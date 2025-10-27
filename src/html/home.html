@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeebMaster - Quiz Anime Tournoi</title>
+    <link rel="stylesheet" href="home.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- Theme Toggle -->
+        <div class="theme-toggle" @click="toggleTheme">
+            <div class="toggle-icon">{{ isDark ? '☀️' : '🌙' }}</div>
+        </div>
+
+        <!-- Particles Background -->
+        <div id="particles-js"></div>
+
+        <!-- Main Container -->
+        <div class="main-container">
+            <!-- Logo & Title -->
+            <div class="header-section" v-if="!gameInProgress">
+                <h1 class="logo-title">
+                    <span class="neon-text">Weeb</span><span class="neon-text-alt">Master</span>
+                </h1>
+                <p class="subtitle">Quiz Anime • Tournoi Hebdomadaire</p>
+                <div class="live-badge" v-if="isGameActive">
+                    <span class="pulse-dot"></span>
+                    <span>LIVE LUNDI</span>
+                </div>
+            </div>
+
+            <!-- État: Jeu non activé -->
+            <div class="content-section" v-if="!isGameActive && !isAuthenticated">
+                <div class="info-card">
+                    <div class="icon-large">🎮</div>
+                    <h2>Prochaine session en préparation...</h2>
+                    <p>Les tournois ont lieu chaque <strong>lundi en direct sur Twitch</strong>.</p>
+                    <p class="small-text">Connectez-vous avec Twitch pour être prêt !</p>
+                </div>
+                
+                <button class="btn-primary btn-twitch" @click="loginTwitch">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/>
+                    </svg>
+                    Se connecter avec Twitch
+                </button>
+            </div>
+
+            <!-- État: Connecté mais jeu non activé -->
+            <div class="content-section" v-if="!isGameActive && isAuthenticated">
+                <div class="info-card">
+                    <div class="user-welcome">
+                        <div class="avatar-icon">👤</div>
+                        <div>
+                            <p class="welcome-text">Bienvenue,</p>
+                            <h3 class="username">{{ username }}</h3>
+                        </div>
+                    </div>
+                    
+                    <div class="separator"></div>
+                    
+                    <div class="icon-large">⏳</div>
+                    <h2>Prochaine session en préparation...</h2>
+                    <p>Le tournoi commence bientôt !</p>
+                    <p class="small-text">Restez connecté, le lobby ouvrira sous peu.</p>
+                </div>
+
+                <button class="btn-secondary" @click="logout">
+                    Déconnexion
+                </button>
+            </div>
+
+            <!-- État: Lobby (jeu activé, en attente) -->
+            <div class="content-section" v-if="isGameActive && !gameInProgress && isAuthenticated">
+                <div class="lobby-card">
+                    <div class="lobby-header">
+                        <div class="icon-large">🎯</div>
+                        <h2>Lobby ouvert !</h2>
+                        <p>Rejoignez la partie en direct</p>
+                    </div>
+
+                    <div class="lobby-stats">
+                        <div class="stat-box">
+                            <div class="stat-number">{{ playerCount }}</div>
+                            <div class="stat-label">Joueurs connectés</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-number">3</div>
+                            <div class="stat-label">Vies</div>
+                        </div>
+                    </div>
+
+                    <button class="btn-primary btn-join" @click="joinLobby" :disabled="hasJoined">
+                        {{ hasJoined ? '✓ Vous êtes dans la partie !' : '🚀 Rejoindre la partie' }}
+                    </button>
+
+                    <div class="lobby-info">
+                        <p>💡 Le jeu démarre quand l'animateur lance la première question</p>
+                        <p>⚡ Vous avez 7 secondes pour répondre à chaque question</p>
+                        <p>❤️ 3 erreurs = élimination</p>
+                    </div>
+                </div>
+
+                <button class="btn-secondary" @click="logout">
+                    Déconnexion
+                </button>
+            </div>
+
+            <!-- État: Partie en cours -->
+            <div class="content-section game-section" v-if="gameInProgress && isAuthenticated">
+                <!-- HUD du joueur -->
+                <div class="player-hud">
+                    <div class="hud-item">
+                        <span class="hud-label">Joueur</span>
+                        <span class="hud-value">{{ username }}</span>
+                    </div>
+                    <div class="hud-item lives-display">
+                        <span class="hud-label">Vies</span>
+                        <div class="hearts">
+                            <span v-for="n in 3" :key="n" class="heart" :class="{ lost: n > playerLives }">
+                                {{ n <= playerLives ? '❤️' : '🖤' }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="hud-item">
+                        <span class="hud-label">Question</span>
+                        <span class="hud-value">{{ currentQuestionNumber }}</span>
+                    </div>
+                </div>
+
+                <!-- Question -->
+                <div class="question-card" v-if="currentQuestion && !showResults">
+                    <div class="question-header">
+                        <div class="question-meta">
+                            <span class="serie-badge">{{ currentQuestion.serie }}</span>
+                            <span class="difficulty-badge" :class="'diff-' + currentQuestion.difficulty">
+                                {{ currentQuestion.difficulty.toUpperCase() }}
+                            </span>
+                        </div>
+                        <div class="timer-display">
+                            <div class="timer-bar" :style="{ width: timerProgress + '%' }"></div>
+                            <span class="timer-text">{{ timeRemaining }}s</span>
+                        </div>
+                    </div>
+
+                    <h3 class="question-text">{{ currentQuestion.question }}</h3>
+
+                    <div class="answers-grid">
+                        <button 
+                            v-for="(answer, index) in currentQuestion.answers" 
+                            :key="index"
+                            class="answer-btn"
+                            :class="{ selected: selectedAnswer === index + 1, disabled: hasAnswered || playerLives === 0 }"
+                            @click="selectAnswer(index + 1)"
+                            :disabled="hasAnswered || playerLives === 0"
+                        >
+                            <span class="answer-number">{{ index + 1 }}</span>
+                            <span class="answer-text">{{ answer }}</span>
+                        </button>
+                    </div>
+
+                    <div class="answer-status" v-if="hasAnswered">
+                        <div class="status-icon">✓</div>
+                        <p>Réponse enregistrée !</p>
+                    </div>
+
+                    <div class="eliminated-notice" v-if="playerLives === 0">
+                        <div class="skull-icon">💀</div>
+                        <h3>Vous êtes éliminé</h3>
+                        <p>Vous pouvez continuer à regarder la partie</p>
+                    </div>
+                </div>
+
+                <!-- Résultats de la question -->
+                <div class="results-card" v-if="showResults">
+                    <div class="results-header">
+                        <h2>Résultats</h2>
+                        <div class="correct-answer-reveal">
+                            <span class="label">Bonne réponse:</span>
+                            <span class="answer-badge">{{ questionResults.correctAnswer }}</span>
+                        </div>
+                    </div>
+
+                    <div class="results-grid">
+                        <!-- Stats des réponses -->
+                        <div class="result-box">
+                            <h4>📊 Statistiques des réponses</h4>
+                            <div class="chart-container">
+                                <div class="chart-bar">
+                                    <div class="bar correct" :style="{ height: getBarHeight(questionResults.stats.correct) }">
+                                        <span class="bar-value">{{ questionResults.stats.correct }}</span>
+                                    </div>
+                                    <div class="bar-label">Bonnes</div>
+                                </div>
+                                <div class="chart-bar">
+                                    <div class="bar wrong" :style="{ height: getBarHeight(questionResults.stats.wrong) }">
+                                        <span class="bar-value">{{ questionResults.stats.wrong }}</span>
+                                    </div>
+                                    <div class="bar-label">Mauvaises</div>
+                                </div>
+                                <div class="chart-bar">
+                                    <div class="bar afk" :style="{ height: getBarHeight(questionResults.stats.afk) }">
+                                        <span class="bar-value">{{ questionResults.stats.afk }}</span>
+                                    </div>
+                                    <div class="bar-label">AFK</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Distribution des vies -->
+                        <div class="result-box">
+                            <h4>❤️ Vies restantes</h4>
+                            <div class="lives-distribution">
+                                <div class="life-row" v-for="(count, lives) in questionResults.stats.livesDistribution" :key="lives">
+                                    <div class="life-icons">
+                                        <span v-for="n in parseInt(lives)" :key="n">❤️</span>
+                                        <span v-for="n in (3 - parseInt(lives))" :key="'lost-' + n">🖤</span>
+                                    </div>
+                                    <div class="life-bar">
+                                        <div class="bar-fill" :style="{ width: getLifeBarWidth(count) }"></div>
+                                    </div>
+                                    <span class="life-count">{{ count }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="elimination-banner" v-if="questionResults.eliminatedCount > 0">
+                        <span class="skull">💀</span>
+                        <span>{{ questionResults.eliminatedCount }} joueur(s) éliminé(s)</span>
+                        <span class="skull">💀</span>
+                    </div>
+
+                    <div class="remaining-players">
+                        <span class="trophy">🏆</span>
+                        <span>{{ questionResults.remainingPlayers }} joueur(s) en vie</span>
+                    </div>
+                </div>
+
+                <!-- Game Over -->
+                <div class="gameover-card" v-if="gameEnded">
+                    <div class="trophy-icon">🏆</div>
+                    <h2>Partie terminée !</h2>
+                    
+                    <div class="winner-section" v-if="gameEndData.winner">
+                        <h3>Vainqueur</h3>
+                        <div class="winner-name">{{ gameEndData.winner.username }}</div>
+                        <p>{{ gameEndData.winner.correctAnswers }} bonnes réponses</p>
+                    </div>
+
+                    <div class="game-stats">
+                        <div class="stat-item">
+                            <span class="stat-value">{{ gameEndData.totalQuestions }}</span>
+                            <span class="stat-label">Questions</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">{{ formatDuration(gameEndData.duration) }}</span>
+                            <span class="stat-label">Durée</span>
+                        </div>
+                    </div>
+
+                    <button class="btn-primary" @click="backToHome">
+                        Retour à l'accueil
+                    </button>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer" v-if="!gameInProgress">
+                <p>Développé avec ❤️ par Adem • © 2025 WeebMaster</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

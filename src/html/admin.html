@@ -1,0 +1,575 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeebMaster - Admin Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'VT323', monospace;
+            background: #0f0f23;
+            color: #00ff00;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background-image: 
+                repeating-linear-gradient(0deg, rgba(0, 255, 0, 0.03) 0px, transparent 1px, transparent 2px, rgba(0, 255, 0, 0.03) 3px),
+                repeating-linear-gradient(90deg, rgba(0, 255, 0, 0.03) 0px, transparent 1px, transparent 2px, rgba(0, 255, 0, 0.03) 3px);
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+
+        /* Login Form */
+        .login-container {
+            background: #1a1a2e;
+            border: 3px solid #00ff00;
+            padding: 40px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3), inset 0 0 20px rgba(0, 255, 0, 0.1);
+            text-align: center;
+        }
+
+        .login-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px #00ff00;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 10px #00ff00; }
+            50% { text-shadow: 0 0 20px #00ff00, 0 0 30px #00ff00; }
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 1.3rem;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            background: #0f0f23;
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            outline: none;
+        }
+
+        .input-group input:focus {
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        .btn {
+            padding: 15px 40px;
+            background: #00ff00;
+            color: #0f0f23;
+            border: none;
+            font-family: 'VT323', monospace;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background: #00cc00;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.6);
+            transform: scale(1.05);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .error-msg {
+            color: #ff0000;
+            margin-top: 15px;
+            font-size: 1.2rem;
+        }
+
+        /* Admin Panel */
+        .admin-panel {
+            display: none;
+        }
+
+        .panel-header {
+            background: #1a1a2e;
+            border: 3px solid #00ff00;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+
+        .panel-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1.2rem;
+            text-align: center;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .status-line {
+            font-size: 1.3rem;
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 10px;
+            animation: blink 1.5s infinite;
+        }
+
+        .status-indicator.active {
+            background: #00ff00;
+        }
+
+        .status-indicator.inactive {
+            background: #ff0000;
+        }
+
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.3; }
+        }
+
+        .control-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .control-btn {
+            padding: 20px;
+            background: #1a1a2e;
+            border: 3px solid #00ff00;
+            color: #00ff00;
+            font-family: 'VT323', monospace;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .control-btn:hover {
+            background: #00ff00;
+            color: #0f0f23;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.6);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: #1a1a2e;
+            border: 3px solid #00ff00;
+            padding: 20px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+        }
+
+        .stat-label {
+            font-size: 1.1rem;
+            opacity: 0.7;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .table-container {
+            background: #1a1a2e;
+            border: 3px solid #00ff00;
+            padding: 20px;
+            margin-bottom: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .table-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            text-align: center;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.3);
+            font-size: 1.2rem;
+        }
+
+        th {
+            background: rgba(0, 255, 0, 0.1);
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background: rgba(0, 255, 0, 0.05);
+        }
+
+        .rank-badge {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+            border: 2px solid #00ff00;
+            border-radius: 50%;
+            font-weight: bold;
+        }
+
+        .rank-1 { color: #ffd700; border-color: #ffd700; }
+        .rank-2 { color: #c0c0c0; border-color: #c0c0c0; }
+        .rank-3 { color: #cd7f32; border-color: #cd7f32; }
+
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            z-index: 9999;
+        }
+
+        @media (max-width: 768px) {
+            .control-panel {
+                grid-template-columns: 1fr;
+            }
+
+            .panel-title {
+                font-size: 0.8rem;
+            }
+
+            .login-title {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="scanlines"></div>
+
+    <div class="container">
+        <!-- Login Form -->
+        <div id="loginForm" class="login-container">
+            <div class="login-title">
+                ADMIN ACCESS
+            </div>
+            <div class="input-group">
+                <label for="password">PASSWORD:</label>
+                <input type="password" id="password" placeholder="Enter password..." autofocus>
+            </div>
+            <button class="btn" onclick="login()">ENTER</button>
+            <div id="errorMsg" class="error-msg"></div>
+        </div>
+
+        <!-- Admin Panel -->
+        <div id="adminPanel" class="admin-panel">
+            <div class="panel-header">
+                <div class="panel-title">WEEBMASTER CONTROL CENTER</div>
+                <div class="status-line">
+                    <span>GAME STATUS:</span>
+                    <span id="gameStatus">
+                        <span id="statusText">INACTIVE</span>
+                        <span class="status-indicator inactive" id="statusIndicator"></span>
+                    </span>
+                </div>
+                <div class="status-line">
+                    <span>PLAYERS CONNECTED:</span>
+                    <span id="playerCount">0</span>
+                </div>
+                <div class="status-line">
+                    <span>GAME IN PROGRESS:</span>
+                    <span id="gameProgress">NO</span>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <button class="control-btn" id="toggleGameBtn" onclick="toggleGame()">
+                    ACTIVATE GAME
+                </button>
+                <button class="control-btn" id="startGameBtn" onclick="startGame()" disabled>
+                    START GAME
+                </button>
+                <button class="control-btn" id="nextQuestionBtn" onclick="nextQuestion()" disabled>
+                    NEXT QUESTION
+                </button>
+                <button class="control-btn" onclick="refreshStats()">
+                    REFRESH STATS
+                </button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-label">TOTAL GAMES</div>
+                    <div class="stat-value" id="totalGames">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">ACTIVE PLAYERS</div>
+                    <div class="stat-value" id="activePlayers">0</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-title">TOP 10 PLAYERS</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>RANK</th>
+                            <th>USERNAME</th>
+                            <th>VICTORIES</th>
+                            <th>GAMES</th>
+                        </tr>
+                    </thead>
+                    <tbody id="topPlayersTable">
+                        <tr><td colspan="4" style="text-align: center;">LOADING...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-container">
+                <div class="table-title">RECENT GAMES</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>GAME ID</th>
+                            <th>WINNER</th>
+                            <th>QUESTIONS</th>
+                            <th>DATE</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentGamesTable">
+                        <tr><td colspan="4" style="text-align: center;">LOADING...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isAdmin = false;
+        let statsInterval = null;
+
+        // Check if already authenticated
+        async function checkAuth() {
+            try {
+                const response = await fetch('/admin/check');
+                const data = await response.json();
+                if (data.isAdmin) {
+                    showAdminPanel();
+                    startStatsRefresh();
+                }
+            } catch (error) {
+                console.error('Error checking auth:', error);
+            }
+        }
+
+        async function login() {
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMsg');
+
+            try {
+                const response = await fetch('/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAdminPanel();
+                    startStatsRefresh();
+                } else {
+                    errorMsg.textContent = '✖ ACCESS DENIED';
+                    setTimeout(() => errorMsg.textContent = '', 3000);
+                }
+            } catch (error) {
+                errorMsg.textContent = '✖ CONNECTION ERROR';
+                setTimeout(() => errorMsg.textContent = '', 3000);
+            }
+        }
+
+        function showAdminPanel() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            isAdmin = true;
+            refreshStats();
+        }
+
+        async function toggleGame() {
+            try {
+                const response = await fetch('/admin/toggle-game', { method: 'POST' });
+                const data = await response.json();
+                updateGameStatus(data.isActive);
+            } catch (error) {
+                console.error('Error toggling game:', error);
+            }
+        }
+
+        async function startGame() {
+            try {
+                const response = await fetch('/admin/start-game', { method: 'POST' });
+                const data = await response.json();
+                if (data.success) {
+                    alert('✓ GAME STARTED');
+                    refreshStats();
+                }
+            } catch (error) {
+                alert('✖ ERROR: ' + error.message);
+            }
+        }
+
+        async function nextQuestion() {
+            try {
+                const response = await fetch('/admin/next-question', { method: 'POST' });
+                const data = await response.json();
+                if (data.success) {
+                    console.log('✓ Next question sent');
+                }
+            } catch (error) {
+                alert('✖ ERROR: ' + error.message);
+            }
+        }
+
+        async function refreshStats() {
+            try {
+                const response = await fetch('/admin/stats');
+                const data = await response.json();
+
+                // Update stats
+                document.getElementById('totalGames').textContent = data.totalGames;
+                document.getElementById('playerCount').textContent = data.currentPlayers;
+                document.getElementById('activePlayers').textContent = data.currentPlayers;
+                document.getElementById('gameProgress').textContent = data.gameInProgress ? 'YES' : 'NO';
+
+                updateGameStatus(data.gameActive);
+
+                // Update buttons
+                document.getElementById('startGameBtn').disabled = !data.gameActive || data.gameInProgress;
+                document.getElementById('nextQuestionBtn').disabled = !data.gameInProgress;
+
+                // Update top players
+                const topPlayersTable = document.getElementById('topPlayersTable');
+                if (data.topPlayers.length === 0) {
+                    topPlayersTable.innerHTML = '<tr><td colspan="4" style="text-align: center;">NO DATA</td></tr>';
+                } else {
+                    topPlayersTable.innerHTML = data.topPlayers.map((player, index) => `
+                        <tr>
+                            <td><span class="rank-badge rank-${index + 1}">${index + 1}</span></td>
+                            <td>${player.username}</td>
+                            <td>${player.total_victories}</td>
+                            <td>${player.total_games_played}</td>
+                        </tr>
+                    `).join('');
+                }
+
+                // Update recent games
+                const recentGamesTable = document.getElementById('recentGamesTable');
+                if (data.recentGames.length === 0) {
+                    recentGamesTable.innerHTML = '<tr><td colspan="4" style="text-align: center;">NO DATA</td></tr>';
+                } else {
+                    recentGamesTable.innerHTML = data.recentGames.map(game => `
+                        <tr>
+                            <td>#${game.id}</td>
+                            <td>${game.winner ? game.winner.username : 'N/A'}</td>
+                            <td>${game.questions_count}</td>
+                            <td>${new Date(game.created_at).toLocaleDateString()}</td>
+                        </tr>
+                    `).join('');
+                }
+
+            } catch (error) {
+                console.error('Error refreshing stats:', error);
+            }
+        }
+
+        function updateGameStatus(isActive) {
+            const statusText = document.getElementById('statusText');
+            const statusIndicator = document.getElementById('statusIndicator');
+            const toggleBtn = document.getElementById('toggleGameBtn');
+
+            if (isActive) {
+                statusText.textContent = 'ACTIVE';
+                statusIndicator.classList.remove('inactive');
+                statusIndicator.classList.add('active');
+                toggleBtn.textContent = 'DEACTIVATE GAME';
+            } else {
+                statusText.textContent = 'INACTIVE';
+                statusIndicator.classList.remove('active');
+                statusIndicator.classList.add('inactive');
+                toggleBtn.textContent = 'ACTIVATE GAME';
+            }
+        }
+
+        function startStatsRefresh() {
+            statsInterval = setInterval(refreshStats, 3000);
+        }
+
+        // Handle Enter key on login
+        document.getElementById('password')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') login();
+        });
+
+        // Initialize
+        checkAuth();
+    </script>
+</body>
+</html>
