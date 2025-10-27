@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 7000;
 // Détection automatique de l'URL de redirection
 const TWITCH_REDIRECT_URI = process.env.TWITCH_REDIRECT_URI || 
     (process.env.NODE_ENV === 'production' 
-        ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME || process.env.VERCEL_URL || 'votredomaine.com'}/auth/twitch/callback`
+        ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME || process.env.VERCEL_URL || 'shonenmaster.com'}/auth/twitch/callback`
         : `http://localhost:${PORT}/auth/twitch/callback`);
 
 // ============================================
@@ -26,13 +26,20 @@ const TWITCH_REDIRECT_URI = process.env.TWITCH_REDIRECT_URI ||
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+
+app.set('trust proxy' , 1);
+
+
 app.use(session({
     secret: process.env.SESSION_SECRET || 'pikine-secret-2025',
     resave: false,
     saveUninitialized: false,
     cookie: {
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 24 * 60 * 60 * 1000 // 24h
+        maxAge: 24 * 60 * 60 * 1000, // 24h,
+        httpOnly: true,
+        sameSite: 'lax'
+
     }
 }));
 
