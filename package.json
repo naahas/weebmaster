@@ -4,8 +4,7 @@
   "description": "pikine twitch game",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon server.js",
-    "dev": "nodemon server.js"
+    "start": "nodemon server.js"
   },
   "keywords": [
     "quiz",
