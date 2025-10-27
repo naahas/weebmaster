@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 7000;
 // Détection automatique de l'URL de redirection
 const TWITCH_REDIRECT_URI = process.env.TWITCH_REDIRECT_URI || 
     (process.env.NODE_ENV === 'production' 
-        ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME || process.env.VERCEL_URL || 'weebmaster.com'}/auth/twitch/callback`
+        ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME || process.env.VERCEL_URL || 'votredomaine.com'}/auth/twitch/callback`
         : `http://localhost:${PORT}/auth/twitch/callback`);
 
 // ============================================
@@ -297,32 +297,49 @@ function revealAnswers(correctAnswer) {
     };
 
     let eliminatedThisRound = 0;
+    const playersDetails = []; // 🆕 Détails pour l'admin
 
     gameState.players.forEach((player, socketId) => {
+        let status = 'afk';
+        let isCorrect = false;
+        const playerAnswer = gameState.answers.get(socketId);
+        
         if (player.lives === 0) {
             stats.livesDistribution[0]++;
-            return;
-        }
-
-        const playerAnswer = gameState.answers.get(socketId);
-
-        if (!playerAnswer) {
+            status = 'eliminated';
+        } else if (!playerAnswer) {
             // AFK - perd une vie
             stats.afk++;
             player.lives--;
             if (player.lives === 0) eliminatedThisRound++;
+            status = 'afk';
         } else if (playerAnswer.answer === correctAnswer) {
             // Bonne réponse
             stats.correct++;
             player.correctAnswers++;
+            status = 'correct';
+            isCorrect = true;
         } else {
             // Mauvaise réponse - perd une vie
             stats.wrong++;
             player.lives--;
             if (player.lives === 0) eliminatedThisRound++;
+            status = 'wrong';
         }
 
-        stats.livesDistribution[player.lives]++;
+        if (player.lives > 0 || status !== 'eliminated') {
+            stats.livesDistribution[player.lives]++;
+        }
+
+        // 🆕 Ajouter les détails du joueur pour l'admin
+        playersDetails.push({
+            socketId: socketId,
+            username: player.username,
+            lives: player.lives,
+            status: status,
+            responseTime: playerAnswer?.time || null,
+            isCorrect: isCorrect
+        });
     });
 
     const alivePlayers = getAlivePlayers();
@@ -331,7 +348,8 @@ function revealAnswers(correctAnswer) {
         correctAnswer,
         stats,
         eliminatedCount: eliminatedThisRound,
-        remainingPlayers: alivePlayers.length
+        remainingPlayers: alivePlayers.length,
+        players: playersDetails // 🆕 Détails des joueurs pour l'admin
     });
 
     // Vérifier fin de partie
@@ -478,6 +496,13 @@ io.on('connection', (socket) => {
         });
 
         socket.emit('answer-recorded');
+        
+        // 🆕 Notifier l'admin en temps réel qu'un joueur a répondu
+        io.emit('answer-submitted', {
+            socketId: socket.id,
+            answeredCount: gameState.answers.size,
+            totalPlayers: gameState.players.size
+        });
     });
 
     // Déconnexion

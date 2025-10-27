@@ -24,14 +24,14 @@
             <!-- Logo & Title (Non connecté et jeu non actif) -->
             <div class="header-section welcome-screen" v-if="!isGameActive && !isAuthenticated && !gameInProgress">
                 <h1 class="logo-title">
-                    <span class="neon-text">PIKINE</span><span class="neon-text-alt">Master</span>
+                    <span class="neon-text">Shonen</span><span class="neon-text-alt">Master</span>
                 </h1>
                 
                 <button class="btn-primary btn-twitch floating" @click="loginTwitch">
                     <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
                         <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/>
                     </svg>
-                    <span> CONNECT </span>
+                    <span>Se connecter avec Twitch</span>
                 </button>
             </div>
 
@@ -171,7 +171,7 @@
                     </div>
                 </div>
 
-                <!-- Résultats de la question -->
+                <!-- Résultats de la question (VERSION SIMPLIFIÉE POUR JOUEURS) -->
                 <div class="results-card" v-if="showResults">
                     <div class="results-header">
                         <h2>Résultats</h2>
@@ -181,59 +181,37 @@
                         </div>
                     </div>
 
-                    <div class="results-grid">
-                        <!-- Stats des réponses -->
-                        <div class="result-box">
-                            <h4>📊 Statistiques des réponses</h4>
-                            <div class="chart-container">
-                                <div class="chart-bar">
-                                    <div class="bar correct" :style="{ height: getBarHeight(questionResults.stats.correct) }">
-                                        <span class="bar-value">{{ questionResults.stats.correct }}</span>
-                                    </div>
-                                    <div class="bar-label">Bonnes</div>
-                                </div>
-                                <div class="chart-bar">
-                                    <div class="bar wrong" :style="{ height: getBarHeight(questionResults.stats.wrong) }">
-                                        <span class="bar-value">{{ questionResults.stats.wrong }}</span>
-                                    </div>
-                                    <div class="bar-label">Mauvaises</div>
-                                </div>
-                                <div class="chart-bar">
-                                    <div class="bar afk" :style="{ height: getBarHeight(questionResults.stats.afk) }">
-                                        <span class="bar-value">{{ questionResults.stats.afk }}</span>
-                                    </div>
-                                    <div class="bar-label">AFK</div>
-                                </div>
-                            </div>
+                    <!-- Résultat personnel du joueur -->
+                    <div class="personal-result">
+                        <div v-if="selectedAnswer === questionResults.correctAnswer" class="result-success">
+                            <div class="result-icon">✅</div>
+                            <h3>Bonne réponse !</h3>
+                            <p>Vous conservez vos {{ playerLives }} vies</p>
                         </div>
-
-                        <!-- Distribution des vies -->
-                        <div class="result-box">
-                            <h4>❤️ Vies restantes</h4>
-                            <div class="lives-distribution">
-                                <div class="life-row" v-for="(count, lives) in questionResults.stats.livesDistribution" :key="lives">
-                                    <div class="life-icons">
-                                        <span v-for="n in parseInt(lives)" :key="n">❤️</span>
-                                        <span v-for="n in (3 - parseInt(lives))" :key="'lost-' + n">🖤</span>
-                                    </div>
-                                    <div class="life-bar">
-                                        <div class="bar-fill" :style="{ width: getLifeBarWidth(count) }"></div>
-                                    </div>
-                                    <span class="life-count">{{ count }}</span>
-                                </div>
-                            </div>
+                        <div v-else-if="selectedAnswer && selectedAnswer !== questionResults.correctAnswer" class="result-fail">
+                            <div class="result-icon">❌</div>
+                            <h3>Mauvaise réponse</h3>
+                            <p>Vous perdez une vie - Il vous reste {{ playerLives }} vie(s)</p>
+                        </div>
+                        <div v-else class="result-afk">
+                            <div class="result-icon">⏰</div>
+                            <h3>Temps écoulé</h3>
+                            <p>Vous perdez une vie - Il vous reste {{ playerLives }} vie(s)</p>
                         </div>
                     </div>
 
-                    <div class="elimination-banner" v-if="questionResults.eliminatedCount > 0">
-                        <span class="skull">💀</span>
-                        <span>{{ questionResults.eliminatedCount }} joueur(s) éliminé(s)</span>
-                        <span class="skull">💀</span>
-                    </div>
+                    <!-- Stats simplifiées -->
+                    <div class="simple-stats">
+                        <div class="elimination-banner" v-if="questionResults.eliminatedCount > 0">
+                            <span class="skull">💀</span>
+                            <span>{{ questionResults.eliminatedCount }} joueur(s) éliminé(s)</span>
+                            <span class="skull">💀</span>
+                        </div>
 
-                    <div class="remaining-players">
-                        <span class="trophy">🏆</span>
-                        <span>{{ questionResults.remainingPlayers }} joueur(s) en vie</span>
+                        <div class="remaining-players">
+                            <span class="trophy">🏆</span>
+                            <span>{{ questionResults.remainingPlayers }} joueur(s) en vie</span>
+                        </div>
                     </div>
                 </div>
 
