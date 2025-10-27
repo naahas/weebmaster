@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WeebMaster - Quiz Anime Tournoi</title>
+    <title>ShonenMaster - Quiz Anime Tournoi</title>
     <link rel="stylesheet" href="home.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,33 +21,29 @@
 
         <!-- Main Container -->
         <div class="main-container">
-            <!-- Logo & Title -->
-            <div class="header-section" v-if="!gameInProgress">
+            <!-- Logo & Title (Non connecté et jeu non actif) -->
+            <div class="header-section welcome-screen" v-if="!isGameActive && !isAuthenticated && !gameInProgress">
                 <h1 class="logo-title">
-                    <span class="neon-text">Weeb</span><span class="neon-text-alt">Master</span>
+                    <span class="neon-text">Shonen</span><span class="neon-text-alt">Master</span>
                 </h1>
-                <p class="subtitle">Quiz Anime • Tournoi Hebdomadaire</p>
-                <div class="live-badge" v-if="isGameActive">
-                    <span class="pulse-dot"></span>
-                    <span>LIVE LUNDI</span>
-                </div>
-            </div>
-
-            <!-- État: Jeu non activé -->
-            <div class="content-section" v-if="!isGameActive && !isAuthenticated">
-                <div class="info-card">
-                    <div class="icon-large">🎮</div>
-                    <h2>Prochaine session en préparation...</h2>
-                    <p>Les tournois ont lieu chaque <strong>lundi en direct sur Twitch</strong>.</p>
-                    <p class="small-text">Connectez-vous avec Twitch pour être prêt !</p>
-                </div>
                 
-                <button class="btn-primary btn-twitch" @click="loginTwitch">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <button class="btn-primary btn-twitch floating" @click="loginTwitch">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
                         <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/>
                     </svg>
-                    Se connecter avec Twitch
+                    <span>Se connecter avec Twitch</span>
                 </button>
+            </div>
+
+            <!-- Logo simplifié (Autres états) -->
+            <div class="header-section" v-if="(isGameActive || isAuthenticated) && !gameInProgress">
+                <h1 class="logo-title">
+                    <span class="neon-text">Shonen</span><span class="neon-text-alt">Master</span>
+                </h1>
+                <div class="live-badge" v-if="isGameActive">
+                    <span class="pulse-dot"></span>
+                    <span>EN LIVE</span>
+                </div>
             </div>
 
             <!-- État: Connecté mais jeu non activé -->
@@ -267,11 +263,6 @@
                         Retour à l'accueil
                     </button>
                 </div>
-            </div>
-
-            <!-- Footer -->
-            <div class="footer" v-if="!gameInProgress">
-                <p>Développé avec ❤️ par Adem • © 2025 WeebMaster</p>
             </div>
         </div>
     </div>
