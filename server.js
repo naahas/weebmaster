@@ -19,57 +19,22 @@ const TWITCH_REDIRECT_URI = process.env.TWITCH_REDIRECT_URI ||
         : `http://localhost:${PORT}/auth/twitch/callback`);
 
 // ============================================
+
+// ============================================
 // Middleware
 // ============================================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('src/html'));
-app.use(express.static('src/style'));
-app.use(express.static('src/script'));
 
 app.use(session({
     secret: process.env.SESSION_SECRET || 'pikine-secret-2025',
     resave: false,
     saveUninitialized: false,
-    cookie: { 
+    cookie: {
         secure: process.env.NODE_ENV === 'production',
         maxAge: 24 * 60 * 60 * 1000 // 24h
     }
 }));
-
-// ============================================
-// État du jeu
-// ============================================
-const gameState = {
-    isActive: false,              // Le jeu est-il activé ?
-    inProgress: false,            // Une partie est-elle en cours ?
-    currentGameId: null,          // ID de la partie en cours
-    currentQuestionIndex: 0,      // Index de la question actuelle
-    players: new Map(),           // Map<socketId, playerData>
-    questionStartTime: null,      // Timestamp du début de la question
-    answers: new Map(),           // Map<socketId, answerData>
-    gameStartTime: null           // Timestamp du début du jeu
-};
-
-// ============================================
-// Helpers
-// ============================================
-function getDifficultyForQuestion(questionNumber) {
-    if (questionNumber <= 15) return 'veryeasy';
-    if (questionNumber <= 35) return 'easy';
-    if (questionNumber <= 55) return 'medium';
-    if (questionNumber <= 70) return 'hard';
-    if (questionNumber <= 85) return 'veryhard';
-    return 'extreme';
-}
-
-function getAlivePlayers() {
-    return Array.from(gameState.players.values()).filter(p => p.lives > 0);
-}
-
-function getEliminatedCount() {
-    return Array.from(gameState.players.values()).filter(p => p.lives === 0).length;
-}
 
 // ============================================
 // Routes AUTH TWITCH
@@ -146,6 +111,49 @@ app.get('/auth/status', (req, res) => {
         res.json({ authenticated: false });
     }
 });
+
+// ============================================
+// Fichiers statiques (APRÈS les routes API)
+// ============================================
+app.use(express.static('src/html'));
+app.use(express.static('src/style'));
+app.use(express.static('src/script'));
+
+
+// ============================================
+// État du jeu
+// ============================================
+const gameState = {
+    isActive: false,              // Le jeu est-il activé ?
+    inProgress: false,            // Une partie est-elle en cours ?
+    currentGameId: null,          // ID de la partie en cours
+    currentQuestionIndex: 0,      // Index de la question actuelle
+    players: new Map(),           // Map<socketId, playerData>
+    questionStartTime: null,      // Timestamp du début de la question
+    answers: new Map(),           // Map<socketId, answerData>
+    gameStartTime: null           // Timestamp du début du jeu
+};
+
+// ============================================
+// Helpers
+// ============================================
+function getDifficultyForQuestion(questionNumber) {
+    if (questionNumber <= 15) return 'veryeasy';
+    if (questionNumber <= 35) return 'easy';
+    if (questionNumber <= 55) return 'medium';
+    if (questionNumber <= 70) return 'hard';
+    if (questionNumber <= 85) return 'veryhard';
+    return 'extreme';
+}
+
+function getAlivePlayers() {
+    return Array.from(gameState.players.values()).filter(p => p.lives > 0);
+}
+
+function getEliminatedCount() {
+    return Array.from(gameState.players.values()).filter(p => p.lives === 0).length;
+}
+
 
 
 
