@@ -1,4 +1,3 @@
-
 // ============================================
 // WEEBMASTER - Frontend App (Vue 3)
 // ============================================
@@ -256,8 +255,8 @@ createApp({
 
         // ========== Particles.js ==========
         initParticles() {
-            const particleColor = this.isDark ? '#00ffff' : '#6366f1';
-            const lineColor = this.isDark ? '#00ffff' : '#6366f1';
+            const particleColor = this.isDark ? '#FFD700' : '#FF8C00';
+            const lineColor = this.isDark ? '#FFA500' : '#FF8C00';
 
             particlesJS('particles-js', {
                 particles: {

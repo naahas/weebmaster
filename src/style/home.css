@@ -3,29 +3,29 @@
    ============================================ */
 
 :root {
-    /* Dark Theme (défaut) */
-    --bg-primary: #0a0e27;
-    --bg-secondary: #151933;
-    --bg-card: #1e2444;
+    /* Dark Theme (défaut) - Style Manga Doré */
+    --bg-primary: #0a0a0a;
+    --bg-secondary: #1a1a1a;
+    --bg-card: #1f1f1f;
     --text-primary: #ffffff;
-    --text-secondary: #a0aec0;
-    --neon-primary: #00ffff;
-    --neon-secondary: #ff00ff;
-    --accent-color: #6366f1;
+    --text-secondary: #a0a0a0;
+    --neon-primary: #FFD700;
+    --neon-secondary: #FFA500;
+    --accent-color: #FF8C00;
     --success-color: #10b981;
     --error-color: #ef4444;
-    --warning-color: #f59e0b;
+    --warning-color: #FFA500;
 }
 
 body.light-theme {
-    --bg-primary: #f8fafc;
+    --bg-primary: #fafafa;
     --bg-secondary: #ffffff;
     --bg-card: #ffffff;
-    --text-primary: #1e293b;
-    --text-secondary: #64748b;
-    --neon-primary: #6366f1;
-    --neon-secondary: #8b5cf6;
-    --accent-color: #6366f1;
+    --text-primary: #1a1a1a;
+    --text-secondary: #666666;
+    --neon-primary: #FF8C00;
+    --neon-secondary: #FFA500;
+    --accent-color: #FF8C00;
 }
 
 * {
