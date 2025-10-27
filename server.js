@@ -1,4 +1,3 @@
-
 // ============================================
 // WEEBMASTER - Server Principal
 // ============================================
@@ -12,6 +11,12 @@ const { db } = require('./dbs');
 
 const app = express();
 const PORT = process.env.PORT || 7000;
+
+// Détection automatique de l'URL de redirection
+const TWITCH_REDIRECT_URI = process.env.TWITCH_REDIRECT_URI || 
+    (process.env.NODE_ENV === 'production' 
+        ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME || process.env.VERCEL_URL || 'weebmaster.com'}/auth/twitch/callback`
+        : `http://localhost:${PORT}/auth/twitch/callback`);
 
 // ============================================
 // Middleware
@@ -72,7 +77,7 @@ function getEliminatedCount() {
 
 // Route pour démarrer l'auth Twitch
 app.get('/auth/twitch', (req, res) => {
-    const twitchAuthUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${process.env.TWITCH_CLIENT_ID}&redirect_uri=${encodeURIComponent(process.env.TWITCH_REDIRECT_URI)}&response_type=code&scope=user:read:email`;
+    const twitchAuthUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${process.env.TWITCH_CLIENT_ID}&redirect_uri=${encodeURIComponent(TWITCH_REDIRECT_URI)}&response_type=code&scope=user:read:email`;
     res.redirect(twitchAuthUrl);
 });
 
@@ -92,7 +97,7 @@ app.get('/auth/twitch/callback', async (req, res) => {
                 client_secret: process.env.TWITCH_CLIENT_SECRET,
                 code: code,
                 grant_type: 'authorization_code',
-                redirect_uri: process.env.TWITCH_REDIRECT_URI
+                redirect_uri: TWITCH_REDIRECT_URI
             }
         });
 
@@ -414,6 +419,7 @@ const server = app.listen(PORT, () => {
     ║  Port: ${PORT}                        ║
     ║  Status: ✅ Online                    ║
     ║  Mode: ${process.env.NODE_ENV}                  ║
+    ║  Twitch Redirect: ${TWITCH_REDIRECT_URI}
     ╚═══════════════════════════════════════╝
     `);
 });
