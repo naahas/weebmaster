@@ -60,8 +60,8 @@
                     <div class="separator"></div>
                     
                     <div class="icon-large">⏳</div>
-                    <h2>Prochaine session en préparation...</h2>
-                    <p>Le tournoi commence bientôt !</p>
+                    <h2>En préparation...</h2>
+                    <p>La partie commence bientôt !</p>
                     <p class="small-text">Restez connecté, le lobby ouvrira sous peu.</p>
                 </div>
 
@@ -130,21 +130,34 @@
 
                 <!-- Question -->
                 <div class="question-card" v-if="currentQuestion && !showResults">
-                    <div class="question-header">
-                        <div class="question-meta">
-                            <span class="serie-badge">{{ currentQuestion.serie }}</span>
-                            <span class="difficulty-badge" :class="'diff-' + currentQuestion.difficulty">
-                                {{ currentQuestion.difficulty.toUpperCase() }}
-                            </span>
-                        </div>
-                        <div class="timer-display">
-                            <div class="timer-bar" :style="{ width: timerProgress + '%' }"></div>
-                            <span class="timer-text">{{ timeRemaining }}s</span>
-                        </div>
+                    <!-- Timer circulaire en haut -->
+                    <div class="timer-circle-container">
+                        <svg class="timer-circle" viewBox="0 0 100 100">
+                            <circle class="timer-circle-bg" cx="50" cy="50" r="45"></circle>
+                            <circle 
+                                class="timer-circle-progress" 
+                                cx="50" 
+                                cy="50" 
+                                r="45"
+                                :style="{ strokeDashoffset: (283 - (283 * timerProgress / 100)) }"
+                                :class="{ warning: timeRemaining <= 3 }"
+                            ></circle>
+                        </svg>
+                        <div class="timer-number">{{ timeRemaining }}</div>
                     </div>
 
+                    <!-- Badges série et difficulté -->
+                    <div class="question-badges">
+                        <span class="serie-badge">{{ currentQuestion.serie }}</span>
+                        <span class="difficulty-badge" :class="'diff-' + currentQuestion.difficulty">
+                            {{ currentQuestion.difficulty.toUpperCase() }}
+                        </span>
+                    </div>
+
+                    <!-- Question -->
                     <h3 class="question-text">{{ currentQuestion.question }}</h3>
 
+                    <!-- Réponses -->
                     <div class="answers-grid">
                         <button 
                             v-for="(answer, index) in currentQuestion.answers" 
