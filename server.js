@@ -194,6 +194,11 @@ app.get('/admin/check', (req, res) => {
     res.json({ isAdmin: req.session.isAdmin === true });
 });
 
+// Vérifier l'authentification admin (utilisé par le nouveau panel)
+app.get('/admin/auth', (req, res) => {
+    res.json({ authenticated: req.session.isAdmin === true });
+});
+
 // Activer/désactiver le jeu
 app.post('/admin/toggle-game', (req, res) => {
     if (!req.session.isAdmin) {
@@ -359,12 +364,21 @@ function revealAnswers(correctAnswer) {
 
     const alivePlayers = getAlivePlayers();
 
+    // 🆕 Créer le tableau playersData pour l'admin
+    const playersData = Array.from(gameState.players.values()).map(player => ({
+        twitchId: player.twitchId,
+        username: player.username,
+        lives: player.lives,
+        correctAnswers: player.correctAnswers
+    }));
+
     io.emit('question-results', {
         correctAnswer,
         stats,
         eliminatedCount: eliminatedThisRound,
         remainingPlayers: alivePlayers.length,
-        players: playersDetails // 🆕 Détails des joueurs pour l'admin
+        players: playersDetails, // Détails des joueurs pour l'admin
+        playersData: playersData  // 🆕 Données complètes des joueurs
     });
 
     // Vérifier fin de partie
@@ -490,6 +504,7 @@ io.on('connection', (socket) => {
         io.emit('lobby-update', {
             playerCount: gameState.players.size,
             players: Array.from(gameState.players.values()).map(p => ({
+                twitchId: p.twitchId,
                 username: p.username,
                 lives: p.lives
             }))
@@ -531,6 +546,7 @@ io.on('connection', (socket) => {
             io.emit('lobby-update', {
                 playerCount: gameState.players.size,
                 players: Array.from(gameState.players.values()).map(p => ({
+                    twitchId: p.twitchId,
                     username: p.username,
                     lives: p.lives
                 }))

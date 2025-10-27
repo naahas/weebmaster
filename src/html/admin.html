@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WeebMaster - Admin Panel</title>
+    <title>ShonenMaster - Panel Admin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -14,208 +14,353 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --primary: #FFD700;
+            --primary-dark: #FFA500;
+            --bg-main: #0a0e27;
+            --bg-card: #141b34;
+            --bg-card-hover: #1a2342;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a8c0;
+            --success: #00ff88;
+            --danger: #ff4757;
+            --warning: #ffa502;
+            --border: #1e2847;
+            --shadow: rgba(255, 215, 0, 0.1);
+        }
+
         body {
-            font-family: 'VT323', monospace;
-            background: #0f0f23;
-            color: #FFD700;
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(255, 215, 0, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 165, 0, 0.03) 0%, transparent 50%);
+        }
+
+        /* ============ LOGIN ============ */
+        .login-container {
             min-height: 100vh;
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
             padding: 20px;
-            background-image: 
-                repeating-linear-gradient(0deg, rgba(255, 215, 0, 0.03) 0px, transparent 1px, transparent 2px, rgba(255, 215, 0, 0.03) 3px),
-                repeating-linear-gradient(90deg, rgba(255, 215, 0, 0.03) 0px, transparent 1px, transparent 2px, rgba(255, 215, 0, 0.03) 3px);
         }
 
-        .container {
-            max-width: 1600px;
+        .login-box {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 50px 40px;
+            max-width: 450px;
             width: 100%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
         }
 
-        /* Login Form */
-        .login-container {
-            background: #1a1a2e;
-            border: 3px solid #FFD700;
-            padding: 40px;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3), inset 0 0 20px rgba(255, 215, 0, 0.1);
+        .login-logo {
             text-align: center;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .login-title {
-            font-family: 'Press Start 2P', cursive;
-            font-size: 1.5rem;
             margin-bottom: 30px;
-            text-shadow: 0 0 10px #FFD700;
-            animation: glow 2s ease-in-out infinite;
         }
 
-        @keyframes glow {
-            0%, 100% { text-shadow: 0 0 10px #FFD700; }
-            50% { text-shadow: 0 0 20px #FFD700, 0 0 30px #FFD700; }
+        .login-logo h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
         }
 
-        .input-group {
-            margin-bottom: 20px;
-            text-align: left;
+        .login-logo p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
         }
 
-        .input-group label {
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
             display: block;
             margin-bottom: 8px;
-            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
         }
 
-        .input-group input {
+        .form-group input {
             width: 100%;
-            padding: 12px;
-            background: #0f0f23;
-            border: 2px solid #FFD700;
-            color: #FFD700;
-            font-family: 'VT323', monospace;
-            font-size: 1.2rem;
+            padding: 14px 18px;
+            background: var(--bg-main);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
             outline: none;
-            text-align: center;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
         }
 
-        .input-group input::placeholder {
-            text-align: center;
-        }
-
-        .input-group input:focus {
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
-        }
-
-        .btn {
-            padding: 15px 40px;
-            background: #FFD700;
-            color: #0f0f23;
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--bg-main);
             border: none;
-            font-family: 'VT323', monospace;
-            font-size: 1.5rem;
+            border-radius: 12px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            text-transform: uppercase;
-            font-weight: bold;
         }
 
-        .btn:hover {
-            background: #FFA500;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
-            transform: scale(1.05);
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px var(--shadow);
         }
 
-        .btn:active {
-            transform: scale(0.95);
+        .btn-login:active {
+            transform: translateY(0);
         }
 
         .error-msg {
-            color: #ff0000;
-            margin-top: 15px;
-            font-size: 1.2rem;
+            color: var(--danger);
+            text-align: center;
+            margin-top: 16px;
+            font-size: 0.9rem;
         }
 
-        /* Admin Panel */
+        /* ============ ADMIN PANEL ============ */
         .admin-panel {
             display: none;
+            min-height: 100vh;
         }
 
-        .panel-header {
-            background: #1a1a2e;
-            border: 3px solid #FFD700;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-        }
-
-        .panel-title {
-            font-family: 'Press Start 2P', cursive;
-            font-size: 1.2rem;
-            text-align: center;
-            margin-bottom: 15px;
-            text-shadow: 0 0 10px #FFD700;
-        }
-
-        .status-line {
-            font-size: 1.3rem;
-            margin: 8px 0;
+        .admin-header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 20px 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
         }
 
-        .status-indicator {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
+        .admin-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-main);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            margin-left: 10px;
-            animation: blink 1.5s infinite;
+            animation: pulse 2s ease-in-out infinite;
         }
 
-        .status-indicator.active {
-            background: #00ff00;
+        .status-dot.active {
+            background: var(--success);
+            box-shadow: 0 0 10px var(--success);
         }
 
-        .status-indicator.inactive {
-            background: #ff0000;
+        .status-dot.inactive {
+            background: var(--danger);
+            box-shadow: 0 0 10px var(--danger);
         }
 
-        @keyframes blink {
-            0%, 50%, 100% { opacity: 1; }
-            25%, 75% { opacity: 0.3; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
-        .control-panel {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .control-btn {
-            padding: 15px;
-            background: #1a1a2e;
-            border: 3px solid #FFD700;
-            color: #FFD700;
-            font-family: 'VT323', monospace;
-            font-size: 1.3rem;
+        .btn-icon {
+            padding: 10px 14px;
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
             cursor: pointer;
             transition: all 0.3s ease;
-            text-transform: uppercase;
+            font-size: 1.1rem;
         }
 
-        .control-btn:hover {
-            background: #FFD700;
-            color: #0f0f23;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+        .btn-icon:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--primary);
         }
 
-        .control-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-
-        /* Question en temps réel */
-        .live-question-container {
-            background: #1a1a2e;
-            border: 3px solid #FFD700;
+        /* ============ MAIN CONTENT ============ */
+        .admin-content {
             padding: 30px;
-            margin-bottom: 20px;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.85rem;
+        }
+
+        /* ============ CONTROL PANEL ============ */
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .control-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .control-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            border-color: var(--primary);
+        }
+
+        .control-card.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .control-card h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .control-card p {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .control-card.primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--bg-main);
+            border: none;
+        }
+
+        .control-card.primary p {
+            color: var(--bg-main);
+            opacity: 0.8;
+        }
+
+        .control-card.danger {
+            border-color: var(--danger);
+        }
+
+        .control-card.danger:hover {
+            border-color: var(--danger);
+            box-shadow: 0 8px 24px rgba(255, 71, 87, 0.2);
+        }
+
+        /* ============ STATS GRID ============ */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* ============ LIVE QUESTION ============ */
+        .live-question {
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
             display: none;
+            animation: slideDown 0.4s ease;
         }
 
-        .live-question-container.active {
+        .live-question.active {
             display: block;
-            animation: slideIn 0.5s ease;
         }
 
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .question-header {
@@ -223,98 +368,189 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #FFD700;
         }
 
-        .question-meta {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-
-        .question-badge {
-            background: #FFD700;
-            color: #0f0f23;
-            padding: 5px 15px;
-            font-size: 1.2rem;
-            font-weight: bold;
+        .question-header h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
         }
 
         .timer-display {
-            font-size: 3rem;
-            font-weight: bold;
-            color: #FFD700;
-            text-shadow: 0 0 20px #FFD700;
-            animation: timerPulse 1s infinite;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            background: var(--bg-main);
+            border-radius: 12px;
         }
 
-        .timer-display.warning {
-            color: #ff0000;
-            text-shadow: 0 0 20px #ff0000;
+        .timer-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: conic-gradient(var(--primary) 0deg, var(--bg-card) 0deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            position: relative;
         }
 
-        @keyframes timerPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+        .timer-circle::before {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            background: var(--bg-main);
+            border-radius: 50%;
+            z-index: -1;
+        }
+
+        .question-badges {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge.serie {
+            background: rgba(255, 215, 0, 0.1);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .badge.difficulty {
+            background: rgba(255, 71, 87, 0.1);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .badge.difficulty.facile {
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .badge.difficulty.moyen {
+            background: rgba(255, 165, 2, 0.1);
+            color: var(--warning);
+            border: 1px solid var(--warning);
         }
 
         .question-text {
-            font-size: 2rem;
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 20px;
             line-height: 1.6;
-            margin: 20px 0;
-            text-align: center;
         }
 
-        .answers-tracker {
+        .answers-list {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .answer-item {
+            padding: 16px;
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 12px;
             display: flex;
-            justify-content: space-around;
-            margin-top: 20px;
-            padding: 20px;
-            background: #0f0f23;
-            border: 2px solid #FFD700;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .answer-number {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            color: var(--bg-main);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .answer-item.correct {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: var(--success);
+        }
+
+        .answer-item.correct .answer-number {
+            background: var(--success);
+        }
+
+        .tracker-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
         }
 
         .tracker-item {
+            padding: 16px;
+            background: var(--bg-main);
+            border-radius: 12px;
             text-align: center;
         }
 
         .tracker-value {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #FFD700;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
         }
 
         .tracker-label {
-            font-size: 1.2rem;
-            opacity: 0.7;
-            margin-top: 5px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
         }
 
-        /* Onglets */
-        .tabs-container {
+        /* ============ RESULTS ============ */
+        .results-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .results-container.active {
+            display: block;
+            animation: slideDown 0.4s ease;
+        }
+
+        .results-tabs {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 12px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border);
         }
 
         .tab-btn {
-            flex: 1;
-            padding: 15px;
-            background: #1a1a2e;
-            border: 3px solid #FFD700;
-            color: #FFD700;
-            font-family: 'VT323', monospace;
-            font-size: 1.3rem;
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
             cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
             transition: all 0.3s ease;
-            text-transform: uppercase;
+            border-bottom: 2px solid transparent;
         }
 
         .tab-btn.active {
-            background: #FFD700;
-            color: #0f0f23;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+            color: var(--primary);
+            border-bottom-color: var(--primary);
         }
 
         .tab-content {
@@ -323,258 +559,329 @@
 
         .tab-content.active {
             display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        /* Stats globales */
-        .results-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .result-box {
-            background: #1a1a2e;
-            border: 3px solid #FFD700;
-            padding: 20px;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
-        }
-
-        .result-box h4 {
-            font-size: 1.5rem;
-            margin-bottom: 20px;
-            text-align: center;
         }
 
         .chart-container {
-            display: flex;
-            justify-content: space-around;
-            align-items: flex-end;
-            height: 200px;
-            gap: 15px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+            margin-bottom: 30px;
         }
 
-        .chart-bar {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
+        .chart-item {
+            text-align: center;
         }
 
-        .bar {
-            width: 100%;
-            min-height: 20px;
-            border-radius: 8px 8px 0 0;
+        .chart-item h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        /* Diagramme circulaire */
+        .pie-chart {
+            width: 250px;
+            height: 250px;
+            margin: 0 auto 20px;
             position: relative;
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            padding-top: 10px;
-            transition: all 0.5s ease;
         }
 
-        .bar.correct {
-            background: linear-gradient(180deg, #00ff00, rgba(0, 255, 0, 0.5));
+        .pie-chart svg {
+            transform: rotate(-90deg);
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.3));
         }
 
-        .bar.wrong {
-            background: linear-gradient(180deg, #ff0000, rgba(255, 0, 0, 0.5));
+        .pie-chart circle {
+            transition: stroke-dashoffset 0.8s ease, opacity 0.3s ease;
         }
 
-        .bar.afk {
-            background: linear-gradient(180deg, #FFA500, rgba(255, 165, 0, 0.5));
-        }
-
-        .bar-value {
-            font-weight: bold;
-            font-size: 1.5rem;
-            color: #fff;
-        }
-
-        .bar-label {
-            font-size: 1.2rem;
-            color: #FFD700;
-        }
-
-        .lives-distribution {
+        /* Légendes */
+        .chart-legend {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
+            text-align: left;
+            max-width: 300px;
+            margin: 0 auto;
         }
 
-        .life-row {
+        .legend-item {
             display: flex;
             align-items: center;
-            gap: 10px;
-        }
-
-        .life-icons {
-            width: 100px;
-            font-size: 1.2rem;
-        }
-
-        .life-bar {
-            flex: 1;
-            height: 30px;
-            background: #0f0f23;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: var(--bg-main);
             border-radius: 8px;
-            overflow: hidden;
-            position: relative;
-            border: 2px solid #FFD700;
+            border-left: 4px solid;
         }
 
-        .bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #FFD700, #FFA500);
-            transition: width 0.5s ease;
+        .legend-item.correct {
+            border-left-color: var(--success);
         }
 
-        .life-count {
-            min-width: 40px;
-            text-align: right;
-            font-weight: bold;
-            font-size: 1.3rem;
+        .legend-item.wrong {
+            border-left-color: var(--danger);
         }
 
-        .elimination-info {
-            background: #1a1a2e;
-            border: 3px solid #ff0000;
-            padding: 15px;
+        .legend-item.afk {
+            border-left-color: var(--text-secondary);
+        }
+
+        .legend-item.lives-3 {
+            border-left-color: var(--success);
+        }
+
+        .legend-item.lives-2 {
+            border-left-color: var(--primary);
+        }
+
+        .legend-item.lives-1 {
+            border-left-color: var(--warning);
+        }
+
+        .legend-item.lives-0 {
+            border-left-color: var(--danger);
+        }
+
+        .legend-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .legend-color.correct {
+            background: var(--success);
+        }
+
+        .legend-color.wrong {
+            background: var(--danger);
+        }
+
+        .legend-color.afk {
+            background: var(--text-secondary);
+        }
+
+        .legend-color.lives-3 {
+            background: var(--success);
+        }
+
+        .legend-color.lives-2 {
+            background: var(--primary);
+        }
+
+        .legend-color.lives-1 {
+            background: var(--warning);
+        }
+
+        .legend-color.lives-0 {
+            background: var(--danger);
+        }
+
+        .legend-value {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .legend-percentage {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-left: 4px;
+        }
+
+        .chart-center-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             text-align: center;
-            font-size: 1.5rem;
-            margin-bottom: 15px;
         }
 
-        .remaining-info {
-            background: #1a1a2e;
-            border: 3px solid #00ff00;
-            padding: 15px;
-            text-align: center;
-            font-size: 1.5rem;
+        .chart-center-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            line-height: 1;
         }
 
-        /* Grille de joueurs */
+        .chart-center-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* ============ PLAYERS GRID ============ */
         .players-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 15px;
+            gap: 20px;
+        }
+
+        .no-players-message {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .no-players-message p {
+            font-size: 1rem;
         }
 
         .player-card {
-            background: #1a1a2e;
-            border: 3px solid #FFD700;
+            background: var(--bg-main);
+            border: 2px solid var(--border);
+            border-radius: 12px;
             padding: 20px;
-            position: relative;
             transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
 
-        .player-card.correct {
-            border-color: #00ff00;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
-            background: linear-gradient(135deg, #1a1a2e 0%, rgba(0, 255, 0, 0.1) 100%);
-        }
-
-        .player-card.wrong {
-            border-color: #ff0000;
-            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
-            background: linear-gradient(135deg, #1a1a2e 0%, rgba(255, 0, 0, 0.1) 100%);
-        }
-
-        .player-card.afk {
-            border-color: #FFA500;
-            box-shadow: 0 0 20px rgba(255, 165, 0, 0.5);
-            background: linear-gradient(135deg, #1a1a2e 0%, rgba(255, 165, 0, 0.1) 100%);
+        .player-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
         }
 
         .player-card.eliminated {
-            opacity: 0.5;
-            border-color: #666;
+            opacity: 0.6;
+            border-color: var(--danger);
         }
 
-        .player-name {
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-            font-weight: bold;
+        .player-card.eliminated::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 71, 87, 0.1);
+            pointer-events: none;
+        }
+
+        .player-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .player-username {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 150px;
         }
 
         .player-status {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 1.2rem;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .player-status.alive {
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--success);
+        }
+
+        .player-status.eliminated {
+            background: rgba(255, 71, 87, 0.15);
+            color: var(--danger);
         }
 
         .player-lives {
-            font-size: 1.3rem;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
 
-        .player-time {
-            font-size: 1rem;
-            opacity: 0.7;
+        .lives-display {
+            display: flex;
+            gap: 8px;
+            font-size: 1.5rem;
         }
 
-        .status-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 2rem;
+        .heart {
+            transition: all 0.3s ease;
         }
 
-        /* Stats dashboard */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
+        .heart.lost {
+            opacity: 0.3;
+            filter: grayscale(100%);
         }
 
-        .stat-box {
-            background: #1a1a2e;
-            border: 3px solid #FFD700;
-            padding: 15px;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
-            text-align: center;
-        }
-
-        .stat-label {
-            font-size: 1.1rem;
-            opacity: 0.7;
-            margin-bottom: 8px;
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: bold;
-            text-shadow: 0 0 10px #FFD700;
-        }
-
-        .tables-row {
+        .player-stats {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 15px;
+            gap: 12px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
         }
 
-        .table-container {
-            background: #1a1a2e;
-            border: 3px solid #FFD700;
-            padding: 15px;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
-        }
-
-        .table-title {
-            font-family: 'Press Start 2P', cursive;
-            font-size: 0.9rem;
-            margin-bottom: 15px;
+        .player-stat-item {
             text-align: center;
-            text-shadow: 0 0 10px #FFD700;
+        }
+
+        .player-stat-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .player-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            text-transform: uppercase;
+        }
+
+        /* ============ TABLES ============ */
+        .tables-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+        }
+
+        .table-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .table-card h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
         }
 
         table {
@@ -582,45 +889,89 @@
             border-collapse: collapse;
         }
 
-        th, td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
-            font-size: 1.2rem;
+        thead {
+            background: var(--bg-main);
         }
 
         th {
-            background: rgba(255, 215, 0, 0.1);
-            font-weight: bold;
+            padding: 12px;
+            text-align: left;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 14px 12px;
+            border-top: 1px solid var(--border);
+            font-size: 0.9rem;
         }
 
         tr:hover {
-            background: rgba(255, 215, 0, 0.05);
+            background: var(--bg-main);
         }
 
         .rank-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            background: #FFD700;
-            color: #0f0f23;
-            font-weight: bold;
-            border-radius: 3px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
         }
 
-        .rank-badge.rank-1 { background: #FFD700; }
-        .rank-badge.rank-2 { background: #C0C0C0; }
-        .rank-badge.rank-3 { background: #CD7F32; }
+        .rank-badge.rank-1 {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: var(--bg-main);
+        }
 
-        @media (max-width: 1200px) {
-            .control-panel {
+        .rank-badge.rank-2 {
+            background: linear-gradient(135deg, #C0C0C0, #A8A8A8);
+            color: var(--bg-main);
+        }
+
+        .rank-badge.rank-3 {
+            background: linear-gradient(135deg, #CD7F32, #A0522D);
+            color: var(--bg-main);
+        }
+
+        .rank-badge:not(.rank-1):not(.rank-2):not(.rank-3) {
+            background: var(--bg-main);
+            color: var(--text-secondary);
+        }
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 1024px) {
+            .control-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
 
-            .results-grid {
+            .tables-grid {
                 grid-template-columns: 1fr;
             }
 
-            .tables-row {
+            .chart-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .admin-header {
+                flex-direction: column;
+                gap: 16px;
+                align-items: flex-start;
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .control-grid {
                 grid-template-columns: 1fr;
             }
 
@@ -631,226 +982,383 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Login Form -->
-        <div id="loginForm" class="login-container">
-            <div class="login-title">🎮 ADMIN ACCESS 🎮</div>
-            <div class="input-group">
-                <label for="password">ENTER PASSWORD:</label>
-                <input type="password" id="password" placeholder="••••••••">
+    <!-- ============ LOGIN ============ -->
+    <div class="login-container" id="loginContainer">
+        <div class="login-box">
+            <div class="login-logo">
+                <h1>ShonenMaster</h1>
+                <p>Panel d'Administration</p>
             </div>
-            <button class="btn" onclick="login()">LOGIN</button>
-            <div id="errorMsg" class="error-msg"></div>
+            <form id="loginForm" onsubmit="login(event)">
+                <div class="form-group">
+                    <label for="password">Mot de passe administrateur</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        placeholder="Entrez votre mot de passe"
+                        autocomplete="current-password"
+                    >
+                </div>
+                <button type="submit" class="btn-login">
+                    Se connecter
+                </button>
+                <div class="error-msg" id="errorMsg"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============ ADMIN PANEL ============ -->
+    <div class="admin-panel" id="adminPanel">
+        <!-- Header -->
+        <div class="admin-header">
+            <h1>ShonenMaster Admin</h1>
+            <div class="header-actions">
+                <div class="status-badge">
+                    <span class="status-dot" id="statusIndicator"></span>
+                    <span id="statusText">INACTIVE</span>
+                </div>
+            </div>
         </div>
 
-        <!-- Admin Panel -->
-        <div id="adminPanel" class="admin-panel">
-            <!-- Header -->
-            <div class="panel-header">
-                <div class="panel-title">🎮 WEEBMASTER CONTROL PANEL 🎮</div>
-                <div class="status-line">
-                    <span>GAME STATUS:</span>
-                    <span>
-                        <span id="statusText">INACTIVE</span>
-                        <span class="status-indicator inactive" id="statusIndicator"></span>
-                    </span>
-                </div>
-                <div class="status-line">
-                    <span>PLAYERS IN LOBBY:</span>
-                    <span id="playerCount">0</span>
-                </div>
-                <div class="status-line">
-                    <span>GAME IN PROGRESS:</span>
-                    <span id="gameProgress">NO</span>
-                </div>
-            </div>
-
-            <!-- Controls -->
-            <div class="control-panel">
-                <button class="control-btn" id="toggleGameBtn" onclick="toggleGame()">
-                    ACTIVATE GAME
-                </button>
-                <button class="control-btn" id="startGameBtn" onclick="startGame()" disabled>
-                    START GAME
-                </button>
-                <button class="control-btn" id="nextQuestionBtn" onclick="nextQuestion()" disabled>
-                    NEXT QUESTION
-                </button>
-                <button class="control-btn" onclick="refreshStats()">
-                    REFRESH STATS
-                </button>
-            </div>
-
-            <!-- Question en temps réel -->
-            <div id="liveQuestionContainer" class="live-question-container">
-                <div class="question-header">
-                    <div class="question-meta">
-                        <div class="question-badge" id="questionNumber">Q1</div>
-                        <div class="question-badge" id="questionSerie">SÉRIE</div>
-                        <div class="question-badge" id="questionDifficulty">EASY</div>
+        <!-- Main Content -->
+        <div class="admin-content">
+            <!-- Control Panel -->
+            <div class="section">
+                <h2 class="section-title">Contrôles de la partie</h2>
+                <div class="control-grid">
+                    <div class="control-card primary" onclick="toggleGame()" id="toggleGameCard">
+                        <h3 id="toggleGameBtn">Ouvrir le lobby</h3>
+                        <p>Permettre aux joueurs de rejoindre</p>
                     </div>
-                    <div class="timer-display" id="liveTimer">7</div>
+
+                    <div class="control-card" onclick="startGame()" id="startGameCard">
+                        <h3>Démarrer la partie</h3>
+                        <p>Lancer le quiz avec tous les joueurs</p>
+                    </div>
+
+                    <div class="control-card" onclick="nextQuestion()" id="nextQuestionCard">
+                        <h3>Question suivante</h3>
+                        <p>Afficher la prochaine question</p>
+                    </div>
+
+                    <div class="control-card danger" onclick="location.reload()">
+                        <h3>Rafraîchir</h3>
+                        <p>Recharger l'interface</p>
+                    </div>
                 </div>
-                <div class="question-text" id="liveQuestionText">Question en cours...</div>
-                <div class="answers-tracker">
+            </div>
+
+            <!-- Live Stats -->
+            <div class="section">
+                <h2 class="section-title">Statistiques en direct</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            Joueurs dans le lobby
+                        </div>
+                        <div class="stat-value" id="playerCount">0</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            Joueurs actifs
+                        </div>
+                        <div class="stat-value" id="activePlayers">0</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            Question actuelle
+                        </div>
+                        <div class="stat-value" id="currentQuestion">0</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            Éliminés
+                        </div>
+                        <div class="stat-value" id="totalEliminated">0</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            Parties totales
+                        </div>
+                        <div class="stat-value" id="totalGames">0</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            Partie en cours
+                        </div>
+                        <div class="stat-value" id="gameProgress">NO</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Question -->
+            <div class="live-question" id="liveQuestionContainer">
+                <div class="question-header">
+                    <h2>Question en cours</h2>
+                    <div class="timer-display">
+                        <div class="timer-circle" id="liveTimerCircle">
+                            <span id="liveTimerValue">7</span>
+                        </div>
+                        <span style="font-weight: 600;">secondes</span>
+                    </div>
+                </div>
+
+                <div class="question-badges">
+                    <span class="badge serie" id="questionSerie">Série</span>
+                    <span class="badge difficulty" id="questionDifficulty">Difficulté</span>
+                </div>
+
+                <div class="question-text" id="questionText">
+                    Question en attente...
+                </div>
+
+                <div class="answers-list" id="answersList">
+                    <!-- Answers will be inserted here -->
+                </div>
+
+                <div class="tracker-grid">
                     <div class="tracker-item">
                         <div class="tracker-value" id="answeredCount">0</div>
-                        <div class="tracker-label">ONT RÉPONDU</div>
+                        <div class="tracker-label">Ont répondu</div>
                     </div>
                     <div class="tracker-item">
                         <div class="tracker-value" id="notAnsweredCount">0</div>
-                        <div class="tracker-label">N'ONT PAS RÉPONDU</div>
+                        <div class="tracker-label">N'ont pas répondu</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Onglets -->
-            <div id="resultsTabsContainer" class="tabs-container" style="display: none;">
-                <button class="tab-btn active" onclick="switchTab('stats')">
-                    📊 STATS GLOBALES
-                </button>
-                <button class="tab-btn" onclick="switchTab('players')">
-                    👥 JOUEURS
-                </button>
-            </div>
+            <!-- Results -->
+            <div class="results-container" id="resultsContainer">
+                <div class="results-tabs">
+                    <button class="tab-btn active" onclick="switchTab('stats')">
+                        Statistiques
+                    </button>
+                    <button class="tab-btn" onclick="switchTab('players')">
+                        Joueurs
+                    </button>
+                </div>
 
-            <!-- Contenu des onglets -->
-            <div id="tabStats" class="tab-content active">
-                <!-- Stats globales (comme avant) -->
-                <div id="questionResultsContainer" style="display: none;">
-                    <div class="results-grid">
-                        <div class="result-box">
-                            <h4>📊 STATISTIQUES DES RÉPONSES</h4>
-                            <div class="chart-container">
-                                <div class="chart-bar">
-                                    <div class="bar correct" id="barCorrect" style="height: 0%">
-                                        <span class="bar-value" id="valueCorrect">0</span>
-                                    </div>
-                                    <div class="bar-label">BONNES</div>
+                <div class="tab-content active" id="tabStats">
+                    <div class="chart-container">
+                        <!-- Diagramme 1: Réponses -->
+                        <div class="chart-item">
+                            <h4>Répartition des réponses</h4>
+                            <div class="pie-chart" id="answersChart">
+                                <svg width="250" height="250" viewBox="0 0 250 250">
+                                    <circle cx="125" cy="125" r="100" fill="none" stroke="var(--bg-main)" stroke-width="50"/>
+                                    <circle id="pieCorrect" cx="125" cy="125" r="100" fill="none" stroke="var(--success)" stroke-width="50" stroke-dasharray="0 628" stroke-dashoffset="0"/>
+                                    <circle id="pieWrong" cx="125" cy="125" r="100" fill="none" stroke="var(--danger)" stroke-width="50" stroke-dasharray="0 628" stroke-dashoffset="0"/>
+                                    <circle id="pieAfk" cx="125" cy="125" r="100" fill="none" stroke="var(--text-secondary)" stroke-width="50" stroke-dasharray="0 628" stroke-dashoffset="0"/>
+                                </svg>
+                                <div class="chart-center-text">
+                                    <div class="chart-center-value" id="totalAnswers">0</div>
+                                    <div class="chart-center-label">réponses</div>
                                 </div>
-                                <div class="chart-bar">
-                                    <div class="bar wrong" id="barWrong" style="height: 0%">
-                                        <span class="bar-value" id="valueWrong">0</span>
+                            </div>
+                            <div class="chart-legend">
+                                <div class="legend-item correct">
+                                    <div class="legend-label">
+                                        <div class="legend-color correct"></div>
+                                        <span>Correctes</span>
                                     </div>
-                                    <div class="bar-label">MAUVAISES</div>
+                                    <div>
+                                        <span class="legend-value" id="valueCorrect">0</span>
+                                        <span class="legend-percentage" id="percentCorrect">(0%)</span>
+                                    </div>
                                 </div>
-                                <div class="chart-bar">
-                                    <div class="bar afk" id="barAfk" style="height: 0%">
-                                        <span class="bar-value" id="valueAfk">0</span>
+                                <div class="legend-item wrong">
+                                    <div class="legend-label">
+                                        <div class="legend-color wrong"></div>
+                                        <span>Incorrectes</span>
                                     </div>
-                                    <div class="bar-label">AFK</div>
+                                    <div>
+                                        <span class="legend-value" id="valueWrong">0</span>
+                                        <span class="legend-percentage" id="percentWrong">(0%)</span>
+                                    </div>
+                                </div>
+                                <div class="legend-item afk">
+                                    <div class="legend-label">
+                                        <div class="legend-color afk"></div>
+                                        <span>AFK</span>
+                                    </div>
+                                    <div>
+                                        <span class="legend-value" id="valueAfk">0</span>
+                                        <span class="legend-percentage" id="percentAfk">(0%)</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="result-box">
-                            <h4>❤️ VIES RESTANTES</h4>
-                            <div class="lives-distribution" id="livesDistribution">
-                                <!-- Dynamique -->
+                        <!-- Diagramme 2: Vies -->
+                        <div class="chart-item">
+                            <h4>Répartition des vies</h4>
+                            <div class="pie-chart" id="livesChart">
+                                <svg width="250" height="250" viewBox="0 0 250 250">
+                                    <circle cx="125" cy="125" r="100" fill="none" stroke="var(--bg-main)" stroke-width="50"/>
+                                    <circle id="pieLives3" cx="125" cy="125" r="100" fill="none" stroke="var(--success)" stroke-width="50" stroke-dasharray="0 628" stroke-dashoffset="0"/>
+                                    <circle id="pieLives2" cx="125" cy="125" r="100" fill="none" stroke="var(--primary)" stroke-width="50" stroke-dasharray="0 628" stroke-dashoffset="0"/>
+                                    <circle id="pieLives1" cx="125" cy="125" r="100" fill="none" stroke="var(--warning)" stroke-width="50" stroke-dasharray="0 628" stroke-dashoffset="0"/>
+                                    <circle id="pieLives0" cx="125" cy="125" r="100" fill="none" stroke="var(--danger)" stroke-width="50" stroke-dasharray="0 628" stroke-dashoffset="0"/>
+                                </svg>
+                                <div class="chart-center-text">
+                                    <div class="chart-center-value" id="totalPlayers">0</div>
+                                    <div class="chart-center-label">joueurs</div>
+                                </div>
+                            </div>
+                            <div class="chart-legend">
+                                <div class="legend-item lives-3">
+                                    <div class="legend-label">
+                                        <div class="legend-color lives-3"></div>
+                                        <span>3 vies</span>
+                                    </div>
+                                    <div>
+                                        <span class="legend-value" id="valueLives3">0</span>
+                                        <span class="legend-percentage" id="percentLives3">(0%)</span>
+                                    </div>
+                                </div>
+                                <div class="legend-item lives-2">
+                                    <div class="legend-label">
+                                        <div class="legend-color lives-2"></div>
+                                        <span>2 vies</span>
+                                    </div>
+                                    <div>
+                                        <span class="legend-value" id="valueLives2">0</span>
+                                        <span class="legend-percentage" id="percentLives2">(0%)</span>
+                                    </div>
+                                </div>
+                                <div class="legend-item lives-1">
+                                    <div class="legend-label">
+                                        <div class="legend-color lives-1"></div>
+                                        <span>1 vie</span>
+                                    </div>
+                                    <div>
+                                        <span class="legend-value" id="valueLives1">0</span>
+                                        <span class="legend-percentage" id="percentLives1">(0%)</span>
+                                    </div>
+                                </div>
+                                <div class="legend-item lives-0">
+                                    <div class="legend-label">
+                                        <div class="legend-color lives-0"></div>
+                                        <span>Éliminés</span>
+                                    </div>
+                                    <div>
+                                        <span class="legend-value" id="valueLives0">0</span>
+                                        <span class="legend-percentage" id="percentLives0">(0%)</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="elimination-info" id="eliminationInfo" style="display: none;">
-                        💀 <span id="eliminatedCount">0</span> JOUEUR(S) ÉLIMINÉ(S)
+                    <div class="tracker-grid" style="margin-top: 30px;">
+                        <div class="tracker-item">
+                            <div class="tracker-value" id="remainingCount">0</div>
+                            <div class="tracker-label">Joueurs restants</div>
+                        </div>
+                        <div class="tracker-item" id="eliminationInfo" style="display: none;">
+                            <div class="tracker-value" id="eliminatedCount">0</div>
+                            <div class="tracker-label">Nouveaux éliminés</div>
+                        </div>
                     </div>
+                </div>
 
-                    <div class="remaining-info">
-                        🏆 <span id="remainingCount">0</span> JOUEUR(S) EN VIE
+                <div class="tab-content" id="tabPlayers">
+                    <div class="players-grid" id="playersGridContainer">
+                        <div class="no-players-message">
+                            <div class="empty-icon">👥</div>
+                            <p>Aucun joueur connecté pour le moment</p>
+                        </div>
                     </div>
-                </div>
-            </div>
-
-            <div id="tabPlayers" class="tab-content">
-                <div id="playersGridContainer" class="players-grid">
-                    <!-- Dynamique -->
-                </div>
-            </div>
-
-            <!-- Stats Dashboard -->
-            <div class="stats-grid">
-                <div class="stat-box">
-                    <div class="stat-label">TOTAL GAMES</div>
-                    <div class="stat-value" id="totalGames">0</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">ACTIVE PLAYERS</div>
-                    <div class="stat-value" id="activePlayers">0</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">CURRENT QUESTION</div>
-                    <div class="stat-value" id="currentQuestion">0</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">ELIMINATED</div>
-                    <div class="stat-value" id="totalEliminated">0</div>
                 </div>
             </div>
 
             <!-- Tables -->
-            <div class="tables-row">
-                <div class="table-container">
-                    <div class="table-title">TOP 10 PLAYERS</div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>RANK</th>
-                                <th>USERNAME</th>
-                                <th>VICTORIES</th>
-                                <th>GAMES</th>
-                            </tr>
-                        </thead>
-                        <tbody id="topPlayersTable">
-                            <tr><td colspan="4" style="text-align: center;">LOADING...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="section">
+                <h2 class="section-title">Classements & Historique</h2>
+                <div class="tables-grid">
+                    <!-- Top Players -->
+                    <div class="table-card">
+                        <h3>Top 10 Joueurs</h3>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Rang</th>
+                                        <th>Joueur</th>
+                                        <th>Victoires</th>
+                                        <th>Parties</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="topPlayersTable">
+                                    <tr>
+                                        <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                            Aucune donnée disponible
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
 
-                <div class="table-container">
-                    <div class="table-title">RECENT GAMES</div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>GAME ID</th>
-                                <th>WINNER</th>
-                                <th>QUESTIONS</th>
-                                <th>DATE</th>
-                            </tr>
-                        </thead>
-                        <tbody id="recentGamesTable">
-                            <tr><td colspan="4" style="text-align: center;">LOADING...</td></tr>
-                        </tbody>
-                    </table>
+                    <!-- Recent Games -->
+                    <div class="table-card">
+                        <h3>Parties récentes</h3>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Gagnant</th>
+                                        <th>Questions</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentGamesTable">
+                                    <tr>
+                                        <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                            Aucune donnée disponible
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Socket.IO -->
     <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
     <script>
-        let isAdmin = false;
-        let statsInterval = null;
         let socket = null;
+        let statsInterval = null;
         let liveTimerInterval = null;
         let currentQuestionData = null;
         let playersData = new Map();
 
-        // Check if already authenticated
+        // ============ AUTH ============
         async function checkAuth() {
             try {
-                const response = await fetch('/admin/check');
+                const response = await fetch('/admin/auth');
                 const data = await response.json();
-                if (data.isAdmin) {
+                
+                if (data.authenticated) {
                     showAdminPanel();
-                    startStatsRefresh();
-                    initSocket();
                 }
             } catch (error) {
-                console.error('Error checking auth:', error);
+                console.error('Auth check error:', error);
             }
         }
 
-        async function login() {
+        async function login(event) {
+            event.preventDefault();
             const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('errorMsg');
 
@@ -865,94 +1373,134 @@
 
                 if (data.success) {
                     showAdminPanel();
-                    startStatsRefresh();
-                    initSocket();
                 } else {
-                    errorMsg.textContent = '✖ ACCESS DENIED';
-                    setTimeout(() => errorMsg.textContent = '', 3000);
+                    errorMsg.textContent = '❌ Mot de passe incorrect';
                 }
             } catch (error) {
-                errorMsg.textContent = '✖ CONNECTION ERROR';
-                setTimeout(() => errorMsg.textContent = '', 3000);
+                errorMsg.textContent = '❌ Erreur de connexion';
             }
         }
 
         function showAdminPanel() {
-            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('loginContainer').style.display = 'none';
             document.getElementById('adminPanel').style.display = 'block';
-            isAdmin = true;
+            initSocket();
             refreshStats();
+            startStatsRefresh();
         }
 
+        // ============ SOCKET ============
         function initSocket() {
             socket = io();
 
-            // Nouvelle question
-            socket.on('new-question', (question) => {
-                currentQuestionData = question;
+            socket.on('game-activated', () => {
+                updateGameStatus(true);
+                refreshStats();
+            });
+
+            socket.on('game-deactivated', () => {
+                updateGameStatus(false);
+                refreshStats();
+            });
+
+            socket.on('game-started', () => {
+                refreshStats();
+                // Réinitialiser la liste des joueurs au début de la partie
                 playersData.clear();
-                showLiveQuestion(question);
-                startLiveTimer();
+            });
+
+            socket.on('lobby-update', (data) => {
+                document.getElementById('playerCount').textContent = data.playerCount;
+                // Si on a la liste des joueurs, l'utiliser
+                if (data.players) {
+                    playersData.clear();
+                    data.players.forEach(player => {
+                        playersData.set(player.twitchId, {
+                            username: player.username,
+                            twitchId: player.twitchId,
+                            lives: 3,
+                            correctAnswers: 0
+                        });
+                    });
+                    updatePlayersGrid();
+                }
+            });
+
+            socket.on('new-question', (question) => {
+                displayLiveQuestion(question);
                 hideResults();
             });
 
-            // Résultats de la question
             socket.on('question-results', (results) => {
                 stopLiveTimer();
-                hideLiveQuestion();
+                // Mettre à jour les vies des joueurs après chaque question
+                if (results.playersData) {
+                    results.playersData.forEach(playerData => {
+                        if (playersData.has(playerData.twitchId)) {
+                            playersData.set(playerData.twitchId, {
+                                ...playersData.get(playerData.twitchId),
+                                lives: playerData.lives,
+                                correctAnswers: playerData.correctAnswers || 0
+                            });
+                        }
+                    });
+                }
                 showResults(results);
             });
 
-            // Mise à jour du lobby
-            socket.on('lobby-update', (data) => {
-                document.getElementById('playerCount').textContent = data.playerCount;
+            socket.on('player-answered', (data) => {
+                playersData.set(data.twitchId, data);
                 updateAnswersTracker();
             });
 
-            // Suivi des réponses en temps réel (nouveau événement à ajouter côté serveur)
-            socket.on('answer-submitted', (data) => {
-                playersData.set(data.socketId, data);
-                updateAnswersTracker();
-            });
-
-            // Fin de partie
             socket.on('game-ended', () => {
-                hideResults();
-                hideLiveQuestion();
                 stopLiveTimer();
+                refreshStats();
+                document.getElementById('liveQuestionContainer').classList.remove('active');
             });
         }
 
-        function showLiveQuestion(question) {
-            const container = document.getElementById('liveQuestionContainer');
-            document.getElementById('questionNumber').textContent = `Q${question.questionNumber}`;
-            document.getElementById('questionSerie').textContent = question.serie;
-            document.getElementById('questionDifficulty').textContent = question.difficulty.toUpperCase();
-            document.getElementById('liveQuestionText').textContent = question.question;
-            container.classList.add('active');
-            document.getElementById('answeredCount').textContent = '0';
-            const totalPlayers = parseInt(document.getElementById('playerCount').textContent);
-            document.getElementById('notAnsweredCount').textContent = totalPlayers;
-        }
+        // ============ LIVE QUESTION ============
+        function displayLiveQuestion(question) {
+            currentQuestionData = question;
+            playersData.clear();
 
-        function hideLiveQuestion() {
-            document.getElementById('liveQuestionContainer').classList.remove('active');
+            document.getElementById('liveQuestionContainer').classList.add('active');
+            document.getElementById('questionSerie').textContent = question.serie;
+            
+            const difficultyBadge = document.getElementById('questionDifficulty');
+            difficultyBadge.textContent = question.difficulty.toUpperCase();
+            difficultyBadge.className = `badge difficulty ${question.difficulty}`;
+            
+            document.getElementById('questionText').textContent = question.question;
+
+            const answersList = document.getElementById('answersList');
+            answersList.innerHTML = question.answers.map((answer, index) => `
+                <div class="answer-item ${index + 1 === question.correctAnswer ? 'correct' : ''}">
+                    <span class="answer-number">${index + 1}</span>
+                    <span>${answer}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('answeredCount').textContent = '0';
+            document.getElementById('notAnsweredCount').textContent = document.getElementById('playerCount').textContent;
+
+            startLiveTimer();
         }
 
         function startLiveTimer() {
             let timeLeft = 7;
-            const timerElement = document.getElementById('liveTimer');
-            
-            timerElement.textContent = timeLeft;
-            timerElement.classList.remove('warning');
+            const timerValue = document.getElementById('liveTimerValue');
+            const timerCircle = document.getElementById('liveTimerCircle');
+
+            timerValue.textContent = timeLeft;
 
             liveTimerInterval = setInterval(() => {
                 timeLeft--;
-                timerElement.textContent = timeLeft;
+                timerValue.textContent = timeLeft;
 
-                if (timeLeft <= 3) {
-                    timerElement.classList.add('warning');
-                }
+                const angle = (timeLeft / 7) * 360;
+                timerCircle.style.background = `conic-gradient(var(--primary) ${angle}deg, var(--bg-card) 0deg)`;
 
                 if (timeLeft <= 0) {
                     stopLiveTimer();
@@ -976,45 +1524,70 @@
             document.getElementById('notAnsweredCount').textContent = notAnswered;
         }
 
+        // ============ RESULTS ============
         function showResults(results) {
-            document.getElementById('resultsTabsContainer').style.display = 'flex';
-            document.getElementById('questionResultsContainer').style.display = 'block';
+            document.getElementById('resultsContainer').classList.add('active');
 
-            // Mise à jour des graphiques
-            const max = Math.max(results.stats.correct, results.stats.wrong, results.stats.afk) || 1;
-            
+            // === DIAGRAMME 1: RÉPONSES ===
+            const totalAnswers = results.stats.correct + results.stats.wrong + results.stats.afk;
+            document.getElementById('totalAnswers').textContent = totalAnswers;
+
+            // Calculer les pourcentages
+            const correctPercent = totalAnswers > 0 ? (results.stats.correct / totalAnswers * 100).toFixed(1) : 0;
+            const wrongPercent = totalAnswers > 0 ? (results.stats.wrong / totalAnswers * 100).toFixed(1) : 0;
+            const afkPercent = totalAnswers > 0 ? (results.stats.afk / totalAnswers * 100).toFixed(1) : 0;
+
+            // Mettre à jour les valeurs et pourcentages
             document.getElementById('valueCorrect').textContent = results.stats.correct;
-            document.getElementById('barCorrect').style.height = ((results.stats.correct / max) * 100) + '%';
+            document.getElementById('percentCorrect').textContent = `(${correctPercent}%)`;
             
             document.getElementById('valueWrong').textContent = results.stats.wrong;
-            document.getElementById('barWrong').style.height = ((results.stats.wrong / max) * 100) + '%';
+            document.getElementById('percentWrong').textContent = `(${wrongPercent}%)`;
             
             document.getElementById('valueAfk').textContent = results.stats.afk;
-            document.getElementById('barAfk').style.height = ((results.stats.afk / max) * 100) + '%';
+            document.getElementById('percentAfk').textContent = `(${afkPercent}%)`;
 
-            // Distribution des vies
-            const livesDistribution = document.getElementById('livesDistribution');
-            livesDistribution.innerHTML = '';
-            const totalPlayers = Object.values(results.stats.livesDistribution).reduce((a, b) => a + b, 0);
+            // Dessiner le diagramme circulaire des réponses
+            drawPieChart(
+                ['pieCorrect', 'pieWrong', 'pieAfk'],
+                [results.stats.correct, results.stats.wrong, results.stats.afk]
+            );
 
-            for (let lives = 3; lives >= 0; lives--) {
-                const count = results.stats.livesDistribution[lives] || 0;
-                const percentage = totalPlayers > 0 ? (count / totalPlayers) * 100 : 0;
+            // === DIAGRAMME 2: VIES ===
+            const lives3 = results.stats.livesDistribution[3] || 0;
+            const lives2 = results.stats.livesDistribution[2] || 0;
+            const lives1 = results.stats.livesDistribution[1] || 0;
+            const lives0 = results.stats.livesDistribution[0] || 0;
+            const totalPlayers = lives3 + lives2 + lives1 + lives0;
 
-                const hearts = '❤️'.repeat(lives) + '🖤'.repeat(3 - lives);
-                
-                livesDistribution.innerHTML += `
-                    <div class="life-row">
-                        <div class="life-icons">${hearts}</div>
-                        <div class="life-bar">
-                            <div class="bar-fill" style="width: ${percentage}%"></div>
-                        </div>
-                        <span class="life-count">${count}</span>
-                    </div>
-                `;
-            }
+            document.getElementById('totalPlayers').textContent = totalPlayers;
 
-            // Éliminations
+            // Calculer les pourcentages des vies
+            const percent3 = totalPlayers > 0 ? (lives3 / totalPlayers * 100).toFixed(1) : 0;
+            const percent2 = totalPlayers > 0 ? (lives2 / totalPlayers * 100).toFixed(1) : 0;
+            const percent1 = totalPlayers > 0 ? (lives1 / totalPlayers * 100).toFixed(1) : 0;
+            const percent0 = totalPlayers > 0 ? (lives0 / totalPlayers * 100).toFixed(1) : 0;
+
+            // Mettre à jour les valeurs et pourcentages des vies
+            document.getElementById('valueLives3').textContent = lives3;
+            document.getElementById('percentLives3').textContent = `(${percent3}%)`;
+            
+            document.getElementById('valueLives2').textContent = lives2;
+            document.getElementById('percentLives2').textContent = `(${percent2}%)`;
+            
+            document.getElementById('valueLives1').textContent = lives1;
+            document.getElementById('percentLives1').textContent = `(${percent1}%)`;
+            
+            document.getElementById('valueLives0').textContent = lives0;
+            document.getElementById('percentLives0').textContent = `(${percent0}%)`;
+
+            // Dessiner le diagramme circulaire des vies
+            drawPieChart(
+                ['pieLives3', 'pieLives2', 'pieLives1', 'pieLives0'],
+                [lives3, lives2, lives1, lives0]
+            );
+
+            // === STATS ADDITIONNELLES ===
             const eliminationInfo = document.getElementById('eliminationInfo');
             if (results.eliminatedCount > 0) {
                 eliminationInfo.style.display = 'block';
@@ -1024,33 +1597,126 @@
             }
 
             document.getElementById('remainingCount').textContent = results.remainingPlayers;
-
-            // Mise à jour de la grille des joueurs
-            updatePlayersGrid(results);
-
-            // Stats globales
             document.getElementById('currentQuestion').textContent = currentQuestionData?.questionNumber || 0;
             document.getElementById('totalEliminated').textContent = results.eliminatedCount;
+
+            // Mettre à jour la grille des joueurs si on a les données
+            updatePlayersGrid(results);
         }
 
+        // Fonction pour mettre à jour la grille des joueurs
         function updatePlayersGrid(results) {
-            // Cette fonction sera alimentée par les données des joueurs
-            // Pour l'instant, on crée des cartes basiques
             const grid = document.getElementById('playersGridContainer');
-            grid.innerHTML = '<div style="text-align: center; grid-column: 1/-1; padding: 40px; font-size: 1.5rem;">Données des joueurs disponibles après implémentation Socket.io complète</div>';
+            
+            if (playersData.size === 0) {
+                grid.innerHTML = `
+                    <div class="no-players-message">
+                        <div class="empty-icon">👥</div>
+                        <p>Aucun joueur connecté pour le moment</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Trier les joueurs : vivants d'abord, puis éliminés
+            const playersArray = Array.from(playersData.values()).sort((a, b) => {
+                const livesA = a.lives !== undefined ? a.lives : 3;
+                const livesB = b.lives !== undefined ? b.lives : 3;
+                return livesB - livesA; // Ordre décroissant (plus de vies en premier)
+            });
+
+            let html = '';
+            playersArray.forEach(player => {
+                const lives = player.lives !== undefined ? player.lives : 3;
+                const isEliminated = lives === 0;
+                const correctAnswers = player.correctAnswers || 0;
+                
+                html += `
+                    <div class="player-card ${isEliminated ? 'eliminated' : ''}">
+                        <div class="player-header">
+                            <div class="player-username" title="${player.username}">${player.username}</div>
+                            <div class="player-status ${isEliminated ? 'eliminated' : 'alive'}">
+                                ${isEliminated ? 'Éliminé' : 'En vie'}
+                            </div>
+                        </div>
+                        <div class="player-lives">
+                            <div class="lives-display">
+                                ${generateHearts(lives)}
+                            </div>
+                        </div>
+                        <div class="player-stats">
+                            <div class="player-stat-item">
+                                <div class="player-stat-value">${lives}</div>
+                                <div class="player-stat-label">Vies</div>
+                            </div>
+                            <div class="player-stat-item">
+                                <div class="player-stat-value">${correctAnswers}</div>
+                                <div class="player-stat-label">Bonnes rép.</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            grid.innerHTML = html;
+        }
+
+        // Fonction pour générer les coeurs selon le nombre de vies
+        function generateHearts(lives) {
+            let hearts = '';
+            for (let i = 1; i <= 3; i++) {
+                if (i <= lives) {
+                    hearts += '<span class="heart">❤️</span>';
+                } else {
+                    hearts += '<span class="heart lost">🖤</span>';
+                }
+            }
+            return hearts;
+        }
+
+        // Fonction pour dessiner un diagramme circulaire
+        function drawPieChart(segmentIds, values) {
+            const total = values.reduce((a, b) => a + b, 0);
+            if (total === 0) {
+                // Si aucune valeur, ne rien afficher
+                segmentIds.forEach(id => {
+                    const circle = document.getElementById(id);
+                    circle.setAttribute('stroke-dasharray', '0 628');
+                    circle.setAttribute('opacity', '0');
+                });
+                return;
+            }
+
+            const circumference = 2 * Math.PI * 100; // rayon = 100
+            let currentOffset = 0;
+
+            segmentIds.forEach((id, index) => {
+                const circle = document.getElementById(id);
+                const value = values[index];
+                const percentage = value / total;
+                const segmentLength = circumference * percentage;
+
+                // Afficher le segment s'il a une valeur
+                if (value > 0) {
+                    circle.setAttribute('stroke-dasharray', `${segmentLength} ${circumference}`);
+                    circle.setAttribute('stroke-dashoffset', -currentOffset);
+                    circle.setAttribute('opacity', '1');
+                    currentOffset += segmentLength;
+                } else {
+                    circle.setAttribute('stroke-dasharray', '0 628');
+                    circle.setAttribute('opacity', '0');
+                }
+            });
         }
 
         function hideResults() {
-            document.getElementById('resultsTabsContainer').style.display = 'none';
-            document.getElementById('questionResultsContainer').style.display = 'none';
+            document.getElementById('resultsContainer').classList.remove('active');
         }
 
         function switchTab(tab) {
-            // Désactiver tous les onglets
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
 
-            // Activer l'onglet sélectionné
             if (tab === 'stats') {
                 document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
                 document.getElementById('tabStats').classList.add('active');
@@ -1060,11 +1726,13 @@
             }
         }
 
+        // ============ ACTIONS ============
         async function toggleGame() {
             try {
                 const response = await fetch('/admin/toggle-game', { method: 'POST' });
                 const data = await response.json();
                 updateGameStatus(data.isActive);
+                refreshStats();
             } catch (error) {
                 console.error('Error toggling game:', error);
             }
@@ -1075,11 +1743,10 @@
                 const response = await fetch('/admin/start-game', { method: 'POST' });
                 const data = await response.json();
                 if (data.success) {
-                    alert('✓ GAME STARTED');
                     refreshStats();
                 }
             } catch (error) {
-                alert('✖ ERROR: ' + error.message);
+                alert('❌ Erreur: ' + error.message);
             }
         }
 
@@ -1088,10 +1755,10 @@
                 const response = await fetch('/admin/next-question', { method: 'POST' });
                 const data = await response.json();
                 if (data.success) {
-                    console.log('✓ Next question sent');
+                    console.log('✅ Question suivante envoyée');
                 }
             } catch (error) {
-                alert('✖ ERROR: ' + error.message);
+                alert('❌ Erreur: ' + error.message);
             }
         }
 
@@ -1107,13 +1774,24 @@
 
                 updateGameStatus(data.gameActive);
 
-                document.getElementById('startGameBtn').disabled = !data.gameActive || data.gameInProgress;
-                document.getElementById('nextQuestionBtn').disabled = !data.gameInProgress;
+                const startCard = document.getElementById('startGameCard');
+                const nextCard = document.getElementById('nextQuestionCard');
+                
+                if (!data.gameActive || data.gameInProgress) {
+                    startCard.classList.add('disabled');
+                } else {
+                    startCard.classList.remove('disabled');
+                }
 
-                // Update top players
+                if (!data.gameInProgress) {
+                    nextCard.classList.add('disabled');
+                } else {
+                    nextCard.classList.remove('disabled');
+                }
+
                 const topPlayersTable = document.getElementById('topPlayersTable');
                 if (data.topPlayers.length === 0) {
-                    topPlayersTable.innerHTML = '<tr><td colspan="4" style="text-align: center;">NO DATA</td></tr>';
+                    topPlayersTable.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--text-secondary);">Aucune donnée disponible</td></tr>';
                 } else {
                     topPlayersTable.innerHTML = data.topPlayers.map((player, index) => `
                         <tr>
@@ -1125,10 +1803,9 @@
                     `).join('');
                 }
 
-                // Update recent games
                 const recentGamesTable = document.getElementById('recentGamesTable');
                 if (data.recentGames.length === 0) {
-                    recentGamesTable.innerHTML = '<tr><td colspan="4" style="text-align: center;">NO DATA</td></tr>';
+                    recentGamesTable.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--text-secondary);">Aucune donnée disponible</td></tr>';
                 } else {
                     recentGamesTable.innerHTML = data.recentGames.map(game => `
                         <tr>
@@ -1139,7 +1816,6 @@
                         </tr>
                     `).join('');
                 }
-
             } catch (error) {
                 console.error('Error refreshing stats:', error);
             }
@@ -1151,15 +1827,15 @@
             const toggleBtn = document.getElementById('toggleGameBtn');
 
             if (isActive) {
-                statusText.textContent = 'ACTIVE';
+                statusText.textContent = 'ACTIF';
                 statusIndicator.classList.remove('inactive');
                 statusIndicator.classList.add('active');
-                toggleBtn.textContent = 'DEACTIVATE GAME';
+                toggleBtn.textContent = 'Fermer le lobby';
             } else {
-                statusText.textContent = 'INACTIVE';
+                statusText.textContent = 'INACTIF';
                 statusIndicator.classList.remove('active');
                 statusIndicator.classList.add('inactive');
-                toggleBtn.textContent = 'ACTIVATE GAME';
+                toggleBtn.textContent = 'Ouvrir le lobby';
             }
         }
 
@@ -1167,12 +1843,7 @@
             statsInterval = setInterval(refreshStats, 3000);
         }
 
-        // Handle Enter key on login
-        document.getElementById('password')?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') login();
-        });
-
-        // Initialize
+        // ============ INIT ============
         checkAuth();
     </script>
 </body>

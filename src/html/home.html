@@ -38,7 +38,7 @@
             <!-- Logo simplifié (Autres états) -->
             <div class="header-section" v-if="(isGameActive || isAuthenticated) && !gameInProgress">
                 <h1 class="logo-title">
-                    <span class="neon-text">Shonen</span><span class="neon-text-alt">Master</span>
+                    <!-- <span class="neon-text">Shonen</span><span class="neon-text-alt">Master</span> -->
                 </h1>
                 <div class="live-badge" v-if="isGameActive">
                     <span class="pulse-dot"></span>
@@ -74,15 +74,13 @@
             <div class="content-section" v-if="isGameActive && !gameInProgress && isAuthenticated">
                 <div class="lobby-card">
                     <div class="lobby-header">
-                        <div class="icon-large">🎯</div>
-                        <h2>Lobby ouvert !</h2>
-                        <p>Rejoignez la partie en direct</p>
+                        <h2>La partie va commencer...</h2>
                     </div>
 
                     <div class="lobby-stats">
                         <div class="stat-box">
                             <div class="stat-number">{{ playerCount }}</div>
-                            <div class="stat-label">Joueurs connectés</div>
+                            <div class="stat-label">Joueurs dans la file</div>
                         </div>
                         <div class="stat-box">
                             <div class="stat-number">3</div>
@@ -91,14 +89,14 @@
                     </div>
 
                     <button class="btn-primary btn-join" @click="joinLobby" :disabled="hasJoined">
-                        {{ hasJoined ? '✓ Vous êtes dans la partie !' : '🚀 Rejoindre la partie' }}
+                        {{ hasJoined ? '✓ Vous êtes dans la partie !' : 'Rejoindre la partie' }}
                     </button>
 
-                    <div class="lobby-info">
+                    <!-- <div class="lobby-info">
                         <p>💡 Le jeu démarre quand l'animateur lance la première question</p>
                         <p>⚡ Vous avez 7 secondes pour répondre à chaque question</p>
                         <p>❤️ 3 erreurs = élimination</p>
-                    </div>
+                    </div> -->
                 </div>
 
                 <button class="btn-secondary" @click="logout">
