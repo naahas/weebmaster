@@ -1,5 +1,5 @@
 // ============================================
-// WEEBMASTER - Frontend App (Vue 3)
+// WEEBMASTER - Frontend App (Vue 3) - FIXED
 // ============================================
 
 const { createApp } = Vue;
@@ -15,6 +15,7 @@ createApp({
             // État du jeu
             isGameActive: false,
             gameInProgress: false,
+            gameStartedOnServer: false, // 🆕 Track si une partie a démarré côté serveur
             gameEnded: false,
 
             // Lobby
@@ -58,12 +59,17 @@ createApp({
             isDark: true,
 
             // Socket
-            socket: null
+            socket: null,
+            
+            // Reconnexion
+            needsReconnect: false,
+            shouldRejoinLobby: false
         };
     },
 
     async mounted() {
         await this.checkAuth();
+        await this.restoreGameState();
         this.initParticles();
         this.initSocket();
         this.loadTheme();
@@ -86,17 +92,139 @@ createApp({
             }
         },
 
+        // ========== Restauration d'état ==========
+        async restoreGameState() {
+            try {
+                const response = await fetch('/game/state');
+                const state = await response.json();
+                
+                this.isGameActive = state.isActive;
+                this.playerCount = state.playerCount;
+                
+                // 🆕 Restaurer gameStartedOnServer depuis l'état serveur
+                this.gameStartedOnServer = state.inProgress;
+                
+                // 🆕 IMPORTANT: Si le jeu n'est PAS actif, nettoyer le localStorage
+                // (cas du redémarrage serveur ou fermeture du jeu)
+                if (!state.isActive) {
+                    localStorage.removeItem('hasJoinedLobby');
+                    localStorage.removeItem('lobbyTwitchId');
+                    console.log('🧹 localStorage nettoyé (jeu non actif)');
+                    return; // Sortir sans restaurer l'état
+                }
+                
+                // 🆕 Restaurer l'état "hasJoined" depuis localStorage AVANT de restaurer gameInProgress
+                if (this.isAuthenticated) {
+                    const savedLobbyState = localStorage.getItem('hasJoinedLobby');
+                    const savedTwitchId = localStorage.getItem('lobbyTwitchId');
+                    
+                    // Vérifier que c'est bien le même utilisateur
+                    if (savedLobbyState === 'true' && savedTwitchId === this.twitchId) {
+                        this.hasJoined = true;
+                        console.log('✅ État hasJoined restauré depuis localStorage');
+                        
+                        // Re-joindre le lobby côté serveur si pas en partie
+                        if (this.isGameActive && !state.inProgress) {
+                            this.shouldRejoinLobby = true;
+                        }
+                    }
+                }
+                
+                // 🆕 IMPORTANT: Ne mettre gameInProgress = true que si le joueur a rejoint
+                if (state.inProgress && this.hasJoined) {
+                    this.gameInProgress = true;
+                } else {
+                    this.gameInProgress = false;
+                }
+                
+                // 🆕 Restaurer la question en cours si elle existe ET que le joueur participe
+                if (state.currentQuestion && state.inProgress && this.hasJoined) {
+                    this.currentQuestion = state.currentQuestion;
+                    this.currentQuestionNumber = state.currentQuestion.questionNumber;
+                    
+                    // Restaurer le timer avec le temps restant RÉEL
+                    if (state.timeRemaining > 0) {
+                        this.timeRemaining = state.timeRemaining;
+                        this.timerProgress = (state.timeRemaining / 7) * 100;
+                        this.startTimer(state.timeRemaining); // 🆕 Passer le temps restant
+                    } else {
+                        // Timer écoulé
+                        this.timeRemaining = 0;
+                        this.timerProgress = 0;
+                    }
+                    
+                    console.log(`✅ Question restaurée avec ${state.timeRemaining}s restantes`);
+                }
+                
+                // Si partie en cours ET que le joueur avait rejoint, se reconnecter
+                if (state.inProgress && this.isAuthenticated && this.hasJoined) {
+                    this.needsReconnect = true;
+                }
+            } catch (error) {
+                console.error('Erreur restauration état:', error);
+            }
+        },
+
         loginTwitch() {
             window.location.href = '/auth/twitch';
         },
 
         async logout() {
+            // 🆕 Notifier le serveur qu'on quitte le lobby
+            if (this.hasJoined && this.socket) {
+                this.socket.emit('leave-lobby', {
+                    twitchId: this.twitchId,
+                    username: this.username
+                });
+            }
+            
+            // Nettoyer le localStorage pour éjecter du lobby
+            localStorage.removeItem('hasJoinedLobby');
+            localStorage.removeItem('lobbyTwitchId');
+            
             window.location.href = '/auth/logout';
         },
 
         // ========== Socket.IO ==========
         initSocket() {
             this.socket = io();
+
+            // Événements de connexion
+            this.socket.on('connect', () => {
+                if (this.needsReconnect && this.gameInProgress) {
+                    this.socket.emit('reconnect-player', {
+                        twitchId: this.twitchId,
+                        username: this.username
+                    });
+                    this.needsReconnect = false;
+                }
+                
+                // 🆕 Re-joindre le lobby si l'état a été restauré
+                if (this.shouldRejoinLobby && this.isGameActive && !this.gameInProgress) {
+                    this.socket.emit('join-lobby', {
+                        twitchId: this.twitchId,
+                        username: this.username
+                    });
+                    this.shouldRejoinLobby = false;
+                    console.log('✅ Re-jointure automatique du lobby après refresh');
+                }
+            });
+
+            // Restauration du joueur
+            this.socket.on('player-restored', (data) => {
+                this.playerLives = data.lives;
+                this.currentQuestionNumber = data.currentQuestionIndex;
+                this.hasJoined = true;
+                
+                // 🆕 Restaurer l'état hasAnswered et selectedAnswer si le joueur a déjà répondu
+                if (data.hasAnswered) {
+                    this.hasAnswered = true;
+                    this.selectedAnswer = data.selectedAnswer; // 🆕 Restaurer la réponse sélectionnée
+                    console.log(`⚠️ Réponse ${data.selectedAnswer} restaurée`);
+                }
+                
+                this.showNotification('Reconnecté à la partie !', 'success');
+            });
 
             // Événements du serveur
             this.socket.on('game-activated', () => {
@@ -105,20 +233,57 @@ createApp({
             });
 
             this.socket.on('game-deactivated', () => {
+                // 🆕 Reset COMPLET de l'état du jeu
                 this.isGameActive = false;
+                this.gameInProgress = false;
+                this.gameStartedOnServer = false; // 🆕 Reset flag
+                this.gameEnded = false;
+                this.hasJoined = false;
+                this.currentQuestion = null;
+                this.currentQuestionNumber = 0;
+                this.selectedAnswer = null;
+                this.hasAnswered = false;
+                this.showResults = false;
+                this.playerLives = 3;
+                this.playerCount = 0;
+                
+                // Arrêter le timer si actif
+                this.stopTimer();
+                
+                // Nettoyer localStorage
+                localStorage.removeItem('hasJoinedLobby');
+                localStorage.removeItem('lobbyTwitchId');
+                
                 this.showNotification('Le jeu a été désactivé', 'info');
             });
 
             this.socket.on('game-started', (data) => {
-                this.gameInProgress = true;
-                this.showNotification(`La partie commence avec ${data.totalPlayers} joueurs !`, 'success');
+                // 🆕 Marquer qu'une partie a démarré côté serveur
+                this.gameStartedOnServer = true;
+                
+                // 🆕 Vérifier si le joueur participe à la partie
+                if (data.isParticipating) {
+                    // Le joueur a rejoint le lobby, il participe
+                    this.gameInProgress = true;
+                    this.showNotification(`La partie commence avec ${data.totalPlayers} joueurs !`, 'success');
+                } else {
+                    // Le joueur n'a pas rejoint ou arrive en cours de partie
+                    // On ne change pas gameInProgress, il reste en mode spectateur
+                    console.log('⏳ Partie en cours - Vous êtes spectateur');
+                }
             });
 
             this.socket.on('lobby-update', (data) => {
                 this.playerCount = data.playerCount;
             });
 
+            // 🔒 BUG FIX 1: Empêcher l'affichage des questions si non inscrit au lobby
             this.socket.on('new-question', (question) => {
+                if (!this.hasJoined) {
+                    console.log('❌ Vous devez rejoindre le lobby pour voir les questions');
+                    return;
+                }
+                
                 this.showResults = false;
                 this.currentQuestion = question;
                 this.currentQuestionNumber = question.questionNumber;
@@ -132,8 +297,7 @@ createApp({
                 this.questionResults = results;
                 this.showResults = true;
 
-                // Mettre à jour les vies du joueur (approximation)
-                // Note: Le serveur pourrait envoyer les vies individuelles pour plus de précision
+                // Mettre à jour les vies du joueur
                 if (this.selectedAnswer && this.selectedAnswer !== results.correctAnswer) {
                     this.playerLives = Math.max(0, this.playerLives - 1);
                 } else if (!this.selectedAnswer) {
@@ -147,8 +311,13 @@ createApp({
 
             this.socket.on('game-ended', (data) => {
                 this.gameEnded = true;
+                this.gameStartedOnServer = false; // 🆕 Reset flag
                 this.gameEndData = data;
                 this.stopTimer();
+                
+                // 🆕 Nettoyer localStorage car la partie est terminée
+                localStorage.removeItem('hasJoinedLobby');
+                localStorage.removeItem('lobbyTwitchId');
             });
 
             this.socket.on('error', (data) => {
@@ -169,6 +338,11 @@ createApp({
             });
 
             this.hasJoined = true;
+            
+            // 🆕 Sauvegarder l'état dans localStorage
+            localStorage.setItem('hasJoinedLobby', 'true');
+            localStorage.setItem('lobbyTwitchId', this.twitchId);
+            
             this.showNotification('Vous avez rejoint le lobby !', 'success');
         },
 
@@ -183,9 +357,15 @@ createApp({
             });
         },
 
-        startTimer() {
-            this.timeRemaining = 7;
-            this.timerProgress = 100;
+        startTimer(initialTime = 7) {
+            // Ne pas restart le timer s'il tourne déjà
+            if (this.timerInterval) {
+                console.log('⚠️ Timer déjà en cours');
+                return;
+            }
+
+            this.timeRemaining = initialTime;
+            this.timerProgress = (initialTime / 7) * 100;
 
             this.timerInterval = setInterval(() => {
                 this.timeRemaining--;
@@ -229,6 +409,10 @@ createApp({
             this.playerLives = 3;
             this.hasJoined = false;
             this.showResults = false;
+            
+            // 🆕 Nettoyer localStorage
+            localStorage.removeItem('hasJoinedLobby');
+            localStorage.removeItem('lobbyTwitchId');
         },
 
         formatDuration(seconds) {
@@ -243,7 +427,6 @@ createApp({
             document.body.classList.toggle('light-theme', !this.isDark);
             localStorage.setItem('theme', this.isDark ? 'dark' : 'light');
             
-            // Réinitialiser les particules avec le nouveau thème
             this.initParticles();
         },
 
@@ -327,23 +510,8 @@ createApp({
 
         // ========== Notifications ==========
         showNotification(message, type = 'info') {
-            // Simple console log pour l'instant, peut être amélioré avec un système de toast
+            // 🔇 Notifications désactivées - Log uniquement en console
             console.log(`[${type.toUpperCase()}] ${message}`);
-            
-            // Optionnel: Créer un toast visuel
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-
-            setTimeout(() => {
-                toast.classList.add('show');
-            }, 100);
-
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
         }
     },
 

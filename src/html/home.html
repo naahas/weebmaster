@@ -22,7 +22,7 @@
         <!-- Main Container -->
         <div class="main-container">
             <!-- Logo & Title (Non connecté et jeu non actif) -->
-            <div class="header-section welcome-screen" v-if="!isGameActive && !isAuthenticated && !gameInProgress">
+            <div class="header-section welcome-screen" v-if="!isAuthenticated && !gameInProgress">
                 <h1 class="logo-title">
                     <span class="neon-text">Shonen</span><span class="neon-text-alt">Master</span>
                 </h1>
@@ -35,8 +35,8 @@
                 </button>
             </div>
 
-            <!-- Logo simplifié (Autres états) -->
-            <div class="header-section" v-if="(isGameActive || isAuthenticated) && !gameInProgress">
+            <!-- Logo simplifié (Utilisateur authentifié uniquement) -->
+            <div class="header-section" v-if="isAuthenticated && !gameInProgress">
                 <h1 class="logo-title">
                     <!-- <span class="neon-text">Shonen</span><span class="neon-text-alt">Master</span> -->
                 </h1>
@@ -59,7 +59,6 @@
                     
                     <div class="separator"></div>
                     
-                    <!-- <div class="icon-large">⏳</div> -->
                     <h2>En préparation...</h2>
                     <p>La partie commence bientôt !</p>
                     <p class="small-text">Restez connecté, le lobby ouvrira sous peu.</p>
@@ -71,7 +70,7 @@
             </div>
 
             <!-- État: Lobby (jeu activé, en attente) -->
-            <div class="content-section" v-if="isGameActive && !gameInProgress && isAuthenticated">
+            <div class="content-section" v-if="isGameActive && !gameInProgress && !gameStartedOnServer && isAuthenticated">
                 <div class="lobby-card">
                     <div class="lobby-header">
                         <h2>La partie va commencer...</h2>
@@ -91,12 +90,20 @@
                     <button class="btn-primary btn-join" @click="joinLobby" :disabled="hasJoined">
                         {{ hasJoined ? '✓ Vous êtes dans la partie !' : 'Rejoindre la partie' }}
                     </button>
+                </div>
 
-                    <!-- <div class="lobby-info">
-                        <p>💡 Le jeu démarre quand l'animateur lance la première question</p>
-                        <p>⚡ Vous avez 7 secondes pour répondre à chaque question</p>
-                        <p>❤️ 3 erreurs = élimination</p>
-                    </div> -->
+                <button class="btn-secondary" @click="logout">
+                    Déconnexion
+                </button>
+            </div>
+
+            <!-- État: Spectateur (partie en cours mais pas rejoint) -->
+            <div class="content-section" v-if="gameStartedOnServer && !gameInProgress && isGameActive && isAuthenticated">
+                <div class="info-card spectator-card">
+                    <div class="spectator-icon">⏳</div>
+                    <h2>Partie en cours</h2>
+                    <p>Une partie est actuellement en cours.</p>
+                    <p class="small-text">Veuillez patienter jusqu'à la prochaine partie pour rejoindre le jeu.</p>
                 </div>
 
                 <button class="btn-secondary" @click="logout">
@@ -105,7 +112,7 @@
             </div>
 
             <!-- État: Partie en cours -->
-            <div class="content-section game-section" v-if="gameInProgress && isAuthenticated">
+            <div class="content-section game-section" v-if="gameInProgress && isAuthenticated && !gameEnded">
                 <!-- HUD du joueur -->
                 <div class="player-hud">
                     <div class="hud-item">
@@ -125,25 +132,20 @@
                         <span class="hud-value">{{ currentQuestionNumber }}</span>
                     </div>
                 </div>
-
-                <!-- Question -->
-                <div class="question-card" v-if="currentQuestion && !showResults">
-                    <!-- Timer circulaire en haut -->
-                    <div class="timer-circle-container">
-                        <svg class="timer-circle" viewBox="0 0 100 100">
-                            <circle class="timer-circle-bg" cx="50" cy="50" r="45"></circle>
-                            <circle 
-                                class="timer-circle-progress" 
-                                cx="50" 
-                                cy="50" 
-                                r="45"
-                                :style="{ strokeDashoffset: (283 - (283 * timerProgress / 100)) }"
-                                :class="{ warning: timeRemaining <= 3 }"
-                            ></circle>
-                        </svg>
-                        <div class="timer-number">{{ timeRemaining }}</div>
+                
+                <!-- 🆕 Conteneur fixe pour éviter décalages -->
+                <div class="question-container-wrapper">
+                    <!-- 🆕 Barre de timer horizontale ultra-fine (toujours présente pour éviter les décalages) -->
+                    <div class="timer-bar-container" :class="{ hidden: !currentQuestion || showResults }">
+                        <div 
+                            class="timer-bar-progress" 
+                            :style="{ width: timerProgress + '%' }"
+                            :class="{ warning: timeRemaining <= 3 }"
+                        ></div>
                     </div>
 
+                    <!-- Question -->
+                    <div class="question-card" v-if="currentQuestion && !showResults">
                     <!-- Badges série et difficulté -->
                     <div class="question-badges">
                         <span class="serie-badge">{{ currentQuestion.serie }}</span>
@@ -182,69 +184,67 @@
                     </div>
                 </div>
 
-                <!-- Résultats de la question (VERSION SIMPLIFIÉE POUR JOUEURS) -->
-                <div class="results-card" v-if="showResults">
-                    <div class="results-header">
-                        <h2>Résultats</h2>
-                        <div class="correct-answer-reveal">
-                            <span class="label">Bonne réponse:</span>
-                            <span class="answer-badge">{{ questionResults.correctAnswer }}</span>
+                <!-- 🆕 RÉSULTATS - Question avec indicateurs visuels -->
+                <div class="question-card results-view" v-if="showResults && currentQuestion">
+                    <!-- Badges série et difficulté -->
+                    <div class="question-badges">
+                        <span class="serie-badge">{{ currentQuestion.serie }}</span>
+                        <span class="difficulty-badge" :class="'diff-' + currentQuestion.difficulty">
+                            {{ currentQuestion.difficulty.toUpperCase() }}
+                        </span>
+                    </div>
+
+                    <!-- Question -->
+                    <h3 class="question-text">{{ currentQuestion.question }}</h3>
+
+                    <!-- Réponses avec indicateurs -->
+                    <div class="answers-grid">
+                        <div 
+                            v-for="(answer, index) in currentQuestion.answers" 
+                            :key="index"
+                            class="answer-btn result-answer"
+                            :class="{ 
+                                'correct': (index + 1) === questionResults.correctAnswer,
+                                'wrong': selectedAnswer === (index + 1) && selectedAnswer !== questionResults.correctAnswer,
+                                'unselected': selectedAnswer && selectedAnswer !== (index + 1) && (index + 1) !== questionResults.correctAnswer
+                            }"
+                        >
+                            <span class="answer-text">{{ answer }}</span>
+                            <span class="result-icon" v-if="(index + 1) === questionResults.correctAnswer">✓</span>
+                            <span class="result-icon wrong-icon" v-if="selectedAnswer === (index + 1) && selectedAnswer !== questionResults.correctAnswer">✕</span>
                         </div>
                     </div>
 
-                    <!-- Résultat personnel du joueur -->
-                    <div class="personal-result">
-                        <div v-if="selectedAnswer === questionResults.correctAnswer" class="result-success">
-                            <div class="result-icon">✅</div>
-                            <h3>Bonne réponse !</h3>
-                            <p>Vous conservez vos {{ playerLives }} vies</p>
-                        </div>
-                        <div v-else-if="selectedAnswer && selectedAnswer !== questionResults.correctAnswer" class="result-fail">
-                            <div class="result-icon">❌</div>
-                            <h3>Mauvaise réponse</h3>
-                            <p>Vous perdez une vie - Il vous reste {{ playerLives }} vie(s)</p>
-                        </div>
-                        <div v-else class="result-afk">
-                            <div class="result-icon">⏰</div>
-                            <h3>Temps écoulé</h3>
-                            <p>Vous perdez une vie - Il vous reste {{ playerLives }} vie(s)</p>
-                        </div>
-                    </div>
-
-                    <!-- Stats simplifiées -->
-                    <div class="simple-stats">
-                        <div class="elimination-banner" v-if="questionResults.eliminatedCount > 0">
-                            <span class="skull">💀</span>
-                            <span>{{ questionResults.eliminatedCount }} joueur(s) éliminé(s)</span>
-                            <span class="skull">💀</span>
-                        </div>
-
-                        <div class="remaining-players">
-                            <span class="trophy">🏆</span>
-                            <span>{{ questionResults.remainingPlayers }} joueur(s) en vie</span>
-                        </div>
+                    <!-- Stats discrètes en bas -->
+                    <div class="survivors-count">
+                        👤 {{ questionResults.remainingPlayers }} restants
                     </div>
                 </div>
+                </div><!-- Fin question-container-wrapper -->
+            </div>
 
-                <!-- Game Over -->
-                <div class="gameover-card" v-if="gameEnded">
-                    <div class="trophy-icon">🏆</div>
-                    <h2>Partie terminée !</h2>
+            <!-- 🆕 GAME OVER AMÉLIORÉ (Bug 2 fix) -->
+            <div class="content-section gameover-section" v-if="gameEnded">
+                <div class="gameover-card-improved">
+                    <div class="gameover-header">
+                        <h2>Partie terminée</h2>
+                    </div>
                     
-                    <div class="winner-section" v-if="gameEndData.winner">
-                        <h3>Vainqueur</h3>
-                        <div class="winner-name">{{ gameEndData.winner.username }}</div>
-                        <p>{{ gameEndData.winner.correctAnswers }} bonnes réponses</p>
+                    <div class="winner-section-improved" v-if="gameEndData.winner">
+                        <div class="winner-label">Vainqueur</div>
+                        <div class="winner-name-improved">{{ gameEndData.winner.username }}</div>
+                        <div class="winner-stats">{{ gameEndData.winner.correctAnswers }} bonnes réponses</div>
                     </div>
 
-                    <div class="game-stats">
-                        <div class="stat-item">
-                            <span class="stat-value">{{ gameEndData.totalQuestions }}</span>
-                            <span class="stat-label">Questions</span>
+                    <div class="game-stats-improved">
+                        <div class="stat-item-improved">
+                            <div class="stat-value-improved">{{ gameEndData.totalQuestions }}</div>
+                            <div class="stat-label-improved">Questions</div>
                         </div>
-                        <div class="stat-item">
-                            <span class="stat-value">{{ formatDuration(gameEndData.duration) }}</span>
-                            <span class="stat-label">Durée</span>
+                        <div class="stat-divider"></div>
+                        <div class="stat-item-improved">
+                            <div class="stat-value-improved">{{ formatDuration(gameEndData.duration) }}</div>
+                            <div class="stat-label-improved">Durée</div>
                         </div>
                     </div>
 
@@ -253,6 +253,12 @@
                     </button>
                 </div>
             </div>
+        </div>
+        
+        <!-- 🆕 Badge EN LIVE discret en bas (pour utilisateurs NON connectés) -->
+        <div class="live-badge-bottom" v-if="isGameActive && !isAuthenticated && !gameInProgress">
+            <span class="pulse-dot-small"></span>
+            <span>EN LIVE</span>
         </div>
     </div>
 

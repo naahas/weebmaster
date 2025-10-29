@@ -119,6 +119,36 @@ app.get('/auth/status', (req, res) => {
     }
 });
 
+// Route pour obtenir l'état actuel du jeu (pour reconnexion)
+app.get('/game/state', (req, res) => {
+    // 🆕 Calculer le temps restant du timer si une question est en cours
+    let timeRemaining = null;
+    if (gameState.questionStartTime && gameState.inProgress) {
+        const elapsed = Math.floor((Date.now() - gameState.questionStartTime) / 1000);
+        timeRemaining = Math.max(0, 7 - elapsed);
+    }
+
+    // BUG FIX: Inclure la liste des joueurs pour l'admin  
+    const playersData = Array.from(gameState.players.values()).map(player => ({
+        socketId: player.socketId,
+        twitchId: player.twitchId,
+        username: player.username,
+        lives: player.lives,
+        correctAnswers: player.correctAnswers,
+        hasAnswered: gameState.answers.has(player.socketId)
+    }));
+
+    res.json({
+        isActive: gameState.isActive,
+        inProgress: gameState.inProgress,
+        currentQuestionIndex: gameState.currentQuestionIndex,
+        playerCount: gameState.players.size,
+        currentQuestion: gameState.currentQuestion,
+        timeRemaining: timeRemaining,
+        players: playersData // BUG FIX: Liste complete des joueurs
+    });
+});
+
 // ============================================
 // Fichiers statiques (APRÈS les routes API)
 // ============================================
@@ -135,6 +165,7 @@ const gameState = {
     inProgress: false,            // Une partie est-elle en cours ?
     currentGameId: null,          // ID de la partie en cours
     currentQuestionIndex: 0,      // Index de la question actuelle
+    currentQuestion: null,        // 🆕 Question actuellement affichée
     players: new Map(),           // Map<socketId, playerData>
     questionStartTime: null,      // Timestamp du début de la question
     answers: new Map(),           // Map<socketId, answerData>
@@ -183,7 +214,16 @@ app.post('/admin/login', (req, res) => {
     
     if (password === process.env.ADMIN_PASSWORD) {
         req.session.isAdmin = true;
-        res.json({ success: true });
+        
+        // Forcer la sauvegarde de la session
+        req.session.save((err) => {
+            if (err) {
+                console.error('❌ Erreur sauvegarde session:', err);
+                return res.status(500).json({ success: false, message: 'Erreur de session' });
+            }
+            console.log('✅ Admin connecté - Session sauvegardée');
+            res.json({ success: true });
+        });
     } else {
         res.status(401).json({ success: false, message: 'Mot de passe incorrect' });
     }
@@ -202,16 +242,42 @@ app.get('/admin/auth', (req, res) => {
 // Activer/désactiver le jeu
 app.post('/admin/toggle-game', (req, res) => {
     if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
+        return res.status(403).json({ error: 'Non autorisé - Session expirée' });
     }
 
     gameState.isActive = !gameState.isActive;
     
     if (gameState.isActive) {
         console.log('✅ Jeu activé - Lobby ouvert');
+        
+        // 🆕 Reset la grille des joueurs à l'ouverture du lobby
+        gameState.players.clear();
+        gameState.answers.clear();
+        gameState.currentQuestionIndex = 0;
+        gameState.currentQuestion = null;
+        gameState.questionStartTime = null;
+        gameState.gameStartTime = null;
+        gameState.inProgress = false;
+        gameState.currentGameId = null;
+        
         io.emit('game-activated');
     } else {
         console.log('❌ Jeu désactivé');
+        
+        // 🆕 Reset complet de l'état si une partie était en cours
+        if (gameState.inProgress) {
+            console.log('⚠️ Partie en cours annulée - Reset de l\'état');
+        }
+        
+        gameState.inProgress = false;
+        gameState.currentGameId = null;
+        gameState.currentQuestionIndex = 0;
+        gameState.currentQuestion = null; // 🆕 Reset question
+        gameState.players.clear();
+        gameState.answers.clear();
+        gameState.questionStartTime = null;
+        gameState.gameStartTime = null;
+        
         io.emit('game-deactivated');
     }
 
@@ -228,8 +294,16 @@ app.post('/admin/start-game', async (req, res) => {
         return res.status(400).json({ error: 'Une partie est déjà en cours' });
     }
 
+    // 🆕 Vérifier qu'il y a au moins 1 joueur dans le lobby
+    const totalPlayers = gameState.players.size;
+    if (totalPlayers === 0) {
+        return res.status(400).json({ 
+            success: false, 
+            error: 'Impossible de démarrer : aucun joueur dans le lobby' 
+        });
+    }
+
     try {
-        const totalPlayers = gameState.players.size;
         const game = await db.createGame(totalPlayers);
         
         gameState.inProgress = true;
@@ -244,7 +318,20 @@ app.post('/admin/start-game', async (req, res) => {
         });
 
         console.log(`🎮 Partie démarrée avec ${totalPlayers} joueurs`);
-        io.emit('game-started', { totalPlayers });
+        
+        // 🆕 Envoyer des infos différentes selon si le joueur participe ou non
+        io.sockets.sockets.forEach((socket) => {
+            const socketId = socket.id;
+            const player = gameState.players.get(socketId);
+            
+            if (player) {
+                // Le joueur participe
+                socket.emit('game-started', { totalPlayers, isParticipating: true });
+            } else {
+                // Le joueur ne participe pas (spectateur ou pas rejoint)
+                socket.emit('game-started', { totalPlayers, isParticipating: false });
+            }
+        });
         
         res.json({ success: true, gameId: game.id });
     } catch (error) {
@@ -261,6 +348,19 @@ app.post('/admin/next-question', async (req, res) => {
 
     if (!gameState.inProgress) {
         return res.status(400).json({ error: 'Aucune partie en cours' });
+    }
+
+    // 🆕 BUG 2 FIX: Bloquer si une question est déjà en cours (timer actif)
+    if (gameState.questionStartTime && gameState.currentQuestion) {
+        const elapsed = Math.floor((Date.now() - gameState.questionStartTime) / 1000);
+        if (elapsed < 7) {
+            const timeRemaining = 7 - elapsed;
+            return res.status(400).json({ 
+                error: 'Une question est déjà en cours',
+                timeRemaining: timeRemaining,
+                blocked: true
+            });
+        }
     }
 
     try {
@@ -285,7 +385,14 @@ app.post('/admin/next-question', async (req, res) => {
                 question.answer4
             ].filter(a => a !== null),
             serie: question.serie,
-            difficulty: question.difficulty
+            difficulty: question.difficulty,
+            timeLimit: 7 // Durée en secondes
+        };
+
+        // 🆕 Sauvegarder la question complète avec la bonne réponse dans gameState
+        gameState.currentQuestion = {
+            ...questionData,
+            correctAnswer: question.coanswer
         };
 
         gameState.questionStartTime = Date.now();
@@ -381,6 +488,9 @@ function revealAnswers(correctAnswer) {
         playersData: playersData  // 🆕 Données complètes des joueurs
     });
 
+    // 🆕 Reset la question actuelle après révélation
+    gameState.currentQuestion = null;
+
     // Vérifier fin de partie
     if (alivePlayers.length <= 1) {
         endGame(alivePlayers[0]);
@@ -392,6 +502,8 @@ async function endGame(winner) {
     const duration = Math.floor((Date.now() - gameState.gameStartTime) / 1000);
     
     try {
+        let winnerData = null;
+        
         if (winner) {
             await db.endGame(
                 gameState.currentGameId,
@@ -400,6 +512,16 @@ async function endGame(winner) {
                 duration
             );
             await db.updateUserStats(winner.twitchId, true, 1);
+            
+            // 🆕 Récupérer les stats complètes du winner depuis la DB
+            const winnerUser = await db.getUserByTwitchId(winner.twitchId);
+            
+            winnerData = {
+                username: winner.username,
+                correctAnswers: winner.correctAnswers,
+                livesRemaining: winner.lives, // 🆕 Vies restantes
+                totalVictories: winnerUser ? winnerUser.total_victories : 1 // 🆕 Total victoires
+            };
         }
 
         // Mettre à jour les stats des autres joueurs
@@ -410,10 +532,7 @@ async function endGame(winner) {
         }
 
         io.emit('game-ended', {
-            winner: winner ? {
-                username: winner.username,
-                correctAnswers: winner.correctAnswers
-            } : null,
+            winner: winnerData,
             duration,
             totalQuestions: gameState.currentQuestionIndex
         });
@@ -422,8 +541,16 @@ async function endGame(winner) {
         gameState.inProgress = false;
         gameState.currentGameId = null;
         gameState.currentQuestionIndex = 0;
+        gameState.currentQuestion = null; // 🆕 Reset question
+        gameState.questionStartTime = null; // 🆕 Reset timer
+        gameState.gameStartTime = null; // 🆕 Reset game start time
         gameState.players.clear();
         gameState.answers.clear();
+
+        // 🆕 Fermer automatiquement le lobby à la fin de la partie
+        gameState.isActive = false;
+        io.emit('game-deactivated');
+        console.log('🔒 Lobby fermé automatiquement après la fin de partie');
 
     } catch (error) {
         console.error('❌ Erreur fin de partie:', error);
@@ -446,6 +573,7 @@ app.get('/admin/stats', async (req, res) => {
             topPlayers,
             recentGames,
             currentPlayers: gameState.players.size,
+            activePlayers: gameState.inProgress ? getAlivePlayers().length : 0, // 🆕 0 si pas en cours
             gameActive: gameState.isActive,
             gameInProgress: gameState.inProgress
         });
@@ -511,6 +639,92 @@ io.on('connection', (socket) => {
         });
     });
 
+    // 🆕 Quitter le lobby
+    socket.on('leave-lobby', (data) => {
+        const player = gameState.players.get(socket.id);
+        if (player) {
+            gameState.players.delete(socket.id);
+            gameState.answers.delete(socket.id);
+            console.log(`👋 ${data.username} a quitté le lobby`);
+            
+            io.emit('lobby-update', {
+                playerCount: gameState.players.size,
+                players: Array.from(gameState.players.values()).map(p => ({
+                    twitchId: p.twitchId,
+                    username: p.username,
+                    lives: p.lives
+                }))
+            });
+        }
+    });
+
+    // Reconnexion d'un joueur (nouveau événement)
+    socket.on('reconnect-player', (data) => {
+        if (!gameState.inProgress) {
+            return socket.emit('error', { message: 'Aucune partie en cours' });
+        }
+
+        // Chercher le joueur par twitchId dans les joueurs existants
+        let existingPlayer = null;
+        let oldSocketId = null;
+        for (const [socketId, player] of gameState.players.entries()) {
+            if (player.twitchId === data.twitchId) {
+                existingPlayer = player;
+                oldSocketId = socketId;
+                break;
+            }
+        }
+
+        if (existingPlayer) {
+            // 🆕 Sauvegarder la réponse de l'ancien socketId AVANT de supprimer
+            const previousAnswer = gameState.answers.get(oldSocketId);
+            
+            // Supprimer l'ancienne référence
+            gameState.players.delete(oldSocketId);
+            gameState.answers.delete(oldSocketId);
+            
+            // Restaurer le joueur avec le nouveau socketId
+            existingPlayer.socketId = socket.id;
+            gameState.players.set(socket.id, existingPlayer);
+            
+            // 🆕 Transférer la réponse au nouveau socketId si elle existait
+            if (previousAnswer) {
+                gameState.answers.set(socket.id, previousAnswer);
+            }
+            
+            // 🆕 Nettoyer les marqueurs de déconnexion temporaire
+            delete existingPlayer.disconnectedAt;
+            delete existingPlayer.disconnectedSocketId;
+            
+            console.log(`🔄 ${data.username} reconnecté - ${existingPlayer.lives} ❤️`);
+            
+            // 🆕 Envoyer l'état du joueur au client avec sa réponse précédente
+            socket.emit('player-restored', {
+                lives: existingPlayer.lives,
+                correctAnswers: existingPlayer.correctAnswers,
+                currentQuestionIndex: gameState.currentQuestionIndex,
+                hasAnswered: !!previousAnswer, // A répondu si previousAnswer existe
+                selectedAnswer: previousAnswer ? previousAnswer.answer : null // 🆕 La réponse sélectionnée
+            });
+            
+            // 🆕 Mettre à jour le compteur de joueurs pour l'admin
+            io.emit('lobby-update', {
+                playerCount: gameState.players.size,
+                players: Array.from(gameState.players.values()).map(p => ({
+                    twitchId: p.twitchId,
+                    username: p.username,
+                    lives: p.lives
+                }))
+            });
+        } else {
+            // Nouveau joueur qui rejoint en cours de partie (spectateur)
+            socket.emit('error', { 
+                message: 'Vous ne pouvez pas rejoindre une partie en cours',
+                canSpectate: true 
+            });
+        }
+    });
+
     // Répondre à une question
     socket.on('submit-answer', (data) => {
         if (!gameState.inProgress) return;
@@ -539,18 +753,50 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         const player = gameState.players.get(socket.id);
         if (player) {
-            console.log(`❌ ${player.username} s'est déconnecté`);
-            gameState.players.delete(socket.id);
-            gameState.answers.delete(socket.id);
+            console.log(`🔌 ${player.username} déconnecté (socket: ${socket.id})`);
+            
+            // 🆕 Si une partie est en cours, NE PAS supprimer le joueur immédiatement
+            // Lui laisser le temps de se reconnecter (30 secondes)
+            if (gameState.inProgress) {
+                console.log(`⏳ Attente de reconnexion pour ${player.username}...`);
+                
+                // Marquer le joueur comme temporairement déconnecté
+                player.disconnectedAt = Date.now();
+                player.disconnectedSocketId = socket.id;
+                
+                // Supprimer après 30 secondes si pas de reconnexion
+                setTimeout(() => {
+                    const currentPlayer = gameState.players.get(socket.id);
+                    if (currentPlayer && currentPlayer.disconnectedAt === player.disconnectedAt) {
+                        // Le joueur ne s'est pas reconnecté
+                        console.log(`❌ ${player.username} définitivement déconnecté`);
+                        gameState.players.delete(socket.id);
+                        gameState.answers.delete(socket.id);
+                        
+                        io.emit('lobby-update', {
+                            playerCount: gameState.players.size,
+                            players: Array.from(gameState.players.values()).map(p => ({
+                                twitchId: p.twitchId,
+                                username: p.username,
+                                lives: p.lives
+                            }))
+                        });
+                    }
+                }, 30000); // 30 secondes
+            } else {
+                // Pas de partie en cours, supprimer immédiatement
+                gameState.players.delete(socket.id);
+                gameState.answers.delete(socket.id);
 
-            io.emit('lobby-update', {
-                playerCount: gameState.players.size,
-                players: Array.from(gameState.players.values()).map(p => ({
-                    twitchId: p.twitchId,
-                    username: p.username,
-                    lives: p.lives
-                }))
-            });
+                io.emit('lobby-update', {
+                    playerCount: gameState.players.size,
+                    players: Array.from(gameState.players.values()).map(p => ({
+                        twitchId: p.twitchId,
+                        username: p.username,
+                        lives: p.lives
+                    }))
+                });
+            }
         }
     });
 });
