@@ -145,7 +145,9 @@ app.get('/game/state', (req, res) => {
         playerCount: gameState.players.size,
         currentQuestion: gameState.currentQuestion,
         timeRemaining: timeRemaining,
-        players: playersData // BUG FIX: Liste complete des joueurs
+        players: playersData, 
+        showResults: gameState.showResults,
+        lastQuestionResults: gameState.lastQuestionResults,
     });
 });
 
@@ -169,7 +171,9 @@ const gameState = {
     players: new Map(),           // Map<socketId, playerData>
     questionStartTime: null,      // Timestamp du début de la question
     answers: new Map(),           // Map<socketId, answerData>
-    gameStartTime: null           // Timestamp du début du jeu
+    gameStartTime: null,          // Timestamp du début du jeu
+    showResults: false,           // M-pM-^_M-^FM-^U Afficher les rM-CM-)sultats de la derniM-CM-^Gre question
+    lastQuestionResults: null     // M-pM-^_M-^FM-^U RM-CM-)sultats de la derniM-CM-^Gre question
 };
 
 // ============================================
@@ -255,6 +259,8 @@ app.post('/admin/toggle-game', (req, res) => {
         gameState.answers.clear();
         gameState.currentQuestionIndex = 0;
         gameState.currentQuestion = null;
+        gameState.showResults = false;
+        gameState.lastQuestionResults = null;
         gameState.questionStartTime = null;
         gameState.gameStartTime = null;
         gameState.inProgress = false;
@@ -273,6 +279,8 @@ app.post('/admin/toggle-game', (req, res) => {
         gameState.currentGameId = null;
         gameState.currentQuestionIndex = 0;
         gameState.currentQuestion = null; // 🆕 Reset question
+        gameState.showResults = false;
+        gameState.lastQuestionResults = null;
         gameState.players.clear();
         gameState.answers.clear();
         gameState.questionStartTime = null;
@@ -310,6 +318,8 @@ app.post('/admin/start-game', async (req, res) => {
         gameState.currentGameId = game.id;
         gameState.currentQuestionIndex = 0;
         gameState.gameStartTime = Date.now();
+        gameState.showResults = false;
+        gameState.lastQuestionResults = null;
         
         // Initialiser les joueurs
         gameState.players.forEach(player => {
@@ -350,7 +360,7 @@ app.post('/admin/next-question', async (req, res) => {
         return res.status(400).json({ error: 'Aucune partie en cours' });
     }
 
-    // 🆕 BUG 2 FIX: Bloquer si une question est déjà en cours (timer actif)
+    // BUG 2 FIX: Bloquer si une question est déjà en cours (timer actif)
     if (gameState.questionStartTime && gameState.currentQuestion) {
         const elapsed = Math.floor((Date.now() - gameState.questionStartTime) / 1000);
         if (elapsed < 7) {
@@ -374,36 +384,63 @@ app.post('/admin/next-question', async (req, res) => {
 
         const question = questions[0];
         
-        // Préparer la question (sans la bonne réponse)
+        // 🆕 Récupérer toutes les réponses disponibles (filtrer les null)
+        const allAnswers = [
+            { text: question.answer1, index: 1 },
+            { text: question.answer2, index: 2 },
+            { text: question.answer3, index: 3 },
+            { text: question.answer4, index: 4 },
+            { text: question.answer5, index: 5 },
+            { text: question.answer6, index: 6 }
+        ].filter(answer => answer.text !== null && answer.text !== '');
+
+        // 🆕 Identifier la bonne réponse
+        const correctAnswerObj = allAnswers.find(a => a.index === question.coanswer);
+        
+        // 🆕 Réponses incorrectes (toutes sauf la bonne)
+        const wrongAnswers = allAnswers.filter(a => a.index !== question.coanswer);
+        
+        // 🆕 Mélanger les mauvaises réponses et prendre 3 au hasard
+        const shuffledWrong = wrongAnswers.sort(() => 0.5 - Math.random()).slice(0, 3);
+        
+        // 🆕 Combiner la bonne réponse + 3 mauvaises
+        const selectedAnswers = [correctAnswerObj, ...shuffledWrong];
+        
+        // 🆕 Mélanger les 4 réponses finales
+        const finalAnswers = selectedAnswers.sort(() => 0.5 - Math.random());
+        
+        // 🆕 Trouver le nouvel index de la bonne réponse après mélange
+        const newCorrectIndex = finalAnswers.findIndex(a => a.index === question.coanswer) + 1;
+
+        // Préparer la question (sans la bonne réponse côté client)
         const questionData = {
             questionNumber: gameState.currentQuestionIndex,
             question: question.question,
-            answers: [
-                question.answer1,
-                question.answer2,
-                question.answer3,
-                question.answer4
-            ].filter(a => a !== null),
+            answers: finalAnswers.map(a => a.text), // 🆕 Seulement le texte
             serie: question.serie,
             difficulty: question.difficulty,
-            timeLimit: 7 // Durée en secondes
+            timeLimit: 7
         };
 
-        // 🆕 Sauvegarder la question complète avec la bonne réponse dans gameState
+        // 🆕 Sauvegarder la question complète avec le NOUVEL index de la bonne réponse
         gameState.currentQuestion = {
             ...questionData,
-            correctAnswer: question.coanswer
+            correctAnswer: newCorrectIndex // 🆕 Nouvel index après mélange
         };
 
         gameState.questionStartTime = Date.now();
+        
+        // 🆕 Réinitialiser showResults quand une nouvelle question est envoyée
+        gameState.showResults = false;
+        gameState.lastQuestionResults = null;
         gameState.answers.clear();
 
         io.emit('new-question', questionData);
         
-        // Auto-révéler après 7 secondes
+        // Auto-révéler après 7 secondes avec le nouvel index
         setTimeout(() => {
             if (gameState.inProgress) {
-                revealAnswers(question.coanswer);
+                revealAnswers(newCorrectIndex); // 🆕 Utiliser le nouvel index
             }
         }, 7000);
 
@@ -479,17 +516,21 @@ function revealAnswers(correctAnswer) {
         correctAnswers: player.correctAnswers
     }));
 
-    io.emit('question-results', {
+    // 🆕 Stocker les résultats dans gameState pour la restauration
+    const resultsData = {
         correctAnswer,
         stats,
         eliminatedCount: eliminatedThisRound,
         remainingPlayers: alivePlayers.length,
-        players: playersDetails, // Détails des joueurs pour l'admin
-        playersData: playersData  // 🆕 Données complètes des joueurs
-    });
+        players: playersDetails,
+        playersData: playersData
+    };
+    
+    gameState.showResults = true;
+    gameState.lastQuestionResults = resultsData;
 
-    // 🆕 Reset la question actuelle après révélation
-    gameState.currentQuestion = null;
+    io.emit('question-results', resultsData);
+
 
     // Vérifier fin de partie
     if (alivePlayers.length <= 1) {
@@ -542,6 +583,8 @@ async function endGame(winner) {
         gameState.currentGameId = null;
         gameState.currentQuestionIndex = 0;
         gameState.currentQuestion = null; // 🆕 Reset question
+        gameState.showResults = false;
+        gameState.lastQuestionResults = null;
         gameState.questionStartTime = null; // 🆕 Reset timer
         gameState.gameStartTime = null; // 🆕 Reset game start time
         gameState.players.clear();

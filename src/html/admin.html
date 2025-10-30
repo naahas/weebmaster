@@ -757,6 +757,15 @@
             margin-bottom: 14px;
             text-align: center;
         }
+        
+        .results-question-text {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            margin-bottom: 14px;
+            text-align: center;
+            line-height: 1.4;
+        }
 
         .charts-container {
             display: grid;
@@ -1728,7 +1737,7 @@
 
             container.innerHTML = `
                 <div class="results-display">
-                    <h3>📊 Résultats de la question</h3>
+                    <h3 class="results-question-text">${currentQuestionData?.question || "Question"}</h3>
                     
                     <div class="charts-container">
                         <!-- Diagramme 1: Répartition des réponses -->
@@ -2305,6 +2314,9 @@ svgElement.appendChild(path);
                 if (data.success) {
                     console.log('✅ Question suivante envoyée');
                     
+                    
+                    // 🆕 Switch automatique vers l'onglet "Question en cours"
+                    switchTab('question');
                     // 🆕 Garder le visuel bloqué pendant 7 secondes (durée du timer)
                     setTimeout(() => {
                         nextCard.classList.remove('timer-blocked');

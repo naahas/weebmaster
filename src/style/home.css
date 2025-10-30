@@ -1556,3 +1556,91 @@ body.light-theme .gameover-card {
     color: var(--text-secondary);
     font-weight: 500;
 }
+/* ============================================
+   🆕 ANIMATIONS D'APPARITION DES QUESTIONS
+   ============================================ */
+
+/* Keyframes pour fade-in-up */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Keyframes pour fade-in-scale */
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Appliquer les animations aux éléments de la question */
+.question-card:not(.results-view) .question-badges {
+    animation: fadeInUp 0.4s ease-out 0s backwards;
+}
+
+.question-card:not(.results-view) .question-text {
+    animation: fadeInUp 0.5s ease-out 0.1s backwards;
+}
+
+.question-card:not(.results-view) .answers-grid {
+    animation: fadeInScale 0.5s ease-out 0.2s backwards;
+}
+
+/* Animation en cascade pour chaque réponse */
+.question-card:not(.results-view) .answer-btn:nth-child(1) {
+    animation: fadeInUp 0.4s ease-out 0.3s backwards;
+}
+
+.question-card:not(.results-view) .answer-btn:nth-child(2) {
+    animation: fadeInUp 0.4s ease-out 0.4s backwards;
+}
+
+.question-card:not(.results-view) .answer-btn:nth-child(3) {
+    animation: fadeInUp 0.4s ease-out 0.5s backwards;
+}
+
+.question-card:not(.results-view) .answer-btn:nth-child(4) {
+    animation: fadeInUp 0.4s ease-out 0.6s backwards;
+}
+
+/* Animation pour la barre de timer */
+.timer-bar-container:not(.hidden) {
+    animation: fadeInScale 0.3s ease-out 0s backwards;
+}
+
+/* Animation pour les résultats (plus rapide) */
+.question-card.results-view .question-badges {
+    animation: fadeInUp 0.3s ease-out 0s backwards;
+}
+
+.question-card.results-view .question-text {
+    animation: fadeInUp 0.3s ease-out 0.05s backwards;
+}
+
+.question-card.results-view .answers-grid {
+    animation: fadeInScale 0.4s ease-out 0.1s backwards;
+}
+
+.question-card.results-view .survivors-count {
+    animation: fadeInUp 0.4s ease-out 0.5s backwards;
+}
+
+/* Animation pour answer-status et eliminated-notice */
+.answer-status {
+    animation: fadeInScale 0.4s ease-out 0.7s backwards;
+}
+
+.eliminated-notice {
+    animation: fadeInScale 0.5s ease-out 0.3s backwards;
+}

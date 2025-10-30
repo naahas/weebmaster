@@ -154,6 +154,13 @@ createApp({
                     }
                     
                     console.log(`✅ Question restaurée avec ${state.timeRemaining}s restantes`);
+                
+                // 🆕 Restaurer les résultats si affichés ET que le joueur participe
+                if (state.showResults && state.lastQuestionResults && state.inProgress && this.hasJoined) {
+                    this.showResults = true;
+                    this.questionResults = state.lastQuestionResults;
+                    console.log('✅ Résultats de la question restaurés');
+                }
                 }
                 
                 // Si partie en cours ET que le joueur avait rejoint, se reconnecter
