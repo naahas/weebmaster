@@ -334,7 +334,7 @@
         /* ============ LAYOUT 30/70 ============ */
         .admin-content {
             display: grid;
-            grid-template-columns: 30% 70%;
+            grid-template-columns: 25% 50% 25%;
             min-height: calc(100vh - 160px);
         }
 
@@ -553,10 +553,260 @@
         }
 
         /* ============ RIGHT SIDE (Question/Players) ============ */
+        
+        .admin-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr 200px; /* Panneau droit réduit à 200px pour plus d'espace au centre */
+            gap: 16px;
+            padding: 20px;
+            max-height: calc(100vh - 80px); /* Hauteur max pour éviter scroll */
+            overflow: hidden;
+        }
+
+        /* Panneau latéral droit optimisé */
         .right-panel {
-            padding: 24px;
             display: flex;
             flex-direction: column;
+            gap: 14px; /* Réduire l'espace entre sections */
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        /* Réduire les paddings des cards */
+        .settings-card,
+        .database-card {
+            padding: 16px; /* Réduire de 24px à 16px */
+        }
+
+        /* Réduire l'espacement dans les sections */
+        .settings-section,
+        .database-section {
+            margin-bottom: 16px; /* Réduire de 24px à 16px */
+        }
+
+        .settings-section:last-child,
+        .database-section:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Optimiser les stat-items pour prendre moins de place */
+        .db-stat-item {
+            padding: 10px 12px; /* Réduire padding */
+            margin-bottom: 8px; /* Réduire marge */
+        }
+
+        .db-stat-label {
+            font-size: 0.7rem; /* Réduire de 0.75rem */
+        }
+
+        /* Scrollbar personnalisée pour le panneau droit */
+        .right-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .right-panel::-webkit-scrollbar-track {
+            background: var(--bg-main);
+            border-radius: 10px;
+        }
+
+        .right-panel::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 10px;
+        }
+
+        .right-panel::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        /* STYLES POUR LE PANNEAU DE DROITE */
+
+        /* ============ SETTINGS PANEL (RIGHT) ============ */
+                .settings-panel {
+            padding: 12px;
+            border-left: 0.8px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+
+        .settings-panel {
+            padding: 12px;
+            border-left: 0.8px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+
+        .settings-panel::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .settings-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .settings-panel::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 10px;
+        }
+
+        .settings-panel::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+                /* Settings Section */
+        .settings-section {
+            background: var(--bg-card);
+            border: 0.8px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .settings-section h3 {
+            font-size: 0.75rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+                .setting-item {
+            margin-bottom: 14px;
+        }
+
+        .setting-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .setting-label {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: block;
+            font-weight: 500;
+        }
+
+        /* Lives Selector */
+        .lives-selector {
+            display: flex;
+            gap: 10px;
+        }
+
+        .lives-btn {
+            flex: 1;
+            padding: 10px;
+            background: var(--bg-main);
+            border: 1.6px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .lives-btn:hover:not(.active):not(:disabled) {
+            border-color: var(--primary);
+            background: rgba(255, 215, 0, 0.05);
+        }
+
+        .lives-btn.active {
+            background: var(--primary);
+            color: var(--bg-main);
+            border-color: var(--primary);
+        }
+
+        .lives-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Time Selector */
+        .time-selector {
+            position: relative;
+        }
+
+        .time-select {
+            width: 100%;
+            padding: 10px;
+            background: var(--bg-main);
+            border: 1.6px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .time-select:hover:not(:disabled) {
+            border-color: var(--primary);
+        }
+
+        .time-select:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Database Stats */
+                .db-stats {
+            background: var(--bg-card);
+            border: 0.8px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .db-stats h3 {
+            font-size: 0.75rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+                .db-stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+        }
+
+        .db-stat-item:first-child {
+            padding-top: 0;
+        }
+
+        .db-stat-item:last-child {
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+                .db-stat-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .db-stat-value {
+            font-size: 0.9rem;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        /* Disabled state for settings during game */
+        .settings-section.disabled {
+            opacity: 0.6;
+            pointer-events: none;
         }
 
         /* Tabs */
@@ -776,6 +1026,10 @@
         }
 
         .chart-box {
+            height: 320px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
             background: var(--bg-main);
             border: 1.6px solid var(--border);
             border-radius: 12px;
@@ -804,6 +1058,7 @@
         }
 
         .chart-svg {
+            max-height: 180px;
             width: 100%;
             max-width: 210px;
             aspect-ratio: 1;
@@ -817,26 +1072,41 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 20px;
+            gap: 12px;
+            flex: 1; /* 🆕 Prendre l'espace disponible */
+            min-height: 0; /* 🆕 Important pour flexbox */
+            overflow: hidden; /* 🆕 Empêcher débordement */
         }
 
         .chart-legend {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            min-width: 110px;
+            gap: 4px; /* 🆕 Réduit de 8px à 4px */
+            min-width: 90px; /* 🆕 Réduit de 110px à 90px */
+            max-height: 220px; /* 🆕 Limite hauteur légende */
+            overflow-y: auto; /* 🆕 Scroll si trop d'items */
+        }
+
+        /* 🆕 Scrollbar légende */
+        .chart-legend::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .chart-legend::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 0.72rem;
+            gap: 4px;
+            font-size: 0.68rem;
         }
 
         .legend-color {
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 3px;
             flex-shrink: 0;
         }
@@ -844,13 +1114,13 @@
         .legend-label {
             color: var(--text-primary);
             flex: 1;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
         }
 
         .legend-value {
             color: var(--text-primary);
             font-weight: 600;
-            min-width: 24px;
+            min-width: 20px;
             text-align: right;
         }
 
@@ -1215,6 +1485,52 @@
             font-size: 3.2rem;
             margin-bottom: 16px;
         }
+
+        /* ============================================ */
+        /* RESPONSIVE DESIGN */
+        /* ============================================ */
+
+        @media (max-width: 1400px) {
+            .admin-grid {
+                grid-template-columns: 200px 1fr 200px;
+                gap: 12px;
+                padding: 16px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .admin-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .left-panel,
+            .right-panel,
+            .settings-panel {
+                max-height: none;
+                border-left: none;
+                border-top: 0.8px solid var(--border);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .admin-header {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+            
+            .header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .settings-panel,
+            .settings-section,
+            .db-stats {
+                padding: 10px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1337,6 +1653,50 @@
                     </div>
                 </div>
             </div>
+            <!-- ============ SETTINGS PANEL (RIGHT) ============ -->
+            <div class="settings-panel">
+                <!-- Paramètres de partie -->
+                <div class="settings-section" id="gameSettings">
+                    <h3>Paramètres</h3>
+                    
+                    <div class="setting-item">
+                        <label class="setting-label">Nombre de vies</label>
+                        <div class="lives-selector">
+                            <button class="lives-btn" onclick="setLives(1)" id="lives-1">1</button>
+                            <button class="lives-btn" onclick="setLives(2)" id="lives-2">2</button>
+                            <button class="lives-btn active" onclick="setLives(3)" id="lives-3">3</button>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <label class="setting-label">Temps par question</label>
+                        <div class="time-selector">
+                            <select class="time-select" id="timeSelect" onchange="setTime(this.value)">
+                                <option value="5">5 secondes</option>
+                                <option value="6">6 secondes</option>
+                                <option value="7" selected>7 secondes</option>
+                                <option value="8">8 secondes</option>
+                                <option value="9">9 secondes</option>
+                                <option value="10">10 secondes</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Database -->
+                <div class="db-stats">
+                    <h3>DATAS</h3>
+                    <div class="db-stat-item">
+                        <span class="db-stat-label">Questions</span>
+                        <span class="db-stat-value" id="dbTotalQuestions">-</span>
+                    </div>
+                    
+                    <div class="db-stat-item">
+                        <span class="db-stat-label">Séries</span>
+                        <span class="db-stat-value" id="dbTotalSeries">-</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1404,6 +1764,12 @@
         let isTogglingGame = false; // 🆕 Anti-spam toggle game
         let isStartingGame = false; // 🆕 Anti-spam start game
         let isNextQuestion = false; // 🆕 Anti-spam next question
+        
+        // 🆕 Game Settings
+        let gameSettings = {
+            lives: 3,
+            timePerQuestion: 7
+        };
 
         // ============ AUTH ============
         async function handleLogin(event) {
@@ -1482,6 +1848,31 @@
                     }
                 }
                 
+                // 🆕 BUG FIX 3: Désactiver les paramètres si partie en cours ou lobby actif
+                if (state.inProgress) {
+                    toggleSettingsAccess(false);
+                    console.log('🔒 Paramètres désactivés (partie en cours)');
+                } else {
+                    toggleSettingsAccess(true);
+                    console.log('🔓 Paramètres activés');
+                }
+                
+                // 🆕 BUG FIX 4: Restaurer l'état visuel des paramètres (vies + temps)
+                if (state.lives) {
+                    gameSettings.lives = state.lives;
+                    document.querySelectorAll('.lives-btn').forEach(btn => btn.classList.remove('active'));
+                    const livesBtn = document.getElementById(`lives-${state.lives}`);
+                    if (livesBtn) livesBtn.classList.add('active');
+                    console.log(`✅ Paramètre vies restauré: ${state.lives}`);
+                }
+                
+                if (state.questionTime) {
+                    gameSettings.timePerQuestion = state.questionTime;
+                    const timeSelect = document.getElementById('timeSelect');
+                    if (timeSelect) timeSelect.value = state.questionTime;
+                    console.log(`✅ Paramètre temps restauré: ${state.questionTime}s`);
+                }
+                
             } catch (error) {
                 console.error('❌ Erreur restauration état:', error);
             }
@@ -1515,6 +1906,7 @@
 
             socket.on('game-started', (data) => {
                 console.log('🎮 Partie démarrée:', data);
+                toggleSettingsAccess(false); // 🆕 Désactiver les paramètres au démarrage
                 refreshStats();
                 // Afficher l'onglet grille joueurs automatiquement
                 switchTab('players');
@@ -1542,6 +1934,7 @@
                 updatePlayersGrid([]); // Vider la grille
                 // ⚠️ NE PAS appeler resetQuestionDisplay() ici pour garder le panel de fin
                 refreshStats();
+                toggleSettingsAccess(true); // 🆕 Réactiver les paramètres
             });
         }
 
@@ -2207,6 +2600,7 @@ svgElement.appendChild(path);
                 // 🆕 Si on ouvre le lobby, reset l'affichage de fin de partie
                 if (data.isActive) {
                     resetQuestionDisplay();
+                    toggleSettingsAccess(true); // Débloquer les paramètres
                 }
                 
                 refreshStats();
@@ -2247,6 +2641,7 @@ svgElement.appendChild(path);
                 const data = await response.json();
                 
                 if (data.success) {
+                    toggleSettingsAccess(false); // Bloquer les paramètres
                     refreshStats();
                 }
             } catch (error) {
@@ -2313,8 +2708,7 @@ svgElement.appendChild(path);
                 const data = await response.json();
                 if (data.success) {
                     console.log('✅ Question suivante envoyée');
-                    
-                    
+
                     // 🆕 Switch automatique vers l'onglet "Question en cours"
                     switchTab('question');
                     // 🆕 Garder le visuel bloqué pendant 7 secondes (durée du timer)
@@ -2332,6 +2726,108 @@ svgElement.appendChild(path);
             }
         }
 
+        // ============ GAME SETTINGS ============
+        function setLives(lives) {
+            if (isGameInProgress()) return;
+            
+            gameSettings.lives = lives;
+            
+            // Update UI
+            document.querySelectorAll('.lives-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`lives-${lives}`).classList.add('active');
+            
+            // 🆕 Utiliser la route spécifique /admin/set-lives
+            fetch('/admin/set-lives', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ lives: lives })
+            }).then(response => response.json())
+            .then(data => console.log('✅ Vies synchronisées:', data))
+            .catch(err => console.error('❌ Erreur sync vies:', err));
+            
+            console.log(`✅ Vies définies: ${lives}`);
+        }
+
+        function setTime(seconds) {
+            if (isGameInProgress()) return;
+            
+            gameSettings.timePerQuestion = parseInt(seconds);
+            
+            // 🆕 Émettre vers le serveur pour synchroniser avec les clients
+            fetch('/admin/update-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ lives: gameSettings.lives, timePerQuestion: gameSettings.timePerQuestion })
+            }).then(response => response.json())
+            .then(data => console.log('✅ Paramètres synchronisés'))
+            .catch(err => console.error('❌ Erreur sync paramètres:', err));
+            
+            console.log(`✅ Temps défini: ${seconds}s`);
+        }
+
+        function isGameInProgress() {
+            // Check if game is in progress (disable settings)
+            const startCard = document.getElementById('startGameCard');
+            return !startCard.classList.contains('game-active') && 
+                   !startCard.classList.contains('disabled');
+        }
+
+        function toggleSettingsAccess(enabled) {
+            const settingsSection = document.getElementById('gameSettings');
+            const livesButtons = document.querySelectorAll('.lives-btn');
+            const timeSelect = document.getElementById('timeSelect');
+            
+            if (enabled) {
+                settingsSection.classList.remove('disabled');
+                livesButtons.forEach(btn => btn.disabled = false);
+                timeSelect.disabled = false;
+            } else {
+                settingsSection.classList.add('disabled');
+                livesButtons.forEach(btn => btn.disabled = true);
+                timeSelect.disabled = true;
+            }
+        }
+
+        // ============ DATABASE STATS ============
+        async function loadDatabaseStats() {
+            try {
+                const response = await fetch('/admin/db-stats', {
+                    credentials: 'same-origin'
+                });
+                
+                if (!response.ok) {
+                    console.error('❌ Erreur chargement stats DB');
+                    return;
+                }
+                
+                const stats = await response.json();
+                
+                // Vérifier que les éléments existent avant de les modifier
+                const dbTotalQuestions = document.getElementById('dbTotalQuestions');
+                const dbTotalSeries = document.getElementById('dbTotalSeries');
+                const dbVeryEasy = document.getElementById('dbVeryEasy');
+                const dbEasy = document.getElementById('dbEasy');
+                const dbMedium = document.getElementById('dbMedium');
+                const dbHard = document.getElementById('dbHard');
+                const dbVeryHard = document.getElementById('dbVeryHard');
+                
+                if (dbTotalQuestions) dbTotalQuestions.textContent = stats.totalQuestions;
+                if (dbTotalSeries) dbTotalSeries.textContent = stats.totalSeries;
+                if (dbVeryEasy) dbVeryEasy.textContent = stats.byDifficulty.veryeasy || 0;
+                if (dbEasy) dbEasy.textContent = stats.byDifficulty.easy || 0;
+                if (dbMedium) dbMedium.textContent = stats.byDifficulty.medium || 0;
+                if (dbHard) dbHard.textContent = stats.byDifficulty.hard || 0;
+                if (dbVeryHard) dbVeryHard.textContent = stats.byDifficulty.veryhard || 0;
+                
+                console.log('✅ Stats DB chargées:', stats);
+            } catch (error) {
+                console.error('❌ Erreur loadDatabaseStats:', error);
+            }
+        }
         function refreshPage() {
             location.reload();
         }
@@ -2475,6 +2971,7 @@ svgElement.appendChild(path);
 
         // ============ INIT ============
         checkAuth();
+        loadDatabaseStats(); // Charger les stats DB au démarrage
     </script>
 </body>
 </html>

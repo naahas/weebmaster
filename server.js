@@ -125,7 +125,7 @@ app.get('/game/state', (req, res) => {
     let timeRemaining = null;
     if (gameState.questionStartTime && gameState.inProgress) {
         const elapsed = Math.floor((Date.now() - gameState.questionStartTime) / 1000);
-        timeRemaining = Math.max(0, 7 - elapsed);
+        timeRemaining = Math.max(0, gameState.questionTime - elapsed);
     }
 
     // BUG FIX: Inclure la liste des joueurs pour l'admin  
@@ -145,9 +145,11 @@ app.get('/game/state', (req, res) => {
         playerCount: gameState.players.size,
         currentQuestion: gameState.currentQuestion,
         timeRemaining: timeRemaining,
-        players: playersData, 
+        players: playersData, // BUG FIX: Liste complete des joueurs
         showResults: gameState.showResults,
         lastQuestionResults: gameState.lastQuestionResults,
+        lives: gameState.lives, // 🆕 Paramètres configurables
+        questionTime: gameState.questionTime
     });
 });
 
@@ -172,8 +174,11 @@ const gameState = {
     questionStartTime: null,      // Timestamp du début de la question
     answers: new Map(),           // Map<socketId, answerData>
     gameStartTime: null,          // Timestamp du début du jeu
-    showResults: false,           // M-pM-^_M-^FM-^U Afficher les rM-CM-)sultats de la derniM-CM-^Gre question
-    lastQuestionResults: null     // M-pM-^_M-^FM-^U RM-CM-)sultats de la derniM-CM-^Gre question
+    showResults: false,           // Afficher les résultats de la dernière question
+    lastQuestionResults: null,    // Résultats de la dernière question
+    // 🆕 Paramètres configurables
+    lives: 3,                     // Nombre de vies par défaut
+    questionTime: 7               // Temps par question par défaut
 };
 
 // ============================================
@@ -266,7 +271,10 @@ app.post('/admin/toggle-game', (req, res) => {
         gameState.inProgress = false;
         gameState.currentGameId = null;
         
-        io.emit('game-activated');
+        io.emit('game-activated', {
+            lives: gameState.lives,
+            questionTime: gameState.questionTime
+        });
     } else {
         console.log('❌ Jeu désactivé');
         
@@ -290,6 +298,91 @@ app.post('/admin/toggle-game', (req, res) => {
     }
 
     res.json({ isActive: gameState.isActive });
+});
+
+// 🆕 Mettre à jour les paramètres du jeu (vies et temps)
+app.post('/admin/update-settings', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    const { lives, timePerQuestion } = req.body;
+
+    if (lives) {
+        gameState.lives = parseInt(lives);
+    }
+    if (timePerQuestion) {
+        gameState.questionTime = parseInt(timePerQuestion);
+    }
+
+    console.log(`⚙️ Paramètres mis à jour: ${gameState.lives}❤️ - ${gameState.questionTime}s`);
+
+    // Notifier tous les clients des nouveaux paramètres
+    io.emit('game-config-updated', {
+        lives: gameState.lives,
+        questionTime: gameState.questionTime
+    });
+
+    res.json({ 
+        success: true, 
+        lives: gameState.lives, 
+        questionTime: gameState.questionTime 
+    });
+});
+
+// 🆕 Route séparée pour changer les vies
+app.post('/admin/set-lives', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    const { lives } = req.body;
+    gameState.lives = parseInt(lives);
+
+    console.log(`⚙️ Vies mises à jour: ${gameState.lives}❤️`);
+
+    // 🔥 Mettre à jour les vies de tous les joueurs déjà connectés dans le lobby
+    if (!gameState.inProgress && gameState.players.size > 0) {
+        gameState.players.forEach(player => {
+            player.lives = gameState.lives;
+        });
+
+        // Notifier l'admin pour rafraîchir la grille joueurs
+        io.emit('lobby-update', {
+            playerCount: gameState.players.size,
+            lives: gameState.lives,
+            questionTime: gameState.questionTime,
+            players: Array.from(gameState.players.values()).map(p => ({
+                twitchId: p.twitchId,
+                username: p.username,
+                lives: p.lives
+            }))
+        });
+
+        console.log(`✅ Vies mises à jour pour ${gameState.players.size} joueur(s) dans le lobby`);
+    }
+
+    res.json({ success: true, lives: gameState.lives });
+});
+
+// 🆕 Route séparée pour changer le temps par question
+app.post('/admin/set-time', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    const { time } = req.body;
+    gameState.questionTime = parseInt(time);
+
+    console.log(`⚙️ Temps par question mis à jour: ${gameState.questionTime}s`);
+
+    // Notifier tous les clients du nouveau temps
+    io.emit('game-config-updated', {
+        lives: gameState.lives,
+        questionTime: gameState.questionTime
+    });
+
+    res.json({ success: true, questionTime: gameState.questionTime });
 });
 
 // Démarrer une partie
@@ -323,11 +416,11 @@ app.post('/admin/start-game', async (req, res) => {
         
         // Initialiser les joueurs
         gameState.players.forEach(player => {
-            player.lives = 3;
+            player.lives = gameState.lives;  // 🆕 Utiliser les vies configurées
             player.correctAnswers = 0;
         });
 
-        console.log(`🎮 Partie démarrée avec ${totalPlayers} joueurs`);
+        console.log(`🎮 Partie démarrée avec ${totalPlayers} joueurs - ${gameState.lives}❤️ - ${gameState.questionTime}s`);
         
         // 🆕 Envoyer des infos différentes selon si le joueur participe ou non
         io.sockets.sockets.forEach((socket) => {
@@ -363,8 +456,8 @@ app.post('/admin/next-question', async (req, res) => {
     // BUG 2 FIX: Bloquer si une question est déjà en cours (timer actif)
     if (gameState.questionStartTime && gameState.currentQuestion) {
         const elapsed = Math.floor((Date.now() - gameState.questionStartTime) / 1000);
-        if (elapsed < 7) {
-            const timeRemaining = 7 - elapsed;
+        if (elapsed < gameState.questionTime) {
+            const timeRemaining = gameState.questionTime - elapsed;
             return res.status(400).json({ 
                 error: 'Une question est déjà en cours',
                 timeRemaining: timeRemaining,
@@ -419,7 +512,7 @@ app.post('/admin/next-question', async (req, res) => {
             answers: finalAnswers.map(a => a.text), // 🆕 Seulement le texte
             serie: question.serie,
             difficulty: question.difficulty,
-            timeLimit: 7
+            timeLimit: gameState.questionTime
         };
 
         // 🆕 Sauvegarder la question complète avec le NOUVEL index de la bonne réponse
@@ -437,12 +530,12 @@ app.post('/admin/next-question', async (req, res) => {
 
         io.emit('new-question', questionData);
         
-        // Auto-révéler après 7 secondes avec le nouvel index
+        // Auto-révéler après le temps configuré avec le nouvel index
         setTimeout(() => {
             if (gameState.inProgress) {
                 revealAnswers(newCorrectIndex); // 🆕 Utiliser le nouvel index
             }
-        }, 7000);
+        }, gameState.questionTime * 1000);
 
         res.json({ success: true, question: questionData });
     } catch (error) {
@@ -451,6 +544,7 @@ app.post('/admin/next-question', async (req, res) => {
     }
 });
 
+// Fonction pour révéler les réponses
 // Fonction pour révéler les réponses
 function revealAnswers(correctAnswer) {
     const stats = {
@@ -462,6 +556,20 @@ function revealAnswers(correctAnswer) {
 
     let eliminatedThisRound = 0;
     const playersDetails = []; // 🆕 Détails pour l'admin
+    
+    // 🆕 NOUVEAU : Détecter si tous les joueurs en vie ont 1 vie et vont tous perdre
+    const alivePlayers = getAlivePlayers();
+    const allHaveOneLife = alivePlayers.every(p => p.lives === 1);
+    let allWillLose = false;
+    
+    if (allHaveOneLife && alivePlayers.length > 1) {
+        // Vérifier si tous vont perdre (personne n'a la bonne réponse)
+        const someoneCorrect = Array.from(alivePlayers).some(player => {
+            const playerAnswer = gameState.answers.get(player.socketId);
+            return playerAnswer && playerAnswer.answer === correctAnswer;
+        });
+        allWillLose = !someoneCorrect;
+    }
 
     gameState.players.forEach((player, socketId) => {
         let status = 'afk';
@@ -472,10 +580,13 @@ function revealAnswers(correctAnswer) {
             stats.livesDistribution[0]++;
             status = 'eliminated';
         } else if (!playerAnswer) {
-            // AFK - perd une vie
+            // AFK
             stats.afk++;
-            player.lives--;
-            if (player.lives === 0) eliminatedThisRound++;
+            // 🆕 Ne pas perdre de vie si tout le monde perdrait
+            if (!allWillLose) {
+                player.lives--;
+                if (player.lives === 0) eliminatedThisRound++;
+            }
             status = 'afk';
         } else if (playerAnswer.answer === correctAnswer) {
             // Bonne réponse
@@ -484,10 +595,13 @@ function revealAnswers(correctAnswer) {
             status = 'correct';
             isCorrect = true;
         } else {
-            // Mauvaise réponse - perd une vie
+            // Mauvaise réponse
             stats.wrong++;
-            player.lives--;
-            if (player.lives === 0) eliminatedThisRound++;
+            // 🆕 Ne pas perdre de vie si tout le monde perdrait
+            if (!allWillLose) {
+                player.lives--;
+                if (player.lives === 0) eliminatedThisRound++;
+            }
             status = 'wrong';
         }
 
@@ -506,7 +620,7 @@ function revealAnswers(correctAnswer) {
         });
     });
 
-    const alivePlayers = getAlivePlayers();
+    const alivePlayersAfter = getAlivePlayers();
 
     // 🆕 Créer le tableau playersData pour l'admin
     const playersData = Array.from(gameState.players.values()).map(player => ({
@@ -521,9 +635,10 @@ function revealAnswers(correctAnswer) {
         correctAnswer,
         stats,
         eliminatedCount: eliminatedThisRound,
-        remainingPlayers: alivePlayers.length,
+        remainingPlayers: alivePlayersAfter.length,
         players: playersDetails,
-        playersData: playersData
+        playersData: playersData,
+        allWillLose: allWillLose // 🆕 Indiquer si c'était un cas spécial
     };
     
     gameState.showResults = true;
@@ -533,8 +648,8 @@ function revealAnswers(correctAnswer) {
 
 
     // Vérifier fin de partie
-    if (alivePlayers.length <= 1) {
-        endGame(alivePlayers[0]);
+    if (alivePlayersAfter.length <= 1) {
+        endGame(alivePlayersAfter[0]);
     }
 }
 
@@ -626,6 +741,78 @@ app.get('/admin/stats', async (req, res) => {
     }
 });
 
+// Route pour les stats de la base de données
+app.get('/admin/db-stats', async (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    try {
+        const allQuestions = await db.getAllQuestions();
+        
+        // Compter les questions par difficulté
+        const byDifficulty = {
+            veryeasy: 0,
+            easy: 0,
+            medium: 0,
+            hard: 0,
+            veryhard: 0
+        };
+        
+        const seriesSet = new Set();
+        
+        allQuestions.forEach(q => {
+            if (byDifficulty.hasOwnProperty(q.difficulty)) {
+                byDifficulty[q.difficulty]++;
+            }
+            if (q.serie) {
+                seriesSet.add(q.serie);
+            }
+        });
+        
+        res.json({
+            totalQuestions: allQuestions.length,
+            totalSeries: seriesSet.size,
+            byDifficulty: byDifficulty
+        });
+    } catch (error) {
+        console.error('❌ Erreur db-stats:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+// Route pour mettre à jour les paramètres du jeu
+app.post('/admin/update-settings', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+    
+    const { lives, timePerQuestion } = req.body;
+    
+    if (!lives || !timePerQuestion) {
+        return res.status(400).json({ error: 'Paramètres invalides' });
+    }
+    
+    // Mettre à jour les paramètres du jeu
+    gameSettings.lives = parseInt(lives);
+    gameSettings.timePerQuestion = parseInt(timePerQuestion);
+    
+    // Émettre vers tous les clients connectés
+    io.emit('settings-updated', {
+        lives: gameSettings.lives,
+        timePerQuestion: gameSettings.timePerQuestion
+    });
+    
+    console.log(`✅ Paramètres mis à jour: ${lives} vies, ${timePerQuestion}s`);
+    res.json({ success: true, lives: gameSettings.lives, timePerQuestion: gameSettings.timePerQuestion });
+});
+
+
+
+
+
+
 // ============================================
 // Socket.IO
 // ============================================
@@ -666,7 +853,7 @@ io.on('connection', (socket) => {
             socketId: socket.id,
             twitchId: data.twitchId,
             username: data.username,
-            lives: 3,
+            lives: gameState.lives,  // 🆕 Utiliser les vies configurées
             correctAnswers: 0
         });
 
@@ -674,6 +861,8 @@ io.on('connection', (socket) => {
         
         io.emit('lobby-update', {
             playerCount: gameState.players.size,
+            lives: gameState.lives,  // 🆕 Envoyer les paramètres configurés
+            questionTime: gameState.questionTime,
             players: Array.from(gameState.players.values()).map(p => ({
                 twitchId: p.twitchId,
                 username: p.username,

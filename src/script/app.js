@@ -12,6 +12,9 @@ createApp({
             username: '',
             twitchId: '',
 
+            gameLives: 3,
+            gameTime: 7,
+
             // État du jeu
             isGameActive: false,
             gameInProgress: false,
@@ -101,6 +104,10 @@ createApp({
                 this.isGameActive = state.isActive;
                 this.playerCount = state.playerCount;
                 
+                // 🆕 Restaurer les paramètres configurables
+                if (state.lives) this.gameLives = state.lives;
+                if (state.questionTime) this.gameTime = state.questionTime;
+                
                 // 🆕 Restaurer gameStartedOnServer depuis l'état serveur
                 this.gameStartedOnServer = state.inProgress;
                 
@@ -145,7 +152,7 @@ createApp({
                     // Restaurer le timer avec le temps restant RÉEL
                     if (state.timeRemaining > 0) {
                         this.timeRemaining = state.timeRemaining;
-                        this.timerProgress = (state.timeRemaining / 7) * 100;
+                        this.timerProgress = (state.timeRemaining / this.gameTime) * 100;
                         this.startTimer(state.timeRemaining); // 🆕 Passer le temps restant
                     } else {
                         // Timer écoulé
@@ -234,9 +241,19 @@ createApp({
             });
 
             // Événements du serveur
-            this.socket.on('game-activated', () => {
+            this.socket.on('game-activated', (data) => {
                 this.isGameActive = true;
+                // 🆕 Mettre à jour les paramètres si fournis
+                if (data && data.lives) this.gameLives = data.lives;
+                if (data && data.questionTime) this.gameTime = data.questionTime;
                 this.showNotification('Le jeu est maintenant actif ! 🎮', 'success');
+            });
+
+            // 🆕 Écouter les mises à jour de configuration
+            this.socket.on('game-config-updated', (data) => {
+                this.gameLives = data.lives;
+                this.gameTime = data.questionTime;
+                console.log(`⚙️ Paramètres mis à jour: ${data.lives}❤️ - ${data.questionTime}s`);
             });
 
             this.socket.on('game-deactivated', () => {
@@ -251,7 +268,7 @@ createApp({
                 this.selectedAnswer = null;
                 this.hasAnswered = false;
                 this.showResults = false;
-                this.playerLives = 3;
+                this.playerLives = this.gameLives;  // 🆕 Utiliser gameLives configuré
                 this.playerCount = 0;
                 
                 // Arrêter le timer si actif
@@ -272,6 +289,7 @@ createApp({
                 if (data.isParticipating) {
                     // Le joueur a rejoint le lobby, il participe
                     this.gameInProgress = true;
+                    this.playerLives = this.gameLives;  // 🆕 Utiliser gameLives configuré
                     this.showNotification(`La partie commence avec ${data.totalPlayers} joueurs !`, 'success');
                 } else {
                     // Le joueur n'a pas rejoint ou arrive en cours de partie
@@ -282,6 +300,9 @@ createApp({
 
             this.socket.on('lobby-update', (data) => {
                 this.playerCount = data.playerCount;
+                // 🆕 Mettre à jour les paramètres si fournis
+                if (data.lives) this.gameLives = data.lives;
+                if (data.questionTime) this.gameTime = data.questionTime;
             });
 
             // 🔒 BUG FIX 1: Empêcher l'affichage des questions si non inscrit au lobby
@@ -304,12 +325,16 @@ createApp({
                 this.questionResults = results;
                 this.showResults = true;
 
-                // Mettre à jour les vies du joueur
-                if (this.selectedAnswer && this.selectedAnswer !== results.correctAnswer) {
-                    this.playerLives = Math.max(0, this.playerLives - 1);
-                } else if (!this.selectedAnswer) {
-                    this.playerLives = Math.max(0, this.playerLives - 1);
+                // 🆕 Ne mettre à jour les vies QUE si ce n'est pas un cas où tout le monde perdrait
+                if (!results.allWillLose) {
+                    // Mettre à jour les vies du joueur
+                    if (this.selectedAnswer && this.selectedAnswer !== results.correctAnswer) {
+                        this.playerLives = Math.max(0, this.playerLives - 1);
+                    } else if (!this.selectedAnswer) {
+                        this.playerLives = Math.max(0, this.playerLives - 1);
+                    }
                 }
+                // 🆕 Si allWillLose = true, personne ne perd de vie !
             });
 
             this.socket.on('answer-recorded', () => {
@@ -329,6 +354,13 @@ createApp({
 
             this.socket.on('error', (data) => {
                 this.showNotification(data.message, 'error');
+            });
+
+
+            this.socket.on('settings-updated', (data) => {
+                this.gameLives = data.lives;
+                this.gameTime = data.timePerQuestion;
+                console.log(`⚙️ Paramètres mis à jour: ${data.lives} vies, ${data.timePerQuestion}s`);
             });
         },
 
@@ -364,19 +396,19 @@ createApp({
             });
         },
 
-        startTimer(initialTime = 7) {
+        startTimer(initialTime = null) {
             // Ne pas restart le timer s'il tourne déjà
             if (this.timerInterval) {
                 console.log('⚠️ Timer déjà en cours');
                 return;
             }
 
-            this.timeRemaining = initialTime;
-            this.timerProgress = (initialTime / 7) * 100;
+            this.timeRemaining = initialTime !== null ? initialTime : this.gameTime;
+            this.timerProgress = (initialTime / this.gameTime) * 100;
 
             this.timerInterval = setInterval(() => {
                 this.timeRemaining--;
-                this.timerProgress = (this.timeRemaining / 7) * 100;
+                this.timerProgress = (this.timeRemaining / this.gameTime) * 100;
 
                 if (this.timeRemaining <= 0) {
                     this.stopTimer();
