@@ -1681,6 +1681,14 @@
                             </select>
                         </div>
                     </div>
+
+                    <div class="setting-item">
+                        <label class="setting-label">Nombre de réponses</label>
+                        <div class="lives-selector">
+                            <button class="lives-btn active" onclick="setAnswers(4)" id="answers-4">4</button>
+                            <button class="lives-btn" onclick="setAnswers(6)" id="answers-6">6</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Stats Database -->
@@ -2767,6 +2775,30 @@ svgElement.appendChild(path);
             .catch(err => console.error('❌ Erreur sync paramètres:', err));
             
             console.log(`✅ Temps défini: ${seconds}s`);
+        }
+
+        function setAnswers(count) {
+            if (isGameInProgress()) return;
+            
+            gameSettings.answersCount = count;
+            
+            // Update UI
+            document.querySelectorAll('#answers-4, #answers-6').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`answers-${count}`).classList.add('active');
+            
+            // Envoyer au serveur
+            fetch('/admin/set-answers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ answers: count })
+            }).then(response => response.json())
+            .then(data => console.log('✅ Nombre de réponses synchronisé:', data))
+            .catch(err => console.error('❌ Erreur sync réponses:', err));
+            
+            console.log(`✅ Réponses définies: ${count}`);
         }
 
         function isGameInProgress() {

@@ -158,6 +158,7 @@ app.get('/game/state', (req, res) => {
 // ============================================
 app.use(express.static('src/html'));
 app.use(express.static('src/style'));
+app.use(express.static('src/img'));
 app.use(express.static('src/script'));
 
 
@@ -178,7 +179,8 @@ const gameState = {
     lastQuestionResults: null,    // Résultats de la dernière question
     // 🆕 Paramètres configurables
     lives: 3,                     // Nombre de vies par défaut
-    questionTime: 7               // Temps par question par défaut
+    questionTime: 7,              // Temps par question par défaut
+    answersCount: 4               // Nombre de réponses par défaut (4 ou 6)
 };
 
 // ============================================
@@ -385,6 +387,27 @@ app.post('/admin/set-time', (req, res) => {
     res.json({ success: true, questionTime: gameState.questionTime });
 });
 
+// 🆕 Route séparée pour changer le nombre de réponses
+app.post('/admin/set-answers', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    const { answers } = req.body;
+    gameState.answersCount = parseInt(answers);
+
+    console.log(`⚙️ Nombre de réponses mis à jour: ${gameState.answersCount}`);
+
+    // Notifier tous les clients du nouveau paramètre
+    io.emit('game-config-updated', {
+        lives: gameState.lives,
+        questionTime: gameState.questionTime,
+        answersCount: gameState.answersCount
+    });
+
+    res.json({ success: true, answersCount: gameState.answersCount });
+});
+
 // Démarrer une partie
 app.post('/admin/start-game', async (req, res) => {
     if (!req.session.isAdmin) {
@@ -493,10 +516,11 @@ app.post('/admin/next-question', async (req, res) => {
         // 🆕 Réponses incorrectes (toutes sauf la bonne)
         const wrongAnswers = allAnswers.filter(a => a.index !== question.coanswer);
         
-        // 🆕 Mélanger les mauvaises réponses et prendre 3 au hasard
-        const shuffledWrong = wrongAnswers.sort(() => 0.5 - Math.random()).slice(0, 3);
+        // 🆕 Utiliser le nombre de réponses configuré (4 ou 6)
+        const wrongAnswersNeeded = gameState.answersCount - 1; // -1 car on ajoute la bonne réponse
+        const shuffledWrong = wrongAnswers.sort(() => 0.5 - Math.random()).slice(0, wrongAnswersNeeded);
         
-        // 🆕 Combiner la bonne réponse + 3 mauvaises
+        // 🆕 Combiner la bonne réponse + les mauvaises
         const selectedAnswers = [correctAnswerObj, ...shuffledWrong];
         
         // 🆕 Mélanger les 4 réponses finales
