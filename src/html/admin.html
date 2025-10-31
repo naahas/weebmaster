@@ -1706,6 +1706,9 @@
                 </div>
             </div>
         </div>
+
+
+        
     </div>
 
     <!-- Overlay Backdrop -->
@@ -3001,9 +3004,65 @@ svgElement.appendChild(path);
             statsInterval = setInterval(refreshStats, 3000);
         }
 
+
+        // Gestion du formulaire d'ajout de question
+        document.getElementById('addQuestionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const statusDiv = document.getElementById('addQuestionStatus');
+            statusDiv.style.display = 'none';
+            
+            const formData = {
+                question: document.getElementById('questionText').value,
+                answer1: document.getElementById('answer1').value,
+                answer2: document.getElementById('answer2').value,
+                answer3: document.getElementById('answer3').value,
+                answer4: document.getElementById('answer4').value,
+                answer5: document.getElementById('answer5').value,
+                answer6: document.getElementById('answer6').value,
+                correctAnswer: document.getElementById('correctAnswer').value,
+                serie: document.getElementById('serie').value,
+                difficulty: document.getElementById('difficulty').value
+            };
+            
+            try {
+                const response = await fetch('/admin/add-question', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusDiv.textContent = '✅ Question ajoutée avec succès !';
+                    statusDiv.style.background = 'rgba(16, 185, 129, 0.2)';
+                    statusDiv.style.color = '#10b981';
+                    statusDiv.style.border = '1px solid #10b981';
+                    statusDiv.style.display = 'block';
+                    
+                    // Reset form
+                    document.getElementById('addQuestionForm').reset();
+                    
+                    // Refresh DB stats
+                    loadDatabaseStats();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                statusDiv.textContent = '❌ Erreur: ' + error.message;
+                statusDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+                statusDiv.style.color = '#ef4444';
+                statusDiv.style.border = '1px solid #ef4444';
+                statusDiv.style.display = 'block';
+            }
+        });
+
         // ============ INIT ============
         checkAuth();
         loadDatabaseStats(); // Charger les stats DB au démarrage
     </script>
 </body>
 </html>
+

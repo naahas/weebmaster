@@ -7,7 +7,7 @@ const express = require('express');
 const session = require('express-session');
 const { Server } = require('socket.io');
 const axios = require('axios');
-const { db } = require('./dbs');
+const { db , supabase  } = require('./dbs');
 
 const app = express();
 const PORT = process.env.PORT || 7000;
@@ -180,18 +180,19 @@ const gameState = {
     // 🆕 Paramètres configurables
     lives: 3,                     // Nombre de vies par défaut
     questionTime: 7,              // Temps par question par défaut
-    answersCount: 4               // Nombre de réponses par défaut (4 ou 6)
+    answersCount: 4,              // Nombre de réponses par défaut (4 ou 6)
+    usedQuestionIds: []           // 🆕 NOUVEAU: Tracker les questions déjà utilisées
 };
 
 // ============================================
 // Helpers
 // ============================================
 function getDifficultyForQuestion(questionNumber) {
-    if (questionNumber <= 15) return 'veryeasy';
-    if (questionNumber <= 35) return 'easy';
-    if (questionNumber <= 55) return 'medium';
-    if (questionNumber <= 70) return 'hard';
-    if (questionNumber <= 85) return 'veryhard';
+    if (questionNumber <= 10) return 'veryeasy';
+    if (questionNumber <= 20) return 'easy';
+    if (questionNumber <= 35) return 'medium';
+    if (questionNumber <= 50) return 'hard';
+    if (questionNumber <= 75) return 'veryhard';
     return 'extreme';
 }
 
@@ -272,6 +273,7 @@ app.post('/admin/toggle-game', (req, res) => {
         gameState.gameStartTime = null;
         gameState.inProgress = false;
         gameState.currentGameId = null;
+        gameState.usedQuestionIds = []; // 🆕 RESET: Vider l'historique des questions
         
         io.emit('game-activated', {
             lives: gameState.lives,
@@ -295,6 +297,7 @@ app.post('/admin/toggle-game', (req, res) => {
         gameState.answers.clear();
         gameState.questionStartTime = null;
         gameState.gameStartTime = null;
+        gameState.usedQuestionIds = []; // 🆕 RESET: Vider l'historique des questions
         
         io.emit('game-deactivated');
     }
@@ -436,6 +439,7 @@ app.post('/admin/start-game', async (req, res) => {
         gameState.gameStartTime = Date.now();
         gameState.showResults = false;
         gameState.lastQuestionResults = null;
+        gameState.usedQuestionIds = []; // 🆕 RESET: Vider l'historique des questions au début de partie
         
         // Initialiser les joueurs
         gameState.players.forEach(player => {
@@ -492,13 +496,19 @@ app.post('/admin/next-question', async (req, res) => {
     try {
         gameState.currentQuestionIndex++;
         const difficulty = getDifficultyForQuestion(gameState.currentQuestionIndex);
-        const questions = await db.getRandomQuestions(difficulty, 1);
+        
+        // 🆕 MODIFIÉ: Passer les IDs des questions déjà utilisées
+        const questions = await db.getRandomQuestions(difficulty, 1, gameState.usedQuestionIds);
         
         if (questions.length === 0) {
             return res.status(404).json({ error: 'Aucune question disponible' });
         }
 
         const question = questions[0];
+        
+        // 🆕 NOUVEAU: Ajouter l'ID de la question aux questions utilisées
+        gameState.usedQuestionIds.push(question.id);
+        console.log(`📌 Question ID ${question.id} ajoutée à l'historique (${gameState.usedQuestionIds.length} questions utilisées)`);
         
         // 🆕 Récupérer toutes les réponses disponibles (filtrer les null)
         const allAnswers = [
@@ -728,6 +738,7 @@ async function endGame(winner) {
         gameState.gameStartTime = null; // 🆕 Reset game start time
         gameState.players.clear();
         gameState.answers.clear();
+        gameState.usedQuestionIds = []; // 🆕 RESET: Vider l'historique des questions
 
         // 🆕 Fermer automatiquement le lobby à la fin de la partie
         gameState.isActive = false;
@@ -833,8 +844,42 @@ app.post('/admin/update-settings', (req, res) => {
 });
 
 
+// Route pour ajouter une question
+app.post('/admin/add-question', async (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
 
+    try {
+        const { question, answer1, answer2, answer3, answer4, answer5, answer6, correctAnswer, serie, difficulty } = req.body;
 
+        // 🆕 Utiliser supabase directement
+        const { data, error } = await supabase
+            .from('questions')
+            .insert({
+                question: question,
+                answer1: answer1,
+                answer2: answer2,
+                answer3: answer3,
+                answer4: answer4,
+                answer5: answer5,
+                answer6: answer6,
+                coanswer: parseInt(correctAnswer),
+                serie: serie,
+                difficulty: difficulty
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        console.log('✅ Question ajoutée:', data.id);
+        res.json({ success: true, question: data });
+    } catch (error) {
+        console.error('❌ Erreur ajout question:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 
 
 // ============================================
@@ -1000,6 +1045,13 @@ io.on('connection', (socket) => {
         // 🆕 Notifier l'admin en temps réel qu'un joueur a répondu
         io.emit('answer-submitted', {
             socketId: socket.id,
+            answeredCount: gameState.answers.size,
+            totalPlayers: gameState.players.size
+        });
+
+        // 🆕 Notifier TOUS les joueurs qu'un joueur a répondu
+        io.emit('player-answered', {
+            username: player.username,
             answeredCount: gameState.answers.size,
             totalPlayers: gameState.players.size
         });

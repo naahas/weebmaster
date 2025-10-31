@@ -1664,3 +1664,124 @@ body {
 .eliminated-notice {
     animation: fadeInScale 0.5s ease-out 0.3s backwards;
 }
+
+/* ============================================
+   NOTIFICATIONS RÉPONSE JOUEUR - 2 TRAJECTOIRES FLUIDES V3
+   ============================================ */
+.answer-notification {
+    position: fixed;
+    left: 150px; /* 🆕 Un peu plus éloigné des réponses */
+    top: 62%;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: rgba(20, 20, 20, 0.4);
+    backdrop-filter: blur(8px);
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    pointer-events: none;
+    will-change: transform, opacity;
+}
+
+.notif-username {
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--neon-primary);
+    text-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
+}
+
+.notif-text {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 400;
+}
+
+/* 🆕 TRAJECTOIRE 1 - Angle réduit + vitesse ralentie */
+.answer-notification.path1 {
+    animation: curvedPath1 3.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; /* 🆕 3.5s au lieu de 2.8s */
+}
+
+@keyframes curvedPath1 {
+    0% {
+        opacity: 0;
+        transform: translate(-10px, 10px) scale(0.85);
+    }
+    3% {
+        opacity: 0.9;
+        transform: translate(-15px, -5px) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-30px, -220px) scale(0.85); /* 🆕 -30px au lieu de -50px */
+    }
+}
+
+/* 🆕 TRAJECTOIRE 2 - Angle encore plus réduit */
+.answer-notification.path2 {
+    animation: curvedPath2 3.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes curvedPath2 {
+    0% {
+        opacity: 0;
+        transform: translate(10px, 10px) scale(0.85);
+    }
+    3% {
+        opacity: 0.9;
+        transform: translate(20px, -5px) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(60px, -200px) scale(0.85); /* 🆕 60px au lieu de 100px */
+    }
+}
+
+/* Responsive mobile */
+@media (max-width: 614px) {
+    .answer-notification {
+        left: 100px; /* 🆕 Ajusté */
+        top: 58%;
+        padding: 6px 12px;
+    }
+    
+    .notif-username {
+        font-size: 0.7rem;
+    }
+    
+    .notif-text {
+        font-size: 0.65rem;
+    }
+    
+    @keyframes curvedPath1 {
+        0% {
+            opacity: 0;
+            transform: translate(-8px, 8px) scale(0.85);
+        }
+        3% {
+            opacity: 0.9;
+            transform: translate(-12px, -4px) scale(1);
+        }
+        100% {
+            opacity: 0;
+            transform: translate(-20px, -150px) scale(0.85); /* 🆕 Angle réduit */
+        }
+    }
+    
+    @keyframes curvedPath2 {
+        0% {
+            opacity: 0;
+            transform: translate(8px, 8px) scale(0.85);
+        }
+        3% {
+            opacity: 0.9;
+            transform: translate(15px, -4px) scale(1);
+        }
+        100% {
+            opacity: 0;
+            transform: translate(70px, -140px) scale(0.85); /* 🆕 Angle réduit */
+        }
+    }
+}

@@ -362,6 +362,36 @@ createApp({
                 this.gameTime = data.timePerQuestion;
                 console.log(`⚙️ Paramètres mis à jour: ${data.lives} vies, ${data.timePerQuestion}s`);
             });
+
+            // 🆕 Écouter quand un joueur répond
+            this.socket.on('player-answered', (data) => {
+                if (data.username !== this.username) {
+                    this.showAnswerNotification(data.username);
+                }
+                
+            });
+        },
+
+        // 🆕 Afficher la notification quand un joueur répond
+        showAnswerNotification(username) {
+            const notification = document.createElement('div');
+            notification.className = 'answer-notification';
+            
+            // 🆕 Choisir aléatoirement une trajectoire (1 ou 2)
+            const randomPath = Math.random() < 0.5 ? 'path1' : 'path2';
+            notification.classList.add(randomPath);
+            
+            notification.innerHTML = `
+                <span class="notif-username">${username}</span>
+                <span class="notif-text">a répondu</span>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Suppression après l'animation
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 3000);
         },
 
         // ========== Lobby ==========

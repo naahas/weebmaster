@@ -90,12 +90,22 @@ const db = {
         return data;
     },
 
-    async getRandomQuestions(difficulty, count = 1) {
+    // 🆕 MODIFIÉ: Éviter les questions en double
+    async getRandomQuestions(difficulty, count = 1, excludeIds = []) {
         const questions = await this.getQuestionsByDifficulty(difficulty);
         if (!questions || questions.length === 0) return [];
 
+        // 🆕 Filtrer les questions déjà utilisées
+        const availableQuestions = questions.filter(q => !excludeIds.includes(q.id));
+        
+        // Si toutes les questions ont été utilisées, réinitialiser
+        if (availableQuestions.length === 0) {
+            console.log('⚠️ Toutes les questions de difficulté "' + difficulty + '" ont été utilisées, réinitialisation...');
+            return this.getRandomQuestions(difficulty, count, []);
+        }
+
         // Shuffle et prendre 'count' questions
-        const shuffled = questions.sort(() => 0.5 - Math.random());
+        const shuffled = availableQuestions.sort(() => 0.5 - Math.random());
         return shuffled.slice(0, count);
     },
 
