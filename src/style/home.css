@@ -28,8 +28,9 @@ body {
     font-family: 'Poppins', sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
-    overflow-x: hidden;
+    overflow: hidden; /* 🆕 Empêcher scroll vertical ET horizontal */
     transition: background 0.3s ease, color 0.3s ease;
+    height: 100vh; /* 🆕 Forcer hauteur viewport */
 }
 
 /* ============================================
@@ -533,11 +534,13 @@ body {
 /* 🆕 Conteneur wrapper avec hauteur fixe pour éviter les décalages */
 .question-container-wrapper {
     min-height: 75vh;
+    max-height: 85vh; /* 🆕 AJOUT - Limiter hauteur max */
     display: flex;
     flex-direction: column;
     width: 100%;
-    justify-content: flex-start; /* 🆕 Alignement en haut pour éviter décalages */
-    padding-top: 8vh; /* 🆕 Espacement fixe en haut pour centrage visuel */
+    justify-content: flex-start;
+    padding-top: 4vh; /* 🆕 Réduit de 8vh à 4vh pour mobile */
+    overflow: hidden; /* 🆕 AJOUT - Empêcher scroll interne */
 }
 
 .timer-circle-container {
@@ -1405,8 +1408,13 @@ body {
    RESPONSIVE
    ============================================ */
 @media (max-width: 614px) {
+
+    .btn-twitch {
+        padding: 11px 20px; /* 🆕 Réduire padding */
+        font-size: 0.8rem; /* 🆕 Réduire taille texte */
+    }
     .logo-title {
-        font-size: 2.0rem;
+        font-size: 1.6rem;
     }
 
     .subtitle {
@@ -1418,7 +1426,7 @@ body {
     .question-card,
     .results-card,
     .gameover-card {
-        padding: 20px;
+        padding: 16px;
     }
 
     .lobby-stats {
@@ -1426,15 +1434,15 @@ body {
     }
 
     .stat-box-single {
-        padding: 16px 30px;
+        padding: 12px 24px; /* 🆕 Réduit */
     }
 
     .stat-content {
-        gap: 12px;
+        gap: 10px; /* 🆕 Réduit */
     }
 
     .stat-number {
-        font-size: 2.5rem;
+        font-size: 2.0rem; /* 🆕 Réduit de 2.5rem à 2.0rem */
     }
 
     .stat-icon {
@@ -1458,19 +1466,21 @@ body {
     }
 
     .question-text {
-        font-size: 0.88rem;
-        padding: 0 8.0px;
+        font-size: 0.95rem; /* 🆕 Légèrement plus gros pour lisibilité */
+        padding: 0 12px; /* 🆕 Plus de padding horizontal */
+        line-height: 1.3; /* 🆕 Réduire hauteur de ligne */
     }
 
     .answers-grid {
         grid-template-columns: 1fr;
         max-width: 100%;
-        gap: 9.6px;
+        gap: 8px; /* 🆕 Réduit de 9.6px à 8px */
+        overflow-y: visible; /* 🆕 Forcer visible */
     }
 
     .answer-btn {
-        padding: 12px 16px;
-        min-height: 56px;
+        padding: 10px 14px; /* 🆕 Réduit de 12px 16px */
+        min-height: 50px; /* 🆕 Réduit de 56px à 50px */
     }
 
     .answer-number {
@@ -1489,9 +1499,18 @@ body {
 
     .player-hud {
         flex-direction: row;
-        flex-wrap: wrap;
-        gap: 8.0px;
-        padding: 9.6px 12px;
+        flex-wrap: nowrap; /* 🆕 Empêcher wrap */
+        gap: 6px; /* 🆕 Réduit de 8px */
+        padding: 8px 10px; /* 🆕 Réduit */
+        margin-bottom: 12px; /* 🆕 Réduit de 16px */
+    }
+
+    .hud-label {
+        font-size: 0.5rem; /* 🆕 Encore plus petit */
+    }
+
+    .hud-value {
+        font-size: 0.7rem; /* 🆕 Réduit */
     }
 
     .hud-item {
@@ -1502,6 +1521,16 @@ body {
     .game-stats {
         flex-direction: column;
         gap: 16px;
+    }
+
+    .game-section {
+        max-width: 100%;
+        margin-top: 0; /* 🆕 Supprimer margin négatif sur mobile */
+        padding: 8px; /* 🆕 Réduire padding */
+    }
+
+    .main-container {
+        padding: 8px; /* 🆕 Réduire padding du container principal */
     }
 }
 /* ============================================
