@@ -188,11 +188,11 @@ const gameState = {
 // Helpers
 // ============================================
 function getDifficultyForQuestion(questionNumber) {
-    if (questionNumber <= 10) return 'veryeasy';
-    if (questionNumber <= 20) return 'easy';
-    if (questionNumber <= 35) return 'medium';
-    if (questionNumber <= 50) return 'hard';
-    if (questionNumber <= 75) return 'veryhard';
+    if (questionNumber <= 7) return 'veryeasy';
+    if (questionNumber <= 15) return 'easy';
+    if (questionNumber <= 25) return 'medium';
+    if (questionNumber <= 35) return 'hard';
+    if (questionNumber <= 45) return 'veryhard';
     return 'extreme';
 }
 
