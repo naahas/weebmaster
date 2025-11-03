@@ -65,6 +65,10 @@ const db = {
             .single();
 
         if (error) throw error;
+
+        // 🆕 Vérifier et débloquer les badges automatiquement
+        await this.checkAndUnlockBadges(twitchId);
+
         return data;
     },
 
@@ -183,7 +187,188 @@ const db = {
 
         if (error) throw error;
         return data;
+    },
+
+    // ========== TITLES ==========
+    async getAllTitles() {
+        const { data, error } = await supabase
+            .from('titles')
+            .select('*')
+            .order('requirement_value', { ascending: true });
+
+        if (error) throw error;
+        return data;
+    },
+
+    async getTitleById(titleId) {
+        const { data, error } = await supabase
+            .from('titles')
+            .select('*')
+            .eq('id', titleId)
+            .single();
+
+        if (error && error.code !== 'PGRST116') throw error;
+        return data;
+    },
+
+    async getUserUnlockedTitles(twitchId) {
+        const user = await this.getUserByTwitchId(twitchId);
+        if (!user) return [];
+
+        const allTitles = await this.getAllTitles();
+        
+        // Filtrer les titres débloqués selon les stats du joueur
+        const unlockedTitles = allTitles.filter(title => {
+            if (title.title_type === 'games_played') {
+                return user.total_games_played >= title.requirement_value;
+            }
+            if (title.title_type === 'games_won') {
+                return user.total_victories >= title.requirement_value;
+            }
+            return false;
+        });
+
+        return unlockedTitles;
+    },
+
+    async updateUserTitle(twitchId, titleId) {
+        // Vérifier que le titre existe
+        const title = await this.getTitleById(titleId);
+        if (!title) throw new Error('Titre inexistant');
+
+        // Vérifier que l'utilisateur a débloqué ce titre
+        const unlockedTitles = await this.getUserUnlockedTitles(twitchId);
+        const hasTitle = unlockedTitles.some(t => t.id === titleId);
+        
+        if (!hasTitle) throw new Error('Titre non débloqué');
+
+        // Mettre à jour le titre actuel
+        const { data, error } = await supabase
+            .from('users')
+            .update({ current_title_id: titleId })
+            .eq('twitch_id', twitchId)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
+
+    // ========== BADGES ==========
+    async getUserBadges(twitchId) {
+        const { data, error } = await supabase
+            .from('badges')
+            .select('*')
+            .eq('user_twitch_id', twitchId)
+            .order('badge_tier', { ascending: true });
+
+        if (error) throw error;
+        return data || [];
+    },
+
+    async unlockBadge(twitchId, badgeType, badgeTier) {
+        // Vérifier si le badge existe déjà
+        const { data: existing } = await supabase
+            .from('badges')
+            .select('*')
+            .eq('user_twitch_id', twitchId)
+            .eq('badge_type', badgeType)
+            .eq('badge_tier', badgeTier)
+            .single();
+
+        if (existing) return existing; // Déjà débloqué
+
+        // Débloquer le badge
+        const { data, error } = await supabase
+            .from('badges')
+            .insert({
+                user_twitch_id: twitchId,
+                badge_type: badgeType,
+                badge_tier: badgeTier
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
+        console.log(`🏅 Badge débloqué: ${badgeType} tier ${badgeTier} pour ${twitchId}`);
+        return data;
+    },
+
+    async checkAndUnlockBadges(twitchId) {
+        const user = await this.getUserByTwitchId(twitchId);
+        if (!user) return;
+
+        const tiers = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+        const newBadges = [];
+
+        // Vérifier badges "games_played"
+        for (const tier of tiers) {
+            if (user.total_games_played >= tier) {
+                try {
+                    const badge = await this.unlockBadge(twitchId, 'games_played', tier);
+                    if (badge) newBadges.push(badge);
+                } catch (err) {
+                    // Badge déjà débloqué, ignorer
+                }
+            }
+        }
+
+        // Vérifier badges "games_won"
+        for (const tier of tiers) {
+            if (user.total_victories >= tier) {
+                try {
+                    const badge = await this.unlockBadge(twitchId, 'games_won', tier);
+                    if (badge) newBadges.push(badge);
+                } catch (err) {
+                    // Badge déjà débloqué, ignorer
+                }
+            }
+        }
+
+        return newBadges;
+    },
+
+    // ========== LEADERBOARD ==========
+    async getLeaderboard(limit = 10) {
+        const { data, error } = await supabase
+            .from('users')
+            .select(`
+                twitch_id,
+                username,
+                total_victories,
+                total_games_played,
+                current_title_id,
+                titles:current_title_id (
+                    title_name
+                )
+            `)
+            .gte('total_games_played', 5) // Minimum 5 parties
+            .order('total_victories', { ascending: false })
+            .order('total_games_played', { ascending: true }) // Départager par nombre de parties
+            .limit(limit);
+
+        if (error) throw error;
+
+        // Calculer le win rate
+        return (data || []).map(user => ({
+            ...user,
+            win_rate: user.total_games_played > 0 
+                ? ((user.total_victories / user.total_games_played) * 100).toFixed(1)
+                : '0.0',
+            title_name: user.titles?.title_name || 'Novice'
+        }));
     }
 };
+
+
+
+
+
+
+
+
+
+
+
 
 module.exports = { supabase, db };

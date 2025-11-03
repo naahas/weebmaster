@@ -25,6 +25,16 @@ createApp({
             playerCount: 0,
             hasJoined: false,
 
+
+            // Profil & Badges
+            showProfileModal: false,
+            currentTab: 'profile',
+            profileData: null,
+
+            // Leaderboard
+            leaderboard: [],
+            leaderboardLoaded: false,
+
             // Question en cours
             currentQuestion: null,
             currentQuestionNumber: 0,
@@ -73,6 +83,7 @@ createApp({
     async mounted() {
         await this.checkAuth();
         await this.restoreGameState();
+        await this.loadLeaderboard();
         this.initParticles();
         this.initSocket();
         this.loadTheme();
@@ -92,6 +103,78 @@ createApp({
                 }
             } catch (error) {
                 console.error('Erreur vérification auth:', error);
+            }
+        },
+
+        // ========== Profil & Badges ==========
+        async openProfile() {
+            if (!this.isAuthenticated) return;
+            
+            try {
+                const response = await fetch(`/profile/${this.twitchId}`);
+                const data = await response.json();
+                
+                this.profileData = data;
+                this.showProfileModal = true;
+                this.currentTab = 'profile';
+                
+                console.log('✅ Profil chargé:', data);
+            } catch (error) {
+                console.error('❌ Erreur chargement profil:', error);
+                this.showNotification('Erreur chargement profil', 'error');
+            }
+        },
+
+        closeProfile() {
+            this.showProfileModal = false;
+            this.profileData = null;
+        },
+
+        async equipTitle(titleId) {
+            try {
+                const response = await fetch('/profile/update-title', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        twitchId: this.twitchId,
+                        titleId: titleId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Recharger le profil
+                    await this.openProfile();
+                    this.showNotification('Titre équipé !', 'success');
+                }
+            } catch (error) {
+                console.error('❌ Erreur équipement titre:', error);
+                this.showNotification('Erreur changement titre', 'error');
+            }
+        },
+
+        // ========== Leaderboard ==========
+        async loadLeaderboard() {
+            try {
+                // 🆕 Attendre 1 seconde avant de charger
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const response = await fetch('/leaderboard?limit=10');
+                const data = await response.json();
+                
+                // Arrondir le win rate (pas de décimal)
+                this.leaderboard = data.map(player => ({
+                    ...player,
+                    win_rate: Math.round(parseFloat(player.win_rate))
+                }));
+                
+                // 🆕 Marquer comme chargé
+                this.leaderboardLoaded = true;
+                
+                console.log('✅ Leaderboard chargé:', this.leaderboard);
+            } catch (error) {
+                console.error('❌ Erreur leaderboard:', error);
             }
         },
 
@@ -434,16 +517,30 @@ createApp({
             }
 
             this.timeRemaining = initialTime !== null ? initialTime : this.gameTime;
-            this.timerProgress = (initialTime / this.gameTime) * 100;
+            this.timerProgress = (this.timeRemaining / this.gameTime) * 100;
 
-            this.timerInterval = setInterval(() => {
-                this.timeRemaining--;
-                this.timerProgress = (this.timeRemaining / this.gameTime) * 100;
-
-                if (this.timeRemaining <= 0) {
+            // 🆕 Animation fluide avec requestAnimationFrame
+            const startTime = Date.now();
+            const duration = this.timeRemaining * 1000; // Durée en ms
+            
+            const animate = () => {
+                const elapsed = Date.now() - startTime;
+                const remaining = Math.max(0, duration - elapsed);
+                
+                // 🆕 Mise à jour continue de la progression
+                this.timerProgress = (remaining / (this.gameTime * 1000)) * 100;
+                this.timeRemaining = Math.ceil(remaining / 1000); // Arrondi pour l'affichage du nombre
+                
+                if (remaining > 0) {
+                    requestAnimationFrame(animate);
+                } else {
+                    this.timerProgress = 0;
+                    this.timeRemaining = 0;
                     this.stopTimer();
                 }
-            }, 1000);
+            };
+            
+            requestAnimationFrame(animate);
         },
 
         stopTimer() {
@@ -507,75 +604,46 @@ createApp({
 
         // ========== Particles.js ==========
         initParticles() {
-            const particleColor = this.isDark ? '#FFD700' : '#FF8C00';
-            const lineColor = this.isDark ? '#FFA500' : '#FF8C00';
+    const particleColor = this.isDark ? '#FFD700' : '#FF8C00';
 
-            particlesJS('particles-js', {
-                particles: {
-                    number: {
-                        value: 80,
-                        density: {
-                            enable: true,
-                            value_area: 800
-                        }
-                    },
-                    color: {
-                        value: particleColor
-                    },
-                    shape: {
-                        type: 'circle'
-                    },
-                    opacity: {
-                        value: 0.5,
-                        random: false
-                    },
-                    size: {
-                        value: 3,
-                        random: true
-                    },
-                    line_linked: {
-                        enable: true,
-                        distance: 150,
-                        color: lineColor,
-                        opacity: 0.4,
-                        width: 1
-                    },
-                    move: {
-                        enable: true,
-                        speed: 2,
-                        direction: 'none',
-                        random: false,
-                        straight: false,
-                        out_mode: 'out',
-                        bounce: false
-                    }
-                },
-                interactivity: {
-                    detect_on: 'canvas',
-                    events: {
-                        onhover: {
-                            enable: true,
-                            mode: 'repulse'
-                        },
-                        onclick: {
-                            enable: true,
-                            mode: 'push'
-                        },
-                        resize: true
-                    },
-                    modes: {
-                        repulse: {
-                            distance: 100,
-                            duration: 0.4
-                        },
-                        push: {
-                            particles_nb: 4
-                        }
-                    }
-                },
-                retina_detect: true
-            });
+    particlesJS('particles-js', {
+        particles: {
+            number: { value: 50, density: { enable: true, value_area: 800 } }, // 🆕 +20 lucioles
+            color: { value: ['#FFD700', '#FFA500', '#FF8C00'] },
+            shape: { type: 'circle' },
+            opacity: {
+                value: 0.7, // 🆕 Augmenté de 0.5 à 0.7
+                random: true,
+                anim: { enable: true, speed: 0.8, opacity_min: 0.3, sync: false } // 🆕 Min à 0.3 au lieu de 0.1
+            },
+            size: {
+                value: 4, // 🆕 Augmenté de 3 à 4
+                random: true,
+                anim: { enable: true, speed: 2, size_min: 1, sync: false } // 🆕 Min à 1 au lieu de 0.5
+            },
+            line_linked: { enable: false },
+            move: {
+                enable: true,
+                speed: 0.8, // 🆕 Augmenté de 0.5 à 0.8 (plus vivant)
+                direction: 'none',
+                random: true,
+                straight: false,
+                out_mode: 'bounce'
+            }
         },
+        interactivity: {
+            detect_on: 'canvas',
+            events: {
+                onhover: { enable: true, mode: 'repulse' },
+                onclick: { enable: false }
+            },
+            modes: {
+                repulse: { distance: 120, duration: 0.4 } // 🆕 Distance augmentée
+            }
+        },
+        retina_detect: true
+    });
+},
 
         // ========== Notifications ==========
         showNotification(message, type = 'info') {

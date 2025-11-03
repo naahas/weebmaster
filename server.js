@@ -881,6 +881,102 @@ app.post('/admin/add-question', async (req, res) => {
     }
 });
 
+// ============================================
+// ROUTES PROFIL & BADGES
+// ============================================
+
+// Récupérer le profil complet d'un joueur
+app.get('/profile/:twitchId', async (req, res) => {
+    try {
+        const { twitchId } = req.params;
+        
+        const user = await db.getUserByTwitchId(twitchId);
+        if (!user) {
+            return res.status(404).json({ error: 'Utilisateur non trouvé' });
+        }
+
+        const badges = await db.getUserBadges(twitchId);
+        const unlockedTitles = await db.getUserUnlockedTitles(twitchId);
+        const currentTitle = user.current_title_id 
+            ? await db.getTitleById(user.current_title_id)
+            : await db.getTitleById(1); // Novice par défaut
+
+        res.json({
+            user: {
+                twitch_id: user.twitch_id,
+                username: user.username,
+                total_games_played: user.total_games_played,
+                total_victories: user.total_victories,
+                win_rate: user.total_games_played > 0 
+                    ? ((user.total_victories / user.total_games_played) * 100).toFixed(1)
+                    : '0.0'
+            },
+            badges: {
+                games_played: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(tier => ({
+                    tier,
+                    unlocked: badges.some(b => b.badge_type === 'games_played' && b.badge_tier === tier)
+                })),
+                games_won: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(tier => ({
+                    tier,
+                    unlocked: badges.some(b => b.badge_type === 'games_won' && b.badge_tier === tier)
+                }))
+            },
+            titles: {
+                current: currentTitle,
+                unlocked: unlockedTitles
+            }
+        });
+    } catch (error) {
+        console.error('❌ Erreur profil:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Changer le titre actuel
+app.post('/profile/update-title', async (req, res) => {
+    try {
+        const { twitchId, titleId } = req.body;
+
+        if (!twitchId || !titleId) {
+            return res.status(400).json({ error: 'Paramètres manquants' });
+        }
+
+        const updatedUser = await db.updateUserTitle(twitchId, titleId);
+        const newTitle = await db.getTitleById(titleId);
+
+        res.json({ 
+            success: true, 
+            user: updatedUser,
+            title: newTitle
+        });
+    } catch (error) {
+        console.error('❌ Erreur update titre:', error);
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Récupérer tous les titres disponibles
+app.get('/titles', async (req, res) => {
+    try {
+        const titles = await db.getAllTitles();
+        res.json(titles);
+    } catch (error) {
+        console.error('❌ Erreur titres:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Récupérer le leaderboard
+app.get('/leaderboard', async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 10;
+        const leaderboard = await db.getLeaderboard(limit);
+        res.json(leaderboard);
+    } catch (error) {
+        console.error('❌ Erreur leaderboard:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // ============================================
 // Socket.IO
