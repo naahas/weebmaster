@@ -28,9 +28,8 @@ body {
     font-family: 'Poppins', sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
-    overflow: hidden; /* 🆕 Empêcher scroll vertical ET horizontal */
+    overflow-x: hidden;
     transition: background 0.3s ease, color 0.3s ease;
-    height: 100vh; /* 🆕 Forcer hauteur viewport */
 }
 
 /* ============================================
@@ -196,7 +195,7 @@ body {
 .game-section {
     max-width: 880px;
     width: 100%;
-    margin-top: -20px; /* 🆕 Remonter légèrement */
+    margin-top: -20px;
 }
 
 /* ============================================
@@ -527,24 +526,21 @@ body {
     align-items: center;
     gap: 24px;
     position: relative;
-    flex: 1; /* 🆕 Prend l'espace disponible dans le wrapper */
+    flex: 1;
 }
 
 /* ========== TIMER - Compact en haut à droite ========== */
-/* 🆕 Conteneur wrapper avec hauteur fixe pour éviter les décalages */
 .question-container-wrapper {
     min-height: 75vh;
-    max-height: 85vh; /* 🆕 AJOUT - Limiter hauteur max */
     display: flex;
     flex-direction: column;
     width: 100%;
     justify-content: flex-start;
-    padding-top: 4vh; /* 🆕 Réduit de 8vh à 4vh pour mobile */
-    overflow: hidden; /* 🆕 AJOUT - Empêcher scroll interne */
+    padding-top: 8vh;
 }
 
 .timer-circle-container {
-    display: none !important; /* 🆕 Masquer le timer circulaire */
+    display: none !important;
 }
 
 /* 🆕 Barre de timer horizontale ultra-fine */
@@ -554,14 +550,14 @@ body {
     background: rgba(255, 255, 255, 0.1);
     position: relative;
     margin-top: 12px;
-    margin-bottom: 24px; /* 🆕 Espace fixe en dessous pour alignement constant */
+    margin-bottom: 24px;
     border-radius: 2px;
     overflow: hidden;
     transition: opacity 0.3s ease;
 }
 
 .timer-bar-container.hidden {
-    opacity: 0; /* 🆕 Masquer visuellement mais garder l'espace */
+    opacity: 0;
     pointer-events: none;
 }
 
@@ -694,13 +690,13 @@ body {
 
 /* ========== QUESTION TEXT - Plus petite et haute ========== */
 .question-text {
-    font-size: 1.2rem; /* 🆕 Réduit encore un peu */
+    font-size: 1.2rem;
     font-weight: 600;
     text-align: center;
     color: var(--text-primary);
     max-width: 640px;
-    line-height: 1.4; /* 🆕 Réduit un peu l'interligne */
-    margin: 0 0 1.5rem 0; /* 🆕 Ajout margin-bottom */
+    line-height: 1.4;
+    margin: 0 0 1.5rem 0;
     padding: 0 16px;
 }
 
@@ -711,7 +707,7 @@ body {
     gap: 12px;
     width: 100%;
     max-width: 600px;
-    margin-top: 1.5rem; /* 🆕 Espacement ajusté */
+    margin-top: 1.5rem;
 }
 
 .answers-grid.grid-6 {
@@ -722,14 +718,14 @@ body {
     background: var(--bg-card);
     border: 1.6px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
-    padding: 16px 24px; /* 🆕 Padding ajusté */
+    padding: 16px 24px;
     display: flex;
     align-items: center;
-    justify-content: center; /* 🆕 Centrer le contenu */
+    justify-content: center;
     gap: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
-    text-align: center; /* 🆕 Texte centré */
+    text-align: center;
     font-family: 'Poppins', sans-serif;
     min-height: 64px;
 }
@@ -749,24 +745,24 @@ body {
 
 .answer-btn.disabled {
     opacity: 0.5;
-    cursor: default; /* 🆕 Curseur par défaut au lieu de not-allowed */
+    cursor: default;
 }
 
 .answer-number {
-    display: none !important; /* 🆕 Masquer les numéros */
+    display: none !important;
 }
 
 .answer-text {
-    font-size: 1rem; /* 🆕 Taille augmentée */
+    font-size: 1rem;
     font-weight: 500;
     color: var(--text-primary);
-    text-align: center; /* 🆕 Centré */
-    width: 100%; /* 🆕 Pleine largeur */
+    text-align: center;
+    width: 100%;
 }
 
 /* ========== STATUS RÉPONSE ========== */
 .answer-status {
-    display: none !important; /* 🆕 Masquer l'indicateur vert de validation */
+    display: none !important;
 }
 
 /* ========== ÉLIMINÉ ========== */
@@ -781,11 +777,11 @@ body {
 }
 
 .skull-icon {
-    display: none; /* 🆕 Masquer le skull */
+    display: none;
 }
 
 .eliminated-notice h3 {
-    display: none; /* 🆕 Masquer le titre */
+    display: none;
 }
 
 .eliminated-notice p {
@@ -1273,8 +1269,6 @@ body {
     border-color: var(--success-color);
 }
 
-
-
 .stat-text {
     color: var(--text-primary);
 }
@@ -1405,140 +1399,11 @@ body {
 }
 
 /* ============================================
-   RESPONSIVE
-   ============================================ */
-@media (max-width: 614px) {
-
-    .btn-twitch {
-        padding: 11px 20px; /* 🆕 Réduire padding */
-        font-size: 0.8rem; /* 🆕 Réduire taille texte */
-    }
-    .logo-title {
-        font-size: 1.6rem;
-    }
-
-    .subtitle {
-        font-size: 0.8rem;
-    }
-
-    .info-card,
-    .lobby-card,
-    .question-card,
-    .results-card,
-    .gameover-card {
-        padding: 16px;
-    }
-
-    .lobby-stats {
-        margin: 20px 0;
-    }
-
-    .stat-box-single {
-        padding: 12px 24px; /* 🆕 Réduit */
-    }
-
-    .stat-content {
-        gap: 10px; /* 🆕 Réduit */
-    }
-
-    .stat-number {
-        font-size: 2.0rem; /* 🆕 Réduit de 2.5rem à 2.0rem */
-    }
-
-    .stat-icon {
-        font-size: 2rem;
-    }
-
-    .stat-text {
-        font-size: 0.9rem;
-    }
-
-    /* Question mobile */
-    .timer-circle-container {
-        width: 48px;
-        height: 48px;
-        top: 8.0px;
-        right: 12px;
-    }
-
-    .timer-number {
-        font-size: 1.0rem;
-    }
-
-    .question-text {
-        font-size: 0.95rem; /* 🆕 Légèrement plus gros pour lisibilité */
-        padding: 0 12px; /* 🆕 Plus de padding horizontal */
-        line-height: 1.3; /* 🆕 Réduire hauteur de ligne */
-    }
-
-    .answers-grid {
-        grid-template-columns: 1fr;
-        max-width: 100%;
-        gap: 8px; /* 🆕 Réduit de 9.6px à 8px */
-        overflow-y: visible; /* 🆕 Forcer visible */
-    }
-
-    .answer-btn {
-        padding: 10px 14px; /* 🆕 Réduit de 12px 16px */
-        min-height: 50px; /* 🆕 Réduit de 56px à 50px */
-    }
-
-    .answer-number {
-        width: 28px;
-        height: 28px;
-        font-size: 0.8rem;
-    }
-
-    .answer-text {
-        font-size: 0.72rem;
-    }
-
-    .results-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .player-hud {
-        flex-direction: row;
-        flex-wrap: nowrap; /* 🆕 Empêcher wrap */
-        gap: 6px; /* 🆕 Réduit de 8px */
-        padding: 8px 10px; /* 🆕 Réduit */
-        margin-bottom: 12px; /* 🆕 Réduit de 16px */
-    }
-
-    .hud-label {
-        font-size: 0.5rem; /* 🆕 Encore plus petit */
-    }
-
-    .hud-value {
-        font-size: 0.7rem; /* 🆕 Réduit */
-    }
-
-    .hud-item {
-        flex: 1;
-        min-width: 64px;
-    }
-
-    .game-stats {
-        flex-direction: column;
-        gap: 16px;
-    }
-
-    .game-section {
-        max-width: 100%;
-        margin-top: 0; /* 🆕 Supprimer margin négatif sur mobile */
-        padding: 8px; /* 🆕 Réduire padding */
-    }
-
-    .main-container {
-        padding: 8px; /* 🆕 Réduire padding du container principal */
-    }
-}
-/* ============================================
    RÉSULTATS - Question avec indicateurs visuels
    ============================================ */
 
 .results-view {
-    pointer-events: none; /* Désactiver les clics sur les réponses */
+    pointer-events: none;
 }
 
 .result-answer {
@@ -1546,26 +1411,22 @@ body {
     transition: all 0.4s ease;
 }
 
-/* Réponse correcte - Bordure verte */
 .result-answer.correct {
     border-color: #00ff88 !important;
     background: rgba(0, 255, 136, 0.1) !important;
     box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
 }
 
-/* Réponse incorrecte sélectionnée - Bordure rouge */
 .result-answer.wrong {
     border-color: #ff4757 !important;
     background: rgba(255, 71, 87, 0.1) !important;
     box-shadow: 0 0 20px rgba(255, 71, 87, 0.3);
 }
 
-/* Réponses non sélectionnées - Plus discrètes */
 .result-answer.unselected {
     opacity: 0.4;
 }
 
-/* Icône de résultat (✓ ou ✕) */
 .result-icon {
     position: absolute;
     right: 16px;
@@ -1597,7 +1458,6 @@ body {
     }
 }
 
-/* Stats discrètes des survivants */
 .survivors-count {
     text-align: center;
     margin-top: 24px;
@@ -1605,23 +1465,11 @@ body {
     color: var(--text-secondary);
     font-weight: 500;
 }
+
 /* ============================================
    🆕 ANIMATIONS D'APPARITION DES QUESTIONS
    ============================================ */
 
-/* Keyframes pour fade-in-up */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Keyframes pour fade-in-scale */
 @keyframes fadeInScale {
     from {
         opacity: 0;
@@ -1633,7 +1481,6 @@ body {
     }
 }
 
-/* Appliquer les animations aux éléments de la question */
 .question-card:not(.results-view) .question-badges {
     animation: fadeInUp 0.4s ease-out 0s backwards;
 }
@@ -1646,7 +1493,6 @@ body {
     animation: fadeInScale 0.5s ease-out 0.2s backwards;
 }
 
-/* Animation en cascade pour chaque réponse */
 .question-card:not(.results-view) .answer-btn:nth-child(1) {
     animation: fadeInUp 0.4s ease-out 0.3s backwards;
 }
@@ -1663,12 +1509,10 @@ body {
     animation: fadeInUp 0.4s ease-out 0.6s backwards;
 }
 
-/* Animation pour la barre de timer */
 .timer-bar-container:not(.hidden) {
     animation: fadeInScale 0.3s ease-out 0s backwards;
 }
 
-/* Animation pour les résultats (plus rapide) */
 .question-card.results-view .question-badges {
     animation: fadeInUp 0.3s ease-out 0s backwards;
 }
@@ -1685,7 +1529,6 @@ body {
     animation: fadeInUp 0.4s ease-out 0.5s backwards;
 }
 
-/* Animation pour answer-status et eliminated-notice */
 .answer-status {
     animation: fadeInScale 0.4s ease-out 0.7s backwards;
 }
@@ -1699,7 +1542,7 @@ body {
    ============================================ */
 .answer-notification {
     position: fixed;
-    left: 150px; /* 🆕 Un peu plus éloigné des réponses */
+    left: 150px;
     top: 62%;
     display: flex;
     align-items: center;
@@ -1728,9 +1571,8 @@ body {
     font-weight: 400;
 }
 
-/* 🆕 TRAJECTOIRE 1 - Angle réduit + vitesse ralentie */
 .answer-notification.path1 {
-    animation: curvedPath1 3.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; /* 🆕 3.5s au lieu de 2.8s */
+    animation: curvedPath1 3.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
 @keyframes curvedPath1 {
@@ -1744,11 +1586,10 @@ body {
     }
     100% {
         opacity: 0;
-        transform: translate(-30px, -220px) scale(0.85); /* 🆕 -30px au lieu de -50px */
+        transform: translate(-30px, -220px) scale(0.85);
     }
 }
 
-/* 🆕 TRAJECTOIRE 2 - Angle encore plus réduit */
 .answer-notification.path2 {
     animation: curvedPath2 3.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
@@ -1764,14 +1605,222 @@ body {
     }
     100% {
         opacity: 0;
-        transform: translate(60px, -200px) scale(0.85); /* 🆕 60px au lieu de 100px */
+        transform: translate(60px, -200px) scale(0.85);
     }
 }
 
-/* Responsive mobile */
+/* ============================================
+   RESPONSIVE MOBILE - MODIFICATIONS ICI UNIQUEMENT
+   ============================================ */
 @media (max-width: 614px) {
+    /* Body - Empêcher scroll */
+    body {
+        overflow: hidden;
+        height: 100vh;
+    }
+
+    /* Main container */
+    .main-container {
+        padding: 8px;
+    }
+
+    /* Titre logo */
+    .logo-title {
+        font-size: 2.4rem;
+    }
+
+    .subtitle {
+        font-size: 0.8rem;
+    }
+
+    /* Cards générales */
+    .info-card,
+    .lobby-card,
+    .question-card,
+    .results-card,
+    .gameover-card {
+        padding: 14px;
+        margin-bottom: 10px;
+        border-radius: 12px;
+    }
+
+    /* Lobby spécifique */
+    .lobby-card {
+        padding: 16px 14px;
+    }
+
+    .lobby-header {
+        margin-bottom: 12px;
+    }
+
+    .lobby-header h2 {
+        font-size: 1.0rem;
+        margin-bottom: 0;
+    }
+
+    .lobby-stats {
+        margin: 16px 0;
+    }
+
+    .stat-box-single {
+        padding: 12px 24px;
+    }
+
+    .stat-content {
+        gap: 10px;
+    }
+
+    .stat-number {
+        font-size: 2.0rem;
+    }
+
+    .stat-icon {
+        font-size: 1.8rem;
+    }
+
+    .stat-icon-img {
+        width: 1.8rem;
+        height: 1.8rem;
+    }
+
+    .stat-text {
+        font-size: 0.9rem;
+    }
+
+    /* User welcome */
+    .user-welcome {
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .avatar-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+    }
+
+    .username {
+        font-size: 0.95rem;
+    }
+
+    /* Titres */
+    .info-card h2,
+    .lobby-card h2 {
+        font-size: 1.05rem;
+        margin-bottom: 8px;
+    }
+
+    .info-card p {
+        font-size: 0.8rem;
+        margin-bottom: 6px;
+    }
+
+    /* Boutons */
+    .btn-primary,
+    .btn-secondary,
+    .btn-twitch,
+    .btn-join {
+        padding: 10px 20px;
+        font-size: 0.78rem;
+        gap: 6px;
+    }
+
+    /* Separator */
+    .separator {
+        margin: 12px 0;
+    }
+
+    /* Question mobile */
+    .question-container-wrapper {
+        max-height: 85vh;
+        padding-top: 4vh;
+        overflow: hidden;
+    }
+
+    .timer-circle-container {
+        width: 48px;
+        height: 48px;
+        top: 8.0px;
+        right: 12px;
+    }
+
+    .timer-number {
+        font-size: 1.0rem;
+    }
+
+    .question-text {
+        font-size: 0.95rem;
+        padding: 0 12px;
+        line-height: 1.3;
+    }
+
+    .answers-grid {
+        grid-template-columns: 1fr;
+        max-width: 100%;
+        gap: 8px;
+        overflow-y: visible;
+    }
+
+    .answers-grid.grid-6 {
+        grid-template-columns: 1fr;
+    }
+
+    .answer-btn {
+        padding: 10px 14px;
+        min-height: 50px;
+    }
+
+    .answer-number {
+        width: 28px;
+        height: 28px;
+        font-size: 0.8rem;
+    }
+
+    .answer-text {
+        font-size: 0.9rem;
+    }
+
+    /* HUD */
+    .player-hud {
+        flex-wrap: nowrap;
+        gap: 6px;
+        padding: 8px 10px;
+        margin-bottom: 12px;
+    }
+
+    .hud-item {
+        flex: 1;
+        min-width: 64px;
+    }
+
+    .hud-label {
+        font-size: 0.5rem;
+    }
+
+    .hud-value {
+        font-size: 0.7rem;
+    }
+
+    /* Game section */
+    .game-section {
+        max-width: 100%;
+        margin-top: 0;
+        padding: 8px;
+    }
+
+    /* Results */
+    .results-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .game-stats {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    /* Notifications */
     .answer-notification {
-        left: 100px; /* 🆕 Ajusté */
+        left: 100px;
         top: 58%;
         padding: 6px 12px;
     }
@@ -1795,7 +1844,7 @@ body {
         }
         100% {
             opacity: 0;
-            transform: translate(-20px, -150px) scale(0.85); /* 🆕 Angle réduit */
+            transform: translate(-20px, -150px) scale(0.85);
         }
     }
     
@@ -1810,7 +1859,7 @@ body {
         }
         100% {
             opacity: 0;
-            transform: translate(70px, -140px) scale(0.85); /* 🆕 Angle réduit */
+            transform: translate(70px, -140px) scale(0.85);
         }
     }
 }
