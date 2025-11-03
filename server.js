@@ -36,11 +36,11 @@ app.use(session({
     saveUninitialized: false,
     cookie: {
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 24 * 60 * 60 * 1000, // 24h,
+        maxAge: 24 * 60 * 60 * 1000, // 24h
         httpOnly: true,
-        sameSite: 'lax'
-
-    }
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' 
+    },
+    proxy: process.env.NODE_ENV === 'production' 
 }));
 
 // ============================================

@@ -1708,6 +1708,7 @@
         </div>
 
 
+        <!-- ============ SECTION AJOUT QUESTION (TEMPORAIRE) ============ -->
         
     </div>
 
@@ -1801,6 +1802,12 @@
                     document.getElementById('loginContainer').style.display = 'none';
                     document.getElementById('adminPanel').style.display = 'block';
                     initSocket();
+                    
+                    // 🆕 Attendre que socket soit connecté
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // 🆕 FORCER la restauration
+                    await restoreGameState();
                     refreshStats();
                     startStatsRefresh();
                 } else {
@@ -1823,10 +1830,14 @@
                         document.getElementById('loginContainer').style.display = 'none';
                         document.getElementById('adminPanel').style.display = 'block';
                         initSocket();
+                        
+                        // 🆕 Attendre que socket soit connecté
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        
+                        // 🆕 FORCER la restauration
+                        await restoreGameState();
                         refreshStats();
                         startStatsRefresh();
-                        // BUG FIX 1 & 2: Restaurer l'état du jeu après refresh
-                        await restoreGameState();
                     }
                 }
             } catch (error) {
@@ -1842,46 +1853,58 @@
                 
                 console.log('🔄 Restauration état:', state);
                 
-                // BUG FIX 1: Restaurer la liste des joueurs
+                // 🆕 Attendre que DOM soit prêt
+                await new Promise(resolve => setTimeout(resolve, 200));
+                
+                // Restaurer joueurs
                 if (state.players && state.players.length > 0) {
                     updatePlayersGrid(state.players);
                     console.log(`✅ ${state.players.length} joueurs restaurés`);
                 }
                 
-                // BUG FIX 2: Restaurer la question en cours
+                // Restaurer question en cours
                 if (state.currentQuestion && state.inProgress) {
                     console.log('✅ Question en cours restaurée');
+                    
+                    // 🆕 Switch vers onglet Question
+                    switchTab('question');
+                    
+                    // 🆕 Attendre 100ms
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
                     displayQuestion(state.currentQuestion, state.timeRemaining || 0);
                     
-                    // Démarrer le timer avec le temps restant
                     if (state.timeRemaining > 0) {
                         startAdminTimer(state.timeRemaining);
                     }
                 }
                 
-                // 🆕 BUG FIX 3: Désactiver les paramètres si partie en cours ou lobby actif
+                // Désactiver paramètres si partie en cours
                 if (state.inProgress) {
                     toggleSettingsAccess(false);
-                    console.log('🔒 Paramètres désactivés (partie en cours)');
+                    console.log('🔒 Paramètres désactivés');
                 } else {
                     toggleSettingsAccess(true);
                     console.log('🔓 Paramètres activés');
                 }
                 
-                // 🆕 BUG FIX 4: Restaurer l'état visuel des paramètres (vies + temps)
+                // Restaurer paramètres visuels
                 if (state.lives) {
                     gameSettings.lives = state.lives;
-                    document.querySelectorAll('.lives-btn').forEach(btn => btn.classList.remove('active'));
-                    const livesBtn = document.getElementById(`lives-${state.lives}`);
-                    if (livesBtn) livesBtn.classList.add('active');
-                    console.log(`✅ Paramètre vies restauré: ${state.lives}`);
+                    const livesButtons = document.querySelectorAll('.lives-btn');
+                    if (livesButtons.length > 0) {
+                        livesButtons.forEach(btn => btn.classList.remove('active'));
+                        const livesBtn = document.getElementById(`lives-${state.lives}`);
+                        if (livesBtn) livesBtn.classList.add('active');
+                    }
+                    console.log(`✅ Vies restaurées: ${state.lives}`);
                 }
                 
                 if (state.questionTime) {
                     gameSettings.timePerQuestion = state.questionTime;
                     const timeSelect = document.getElementById('timeSelect');
                     if (timeSelect) timeSelect.value = state.questionTime;
-                    console.log(`✅ Paramètre temps restauré: ${state.questionTime}s`);
+                    console.log(`✅ Temps restauré: ${state.questionTime}s`);
                 }
                 
             } catch (error) {
