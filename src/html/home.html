@@ -382,9 +382,18 @@
             </div>
         </div>
 
-        <!-- 🆕 Leaderboard (visible si PAS connecté OU si connecté dans lobby) -->
-        <div class="leaderboard-container" v-if="leaderboardLoaded && !isAuthenticated">
-            <h3 class="leaderboard-title">Classement</h3>
+        <!-- 🆕 Bouton Toggle Leaderboard (mobile uniquement) -->
+        <button class="leaderboard-toggle-btn" v-if="leaderboardLoaded && !isAuthenticated" @click="toggleLeaderboard">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M7 7h10v2H7zm0 4h10v2H7zm0 4h10v2H7z"/>
+                <path d="M12 3L4 9v12h16V9l-8-6zm6 16H6V10l6-4.5L18 10v9z"/>
+            </svg>
+        </button>
+
+        <!-- 🆕 Leaderboard Panel (desktop toujours visible, mobile toggle) -->
+        <div class="leaderboard-container" :class="{ 'mobile-open': showLeaderboard }" v-if="leaderboardLoaded && !isAuthenticated">
+            <h3 class="leaderboard-title">Ranking</h3>
+            <button class="leaderboard-close-btn" @click="toggleLeaderboard">✕</button>
             <div class="leaderboard-list">
                 <div 
                     v-for="(player, index) in leaderboard" 

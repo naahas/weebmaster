@@ -34,6 +34,7 @@ createApp({
             // Leaderboard
             leaderboard: [],
             leaderboardLoaded: false,
+            showLeaderboard: false, 
 
             // Question en cours
             currentQuestion: null,
@@ -152,6 +153,10 @@ createApp({
                 console.error('❌ Erreur équipement titre:', error);
                 this.showNotification('Erreur changement titre', 'error');
             }
+        },
+
+        toggleLeaderboard() {
+            this.showLeaderboard = !this.showLeaderboard;
         },
 
         // ========== Leaderboard ==========

@@ -1609,6 +1609,19 @@ body {
     }
 }
 
+
+.leaderboard-close-btn {
+    display: none; /* 🆕 IMPORTANT - Caché sur desktop */
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
 /* ============================================
    RESPONSIVE MOBILE - MODIFICATIONS ICI UNIQUEMENT
    ============================================ */
@@ -1861,14 +1874,84 @@ body {
             opacity: 0;
             transform: translate(70px, -140px) scale(0.85);
         }
+
+        
     }
 
+
+    /* ============================================
+    LEADERBOARD MOBILE
+    ============================================ */
+
+    /* Afficher le bouton toggle sur mobile */
+    .leaderboard-toggle-btn {
+        display: flex !important;
+    }
+
+    /* Leaderboard panel slide depuis la gauche */
     .leaderboard-container {
-        width: 90%;
-        left: 50%;
-        top: auto; /* 🆕 AJOUT */
-        transform: translateX(-50%); /* 🆕 Seulement horizontal sur mobile */
-        bottom: 10px;
+        top: 0;
+        left: 0;
+        width: 80%;
+        max-width: 300px;
+        height: 100vh;
+        border-radius: 0 14px 14px 0;
+        padding: 20px 16px;
+        transform: translateX(-100%); /* 🆕 Caché par défaut */
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        opacity: 1; /* 🆕 Toujours opaque sur mobile */
+        animation: none; /* 🆕 Pas d'animation fade */
+    }
+
+    .leaderboard-container.mobile-open {
+        transform: translateX(0); /* 🆕 Slide vers la droite */
+    }
+
+    .leaderboard-container:hover {
+        opacity: 1; /* 🆕 Override hover desktop */
+    }
+
+    .leaderboard-close-btn {
+        display: block !important; /* 🆕 Visible sur mobile */
+    }
+
+    .leaderboard-title {
+        font-size: 0.9rem;
+    }
+
+    .leaderboard-list {
+        max-height: calc(100vh - 80px);
+    }
+
+    .leaderboard-item {
+        padding: 6px 8px;
+    }
+
+    .player-name {
+        font-size: 0.75rem;
+    }
+
+    .player-title {
+        font-size: 0.6rem;
+    }
+
+    .player-winrate {
+        font-size: 0.75rem;
+    }
+
+    /* ============================================
+    LOGO & BOUTON TWITCH MOBILE
+    ============================================ */
+
+    /* Réduire le logo */
+    .logo-title {
+        font-size: 2rem !important; /* 🆕 Réduit de 2.4rem */
+    }
+
+    /* Réduire le bouton Twitch */
+    .btn-twitch {
+        max-width: 280px; /* 🆕 Limiter la largeur */
+        margin: 0 auto; /* 🆕 Centrer */
     }
 }
 
@@ -2220,9 +2303,8 @@ body {
    ============================================ */
 .leaderboard-container {
     position: fixed;
-    top: 20px; /* 🆕 En haut au lieu de centré */
+    top: 20px;
     left: 20px;
-    transform: none; /* 🆕 Pas de transform */
     width: 320px;
     background: rgba(31, 31, 31, 0.75);
     backdrop-filter: blur(12px);
@@ -2231,13 +2313,13 @@ body {
     padding: 16px;
     z-index: 400;
     overflow: hidden;
-    opacity: 0.3; /* 🆕 Opacité très basse par défaut */
-    transition: opacity 0.3s ease; /* 🆕 Transition smooth */
-    animation: fadeIno 0.5s ease; /* 🆕 Fade in simple */
+    opacity: 0.3;
+    transition: opacity 0.3s ease;
+    animation: fadeIno 0.5s ease;
 }
 
 .leaderboard-container:hover {
-    opacity: 1; /* 🆕 Opacité complète au survol */
+    opacity: 1;
 }
 
 @keyframes fadeIno {
@@ -2252,7 +2334,7 @@ body {
 
 
 .leaderboard-title {
-    font-size: 1rem;
+    font-size: 0.7rem;
     font-weight: 700;
     color: var(--neon-primary);
     margin-bottom: 12px;
@@ -2357,4 +2439,33 @@ body {
     font-size: 0.8rem;
     font-weight: 700;
     color: var(--success-color);
+}
+
+
+/* Bouton toggle (mobile uniquement) */
+.leaderboard-toggle-btn {
+    display: none; /* Caché par défaut (desktop) */
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 48px;
+    height: 48px;
+    background: rgba(31, 31, 31, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1.6px solid rgba(255, 215, 0, 0.3);
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 500;
+    color: var(--neon-primary);
+}
+
+.leaderboard-toggle-btn:active {
+    transform: scale(0.95);
+}
+
+.leaderboard-toggle-btn svg {
+    filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.3));
 }
