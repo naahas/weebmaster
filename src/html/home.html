@@ -390,10 +390,15 @@
             </svg>
         </button>
 
+        <!-- 🆕 Overlay sombre (mobile uniquement) -->
+        <div class="leaderboard-overlay" :class="{ active: showLeaderboard }" @click="toggleLeaderboard" v-if="!isAuthenticated"></div>
+
         <!-- 🆕 Leaderboard Panel (desktop toujours visible, mobile toggle) -->
         <div class="leaderboard-container" :class="{ 'mobile-open': showLeaderboard }" v-if="leaderboardLoaded && !isAuthenticated">
-            <h3 class="leaderboard-title">Ranking</h3>
-            <button class="leaderboard-close-btn" @click="toggleLeaderboard">✕</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 class="leaderboard-title" style="margin-bottom: 0;">🏆 Classement</h3>
+                <button class="leaderboard-close-btn" @click="toggleLeaderboard">✕</button>
+            </div>
             <div class="leaderboard-list">
                 <div 
                     v-for="(player, index) in leaderboard" 

@@ -1886,21 +1886,42 @@ body {
     /* Afficher le bouton toggle sur mobile */
     .leaderboard-toggle-btn {
         display: flex !important;
+        top: 15px;
+        left: 15px;
     }
+
+    .leaderboard-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
+        z-index: 450;
+    }
+
+    .leaderboard-overlay.active {
+        display: block;
+    }
+
 
     /* Leaderboard panel slide depuis la gauche */
     .leaderboard-container {
+        position: fixed;
         top: 0;
         left: 0;
-        width: 80%;
-        max-width: 300px;
+        width: 70%; /* 🆕 Réduit de 80% à 70% */
+        max-width: 260px; /* 🆕 Réduit de 300px à 260px */
         height: 100vh;
         border-radius: 0 14px 14px 0;
-        padding: 20px 16px;
+        padding: 16px 12px; /* 🆕 Padding réduit */
         transform: translateX(-100%); /* 🆕 Caché par défaut */
         transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        opacity: 1; /* 🆕 Toujours opaque sur mobile */
-        animation: none; /* 🆕 Pas d'animation fade */
+        opacity: 1;
+        animation: none;
+        z-index: 500; /* 🆕 Au-dessus de tout (logo, bouton) */
     }
 
     .leaderboard-container.mobile-open {
@@ -1908,15 +1929,19 @@ body {
     }
 
     .leaderboard-container:hover {
-        opacity: 1; /* 🆕 Override hover desktop */
+        opacity: 1;
     }
 
     .leaderboard-close-btn {
-        display: block !important; /* 🆕 Visible sur mobile */
+        display: flex !important; /* 🆕 Visible sur mobile */
+        align-items: center;
+        justify-content: center;
+        margin-left: auto;
     }
 
+
     .leaderboard-title {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
     }
 
     .leaderboard-list {
@@ -1928,15 +1953,15 @@ body {
     }
 
     .player-name {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
     }
 
     .player-title {
-        font-size: 0.6rem;
+        font-size: 0.57rem;
     }
 
     .player-winrate {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
     }
 
     /* ============================================
