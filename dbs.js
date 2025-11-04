@@ -342,7 +342,7 @@ const db = {
                     title_name
                 )
             `)
-            .gte('total_games_played', 5) // Minimum 5 parties
+            .gte('total_games_played', 3) // Minimum 5 parties
             .order('total_victories', { ascending: false })
             .order('total_games_played', { ascending: true }) // Départager par nombre de parties
             .limit(limit);
