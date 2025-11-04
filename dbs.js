@@ -357,6 +357,47 @@ const db = {
                 : '0.0',
             title_name: user.titles?.title_name || 'Novice'
         }));
+    },
+
+
+    // ========== USED QUESTIONS (Historique persistant) ==========
+    async addUsedQuestion(questionId) {
+        const { error } = await supabase
+            .from('used_questions')
+            .insert({ question_id: questionId });
+        
+        if (error) throw error;
+        console.log(`📌 Question ${questionId} ajoutée à l'historique`);
+    },
+
+    async getUsedQuestionIds() {
+        const { data, error } = await supabase
+            .from('used_questions')
+            .select('question_id');
+        
+        if (error) throw error;
+        return data ? data.map(row => row.question_id) : [];
+    },
+
+    async resetUsedQuestions() {
+        const { error } = await supabase
+            .from('used_questions')
+            .delete()
+            .neq('id', 0); // Supprimer toutes les lignes
+        
+        if (error) throw error;
+        console.log('🔄 Historique des questions réinitialisé');
+    },
+
+    // 🆕 Compter le nombre de parties terminées
+    async getCompletedGamesCount() {
+        const { count, error } = await supabase
+            .from('games')
+            .select('*', { count: 'exact', head: true })
+            .not('winner_twitch_id', 'is', null); // Seulement les parties terminées
+
+        if (error) throw error;
+        return count || 0;
     }
 };
 

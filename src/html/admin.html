@@ -1486,6 +1486,80 @@
             margin-bottom: 16px;
         }
 
+        /* ============================================
+        RESET QUESTIONS BUTTON - VERSION BLANCHE
+        ============================================ */
+
+        .btn-reset-questions:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .reset-questions-section {
+            background: var(--bg-card);
+            border: 0.8px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-reset-questions {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1.6px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-reset-questions:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-reset-questions:active {
+            transform: translateY(0);
+        }
+
+        .reset-icon {
+            font-size: 1.1rem;
+            animation: rotate-reset 2s linear infinite paused;
+            opacity: 0.8;
+        }
+
+        .btn-reset-questions:hover .reset-icon {
+            animation-play-state: running;
+            opacity: 1;
+        }
+
+        @keyframes rotate-reset {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .reset-text {
+            letter-spacing: 0.3px;
+            opacity: 0.9;
+        }
+
+        .btn-reset-questions:hover .reset-text {
+            opacity: 1;
+        }
+
         /* ============================================ */
         /* RESPONSIVE DESIGN */
         /* ============================================ */
@@ -1531,6 +1605,8 @@
                 padding: 10px;
             }
         }
+
+        
     </style>
 </head>
 <body>
@@ -1691,24 +1767,82 @@
                     </div>
                 </div>
 
-                <!-- Stats Database -->
-                <div class="db-stats">
-                    <h3>DATAS</h3>
-                    <div class="db-stat-item">
-                        <span class="db-stat-label">Questions</span>
-                        <span class="db-stat-value" id="dbTotalQuestions">-</span>
-                    </div>
-                    
-                    <div class="db-stat-item">
-                        <span class="db-stat-label">Séries</span>
-                        <span class="db-stat-value" id="dbTotalSeries">-</span>
-                    </div>
+                <!-- Reset Questions Button -->
+                <div class="reset-questions-section">
+                    <button class="btn-reset-questions" id="btnResetQuestions" onclick="resetQuestionsHistory()">
+                        <span class="reset-icon">🔄</span>
+                        <span class="reset-text">Reset Questions</span>
+                    </button>
                 </div>
             </div>
         </div>
 
 
-       
+        <!-- <div class="add-question-section" style="grid-column: 1 / -1; margin-top: 32px; padding: 24px; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border);">
+            <h2 style="color: var(--primary); margin-bottom: 24px; font-size: 1.2rem;">➕ Ajouter une question</h2>
+            
+            <form id="addQuestionForm" style="display: grid; gap: 16px;">
+                <div style="max-width: 600px;">
+                    <label style="display: block; color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">Question</label>
+                    <input type="text" id="questionText" required style="width: 100%; padding: 12px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: 'Poppins';">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr; gap: 12px; max-width: 600px;">
+                    <div>
+                        <label style="display: block; color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">Réponse 1</label>
+                        <input type="text" id="answer1" required style="width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: 'Poppins';">
+                    </div>
+                    <div>
+                        <label style="display: block; color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">Réponse 2</label>
+                        <input type="text" id="answer2" required style="width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: 'Poppins';">
+                    </div>
+                    <div>
+                        <label style="display: block; color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">Réponse 3</label>
+                        <input type="text" id="answer3" required style="width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: 'Poppins';">
+                    </div>
+                    <div>
+                        <label style="display: block; color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">Réponse 4</label>
+                        <input type="text" id="answer4" required style="width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: 'Poppins';">
+                    </div>
+                    <div>
+                        <label style="display: block; color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">Réponse 5</label>
+                        <input type="text" id="answer5" required style="width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: 'Poppins';">
+                    </div>
+                    <div>
+                        <label style="display: block; color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">Réponse 6</label>
+                        <input type="text" id="answer6" required style="width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: 'Poppins';">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label style="display: block; color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">Bonne réponse (1-6)</label>
+                        <input type="number" id="correctAnswer" min="1" max="6" value="1" required style="width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: 'Poppins';">
+                    </div>
+                    <div>
+                        <label style="display: block; color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">Série</label>
+                        <input type="text" id="serie" required style="width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: 'Poppins';">
+                    </div>
+                    <div>
+                        <label style="display: block; color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">Difficulté</label>
+                        <select id="difficulty" required style="width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: 'Poppins';">
+                            <option value="veryeasy">Very Easy</option>
+                            <option value="easy">Easy</option>
+                            <option value="medium">Medium</option>
+                            <option value="hard">Hard</option>
+                            <option value="veryhard">Very Hard</option>
+                            <option value="extreme">Extreme</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" style="padding: 12px 24px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: var(--bg-main); border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-family: 'Poppins';">
+                    Ajouter la question
+                </button>
+            </form>
+
+            <div id="addQuestionStatus" style="margin-top: 16px; padding: 12px; border-radius: 8px; display: none;"></div>
+        </div> -->
     </div>
 
     <!-- Overlay Backdrop -->
@@ -2837,54 +2971,22 @@ svgElement.appendChild(path);
             const settingsSection = document.getElementById('gameSettings');
             const livesButtons = document.querySelectorAll('.lives-btn');
             const timeSelect = document.getElementById('timeSelect');
+            const btnResetQuestions = document.getElementById('btnResetQuestions'); // 🆕
             
             if (enabled) {
                 settingsSection.classList.remove('disabled');
                 livesButtons.forEach(btn => btn.disabled = false);
                 timeSelect.disabled = false;
+                if (btnResetQuestions) btnResetQuestions.disabled = false; // 🆕
             } else {
                 settingsSection.classList.add('disabled');
                 livesButtons.forEach(btn => btn.disabled = true);
                 timeSelect.disabled = true;
+                if (btnResetQuestions) btnResetQuestions.disabled = true; // 🆕
             }
         }
 
-        // ============ DATABASE STATS ============
-        async function loadDatabaseStats() {
-            try {
-                const response = await fetch('/admin/db-stats', {
-                    credentials: 'same-origin'
-                });
-                
-                if (!response.ok) {
-                    console.error('❌ Erreur chargement stats DB');
-                    return;
-                }
-                
-                const stats = await response.json();
-                
-                // Vérifier que les éléments existent avant de les modifier
-                const dbTotalQuestions = document.getElementById('dbTotalQuestions');
-                const dbTotalSeries = document.getElementById('dbTotalSeries');
-                const dbVeryEasy = document.getElementById('dbVeryEasy');
-                const dbEasy = document.getElementById('dbEasy');
-                const dbMedium = document.getElementById('dbMedium');
-                const dbHard = document.getElementById('dbHard');
-                const dbVeryHard = document.getElementById('dbVeryHard');
-                
-                if (dbTotalQuestions) dbTotalQuestions.textContent = stats.totalQuestions;
-                if (dbTotalSeries) dbTotalSeries.textContent = stats.totalSeries;
-                if (dbVeryEasy) dbVeryEasy.textContent = stats.byDifficulty.veryeasy || 0;
-                if (dbEasy) dbEasy.textContent = stats.byDifficulty.easy || 0;
-                if (dbMedium) dbMedium.textContent = stats.byDifficulty.medium || 0;
-                if (dbHard) dbHard.textContent = stats.byDifficulty.hard || 0;
-                if (dbVeryHard) dbVeryHard.textContent = stats.byDifficulty.veryhard || 0;
-                
-                console.log('✅ Stats DB chargées:', stats);
-            } catch (error) {
-                console.error('❌ Erreur loadDatabaseStats:', error);
-            }
-        }
+        
         function refreshPage() {
             location.reload();
         }
@@ -3027,6 +3129,45 @@ svgElement.appendChild(path);
         }
 
 
+        // Reset Questions History
+        async function resetQuestionsHistory() {
+            // 🆕 Vérifier si une partie est en cours
+            const btnResetQuestions = document.getElementById('btnResetQuestions');
+            if (btnResetQuestions && btnResetQuestions.disabled) {
+                console.log('⚠️ Impossible de reset pendant une partie');
+                return;
+            }
+            
+            if (!confirm('Réinitialiser l\'historique des questions ?\n\nToutes les questions redeviendront disponibles')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/admin/reset-questions-history', {
+                    method: 'POST',
+                    credentials: 'same-origin'
+                });
+                
+                if (response.status === 403) {
+                    alert('❌ Session expirée, rechargement...');
+                    location.reload();
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    console.log('🔄 Reset effectué avec succès');
+                } else {
+                    alert('❌ Erreur: ' + (data.error || 'Erreur inconnue'));
+                }
+            } catch (error) {
+                console.error('❌ Erreur reset:', error);
+                alert('❌ Erreur lors du reset: ' + error.message);
+            }
+        }
+
+
         // Gestion du formulaire d'ajout de question
         document.getElementById('addQuestionForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -3066,9 +3207,7 @@ svgElement.appendChild(path);
                     
                     // Reset form
                     document.getElementById('addQuestionForm').reset();
-                    
-                    // Refresh DB stats
-                    loadDatabaseStats();
+              
                 } else {
                     throw new Error(data.error);
                 }
@@ -3083,7 +3222,6 @@ svgElement.appendChild(path);
 
         // ============ INIT ============
         checkAuth();
-        loadDatabaseStats(); // Charger les stats DB au démarrage
     </script>
 </body>
 </html>

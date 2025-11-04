@@ -12,6 +12,8 @@ const { db , supabase  } = require('./dbs');
 const app = express();
 const PORT = process.env.PORT || 7000;
 
+const MAX_GAMES_BEFORE_RESET = 5; 
+
 // Détection automatique de l'URL de redirection
 const TWITCH_REDIRECT_URI = process.env.TWITCH_REDIRECT_URI || 
     (process.env.NODE_ENV === 'production' 
@@ -273,7 +275,6 @@ app.post('/admin/toggle-game', (req, res) => {
         gameState.gameStartTime = null;
         gameState.inProgress = false;
         gameState.currentGameId = null;
-        gameState.usedQuestionIds = []; // 🆕 RESET: Vider l'historique des questions
         
         io.emit('game-activated', {
             lives: gameState.lives,
@@ -297,7 +298,6 @@ app.post('/admin/toggle-game', (req, res) => {
         gameState.answers.clear();
         gameState.questionStartTime = null;
         gameState.gameStartTime = null;
-        gameState.usedQuestionIds = []; // 🆕 RESET: Vider l'historique des questions
         
         io.emit('game-deactivated');
     }
@@ -421,7 +421,6 @@ app.post('/admin/start-game', async (req, res) => {
         return res.status(400).json({ error: 'Une partie est déjà en cours' });
     }
 
-    // 🆕 Vérifier qu'il y a au moins 1 joueur dans le lobby
     const totalPlayers = gameState.players.size;
     if (totalPlayers === 0) {
         return res.status(400).json({ 
@@ -431,6 +430,13 @@ app.post('/admin/start-game', async (req, res) => {
     }
 
     try {
+        // 🆕 Vérifier si on doit reset (toutes les 5 parties)
+        const completedGames = await db.getCompletedGamesCount();
+        if (completedGames > 0 && completedGames % MAX_GAMES_BEFORE_RESET === 0) {
+            console.log(`🔄 ${completedGames} parties terminées, reset automatique de l'historique...`);
+            await db.resetUsedQuestions();
+        }
+        
         const game = await db.createGame(totalPlayers);
         
         gameState.inProgress = true;
@@ -439,26 +445,26 @@ app.post('/admin/start-game', async (req, res) => {
         gameState.gameStartTime = Date.now();
         gameState.showResults = false;
         gameState.lastQuestionResults = null;
-        gameState.usedQuestionIds = []; // 🆕 RESET: Vider l'historique des questions au début de partie
+        
+        // 🆕 Charger les questions déjà utilisées depuis la DB
+        gameState.usedQuestionIds = await db.getUsedQuestionIds();
+        console.log(`📚 ${gameState.usedQuestionIds.length} questions dans l'historique (Partie ${completedGames + 1}/${MAX_GAMES_BEFORE_RESET})`);
         
         // Initialiser les joueurs
         gameState.players.forEach(player => {
-            player.lives = gameState.lives;  // 🆕 Utiliser les vies configurées
+            player.lives = gameState.lives;
             player.correctAnswers = 0;
         });
 
         console.log(`🎮 Partie démarrée avec ${totalPlayers} joueurs - ${gameState.lives}❤️ - ${gameState.questionTime}s`);
         
-        // 🆕 Envoyer des infos différentes selon si le joueur participe ou non
         io.sockets.sockets.forEach((socket) => {
             const socketId = socket.id;
             const player = gameState.players.get(socketId);
             
             if (player) {
-                // Le joueur participe
                 socket.emit('game-started', { totalPlayers, isParticipating: true });
             } else {
-                // Le joueur ne participe pas (spectateur ou pas rejoint)
                 socket.emit('game-started', { totalPlayers, isParticipating: false });
             }
         });
@@ -466,6 +472,22 @@ app.post('/admin/start-game', async (req, res) => {
         res.json({ success: true, gameId: game.id });
     } catch (error) {
         console.error('❌ Erreur démarrage partie:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Route pour reset manuel de l'historique des questions
+app.post('/admin/reset-questions-history', async (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    try {
+        await db.resetUsedQuestions();
+        console.log('🔄 Historique des questions réinitialisé manuellement');
+        res.json({ success: true, message: 'Historique réinitialisé' });
+    } catch (error) {
+        console.error('❌ Erreur reset questions:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -506,9 +528,11 @@ app.post('/admin/next-question', async (req, res) => {
 
         const question = questions[0];
         
-        // 🆕 NOUVEAU: Ajouter l'ID de la question aux questions utilisées
+        // 🆕 NOUVEAU: Enregistrer dans la DB ET dans le gameState
+        await db.addUsedQuestion(question.id);
         gameState.usedQuestionIds.push(question.id);
-        console.log(`📌 Question ID ${question.id} ajoutée à l'historique (${gameState.usedQuestionIds.length} questions utilisées)`);
+        
+        console.log(`📌 Question ID ${question.id} enregistrée (${gameState.usedQuestionIds.length} questions utilisées)`);
         
         // 🆕 Récupérer toutes les réponses disponibles (filtrer les null)
         const allAnswers = [
@@ -738,7 +762,6 @@ async function endGame(winner) {
         gameState.gameStartTime = null; // 🆕 Reset game start time
         gameState.players.clear();
         gameState.answers.clear();
-        gameState.usedQuestionIds = []; // 🆕 RESET: Vider l'historique des questions
 
         // 🆕 Fermer automatiquement le lobby à la fin de la partie
         gameState.isActive = false;

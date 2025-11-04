@@ -162,8 +162,11 @@ createApp({
         // ========== Leaderboard ==========
         async loadLeaderboard() {
             try {
-                // 🆕 Attendre 1 seconde avant de charger
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                // 🆕 Délai uniquement sur desktop (width > 614px)
+                const isMobile = window.innerWidth <= 614;
+                if (!isMobile) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
                 
                 const response = await fetch('/leaderboard?limit=10');
                 const data = await response.json();
@@ -174,7 +177,7 @@ createApp({
                     win_rate: Math.round(parseFloat(player.win_rate))
                 }));
                 
-                // 🆕 Marquer comme chargé
+                // Marquer comme chargé
                 this.leaderboardLoaded = true;
                 
                 console.log('✅ Leaderboard chargé:', this.leaderboard);

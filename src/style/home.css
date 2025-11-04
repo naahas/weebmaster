@@ -1470,17 +1470,6 @@ body {
    🆕 ANIMATIONS D'APPARITION DES QUESTIONS
    ============================================ */
 
-@keyframes fadeInScale {
-    from {
-        opacity: 0;
-        transform: scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
 .question-card:not(.results-view) .question-badges {
     animation: fadeInUp 0.4s ease-out 0s backwards;
 }
@@ -1609,21 +1598,208 @@ body {
     }
 }
 
+/* ============================================
+   LEADERBOARD - FIX COMPLET DESKTOP + MOBILE
+   ============================================ */
+.leaderboard-container {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 70%;
+    max-width: 260px;
+    height: auto;
+    max-height: calc(100vh - 40px);
+    background: rgba(20, 20, 20, 0.3);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 215, 0, 0.15);
+    border-radius: 14px;
+    padding: 16px 12px;
+    z-index: 500;
+    
+    /* 🔥 DESKTOP - Visible par défaut */
+    transform: translateX(0);
+    pointer-events: auto;
+    opacity: 0.5;
+    
+    transition: 
+        transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.3s ease,
+        background 0.3s ease,
+        backdrop-filter 0.3s ease;
+    
+    /* 🔥 Animation UNIQUEMENT sur desktop */
+    animation: fadeInLeft 0.6s ease-out;
+}
+
+@keyframes fadeInLeft {
+    0% {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    100% {
+        opacity: 0.5;
+        transform: translateX(0);
+    }
+}
+
+/* Hover sur desktop */
+.leaderboard-container:hover {
+    opacity: 1 !important;
+    background: rgba(20, 20, 20, 0.7);
+    backdrop-filter: blur(12px);
+    border-color: rgba(255, 215, 0, 0.3);
+}
+
+.leaderboard-container.mobile-open {
+    transform: translateX(0);
+    pointer-events: auto;
+    opacity: 1;
+}
+
+.leaderboard-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--neon-primary);
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.leaderboard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.leaderboard-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.leaderboard-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 215, 0, 0.3);
+    border-radius: 10px;
+}
+
+.leaderboard-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    /* 🔥 Animation items UNIQUEMENT sur desktop */
+    animation: fadeInItem 0.4s ease-out backwards;
+}
+
+.leaderboard-item:nth-child(1) { animation-delay: 0.1s; }
+.leaderboard-item:nth-child(2) { animation-delay: 0.2s; }
+.leaderboard-item:nth-child(3) { animation-delay: 0.3s; }
+.leaderboard-item:nth-child(4) { animation-delay: 0.4s; }
+.leaderboard-item:nth-child(5) { animation-delay: 0.5s; }
+.leaderboard-item:nth-child(6) { animation-delay: 0.6s; }
+.leaderboard-item:nth-child(7) { animation-delay: 0.7s; }
+.leaderboard-item:nth-child(8) { animation-delay: 0.8s; }
+.leaderboard-item:nth-child(9) { animation-delay: 0.9s; }
+.leaderboard-item:nth-child(10) { animation-delay: 1.0s; }
+
+@keyframes fadeInItem {
+    0% {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.leaderboard-item.rank-1 {
+    border-color: #FFD700;
+    background: rgba(255, 215, 0, 0.1);
+}
+
+.leaderboard-item.rank-2 {
+    border-color: #C0C0C0;
+    background: rgba(192, 192, 192, 0.05);
+}
+
+.leaderboard-item.rank-3 {
+    border-color: #CD7F32;
+    background: rgba(205, 127, 50, 0.05);
+}
+
+.rank {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 215, 0, 0.2);
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--neon-primary);
+    flex-shrink: 0;
+}
+
+.leaderboard-item.rank-1 .rank {
+    background: #FFD700;
+    color: #000;
+}
+
+.leaderboard-item.rank-2 .rank {
+    background: #C0C0C0;
+    color: #000;
+}
+
+.leaderboard-item.rank-3 .rank {
+    background: #CD7F32;
+    color: #fff;
+}
+
+.player-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.player-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.player-title {
+    font-size: 0.65rem;
+    color: var(--neon-primary);
+    font-style: italic;
+}
+
+.player-winrate {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--success-color);
+}
+
+.leaderboard-toggle-btn {
+    display: none;
+}
 
 .leaderboard-close-btn {
-    display: none; /* 🆕 IMPORTANT - Caché sur desktop */
-    width: 28px;
-    height: 28px;
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 1.3rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
+    display: none;
+}
+
+.leaderboard-overlay {
+    display: none;
 }
 
 /* ============================================
-   RESPONSIVE MOBILE - MODIFICATIONS ICI UNIQUEMENT
+   RESPONSIVE MOBILE
    ============================================ */
 @media (max-width: 614px) {
     /* Body - Empêcher scroll */
@@ -1639,7 +1815,7 @@ body {
 
     /* Titre logo */
     .logo-title {
-        font-size: 2.4rem;
+        font-size: 2rem !important;
     }
 
     .subtitle {
@@ -1736,6 +1912,12 @@ body {
         padding: 10px 20px;
         font-size: 0.78rem;
         gap: 6px;
+    }
+
+    /* Réduire le bouton Twitch */
+    .btn-twitch {
+        max-width: 280px;
+        margin: 0 auto;
     }
 
     /* Separator */
@@ -1874,20 +2056,80 @@ body {
             opacity: 0;
             transform: translate(70px, -140px) scale(0.85);
         }
-
-        
     }
 
-
     /* ============================================
-    LEADERBOARD MOBILE
+    LEADERBOARD MOBILE - FIX COMPLET
     ============================================ */
 
+    /* 🔥 FIX: Désactiver TOUTES les animations sur mobile */
+   .leaderboard-container {
+        animation: none !important;
+        transform: translateX(-100%) !important;
+        pointer-events: none !important;
+        opacity: 1 !important;
+        top: 20px !important; /* 🆕 Comme sur desktop */
+        left: 0 !important;
+        border-radius: 0 14px 14px 0;
+        height: auto !important; /* 🆕 Hauteur dynamique */
+        max-height: calc(100vh - 40px) !important; /* 🆕 Limite max */
+    }
+    
+    /* Quand ouvert sur mobile */
+    .leaderboard-container.mobile-open {
+        transform: translateX(0) !important;
+        pointer-events: auto !important;
+        opacity: 1 !important;
+    }
+    
+    /* 🔥 FIX: Désactiver animations des items sur mobile */
+    .leaderboard-item {
+        animation: none !important;
+    }
+    
     /* Afficher le bouton toggle sur mobile */
     .leaderboard-toggle-btn {
         display: flex !important;
+        position: fixed;
         top: 15px;
         left: 15px;
+        width: 48px;
+        height: 48px;
+        background: rgba(31, 31, 31, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1.6px solid rgba(255, 215, 0, 0.3);
+        border-radius: 50%;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        z-index: 501;
+        color: var(--neon-primary);
+    }
+
+    .leaderboard-toggle-btn:active {
+        transform: scale(0.95);
+    }
+
+    .leaderboard-toggle-btn.hidden {
+        opacity: 0;
+        pointer-events: none;
+        transform: scale(0.8);
+    }
+
+    .leaderboard-close-btn {
+        display: flex !important;
+        width: 28px;
+        height: 28px;
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 1.3rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto;
     }
 
     .leaderboard-overlay {
@@ -1906,46 +2148,12 @@ body {
         display: block;
     }
 
-
-    /* Leaderboard panel slide depuis la gauche */
-    .leaderboard-container {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 70%; /* 🆕 Réduit de 80% à 70% */
-        max-width: 260px; /* 🆕 Réduit de 300px à 260px */
-        height: 100vh;
-        border-radius: 0 14px 14px 0;
-        padding: 16px 12px; /* 🆕 Padding réduit */
-        transform: translateX(-100%); /* 🆕 Caché par défaut */
-        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        opacity: 1;
-        animation: none;
-        z-index: 500; /* 🆕 Au-dessus de tout (logo, bouton) */
-    }
-
-    .leaderboard-container.mobile-open {
-        transform: translateX(0); /* 🆕 Slide vers la droite */
-    }
-
-    .leaderboard-container:hover {
-        opacity: 1;
-    }
-
-    .leaderboard-close-btn {
-        display: flex !important; /* 🆕 Visible sur mobile */
-        align-items: center;
-        justify-content: center;
-        margin-left: auto;
-    }
-
-
     .leaderboard-title {
         font-size: 0.85rem;
     }
 
     .leaderboard-list {
-        max-height: calc(100vh - 80px);
+         max-height: calc(100vh - 120px); /* 🆕 Ajusté pour mobile */
     }
 
     .leaderboard-item {
@@ -1963,23 +2171,7 @@ body {
     .player-winrate {
         font-size: 0.7rem;
     }
-
-    /* ============================================
-    LOGO & BOUTON TWITCH MOBILE
-    ============================================ */
-
-    /* Réduire le logo */
-    .logo-title {
-        font-size: 2rem !important; /* 🆕 Réduit de 2.4rem */
-    }
-
-    /* Réduire le bouton Twitch */
-    .btn-twitch {
-        max-width: 280px; /* 🆕 Limiter la largeur */
-        margin: 0 auto; /* 🆕 Centrer */
-    }
 }
-
 
 /* ============================================
    PROFIL & BADGES SYSTEM
@@ -2281,7 +2473,7 @@ body {
     border: 1.6px solid rgba(255, 255, 255, 0.1);
     border-radius: 10px;
     transition: all 0.3s ease;
-    cursor: pointer; /* 🆕 AJOUT */
+    cursor: pointer;
 }
 
 .title-item:hover {
@@ -2312,8 +2504,6 @@ body {
     color: var(--text-secondary);
 }
 
-
-
 .equipped-badge {
     padding: 6px 12px;
     background: rgba(0, 255, 136, 0.15);
@@ -2323,174 +2513,11 @@ body {
     font-weight: 600;
 }
 
-/* ============================================
-   LEADERBOARD
-   ============================================ */
-.leaderboard-container {
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    width: 320px;
-    background: rgba(31, 31, 31, 0.75);
-    backdrop-filter: blur(12px);
-    border: 1.6px solid rgba(255, 215, 0, 0.25);
-    border-radius: 14px;
-    padding: 16px;
-    z-index: 400;
-    overflow: hidden;
-    opacity: 0.3;
-    transition: opacity 0.3s ease;
-    animation: fadeIno 0.5s ease;
-}
-
-.leaderboard-container:hover {
-    opacity: 1;
-}
-
-@keyframes fadeIno {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 0.3; /* 🆕 Fade jusqu'à l'opacité de base */
-    }
-}
-
-
-
-.leaderboard-title {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: var(--neon-primary);
-    margin-bottom: 12px;
+.spectator-card {
     text-align: center;
 }
 
-.leaderboard-list {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    max-height: 400px;
-    overflow-y: auto;
-    overflow-x: hidden; /* 🆕 AJOUT - Empêcher scroll horizontal */
-}
-
-.leaderboard-list::-webkit-scrollbar {
-    width: 4px;
-}
-
-.leaderboard-list::-webkit-scrollbar-thumb {
-    background: rgba(255, 215, 0, 0.3);
-    border-radius: 10px;
-}
-
-.leaderboard-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 10px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    transition: all 0.3s ease;
-}
-
-
-
-.leaderboard-item.rank-1 {
-    border-color: #FFD700;
-    background: rgba(255, 215, 0, 0.1);
-}
-
-.leaderboard-item.rank-2 {
-    border-color: #C0C0C0;
-    background: rgba(192, 192, 192, 0.05);
-}
-
-.leaderboard-item.rank-3 {
-    border-color: #CD7F32;
-    background: rgba(205, 127, 50, 0.05);
-}
-
-.rank {
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 215, 0, 0.2);
-    border-radius: 50%;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--neon-primary);
-    flex-shrink: 0;
-}
-
-.leaderboard-item.rank-1 .rank {
-    background: #FFD700;
-    color: #000;
-}
-
-.leaderboard-item.rank-2 .rank {
-    background: #C0C0C0;
-    color: #000;
-}
-
-.leaderboard-item.rank-3 .rank {
-    background: #CD7F32;
-    color: #fff;
-}
-
-.player-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.player-name {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.player-title {
-    font-size: 0.65rem;
-    color: var(--neon-primary);
-    font-style: italic;
-}
-
-.player-winrate {
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: var(--success-color);
-}
-
-
-/* Bouton toggle (mobile uniquement) */
-.leaderboard-toggle-btn {
-    display: none; /* Caché par défaut (desktop) */
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    width: 48px;
-    height: 48px;
-    background: rgba(31, 31, 31, 0.8);
-    backdrop-filter: blur(10px);
-    border: 1.6px solid rgba(255, 215, 0, 0.3);
-    border-radius: 50%;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    z-index: 500;
-    color: var(--neon-primary);
-}
-
-.leaderboard-toggle-btn:active {
-    transform: scale(0.95);
-}
-
-.leaderboard-toggle-btn svg {
-    filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.3));
+.spectator-icon {
+    font-size: 3.2rem;
+    margin-bottom: 16px;
 }
