@@ -24,11 +24,13 @@
     box-sizing: border-box;
 }
 
+
 body {
     font-family: 'Poppins', sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
-    overflow-x: hidden;
+    overflow: hidden; /* 🆕 Bloquer le scroll partout */
+    height: 100vh; /* 🆕 Forcer hauteur viewport */
     transition: background 0.3s ease, color 0.3s ease;
 }
 
@@ -2035,16 +2037,9 @@ body {
         margin: 12px 0;
     }
 
-    body.game-active {
-        overflow: hidden;
-        position: fixed;
-        width: 100%;
-        height: 100vh;
-    }
-
     /* Question mobile */
     .question-container-wrapper {
-        max-height: 75vh;
+        max-height: 85vh;
         padding-top: 4vh;
         overflow: hidden;
     }

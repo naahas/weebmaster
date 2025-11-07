@@ -379,6 +379,7 @@ createApp({
                 // 🆕 Vérifier si le joueur participe à la partie
                 if (data.isParticipating) {
                     // Le joueur a rejoint le lobby, il participe
+                    document.body.classList.add('game-active');
                     this.gameInProgress = true;
                     this.playerLives = this.gameLives;  // 🆕 Utiliser gameLives configuré
                     this.showNotification(`La partie commence avec ${data.totalPlayers} joueurs !`, 'success');
