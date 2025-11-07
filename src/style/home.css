@@ -86,7 +86,7 @@ body {
 
 .neon-text {
     color: var(--neon-primary);
-    text-shadow: 
+    text-shadow:
         0 0 8.0px var(--neon-primary),
         0 0 16px var(--neon-primary),
         0 0 32px var(--neon-primary);
@@ -95,7 +95,7 @@ body {
 
 .neon-text-alt {
     color: var(--neon-secondary);
-    text-shadow: 
+    text-shadow:
         0 0 8.0px var(--neon-secondary),
         0 0 16px var(--neon-secondary),
         0 0 32px var(--neon-secondary);
@@ -103,14 +103,17 @@ body {
 }
 
 @keyframes neonPulse {
-    0%, 100% {
-        text-shadow: 
+
+    0%,
+    100% {
+        text-shadow:
             0 0 8.0px currentColor,
             0 0 16px currentColor,
             0 0 32px currentColor;
     }
+
     50% {
-        text-shadow: 
+        text-shadow:
             0 0 16px currentColor,
             0 0 32px currentColor,
             0 0 64px currentColor;
@@ -146,8 +149,17 @@ body {
 }
 
 @keyframes pulseDot {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(1.2); }
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.5;
+        transform: scale(1.2);
+    }
 }
 
 /* 🆕 Badge EN LIVE discret en bas (pour non-connectés) */
@@ -179,8 +191,15 @@ body {
 }
 
 @keyframes subtlePulse {
-    0%, 100% { opacity: 0.8; }
-    50% { opacity: 0.6; }
+
+    0%,
+    100% {
+        opacity: 0.8;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
 }
 
 /* ============================================
@@ -223,8 +242,15 @@ body {
 }
 
 @keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8.0px); }
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-8.0px);
+    }
 }
 
 .info-card h2,
@@ -444,8 +470,15 @@ body {
 }
 
 @keyframes floating {
-    0%, 100% { transform: translateY(0.0px); }
-    50% { transform: translateY(-8.0px); }
+
+    0%,
+    100% {
+        transform: translateY(0.0px);
+    }
+
+    50% {
+        transform: translateY(-8.0px);
+    }
 }
 
 /* ============================================
@@ -576,8 +609,15 @@ body {
 }
 
 @keyframes pulse-warning {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
 }
 
 .timer-circle {
@@ -610,8 +650,15 @@ body {
 }
 
 @keyframes timerPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
 }
 
 .timer-number {
@@ -625,7 +672,7 @@ body {
     text-shadow: 0 0 8.0px var(--neon-primary);
 }
 
-.timer-circle-progress.warning + .timer-number {
+.timer-circle-progress.warning+.timer-number {
     color: var(--error-color);
     text-shadow: 0 0 8.0px var(--error-color);
 }
@@ -791,8 +838,13 @@ body {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 /* ============================================
@@ -890,6 +942,7 @@ body {
         opacity: 0;
         transform: scale(0.9);
     }
+
     to {
         opacity: 1;
         transform: scale(1);
@@ -1054,9 +1107,19 @@ body {
 }
 
 @keyframes rotate {
-    0%, 100% { transform: rotate(0deg); }
-    25% { transform: rotate(-10deg); }
-    75% { transform: rotate(10deg); }
+
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    25% {
+        transform: rotate(-10deg);
+    }
+
+    75% {
+        transform: rotate(10deg);
+    }
 }
 
 .winner-section {
@@ -1376,6 +1439,7 @@ body {
         opacity: 0;
         transform: translateY(24px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -1387,6 +1451,7 @@ body {
         opacity: 0;
         transform: translateY(-24px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -1394,8 +1459,15 @@ body {
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
 }
 
 /* ============================================
@@ -1449,9 +1521,11 @@ body {
         transform: translateY(-50%) scale(0);
         opacity: 0;
     }
+
     50% {
         transform: translateY(-50%) scale(1.2);
     }
+
     100% {
         transform: translateY(-50%) scale(1);
         opacity: 1;
@@ -1569,10 +1643,12 @@ body {
         opacity: 0;
         transform: translate(-10px, 10px) scale(0.85);
     }
+
     3% {
         opacity: 0.9;
         transform: translate(-15px, -5px) scale(1);
     }
+
     100% {
         opacity: 0;
         transform: translate(-30px, -220px) scale(0.85);
@@ -1588,10 +1664,12 @@ body {
         opacity: 0;
         transform: translate(10px, 10px) scale(0.85);
     }
+
     3% {
         opacity: 0.9;
         transform: translate(20px, -5px) scale(1);
     }
+
     100% {
         opacity: 0;
         transform: translate(60px, -200px) scale(0.85);
@@ -1615,18 +1693,18 @@ body {
     border-radius: 14px;
     padding: 16px 12px;
     z-index: 500;
-    
+
     /* 🔥 DESKTOP - Visible par défaut */
     transform: translateX(0);
     pointer-events: auto;
     opacity: 0.5;
-    
-    transition: 
+
+    transition:
         transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
         opacity 0.3s ease,
         background 0.3s ease,
         backdrop-filter 0.3s ease;
-    
+
     /* 🔥 Animation UNIQUEMENT sur desktop */
     animation: fadeInLeft 0.6s ease-out;
 }
@@ -1636,6 +1714,7 @@ body {
         opacity: 0;
         transform: translateX(-30px);
     }
+
     100% {
         opacity: 0.5;
         transform: translateX(0);
@@ -1695,22 +1774,52 @@ body {
     animation: fadeInItem 0.4s ease-out backwards;
 }
 
-.leaderboard-item:nth-child(1) { animation-delay: 0.1s; }
-.leaderboard-item:nth-child(2) { animation-delay: 0.2s; }
-.leaderboard-item:nth-child(3) { animation-delay: 0.3s; }
-.leaderboard-item:nth-child(4) { animation-delay: 0.4s; }
-.leaderboard-item:nth-child(5) { animation-delay: 0.5s; }
-.leaderboard-item:nth-child(6) { animation-delay: 0.6s; }
-.leaderboard-item:nth-child(7) { animation-delay: 0.7s; }
-.leaderboard-item:nth-child(8) { animation-delay: 0.8s; }
-.leaderboard-item:nth-child(9) { animation-delay: 0.9s; }
-.leaderboard-item:nth-child(10) { animation-delay: 1.0s; }
+.leaderboard-item:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.leaderboard-item:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.leaderboard-item:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.leaderboard-item:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.leaderboard-item:nth-child(5) {
+    animation-delay: 0.5s;
+}
+
+.leaderboard-item:nth-child(6) {
+    animation-delay: 0.6s;
+}
+
+.leaderboard-item:nth-child(7) {
+    animation-delay: 0.7s;
+}
+
+.leaderboard-item:nth-child(8) {
+    animation-delay: 0.8s;
+}
+
+.leaderboard-item:nth-child(9) {
+    animation-delay: 0.9s;
+}
+
+.leaderboard-item:nth-child(10) {
+    animation-delay: 1.0s;
+}
 
 @keyframes fadeInItem {
     0% {
         opacity: 0;
         transform: translateX(-10px);
     }
+
     100% {
         opacity: 1;
         transform: translateX(0);
@@ -1802,6 +1911,7 @@ body {
    RESPONSIVE MOBILE
    ============================================ */
 @media (max-width: 614px) {
+
     /* Body - Empêcher scroll */
     body {
         overflow: hidden;
@@ -2019,39 +2129,43 @@ body {
         top: 58%;
         padding: 6px 12px;
     }
-    
+
     .notif-username {
         font-size: 0.7rem;
     }
-    
+
     .notif-text {
         font-size: 0.65rem;
     }
-    
+
     @keyframes curvedPath1 {
         0% {
             opacity: 0;
             transform: translate(-8px, 8px) scale(0.85);
         }
+
         3% {
             opacity: 0.9;
             transform: translate(-12px, -4px) scale(1);
         }
+
         100% {
             opacity: 0;
             transform: translate(-20px, -150px) scale(0.85);
         }
     }
-    
+
     @keyframes curvedPath2 {
         0% {
             opacity: 0;
             transform: translate(8px, 8px) scale(0.85);
         }
+
         3% {
             opacity: 0.9;
             transform: translate(15px, -4px) scale(1);
         }
+
         100% {
             opacity: 0;
             transform: translate(70px, -140px) scale(0.85);
@@ -2063,30 +2177,33 @@ body {
     ============================================ */
 
     /* 🔥 FIX: Désactiver TOUTES les animations sur mobile */
-   .leaderboard-container {
+    .leaderboard-container {
         animation: none !important;
         transform: translateX(-100%) !important;
         pointer-events: none !important;
         opacity: 1 !important;
-        top: 20px !important; /* 🆕 Comme sur desktop */
+        top: 20px !important;
+        /* 🆕 Comme sur desktop */
         left: 0 !important;
         border-radius: 0 14px 14px 0;
-        height: auto !important; /* 🆕 Hauteur dynamique */
-        max-height: calc(100vh - 40px) !important; /* 🆕 Limite max */
+        height: auto !important;
+        /* 🆕 Hauteur dynamique */
+        max-height: calc(100vh - 40px) !important;
+        /* 🆕 Limite max */
     }
-    
+
     /* Quand ouvert sur mobile */
     .leaderboard-container.mobile-open {
         transform: translateX(0) !important;
         pointer-events: auto !important;
         opacity: 1 !important;
     }
-    
+
     /* 🔥 FIX: Désactiver animations des items sur mobile */
     .leaderboard-item {
         animation: none !important;
     }
-    
+
     /* Afficher le bouton toggle sur mobile */
     .leaderboard-toggle-btn {
         display: flex !important;
@@ -2153,7 +2270,8 @@ body {
     }
 
     .leaderboard-list {
-         max-height: calc(100vh - 120px); /* 🆕 Ajusté pour mobile */
+        max-height: calc(100vh - 120px);
+        /* 🆕 Ajusté pour mobile */
     }
 
     .leaderboard-item {
@@ -2242,6 +2360,7 @@ body {
         opacity: 0;
         transform: translateY(30px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -2528,7 +2647,8 @@ body {
 .instagram-btn {
     position: fixed;
     bottom: 24px;
-    left: 15px; /* Premier à gauche */
+    left: 15px;
+    /* Premier à gauche */
     width: 48px;
     height: 48px;
     background: transparent;
@@ -2543,21 +2663,25 @@ body {
     text-decoration: none;
     animation: slideInLeft 0.8s ease-out;
 }
+
 .instagram-btn:hover {
     transform: scale(1.1);
     color: var(--neon-primary);
     filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.3));
 }
+
 .instagram-btn svg {
     transition: all 0.3s ease;
 }
+
 /* ============================================
    TIKTOK BUTTON - À côté d'Instagram
    ============================================ */
 .tiktok-btn {
     position: fixed;
     bottom: 24px;
-    left: 60px; /* 24px + 48px (largeur insta) + 8px gap */
+    left: 60px;
+    /* 24px + 48px (largeur insta) + 8px gap */
     width: 48px;
     height: 48px;
     background: transparent;
@@ -2572,25 +2696,30 @@ body {
     text-decoration: none;
     animation: slideInLeft 0.8s ease-out;
 }
+
 .tiktok-btn:hover {
     transform: scale(1.1);
     color: var(--neon-primary);
     filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.3));
 }
+
 .tiktok-btn svg {
     transition: all 0.3s ease;
 }
+
 /* Animation slide depuis la gauche */
 @keyframes slideInLeft {
     0% {
         opacity: 0;
         transform: translateY(30px);
     }
+
     100% {
         opacity: 1;
         transform: translateY(0);
     }
 }
+
 /* Mobile */
 @media (max-width: 614px) {
     .instagram-btn {
@@ -2599,10 +2728,11 @@ body {
         width: 44px;
         height: 44px;
     }
-    
+
     .tiktok-btn {
         bottom: 80px;
-        left: 72px; /* 20px + 44px + 8px gap */
+        left: 72px;
+        /* 20px + 44px + 8px gap */
         width: 44px;
         height: 44px;
     }

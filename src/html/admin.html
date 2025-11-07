@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ShonenMaster - Panel Admin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -35,7 +37,7 @@
             color: var(--text-primary);
             min-height: 100vh;
             overflow-x: hidden;
-            background-image: 
+            background-image:
                 radial-gradient(circle at 20% 50%, rgba(255, 215, 0, 0.03) 0%, transparent 50%),
                 radial-gradient(circle at 80% 80%, rgba(255, 165, 0, 0.03) 0%, transparent 50%);
         }
@@ -204,8 +206,15 @@
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
         }
 
         .btn-icon {
@@ -281,8 +290,15 @@
         }
 
         @keyframes pulse-timer {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
         }
 
         .control-card.lobby-active {
@@ -553,13 +569,15 @@
         }
 
         /* ============ RIGHT SIDE (Question/Players) ============ */
-        
+
         .admin-grid {
             display: grid;
-            grid-template-columns: 280px 1fr 200px; /* Panneau droit réduit à 200px pour plus d'espace au centre */
+            grid-template-columns: 280px 1fr 200px;
+            /* Panneau droit réduit à 200px pour plus d'espace au centre */
             gap: 16px;
             padding: 20px;
-            max-height: calc(100vh - 80px); /* Hauteur max pour éviter scroll */
+            max-height: calc(100vh - 80px);
+            /* Hauteur max pour éviter scroll */
             overflow: hidden;
         }
 
@@ -567,7 +585,8 @@
         .right-panel {
             display: flex;
             flex-direction: column;
-            gap: 14px; /* Réduire l'espace entre sections */
+            gap: 14px;
+            /* Réduire l'espace entre sections */
             max-height: calc(100vh - 100px);
             overflow-y: auto;
             padding-right: 8px;
@@ -576,13 +595,15 @@
         /* Réduire les paddings des cards */
         .settings-card,
         .database-card {
-            padding: 16px; /* Réduire de 24px à 16px */
+            padding: 16px;
+            /* Réduire de 24px à 16px */
         }
 
         /* Réduire l'espacement dans les sections */
         .settings-section,
         .database-section {
-            margin-bottom: 16px; /* Réduire de 24px à 16px */
+            margin-bottom: 16px;
+            /* Réduire de 24px à 16px */
         }
 
         .settings-section:last-child,
@@ -592,12 +613,15 @@
 
         /* Optimiser les stat-items pour prendre moins de place */
         .db-stat-item {
-            padding: 10px 12px; /* Réduire padding */
-            margin-bottom: 8px; /* Réduire marge */
+            padding: 10px 12px;
+            /* Réduire padding */
+            margin-bottom: 8px;
+            /* Réduire marge */
         }
 
         .db-stat-label {
-            font-size: 0.7rem; /* Réduire de 0.75rem */
+            font-size: 0.7rem;
+            /* Réduire de 0.75rem */
         }
 
         /* Scrollbar personnalisée pour le panneau droit */
@@ -622,7 +646,7 @@
         /* STYLES POUR LE PANNEAU DE DROITE */
 
         /* ============ SETTINGS PANEL (RIGHT) ============ */
-                .settings-panel {
+        .settings-panel {
             padding: 12px;
             border-left: 0.8px solid var(--border);
             display: flex;
@@ -659,7 +683,7 @@
             background: var(--primary);
         }
 
-                /* Settings Section */
+        /* Settings Section */
         .settings-section {
             background: var(--bg-card);
             border: 0.8px solid var(--border);
@@ -676,7 +700,7 @@
             letter-spacing: 0.5px;
         }
 
-                .setting-item {
+        .setting-item {
             margin-bottom: 14px;
         }
 
@@ -757,7 +781,7 @@
         }
 
         /* Database Stats */
-                .db-stats {
+        .db-stats {
             background: var(--bg-card);
             border: 0.8px solid var(--border);
             border-radius: 8px;
@@ -766,6 +790,7 @@
             flex-direction: column;
             gap: 8px;
         }
+
         .db-stats h3 {
             font-size: 0.75rem;
             color: var(--primary);
@@ -775,7 +800,7 @@
             letter-spacing: 0.5px;
         }
 
-                .db-stat-item {
+        .db-stat-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -791,7 +816,7 @@
             border-bottom: none;
         }
 
-                .db-stat-label {
+        .db-stat-label {
             font-size: 0.7rem;
             color: var(--text-secondary);
             font-weight: 500;
@@ -927,8 +952,15 @@
         }
 
         @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
         }
 
         .timer-text {
@@ -995,6 +1027,7 @@
                 opacity: 0;
                 transform: translateY(16px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -1007,7 +1040,7 @@
             margin-bottom: 14px;
             text-align: center;
         }
-        
+
         .results-question-text {
             font-size: 0.75rem;
             color: var(--text-secondary);
@@ -1040,8 +1073,15 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
 
         .chart-box:nth-child(2) {
@@ -1073,18 +1113,25 @@
             align-items: center;
             justify-content: center;
             gap: 12px;
-            flex: 1; /* 🆕 Prendre l'espace disponible */
-            min-height: 0; /* 🆕 Important pour flexbox */
-            overflow: hidden; /* 🆕 Empêcher débordement */
+            flex: 1;
+            /* 🆕 Prendre l'espace disponible */
+            min-height: 0;
+            /* 🆕 Important pour flexbox */
+            overflow: hidden;
+            /* 🆕 Empêcher débordement */
         }
 
         .chart-legend {
             display: flex;
             flex-direction: column;
-            gap: 4px; /* 🆕 Réduit de 8px à 4px */
-            min-width: 90px; /* 🆕 Réduit de 110px à 90px */
-            max-height: 220px; /* 🆕 Limite hauteur légende */
-            overflow-y: auto; /* 🆕 Scroll si trop d'items */
+            gap: 4px;
+            /* 🆕 Réduit de 8px à 4px */
+            min-width: 90px;
+            /* 🆕 Réduit de 110px à 90px */
+            max-height: 220px;
+            /* 🆕 Limite hauteur légende */
+            overflow-y: auto;
+            /* 🆕 Scroll si trop d'items */
         }
 
         /* 🆕 Scrollbar légende */
@@ -1379,8 +1426,15 @@
         }
 
         @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8.0px); }
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-8.0px);
+            }
         }
 
         .game-end-header h2 {
@@ -1547,8 +1601,13 @@
         }
 
         @keyframes rotate-reset {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .reset-text {
@@ -1577,7 +1636,7 @@
                 grid-template-columns: 1fr;
                 gap: 16px;
             }
-            
+
             .left-panel,
             .right-panel,
             .settings-panel {
@@ -1593,12 +1652,12 @@
                 gap: 12px;
                 align-items: flex-start;
             }
-            
+
             .header-actions {
                 width: 100%;
                 justify-content: space-between;
             }
-            
+
             .settings-panel,
             .settings-section,
             .db-stats {
@@ -1606,9 +1665,29 @@
             }
         }
 
-        
+        .btn-home-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--bg-main);
+            border: 0.8px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .btn-home-icon:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            color: var(--primary);
+        }
     </style>
 </head>
+
 <body>
     <!-- ============ LOGIN ============ -->
     <div class="login-container" id="loginContainer">
@@ -1632,7 +1711,14 @@
     <div class="admin-panel" id="adminPanel">
         <!-- Header -->
         <div class="admin-header">
-            <h1>ShonenMaster Admin</h1>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <button class="btn-home-icon" onclick="goToHome()" title="Retour à l'accueil">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+                    </svg>
+                </button>
+                <h1>ShonenMaster Admin</h1>
+            </div>
             <div class="header-actions">
                 <div class="status-badge">
                     <div class="status-dot inactive" id="statusIndicator"></div>
@@ -1655,6 +1741,8 @@
             <div class="control-card secondary" onclick="refreshPage()">
                 <h3>Rafraîchir</h3>
             </div>
+
+
         </div>
 
         <!-- Layout 30/70 -->
@@ -1734,7 +1822,7 @@
                 <!-- Paramètres de partie -->
                 <div class="settings-section" id="gameSettings">
                     <h3>Paramètres</h3>
-                    
+
                     <div class="setting-item">
                         <label class="setting-label">Nombre de vies</label>
                         <div class="lives-selector">
@@ -1914,7 +2002,7 @@
         let isTogglingGame = false; // 🆕 Anti-spam toggle game
         let isStartingGame = false; // 🆕 Anti-spam start game
         let isNextQuestion = false; // 🆕 Anti-spam next question
-        
+
         // 🆕 Game Settings
         let gameSettings = {
             lives: 3,
@@ -1940,10 +2028,10 @@
                     document.getElementById('loginContainer').style.display = 'none';
                     document.getElementById('adminPanel').style.display = 'block';
                     initSocket();
-                    
+
                     // 🆕 Attendre que socket soit connecté
                     await new Promise(resolve => setTimeout(resolve, 500));
-                    
+
                     // 🆕 FORCER la restauration
                     await restoreGameState();
                     refreshStats();
@@ -1968,10 +2056,10 @@
                         document.getElementById('loginContainer').style.display = 'none';
                         document.getElementById('adminPanel').style.display = 'block';
                         initSocket();
-                        
+
                         // 🆕 Attendre que socket soit connecté
                         await new Promise(resolve => setTimeout(resolve, 500));
-                        
+
                         // 🆕 FORCER la restauration
                         await restoreGameState();
                         refreshStats();
@@ -1988,35 +2076,35 @@
             try {
                 const response = await fetch('/game/state');
                 const state = await response.json();
-                
+
                 console.log('🔄 Restauration état:', state);
-                
+
                 // 🆕 Attendre que DOM soit prêt
                 await new Promise(resolve => setTimeout(resolve, 200));
-                
+
                 // Restaurer joueurs
                 if (state.players && state.players.length > 0) {
                     updatePlayersGrid(state.players);
                     console.log(`✅ ${state.players.length} joueurs restaurés`);
                 }
-                
+
                 // Restaurer question en cours
                 if (state.currentQuestion && state.inProgress) {
                     console.log('✅ Question en cours restaurée');
-                    
+
                     // 🆕 Switch vers onglet Question
                     switchTab('question');
-                    
+
                     // 🆕 Attendre 100ms
                     await new Promise(resolve => setTimeout(resolve, 100));
-                    
+
                     displayQuestion(state.currentQuestion, state.timeRemaining || 0);
-                    
+
                     if (state.timeRemaining > 0) {
                         startAdminTimer(state.timeRemaining);
                     }
                 }
-                
+
                 // Désactiver paramètres si partie en cours
                 if (state.inProgress) {
                     toggleSettingsAccess(false);
@@ -2025,7 +2113,7 @@
                     toggleSettingsAccess(true);
                     console.log('🔓 Paramètres activés');
                 }
-                
+
                 // Restaurer paramètres visuels
                 if (state.lives) {
                     gameSettings.lives = state.lives;
@@ -2037,14 +2125,14 @@
                     }
                     console.log(`✅ Vies restaurées: ${state.lives}`);
                 }
-                
+
                 if (state.questionTime) {
                     gameSettings.timePerQuestion = state.questionTime;
                     const timeSelect = document.getElementById('timeSelect');
                     if (timeSelect) timeSelect.value = state.questionTime;
                     console.log(`✅ Temps restauré: ${state.questionTime}s`);
                 }
-                
+
             } catch (error) {
                 console.error('❌ Erreur restauration état:', error);
             }
@@ -2115,7 +2203,7 @@
             currentQuestionData = data;
             console.log("📝 Displaying question:", data);
             const container = document.getElementById('questionContainer');
-            
+
             // Reset timer
             clearInterval(timerInterval);
             // BUG FIX 2: Utiliser le temps restant passé en paramètre si disponible
@@ -2164,7 +2252,7 @@
 
             // Update question number
             document.getElementById('currentQuestion').textContent = data.questionNumber;
-            
+
             // S'assurer que le container est visible
             document.getElementById('resultsContainer').style.display = 'none';
             container.style.display = 'block';
@@ -2173,10 +2261,10 @@
         function startTimer(duration) {
             const fill = document.getElementById('timerBarFill');
             const text = document.getElementById('timerText');
-            
+
             timerInterval = setInterval(() => {
                 timeRemaining--;
-                
+
                 const percentage = (timeRemaining / duration) * 100;
                 fill.style.width = percentage + '%';
                 text.textContent = timeRemaining + 's';
@@ -2199,32 +2287,32 @@
                 console.log('⚠️ Timer trop court, pas de démarrage');
                 return;
             }
-            
+
             const fill = document.getElementById('timerBarFill');
             const text = document.getElementById('timerText');
             const duration = 7; // Durée totale de base
-            
+
             if (!fill || !text) {
                 console.log('⚠️ Éléments timer non trouvés');
                 return;
             }
-            
+
             // Définir l'état initial du timer
             timeRemaining = initialTime;
             const percentage = (timeRemaining / duration) * 100;
             fill.style.width = percentage + '%';
             text.textContent = timeRemaining + 's';
-            
+
             if (timeRemaining <= 3) {
                 fill.classList.add('warning');
                 text.classList.add('warning');
             }
-            
+
             // Démarrer l'intervalle
             clearInterval(timerInterval); // Clear any existing interval
             timerInterval = setInterval(() => {
                 timeRemaining--;
-                
+
                 const newPercentage = (timeRemaining / duration) * 100;
                 fill.style.width = newPercentage + '%';
                 text.textContent = timeRemaining + 's';
@@ -2239,7 +2327,7 @@
                     console.log('⏱️ Timer terminé après restauration');
                 }
             }, 1000);
-            
+
             console.log(`✅ Timer démarré avec ${initialTime}s restantes`);
         }
 
@@ -2247,16 +2335,16 @@
         function displayResults(data) {
             console.log('📊 displayResults appelé avec:', data);
             clearInterval(timerInterval);
-            
+
             const container = document.getElementById('resultsContainer');
             console.log('📦 Container resultsContainer:', container);
-            
+
             // Utiliser les bonnes propriétés du serveur
             const correctCount = data.stats.correct;
             const wrongCount = data.stats.wrong;
             const afkCount = data.stats.afk;
             const totalAnswers = correctCount + wrongCount + afkCount;
-            
+
             console.log('📈 Stats:', { correctCount, wrongCount, afkCount, totalAnswers });
 
             // Diagramme 2: Répartition des vies
@@ -2271,7 +2359,7 @@
             if (data.players) {
                 const correctPlayers = data.players.filter(p => p.isCorrect && p.responseTime);
                 if (correctPlayers.length > 0) {
-                    fastestPlayer = correctPlayers.reduce((fastest, current) => 
+                    fastestPlayer = correctPlayers.reduce((fastest, current) =>
                         current.responseTime < fastest.responseTime ? current : fastest
                     );
                 }
@@ -2279,22 +2367,22 @@
 
             // Calculs pour les camemberts
             const circumference = 2 * Math.PI * 45;
-            
+
             // Segments diagramme 1 (réponses)
             const correctPercent = totalAnswers > 0 ? correctCount / totalAnswers : 0;
             const wrongPercent = totalAnswers > 0 ? wrongCount / totalAnswers : 0;
             const afkPercent = totalAnswers > 0 ? afkCount / totalAnswers : 0;
-            
+
             const correctDash = correctPercent * circumference;
             const wrongDash = wrongPercent * circumference;
             const afkDash = afkPercent * circumference;
-            
+
             // Segments diagramme 2 (vies)
             const lives3Percent = totalPlayers > 0 ? lives3 / totalPlayers : 0;
             const lives2Percent = totalPlayers > 0 ? lives2 / totalPlayers : 0;
             const lives1Percent = totalPlayers > 0 ? lives1 / totalPlayers : 0;
             const lives0Percent = totalPlayers > 0 ? lives0 / totalPlayers : 0;
-            
+
             const lives3Dash = lives3Percent * circumference;
             const lives2Dash = lives2Percent * circumference;
             const lives1Dash = lives1Percent * circumference;
@@ -2423,40 +2511,40 @@
                         svg2.appendChild(text);
                     }
                 }
-                
+
                 console.log('✅ Charts injected successfully');
             }, 50);
 
             // Update stats - Actifs = joueurs restants après la question
             document.getElementById('activePlayers').textContent = data.remainingPlayers;
-            
+
             // Mettre à jour la grille des joueurs avec les indicateurs de réponse
             if (data.playersData) {
                 updatePlayersGridWithResults(data.playersData, data.players);
             }
-            
+
             console.log('✅ Results displayed successfully');
         }
 
         // 🆕 Fonction pour générer un pie chart SVG avec labels (FIXED)
         function generatePieChart(svgElement, segments) {
             console.log('🎨 generatePieChart appelé avec:', segments);
-            
+
             // Vider le SVG
             while (svgElement.firstChild) {
                 svgElement.removeChild(svgElement.firstChild);
             }
-            
+
             const centerX = 50;
             const centerY = 50;
             const radius = 40;
             let currentAngle = -90;
-            
+
             // Filtrer les segments avec valeur > 0
             const validSegments = segments.filter(s => s.value > 0);
-            
+
             console.log('✅ Valid segments:', validSegments);
-            
+
             if (validSegments.length === 0) {
                 const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                 text.setAttribute('x', '50');
@@ -2468,52 +2556,52 @@
                 svgElement.appendChild(text);
                 return;
             }
-            
+
             // Calculer le total
             const total = validSegments.reduce((sum, s) => sum + s.value, 0);
             console.log('📊 Total:', total);
-            
+
             validSegments.forEach((segment, i) => {
                 const angle = (segment.value / total) * 360;
                 const startAngle = currentAngle;
                 const endAngle = currentAngle + angle;
-                
+
                 console.log(`Segment ${i}:`, { angle, startAngle, endAngle, color: segment.color });
-                
+
                 // Convertir en radians
                 const startRad = (startAngle * Math.PI) / 180;
                 const endRad = (endAngle * Math.PI) / 180;
-                
+
                 // Points de départ et fin
                 const x1 = centerX + radius * Math.cos(startRad);
                 const y1 = centerY + radius * Math.sin(startRad);
                 const x2 = centerX + radius * Math.cos(endRad);
                 const y2 = centerY + radius * Math.sin(endRad);
-                
-                const largeArc = angle > 180 ? 1 : 0;
-                
-                // ⭐ FIX: Pour un cercle complet (360°), utiliser 2 arcs de 180°
-let pathD;
-if (angle >= 359.9) {
-    // Cercle complet : 2 demi-cercles
-    const midX = centerX - radius;
-    pathD = `M ${centerX},${centerY - radius} A ${radius},${radius} 0 0,1 ${centerX},${centerY + radius} A ${radius},${radius} 0 0,1 ${centerX},${centerY - radius} Z`;
-} else {
-    pathD = `M ${centerX},${centerY} L ${x1},${y1} A ${radius},${radius} 0 ${largeArc},1 ${x2},${y2} Z`;
-}
-console.log('Path:', pathD);
 
-// ⭐ CRÉER LE PATH AVEC createElementNS
-const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-path.setAttribute('d', pathD);
-path.setAttribute('fill', segment.color);
-path.setAttribute('stroke', '#1a1d29');
-path.setAttribute('stroke-width', '1.5');
-svgElement.appendChild(path);
-                
+                const largeArc = angle > 180 ? 1 : 0;
+
+                // ⭐ FIX: Pour un cercle complet (360°), utiliser 2 arcs de 180°
+                let pathD;
+                if (angle >= 359.9) {
+                    // Cercle complet : 2 demi-cercles
+                    const midX = centerX - radius;
+                    pathD = `M ${centerX},${centerY - radius} A ${radius},${radius} 0 0,1 ${centerX},${centerY + radius} A ${radius},${radius} 0 0,1 ${centerX},${centerY - radius} Z`;
+                } else {
+                    pathD = `M ${centerX},${centerY} L ${x1},${y1} A ${radius},${radius} 0 ${largeArc},1 ${x2},${y2} Z`;
+                }
+                console.log('Path:', pathD);
+
+                // ⭐ CRÉER LE PATH AVEC createElementNS
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', pathD);
+                path.setAttribute('fill', segment.color);
+                path.setAttribute('stroke', '#1a1d29');
+                path.setAttribute('stroke-width', '1.5');
+                svgElement.appendChild(path);
+
                 currentAngle = endAngle;
             });
-            
+
             console.log('✅ SVG elements created successfully');
         }
 
@@ -2529,11 +2617,11 @@ svgElement.appendChild(path);
             console.log('🔄 Reset question display');
             const questionContainer = document.getElementById('questionContainer');
             const resultsContainer = document.getElementById('resultsContainer');
-            
+
             // Cacher les résultats
             resultsContainer.style.display = 'none';
             resultsContainer.innerHTML = '';
-            
+
             // Afficher le message par défaut
             questionContainer.innerHTML = `
                 <div class="empty-state">
@@ -2543,7 +2631,7 @@ svgElement.appendChild(path);
                 </div>
             `;
             questionContainer.style.display = 'block';
-            
+
             // Revenir à l'onglet Question
             switchTab('question');
         }
@@ -2551,13 +2639,13 @@ svgElement.appendChild(path);
         // ============ GAME END PANEL ============
         function displayGameEnd(data) {
             console.log('🏁 Affichage fin de partie:', data);
-            
+
             const resultsContainer = document.getElementById('resultsContainer');
             const questionContainer = document.getElementById('questionContainer');
-            
+
             // Cacher la question et afficher le panel de fin
             questionContainer.style.display = 'none';
-            
+
             if (!data.winner) {
                 resultsContainer.innerHTML = `
                     <div class="game-end-panel">
@@ -2570,7 +2658,7 @@ svgElement.appendChild(path);
             } else {
                 // Panel avec le gagnant
                 const hearts = '❤️'.repeat(data.winner.livesRemaining);
-                
+
                 resultsContainer.innerHTML = `
                     <div class="game-end-panel">
                         <div class="game-end-header">
@@ -2607,14 +2695,14 @@ svgElement.appendChild(path);
                     </div>
                 `;
             }
-            
+
             resultsContainer.style.display = 'block';
         }
 
         // ============ PLAYERS GRID ============
         function updatePlayersGrid(players) {
             const grid = document.getElementById('playersGrid');
-            
+
             if (players.length === 0) {
                 grid.innerHTML = `
                     <div class="empty-state">
@@ -2628,8 +2716,8 @@ svgElement.appendChild(path);
 
             grid.innerHTML = players.map(player => {
                 const isEliminated = player.lives === 0;
-                const statusClass = player.lastAnswerCorrect === true ? 'correct' : 
-                                  player.lastAnswerCorrect === false ? 'wrong' : '';
+                const statusClass = player.lastAnswerCorrect === true ? 'correct' :
+                    player.lastAnswerCorrect === false ? 'wrong' : '';
 
                 return `
                     <div class="player-card ${statusClass} ${isEliminated ? 'eliminated' : ''}">
@@ -2641,11 +2729,11 @@ svgElement.appendChild(path);
                         </div>
                         <div class="player-lives">
                             <span>Vies:</span>
-                            ${[1, 2, 3].map(n => 
-                                `<span class="heart-icon ${n <= player.lives ? 'active' : 'lost'}">
+                            ${[1, 2, 3].map(n =>
+                    `<span class="heart-icon ${n <= player.lives ? 'active' : 'lost'}">
                                     ${n <= player.lives ? '❤️' : '🖤'}
                                 </span>`
-                            ).join('')}
+                ).join('')}
                         </div>
                     </div>
                 `;
@@ -2655,7 +2743,7 @@ svgElement.appendChild(path);
         // 🆕 Mettre à jour la grille avec les résultats de la question
         function updatePlayersGridWithResults(playersData, playersDetails) {
             const grid = document.getElementById('playersGrid');
-            
+
             if (!playersData || playersData.length === 0) {
                 grid.innerHTML = `
                     <div class="empty-state">
@@ -2678,8 +2766,8 @@ svgElement.appendChild(path);
             grid.innerHTML = playersData.map(player => {
                 const isEliminated = player.lives === 0;
                 const detail = detailsMap.get(player.username);
-                const statusClass = detail?.isCorrect ? 'correct' : 
-                                  detail?.isCorrect === false ? 'wrong' : '';
+                const statusClass = detail?.isCorrect ? 'correct' :
+                    detail?.isCorrect === false ? 'wrong' : '';
 
                 return `
                     <div class="player-card ${statusClass} ${isEliminated ? 'eliminated' : ''}">
@@ -2691,11 +2779,11 @@ svgElement.appendChild(path);
                         </div>
                         <div class="player-lives">
                             <span>Vies:</span>
-                            ${[1, 2, 3].map(n => 
-                                `<span class="heart-icon ${n <= player.lives ? 'active' : 'lost'}">
+                            ${[1, 2, 3].map(n =>
+                    `<span class="heart-icon ${n <= player.lives ? 'active' : 'lost'}">
                                     ${n <= player.lives ? '❤️' : '🖤'}
                                 </span>`
-                            ).join('')}
+                ).join('')}
                         </div>
                     </div>
                 `;
@@ -2705,7 +2793,7 @@ svgElement.appendChild(path);
         // ============ OVERLAYS ============
         function toggleOverlay(type) {
             closeOverlays();
-            
+
             const backdrop = document.getElementById('overlayBackdrop');
             backdrop.classList.add('active');
 
@@ -2743,15 +2831,15 @@ svgElement.appendChild(path);
                 console.log('⏳ Veuillez patienter...');
                 return;
             }
-            
+
             isTogglingGame = true;
-            
+
             try {
-                const response = await fetch('/admin/toggle-game', { 
+                const response = await fetch('/admin/toggle-game', {
                     method: 'POST',
                     credentials: 'same-origin'
                 });
-                
+
                 if (response.status === 403) {
                     if (!isReloading) {
                         isReloading = true;
@@ -2760,21 +2848,21 @@ svgElement.appendChild(path);
                     }
                     return;
                 }
-                
+
                 if (!response.ok) {
                     console.error('❌ Erreur toggle-game:', response.status);
                     return;
                 }
-                
+
                 const data = await response.json();
                 updateGameStatus(data.isActive);
-                
+
                 // 🆕 Si on ouvre le lobby, reset l'affichage de fin de partie
                 if (data.isActive) {
                     resetQuestionDisplay();
                     toggleSettingsAccess(true); // Débloquer les paramètres
                 }
-                
+
                 refreshStats();
             } catch (error) {
                 console.error('❌ Erreur toggleGame:', error);
@@ -2792,15 +2880,15 @@ svgElement.appendChild(path);
                 console.log('⏳ Démarrage en cours...');
                 return;
             }
-            
+
             isStartingGame = true;
-            
+
             try {
-                const response = await fetch('/admin/start-game', { 
+                const response = await fetch('/admin/start-game', {
                     method: 'POST',
                     credentials: 'same-origin'
                 });
-                
+
                 if (response.status === 403) {
                     if (!isReloading) {
                         isReloading = true;
@@ -2809,9 +2897,9 @@ svgElement.appendChild(path);
                     }
                     return;
                 }
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     toggleSettingsAccess(false); // Bloquer les paramètres
                     refreshStats();
@@ -2828,25 +2916,25 @@ svgElement.appendChild(path);
 
         async function nextQuestion() {
             const nextCard = document.getElementById('nextQuestionCard');
-            
+
             // 🆕 Anti-spam
             if (isNextQuestion) {
                 console.log('⏳ Question en cours d\'envoi...');
                 return;
             }
-            
+
             isNextQuestion = true;
-            
+
             // 🆕 Ajouter l'état visuel de blocage
             nextCard.classList.add('timer-blocked');
             nextCard.classList.remove('game-active');
-            
+
             try {
-                const response = await fetch('/admin/next-question', { 
+                const response = await fetch('/admin/next-question', {
                     method: 'POST',
                     credentials: 'same-origin'
                 });
-                
+
                 if (response.status === 403) {
                     if (!isReloading) {
                         isReloading = true;
@@ -2855,10 +2943,10 @@ svgElement.appendChild(path);
                     }
                     return;
                 }
-                
+
                 if (!response.ok) {
                     const data = await response.json();
-                    
+
                     // 🆕 Si bloqué par le timer (400 avec blocked: true)
                     if (response.status === 400 && data.blocked) {
                         console.log(`⏱ Timer actif - ${data.timeRemaining}s restantes`);
@@ -2870,13 +2958,13 @@ svgElement.appendChild(path);
                         }, data.timeRemaining * 1000);
                         return;
                     }
-                    
+
                     console.error('❌ Erreur next-question:', response.status);
                     nextCard.classList.remove('timer-blocked');
                     nextCard.classList.add('game-active');
                     return;
                 }
-                
+
                 const data = await response.json();
                 if (data.success) {
                     console.log('✅ Question suivante envoyée');
@@ -2901,15 +2989,15 @@ svgElement.appendChild(path);
         // ============ GAME SETTINGS ============
         function setLives(lives) {
             if (isGameInProgress()) return;
-            
+
             gameSettings.lives = lives;
-            
+
             // Update UI
             document.querySelectorAll('.lives-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             document.getElementById(`lives-${lives}`).classList.add('active');
-            
+
             // 🆕 Utiliser la route spécifique /admin/set-lives
             fetch('/admin/set-lives', {
                 method: 'POST',
@@ -2917,17 +3005,17 @@ svgElement.appendChild(path);
                 credentials: 'same-origin',
                 body: JSON.stringify({ lives: lives })
             }).then(response => response.json())
-            .then(data => console.log('✅ Vies synchronisées:', data))
-            .catch(err => console.error('❌ Erreur sync vies:', err));
-            
+                .then(data => console.log('✅ Vies synchronisées:', data))
+                .catch(err => console.error('❌ Erreur sync vies:', err));
+
             console.log(`✅ Vies définies: ${lives}`);
         }
 
         function setTime(seconds) {
             if (isGameInProgress()) return;
-            
+
             gameSettings.timePerQuestion = parseInt(seconds);
-            
+
             // 🆕 Émettre vers le serveur pour synchroniser avec les clients
             fetch('/admin/update-settings', {
                 method: 'POST',
@@ -2935,23 +3023,23 @@ svgElement.appendChild(path);
                 credentials: 'same-origin',
                 body: JSON.stringify({ lives: gameSettings.lives, timePerQuestion: gameSettings.timePerQuestion })
             }).then(response => response.json())
-            .then(data => console.log('✅ Paramètres synchronisés'))
-            .catch(err => console.error('❌ Erreur sync paramètres:', err));
-            
+                .then(data => console.log('✅ Paramètres synchronisés'))
+                .catch(err => console.error('❌ Erreur sync paramètres:', err));
+
             console.log(`✅ Temps défini: ${seconds}s`);
         }
 
         function setAnswers(count) {
             if (isGameInProgress()) return;
-            
+
             gameSettings.answersCount = count;
-            
+
             // Update UI
             document.querySelectorAll('#answers-4, #answers-6').forEach(btn => {
                 btn.classList.remove('active');
             });
             document.getElementById(`answers-${count}`).classList.add('active');
-            
+
             // Envoyer au serveur
             fetch('/admin/set-answers', {
                 method: 'POST',
@@ -2959,17 +3047,17 @@ svgElement.appendChild(path);
                 credentials: 'same-origin',
                 body: JSON.stringify({ answers: count })
             }).then(response => response.json())
-            .then(data => console.log('✅ Nombre de réponses synchronisé:', data))
-            .catch(err => console.error('❌ Erreur sync réponses:', err));
-            
+                .then(data => console.log('✅ Nombre de réponses synchronisé:', data))
+                .catch(err => console.error('❌ Erreur sync réponses:', err));
+
             console.log(`✅ Réponses définies: ${count}`);
         }
 
         function isGameInProgress() {
             // Check if game is in progress (disable settings)
             const startCard = document.getElementById('startGameCard');
-            return !startCard.classList.contains('game-active') && 
-                   !startCard.classList.contains('disabled');
+            return !startCard.classList.contains('game-active') &&
+                !startCard.classList.contains('disabled');
         }
 
         function toggleSettingsAccess(enabled) {
@@ -2977,7 +3065,7 @@ svgElement.appendChild(path);
             const livesButtons = document.querySelectorAll('.lives-btn');
             const timeSelect = document.getElementById('timeSelect');
             const btnResetQuestions = document.getElementById('btnResetQuestions'); // 🆕
-            
+
             if (enabled) {
                 settingsSection.classList.remove('disabled');
                 livesButtons.forEach(btn => btn.disabled = false);
@@ -2991,7 +3079,7 @@ svgElement.appendChild(path);
             }
         }
 
-        
+
         function refreshPage() {
             location.reload();
         }
@@ -3001,7 +3089,7 @@ svgElement.appendChild(path);
                 const response = await fetch('/admin/stats', {
                     credentials: 'same-origin'
                 });
-                
+
                 if (response.status === 403) {
                     if (!isReloading) {
                         isReloading = true;
@@ -3011,12 +3099,12 @@ svgElement.appendChild(path);
                     }
                     return;
                 }
-                
+
                 if (!response.ok) {
                     console.error('❌ Erreur refresh stats:', response.status);
                     return;
                 }
-                
+
                 const data = await response.json();
 
                 // 🆕 Récupérer l'état du jeu pour le timer
@@ -3026,7 +3114,7 @@ svgElement.appendChild(path);
                 const gameState = await gameStateResponse.json();
 
                 document.getElementById('totalGames').textContent = data.totalGames;
-                
+
                 // 🆕 Logique Lobby vs Actifs
                 if (data.gameInProgress) {
                     // Partie en cours : Lobby = 0, Actifs = joueurs en vie
@@ -3042,7 +3130,7 @@ svgElement.appendChild(path);
 
                 const startCard = document.getElementById('startGameCard');
                 const nextCard = document.getElementById('nextQuestionCard');
-                
+
                 if (!data.gameActive || data.gameInProgress || data.currentPlayers === 0) {
                     startCard.classList.add('disabled');
                     startCard.classList.remove('game-active');
@@ -3057,13 +3145,13 @@ svgElement.appendChild(path);
                     nextCard.classList.remove('timer-blocked'); // 🆕 Retirer timer-blocked
                 } else {
                     nextCard.classList.remove('disabled');
-                    
+
                     // 🆕 Gérer l'état timer-blocked si une question est en cours
                     if (gameState.timeRemaining !== null && gameState.timeRemaining > 0) {
                         nextCard.classList.add('timer-blocked');
                         nextCard.classList.remove('game-active');
                         isNextQuestion = true;
-                        
+
                         // Débloquer après le temps restant
                         setTimeout(() => {
                             nextCard.classList.remove('timer-blocked');
@@ -3142,25 +3230,25 @@ svgElement.appendChild(path);
                 console.log('⚠️ Impossible de reset pendant une partie');
                 return;
             }
-            
+
             if (!confirm('Réinitialiser l\'historique des questions ?\n\nToutes les questions redeviendront disponibles')) {
                 return;
             }
-            
+
             try {
                 const response = await fetch('/admin/reset-questions-history', {
                     method: 'POST',
                     credentials: 'same-origin'
                 });
-                
+
                 if (response.status === 403) {
                     alert('❌ Session expirée, rechargement...');
                     location.reload();
                     return;
                 }
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     console.log('🔄 Reset effectué avec succès');
                 } else {
@@ -3173,13 +3261,18 @@ svgElement.appendChild(path);
         }
 
 
+        function goToHome() {
+            window.location.href = '/';
+        }
+
+
         // Gestion du formulaire d'ajout de question
         document.getElementById('addQuestionForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const statusDiv = document.getElementById('addQuestionStatus');
             statusDiv.style.display = 'none';
-            
+
             const formData = {
                 question: document.getElementById('questionText').value,
                 answer1: document.getElementById('answer1').value,
@@ -3192,7 +3285,7 @@ svgElement.appendChild(path);
                 serie: document.getElementById('serie').value,
                 difficulty: document.getElementById('difficulty').value
             };
-            
+
             try {
                 const response = await fetch('/admin/add-question', {
                     method: 'POST',
@@ -3200,19 +3293,19 @@ svgElement.appendChild(path);
                     credentials: 'same-origin',
                     body: JSON.stringify(formData)
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     statusDiv.textContent = '✅ Question ajoutée avec succès !';
                     statusDiv.style.background = 'rgba(16, 185, 129, 0.2)';
                     statusDiv.style.color = '#10b981';
                     statusDiv.style.border = '1px solid #10b981';
                     statusDiv.style.display = 'block';
-                    
+
                     // Reset form
                     document.getElementById('addQuestionForm').reset();
-              
+
                 } else {
                     throw new Error(data.error);
                 }
@@ -3229,5 +3322,5 @@ svgElement.appendChild(path);
         checkAuth();
     </script>
 </body>
-</html>
 
+</html>

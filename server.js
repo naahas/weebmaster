@@ -7,16 +7,16 @@ const express = require('express');
 const session = require('express-session');
 const { Server } = require('socket.io');
 const axios = require('axios');
-const { db , supabase  } = require('./dbs');
+const { db, supabase } = require('./dbs');
 
 const app = express();
 const PORT = process.env.PORT || 7000;
 
-const MAX_GAMES_BEFORE_RESET = 5; 
+const MAX_GAMES_BEFORE_RESET = 5;
 
 // Détection automatique de l'URL de redirection
-const TWITCH_REDIRECT_URI = process.env.TWITCH_REDIRECT_URI || 
-    (process.env.NODE_ENV === 'production' 
+const TWITCH_REDIRECT_URI = process.env.TWITCH_REDIRECT_URI ||
+    (process.env.NODE_ENV === 'production'
         ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME || process.env.VERCEL_URL || 'shonenmaster.com'}/auth/twitch/callback`
         : `http://localhost:${PORT}/auth/twitch/callback`);
 
@@ -29,7 +29,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 
-app.set('trust proxy' , 1);
+app.set('trust proxy', 1);
 
 
 app.use(session({
@@ -40,9 +40,9 @@ app.use(session({
         secure: process.env.NODE_ENV === 'production',
         maxAge: 24 * 60 * 60 * 1000, // 24h
         httpOnly: true,
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' 
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
     },
-    proxy: process.env.NODE_ENV === 'production' 
+    proxy: process.env.NODE_ENV === 'production'
 }));
 
 // ============================================
@@ -219,16 +219,16 @@ app.get('/', (req, res) => {
 
 // Page admin
 app.get('/admin', (req, res) => {
-res.sendFile(__dirname + '/src/html/admin.html');
+    res.sendFile(__dirname + '/src/html/admin.html');
 });
 
 // Login admin
 app.post('/admin/login', (req, res) => {
     const { password } = req.body;
-    
+
     if (password === process.env.ADMIN_PASSWORD) {
         req.session.isAdmin = true;
-        
+
         // Forcer la sauvegarde de la session
         req.session.save((err) => {
             if (err) {
@@ -260,10 +260,10 @@ app.post('/admin/toggle-game', (req, res) => {
     }
 
     gameState.isActive = !gameState.isActive;
-    
+
     if (gameState.isActive) {
         console.log('✅ Jeu activé - Lobby ouvert');
-        
+
         // 🆕 Reset la grille des joueurs à l'ouverture du lobby
         gameState.players.clear();
         gameState.answers.clear();
@@ -275,19 +275,19 @@ app.post('/admin/toggle-game', (req, res) => {
         gameState.gameStartTime = null;
         gameState.inProgress = false;
         gameState.currentGameId = null;
-        
+
         io.emit('game-activated', {
             lives: gameState.lives,
             questionTime: gameState.questionTime
         });
     } else {
         console.log('❌ Jeu désactivé');
-        
+
         // 🆕 Reset complet de l'état si une partie était en cours
         if (gameState.inProgress) {
             console.log('⚠️ Partie en cours annulée - Reset de l\'état');
         }
-        
+
         gameState.inProgress = false;
         gameState.currentGameId = null;
         gameState.currentQuestionIndex = 0;
@@ -298,7 +298,7 @@ app.post('/admin/toggle-game', (req, res) => {
         gameState.answers.clear();
         gameState.questionStartTime = null;
         gameState.gameStartTime = null;
-        
+
         io.emit('game-deactivated');
     }
 
@@ -328,10 +328,10 @@ app.post('/admin/update-settings', (req, res) => {
         questionTime: gameState.questionTime
     });
 
-    res.json({ 
-        success: true, 
-        lives: gameState.lives, 
-        questionTime: gameState.questionTime 
+    res.json({
+        success: true,
+        lives: gameState.lives,
+        questionTime: gameState.questionTime
     });
 });
 
@@ -423,9 +423,9 @@ app.post('/admin/start-game', async (req, res) => {
 
     const totalPlayers = gameState.players.size;
     if (totalPlayers === 0) {
-        return res.status(400).json({ 
-            success: false, 
-            error: 'Impossible de démarrer : aucun joueur dans le lobby' 
+        return res.status(400).json({
+            success: false,
+            error: 'Impossible de démarrer : aucun joueur dans le lobby'
         });
     }
 
@@ -436,20 +436,20 @@ app.post('/admin/start-game', async (req, res) => {
             console.log(`🔄 ${completedGames} parties terminées, reset automatique de l'historique...`);
             await db.resetUsedQuestions();
         }
-        
+
         const game = await db.createGame(totalPlayers);
-        
+
         gameState.inProgress = true;
         gameState.currentGameId = game.id;
         gameState.currentQuestionIndex = 0;
         gameState.gameStartTime = Date.now();
         gameState.showResults = false;
         gameState.lastQuestionResults = null;
-        
+
         // 🆕 Charger les questions déjà utilisées depuis la DB
         gameState.usedQuestionIds = await db.getUsedQuestionIds();
         console.log(`📚 ${gameState.usedQuestionIds.length} questions dans l'historique (Partie ${completedGames + 1}/${MAX_GAMES_BEFORE_RESET})`);
-        
+
         // Initialiser les joueurs
         gameState.players.forEach(player => {
             player.lives = gameState.lives;
@@ -457,18 +457,18 @@ app.post('/admin/start-game', async (req, res) => {
         });
 
         console.log(`🎮 Partie démarrée avec ${totalPlayers} joueurs - ${gameState.lives}❤️ - ${gameState.questionTime}s`);
-        
+
         io.sockets.sockets.forEach((socket) => {
             const socketId = socket.id;
             const player = gameState.players.get(socketId);
-            
+
             if (player) {
                 socket.emit('game-started', { totalPlayers, isParticipating: true });
             } else {
                 socket.emit('game-started', { totalPlayers, isParticipating: false });
             }
         });
-        
+
         res.json({ success: true, gameId: game.id });
     } catch (error) {
         console.error('❌ Erreur démarrage partie:', error);
@@ -507,7 +507,7 @@ app.post('/admin/next-question', async (req, res) => {
         const elapsed = Math.floor((Date.now() - gameState.questionStartTime) / 1000);
         if (elapsed < gameState.questionTime) {
             const timeRemaining = gameState.questionTime - elapsed;
-            return res.status(400).json({ 
+            return res.status(400).json({
                 error: 'Une question est déjà en cours',
                 timeRemaining: timeRemaining,
                 blocked: true
@@ -518,22 +518,22 @@ app.post('/admin/next-question', async (req, res) => {
     try {
         gameState.currentQuestionIndex++;
         const difficulty = getDifficultyForQuestion(gameState.currentQuestionIndex);
-        
+
         // 🆕 MODIFIÉ: Passer les IDs des questions déjà utilisées
         const questions = await db.getRandomQuestions(difficulty, 1, gameState.usedQuestionIds);
-        
+
         if (questions.length === 0) {
             return res.status(404).json({ error: 'Aucune question disponible' });
         }
 
         const question = questions[0];
-        
+
         // 🆕 NOUVEAU: Enregistrer dans la DB ET dans le gameState
         await db.addUsedQuestion(question.id);
         gameState.usedQuestionIds.push(question.id);
-        
+
         console.log(`📌 Question ID ${question.id} enregistrée (${gameState.usedQuestionIds.length} questions utilisées)`);
-        
+
         // 🆕 Récupérer toutes les réponses disponibles (filtrer les null)
         const allAnswers = [
             { text: question.answer1, index: 1 },
@@ -546,20 +546,20 @@ app.post('/admin/next-question', async (req, res) => {
 
         // 🆕 Identifier la bonne réponse
         const correctAnswerObj = allAnswers.find(a => a.index === question.coanswer);
-        
+
         // 🆕 Réponses incorrectes (toutes sauf la bonne)
         const wrongAnswers = allAnswers.filter(a => a.index !== question.coanswer);
-        
+
         // 🆕 Utiliser le nombre de réponses configuré (4 ou 6)
         const wrongAnswersNeeded = gameState.answersCount - 1; // -1 car on ajoute la bonne réponse
         const shuffledWrong = wrongAnswers.sort(() => 0.5 - Math.random()).slice(0, wrongAnswersNeeded);
-        
+
         // 🆕 Combiner la bonne réponse + les mauvaises
         const selectedAnswers = [correctAnswerObj, ...shuffledWrong];
-        
+
         // 🆕 Mélanger les 4 réponses finales
         const finalAnswers = selectedAnswers.sort(() => 0.5 - Math.random());
-        
+
         // 🆕 Trouver le nouvel index de la bonne réponse après mélange
         const newCorrectIndex = finalAnswers.findIndex(a => a.index === question.coanswer) + 1;
 
@@ -580,14 +580,14 @@ app.post('/admin/next-question', async (req, res) => {
         };
 
         gameState.questionStartTime = Date.now();
-        
+
         // 🆕 Réinitialiser showResults quand une nouvelle question est envoyée
         gameState.showResults = false;
         gameState.lastQuestionResults = null;
         gameState.answers.clear();
 
         io.emit('new-question', questionData);
-        
+
         // Auto-révéler après le temps configuré avec le nouvel index
         setTimeout(() => {
             if (gameState.inProgress) {
@@ -614,12 +614,12 @@ function revealAnswers(correctAnswer) {
 
     let eliminatedThisRound = 0;
     const playersDetails = []; // 🆕 Détails pour l'admin
-    
+
     // 🆕 NOUVEAU : Détecter si tous les joueurs en vie ont 1 vie et vont tous perdre
     const alivePlayers = getAlivePlayers();
     const allHaveOneLife = alivePlayers.every(p => p.lives === 1);
     let allWillLose = false;
-    
+
     if (allHaveOneLife && alivePlayers.length > 1) {
         // Vérifier si tous vont perdre (personne n'a la bonne réponse)
         const someoneCorrect = Array.from(alivePlayers).some(player => {
@@ -633,7 +633,7 @@ function revealAnswers(correctAnswer) {
         let status = 'afk';
         let isCorrect = false;
         const playerAnswer = gameState.answers.get(socketId);
-        
+
         if (player.lives === 0) {
             stats.livesDistribution[0]++;
             status = 'eliminated';
@@ -698,7 +698,7 @@ function revealAnswers(correctAnswer) {
         playersData: playersData,
         allWillLose: allWillLose // 🆕 Indiquer si c'était un cas spécial
     };
-    
+
     gameState.showResults = true;
     gameState.lastQuestionResults = resultsData;
 
@@ -714,10 +714,10 @@ function revealAnswers(correctAnswer) {
 // Terminer la partie
 async function endGame(winner) {
     const duration = Math.floor((Date.now() - gameState.gameStartTime) / 1000);
-    
+
     try {
         let winnerData = null;
-        
+
         if (winner) {
             await db.endGame(
                 gameState.currentGameId,
@@ -726,10 +726,10 @@ async function endGame(winner) {
                 duration
             );
             await db.updateUserStats(winner.twitchId, true, 1);
-            
+
             // 🆕 Récupérer les stats complètes du winner depuis la DB
             const winnerUser = await db.getUserByTwitchId(winner.twitchId);
-            
+
             winnerData = {
                 username: winner.username,
                 correctAnswers: winner.correctAnswers,
@@ -807,7 +807,7 @@ app.get('/admin/db-stats', async (req, res) => {
 
     try {
         const allQuestions = await db.getAllQuestions();
-        
+
         // Compter les questions par difficulté
         const byDifficulty = {
             veryeasy: 0,
@@ -816,9 +816,9 @@ app.get('/admin/db-stats', async (req, res) => {
             hard: 0,
             veryhard: 0
         };
-        
+
         const seriesSet = new Set();
-        
+
         allQuestions.forEach(q => {
             if (byDifficulty.hasOwnProperty(q.difficulty)) {
                 byDifficulty[q.difficulty]++;
@@ -827,7 +827,7 @@ app.get('/admin/db-stats', async (req, res) => {
                 seriesSet.add(q.serie);
             }
         });
-        
+
         res.json({
             totalQuestions: allQuestions.length,
             totalSeries: seriesSet.size,
@@ -845,23 +845,23 @@ app.post('/admin/update-settings', (req, res) => {
     if (!req.session.isAdmin) {
         return res.status(403).json({ error: 'Non autorisé' });
     }
-    
+
     const { lives, timePerQuestion } = req.body;
-    
+
     if (!lives || !timePerQuestion) {
         return res.status(400).json({ error: 'Paramètres invalides' });
     }
-    
+
     // Mettre à jour les paramètres du jeu
     gameSettings.lives = parseInt(lives);
     gameSettings.timePerQuestion = parseInt(timePerQuestion);
-    
+
     // Émettre vers tous les clients connectés
     io.emit('settings-updated', {
         lives: gameSettings.lives,
         timePerQuestion: gameSettings.timePerQuestion
     });
-    
+
     console.log(`✅ Paramètres mis à jour: ${lives} vies, ${timePerQuestion}s`);
     res.json({ success: true, lives: gameSettings.lives, timePerQuestion: gameSettings.timePerQuestion });
 });
@@ -912,7 +912,7 @@ app.post('/admin/add-question', async (req, res) => {
 app.get('/profile/:twitchId', async (req, res) => {
     try {
         const { twitchId } = req.params;
-        
+
         const user = await db.getUserByTwitchId(twitchId);
         if (!user) {
             return res.status(404).json({ error: 'Utilisateur non trouvé' });
@@ -920,7 +920,7 @@ app.get('/profile/:twitchId', async (req, res) => {
 
         const badges = await db.getUserBadges(twitchId);
         const unlockedTitles = await db.getUserUnlockedTitles(twitchId);
-        const currentTitle = user.current_title_id 
+        const currentTitle = user.current_title_id
             ? await db.getTitleById(user.current_title_id)
             : await db.getTitleById(1); // Novice par défaut
 
@@ -930,7 +930,7 @@ app.get('/profile/:twitchId', async (req, res) => {
                 username: user.username,
                 total_games_played: user.total_games_played,
                 total_victories: user.total_victories,
-                win_rate: user.total_games_played > 0 
+                win_rate: user.total_games_played > 0
                     ? ((user.total_victories / user.total_games_played) * 100).toFixed(1)
                     : '0.0'
             },
@@ -967,8 +967,8 @@ app.post('/profile/update-title', async (req, res) => {
         const updatedUser = await db.updateUserTitle(twitchId, titleId);
         const newTitle = await db.getTitleById(titleId);
 
-        res.json({ 
-            success: true, 
+        res.json({
+            success: true,
             user: updatedUser,
             title: newTitle
         });
@@ -1046,7 +1046,7 @@ io.on('connection', (socket) => {
         });
 
         console.log(`✅ ${data.username} a rejoint le lobby`);
-        
+
         io.emit('lobby-update', {
             playerCount: gameState.players.size,
             lives: gameState.lives,  // 🆕 Envoyer les paramètres configurés
@@ -1066,7 +1066,7 @@ io.on('connection', (socket) => {
             gameState.players.delete(socket.id);
             gameState.answers.delete(socket.id);
             console.log(`👋 ${data.username} a quitté le lobby`);
-            
+
             io.emit('lobby-update', {
                 playerCount: gameState.players.size,
                 players: Array.from(gameState.players.values()).map(p => ({
@@ -1098,26 +1098,26 @@ io.on('connection', (socket) => {
         if (existingPlayer) {
             // 🆕 Sauvegarder la réponse de l'ancien socketId AVANT de supprimer
             const previousAnswer = gameState.answers.get(oldSocketId);
-            
+
             // Supprimer l'ancienne référence
             gameState.players.delete(oldSocketId);
             gameState.answers.delete(oldSocketId);
-            
+
             // Restaurer le joueur avec le nouveau socketId
             existingPlayer.socketId = socket.id;
             gameState.players.set(socket.id, existingPlayer);
-            
+
             // 🆕 Transférer la réponse au nouveau socketId si elle existait
             if (previousAnswer) {
                 gameState.answers.set(socket.id, previousAnswer);
             }
-            
+
             // 🆕 Nettoyer les marqueurs de déconnexion temporaire
             delete existingPlayer.disconnectedAt;
             delete existingPlayer.disconnectedSocketId;
-            
+
             console.log(`🔄 ${data.username} reconnecté - ${existingPlayer.lives} ❤️`);
-            
+
             // 🆕 Envoyer l'état du joueur au client avec sa réponse précédente
             socket.emit('player-restored', {
                 lives: existingPlayer.lives,
@@ -1126,7 +1126,7 @@ io.on('connection', (socket) => {
                 hasAnswered: !!previousAnswer, // A répondu si previousAnswer existe
                 selectedAnswer: previousAnswer ? previousAnswer.answer : null // 🆕 La réponse sélectionnée
             });
-            
+
             // 🆕 Mettre à jour le compteur de joueurs pour l'admin
             io.emit('lobby-update', {
                 playerCount: gameState.players.size,
@@ -1138,9 +1138,9 @@ io.on('connection', (socket) => {
             });
         } else {
             // Nouveau joueur qui rejoint en cours de partie (spectateur)
-            socket.emit('error', { 
+            socket.emit('error', {
                 message: 'Vous ne pouvez pas rejoindre une partie en cours',
-                canSpectate: true 
+                canSpectate: true
             });
         }
     });
@@ -1160,7 +1160,7 @@ io.on('connection', (socket) => {
         });
 
         socket.emit('answer-recorded');
-        
+
         // 🆕 Notifier l'admin en temps réel qu'un joueur a répondu
         io.emit('answer-submitted', {
             socketId: socket.id,
@@ -1181,16 +1181,16 @@ io.on('connection', (socket) => {
         const player = gameState.players.get(socket.id);
         if (player) {
             console.log(`🔌 ${player.username} déconnecté (socket: ${socket.id})`);
-            
+
             // 🆕 Si une partie est en cours, NE PAS supprimer le joueur immédiatement
             // Lui laisser le temps de se reconnecter (30 secondes)
             if (gameState.inProgress) {
                 console.log(`⏳ Attente de reconnexion pour ${player.username}...`);
-                
+
                 // Marquer le joueur comme temporairement déconnecté
                 player.disconnectedAt = Date.now();
                 player.disconnectedSocketId = socket.id;
-                
+
                 // Supprimer après 30 secondes si pas de reconnexion
                 setTimeout(() => {
                     const currentPlayer = gameState.players.get(socket.id);
@@ -1199,7 +1199,7 @@ io.on('connection', (socket) => {
                         console.log(`❌ ${player.username} définitivement déconnecté`);
                         gameState.players.delete(socket.id);
                         gameState.answers.delete(socket.id);
-                        
+
                         io.emit('lobby-update', {
                             playerCount: gameState.players.size,
                             players: Array.from(gameState.players.values()).map(p => ({
