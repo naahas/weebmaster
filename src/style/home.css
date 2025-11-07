@@ -2723,16 +2723,15 @@ body {
 /* Mobile */
 @media (max-width: 614px) {
     .instagram-btn {
-        bottom: 80px;
+        bottom: 20px; /* Au lieu de 80px */
         left: 20px;
         width: 44px;
         height: 44px;
     }
-
+    
     .tiktok-btn {
-        bottom: 80px;
-        left: 72px;
-        /* 20px + 44px + 8px gap */
+        bottom: 20px; /* Au lieu de 80px */
+        left: 72px; /* 20px + 44px + 8px gap */
         width: 44px;
         height: 44px;
     }
