@@ -29,16 +29,17 @@ body {
     font-family: 'Poppins', sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
-    overflow: hidden; /* Bloquer le scroll */
-    height: 100vh; /* Forcer hauteur viewport */
-    position: fixed; /* 🆕 CLEF : Empêcher tout mouvement */
+    overflow: hidden;
+    height: 100vh;
+    position: fixed; /* Garde ça pour bloquer le scroll */
     width: 100%;
     transition: background 0.3s ease, color 0.3s ease;
 }
 
+/* 🆕 PERMETTRE le pull-to-refresh mais bloquer le scroll horizontal */
 html, body {
-    overscroll-behavior: none; /* Bloquer le bounce */
-    touch-action: pan-x pan-y; /* Bloquer gestures natifs */
+    overscroll-behavior-x: none; /* Bloquer bounce horizontal uniquement */
+    overscroll-behavior-y: auto; /* 🆕 Autoriser bounce vertical = pull-to-refresh */
 }
 
 /* ============================================
