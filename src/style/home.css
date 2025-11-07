@@ -2103,7 +2103,7 @@ html, body {
         margin-bottom: 12px;
     }
 
-    .survivors-count {
+    .results-view .answers-grid.grid-6 ~ .survivors-count {
         display: none;
     }
 
