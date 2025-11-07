@@ -2521,3 +2521,89 @@ body {
     font-size: 3.2rem;
     margin-bottom: 16px;
 }
+
+/* ============================================
+   INSTAGRAM BUTTON - Côte à côte en bas à gauche
+   ============================================ */
+.instagram-btn {
+    position: fixed;
+    bottom: 24px;
+    left: 15px; /* Premier à gauche */
+    width: 48px;
+    height: 48px;
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 100;
+    color: rgba(255, 255, 255, 0.5);
+    text-decoration: none;
+    animation: slideInLeft 0.8s ease-out;
+}
+.instagram-btn:hover {
+    transform: scale(1.1);
+    color: var(--neon-primary);
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.3));
+}
+.instagram-btn svg {
+    transition: all 0.3s ease;
+}
+/* ============================================
+   TIKTOK BUTTON - À côté d'Instagram
+   ============================================ */
+.tiktok-btn {
+    position: fixed;
+    bottom: 24px;
+    left: 60px; /* 24px + 48px (largeur insta) + 8px gap */
+    width: 48px;
+    height: 48px;
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 100;
+    color: rgba(255, 255, 255, 0.5);
+    text-decoration: none;
+    animation: slideInLeft 0.8s ease-out;
+}
+.tiktok-btn:hover {
+    transform: scale(1.1);
+    color: var(--neon-primary);
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.3));
+}
+.tiktok-btn svg {
+    transition: all 0.3s ease;
+}
+/* Animation slide depuis la gauche */
+@keyframes slideInLeft {
+    0% {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+/* Mobile */
+@media (max-width: 614px) {
+    .instagram-btn {
+        bottom: 80px;
+        left: 20px;
+        width: 44px;
+        height: 44px;
+    }
+    
+    .tiktok-btn {
+        bottom: 80px;
+        left: 72px; /* 20px + 44px + 8px gap */
+        width: 44px;
+        height: 44px;
+    }
+}
