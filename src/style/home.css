@@ -29,9 +29,16 @@ body {
     font-family: 'Poppins', sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
-    overflow: hidden; /* 🆕 Bloquer le scroll partout */
-    height: 100vh; /* 🆕 Forcer hauteur viewport */
+    overflow: hidden; /* Bloquer le scroll */
+    height: 100vh; /* Forcer hauteur viewport */
+    position: fixed; /* 🆕 CLEF : Empêcher tout mouvement */
+    width: 100%;
     transition: background 0.3s ease, color 0.3s ease;
+}
+
+html, body {
+    overscroll-behavior: none; /* Bloquer le bounce */
+    touch-action: pan-x pan-y; /* Bloquer gestures natifs */
 }
 
 /* ============================================
