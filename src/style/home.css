@@ -2035,9 +2035,16 @@ body {
         margin: 12px 0;
     }
 
+    body.game-active {
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
+        height: 100vh;
+    }
+
     /* Question mobile */
     .question-container-wrapper {
-        max-height: 85vh;
+        max-height: 75vh;
         padding-top: 4vh;
         overflow: hidden;
     }
