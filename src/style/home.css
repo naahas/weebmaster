@@ -579,7 +579,7 @@ html, body {
     flex-direction: column;
     width: 100%;
     justify-content: flex-start;
-    padding-top: 8vh;
+    padding-top: 0; 
 }
 
 .timer-circle-container {
@@ -2048,7 +2048,7 @@ html, body {
     /* Question mobile */
     .question-container-wrapper {
         max-height: 85vh;
-        padding-top: 4vh;
+        padding-top: 1vh;
         overflow: hidden;
     }
 
@@ -2098,6 +2098,7 @@ html, body {
     /* HUD */
     .player-hud {
         flex-wrap: nowrap;
+        margin-top: 8px;
         gap: 6px;
         padding: 8px 10px;
         margin-bottom: 12px;
