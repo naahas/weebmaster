@@ -1619,6 +1619,276 @@
             opacity: 1;
         }
 
+
+        /* ============================================
+        REPORT QUESTION BUTTON - VERSION ORANGE
+        ============================================ */
+
+        .btn-report-question {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 165, 2, 0.03);
+            border: 1.6px solid rgba(255, 165, 2, 0.15);
+            border-radius: 8px;
+            color: var(--warning-color);
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-report-question:hover {
+            background: rgba(255, 165, 2, 0.08);
+            border-color: rgba(255, 165, 2, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 165, 2, 0.1);
+        }
+
+        .btn-report-question:active {
+            transform: translateY(0);
+        }
+
+        .btn-report-question:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .report-icon {
+            font-size: 1.1rem;
+            opacity: 0.8;
+        }
+
+        .btn-report-question:hover .report-icon {
+            opacity: 1;
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: rotate(0deg);
+            }
+
+            25% {
+                transform: rotate(-10deg);
+            }
+
+            75% {
+                transform: rotate(10deg);
+            }
+        }
+
+        .report-text {
+            letter-spacing: 0.3px;
+            opacity: 0.9;
+        }
+
+        .btn-report-question:hover .report-text {
+            opacity: 1;
+        }
+
+
+        /* ============================================
+        MODAL SIGNALEMENT
+        ============================================ */
+
+        .report-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .report-modal-overlay.active {
+            display: flex;
+        }
+
+        .report-modal {
+            background: var(--bg-card);
+            border: 1.6px solid var(--border);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 480px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .report-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .report-modal-header h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .report-modal-close {
+            width: 32px;
+            height: 32px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.4rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .report-modal-close:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+            transform: rotate(90deg);
+        }
+
+        .report-modal-body {
+            padding: 24px;
+        }
+
+        .report-question-preview {
+            background: var(--bg-main);
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .report-form-group {
+            margin-bottom: 16px;
+        }
+
+        .report-form-group label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .report-select {
+            width: 100%;
+            padding: 12px 16px;
+            padding-right: 40px;
+            /* 🆕 Plus d'espace pour la flèche */
+            background: var(--bg-main);
+            border: 1.6px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            /* 🆕 Personnaliser la flèche native */
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            /* 🆕 Décalée à gauche */
+            background-size: 12px;
+        }
+
+        .report-select:hover {
+            border-color: var(--warning-color);
+        }
+
+        .report-select:focus {
+            outline: none;
+            border-color: var(--warning-color);
+            box-shadow: 0 0 0 3px rgba(255, 165, 2, 0.1);
+        }
+
+        .report-modal-footer {
+            display: flex;
+            gap: 12px;
+            padding: 20px 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-report-cancel,
+        .btn-report-submit {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-report-cancel {
+            background: var(--bg-main);
+            color: var(--text-primary);
+            border: 1.6px solid var(--border);
+        }
+
+        .btn-report-cancel:hover {
+            background: var(--bg-card);
+            border-color: var(--text-secondary);
+        }
+
+        .btn-report-submit {
+            background: var(--bg-main);
+            color: var(--text-primary);
+            filter: brightness(1) !important;
+            /* 🆕 Forcer luminosité normale */
+        }
+
+        .btn-report-submit:hover {
+            transform: translateY(-2px);
+            background: var(--bg-card);
+            border-color: var(--text-secondary);
+            filter: brightness(1.1) !important;
+            /* 🆕 Légèrement plus lumineux au hover */
+        }
+
+        .btn-report-submit:active {
+            transform: translateY(0);
+            filter: brightness(1) !important;
+        }
+
         /* ============================================ */
         /* RESPONSIVE DESIGN */
         /* ============================================ */
@@ -1684,6 +1954,50 @@
             border-color: var(--primary);
             transform: translateY(-2px);
             color: var(--primary);
+        }
+
+
+        /* ============================================
+        TOAST NOTIFICATION
+        ============================================ */
+
+        .toast-notification {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            /* 🆕 Centré horizontalement */
+            transform: translateX(-50%) translateY(100px);
+            /* 🆕 Centrage + animation */
+            background: rgba(108, 244, 198, 0.501);
+            color: #fff;
+            padding: 12px 18px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 3000;
+            pointer-events: none;
+        }
+
+        .toast-notification.show {
+            transform: translateX(-50%) translateY(0);
+            /* 🆕 Centré + visible */
+            opacity: 0.85;
+        }
+
+        .toast-icon {
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .toast-text {
+            letter-spacing: 0.3px;
         }
     </style>
 </head>
@@ -1863,9 +2177,50 @@
                 <!-- Reset Questions Button -->
                 <div class="reset-questions-section">
                     <button class="btn-reset-questions" id="btnResetQuestions" onclick="resetQuestionsHistory()">
-                        <span class="reset-icon">🔄</span>
+                        <span class="reset-icon">♻️</span>
                         <span class="reset-text">Reset Questions</span>
                     </button>
+                </div>
+
+                <!-- Signaler Question Button -->
+                <div class="reset-questions-section" style="margin-top: 8px;">
+                    <button class="btn-report-question" id="btnReportQuestion" onclick="openReportModal()">
+                        <span class="report-icon">❗</span>
+                        <span class="report-text">Signaler Question</span>
+                    </button>
+                </div>
+
+                <!-- Modal Signalement -->
+                <div class="report-modal-overlay" id="reportModalOverlay" onclick="closeReportModal()">
+                    <div class="report-modal" onclick="event.stopPropagation()">
+                        <div class="report-modal-header">
+                            <h3>Demander un changement</h3>
+                            <button class="report-modal-close" onclick="closeReportModal()">✕</button>
+                        </div>
+
+                        <div class="report-modal-body">
+                            <p class="report-question-preview" id="reportQuestionPreview"></p>
+
+                            <div class="report-form-group">
+                                <label for="reportReason">Motif du signalement</label>
+                                <select id="reportReason" class="report-select">
+                                    <option value="Augmenter la difficulté">Augmenter la difficulté</option>
+                                    <option value="Baisser la difficulté">Baisser la difficulté</option>
+                                    <option value="Corriger la question / réponses">Corriger la question / réponses</option>
+                                    <option value="Changer la bonne réponse">Changer la bonne réponse</option>
+                                    <option value="Reformuler la question">Reformuler la question
+                                    </option>
+                                    <option value="Enlever doublon">Enlever doublon</option>
+                                    <!-- <option value="Autre">Autre</option>-->
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="report-modal-footer">
+                            <button class="btn-report-cancel" onclick="closeReportModal()">Annuler</button>
+                            <button class="btn-report-submit" onclick="submitReport()">Signaler</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1989,6 +2344,12 @@
                 </tr>
             </tbody>
         </table>
+    </div>
+
+
+    <div class="toast-notification" id="toastNotification">
+        <span class="toast-icon">✓</span>
+        <span class="toast-text">Question signalée avec succès</span>
     </div>
 
     <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
@@ -3264,6 +3625,92 @@
         function goToHome() {
             window.location.href = '/';
         }
+
+
+        // Ouvrir le modal de signalement
+        function openReportModal() {
+            // Vérifier qu'une question est en cours
+            if (!currentQuestionData || !currentQuestionData.question) {
+                alert('❌ Aucune question en cours à signaler');
+                return;
+            }
+
+            // Afficher la question dans le preview
+            document.getElementById('reportQuestionPreview').textContent = currentQuestionData.question;
+
+            // Reset du select
+            document.getElementById('reportReason').value = 'Augmenter la difficulté';
+
+            // Afficher le modal
+            document.getElementById('reportModalOverlay').classList.add('active');
+        }
+
+        // Fermer le modal
+        function closeReportModal() {
+            document.getElementById('reportModalOverlay').classList.remove('active');
+        }
+
+        // Soumettre le signalement
+        async function submitReport() {
+            const reason = document.getElementById('reportReason').value;
+
+            if (!reason) {
+                alert('❌ Veuillez sélectionner un motif');
+                return;
+            }
+
+            try {
+                const response = await fetch('/admin/report-question', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        questionId: currentQuestionData.questionId || null,
+                        questionText: currentQuestionData.question,
+                        difficulty: currentQuestionData.difficulty,
+                        reason: reason
+                    })
+                });
+
+                if (response.status === 403) {
+                    alert('❌ Session expirée, rechargement...');
+                    location.reload();
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    closeReportModal();
+                    // 🆕 Afficher la notification discrète
+                    showToast();
+                    console.log('✅ Signalement envoyé:', data);
+                } else {
+                    alert('❌ Erreur: ' + (data.error || 'Erreur inconnue'));
+                }
+            } catch (error) {
+                console.error('❌ Erreur signalement:', error);
+                alert('❌ Erreur lors du signalement: ' + error.message);
+            }
+        }
+
+        // 🆕 Fonction pour afficher le toast
+        function showToast() {
+            const toast = document.getElementById('toastNotification');
+            toast.classList.add('show');
+
+            // Masquer après 3 secondes
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Fermer le modal avec Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeReportModal();
+            }
+        });
 
 
         // Gestion du formulaire d'ajout de question

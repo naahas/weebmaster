@@ -566,8 +566,9 @@ app.post('/admin/next-question', async (req, res) => {
         // Préparer la question (sans la bonne réponse côté client)
         const questionData = {
             questionNumber: gameState.currentQuestionIndex,
+            questionId: question.id, // 🆕 Ajouter l'ID de la question
             question: question.question,
-            answers: finalAnswers.map(a => a.text), // 🆕 Seulement le texte
+            answers: finalAnswers.map(a => a.text),
             serie: question.serie,
             difficulty: question.difficulty,
             timeLimit: gameState.questionTime
@@ -576,7 +577,7 @@ app.post('/admin/next-question', async (req, res) => {
         // 🆕 Sauvegarder la question complète avec le NOUVEL index de la bonne réponse
         gameState.currentQuestion = {
             ...questionData,
-            correctAnswer: newCorrectIndex // 🆕 Nouvel index après mélange
+            correctAnswer: newCorrectIndex
         };
 
         gameState.questionStartTime = Date.now();
@@ -975,6 +976,43 @@ app.post('/profile/update-title', async (req, res) => {
     } catch (error) {
         console.error('❌ Erreur update titre:', error);
         res.status(400).json({ error: error.message });
+    }
+});
+
+
+// Route pour signaler une question
+app.post('/admin/report-question', async (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    try {
+        const { questionId, questionText, difficulty, reason } = req.body;
+        
+        if (!questionText || !reason) {
+            return res.status(400).json({ error: 'Données manquantes' });
+        }
+        
+        // Enregistrer le signalement dans Supabase
+        const { data, error } = await supabase
+            .from('reported_questions')
+            .insert({
+                question_id: questionId,
+                question_text: questionText,
+                difficulty: difficulty,
+                reason: reason,
+                reported_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+        
+        if (error) throw error;
+        
+        console.log('🚨 Question signalée:', questionText);
+        res.json({ success: true, report: data });
+    } catch (error) {
+        console.error('❌ Erreur signalement question:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 
