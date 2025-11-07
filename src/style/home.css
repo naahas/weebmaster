@@ -2103,6 +2103,10 @@ html, body {
         margin-bottom: 12px;
     }
 
+    .survivors-count {
+        display: none;
+    }
+
     .hud-item {
         flex: 1;
         min-width: 64px;
