@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,8 +8,10 @@
     <link rel="stylesheet" href="home.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap"
+        rel="stylesheet">
 </head>
+
 <body>
     <div id="app">
 
@@ -22,10 +25,11 @@
                 <h1 class="logo-title">
                     <span class="neon-text">Shonen</span><span class="neon-text-alt">Master</span>
                 </h1>
-                
+
                 <button class="btn-primary btn-twitch floating" @click="loginTwitch">
                     <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                        <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/>
+                        <path
+                            d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
                     </svg>
                     <span>Se connecter avec Twitch</span>
                 </button>
@@ -52,9 +56,9 @@
                             <h3 class="username">{{ username }}</h3>
                         </div>
                     </div>
-                    
+
                     <div class="separator"></div>
-                    
+
                     <h2>En préparation...</h2>
                     <p>La partie commence bientôt !</p>
                     <p class="small-text">Restez connecté, le lobby ouvrira sous peu.</p>
@@ -66,7 +70,8 @@
             </div>
 
             <!-- État: Lobby (jeu activé, en attente) -->
-            <div class="content-section" v-if="isGameActive && !gameInProgress && !gameStartedOnServer && isAuthenticated">
+            <div class="content-section"
+                v-if="isGameActive && !gameInProgress && !gameStartedOnServer && isAuthenticated">
                 <div class="lobby-card">
                     <div class="lobby-header">
                         <h2>La partie va commencer...</h2>
@@ -93,7 +98,8 @@
             </div>
 
             <!-- État: Spectateur (partie en cours mais pas rejoint) -->
-            <div class="content-section" v-if="gameStartedOnServer && !gameInProgress && isGameActive && isAuthenticated">
+            <div class="content-section"
+                v-if="gameStartedOnServer && !gameInProgress && isGameActive && isAuthenticated">
                 <div class="info-card spectator-card">
                     <div class="spectator-icon">⏳</div>
                     <h2>Partie en cours</h2>
@@ -118,8 +124,7 @@
                         <span class="hud-label">Vies</span>
                         <div class="hearts">
                             <span v-for="n in 3" :key="n" class="heart" :class="{ lost: n > playerLives }">
-                                {{ n <= playerLives ? '❤️' : '🖤' }}
-                            </span>
+                                {{ n <= playerLives ? '❤️' : '🖤' }} </span>
                         </div>
                     </div>
                     <div class="hud-item">
@@ -127,94 +132,83 @@
                         <span class="hud-value">{{ currentQuestionNumber }}</span>
                     </div>
                 </div>
-                
+
                 <!-- 🆕 Conteneur fixe pour éviter décalages -->
                 <div class="question-container-wrapper">
                     <!-- 🆕 Barre de timer horizontale ultra-fine (toujours présente pour éviter les décalages) -->
                     <div class="timer-bar-container" :class="{ hidden: !currentQuestion || showResults }">
-                        <div 
-                            class="timer-bar-progress" 
-                            :style="{ width: timerProgress + '%' }"
-                            :class="{ warning: timeRemaining <= 3 }"
-                        ></div>
+                        <div class="timer-bar-progress" :style="{ width: timerProgress + '%' }"
+                            :class="{ warning: timeRemaining <= 3 }"></div>
                     </div>
 
                     <!-- Question -->
                     <div class="question-card" v-if="currentQuestion && !showResults">
-                    <!-- Badges série et difficulté -->
-                    <div class="question-badges">
-                        <span class="serie-badge">{{ currentQuestion.serie }}</span>
-                        <span class="difficulty-badge" :class="'diff-' + currentQuestion.difficulty">
-                            {{ currentQuestion.difficulty.toUpperCase() }}
-                        </span>
-                    </div>
+                        <!-- Badges série et difficulté -->
+                        <div class="question-badges">
+                            <span class="serie-badge">{{ currentQuestion.serie }}</span>
+                            <span class="difficulty-badge" :class="'diff-' + currentQuestion.difficulty">
+                                {{ currentQuestion.difficulty.toUpperCase() }}
+                            </span>
+                        </div>
 
-                    <!-- Question -->
-                    <h3 class="question-text">{{ currentQuestion.question }}</h3>
+                        <!-- Question -->
+                        <h3 class="question-text">{{ currentQuestion.question }}</h3>
 
-                    <!-- Réponses -->
-                    <div class="answers-grid" :class="{ 'grid-6': currentQuestion.answers.length === 6 }">
-                        <button 
-                            v-for="(answer, index) in currentQuestion.answers" 
-                            :key="index"
-                            class="answer-btn"
-                            :class="{ selected: selectedAnswer === index + 1, disabled: hasAnswered || playerLives === 0 }"
-                            @click="selectAnswer(index + 1)"
-                            :disabled="hasAnswered || playerLives === 0"
-                        >
-                            <span class="answer-number">{{ index + 1 }}</span>
-                            <span class="answer-text">{{ answer }}</span>
-                        </button>
-                    </div>
+                        <!-- Réponses -->
+                        <div class="answers-grid" :class="{ 'grid-6': currentQuestion.answers.length === 6 }">
+                            <button v-for="(answer, index) in currentQuestion.answers" :key="index" class="answer-btn"
+                                :class="{ selected: selectedAnswer === index + 1, disabled: hasAnswered || playerLives === 0 }"
+                                @click="selectAnswer(index + 1)" :disabled="hasAnswered || playerLives === 0">
+                                <span class="answer-number">{{ index + 1 }}</span>
+                                <span class="answer-text">{{ answer }}</span>
+                            </button>
+                        </div>
 
-                    <div class="answer-status" v-if="hasAnswered">
-                        <div class="status-icon">✓</div>
-                        <p>Réponse enregistrée !</p>
-                    </div>
+                        <div class="answer-status" v-if="hasAnswered">
+                            <div class="status-icon">✓</div>
+                            <p>Réponse enregistrée !</p>
+                        </div>
 
-                    <div class="eliminated-notice" v-if="playerLives === 0">
-                        <div class="skull-icon">💀</div>
-                        <h3>Vous êtes éliminé</h3>
-                        <p>Vous pouvez continuer à regarder la partie</p>
-                    </div>
-                </div>
-
-                <!-- 🆕 RÉSULTATS - Question avec indicateurs visuels -->
-                <div class="question-card results-view" v-if="showResults && currentQuestion">
-                    <!-- Badges série et difficulté -->
-                    <div class="question-badges">
-                        <span class="serie-badge">{{ currentQuestion.serie }}</span>
-                        <span class="difficulty-badge" :class="'diff-' + currentQuestion.difficulty">
-                            {{ currentQuestion.difficulty.toUpperCase() }}
-                        </span>
-                    </div>
-
-                    <!-- Question -->
-                    <h3 class="question-text">{{ currentQuestion.question }}</h3>
-
-                    <!-- Réponses avec indicateurs -->
-                    <div class="answers-grid" :class="{ 'grid-6': currentQuestion.answers.length === 6 }">
-                        <div 
-                            v-for="(answer, index) in currentQuestion.answers" 
-                            :key="index"
-                            class="answer-btn result-answer"
-                            :class="{ 
-                                'correct': (index + 1) === questionResults.correctAnswer,
-                                'wrong': selectedAnswer === (index + 1) && selectedAnswer !== questionResults.correctAnswer,
-                                'unselected': selectedAnswer && selectedAnswer !== (index + 1) && (index + 1) !== questionResults.correctAnswer
-                            }"
-                        >
-                            <span class="answer-text">{{ answer }}</span>
-                            <span class="result-icon" v-if="(index + 1) === questionResults.correctAnswer"></span>
-                            <span class="result-icon wrong-icon" v-if="selectedAnswer === (index + 1) && selectedAnswer !== questionResults.correctAnswer"></span>
+                        <div class="eliminated-notice" v-if="playerLives === 0">
+                            <div class="skull-icon">💀</div>
+                            <h3>Vous êtes éliminé</h3>
+                            <p>Vous pouvez continuer à regarder la partie</p>
                         </div>
                     </div>
 
-                    <!-- Stats discrètes en bas -->
-                    <div class="survivors-count">
-                        👤 {{ questionResults.remainingPlayers }} restants
+                    <!-- 🆕 RÉSULTATS - Question avec indicateurs visuels -->
+                    <div class="question-card results-view" v-if="showResults && currentQuestion">
+                        <!-- Badges série et difficulté -->
+                        <div class="question-badges">
+                            <span class="serie-badge">{{ currentQuestion.serie }}</span>
+                            <span class="difficulty-badge" :class="'diff-' + currentQuestion.difficulty">
+                                {{ currentQuestion.difficulty.toUpperCase() }}
+                            </span>
+                        </div>
+
+                        <!-- Question -->
+                        <h3 class="question-text">{{ currentQuestion.question }}</h3>
+
+                        <!-- Réponses avec indicateurs -->
+                        <div class="answers-grid" :class="{ 'grid-6': currentQuestion.answers.length === 6 }">
+                            <div v-for="(answer, index) in currentQuestion.answers" :key="index"
+                                class="answer-btn result-answer" :class="{ 
+                                'correct': (index + 1) === questionResults.correctAnswer,
+                                'wrong': selectedAnswer === (index + 1) && selectedAnswer !== questionResults.correctAnswer,
+                                'unselected': selectedAnswer && selectedAnswer !== (index + 1) && (index + 1) !== questionResults.correctAnswer
+                            }">
+                                <span class="answer-text">{{ answer }}</span>
+                                <span class="result-icon" v-if="(index + 1) === questionResults.correctAnswer"></span>
+                                <span class="result-icon wrong-icon"
+                                    v-if="selectedAnswer === (index + 1) && selectedAnswer !== questionResults.correctAnswer"></span>
+                            </div>
+                        </div>
+
+                        <!-- Stats discrètes en bas -->
+                        <div class="survivors-count">
+                            👤 {{ questionResults.remainingPlayers }} restants
+                        </div>
                     </div>
-                </div>
                 </div><!-- Fin question-container-wrapper -->
             </div>
 
@@ -224,7 +218,7 @@
                     <div class="gameover-header">
                         <h2>Partie terminée</h2>
                     </div>
-                    
+
                     <div class="winner-section-improved" v-if="gameEndData.winner">
                         <div class="winner-label">Vainqueur</div>
                         <div class="winner-name-improved">{{ gameEndData.winner.username }}</div>
@@ -249,7 +243,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- 🆕 Badge EN LIVE discret en bas (pour utilisateurs NON connectés) -->
         <div class="live-badge-bottom" v-if="isGameActive && !isAuthenticated && !gameInProgress">
             <span class="pulse-dot-small"></span>
@@ -258,9 +252,10 @@
 
 
         <!-- 🆕 Bouton Profil (en haut à droite, visible si connecté) -->
-        <button class="profile-btn" v-if="isAuthenticated" @click="openProfile">
+        <button class="profile-btn" v-if="isAuthenticated && !gameInProgress" @click="openProfile">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                <path
+                    d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
             </svg>
         </button>
 
@@ -274,25 +269,14 @@
 
                 <!-- Tabs -->
                 <div class="modal-tabs">
-                    <button 
-                        class="tab-btn" 
-                        :class="{ active: currentTab === 'profile' }"
-                        @click="currentTab = 'profile'"
-                    >
+                    <button class="tab-btn" :class="{ active: currentTab === 'profile' }"
+                        @click="currentTab = 'profile'">
                         Profil
                     </button>
-                    <button 
-                        class="tab-btn" 
-                        :class="{ active: currentTab === 'badges' }"
-                        @click="currentTab = 'badges'"
-                    >
+                    <button class="tab-btn" :class="{ active: currentTab === 'badges' }" @click="currentTab = 'badges'">
                         Badges
                     </button>
-                    <button 
-                        class="tab-btn" 
-                        :class="{ active: currentTab === 'titles' }"
-                        @click="currentTab = 'titles'"
-                    >
+                    <button class="tab-btn" :class="{ active: currentTab === 'titles' }" @click="currentTab = 'titles'">
                         Titres
                     </button>
                 </div>
@@ -304,7 +288,7 @@
                             <span class="title-label">Titre</span>
                             <span class="title-value">{{ profileData.titles.current.title_name }}</span>
                         </div>
-                        
+
                         <div class="stats-grid">
                             <div class="stat-item">
                                 <span class="stat-number">{{ profileData.user.total_games_played }}</span>
@@ -327,12 +311,8 @@
                     <div class="badges-section">
                         <h3 class="section-title">🎮 Parties jouées</h3>
                         <div class="badges-grid">
-                            <div 
-                                v-for="badge in profileData.badges.games_played" 
-                                :key="'played-' + badge.tier"
-                                class="badge-item"
-                                :class="{ unlocked: badge.unlocked }"
-                            >
+                            <div v-for="badge in profileData.badges.games_played" :key="'played-' + badge.tier"
+                                class="badge-item" :class="{ unlocked: badge.unlocked }">
                                 <div class="badge-icon">
                                     {{ badge.unlocked ? '🏅' : '🔒' }}
                                 </div>
@@ -344,12 +324,8 @@
                     <div class="badges-section">
                         <h3 class="section-title">🏆 Parties gagnées</h3>
                         <div class="badges-grid">
-                            <div 
-                                v-for="badge in profileData.badges.games_won" 
-                                :key="'won-' + badge.tier"
-                                class="badge-item"
-                                :class="{ unlocked: badge.unlocked }"
-                            >
+                            <div v-for="badge in profileData.badges.games_won" :key="'won-' + badge.tier"
+                                class="badge-item" :class="{ unlocked: badge.unlocked }">
                                 <div class="badge-icon">
                                     {{ badge.unlocked ? '👑' : '🔒' }}
                                 </div>
@@ -362,20 +338,18 @@
                 <!-- Tab Content: Titres -->
                 <div class="modal-content" v-if="currentTab === 'titles' && profileData">
                     <div class="titles-list">
-                        <div 
-                            v-for="title in profileData.titles.unlocked" 
-                            :key="title.id"
-                            class="title-item"
+                        <div v-for="title in profileData.titles.unlocked" :key="title.id" class="title-item"
                             :class="{ equipped: title.id === profileData.titles.current.id }"
-                            @click="equipTitle(title.id)"
-                        >
+                            @click="equipTitle(title.id)">
                             <div class="title-info">
                                 <span class="title-name">{{ title.title_name }}</span>
                                 <span class="title-requirement">
-                                    {{ title.requirement_value }} {{ title.title_type === 'games_played' ? 'parties' : 'victoires' }}
+                                    {{ title.requirement_value }} {{ title.title_type === 'games_played' ? 'parties' :
+                                    'victoires' }}
                                 </span>
                             </div>
-                            <span v-if="title.id === profileData.titles.current.id" class="equipped-badge">✓ Équipé</span>
+                            <span v-if="title.id === profileData.titles.current.id" class="equipped-badge">✓
+                                Équipé</span>
                         </div>
                     </div>
                 </div>
@@ -383,38 +357,27 @@
         </div>
 
         <!-- 🆕 Bouton Toggle Leaderboard (mobile uniquement) -->
-        <button 
-            class="leaderboard-toggle-btn" 
-            :class="{ hidden: showLeaderboard }"
-            v-if="leaderboardLoaded && !isAuthenticated" 
-            @click="toggleLeaderboard"
-        >
+        <button class="leaderboard-toggle-btn" :class="{ hidden: showLeaderboard }"
+            v-if="leaderboardLoaded && !isAuthenticated" @click="toggleLeaderboard">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M7 7h10v2H7zm0 4h10v2H7zm0 4h10v2H7z"/>
-                <path d="M12 3L4 9v12h16V9l-8-6zm6 16H6V10l6-4.5L18 10v9z"/>
+                <path d="M7 7h10v2H7zm0 4h10v2H7zm0 4h10v2H7z" />
+                <path d="M12 3L4 9v12h16V9l-8-6zm6 16H6V10l6-4.5L18 10v9z" />
             </svg>
         </button>
 
         <!-- 🆕 Overlay sombre (mobile uniquement) -->
-        <div 
-            class="leaderboard-overlay" 
-            :class="{ active: showLeaderboard }" 
-            @click="toggleLeaderboard"
-            v-if="leaderboardLoaded && !isAuthenticated"
-        ></div>
+        <div class="leaderboard-overlay" :class="{ active: showLeaderboard }" @click="toggleLeaderboard"
+            v-if="leaderboardLoaded && !isAuthenticated"></div>
         <!-- 🆕 Leaderboard Panel (desktop toujours visible, mobile toggle) -->
-        <div class="leaderboard-container" :class="{ 'mobile-open': showLeaderboard }" v-if="leaderboardLoaded && !isAuthenticated">
+        <div class="leaderboard-container" :class="{ 'mobile-open': showLeaderboard }"
+            v-if="leaderboardLoaded && !isAuthenticated">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <h3 class="leaderboard-title" style="margin-bottom: 0;">🏆 Classement</h3>
                 <button class="leaderboard-close-btn" @click="toggleLeaderboard">✕</button>
             </div>
             <div class="leaderboard-list">
-                <div 
-                    v-for="(player, index) in leaderboard" 
-                    :key="player.twitch_id"
-                    class="leaderboard-item"
-                    :class="'rank-' + (index + 1)"
-                >
+                <div v-for="(player, index) in leaderboard" :key="player.twitch_id" class="leaderboard-item"
+                    :class="'rank-' + (index + 1)">
                     <span class="rank">{{ index + 1 }}</span>
                     <div class="player-info">
                         <span class="player-name">{{ player.username }}</span>
@@ -426,27 +389,21 @@
         </div>
 
         <!-- 🆕 Bouton Instagram (visible uniquement avant connexion) -->
-        <a 
-            href="https://www.instagram.com/naahas__" 
-            target="_blank" 
-            class="instagram-btn" 
-            v-if="!isAuthenticated && !gameInProgress"
-        >
+        <a href="https://www.instagram.com/naahas__" target="_blank" class="instagram-btn"
+            v-if="!isAuthenticated && !gameInProgress">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                <path
+                    d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
             </svg>
         </a>
 
 
         <!-- 🆕 Bouton TikTok (visible uniquement avant connexion) -->
-        <a 
-            href="https://www.tiktok.com/@naahas__" 
-            target="_blank" 
-            class="tiktok-btn" 
-            v-if="!isAuthenticated && !gameInProgress"
-        >
+        <a href="https://www.tiktok.com/@naahas__" target="_blank" class="tiktok-btn"
+            v-if="!isAuthenticated && !gameInProgress">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+                <path
+                    d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
             </svg>
         </a>
 
@@ -461,4 +418,5 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="app.js"></script>
 </body>
+
 </html>
