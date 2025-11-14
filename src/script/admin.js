@@ -1,0 +1,1910 @@
+
+let socket;
+let statsInterval;
+let currentQuestionData = null;
+let timerInterval = null;
+let timeRemaining = 10;
+let isReloading = false; // 🆕 Flag pour éviter les reloads multiples
+let isTogglingGame = false; // 🆕 Anti-spam toggle game
+let isStartingGame = false; // 🆕 Anti-spam start game
+let isNextQuestion = false; // 🆕 Anti-spam next question
+let tiebreakerPlayerIds = [];
+let lastQuestionResults = null;
+
+
+
+let currentGameMode = 'lives'; // 'lives' ou 'points'
+let gameSettings = {
+    mode: 'lives',
+    lives: 3,
+    questions: 15,
+    timePerQuestion: 10,
+    answersCount: 4,
+    difficultyMode: 'croissante'
+};
+
+// Toggle du menu de sélection de mode
+function toggleModeMenu() {
+    const menu = document.getElementById('modeMenu');
+    const btn = document.getElementById('btnModeToggle');
+    const overlay = document.getElementById('modeMenuOverlay');
+
+    const isActive = menu.classList.contains('active');
+
+    if (isActive) {
+        menu.classList.remove('active');
+        btn.classList.remove('active');
+        if (overlay) overlay.classList.remove('active');
+    } else {
+        menu.classList.add('active');
+        btn.classList.add('active');
+        if (overlay) overlay.classList.add('active');
+    }
+}
+
+// Sélection d'un mode
+function selectMode(mode) {
+    // 🆕 Vérifier si une partie est en cours
+    if (isGameInProgress()) {
+        console.log('⚠️ Impossible de changer le mode pendant une partie');
+        toggleModeMenu(); // Fermer le menu quand même
+        return;
+    }
+
+    currentGameMode = mode;
+    gameSettings.mode = mode;
+
+    // Fermer le menu
+    toggleModeMenu();
+
+    // Mettre à jour le texte du bouton
+    const modeText = document.getElementById('currentModeText');
+    if (mode === 'lives') {
+        modeText.textContent = 'Mode Vie';
+    } else if (mode === 'points') {
+        modeText.textContent = 'Mode Points';
+    }
+
+    // Afficher/masquer les paramètres selon le mode
+    updateModeParams(mode);
+
+    // Envoyer au serveur
+    fetch('/admin/set-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ mode: mode })
+    }).then(response => {
+        if (response.status === 400) {
+            return response.json().then(data => {
+                if (data.blocked) {
+                    console.log('❌ Changement de mode bloqué: partie en cours');
+                }
+            });
+        }
+        return response.json();
+    })
+        .then(data => {
+            if (data && data.success) {
+                console.log('✅ Mode changé:', data);
+            }
+        })
+        .catch(err => console.error('❌ Erreur changement mode:', err));
+
+    console.log(`✅ Mode changé: ${mode}`);
+}
+
+// Mettre à jour l'affichage des paramètres selon le mode
+function updateModeParams(mode) {
+    const livesParams = document.getElementById('livesParams');
+    const pointsParams = document.getElementById('pointsParams');
+
+    if (mode === 'lives') {
+        livesParams.style.display = 'block';
+        pointsParams.style.display = 'none';
+    } else if (mode === 'points') {
+        livesParams.style.display = 'none';
+        pointsParams.style.display = 'block';
+    }
+}
+
+// Définir le nombre de questions (Mode Points)
+function setQuestions(count) {
+    if (isGameInProgress()) return;
+
+    gameSettings.questions = count;
+
+    // Update UI
+    document.querySelectorAll('.questions-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.getElementById(`questions-${count}`).classList.add('active');
+
+    // Envoyer au serveur
+    fetch('/admin/set-questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ questions: count })
+    }).then(response => response.json())
+        .then(data => console.log('✅ Nombre de questions synchronisé:', data))
+        .catch(err => console.error('❌ Erreur sync questions:', err));
+
+    console.log(`✅ Nombre de questions: ${count}`);
+}
+
+
+// 🆕 Définir le mode de difficulté
+function toggleDifficultyMode() {
+    if (isGameInProgress()) return;
+
+    // Toggle entre croissante et aléatoire
+    gameSettings.difficultyMode = gameSettings.difficultyMode === 'croissante' ? 'aleatoire' : 'croissante';
+
+    // Update UI
+    const diffBtn = document.getElementById('difficultyModeBtn');
+    if (diffBtn) {
+        diffBtn.classList.toggle('active');
+        const text = diffBtn.querySelector('.diff-mode-text');
+        if (text) {
+            text.textContent = gameSettings.difficultyMode === 'croissante' ? 'Croissante' : 'Aléatoire';
+        }
+    }
+
+    // Envoyer au serveur
+    fetch('/admin/set-difficulty-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ mode: gameSettings.difficultyMode })
+    }).then(response => response.json())
+        .then(data => console.log('✅ Mode de difficulté synchronisé:', data))
+        .catch(err => console.error('❌ Erreur sync difficulté:', err));
+
+    console.log(`✅ Mode de difficulté: ${gameSettings.difficultyMode}`);
+}
+
+// Fermer le menu si on clique ailleurs
+document.addEventListener('click', (e) => {
+    const modeContainer = document.querySelector('.mode-selector-container');
+    const menu = document.getElementById('modeMenu');
+
+    if (menu && modeContainer) {
+        if (!modeContainer.contains(e.target) && menu.classList.contains('active')) {
+            toggleModeMenu();
+        }
+    }
+})
+
+
+// Initialisation au chargement
+document.addEventListener('DOMContentLoaded', () => {
+    // Créer l'overlay si il n'existe pas
+    if (!document.getElementById('modeMenuOverlay')) {
+        const overlay = document.createElement('div');
+        overlay.id = 'modeMenuOverlay';
+        overlay.className = 'mode-menu-overlay';
+        overlay.onclick = toggleModeMenu;
+        document.body.appendChild(overlay);
+    }
+
+    // Initialiser l'affichage selon le mode par défaut
+    updateModeParams(currentGameMode);
+
+    console.log('✅ Mode selector initialisé');
+});
+
+
+// ============ AUTH ============
+async function handleLogin(event) {
+    event.preventDefault();
+    const password = document.getElementById('adminCode').value;
+    const errorMsg = document.getElementById('errorMsg');
+
+    try {
+        const response = await fetch('/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            initSocket();
+
+            // 🆕 Attendre que socket soit connecté
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // 🆕 FORCER la restauration
+            await restoreGameState();
+            refreshStats();
+            startStatsRefresh();
+        } else {
+            errorMsg.textContent = 'Code incorrect';
+        }
+    } catch (error) {
+        errorMsg.textContent = 'Erreur de connexion';
+    }
+}
+
+async function checkAuth() {
+    try {
+        const response = await fetch('/admin/check', {
+            credentials: 'same-origin'
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.isAdmin) {
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                initSocket();
+
+                // 🆕 Attendre que socket soit connecté
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // 🆕 FORCER la restauration
+                await restoreGameState();
+                refreshStats();
+                startStatsRefresh();
+            }
+        }
+    } catch (error) {
+        console.log('Non authentifié');
+    }
+}
+
+async function restoreGameState() {
+    try {
+        const response = await fetch('/game/state');
+        const state = await response.json();
+
+        console.log('🔄 Restauration état:', state);
+
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        if (state.difficultyMode) {
+            gameSettings.difficultyMode = state.difficultyMode;
+            const diffBtn = document.getElementById('difficultyModeBtn');
+            if (diffBtn) {
+                if (state.difficultyMode === 'aleatoire') {
+                    diffBtn.classList.add('active');
+                } else {
+                    diffBtn.classList.remove('active');
+                }
+                const text = diffBtn.querySelector('.diff-mode-text');
+                if (text) {
+                    text.textContent = state.difficultyMode === 'croissante' ? 'Croissante' : 'Aléatoire';
+                }
+            }
+            console.log(`✅ Mode de difficulté restauré: ${state.difficultyMode}`);
+        }
+
+        // Restaurer le mode
+        if (state.mode) {
+            currentGameMode = state.mode;
+            gameSettings.mode = state.mode;
+            const modeText = document.getElementById('currentModeText');
+            if (modeText) {
+                modeText.textContent = state.mode === 'lives' ? 'Mode Vie' : 'Mode Points';
+            }
+            updateModeParams(state.mode);
+        }
+
+        // Restaurer joueurs
+        if (state.players && state.players.length > 0) {
+            updatePlayersGrid(state.players);
+            console.log(`✅ ${state.players.length} joueurs restaurés`);
+        }
+
+        // Restaurer question en cours
+        if (state.currentQuestion && state.inProgress) {
+            console.log('✅ Question en cours restaurée');
+            switchTab('question');
+            await new Promise(resolve => setTimeout(resolve, 100));
+            displayQuestion(state.currentQuestion, state.timeRemaining || 0);
+
+            if (state.timeRemaining > 0) {
+                startAdminTimer(state.timeRemaining);
+            }
+        }
+
+        // Désactiver paramètres si partie en cours
+        if (state.inProgress) {
+            toggleSettingsAccess(false);
+            console.log('🔒 Paramètres désactivés');
+        } else {
+            toggleSettingsAccess(true);
+            console.log('🔓 Paramètres activés');
+        }
+
+        // 🔥 FIX: Restaurer TOUS les paramètres visuels
+        if (state.lives) {
+            gameSettings.lives = state.lives;
+            const livesButtons = document.querySelectorAll('.lives-btn');
+            if (livesButtons.length > 0) {
+                livesButtons.forEach(btn => btn.classList.remove('active'));
+                const livesBtn = document.getElementById(`lives-${state.lives}`);
+                if (livesBtn) livesBtn.classList.add('active');
+            }
+        }
+
+        if (state.questionTime) {
+            gameSettings.timePerQuestion = state.questionTime;
+            const timeSelect = document.getElementById('timeSelect');
+            if (timeSelect) timeSelect.value = state.questionTime;
+        }
+
+        // 🔥 FIX: RESTAURER answersCount
+        if (state.answersCount) {
+            gameSettings.answersCount = state.answersCount;
+            const answersButtons = document.querySelectorAll('#answers-4, #answers-6');
+            if (answersButtons.length > 0) {
+                answersButtons.forEach(btn => btn.classList.remove('active'));
+                const answersBtn = document.getElementById(`answers-${state.answersCount}`);
+                if (answersBtn) answersBtn.classList.add('active');
+            }
+        }
+
+        // 🔥 FIX PRINCIPAL: RESTAURER questionsCount
+        if (state.questionsCount) {
+            gameSettings.questions = state.questionsCount;
+            const questionsButtons = document.querySelectorAll('.questions-btn');
+            if (questionsButtons.length > 0) {
+                questionsButtons.forEach(btn => btn.classList.remove('active'));
+                const questionsBtn = document.getElementById(`questions-${state.questionsCount}`);
+                if (questionsBtn) questionsBtn.classList.add('active');
+                console.log(`✅ Nombre de questions restauré: ${state.questionsCount}`);
+            }
+        }
+
+        // 🔥 Restaurer l'état tiebreaker
+        if (state.isTiebreaker && state.tiebreakerPlayers) {
+            tiebreakerPlayerIds = state.tiebreakerPlayers.map(p => p.twitchId);
+            console.log('✅ Tiebreaker restauré:', tiebreakerPlayerIds);
+        }
+
+    } catch (error) {
+        console.error('❌ Erreur restauration état:', error);
+    }
+}
+
+// ============ SOCKET ============
+function initSocket() {
+    socket = io();
+
+
+    socket.on('tiebreaker-announced', (data) => {
+        console.log('⚖️ Tiebreaker annoncé:', data);
+
+        // 🔥 Stocker les IDs des joueurs en tiebreaker
+        tiebreakerPlayerIds = data.tiebreakerPlayers.map(p => p.twitchId);
+
+        // Mettre à jour la grille pour afficher le clignotement
+        updatePlayersGridWithTiebreaker();
+
+        console.log(`⚔️ ${tiebreakerPlayerIds.length} joueurs en tiebreaker`);
+    });
+
+    socket.on('tiebreaker-continues', (data) => {
+        console.log('⚖️ Tiebreaker continue:', data);
+
+        // 🔥 Mettre à jour les IDs
+        tiebreakerPlayerIds = data.tiebreakerPlayers.map(p => p.twitchId);
+
+        // Mettre à jour la grille
+        updatePlayersGridWithTiebreaker();
+
+        console.log(`⚔️ ${tiebreakerPlayerIds.length} joueurs encore en tiebreaker`);
+    });
+
+    socket.on('new-question', (data) => {
+        console.log('📩 Question reçue:', data);
+        displayQuestion(data);
+        hideResults();
+    });
+
+    socket.on('question-results', (data) => {
+        console.log('📊 Résultats reçus:', data);
+        displayResults(data);
+
+        // 🔥 Stocker les résultats pour usage ultérieur
+        lastQuestionResults = data;
+    });
+
+    socket.on('lobby-update', (data) => {
+        this.playerCount = data.playerCount;
+
+        // 🆕 Mettre à jour le mode si fourni
+        if (data.mode) {
+            currentGameMode = data.mode;
+            gameSettings.mode = data.mode;
+
+            const modeText = document.getElementById('currentModeText');
+            if (modeText) {
+                modeText.textContent = data.mode === 'lives' ? 'Mode Vie' : 'Mode Points';
+            }
+
+            updateModeParams(data.mode);
+        }
+
+        // Mettre à jour les paramètres si fournis
+        if (data.lives) gameSettings.lives = data.lives;
+        if (data.questionTime) gameSettings.timePerQuestion = data.questionTime;
+
+        // 🔥 NOUVEAU: Mettre à jour la grille avec les joueurs si fournis
+        if (data.players) {
+            updatePlayersGrid(data.players);
+            console.log(`✅ Grille mise à jour avec ${data.players.length} joueur(s) - Mode: ${data.mode}`);
+        }
+    });
+
+    socket.on('game-started', (data) => {
+        console.log('🎮 Partie démarrée:', data);
+        toggleSettingsAccess(false); // 🆕 Désactiver les paramètres au démarrage
+        refreshStats();
+        // Afficher l'onglet grille joueurs automatiquement
+        switchTab('players');
+    });
+
+    socket.on('game-ended', (data) => {
+        console.log('🏁 Partie terminée:', data);
+        clearInterval(timerInterval);
+        hideResults();
+        displayGameEnd(data);
+        refreshStats();
+
+        tiebreakerPlayerIds = [];
+
+        // 🔥 FIX: Utiliser les données du podium pour mettre à jour la grille
+        if (data.podium && data.podium.length > 0) {
+            console.log('📊 Mise à jour grille avec scores finaux du podium');
+
+            // Transformer les données du podium en format compatible avec updatePlayersGrid
+            const finalPlayers = data.podium.map(player => ({
+                username: player.username,
+                points: player.points || 0,
+                lives: null,
+                correctAnswers: null,
+                twitchId: player.twitchId || null
+            }));
+
+            updatePlayersGrid(finalPlayers);
+        } else {
+            // Fallback : fetch /game/state si pas de podium
+            setTimeout(() => {
+                fetch('/game/state')
+                    .then(response => response.json())
+                    .then(state => {
+                        if (state.players && state.players.length > 0) {
+                            console.log('📊 Mise à jour grille avec scores finaux (fallback)');
+                            const sortedPlayers = state.players.sort((a, b) => {
+                                if (state.mode === 'points') {
+                                    return (b.points || 0) - (a.points || 0);
+                                } else {
+                                    if (b.lives !== a.lives) return b.lives - a.lives;
+                                    return (b.correctAnswers || 0) - (a.correctAnswers || 0);
+                                }
+                            });
+                            updatePlayersGrid(sortedPlayers);
+                        }
+                    })
+                    .catch(err => console.error('❌ Erreur fetch scores finaux:', err));
+            }, 200);
+        }
+    });
+
+    // 🆕 Reset grille quand le lobby est ouvert (nouveau lobby)
+    socket.on('game-activated', () => {
+        console.log('✅ Lobby ouvert - Reset grille et affichage');
+        updatePlayersGrid([]); // Vider la grille
+        resetQuestionDisplay(); // Reset l'affichage question + panel fin
+        refreshStats();
+
+        lastQuestionResults = null;
+    });
+
+    // 🆕 Reset grille quand le lobby est fermé MAIS pas l'affichage (pour garder le panel de fin)
+    socket.on('game-deactivated', () => {
+        console.log('❌ Lobby fermé');
+        // ✅ NE PAS vider la grille ici pour garder le classement visible
+        // La grille sera vidée lors de la prochaine ouverture du lobby
+        refreshStats();
+        toggleSettingsAccess(true); // Réactiver les paramètres
+    });
+
+
+    socket.on('game-config-updated', (data) => {
+        if (data.mode) {
+            currentGameMode = data.mode;
+            gameSettings.mode = data.mode;
+
+            const modeText = document.getElementById('currentModeText');
+            if (modeText) {
+                modeText.textContent = data.mode === 'lives' ? 'Mode Vie' : 'Mode Points';
+            }
+
+            updateModeParams(data.mode);
+        }
+
+        if (data.lives) gameSettings.lives = data.lives;
+        if (data.questionTime) gameSettings.timePerQuestion = data.questionTime;
+        if (data.answersCount) gameSettings.answersCount = data.answersCount;
+        if (data.questionsCount) gameSettings.questions = data.questionsCount;
+
+        console.log('⚙️ Config mise à jour:', data);
+    });
+}
+
+// ============ DISPLAY QUESTION ============
+function displayQuestion(data, initialTimeRemaining = null) {
+    currentQuestionData = data;
+    console.log("📝 Displaying question:", data);
+    const container = document.getElementById('questionContainer');
+
+    // Reset timer
+    clearInterval(timerInterval);
+    // BUG FIX 2: Utiliser le temps restant passé en paramètre si disponible
+    timeRemaining = initialTimeRemaining !== null ? initialTimeRemaining : data.timeLimit;
+
+    container.innerHTML = `
+                <div class="question-display">
+                    <div class="question-meta">
+                        <span class="meta-badge serie">${data.serie}</span>
+                        <span class="meta-badge difficulty ${data.difficulty}">${data.difficulty.toUpperCase()}</span>
+                    </div>
+                    
+                    <h3 class="question-text">${data.question}</h3>
+                    
+                    <div class="timer-bar-container">
+                        <div class="timer-bar-wrapper">
+                            <div class="timer-bar-fill" id="timerBarFill"></div>
+                        </div>
+                        <div class="timer-text" id="timerText">${timeRemaining}s</div>
+                    </div>
+                    
+                    <div class="answers-list">
+                        ${data.answers.map((answer, index) => `
+                            <div class="answer-item">
+                                <div class="answer-number">${index + 1}</div>
+                                <div class="answer-text">${answer}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+    // BUG FIX 2: Start timer seulement si timeRemaining > 0
+    if (timeRemaining > 0) {
+        startTimer(data.timeLimit);
+    } else {
+        // Timer déjà écoulé
+        const fill = document.getElementById('timerBarFill');
+        const text = document.getElementById('timerText');
+        if (fill) fill.style.width = '0%';
+        if (text) {
+            text.textContent = '0s';
+            text.classList.add('warning');
+        }
+    }
+
+    // Update question number
+    document.getElementById('currentQuestion').textContent = data.questionNumber;
+
+    // S'assurer que le container est visible
+    document.getElementById('resultsContainer').style.display = 'none';
+    container.style.display = 'block';
+}
+
+function startTimer(duration) {
+    const fill = document.getElementById('timerBarFill');
+    const text = document.getElementById('timerText');
+
+    timerInterval = setInterval(() => {
+        timeRemaining--;
+
+        const percentage = (timeRemaining / duration) * 100;
+        fill.style.width = percentage + '%';
+        text.textContent = timeRemaining + 's';
+
+        if (timeRemaining <= 3) {
+            fill.classList.add('warning');
+            text.classList.add('warning');
+        }
+
+        if (timeRemaining <= 0) {
+            clearInterval(timerInterval);
+        }
+    }, 1000);
+}
+
+// BUG FIX 2: Timer spécifique pour la restauration après refresh
+function startAdminTimer(initialTime) {
+    // Ne pas démarrer si le timer est presque fini (< 1 seconde)
+    if (initialTime < 1) {
+        console.log('⚠️ Timer trop court, pas de démarrage');
+        return;
+    }
+
+    const fill = document.getElementById('timerBarFill');
+    const text = document.getElementById('timerText');
+    const duration = 7; // Durée totale de base
+
+    if (!fill || !text) {
+        console.log('⚠️ Éléments timer non trouvés');
+        return;
+    }
+
+    // Définir l'état initial du timer
+    timeRemaining = initialTime;
+    const percentage = (timeRemaining / duration) * 100;
+    fill.style.width = percentage + '%';
+    text.textContent = timeRemaining + 's';
+
+    if (timeRemaining <= 3) {
+        fill.classList.add('warning');
+        text.classList.add('warning');
+    }
+
+    // Démarrer l'intervalle
+    clearInterval(timerInterval); // Clear any existing interval
+    timerInterval = setInterval(() => {
+        timeRemaining--;
+
+        const newPercentage = (timeRemaining / duration) * 100;
+        fill.style.width = newPercentage + '%';
+        text.textContent = timeRemaining + 's';
+
+        if (timeRemaining <= 3) {
+            fill.classList.add('warning');
+            text.classList.add('warning');
+        }
+
+        if (timeRemaining <= 0) {
+            clearInterval(timerInterval);
+            console.log('⏱️ Timer terminé après restauration');
+        }
+    }, 1000);
+
+    console.log(`✅ Timer démarré avec ${initialTime}s restantes`);
+}
+
+// ============ DISPLAY RESULTS ============
+function displayResults(data) {
+    console.log('📊 displayResults appelé avec:', data);
+    clearInterval(timerInterval);
+
+    const container = document.getElementById('resultsContainer');
+    console.log('📦 Container resultsContainer:', container);
+
+    // Utiliser les bonnes propriétés du serveur
+    const correctCount = data.stats.correct;
+    const wrongCount = data.stats.wrong;
+    const afkCount = data.stats.afk;
+    const totalAnswers = correctCount + wrongCount + afkCount;
+
+    console.log('📈 Stats:', { correctCount, wrongCount, afkCount, totalAnswers });
+
+    // Diagramme 2: Répartition des vies
+    const lives3 = data.stats.livesDistribution[3] || 0;
+    const lives2 = data.stats.livesDistribution[2] || 0;
+    const lives1 = data.stats.livesDistribution[1] || 0;
+    const lives0 = data.stats.livesDistribution[0] || 0;
+    const totalPlayers = lives3 + lives2 + lives1 + lives0;
+
+    // Trouver le joueur le plus rapide parmi les réponses correctes
+    let fastestPlayer = null;
+    if (data.players) {
+        const correctPlayers = data.players.filter(p => p.isCorrect && p.responseTime);
+        if (correctPlayers.length > 0) {
+            fastestPlayer = correctPlayers.reduce((fastest, current) =>
+                current.responseTime < fastest.responseTime ? current : fastest
+            );
+        }
+    }
+
+    // Calculs pour les camemberts
+    const circumference = 2 * Math.PI * 45;
+
+    // Segments diagramme 1 (réponses)
+    const correctPercent = totalAnswers > 0 ? correctCount / totalAnswers : 0;
+    const wrongPercent = totalAnswers > 0 ? wrongCount / totalAnswers : 0;
+    const afkPercent = totalAnswers > 0 ? afkCount / totalAnswers : 0;
+
+    const correctDash = correctPercent * circumference;
+    const wrongDash = wrongPercent * circumference;
+    const afkDash = afkPercent * circumference;
+
+    // Segments diagramme 2 (vies)
+    const lives3Percent = totalPlayers > 0 ? lives3 / totalPlayers : 0;
+    const lives2Percent = totalPlayers > 0 ? lives2 / totalPlayers : 0;
+    const lives1Percent = totalPlayers > 0 ? lives1 / totalPlayers : 0;
+    const lives0Percent = totalPlayers > 0 ? lives0 / totalPlayers : 0;
+
+    const lives3Dash = lives3Percent * circumference;
+    const lives2Dash = lives2Percent * circumference;
+    const lives1Dash = lives1Percent * circumference;
+    const lives0Dash = lives0Percent * circumference;
+
+    container.innerHTML = `
+        <div class="results-display">
+            <h3 class="results-question-text">${currentQuestionData?.question || "Question"}</h3>
+            
+            <div class="charts-container ${currentGameMode === 'points' ? 'single-chart' : ''}">
+                <!-- Diagramme 1: Répartition des réponses -->
+                <div class="chart-box">
+                    <div class="chart-title">Répartition des réponses</div>
+                    <div class="chart-with-legend">
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #00ff88;"></div>
+                                <span class="legend-label">✓</span>
+                                <span class="legend-value">${correctCount}</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #ff4757;"></div>
+                                <span class="legend-label">✕</span>
+                                <span class="legend-value">${wrongCount}</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #ffa502;"></div>
+                                <span class="legend-label">⏱</span>
+                                <span class="legend-value">${afkCount}</span>
+                            </div>
+                        </div>
+                        <svg id="answersChart" class="chart-svg" viewBox="0 0 100 100"></svg>
+                    </div>
+                </div>
+
+                <!-- Diagramme 2: Répartition des vies (SEULEMENT EN MODE VIE) -->
+                ${currentGameMode === 'lives' ? `
+                <div class="chart-box">
+                    <div class="chart-title">Répartition des vies</div>
+                    <div class="chart-with-legend">
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #00ff88;"></div>
+                                <span class="legend-label">❤️❤️❤️</span>
+                                <span class="legend-value">${lives3}</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #FFD700;"></div>
+                                <span class="legend-label">❤️❤️</span>
+                                <span class="legend-value">${lives2}</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #ffa502;"></div>
+                                <span class="legend-label">❤️</span>
+                                <span class="legend-value">${lives1}</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #ff4757;"></div>
+                                <span class="legend-label">💀</span>
+                                <span class="legend-value">${lives0}</span>
+                            </div>
+                        </div>
+                        <svg id="livesChart" class="chart-svg" viewBox="0 0 100 100"></svg>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+
+            ${fastestPlayer ? `
+                <div class="fastest-player">
+                    <h4>⚡ Plus rapide:</h4>
+                    <span class="fastest-player-name">${fastestPlayer.username}</span>
+                    <span class="fastest-player-time">${(fastestPlayer.responseTime / 1000).toFixed(2)}s</span>
+                </div>
+            ` : ''}
+        </div>
+    `;
+
+    // Afficher les résultats et cacher la question
+    container.style.display = 'block';
+    document.getElementById('questionContainer').style.display = 'none';
+
+    // 🆕 Générer les charts APRÈS avoir affiché le container
+    setTimeout(() => {
+        if (totalAnswers > 0) {
+            const svg1 = document.getElementById('answersChart');
+            if (svg1) {
+                generatePieChart(svg1, [
+                    { value: correctCount, color: '#00ff88', label: '✓\n' + correctCount },
+                    { value: wrongCount, color: '#ff4757', label: '✕\n' + wrongCount },
+                    { value: afkCount, color: '#ffa502', label: '⏱\n' + afkCount }
+                ]);
+            }
+        } else {
+            const svg1 = document.getElementById('answersChart');
+            if (svg1) {
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', '50');
+                text.setAttribute('y', '50');
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('fill', '#fff');
+                text.setAttribute('font-size', '8');
+                text.textContent = 'Aucune réponse';
+                svg1.appendChild(text);
+            }
+        }
+
+        if (totalPlayers > 0) {
+            const svg2 = document.getElementById('livesChart');
+            if (svg2) {
+                generatePieChart(svg2, [
+                    { value: lives3, color: '#00ff88', label: '3❤\n' + lives3 },
+                    { value: lives2, color: '#FFD700', label: '2❤\n' + lives2 },
+                    { value: lives1, color: '#ffa502', label: '1❤\n' + lives1 },
+                    { value: lives0, color: '#ff4757', label: '💀\n' + lives0 }
+                ]);
+            }
+        } else {
+            const svg2 = document.getElementById('livesChart');
+            if (svg2) {
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', '50');
+                text.setAttribute('y', '50');
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('fill', '#fff');
+                text.setAttribute('font-size', '8');
+                text.textContent = 'Aucun joueur';
+                svg2.appendChild(text);
+            }
+        }
+
+        console.log('✅ Charts injected successfully');
+    }, 50);
+
+    // Update stats - Actifs = joueurs restants après la question
+    document.getElementById('activePlayers').textContent = data.remainingPlayers;
+
+    // Mettre à jour la grille des joueurs avec les indicateurs de réponse
+    if (data.playersData && data.players) {
+        console.log('🎯 Mise à jour grille avec résultats:', data.players);
+        updatePlayersGridWithResults(data.playersData, data.players);
+    }
+
+    console.log('✅ Results displayed successfully');
+}
+
+// 🆕 Fonction pour générer un pie chart SVG avec labels (FIXED)
+function generatePieChart(svgElement, segments) {
+    console.log('🎨 generatePieChart appelé avec:', segments);
+
+    // Vider le SVG
+    while (svgElement.firstChild) {
+        svgElement.removeChild(svgElement.firstChild);
+    }
+
+    const centerX = 50;
+    const centerY = 50;
+    const radius = 40;
+    let currentAngle = -90;
+
+    // Filtrer les segments avec valeur > 0
+    const validSegments = segments.filter(s => s.value > 0);
+
+    console.log('✅ Valid segments:', validSegments);
+
+    if (validSegments.length === 0) {
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', '50');
+        text.setAttribute('y', '50');
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('fill', '#fff');
+        text.setAttribute('font-size', '8');
+        text.textContent = 'Aucune donnée';
+        svgElement.appendChild(text);
+        return;
+    }
+
+    // Calculer le total
+    const total = validSegments.reduce((sum, s) => sum + s.value, 0);
+    console.log('📊 Total:', total);
+
+    validSegments.forEach((segment, i) => {
+        const angle = (segment.value / total) * 360;
+        const startAngle = currentAngle;
+        const endAngle = currentAngle + angle;
+
+        console.log(`Segment ${i}:`, { angle, startAngle, endAngle, color: segment.color });
+
+        // Convertir en radians
+        const startRad = (startAngle * Math.PI) / 180;
+        const endRad = (endAngle * Math.PI) / 180;
+
+        // Points de départ et fin
+        const x1 = centerX + radius * Math.cos(startRad);
+        const y1 = centerY + radius * Math.sin(startRad);
+        const x2 = centerX + radius * Math.cos(endRad);
+        const y2 = centerY + radius * Math.sin(endRad);
+
+        const largeArc = angle > 180 ? 1 : 0;
+
+        // ⭐ FIX: Pour un cercle complet (360°), utiliser 2 arcs de 180°
+        let pathD;
+        if (angle >= 359.9) {
+            // Cercle complet : 2 demi-cercles
+            const midX = centerX - radius;
+            pathD = `M ${centerX},${centerY - radius} A ${radius},${radius} 0 0,1 ${centerX},${centerY + radius} A ${radius},${radius} 0 0,1 ${centerX},${centerY - radius} Z`;
+        } else {
+            pathD = `M ${centerX},${centerY} L ${x1},${y1} A ${radius},${radius} 0 ${largeArc},1 ${x2},${y2} Z`;
+        }
+        console.log('Path:', pathD);
+
+        // ⭐ CRÉER LE PATH AVEC createElementNS
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', pathD);
+        path.setAttribute('fill', segment.color);
+        path.setAttribute('stroke', '#1a1d29');
+        path.setAttribute('stroke-width', '1.5');
+        svgElement.appendChild(path);
+
+        currentAngle = endAngle;
+    });
+
+    console.log('✅ SVG elements created successfully');
+}
+
+function hideResults() {
+    console.log('🔄 Hiding results, showing question');
+    document.getElementById('resultsContainer').style.display = 'none';
+    document.getElementById('resultsContainer').innerHTML = ''; // Vider le contenu
+    document.getElementById('questionContainer').style.display = 'block';
+}
+
+// 🆕 Reset l'affichage à l'état initial
+function resetQuestionDisplay() {
+    console.log('🔄 Reset question display');
+    const questionContainer = document.getElementById('questionContainer');
+    const resultsContainer = document.getElementById('resultsContainer');
+
+    // Cacher les résultats
+    resultsContainer.style.display = 'none';
+    resultsContainer.innerHTML = '';
+
+    // Afficher le message par défaut
+    questionContainer.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">❓</div>
+                    <h3>Aucune question active</h3>
+                    <p>Démarrez une partie pour afficher les questions</p>
+                </div>
+            `;
+    questionContainer.style.display = 'block';
+
+    // Revenir à l'onglet Question
+    switchTab('question');
+}
+
+// ============ GAME END PANEL ============
+function displayGameEnd(data) {
+    console.log('🏁 Affichage fin de partie:', data);
+
+    const resultsContainer = document.getElementById('resultsContainer');
+    const questionContainer = document.getElementById('questionContainer');
+
+    // Cacher la question et afficher le panel de fin
+    questionContainer.style.display = 'none';
+
+    if (!data.winner) {
+        resultsContainer.innerHTML = `
+            <div class="game-end-panel">
+                <div class="game-end-header">
+                    <h2>Partie terminée</h2>
+                </div>
+                <p>Aucun gagnant</p>
+            </div>
+        `;
+    } else {
+        // 🔥 FIX: Affichage selon le mode
+        let statsHTML = '';
+
+        if (data.gameMode === 'lives') {
+            const hearts = '❤️'.repeat(data.winner.livesRemaining || 0);
+            statsHTML = `
+                <div class="winner-stat">
+                    <div class="stat-label">Vies restantes</div>
+                    <div class="stat-value hearts">${hearts}</div>
+                </div>
+            `;
+        } else if (data.gameMode === 'points') {
+            statsHTML = `
+                <div class="winner-stat">
+                    <div class="stat-label">Points</div>
+                    <div class="stat-value">${data.winner.points || 0}</div>
+                </div>
+            `;
+        }
+
+        resultsContainer.innerHTML = `
+            <div class="game-end-panel">
+                <div class="game-end-header">
+                    <h2>Partie terminée !</h2>
+                </div>
+                
+                <div class="winner-section">
+                    <div class="winner-badge">VAINQUEUR</div>
+                    <div class="winner-name">${data.winner.username}</div>
+                    
+                    <div class="winner-stats">
+                        ${statsHTML}
+                        <div class="stat-divider"></div>
+                        <div class="winner-stat">
+                            <div class="stat-label">Victoires totales</div>
+                            <div class="stat-value">${data.winner.totalVictories}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="game-summary">
+                    <div class="summary-item">
+                        <span class="summary-label">Questions</span>
+                        <span class="summary-value">${data.totalQuestions}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Durée</span>
+                        <span class="summary-value">${Math.floor(data.duration / 60)}m ${data.duration % 60}s</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    resultsContainer.style.display = 'block';
+}
+
+// ============ PLAYERS GRID ============
+function updatePlayersGrid(players) {
+    // 🔥 NOUVEAU: Toujours trier avant d'afficher
+    let sortedPlayers = [...players];
+    
+    if (currentGameMode === 'points') {
+        sortedPlayers.sort((a, b) => (b.points || 0) - (a.points || 0));
+    } else {
+        sortedPlayers.sort((a, b) => {
+            if (b.lives !== a.lives) return b.lives - a.lives;
+            return (b.correctAnswers || 0) - (a.correctAnswers || 0);
+        });
+    }
+    
+    // Utiliser la fonction avec effet tiebreaker qui gère déjà l'affichage
+    updatePlayersGridWithTiebreakerEffect(sortedPlayers);
+}
+
+
+// 🆕 Fonction modifiée de updatePlayersGrid avec effet tiebreaker
+function updatePlayersGridWithTiebreakerEffect(players) {
+    const grid = document.getElementById('playersGrid');
+
+    if (players.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">👥</div>
+                <h3>Aucun joueur</h3>
+                <p>Les joueurs apparaîtront ici une fois la partie lancée</p>
+            </div>
+        `;
+        return;
+    }
+
+    // 🔥 FIX: Récupérer les résultats de la dernière question
+    const playersDetails = lastQuestionResults?.players || [];
+
+    // Créer une map des détails pour accès rapide
+    const detailsMap = new Map();
+    playersDetails.forEach(detail => {
+        detailsMap.set(detail.username, detail);
+    });
+
+    grid.innerHTML = players.map(player => {
+        const isEliminated = currentGameMode === 'lives' ? player.lives === 0 : false;
+        const isTiebreaker = tiebreakerPlayerIds.includes(player.twitchId);
+
+        // 🔥 Récupérer le status de la dernière question
+        const detail = detailsMap.get(player.username);
+        let statusClass = '';
+        if (detail) {
+            if (detail.status === 'correct') {
+                statusClass = 'correct';
+            } else if (detail.status === 'wrong' || detail.status === 'afk') {
+                statusClass = 'wrong';
+            }
+        }
+
+        let statsHTML = '';
+        if (currentGameMode === 'lives') {
+            const lives = player.lives !== undefined ? player.lives : gameSettings.lives;
+            statsHTML = `
+                <div class="player-lives">
+                    <span>Vies:</span>
+                    ${[1, 2, 3].map(n =>
+                `<span class="heart-icon ${n <= lives ? 'active' : 'lost'}">
+                            ${n <= lives ? '❤️' : '🖤'}
+                        </span>`
+            ).join('')}
+                </div>
+            `;
+        } else {
+            const points = player.points !== undefined && player.points !== null ? player.points : 0;
+            statsHTML = `
+                <div class="player-points">
+                    <span class="points-label">Points:</span>
+                    <span class="points-value">${points}</span>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="player-card ${statusClass} ${isEliminated ? 'eliminated' : ''} ${isTiebreaker ? 'tiebreaker' : ''}">
+                <div class="player-header">
+                    <div class="player-username">${player.username}</div>
+                    <div class="player-status">
+                        <div class="status-indicator ${statusClass}"></div>
+                    </div>
+                </div>
+                ${statsHTML}
+            </div>
+        `;
+    }).join('');
+}
+
+// 🆕 Fonction pour mettre à jour la grille avec les résultats de la question
+function updatePlayersGridWithResults(playersData, playersDetails) {
+    const grid = document.getElementById('playersGrid');
+
+    if (!playersData || playersData.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">👥</div>
+                <h3>Aucun joueur</h3>
+                <p>Les joueurs apparaîtront ici une fois la partie lancée</p>
+            </div>
+        `;
+        return;
+    }
+
+    // 🔥 NOUVEAU: Trier les joueurs selon le mode
+    let sortedPlayers = [...playersData]; // Copie pour ne pas modifier l'original
+    
+    if (currentGameMode === 'points') {
+        // Tri par points décroissants (du plus haut au plus bas)
+        sortedPlayers.sort((a, b) => (b.points || 0) - (a.points || 0));
+        console.log('📊 Joueurs triés par points:', sortedPlayers.map(p => `${p.username}: ${p.points}`));
+    } else {
+        // Mode Vie: tri par vies décroissantes, puis par bonnes réponses
+        sortedPlayers.sort((a, b) => {
+            if (b.lives !== a.lives) return b.lives - a.lives;
+            return (b.correctAnswers || 0) - (a.correctAnswers || 0);
+        });
+    }
+
+    // Créer une map des détails pour accès rapide
+    const detailsMap = new Map();
+    if (playersDetails) {
+        playersDetails.forEach(detail => {
+            detailsMap.set(detail.username, detail);
+        });
+    }
+
+    // 🔥 Utiliser sortedPlayers au lieu de playersData
+    grid.innerHTML = sortedPlayers.map(player => {
+        const detail = detailsMap.get(player.username);
+
+        let statusClass = '';
+        if (detail) {
+            if (detail.status === 'correct') {
+                statusClass = 'correct';
+            } else if (detail.status === 'wrong' || detail.status === 'afk') {
+                statusClass = 'wrong';
+            }
+        }
+
+        const isEliminated = currentGameMode === 'lives' && player.lives === 0;
+        const isTiebreaker = tiebreakerPlayerIds.includes(player.twitchId);
+
+        let statsHTML = '';
+        if (currentGameMode === 'points') {
+            const points = player.points !== undefined && player.points !== null ? player.points : 0;
+            statsHTML = `
+                <div class="player-points">
+                    <span class="points-label">Points:</span>
+                    <span class="points-value">${points}</span>
+                </div>
+            `;
+        } else {
+            statsHTML = `
+                <div class="player-lives">
+                    <span>Vies:</span>
+                    ${[1, 2, 3].map(n =>
+                        `<span class="heart-icon ${n <= player.lives ? 'active' : 'lost'}">
+                            ${n <= player.lives ? '❤️' : '🖤'}
+                        </span>`
+                    ).join('')}
+                </div>
+            `;
+        }
+
+        return `
+            <div class="player-card ${statusClass} ${isEliminated ? 'eliminated' : ''} ${isTiebreaker ? 'tiebreaker' : ''}">
+                <div class="player-header">
+                    <div class="player-username">${player.username}</div>
+                    <div class="player-status">
+                        <div class="status-indicator ${statusClass}"></div>
+                    </div>
+                </div>
+                ${statsHTML}
+            </div>
+        `;
+    }).join('');
+}
+
+// ============ OVERLAYS ============
+function toggleOverlay(type) {
+    closeOverlays();
+
+    const backdrop = document.getElementById('overlayBackdrop');
+    backdrop.classList.add('active');
+
+    if (type === 'top10') {
+        document.getElementById('overlayTop10').classList.add('active');
+    } else if (type === 'recent') {
+        document.getElementById('overlayRecent').classList.add('active');
+    }
+}
+
+function closeOverlays() {
+    document.getElementById('overlayBackdrop').classList.remove('active');
+    document.getElementById('overlayTop10').classList.remove('active');
+    document.getElementById('overlayRecent').classList.remove('active');
+}
+
+// ============ TABS ============
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+    if (tab === 'question') {
+        document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+        document.getElementById('tabQuestion').classList.add('active');
+    } else if (tab === 'players') {
+        document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+        document.getElementById('tabPlayers').classList.add('active');
+    }
+}
+
+// ============ ACTIONS ============
+async function toggleGame() {
+    // 🆕 Anti-spam
+    if (isTogglingGame) {
+        console.log('⏳ Veuillez patienter...');
+        return;
+    }
+
+    isTogglingGame = true;
+
+    try {
+        const response = await fetch('/admin/toggle-game', {
+            method: 'POST',
+            credentials: 'same-origin'
+        });
+
+        if (response.status === 403) {
+            if (!isReloading) {
+                isReloading = true;
+                console.log('⚠️ Session expirée, rechargement...');
+                location.reload();
+            }
+            return;
+        }
+
+        if (!response.ok) {
+            console.error('❌ Erreur toggle-game:', response.status);
+            return;
+        }
+
+        const data = await response.json();
+        updateGameStatus(data.isActive);
+
+        // 🆕 Si on ouvre le lobby, reset l'affichage de fin de partie
+        if (data.isActive) {
+            resetQuestionDisplay();
+            toggleSettingsAccess(true); // Débloquer les paramètres
+        }
+
+        refreshStats();
+    } catch (error) {
+        console.error('❌ Erreur toggleGame:', error);
+    } finally {
+        // 🆕 Débloquer après 1 seconde
+        setTimeout(() => {
+            isTogglingGame = false;
+        }, 1000);
+    }
+}
+
+async function startGame() {
+    // 🆕 Anti-spam
+    if (isStartingGame) {
+        console.log('⏳ Démarrage en cours...');
+        return;
+    }
+
+    isStartingGame = true;
+
+    try {
+        const response = await fetch('/admin/start-game', {
+            method: 'POST',
+            credentials: 'same-origin'
+        });
+
+        if (response.status === 403) {
+            if (!isReloading) {
+                isReloading = true;
+                console.log('⚠️ Session expirée, rechargement...');
+                location.reload();
+            }
+            return;
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+            toggleSettingsAccess(false); // Bloquer les paramètres
+            refreshStats();
+        }
+    } catch (error) {
+        console.error('Erreur démarrage:', error);
+    } finally {
+        // 🆕 Débloquer après 2 secondes
+        setTimeout(() => {
+            isStartingGame = false;
+        }, 2000);
+    }
+}
+
+async function nextQuestion() {
+    const nextCard = document.getElementById('nextQuestionCard');
+
+    // 🆕 Anti-spam
+    if (isNextQuestion) {
+        console.log('⏳ Question en cours d\'envoi...');
+        return;
+    }
+
+    isNextQuestion = true;
+
+    // 🆕 Ajouter l'état visuel de blocage
+    nextCard.classList.add('timer-blocked');
+    nextCard.classList.remove('game-active');
+
+    try {
+        const response = await fetch('/admin/next-question', {
+            method: 'POST',
+            credentials: 'same-origin'
+        });
+
+        if (response.status === 403) {
+            if (!isReloading) {
+                isReloading = true;
+                console.log('⚠️ Session expirée, rechargement...');
+                location.reload();
+            }
+            return;
+        }
+
+        if (!response.ok) {
+            const data = await response.json();
+
+            // 🆕 Si bloqué par le timer (400 avec blocked: true)
+            if (response.status === 400 && data.blocked) {
+                console.log(`⏱ Timer actif - ${data.timeRemaining}s restantes`);
+                // Garder le visuel bloqué pendant le temps restant
+                setTimeout(() => {
+                    nextCard.classList.remove('timer-blocked');
+                    nextCard.classList.add('game-active');
+                    isNextQuestion = false;
+                }, data.timeRemaining * 1000);
+                return;
+            }
+
+            console.error('❌ Erreur next-question:', response.status);
+            nextCard.classList.remove('timer-blocked');
+            nextCard.classList.add('game-active');
+            return;
+        }
+
+        const data = await response.json();
+        if (data.success) {
+            console.log('✅ Question suivante envoyée');
+
+            // 🆕 Switch automatique vers l'onglet "Question en cours"
+            switchTab('question');
+            // 🆕 Garder le visuel bloqué pendant 7 secondes (durée du timer)
+            setTimeout(() => {
+                nextCard.classList.remove('timer-blocked');
+                nextCard.classList.add('game-active');
+                isNextQuestion = false;
+            }, 7000);
+        }
+    } catch (error) {
+        console.error('❌ Erreur nextQuestion:', error);
+        nextCard.classList.remove('timer-blocked');
+        nextCard.classList.add('game-active');
+        isNextQuestion = false;
+    }
+}
+
+// ============ GAME SETTINGS ============
+function setLives(lives) {
+    if (isGameInProgress()) return;
+
+    gameSettings.lives = lives;
+
+    // Update UI
+    document.querySelectorAll('.lives-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.getElementById(`lives-${lives}`).classList.add('active');
+
+    // 🆕 Utiliser la route spécifique /admin/set-lives
+    fetch('/admin/set-lives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ lives: lives })
+    }).then(response => response.json())
+        .then(data => console.log('✅ Vies synchronisées:', data))
+        .catch(err => console.error('❌ Erreur sync vies:', err));
+
+    console.log(`✅ Vies définies: ${lives}`);
+}
+
+function setTime(seconds) {
+    if (isGameInProgress()) return;
+
+    gameSettings.timePerQuestion = parseInt(seconds);
+
+    // 🆕 Émettre vers le serveur pour synchroniser avec les clients
+    fetch('/admin/update-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ lives: gameSettings.lives, timePerQuestion: gameSettings.timePerQuestion })
+    }).then(response => response.json())
+        .then(data => console.log('✅ Paramètres synchronisés'))
+        .catch(err => console.error('❌ Erreur sync paramètres:', err));
+
+    console.log(`✅ Temps défini: ${seconds}s`);
+}
+
+function setAnswers(count) {
+    if (isGameInProgress()) return;
+
+    gameSettings.answersCount = count;
+
+    // Update UI
+    document.querySelectorAll('#answers-4, #answers-6').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.getElementById(`answers-${count}`).classList.add('active');
+
+    // Envoyer au serveur
+    fetch('/admin/set-answers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ answers: count })
+    }).then(response => response.json())
+        .then(data => console.log('✅ Nombre de réponses synchronisé:', data))
+        .catch(err => console.error('❌ Erreur sync réponses:', err));
+
+    console.log(`✅ Réponses définies: ${count}`);
+}
+
+function isGameInProgress() {
+    const startCard = document.getElementById('startGameCard');
+    return !startCard.classList.contains('game-active') &&
+        !startCard.classList.contains('disabled');
+}
+
+function toggleSettingsAccess(enabled) {
+    const settingsSection = document.getElementById('gameSettings');
+    const livesButtons = document.querySelectorAll('.lives-btn');
+    const questionsButtons = document.querySelectorAll('.questions-btn');
+    const timeSelect = document.getElementById('timeSelect');
+    const answersButtons = document.querySelectorAll('#answers-4, #answers-6');
+    const btnResetQuestions = document.getElementById('btnResetQuestions');
+    const btnModeToggle = document.getElementById('btnModeToggle'); // 🆕
+    const btnDifficultyMode = document.getElementById('difficultyModeBtn');
+
+    if (enabled) {
+        settingsSection.classList.remove('disabled');
+        livesButtons.forEach(btn => btn.disabled = false);
+        questionsButtons.forEach(btn => btn.disabled = false);
+        timeSelect.disabled = false;
+        answersButtons.forEach(btn => btn.disabled = false);
+        if (btnResetQuestions) btnResetQuestions.disabled = false;
+        if (btnModeToggle) btnModeToggle.disabled = false; // 🆕
+        if (btnDifficultyMode) btnDifficultyMode.disabled = false;
+    } else {
+        settingsSection.classList.add('disabled');
+        livesButtons.forEach(btn => btn.disabled = true);
+        questionsButtons.forEach(btn => btn.disabled = true);
+        timeSelect.disabled = true;
+        answersButtons.forEach(btn => btn.disabled = true);
+        if (btnResetQuestions) btnResetQuestions.disabled = true;
+        if (btnModeToggle) btnModeToggle.disabled = true; // 🆕
+        if (btnDifficultyMode) btnDifficultyMode.disabled = true;
+    }
+}
+
+
+function refreshPage() {
+    location.reload();
+}
+
+async function refreshStats() {
+    try {
+        const response = await fetch('/admin/stats', {
+            credentials: 'same-origin'
+        });
+
+        if (response.status === 403) {
+            if (!isReloading) {
+                isReloading = true;
+                console.log('⚠️ Session expirée, rechargement...');
+                clearInterval(statsInterval); // 🆕 Arrêter le refresh avant de recharger
+                location.reload();
+            }
+            return;
+        }
+
+        if (!response.ok) {
+            console.error('❌ Erreur refresh stats:', response.status);
+            return;
+        }
+
+        const data = await response.json();
+
+        // 🆕 Récupérer l'état du jeu pour le timer
+        const gameStateResponse = await fetch('/game/state', {
+            credentials: 'same-origin'
+        });
+        const gameState = await gameStateResponse.json();
+
+        document.getElementById('totalGames').textContent = data.totalGames;
+
+        // 🆕 Logique Lobby vs Actifs
+        if (data.gameInProgress) {
+            // Partie en cours : Lobby = 0, Actifs = joueurs en vie
+            document.getElementById('playerCount').textContent = '0';
+            document.getElementById('activePlayers').textContent = data.activePlayers;
+        } else {
+            // Avant/après partie : Lobby = joueurs qui rejoignent, Actifs = 0
+            document.getElementById('playerCount').textContent = data.currentPlayers;
+            document.getElementById('activePlayers').textContent = '0';
+        }
+
+        updateGameStatus(data.gameActive);
+
+        const startCard = document.getElementById('startGameCard');
+        const nextCard = document.getElementById('nextQuestionCard');
+
+        if (!data.gameActive || data.gameInProgress || data.currentPlayers === 0) {
+            startCard.classList.add('disabled');
+            startCard.classList.remove('game-active');
+        } else {
+            startCard.classList.remove('disabled');
+            startCard.classList.add('game-active'); // 🆕 Indicateur visuel
+        }
+
+        if (!data.gameInProgress) {
+            nextCard.classList.add('disabled');
+            nextCard.classList.remove('game-active');
+            nextCard.classList.remove('timer-blocked'); // 🆕 Retirer timer-blocked
+        } else {
+            nextCard.classList.remove('disabled');
+
+            // 🆕 Gérer l'état timer-blocked si une question est en cours
+            if (gameState.timeRemaining !== null && gameState.timeRemaining > 0) {
+                nextCard.classList.add('timer-blocked');
+                nextCard.classList.remove('game-active');
+                isNextQuestion = true;
+
+                // Débloquer après le temps restant
+                setTimeout(() => {
+                    nextCard.classList.remove('timer-blocked');
+                    nextCard.classList.add('game-active');
+                    isNextQuestion = false;
+                }, gameState.timeRemaining * 1000);
+            } else {
+                nextCard.classList.remove('timer-blocked');
+                nextCard.classList.add('game-active');
+            }
+        }
+
+        const topPlayersTable = document.getElementById('topPlayersTable');
+        if (data.topPlayers.length === 0) {
+            topPlayersTable.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--text-secondary);">Aucune donnée disponible</td></tr>';
+        } else {
+            topPlayersTable.innerHTML = data.topPlayers.map((player, index) => `
+                        <tr>
+                            <td><span class="rank-badge rank-${index + 1}">${index + 1}</span></td>
+                            <td>${player.username}</td>
+                            <td>${player.total_victories}</td>
+                            <td>${player.total_games_played}</td>
+                        </tr>
+                    `).join('');
+        }
+
+        const recentGamesTable = document.getElementById('recentGamesTable');
+        if (data.recentGames.length === 0) {
+            recentGamesTable.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--text-secondary);">Aucune donnée disponible</td></tr>';
+        } else {
+            recentGamesTable.innerHTML = data.recentGames.map(game => `
+                        <tr>
+                            <td>#${game.id}</td>
+                            <td>${game.winner ? game.winner.username : 'N/A'}</td>
+                            <td>${game.questions_count}</td>
+                            <td>${new Date(game.created_at).toLocaleDateString()}</td>
+                        </tr>
+                    `).join('');
+        }
+    } catch (error) {
+        console.error('Error refreshing stats:', error);
+    }
+}
+
+function updateGameStatus(isActive) {
+    const statusText = document.getElementById('statusText');
+    const statusIndicator = document.getElementById('statusIndicator');
+    const toggleBtn = document.getElementById('toggleGameBtn');
+    const toggleCard = document.getElementById('toggleGameCard');
+
+    if (isActive) {
+        statusText.textContent = 'ACTIF';
+        statusIndicator.classList.remove('inactive');
+        statusIndicator.classList.add('active');
+        toggleBtn.textContent = 'Fermer lobby';
+        toggleCard.classList.add('lobby-active');
+    } else {
+        statusText.textContent = 'INACTIF';
+        statusIndicator.classList.remove('active');
+        statusIndicator.classList.add('inactive');
+        toggleBtn.textContent = 'Ouvrir lobby';
+        toggleCard.classList.remove('lobby-active');
+    }
+}
+
+function startStatsRefresh() {
+    statsInterval = setInterval(refreshStats, 3000);
+}
+
+
+// Reset Questions History
+async function resetQuestionsHistory() {
+    // 🆕 Vérifier si une partie est en cours
+    const btnResetQuestions = document.getElementById('btnResetQuestions');
+    if (btnResetQuestions && btnResetQuestions.disabled) {
+        console.log('⚠️ Impossible de reset pendant une partie');
+        return;
+    }
+
+    if (!confirm('Réinitialiser l\'historique des questions ?\n\nToutes les questions redeviendront disponibles')) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/admin/reset-questions-history', {
+            method: 'POST',
+            credentials: 'same-origin'
+        });
+
+        if (response.status === 403) {
+            alert('❌ Session expirée, rechargement...');
+            location.reload();
+            return;
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+            console.log('🔄 Reset effectué avec succès');
+        } else {
+            alert('❌ Erreur: ' + (data.error || 'Erreur inconnue'));
+        }
+    } catch (error) {
+        console.error('❌ Erreur reset:', error);
+        alert('❌ Erreur lors du reset: ' + error.message);
+    }
+}
+
+
+function goToHome() {
+    window.location.href = '/';
+}
+
+
+// Ouvrir le modal de signalement
+function openReportModal() {
+    // Vérifier qu'une question est en cours
+    if (!currentQuestionData || !currentQuestionData.question) {
+        alert('❌ Aucune question en cours à signaler');
+        return;
+    }
+
+    // 🔥 FIX: Vérifier que l'élément existe avant de le modifier
+    const previewElement = document.getElementById('reportQuestionPreview');
+    if (!previewElement) {
+        console.error('❌ Element reportQuestionPreview introuvable');
+        alert('❌ Erreur: Modal de signalement non trouvé');
+        return;
+    }
+
+    // Afficher la question dans le preview
+    previewElement.textContent = currentQuestionData.question;
+
+    // Reset du select
+    const reasonSelect = document.getElementById('reportReason');
+    if (reasonSelect) {
+        reasonSelect.value = 'Augmenter la difficulté';
+    }
+
+    // Afficher le modal
+    const modalOverlay = document.getElementById('reportModalOverlay');
+    if (modalOverlay) {
+        modalOverlay.classList.add('active');
+    } else {
+        console.error('❌ Element reportModalOverlay introuvable');
+        alert('❌ Erreur: Modal de signalement non trouvé');
+    }
+}
+
+// Fermer le modal
+function closeReportModal() {
+    document.getElementById('reportModalOverlay').classList.remove('active');
+}
+
+// Soumettre le signalement
+async function submitReport() {
+    const reason = document.getElementById('reportReason').value;
+
+    if (!reason) {
+        alert('❌ Veuillez sélectionner un motif');
+        return;
+    }
+
+    try {
+        const response = await fetch('/admin/report-question', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                questionId: currentQuestionData.questionId || null,
+                questionText: currentQuestionData.question,
+                difficulty: currentQuestionData.difficulty,
+                reason: reason
+            })
+        });
+
+        if (response.status === 403) {
+            alert('❌ Session expirée, rechargement...');
+            location.reload();
+            return;
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+            closeReportModal();
+            // 🆕 Afficher la notification discrète
+            showToast();
+            console.log('✅ Signalement envoyé:', data);
+        } else {
+            alert('❌ Erreur: ' + (data.error || 'Erreur inconnue'));
+        }
+    } catch (error) {
+        console.error('❌ Erreur signalement:', error);
+        alert('❌ Erreur lors du signalement: ' + error.message);
+    }
+}
+
+// 🆕 Fonction pour afficher le toast
+function showToast() {
+    const toast = document.getElementById('toastNotification');
+    toast.classList.add('show');
+
+    // Masquer après 3 secondes
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
+// Fermer le modal avec Escape
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeReportModal();
+    }
+});
+
+
+
+// 🆕 Fonction pour mettre à jour la grille avec effet tiebreaker
+function updatePlayersGridWithTiebreaker() {
+    // Récupérer les joueurs actuels depuis gameState via fetch
+    fetch('/game/state')
+        .then(response => response.json())
+        .then(state => {
+            if (state.players && state.players.length > 0) {
+                const playersData = state.players.map(p => ({
+                    twitchId: p.twitchId,
+                    username: p.username,
+                    lives: state.mode === 'lives' ? p.lives : null,
+                    points: state.mode === 'points' ? (p.points || 0) : null
+                }));
+
+                updatePlayersGridWithTiebreakerEffect(playersData);
+            }
+        })
+        .catch(err => console.error('❌ Erreur refresh grille tiebreaker:', err));
+}
+
+
+// Gestion du formulaire d'ajout de question
+document.getElementById('addQuestionForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const statusDiv = document.getElementById('addQuestionStatus');
+    statusDiv.style.display = 'none';
+
+    const formData = {
+        question: document.getElementById('questionText').value,
+        answer1: document.getElementById('answer1').value,
+        answer2: document.getElementById('answer2').value,
+        answer3: document.getElementById('answer3').value,
+        answer4: document.getElementById('answer4').value,
+        answer5: document.getElementById('answer5').value,
+        answer6: document.getElementById('answer6').value,
+        correctAnswer: document.getElementById('correctAnswer').value,
+        serie: document.getElementById('serie').value,
+        difficulty: document.getElementById('difficulty').value
+    };
+
+    try {
+        const response = await fetch('/admin/add-question', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            statusDiv.textContent = '✅ Question ajoutée avec succès !';
+            statusDiv.style.background = 'rgba(16, 185, 129, 0.2)';
+            statusDiv.style.color = '#10b981';
+            statusDiv.style.border = '1px solid #10b981';
+            statusDiv.style.display = 'block';
+
+            // Reset form
+            document.getElementById('addQuestionForm').reset();
+
+        } else {
+            throw new Error(data.error);
+        }
+    } catch (error) {
+        statusDiv.textContent = '❌ Erreur: ' + error.message;
+        statusDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+        statusDiv.style.color = '#ef4444';
+        statusDiv.style.border = '1px solid #ef4444';
+        statusDiv.style.display = 'block';
+    }
+});
+
+// ============ INIT ============
+checkAuth();

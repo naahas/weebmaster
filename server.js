@@ -1,5 +1,5 @@
 // ============================================
-// WEEBMASTER - Server Principal
+// WEEBMASTER - Server Principal - TIEBREAKER FIX
 // ============================================
 
 require('dotenv').config();
@@ -21,16 +21,12 @@ const TWITCH_REDIRECT_URI = process.env.TWITCH_REDIRECT_URI ||
         : `http://localhost:${PORT}/auth/twitch/callback`);
 
 // ============================================
-
-// ============================================
 // Middleware
 // ============================================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
 app.set('trust proxy', 1);
-
 
 app.use(session({
     secret: process.env.SESSION_SECRET || 'pikine-secret-2025',
@@ -121,21 +117,21 @@ app.get('/auth/status', (req, res) => {
     }
 });
 
+
 // Route pour obtenir l'état actuel du jeu (pour reconnexion)
 app.get('/game/state', (req, res) => {
-    // 🆕 Calculer le temps restant du timer si une question est en cours
     let timeRemaining = null;
     if (gameState.questionStartTime && gameState.inProgress) {
         const elapsed = Math.floor((Date.now() - gameState.questionStartTime) / 1000);
         timeRemaining = Math.max(0, gameState.questionTime - elapsed);
     }
 
-    // BUG FIX: Inclure la liste des joueurs pour l'admin  
     const playersData = Array.from(gameState.players.values()).map(player => ({
         socketId: player.socketId,
         twitchId: player.twitchId,
         username: player.username,
-        lives: player.lives,
+        lives: gameState.mode === 'lives' ? player.lives : null,
+        points: gameState.mode === 'points' ? (player.points || 0) : null,
         correctAnswers: player.correctAnswers,
         hasAnswered: gameState.answers.has(player.socketId)
     }));
@@ -147,11 +143,21 @@ app.get('/game/state', (req, res) => {
         playerCount: gameState.players.size,
         currentQuestion: gameState.currentQuestion,
         timeRemaining: timeRemaining,
-        players: playersData, // BUG FIX: Liste complete des joueurs
+        players: playersData,
         showResults: gameState.showResults,
         lastQuestionResults: gameState.lastQuestionResults,
-        lives: gameState.lives, // 🆕 Paramètres configurables
-        questionTime: gameState.questionTime
+        mode: gameState.mode,
+        lives: gameState.lives,
+        questionTime: gameState.questionTime,
+        answersCount: gameState.answersCount,
+        questionsCount: gameState.questionsCount,
+        difficultyMode: gameState.difficultyMode,
+        isTiebreaker: gameState.isTiebreaker,
+        tiebreakerPlayers: gameState.isTiebreaker
+            ? Array.from(gameState.players.values())
+                .filter(p => gameState.tiebreakerPlayers.includes(p.twitchId))
+                .map(p => ({ twitchId: p.twitchId, username: p.username }))
+            : []
     });
 });
 
@@ -168,34 +174,73 @@ app.use(express.static('src/script'));
 // État du jeu
 // ============================================
 const gameState = {
-    isActive: false,              // Le jeu est-il activé ?
-    inProgress: false,            // Une partie est-elle en cours ?
-    currentGameId: null,          // ID de la partie en cours
-    currentQuestionIndex: 0,      // Index de la question actuelle
-    currentQuestion: null,        // 🆕 Question actuellement affichée
-    players: new Map(),           // Map<socketId, playerData>
-    questionStartTime: null,      // Timestamp du début de la question
-    answers: new Map(),           // Map<socketId, answerData>
-    gameStartTime: null,          // Timestamp du début du jeu
-    showResults: false,           // Afficher les résultats de la dernière question
-    lastQuestionResults: null,    // Résultats de la dernière question
-    // 🆕 Paramètres configurables
-    lives: 3,                     // Nombre de vies par défaut
-    questionTime: 7,              // Temps par question par défaut
-    answersCount: 4,              // Nombre de réponses par défaut (4 ou 6)
-    usedQuestionIds: []           // 🆕 NOUVEAU: Tracker les questions déjà utilisées
+    isActive: false,
+    inProgress: false,
+    currentGameId: null,
+    currentQuestionIndex: 0,
+    currentQuestion: null,
+    players: new Map(),
+    questionStartTime: null,
+    answers: new Map(),
+    gameStartTime: null,
+    showResults: false,
+    lastQuestionResults: null,
+
+    mode: 'lives',
+    lives: 3,
+    questionTime: 10,
+    answersCount: 4,
+    questionsCount: 20,
+    usedQuestionIds: [],
+
+    // Tiebreaker
+    isTiebreaker: false,
+    tiebreakerPlayers: [],
+
+    difficultyMode: 'croissante',
+    lastDifficulty: null
 };
 
 // ============================================
 // Helpers
 // ============================================
 function getDifficultyForQuestion(questionNumber) {
-    if (questionNumber <= 7) return 'veryeasy';
-    if (questionNumber <= 15) return 'easy';
-    if (questionNumber <= 25) return 'medium';
-    if (questionNumber <= 35) return 'hard';
-    if (questionNumber <= 45) return 'veryhard';
-    return 'extreme';
+    if (gameState.difficultyMode === 'aleatoire') {
+        // 🆕 MODE ALÉATOIRE - Éviter 2 fois la même difficulté
+        const difficulties = ['veryeasy', 'easy', 'medium', 'hard', 'veryhard', 'extreme'];
+        
+        // Filtrer pour éviter la dernière difficulté utilisée
+        const availableDifficulties = gameState.lastDifficulty 
+            ? difficulties.filter(d => d !== gameState.lastDifficulty)
+            : difficulties;
+        
+        // Piocher aléatoirement
+        const randomDifficulty = availableDifficulties[Math.floor(Math.random() * availableDifficulties.length)];
+        gameState.lastDifficulty = randomDifficulty;
+        return randomDifficulty;
+    }
+    
+    // MODE CROISSANTE (logique actuelle)
+    if (gameState.mode === 'lives') {
+        if (questionNumber <= 7) return 'veryeasy';
+        if (questionNumber <= 15) return 'easy';
+        if (questionNumber <= 25) return 'medium';
+        if (questionNumber <= 35) return 'hard';
+        if (questionNumber <= 45) return 'veryhard';
+        return 'extreme';
+    } else {
+        const distribution = getQuestionDistribution(gameState.questionsCount);
+        let cumulative = 0;
+        const difficulties = ['veryeasy', 'easy', 'medium', 'hard', 'veryhard', 'extreme'];
+
+        for (const diff of difficulties) {
+            cumulative += distribution[diff];
+            if (questionNumber <= cumulative) {
+                return diff;
+            }
+        }
+        return 'extreme';
+    }
 }
 
 function getAlivePlayers() {
@@ -264,7 +309,7 @@ app.post('/admin/toggle-game', (req, res) => {
     if (gameState.isActive) {
         console.log('✅ Jeu activé - Lobby ouvert');
 
-        // 🆕 Reset la grille des joueurs à l'ouverture du lobby
+        // Reset la grille des joueurs à l'ouverture du lobby
         gameState.players.clear();
         gameState.answers.clear();
         gameState.currentQuestionIndex = 0;
@@ -276,6 +321,10 @@ app.post('/admin/toggle-game', (req, res) => {
         gameState.inProgress = false;
         gameState.currentGameId = null;
 
+        // 🔥 NOUVEAU: Reset tiebreaker
+        gameState.isTiebreaker = false;
+        gameState.tiebreakerPlayers = [];
+
         io.emit('game-activated', {
             lives: gameState.lives,
             questionTime: gameState.questionTime
@@ -283,7 +332,7 @@ app.post('/admin/toggle-game', (req, res) => {
     } else {
         console.log('❌ Jeu désactivé');
 
-        // 🆕 Reset complet de l'état si une partie était en cours
+        // Reset complet de l'état si une partie était en cours
         if (gameState.inProgress) {
             console.log('⚠️ Partie en cours annulée - Reset de l\'état');
         }
@@ -291,7 +340,7 @@ app.post('/admin/toggle-game', (req, res) => {
         gameState.inProgress = false;
         gameState.currentGameId = null;
         gameState.currentQuestionIndex = 0;
-        gameState.currentQuestion = null; // 🆕 Reset question
+        gameState.currentQuestion = null;
         gameState.showResults = false;
         gameState.lastQuestionResults = null;
         gameState.players.clear();
@@ -305,7 +354,7 @@ app.post('/admin/toggle-game', (req, res) => {
     res.json({ isActive: gameState.isActive });
 });
 
-// 🆕 Mettre à jour les paramètres du jeu (vies et temps)
+// Mettre à jour les paramètres du jeu (vies et temps)
 app.post('/admin/update-settings', (req, res) => {
     if (!req.session.isAdmin) {
         return res.status(403).json({ error: 'Non autorisé' });
@@ -335,7 +384,7 @@ app.post('/admin/update-settings', (req, res) => {
     });
 });
 
-// 🆕 Route séparée pour changer les vies
+// Route séparée pour changer les vies
 app.post('/admin/set-lives', (req, res) => {
     if (!req.session.isAdmin) {
         return res.status(403).json({ error: 'Non autorisé' });
@@ -346,7 +395,7 @@ app.post('/admin/set-lives', (req, res) => {
 
     console.log(`⚙️ Vies mises à jour: ${gameState.lives}❤️`);
 
-    // 🔥 Mettre à jour les vies de tous les joueurs déjà connectés dans le lobby
+    // Mettre à jour les vies de tous les joueurs déjà connectés dans le lobby
     if (!gameState.inProgress && gameState.players.size > 0) {
         gameState.players.forEach(player => {
             player.lives = gameState.lives;
@@ -370,7 +419,7 @@ app.post('/admin/set-lives', (req, res) => {
     res.json({ success: true, lives: gameState.lives });
 });
 
-// 🆕 Route séparée pour changer le temps par question
+// Route séparée pour changer le temps par question
 app.post('/admin/set-time', (req, res) => {
     if (!req.session.isAdmin) {
         return res.status(403).json({ error: 'Non autorisé' });
@@ -390,7 +439,7 @@ app.post('/admin/set-time', (req, res) => {
     res.json({ success: true, questionTime: gameState.questionTime });
 });
 
-// 🆕 Route séparée pour changer le nombre de réponses
+// Route séparée pour changer le nombre de réponses
 app.post('/admin/set-answers', (req, res) => {
     if (!req.session.isAdmin) {
         return res.status(403).json({ error: 'Non autorisé' });
@@ -430,7 +479,6 @@ app.post('/admin/start-game', async (req, res) => {
     }
 
     try {
-        // 🆕 Vérifier si on doit reset (toutes les 5 parties)
         const completedGames = await db.getCompletedGamesCount();
         if (completedGames > 0 && completedGames % MAX_GAMES_BEFORE_RESET === 0) {
             console.log(`🔄 ${completedGames} parties terminées, reset automatique de l'historique...`);
@@ -446,35 +494,176 @@ app.post('/admin/start-game', async (req, res) => {
         gameState.showResults = false;
         gameState.lastQuestionResults = null;
 
-        // 🆕 Charger les questions déjà utilisées depuis la DB
         gameState.usedQuestionIds = await db.getUsedQuestionIds();
-        console.log(`📚 ${gameState.usedQuestionIds.length} questions dans l'historique (Partie ${completedGames + 1}/${MAX_GAMES_BEFORE_RESET})`);
 
-        // Initialiser les joueurs
+        // Initialiser les joueurs selon le mode
         gameState.players.forEach(player => {
-            player.lives = gameState.lives;
-            player.correctAnswers = 0;
+            if (gameState.mode === 'lives') {
+                player.lives = gameState.lives;
+                player.correctAnswers = 0;
+            } else {
+                player.points = 0;
+            }
         });
 
-        console.log(`🎮 Partie démarrée avec ${totalPlayers} joueurs - ${gameState.lives}❤️ - ${gameState.questionTime}s`);
+        console.log(`🎮 Partie démarrée (Mode: ${gameState.mode.toUpperCase()}) - ${totalPlayers} joueurs`);
 
         io.sockets.sockets.forEach((socket) => {
             const socketId = socket.id;
             const player = gameState.players.get(socketId);
 
             if (player) {
-                socket.emit('game-started', { totalPlayers, isParticipating: true });
+                socket.emit('game-started', {
+                    totalPlayers,
+                    isParticipating: true,
+                    gameMode: gameState.mode,
+                    questionsCount: gameState.mode === 'points' ? gameState.questionsCount : null
+                });
             } else {
-                socket.emit('game-started', { totalPlayers, isParticipating: false });
+                socket.emit('game-started', {
+                    totalPlayers,
+                    isParticipating: false,
+                    gameMode: gameState.mode
+                });
             }
         });
 
-        res.json({ success: true, gameId: game.id });
+        res.json({ success: true, gameId: game.id, mode: gameState.mode });
     } catch (error) {
         console.error('❌ Erreur démarrage partie:', error);
         res.status(500).json({ error: error.message });
     }
 });
+
+
+// Route pour changer le mode de jeu
+app.post('/admin/set-mode', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    // Bloquer si une partie est en cours
+    if (gameState.inProgress) {
+        return res.status(400).json({
+            error: 'Impossible de changer le mode pendant une partie',
+            blocked: true
+        });
+    }
+
+    const { mode } = req.body;
+
+    if (!['lives', 'points'].includes(mode)) {
+        return res.status(400).json({ error: 'Mode invalide' });
+    }
+
+    gameState.mode = mode;
+    console.log(`⚙️ Mode de jeu changé: ${mode}`);
+
+    // Mettre à jour tous les joueurs déjà dans le lobby
+    if (gameState.players.size > 0) {
+        gameState.players.forEach(player => {
+            if (mode === 'lives') {
+                player.lives = gameState.lives;
+                player.correctAnswers = 0;
+                delete player.points;
+            } else {
+                player.points = 0;
+                delete player.lives;
+                delete player.correctAnswers;
+            }
+        });
+
+        console.log(`✅ ${gameState.players.size} joueur(s) mis à jour pour le mode ${mode}`);
+    }
+
+    io.emit('game-config-updated', {
+        mode: gameState.mode,
+        lives: gameState.lives,
+        questionTime: gameState.questionTime,
+        answersCount: gameState.answersCount,
+        questionsCount: gameState.questionsCount
+    });
+
+    io.emit('lobby-update', {
+        playerCount: gameState.players.size,
+        mode: gameState.mode,
+        lives: gameState.lives,
+        questionTime: gameState.questionTime,
+        players: Array.from(gameState.players.values()).map(p => ({
+            twitchId: p.twitchId,
+            username: p.username,
+            lives: mode === 'lives' ? p.lives : null,
+            points: mode === 'points' ? p.points : null
+        }))
+    });
+
+    res.json({ success: true, mode: gameState.mode });
+});
+
+// Route pour changer le nombre de questions (Mode Points)
+app.post('/admin/set-questions', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    const { questions } = req.body;
+    const validCounts = [15, 20, 25, 30, 35, 40, 45, 50];
+
+    if (!validCounts.includes(parseInt(questions))) {
+        return res.status(400).json({ error: 'Nombre de questions invalide' });
+    }
+
+    gameState.questionsCount = parseInt(questions);
+    console.log(`⚙️ Nombre de questions mis à jour: ${gameState.questionsCount}`);
+
+    io.emit('game-config-updated', {
+        mode: gameState.mode,
+        lives: gameState.lives,
+        questionTime: gameState.questionTime,
+        answersCount: gameState.answersCount,
+        questionsCount: gameState.questionsCount
+    });
+
+    res.json({ success: true, questionsCount: gameState.questionsCount });
+});
+
+
+// Route pour changer le mode de difficulté
+app.post('/admin/set-difficulty-mode', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    // Bloquer si une partie est en cours
+    if (gameState.inProgress) {
+        return res.status(400).json({
+            error: 'Impossible de changer la difficulté pendant une partie',
+            blocked: true
+        });
+    }
+
+    const { mode } = req.body;
+
+    if (!['croissante', 'aleatoire'].includes(mode)) {
+        return res.status(400).json({ error: 'Mode de difficulté invalide' });
+    }
+
+    gameState.difficultyMode = mode;
+    gameState.lastDifficulty = null; // Reset
+    console.log(`⚙️ Mode de difficulté changé: ${mode}`);
+
+    io.emit('game-config-updated', {
+        mode: gameState.mode,
+        lives: gameState.lives,
+        questionTime: gameState.questionTime,
+        answersCount: gameState.answersCount,
+        questionsCount: gameState.questionsCount,
+        difficultyMode: gameState.difficultyMode // 🆕
+    });
+
+    res.json({ success: true, difficultyMode: gameState.difficultyMode });
+});
+
 
 // Route pour reset manuel de l'historique des questions
 app.post('/admin/reset-questions-history', async (req, res) => {
@@ -502,7 +691,7 @@ app.post('/admin/next-question', async (req, res) => {
         return res.status(400).json({ error: 'Aucune partie en cours' });
     }
 
-    // BUG 2 FIX: Bloquer si une question est déjà en cours (timer actif)
+    // Bloquer si une question est déjà en cours
     if (gameState.questionStartTime && gameState.currentQuestion) {
         const elapsed = Math.floor((Date.now() - gameState.questionStartTime) / 1000);
         if (elapsed < gameState.questionTime) {
@@ -516,10 +705,24 @@ app.post('/admin/next-question', async (req, res) => {
     }
 
     try {
-        gameState.currentQuestionIndex++;
-        const difficulty = getDifficultyForQuestion(gameState.currentQuestionIndex);
+        // 🔥 FIX TIEBREAKER: Si tiebreaker, lancer une question EXTREME
+        if (gameState.isTiebreaker) {
+            console.log('⚔️ Admin lance une question de départage');
+            await sendTiebreakerQuestion();
+            return res.json({ success: true, tiebreaker: true });
+        }
 
-        // 🆕 MODIFIÉ: Passer les IDs des questions déjà utilisées
+        // Logique normale
+        gameState.currentQuestionIndex++;
+
+        // Vérifier si on a atteint le nombre max de questions en mode Points
+        if (gameState.mode === 'points' && gameState.currentQuestionIndex > gameState.questionsCount) {
+            // Fin de partie - déterminer le gagnant par points
+            endGameByPoints();
+            return res.json({ success: true, gameEnded: true });
+        }
+
+        const difficulty = getDifficultyForQuestion(gameState.currentQuestionIndex);
         const questions = await db.getRandomQuestions(difficulty, 1, gameState.usedQuestionIds);
 
         if (questions.length === 0) {
@@ -527,14 +730,12 @@ app.post('/admin/next-question', async (req, res) => {
         }
 
         const question = questions[0];
-
-        // 🆕 NOUVEAU: Enregistrer dans la DB ET dans le gameState
         await db.addUsedQuestion(question.id);
         gameState.usedQuestionIds.push(question.id);
 
-        console.log(`📌 Question ID ${question.id} enregistrée (${gameState.usedQuestionIds.length} questions utilisées)`);
+        console.log(`📌 Question ${gameState.currentQuestionIndex}/${gameState.mode === 'points' ? gameState.questionsCount : '∞'} - Difficulté: ${difficulty}`);
 
-        // 🆕 Récupérer toutes les réponses disponibles (filtrer les null)
+        // Récupérer toutes les réponses disponibles
         const allAnswers = [
             { text: question.answer1, index: 1 },
             { text: question.answer2, index: 2 },
@@ -544,55 +745,44 @@ app.post('/admin/next-question', async (req, res) => {
             { text: question.answer6, index: 6 }
         ].filter(answer => answer.text !== null && answer.text !== '');
 
-        // 🆕 Identifier la bonne réponse
         const correctAnswerObj = allAnswers.find(a => a.index === question.coanswer);
-
-        // 🆕 Réponses incorrectes (toutes sauf la bonne)
         const wrongAnswers = allAnswers.filter(a => a.index !== question.coanswer);
 
-        // 🆕 Utiliser le nombre de réponses configuré (4 ou 6)
-        const wrongAnswersNeeded = gameState.answersCount - 1; // -1 car on ajoute la bonne réponse
+        const wrongAnswersNeeded = gameState.answersCount - 1;
         const shuffledWrong = wrongAnswers.sort(() => 0.5 - Math.random()).slice(0, wrongAnswersNeeded);
 
-        // 🆕 Combiner la bonne réponse + les mauvaises
         const selectedAnswers = [correctAnswerObj, ...shuffledWrong];
-
-        // 🆕 Mélanger les 4 réponses finales
         const finalAnswers = selectedAnswers.sort(() => 0.5 - Math.random());
 
-        // 🆕 Trouver le nouvel index de la bonne réponse après mélange
         const newCorrectIndex = finalAnswers.findIndex(a => a.index === question.coanswer) + 1;
 
-        // Préparer la question (sans la bonne réponse côté client)
         const questionData = {
             questionNumber: gameState.currentQuestionIndex,
-            questionId: question.id, // 🆕 Ajouter l'ID de la question
+            totalQuestions: gameState.mode === 'points' ? gameState.questionsCount : null,
+            questionId: question.id,
             question: question.question,
             answers: finalAnswers.map(a => a.text),
             serie: question.serie,
-            difficulty: question.difficulty,
+            difficulty: question.difficulty, // ✅ Important pour le calcul des points
             timeLimit: gameState.questionTime
         };
 
-        // 🆕 Sauvegarder la question complète avec le NOUVEL index de la bonne réponse
         gameState.currentQuestion = {
             ...questionData,
-            correctAnswer: newCorrectIndex
+            correctAnswer: newCorrectIndex,
+            difficulty: question.difficulty // ✅ Stocker aussi dans l'état
         };
 
         gameState.questionStartTime = Date.now();
-
-        // 🆕 Réinitialiser showResults quand une nouvelle question est envoyée
         gameState.showResults = false;
         gameState.lastQuestionResults = null;
         gameState.answers.clear();
 
         io.emit('new-question', questionData);
 
-        // Auto-révéler après le temps configuré avec le nouvel index
         setTimeout(() => {
             if (gameState.inProgress) {
-                revealAnswers(newCorrectIndex); // 🆕 Utiliser le nouvel index
+                revealAnswers(newCorrectIndex);
             }
         }, gameState.questionTime * 1000);
 
@@ -603,8 +793,21 @@ app.post('/admin/next-question', async (req, res) => {
     }
 });
 
-// Fonction pour révéler les réponses
-// Fonction pour révéler les réponses
+
+// Fonction pour calculer la répartition des questions par difficulté
+function getQuestionDistribution(totalQuestions) {
+    return {
+        veryeasy: Math.round(totalQuestions * 0.10),
+        easy: Math.round(totalQuestions * 0.20),
+        medium: Math.round(totalQuestions * 0.30),
+        hard: Math.round(totalQuestions * 0.20),
+        veryhard: Math.round(totalQuestions * 0.10),
+        extreme: Math.round(totalQuestions * 0.10)
+    };
+}
+
+
+// 🔥 FIX TIEBREAKER: Fonction pour révéler les réponses
 function revealAnswers(correctAnswer) {
     const stats = {
         correct: 0,
@@ -614,82 +817,117 @@ function revealAnswers(correctAnswer) {
     };
 
     let eliminatedThisRound = 0;
-    const playersDetails = []; // 🆕 Détails pour l'admin
+    const playersDetails = [];
 
-    // 🆕 NOUVEAU : Détecter si tous les joueurs en vie ont 1 vie et vont tous perdre
-    const alivePlayers = getAlivePlayers();
-    const allHaveOneLife = alivePlayers.every(p => p.lives === 1);
-    let allWillLose = false;
-
-    if (allHaveOneLife && alivePlayers.length > 1) {
-        // Vérifier si tous vont perdre (personne n'a la bonne réponse)
-        const someoneCorrect = Array.from(alivePlayers).some(player => {
-            const playerAnswer = gameState.answers.get(player.socketId);
-            return playerAnswer && playerAnswer.answer === correctAnswer;
-        });
-        allWillLose = !someoneCorrect;
+    // 🔥 FIX: Si tiebreaker, utiliser la fonction dédiée
+    if (gameState.isTiebreaker) {
+        revealTiebreakerAnswers(correctAnswer);
+        return;
     }
 
-    gameState.players.forEach((player, socketId) => {
-        let status = 'afk';
-        let isCorrect = false;
-        const playerAnswer = gameState.answers.get(socketId);
+    // Mode Points: calculer les scores
+    if (gameState.mode === 'points') {
+        gameState.players.forEach((player, socketId) => {
+            const playerAnswer = gameState.answers.get(socketId);
+            let isCorrect = false;
+            let status = 'afk';
 
-        if (player.lives === 0) {
-            stats.livesDistribution[0]++;
-            status = 'eliminated';
-        } else if (!playerAnswer) {
-            // AFK
-            stats.afk++;
-            // 🆕 Ne pas perdre de vie si tout le monde perdrait
-            if (!allWillLose) {
-                player.lives--;
-                if (player.lives === 0) eliminatedThisRound++;
+            if (!playerAnswer) {
+                stats.afk++;
+                status = 'afk';
+            } else if (playerAnswer.answer === correctAnswer) {
+                stats.correct++;
+
+                const pointsEarned = getPointsForDifficulty(gameState.currentQuestion.difficulty);
+                player.points = (player.points || 0) + pointsEarned;
+
+                isCorrect = true;
+                status = 'correct';
+            } else {
+                stats.wrong++;
+                status = 'wrong';
             }
-            status = 'afk';
-        } else if (playerAnswer.answer === correctAnswer) {
-            // Bonne réponse
-            stats.correct++;
-            player.correctAnswers++;
-            status = 'correct';
-            isCorrect = true;
-        } else {
-            // Mauvaise réponse
-            stats.wrong++;
-            // 🆕 Ne pas perdre de vie si tout le monde perdrait
-            if (!allWillLose) {
-                player.lives--;
-                if (player.lives === 0) eliminatedThisRound++;
-            }
-            status = 'wrong';
-        }
 
-        if (player.lives > 0 || status !== 'eliminated') {
-            stats.livesDistribution[player.lives]++;
-        }
-
-        // 🆕 Ajouter les détails du joueur pour l'admin
-        playersDetails.push({
-            socketId: socketId,
-            username: player.username,
-            lives: player.lives,
-            status: status,
-            responseTime: playerAnswer?.time || null,
-            isCorrect: isCorrect
+            playersDetails.push({
+                socketId: socketId,
+                username: player.username,
+                points: player.points || 0,
+                status: status,
+                responseTime: playerAnswer?.time || null,
+                isCorrect: isCorrect,
+                pointsEarned: isCorrect ? getPointsForDifficulty(gameState.currentQuestion.difficulty) : 0 // 🔥 NOUVEAU
+            });
         });
-    });
+    } else {
+        // Mode Vie - Logique originale
+        const alivePlayers = getAlivePlayers();
+        const allHaveOneLife = alivePlayers.every(p => p.lives === 1);
+        let allWillLose = false;
 
-    const alivePlayersAfter = getAlivePlayers();
+        if (allHaveOneLife && alivePlayers.length > 1) {
+            const someoneCorrect = Array.from(alivePlayers).some(player => {
+                const playerAnswer = gameState.answers.get(player.socketId);
+                return playerAnswer && playerAnswer.answer === correctAnswer;
+            });
+            allWillLose = !someoneCorrect;
+        }
 
-    // 🆕 Créer le tableau playersData pour l'admin
+        gameState.players.forEach((player, socketId) => {
+            let status = 'afk';
+            let isCorrect = false;
+            const playerAnswer = gameState.answers.get(socketId);
+
+            if (player.lives === 0) {
+                stats.livesDistribution[0]++;
+                status = 'eliminated';
+            } else if (!playerAnswer) {
+                stats.afk++;
+                if (!allWillLose) {
+                    player.lives--;
+                    if (player.lives === 0) eliminatedThisRound++;
+                }
+                status = 'afk';
+            } else if (playerAnswer.answer === correctAnswer) {
+                stats.correct++;
+                player.correctAnswers++;
+                status = 'correct';
+                isCorrect = true;
+            } else {
+                stats.wrong++;
+                if (!allWillLose) {
+                    player.lives--;
+                    if (player.lives === 0) eliminatedThisRound++;
+                }
+                status = 'wrong';
+            }
+
+            if (player.lives > 0 || status !== 'eliminated') {
+                stats.livesDistribution[player.lives]++;
+            }
+
+            playersDetails.push({
+                socketId: socketId,
+                username: player.username,
+                points: player.points || 0,
+                status: status,
+                responseTime: playerAnswer?.time || null,
+                isCorrect: isCorrect
+            });
+        });
+    }
+
+    const alivePlayersAfter = gameState.mode === 'points'
+        ? Array.from(gameState.players.values())
+        : getAlivePlayers();
+
     const playersData = Array.from(gameState.players.values()).map(player => ({
         twitchId: player.twitchId,
         username: player.username,
         lives: player.lives,
-        correctAnswers: player.correctAnswers
+        correctAnswers: player.correctAnswers,
+        points: player.points || 0
     }));
 
-    // 🆕 Stocker les résultats dans gameState pour la restauration
     const resultsData = {
         correctAnswer,
         stats,
@@ -697,7 +935,7 @@ function revealAnswers(correctAnswer) {
         remainingPlayers: alivePlayersAfter.length,
         players: playersDetails,
         playersData: playersData,
-        allWillLose: allWillLose // 🆕 Indiquer si c'était un cas spécial
+        gameMode: gameState.mode
     };
 
     gameState.showResults = true;
@@ -705,11 +943,432 @@ function revealAnswers(correctAnswer) {
 
     io.emit('question-results', resultsData);
 
-
-    // Vérifier fin de partie
-    if (alivePlayersAfter.length <= 1) {
+    // Vérifier fin de partie selon le mode
+    if (gameState.mode === 'lives' && alivePlayersAfter.length <= 1) {
         endGame(alivePlayersAfter[0]);
+    } else if (gameState.mode === 'points' && gameState.currentQuestionIndex >= gameState.questionsCount) {
+        // Terminer automatiquement après la dernière question
+        setTimeout(() => {
+            endGameByPoints();
+        }, 100);
     }
+}
+
+
+function getPointsForDifficulty(difficulty) {
+    const pointsMap = {
+        'veryeasy': 500,
+        'easy': 1000,
+        'medium': 1500,
+        'hard': 2000,
+        'veryhard': 2500,
+        'extreme': 3000
+    };
+
+    return pointsMap[difficulty] || 1000; // Défaut 1000 si difficulté inconnue
+}
+
+// 🔥 FIX TIEBREAKER: Fonction dédiée pour révéler les résultats du tiebreaker
+function revealTiebreakerAnswers(correctAnswer) {
+    console.log('⚔️ Révélation résultats tiebreaker');
+
+    const stats = {
+        correct: 0,
+        wrong: 0,
+        afk: 0
+    };
+
+    const playersDetails = [];
+
+    // 🔥 FIX: Analyser TOUS les joueurs ET incrémenter TOUS les points
+    gameState.players.forEach((player, socketId) => {
+        const playerAnswer = gameState.answers.get(socketId);
+        let isCorrect = false;
+        let status = 'spectator';
+
+        // Vérifier si le joueur est en tiebreaker (pour l'affichage visuel uniquement)
+        const isInTiebreaker = gameState.tiebreakerPlayers.includes(player.twitchId);
+
+        // 🔥 FIX: Traiter la réponse de TOUS les joueurs, pas seulement ceux en tiebreaker
+        if (!playerAnswer) {
+            stats.afk++;
+            status = 'afk';
+        } else if (playerAnswer.answer === correctAnswer) {
+            stats.correct++;
+
+            // 🔥 Tiebreaker = toujours EXTREME = 3000 points
+            const pointsEarned = 3000;
+            player.points = (player.points || 0) + pointsEarned;
+
+            isCorrect = true;
+            status = 'correct';
+        } else {
+            stats.wrong++;
+            status = 'wrong';
+        }
+
+        playersDetails.push({
+            socketId: socketId,
+            username: player.username,
+            points: player.points || 0,
+            status: status,
+            responseTime: playerAnswer?.time || null,
+            isCorrect: isCorrect,
+            isInTiebreaker: isInTiebreaker,
+            pointsEarned: isCorrect ? 3000 : 0 // 🔥 NOUVEAU (toujours 3000 en tiebreaker)
+        });
+    });
+
+    const playersData = Array.from(gameState.players.values()).map(player => ({
+        twitchId: player.twitchId,
+        username: player.username,
+        points: player.points || 0
+    }));
+
+    const resultsData = {
+        correctAnswer: correctAnswer,
+        stats: stats,
+        players: playersDetails,
+        playersData: playersData,
+        gameMode: 'points',
+        isTiebreaker: true,
+        remainingPlayers: gameState.tiebreakerPlayers.length
+    };
+
+    gameState.showResults = true;
+    gameState.lastQuestionResults = resultsData;
+
+    io.emit('question-results', resultsData);
+
+    console.log(`⚔️ Résultats tiebreaker: ${stats.correct} bonne(s) réponse(s), ${stats.wrong} mauvaise(s), ${stats.afk} AFK`);
+
+    // 🔥 FIX: Vérifier IMMÉDIATEMENT le gagnant
+    setTimeout(async () => {
+        await checkTiebreakerWinner();
+    }, 100);
+}
+
+
+// Fonction pour terminer une partie en mode Points
+async function endGameByPoints() {
+    const duration = Math.floor((Date.now() - gameState.gameStartTime) / 1000);
+
+    try {
+        // Trier les joueurs par points (décroissant)
+        const sortedPlayers = Array.from(gameState.players.values())
+            .sort((a, b) => (b.points || 0) - (a.points || 0));
+
+        // Détecter les égalités
+        const maxPoints = sortedPlayers[0]?.points || 0;
+        const winners = sortedPlayers.filter(p => p.points === maxPoints);
+
+        // CAS 1: UN SEUL GAGNANT
+        if (winners.length === 1) {
+            const winner = winners[0];
+
+            if (winner && winner.points > 0) {
+                await db.endGame(
+                    gameState.currentGameId,
+                    winner.twitchId,
+                    gameState.currentQuestionIndex,
+                    duration
+                );
+                await db.updateUserStats(winner.twitchId, true, 1);
+
+                const winnerUser = await db.getUserByTwitchId(winner.twitchId);
+
+                const winnerData = {
+                    username: winner.username,
+                    points: winner.points || 0,
+                    totalVictories: winnerUser ? winnerUser.total_victories : 1
+                };
+
+                console.log(`🏆 Gagnant: ${winner.username} avec ${winner.points} points`);
+
+                // Mettre à jour les stats des perdants
+                let placement = 2;
+                for (const player of sortedPlayers.slice(1)) {
+                    await db.updateUserStats(player.twitchId, false, placement++);
+                }
+
+                // Créer le podium Top 3
+                const podium = sortedPlayers.slice(0, 3).map((player, index) => ({
+                    rank: index + 1,
+                    username: player.username,
+                    points: player.points || 0
+                }));
+
+                io.emit('game-ended', {
+                    winner: winnerData,
+                    podium: podium,
+                    duration,
+                    totalQuestions: gameState.currentQuestionIndex,
+                    gameMode: 'points'
+                });
+
+                // Reset complet
+                resetGameState();
+            }
+        }
+        // CAS 2: ÉGALITÉ → QUESTION DE DÉPARTAGE
+        else {
+            console.log(`⚖️ ÉGALITÉ: ${winners.length} joueurs avec ${maxPoints} points → Question de départage !`);
+
+            // Stocker les twitchId
+            gameState.isTiebreaker = true;
+            gameState.tiebreakerPlayers = winners.map(w => w.twitchId);
+
+            io.emit('tiebreaker-announced', {
+                tiebreakerPlayers: winners.map(w => ({
+                    twitchId: w.twitchId,
+                    username: w.username,
+                    points: w.points
+                })),
+                message: '⚖️ Égalité ! Question de départage...'
+            });
+
+            console.log('⚠️ En attente que l\'admin lance la question de départage...');
+        }
+
+    } catch (error) {
+        console.error('❌ Erreur fin de partie (Mode Points):', error);
+    }
+}
+
+
+// FONCTION: Envoyer une question de départage (EXTREME)
+async function sendTiebreakerQuestion() {
+    try {
+        gameState.currentQuestionIndex++;
+
+        // Toujours prendre une question EXTREME pour le tiebreaker
+        const difficulty = 'extreme';
+
+        const questions = await db.getRandomQuestions(difficulty, 1, gameState.usedQuestionIds);
+
+        if (questions.length === 0) {
+            console.error('❌ Aucune question extreme disponible pour tiebreaker');
+            // Fallback: terminer avec égalité
+            await endGameWithTie();
+            return;
+        }
+
+        const question = questions[0];
+        await db.addUsedQuestion(question.id);
+        gameState.usedQuestionIds.push(question.id);
+
+        console.log(`⚔️ Question de départage ${gameState.currentQuestionIndex} - Difficulté: EXTREME`);
+
+        // Préparer les réponses
+        const allAnswers = [
+            { text: question.answer1, index: 1 },
+            { text: question.answer2, index: 2 },
+            { text: question.answer3, index: 3 },
+            { text: question.answer4, index: 4 },
+            { text: question.answer5, index: 5 },
+            { text: question.answer6, index: 6 }
+        ].filter(answer => answer.text !== null && answer.text !== '');
+
+        const correctAnswerObj = allAnswers.find(a => a.index === question.coanswer);
+        const wrongAnswers = allAnswers.filter(a => a.index !== question.coanswer);
+        const wrongAnswersNeeded = gameState.answersCount - 1;
+        const shuffledWrong = wrongAnswers.sort(() => 0.5 - Math.random()).slice(0, wrongAnswersNeeded);
+        const selectedAnswers = [correctAnswerObj, ...shuffledWrong];
+        const finalAnswers = selectedAnswers.sort(() => 0.5 - Math.random());
+        const newCorrectIndex = finalAnswers.findIndex(a => a.index === question.coanswer) + 1;
+
+        const questionData = {
+            questionNumber: gameState.currentQuestionIndex,
+            totalQuestions: null,
+            questionId: question.id,
+            question: question.question,
+            answers: finalAnswers.map(a => a.text),
+            serie: question.serie,
+            difficulty: 'TIEBREAKER - EXTREME',
+            timeLimit: gameState.questionTime,
+            isTiebreaker: true
+        };
+
+        gameState.currentQuestion = {
+            ...questionData,
+            correctAnswer: newCorrectIndex
+        };
+
+        gameState.questionStartTime = Date.now();
+        gameState.showResults = false;
+        gameState.lastQuestionResults = null;
+        gameState.answers.clear();
+
+        // Envoyer la question à TOUS les joueurs
+        io.emit('new-question', questionData);
+
+        // 🔥 FIX: Attendre la fin du timer PUIS révéler
+        setTimeout(() => {
+            if (gameState.inProgress && gameState.isTiebreaker) {
+                revealTiebreakerAnswers(newCorrectIndex);
+            }
+        }, gameState.questionTime * 1000);
+
+    } catch (error) {
+        console.error('❌ Erreur question tiebreaker:', error);
+    }
+}
+
+// 🔥 FIX TIEBREAKER: Fonction pour vérifier si on a un gagnant
+async function checkTiebreakerWinner() {
+    console.log('🔍 Vérification gagnant tiebreaker...');
+
+    // 🆕 FIX: Récupérer TOUS les joueurs et les trier par points
+    const allPlayersSorted = Array.from(gameState.players.values())
+        .sort((a, b) => (b.points || 0) - (a.points || 0));
+
+    if (allPlayersSorted.length === 0) {
+        console.error('❌ Aucun joueur trouvé');
+        return;
+    }
+
+    // 🆕 FIX: Le max points peut avoir changé (un joueur a pu rattraper)
+    const maxPoints = allPlayersSorted[0]?.points || 0;
+    const stillTied = allPlayersSorted.filter(p => p.points === maxPoints);
+
+    console.log(`📊 Max points: ${maxPoints}, Joueurs à ${maxPoints} pts: ${stillTied.length}`);
+
+    // 🆕 FIX: Mettre à jour la liste des joueurs en tiebreaker (peut avoir changé)
+    gameState.tiebreakerPlayers = stillTied.map(p => p.twitchId);
+
+    if (stillTied.length === 1) {
+        // 🎉 UN GAGNANT !
+        const winner = stillTied[0];
+        console.log(`🏆 Tiebreaker terminé: ${winner.username} gagne avec ${winner.points} points !`);
+
+        gameState.isTiebreaker = false;
+        gameState.tiebreakerPlayers = [];
+
+        // Terminer la partie avec ce gagnant
+        const duration = Math.floor((Date.now() - gameState.gameStartTime) / 1000);
+
+        try {
+            // Enregistrer la victoire
+            await db.endGame(
+                gameState.currentGameId,
+                winner.twitchId,
+                gameState.currentQuestionIndex,
+                duration
+            );
+            await db.updateUserStats(winner.twitchId, true, 1);
+
+            const winnerUser = await db.getUserByTwitchId(winner.twitchId);
+
+            const winnerData = {
+                username: winner.username,
+                points: winner.points || 0,
+                totalVictories: winnerUser ? winnerUser.total_victories : 1
+            };
+
+            // Mettre à jour les stats des perdants
+            const allPlayers = Array.from(gameState.players.values())
+                .sort((a, b) => (b.points || 0) - (a.points || 0));
+
+            let placement = 2;
+            for (const player of allPlayers) {
+                if (player.twitchId !== winner.twitchId) {
+                    await db.updateUserStats(player.twitchId, false, placement++);
+                }
+            }
+
+            // Créer le podium Top 3
+            const podium = allPlayers.slice(0, 3).map((player, index) => ({
+                rank: index + 1,
+                username: player.username,
+                points: player.points || 0
+            }));
+
+            io.emit('game-ended', {
+                winner: winnerData,
+                podium: podium,
+                duration,
+                totalQuestions: gameState.currentQuestionIndex,
+                gameMode: 'points'
+            });
+
+            // Reset complet
+            resetGameState();
+
+            console.log('✅ Partie terminée après tiebreaker');
+        } catch (error) {
+            console.error('❌ Erreur fin de partie après tiebreaker:', error);
+        }
+    } else {
+        // ⚔️ ENCORE ÉGALITÉ
+        console.log(`⚖️ Toujours ${stillTied.length} joueurs à égalité avec ${maxPoints} points`);
+
+        gameState.tiebreakerPlayers = stillTied.map(p => p.twitchId);
+
+        io.emit('tiebreaker-continues', {
+            tiebreakerPlayers: stillTied.map(p => ({
+                twitchId: p.twitchId,
+                username: p.username,
+                points: p.points
+            })),
+            message: '⚖️ Encore égalité ! Cliquez sur "Question suivante"'
+        });
+
+        console.log('⚠️ En attente que l\'admin lance la prochaine question de départage...');
+    }
+}
+
+
+// FONCTION: Terminer avec égalité (fallback si plus de questions)
+async function endGameWithTie() {
+    const duration = Math.floor((Date.now() - gameState.gameStartTime) / 1000);
+
+    const sortedPlayers = Array.from(gameState.players.values())
+        .sort((a, b) => (b.points || 0) - (a.points || 0));
+
+    const maxPoints = sortedPlayers[0]?.points || 0;
+    const winners = sortedPlayers.filter(p => p.points === maxPoints);
+
+    await db.endGame(
+        gameState.currentGameId,
+        null,
+        gameState.currentQuestionIndex,
+        duration
+    );
+
+    for (const winner of winners) {
+        await db.updateUserStats(winner.twitchId, true, 1);
+    }
+
+    let placement = winners.length + 1;
+    for (const player of sortedPlayers.slice(winners.length)) {
+        await db.updateUserStats(player.twitchId, false, placement++);
+    }
+
+    const winnerData = {
+        tie: true,
+        winners: winners.map(w => ({
+            username: w.username,
+            points: w.points || 0
+        })),
+        points: maxPoints,
+        username: winners.map(w => w.username).join(' & ')
+    };
+
+    const podium = sortedPlayers.slice(0, 3).map((player, index) => ({
+        rank: index + 1,
+        username: player.username,
+        points: player.points || 0
+    }));
+
+    io.emit('game-ended', {
+        winner: winnerData,
+        podium: podium,
+        duration,
+        totalQuestions: gameState.currentQuestionIndex,
+        gameMode: 'points'
+    });
+
+    resetGameState();
 }
 
 // Terminer la partie
@@ -728,14 +1387,13 @@ async function endGame(winner) {
             );
             await db.updateUserStats(winner.twitchId, true, 1);
 
-            // 🆕 Récupérer les stats complètes du winner depuis la DB
             const winnerUser = await db.getUserByTwitchId(winner.twitchId);
 
             winnerData = {
                 username: winner.username,
                 correctAnswers: winner.correctAnswers,
-                livesRemaining: winner.lives, // 🆕 Vies restantes
-                totalVictories: winnerUser ? winnerUser.total_victories : 1 // 🆕 Total victoires
+                livesRemaining: winner.lives,
+                totalVictories: winnerUser ? winnerUser.total_victories : 1
             };
         }
 
@@ -749,25 +1407,12 @@ async function endGame(winner) {
         io.emit('game-ended', {
             winner: winnerData,
             duration,
-            totalQuestions: gameState.currentQuestionIndex
+            totalQuestions: gameState.currentQuestionIndex,
+            gameMode: 'lives'
         });
 
-        // Reset l'état
-        gameState.inProgress = false;
-        gameState.currentGameId = null;
-        gameState.currentQuestionIndex = 0;
-        gameState.currentQuestion = null; // 🆕 Reset question
-        gameState.showResults = false;
-        gameState.lastQuestionResults = null;
-        gameState.questionStartTime = null; // 🆕 Reset timer
-        gameState.gameStartTime = null; // 🆕 Reset game start time
-        gameState.players.clear();
-        gameState.answers.clear();
-
-        // 🆕 Fermer automatiquement le lobby à la fin de la partie
-        gameState.isActive = false;
-        io.emit('game-deactivated');
-        console.log('🔒 Lobby fermé automatiquement après la fin de partie');
+        // Reset
+        resetGameState();
 
     } catch (error) {
         console.error('❌ Erreur fin de partie:', error);
@@ -790,7 +1435,7 @@ app.get('/admin/stats', async (req, res) => {
             topPlayers,
             recentGames,
             currentPlayers: gameState.players.size,
-            activePlayers: gameState.inProgress ? getAlivePlayers().length : 0, // 🆕 0 si pas en cours
+            activePlayers: gameState.inProgress ? getAlivePlayers().length : 0,
             gameActive: gameState.isActive,
             gameInProgress: gameState.inProgress
         });
@@ -877,7 +1522,7 @@ app.post('/admin/add-question', async (req, res) => {
     try {
         const { question, answer1, answer2, answer3, answer4, answer5, answer6, correctAnswer, serie, difficulty } = req.body;
 
-        // 🆕 Utiliser supabase directement
+        // Utiliser supabase directement
         const { data, error } = await supabase
             .from('questions')
             .insert({
@@ -988,11 +1633,11 @@ app.post('/admin/report-question', async (req, res) => {
 
     try {
         const { questionId, questionText, difficulty, reason } = req.body;
-        
+
         if (!questionText || !reason) {
             return res.status(400).json({ error: 'Données manquantes' });
         }
-        
+
         // Enregistrer le signalement dans Supabase
         const { data, error } = await supabase
             .from('reported_questions')
@@ -1005,9 +1650,9 @@ app.post('/admin/report-question', async (req, res) => {
             })
             .select()
             .single();
-        
+
         if (error) throw error;
-        
+
         console.log('🚨 Question signalée:', questionText);
         res.json({ success: true, report: data });
     } catch (error) {
@@ -1079,7 +1724,7 @@ io.on('connection', (socket) => {
             socketId: socket.id,
             twitchId: data.twitchId,
             username: data.username,
-            lives: gameState.lives,  // 🆕 Utiliser les vies configurées
+            lives: gameState.lives,
             correctAnswers: 0
         });
 
@@ -1087,7 +1732,7 @@ io.on('connection', (socket) => {
 
         io.emit('lobby-update', {
             playerCount: gameState.players.size,
-            lives: gameState.lives,  // 🆕 Envoyer les paramètres configurés
+            lives: gameState.lives,
             questionTime: gameState.questionTime,
             players: Array.from(gameState.players.values()).map(p => ({
                 twitchId: p.twitchId,
@@ -1097,7 +1742,7 @@ io.on('connection', (socket) => {
         });
     });
 
-    // 🆕 Quitter le lobby
+    // Quitter le lobby
     socket.on('leave-lobby', (data) => {
         const player = gameState.players.get(socket.id);
         if (player) {
@@ -1134,7 +1779,7 @@ io.on('connection', (socket) => {
         }
 
         if (existingPlayer) {
-            // 🆕 Sauvegarder la réponse de l'ancien socketId AVANT de supprimer
+            // Sauvegarder la réponse de l'ancien socketId AVANT de supprimer
             const previousAnswer = gameState.answers.get(oldSocketId);
 
             // Supprimer l'ancienne référence
@@ -1145,33 +1790,43 @@ io.on('connection', (socket) => {
             existingPlayer.socketId = socket.id;
             gameState.players.set(socket.id, existingPlayer);
 
-            // 🆕 Transférer la réponse au nouveau socketId si elle existait
+            // Transférer la réponse au nouveau socketId si elle existait
             if (previousAnswer) {
                 gameState.answers.set(socket.id, previousAnswer);
             }
 
-            // 🆕 Nettoyer les marqueurs de déconnexion temporaire
+            // Nettoyer les marqueurs de déconnexion temporaire
             delete existingPlayer.disconnectedAt;
             delete existingPlayer.disconnectedSocketId;
 
-            console.log(`🔄 ${data.username} reconnecté - ${existingPlayer.lives} ❤️`);
+            console.log(`🔄 ${data.username} reconnecté - Mode: ${gameState.mode}, Points: ${existingPlayer.points || 0}, Vies: ${existingPlayer.lives}`);
 
-            // 🆕 Envoyer l'état du joueur au client avec sa réponse précédente
-            socket.emit('player-restored', {
-                lives: existingPlayer.lives,
-                correctAnswers: existingPlayer.correctAnswers,
+            // Envoyer les bonnes données selon le mode
+            const restorationData = {
                 currentQuestionIndex: gameState.currentQuestionIndex,
-                hasAnswered: !!previousAnswer, // A répondu si previousAnswer existe
-                selectedAnswer: previousAnswer ? previousAnswer.answer : null // 🆕 La réponse sélectionnée
-            });
+                hasAnswered: !!previousAnswer,
+                selectedAnswer: previousAnswer ? previousAnswer.answer : null,
+                gameMode: gameState.mode
+            };
 
-            // 🆕 Mettre à jour le compteur de joueurs pour l'admin
+            if (gameState.mode === 'lives') {
+                restorationData.lives = existingPlayer.lives;
+                restorationData.correctAnswers = existingPlayer.correctAnswers;
+            } else {
+                restorationData.points = existingPlayer.points || 0;
+            }
+
+            socket.emit('player-restored', restorationData);
+
+            // Mettre à jour le compteur de joueurs pour l'admin
             io.emit('lobby-update', {
                 playerCount: gameState.players.size,
+                mode: gameState.mode,
                 players: Array.from(gameState.players.values()).map(p => ({
                     twitchId: p.twitchId,
                     username: p.username,
-                    lives: p.lives
+                    lives: gameState.mode === 'lives' ? p.lives : null,
+                    points: gameState.mode === 'points' ? (p.points || 0) : null
                 }))
             });
         } else {
@@ -1188,7 +1843,22 @@ io.on('connection', (socket) => {
         if (!gameState.inProgress) return;
 
         const player = gameState.players.get(socket.id);
-        if (!player || player.lives === 0) return;
+        if (!player) return;
+
+        // Vérifier que le timer n'est pas expiré
+        if (gameState.questionStartTime) {
+            const elapsed = Math.floor((Date.now() - gameState.questionStartTime) / 1000);
+            if (elapsed >= gameState.questionTime) {
+                console.log(`⏱️ ${player.username} a essayé de répondre après expiration du timer`);
+                return;
+            }
+        }
+
+        // 🔥 FIX: En mode Points, TOUS les joueurs continuent à jouer pendant le tiebreaker
+        // Seul le mode Vie bloque les joueurs éliminés (lives === 0)
+
+        // Mode Vie - bloquer si éliminé
+        if (gameState.mode === 'lives' && player.lives === 0) return;
 
         const responseTime = Date.now() - gameState.questionStartTime;
 
@@ -1199,14 +1869,12 @@ io.on('connection', (socket) => {
 
         socket.emit('answer-recorded');
 
-        // 🆕 Notifier l'admin en temps réel qu'un joueur a répondu
         io.emit('answer-submitted', {
             socketId: socket.id,
             answeredCount: gameState.answers.size,
             totalPlayers: gameState.players.size
         });
 
-        // 🆕 Notifier TOUS les joueurs qu'un joueur a répondu
         io.emit('player-answered', {
             username: player.username,
             answeredCount: gameState.answers.size,
@@ -1220,7 +1888,7 @@ io.on('connection', (socket) => {
         if (player) {
             console.log(`🔌 ${player.username} déconnecté (socket: ${socket.id})`);
 
-            // 🆕 Si une partie est en cours, NE PAS supprimer le joueur immédiatement
+            // Si une partie est en cours, NE PAS supprimer le joueur immédiatement
             // Lui laisser le temps de se reconnecter (30 secondes)
             if (gameState.inProgress) {
                 console.log(`⏳ Attente de reconnexion pour ${player.username}...`);
@@ -1266,14 +1934,6 @@ io.on('connection', (socket) => {
     });
 });
 
-
-
-
-
-
-
-
-
 // ============================================
 // Gestion des erreurs
 // ============================================
@@ -1285,3 +1945,23 @@ process.on('uncaughtException', (error) => {
     console.error('❌ Uncaught exception:', error);
     process.exit(1);
 });
+
+// FONCTION: Reset complet de l'état du jeu
+function resetGameState() {
+    gameState.inProgress = false;
+    gameState.currentGameId = null;
+    gameState.currentQuestionIndex = 0;
+    gameState.currentQuestion = null;
+    gameState.showResults = false;
+    gameState.lastQuestionResults = null;
+    gameState.questionStartTime = null;
+    gameState.gameStartTime = null;
+    gameState.players.clear();
+    gameState.answers.clear();
+    gameState.isTiebreaker = false;
+    gameState.tiebreakerPlayers = [];
+
+    gameState.isActive = false;
+    io.emit('game-deactivated');
+    console.log('🔒 Lobby fermé automatiquement après la fin de partie');
+}

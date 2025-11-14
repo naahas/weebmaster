@@ -12,13 +12,20 @@ createApp({
             username: '',
             twitchId: '',
 
+
+            gameMode: 'lives',
             gameLives: 3,
-            gameTime: 7,
+            gameTime: 10,
+
+
+            playerPoints: 0,
+            pointsAnimation: false,
+            pointsGained: 0,
 
             // État du jeu
             isGameActive: false,
             gameInProgress: false,
-            gameStartedOnServer: false, // 🆕 Track si une partie a démarré côté serveur
+            gameStartedOnServer: false,
             gameEnded: false,
 
             // Lobby
@@ -88,6 +95,12 @@ createApp({
         this.initParticles();
         this.initSocket();
         this.loadTheme();
+    },
+
+    computed: {
+        formattedPlayerPoints() {
+            return this.playerPoints.toLocaleString('fr-FR');
+        }
     },
 
     methods: {
@@ -186,6 +199,13 @@ createApp({
             }
         },
 
+        triggerPointsAnimation() {
+            this.pointsAnimation = true;
+            setTimeout(() => {
+                this.pointsAnimation = false;
+            }, 1500);
+        },
+
         // ========== Restauration d'état ==========
         async restoreGameState() {
             try {
@@ -195,65 +215,74 @@ createApp({
                 this.isGameActive = state.isActive;
                 this.playerCount = state.playerCount;
 
-                // 🆕 Restaurer les paramètres configurables
+                // 🆕 Restaurer le mode
+                if (state.mode) {
+                    this.gameMode = state.mode;
+                }
+
                 if (state.lives) this.gameLives = state.lives;
                 if (state.questionTime) this.gameTime = state.questionTime;
+                if (state.questionsCount) this.totalQuestions = state.questionsCount;
 
-                // 🆕 Restaurer gameStartedOnServer depuis l'état serveur
                 this.gameStartedOnServer = state.inProgress;
 
-                // 🆕 IMPORTANT: Si le jeu n'est PAS actif, nettoyer le localStorage
-                // (cas du redémarrage serveur ou fermeture du jeu)
                 if (!state.isActive) {
                     localStorage.removeItem('hasJoinedLobby');
                     localStorage.removeItem('lobbyTwitchId');
                     console.log('🧹 localStorage nettoyé (jeu non actif)');
-                    return; // Sortir sans restaurer l'état
+                    return;
                 }
 
-                // 🆕 Restaurer l'état "hasJoined" depuis localStorage AVANT de restaurer gameInProgress
                 if (this.isAuthenticated) {
                     const savedLobbyState = localStorage.getItem('hasJoinedLobby');
                     const savedTwitchId = localStorage.getItem('lobbyTwitchId');
 
-                    // Vérifier que c'est bien le même utilisateur
                     if (savedLobbyState === 'true' && savedTwitchId === this.twitchId) {
                         this.hasJoined = true;
                         console.log('✅ État hasJoined restauré depuis localStorage');
 
-                        // Re-joindre le lobby côté serveur si pas en partie
                         if (this.isGameActive && !state.inProgress) {
                             this.shouldRejoinLobby = true;
                         }
                     }
                 }
 
-                // 🆕 IMPORTANT: Ne mettre gameInProgress = true que si le joueur a rejoint
                 if (state.inProgress && this.hasJoined) {
                     this.gameInProgress = true;
                 } else {
                     this.gameInProgress = false;
                 }
 
-                // 🆕 Restaurer la question en cours si elle existe ET que le joueur participe
+                // 🔥 CORRECTION: Restaurer les points/vies selon le mode
+                if (state.inProgress && this.hasJoined) {
+                    const currentPlayer = state.players?.find(p => p.twitchId === this.twitchId);
+
+                    if (currentPlayer) {
+                        if (state.mode === 'points') {
+                            this.playerPoints = currentPlayer.points || 0;
+                            console.log(`✅ Points restaurés: ${this.playerPoints}`);
+                        } else {
+                            this.playerLives = currentPlayer.lives !== undefined ? currentPlayer.lives : this.gameLives;
+                            console.log(`✅ Vies restaurées: ${this.playerLives}`);
+                        }
+                    }
+                }
+
                 if (state.currentQuestion && state.inProgress && this.hasJoined) {
                     this.currentQuestion = state.currentQuestion;
                     this.currentQuestionNumber = state.currentQuestion.questionNumber;
 
-                    // Restaurer le timer avec le temps restant RÉEL
                     if (state.timeRemaining > 0) {
                         this.timeRemaining = state.timeRemaining;
                         this.timerProgress = (state.timeRemaining / this.gameTime) * 100;
-                        this.startTimer(state.timeRemaining); // 🆕 Passer le temps restant
+                        this.startTimer(state.timeRemaining);
                     } else {
-                        // Timer écoulé
                         this.timeRemaining = 0;
                         this.timerProgress = 0;
                     }
 
                     console.log(`✅ Question restaurée avec ${state.timeRemaining}s restantes`);
 
-                    // 🆕 Restaurer les résultats si affichés ET que le joueur participe
                     if (state.showResults && state.lastQuestionResults && state.inProgress && this.hasJoined) {
                         this.showResults = true;
                         this.questionResults = state.lastQuestionResults;
@@ -261,7 +290,6 @@ createApp({
                     }
                 }
 
-                // Si partie en cours ET que le joueur avait rejoint, se reconnecter
                 if (state.inProgress && this.isAuthenticated && this.hasJoined) {
                     this.needsReconnect = true;
                 }
@@ -317,17 +345,27 @@ createApp({
 
             // Restauration du joueur
             this.socket.on('player-restored', (data) => {
-                this.playerLives = data.lives;
+                console.log('🔄 Données de restauration reçues:', data);
+
+                // 🔥 FIX: Restaurer selon le mode
+                if (data.gameMode === 'lives') {
+                    this.playerLives = data.lives;
+                    console.log(`✅ Vies restaurées: ${this.playerLives}`);
+                } else if (data.gameMode === 'points') {
+                    this.playerPoints = data.points || 0;  // 🔥 FIX PRINCIPAL
+                    console.log(`✅ Points restaurés: ${this.playerPoints}`);
+                }
+
                 this.currentQuestionNumber = data.currentQuestionIndex;
                 this.hasJoined = true;
 
-                // 🆕 Restaurer l'état hasAnswered et selectedAnswer si le joueur a déjà répondu
                 if (data.hasAnswered) {
                     this.hasAnswered = true;
-                    this.selectedAnswer = data.selectedAnswer; // 🆕 Restaurer la réponse sélectionnée
+                    this.selectedAnswer = data.selectedAnswer;
                     console.log(`⚠️ Réponse ${data.selectedAnswer} restaurée`);
                 }
 
+                console.log(`✅ Joueur restauré - Mode: ${data.gameMode}`);
                 this.showNotification('Reconnecté à la partie !', 'success');
             });
 
@@ -373,19 +411,22 @@ createApp({
             });
 
             this.socket.on('game-started', (data) => {
-                // 🆕 Marquer qu'une partie a démarré côté serveur
                 this.gameStartedOnServer = true;
+                this.gameMode = data.gameMode || 'lives';  // 🆕
 
-                // 🆕 Vérifier si le joueur participe à la partie
                 if (data.isParticipating) {
-                    // Le joueur a rejoint le lobby, il participe
                     document.body.classList.add('game-active');
                     this.gameInProgress = true;
-                    this.playerLives = this.gameLives;  // 🆕 Utiliser gameLives configuré
+
+                    // 🆕 Initialiser selon le mode
+                    if (this.gameMode === 'lives') {
+                        this.playerLives = this.gameLives;
+                    } else {
+                        this.playerPoints = 0;
+                    }
+
                     this.showNotification(`La partie commence avec ${data.totalPlayers} joueurs !`, 'success');
                 } else {
-                    // Le joueur n'a pas rejoint ou arrive en cours de partie
-                    // On ne change pas gameInProgress, il reste en mode spectateur
                     console.log('⏳ Partie en cours - Vous êtes spectateur');
                 }
             });
@@ -417,16 +458,36 @@ createApp({
                 this.questionResults = results;
                 this.showResults = true;
 
-                // 🆕 Ne mettre à jour les vies QUE si ce n'est pas un cas où tout le monde perdrait
-                if (!results.allWillLose) {
-                    // Mettre à jour les vies du joueur
-                    if (this.selectedAnswer && this.selectedAnswer !== results.correctAnswer) {
-                        this.playerLives = Math.max(0, this.playerLives - 1);
-                    } else if (!this.selectedAnswer) {
-                        this.playerLives = Math.max(0, this.playerLives - 1);
+                // Mode Points - Incrémenter le score si correct
+                if (this.gameMode === 'points') {
+                    if (this.selectedAnswer === results.correctAnswer) {
+                        // 🔥 Trouver les points gagnés depuis les résultats
+                        const myResult = results.players?.find(p => p.username === this.username);
+                        const pointsEarned = myResult?.pointsEarned || 1000; // Défaut 1000 si non trouvé
+
+                        this.pointsGained = pointsEarned;
+                        this.playerPoints += pointsEarned;
+                        this.triggerPointsAnimation();
+                    }
+                } else {
+                    // 🔥 FIX MODE VIE: Synchroniser les vies avec le serveur
+                    const myPlayerData = results.playersData?.find(p => p.twitchId === this.twitchId);
+
+                    if (myPlayerData) {
+                        // ✅ Mettre à jour les vies directement depuis le serveur
+                        this.playerLives = myPlayerData.lives;
+                        console.log(`✅ Vies synchronisées: ${this.playerLives}`);
+                    } else {
+                        // Fallback: ancienne logique si playersData n'est pas disponible
+                        if (!results.allWillLose) {
+                            if (this.selectedAnswer && this.selectedAnswer !== results.correctAnswer) {
+                                this.playerLives = Math.max(0, this.playerLives - 1);
+                            } else if (!this.selectedAnswer) {
+                                this.playerLives = Math.max(0, this.playerLives - 1);
+                            }
+                        }
                     }
                 }
-                // 🆕 Si allWillLose = true, personne ne perd de vie !
             });
 
             this.socket.on('answer-recorded', () => {

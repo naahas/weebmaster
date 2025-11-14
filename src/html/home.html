@@ -120,17 +120,33 @@
                         <span class="hud-label">Joueur</span>
                         <span class="hud-value">{{ username }}</span>
                     </div>
-                    <div class="hud-item lives-display">
+
+                    <!-- 🆕 Affichage conditionnel selon le mode -->
+                    <div class="hud-item" v-if="gameMode === 'lives'">
                         <span class="hud-label">Vies</span>
                         <div class="hearts">
                             <span v-for="n in 3" :key="n" class="heart" :class="{ lost: n > playerLives }">
                                 {{ n <= playerLives ? '❤️' : '🖤' }} </span>
                         </div>
                     </div>
+
+                    <div class="hud-item points-display" v-if="gameMode === 'points'">
+                        <span class="hud-label">Points</span>
+                        <div class="points-counter">
+                            <!-- <span class="points-icon">⭐</span> -->
+                            <span class="points-number">{{ formattedPlayerPoints }}</span>
+                        </div>
+                    </div>
+
                     <div class="hud-item">
                         <span class="hud-label">Question</span>
                         <span class="hud-value">{{ currentQuestionNumber }}</span>
                     </div>
+                </div>
+
+                <!-- 🆕 Animation +X points -->
+                <div class="points-animation-container" v-if="pointsAnimation">
+                    <div class="points-gained">+{{ pointsGained }} </div>
                 </div>
 
                 <!-- 🆕 Conteneur fixe pour éviter décalages -->
@@ -177,6 +193,7 @@
                     </div>
 
                     <!-- 🆕 RÉSULTATS - Question avec indicateurs visuels -->
+                    <!-- Résultats - Question avec indicateurs visuels -->
                     <div class="question-card results-view" v-if="showResults && currentQuestion">
                         <!-- Badges série et difficulté -->
                         <div class="question-badges">
@@ -193,20 +210,26 @@
                         <div class="answers-grid" :class="{ 'grid-6': currentQuestion.answers.length === 6 }">
                             <div v-for="(answer, index) in currentQuestion.answers" :key="index"
                                 class="answer-btn result-answer" :class="{ 
-                                'correct': (index + 1) === questionResults.correctAnswer,
-                                'wrong': selectedAnswer === (index + 1) && selectedAnswer !== questionResults.correctAnswer,
-                                'unselected': selectedAnswer && selectedAnswer !== (index + 1) && (index + 1) !== questionResults.correctAnswer
-                            }">
+                'correct': (index + 1) === questionResults.correctAnswer,
+                'wrong': selectedAnswer === (index + 1) && selectedAnswer !== questionResults.correctAnswer,
+                'unselected': selectedAnswer && selectedAnswer !== (index + 1) && (index + 1) !== questionResults.correctAnswer
+            }">
                                 <span class="answer-text">{{ answer }}</span>
-                                <span class="result-icon" v-if="(index + 1) === questionResults.correctAnswer"></span>
+                                <span class="result-icon" v-if="(index + 1) === questionResults.correctAnswer">✓</span>
                                 <span class="result-icon wrong-icon"
-                                    v-if="selectedAnswer === (index + 1) && selectedAnswer !== questionResults.correctAnswer"></span>
+                                    v-if="selectedAnswer === (index + 1) && selectedAnswer !== questionResults.correctAnswer">✕</span>
                             </div>
                         </div>
 
                         <!-- Stats discrètes en bas -->
-                        <div class="survivors-count">
+                        <div class="survivors-count" v-if="!questionResults.isTiebreaker">
                             👤 {{ questionResults.remainingPlayers }} restants
+                        </div>
+
+                        <!-- 🔥 Message tiebreaker -->
+                        <div class="survivors-count" v-if="questionResults.isTiebreaker"
+                            style="color: var(--warning-color);">
+                            ⚔️ Tiebreaker en cours
                         </div>
                     </div>
                 </div><!-- Fin question-container-wrapper -->
@@ -219,10 +242,52 @@
                         <h2>Partie terminée</h2>
                     </div>
 
-                    <div class="winner-section-improved" v-if="gameEndData.winner">
+                    <!-- 🔥 CAS 1: UN SEUL GAGNANT -->
+                    <div class="winner-section-improved" v-if="gameEndData.winner && !gameEndData.winner.tie">
                         <div class="winner-label">Vainqueur</div>
                         <div class="winner-name-improved">{{ gameEndData.winner.username }}</div>
-                        <div class="winner-stats">{{ gameEndData.winner.correctAnswers }} bonnes réponses</div>
+
+                        <!-- 🔥 Affichage conditionnel selon le mode -->
+                        <div class="winner-stats" v-if="gameEndData.gameMode === 'lives'">
+                            {{ gameEndData.winner.correctAnswers }} bonnes réponses
+                        </div>
+                        <div class="winner-stats winner-points" v-if="gameEndData.gameMode === 'points'">
+                            <span class="points-icon-large">⭐</span>
+                            <span class="points-number-large">{{ gameEndData.winner.points }}</span>
+                            <span class="points-text">points</span>
+                        </div>
+                    </div>
+
+                    <!-- 🔥 CAS 2: ÉGALITÉ -->
+                    <div class="tie-section-improved" v-if="gameEndData.winner && gameEndData.winner.tie">
+                        <div class="tie-label">⚖️ Égalité</div>
+                        <div class="tie-winners">
+                            <div class="tie-winner" v-for="winner in gameEndData.winner.winners" :key="winner.username">
+                                <span class="tie-winner-name">{{ winner.username }}</span>
+                                <span class="tie-winner-points">{{ winner.points }} pts</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 🔥 CAS 3: AUCUN GAGNANT -->
+                    <div class="no-winner-section" v-if="!gameEndData.winner">
+                        <div class="no-winner-icon">💀</div>
+                        <div class="no-winner-text">Aucun gagnant</div>
+                    </div>
+
+                    <!-- 🔥 NOUVEAU: PODIUM TOP 3 (Mode Points uniquement) -->
+                    <div class="podium-section" v-if="gameEndData.podium && gameEndData.gameMode === 'points'">
+                        <h3 class="podium-title">🏆 Podium</h3>
+                        <div class="podium-list">
+                            <div class="podium-item" v-for="player in gameEndData.podium" :key="player.rank"
+                                :class="'rank-' + player.rank">
+                                <div class="podium-rank">{{ player.rank }}</div>
+                                <div class="podium-info">
+                                    <span class="podium-name">{{ player.username }}</span>
+                                    <span class="podium-points">{{ player.points }} pts</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="game-stats-improved">
@@ -387,6 +452,8 @@
                 </div>
             </div>
         </div>
+
+
 
         <!-- 🆕 Bouton Instagram (visible uniquement avant connexion) -->
         <a href="https://www.instagram.com/naahas__" target="_blank" class="instagram-btn"

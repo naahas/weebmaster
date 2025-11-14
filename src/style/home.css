@@ -2750,3 +2750,263 @@ html, body {
         height: 44px;
     }
 }
+
+/* ============================================
+   HUD JOUEUR - MODE POINTS
+   ============================================ */
+.hud-item.points-display {
+    flex-direction: row;
+    gap: 8px;
+}
+
+.points-counter {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.points-icon {
+    font-size: 1rem;
+}
+
+.points-number {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--neon-primary);
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+}
+
+/* ============================================
+   ANIMATION +X POINTS
+   ============================================ */
+.points-animation-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 100;
+}
+
+.points-gained {
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--success-color);
+    text-shadow: 
+        0 0 10px rgba(16, 185, 129, 0.8),
+        0 0 20px rgba(16, 185, 129, 0.5);
+    animation: pointsPopUp 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes pointsPopUp {
+    0% {
+        opacity: 0;
+        transform: scale(0.5) translateY(0);
+    }
+    20% {
+        opacity: 1;
+        transform: scale(1.2) translateY(-10px);
+    }
+    50% {
+        transform: scale(1) translateY(-20px);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.8) translateY(-60px);
+    }
+}
+
+
+.tie-section-improved {
+    margin: 24px 0;
+    padding: 24px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    border: 1.6px solid var(--warning-color);
+}
+
+.tie-label {
+    font-size: 0.9rem;
+    color: var(--warning-color);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.tie-winners {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.tie-winner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--bg-main);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 165, 0, 0.3);
+}
+
+.tie-winner-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.tie-winner-points {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--warning-color);
+}
+
+/* ============================================
+   AUCUN GAGNANT
+   ============================================ */
+.no-winner-section {
+    text-align: center;
+    margin: 24px 0;
+    padding: 24px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    border: 1.6px solid var(--text-secondary);
+}
+
+.no-winner-icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+}
+
+.no-winner-text {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+
+/* ============================================
+   WINNER STATS - MODE POINTS
+   ============================================ */
+.winner-points {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 1.2rem;
+}
+
+.points-icon-large {
+    font-size: 2rem;
+}
+
+.points-number-large {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--neon-primary);
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+}
+
+.points-text {
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+/* ============================================
+   PODIUM TOP 3
+   ============================================ */
+.podium-section {
+    margin: 24px 0;
+    padding: 20px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+.podium-title {
+    font-size: 1rem;
+    color: var(--text-primary);
+    text-align: center;
+    margin-bottom: 16px;
+    font-weight: 600;
+}
+
+.podium-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.podium-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg-card);
+    border-radius: 8px;
+    border: 1.6px solid var(--border);
+    transition: all 0.3s ease;
+}
+
+.podium-item.rank-1 {
+    border-color: #FFD700;
+    background: linear-gradient(90deg, rgba(255, 215, 0, 0.1), transparent);
+}
+
+.podium-item.rank-2 {
+    border-color: #C0C0C0;
+    background: linear-gradient(90deg, rgba(192, 192, 192, 0.1), transparent);
+}
+
+.podium-item.rank-3 {
+    border-color: #CD7F32;
+    background: linear-gradient(90deg, rgba(205, 127, 50, 0.1), transparent);
+}
+
+.podium-rank {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--neon-primary);
+    color: var(--bg-main);
+    border-radius: 50%;
+    font-size: 0.9rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.podium-item.rank-1 .podium-rank {
+    background: #FFD700;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+}
+
+.podium-item.rank-2 .podium-rank {
+    background: #C0C0C0;
+}
+
+.podium-item.rank-3 .podium-rank {
+    background: #CD7F32;
+}
+
+.podium-info {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.podium-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.podium-points {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--neon-primary);
+}
