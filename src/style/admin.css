@@ -418,6 +418,41 @@ body {
     color: var(--text-secondary);
 }
 
+
+/* 🔥 Boutons demi-largeur */
+.control-card.half-width {
+    flex: 1;
+    min-width: 0;
+}
+
+/* 🔥 Animation refresh icon */
+.refresh-icon {
+    display: inline-block;
+    transition: transform 0.3s ease;
+}
+
+.control-card:hover:not(.on-cooldown) .refresh-icon {
+    transform: rotate(180deg);
+}
+
+/* 🔥 État sobre pendant cooldown (juste opacité réduite) */
+.control-card.on-cooldown {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.control-card.on-cooldown .refresh-icon {
+    animation: none;
+}
+
+/* 🔥 Cibler uniquement le bouton refresh, pas les autres */
+#refreshPlayersCard.on-cooldown {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 /* ============================================
    LAYOUT
    ============================================ */
@@ -2151,6 +2186,11 @@ body {
     text-align: center;
     padding: 48px 16px;
     color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px; /* 🔥 Hauteur minimum pour centrer verticalement */
 }
 
 .empty-state-icon {
@@ -2167,6 +2207,26 @@ body {
 
 .empty-state p {
     font-size: 0.72rem;
+}
+
+/* ============================================
+   PLAYERS GRID
+   ============================================ */
+
+.players-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(224px, 1fr));
+    gap: 12px;
+    overflow-y: auto;
+    padding-right: 8.0px;
+    min-height: 100px; 
+}
+
+/* 🔥 NOUVEAU: Centrer l'empty state si c'est le seul élément */
+.players-grid:has(.empty-state:only-child) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* ============================================
@@ -2836,5 +2896,47 @@ body {
 
     .overlay-panel {
         width: 100%;
+    }
+}
+
+
+
+/* 🔥 Mise en évidence joueurs qualifiés (≥3 parties) */
+.data-table tr.qualified {
+    background: rgba(255, 217, 0, 0.329);
+    border-left: 3px solid var(--primary);
+}
+
+.data-table tr.qualified:hover {
+    background: rgba(255, 215, 0, 0.12);
+}
+
+.data-table tr.qualified td {
+    font-weight: 600;
+}
+
+
+
+/* 🆕 Mise en évidence bonne réponse */
+.answer-item.correct-answer {
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(0, 255, 136, 0.05));
+    border-color: var(--success);
+    animation: correctPulse 1.5s ease-in-out infinite;
+}
+
+.answer-item.correct-answer .answer-number {
+    background: var(--success);
+    color: var(--bg-main);
+    box-shadow: 0 0 12px var(--success);
+}
+
+@keyframes correctPulse {
+    0%, 100% {
+        border-color: var(--success);
+        box-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
+    }
+    50% {
+        border-color: rgba(0, 255, 136, 0.6);
+        box-shadow: 0 0 16px rgba(0, 255, 136, 0.5);
     }
 }

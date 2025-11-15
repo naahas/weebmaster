@@ -62,11 +62,19 @@
             <div class="control-card" id="nextQuestionCard" onclick="nextQuestion()">
                 <h3>Question suivante</h3>
             </div>
-            <div class="control-card secondary" onclick="refreshPage()">
-                <h3>Rafraîchir</h3>
+
+            <!-- 🔥 SIMPLIFIÉ: 2 boutons côte à côte -->
+            <div style="display: flex; gap: 12px; grid-column: span 1;">
+                <div class="control-card secondary half-width" onclick="refreshPage()">
+                    <h3>Actualiser</h3>
+                </div>
+                <div class="control-card secondary half-width" id="refreshPlayersCard" onclick="refreshAllPlayers()">
+                    <h3>
+                        <!-- <span class="refresh-icon">🔄</span> -->
+                        <span class="refresh-text">Actualiser 👥</span>
+                    </h3>
+                </div>
             </div>
-
-
         </div>
 
         <!-- Layout 30/70 -->
@@ -111,6 +119,9 @@
                     <button class="tab-btn active" onclick="switchTab('question')">
                         Question en cours
                     </button>
+                    <button class="tab-btn" onclick="switchTab('stats')">
+                        Statistiques
+                    </button>
                     <button class="tab-btn" onclick="switchTab('players')">
                         Grille joueurs
                     </button>
@@ -125,10 +136,20 @@
                             <p>Démarrez une partie pour afficher les questions</p>
                         </div>
                     </div>
+                </div>
+
+                <!-- 🆕 Tab: Statistiques -->
+                <div class="tab-content" id="tabStats">
                     <div id="resultsContainer" style="display: none;">
-                        <!-- Results will be injected here -->
+                        <!-- Les charts seront injectés ici -->
+                    </div>
+                    <div class="empty-state" id="statsEmptyState">
+                        <div class="empty-state-icon">📊</div>
+                        <h3>Aucune statistique</h3>
+                        <p>Les statistiques s'afficheront après chaque question</p>
                     </div>
                 </div>
+
 
                 <!-- Tab: Players Grid -->
                 <div class="tab-content" id="tabPlayers">
@@ -140,8 +161,9 @@
                         </div>
                     </div>
                 </div>
+
             </div>
-            <!-- ============ SETTINGS PANEL (RIGHT) ============ -->
+
             <!-- ============ SETTINGS PANEL (RIGHT) ============ -->
             <div class="settings-panel">
                 <!-- Overlay pour fermer le menu -->
@@ -489,7 +511,7 @@
 
         <!-- Searchbar -->
         <div class="serie-search-container">
-            <input type="text" id="serieSearch" class="serie-search-input"  placeholder=" Rechercher une série..."
+            <input type="text" id="serieSearch" class="serie-search-input" placeholder=" Rechercher une série..."
                 oninput="filterSerieCards()">
         </div>
 

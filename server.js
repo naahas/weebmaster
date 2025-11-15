@@ -14,6 +14,9 @@ const PORT = process.env.PORT || 7000;
 
 const MAX_GAMES_BEFORE_RESET = 5;
 
+let lastRefreshPlayersTime = 0;
+const REFRESH_COOLDOWN_MS = 20000;
+
 
 // config/serieFilters.js
 const SERIE_FILTERS = {
@@ -254,6 +257,8 @@ const gameState = {
 
     serieFilter: 'tout'
 };
+
+const authenticatedUsers = new Map();
 
 // ============================================
 // Helpers
@@ -969,6 +974,78 @@ app.post('/admin/trigger-auto-next', (req, res) => {
     res.json({ success: true });
 });
 
+
+// Route pour forcer le refresh de tous les joueurs AUTHENTIFIÉS
+app.post('/admin/refresh-players', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    try {
+        const now = Date.now();
+        const timeSinceLastRefresh = now - lastRefreshPlayersTime;
+
+        // 🔥 Vérifier le cooldown côté serveur
+        if (timeSinceLastRefresh < REFRESH_COOLDOWN_MS) {
+            const remainingTime = Math.ceil((REFRESH_COOLDOWN_MS - timeSinceLastRefresh) / 1000);
+            return res.status(429).json({ 
+                error: 'Cooldown actif',
+                remainingTime: remainingTime,
+                onCooldown: true
+            });
+        }
+
+        let refreshedCount = 0;
+
+        // 🔥 NOUVEAU : Parcourir TOUS les utilisateurs authentifiés (pas seulement ceux dans le lobby)
+        authenticatedUsers.forEach((user, socketId) => {
+            const socket = io.sockets.sockets.get(socketId);
+            if (socket) {
+                // 🔥 Envoyer uniquement à ce joueur authentifié
+                socket.emit('force-refresh');
+                refreshedCount++;
+                console.log(`🔄 Refresh envoyé à ${user.username}`);
+            }
+        });
+
+        // 🔥 Mettre à jour le timestamp
+        lastRefreshPlayersTime = now;
+
+        console.log(`🔄 Refresh forcé envoyé à ${refreshedCount} utilisateur(s) authentifié(s)`);
+
+        res.json({ 
+            success: true, 
+            playersRefreshed: refreshedCount 
+        });
+    } catch (error) {
+        console.error('❌ Erreur refresh joueurs:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+// Route pour vérifier le cooldown restant
+app.get('/admin/refresh-cooldown', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    const now = Date.now();
+    const timeSinceLastRefresh = now - lastRefreshPlayersTime;
+
+    if (timeSinceLastRefresh < REFRESH_COOLDOWN_MS) {
+        const remainingTime = Math.ceil((REFRESH_COOLDOWN_MS - timeSinceLastRefresh) / 1000);
+        res.json({
+            onCooldown: true,
+            remainingTime: remainingTime
+        });
+    } else {
+        res.json({
+            onCooldown: false,
+            remainingTime: 0
+        });
+    }
+});
 
 // Route pour reset manuel de l'historique des questions
 app.post('/admin/reset-questions-history', async (req, res) => {
@@ -2143,6 +2220,15 @@ const io = new Server(server, {
 io.on('connection', (socket) => {
     console.log(`🔌 Nouveau socket connecté: ${socket.id}`);
 
+    // 🔥 NOUVEAU: Événement pour enregistrer l'authentification
+    socket.on('register-authenticated', (data) => {
+        authenticatedUsers.set(socket.id, {
+            twitchId: data.twitchId,
+            username: data.username
+        });
+        console.log(`✅ Utilisateur authentifié enregistré: ${data.username} (${socket.id})`);
+    });
+
     // Rejoindre le lobby
     socket.on('join-lobby', (data) => {
         if (!gameState.isActive) {
@@ -2318,23 +2404,26 @@ io.on('connection', (socket) => {
     // Déconnexion
     socket.on('disconnect', () => {
         const player = gameState.players.get(socket.id);
+
+        // 🔥 Retirer du tracker d'authentification
+        if (authenticatedUsers.has(socket.id)) {
+            const user = authenticatedUsers.get(socket.id);
+            console.log(`🔌 ${user.username} déconnecté (authentifié)`);
+            authenticatedUsers.delete(socket.id);
+        }
+
         if (player) {
             console.log(`🔌 ${player.username} déconnecté (socket: ${socket.id})`);
 
             // Si une partie est en cours, NE PAS supprimer le joueur immédiatement
-            // Lui laisser le temps de se reconnecter (30 secondes)
             if (gameState.inProgress) {
                 console.log(`⏳ Attente de reconnexion pour ${player.username}...`);
-
-                // Marquer le joueur comme temporairement déconnecté
                 player.disconnectedAt = Date.now();
                 player.disconnectedSocketId = socket.id;
 
-                // Supprimer après 30 secondes si pas de reconnexion
                 setTimeout(() => {
                     const currentPlayer = gameState.players.get(socket.id);
                     if (currentPlayer && currentPlayer.disconnectedAt === player.disconnectedAt) {
-                        // Le joueur ne s'est pas reconnecté
                         console.log(`❌ ${player.username} définitivement déconnecté`);
                         gameState.players.delete(socket.id);
                         gameState.answers.delete(socket.id);
@@ -2348,9 +2437,8 @@ io.on('connection', (socket) => {
                             }))
                         });
                     }
-                }, 30000); // 30 secondes
+                }, 30000);
             } else {
-                // Pas de partie en cours, supprimer immédiatement
                 gameState.players.delete(socket.id);
                 gameState.answers.delete(socket.id);
 

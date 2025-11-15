@@ -11,6 +11,9 @@ let isNextQuestion = false; // 🆕 Anti-spam next question
 let tiebreakerPlayerIds = [];
 let lastQuestionResults = null;
 
+let refreshCooldownActive = false;
+let refreshCooldownTimer = null;
+
 let currentSerieFilter = 'tout';
 
 const SERIE_FILTERS = {
@@ -530,6 +533,9 @@ async function restoreGameState() {
             console.log('✅ Tiebreaker restauré:', tiebreakerPlayerIds);
         }
 
+        await checkRefreshCooldown();
+
+
     } catch (error) {
         console.error('❌ Erreur restauration état:', error);
     }
@@ -710,41 +716,38 @@ function displayQuestion(data, initialTimeRemaining = null) {
 
     // Reset timer
     clearInterval(timerInterval);
-    // BUG FIX 2: Utiliser le temps restant passé en paramètre si disponible
     timeRemaining = initialTimeRemaining !== null ? initialTimeRemaining : data.timeLimit;
 
     container.innerHTML = `
-                <div class="question-display">
-                    <div class="question-meta">
-                        <span class="meta-badge serie">${data.serie}</span>
-                        <span class="meta-badge difficulty ${data.difficulty}">${data.difficulty.toUpperCase()}</span>
-                    </div>
-                    
-                    <h3 class="question-text">${data.question}</h3>
-                    
-                    <div class="timer-bar-container">
-                        <div class="timer-bar-wrapper">
-                            <div class="timer-bar-fill" id="timerBarFill"></div>
-                        </div>
-                        <div class="timer-text" id="timerText">${timeRemaining}s</div>
-                    </div>
-                    
-                    <div class="answers-list">
-                        ${data.answers.map((answer, index) => `
-                            <div class="answer-item">
-                                <div class="answer-number">${index + 1}</div>
-                                <div class="answer-text">${answer}</div>
-                            </div>
-                        `).join('')}
-                    </div>
+        <div class="question-display">
+            <div class="question-meta">
+                <span class="meta-badge serie">${data.serie}</span>
+                <span class="meta-badge difficulty ${data.difficulty}">${data.difficulty.toUpperCase()}</span>
+            </div>
+            
+            <h3 class="question-text">${data.question}</h3>
+            
+            <div class="timer-bar-container">
+                <div class="timer-bar-wrapper">
+                    <div class="timer-bar-fill" id="timerBarFill"></div>
                 </div>
-            `;
+                <div class="timer-text" id="timerText">${timeRemaining}s</div>
+            </div>
+            
+            <div class="answers-list">
+                ${data.answers.map((answer, index) => `
+                    <div class="answer-item" id="answer-${index + 1}">
+                        <div class="answer-number">${index + 1}</div>
+                        <div class="answer-text">${answer}</div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
 
-    // BUG FIX 2: Start timer seulement si timeRemaining > 0
     if (timeRemaining > 0) {
         startTimer(data.timeLimit);
     } else {
-        // Timer déjà écoulé
         const fill = document.getElementById('timerBarFill');
         const text = document.getElementById('timerText');
         if (fill) fill.style.width = '0%';
@@ -754,11 +757,14 @@ function displayQuestion(data, initialTimeRemaining = null) {
         }
     }
 
-    // Update question number
     document.getElementById('currentQuestion').textContent = data.questionNumber;
 
-    // S'assurer que le container est visible
+    // 🆕 S'assurer qu'on est sur l'onglet Question
+    switchTab('question');
+    
+    // Masquer les résultats
     document.getElementById('resultsContainer').style.display = 'none';
+    document.getElementById('statsEmptyState').style.display = 'block';
     container.style.display = 'block';
 }
 
@@ -840,25 +846,24 @@ function displayResults(data) {
     console.log('📊 displayResults appelé avec:', data);
     clearInterval(timerInterval);
 
-    const container = document.getElementById('resultsContainer');
-    console.log('📦 Container resultsContainer:', container);
+    // 🆕 Mettre en évidence la bonne réponse dans l'onglet Question
+    highlightCorrectAnswer(data.correctAnswer);
 
-    // Utiliser les bonnes propriétés du serveur
+    // 🆕 Afficher les stats dans l'onglet Statistiques
+    const resultsContainer = document.getElementById('resultsContainer');
+    const statsEmptyState = document.getElementById('statsEmptyState');
+
     const correctCount = data.stats.correct;
     const wrongCount = data.stats.wrong;
     const afkCount = data.stats.afk;
     const totalAnswers = correctCount + wrongCount + afkCount;
 
-    console.log('📈 Stats:', { correctCount, wrongCount, afkCount, totalAnswers });
-
-    // Diagramme 2: Répartition des vies
     const lives3 = data.stats.livesDistribution[3] || 0;
     const lives2 = data.stats.livesDistribution[2] || 0;
     const lives1 = data.stats.livesDistribution[1] || 0;
     const lives0 = data.stats.livesDistribution[0] || 0;
     const totalPlayers = lives3 + lives2 + lives1 + lives0;
 
-    // Trouver le joueur le plus rapide parmi les réponses correctes
     let fastestPlayer = null;
     if (data.players) {
         const correctPlayers = data.players.filter(p => p.isCorrect && p.responseTime);
@@ -869,35 +874,10 @@ function displayResults(data) {
         }
     }
 
-    // Calculs pour les camemberts
-    const circumference = 2 * Math.PI * 45;
-
-    // Segments diagramme 1 (réponses)
-    const correctPercent = totalAnswers > 0 ? correctCount / totalAnswers : 0;
-    const wrongPercent = totalAnswers > 0 ? wrongCount / totalAnswers : 0;
-    const afkPercent = totalAnswers > 0 ? afkCount / totalAnswers : 0;
-
-    const correctDash = correctPercent * circumference;
-    const wrongDash = wrongPercent * circumference;
-    const afkDash = afkPercent * circumference;
-
-    // Segments diagramme 2 (vies)
-    const lives3Percent = totalPlayers > 0 ? lives3 / totalPlayers : 0;
-    const lives2Percent = totalPlayers > 0 ? lives2 / totalPlayers : 0;
-    const lives1Percent = totalPlayers > 0 ? lives1 / totalPlayers : 0;
-    const lives0Percent = totalPlayers > 0 ? lives0 / totalPlayers : 0;
-
-    const lives3Dash = lives3Percent * circumference;
-    const lives2Dash = lives2Percent * circumference;
-    const lives1Dash = lives1Percent * circumference;
-    const lives0Dash = lives0Percent * circumference;
-
-    container.innerHTML = `
+    resultsContainer.innerHTML = `
         <div class="results-display">
-            <h3 class="results-question-text">${currentQuestionData?.question || "Question"}</h3>
             
             <div class="charts-container ${currentGameMode === 'points' ? 'single-chart' : ''}">
-                <!-- Diagramme 1: Répartition des réponses -->
                 <div class="chart-box">
                     <div class="chart-title">Répartition des réponses</div>
                     <div class="chart-with-legend">
@@ -922,7 +902,6 @@ function displayResults(data) {
                     </div>
                 </div>
 
-                <!-- Diagramme 2: Répartition des vies (SEULEMENT EN MODE VIE) -->
                 ${currentGameMode === 'lives' ? `
                 <div class="chart-box">
                     <div class="chart-title">Répartition des vies</div>
@@ -954,7 +933,7 @@ function displayResults(data) {
                 </div>
                 ` : ''}
             </div>
-
+            
             ${fastestPlayer ? `
                 <div class="fastest-player">
                     <h4>⚡ Plus rapide:</h4>
@@ -965,11 +944,10 @@ function displayResults(data) {
         </div>
     `;
 
-    // Afficher les résultats et cacher la question
-    container.style.display = 'block';
-    document.getElementById('questionContainer').style.display = 'none';
+    resultsContainer.style.display = 'block';
+    statsEmptyState.style.display = 'none';
 
-    // 🆕 Générer les charts APRÈS avoir affiché le container
+    // Générer les charts
     setTimeout(() => {
         if (totalAnswers > 0) {
             const svg1 = document.getElementById('answersChart');
@@ -980,21 +958,9 @@ function displayResults(data) {
                     { value: afkCount, color: '#ffa502', label: '⏱\n' + afkCount }
                 ]);
             }
-        } else {
-            const svg1 = document.getElementById('answersChart');
-            if (svg1) {
-                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                text.setAttribute('x', '50');
-                text.setAttribute('y', '50');
-                text.setAttribute('text-anchor', 'middle');
-                text.setAttribute('fill', '#fff');
-                text.setAttribute('font-size', '8');
-                text.textContent = 'Aucune réponse';
-                svg1.appendChild(text);
-            }
         }
 
-        if (totalPlayers > 0) {
+        if (totalPlayers > 0 && currentGameMode === 'lives') {
             const svg2 = document.getElementById('livesChart');
             if (svg2) {
                 generatePieChart(svg2, [
@@ -1004,33 +970,39 @@ function displayResults(data) {
                     { value: lives0, color: '#ff4757', label: '💀\n' + lives0 }
                 ]);
             }
-        } else {
-            const svg2 = document.getElementById('livesChart');
-            if (svg2) {
-                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                text.setAttribute('x', '50');
-                text.setAttribute('y', '50');
-                text.setAttribute('text-anchor', 'middle');
-                text.setAttribute('fill', '#fff');
-                text.setAttribute('font-size', '8');
-                text.textContent = 'Aucun joueur';
-                svg2.appendChild(text);
-            }
         }
-
-        console.log('✅ Charts injected successfully');
     }, 50);
 
-    // Update stats - Actifs = joueurs restants après la question
     document.getElementById('activePlayers').textContent = data.remainingPlayers;
 
-    // Mettre à jour la grille des joueurs avec les indicateurs de réponse
     if (data.playersData && data.players) {
-        console.log('🎯 Mise à jour grille avec résultats:', data.players);
         updatePlayersGridWithResults(data.playersData, data.players);
     }
 
+    // 🆕 Switcher automatiquement vers l'onglet Statistiques
+    setTimeout(() => {
+        switchTab('stats');
+    }, 300);
+
     console.log('✅ Results displayed successfully');
+}
+
+
+// 🆕 Mettre en évidence la bonne réponse dans l'onglet Question
+function highlightCorrectAnswer(correctAnswerIndex) {
+    const answerElement = document.getElementById(`answer-${correctAnswerIndex}`);
+    
+    if (answerElement) {
+        // Retirer le style de toutes les réponses d'abord
+        document.querySelectorAll('.answer-item').forEach(item => {
+            item.classList.remove('correct-answer', 'wrong-answer');
+        });
+
+        // Ajouter la classe correct à la bonne réponse
+        answerElement.classList.add('correct-answer');
+        
+        console.log(`✅ Réponse ${correctAnswerIndex} mise en évidence`);
+    }
 }
 
 // 🆕 Fonction pour générer un pie chart SVG avec labels (FIXED)
@@ -1433,8 +1405,11 @@ function switchTab(tab) {
     if (tab === 'question') {
         document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
         document.getElementById('tabQuestion').classList.add('active');
-    } else if (tab === 'players') {
+    } else if (tab === 'stats') {
         document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+        document.getElementById('tabStats').classList.add('active');
+    } else if (tab === 'players') {
+        document.querySelector('.tab-btn:nth-child(3)').classList.add('active');
         document.getElementById('tabPlayers').classList.add('active');
     }
 }
@@ -1734,6 +1709,97 @@ function refreshPage() {
     location.reload();
 }
 
+
+// 🔄 Forcer le refresh de tous les joueurs
+async function refreshAllPlayers() {
+    // Vérifier si en cooldown
+    if (refreshCooldownActive) {
+        console.log('⏳ Cooldown actif - Veuillez attendre');
+        return;
+    }
+
+    try {
+        const response = await fetch('/admin/refresh-players', {
+            method: 'POST',
+            credentials: 'same-origin'
+        });
+
+        if (response.status === 403) {
+            if (!isReloading) {
+                isReloading = true;
+                console.log('⚠️ Session expirée, rechargement...');
+                location.reload();
+            }
+            return;
+        }
+
+        if (response.status === 429) {
+            const data = await response.json();
+            console.log(`⏳ Cooldown actif - ${data.remainingTime}s restantes`);
+            startRefreshCooldown(data.remainingTime);
+            return;
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+            console.log(`✅ ${data.playersRefreshed} joueur(s) refresh forcé`);
+            startRefreshCooldown(20);
+        }
+    } catch (error) {
+        console.error('❌ Erreur refresh joueurs:', error);
+    }
+}
+
+// 🔥 Gérer le cooldown de 20s
+function startRefreshCooldown(initialTime = 20) {
+    refreshCooldownActive = true;
+    
+    const card = document.getElementById('refreshPlayersCard');
+    
+    // 🔥 Juste griser le bouton
+    card.classList.add('on-cooldown');
+    
+    // Clear any existing timer
+    if (refreshCooldownTimer) {
+        clearInterval(refreshCooldownTimer);
+    }
+    
+    let timeLeft = initialTime;
+    
+    refreshCooldownTimer = setInterval(() => {
+        timeLeft--;
+        
+        if (timeLeft <= 0) {
+            clearInterval(refreshCooldownTimer);
+            refreshCooldownActive = false;
+            card.classList.remove('on-cooldown');
+            console.log('✅ Cooldown refresh terminé');
+        }
+    }, 1000);
+}
+
+
+// 🔥 Vérifier et restaurer le cooldown au chargement
+async function checkRefreshCooldown() {
+    try {
+        const response = await fetch('/admin/refresh-cooldown', {
+            credentials: 'same-origin'
+        });
+
+        if (response.status === 403) return;
+
+        const data = await response.json();
+
+        if (data.onCooldown && data.remainingTime > 0) {
+            console.log(`⏳ Cooldown restauré: ${data.remainingTime}s restantes`);
+            startRefreshCooldown(data.remainingTime);
+        }
+    } catch (error) {
+        console.error('❌ Erreur vérification cooldown:', error);
+    }
+}
+
 async function refreshStats() {
     try {
         const response = await fetch('/admin/stats', {
@@ -1818,14 +1884,19 @@ async function refreshStats() {
         if (data.topPlayers.length === 0) {
             topPlayersTable.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--text-secondary);">Aucune donnée disponible</td></tr>';
         } else {
-            topPlayersTable.innerHTML = data.topPlayers.map((player, index) => `
-                        <tr>
-                            <td><span class="rank-badge rank-${index + 1}">${index + 1}</span></td>
-                            <td>${player.username}</td>
-                            <td>${player.total_victories}</td>
-                            <td>${player.total_games_played}</td>
-                        </tr>
-                    `).join('');
+            topPlayersTable.innerHTML = data.topPlayers.map((player, index) => {
+                // 🔥 NOUVEAU: Vérifier si le joueur est qualifié (≥3 parties)
+                const isQualified = player.total_games_played >= 3;
+
+                return `
+            <tr class="${isQualified ? 'qualified' : ''}">
+                <td><span class="rank-badge rank-${index + 1}">${index + 1}</span></td>
+                <td>${player.username}</td>
+                <td>${player.total_victories}</td>
+                <td>${player.total_games_played}</td>
+            </tr>
+        `;
+            }).join('');
         }
 
         const recentGamesTable = document.getElementById('recentGamesTable');

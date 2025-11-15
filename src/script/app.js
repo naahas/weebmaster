@@ -114,6 +114,14 @@ createApp({
                     this.isAuthenticated = true;
                     this.username = data.username;
                     this.twitchId = data.twitchId;
+
+                    if (this.socket && this.socket.connected) {
+                        this.socket.emit('register-authenticated', {
+                            twitchId: this.twitchId,
+                            username: this.username
+                        });
+                        console.log('✅ Authentification enregistrée (connexion tardive)');
+                    }
                 }
             } catch (error) {
                 console.error('Erreur vérification auth:', error);
@@ -324,6 +332,15 @@ createApp({
 
             // Événements de connexion
             this.socket.on('connect', () => {
+
+                if (this.isAuthenticated) {
+                    this.socket.emit('register-authenticated', {
+                        twitchId: this.twitchId,
+                        username: this.username
+                    });
+                    console.log('✅ Authentification enregistrée auprès du serveur');
+                }
+
                 if (this.needsReconnect && this.gameInProgress) {
                     this.socket.emit('reconnect-player', {
                         twitchId: this.twitchId,
@@ -514,6 +531,12 @@ createApp({
                 this.gameLives = data.lives;
                 this.gameTime = data.timePerQuestion;
                 console.log(`⚙️ Paramètres mis à jour: ${data.lives} vies, ${data.timePerQuestion}s`);
+            });
+
+            // 🔄 Forcer le refresh par l'admin
+            this.socket.on('force-refresh', () => {
+                console.log('🔄 Refresh forcé par l\'admin');
+                location.reload();
             });
 
             // 🆕 Écouter quand un joueur répond
