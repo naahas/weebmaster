@@ -94,21 +94,127 @@ const db = {
         return data;
     },
 
-    // 🆕 MODIFIÉ: Éviter les questions en double
-    async getRandomQuestions(difficulty, count = 1, excludeIds = []) {
-        const questions = await this.getQuestionsByDifficulty(difficulty);
-        if (!questions || questions.length === 0) return [];
+    async getAvailableQuestionsCount(serieFilter = 'tout', excludeIds = []) {
+        let query = supabase
+            .from('questions')
+            .select('id', { count: 'exact' });
 
-        // 🆕 Filtrer les questions déjà utilisées
-        const availableQuestions = questions.filter(q => !excludeIds.includes(q.id));
-        
-        // Si toutes les questions ont été utilisées, réinitialiser
-        if (availableQuestions.length === 0) {
-            console.log('⚠️ Toutes les questions de difficulté "' + difficulty + '" ont été utilisées, réinitialisation...');
-            return this.getRandomQuestions(difficulty, count, []);
+        // 🔥 AUTOMATIQUE: Même config que getRandomQuestions
+        const filterConfig = {
+            'tout': [],
+            'big3': ['One Piece', 'Naruto', 'Bleach'],
+            'mainstream': [
+                'One Piece', 'Naruto', 'Bleach', 'Hunter x Hunter',
+                'Shingeki no Kyojin', 'Fullmetal Alchemist', 'Death Note',
+                'Dragon Ball', 'Demon Slayer', 'Jojo\'s Bizarre Adventure', 'My Hero Academia',
+                'Fairy Tail', 'Tokyo Ghoul', 'Nanatsu no Taizai', 'Kuroko no Basket'
+            ],
+            'naruto': ['Naruto'],
+            'dragonball': ['Dragon Ball', 'Dragon Ball Z', 'Dragon Ball Super'],
+            'onepiece': ['One Piece'],
+            'bleach': ['Bleach'] // 🔥 Facile à ajouter !
+        };
+
+        if (serieFilter !== 'tout' && filterConfig[serieFilter]) {
+            const series = filterConfig[serieFilter];
+            if (series.length === 1) {
+                query = query.eq('serie', series[0]);
+            } else {
+                query = query.in('serie', series);
+            }
         }
 
-        // Shuffle et prendre 'count' questions
+        const { data, error, count } = await query;
+
+        if (error) throw error;
+
+        if (excludeIds.length === 0) {
+            return count || 0;
+        }
+
+        const excludedInThisFilter = data.filter(q => excludeIds.includes(q.id)).length;
+        return (count || 0) - excludedInThisFilter;
+    },
+
+    // 🆕 MODIFIÉ: Éviter les questions en double + Filtre série + Fallback
+    async getRandomQuestions(difficulty, count = 1, excludeIds = [], serieFilter = 'tout') {
+        let query = supabase
+            .from('questions')
+            .select('*')
+            .eq('difficulty', difficulty);
+
+        console.log(`🔍 [DBS] Filtre série reçu: "${serieFilter}"`);
+
+        // 🔥 AUTOMATIQUE: Appliquer le filtre basé sur SERIE_FILTERS
+        // Note: On doit importer SERIE_FILTERS depuis server.js ou le définir ici aussi
+        const filterConfig = {
+            'tout': [],
+            'big3': ['One Piece', 'Naruto', 'Bleach'],
+            'mainstream': [
+                'One Piece', 'Naruto', 'Bleach', 'Hunter x Hunter',
+                'Shingeki no Kyojin', 'Fullmetal Alchemist', 'Death Note',
+                'Dragon Ball', 'Demon Slayer', 'Jojo\'s Bizarre Adventure', 'My Hero Academia',
+                'Fairy Tail', 'Tokyo Ghoul', 'Nanatsu no Taizai', 'Kuroko no Basket'
+            ],
+            'naruto': ['Naruto'],
+            'dragonball': ['Dragon Ball', 'Dragon Ball Z', 'Dragon Ball Super'],
+            'onepiece': ['One Piece'],
+            'bleach': ['Bleach'] // 🔥 Facile à ajouter !
+        };
+
+        // Appliquer le filtre si ce n'est pas "tout"
+        if (serieFilter !== 'tout' && filterConfig[serieFilter]) {
+            const series = filterConfig[serieFilter];
+            if (series.length === 1) {
+                query = query.eq('serie', series[0]);
+            } else {
+                query = query.in('serie', series);
+            }
+            console.log(`🔍 [DBS] Filtre ${serieFilter} appliqué`);
+        } else {
+            console.log('🔍 [DBS] Aucun filtre (tout)');
+        }
+
+        const { data: questions, error } = await query;
+
+        if (error) throw error;
+
+        // Système de fallback (reste identique)
+        if (!questions || questions.length === 0) {
+            console.log(`⚠️ [DBS] Aucune question trouvée pour difficulté "${difficulty}" avec filtre "${serieFilter}"`);
+
+            const fallbackOrder = getFallbackDifficulties(difficulty);
+            console.log(`🔄 [DBS] Tentative fallback sur: ${fallbackOrder.join(' → ')}`);
+
+            for (const fallbackDiff of fallbackOrder) {
+                console.log(`🔄 [DBS] Essai difficulté: ${fallbackDiff}`);
+
+                const fallbackQuestions = await this.getRandomQuestions(
+                    fallbackDiff,
+                    count,
+                    excludeIds,
+                    serieFilter
+                );
+
+                if (fallbackQuestions.length > 0) {
+                    console.log(`✅ [DBS] Fallback réussi ! ${fallbackQuestions.length} question(s) trouvée(s) en difficulté "${fallbackDiff}"`);
+                    return fallbackQuestions;
+                }
+            }
+
+            console.error(`❌ [DBS] AUCUNE question disponible pour le filtre "${serieFilter}" (toutes difficultés essayées)`);
+            return [];
+        }
+
+        console.log(`✅ [DBS] ${questions.length} question(s) trouvée(s) pour difficulté "${difficulty}" avec filtre "${serieFilter}"`);
+
+        const availableQuestions = questions.filter(q => !excludeIds.includes(q.id));
+
+        if (availableQuestions.length === 0) {
+            console.log('⚠️ Toutes les questions de difficulté "' + difficulty + '" ont été utilisées, réinitialisation...');
+            return this.getRandomQuestions(difficulty, count, [], serieFilter);
+        }
+
         const shuffled = availableQuestions.sort(() => 0.5 - Math.random());
         return shuffled.slice(0, count);
     },
@@ -216,7 +322,7 @@ const db = {
         if (!user) return [];
 
         const allTitles = await this.getAllTitles();
-        
+
         // Filtrer les titres débloqués selon les stats du joueur
         const unlockedTitles = allTitles.filter(title => {
             if (title.title_type === 'games_played') {
@@ -239,7 +345,7 @@ const db = {
         // Vérifier que l'utilisateur a débloqué ce titre
         const unlockedTitles = await this.getUserUnlockedTitles(twitchId);
         const hasTitle = unlockedTitles.some(t => t.id === titleId);
-        
+
         if (!hasTitle) throw new Error('Titre non débloqué');
 
         // Mettre à jour le titre actuel
@@ -352,7 +458,7 @@ const db = {
         // Calculer le win rate
         return (data || []).map(user => ({
             ...user,
-            win_rate: user.total_games_played > 0 
+            win_rate: user.total_games_played > 0
                 ? ((user.total_victories / user.total_games_played) * 100).toFixed(1)
                 : '0.0',
             title_name: user.titles?.title_name || 'Novice'
@@ -365,7 +471,7 @@ const db = {
         const { error } = await supabase
             .from('used_questions')
             .insert({ question_id: questionId });
-        
+
         if (error) throw error;
         console.log(`📌 Question ${questionId} ajoutée à l'historique`);
     },
@@ -374,7 +480,7 @@ const db = {
         const { data, error } = await supabase
             .from('used_questions')
             .select('question_id');
-        
+
         if (error) throw error;
         return data ? data.map(row => row.question_id) : [];
     },
@@ -384,7 +490,7 @@ const db = {
             .from('used_questions')
             .delete()
             .neq('id', 0); // Supprimer toutes les lignes
-        
+
         if (error) throw error;
         console.log('🔄 Historique des questions réinitialisé');
     },
@@ -398,8 +504,45 @@ const db = {
 
         if (error) throw error;
         return count || 0;
-    }
+    },
+
+
 };
+
+// 🔥 HELPER: Définir l'ordre de fallback selon la difficulté
+function getFallbackDifficulties(difficulty) {
+    const difficultyLevels = ['veryeasy', 'easy', 'medium', 'hard', 'veryhard', 'extreme'];
+    const currentIndex = difficultyLevels.indexOf(difficulty);
+
+    if (currentIndex === -1) return difficultyLevels; // Si difficulté invalide, essayer toutes
+
+    // 🔥 Stratégie: essayer les difficultés proches d'abord, puis s'éloigner
+    const fallback = [];
+
+    // Essayer la difficulté juste en dessous
+    if (currentIndex > 0) {
+        fallback.push(difficultyLevels[currentIndex - 1]);
+    }
+
+    // Essayer la difficulté juste au dessus
+    if (currentIndex < difficultyLevels.length - 1) {
+        fallback.push(difficultyLevels[currentIndex + 1]);
+    }
+
+    // Puis essayer toutes les autres par ordre décroissant de proximité
+    let offset = 2;
+    while (fallback.length < difficultyLevels.length - 1) {
+        if (currentIndex - offset >= 0) {
+            fallback.push(difficultyLevels[currentIndex - offset]);
+        }
+        if (currentIndex + offset < difficultyLevels.length) {
+            fallback.push(difficultyLevels[currentIndex + offset]);
+        }
+        offset++;
+    }
+
+    return fallback;
+}
 
 
 

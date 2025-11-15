@@ -14,6 +14,53 @@ const PORT = process.env.PORT || 7000;
 
 const MAX_GAMES_BEFORE_RESET = 5;
 
+
+// config/serieFilters.js
+const SERIE_FILTERS = {
+    tout: {
+        name: 'Tout',
+        icon: '🌍',
+        series: []
+    },
+    big3: {
+        name: 'Big 3',
+        icon: '👑',
+        series: ['One Piece', 'Naruto', 'Bleach']
+    },
+    mainstream: {
+        name: 'Mainstream',
+        icon: '⭐',
+        series: [
+            'One Piece', 'Naruto', 'Bleach', 'Hunter x Hunter',
+            'Shingeki no Kyojin', 'Fullmetal Alchemist', 'Death Note',
+            'Dragon Ball', 'Demon Slayer', 'Jojo\'s Bizarre Adventure', 'My Hero Academia',
+            'Fairy Tail', 'Tokyo Ghoul', 'Nanatsu no Taizai', 'Kuroko no Basket'
+        ]
+    },
+    onepiece: {
+        name: 'One Piece',
+        icon: '🏴‍☠️',
+        series: ['One Piece']
+    },
+    naruto: {
+        name: 'Naruto',
+        icon: '🍥',
+        series: ['Naruto']
+    },
+    dragonball: {
+        name: 'Dragon Ball',
+        icon: '🐉',
+        series: ['Dragon Ball']
+    },
+
+    bleach: {
+        name: 'Bleach',
+        icon: '⚔️',
+        series: ['Bleach']
+    }
+};
+
+
 // Détection automatique de l'URL de redirection
 const TWITCH_REDIRECT_URI = process.env.TWITCH_REDIRECT_URI ||
     (process.env.NODE_ENV === 'production'
@@ -152,7 +199,9 @@ app.get('/game/state', (req, res) => {
         answersCount: gameState.answersCount,
         questionsCount: gameState.questionsCount,
         difficultyMode: gameState.difficultyMode,
+        serieFilter: gameState.serieFilter,
         isTiebreaker: gameState.isTiebreaker,
+        autoMode: gameState.autoMode,
         tiebreakerPlayers: gameState.isTiebreaker
             ? Array.from(gameState.players.values())
                 .filter(p => gameState.tiebreakerPlayers.includes(p.twitchId))
@@ -198,7 +247,12 @@ const gameState = {
     tiebreakerPlayers: [],
 
     difficultyMode: 'croissante',
-    lastDifficulty: null
+    lastDifficulty: null,
+
+    autoMode: false,
+    autoModeTimeout: null,
+
+    serieFilter: 'tout'
 };
 
 // ============================================
@@ -208,18 +262,18 @@ function getDifficultyForQuestion(questionNumber) {
     if (gameState.difficultyMode === 'aleatoire') {
         // 🆕 MODE ALÉATOIRE - Éviter 2 fois la même difficulté
         const difficulties = ['veryeasy', 'easy', 'medium', 'hard', 'veryhard', 'extreme'];
-        
+
         // Filtrer pour éviter la dernière difficulté utilisée
-        const availableDifficulties = gameState.lastDifficulty 
+        const availableDifficulties = gameState.lastDifficulty
             ? difficulties.filter(d => d !== gameState.lastDifficulty)
             : difficulties;
-        
+
         // Piocher aléatoirement
         const randomDifficulty = availableDifficulties[Math.floor(Math.random() * availableDifficulties.length)];
         gameState.lastDifficulty = randomDifficulty;
         return randomDifficulty;
     }
-    
+
     // MODE CROISSANTE (logique actuelle)
     if (gameState.mode === 'lives') {
         if (questionNumber <= 7) return 'veryeasy';
@@ -461,6 +515,7 @@ app.post('/admin/set-answers', (req, res) => {
 });
 
 // Démarrer une partie
+// Démarrer une partie
 app.post('/admin/start-game', async (req, res) => {
     if (!req.session.isAdmin) {
         return res.status(403).json({ error: 'Non autorisé' });
@@ -479,10 +534,31 @@ app.post('/admin/start-game', async (req, res) => {
     }
 
     try {
+        // 🔥 NOUVEAU: Vérifier si on a assez de questions AVANT de démarrer
+        const questionsNeeded = gameState.mode === 'points' ? gameState.questionsCount : 50; // 50 pour mode Vie (estimation haute)
+
+        const usedQuestionIds = await db.getUsedQuestionIds();
+        const availableQuestionsCount = await db.getAvailableQuestionsCount(
+            gameState.serieFilter,
+            usedQuestionIds
+        );
+
+        console.log(`📊 Questions disponibles: ${availableQuestionsCount}, Besoin: ${questionsNeeded}`);
+
+        // 🔥 Si pas assez de questions, reset auto
+        if (availableQuestionsCount < questionsNeeded) {
+            console.log(`⚠️ Pas assez de questions (${availableQuestionsCount} < ${questionsNeeded}), reset automatique de l'historique...`);
+            await db.resetUsedQuestions();
+            gameState.usedQuestionIds = []; // Reset aussi la liste en mémoire
+            console.log('✅ Historique réinitialisé - Toutes les questions sont à nouveau disponibles');
+        }
+
+        // Reset automatique tous les 5 jeux (système existant)
         const completedGames = await db.getCompletedGamesCount();
         if (completedGames > 0 && completedGames % MAX_GAMES_BEFORE_RESET === 0) {
             console.log(`🔄 ${completedGames} parties terminées, reset automatique de l'historique...`);
             await db.resetUsedQuestions();
+            gameState.usedQuestionIds = [];
         }
 
         const game = await db.createGame(totalPlayers);
@@ -494,6 +570,7 @@ app.post('/admin/start-game', async (req, res) => {
         gameState.showResults = false;
         gameState.lastQuestionResults = null;
 
+        // 🔥 Recharger les IDs utilisés (peut être vide si reset)
         gameState.usedQuestionIds = await db.getUsedQuestionIds();
 
         // Initialiser les joueurs selon le mode
@@ -506,7 +583,7 @@ app.post('/admin/start-game', async (req, res) => {
             }
         });
 
-        console.log(`🎮 Partie démarrée (Mode: ${gameState.mode.toUpperCase()}) - ${totalPlayers} joueurs`);
+        console.log(`🎮 Partie démarrée (Mode: ${gameState.mode.toUpperCase()}) - ${totalPlayers} joueurs - Filtre: ${gameState.serieFilter}`);
 
         io.sockets.sockets.forEach((socket) => {
             const socketId = socket.id;
@@ -665,6 +742,234 @@ app.post('/admin/set-difficulty-mode', (req, res) => {
 });
 
 
+// Route pour obtenir les statistiques des séries (nombre de questions)
+app.get('/admin/serie-stats', async (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    try {
+        const allQuestions = await db.getAllQuestions();
+
+        // Compter les séries uniques
+        const uniqueSeries = new Set(allQuestions.map(q => q.serie).filter(s => s));
+        const totalSeries = uniqueSeries.size;
+
+        const stats = {};
+
+        // 🔥 AUTOMATIQUE: Générer les stats pour chaque filtre dans SERIE_FILTERS
+        for (const [filterId, filterConfig] of Object.entries(SERIE_FILTERS)) {
+            if (filterId === 'tout') {
+                stats.tout = {
+                    count: allQuestions.length,
+                    subtitle: `${totalSeries} séries`
+                };
+            } else if (filterId === 'mainstream') {
+                const mainstreamSeriesWithQuestions = new Set(
+                    allQuestions
+                        .filter(q => filterConfig.series.includes(q.serie))
+                        .map(q => q.serie)
+                );
+                stats.mainstream = {
+                    count: mainstreamSeriesWithQuestions.size,
+                    subtitle: `${mainstreamSeriesWithQuestions.size} séries`
+                };
+            } else {
+                // Pour tous les autres filtres (naruto, dragonball, onepiece, bleach, etc.)
+                stats[filterId] = {
+                    count: allQuestions.filter(q => filterConfig.series.includes(q.serie)).length,
+                    subtitle: null
+                };
+            }
+        }
+
+        res.json(stats);
+    } catch (error) {
+        console.error('❌ Erreur stats séries:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Route pour changer le filtre série
+// Route pour changer le filtre série
+app.post('/admin/set-serie-filter', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    // Bloquer si une partie est en cours
+    if (gameState.inProgress) {
+        return res.status(400).json({
+            error: 'Impossible de changer le filtre pendant une partie',
+            blocked: true
+        });
+    }
+
+    const { filter } = req.body;
+
+    // 🔥 AUTOMATIQUE: Validation basée sur SERIE_FILTERS
+    if (!SERIE_FILTERS[filter]) {
+        return res.status(400).json({ error: 'Filtre invalide' });
+    }
+
+    gameState.serieFilter = filter;
+    console.log(`⚙️ Filtre série changé: ${filter}`);
+
+    io.emit('game-config-updated', {
+        mode: gameState.mode,
+        lives: gameState.lives,
+        questionTime: gameState.questionTime,
+        answersCount: gameState.answersCount,
+        questionsCount: gameState.questionsCount,
+        difficultyMode: gameState.difficultyMode,
+        autoMode: gameState.autoMode,
+        serieFilter: gameState.serieFilter
+    });
+
+    res.json({ success: true, serieFilter: gameState.serieFilter });
+});
+
+
+// Route pour toggle le mode auto
+app.post('/admin/toggle-auto-mode', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    gameState.autoMode = !gameState.autoMode;
+    console.log(`⚙️ Mode Auto ${gameState.autoMode ? 'activé' : 'désactivé'}`);
+
+    io.emit('game-config-updated', {
+        mode: gameState.mode,
+        lives: gameState.lives,
+        questionTime: gameState.questionTime,
+        answersCount: gameState.answersCount,
+        questionsCount: gameState.questionsCount,
+        difficultyMode: gameState.difficultyMode,
+        autoMode: gameState.autoMode // 🆕
+    });
+
+    res.json({ success: true, autoMode: gameState.autoMode });
+});
+
+// Route pour forcer le déclenchement du mode auto (si activé pendant résultats)
+app.post('/admin/trigger-auto-next', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    // Vérifier que le mode auto est activé et qu'une partie est en cours
+    if (!gameState.autoMode || !gameState.inProgress) {
+        return res.json({ success: false, reason: 'Mode auto désactivé ou pas de partie' });
+    }
+
+    // Vérifier qu'on est bien en train d'afficher les résultats
+    if (!gameState.showResults) {
+        return res.json({ success: false, reason: 'Pas en phase de résultats' });
+    }
+
+    console.log('🔄 Trigger manuel du mode auto');
+
+    // Annuler le timeout précédent si existant
+    if (gameState.autoModeTimeout) {
+        clearTimeout(gameState.autoModeTimeout);
+        gameState.autoModeTimeout = null;
+    }
+
+    // Lancer le compte à rebours de 3s
+    gameState.autoModeTimeout = setTimeout(async () => {
+        try {
+            if (!gameState.inProgress || !gameState.autoMode) return;
+
+            console.log('🤖 Mode Auto (trigger manuel) : Passage à la question suivante');
+
+            // 🔥 FIX TIEBREAKER
+            if (gameState.isTiebreaker) {
+                await sendTiebreakerQuestion();
+                return;
+            }
+
+            gameState.currentQuestionIndex++;
+
+            if (gameState.mode === 'points' && gameState.currentQuestionIndex > gameState.questionsCount) {
+                endGameByPoints();
+                return;
+            }
+
+            const difficulty = getDifficultyForQuestion(gameState.currentQuestionIndex);
+            const questions = await db.getRandomQuestions(
+                difficulty,
+                1,
+                gameState.usedQuestionIds,
+                gameState.serieFilter // 🔥 AJOUTER ICI
+            );
+
+
+            if (questions.length === 0) {
+                console.error('❌ Mode Auto : Aucune question disponible');
+                return;
+            }
+
+            const question = questions[0];
+            await db.addUsedQuestion(question.id);
+            gameState.usedQuestionIds.push(question.id);
+
+            const allAnswers = [
+                { text: question.answer1, index: 1 },
+                { text: question.answer2, index: 2 },
+                { text: question.answer3, index: 3 },
+                { text: question.answer4, index: 4 },
+                { text: question.answer5, index: 5 },
+                { text: question.answer6, index: 6 }
+            ].filter(answer => answer.text !== null && answer.text !== '');
+
+            const correctAnswerObj = allAnswers.find(a => a.index === question.coanswer);
+            const wrongAnswers = allAnswers.filter(a => a.index !== question.coanswer);
+            const wrongAnswersNeeded = gameState.answersCount - 1;
+            const shuffledWrong = wrongAnswers.sort(() => 0.5 - Math.random()).slice(0, wrongAnswersNeeded);
+            const selectedAnswers = [correctAnswerObj, ...shuffledWrong];
+            const finalAnswers = selectedAnswers.sort(() => 0.5 - Math.random());
+            const newCorrectIndex = finalAnswers.findIndex(a => a.index === question.coanswer) + 1;
+
+            const questionData = {
+                questionNumber: gameState.currentQuestionIndex,
+                totalQuestions: gameState.mode === 'points' ? gameState.questionsCount : null,
+                questionId: question.id,
+                question: question.question,
+                answers: finalAnswers.map(a => a.text),
+                serie: question.serie,
+                difficulty: question.difficulty,
+                timeLimit: gameState.questionTime
+            };
+
+            gameState.currentQuestion = {
+                ...questionData,
+                correctAnswer: newCorrectIndex,
+                difficulty: question.difficulty
+            };
+
+            gameState.questionStartTime = Date.now();
+            gameState.showResults = false;
+            gameState.lastQuestionResults = null;
+            gameState.answers.clear();
+
+            io.emit('new-question', questionData);
+
+            setTimeout(() => {
+                if (gameState.inProgress) {
+                    revealAnswers(newCorrectIndex);
+                }
+            }, gameState.questionTime * 1000);
+
+        } catch (error) {
+            console.error('❌ Erreur trigger auto:', error);
+        }
+    }, 3000);
+
+    res.json({ success: true });
+});
+
+
 // Route pour reset manuel de l'historique des questions
 app.post('/admin/reset-questions-history', async (req, res) => {
     if (!req.session.isAdmin) {
@@ -723,18 +1028,31 @@ app.post('/admin/next-question', async (req, res) => {
         }
 
         const difficulty = getDifficultyForQuestion(gameState.currentQuestionIndex);
-        const questions = await db.getRandomQuestions(difficulty, 1, gameState.usedQuestionIds);
+
+        // 🔥 DEBUG: Afficher le filtre utilisé
+        console.log(`🔍 Filtre série actif: ${gameState.serieFilter}`);
+
+        const questions = await db.getRandomQuestions(
+            difficulty,
+            1,
+            gameState.usedQuestionIds,
+            gameState.serieFilter // 🔥 VÉRIFIER que c'est bien passé ici
+        );
+
 
         if (questions.length === 0) {
             return res.status(404).json({ error: 'Aucune question disponible' });
         }
 
         const question = questions[0];
+
+        // 🔥 DEBUG: Afficher la série de la question retournée
+        console.log(`📌 Question série: ${question.serie}, difficulté: ${difficulty}`);
+
         await db.addUsedQuestion(question.id);
         gameState.usedQuestionIds.push(question.id);
 
         console.log(`📌 Question ${gameState.currentQuestionIndex}/${gameState.mode === 'points' ? gameState.questionsCount : '∞'} - Difficulté: ${difficulty}`);
-
         // Récupérer toutes les réponses disponibles
         const allAnswers = [
             { text: question.answer1, index: 1 },
@@ -806,8 +1124,7 @@ function getQuestionDistribution(totalQuestions) {
     };
 }
 
-
-// 🔥 FIX TIEBREAKER: Fonction pour révéler les réponses
+// Fonction pour révéler les réponses
 function revealAnswers(correctAnswer) {
     const stats = {
         correct: 0,
@@ -914,6 +1231,8 @@ function revealAnswers(correctAnswer) {
                 isCorrect: isCorrect
             });
         });
+
+
     }
 
     const alivePlayersAfter = gameState.mode === 'points'
@@ -951,6 +1270,114 @@ function revealAnswers(correctAnswer) {
         setTimeout(() => {
             endGameByPoints();
         }, 100);
+    }
+
+
+    // 🆕 MODE AUTO : Passer automatiquement à la question suivante après 3s
+    if (gameState.autoMode && gameState.inProgress) {
+        console.log('⏱️ Mode Auto : Question suivante dans 3s...');
+
+        // Annuler le timeout précédent si existant
+        if (gameState.autoModeTimeout) {
+            clearTimeout(gameState.autoModeTimeout);
+        }
+
+        gameState.autoModeTimeout = setTimeout(async () => {
+            if (!gameState.inProgress) return; // Sécurité : vérifier que la partie est toujours en cours
+
+            console.log('🤖 Mode Auto : Passage automatique à la question suivante');
+
+            // 🔥 FIX TIEBREAKER: Si tiebreaker, lancer une question EXTREME
+            if (gameState.isTiebreaker) {
+                await sendTiebreakerQuestion();
+                return;
+            }
+
+            // Logique normale (copie de /admin/next-question)
+            gameState.currentQuestionIndex++;
+
+            // Vérifier si on a atteint le nombre max de questions en mode Points
+            if (gameState.mode === 'points' && gameState.currentQuestionIndex > gameState.questionsCount) {
+                endGameByPoints();
+                return;
+            }
+
+            try {
+                const difficulty = getDifficultyForQuestion(gameState.currentQuestionIndex);
+
+                // 🔥 FIX: AJOUTER gameState.serieFilter (c'était probablement déjà là, mais vérifie bien)
+                console.log(`🔍 [Mode Auto Timer] Filtre série: ${gameState.serieFilter}`); // 🔥 NOUVEAU LOG
+
+                const questions = await db.getRandomQuestions(
+                    difficulty,
+                    1,
+                    gameState.usedQuestionIds,
+                    gameState.serieFilter // 🔥 VÉRIFIER QUE C'EST BIEN LÀ
+                );
+
+                if (questions.length === 0) {
+                    console.error('❌ Aucune question disponible (mode auto)');
+                    return;
+                }
+
+                const question = questions[0];
+                await db.addUsedQuestion(question.id);
+                gameState.usedQuestionIds.push(question.id);
+
+                console.log(`📌 Question ${gameState.currentQuestionIndex}/${gameState.mode === 'points' ? gameState.questionsCount : '∞'} - Difficulté: ${difficulty}`);
+
+                // Préparer les réponses
+                const allAnswers = [
+                    { text: question.answer1, index: 1 },
+                    { text: question.answer2, index: 2 },
+                    { text: question.answer3, index: 3 },
+                    { text: question.answer4, index: 4 },
+                    { text: question.answer5, index: 5 },
+                    { text: question.answer6, index: 6 }
+                ].filter(answer => answer.text !== null && answer.text !== '');
+
+                const correctAnswerObj = allAnswers.find(a => a.index === question.coanswer);
+                const wrongAnswers = allAnswers.filter(a => a.index !== question.coanswer);
+                const wrongAnswersNeeded = gameState.answersCount - 1;
+                const shuffledWrong = wrongAnswers.sort(() => 0.5 - Math.random()).slice(0, wrongAnswersNeeded);
+                const selectedAnswers = [correctAnswerObj, ...shuffledWrong];
+                const finalAnswers = selectedAnswers.sort(() => 0.5 - Math.random());
+                const newCorrectIndex = finalAnswers.findIndex(a => a.index === question.coanswer) + 1;
+
+                const questionData = {
+                    questionNumber: gameState.currentQuestionIndex,
+                    totalQuestions: gameState.mode === 'points' ? gameState.questionsCount : null,
+                    questionId: question.id,
+                    question: question.question,
+                    answers: finalAnswers.map(a => a.text),
+                    serie: question.serie,
+                    difficulty: question.difficulty,
+                    timeLimit: gameState.questionTime
+                };
+
+                gameState.currentQuestion = {
+                    ...questionData,
+                    correctAnswer: newCorrectIndex,
+                    difficulty: question.difficulty
+                };
+
+                gameState.questionStartTime = Date.now();
+                gameState.showResults = false;
+                gameState.lastQuestionResults = null;
+                gameState.answers.clear();
+
+                io.emit('new-question', questionData);
+
+                setTimeout(() => {
+                    if (gameState.inProgress) {
+                        revealAnswers(newCorrectIndex);
+                    }
+                }, gameState.questionTime * 1000);
+
+            } catch (error) {
+                console.error('❌ Erreur mode auto:', error);
+            }
+        }, 3000); // 3 secondes
     }
 }
 
@@ -1144,7 +1571,13 @@ async function sendTiebreakerQuestion() {
         // Toujours prendre une question EXTREME pour le tiebreaker
         const difficulty = 'extreme';
 
-        const questions = await db.getRandomQuestions(difficulty, 1, gameState.usedQuestionIds);
+        const questions = await db.getRandomQuestions(
+            difficulty,
+            1,
+            gameState.usedQuestionIds,
+            gameState.serieFilter // 🔥 AJOUTER ICI
+        );
+
 
         if (questions.length === 0) {
             console.error('❌ Aucune question extreme disponible pour tiebreaker');
@@ -1960,6 +2393,12 @@ function resetGameState() {
     gameState.answers.clear();
     gameState.isTiebreaker = false;
     gameState.tiebreakerPlayers = [];
+
+    // 🆕 Annuler le timeout auto mode si actif
+    if (gameState.autoModeTimeout) {
+        clearTimeout(gameState.autoModeTimeout);
+        gameState.autoModeTimeout = null;
+    }
 
     gameState.isActive = false;
     io.emit('game-deactivated');

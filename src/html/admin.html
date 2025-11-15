@@ -155,14 +155,24 @@
                         <span class="mode-arrow">▼</span>
                     </button>
 
+                    <!-- 🆕 Bouton Mode Auto à côté -->
+                    <button class="btn-auto-mode" id="autoModeBtn" onclick="toggleAutoMode()" data-tooltip="Manuel">
+                        <span class="auto-mode-text">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                <path
+                                    d="M23 5.5V20c0 2.2-1.8 4-4 4h-7.3c-1.08 0-2.1-.43-2.85-1.19L1 14.83s1.26-1.23 1.3-1.25c.22-.19.49-.29.79-.29.22 0 .42.06.6.16.04.01 4.31 2.46 4.31 2.46V4c0-.83.67-1.5 1.5-1.5S11 3.17 11 4v7h1V1.5c0-.83.67-1.5 1.5-1.5S15 .67 15 1.5V11h1V2.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5V11h1V5.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5z" />
+                            </svg>
+                        </span>
+                    </button>
+
                     <!-- Menu déroulant des modes -->
                     <div class="mode-menu" id="modeMenu">
                         <div class="mode-option selected" onclick="selectMode('lives')">
-                            <!-- <span class="mode-option-icon">❤️</span> -->
+                            <span class="mode-option-icon">❤️</span>
                             <span class="mode-option-text">Mode Vie</span>
                         </div>
                         <div class="mode-option" onclick="selectMode('points')">
-                            <!-- <span class="mode-option-icon">⭐</span> -->
+                            <span class="mode-option-icon">⭐</span>
                             <span class="mode-option-text">Mode Points</span>
                         </div>
                     </div>
@@ -187,7 +197,7 @@
                         <div class="setting-item">
                             <label class="setting-label">Nombre de questions</label>
                             <div class="questions-grid">
-                                <button class="questions-btn" onclick="setQuestions(3)" id="questions-3">3</button>
+                                <button class="questions-btn" onclick="setQuestions(15)" id="questions-15">15</button>
                                 <button class="questions-btn active" onclick="setQuestions(20)"
                                     id="questions-20">20</button>
                                 <button class="questions-btn" onclick="setQuestions(25)" id="questions-25">25</button>
@@ -202,60 +212,79 @@
 
 
                     <!-- Paramètres communs (toujours visibles) -->
+
+
                     <div class="setting-item">
-                        <label class="setting-label">Temps par question</label>
-                        <div class="time-selector">
-                            <select class="time-select" id="timeSelect" onchange="setTime(this.value)">
-                                <option value="5">5 secondes</option>
-                                <option value="6">6 secondes</option>
-                                <option value="7">7 secondes</option>
-                                <option value="8">8 secondes</option>
-                                <option value="9">9 secondes</option>
-                                <option value="10" selected>10 secondes</option>
-                                <option value="11">11 secondes</option>
-                                <option value="12">12 secondes</option>
-                                <option value="13">13 secondes</option>
-                                <option value="14">14 secondes</option>
-                                <option value="15">15 secondes</option>
-                            </select>
+                        <div class="dual-inputs-container">
+                            <div class="input-group">
+                                <label class="input-label">Temps</label>
+                                <select class="time-select" id="timeSelect" onchange="setTime(this.value)">
+                                    <option value="5">5s</option>
+                                    <option value="6">6s</option>
+                                    <option value="7">7s</option>
+                                    <option value="8">8s</option>
+                                    <option value="9">9s</option>
+                                    <option value="10" selected>10s</option>
+                                    <option value="11">11s</option>
+                                    <option value="12">12s</option>
+                                    <option value="13">13s</option>
+                                    <option value="14">14s</option>
+                                    <option value="15">15s</option>
+                                </select>
+                            </div>
+
+                            <div class="input-group">
+                                <label class="input-label">Réponses</label>
+                                <select class="answers-select" id="answersSelect" onchange="setAnswers(this.value)">
+                                    <option value="4" selected>4</option>
+                                    <option value="6">6</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="setting-item">
-                        <label class="setting-label">Nombre de réponses</label>
-                        <div class="lives-selector">
-                            <button class="lives-btn active" onclick="setAnswers(4)" id="answers-4">4</button>
-                            <button class="lives-btn" onclick="setAnswers(6)" id="answers-6">6</button>
-                        </div>
-                    </div>
                     <!-- 🆕 Paramètre Mode de difficulté (commun aux 2 modes) -->
                     <div class="setting-item">
-                        <label class="setting-label">Mode de difficulté</label>
-                        <button class="difficulty-mode-btn" id="difficultyModeBtn" onclick="toggleDifficultyMode()">
-                            <span class="diff-mode-icon"></span>
-                            <span class="diff-mode-text">Croissante</span>
+                        <div class="dual-inputs-container">
+                            <div class="input-group">
+                                <label class="input-label">Difficulté</label>
+                                <button class="difficulty-mode-btn" id="difficultyModeBtn"
+                                    onclick="toggleDifficultyMode()">
+                                    <span class="diff-mode-icon"></span>
+                                    <span class="diff-mode-text">Croissante</span>
+                                </button>
+                            </div>
+
+                            <div class="input-group">
+                                <label class="input-label">Série</label>
+                                <button class="serie-filter-btn-compact" id="serieFilterBtn"
+                                    onclick="toggleSeriePanel()">
+                                    <div class="serie-filter-bg" id="serieFilterBg"></div>
+                                    <span class="serie-filter-text" id="serieFilterText">Overall</span>
+                                    <span class="serie-filter-arrow">▶</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- Reset Questions & Signaler Question - CÔTE À CÔTE -->
+                    <div class="reset-questions-section">
+                        <button class="btn-reset-questions" id="btnResetQuestions" onclick="resetQuestionsHistory()">
+                            <span class="reset-icon">♻️</span>
+                            <span class="reset-text">Reset</span>
+                        </button>
+
+                        <button class="btn-report-question" id="btnReportQuestion" onclick="openReportModal()">
+                            <span class="report-icon">❗</span>
+                            <span class="report-text">Report</span>
                         </button>
                     </div>
                 </div>
-
-
-                <!-- Reset Questions & Signaler Question - CÔTE À CÔTE -->
-                <div class="reset-questions-section">
-                    <button class="btn-reset-questions" id="btnResetQuestions" onclick="resetQuestionsHistory()">
-                        <span class="reset-icon">♻️</span>
-                        <span class="reset-text">Reset</span>
-                    </button>
-
-                    <button class="btn-report-question" id="btnReportQuestion" onclick="openReportModal()">
-                        <span class="report-icon">❗</span>
-                        <span class="report-text">Signaler</span>
-                    </button>
-                </div>
             </div>
-        </div>
 
 
-        <!-- <div class="add-question-section"
+            <!-- <div class="add-question-section"
             style="grid-column: 1 / -1; margin-top: 32px; padding: 24px; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border);">
             <h2 style="color: var(--primary); margin-bottom: 24px; font-size: 1.2rem;">➕ Ajouter une question</h2>
 
@@ -350,100 +379,124 @@
             <div id="addQuestionStatus" style="margin-top: 16px; padding: 12px; border-radius: 8px; display: none;">
             </div>
         </div> -->
-    </div>
-
-    <!-- Overlay Backdrop -->
-    <div class="overlay-backdrop" id="overlayBackdrop" onclick="closeOverlays()"></div>
-
-    <!-- Overlay: Top 10 -->
-    <div class="overlay-panel" id="overlayTop10">
-        <div class="overlay-header">
-            <h2>🏆 Top 10 Joueurs</h2>
-            <button class="close-overlay" onclick="closeOverlays()">✕</button>
         </div>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Rang</th>
-                    <th>Joueur</th>
-                    <th>Victoires</th>
-                    <th>Parties</th>
-                </tr>
-            </thead>
-            <tbody id="topPlayersTable">
-                <tr>
-                    <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                        Aucune donnée disponible
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
 
-    <!-- Overlay: Recent Games -->
-    <div class="overlay-panel" id="overlayRecent">
-        <div class="overlay-header">
-            <h2>📊 Parties récentes</h2>
-            <button class="close-overlay" onclick="closeOverlays()">✕</button>
-        </div>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Gagnant</th>
-                    <th>Questions</th>
-                    <th>Date</th>
-                </tr>
-            </thead>
-            <tbody id="recentGamesTable">
-                <tr>
-                    <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                        Aucune donnée disponible
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+        <!-- Overlay Backdrop -->
+        <div class="overlay-backdrop" id="overlayBackdrop" onclick="closeOverlays()"></div>
 
-    </div>
-
-    <!-- Modal Signalement -->
-    <div class="report-modal-overlay" id="reportModalOverlay" onclick="closeReportModal()">
-        <div class="report-modal" onclick="event.stopPropagation()">
-            <div class="report-modal-header">
-                <h3>Demander un changement</h3>
-                <button class="report-modal-close" onclick="closeReportModal()">✕</button>
+        <!-- Overlay: Top 10 -->
+        <div class="overlay-panel" id="overlayTop10">
+            <div class="overlay-header">
+                <h2>🏆 Top 10 Joueurs</h2>
+                <button class="close-overlay" onclick="closeOverlays()">✕</button>
             </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Rang</th>
+                        <th>Joueur</th>
+                        <th>Victoires</th>
+                        <th>Parties</th>
+                    </tr>
+                </thead>
+                <tbody id="topPlayersTable">
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                            Aucune donnée disponible
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
-            <div class="report-modal-body">
-                <p class="report-question-preview" id="reportQuestionPreview"></p>
+        <!-- Overlay: Recent Games -->
+        <div class="overlay-panel" id="overlayRecent">
+            <div class="overlay-header">
+                <h2>📊 Parties récentes</h2>
+                <button class="close-overlay" onclick="closeOverlays()">✕</button>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Gagnant</th>
+                        <th>Questions</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="recentGamesTable">
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                            Aucune donnée disponible
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
 
-                <div class="report-form-group">
-                    <label for="reportReason">Motif du signalement</label>
-                    <select id="reportReason" class="report-select">
-                        <option value="Augmenter la difficulté">Augmenter la difficulté</option>
-                        <option value="Baisser la difficulté">Baisser la difficulté</option>
-                        <option value="Corriger la question / réponses">Corriger la question / réponses</option>
-                        <option value="Changer la bonne réponse">Changer la bonne réponse</option>
-                        <option value="Reformuler la question">Reformuler la question
-                        </option>
-                        <option value="Enlever doublon">Enlever doublon</option>
-                        <!-- <option value="Autre">Autre</option>-->
-                    </select>
+        </div>
+
+        <!-- Modal Signalement -->
+        <div class="report-modal-overlay" id="reportModalOverlay" onclick="closeReportModal()">
+            <div class="report-modal" onclick="event.stopPropagation()">
+                <div class="report-modal-header">
+                    <h3>Demander un changement</h3>
+                    <button class="report-modal-close" onclick="closeReportModal()">✕</button>
+                </div>
+
+                <div class="report-modal-body">
+                    <p class="report-question-preview" id="reportQuestionPreview"></p>
+
+                    <div class="report-form-group">
+                        <label for="reportReason">Motif du signalement</label>
+                        <select id="reportReason" class="report-select">
+                            <option value="Augmenter la difficulté">Augmenter la difficulté</option>
+                            <option value="Baisser la difficulté">Baisser la difficulté</option>
+                            <option value="Corriger la question / réponses">Corriger la question / réponses</option>
+                            <option value="Changer la bonne réponse">Changer la bonne réponse</option>
+                            <option value="Reformuler la question">Reformuler la question
+                            </option>
+                            <option value="Enlever doublon">Enlever doublon</option>
+                            <!-- <option value="Autre">Autre</option>-->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="report-modal-footer">
+                    <button class="btn-report-cancel" onclick="closeReportModal()">Annuler</button>
+                    <button class="btn-report-submit" onclick="submitReport()">Signaler</button>
                 </div>
             </div>
-
-            <div class="report-modal-footer">
-                <button class="btn-report-cancel" onclick="closeReportModal()">Annuler</button>
-                <button class="btn-report-submit" onclick="submitReport()">Signaler</button>
-            </div>
         </div>
-    </div>
+
+
     </div>
 
     <!-- Toast Notification -->
     <div class="toast-notification" id="toastNotification">
         <span class="toast-icon">✓</span>
         <span class="toast-text">Question signalée avec succès</span>
+    </div>
+
+
+    <!-- 🆕 Panel Filtre Série (vient de la droite) -->
+    <div class="serie-panel-backdrop" id="seriePanelBackdrop" onclick="closeSeriePanel()"></div>
+
+    <div class="serie-panel" id="seriePanel">
+        <div class="serie-panel-header">
+            <h2>📺 Filtrer par série</h2>
+            <button class="close-serie-panel" onclick="closeSeriePanel()">✕</button>
+        </div>
+
+        <!-- Searchbar -->
+        <div class="serie-search-container">
+            <input type="text" id="serieSearch" class="serie-search-input"  placeholder=" Rechercher une série..."
+                oninput="filterSerieCards()">
+        </div>
+
+        <!-- Grille de cartes séries -->
+        <div class="serie-cards-grid" id="serieCardsGrid">
+            <!-- Les cartes seront injectées par JS -->
+        </div>
     </div>
 
     <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>

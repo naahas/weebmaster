@@ -11,6 +11,55 @@ let isNextQuestion = false; // 🆕 Anti-spam next question
 let tiebreakerPlayerIds = [];
 let lastQuestionResults = null;
 
+let currentSerieFilter = 'tout';
+
+const SERIE_FILTERS = {
+    tout: {
+        name: 'Overall',
+        icon: '🌍',
+        series: [] // Vide = toutes les séries
+    },
+    big3: {
+        name: 'Big 3',
+        icon: '👑',
+        series: ['One Piece', 'Naruto', 'Bleach']
+    },
+    mainstream: {
+        name: 'Mainstream',
+        icon: '⭐',
+        series: [
+            'One Piece', 'Naruto', 'Bleach', 'Hunter x Hunter',
+            'Shingeki no Kyojin', 'Fullmetal Alchemist', 'Death Note',
+            'Dragon Ball', 'Demon Slayer', 'Jojo\'s Bizarre Adventure', 'My Hero Academia',
+            'Fairy Tail', 'Tokyo Ghoul', 'Nanatsu no Taizai', 'Kuroko no Basket'
+        ]
+    },
+
+    onepiece: {
+        name: 'One Piece',
+        icon: '',
+        series: ['One Piece']
+    },
+
+    naruto: {
+        name: 'Naruto',
+        icon: '',
+        series: ['Naruto']
+    },
+    dragonball: {
+        name: 'Dragon Ball',
+        icon: '',
+        series: ['Dragon Ball']
+    },
+
+    bleach: {
+        name: 'Bleach',
+        icon: '⚔️',
+        series: ['Bleach']
+    }
+};
+
+
 
 
 let currentGameMode = 'lives'; // 'lives' ou 'points'
@@ -20,7 +69,8 @@ let gameSettings = {
     questions: 15,
     timePerQuestion: 10,
     answersCount: 4,
-    difficultyMode: 'croissante'
+    difficultyMode: 'croissante',
+    autoMode: false
 };
 
 // Toggle du menu de sélection de mode
@@ -164,6 +214,83 @@ function toggleDifficultyMode() {
     console.log(`✅ Mode de difficulté: ${gameSettings.difficultyMode}`);
 }
 
+
+
+// 🆕 Toggle Mode Auto
+async function toggleAutoMode() {
+    try {
+        const response = await fetch('/admin/toggle-auto-mode', {
+            method: 'POST',
+            credentials: 'same-origin'
+        });
+
+        if (response.status === 403) {
+            if (!isReloading) {
+                isReloading = true;
+                console.log('⚠️ Session expirée, rechargement...');
+                location.reload();
+            }
+            return;
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+            gameSettings.autoMode = data.autoMode;
+
+            // Update UI
+            const autoBtn = document.getElementById('autoModeBtn');
+            if (autoBtn) {
+                autoBtn.classList.toggle('active', data.autoMode);
+
+                // 🔥 Mettre à jour le tooltip
+                autoBtn.setAttribute('data-tooltip', data.autoMode ? 'Auto' : 'Manuel');
+
+                const text = autoBtn.querySelector('.auto-mode-text');
+                if (text) {
+                    text.innerHTML = data.autoMode
+                        ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>'
+                        : '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M23 5.5V20c0 2.2-1.8 4-4 4h-7.3c-1.08 0-2.1-.43-2.85-1.19L1 14.83s1.26-1.23 1.3-1.25c.22-.19.49-.29.79-.29.22 0 .42.06.6.16.04.01 4.31 2.46 4.31 2.46V4c0-.83.67-1.5 1.5-1.5S11 3.17 11 4v7h1V1.5c0-.83.67-1.5 1.5-1.5S15 .67 15 1.5V11h1V2.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5V11h1V5.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5z"/></svg>';
+                }
+            }
+
+            updateNextQuestionButtonState();
+            console.log(`✅ Mode Auto ${data.autoMode ? 'activé' : 'désactivé'}`);
+
+            if (data.autoMode) {
+                fetch('/admin/trigger-auto-next', {
+                    method: 'POST',
+                    credentials: 'same-origin'
+                }).catch(err => console.error('❌ Erreur trigger auto:', err));
+            }
+        }
+    } catch (error) {
+        console.error('❌ Erreur toggle auto mode:', error);
+    }
+}
+
+// Remplacer la fonction updateNextQuestionButtonState() :
+function updateNextQuestionButtonState() {
+    const nextCard = document.getElementById('nextQuestionCard');
+    if (!nextCard) return;
+
+    if (gameSettings.autoMode) {
+        // 🔥 MODE AUTO: Désactiver le bouton ET ajouter le clignotement jaune
+        nextCard.classList.add('auto-mode-disabled');
+
+        // Ajouter le clignotement SEULEMENT si le bouton est actif (partie en cours)
+        if (nextCard.classList.contains('game-active') && !nextCard.classList.contains('disabled') && !nextCard.classList.contains('timer-blocked')) {
+            nextCard.classList.add('auto-mode-active');
+        } else {
+            nextCard.classList.remove('auto-mode-active');
+        }
+    } else {
+        // 🔥 MODE MANUEL: Activer le bouton et retirer le clignotement
+        nextCard.classList.remove('auto-mode-disabled');
+        nextCard.classList.remove('auto-mode-active');
+    }
+}
+
 // Fermer le menu si on clique ailleurs
 document.addEventListener('click', (e) => {
     const modeContainer = document.querySelector('.mode-selector-container');
@@ -283,6 +410,29 @@ async function restoreGameState() {
             console.log(`✅ Mode de difficulté restauré: ${state.difficultyMode}`);
         }
 
+        // 🔥 NOUVEAU: Restaurer le filtre série
+        if (state.serieFilter) {
+            currentSerieFilter = state.serieFilter;
+
+            // Mettre à jour le bouton principal
+            const filterText = document.getElementById('serieFilterText');
+            if (filterText) {
+                // Mapper l'ID du filtre vers son nom d'affichage
+                const filterNames = {
+                    'tout': 'Overall',
+                    'big3': 'Big 3',
+                    'mainstream': 'Mainstream',
+                    'naruto': 'Naruto',
+                    'dragonball': 'Dragon Ball',
+                    'onepiece': 'One Piece',
+                    'bleach': 'Bleach'
+                };
+                filterText.textContent = filterNames[state.serieFilter] || 'Overall';
+            }
+
+            console.log(`✅ Filtre série restauré: ${state.serieFilter}`);
+        }
+
         // Restaurer le mode
         if (state.mode) {
             currentGameMode = state.mode;
@@ -321,7 +471,7 @@ async function restoreGameState() {
             console.log('🔓 Paramètres activés');
         }
 
-        // 🔥 FIX: Restaurer TOUS les paramètres visuels
+        // Restaurer TOUS les paramètres visuels
         if (state.lives) {
             gameSettings.lives = state.lives;
             const livesButtons = document.querySelectorAll('.lives-btn');
@@ -338,18 +488,14 @@ async function restoreGameState() {
             if (timeSelect) timeSelect.value = state.questionTime;
         }
 
-        // 🔥 FIX: RESTAURER answersCount
         if (state.answersCount) {
             gameSettings.answersCount = state.answersCount;
-            const answersButtons = document.querySelectorAll('#answers-4, #answers-6');
-            if (answersButtons.length > 0) {
-                answersButtons.forEach(btn => btn.classList.remove('active'));
-                const answersBtn = document.getElementById(`answers-${state.answersCount}`);
-                if (answersBtn) answersBtn.classList.add('active');
+            const answersSelect = document.getElementById('answersSelect');
+            if (answersSelect) {
+                answersSelect.value = state.answersCount;
             }
         }
 
-        // 🔥 FIX PRINCIPAL: RESTAURER questionsCount
         if (state.questionsCount) {
             gameSettings.questions = state.questionsCount;
             const questionsButtons = document.querySelectorAll('.questions-btn');
@@ -361,7 +507,24 @@ async function restoreGameState() {
             }
         }
 
-        // 🔥 Restaurer l'état tiebreaker
+        if (state.autoMode !== undefined) {
+            gameSettings.autoMode = state.autoMode;
+            const autoBtn = document.getElementById('autoModeBtn');
+            if (autoBtn) {
+                autoBtn.classList.toggle('active', state.autoMode);
+                autoBtn.setAttribute('data-tooltip', state.autoMode ? 'Auto' : 'Manuel');
+
+                const text = autoBtn.querySelector('.auto-mode-text');
+                if (text) {
+                    text.innerHTML = state.autoMode
+                        ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>'
+                        : '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M23 5.5V20c0 2.2-1.8 4-4 4h-7.3c-1.08 0-2.1-.43-2.85-1.19L1 14.83s1.26-1.23 1.3-1.25c.22-.19.49-.29.79-.29.22 0 .42.06.6.16.04.01 4.31 2.46 4.31 2.46V4c0-.83.67-1.5 1.5-1.5S11 3.17 11 4v7h1V1.5c0-.83.67-1.5 1.5-1.5S15 .67 15 1.5V11h1V2.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5V11h1V5.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5z"/></svg>';
+                }
+            }
+            updateNextQuestionButtonState();
+            console.log(`✅ Mode Auto restauré: ${state.autoMode ? 'activé' : 'désactivé'}`);
+        }
+
         if (state.isTiebreaker && state.tiebreakerPlayers) {
             tiebreakerPlayerIds = state.tiebreakerPlayers.map(p => p.twitchId);
             console.log('✅ Tiebreaker restauré:', tiebreakerPlayerIds);
@@ -1061,7 +1224,7 @@ function displayGameEnd(data) {
 function updatePlayersGrid(players) {
     // 🔥 NOUVEAU: Toujours trier avant d'afficher
     let sortedPlayers = [...players];
-    
+
     if (currentGameMode === 'points') {
         sortedPlayers.sort((a, b) => (b.points || 0) - (a.points || 0));
     } else {
@@ -1070,7 +1233,7 @@ function updatePlayersGrid(players) {
             return (b.correctAnswers || 0) - (a.correctAnswers || 0);
         });
     }
-    
+
     // Utiliser la fonction avec effet tiebreaker qui gère déjà l'affichage
     updatePlayersGridWithTiebreakerEffect(sortedPlayers);
 }
@@ -1169,7 +1332,7 @@ function updatePlayersGridWithResults(playersData, playersDetails) {
 
     // 🔥 NOUVEAU: Trier les joueurs selon le mode
     let sortedPlayers = [...playersData]; // Copie pour ne pas modifier l'original
-    
+
     if (currentGameMode === 'points') {
         // Tri par points décroissants (du plus haut au plus bas)
         sortedPlayers.sort((a, b) => (b.points || 0) - (a.points || 0));
@@ -1220,10 +1383,10 @@ function updatePlayersGridWithResults(playersData, playersDetails) {
                 <div class="player-lives">
                     <span>Vies:</span>
                     ${[1, 2, 3].map(n =>
-                        `<span class="heart-icon ${n <= player.lives ? 'active' : 'lost'}">
+                `<span class="heart-icon ${n <= player.lives ? 'active' : 'lost'}">
                             ${n <= player.lives ? '❤️' : '🖤'}
                         </span>`
-                    ).join('')}
+            ).join('')}
                 </div>
             `;
         }
@@ -1369,6 +1532,12 @@ async function startGame() {
 async function nextQuestion() {
     const nextCard = document.getElementById('nextQuestionCard');
 
+    // 🆕 Bloquer si mode auto activé
+    if (gameSettings.autoMode) {
+        console.log('⚠️ Mode Auto activé - Bouton désactivé');
+        return;
+    }
+
     // 🆕 Anti-spam
     if (isNextQuestion) {
         console.log('⏳ Question en cours d\'envoi...');
@@ -1376,6 +1545,10 @@ async function nextQuestion() {
     }
 
     isNextQuestion = true;
+
+    // Feedback visuel
+    nextCard.classList.add('loading');
+    nextCard.style.pointerEvents = 'none';
 
     // 🆕 Ajouter l'état visuel de blocage
     nextCard.classList.add('timer-blocked');
@@ -1435,6 +1608,13 @@ async function nextQuestion() {
         nextCard.classList.remove('timer-blocked');
         nextCard.classList.add('game-active');
         isNextQuestion = false;
+    } finally {
+        // 🆕 Débloquer après 2 secondes (temps de sécurité)
+        setTimeout(() => {
+            isNextQuestion = false;
+            nextCard.classList.remove('loading');
+            nextCard.style.pointerEvents = 'auto';
+        }, 2000);
     }
 }
 
@@ -1481,16 +1661,17 @@ function setTime(seconds) {
     console.log(`✅ Temps défini: ${seconds}s`);
 }
 
+// Remplace la fonction setAnswers (vers ligne 350-370) :
 function setAnswers(count) {
     if (isGameInProgress()) return;
 
-    gameSettings.answersCount = count;
+    gameSettings.answersCount = parseInt(count);
 
-    // Update UI
-    document.querySelectorAll('#answers-4, #answers-6').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    document.getElementById(`answers-${count}`).classList.add('active');
+    // Update UI - dropdown est automatiquement mis à jour
+    const answersSelect = document.getElementById('answersSelect');
+    if (answersSelect) {
+        answersSelect.value = count;
+    }
 
     // Envoyer au serveur
     fetch('/admin/set-answers', {
@@ -1520,6 +1701,8 @@ function toggleSettingsAccess(enabled) {
     const btnResetQuestions = document.getElementById('btnResetQuestions');
     const btnModeToggle = document.getElementById('btnModeToggle'); // 🆕
     const btnDifficultyMode = document.getElementById('difficultyModeBtn');
+    const btnReportQuestion = document.getElementById('btnReportQuestion'); // 🔥 NOUVEAU
+
 
     if (enabled) {
         settingsSection.classList.remove('disabled');
@@ -1530,6 +1713,8 @@ function toggleSettingsAccess(enabled) {
         if (btnResetQuestions) btnResetQuestions.disabled = false;
         if (btnModeToggle) btnModeToggle.disabled = false; // 🆕
         if (btnDifficultyMode) btnDifficultyMode.disabled = false;
+        if (btnReportQuestion) btnReportQuestion.disabled = false;
+
     } else {
         settingsSection.classList.add('disabled');
         livesButtons.forEach(btn => btn.disabled = true);
@@ -1539,6 +1724,8 @@ function toggleSettingsAccess(enabled) {
         if (btnResetQuestions) btnResetQuestions.disabled = true;
         if (btnModeToggle) btnModeToggle.disabled = true; // 🆕
         if (btnDifficultyMode) btnDifficultyMode.disabled = true;
+        if (btnReportQuestion) btnReportQuestion.disabled = false;
+
     }
 }
 
@@ -1854,57 +2041,400 @@ function updatePlayersGridWithTiebreaker() {
 }
 
 
-// Gestion du formulaire d'ajout de question
-document.getElementById('addQuestionForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
+// ============================================
+// FILTRE SÉRIE - Fonctions
+// ============================================
+function toggleSeriePanel() {
+    const panel = document.getElementById('seriePanel');
+    const backdrop = document.getElementById('seriePanelBackdrop');
 
-    const statusDiv = document.getElementById('addQuestionStatus');
-    statusDiv.style.display = 'none';
+    panel.classList.toggle('active');
+    backdrop.classList.toggle('active');
 
-    const formData = {
-        question: document.getElementById('questionText').value,
-        answer1: document.getElementById('answer1').value,
-        answer2: document.getElementById('answer2').value,
-        answer3: document.getElementById('answer3').value,
-        answer4: document.getElementById('answer4').value,
-        answer5: document.getElementById('answer5').value,
-        answer6: document.getElementById('answer6').value,
-        correctAnswer: document.getElementById('correctAnswer').value,
-        serie: document.getElementById('serie').value,
-        difficulty: document.getElementById('difficulty').value
-    };
+    // 🔥 Générer les cartes au premier affichage OU à chaque ouverture (pour refresh stats)
+    if (panel.classList.contains('active')) {
+        generateSerieCards(); // 🔥 Recharger à chaque ouverture
+    }
+}
+
+function closeSeriePanel() {
+    document.getElementById('seriePanel').classList.remove('active');
+    document.getElementById('seriePanelBackdrop').classList.remove('active');
+}
+
+
+
+async function generateSerieCards() {
+    const grid = document.getElementById('serieCardsGrid');
+
+    // Afficher un loader pendant le chargement
+    grid.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-secondary);">
+            <div style="font-size: 1.5rem; margin-bottom: 8px;">⏳</div>
+            <div>Chargement...</div>
+        </div>
+    `;
 
     try {
-        const response = await fetch('/admin/add-question', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'same-origin',
-            body: JSON.stringify(formData)
+        // Récupérer les stats depuis le serveur
+        const response = await fetch('/admin/serie-stats', {
+            credentials: 'same-origin'
         });
 
-        const data = await response.json();
-
-        if (data.success) {
-            statusDiv.textContent = '✅ Question ajoutée avec succès !';
-            statusDiv.style.background = 'rgba(16, 185, 129, 0.2)';
-            statusDiv.style.color = '#10b981';
-            statusDiv.style.border = '1px solid #10b981';
-            statusDiv.style.display = 'block';
-
-            // Reset form
-            document.getElementById('addQuestionForm').reset();
-
-        } else {
-            throw new Error(data.error);
+        if (!response.ok) {
+            throw new Error('Erreur chargement stats');
         }
+
+        const stats = await response.json();
+
+        // 🔥 PRODUCTION: Définir quelles cartes sont disponibles
+        const cards = [
+            {
+                id: 'tout',
+                name: 'Overall',
+                subtitle: stats.tout.subtitle,
+                bg: 'overall.jpg',
+                disabled: false // ✅ Disponible
+            },
+
+            {
+                id: 'mainstream',
+                name: 'Mainstream',
+                subtitle: stats.mainstream.subtitle,
+                bg: 'mainstream.jpg',
+                disabled: false // ✅ Disponible
+            },
+            {
+                id: 'big3',
+                name: 'Big 3',
+                subtitle: `${stats.big3.count} questions`,
+                bg: 'overall.jpg',
+                disabled: true // 🔥 Bientôt disponible
+            },
+
+            {
+                id: 'onepiece',
+                name: 'One Piece',
+                subtitle: `${stats.onepiece.count} questions`,
+                bg: 'op.png',
+                disabled: true // 🔥 Bientôt disponible
+            },
+
+            {
+                id: 'naruto',
+                name: 'Naruto',
+                subtitle: `${stats.naruto.count} questions`,
+                bg: 'naruto2.png',
+                disabled: true // 🔥 Bientôt disponible
+            },
+            {
+                id: 'dragonball',
+                name: 'Dragon Ball',
+                subtitle: `${stats.dragonball.count} questions`,
+                bg: 'dbz.png',
+                disabled: true // 🔥 Bientôt disponible
+            },
+
+            ,
+            {
+                id: 'bleach',
+                name: 'Bleach',
+                subtitle: `${stats.bleach.count} questions`,
+                bg: 'bleach.png',
+                disabled: true // 🔥 Bientôt disponible
+            },
+
+            /* ------------ Cartes Bientôt Disponibles ------------ */
+
+            ,
+            {
+                id: 'bleach',
+                name: 'Demon Slayer',
+                subtitle: `${stats.dragonball.count} questions`,
+                bg: 'overall.jpg',
+                disabled: true // 🔥 Bientôt disponible
+            },
+            ,
+            {
+                id: 'bleach',
+                name: 'Jujutsu Kaisen',
+                subtitle: `${stats.dragonball.count} questions`,
+                bg: 'overall.jpg',
+                disabled: true // 🔥 Bientôt disponible
+            },
+            ,
+            {
+                id: 'bleach',
+                name: 'My Hero Academia',
+                subtitle: `${stats.dragonball.count} questions`,
+                bg: 'overall.jpg',
+                disabled: true // 🔥 Bientôt disponible
+            },
+            ,
+            {
+                id: 'bleach',
+                name: 'Shingeki no Kyojin',
+                subtitle: `${stats.dragonball.count} questions`,
+                bg: 'overall.jpg',
+                disabled: true // 🔥 Bientôt disponible
+            },
+            ,
+            {
+                id: 'bleach',
+                name: 'Death Note',
+                subtitle: `${stats.dragonball.count} questions`,
+                bg: 'overall.jpg',
+                disabled: true // 🔥 Bientôt disponible
+            },
+            ,
+            {
+                id: 'bleach',
+                name: 'Hunter Hunter',
+                subtitle: `${stats.dragonball.count} questions`,
+                bg: 'overall.jpg',
+                disabled: true // 🔥 Bientôt disponible
+            }
+            ,
+            {
+                id: 'bleach',
+                name: 'Fairy Tail',
+                subtitle: `${stats.dragonball.count} questions`,
+                bg: 'overall.jpg',
+                disabled: true // 🔥 Bientôt disponible
+            },
+            ,
+            {
+                id: 'bleach',
+                name: 'Fullmetal Alchemist',
+                subtitle: `${stats.dragonball.count} questions`,
+                bg: 'overall.jpg',
+                disabled: true // 🔥 Bientôt disponible
+            },
+            ,
+            {
+                id: 'bleach',
+                name: 'Jojo\'s Bizarre Adventure',
+                subtitle: `${stats.dragonball.count} questions`,
+                bg: 'overall.jpg',
+                disabled: true // 🔥 Bientôt disponible
+            },
+            ,
+            {
+                id: 'bleach',
+                name: 'Vinland Saga',
+                subtitle: `${stats.dragonball.count} questions`,
+                bg: 'overall.jpg',
+                disabled: true // 🔥 Bientôt disponible
+            },
+            ,
+            {
+                id: 'bleach',
+                name: 'Tokyo Ghoul',
+                subtitle: `${stats.dragonball.count} questions`,
+                bg: 'overall.jpg',
+                disabled: true // 🔥 Bientôt disponible
+            },
+            ,
+            {
+                id: 'bleach',
+                name: 'Kuroko no Basket',
+                subtitle: `${stats.dragonball.count} questions`,
+                bg: 'overall.jpg',
+                disabled: true // 🔥 Bientôt disponible
+            },
+            ,
+            {
+                id: 'bleach',
+                name: 'Gintama',
+                subtitle: `${stats.dragonball.count} questions`,
+                bg: 'overall.jpg',
+                disabled: true // 🔥 Bientôt disponible
+            },
+            ,
+            {
+                id: 'bleach',
+                name: 'Nanatsu no Taizai',
+                subtitle: `${stats.dragonball.count} questions`,
+                bg: 'overall.jpg',
+                disabled: true // 🔥 Bientôt disponible
+            },
+            ,
+            {
+                id: 'bleach',
+                name: 'Yu Yu Hakusho',
+                subtitle: `${stats.dragonball.count} questions`,
+                bg: 'overall.jpg',
+                disabled: true // 🔥 Bientôt disponible
+            },
+            ,
+            {
+                id: 'bleach',
+                name: 'Yu-Gi-Oh!',
+                subtitle: `${stats.dragonball.count} questions`,
+                bg: 'overall.jpg',
+                disabled: true // 🔥 Bientôt disponible
+            },
+            {
+                id: 'bleach',
+                name: 'Pokemon',
+                subtitle: `${stats.dragonball.count} questions`,
+                bg: 'overall.jpg',
+                disabled: true // 🔥 Bientôt disponible
+            }
+
+
+        ];
+
+        // Générer les cartes
+        grid.innerHTML = cards.map(card => `
+            <div class="serie-card-pro ${currentSerieFilter === card.id ? 'selected' : ''} ${card.disabled ? 'disabled' : ''}" 
+                 data-serie="${card.id}" 
+                 data-name="${card.name.toLowerCase()}"
+                 ${card.disabled ? '' : `onclick="selectSerie('${card.id}', '${card.name}')"`}>
+                <div class="serie-card-bg" style="background-image: url('${card.bg}')"></div>
+                <div class="serie-shine-card"></div>
+                ${card.disabled ? '<div class="serie-card-soon">SOON</div>' : ''}
+                <div class="serie-card-content">
+                    <div class="serie-card-name">${card.name}</div>
+                    <div class="serie-card-subtitle">${card.subtitle}</div>
+                </div>
+            </div>
+        `).join('');
+
+        console.log('✅ Stats séries chargées:', stats);
+
     } catch (error) {
-        statusDiv.textContent = '❌ Erreur: ' + error.message;
-        statusDiv.style.background = 'rgba(239, 68, 68, 0.2)';
-        statusDiv.style.color = '#ef4444';
-        statusDiv.style.border = '1px solid #ef4444';
-        statusDiv.style.display = 'block';
+        console.error('❌ Erreur chargement stats séries:', error);
+
+        grid.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--danger);">
+                <div style="font-size: 1.5rem; margin-bottom: 8px;">❌</div>
+                <div>Erreur de chargement</div>
+            </div>
+        `;
     }
-});
+}
+
+
+function selectSerie(serieId, serieName) {
+    if (isGameInProgress()) {
+        console.log('⚠️ Impossible de changer le filtre pendant une partie');
+        return;
+    }
+
+    currentSerieFilter = serieId;
+
+    // 🔥 FIX: Mettre à jour visuellement TOUTES les cartes
+    document.querySelectorAll('.serie-card-pro').forEach(card => {
+        if (card.dataset.serie === serieId) {
+            card.classList.add('selected');
+        } else {
+            card.classList.remove('selected');
+        }
+    });
+
+    // Mettre à jour le bouton principal
+    const filterText = document.getElementById('serieFilterText');
+    const filterBg = document.getElementById('serieFilterBg');
+
+    if (filterText) {
+        filterText.textContent = serieName;
+    }
+
+    if (filterBg) {
+        filterBg.style.backgroundImage = `url('overall.jpg')`;
+    }
+
+    // Envoyer au serveur
+    fetch('/admin/set-serie-filter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ filter: serieId })
+    }).then(response => response.json())
+        .then(data => console.log('✅ Filtre série synchronisé:', data))
+        .catch(err => console.error('❌ Erreur sync filtre série:', err));
+
+    console.log(`✅ Filtre série: ${serieName}`);
+
+    // Fermer le panel
+    closeSeriePanel();
+}
+
+function filterSerieCards() {
+    const search = document.getElementById('serieSearch').value.toLowerCase();
+    const cards = document.querySelectorAll('.serie-card-pro'); // 🔥 Changé de .serie-card à .serie-card-pro
+
+    cards.forEach(card => {
+        const name = card.dataset.name; // Récupère data-name
+        if (name && name.includes(search)) {
+            card.style.display = 'flex'; // 🔥 Changé de 'block' à 'flex' (pour le layout)
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+
+// Gestion du formulaire d'ajout de question
+if (document.getElementById('addQuestionForm')) {
+    document.getElementById('addQuestionForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const statusDiv = document.getElementById('addQuestionStatus');
+        statusDiv.style.display = 'none';
+
+        const formData = {
+            question: document.getElementById('questionText').value,
+            answer1: document.getElementById('answer1').value,
+            answer2: document.getElementById('answer2').value,
+            answer3: document.getElementById('answer3').value,
+            answer4: document.getElementById('answer4').value,
+            answer5: document.getElementById('answer5').value,
+            answer6: document.getElementById('answer6').value,
+            correctAnswer: document.getElementById('correctAnswer').value,
+            serie: document.getElementById('serie').value,
+            difficulty: document.getElementById('difficulty').value
+        };
+
+        try {
+            const response = await fetch('/admin/add-question', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                statusDiv.textContent = '✅ Question ajoutée avec succès !';
+                statusDiv.style.background = 'rgba(16, 185, 129, 0.2)';
+                statusDiv.style.color = '#10b981';
+                statusDiv.style.border = '1px solid #10b981';
+                statusDiv.style.display = 'block';
+
+                // Reset form
+                document.getElementById('addQuestionForm').reset();
+
+            } else {
+                throw new Error(data.error);
+            }
+        } catch (error) {
+            statusDiv.textContent = '❌ Erreur: ' + error.message;
+            statusDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+            statusDiv.style.color = '#ef4444';
+            statusDiv.style.border = '1px solid #ef4444';
+            statusDiv.style.display = 'block';
+        }
+    });
+}
+
+
+
+
 
 // ============ INIT ============
 checkAuth();
+
+
