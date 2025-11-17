@@ -93,7 +93,7 @@ createApp({
             availableBonuses: [],       // ['5050', 'reveal', 'extralife' ou 'doublex2']
             usedBonuses: [],            // Bonus déjà utilisés dans la partie
             showBonusModal: false,      // Afficher/masquer le modal
-            activeBonusEffect: null,
+            activeBonusEffect: null
         };
     },
 
@@ -333,8 +333,17 @@ createApp({
                             this.playerLives = currentPlayer.lives !== undefined ? currentPlayer.lives : this.gameLives;
                             console.log(`✅ Vies restaurées: ${this.playerLives}`);
                         }
+
+                        if (currentPlayer.comboData && this.comboLevel === 0 && this.comboProgress === 0) {
+                            this.comboLevel = currentPlayer.comboData.comboLevel || 0;
+                            this.comboProgress = currentPlayer.comboData.comboProgress || 0;
+                            this.availableBonuses = [...(currentPlayer.comboData.availableBonuses || [])];
+                            this.usedBonuses = [...(currentPlayer.comboData.usedBonuses || [])];
+                            console.log(`✅ Combo restauré via /game/state: Lvl${this.comboLevel}, Progress:${this.comboProgress}`);
+                        }
                     }
                 }
+
 
                 if (state.currentQuestion && state.inProgress && this.hasJoined) {
                     this.currentQuestion = state.currentQuestion;
@@ -424,14 +433,24 @@ createApp({
             this.socket.on('player-restored', (data) => {
                 console.log('🔄 Données de restauration reçues:', data);
 
-                // 🔥 FIX: Restaurer selon le mode
                 if (data.gameMode === 'lives') {
                     this.playerLives = data.lives;
                     console.log(`✅ Vies restaurées: ${this.playerLives}`);
                 } else if (data.gameMode === 'points') {
-                    this.playerPoints = data.points || 0;  // 🔥 FIX PRINCIPAL
+                    this.playerPoints = data.points || 0;
                     console.log(`✅ Points restaurés: ${this.playerPoints}`);
                 }
+
+                // 🔥 AJOUTE CETTE PARTIE
+                if (data.comboData) {
+                    this.comboLevel = data.comboData.comboLevel || 0;
+                    this.comboProgress = data.comboData.comboProgress || 0;
+                    this.availableBonuses = [...(data.comboData.availableBonuses || [])];
+                    this.usedBonuses = [...(data.comboData.usedBonuses || [])];
+                    console.log(`✅ Combo restauré via player-restored (prioritaire): Lvl${this.comboLevel}, Progress:${this.comboProgress}`);
+                }
+
+
 
                 this.currentQuestionNumber = data.currentQuestionIndex;
                 this.hasJoined = true;
@@ -444,6 +463,7 @@ createApp({
 
                 console.log(`✅ Joueur restauré - Mode: ${data.gameMode}`);
                 this.showNotification('Reconnecté à la partie !', 'success');
+
             });
 
             // Événements du serveur
@@ -476,9 +496,12 @@ createApp({
                 this.showResults = false;
                 this.playerLives = this.gameLives;  // 🆕 Utiliser gameLives configuré
                 this.playerCount = 0;
+                this.playerPoints = 0;
 
                 // Arrêter le timer si actif
                 this.stopTimer();
+
+                this.resetComboSystem();
 
                 // Nettoyer localStorage
                 localStorage.removeItem('hasJoinedLobby');
@@ -489,11 +512,14 @@ createApp({
 
             this.socket.on('game-started', (data) => {
                 this.gameStartedOnServer = true;
-                this.gameMode = data.gameMode || 'lives';  // 🆕
+                this.gameMode = data.gameMode || 'lives';
 
                 if (data.isParticipating) {
                     document.body.classList.add('game-active');
                     this.gameInProgress = true;
+
+                    // 🔥 AJOUTE CETTE LIGNE ICI
+                    this.resetComboSystem();
 
                     // 🆕 Initialiser selon le mode
                     if (this.gameMode === 'lives') {
@@ -548,8 +574,7 @@ createApp({
                         this.playerPoints += finalPoints;
                         this.triggerPointsAnimation();
 
-                        // 🔥 VÉRIFIER : Un seul appel ici
-                        this.updateCombo();
+                        // 🔥 SUPPRIMÉ : this.updateCombo() - Le serveur s'en charge
                     }
                 } else {
                     // Mode Vie
@@ -559,20 +584,14 @@ createApp({
                         this.playerLives = myPlayerData.lives;
                         console.log(`✅ Vies synchronisées: ${this.playerLives}`);
 
-                        // 🔥 VÉRIFIER : Un seul appel ici aussi
-                        if (this.selectedAnswer === results.correctAnswer) {
-                            this.updateCombo();
-                        }
+                        // 🔥 SUPPRIMÉ : if (this.selectedAnswer === results.correctAnswer) { this.updateCombo(); }
                     } else {
-                        // Fallback...
+                        // Fallback
                         if (!results.allWillLose) {
                             if (this.selectedAnswer && this.selectedAnswer !== results.correctAnswer) {
                                 this.playerLives = Math.max(0, this.playerLives - 1);
                             } else if (!this.selectedAnswer) {
                                 this.playerLives = Math.max(0, this.playerLives - 1);
-                            } else {
-                                // 🔥 VÉRIFIER : Pas de double appel ici
-                                this.updateCombo();
                             }
                         }
                     }
@@ -590,6 +609,8 @@ createApp({
                 this.gameStartedOnServer = false; // 🆕 Reset flag
                 this.gameEndData = data;
                 this.stopTimer();
+
+                this.resetComboSystem();
 
                 // 🆕 Nettoyer localStorage car la partie est terminée
                 localStorage.removeItem('hasJoinedLobby');
@@ -628,11 +649,21 @@ createApp({
                 this.animateLevelUp();
             });
 
-            // 🆕 Combo mis à jour
             this.socket.on('combo-updated', (data) => {
+                // 🔥 VERSION SIMPLE : Accepter TOUJOURS ce que le serveur envoie
+                const oldProgress = this.comboProgress;
+                const oldLevel = this.comboLevel;
+
                 this.comboLevel = data.comboLevel;
                 this.comboProgress = data.comboProgress;
                 this.availableBonuses = data.availableBonuses;
+
+                // Spawn particules seulement si vraie progression
+                if (data.comboProgress > oldProgress) {
+                    this.spawnParticles();
+                }
+
+                console.log(`📡 Combo reçu du serveur: Lvl${this.comboLevel}, Progress:${this.comboProgress}`);
             });
 
             // 🆕 Bonus utilisé (confirmation)
@@ -856,89 +887,21 @@ createApp({
             console.log(`[${type.toUpperCase()}] ${message}`);
         },
 
-        // 🆕 GESTION DU COMBO
-        updateCombo() {
-            // 🔥 Empêcher l'incrémentation pendant l'animation de level up
-            const barFill = document.querySelector('.combo-bar-fill');
-            if (barFill && barFill.classList.contains('level-up')) {
-                console.log('⏳ Animation de level up en cours, combo ignoré');
-                return;
-            }
 
-            this.comboProgress++;
 
-            // 🔥 NOUVEAU : Spawn particules à CHAQUE bonne réponse
-            this.spawnParticles();
 
-            // Vérifier si on atteint un nouveau niveau
-            const nextLevel = this.comboLevel;
-            const threshold = this.comboThresholds[nextLevel];
-
-            if (this.comboProgress === threshold && this.comboLevel < 3) {
-                this.levelUp();
-            }
-        },
-
-        levelUp() {
-            // 🔥 ÉTAPE 1 : Animation de completion (barre à 100%)
-            const barFill = document.querySelector('.combo-bar-fill');
-            if (barFill) {
-                // Forcer la barre à 100% avec animation
-                barFill.style.transition = 'height 0.4s ease-out';
-                barFill.style.height = '100%';
-
-                // Effet visuel de completion
-                barFill.classList.add('level-up');
-
-                // 🔥 Spawn particules immédiatement
-                this.spawnParticles();
-            }
-
-            // 🔥 ÉTAPE 2 : Attendre 1.5s puis incrémenter le niveau et reset
-            setTimeout(() => {
-                this.comboLevel++;
-
-                // Débloquer le bonus correspondant
-                let bonusType = '';
-                if (this.comboLevel === 1) {
-                    bonusType = '5050';
-                } else if (this.comboLevel === 2) {
-                    bonusType = 'reveal';
-                } else if (this.comboLevel === 3) {
-                    bonusType = this.gameMode === 'lives' ? 'extralife' : 'doublex2';
-                }
-
-                if (bonusType) {
-                    this.availableBonuses.push(bonusType);
-                }
-
-                // 🔥 ÉTAPE 3 : Reset visuel de la barre après level up
-                if (barFill) {
-                    barFill.classList.remove('level-up');
-
-                    // Reset instantané après l'animation
-                    barFill.style.transition = 'none';
-                    barFill.style.height = '0%';
-
-                    // Remettre la transition pour la prochaine progression
-                    setTimeout(() => {
-                        barFill.style.transition = 'height 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
-                    }, 50);
-                }
-
-                console.log(`🎉 Level ${this.comboLevel} atteint ! Bonus débloqué: ${bonusType}`);
-            }, 1500); // 🔥 Délai de 1.5s
-        },
 
         animateLevelUp() {
-            // Animation de la jauge
             const barFill = document.querySelector('.combo-bar-fill');
             if (barFill) {
+                // 🔥 Stocker la hauteur actuelle avant l'animation
+                const currentHeight = barFill.style.height || this.comboBarHeight + '%';
+                barFill.style.setProperty('--current-height', currentHeight);
+
                 barFill.classList.add('level-up');
-                setTimeout(() => barFill.classList.remove('level-up'), 600);
+                setTimeout(() => barFill.classList.remove('level-up'), 1500);
             }
 
-            // Particules dorées
             this.spawnParticles();
         },
 
@@ -1113,6 +1076,8 @@ createApp({
             this.usedBonuses = [];
             this.activeBonusEffect = null;
             this.showBonusModal = false;
+
+            console.log('🔄 Système de combo complètement reset');
         }
     },
 

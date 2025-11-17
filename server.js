@@ -176,15 +176,35 @@ app.get('/game/state', (req, res) => {
         timeRemaining = Math.max(0, gameState.questionTime - elapsed);
     }
 
-    const playersData = Array.from(gameState.players.values()).map(player => ({
-        socketId: player.socketId,
-        twitchId: player.twitchId,
-        username: player.username,
-        lives: gameState.mode === 'lives' ? player.lives : null,
-        points: gameState.mode === 'points' ? (player.points || 0) : null,
-        correctAnswers: player.correctAnswers,
-        hasAnswered: gameState.answers.has(player.socketId)
-    }));
+    const playersData = Array.from(gameState.players.values()).map(player => {
+        // 🔥 FIX: Chercher les bonus par twitchId au lieu de socketId (qui change à chaque refresh)
+        let comboData = null;
+        for (const [sid, bonusData] of gameState.playerBonuses.entries()) {
+            const bonusPlayer = gameState.players.get(sid);
+            if (bonusPlayer && bonusPlayer.twitchId === player.twitchId) {
+                comboData = {
+                    comboLevel: bonusData.comboLevel,
+                    comboProgress: bonusData.comboProgress,
+                    availableBonuses: bonusData.availableBonuses,
+                    usedBonuses: bonusData.usedBonuses
+                };
+                break;
+            }
+        }
+
+        return {
+            socketId: player.socketId,
+            twitchId: player.twitchId,
+            username: player.username,
+            lives: gameState.mode === 'lives' ? player.lives : null,
+            points: gameState.mode === 'points' ? (player.points || 0) : null,
+            correctAnswers: player.correctAnswers,
+            hasAnswered: gameState.answers.has(player.socketId),
+            comboData: comboData
+        };
+    });
+
+
 
     res.json({
         isActive: gameState.isActive,
@@ -409,6 +429,8 @@ app.post('/admin/toggle-game', (req, res) => {
         gameState.questionStartTime = null;
         gameState.gameStartTime = null;
 
+        gameState.playerBonuses.clear();
+
         io.emit('game-deactivated');
     }
 
@@ -578,6 +600,9 @@ app.post('/admin/start-game', async (req, res) => {
 
         // 🔥 Recharger les IDs utilisés (peut être vide si reset)
         gameState.usedQuestionIds = await db.getUsedQuestionIds();
+
+        gameState.playerBonuses.clear();
+        console.log('🔄 Bonus reset pour nouvelle partie');
 
         // Initialiser les joueurs selon le mode
         gameState.players.forEach((player, socketId) => {
@@ -2306,7 +2331,6 @@ io.on('connection', (socket) => {
             return socket.emit('error', { message: 'Aucune partie en cours' });
         }
 
-        // Chercher le joueur par twitchId dans les joueurs existants
         let existingPlayer = null;
         let oldSocketId = null;
         for (const [socketId, player] of gameState.players.entries()) {
@@ -2318,34 +2342,43 @@ io.on('connection', (socket) => {
         }
 
         if (existingPlayer) {
-            // Sauvegarder la réponse de l'ancien socketId AVANT de supprimer
             const previousAnswer = gameState.answers.get(oldSocketId);
 
-            // Supprimer l'ancienne référence
+            // 🔥 FIX: Transférer les bonus vers le nouveau socketId
+            const oldBonusData = gameState.playerBonuses.get(oldSocketId);
+            if (oldBonusData) {
+                gameState.playerBonuses.set(socket.id, oldBonusData);
+                gameState.playerBonuses.delete(oldSocketId);
+                console.log(`🎁 Bonus transférés: ${oldSocketId} → ${socket.id}`);
+            }
+
             gameState.players.delete(oldSocketId);
             gameState.answers.delete(oldSocketId);
 
-            // Restaurer le joueur avec le nouveau socketId
             existingPlayer.socketId = socket.id;
             gameState.players.set(socket.id, existingPlayer);
 
-            // Transférer la réponse au nouveau socketId si elle existait
             if (previousAnswer) {
                 gameState.answers.set(socket.id, previousAnswer);
             }
 
-            // Nettoyer les marqueurs de déconnexion temporaire
             delete existingPlayer.disconnectedAt;
             delete existingPlayer.disconnectedSocketId;
 
             console.log(`🔄 ${data.username} reconnecté - Mode: ${gameState.mode}, Points: ${existingPlayer.points || 0}, Vies: ${existingPlayer.lives}`);
 
-            // Envoyer les bonnes données selon le mode
             const restorationData = {
                 currentQuestionIndex: gameState.currentQuestionIndex,
                 hasAnswered: !!previousAnswer,
                 selectedAnswer: previousAnswer ? previousAnswer.answer : null,
-                gameMode: gameState.mode
+                gameMode: gameState.mode,
+                // 🔥 FIX: Maintenant les bonus sont bien associés au nouveau socketId
+                comboData: gameState.playerBonuses.get(socket.id) ? {
+                    comboLevel: gameState.playerBonuses.get(socket.id).comboLevel,
+                    comboProgress: gameState.playerBonuses.get(socket.id).comboProgress,
+                    availableBonuses: gameState.playerBonuses.get(socket.id).availableBonuses,
+                    usedBonuses: gameState.playerBonuses.get(socket.id).usedBonuses
+                } : null
             };
 
             if (gameState.mode === 'lives') {
@@ -2357,6 +2390,7 @@ io.on('connection', (socket) => {
 
             socket.emit('player-restored', restorationData);
 
+            
             // Mettre à jour le compteur de joueurs pour l'admin
             io.emit('lobby-update', {
                 playerCount: gameState.players.size,
@@ -2631,7 +2665,7 @@ function resetGameState() {
     gameState.tiebreakerPlayers = [];
 
     resetAllBonuses();
-    
+
     gameState.isActive = false;
     io.emit('game-deactivated');
     console.log('🔒 Lobby fermé automatiquement après la fin de partie');

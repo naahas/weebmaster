@@ -3085,31 +3085,69 @@ html, body {
     border-radius: 15px;
     transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+    transform-origin: bottom; /* 🔥 IMPORTANT pour scaleY */
 }
 
-.combo-bar-fill.level-up {
+/* 🔥 Wrapper pour l'animation de level-up */
+.combo-bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: inherit;
+    border-radius: inherit;
+    opacity: 0;
+    transform: scaleY(1);
+    transform-origin: bottom;
+    pointer-events: none;
+}
+
+.combo-bar-fill.level-up::after {
     animation: levelUpComplete 1.5s ease-out;
 }
 
-@keyframes levelUpPulse {
-    0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
-    50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.8); }
-}
-
-
 @keyframes levelUpComplete {
     0% {
+        opacity: 1;
+        transform: scaleY(1);
         box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+        filter: brightness(1);
     }
-    50% {
-        box-shadow: 0 0 50px rgba(255, 215, 0, 1),
-                    0 0 80px rgba(255, 215, 0, 0.6);
+    20% {
+        opacity: 1;
+        transform: scaleY(1.5); /* 🔥 Monte au-dessus */
+        box-shadow: 0 0 40px rgba(255, 215, 0, 0.8),
+                    0 0 60px rgba(255, 215, 0, 0.5);
         filter: brightness(1.3);
     }
-    100% {
+    40% {
+        opacity: 1;
+        transform: scaleY(1.8);
+        box-shadow: 0 0 60px rgba(255, 215, 0, 1),
+                    0 0 100px rgba(255, 215, 0, 0.8);
+        filter: brightness(1.6);
+    }
+    70% {
+        opacity: 1;
+        transform: scaleY(2);
+        box-shadow: 0 0 80px rgba(255, 215, 0, 1),
+                    0 0 120px rgba(255, 215, 0, 1);
+        filter: brightness(2);
+    }
+    85% {
+        opacity: 1;
+        transform: scaleY(1.5);
         box-shadow: 0 0 60px rgba(255, 215, 0, 1),
                     0 0 100px rgba(255, 215, 0, 0.8);
         filter: brightness(1.5);
+    }
+    100% {
+        opacity: 0;
+        transform: scaleY(0);
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+        filter: brightness(1);
     }
 }
 
@@ -3171,19 +3209,54 @@ html, body {
 
 .combo-level-indicator {
     position: absolute;
-    bottom: -32px; /* 🔥 Augmenté de -25px à -32px */
+    bottom: -50px; /* 🔥 Augmenté de -32px à -38px pour plus d'espace */
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(255, 215, 0, 0.2);
+    
+    /* 🔥 Style amélioré */
+    background: linear-gradient(135deg, 
+        rgba(255, 215, 0, 0.3), 
+        rgba(255, 165, 0, 0.3)
+    );
     color: var(--neon-primary);
-    padding: 4px 10px;
-    border-radius: 8px;
-    font-size: 0.7rem; /* 🔥 Légèrement plus gros */
+    padding: 6px 14px; /* 🔥 Padding augmenté */
+    border-radius: 10px; /* 🔥 Plus arrondi */
+    font-size: 0.6rem;
     font-weight: 900;
-    letter-spacing: 0.5px;
-    border: 1px solid rgba(255, 215, 0, 0.3);
+    letter-spacing: 1.5px; /* 🔥 Plus d'espace entre les lettres */
     white-space: nowrap;
-    box-shadow: 0 0 8px rgba(255, 215, 0, 0.3); /* 🔥 Ajout de glow */
+    
+    /* 🔥 Glow effect stylé */
+    box-shadow: 
+        0 0 15px rgba(255, 217, 0, 0.164),
+        0 0 30px rgba(255, 215, 0, 0.2),
+        inset 0 0 20px rgba(255, 215, 0, 0.1);
+    
+    /* 🔥 Animation subtle de pulsation */
+    animation: levelIndicatorPulse 2s ease-in-out infinite;
+    
+    /* 🔥 Text shadow pour le nombre */
+    text-shadow: 
+        0 0 10px rgba(255, 215, 0, 0.8),
+        0 0 20px rgba(255, 215, 0, 0.4),
+        0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes levelIndicatorPulse {
+    0%, 100% {
+        box-shadow: 
+            0 0 15px rgba(255, 215, 0, 0.4),
+            0 0 30px rgba(255, 215, 0, 0.2),
+            inset 0 0 20px rgba(255, 215, 0, 0.1);
+        transform: translateX(-50%) scale(1);
+    }
+    50% {
+        box-shadow: 
+            0 0 20px rgba(255, 215, 0, 0.6),
+            0 0 40px rgba(255, 215, 0, 0.3),
+            inset 0 0 25px rgba(255, 215, 0, 0.15);
+        transform: translateX(-50%) scale(1.05);
+    }
 }
 
 /* Label MAX */
@@ -3212,8 +3285,8 @@ html, body {
 /* ========== BOX BONUS (Coin haut droit) ========== */
 .bonus-box-container {
     position: fixed;
-    top: 80px;
-    right: 24px;
+    top: 20px; /* 🔥 Aligné avec le profil */
+    right: 20px; /* 🔥 À gauche du bouton profil (qui est à right: 20px) */
     z-index: 500;
     display: none;
 }
@@ -3224,11 +3297,11 @@ html, body {
 }
 
 .bonus-trigger-btn {
-    width: 56px;
-    height: 56px;
-    background: rgba(31, 31, 31, 0.8);
-    backdrop-filter: blur(10px);
-    border: 2px solid rgba(255, 215, 0, 0.3);
+    width: 30px; /* 🔥 Légèrement agrandi */
+    height: 30px;
+    background: rgba(31, 31, 31, 0.85); /* 🔥 Légèrement plus opaque */
+    backdrop-filter: blur(12px); /* 🔥 Blur augmenté */
+    border: 2px solid rgba(255, 215, 0, 0.4); /* 🔥 Border plus visible */
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -3236,44 +3309,53 @@ html, body {
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
+    
+    /* 🔥 Glow subtil */
+    box-shadow: 
+        0 4px 16px rgba(0, 0, 0, 0.3),
+        0 0 20px rgba(255, 215, 0, 0.2);
 }
 
 .bonus-trigger-btn:hover {
     transform: scale(1.1);
     border-color: var(--neon-primary);
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+    box-shadow: 
+        0 6px 24px rgba(0, 0, 0, 0.4),
+        0 0 30px rgba(255, 215, 0, 0.5);
 }
 
 .bonus-trigger-btn svg {
-    width: 28px;
-    height: 28px;
+    width: 26px; /* 🔥 SVG légèrement plus grand */
+    height: 26px;
     fill: var(--neon-primary);
-    filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.3));
+    filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.4)); /* 🔥 Glow augmenté */
 }
 
 /* Badge notification rouge */
 .bonus-notification-badge {
     position: absolute;
-    top: -4px;
-    right: -4px;
+    top: -6px; /* 🔥 Ajusté */
+    right: -6px;
     background: #ff4757;
     color: #fff;
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: 700;
-    border: 2px solid var(--bg-main);
+    border: 2.5px solid var(--bg-main); /* 🔥 Border plus épaisse */
     animation: badgePop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    box-shadow: 0 0 10px rgba(255, 71, 87, 0.6);
+    box-shadow: 
+        0 0 15px rgba(255, 71, 87, 0.8),
+        0 2px 8px rgba(0, 0, 0, 0.3); /* 🔥 Ombre + glow */
 }
 
 @keyframes badgePop {
     0% { transform: scale(0); }
-    50% { transform: scale(1.2); }
+    50% { transform: scale(1.3); }
     100% { transform: scale(1); }
 }
 
@@ -3451,8 +3533,8 @@ html, body {
     
     /* Box bonus repositionnée */
     .bonus-box-container {
-        top: 16px;
-        right: 16px;
+        top: 20px; /* 🔥 Même hauteur que desktop */
+        right: 76px; /* 🔥 À gauche du bouton profil mobile */
     }
     
     .bonus-trigger-btn {
@@ -3466,9 +3548,17 @@ html, body {
     }
     
     .bonus-notification-badge {
-        width: 20px;
-        height: 20px;
-        font-size: 0.65rem;
+        width: 22px;
+        height: 22px;
+        font-size: 0.7rem;
+        top: -5px;
+        right: -5px;
+    }
+
+    .combo-level-indicator {
+        bottom: -36px;
+        padding: 5px 12px;
+        font-size: 0.7rem;
     }
     
     .bonus-modal {
