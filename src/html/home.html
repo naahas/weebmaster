@@ -474,10 +474,86 @@
             </svg>
         </a>
 
+
+
+        <!-- 🆕 SYSTÈME DE COMBO & BONUS -->
+
+        <!-- Jauge de Combo (Desktop uniquement - côté droit) -->
+        <div class="combo-gauge-container" v-if="gameInProgress && !gameEnded">
+            <!-- 🔥 NOUVEAU: Particules EN DEHORS de la jauge -->
+            <div class="combo-particles-external"></div>
+
+            <div class="combo-gauge">
+                <div class="combo-bar-wrapper">
+                    <div class="combo-bar-bg">
+                        <!-- Barre de progression -->
+                        <div class="combo-bar-fill" :style="{ height: comboBarHeight + '%' }"></div>
+                    </div>
+                </div>
+
+                <!-- 🔥 NOUVEAU : Indicateur niveau actuel -->
+                <div class="combo-level-indicator" v-if="comboLevel > 0 && comboLevel < 3">
+                    Lvl {{ comboLevel }}
+                </div>
+
+                <!-- Label MAX quand lvl 3 atteint -->
+                <div class="combo-max-label" v-if="comboLevel >= 3">MAX</div>
+            </div>
+        </div>
+
+        <!-- Box Bonus (coin haut droit - desktop & mobile) -->
+        <div class="bonus-box-container" v-if="gameInProgress && !gameEnded"
+            :class="{ active: availableBonuses.length > 0 }">
+            <button class="bonus-trigger-btn" @click="toggleBonusModal" :disabled="!canUseBonus()">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 2.18l8 3.6v8.55c0 4.65-3.2 8.95-8 10.05-4.8-1.1-8-5.4-8-10.05V7.78l8-3.6zM11 10v2h2v-2h-2zm0 4v6h2v-6h-2z" />
+                </svg>
+
+                <!-- Badge notification (nombre de bonus disponibles) -->
+                <span class="bonus-notification-badge" v-if="unusedBonusCount > 0">
+                    {{ unusedBonusCount }}
+                </span>
+            </button>
+        </div>
+
+        <!-- Modal de sélection des bonus -->
+        <div class="bonus-modal-overlay" :class="{ active: showBonusModal }" @click="closeBonusModal">
+            <div class="bonus-modal" @click.stop>
+                <div class="bonus-modal-header">
+                    <h3>💎 Bonus disponibles</h3>
+                    <button class="bonus-modal-close" @click="closeBonusModal">✕</button>
+                </div>
+
+                <div class="bonus-list" v-if="bonusList.length > 0">
+                    <div v-for="bonus in bonusList" :key="bonus.id" class="bonus-item"
+                        :class="{ available: bonus.available, used: bonus.used }">
+                        <div class="bonus-info">
+                            <div class="bonus-name">{{ bonus.name }}</div>
+                            <div class="bonus-desc">{{ bonus.desc }}</div>
+                        </div>
+                        <button class="bonus-use-btn" @click="useBonus(bonus.id)"
+                            :disabled="!bonus.available || bonus.used">
+                            {{ bonus.used ? 'Utilisé' : 'Utiliser' }}
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bonus-empty-state" v-else>
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                    </svg>
+                    <p>Aucun bonus disponible</p>
+                    <p style="font-size: 0.7rem; margin-top: 8px;">Enchaînez les bonnes réponses pour débloquer des
+                        bonus !</p>
+                </div>
+            </div>
+        </div>
+
     </div>
 
 
-    </div>
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>

@@ -84,7 +84,16 @@ createApp({
 
             // Reconnexion
             needsReconnect: false,
-            shouldRejoinLobby: false
+            shouldRejoinLobby: false,
+
+
+            comboLevel: 0,              // Niveau actuel (0, 1, 2, 3)
+            comboProgress: 0,           // Nombre de bonnes réponses
+            comboThresholds: [3, 7, 12], // Seuils : Lvl1=3, Lvl2=7 (3+4), Lvl3=12 (7+5)
+            availableBonuses: [],       // ['5050', 'reveal', 'extralife' ou 'doublex2']
+            usedBonuses: [],            // Bonus déjà utilisés dans la partie
+            showBonusModal: false,      // Afficher/masquer le modal
+            activeBonusEffect: null,
         };
     },
 
@@ -100,6 +109,57 @@ createApp({
     computed: {
         formattedPlayerPoints() {
             return this.playerPoints.toLocaleString('fr-FR');
+        },
+
+        // 🆕 COMPUTED POUR LES BONUS
+        comboBarHeight() {
+            if (this.comboLevel >= 3) return 100; // MAX atteint
+
+            const currentThreshold = this.comboThresholds[this.comboLevel];
+            const prevThreshold = this.comboLevel > 0 ? this.comboThresholds[this.comboLevel - 1] : 0;
+
+            // 🔥 FIX : Calculer la progression RELATIVE au niveau actuel
+            const progressInCurrentLevel = this.comboProgress - prevThreshold;
+            const rangeForCurrentLevel = currentThreshold - prevThreshold;
+
+            // Pourcentage de 0 à 100 pour CE niveau uniquement
+            return Math.min(100, (progressInCurrentLevel / rangeForCurrentLevel) * 100);
+        },
+
+        hasUnusedBonuses() {
+            return this.availableBonuses.length > 0;
+        },
+
+        unusedBonusCount() {
+            return this.availableBonuses.length;
+        },
+
+        bonusList() {
+            const bonuses = [
+                {
+                    id: '5050',
+                    name: '50/50',
+                    desc: 'Élimine 50% des mauvaises réponses',
+                    available: this.availableBonuses.includes('5050'),
+                    used: this.usedBonuses.includes('5050')
+                },
+                {
+                    id: 'reveal',
+                    name: 'Révéler',
+                    desc: 'Affiche la bonne réponse',
+                    available: this.availableBonuses.includes('reveal'),
+                    used: this.usedBonuses.includes('reveal')
+                },
+                {
+                    id: this.gameMode === 'lives' ? 'extralife' : 'doublex2',
+                    name: this.gameMode === 'lives' ? '+1 Vie' : 'Points x2',
+                    desc: this.gameMode === 'lives' ? 'Ajoute une vie' : 'Double les points de cette question',
+                    available: this.availableBonuses.includes(this.gameMode === 'lives' ? 'extralife' : 'doublex2'),
+                    used: this.usedBonuses.includes(this.gameMode === 'lives' ? 'extralife' : 'doublex2')
+                }
+            ];
+
+            return bonuses.filter(b => b.available || b.used);
         }
     },
 
@@ -467,6 +527,7 @@ createApp({
                 this.currentQuestionNumber = question.questionNumber;
                 this.selectedAnswer = null;
                 this.hasAnswered = false;
+                this.resetBonusEffects(); // 🆕 Reset les effets de bonus de la question précédente
                 this.startTimer();
             });
 
@@ -478,33 +539,46 @@ createApp({
                 // Mode Points - Incrémenter le score si correct
                 if (this.gameMode === 'points') {
                     if (this.selectedAnswer === results.correctAnswer) {
-                        // 🔥 Trouver les points gagnés depuis les résultats
                         const myResult = results.players?.find(p => p.username === this.username);
-                        const pointsEarned = myResult?.pointsEarned || 1000; // Défaut 1000 si non trouvé
+                        const pointsEarned = myResult?.pointsEarned || 1000;
 
-                        this.pointsGained = pointsEarned;
-                        this.playerPoints += pointsEarned;
+                        const finalPoints = this.activeBonusEffect === 'doublex2' ? pointsEarned * 2 : pointsEarned;
+
+                        this.pointsGained = finalPoints;
+                        this.playerPoints += finalPoints;
                         this.triggerPointsAnimation();
+
+                        // 🔥 VÉRIFIER : Un seul appel ici
+                        this.updateCombo();
                     }
                 } else {
-                    // 🔥 FIX MODE VIE: Synchroniser les vies avec le serveur
+                    // Mode Vie
                     const myPlayerData = results.playersData?.find(p => p.twitchId === this.twitchId);
 
                     if (myPlayerData) {
-                        // ✅ Mettre à jour les vies directement depuis le serveur
                         this.playerLives = myPlayerData.lives;
                         console.log(`✅ Vies synchronisées: ${this.playerLives}`);
+
+                        // 🔥 VÉRIFIER : Un seul appel ici aussi
+                        if (this.selectedAnswer === results.correctAnswer) {
+                            this.updateCombo();
+                        }
                     } else {
-                        // Fallback: ancienne logique si playersData n'est pas disponible
+                        // Fallback...
                         if (!results.allWillLose) {
                             if (this.selectedAnswer && this.selectedAnswer !== results.correctAnswer) {
                                 this.playerLives = Math.max(0, this.playerLives - 1);
                             } else if (!this.selectedAnswer) {
                                 this.playerLives = Math.max(0, this.playerLives - 1);
+                            } else {
+                                // 🔥 VÉRIFIER : Pas de double appel ici
+                                this.updateCombo();
                             }
                         }
                     }
                 }
+
+                this.resetBonusEffects();
             });
 
             this.socket.on('answer-recorded', () => {
@@ -545,6 +619,40 @@ createApp({
                     this.showAnswerNotification(data.username);
                 }
 
+            });
+
+
+            // 🆕 Bonus débloqué
+            this.socket.on('bonus-unlocked', (data) => {
+                console.log(`🎁 Nouveau bonus débloqué: ${data.bonusType} (Lvl${data.level})`);
+                this.animateLevelUp();
+            });
+
+            // 🆕 Combo mis à jour
+            this.socket.on('combo-updated', (data) => {
+                this.comboLevel = data.comboLevel;
+                this.comboProgress = data.comboProgress;
+                this.availableBonuses = data.availableBonuses;
+            });
+
+            // 🆕 Bonus utilisé (confirmation)
+            this.socket.on('bonus-used', (data) => {
+                if (data.success) {
+                    // Retirer localement aussi
+                    const index = this.availableBonuses.indexOf(data.bonusType);
+                    if (index > -1) {
+                        this.availableBonuses.splice(index, 1);
+                    }
+                    this.usedBonuses.push(data.bonusType);
+
+                    // Appliquer l'effet
+                    this.applyBonusEffect(data.bonusType);
+
+                    // Fermer le modal
+                    this.closeBonusModal();
+                } else {
+                    console.error('❌ Erreur utilisation bonus:', data.error);
+                }
             });
         },
 
@@ -598,7 +706,9 @@ createApp({
             this.selectedAnswer = answerIndex;
 
             this.socket.emit('submit-answer', {
-                answer: answerIndex
+                answer: answerIndex,
+                usedBonus: this.activeBonusEffect, // 🆕 Envoyer le bonus utilisé
+                bonusActive: this.activeBonusEffect === 'doublex2' // 🆕 Pour le x2 points
             });
         },
 
@@ -669,7 +779,9 @@ createApp({
             this.hasJoined = false;
             this.showResults = false;
 
-            // 🆕 Nettoyer localStorage
+            // 🆕 Reset le système de combo
+            this.resetComboSystem();
+
             localStorage.removeItem('hasJoinedLobby');
             localStorage.removeItem('lobbyTwitchId');
         },
@@ -742,6 +854,265 @@ createApp({
         showNotification(message, type = 'info') {
             // 🔇 Notifications désactivées - Log uniquement en console
             console.log(`[${type.toUpperCase()}] ${message}`);
+        },
+
+        // 🆕 GESTION DU COMBO
+        updateCombo() {
+            // 🔥 Empêcher l'incrémentation pendant l'animation de level up
+            const barFill = document.querySelector('.combo-bar-fill');
+            if (barFill && barFill.classList.contains('level-up')) {
+                console.log('⏳ Animation de level up en cours, combo ignoré');
+                return;
+            }
+
+            this.comboProgress++;
+
+            // 🔥 NOUVEAU : Spawn particules à CHAQUE bonne réponse
+            this.spawnParticles();
+
+            // Vérifier si on atteint un nouveau niveau
+            const nextLevel = this.comboLevel;
+            const threshold = this.comboThresholds[nextLevel];
+
+            if (this.comboProgress === threshold && this.comboLevel < 3) {
+                this.levelUp();
+            }
+        },
+
+        levelUp() {
+            // 🔥 ÉTAPE 1 : Animation de completion (barre à 100%)
+            const barFill = document.querySelector('.combo-bar-fill');
+            if (barFill) {
+                // Forcer la barre à 100% avec animation
+                barFill.style.transition = 'height 0.4s ease-out';
+                barFill.style.height = '100%';
+
+                // Effet visuel de completion
+                barFill.classList.add('level-up');
+
+                // 🔥 Spawn particules immédiatement
+                this.spawnParticles();
+            }
+
+            // 🔥 ÉTAPE 2 : Attendre 1.5s puis incrémenter le niveau et reset
+            setTimeout(() => {
+                this.comboLevel++;
+
+                // Débloquer le bonus correspondant
+                let bonusType = '';
+                if (this.comboLevel === 1) {
+                    bonusType = '5050';
+                } else if (this.comboLevel === 2) {
+                    bonusType = 'reveal';
+                } else if (this.comboLevel === 3) {
+                    bonusType = this.gameMode === 'lives' ? 'extralife' : 'doublex2';
+                }
+
+                if (bonusType) {
+                    this.availableBonuses.push(bonusType);
+                }
+
+                // 🔥 ÉTAPE 3 : Reset visuel de la barre après level up
+                if (barFill) {
+                    barFill.classList.remove('level-up');
+
+                    // Reset instantané après l'animation
+                    barFill.style.transition = 'none';
+                    barFill.style.height = '0%';
+
+                    // Remettre la transition pour la prochaine progression
+                    setTimeout(() => {
+                        barFill.style.transition = 'height 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+                    }, 50);
+                }
+
+                console.log(`🎉 Level ${this.comboLevel} atteint ! Bonus débloqué: ${bonusType}`);
+            }, 1500); // 🔥 Délai de 1.5s
+        },
+
+        animateLevelUp() {
+            // Animation de la jauge
+            const barFill = document.querySelector('.combo-bar-fill');
+            if (barFill) {
+                barFill.classList.add('level-up');
+                setTimeout(() => barFill.classList.remove('level-up'), 600);
+            }
+
+            // Particules dorées
+            this.spawnParticles();
+        },
+
+        // Dans app.js, remplace la fonction spawnParticles() :
+
+        // Dans app.js, remplace la fonction spawnParticles() :
+
+        spawnParticles() {
+            const container = document.querySelector('.combo-particles-external');
+            if (!container) return;
+
+            // Hauteur actuelle de la barre
+            const currentHeight = this.comboBarHeight;
+
+            // 🔥 NOUVEAU: Spawn des particules sur TOUTE la hauteur de la barre
+            for (let i = 0; i < 25; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+
+                // Position aléatoire horizontale
+                const randomX = Math.random() * 100;
+                particle.style.left = `${randomX}%`;
+
+                // 🔥 Position verticale ALÉATOIRE entre 0 et la hauteur actuelle
+                const randomHeight = Math.random() * currentHeight;
+                particle.style.bottom = `${randomHeight}%`;
+
+                // Dérive horizontale aléatoire
+                const drift = (Math.random() - 0.5) * 40;
+                particle.style.setProperty('--drift', `${drift}px`);
+
+                // Délai aléatoire
+                particle.style.animationDelay = `${Math.random() * 0.4}s`;
+
+                container.appendChild(particle);
+
+                // Supprimer après animation
+                setTimeout(() => particle.remove(), 2000);
+            }
+
+            console.log('✨ Particules spawned sur toute la jauge (0 à ' + currentHeight + '%)');
+        },
+
+        // 🆕 GESTION DES BONUS
+        toggleBonusModal() {
+            if (!this.currentQuestion || this.hasAnswered) {
+                console.log('⚠️ Impossible d\'ouvrir les bonus en dehors d\'une question');
+                return;
+            }
+            this.showBonusModal = !this.showBonusModal;
+        },
+
+        closeBonusModal() {
+            this.showBonusModal = false;
+        },
+
+        canUseBonus() {
+            return this.currentQuestion && !this.hasAnswered && this.gameInProgress;
+        },
+
+        useBonus(bonusType) {
+            if (!this.canUseBonus()) {
+                console.log('⚠️ Impossible d\'utiliser un bonus maintenant');
+                return;
+            }
+
+            if (!this.availableBonuses.includes(bonusType)) {
+                console.log('⚠️ Bonus non disponible');
+                return;
+            }
+
+            this.socket.emit('use-bonus', { bonusType: bonusType });
+
+
+            // Retirer le bonus du stock
+            const index = this.availableBonuses.indexOf(bonusType);
+            this.availableBonuses.splice(index, 1);
+            this.usedBonuses.push(bonusType);
+
+            // Appliquer l'effet
+            this.applyBonusEffect(bonusType);
+
+            // Fermer le modal
+            this.closeBonusModal();
+
+            console.log(`✅ Bonus utilisé: ${bonusType}`);
+        },
+
+        applyBonusEffect(bonusType) {
+            this.activeBonusEffect = bonusType;
+
+            if (bonusType === '5050') {
+                this.apply5050();
+            } else if (bonusType === 'reveal') {
+                this.applyReveal();
+            } else if (bonusType === 'extralife') {
+                this.applyExtraLife();
+            } else if (bonusType === 'doublex2') {
+                // Le x2 sera appliqué lors du calcul des points dans question-results
+                console.log('💰 Points x2 activé pour cette question');
+            }
+        },
+
+        apply5050() {
+            if (!this.currentQuestion) return;
+
+            const totalAnswers = this.currentQuestion.answers.length;
+            const correctIndex = this.currentQuestion.correctAnswer || 1;
+
+            // Nombre de mauvaises réponses à cacher (50%)
+            const hideCount = totalAnswers === 4 ? 2 : 3;
+
+            // Toutes les mauvaises réponses
+            const wrongIndexes = [];
+            for (let i = 1; i <= totalAnswers; i++) {
+                if (i !== correctIndex) {
+                    wrongIndexes.push(i);
+                }
+            }
+
+            // Mélanger et prendre les X premières
+            const shuffled = wrongIndexes.sort(() => 0.5 - Math.random());
+            const toHide = shuffled.slice(0, hideCount);
+
+            // Appliquer le style
+            setTimeout(() => {
+                toHide.forEach(index => {
+                    const btn = document.querySelector(`.answer-btn:nth-child(${index})`);
+                    if (btn) {
+                        btn.classList.add('bonus-5050-hidden');
+                    }
+                });
+            }, 100);
+
+            console.log(`🎯 50/50 appliqué - ${hideCount} réponses cachées`);
+        },
+
+        applyReveal() {
+            if (!this.currentQuestion) return;
+
+            const correctIndex = this.currentQuestion.correctAnswer || 1;
+
+            // Mettre en évidence la bonne réponse
+            setTimeout(() => {
+                const correctBtn = document.querySelector(`.answer-btn:nth-child(${correctIndex})`);
+                if (correctBtn) {
+                    correctBtn.classList.add('bonus-revealed');
+                }
+            }, 100);
+
+            console.log(`💡 Bonne réponse révélée: ${correctIndex}`);
+        },
+
+        applyExtraLife() {
+            this.playerLives = Math.min(this.gameLives, this.playerLives + 1);
+            console.log(`❤️ +1 Vie ! Vies actuelles: ${this.playerLives}`);
+        },
+
+        resetBonusEffects() {
+            // Retirer tous les effets visuels
+            document.querySelectorAll('.answer-btn').forEach(btn => {
+                btn.classList.remove('bonus-5050-hidden', 'bonus-revealed');
+            });
+
+            this.activeBonusEffect = null;
+        },
+
+        resetComboSystem() {
+            this.comboLevel = 0;
+            this.comboProgress = 0;
+            this.availableBonuses = [];
+            this.usedBonuses = [];
+            this.activeBonusEffect = null;
+            this.showBonusModal = false;
         }
     },
 

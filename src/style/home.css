@@ -3010,3 +3010,470 @@ html, body {
     font-weight: 700;
     color: var(--neon-primary);
 }
+
+
+/* ============================================
+   SYSTÈME DE COMBO & BONUS
+   ============================================ */
+
+/* ========== JAUGE DE COMBO (PC - Côté droit) ========== */
+.combo-gauge-container {
+    position: fixed;
+    right: 30px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px; /* 🔥 Réduit de 40px à 32px */
+    z-index: 400;
+    opacity: 0.9;
+}
+
+
+.combo-gauge {
+    width: 100%;
+    height: 407px;
+    background: rgba(20, 20, 20, 0.6);
+    backdrop-filter: blur(8px);
+    border: 1.6px solid rgba(255, 215, 0, 0.2);
+    border-radius: 20px;
+    padding: 2px 3px; /* 🔥 Padding horizontal réduit */
+    position: relative;
+    overflow: visible; /* 🔥 Changé de hidden à visible pour voir le label */
+}
+
+.combo-gauge::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, transparent, rgba(255, 215, 0, 0.03));
+    pointer-events: none;
+}
+
+
+
+.combo-bar-wrapper {
+    height: 400px;
+    width: 100%;
+    position: relative;
+    overflow: hidden; /* 🔥 AJOUTÉ ici pour garder la barre contenue */
+}
+
+.combo-bar-bg {
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    position: relative;
+    overflow: visible; /* 🔥 CHANGÉ de hidden à visible */
+}
+
+
+
+/* Barre de progression */
+.combo-bar-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(180deg, 
+        rgba(255, 215, 0, 0.4) 0%,
+        rgba(255, 215, 0, 0.7) 50%,
+        var(--neon-primary) 100%
+    );
+    border-radius: 15px;
+    transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+}
+
+.combo-bar-fill.level-up {
+    animation: levelUpComplete 1.5s ease-out;
+}
+
+@keyframes levelUpPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
+    50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.8); }
+}
+
+
+@keyframes levelUpComplete {
+    0% {
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 50px rgba(255, 215, 0, 1),
+                    0 0 80px rgba(255, 215, 0, 0.6);
+        filter: brightness(1.3);
+    }
+    100% {
+        box-shadow: 0 0 60px rgba(255, 215, 0, 1),
+                    0 0 100px rgba(255, 215, 0, 0.8);
+        filter: brightness(1.5);
+    }
+}
+
+/* Particules dorées au level up */
+.combo-particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    overflow: visible; /* 🔥 AJOUTÉ */
+    z-index: 10; /* 🔥 AJOUTÉ pour être au-dessus */
+}
+
+.combo-particles-external {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 999;
+    overflow: visible;
+}
+
+.particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: radial-gradient(circle, var(--neon-primary), var(--neon-secondary));
+    border-radius: 50%;
+    opacity: 0;
+    box-shadow: 
+        0 0 10px var(--neon-primary), 
+        0 0 20px var(--neon-primary),
+        0 0 30px rgba(255, 215, 0, 0.5);
+    animation: particleBurst 1.2s ease-out forwards;
+}
+
+@keyframes particleBurst {
+    0% {
+        opacity: 1;
+        transform: translateY(0) translateX(0) scale(0.5);
+    }
+    20% {
+        opacity: 1;
+        transform: translateY(-30px) translateX(var(--drift)) scale(1.2);
+    }
+    50% {
+        opacity: 0.8;
+        transform: translateY(-60px) translateX(var(--drift)) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-100px) translateX(var(--drift)) scale(0.3);
+    }
+}
+
+.combo-level-indicator {
+    position: absolute;
+    bottom: -32px; /* 🔥 Augmenté de -25px à -32px */
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 215, 0, 0.2);
+    color: var(--neon-primary);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.7rem; /* 🔥 Légèrement plus gros */
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    white-space: nowrap;
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.3); /* 🔥 Ajout de glow */
+}
+
+/* Label MAX */
+.combo-max-label {
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--neon-primary), var(--neon-secondary));
+    color: var(--bg-main);
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+    animation: maxPulse 2s ease-in-out infinite;
+}
+
+
+@keyframes maxPulse {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.05); }
+}
+
+/* ========== BOX BONUS (Coin haut droit) ========== */
+.bonus-box-container {
+    position: fixed;
+    top: 80px;
+    right: 24px;
+    z-index: 500;
+    display: none;
+}
+
+.bonus-box-container.active {
+    display: block;
+    animation: slideInRight 0.4s ease-out;
+}
+
+.bonus-trigger-btn {
+    width: 56px;
+    height: 56px;
+    background: rgba(31, 31, 31, 0.8);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.bonus-trigger-btn:hover {
+    transform: scale(1.1);
+    border-color: var(--neon-primary);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+}
+
+.bonus-trigger-btn svg {
+    width: 28px;
+    height: 28px;
+    fill: var(--neon-primary);
+    filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.3));
+}
+
+/* Badge notification rouge */
+.bonus-notification-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #ff4757;
+    color: #fff;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border: 2px solid var(--bg-main);
+    animation: badgePop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    box-shadow: 0 0 10px rgba(255, 71, 87, 0.6);
+}
+
+@keyframes badgePop {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+/* ========== MODAL BONUS ========== */
+.bonus-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1500;
+    animation: fadeIn 0.2s ease;
+}
+
+.bonus-modal-overlay.active {
+    display: flex;
+}
+
+.bonus-modal {
+    background: var(--bg-card);
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 400px;
+    padding: 24px;
+    animation: slideUp 0.3s ease;
+}
+
+.bonus-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.bonus-modal-header h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--neon-primary), var(--neon-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.bonus-modal-close {
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+}
+
+.bonus-modal-close:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.1);
+    transform: rotate(90deg);
+}
+
+.bonus-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.bonus-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1.6px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.bonus-item.available {
+    border-color: rgba(255, 215, 0, 0.4);
+    background: rgba(255, 215, 0, 0.05);
+}
+
+.bonus-item.used {
+    opacity: 0.4;
+}
+
+.bonus-info {
+    flex: 1;
+}
+
+.bonus-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.bonus-desc {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.bonus-use-btn {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, var(--neon-primary), var(--accent-color));
+    color: var(--bg-main);
+    border: none;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Poppins', sans-serif;
+}
+
+.bonus-use-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+}
+
+.bonus-use-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.bonus-empty-state {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--text-secondary);
+}
+
+.bonus-empty-state svg {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+    opacity: 0.3;
+}
+
+/* ========== EFFETS DES BONUS SUR LES RÉPONSES ========== */
+.answer-btn.bonus-5050-hidden {
+    opacity: 0.3;
+    pointer-events: none;
+    filter: grayscale(1);
+}
+
+.answer-btn.bonus-revealed {
+    border-color: var(--success-color) !important;
+    background: rgba(16, 185, 129, 0.15) !important;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+    animation: revealPulse 1s ease-in-out infinite;
+}
+
+@keyframes revealPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); }
+    50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.5); }
+}
+
+/* ========== RESPONSIVE MOBILE ========== */
+@media (max-width: 614px) {
+    /* Jauge cachée sur mobile */
+    .combo-gauge-container {
+        display: none !important;
+    }
+    
+    /* Box bonus repositionnée */
+    .bonus-box-container {
+        top: 16px;
+        right: 16px;
+    }
+    
+    .bonus-trigger-btn {
+        width: 48px;
+        height: 48px;
+    }
+    
+    .bonus-trigger-btn svg {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .bonus-notification-badge {
+        width: 20px;
+        height: 20px;
+        font-size: 0.65rem;
+    }
+    
+    .bonus-modal {
+        width: 95%;
+        max-width: none;
+        padding: 20px;
+    }
+}

@@ -255,7 +255,9 @@ const gameState = {
     autoMode: false,
     autoModeTimeout: null,
 
-    serieFilter: 'tout'
+    serieFilter: 'tout',
+
+    playerBonuses: new Map()
 };
 
 const authenticatedUsers = new Map();
@@ -520,7 +522,6 @@ app.post('/admin/set-answers', (req, res) => {
 });
 
 // Démarrer une partie
-// Démarrer une partie
 app.post('/admin/start-game', async (req, res) => {
     if (!req.session.isAdmin) {
         return res.status(403).json({ error: 'Non autorisé' });
@@ -579,13 +580,21 @@ app.post('/admin/start-game', async (req, res) => {
         gameState.usedQuestionIds = await db.getUsedQuestionIds();
 
         // Initialiser les joueurs selon le mode
-        gameState.players.forEach(player => {
+        gameState.players.forEach((player, socketId) => {
             if (gameState.mode === 'lives') {
                 player.lives = gameState.lives;
                 player.correctAnswers = 0;
             } else {
                 player.points = 0;
             }
+
+            // 🆕 Initialiser les bonus du joueur
+            gameState.playerBonuses.set(socketId, {
+                comboLevel: 0,
+                comboProgress: 0,
+                availableBonuses: [],
+                usedBonuses: []
+            });
         });
 
         console.log(`🎮 Partie démarrée (Mode: ${gameState.mode.toUpperCase()}) - ${totalPlayers} joueurs - Filtre: ${gameState.serieFilter}`);
@@ -988,7 +997,7 @@ app.post('/admin/refresh-players', (req, res) => {
         // 🔥 Vérifier le cooldown côté serveur
         if (timeSinceLastRefresh < REFRESH_COOLDOWN_MS) {
             const remainingTime = Math.ceil((REFRESH_COOLDOWN_MS - timeSinceLastRefresh) / 1000);
-            return res.status(429).json({ 
+            return res.status(429).json({
                 error: 'Cooldown actif',
                 remainingTime: remainingTime,
                 onCooldown: true
@@ -1013,9 +1022,9 @@ app.post('/admin/refresh-players', (req, res) => {
 
         console.log(`🔄 Refresh forcé envoyé à ${refreshedCount} utilisateur(s) authentifié(s)`);
 
-        res.json({ 
-            success: true, 
-            playersRefreshed: refreshedCount 
+        res.json({
+            success: true,
+            playersRefreshed: refreshedCount
         });
     } catch (error) {
         console.error('❌ Erreur refresh joueurs:', error);
@@ -1232,11 +1241,19 @@ function revealAnswers(correctAnswer) {
             } else if (playerAnswer.answer === correctAnswer) {
                 stats.correct++;
 
-                const pointsEarned = getPointsForDifficulty(gameState.currentQuestion.difficulty);
+                // 🆕 Appliquer le multiplicateur x2 si bonus actif
+                let pointsEarned = getPointsForDifficulty(gameState.currentQuestion.difficulty);
+                if (playerAnswer.bonusActive) {
+                    pointsEarned *= 2;
+                }
+
                 player.points = (player.points || 0) + pointsEarned;
 
                 isCorrect = true;
                 status = 'correct';
+
+                // 🆕 Incrémenter le combo
+                updatePlayerCombo(socketId);
             } else {
                 stats.wrong++;
                 status = 'wrong';
@@ -1286,6 +1303,9 @@ function revealAnswers(correctAnswer) {
                 player.correctAnswers++;
                 status = 'correct';
                 isCorrect = true;
+
+                // 🆕 Incrémenter le combo
+                updatePlayerCombo(socketId);
             } else {
                 stats.wrong++;
                 if (!allWillLose) {
@@ -2401,6 +2421,41 @@ io.on('connection', (socket) => {
         });
     });
 
+
+    // 🆕 Utilisation d'un bonus
+    socket.on('use-bonus', (data) => {
+        if (!gameState.inProgress) return;
+
+        const player = gameState.players.get(socket.id);
+        if (!player) return;
+
+        const { bonusType } = data;
+
+        // Vérifier et utiliser le bonus
+        const success = usePlayerBonus(socket.id, bonusType);
+
+        if (success) {
+            // Confirmer au joueur
+            socket.emit('bonus-used', {
+                bonusType: bonusType,
+                success: true
+            });
+
+            // Appliquer l'effet selon le bonus
+            if (bonusType === 'extralife' && gameState.mode === 'lives') {
+                player.lives = Math.min(gameState.lives, player.lives + 1);
+                console.log(`❤️ +1 Vie pour ${player.username}`);
+            }
+            // Les autres bonus (5050, reveal, doublex2) sont gérés côté client
+        } else {
+            socket.emit('bonus-used', {
+                bonusType: bonusType,
+                success: false,
+                error: 'Bonus non disponible'
+            });
+        }
+    });
+
     // Déconnexion
     socket.on('disconnect', () => {
         const player = gameState.players.get(socket.id);
@@ -2455,17 +2510,110 @@ io.on('connection', (socket) => {
     });
 });
 
-// ============================================
-// Gestion des erreurs
-// ============================================
-process.on('unhandledRejection', (error) => {
-    console.error('❌ Unhandled rejection:', error);
-});
 
-process.on('uncaughtException', (error) => {
-    console.error('❌ Uncaught exception:', error);
-    process.exit(1);
-});
+
+// ============================================
+// 🆕 SYSTÈME DE BONUS
+// ============================================
+
+// Seuils de combo
+const COMBO_THRESHOLDS = [3, 7, 12]; // Lvl1, Lvl2, Lvl3
+
+// Mise à jour du combo d'un joueur (bonne réponse)
+function updatePlayerCombo(socketId) {
+    const bonusData = gameState.playerBonuses.get(socketId);
+    if (!bonusData) return;
+
+    // Incrémenter le progrès
+    bonusData.comboProgress++;
+
+    console.log(`📊 Combo update: socketId=${socketId}, progress=${bonusData.comboProgress}, level=${bonusData.comboLevel}`);
+
+    // Vérifier si on atteint un nouveau niveau
+    const currentLevel = bonusData.comboLevel;
+    if (currentLevel < 3) {
+        const threshold = COMBO_THRESHOLDS[currentLevel];
+
+        if (bonusData.comboProgress >= threshold) {
+            bonusData.comboLevel++;
+
+            // Débloquer le bonus correspondant
+            let bonusType = '';
+            if (bonusData.comboLevel === 1) {
+                bonusType = '5050';
+            } else if (bonusData.comboLevel === 2) {
+                bonusType = 'reveal';
+            } else if (bonusData.comboLevel === 3) {
+                bonusType = gameState.mode === 'lives' ? 'extralife' : 'doublex2';
+            }
+
+            if (bonusType && !bonusData.availableBonuses.includes(bonusType)) {
+                bonusData.availableBonuses.push(bonusType);
+            }
+
+            console.log(`🎉 Level up ! Joueur ${socketId}: Lvl${bonusData.comboLevel}, Bonus: ${bonusType}`);
+        }
+    }
+
+    // 🔥 TOUJOURS envoyer combo-updated après CHAQUE bonne réponse
+    const socket = io.sockets.sockets.get(socketId);
+    if (socket) {
+        socket.emit('combo-updated', {
+            comboLevel: bonusData.comboLevel,
+            comboProgress: bonusData.comboProgress,
+            availableBonuses: bonusData.availableBonuses
+        });
+        console.log(`📡 combo-updated envoyé: level=${bonusData.comboLevel}, progress=${bonusData.comboProgress}`);
+    }
+}
+
+// Reset du combo d'un joueur (mauvaise réponse ou AFK)
+function resetPlayerCombo(socketId) {
+    const bonusData = gameState.playerBonuses.get(socketId);
+    if (!bonusData) return;
+
+    // Reset uniquement la progression, pas le niveau ni les bonus
+    // (on garde les bonus débloqués pour toute la partie)
+
+    const socket = io.sockets.sockets.get(socketId);
+    if (socket) {
+        socket.emit('combo-updated', {
+            comboLevel: bonusData.comboLevel,
+            comboProgress: bonusData.comboProgress,
+            availableBonuses: bonusData.availableBonuses
+        });
+    }
+}
+
+// Utilisation d'un bonus
+function usePlayerBonus(socketId, bonusType) {
+    const bonusData = gameState.playerBonuses.get(socketId);
+    if (!bonusData) return false;
+
+    // Vérifier que le bonus est disponible
+    if (!bonusData.availableBonuses.includes(bonusType)) {
+        return false;
+    }
+
+    // Retirer le bonus des disponibles
+    const index = bonusData.availableBonuses.indexOf(bonusType);
+    bonusData.availableBonuses.splice(index, 1);
+
+    // Ajouter aux utilisés
+    bonusData.usedBonuses.push(bonusType);
+
+    console.log(`✅ Bonus "${bonusType}" utilisé par joueur ${socketId}`);
+
+    return true;
+}
+
+// Reset des bonus en fin de partie
+function resetAllBonuses() {
+    gameState.playerBonuses.clear();
+    console.log('🔄 Reset de tous les bonus');
+}
+
+
 
 // FONCTION: Reset complet de l'état du jeu
 function resetGameState() {
@@ -2482,6 +2630,12 @@ function resetGameState() {
     gameState.isTiebreaker = false;
     gameState.tiebreakerPlayers = [];
 
+    resetAllBonuses();
+    
+    gameState.isActive = false;
+    io.emit('game-deactivated');
+    console.log('🔒 Lobby fermé automatiquement après la fin de partie');
+
     // 🆕 Annuler le timeout auto mode si actif
     if (gameState.autoModeTimeout) {
         clearTimeout(gameState.autoModeTimeout);
@@ -2492,3 +2646,30 @@ function resetGameState() {
     io.emit('game-deactivated');
     console.log('🔒 Lobby fermé automatiquement après la fin de partie');
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ============================================
+// Gestion des erreurs
+// ============================================
+process.on('unhandledRejection', (error) => {
+    console.error('❌ Unhandled rejection:', error);
+});
+
+process.on('uncaughtException', (error) => {
+    console.error('❌ Uncaught exception:', error);
+    process.exit(1);
+});
