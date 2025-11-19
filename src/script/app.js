@@ -12,6 +12,11 @@ createApp({
             username: '',
             twitchId: '',
 
+            tempCorrectAnswer: null,
+
+            howBonusMenu: false,
+            showBonusMenu: false,
+
 
             gameMode: 'lives',
             gameLives: 3,
@@ -93,7 +98,9 @@ createApp({
             availableBonuses: [],       // ['5050', 'reveal', 'extralife' ou 'doublex2']
             usedBonuses: [],            // Bonus déjà utilisés dans la partie
             showBonusModal: false,      // Afficher/masquer le modal
-            activeBonusEffect: null
+            activeBonusEffect: null,
+
+            isLevelingUp: false,
         };
     },
 
@@ -111,19 +118,27 @@ createApp({
             return this.playerPoints.toLocaleString('fr-FR');
         },
 
-        // 🆕 COMPUTED POUR LES BONUS
         comboBarHeight() {
-            if (this.comboLevel >= 3) return 100; // MAX atteint
+            if (this.comboLevel >= 3) return 0; // 🔥 CHANGÉ: Jauge vide au MAX
+
+            if (this.isLevelingUp) {
+                console.log('🔒 Recalcul bloqué - Animation en cours');
+                return 100;
+            }
 
             const currentThreshold = this.comboThresholds[this.comboLevel];
             const prevThreshold = this.comboLevel > 0 ? this.comboThresholds[this.comboLevel - 1] : 0;
 
-            // 🔥 FIX : Calculer la progression RELATIVE au niveau actuel
             const progressInCurrentLevel = this.comboProgress - prevThreshold;
             const rangeForCurrentLevel = currentThreshold - prevThreshold;
 
-            // Pourcentage de 0 à 100 pour CE niveau uniquement
-            return Math.min(100, (progressInCurrentLevel / rangeForCurrentLevel) * 100);
+            const result = Math.min(100, (progressInCurrentLevel / rangeForCurrentLevel) * 100);
+            console.log(`📊 ComboBarHeight calculé: ${result}%`);
+            return result;
+        },
+
+        comboLevelDisplay() {
+            return this.comboLevel >= 3 ? 'MAX' : this.comboLevel.toString();
         },
 
         hasUnusedBonuses() {
@@ -160,7 +175,7 @@ createApp({
             ];
 
             return bonuses.filter(b => b.available || b.used);
-        }
+        },
     },
 
     methods: {
@@ -650,21 +665,45 @@ createApp({
             });
 
             this.socket.on('combo-updated', (data) => {
-                // 🔥 VERSION SIMPLE : Accepter TOUJOURS ce que le serveur envoie
-                const oldProgress = this.comboProgress;
+                // 🔥 Sauvegarder l'ancien niveau AVANT la mise à jour
                 const oldLevel = this.comboLevel;
+                const oldProgress = this.comboProgress;
 
+                // 🔥 SI animation en cours, IGNORER complètement cette mise à jour
+                if (this.isLevelingUp) {
+                    console.log('⏸️ Update combo ignorée - Animation en cours');
+
+                    // Mettre à jour SEULEMENT les données (pas la jauge visuelle)
+                    this.comboLevel = data.comboLevel;
+                    this.comboProgress = data.comboProgress;
+                    this.availableBonuses = data.availableBonuses;
+                    return; // ❌ NE PAS continuer
+                }
+
+                // Mise à jour normale des données
                 this.comboLevel = data.comboLevel;
                 this.comboProgress = data.comboProgress;
                 this.availableBonuses = data.availableBonuses;
 
-                // Spawn particules seulement si vraie progression
-                if (data.comboProgress > oldProgress) {
-                    this.spawnParticles();
-                }
-
                 console.log(`📡 Combo reçu du serveur: Lvl${this.comboLevel}, Progress:${this.comboProgress}`);
+
+                // 🔥 Détecter si on vient de LEVEL-UP
+                if (data.comboLevel > oldLevel) {
+                    console.log(`🎉 LEVEL UP DÉTECTÉ: ${oldLevel} → ${data.comboLevel}`);
+
+                    // BLOQUER immédiatement AVANT d'appeler l'animation
+                    this.isLevelingUp = true;
+
+                    // Lancer l'animation
+                    this.animateLevelUp();
+                } else {
+                    // Pas de level-up, juste spawn particules si progression
+                    if (data.comboProgress > oldProgress) {
+                        this.spawnParticles();
+                    }
+                }
             });
+
 
             // 🆕 Bonus utilisé (confirmation)
             this.socket.on('bonus-used', (data) => {
@@ -684,6 +723,28 @@ createApp({
                 } else {
                     console.error('❌ Erreur utilisation bonus:', data.error);
                 }
+            });
+
+
+            this.socket.on('bonus-validated', (data) => {
+                console.log(`📡 Bonus validé par le serveur:`, data);
+
+                const { bonusType, correctAnswer } = data;
+
+                // Stocker temporairement la bonne réponse
+                this.tempCorrectAnswer = correctAnswer;
+
+                // Appliquer l'effet
+                if (bonusType === '5050') {
+                    this.apply5050();
+                } else if (bonusType === 'reveal') {
+                    this.applyReveal();
+                }
+
+                // Nettoyer après
+                setTimeout(() => {
+                    this.tempCorrectAnswer = null;
+                }, 100);
             });
         },
 
@@ -893,44 +954,94 @@ createApp({
 
         animateLevelUp() {
             const barFill = document.querySelector('.combo-bar-fill');
-            if (barFill) {
-                // 🔥 Stocker la hauteur actuelle avant l'animation
-                const currentHeight = barFill.style.height || this.comboBarHeight + '%';
-                barFill.style.setProperty('--current-height', currentHeight);
-
-                barFill.classList.add('level-up');
-                setTimeout(() => barFill.classList.remove('level-up'), 1500);
+            if (!barFill) {
+                console.error('❌ Barre combo non trouvée');
+                return;
             }
 
+            console.log('🎉 === DEBUT ANIMATION LEVEL-UP ===');
+
+            // 🔥 ÉTAPE 1: BLOQUER le recalcul IMMÉDIATEMENT
+            this.isLevelingUp = true;
+
+            // 🔥 ÉTAPE 2: Forcer le border-radius
+            barFill.style.borderRadius = '15px';
+
+            // 🔥 ÉTAPE 3: Monter à 100% de manière FLUIDE
+            barFill.style.height = '100%';
+
             this.spawnParticles();
+
+            // 🔥 ÉTAPE 4: Attendre la FIN de la montée (500ms)
+            setTimeout(() => {
+                console.log('💥 === PIC ATTEINT - EXPLOSION ===');
+
+                barFill.offsetHeight;
+
+                barFill.style.transition = 'opacity 0.5s ease-out';
+                barFill.style.opacity = '0';
+
+                // APRÈS le fade (500ms), reset complet
+                setTimeout(() => {
+                    barFill.style.transition = 'none';
+                    barFill.style.height = '0%';
+                    barFill.style.minHeight = '';
+                    barFill.style.maxHeight = '';
+                    barFill.style.borderRadius = '';
+
+                    setTimeout(() => {
+                        barFill.style.opacity = '1';
+                    }, 500);
+
+                    // Débloquer le système
+                    this.isLevelingUp = false;
+
+                    console.log(`📊 Reset complet - Level=${this.comboLevel}, Progress=${this.comboProgress}`);
+
+                    // 🔥 MODIFIÉ: Si niveau MAX, ne pas remonter la jauge
+                    if (this.comboLevel < 3) {
+                        this.$nextTick(() => {
+                            barFill.style.transition = '';
+                            const newHeight = this.comboBarHeight;
+                            console.log(`📈 Remontée à ${newHeight}%`);
+                            barFill.style.height = `${newHeight}%`;
+                        });
+                    } else {
+                        // 🆕 Niveau MAX atteint, jauge reste vide
+                        console.log('🎯 Niveau MAX atteint - Jauge reste vide');
+                    }
+                }, 500);
+
+            }, 500);
         },
 
-        // Dans app.js, remplace la fonction spawnParticles() :
 
-        // Dans app.js, remplace la fonction spawnParticles() :
+
 
         spawnParticles() {
             const container = document.querySelector('.combo-particles-external');
             if (!container) return;
 
-            // Hauteur actuelle de la barre
+            // 🔥 FIX: Utiliser la VRAIE hauteur actuelle de la barre
             const currentHeight = this.comboBarHeight;
 
-            // 🔥 NOUVEAU: Spawn des particules sur TOUTE la hauteur de la barre
-            for (let i = 0; i < 25; i++) {
+            console.log(`✨ Spawn particules à ${currentHeight}% de hauteur`);
+
+            // 🔥 40 particules pour un effet explosif
+            for (let i = 0; i < 40; i++) {
                 const particle = document.createElement('div');
                 particle.className = 'particle';
 
-                // Position aléatoire horizontale
+                // Position horizontale aléatoire
                 const randomX = Math.random() * 100;
                 particle.style.left = `${randomX}%`;
 
-                // 🔥 Position verticale ALÉATOIRE entre 0 et la hauteur actuelle
-                const randomHeight = Math.random() * currentHeight;
-                particle.style.bottom = `${randomHeight}%`;
+                // 🔥 FIX: Position verticale ALÉATOIRE sur toute la hauteur actuelle
+                const randomHeightInRange = Math.random() * currentHeight;
+                particle.style.bottom = `${randomHeightInRange}%`;
 
-                // Dérive horizontale aléatoire
-                const drift = (Math.random() - 0.5) * 40;
+                // Dérive horizontale
+                const drift = (Math.random() - 0.5) * 60;
                 particle.style.setProperty('--drift', `${drift}px`);
 
                 // Délai aléatoire
@@ -941,8 +1052,6 @@ createApp({
                 // Supprimer après animation
                 setTimeout(() => particle.remove(), 2000);
             }
-
-            console.log('✨ Particules spawned sur toute la jauge (0 à ' + currentHeight + '%)');
         },
 
         // 🆕 GESTION DES BONUS
@@ -959,7 +1068,11 @@ createApp({
         },
 
         canUseBonus() {
-            return this.currentQuestion && !this.hasAnswered && this.gameInProgress;
+            return this.currentQuestion &&
+                !this.hasAnswered &&
+                this.gameInProgress &&
+                !this.showResults &&
+                this.timeRemaining > 0;
         },
 
         useBonus(bonusType) {
@@ -973,21 +1086,18 @@ createApp({
                 return;
             }
 
+            // 🔥 ENVOYER AU SERVEUR pour validation
             this.socket.emit('use-bonus', { bonusType: bonusType });
 
-
-            // Retirer le bonus du stock
+            // Retirer le bonus du stock LOCAL (l'UI)
             const index = this.availableBonuses.indexOf(bonusType);
             this.availableBonuses.splice(index, 1);
             this.usedBonuses.push(bonusType);
 
-            // Appliquer l'effet
-            this.applyBonusEffect(bonusType);
-
             // Fermer le modal
             this.closeBonusModal();
 
-            console.log(`✅ Bonus utilisé: ${bonusType}`);
+            console.log(`📤 Demande d'utilisation du bonus ${bonusType} envoyée au serveur`);
         },
 
         applyBonusEffect(bonusType) {
@@ -1008,13 +1118,25 @@ createApp({
         apply5050() {
             if (!this.currentQuestion) return;
 
+            const correctIndex = this.tempCorrectAnswer;
+
+            if (!correctIndex) {
+                console.error('❌ Pas de bonne réponse reçue du serveur');
+                return;
+            }
+
             const totalAnswers = this.currentQuestion.answers.length;
-            const correctIndex = this.currentQuestion.correctAnswer || 1;
 
-            // Nombre de mauvaises réponses à cacher (50%)
-            const hideCount = totalAnswers === 4 ? 2 : 3;
+            console.log(`🎯 Bonus 50/50 - Bonne réponse: ${correctIndex}, Total: ${totalAnswers}`);
 
-            // Toutes les mauvaises réponses
+            // 🔥 Calculer combien garder visible (50% arrondi au supérieur)
+            const toKeepVisible = Math.ceil(totalAnswers / 2);
+            // Si 4 réponses → 2 visibles (50%)
+            // Si 6 réponses → 3 visibles (50%)
+
+            console.log(`📊 50% de ${totalAnswers} = ${toKeepVisible} réponses à garder`);
+
+            // Toutes les MAUVAISES réponses
             const wrongIndexes = [];
             for (let i = 1; i <= totalAnswers; i++) {
                 if (i !== correctIndex) {
@@ -1022,41 +1144,66 @@ createApp({
                 }
             }
 
-            // Mélanger et prendre les X premières
-            const shuffled = wrongIndexes.sort(() => 0.5 - Math.random());
-            const toHide = shuffled.slice(0, hideCount);
+            // 🔥 Nombre de mauvaises réponses à GARDER visibles
+            const wrongToKeepCount = toKeepVisible - 1; // -1 car la bonne est déjà comptée
+            // Si 4 réponses (2 à garder) → 1 mauvaise à garder
+            // Si 6 réponses (3 à garder) → 2 mauvaises à garder
 
-            // Appliquer le style
+            // Mélanger et prendre les N premières
+            const shuffledWrong = [...wrongIndexes].sort(() => 0.5 - Math.random());
+            const wrongToKeep = shuffledWrong.slice(0, wrongToKeepCount);
+
+            // Toutes les autres seront masquées
+            const toHide = wrongIndexes.filter(idx => !wrongToKeep.includes(idx));
+
+            console.log(`✅ Visibles: ${correctIndex} (bonne) + ${wrongToKeep} (mauvaises) = ${toKeepVisible} total`);
+            console.log(`🙈 Masquées: ${toHide} = ${toHide.length} réponses`);
+
+            // Appliquer
             setTimeout(() => {
                 toHide.forEach(index => {
                     const btn = document.querySelector(`.answer-btn:nth-child(${index})`);
                     if (btn) {
                         btn.classList.add('bonus-5050-hidden');
+                        console.log(`   ✅ Réponse ${index} masquée`);
                     }
                 });
             }, 100);
-
-            console.log(`🎯 50/50 appliqué - ${hideCount} réponses cachées`);
         },
+
 
         applyReveal() {
             if (!this.currentQuestion) return;
 
-            const correctIndex = this.currentQuestion.correctAnswer || 1;
+            // 🔥 UTILISER tempCorrectAnswer (envoyé par le serveur)
+            const correctIndex = this.tempCorrectAnswer;
 
-            // Mettre en évidence la bonne réponse
+            if (!correctIndex) {
+                console.error('❌ Pas de bonne réponse reçue du serveur');
+                return;
+            }
+
+            const totalAnswers = this.currentQuestion.answers.length;
+
+            console.log(`💡 Bonus Révéler - Bonne réponse: ${correctIndex}`);
+
+            // Masquer TOUTES les mauvaises réponses
             setTimeout(() => {
-                const correctBtn = document.querySelector(`.answer-btn:nth-child(${correctIndex})`);
-                if (correctBtn) {
-                    correctBtn.classList.add('bonus-revealed');
+                for (let i = 1; i <= totalAnswers; i++) {
+                    const btn = document.querySelector(`.answer-btn:nth-child(${i})`);
+                    if (btn) {
+                        if (i !== correctIndex) {
+                            btn.classList.add('bonus-5050-hidden');
+                        }
+                    }
                 }
             }, 100);
 
-            console.log(`💡 Bonne réponse révélée: ${correctIndex}`);
+            console.log(`✅ Seule la réponse ${correctIndex} est visible`);
         },
 
         applyExtraLife() {
-            this.playerLives = Math.min(this.gameLives, this.playerLives + 1);
+            this.playerLives = Math.min(3, this.playerLives + 1);
             console.log(`❤️ +1 Vie ! Vies actuelles: ${this.playerLives}`);
         },
 
@@ -1078,13 +1225,58 @@ createApp({
             this.showBonusModal = false;
 
             console.log('🔄 Système de combo complètement reset');
-        }
+        },
+
+        beforeUnmount() {
+            if (this.socket) {
+                this.socket.disconnect();
+            }
+            this.stopTimer();
+        },
+
+
+        // 🆕 Déterminer l'état d'un bonus
+        getBonusState(bonusType) {
+            if (this.usedBonuses.includes(bonusType)) {
+                return 'used';
+            }
+
+            if (this.availableBonuses.includes(bonusType)) {
+                // 🔥 NOUVEAU : Griser Extra Life si vies au max
+                if (bonusType === 'extralife' && this.gameMode === 'lives' && this.playerLives >= 3) {
+                    return 'locked';
+                }
+                return 'available';
+            }
+
+            return 'locked';
+        },
+
+        // 🆕 Utiliser un bonus depuis une bandelette
+        useBonusStrip(bonusType) {
+            if (!this.canUseBonus()) {
+                console.log('⚠️ Impossible d\'utiliser un bonus maintenant');
+                return;
+            }
+
+            if (!this.availableBonuses.includes(bonusType)) {
+                console.log('⚠️ Bonus non disponible');
+                return;
+            }
+
+            // 🔥 NOUVEAU : Bloquer Extra Life si déjà au max de vies
+            if (bonusType === 'extralife' && this.playerLives >= 3) {
+                console.log('⚠️ Extra Life bloqué : déjà au maximum de vies');
+                return;
+            }
+
+            // Fermer le menu sur mobile
+            this.showBonusMenu = false;
+
+            // Utiliser le bonus (logique existante)
+            this.useBonus(bonusType);
+        },
     },
 
-    beforeUnmount() {
-        if (this.socket) {
-            this.socket.disconnect();
-        }
-        this.stopTimer();
-    }
+
 }).mount('#app');

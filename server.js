@@ -2390,7 +2390,7 @@ io.on('connection', (socket) => {
 
             socket.emit('player-restored', restorationData);
 
-            
+
             // Mettre à jour le compteur de joueurs pour l'admin
             io.emit('lobby-update', {
                 playerCount: gameState.players.size,
@@ -2469,18 +2469,28 @@ io.on('connection', (socket) => {
         const success = usePlayerBonus(socket.id, bonusType);
 
         if (success) {
-            // Confirmer au joueur
-            socket.emit('bonus-used', {
-                bonusType: bonusType,
-                success: true
-            });
+            console.log(`✅ Bonus "${bonusType}" utilisé par ${player.username}`);
+
+            // 🔥 NOUVEAU: Pour 50/50 et Reveal, envoyer la bonne réponse
+            if (bonusType === '5050' || bonusType === 'reveal') {
+                const correctAnswer = gameState.currentQuestion?.correctAnswer;
+
+                if (correctAnswer) {
+                    // Envoyer au joueur UNIQUEMENT
+                    socket.emit('bonus-validated', {
+                        bonusType: bonusType,
+                        correctAnswer: correctAnswer
+                    });
+
+                    console.log(`📡 Bonne réponse (${correctAnswer}) envoyée à ${player.username} pour bonus ${bonusType}`);
+                }
+            }
 
             // Appliquer l'effet selon le bonus
             if (bonusType === 'extralife' && gameState.mode === 'lives') {
                 player.lives = Math.min(gameState.lives, player.lives + 1);
                 console.log(`❤️ +1 Vie pour ${player.username}`);
             }
-            // Les autres bonus (5050, reveal, doublex2) sont gérés côté client
         } else {
             socket.emit('bonus-used', {
                 bonusType: bonusType,
@@ -2557,6 +2567,12 @@ const COMBO_THRESHOLDS = [3, 7, 12]; // Lvl1, Lvl2, Lvl3
 function updatePlayerCombo(socketId) {
     const bonusData = gameState.playerBonuses.get(socketId);
     if (!bonusData) return;
+
+    // 🔥 NOUVEAU : Si déjà au niveau MAX, ne plus incrémenter
+    if (bonusData.comboLevel >= 3) {
+        console.log(`🎯 Joueur ${socketId} déjà au niveau MAX - Pas d'incrémentation`);
+        return;
+    }
 
     // Incrémenter le progrès
     bonusData.comboProgress++;

@@ -3022,7 +3022,7 @@ html, body {
     right: 30px;
     top: 50%;
     transform: translateY(-50%);
-    width: 28px; /* 🔥 Réduit de 40px à 32px */
+    width: 24px; /* 🔥 Réduit de 40px à 32px */
     z-index: 400;
     opacity: 0.9;
 }
@@ -3033,7 +3033,7 @@ html, body {
     height: 407px;
     background: rgba(20, 20, 20, 0.6);
     backdrop-filter: blur(8px);
-    border: 1.6px solid rgba(255, 215, 0, 0.2);
+    border: 2px double rgba(238, 242, 242, 0.253);
     border-radius: 20px;
     padding: 2px 3px; /* 🔥 Padding horizontal réduit */
     position: relative;
@@ -3082,11 +3082,55 @@ html, body {
         rgba(255, 215, 0, 0.7) 50%,
         var(--neon-primary) 100%
     );
-    border-radius: 15px;
+    border-radius: 15px !important; /* 🔥 AJOUTÉ - Force l'arrondi en permanence */
+    
     transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
-    transform-origin: bottom; /* 🔥 IMPORTANT pour scaleY */
+    transform-origin: bottom;
 }
+
+
+/* 🔥 Quand on level-up, on override la transition */
+.combo-bar-fill.level-up-complete {
+    animation: levelUpCelebration 1.5s ease-out forwards;
+    box-shadow: 
+        0 0 40px rgba(255, 215, 0, 1),
+        0 0 80px rgba(255, 215, 0, 0.8),
+        0 0 120px rgba(255, 215, 0, 0.6),
+        inset 0 0 40px rgba(255, 255, 255, 0.5);
+    
+    /* 🔥 FORCER le border-radius pendant toute l'animation */
+    border-radius: 15px !important;
+    
+    /* 🔥 Empêcher TOUTE modification de hauteur */
+    overflow: hidden;
+}
+
+/* 🔥 REMPLACER @keyframes levelUpCelebration - SANS transform: scaleY() */
+@keyframes levelUpCelebration {
+    0% {
+        filter: brightness(1);
+        /* 🔥 PAS de transform scaleY */
+    }
+    10% {
+        filter: brightness(1.5);
+    }
+    25% {
+        filter: brightness(2);
+    }
+    50% {
+        filter: brightness(2.5);
+    }
+    75% {
+        filter: brightness(2);
+    }
+    100% {
+        filter: brightness(1.8);
+    }
+}
+
+
 
 /* 🔥 Wrapper pour l'animation de level-up */
 .combo-bar-fill::after {
@@ -3104,52 +3148,7 @@ html, body {
     pointer-events: none;
 }
 
-.combo-bar-fill.level-up::after {
-    animation: levelUpComplete 1.5s ease-out;
-}
 
-@keyframes levelUpComplete {
-    0% {
-        opacity: 1;
-        transform: scaleY(1);
-        box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
-        filter: brightness(1);
-    }
-    20% {
-        opacity: 1;
-        transform: scaleY(1.5); /* 🔥 Monte au-dessus */
-        box-shadow: 0 0 40px rgba(255, 215, 0, 0.8),
-                    0 0 60px rgba(255, 215, 0, 0.5);
-        filter: brightness(1.3);
-    }
-    40% {
-        opacity: 1;
-        transform: scaleY(1.8);
-        box-shadow: 0 0 60px rgba(255, 215, 0, 1),
-                    0 0 100px rgba(255, 215, 0, 0.8);
-        filter: brightness(1.6);
-    }
-    70% {
-        opacity: 1;
-        transform: scaleY(2);
-        box-shadow: 0 0 80px rgba(255, 215, 0, 1),
-                    0 0 120px rgba(255, 215, 0, 1);
-        filter: brightness(2);
-    }
-    85% {
-        opacity: 1;
-        transform: scaleY(1.5);
-        box-shadow: 0 0 60px rgba(255, 215, 0, 1),
-                    0 0 100px rgba(255, 215, 0, 0.8);
-        filter: brightness(1.5);
-    }
-    100% {
-        opacity: 0;
-        transform: scaleY(0);
-        box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
-        filter: brightness(1);
-    }
-}
 
 /* Particules dorées au level up */
 .combo-particles {
@@ -3209,37 +3208,39 @@ html, body {
 
 .combo-level-indicator {
     position: absolute;
-    bottom: -50px; /* 🔥 Augmenté de -32px à -38px pour plus d'espace */
+    bottom: -50px;
     left: 50%;
     transform: translateX(-50%);
     
-    /* 🔥 Style amélioré */
     background: linear-gradient(135deg, 
         rgba(255, 215, 0, 0.3), 
         rgba(255, 165, 0, 0.3)
     );
     color: var(--neon-primary);
-    padding: 6px 14px; /* 🔥 Padding augmenté */
-    border-radius: 10px; /* 🔥 Plus arrondi */
+    padding: 6px 14px;
+    border-radius: 10px;
     font-size: 0.6rem;
     font-weight: 900;
-    letter-spacing: 1.5px; /* 🔥 Plus d'espace entre les lettres */
+    letter-spacing: 1.5px;
     white-space: nowrap;
     
-    /* 🔥 Glow effect stylé */
     box-shadow: 
         0 0 15px rgba(255, 217, 0, 0.164),
         0 0 30px rgba(255, 215, 0, 0.2),
         inset 0 0 20px rgba(255, 215, 0, 0.1);
     
-    /* 🔥 Animation subtle de pulsation */
     animation: levelIndicatorPulse 2s ease-in-out infinite;
     
-    /* 🔥 Text shadow pour le nombre */
     text-shadow: 
         0 0 10px rgba(255, 215, 0, 0.8),
         0 0 20px rgba(255, 215, 0, 0.4),
         0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+
+.combo-level-indicator:has-text("MAX") {
+    font-size: 0.55rem; /* Légèrement plus petit pour "MAX" */
+    padding: 6px 16px; /* Un peu plus large */
 }
 
 @keyframes levelIndicatorPulse {
@@ -3258,6 +3259,32 @@ html, body {
         transform: translateX(-50%) scale(1.05);
     }
 }
+
+
+
+/* Effet de disparition (300ms) - Fade-out élégant */
+.combo-bar-fill.level-up-fadeout {
+    animation: levelUpFadeOut 0.3s ease-out forwards;
+    
+    /* 🔥 GARDER le border-radius */
+    border-radius: 15px !important;
+    
+    /* 🔥 Empêcher toute modification de hauteur */
+    overflow: hidden;
+}
+
+@keyframes levelUpFadeOut {
+    0% {
+        opacity: 1;
+        filter: brightness(1.8);
+    }
+    100% {
+        opacity: 0;
+        filter: brightness(0.5);
+    }
+}
+
+
 
 /* Label MAX */
 .combo-max-label {
@@ -3282,227 +3309,350 @@ html, body {
     50% { transform: translateX(-50%) scale(1.05); }
 }
 
-/* ========== BOX BONUS (Coin haut droit) ========== */
-.bonus-box-container {
+/* ============================================
+   🆕 NOUVEAU SYSTÈME BONUS - ICÔNE + HOVER MENU
+   ============================================ */
+
+.bonus-icon-container {
     position: fixed;
-    top: 20px; /* 🔥 Aligné avec le profil */
-    right: 20px; /* 🔥 À gauche du bouton profil (qui est à right: 20px) */
+    right: 22px;
+    top: calc(50% - 260px); /* 🔥 Juste au-dessus de la jauge (qui fait 407px + marge) */
     z-index: 500;
-    display: none;
 }
 
-.bonus-box-container.active {
-    display: block;
-    animation: slideInRight 0.4s ease-out;
+.bonus-icon-wrapper {
+    position: relative;
+    cursor: pointer;
+    padding-left: 130px;
 }
 
-.bonus-trigger-btn {
-    width: 30px; /* 🔥 Légèrement agrandi */
-    height: 30px;
-    background: rgba(31, 31, 31, 0.85); /* 🔥 Légèrement plus opaque */
-    backdrop-filter: blur(12px); /* 🔥 Blur augmenté */
-    border: 2px solid rgba(255, 215, 0, 0.4); /* 🔥 Border plus visible */
+/* Icône principale */
+.bonus-main-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(31, 31, 31, 0.6);
+    backdrop-filter: blur(8px);
+    border: 2px solid rgba(255, 255, 255, 0.15);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
-    
-    /* 🔥 Glow subtil */
-    box-shadow: 
-        0 4px 16px rgba(0, 0, 0, 0.3),
-        0 0 20px rgba(255, 215, 0, 0.2);
+    margin-left: auto;
 }
 
-.bonus-trigger-btn:hover {
-    transform: scale(1.1);
-    border-color: var(--neon-primary);
-    box-shadow: 
-        0 6px 24px rgba(0, 0, 0, 0.4),
-        0 0 30px rgba(255, 215, 0, 0.5);
-}
-
-.bonus-trigger-btn svg {
-    width: 26px; /* 🔥 SVG légèrement plus grand */
-    height: 26px;
-    fill: var(--neon-primary);
-    filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.4)); /* 🔥 Glow augmenté */
-}
-
-/* Badge notification rouge */
-.bonus-notification-badge {
-    position: absolute;
-    top: -6px; /* 🔥 Ajusté */
-    right: -6px;
-    background: #ff4757;
-    color: #fff;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    font-weight: 700;
-    border: 2.5px solid var(--bg-main); /* 🔥 Border plus épaisse */
-    animation: badgePop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    box-shadow: 
-        0 0 15px rgba(255, 71, 87, 0.8),
-        0 2px 8px rgba(0, 0, 0, 0.3); /* 🔥 Ombre + glow */
-}
-
-@keyframes badgePop {
-    0% { transform: scale(0); }
-    50% { transform: scale(1.3); }
-    100% { transform: scale(1); }
-}
-
-/* ========== MODAL BONUS ========== */
-.bonus-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(4px);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 1500;
-    animation: fadeIn 0.2s ease;
-}
-
-.bonus-modal-overlay.active {
-    display: flex;
-}
-
-.bonus-modal {
-    background: var(--bg-card);
-    border: 2px solid rgba(255, 215, 0, 0.3);
-    border-radius: 16px;
-    width: 90%;
-    max-width: 400px;
-    padding: 24px;
-    animation: slideUp 0.3s ease;
-}
-
-.bonus-modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.bonus-modal-header h3 {
-    font-size: 1.2rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, var(--neon-primary), var(--neon-secondary));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.bonus-modal-close {
-    width: 32px;
-    height: 32px;
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 1.5rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-}
-
-.bonus-modal-close:hover {
-    color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.1);
-    transform: rotate(90deg);
-}
-
-.bonus-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.bonus-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1.6px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
+.bonus-main-icon svg {
+    width: 22px;
+    height: 22px;
+    fill: rgba(255, 255, 255, 0.4);
     transition: all 0.3s ease;
 }
 
-.bonus-item.available {
+/* État actif (bonus disponibles) */
+.bonus-main-icon.active {
     border-color: rgba(255, 215, 0, 0.4);
-    background: rgba(255, 215, 0, 0.05);
 }
 
-.bonus-item.used {
+.bonus-main-icon:not(.active) {
+    border-color: rgba(255, 255, 255, 0.1);
     opacity: 0.4;
 }
 
-.bonus-info {
-    flex: 1;
+.bonus-main-icon:not(.active) svg {
+    fill: rgba(255, 255, 255, 0.2);
 }
 
-.bonus-name {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 4px;
+.bonus-main-icon.active svg {
+    fill: var(--neon-primary);
+    filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.4));
 }
 
-.bonus-desc {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
+.bonus-icon-wrapper:hover .bonus-main-icon {
+    border-color: var(--neon-primary);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
 }
 
-.bonus-use-btn {
-    padding: 8px 16px;
-    background: linear-gradient(135deg, var(--neon-primary), var(--accent-color));
-    color: var(--bg-main);
-    border: none;
+
+.bonus-icon-wrapper:hover .bonus-main-icon:not(.active) {
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: none;
+}
+
+/* Badge compteur */
+.bonus-count-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 20px;
+    height: 20px;
+    background: #ff4757;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border: 2px solid var(--bg-primary);
+    box-shadow: 0 0 12px rgba(255, 71, 87, 0.6);
+}
+
+/* Menu des bonus (3 bandelettes) */
+.bonus-menu {
+    position: absolute;
+    right: 50px; /* 🔥 Vers la gauche */
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Bandelette individuelle */
+.bonus-strip {
+    padding: 9px 50px;
     border-radius: 8px;
-    font-size: 0.8rem;
-    font-weight: 600;
+    border-top-left-radius: 0%;
+    border-bottom-left-radius: 0%;
+    border: none; /* 🔥 Plus de bordure */
+    backdrop-filter: blur(10px);
     cursor: pointer;
     transition: all 0.3s ease;
-    font-family: 'Poppins', sans-serif;
-}
-
-.bonus-use-btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
-}
-
-.bonus-use-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.bonus-empty-state {
+    min-width: 110px;
     text-align: center;
-    padding: 32px 16px;
-    color: var(--text-secondary);
+    position: relative;
+    overflow: hidden;
 }
 
-.bonus-empty-state svg {
-    width: 48px;
-    height: 48px;
-    margin-bottom: 12px;
-    opacity: 0.3;
+
+.bonus-strip::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, 
+        transparent 0%,
+        rgba(255, 215, 0, 0) 30%,
+        rgba(255, 215, 0, 0.15) 100%
+    );
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 0;
+}
+
+
+.bonus-strip.available::before {
+    opacity: 1;
+}
+
+
+.bonus-strip.available:hover::before {
+    background: linear-gradient(90deg, 
+    transparent 0%,
+    rgba(255, 215, 0, 0) 40%,
+    rgba(255, 217, 0, 0.047) 100%
+);
+}
+
+.bonus-strip-text {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    position: relative;
+    z-index: 1; /* 🔥 Important pour être au-dessus de l'overlay */
+    white-space: nowrap;
+}
+
+/* 🔥 État LOCKED (grisé, non débloqué) */
+.bonus-strip.locked {
+    background: linear-gradient(90deg, 
+        transparent 0%,
+        rgba(60, 60, 60, 0.15) 40%,
+        rgba(60, 60, 60, 0.3) 100%
+    );
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.bonus-strip.locked .bonus-strip-text {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* 🔥 État AVAILABLE (disponible) */
+.bonus-strip.available {
+    background: linear-gradient(90deg, 
+        transparent 0%,
+        rgba(255, 215, 0, 0.03) 40%, /* 🔥 RÉDUIT de 0.08 à 0.03 */
+        rgba(255, 215, 0, 0.08) 100%  /* 🔥 RÉDUIT de 0.15 à 0.08 */
+    );
+}
+
+.bonus-strip.available .bonus-strip-text {
+    color: rgb(253, 253, 238);
+    opacity: 0.7;
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+}
+
+.bonus-strip.available:hover {
+    transform: scale(1.08);
+    background: linear-gradient(90deg, 
+        transparent 0%,
+        rgba(255, 215, 0, 0.08) 40%, /* 🔥 RÉDUIT de 0.15 à 0.08 */
+        rgba(255, 215, 0, 0.15) 100%  /* 🔥 RÉDUIT de 0.25 à 0.15 */
+    );
+    /* box-shadow: 0 4px 16px rgba(255, 215, 0, 0.2); */
+}
+
+
+/* 🆕 État DISABLED (pas utilisable en ce moment) */
+.bonus-strip.disabled {
+    opacity: 0.3 !important;
+    cursor: not-allowed !important;
+    pointer-events: none;
+}
+
+.bonus-strip.available.disabled {
+    background: linear-gradient(90deg, 
+        rgba(60, 60, 60, 0.2) 0%,
+        rgba(60, 60, 60, 0.1) 60%,
+        transparent 100%
+    ) !important;
+}
+
+.bonus-strip.available.disabled::before {
+    opacity: 0 !important;
+}
+
+.bonus-strip.disabled .bonus-strip-text {
+    color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 🔥 État USED (déjà utilisé) */
+.bonus-strip.used {
+    background: linear-gradient(90deg, 
+        transparent 0%,
+        rgba(40, 40, 40, 0.1) 40%,
+        rgba(40, 40, 40, 0.2) 100%
+    );
+    opacity: 0.25;
+    cursor: not-allowed;
+}
+
+.bonus-strip.used .bonus-strip-text {
+    color: rgba(231, 21, 21, 0.2);
+    text-decoration: line-through;
+}
+
+/* 🎨 Couleurs spécifiques par bonus */
+
+/* 
+.bonus-strip.available:nth-child(1) {
+    background: rgba(37, 40, 3, 0.482); 
+    border-color: rgba(255, 237, 34, 0.09);
+}
+
+.bonus-strip.available:nth-child(1):hover {
+    background: rgba(83, 90, 7, 0.482); 
+    border-color: rgba(255, 237, 34, 0.3);
+}
+
+.bonus-strip.available:nth-child(2) {
+   background: rgba(37, 40, 3, 0.482); 
+    border-color: rgba(255, 237, 34, 0.3);
+}
+
+.bonus-strip.available:nth-child(2):hover {
+    background: rgba(83, 90, 7, 0.482); 
+    border-color: rgba(255, 237, 34, 0.3);
+}
+
+.bonus-strip.available:nth-child(3) {
+    background: rgba(37, 40, 3, 0.482); 
+    border-color: rgba(255, 237, 34, 0.3);
+}
+
+.bonus-strip.available:nth-child(3):hover {
+    background: rgba(83, 90, 7, 0.482); 
+    border-color: rgba(255, 237, 34, 0.3);
+} */
+
+/* 🎭 Animation slide/fade */
+.bonus-menu-enter-active {
+    animation: bonusMenuSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bonus-menu-leave-active {
+    animation: bonusMenuSlideOut 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes bonusMenuSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes bonusMenuSlideOut {
+    0% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+}
+
+/* Animation échelonnée des bandelettes */
+.bonus-strip:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.bonus-strip:nth-child(2) {
+    animation-delay: 0.05s;
+}
+
+.bonus-strip:nth-child(3) {
+    animation-delay: 0.1s;
+}
+
+/* ============================================
+   RESPONSIVE MOBILE
+   ============================================ */
+@media (max-width: 614px) {
+    .bonus-icon-container {
+        right: 76px; /* À gauche du bouton profil */
+        top: 20px; /* En haut */
+    }
+    
+    .bonus-main-icon {
+        width: 48px;
+        height: 48px;
+    }
+    
+    .bonus-main-icon svg {
+        width: 24px;
+        height: 24px;
+    }
+    
+    /* Menu en dessous sur mobile */
+    .bonus-menu {
+        right: auto;
+        top: 58px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    
+    .bonus-strip {
+        min-width: 120px;
+    }
 }
 
 /* ========== EFFETS DES BONUS SUR LES RÉPONSES ========== */
@@ -3567,3 +3717,5 @@ html, body {
         padding: 20px;
     }
 }
+
+
