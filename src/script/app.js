@@ -14,7 +14,6 @@ createApp({
 
             tempCorrectAnswer: null,
 
-            howBonusMenu: false,
             showBonusMenu: false,
 
 
@@ -166,16 +165,16 @@ createApp({
                     used: this.usedBonuses.includes('reveal')
                 },
                 {
-                    id: this.gameMode === 'lives' ? 'extralife' : 'doublex2',
-                    name: this.gameMode === 'lives' ? '+1 Vie' : 'Points x2',
-                    desc: this.gameMode === 'lives' ? 'Ajoute une vie' : 'Double les points de cette question',
-                    available: this.availableBonuses.includes(this.gameMode === 'lives' ? 'extralife' : 'doublex2'),
-                    used: this.usedBonuses.includes(this.gameMode === 'lives' ? 'extralife' : 'doublex2')
+                    id: this.gameMode === 'lives' ? 'shield' : 'doublex2', // 🔥 CHANGÉ
+                    name: this.gameMode === 'lives' ? 'Bouclier' : 'Points x2',
+                    desc: this.gameMode === 'lives' ? 'Protège contre une perte de vie' : 'Double les points de cette question',
+                    available: this.availableBonuses.includes(this.gameMode === 'lives' ? 'shield' : 'doublex2'),
+                    used: this.usedBonuses.includes(this.gameMode === 'lives' ? 'shield' : 'doublex2')
                 }
             ];
 
             return bonuses.filter(b => b.available || b.used);
-        },
+        }
     },
 
     methods: {
@@ -253,6 +252,24 @@ createApp({
 
         toggleLeaderboard() {
             this.showLeaderboard = !this.showLeaderboard;
+        },
+
+        // 🆕 Effet de protection Shield
+        // 🆕 Effet de protection Shield - Vague UNIQUEMENT
+        showShieldProtectionEffect() {
+            // Créer uniquement la vague (pas d'overlay)
+            const wave = document.createElement('div');
+            wave.className = 'shield-protection-wave';
+            document.body.appendChild(wave);
+
+            setTimeout(() => {
+                wave.classList.add('expand');
+            }, 10);
+
+            setTimeout(() => {
+                document.body.removeChild(wave);
+            }, 1000);
+
         },
 
         // ========== Leaderboard ==========
@@ -410,6 +427,42 @@ createApp({
             window.location.href = '/auth/logout';
         },
 
+
+        restoreBonusEffects(data) {
+            if (!data.hasAnswered || !data.bonusActive) {
+                console.log('Aucun bonus actif à restaurer');
+                return;
+            }
+
+            const bonusType = data.bonusActive;
+            console.log(`🎨 Restauration effet visuel du bonus: ${bonusType}`);
+
+            this.activeBonusEffect = bonusType;
+
+            setTimeout(() => {
+                if (bonusType === '5050') {
+                    console.log('🎨 Restauration visuelle 50/50');
+                    this.apply5050();
+                } else if (bonusType === 'reveal') {
+                    console.log('🎨 Restauration visuelle Joker');
+                    this.applyReveal();
+                } else if (bonusType === 'shield') {
+                    console.log('🎨 Restauration visuelle Shield');
+                    const hud = document.querySelector('.player-hud');
+                    if (hud) {
+                        hud.classList.add('shield-protected');
+                    }
+                } else if (bonusType === 'doublex2') {
+                    console.log('🎨 Restauration visuelle x2');
+                    // 🔥 AJOUTER ICI : Pulse doré du HUD
+                    const hud = document.querySelector('.player-hud');
+                    if (hud) {
+                        hud.classList.add('x2-protected');
+                    }
+                }
+            }, 100);
+        },
+
         // ========== Socket.IO ==========
         initSocket() {
             this.socket = io();
@@ -445,6 +498,7 @@ createApp({
             });
 
             // Restauration du joueur
+            // Restauration du joueur
             this.socket.on('player-restored', (data) => {
                 console.log('🔄 Données de restauration reçues:', data);
 
@@ -456,7 +510,7 @@ createApp({
                     console.log(`✅ Points restaurés: ${this.playerPoints}`);
                 }
 
-                // 🔥 AJOUTE CETTE PARTIE
+                // 🔥 Restaurer les bonus
                 if (data.comboData) {
                     this.comboLevel = data.comboData.comboLevel || 0;
                     this.comboProgress = data.comboData.comboProgress || 0;
@@ -464,8 +518,6 @@ createApp({
                     this.usedBonuses = [...(data.comboData.usedBonuses || [])];
                     console.log(`✅ Combo restauré via player-restored (prioritaire): Lvl${this.comboLevel}, Progress:${this.comboProgress}`);
                 }
-
-
 
                 this.currentQuestionNumber = data.currentQuestionIndex;
                 this.hasJoined = true;
@@ -476,10 +528,16 @@ createApp({
                     console.log(`⚠️ Réponse ${data.selectedAnswer} restaurée`);
                 }
 
+                // 🔥 NOUVEAU : Restaurer les effets visuels des bonus utilisés
+                this.$nextTick(() => {
+                    this.restoreBonusEffects(data);
+                });
+
                 console.log(`✅ Joueur restauré - Mode: ${data.gameMode}`);
                 this.showNotification('Reconnecté à la partie !', 'success');
-
             });
+
+
 
             // Événements du serveur
             this.socket.on('game-activated', (data) => {
@@ -533,9 +591,6 @@ createApp({
                     document.body.classList.add('game-active');
                     this.gameInProgress = true;
 
-                    // 🔥 AJOUTE CETTE LIGNE ICI
-                    this.resetComboSystem();
-
                     // 🆕 Initialiser selon le mode
                     if (this.gameMode === 'lives') {
                         this.playerLives = this.gameLives;
@@ -572,15 +627,24 @@ createApp({
                 this.startTimer();
             });
 
+
             this.socket.on('question-results', (results) => {
                 this.stopTimer();
                 this.questionResults = results;
                 this.showResults = true;
 
+                // 🔥 Déplacer myResult ici pour être accessible partout
+
+                const myResult = results.players?.find(p => p.username === this.username);
+
+                if (myResult && myResult.shieldUsed) {
+                    this.showNotification('🛡️ Bouclier utilisé ! Vous êtes protégé !', 'success');
+                    this.showShieldProtectionEffect();
+                }
+
                 // Mode Points - Incrémenter le score si correct
                 if (this.gameMode === 'points') {
                     if (this.selectedAnswer === results.correctAnswer) {
-                        const myResult = results.players?.find(p => p.username === this.username);
                         const pointsEarned = myResult?.pointsEarned || 1000;
 
                         const finalPoints = this.activeBonusEffect === 'doublex2' ? pointsEarned * 2 : pointsEarned;
@@ -588,8 +652,6 @@ createApp({
                         this.pointsGained = finalPoints;
                         this.playerPoints += finalPoints;
                         this.triggerPointsAnimation();
-
-                        // 🔥 SUPPRIMÉ : this.updateCombo() - Le serveur s'en charge
                     }
                 } else {
                     // Mode Vie
@@ -598,8 +660,6 @@ createApp({
                     if (myPlayerData) {
                         this.playerLives = myPlayerData.lives;
                         console.log(`✅ Vies synchronisées: ${this.playerLives}`);
-
-                        // 🔥 SUPPRIMÉ : if (this.selectedAnswer === results.correctAnswer) { this.updateCombo(); }
                     } else {
                         // Fallback
                         if (!results.allWillLose) {
@@ -799,9 +859,10 @@ createApp({
 
             this.socket.emit('submit-answer', {
                 answer: answerIndex,
-                usedBonus: this.activeBonusEffect, // 🆕 Envoyer le bonus utilisé
-                bonusActive: this.activeBonusEffect === 'doublex2' // 🆕 Pour le x2 points
+                bonusActive: this.activeBonusEffect // 🔥 CHANGÉ : envoie 'shield', 'doublex2', etc.
             });
+
+            console.log(`📤 Réponse envoyée: ${answerIndex}, bonus: ${this.activeBonusEffect}`);
         },
 
         startTimer(initialTime = null) {
@@ -1076,28 +1137,27 @@ createApp({
         },
 
         useBonus(bonusType) {
-            if (!this.canUseBonus()) {
-                console.log('⚠️ Impossible d\'utiliser un bonus maintenant');
-                return;
-            }
+            console.log(`🎮 useBonus appelé avec: ${bonusType}`); // 🧪 DEBUG
 
             if (!this.availableBonuses.includes(bonusType)) {
                 console.log('⚠️ Bonus non disponible');
                 return;
             }
 
-            // 🔥 ENVOYER AU SERVEUR pour validation
-            this.socket.emit('use-bonus', { bonusType: bonusType });
+            // Envoyer au serveur
+            this.socket.emit('use-bonus', { bonusType });
 
-            // Retirer le bonus du stock LOCAL (l'UI)
+            // Marquer comme utilisé
             const index = this.availableBonuses.indexOf(bonusType);
-            this.availableBonuses.splice(index, 1);
+            if (index > -1) {
+                this.availableBonuses.splice(index, 1);
+            }
             this.usedBonuses.push(bonusType);
 
-            // Fermer le modal
-            this.closeBonusModal();
+            // Appliquer l'effet
+            this.applyBonusEffect(bonusType); // 🔥 IMPORTANT
 
-            console.log(`📤 Demande d'utilisation du bonus ${bonusType} envoyée au serveur`);
+            console.log(`✅ Bonus ${bonusType} utilisé. Effet actif: ${this.activeBonusEffect}`); // 🧪 DEBUG
         },
 
         applyBonusEffect(bonusType) {
@@ -1107,11 +1167,15 @@ createApp({
                 this.apply5050();
             } else if (bonusType === 'reveal') {
                 this.applyReveal();
-            } else if (bonusType === 'extralife') {
-                this.applyExtraLife();
+            } else if (bonusType === 'shield') {
+                this.applyShield();
             } else if (bonusType === 'doublex2') {
-                // Le x2 sera appliqué lors du calcul des points dans question-results
+                // 🔥 MODIFIER ICI : Ajouter le pulse doré
                 console.log('💰 Points x2 activé pour cette question');
+                const hud = document.querySelector('.player-hud');
+                if (hud) {
+                    hud.classList.add('x2-protected');
+                }
             }
         },
 
@@ -1202,9 +1266,37 @@ createApp({
             console.log(`✅ Seule la réponse ${correctIndex} est visible`);
         },
 
-        applyExtraLife() {
-            this.playerLives = Math.min(3, this.playerLives + 1);
-            console.log(`❤️ +1 Vie ! Vies actuelles: ${this.playerLives}`);
+        applyShield() {
+            console.log(`🛡️ Bouclier activé ! Protection contre la prochaine perte de vie`);
+
+            // 🔥 Ajouter le pulse SANS timeout (reste jusqu'à la fin)
+            const hud = document.querySelector('.player-hud');
+            if (hud) {
+                hud.classList.add('shield-protected');
+            }
+        },
+
+        // 🆕 Afficher l'animation Shield
+        showShieldAnimation() {
+            // Créer un overlay d'effet Shield
+            const overlay = document.createElement('div');
+            overlay.className = 'shield-overlay-effect';
+            document.body.appendChild(overlay);
+
+            // Animation de pulsation
+            setTimeout(() => {
+                overlay.classList.add('active');
+            }, 10);
+
+            // Retirer après 2 secondes
+            setTimeout(() => {
+                overlay.classList.remove('active');
+                setTimeout(() => {
+                    document.body.removeChild(overlay);
+                }, 500);
+            }, 2000);
+
+
         },
 
         resetBonusEffects() {
@@ -1214,6 +1306,12 @@ createApp({
             });
 
             this.activeBonusEffect = null;
+
+            // Retirer les pulses du HUD
+            const hud = document.querySelector('.player-hud');
+            if (hud) {
+                hud.classList.remove('shield-protected', 'x2-protected'); // 🔥 AJOUTER x2-protected
+            }
         },
 
         resetComboSystem() {
@@ -1242,10 +1340,7 @@ createApp({
             }
 
             if (this.availableBonuses.includes(bonusType)) {
-                // 🔥 NOUVEAU : Griser Extra Life si vies au max
-                if (bonusType === 'extralife' && this.gameMode === 'lives' && this.playerLives >= 3) {
-                    return 'locked';
-                }
+                // 🔥 SUPPRIMÉ : La vérification des 3 vies
                 return 'available';
             }
 
@@ -1264,17 +1359,14 @@ createApp({
                 return;
             }
 
-            // 🔥 NOUVEAU : Bloquer Extra Life si déjà au max de vies
-            if (bonusType === 'extralife' && this.playerLives >= 3) {
-                console.log('⚠️ Extra Life bloqué : déjà au maximum de vies');
-                return;
-            }
-
-            // Fermer le menu sur mobile
             this.showBonusMenu = false;
-
-            // Utiliser le bonus (logique existante)
             this.useBonus(bonusType);
+
+            // 🔥 NOUVEAU: Activer immédiatement l'effet Shield
+            if (bonusType === 'shield') {
+                this.activeBonusEffect = 'shield';
+                console.log('✅ Shield activé, effet appliqué');
+            }
         },
     },
 

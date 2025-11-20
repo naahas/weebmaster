@@ -515,6 +515,80 @@ html, body {
     border-radius: 12px;
     margin-bottom: 16px;
     border: 0.8px solid rgba(255, 255, 255, 0.05);
+    position: relative;
+    
+    /* 🔥 AJOUTER ces lignes */
+    transition: 
+        border-color 0.8s ease-in-out,
+        box-shadow 0.8s ease-in-out;
+}
+
+
+.hud-shield-icon {
+    position: absolute;
+    right: -55px; /* 🔥 À droite, en dehors du HUD */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.8))
+            drop-shadow(0 0 30px rgba(59, 130, 246, 0.4));
+    animation: shieldIconFloat 2s ease-in-out infinite;
+    pointer-events: none;
+}
+
+/* Animation flottante de l'icône */
+@keyframes shieldIconFloat {
+    0%, 100% {
+        transform: translateY(-50%) translateY(0);
+    }
+    50% {
+        transform: translateY(-50%) translateY(-5px); /* 🔥 Mouvement ultra discret */
+    }
+}
+
+/* Animation d'apparition/disparition */
+.shield-icon-fade-enter-active {
+    animation: shieldIconAppear 0.5s ease-out;
+}
+
+.shield-icon-fade-leave-active {
+    animation: shieldIconDisappear 0.3s ease-in;
+}
+
+@keyframes shieldIconAppear {
+    0% {
+        opacity: 0;
+        transform: translateY(-50%) scale(0.5) rotate(-180deg);
+    }
+    60% {
+        transform: translateY(-50%) scale(1.1) rotate(10deg);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(-50%) scale(1) rotate(0deg);
+    }
+}
+
+@keyframes shieldIconDisappear {
+    0% {
+        opacity: 1;
+        transform: translateY(-50%) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-50%) scale(0.3) rotate(180deg);
+    }
+}
+
+/* Responsive mobile */
+@media (max-width: 614px) {
+    .hud-shield-icon {
+        right: -40px; /* 🔥 Plus proche sur mobile */
+        width: 30px;
+        height: 30px;
+    }
 }
 
 .hud-item {
@@ -3410,20 +3484,32 @@ html, body {
 
 /* Bandelette individuelle */
 .bonus-strip {
-    padding: 9px 50px;
+    padding: 9px 16px 9px 12px; /* 🔥 MODIFIÉ: Plus d'espace à gauche pour l'icône */
     border-radius: 8px;
     border-top-left-radius: 0%;
     border-bottom-left-radius: 0%;
-    border: none; /* 🔥 Plus de bordure */
+    border: none;
     backdrop-filter: blur(10px);
     cursor: pointer;
     transition: all 0.3s ease;
-    min-width: 110px;
-    text-align: center;
+    min-width: 140px; /* 🔥 MODIFIÉ: Élargi de 110px à 140px */
+    text-align: left; /* 🔥 MODIFIÉ: Alignement à gauche */
     position: relative;
     overflow: hidden;
+    display: flex; /* 🔥 NOUVEAU: Flexbox pour aligner icône + texte */
+    align-items: center;
+    gap: 10px; /* 🔥 NOUVEAU: Espace entre icône et texte */
 }
 
+/* 🔥 NOUVEAU: Style de l'icône */
+.bonus-icon-img {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.3));
+    transition: all 0.3s ease;
+    flex-shrink: 0; /* Empêcher le rétrécissement */
+}
 
 .bonus-strip::before {
     content: '';
@@ -3458,12 +3544,13 @@ html, body {
 }
 
 .bonus-strip-text {
-    font-size: 0.6rem;
+    font-size: 0.7rem; /* 🔥 MODIFIÉ: Légèrement plus grand (0.6 → 0.7) */
     font-weight: 600;
     letter-spacing: 0.5px;
     position: relative;
-    z-index: 1; /* 🔥 Important pour être au-dessus de l'overlay */
+    z-index: 1;
     white-space: nowrap;
+    flex: 1; /* Prendre l'espace restant */
 }
 
 /* 🔥 État LOCKED (grisé, non débloqué) */
@@ -3719,3 +3806,467 @@ html, body {
 }
 
 
+/* 🆕 Indicateur Bouclier */
+.shield-indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(147, 197, 253, 0.2));
+    border: 2px solid rgba(59, 130, 246, 0.5);
+    border-radius: 8px;
+    font-size: 1.2rem;
+    box-shadow: 
+        0 0 20px rgba(59, 130, 246, 0.6),
+        0 0 40px rgba(59, 130, 246, 0.3),
+        inset 0 0 20px rgba(59, 130, 246, 0.1);
+    animation: shieldPulse 2s ease-in-out infinite;
+}
+
+@keyframes shieldPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 
+            0 0 20px rgba(59, 130, 246, 0.6),
+            0 0 40px rgba(59, 130, 246, 0.3);
+    }
+    50% {
+        transform: scale(1.1);
+        box-shadow: 
+            0 0 30px rgba(59, 130, 246, 0.8),
+            0 0 60px rgba(59, 130, 246, 0.5);
+    }
+}
+
+/* Animation d'apparition du bouclier */
+.shield-pulse-enter-active {
+    animation: shieldAppear 0.5s ease-out;
+}
+
+.shield-pulse-leave-active {
+    animation: shieldDisappear 0.3s ease-in;
+}
+
+@keyframes shieldAppear {
+    0% {
+        opacity: 0;
+        transform: scale(0.5) rotate(-180deg);
+    }
+    60% {
+        transform: scale(1.2) rotate(10deg);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+@keyframes shieldDisappear {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.5) rotate(180deg);
+    }
+}
+
+
+/* ============================================
+   ANIMATIONS SHIELD - À AJOUTER DANS home.css
+   ============================================ */
+
+/* Overlay d'effet Shield (activation) */
+.shield-overlay-effect {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at center, 
+        rgba(59, 130, 246, 0.3) 0%, 
+        rgba(59, 130, 246, 0.1) 30%, 
+        transparent 70%
+    );
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.shield-overlay-effect.active {
+    opacity: 1;
+    animation: shieldPulseOverlay 2s ease-in-out;
+}
+
+@keyframes shieldPulseOverlay {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.7;
+    }
+}
+
+/* Vague de protection (quand Shield protège) */
+.shield-protection-wave {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px; /* 🔥 RÉDUIT de 100px à 80px */
+    height: 80px;
+    border: 3px solid rgba(59, 130, 246, 0.8); /* 🔥 RÉDUIT de 4px à 3px */
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    opacity: 1;
+    box-shadow: 
+        0 0 30px rgba(59, 130, 246, 0.6),
+        0 0 60px rgba(59, 130, 246, 0.4),
+        inset 0 0 30px rgba(59, 130, 246, 0.2);
+    will-change: transform, opacity; /* 🔥 AJOUTÉ pour fluidité */
+}
+
+.shield-protection-wave.expand {
+    animation: shieldWaveExpand 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; /* 🔥 Meilleure courbe */
+}
+
+@keyframes shieldWaveExpand {
+    0% {
+        width: 80px;
+        height: 80px;
+        opacity: 1;
+        border-width: 3px;
+    }
+    50% {
+        opacity: 0.7; /* 🔥 AJUSTÉ de 0.6 à 0.7 */
+        border-width: 6px; /* 🔥 RÉDUIT de 8px à 6px */
+    }
+    100% {
+        width: 120vh; /* 🔥 RÉDUIT de 140vh à 120vh */
+        height: 120vh;
+        opacity: 0;
+        border-width: 2px;
+    }
+}
+
+/* Amélioration de l'indicateur Shield existant */
+.shield-indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(147, 197, 253, 0.3));
+    border: 2px solid rgba(59, 130, 246, 0.6);
+    border-radius: 8px;
+    font-size: 1.2rem;
+    box-shadow: 
+        0 0 30px rgba(59, 130, 246, 0.7),
+        0 0 60px rgba(59, 130, 246, 0.4),
+        inset 0 0 30px rgba(59, 130, 246, 0.2);
+    animation: shieldPulseIndicator 1.5s ease-in-out infinite;
+}
+
+@keyframes shieldPulseIndicator {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 
+            0 0 30px rgba(59, 130, 246, 0.7),
+            0 0 60px rgba(59, 130, 246, 0.4);
+    }
+    50% {
+        transform: scale(1.15);
+        box-shadow: 
+            0 0 45px rgba(59, 130, 246, 0.9),
+            0 0 90px rgba(59, 130, 246, 0.6);
+    }
+}
+
+/* Animation quand Shield est actif sur une réponse */
+.answer-btn.shield-active {
+    border-color: rgba(59, 130, 246, 0.6) !important;
+    background: rgba(59, 130, 246, 0.1) !important;
+    box-shadow: 
+        0 0 20px rgba(59, 130, 246, 0.4),
+        inset 0 0 20px rgba(59, 130, 246, 0.1);
+    animation: shieldAnswerPulse 2s ease-in-out infinite;
+}
+
+@keyframes shieldAnswerPulse {
+    0%, 100% {
+        box-shadow: 
+            0 0 20px rgba(59, 130, 246, 0.4),
+            inset 0 0 20px rgba(59, 130, 246, 0.1);
+    }
+    50% {
+        box-shadow: 
+            0 0 30px rgba(59, 130, 246, 0.6),
+            inset 0 0 30px rgba(59, 130, 246, 0.2);
+    }
+}
+
+/* Particules Shield (optionnel - effet premium) */
+.shield-particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 9997;
+    overflow: hidden;
+}
+
+.shield-particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: radial-gradient(circle, 
+        rgba(59, 130, 246, 1) 0%, 
+        rgba(147, 197, 253, 0.5) 50%, 
+        transparent 100%
+    );
+    border-radius: 50%;
+    opacity: 0;
+    animation: shieldParticleFloat 2s ease-out forwards;
+}
+
+@keyframes shieldParticleFloat {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(0.5);
+    }
+    50% {
+        opacity: 0.8;
+        transform: translateY(-30vh) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-60vh) scale(0.3);
+    }
+}
+
+/* Effet de brillance sur le bouton Shield quand disponible */
+.bonus-strip.available:has(.bonus-strip-text:contains("Bouclier")) {
+    position: relative;
+    overflow: hidden;
+}
+
+.bonus-strip.available:has(.bonus-strip-text:contains("Bouclier"))::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(59, 130, 246, 0.3) 50%,
+        transparent 70%
+    );
+    animation: shieldButtonShine 3s ease-in-out infinite;
+}
+
+@keyframes shieldButtonShine {
+    0% {
+        transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    }
+    100% {
+        transform: translateX(100%) translateY(100%) rotate(45deg);
+    }
+}
+
+/* Responsive mobile */
+@media (max-width: 614px) {
+    .shield-overlay-effect {
+        background: radial-gradient(circle at center, 
+            rgba(59, 130, 246, 0.4) 0%, 
+            rgba(59, 130, 246, 0.15) 25%, 
+            transparent 60%
+        );
+    }
+    
+    .shield-protection-wave {
+        width: 80px;
+        height: 80px;
+        border-width: 3px;
+    }
+    
+    @keyframes shieldWaveExpand {
+        0% {
+            width: 80px;
+            height: 80px;
+            opacity: 1;
+            border-width: 3px;
+        }
+        100% {
+            width: 120vh;
+            height: 120vh;
+            opacity: 0;
+            border-width: 1px;
+        }
+    }
+}
+
+
+/* Overlay d'effet Shield (activation) */
+.shield-overlay-effect {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at center, 
+        rgba(59, 130, 246, 0.3) 0%, 
+        rgba(59, 130, 246, 0.1) 30%, 
+        transparent 70%
+    );
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.shield-overlay-effect.active {
+    opacity: 1;
+    animation: shieldPulseOverlay 2s ease-in-out;
+}
+
+@keyframes shieldPulseOverlay {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.7;
+    }
+}
+
+
+/* 🆕 Pulse sobre du HUD en même temps */
+.player-hud.shield-protected {
+    animation: shieldHudPulse 3s ease-in-out infinite;
+}
+
+@keyframes shieldHudPulse {
+    0%, 100% {
+        border-color: rgba(59, 130, 246, 0.35);
+        box-shadow: 
+            0 0 18px rgba(59, 130, 246, 0.25),
+            inset 0 0 18px rgba(59, 130, 246, 0.1);
+    }
+    50% {
+        border-color: rgba(59, 130, 246, 0.45);
+        box-shadow: 
+            0 0 22px rgba(59, 130, 246, 0.35),
+            inset 0 0 22px rgba(59, 130, 246, 0.13);
+    }
+}
+
+
+
+
+/* ============================================
+   ICÔNE X2 DANS LE HUD
+   ============================================ */
+
+/* Icône x2 en position absolue */
+.hud-x2-icon {
+    position: absolute;
+    right: -50px; /* Même position que le Shield */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.8))
+            drop-shadow(0 0 30px rgba(255, 165, 0, 0.4));
+    animation: x2IconFloat 2s ease-in-out infinite;
+    pointer-events: none;
+}
+
+/* Animation flottante de l'icône (vertical) */
+@keyframes x2IconFloat {
+    0%, 100% {
+        transform: translateY(-50%) translateY(0);
+    }
+    50% {
+        transform: translateY(-50%) translateY(-5px);
+    }
+}
+
+/* Animation d'apparition/disparition */
+.x2-icon-fade-enter-active {
+    animation: x2IconAppear 0.5s ease-out;
+}
+
+.x2-icon-fade-leave-active {
+    animation: x2IconDisappear 0.3s ease-in;
+}
+
+@keyframes x2IconAppear {
+    0% {
+        opacity: 0;
+        transform: translateY(-50%) scale(0.5) rotate(-180deg);
+    }
+    60% {
+        transform: translateY(-50%) scale(1.1) rotate(10deg);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(-50%) scale(1) rotate(0deg);
+    }
+}
+
+@keyframes x2IconDisappear {
+    0% {
+        opacity: 1;
+        transform: translateY(-50%) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-50%) scale(0.3) rotate(180deg);
+    }
+}
+
+/* Responsive mobile */
+@media (max-width: 614px) {
+    .hud-x2-icon {
+        right: -40px;
+        width: 30px;
+        height: 30px;
+    }
+}
+
+
+/* Pulse doré pour le bonus x2 */
+.player-hud.x2-protected {
+    animation: x2HudPulse 3s ease-in-out infinite;
+}
+
+@keyframes x2HudPulse {
+    0% {
+        border-color: rgba(255, 215, 0, 0.3);
+        box-shadow: 
+            0 0 15px rgba(255, 215, 0, 0.2),
+            inset 0 0 15px rgba(255, 215, 0, 0.08);
+    }
+    50% {
+        border-color: rgba(255, 215, 0, 0.5);
+        box-shadow: 
+            0 0 25px rgba(255, 215, 0, 0.4),
+            inset 0 0 25px rgba(255, 215, 0, 0.12);
+    }
+    100% {
+        border-color: rgba(255, 215, 0, 0.3);
+        box-shadow: 
+            0 0 15px rgba(255, 215, 0, 0.2),
+            inset 0 0 15px rgba(255, 215, 0, 0.08);
+    }
+}

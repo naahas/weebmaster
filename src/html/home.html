@@ -142,6 +142,16 @@
                         <span class="hud-label">Question</span>
                         <span class="hud-value">{{ currentQuestionNumber }}</span>
                     </div>
+
+
+                    <transition name="shield-icon-fade">
+                        <img v-if="activeBonusEffect === 'shield'" src="shield.png" alt="Shield"
+                            class="hud-shield-icon">
+                    </transition>
+
+                    <transition name="x2-icon-fade">
+                        <img v-if="activeBonusEffect === 'doublex2'" src="x2.png" alt="Points x2" class="hud-x2-icon">
+                    </transition>
                 </div>
 
                 <!-- 🆕 Animation +X points -->
@@ -165,6 +175,8 @@
                             <span class="difficulty-badge" :class="'diff-' + currentQuestion.difficulty">
                                 {{ currentQuestion.difficulty.toUpperCase() }}
                             </span>
+
+
                         </div>
 
                         <!-- Question -->
@@ -193,7 +205,6 @@
                     </div>
 
                     <!-- 🆕 RÉSULTATS - Question avec indicateurs visuels -->
-                    <!-- Résultats - Question avec indicateurs visuels -->
                     <div class="question-card results-view" v-if="showResults && currentQuestion">
                         <!-- Badges série et difficulté -->
                         <div class="question-badges">
@@ -201,6 +212,7 @@
                             <span class="difficulty-badge" :class="'diff-' + currentQuestion.difficulty">
                                 {{ currentQuestion.difficulty.toUpperCase() }}
                             </span>
+
                         </div>
 
                         <!-- Question -->
@@ -525,21 +537,24 @@
                         <!-- Bonus 1 : 50/50 -->
                         <div class="bonus-strip" :class="[getBonusState('5050'), { disabled: !canUseBonus() }]"
                             @click="useBonusStrip('5050')">
+                            <img src="5050.png" alt="50/50" class="bonus-icon-img"> &nbsp;
                             <span class="bonus-strip-text">50/50</span>
                         </div>
 
                         <!-- Bonus 2 : Joker -->
                         <div class="bonus-strip" :class="[getBonusState('reveal'), { disabled: !canUseBonus() }]"
                             @click="useBonusStrip('reveal')">
+                            <img src="reveal2.png" alt="Révéler" class="bonus-icon-img"> &nbsp;
                             <span class="bonus-strip-text">Joker</span>
                         </div>
 
-                        <!-- Bonus 3 : Points x2 / Extra Life -->
+                        <!-- Bonus 3 : Points x2 / Shield -->
                         <div class="bonus-strip"
-                            :class="[getBonusState(gameMode === 'lives' ? 'extralife' : 'doublex2'), { disabled: !canUseBonus() }]"
-                            @click="useBonusStrip(gameMode === 'lives' ? 'extralife' : 'doublex2')">
-                            <span class="bonus-strip-text">{{ gameMode === 'lives' ? 'Extra life' : 'Points x2'
-                                }}</span>
+                            :class="[getBonusState(gameMode === 'lives' ? 'shield' : 'doublex2'), { disabled: !canUseBonus() }]"
+                            @click="useBonusStrip(gameMode === 'lives' ? 'shield' : 'doublex2')">
+                            <img :src="gameMode === 'lives' ? 'shield.png' : 'x2.png'"
+                                :alt="gameMode === 'lives' ? 'Bouclier' : 'Points x2'" class="bonus-icon-img"> &nbsp;
+                            <span class="bonus-strip-text">{{ gameMode === 'lives' ? 'Bouclier' : 'Points x2' }}</span>
                         </div>
                     </div>
                 </transition>

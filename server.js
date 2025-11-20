@@ -361,7 +361,7 @@ app.post('/admin/login', (req, res) => {
                 console.error('❌ Erreur sauvegarde session:', err);
                 return res.status(500).json({ success: false, message: 'Erreur de session' });
             }
-            console.log('✅ Admin connecté - Session sauvegardée');
+            // console.log('✅ Admin connecté - Session sauvegardée');
             res.json({ success: true });
         });
     } else {
@@ -1268,8 +1268,9 @@ function revealAnswers(correctAnswer) {
 
                 // 🆕 Appliquer le multiplicateur x2 si bonus actif
                 let pointsEarned = getPointsForDifficulty(gameState.currentQuestion.difficulty);
-                if (playerAnswer.bonusActive) {
+                if (playerAnswer.bonusActive === 'doublex2') { // ✅ BON
                     pointsEarned *= 2;
+                    console.log(`💰 ${player.username} : Points x2 appliqué ! ${pointsEarned} points`);
                 }
 
                 player.points = (player.points || 0) + pointsEarned;
@@ -1301,11 +1302,19 @@ function revealAnswers(correctAnswer) {
         let allWillLose = false;
 
         if (allHaveOneLife && alivePlayers.length > 1) {
+            // Vérifier si quelqu'un a répondu correctement
             const someoneCorrect = Array.from(alivePlayers).some(player => {
                 const playerAnswer = gameState.answers.get(player.socketId);
                 return playerAnswer && playerAnswer.answer === correctAnswer;
             });
-            allWillLose = !someoneCorrect;
+
+            // 🔥 NOUVEAU : Vérifier si quelqu'un a un Shield actif
+            const someoneHasShield = Array.from(alivePlayers).some(player => {
+                return player.activeShield === true;
+            });
+
+            // Si personne n'a répondu juste ET personne n'a de Shield → Tous vont perdre
+            allWillLose = !someoneCorrect && !someoneHasShield;
         }
 
         gameState.players.forEach((player, socketId) => {
@@ -1313,31 +1322,64 @@ function revealAnswers(correctAnswer) {
             let isCorrect = false;
             const playerAnswer = gameState.answers.get(socketId);
 
+            // 🔥 FIX SHIELD + AFK: Vérifier le Shield dans les données du joueur
+            const hasShield = player.activeShield === true;
+
+            console.log(`🔍 ${player.username} (${socketId}):`);
+            console.log(`   - playerAnswer:`, playerAnswer);
+            console.log(`   - bonusActive (answer):`, playerAnswer?.bonusActive);
+            console.log(`   - activeShield (player):`, player.activeShield);
+            console.log(`   - hasShield:`, hasShield);
+
             if (player.lives === 0) {
                 stats.livesDistribution[0]++;
                 status = 'eliminated';
             } else if (!playerAnswer) {
                 stats.afk++;
                 if (!allWillLose) {
-                    player.lives--;
-                    if (player.lives === 0) eliminatedThisRound++;
+                    // 🛡️ Shield protège contre l'AFK
+                    if (hasShield) {
+                        console.log(`🛡️ ${player.username} protégé par le Bouclier (AFK)`);
+                        status = 'afk-shielded';
+                        player.activeShield = false; // ✅ Consommer le Shield
+                    } else {
+                        player.lives--;
+                        if (player.lives === 0) eliminatedThisRound++;
+                        status = 'afk';
+                    }
+                } else {
+                    status = 'afk';
                 }
-                status = 'afk';
             } else if (playerAnswer.answer === correctAnswer) {
                 stats.correct++;
                 player.correctAnswers++;
                 status = 'correct';
                 isCorrect = true;
 
-                // 🆕 Incrémenter le combo
+                // 🔥 Ne pas consommer le Shield si bonne réponse
+                if (hasShield) {
+                    player.activeShield = false; // ✅ Retirer le Shield (pas utilisé)
+                    console.log(`🛡️ Shield retiré (bonne réponse, non utilisé)`);
+                }
+
                 updatePlayerCombo(socketId);
+
             } else {
                 stats.wrong++;
                 if (!allWillLose) {
-                    player.lives--;
-                    if (player.lives === 0) eliminatedThisRound++;
+                    // 🛡️ Shield protège contre la mauvaise réponse
+                    if (hasShield) {
+                        console.log(`🛡️ ${player.username} protégé par Shield (mauvaise réponse)`);
+                        status = 'wrong-shielded';
+                        player.activeShield = false; // ✅ Consommer le Shield
+                    } else {
+                        player.lives--;
+                        if (player.lives === 0) eliminatedThisRound++;
+                        status = 'wrong';
+                    }
+                } else {
+                    status = 'wrong';
                 }
-                status = 'wrong';
             }
 
             if (player.lives > 0 || status !== 'eliminated') {
@@ -1350,7 +1392,8 @@ function revealAnswers(correctAnswer) {
                 points: player.points || 0,
                 status: status,
                 responseTime: playerAnswer?.time || null,
-                isCorrect: isCorrect
+                isCorrect: isCorrect,
+                shieldUsed: hasShield // 🔥 Indiquer si le Shield a été utilisé
             });
         });
 
@@ -2344,7 +2387,7 @@ io.on('connection', (socket) => {
         if (existingPlayer) {
             const previousAnswer = gameState.answers.get(oldSocketId);
 
-            // 🔥 FIX: Transférer les bonus vers le nouveau socketId
+            // 🔥 Transférer les bonus
             const oldBonusData = gameState.playerBonuses.get(oldSocketId);
             if (oldBonusData) {
                 gameState.playerBonuses.set(socket.id, oldBonusData);
@@ -2371,8 +2414,8 @@ io.on('connection', (socket) => {
                 currentQuestionIndex: gameState.currentQuestionIndex,
                 hasAnswered: !!previousAnswer,
                 selectedAnswer: previousAnswer ? previousAnswer.answer : null,
+                bonusActive: previousAnswer ? previousAnswer.bonusActive : null, // 🔥 AJOUTER ICI
                 gameMode: gameState.mode,
-                // 🔥 FIX: Maintenant les bonus sont bien associés au nouveau socketId
                 comboData: gameState.playerBonuses.get(socket.id) ? {
                     comboLevel: gameState.playerBonuses.get(socket.id).comboLevel,
                     comboProgress: gameState.playerBonuses.get(socket.id).comboProgress,
@@ -2390,8 +2433,7 @@ io.on('connection', (socket) => {
 
             socket.emit('player-restored', restorationData);
 
-
-            // Mettre à jour le compteur de joueurs pour l'admin
+            // Mise à jour lobby
             io.emit('lobby-update', {
                 playerCount: gameState.players.size,
                 mode: gameState.mode,
@@ -2403,7 +2445,6 @@ io.on('connection', (socket) => {
                 }))
             });
         } else {
-            // Nouveau joueur qui rejoint en cours de partie (spectateur)
             socket.emit('error', {
                 message: 'Vous ne pouvez pas rejoindre une partie en cours',
                 canSpectate: true
@@ -2437,7 +2478,8 @@ io.on('connection', (socket) => {
 
         gameState.answers.set(socket.id, {
             answer: data.answer,
-            time: responseTime
+            time: responseTime,
+            bonusActive: data.bonusActive // 🔥 AJOUTER CETTE LIGNE
         });
 
         socket.emit('answer-recorded');
@@ -2471,12 +2513,17 @@ io.on('connection', (socket) => {
         if (success) {
             console.log(`✅ Bonus "${bonusType}" utilisé par ${player.username}`);
 
+            // 🔥 NOUVEAU: Stocker le Shield dans les données du joueur
+            if (bonusType === 'shield') {
+                player.activeShield = true; // ✅ Marquer le Shield comme actif
+                console.log(`🛡️ Shield marqué actif pour ${player.username}`);
+            }
+
             // 🔥 NOUVEAU: Pour 50/50 et Reveal, envoyer la bonne réponse
             if (bonusType === '5050' || bonusType === 'reveal') {
                 const correctAnswer = gameState.currentQuestion?.correctAnswer;
 
                 if (correctAnswer) {
-                    // Envoyer au joueur UNIQUEMENT
                     socket.emit('bonus-validated', {
                         bonusType: bonusType,
                         correctAnswer: correctAnswer
@@ -2484,12 +2531,6 @@ io.on('connection', (socket) => {
 
                     console.log(`📡 Bonne réponse (${correctAnswer}) envoyée à ${player.username} pour bonus ${bonusType}`);
                 }
-            }
-
-            // Appliquer l'effet selon le bonus
-            if (bonusType === 'extralife' && gameState.mode === 'lives') {
-                player.lives = Math.min(gameState.lives, player.lives + 1);
-                console.log(`❤️ +1 Vie pour ${player.username}`);
             }
         } else {
             socket.emit('bonus-used', {
@@ -2594,7 +2635,7 @@ function updatePlayerCombo(socketId) {
             } else if (bonusData.comboLevel === 2) {
                 bonusType = 'reveal';
             } else if (bonusData.comboLevel === 3) {
-                bonusType = gameState.mode === 'lives' ? 'extralife' : 'doublex2';
+                bonusType = gameState.mode === 'lives' ? 'shield' : 'doublex2';
             }
 
             if (bonusType && !bonusData.availableBonuses.includes(bonusType)) {
@@ -2679,6 +2720,10 @@ function resetGameState() {
     gameState.answers.clear();
     gameState.isTiebreaker = false;
     gameState.tiebreakerPlayers = [];
+
+    gameState.players.forEach(player => {
+        player.activeShield = false;
+    });
 
     resetAllBonuses();
 
