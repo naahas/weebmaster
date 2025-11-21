@@ -204,6 +204,13 @@ app.get('/game/state', (req, res) => {
         };
     });
 
+    const answerCounts = {};
+    gameState.liveAnswers.forEach((answerIndex) => {
+        if (!answerCounts[answerIndex]) {
+            answerCounts[answerIndex] = 0;
+        }
+        answerCounts[answerIndex]++;
+    });
 
 
     res.json({
@@ -224,6 +231,8 @@ app.get('/game/state', (req, res) => {
         difficultyMode: gameState.difficultyMode,
         serieFilter: gameState.serieFilter,
         isTiebreaker: gameState.isTiebreaker,
+        liveAnswerCounts: answerCounts,
+        answeredCount: gameState.liveAnswers.size,
         autoMode: gameState.autoMode,
         tiebreakerPlayers: gameState.isTiebreaker
             ? Array.from(gameState.players.values())
@@ -264,6 +273,8 @@ const gameState = {
     answersCount: 4,
     questionsCount: 20,
     usedQuestionIds: [],
+
+    liveAnswers: new Map(),
 
     // Tiebreaker
     isTiebreaker: false,
@@ -1206,6 +1217,9 @@ app.post('/admin/next-question', async (req, res) => {
         gameState.showResults = false;
         gameState.lastQuestionResults = null;
         gameState.answers.clear();
+        gameState.liveAnswers.clear();
+        updateLiveAnswerStats();
+
 
         io.emit('new-question', questionData);
 
@@ -2484,6 +2498,9 @@ io.on('connection', (socket) => {
 
         socket.emit('answer-recorded');
 
+        gameState.liveAnswers.set(socket.id, data.answer);
+        updateLiveAnswerStats();
+
         io.emit('answer-submitted', {
             socketId: socket.id,
             answeredCount: gameState.answers.size,
@@ -2727,9 +2744,10 @@ function resetGameState() {
 
     resetAllBonuses();
 
-    gameState.isActive = false;
-    io.emit('game-deactivated');
-    console.log('🔒 Lobby fermé automatiquement après la fin de partie');
+    // 🔥 COMMENTER CES LIGNES
+    // gameState.isActive = false;
+    // io.emit('game-deactivated');
+    // console.log('🔒 Lobby fermé automatiquement après la fin de partie');
 
     // 🆕 Annuler le timeout auto mode si actif
     if (gameState.autoModeTimeout) {
@@ -2737,16 +2755,29 @@ function resetGameState() {
         gameState.autoModeTimeout = null;
     }
 
-    gameState.isActive = false;
-    io.emit('game-deactivated');
-    console.log('🔒 Lobby fermé automatiquement après la fin de partie');
+    // 🆕 OPTIONNEL : Log pour savoir que le jeu reste ouvert
+    console.log('✅ Partie terminée - Lobby reste ouvert pour la prochaine partie');
 }
 
 
 
 
+function updateLiveAnswerStats() {
+    const answerCounts = {};
 
+    gameState.liveAnswers.forEach((answerIndex) => {
+        if (!answerCounts[answerIndex]) {
+            answerCounts[answerIndex] = 0;
+        }
+        answerCounts[answerIndex]++;
+    });
 
+    io.emit('live-answer-stats', {
+        answerCounts: answerCounts,
+        answeredCount: gameState.liveAnswers.size,
+        totalPlayers: gameState.players.size
+    });
+}
 
 
 

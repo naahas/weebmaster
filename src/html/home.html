@@ -249,72 +249,78 @@
 
             <!-- 🆕 GAME OVER AMÉLIORÉ (Bug 2 fix) -->
             <div class="content-section gameover-section" v-if="gameEnded">
-                <div class="gameover-card-improved">
-                    <div class="gameover-header">
-                        <h2>Partie terminée</h2>
-                    </div>
+                <div class="gameover-card-compact">
+                    <div class="gameover-layout">
+                        <!-- Colonne gauche : Résultats du gagnant -->
+                        <div class="winner-column">
 
-                    <!-- 🔥 CAS 1: UN SEUL GAGNANT -->
-                    <div class="winner-section-improved" v-if="gameEndData.winner && !gameEndData.winner.tie">
-                        <div class="winner-label">Vainqueur</div>
-                        <div class="winner-name-improved">{{ gameEndData.winner.username }}</div>
+                            <!-- 🔥 CAS 1: UN SEUL GAGNANT -->
+                            <div class="winner-box" v-if="gameEndData.winner && !gameEndData.winner.tie">
+                                <div class="trophy-icon">
+                                    <img src="trophy.png" alt="Trophy" class="trophy-img">
+                                </div>
+                                <div class="winner-badge">VAINQUEUR</div>
+                                <div class="winner-name">{{ gameEndData.winner.username }}</div>
 
-                        <!-- 🔥 Affichage conditionnel selon le mode -->
-                        <div class="winner-stats" v-if="gameEndData.gameMode === 'lives'">
-                            {{ gameEndData.winner.correctAnswers }} bonnes réponses
-                        </div>
-                        <div class="winner-stats winner-points" v-if="gameEndData.gameMode === 'points'">
-                            <span class="points-icon-large">⭐</span>
-                            <span class="points-number-large">{{ gameEndData.winner.points }}</span>
-                            <span class="points-text">points</span>
-                        </div>
-                    </div>
+                                <!-- Affichage conditionnel selon le mode -->
+                                <div class="winner-stats" v-if="gameEndData.gameMode === 'points'">
+                                    <span class="points-icon">⭐</span>
+                                    <span class="points-number">{{ gameEndData.winner.points }}</span>
+                                    <span class="points-text">points</span>
+                                </div>
+                                <div class="winner-stats" v-if="gameEndData.gameMode === 'lives'">
+                                    {{ gameEndData.winner.correctAnswers }} bonnes réponses
+                                </div>
+                            </div>
 
-                    <!-- 🔥 CAS 2: ÉGALITÉ -->
-                    <div class="tie-section-improved" v-if="gameEndData.winner && gameEndData.winner.tie">
-                        <div class="tie-label">⚖️ Égalité</div>
-                        <div class="tie-winners">
-                            <div class="tie-winner" v-for="winner in gameEndData.winner.winners" :key="winner.username">
-                                <span class="tie-winner-name">{{ winner.username }}</span>
-                                <span class="tie-winner-points">{{ winner.points }} pts</span>
+                            <!-- 🔥 CAS 2: ÉGALITÉ -->
+                            <div class="tie-box" v-if="gameEndData.winner && gameEndData.winner.tie">
+                                <div class="tie-badge">⚖️ Égalité</div>
+                                <div class="tie-winners-list">
+                                    <div class="tie-winner-item" v-for="winner in gameEndData.winner.winners"
+                                        :key="winner.username">
+                                        {{ winner.username }} - {{ winner.points }} pts
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 🔥 CAS 3: AUCUN GAGNANT -->
+                            <div class="no-winner-box" v-if="!gameEndData.winner">
+                                <div class="no-winner-icon">💀</div>
+                                <div class="no-winner-text">Aucun gagnant</div>
+                            </div>
+
+                            <!-- Stats de la partie -->
+                            <div class="game-stats-compact">
+                                <div class="stat-compact-item">
+                                    <span class="stat-number">{{ gameEndData.totalQuestions }}</span>
+                                    <span class="stat-label">Questions</span>
+                                </div>
+                                <div class="stat-divider-compact"></div>
+                                <div class="stat-compact-item">
+                                    <span class="stat-number">{{ formatDuration(gameEndData.duration) }}</span>
+                                    <span class="stat-label">Durée</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- 🔥 CAS 3: AUCUN GAGNANT -->
-                    <div class="no-winner-section" v-if="!gameEndData.winner">
-                        <div class="no-winner-icon">💀</div>
-                        <div class="no-winner-text">Aucun gagnant</div>
-                    </div>
-
-                    <!-- 🔥 NOUVEAU: PODIUM TOP 3 (Mode Points uniquement) -->
-                    <div class="podium-section" v-if="gameEndData.podium && gameEndData.gameMode === 'points'">
-                        <h3 class="podium-title">🏆 Podium</h3>
-                        <div class="podium-list">
-                            <div class="podium-item" v-for="player in gameEndData.podium" :key="player.rank"
-                                :class="'rank-' + player.rank">
-                                <div class="podium-rank">{{ player.rank }}</div>
-                                <div class="podium-info">
-                                    <span class="podium-name">{{ player.username }}</span>
-                                    <span class="podium-points">{{ player.points }} pts</span>
+                        <!-- Colonne droite : Podium Top 3 (Mode Points uniquement) -->
+                        <div class="podium-column" v-if="gameEndData.podium && gameEndData.gameMode === 'points'">
+                            <!-- <h3 class="podium-title">🏆 Podium</h3> -->
+                            <div class="podium-compact-list">
+                                <div class="podium-compact-item" v-for="player in gameEndData.podium" :key="player.rank"
+                                    :class="'rank-' + player.rank">
+                                    <div class="podium-compact-rank">{{ player.rank }}</div>
+                                    <div class="podium-compact-info">
+                                        <span class="podium-compact-name">{{ player.username }}</span>
+                                        <span class="podium-compact-points">{{ player.points }} pts</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="game-stats-improved">
-                        <div class="stat-item-improved">
-                            <div class="stat-value-improved">{{ gameEndData.totalQuestions }}</div>
-                            <div class="stat-label-improved">Questions</div>
-                        </div>
-                        <div class="stat-divider"></div>
-                        <div class="stat-item-improved">
-                            <div class="stat-value-improved">{{ formatDuration(gameEndData.duration) }}</div>
-                            <div class="stat-label-improved">Durée</div>
-                        </div>
-                    </div>
-
-                    <button class="btn-primary" @click="backToHome">
+                    <button class="btn-primary btn-home" @click="backToHome">
                         Retour à l'accueil
                     </button>
                 </div>

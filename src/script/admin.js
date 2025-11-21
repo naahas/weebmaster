@@ -465,6 +465,19 @@ async function restoreGameState() {
             }
         }
 
+        if (state.currentQuestion && state.liveAnswerCounts) {
+            console.log('📊 Restauration des stats live:', state.liveAnswerCounts);
+
+            // Attendre que le DOM soit prêt
+            setTimeout(() => {
+                updateLiveAnswerDisplay({
+                    answerCounts: state.liveAnswerCounts,
+                    answeredCount: state.answeredCount || 0,
+                    totalPlayers: state.playerCount || 0
+                });
+            }, 200);
+        }
+
         // Désactiver paramètres si partie en cours
         if (state.inProgress) {
             toggleSettingsAccess(false);
@@ -706,12 +719,24 @@ function initSocket() {
 
         console.log('⚙️ Config mise à jour:', data);
     });
+
+
+    socket.on('live-answer-stats', (data) => {
+        updateLiveAnswerDisplay(data);
+    });
 }
 
 // ============ DISPLAY QUESTION ============
 function displayQuestion(data, initialTimeRemaining = null) {
     currentQuestionData = data;
     console.log("📝 Displaying question:", data);
+
+    updateLiveAnswerDisplay({
+        answerCounts: {},
+        answeredCount: 0,
+        totalPlayers: 0
+    });
+
     const container = document.getElementById('questionContainer');
 
     // Reset timer
@@ -739,6 +764,7 @@ function displayQuestion(data, initialTimeRemaining = null) {
                     <div class="answer-item" id="answer-${index + 1}">
                         <div class="answer-number">${index + 1}</div>
                         <div class="answer-text">${answer}</div>
+                        <div class="answer-percentage" id="percent-${index + 1}">0%</div>
                     </div>
                 `).join('')}
             </div>
@@ -761,7 +787,7 @@ function displayQuestion(data, initialTimeRemaining = null) {
 
     // 🆕 S'assurer qu'on est sur l'onglet Question
     switchTab('question');
-    
+
     // Masquer les résultats
     document.getElementById('resultsContainer').style.display = 'none';
     document.getElementById('statsEmptyState').style.display = 'block';
@@ -991,7 +1017,7 @@ function displayResults(data) {
 // 🆕 Mettre en évidence la bonne réponse dans l'onglet Question
 function highlightCorrectAnswer(correctAnswerIndex) {
     const answerElement = document.getElementById(`answer-${correctAnswerIndex}`);
-    
+
     if (answerElement) {
         // Retirer le style de toutes les réponses d'abord
         document.querySelectorAll('.answer-item').forEach(item => {
@@ -1000,7 +1026,7 @@ function highlightCorrectAnswer(correctAnswerIndex) {
 
         // Ajouter la classe correct à la bonne réponse
         answerElement.classList.add('correct-answer');
-        
+
         console.log(`✅ Réponse ${correctAnswerIndex} mise en évidence`);
     }
 }
@@ -1754,22 +1780,22 @@ async function refreshAllPlayers() {
 // 🔥 Gérer le cooldown de 20s
 function startRefreshCooldown(initialTime = 20) {
     refreshCooldownActive = true;
-    
+
     const card = document.getElementById('refreshPlayersCard');
-    
+
     // 🔥 Juste griser le bouton
     card.classList.add('on-cooldown');
-    
+
     // Clear any existing timer
     if (refreshCooldownTimer) {
         clearInterval(refreshCooldownTimer);
     }
-    
+
     let timeLeft = initialTime;
-    
+
     refreshCooldownTimer = setInterval(() => {
         timeLeft--;
-        
+
         if (timeLeft <= 0) {
             clearInterval(refreshCooldownTimer);
             refreshCooldownActive = false;
@@ -2444,6 +2470,23 @@ function filterSerieCards() {
             card.style.display = 'none';
         }
     });
+}
+
+function updateLiveAnswerDisplay(data) {
+    const { answerCounts, answeredCount } = data;
+
+    // Mettre à jour chaque pourcentage
+    for (let answerIndex = 1; answerIndex <= 6; answerIndex++) {
+        const count = answerCounts[answerIndex] || 0;
+        const percentage = answeredCount > 0
+            ? Math.round((count / answeredCount) * 100)
+            : 0;
+
+        const percentElem = document.getElementById(`percent-${answerIndex}`);
+        if (percentElem) {
+            percentElem.textContent = percentage > 0 ? `${percentage}%` : '';
+        }
+    }
 }
 
 

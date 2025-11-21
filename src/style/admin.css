@@ -1607,11 +1607,14 @@ body {
    ============================================ */
 
 .timer-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 16px;
     margin-bottom: 14px;
 }
 
 .timer-bar-wrapper {
-    width: 100%;
+    flex: 1;
     height: 9.6px;
     background: var(--bg-main);
     border-radius: 16px;
@@ -1629,6 +1632,20 @@ body {
 
 .timer-bar-fill.warning {
     background: var(--danger);
+    animation: blink 0.5s ease-in-out infinite;
+}
+
+.timer-text {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary);
+    min-width: 50px;
+    text-align: right;
+    font-family: 'Courier New', monospace;
+}
+
+.timer-text.warning {
+    color: var(--danger);
     animation: blink 0.5s ease-in-out infinite;
 }
 
@@ -1672,6 +1689,23 @@ body {
     border: 0.8px solid var(--border);
     border-radius: 9.6px;
     transition: all 0.3s ease;
+}
+
+
+.answer-percentage {
+    margin-left: auto;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--primary);
+    min-width: 50px;
+    text-align: right;
+    font-family: 'Courier New', monospace;
+    transition: all 0.3s ease;
+}
+
+.answer-percentage:not(:empty) {
+    padding-left: 16px;
+    border-left: 1px solid var(--border);
 }
 
 .answer-number {
@@ -2940,3 +2974,5 @@ body {
         box-shadow: 0 0 16px rgba(0, 255, 136, 0.5);
     }
 }
+
+

@@ -1421,98 +1421,337 @@ html, body {
 }
 
 /* ============================================
-   🆕 GAME OVER AMÉLIORÉ (Bug 2 fix)
+   GAME OVER - VERSION MINIMALISTE
    ============================================ */
+
 .gameover-section {
-    max-width: 560px;
+    max-width: 920px;
+    margin: 0 auto;
 }
 
-.gameover-card-improved {
-    background: var(--bg-card);
-    border-radius: 16px;
-    padding: 40px 32px;
-    box-shadow: 0 8.0px 32px rgba(0, 0, 0, 0.3);
-    border: 0.8px solid rgba(255, 255, 255, 0.1);
-    text-align: center;
+.gameover-card-compact {
+    background: transparent; /* 🔥 Fond transparent */
+    border-radius: 0;
+    padding: 32px;
+    border: none; /* 🔥 Pas de bordure */
     animation: fadeInUp 0.6s ease;
 }
 
-.gameover-header h2 {
-    font-size: 1.6rem;
-    font-weight: 700;
-    margin-bottom: 24px;
-    background: linear-gradient(135deg, var(--neon-primary), var(--neon-secondary));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+/* Layout horizontal */
+.gameover-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-bottom: 32px;
 }
 
-.winner-section-improved {
-    margin: 24px 0;
-    padding: 24px;
-    background: var(--bg-secondary);
-    border-radius: 12px;
-    border: 1.6px solid var(--success-color);
+/* ========== COLONNE GAUCHE : WINNER ========== */
+.winner-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
-.winner-label {
-    font-size: 0.72rem;
-    color: var(--text-secondary);
+.winner-box {
+    text-align: center;
+    padding: 32px 24px;
+    background: rgba(31, 31, 31, 0.4); /* 🔥 Fond subtil */
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    border: none; /* 🔥 Pas de bordure verte */
+}
+
+.trophy-icon {
+    margin-bottom: 16px;
+}
+
+.trophy-img {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
+    animation: trophyPulse 2s ease-in-out infinite; /* 🔥 Pulse au lieu de tanguer */
+}
+
+@keyframes trophyPulse {
+    0%, 100% { 
+        transform: scale(1);
+        filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
+    }
+    14% {
+        transform: scale(1.12);
+        filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.9));
+    }
+    28% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
+    }
+    42% {
+        transform: scale(1.12);
+        filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.9));
+    }
+    56% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
+    }
+}
+
+.winner-badge {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.4); /* 🔥 Plus discret */
     text-transform: uppercase;
-    letter-spacing: 0.8px;
-    font-weight: 600;
-    margin-bottom: 9.6px;
+    letter-spacing: 1.5px;
+    font-weight: 500;
+    margin-bottom: 12px;
 }
 
-.winner-name-improved {
-    font-size: 1.6rem;
+.winner-name {
+    font-size: 1.8rem;
     font-weight: 900;
     background: linear-gradient(135deg, var(--neon-primary), var(--neon-secondary));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-bottom: 6.4px;
+    margin-bottom: 16px;
 }
 
 .winner-stats {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.5);
 }
 
-.game-stats-improved {
+.winner-stats .points-icon {
+    font-size: 1.4rem;
+}
+
+.winner-stats .points-number {
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--neon-primary);
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+}
+
+.winner-stats .points-text {
+    font-size: 0.9rem;
+}
+
+/* Égalité */
+.tie-box {
+    text-align: center;
+    padding: 24px;
+    background: rgba(31, 31, 31, 0.4);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    border: none;
+}
+
+.tie-badge {
+    font-size: 1.2rem;
+    color: var(--warning-color);
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+
+.tie-winners-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tie-winner-item {
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    border: none;
+}
+
+/* Aucun gagnant */
+.no-winner-box {
+    text-align: center;
+    padding: 24px;
+    background: rgba(31, 31, 31, 0.4);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    border: none;
+}
+
+.no-winner-icon {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+}
+
+.no-winner-text {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+/* Stats compactes */
+.game-stats-compact {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 24px;
-    margin: 24px 0;
-    padding: 16px;
+    gap: 20px;
+    padding: 16px 20px;
+    background: rgba(31, 31, 31, 0.3); /* 🔥 Plus subtil */
+    backdrop-filter: blur(8px);
+    border-radius: 12px;
 }
 
-.stat-item-improved {
+.stat-compact-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4.0px;
+    gap: 4px;
 }
 
-.stat-value-improved {
-    font-size: 2.0rem;
+.stat-compact-item .stat-number {
+    font-size: 1.6rem;
     font-weight: 900;
     color: var(--accent-color);
     line-height: 1;
 }
 
-.stat-label-improved {
-    font-size: 0.68rem;
-    color: var(--text-secondary);
+.stat-compact-item .stat-label {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.4); /* 🔥 Plus discret */
     text-transform: uppercase;
     letter-spacing: 0.8px;
 }
 
-.stat-divider {
-    width: 1.6px;
-    height: 40px;
-    background: linear-gradient(180deg, transparent, var(--neon-primary), transparent);
+.stat-divider-compact {
+    width: 1px;
+    height: 32px;
+    background: linear-gradient(180deg, transparent, rgba(255, 215, 0, 0.3), transparent);
+}
+
+/* ========== COLONNE DROITE : PODIUM ========== */
+.podium-column {
+    display: flex;
+    flex-direction: column;
+}
+
+
+
+.podium-compact-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.podium-compact-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: rgba(31, 31, 31, 0.4); /* 🔥 Fond subtil */
+    backdrop-filter: blur(8px);
+    border-radius: 12px;
+    border: none; /* 🔥 Pas de bordures colorées */
+    transition: all 0.3s ease;
+}
+
+.podium-compact-item:hover {
+    background: rgba(31, 31, 31, 0.6);
+    transform: translateX(4px);
+}
+
+.podium-compact-item.rank-1 {
+    background: rgba(255, 215, 0, 0.08); /* 🔥 Légère teinte dorée */
+}
+
+.podium-compact-item.rank-2 {
+    background: rgba(192, 192, 192, 0.06); /* 🔥 Légère teinte argentée */
+}
+
+.podium-compact-item.rank-3 {
+    background: rgba(205, 127, 50, 0.06); /* 🔥 Légère teinte bronze */
+}
+
+.podium-compact-rank {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 215, 0, 0.15); /* 🔥 Fond subtil */
+    color: var(--neon-primary);
+    border-radius: 50%;
+    font-size: 0.9rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.podium-compact-item.rank-1 .podium-compact-rank {
+    background: rgba(255, 215, 0, 0.2);
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
+}
+
+.podium-compact-item.rank-2 .podium-compact-rank {
+    background: rgba(192, 192, 192, 0.15);
+    color: #C0C0C0;
+}
+
+.podium-compact-item.rank-3 .podium-compact-rank {
+    background: rgba(205, 127, 50, 0.15);
+    color: #CD7F32;
+}
+
+.podium-compact-info {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.podium-compact-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.podium-compact-points {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--neon-primary);
+}
+
+/* Bouton retour */
+.btn-home {
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
+}
+
+/* ========== RESPONSIVE MOBILE ========== */
+@media (max-width: 614px) {
+    .gameover-layout {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+    
+    .gameover-card-compact {
+        padding: 20px;
+    }
+    
+    .trophy-img {
+        width: 56px;
+        height: 56px;
+    }
+    
+    .winner-name {
+        font-size: 1.4rem;
+    }
+    
+    .winner-stats .points-number {
+        font-size: 1.6rem;
+    }
 }
 
 /* ============================================
