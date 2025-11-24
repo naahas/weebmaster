@@ -31,15 +31,19 @@ body {
     color: var(--text-primary);
     overflow: hidden;
     height: 100vh;
-    position: fixed; /* Garde ça pour bloquer le scroll */
+    position: fixed;
+    /* Garde ça pour bloquer le scroll */
     width: 100%;
     transition: background 0.3s ease, color 0.3s ease;
 }
 
 /* 🆕 PERMETTRE le pull-to-refresh mais bloquer le scroll horizontal */
-html, body {
-    overscroll-behavior-x: none; /* Bloquer bounce horizontal uniquement */
-    overscroll-behavior-y: auto; /* 🆕 Autoriser bounce vertical = pull-to-refresh */
+html,
+body {
+    overscroll-behavior-x: none;
+    /* Bloquer bounce horizontal uniquement */
+    overscroll-behavior-y: auto;
+    /* 🆕 Autoriser bounce vertical = pull-to-refresh */
 }
 
 /* ============================================
@@ -361,12 +365,6 @@ html, body {
     gap: 15px;
 }
 
-.stat-number {
-    font-size: 3rem;
-    font-weight: 700;
-    color: #ffc107;
-    line-height: 1;
-}
 
 .stat-icon {
     font-size: 2rem;
@@ -516,9 +514,9 @@ html, body {
     margin-bottom: 16px;
     border: 0.8px solid rgba(255, 255, 255, 0.05);
     position: relative;
-    
+
     /* 🔥 AJOUTER ces lignes */
-    transition: 
+    transition:
         border-color 0.8s ease-in-out,
         box-shadow 0.8s ease-in-out;
 }
@@ -526,25 +524,29 @@ html, body {
 
 .hud-shield-icon {
     position: absolute;
-    right: -55px; /* 🔥 À droite, en dehors du HUD */
+    right: -55px;
+    /* 🔥 À droite, en dehors du HUD */
     top: 50%;
     transform: translateY(-50%);
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     object-fit: contain;
-    filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.8))
-            drop-shadow(0 0 30px rgba(59, 130, 246, 0.4));
+    filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.8)) drop-shadow(0 0 30px rgba(59, 130, 246, 0.4));
     animation: shieldIconFloat 2s ease-in-out infinite;
     pointer-events: none;
 }
 
 /* Animation flottante de l'icône */
 @keyframes shieldIconFloat {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: translateY(-50%) translateY(0);
     }
+
     50% {
-        transform: translateY(-50%) translateY(-5px); /* 🔥 Mouvement ultra discret */
+        transform: translateY(-50%) translateY(-5px);
+        /* 🔥 Mouvement ultra discret */
     }
 }
 
@@ -562,9 +564,11 @@ html, body {
         opacity: 0;
         transform: translateY(-50%) scale(0.5) rotate(-180deg);
     }
+
     60% {
         transform: translateY(-50%) scale(1.1) rotate(10deg);
     }
+
     100% {
         opacity: 1;
         transform: translateY(-50%) scale(1) rotate(0deg);
@@ -576,20 +580,13 @@ html, body {
         opacity: 1;
         transform: translateY(-50%) scale(1);
     }
+
     100% {
         opacity: 0;
         transform: translateY(-50%) scale(0.3) rotate(180deg);
     }
 }
 
-/* Responsive mobile */
-@media (max-width: 614px) {
-    .hud-shield-icon {
-        right: -40px; /* 🔥 Plus proche sur mobile */
-        width: 30px;
-        height: 30px;
-    }
-}
 
 .hud-item {
     display: flex;
@@ -653,7 +650,7 @@ html, body {
     flex-direction: column;
     width: 100%;
     justify-content: flex-start;
-    padding-top: 0; 
+    padding-top: 0;
 }
 
 .timer-circle-container {
@@ -1214,15 +1211,6 @@ html, body {
     border: 1.6px solid var(--success-color);
 }
 
-.winner-name {
-    font-size: 1.6rem;
-    font-weight: 900;
-    background: linear-gradient(135deg, var(--neon-primary), var(--neon-secondary));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin: 12px 0;
-}
 
 .game-stats {
     display: flex;
@@ -1430,19 +1418,33 @@ html, body {
 }
 
 .gameover-card-compact {
-    background: transparent; /* 🔥 Fond transparent */
+    background: transparent;
+    /* 🔥 Fond transparent */
     border-radius: 0;
     padding: 32px;
-    border: none; /* 🔥 Pas de bordure */
+    border: none;
+    /* 🔥 Pas de bordure */
     animation: fadeInUp 0.6s ease;
 }
 
 /* Layout horizontal */
 .gameover-layout {
     display: grid;
+    grid-template-columns: 1fr;
+    /* Par défaut : 1 colonne (Mode Vie) */
+    gap: 24px;
+    width: 100%;
+}
+
+.gameover-layout:has(.podium-column) {
     grid-template-columns: 1fr 1fr;
-    gap: 40px;
-    margin-bottom: 32px;
+}
+
+@media (max-width: 768px) {
+    .gameover-layout:has(.podium-column) {
+        grid-template-columns: 1fr;
+        /* 1 colonne sur mobile même avec podium */
+    }
 }
 
 /* ========== COLONNE GAUCHE : WINNER ========== */
@@ -1450,15 +1452,18 @@ html, body {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    align-items: center;
 }
 
 .winner-box {
     text-align: center;
     padding: 32px 24px;
-    background: rgba(31, 31, 31, 0.4); /* 🔥 Fond subtil */
+    background: rgba(31, 31, 31, 0.4);
+    /* 🔥 Fond subtil */
     backdrop-filter: blur(10px);
     border-radius: 16px;
-    border: none; /* 🔥 Pas de bordure verte */
+    border: none;
+    /* 🔥 Pas de bordure verte */
 }
 
 .trophy-icon {
@@ -1466,30 +1471,50 @@ html, body {
 }
 
 .trophy-img {
-    width: 72px;
-    height: 72px;
-    object-fit: contain;
+    width: 80px;
+    height: 80px;
+    margin-bottom: 16px;
     filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
-    animation: trophyPulse 2s ease-in-out infinite; /* 🔥 Pulse au lieu de tanguer */
+    animation: float 3s ease-in-out infinite;
 }
 
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+
 @keyframes trophyPulse {
-    0%, 100% { 
+
+    0%,
+    100% {
         transform: scale(1);
         filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
     }
+
     14% {
         transform: scale(1.12);
         filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.9));
     }
+
     28% {
         transform: scale(1);
         filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
     }
+
     42% {
         transform: scale(1.12);
         filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.9));
     }
+
     56% {
         transform: scale(1);
         filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
@@ -1497,22 +1522,31 @@ html, body {
 }
 
 .winner-badge {
-    font-size: 0.65rem;
-    color: rgba(255, 255, 255, 0.4); /* 🔥 Plus discret */
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    font-weight: 500;
+    display: inline-block;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: var(--bg-main);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 1px;
     margin-bottom: 12px;
 }
 
 .winner-name {
-    font-size: 1.8rem;
+    font-size: 2rem;
     font-weight: 900;
-    background: linear-gradient(135deg, var(--neon-primary), var(--neon-secondary));
+    color: var(--primary);
+    /* 🔥 Fallback pour navigateurs incompatibles */
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     margin-bottom: 16px;
+    text-shadow: none;
+    /* 🔥 Retirer le text-shadow qui peut causer des conflits */
+    filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.4));
+    /* 🔥 Utiliser drop-shadow à la place */
 }
 
 .winner-stats {
@@ -1520,8 +1554,8 @@ html, body {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    font-size: 1rem;
-    color: rgba(255, 255, 255, 0.5);
+    font-size: 1.1rem;
+    color: var(--text-primary);
 }
 
 .winner-stats .points-icon {
@@ -1581,6 +1615,19 @@ html, body {
     border: none;
 }
 
+
+.winner-box,
+.tie-box,
+.no-winner-box {
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 24px;
+    text-align: center;
+    width: 100%;
+    max-width: 400px;
+}
+
 .no-winner-icon {
     font-size: 2.5rem;
     margin-bottom: 12px;
@@ -1595,16 +1642,17 @@ html, body {
 /* Stats compactes */
 .game-stats-compact {
     display: flex;
-    justify-content: center;
-    align-items: center;
     gap: 20px;
-    padding: 16px 20px;
-    background: rgba(31, 31, 31, 0.3); /* 🔥 Plus subtil */
-    backdrop-filter: blur(8px);
+    padding: 16px 24px;
+    background: var(--bg-main);
     border-radius: 12px;
+    border: 1px solid var(--border);
+    width: 100%;
+    max-width: 400px;
 }
 
 .stat-compact-item {
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1620,21 +1668,22 @@ html, body {
 
 .stat-compact-item .stat-label {
     font-size: 0.65rem;
-    color: rgba(255, 255, 255, 0.4); /* 🔥 Plus discret */
+    color: rgba(255, 255, 255, 0.4);
+    /* 🔥 Plus discret */
     text-transform: uppercase;
     letter-spacing: 0.8px;
 }
 
 .stat-divider-compact {
     width: 1px;
-    height: 32px;
-    background: linear-gradient(180deg, transparent, rgba(255, 215, 0, 0.3), transparent);
+    background: var(--border);
 }
 
 /* ========== COLONNE DROITE : PODIUM ========== */
 .podium-column {
     display: flex;
     flex-direction: column;
+    gap: 16px;
 }
 
 
@@ -1648,85 +1697,81 @@ html, body {
 .podium-compact-item {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 14px 18px;
-    background: rgba(31, 31, 31, 0.4); /* 🔥 Fond subtil */
-    backdrop-filter: blur(8px);
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 12px;
-    border: none; /* 🔥 Pas de bordures colorées */
     transition: all 0.3s ease;
 }
 
 .podium-compact-item:hover {
-    background: rgba(31, 31, 31, 0.6);
     transform: translateX(4px);
+    border-color: var(--primary);
 }
 
 .podium-compact-item.rank-1 {
-    background: rgba(255, 215, 0, 0.08); /* 🔥 Légère teinte dorée */
+    border-color: #FFD700;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), transparent);
 }
 
 .podium-compact-item.rank-2 {
-    background: rgba(192, 192, 192, 0.06); /* 🔥 Légère teinte argentée */
+    border-color: #C0C0C0;
 }
 
 .podium-compact-item.rank-3 {
-    background: rgba(205, 127, 50, 0.06); /* 🔥 Légère teinte bronze */
+    border-color: #CD7F32;
 }
 
 .podium-compact-rank {
-    width: 34px;
-    height: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 215, 0, 0.15); /* 🔥 Fond subtil */
-    color: var(--neon-primary);
-    border-radius: 50%;
-    font-size: 0.9rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
     font-weight: 700;
-    flex-shrink: 0;
+    font-size: 1rem;
 }
 
-.podium-compact-item.rank-1 .podium-compact-rank {
-    background: rgba(255, 215, 0, 0.2);
-    box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
+.rank-1 .podium-compact-rank {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: var(--bg-main);
 }
 
-.podium-compact-item.rank-2 .podium-compact-rank {
-    background: rgba(192, 192, 192, 0.15);
-    color: #C0C0C0;
+.rank-2 .podium-compact-rank {
+    background: linear-gradient(135deg, #C0C0C0, #808080);
+    color: var(--bg-main);
 }
 
-.podium-compact-item.rank-3 .podium-compact-rank {
-    background: rgba(205, 127, 50, 0.15);
-    color: #CD7F32;
+.rank-3 .podium-compact-rank {
+    background: linear-gradient(135deg, #CD7F32, #8B4513);
+    color: white;
 }
 
 .podium-compact-info {
     flex: 1;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: 2px;
 }
 
 .podium-compact-name {
-    font-size: 0.95rem;
     font-weight: 600;
     color: var(--text-primary);
+    font-size: 0.9rem;
 }
 
 .podium-compact-points {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: var(--neon-primary);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
 }
 
-/* Bouton retour */
+/* Bouton Retour */
 .btn-home {
+    margin-top: 24px;
     width: 100%;
-    max-width: 440px;
-    margin: 0 auto;
+    max-width: 400px;
 }
 
 /* ========== RESPONSIVE MOBILE ========== */
@@ -1735,20 +1780,20 @@ html, body {
         grid-template-columns: 1fr;
         gap: 24px;
     }
-    
+
     .gameover-card-compact {
         padding: 20px;
     }
-    
+
     .trophy-img {
         width: 56px;
         height: 56px;
     }
-    
+
     .winner-name {
         font-size: 1.4rem;
     }
-    
+
     .winner-stats .points-number {
         font-size: 1.6rem;
     }
@@ -2416,7 +2461,7 @@ html, body {
         margin-bottom: 12px;
     }
 
-    .results-view .answers-grid.grid-6 ~ .survivors-count {
+    .results-view .answers-grid.grid-6~.survivors-count {
         display: none;
     }
 
@@ -2833,15 +2878,16 @@ html, body {
 }
 
 .stat-number {
-    font-size: 1.6rem;
+    font-size: 1.5rem;
     font-weight: 700;
-    color: var(--neon-primary);
+    color: var(--primary);
 }
 
 .stat-label {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     color: var(--text-secondary);
-    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 /* ========== TAB: BADGES ========== */
@@ -3050,15 +3096,18 @@ html, body {
 /* Mobile */
 @media (max-width: 614px) {
     .instagram-btn {
-        bottom: 20px; /* Au lieu de 80px */
+        bottom: 20px;
+        /* Au lieu de 80px */
         left: 20px;
         width: 44px;
         height: 44px;
     }
-    
+
     .tiktok-btn {
-        bottom: 20px; /* Au lieu de 80px */
-        left: 72px; /* 20px + 44px + 8px gap */
+        bottom: 20px;
+        /* Au lieu de 80px */
+        left: 72px;
+        /* 20px + 44px + 8px gap */
         width: 44px;
         height: 44px;
     }
@@ -3068,8 +3117,9 @@ html, body {
    HUD JOUEUR - MODE POINTS
    ============================================ */
 .hud-item.points-display {
-    flex-direction: row;
-    gap: 8px;
+    flex-direction: column;  /* 🔥 Comme les autres hud-item */
+    gap: 3.2px;              /* 🔥 Même gap que les autres */
+    align-items: center;
 }
 
 .points-counter {
@@ -3083,7 +3133,7 @@ html, body {
 }
 
 .points-number {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 700;
     color: var(--neon-primary);
     text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
@@ -3105,7 +3155,7 @@ html, body {
     font-size: 2rem;
     font-weight: 900;
     color: var(--success-color);
-    text-shadow: 
+    text-shadow:
         0 0 10px rgba(16, 185, 129, 0.8),
         0 0 20px rgba(16, 185, 129, 0.5);
     animation: pointsPopUp 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
@@ -3116,13 +3166,16 @@ html, body {
         opacity: 0;
         transform: scale(0.5) translateY(0);
     }
+
     20% {
         opacity: 1;
         transform: scale(1.2) translateY(-10px);
     }
+
     50% {
         transform: scale(1) translateY(-20px);
     }
+
     100% {
         opacity: 0;
         transform: scale(0.8) translateY(-60px);
@@ -3335,7 +3388,8 @@ html, body {
     right: 30px;
     top: 50%;
     transform: translateY(-50%);
-    width: 24px; /* 🔥 Réduit de 40px à 32px */
+    width: 24px;
+    /* 🔥 Réduit de 40px à 32px */
     z-index: 400;
     opacity: 0.9;
 }
@@ -3348,9 +3402,11 @@ html, body {
     backdrop-filter: blur(8px);
     border: 2px double rgba(238, 242, 242, 0.253);
     border-radius: 20px;
-    padding: 2px 3px; /* 🔥 Padding horizontal réduit */
+    padding: 2px 3px;
+    /* 🔥 Padding horizontal réduit */
     position: relative;
-    overflow: visible; /* 🔥 Changé de hidden à visible pour voir le label */
+    overflow: visible;
+    /* 🔥 Changé de hidden à visible pour voir le label */
 }
 
 .combo-gauge::before {
@@ -3370,7 +3426,8 @@ html, body {
     height: 400px;
     width: 100%;
     position: relative;
-    overflow: hidden; /* 🔥 AJOUTÉ ici pour garder la barre contenue */
+    overflow: hidden;
+    /* 🔥 AJOUTÉ ici pour garder la barre contenue */
 }
 
 .combo-bar-bg {
@@ -3379,7 +3436,8 @@ html, body {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 15px;
     position: relative;
-    overflow: visible; /* 🔥 CHANGÉ de hidden à visible */
+    overflow: visible;
+    /* 🔥 CHANGÉ de hidden à visible */
 }
 
 
@@ -3390,15 +3448,15 @@ html, body {
     bottom: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(180deg, 
-        rgba(255, 215, 0, 0.4) 0%,
-        rgba(255, 215, 0, 0.7) 50%,
-        var(--neon-primary) 100%
-    );
-    border-radius: 15px !important; /* 🔥 AJOUTÉ - Force l'arrondi en permanence */
-    
+    background: linear-gradient(180deg,
+            rgba(255, 215, 0, 0.4) 0%,
+            rgba(255, 215, 0, 0.7) 50%,
+            var(--neon-primary) 100%);
+    border-radius: 15px !important;
+    /* 🔥 AJOUTÉ - Force l'arrondi en permanence */
+
     transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    
+
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
     transform-origin: bottom;
 }
@@ -3407,15 +3465,15 @@ html, body {
 /* 🔥 Quand on level-up, on override la transition */
 .combo-bar-fill.level-up-complete {
     animation: levelUpCelebration 1.5s ease-out forwards;
-    box-shadow: 
+    box-shadow:
         0 0 40px rgba(255, 215, 0, 1),
         0 0 80px rgba(255, 215, 0, 0.8),
         0 0 120px rgba(255, 215, 0, 0.6),
         inset 0 0 40px rgba(255, 255, 255, 0.5);
-    
+
     /* 🔥 FORCER le border-radius pendant toute l'animation */
     border-radius: 15px !important;
-    
+
     /* 🔥 Empêcher TOUTE modification de hauteur */
     overflow: hidden;
 }
@@ -3426,18 +3484,23 @@ html, body {
         filter: brightness(1);
         /* 🔥 PAS de transform scaleY */
     }
+
     10% {
         filter: brightness(1.5);
     }
+
     25% {
         filter: brightness(2);
     }
+
     50% {
         filter: brightness(2.5);
     }
+
     75% {
         filter: brightness(2);
     }
+
     100% {
         filter: brightness(1.8);
     }
@@ -3471,8 +3534,10 @@ html, body {
     right: 0;
     bottom: 0;
     pointer-events: none;
-    overflow: visible; /* 🔥 AJOUTÉ */
-    z-index: 10; /* 🔥 AJOUTÉ pour être au-dessus */
+    overflow: visible;
+    /* 🔥 AJOUTÉ */
+    z-index: 10;
+    /* 🔥 AJOUTÉ pour être au-dessus */
 }
 
 .combo-particles-external {
@@ -3493,8 +3558,8 @@ html, body {
     background: radial-gradient(circle, var(--neon-primary), var(--neon-secondary));
     border-radius: 50%;
     opacity: 0;
-    box-shadow: 
-        0 0 10px var(--neon-primary), 
+    box-shadow:
+        0 0 10px var(--neon-primary),
         0 0 20px var(--neon-primary),
         0 0 30px rgba(255, 215, 0, 0.5);
     animation: particleBurst 1.2s ease-out forwards;
@@ -3505,14 +3570,17 @@ html, body {
         opacity: 1;
         transform: translateY(0) translateX(0) scale(0.5);
     }
+
     20% {
         opacity: 1;
         transform: translateY(-30px) translateX(var(--drift)) scale(1.2);
     }
+
     50% {
         opacity: 0.8;
         transform: translateY(-60px) translateX(var(--drift)) scale(1);
     }
+
     100% {
         opacity: 0;
         transform: translateY(-100px) translateX(var(--drift)) scale(0.3);
@@ -3524,11 +3592,10 @@ html, body {
     bottom: -50px;
     left: 50%;
     transform: translateX(-50%);
-    
-    background: linear-gradient(135deg, 
-        rgba(255, 215, 0, 0.3), 
-        rgba(255, 165, 0, 0.3)
-    );
+
+    background: linear-gradient(135deg,
+            rgba(255, 215, 0, 0.3),
+            rgba(255, 165, 0, 0.3));
     color: var(--neon-primary);
     padding: 6px 14px;
     border-radius: 10px;
@@ -3536,15 +3603,15 @@ html, body {
     font-weight: 900;
     letter-spacing: 1.5px;
     white-space: nowrap;
-    
-    box-shadow: 
+
+    box-shadow:
         0 0 15px rgba(255, 217, 0, 0.164),
         0 0 30px rgba(255, 215, 0, 0.2),
         inset 0 0 20px rgba(255, 215, 0, 0.1);
-    
+
     animation: levelIndicatorPulse 2s ease-in-out infinite;
-    
-    text-shadow: 
+
+    text-shadow:
         0 0 10px rgba(255, 215, 0, 0.8),
         0 0 20px rgba(255, 215, 0, 0.4),
         0 2px 4px rgba(0, 0, 0, 0.5);
@@ -3552,20 +3619,25 @@ html, body {
 
 
 .combo-level-indicator:has-text("MAX") {
-    font-size: 0.55rem; /* Légèrement plus petit pour "MAX" */
-    padding: 6px 16px; /* Un peu plus large */
+    font-size: 0.55rem;
+    /* Légèrement plus petit pour "MAX" */
+    padding: 6px 16px;
+    /* Un peu plus large */
 }
 
 @keyframes levelIndicatorPulse {
-    0%, 100% {
-        box-shadow: 
+
+    0%,
+    100% {
+        box-shadow:
             0 0 15px rgba(255, 215, 0, 0.4),
             0 0 30px rgba(255, 215, 0, 0.2),
             inset 0 0 20px rgba(255, 215, 0, 0.1);
         transform: translateX(-50%) scale(1);
     }
+
     50% {
-        box-shadow: 
+        box-shadow:
             0 0 20px rgba(255, 215, 0, 0.6),
             0 0 40px rgba(255, 215, 0, 0.3),
             inset 0 0 25px rgba(255, 215, 0, 0.15);
@@ -3578,10 +3650,10 @@ html, body {
 /* Effet de disparition (300ms) - Fade-out élégant */
 .combo-bar-fill.level-up-fadeout {
     animation: levelUpFadeOut 0.3s ease-out forwards;
-    
+
     /* 🔥 GARDER le border-radius */
     border-radius: 15px !important;
-    
+
     /* 🔥 Empêcher toute modification de hauteur */
     overflow: hidden;
 }
@@ -3591,6 +3663,7 @@ html, body {
         opacity: 1;
         filter: brightness(1.8);
     }
+
     100% {
         opacity: 0;
         filter: brightness(0.5);
@@ -3618,8 +3691,15 @@ html, body {
 
 
 @keyframes maxPulse {
-    0%, 100% { transform: translateX(-50%) scale(1); }
-    50% { transform: translateX(-50%) scale(1.05); }
+
+    0%,
+    100% {
+        transform: translateX(-50%) scale(1);
+    }
+
+    50% {
+        transform: translateX(-50%) scale(1.05);
+    }
 }
 
 /* ============================================
@@ -3629,7 +3709,8 @@ html, body {
 .bonus-icon-container {
     position: fixed;
     right: 22px;
-    top: calc(50% - 260px); /* 🔥 Juste au-dessus de la jauge (qui fait 407px + marge) */
+    top: calc(50% - 260px);
+    /* 🔥 Juste au-dessus de la jauge (qui fait 407px + marge) */
     z-index: 500;
 }
 
@@ -3714,7 +3795,8 @@ html, body {
 /* Menu des bonus (3 bandelettes) */
 .bonus-menu {
     position: absolute;
-    right: 50px; /* 🔥 Vers la gauche */
+    right: 50px;
+    /* 🔥 Vers la gauche */
     top: 0;
     display: flex;
     flex-direction: column;
@@ -3723,7 +3805,8 @@ html, body {
 
 /* Bandelette individuelle */
 .bonus-strip {
-    padding: 9px 16px 9px 12px; /* 🔥 MODIFIÉ: Plus d'espace à gauche pour l'icône */
+    padding: 9px 16px 9px 12px;
+    /* 🔥 MODIFIÉ: Plus d'espace à gauche pour l'icône */
     border-radius: 8px;
     border-top-left-radius: 0%;
     border-bottom-left-radius: 0%;
@@ -3731,13 +3814,17 @@ html, body {
     backdrop-filter: blur(10px);
     cursor: pointer;
     transition: all 0.3s ease;
-    min-width: 140px; /* 🔥 MODIFIÉ: Élargi de 110px à 140px */
-    text-align: left; /* 🔥 MODIFIÉ: Alignement à gauche */
+    min-width: 140px;
+    /* 🔥 MODIFIÉ: Élargi de 110px à 140px */
+    text-align: left;
+    /* 🔥 MODIFIÉ: Alignement à gauche */
     position: relative;
     overflow: hidden;
-    display: flex; /* 🔥 NOUVEAU: Flexbox pour aligner icône + texte */
+    display: flex;
+    /* 🔥 NOUVEAU: Flexbox pour aligner icône + texte */
     align-items: center;
-    gap: 10px; /* 🔥 NOUVEAU: Espace entre icône et texte */
+    gap: 10px;
+    /* 🔥 NOUVEAU: Espace entre icône et texte */
 }
 
 /* 🔥 NOUVEAU: Style de l'icône */
@@ -3747,7 +3834,8 @@ html, body {
     object-fit: contain;
     filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.3));
     transition: all 0.3s ease;
-    flex-shrink: 0; /* Empêcher le rétrécissement */
+    flex-shrink: 0;
+    /* Empêcher le rétrécissement */
 }
 
 .bonus-strip::before {
@@ -3757,11 +3845,10 @@ html, body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(90deg, 
-        transparent 0%,
-        rgba(255, 215, 0, 0) 30%,
-        rgba(255, 215, 0, 0.15) 100%
-    );
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 215, 0, 0) 30%,
+            rgba(255, 215, 0, 0.15) 100%);
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -3775,30 +3862,30 @@ html, body {
 
 
 .bonus-strip.available:hover::before {
-    background: linear-gradient(90deg, 
-    transparent 0%,
-    rgba(255, 215, 0, 0) 40%,
-    rgba(255, 217, 0, 0.047) 100%
-);
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 215, 0, 0) 40%,
+            rgba(255, 217, 0, 0.047) 100%);
 }
 
 .bonus-strip-text {
-    font-size: 0.7rem; /* 🔥 MODIFIÉ: Légèrement plus grand (0.6 → 0.7) */
+    font-size: 0.7rem;
+    /* 🔥 MODIFIÉ: Légèrement plus grand (0.6 → 0.7) */
     font-weight: 600;
     letter-spacing: 0.5px;
     position: relative;
     z-index: 1;
     white-space: nowrap;
-    flex: 1; /* Prendre l'espace restant */
+    flex: 1;
+    /* Prendre l'espace restant */
 }
 
 /* 🔥 État LOCKED (grisé, non débloqué) */
 .bonus-strip.locked {
-    background: linear-gradient(90deg, 
-        transparent 0%,
-        rgba(60, 60, 60, 0.15) 40%,
-        rgba(60, 60, 60, 0.3) 100%
-    );
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(60, 60, 60, 0.15) 40%,
+            rgba(60, 60, 60, 0.3) 100%);
     opacity: 0.4;
     cursor: not-allowed;
 }
@@ -3809,11 +3896,13 @@ html, body {
 
 /* 🔥 État AVAILABLE (disponible) */
 .bonus-strip.available {
-    background: linear-gradient(90deg, 
-        transparent 0%,
-        rgba(255, 215, 0, 0.03) 40%, /* 🔥 RÉDUIT de 0.08 à 0.03 */
-        rgba(255, 215, 0, 0.08) 100%  /* 🔥 RÉDUIT de 0.15 à 0.08 */
-    );
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 215, 0, 0.03) 40%,
+            /* 🔥 RÉDUIT de 0.08 à 0.03 */
+            rgba(255, 215, 0, 0.08) 100%
+            /* 🔥 RÉDUIT de 0.15 à 0.08 */
+        );
 }
 
 .bonus-strip.available .bonus-strip-text {
@@ -3824,11 +3913,13 @@ html, body {
 
 .bonus-strip.available:hover {
     transform: scale(1.08);
-    background: linear-gradient(90deg, 
-        transparent 0%,
-        rgba(255, 215, 0, 0.08) 40%, /* 🔥 RÉDUIT de 0.15 à 0.08 */
-        rgba(255, 215, 0, 0.15) 100%  /* 🔥 RÉDUIT de 0.25 à 0.15 */
-    );
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 215, 0, 0.08) 40%,
+            /* 🔥 RÉDUIT de 0.15 à 0.08 */
+            rgba(255, 215, 0, 0.15) 100%
+            /* 🔥 RÉDUIT de 0.25 à 0.15 */
+        );
     /* box-shadow: 0 4px 16px rgba(255, 215, 0, 0.2); */
 }
 
@@ -3841,11 +3932,10 @@ html, body {
 }
 
 .bonus-strip.available.disabled {
-    background: linear-gradient(90deg, 
-        rgba(60, 60, 60, 0.2) 0%,
-        rgba(60, 60, 60, 0.1) 60%,
-        transparent 100%
-    ) !important;
+    background: linear-gradient(90deg,
+            rgba(60, 60, 60, 0.2) 0%,
+            rgba(60, 60, 60, 0.1) 60%,
+            transparent 100%) !important;
 }
 
 .bonus-strip.available.disabled::before {
@@ -3858,11 +3948,10 @@ html, body {
 
 /* 🔥 État USED (déjà utilisé) */
 .bonus-strip.used {
-    background: linear-gradient(90deg, 
-        transparent 0%,
-        rgba(40, 40, 40, 0.1) 40%,
-        rgba(40, 40, 40, 0.2) 100%
-    );
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(40, 40, 40, 0.1) 40%,
+            rgba(40, 40, 40, 0.2) 100%);
     opacity: 0.25;
     cursor: not-allowed;
 }
@@ -3919,6 +4008,7 @@ html, body {
         opacity: 0;
         transform: translateX(20px);
     }
+
     100% {
         opacity: 1;
         transform: translateX(0);
@@ -3930,6 +4020,7 @@ html, body {
         opacity: 1;
         transform: translateX(0);
     }
+
     100% {
         opacity: 0;
         transform: translateX(20px);
@@ -3954,20 +4045,22 @@ html, body {
    ============================================ */
 @media (max-width: 614px) {
     .bonus-icon-container {
-        right: 76px; /* À gauche du bouton profil */
-        top: 20px; /* En haut */
+        right: 76px;
+        /* À gauche du bouton profil */
+        top: 20px;
+        /* En haut */
     }
-    
+
     .bonus-main-icon {
         width: 48px;
         height: 48px;
     }
-    
+
     .bonus-main-icon svg {
         width: 24px;
         height: 24px;
     }
-    
+
     /* Menu en dessous sur mobile */
     .bonus-menu {
         right: auto;
@@ -3975,7 +4068,7 @@ html, body {
         left: 50%;
         transform: translateX(-50%);
     }
-    
+
     .bonus-strip {
         min-width: 120px;
     }
@@ -3996,33 +4089,43 @@ html, body {
 }
 
 @keyframes revealPulse {
-    0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); }
-    50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.5); }
+
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
+    }
 }
 
 /* ========== RESPONSIVE MOBILE ========== */
 @media (max-width: 614px) {
+
     /* Jauge cachée sur mobile */
     .combo-gauge-container {
         display: none !important;
     }
-    
+
     /* Box bonus repositionnée */
     .bonus-box-container {
-        top: 20px; /* 🔥 Même hauteur que desktop */
-        right: 76px; /* 🔥 À gauche du bouton profil mobile */
+        top: 20px;
+        /* 🔥 Même hauteur que desktop */
+        right: 76px;
+        /* 🔥 À gauche du bouton profil mobile */
     }
-    
+
     .bonus-trigger-btn {
         width: 48px;
         height: 48px;
     }
-    
+
     .bonus-trigger-btn svg {
         width: 24px;
         height: 24px;
     }
-    
+
     .bonus-notification-badge {
         width: 22px;
         height: 22px;
@@ -4036,7 +4139,7 @@ html, body {
         padding: 5px 12px;
         font-size: 0.7rem;
     }
-    
+
     .bonus-modal {
         width: 95%;
         max-width: none;
@@ -4055,7 +4158,7 @@ html, body {
     border: 2px solid rgba(59, 130, 246, 0.5);
     border-radius: 8px;
     font-size: 1.2rem;
-    box-shadow: 
+    box-shadow:
         0 0 20px rgba(59, 130, 246, 0.6),
         0 0 40px rgba(59, 130, 246, 0.3),
         inset 0 0 20px rgba(59, 130, 246, 0.1);
@@ -4063,15 +4166,18 @@ html, body {
 }
 
 @keyframes shieldPulse {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: scale(1);
-        box-shadow: 
+        box-shadow:
             0 0 20px rgba(59, 130, 246, 0.6),
             0 0 40px rgba(59, 130, 246, 0.3);
     }
+
     50% {
         transform: scale(1.1);
-        box-shadow: 
+        box-shadow:
             0 0 30px rgba(59, 130, 246, 0.8),
             0 0 60px rgba(59, 130, 246, 0.5);
     }
@@ -4091,9 +4197,11 @@ html, body {
         opacity: 0;
         transform: scale(0.5) rotate(-180deg);
     }
+
     60% {
         transform: scale(1.2) rotate(10deg);
     }
+
     100% {
         opacity: 1;
         transform: scale(1) rotate(0deg);
@@ -4105,6 +4213,7 @@ html, body {
         opacity: 1;
         transform: scale(1);
     }
+
     100% {
         opacity: 0;
         transform: scale(0.5) rotate(180deg);
@@ -4123,11 +4232,10 @@ html, body {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: radial-gradient(circle at center, 
-        rgba(59, 130, 246, 0.3) 0%, 
-        rgba(59, 130, 246, 0.1) 30%, 
-        transparent 70%
-    );
+    background: radial-gradient(circle at center,
+            rgba(59, 130, 246, 0.3) 0%,
+            rgba(59, 130, 246, 0.1) 30%,
+            transparent 70%);
     pointer-events: none;
     z-index: 9999;
     opacity: 0;
@@ -4140,10 +4248,13 @@ html, body {
 }
 
 @keyframes shieldPulseOverlay {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: scale(1);
         opacity: 1;
     }
+
     50% {
         transform: scale(1.1);
         opacity: 0.7;
@@ -4156,22 +4267,26 @@ html, body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 80px; /* 🔥 RÉDUIT de 100px à 80px */
+    width: 80px;
+    /* 🔥 RÉDUIT de 100px à 80px */
     height: 80px;
-    border: 3px solid rgba(59, 130, 246, 0.8); /* 🔥 RÉDUIT de 4px à 3px */
+    border: 3px solid rgba(59, 130, 246, 0.8);
+    /* 🔥 RÉDUIT de 4px à 3px */
     border-radius: 50%;
     pointer-events: none;
     z-index: 9998;
     opacity: 1;
-    box-shadow: 
+    box-shadow:
         0 0 30px rgba(59, 130, 246, 0.6),
         0 0 60px rgba(59, 130, 246, 0.4),
         inset 0 0 30px rgba(59, 130, 246, 0.2);
-    will-change: transform, opacity; /* 🔥 AJOUTÉ pour fluidité */
+    will-change: transform, opacity;
+    /* 🔥 AJOUTÉ pour fluidité */
 }
 
 .shield-protection-wave.expand {
-    animation: shieldWaveExpand 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; /* 🔥 Meilleure courbe */
+    animation: shieldWaveExpand 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    /* 🔥 Meilleure courbe */
 }
 
 @keyframes shieldWaveExpand {
@@ -4181,12 +4296,17 @@ html, body {
         opacity: 1;
         border-width: 3px;
     }
+
     50% {
-        opacity: 0.7; /* 🔥 AJUSTÉ de 0.6 à 0.7 */
-        border-width: 6px; /* 🔥 RÉDUIT de 8px à 6px */
+        opacity: 0.7;
+        /* 🔥 AJUSTÉ de 0.6 à 0.7 */
+        border-width: 6px;
+        /* 🔥 RÉDUIT de 8px à 6px */
     }
+
     100% {
-        width: 120vh; /* 🔥 RÉDUIT de 140vh à 120vh */
+        width: 120vh;
+        /* 🔥 RÉDUIT de 140vh à 120vh */
         height: 120vh;
         opacity: 0;
         border-width: 2px;
@@ -4203,7 +4323,7 @@ html, body {
     border: 2px solid rgba(59, 130, 246, 0.6);
     border-radius: 8px;
     font-size: 1.2rem;
-    box-shadow: 
+    box-shadow:
         0 0 30px rgba(59, 130, 246, 0.7),
         0 0 60px rgba(59, 130, 246, 0.4),
         inset 0 0 30px rgba(59, 130, 246, 0.2);
@@ -4211,15 +4331,18 @@ html, body {
 }
 
 @keyframes shieldPulseIndicator {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: scale(1);
-        box-shadow: 
+        box-shadow:
             0 0 30px rgba(59, 130, 246, 0.7),
             0 0 60px rgba(59, 130, 246, 0.4);
     }
+
     50% {
         transform: scale(1.15);
-        box-shadow: 
+        box-shadow:
             0 0 45px rgba(59, 130, 246, 0.9),
             0 0 90px rgba(59, 130, 246, 0.6);
     }
@@ -4229,20 +4352,23 @@ html, body {
 .answer-btn.shield-active {
     border-color: rgba(59, 130, 246, 0.6) !important;
     background: rgba(59, 130, 246, 0.1) !important;
-    box-shadow: 
+    box-shadow:
         0 0 20px rgba(59, 130, 246, 0.4),
         inset 0 0 20px rgba(59, 130, 246, 0.1);
     animation: shieldAnswerPulse 2s ease-in-out infinite;
 }
 
 @keyframes shieldAnswerPulse {
-    0%, 100% {
-        box-shadow: 
+
+    0%,
+    100% {
+        box-shadow:
             0 0 20px rgba(59, 130, 246, 0.4),
             inset 0 0 20px rgba(59, 130, 246, 0.1);
     }
+
     50% {
-        box-shadow: 
+        box-shadow:
             0 0 30px rgba(59, 130, 246, 0.6),
             inset 0 0 30px rgba(59, 130, 246, 0.2);
     }
@@ -4264,11 +4390,10 @@ html, body {
     position: absolute;
     width: 4px;
     height: 4px;
-    background: radial-gradient(circle, 
-        rgba(59, 130, 246, 1) 0%, 
-        rgba(147, 197, 253, 0.5) 50%, 
-        transparent 100%
-    );
+    background: radial-gradient(circle,
+            rgba(59, 130, 246, 1) 0%,
+            rgba(147, 197, 253, 0.5) 50%,
+            transparent 100%);
     border-radius: 50%;
     opacity: 0;
     animation: shieldParticleFloat 2s ease-out forwards;
@@ -4279,10 +4404,12 @@ html, body {
         opacity: 1;
         transform: translateY(0) scale(0.5);
     }
+
     50% {
         opacity: 0.8;
         transform: translateY(-30vh) scale(1);
     }
+
     100% {
         opacity: 0;
         transform: translateY(-60vh) scale(0.3);
@@ -4302,12 +4429,10 @@ html, body {
     left: -50%;
     width: 200%;
     height: 200%;
-    background: linear-gradient(
-        45deg,
-        transparent 30%,
-        rgba(59, 130, 246, 0.3) 50%,
-        transparent 70%
-    );
+    background: linear-gradient(45deg,
+            transparent 30%,
+            rgba(59, 130, 246, 0.3) 50%,
+            transparent 70%);
     animation: shieldButtonShine 3s ease-in-out infinite;
 }
 
@@ -4315,6 +4440,7 @@ html, body {
     0% {
         transform: translateX(-100%) translateY(-100%) rotate(45deg);
     }
+
     100% {
         transform: translateX(100%) translateY(100%) rotate(45deg);
     }
@@ -4323,19 +4449,18 @@ html, body {
 /* Responsive mobile */
 @media (max-width: 614px) {
     .shield-overlay-effect {
-        background: radial-gradient(circle at center, 
-            rgba(59, 130, 246, 0.4) 0%, 
-            rgba(59, 130, 246, 0.15) 25%, 
-            transparent 60%
-        );
+        background: radial-gradient(circle at center,
+                rgba(59, 130, 246, 0.4) 0%,
+                rgba(59, 130, 246, 0.15) 25%,
+                transparent 60%);
     }
-    
+
     .shield-protection-wave {
         width: 80px;
         height: 80px;
         border-width: 3px;
     }
-    
+
     @keyframes shieldWaveExpand {
         0% {
             width: 80px;
@@ -4343,6 +4468,7 @@ html, body {
             opacity: 1;
             border-width: 3px;
         }
+
         100% {
             width: 120vh;
             height: 120vh;
@@ -4360,11 +4486,10 @@ html, body {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: radial-gradient(circle at center, 
-        rgba(59, 130, 246, 0.3) 0%, 
-        rgba(59, 130, 246, 0.1) 30%, 
-        transparent 70%
-    );
+    background: radial-gradient(circle at center,
+            rgba(59, 130, 246, 0.3) 0%,
+            rgba(59, 130, 246, 0.1) 30%,
+            transparent 70%);
     pointer-events: none;
     z-index: 9999;
     opacity: 0;
@@ -4377,10 +4502,13 @@ html, body {
 }
 
 @keyframes shieldPulseOverlay {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: scale(1);
         opacity: 1;
     }
+
     50% {
         transform: scale(1.1);
         opacity: 0.7;
@@ -4394,15 +4522,18 @@ html, body {
 }
 
 @keyframes shieldHudPulse {
-    0%, 100% {
+
+    0%,
+    100% {
         border-color: rgba(59, 130, 246, 0.35);
-        box-shadow: 
+        box-shadow:
             0 0 18px rgba(59, 130, 246, 0.25),
             inset 0 0 18px rgba(59, 130, 246, 0.1);
     }
+
     50% {
         border-color: rgba(59, 130, 246, 0.45);
-        box-shadow: 
+        box-shadow:
             0 0 22px rgba(59, 130, 246, 0.35),
             inset 0 0 22px rgba(59, 130, 246, 0.13);
     }
@@ -4418,23 +4549,25 @@ html, body {
 /* Icône x2 en position absolue */
 .hud-x2-icon {
     position: absolute;
-    right: -50px; /* Même position que le Shield */
+    right: -50px;
+    /* Même position que le Shield */
     top: 50%;
     transform: translateY(-50%);
-    width: 36px;
-    height: 36px;
+    width: 32px;
     object-fit: contain;
-    filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.8))
-            drop-shadow(0 0 30px rgba(255, 165, 0, 0.4));
+    filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.8)) drop-shadow(0 0 30px rgba(255, 165, 0, 0.4));
     animation: x2IconFloat 2s ease-in-out infinite;
     pointer-events: none;
 }
 
 /* Animation flottante de l'icône (vertical) */
 @keyframes x2IconFloat {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: translateY(-50%) translateY(0);
     }
+
     50% {
         transform: translateY(-50%) translateY(-5px);
     }
@@ -4454,9 +4587,11 @@ html, body {
         opacity: 0;
         transform: translateY(-50%) scale(0.5) rotate(-180deg);
     }
+
     60% {
         transform: translateY(-50%) scale(1.1) rotate(10deg);
     }
+
     100% {
         opacity: 1;
         transform: translateY(-50%) scale(1) rotate(0deg);
@@ -4468,20 +4603,13 @@ html, body {
         opacity: 1;
         transform: translateY(-50%) scale(1);
     }
+
     100% {
         opacity: 0;
         transform: translateY(-50%) scale(0.3) rotate(180deg);
     }
 }
 
-/* Responsive mobile */
-@media (max-width: 614px) {
-    .hud-x2-icon {
-        right: -40px;
-        width: 30px;
-        height: 30px;
-    }
-}
 
 
 /* Pulse doré pour le bonus x2 */
@@ -4492,20 +4620,1028 @@ html, body {
 @keyframes x2HudPulse {
     0% {
         border-color: rgba(255, 215, 0, 0.3);
-        box-shadow: 
+        box-shadow:
             0 0 15px rgba(255, 215, 0, 0.2),
             inset 0 0 15px rgba(255, 215, 0, 0.08);
     }
+
     50% {
         border-color: rgba(255, 215, 0, 0.5);
-        box-shadow: 
+        box-shadow:
             0 0 25px rgba(255, 215, 0, 0.4),
             inset 0 0 25px rgba(255, 215, 0, 0.12);
     }
+
     100% {
         border-color: rgba(255, 215, 0, 0.3);
-        box-shadow: 
+        box-shadow:
             0 0 15px rgba(255, 215, 0, 0.2),
             inset 0 0 15px rgba(255, 215, 0, 0.08);
+    }
+}
+
+
+
+/* ============================================
+   ÉCRAN DE FIN - PODIUM SIMPLE (SANS FLIP)
+   ============================================ */
+
+/* Container principal */
+.gameover-flip-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 20px;
+    animation: fadeInContainer 0.8s ease-out;
+}
+
+@keyframes fadeInContainer {
+    0% {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========== HEADER ========== */
+.gameover-header-flip {
+    text-align: center;
+    margin-bottom: 48px;
+}
+
+.gameover-title-flip {
+    font-size: 2rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--neon-primary), var(--neon-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 3px;
+    animation: titleSlideDown 0.6s ease-out;
+}
+
+@keyframes titleSlideDown {
+    0% {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========== PODIUM CARDS ========== */
+.podium-flip-cards {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 24px;
+    margin-bottom: 40px;
+    perspective: 1500px;
+    min-height: 300px;
+}
+
+/* Wrapper de carte (gère l'animation d'entrée) */
+.flip-card-wrapper {
+    opacity: 0;
+    animation: cardSlideUp 0.8s ease-out forwards;
+}
+
+@keyframes cardSlideUp {
+    0% {
+        opacity: 0;
+        transform: translateY(100px) scale(0.8);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* 🔥 ORDRE D'APPARITION ET POSITIONNEMENT */
+
+/* 3ème - À GAUCHE - Apparaît en PREMIER */
+.flip-card-wrapper.rank-3 {
+    order: 1;
+    animation-delay: 0.5s;
+}
+
+/* 2ème - À DROITE - Apparaît en DEUXIÈME */
+.flip-card-wrapper.rank-2 {
+    order: 3;
+    animation-delay: 1s;
+}
+
+/* 1er - AU CENTRE - Apparaît en DERNIER (effet dramatique) */
+.flip-card-wrapper.rank-1 {
+    order: 2;
+    animation-delay: 1.5s;
+}
+
+/* Surélévation visuelle */
+.flip-card-wrapper.rank-1 {
+    transform: translateY(-20px);
+}
+
+.flip-card-wrapper.rank-2,
+.flip-card-wrapper.rank-3 {
+    transform: translateY(20px);
+}
+
+/* La carte elle-même (simple, pas de flip) */
+.flip-card-single {
+    width: 180px;
+    height: 240px;
+    position: relative;
+    cursor: default;
+}
+
+/* Face unique */
+.flip-card-face {
+    width: 100%;
+    height: 100%;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    background: linear-gradient(135deg, rgba(31, 31, 31, 0.95), rgba(50, 50, 50, 0.95));
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+.flip-card-single:hover .flip-card-face {
+    transform: translateY(-4px);
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
+}
+
+/* Badge du rang */
+.rank-badge {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Nom du joueur */
+.player-name-flip {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+    word-break: break-word;
+    line-height: 1.3;
+    margin-bottom: 12px;
+}
+
+/* Score (points ou vies) - DISCRET */
+.player-score-flip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    width: 100%;
+}
+
+.score-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--neon-primary);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.score-value.lives-score {
+    color: #ef4444;
+    text-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+    font-size: 1.2rem;
+}
+
+.score-label {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ========== STYLES PAR RANG ========== */
+
+/* 1er - Plus grand, doré, glow */
+.flip-card-wrapper.rank-1 .flip-card-single {
+    width: 210px;
+    height: 280px;
+}
+
+.flip-card-wrapper.rank-1 .flip-card-face {
+    border-color: #FFD700;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(50, 50, 50, 0.95));
+    box-shadow:
+        0 0 40px rgba(255, 215, 0, 0.5),
+        0 15px 50px rgba(0, 0, 0, 0.5);
+}
+
+.flip-card-wrapper.rank-1 .rank-badge {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #000;
+    border-color: #FFD700;
+    box-shadow:
+        0 0 25px rgba(255, 215, 0, 0.7),
+        0 4px 16px rgba(0, 0, 0, 0.4);
+    width: 80px;
+    height: 80px;
+    font-size: 3rem;
+}
+
+.flip-card-wrapper.rank-1 .player-name-flip {
+    font-size: 1.3rem;
+    background: linear-gradient(135deg, var(--neon-primary), var(--neon-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* 2ème - Argenté */
+.flip-card-wrapper.rank-2 .flip-card-face {
+    border-color: #C0C0C0;
+    background: linear-gradient(135deg, rgba(192, 192, 192, 0.1), rgba(50, 50, 50, 0.95));
+}
+
+.flip-card-wrapper.rank-2 .rank-badge {
+    background: linear-gradient(135deg, #C0C0C0, #A0A0A0);
+    color: #000;
+    border-color: #C0C0C0;
+    box-shadow:
+        0 0 15px rgba(192, 192, 192, 0.5),
+        0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* 3ème - Bronze */
+.flip-card-wrapper.rank-3 .flip-card-face {
+    border-color: #CD7F32;
+    background: linear-gradient(135deg, rgba(205, 127, 50, 0.1), rgba(50, 50, 50, 0.95));
+}
+
+.flip-card-wrapper.rank-3 .rank-badge {
+    background: linear-gradient(135deg, #CD7F32, #B8693C);
+    color: #000;
+    border-color: #CD7F32;
+    box-shadow:
+        0 0 15px rgba(205, 127, 50, 0.5),
+        0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* ========== ÉGALITÉ ========== */
+.tie-section-flip {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.tie-badge-flip {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--warning-color);
+    margin-bottom: 20px;
+}
+
+.tie-players-flip {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.tie-player-flip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background: rgba(255, 165, 0, 0.1);
+    border: 1px solid rgba(255, 165, 0, 0.3);
+    border-radius: 12px;
+    animation: tiePlayerSlide 0.5s ease-out backwards;
+}
+
+.tie-player-flip:nth-child(1) {
+    animation-delay: 0.5s;
+}
+
+.tie-player-flip:nth-child(2) {
+    animation-delay: 0.7s;
+}
+
+.tie-player-flip:nth-child(3) {
+    animation-delay: 0.9s;
+}
+
+@keyframes tiePlayerSlide {
+    0% {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.tie-player-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.tie-player-score {
+    font-weight: 700;
+    color: var(--warning-color);
+}
+
+/* ========== AUCUN GAGNANT (Mode Vie) ========== */
+.no-winner-lives {
+    text-align: center;
+    padding: 60px 40px;
+    background: rgba(31, 31, 31, 0.8);
+    border-radius: 20px;
+    border: 2px solid rgba(239, 68, 68, 0.5);
+    animation: cardPopIn 0.8s ease-out;
+}
+
+@keyframes cardPopIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    60% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.skull-icon-big {
+    font-size: 5rem;
+    margin-bottom: 20px;
+    animation: skullShake 1s ease-in-out infinite;
+}
+
+@keyframes skullShake {
+
+    0%,
+    100% {
+        transform: rotate(-5deg);
+    }
+
+    50% {
+        transform: rotate(5deg);
+    }
+}
+
+.no-winner-lives h2 {
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--error-color);
+}
+
+/* ========== STATS ========== */
+.game-stats-flip {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 32px;
+    margin-bottom: 32px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    animation: statsSlideUp 0.6s ease-out 2s backwards;
+}
+
+@keyframes statsSlideUp {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.stat-flip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.stat-value-flip {
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: var(--accent-color);
+}
+
+.stat-label-flip {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.stat-divider-flip {
+    width: 1px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ========== BOUTON RETOUR ========== */
+.btn-home-flip {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 16px 32px;
+    font-size: 1rem;
+    font-weight: 700;
+    animation: buttonSlideUp 0.6s ease-out 2.3s backwards;
+}
+
+@keyframes buttonSlideUp {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========== CONFETTIS ========== */
+.confetti-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 999;
+    overflow: hidden;
+}
+
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    top: -10px;
+    border-radius: 2px;
+    opacity: 0.9;
+    animation: confettiFall linear forwards;
+}
+
+@keyframes confettiFall {
+    0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+/* ========== RESPONSIVE MOBILE ========== */
+@media (max-width: 614px) {
+    .gameover-flip-container {
+        padding: 16px 12px;
+    }
+
+    .gameover-title-flip {
+        font-size: 1.3rem;
+        letter-spacing: 1.5px;
+        margin-bottom: 24px;
+    }
+
+    /* 🔥 PODIUM EN LIGNE (côte à côte) sur mobile */
+    .podium-flip-cards {
+        flex-direction: row;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 12px;
+        min-height: auto;
+        margin-bottom: 24px;
+    }
+
+    /* Réinitialiser l'ordre pour mobile : 3-1-2 (gauche-centre-droite) */
+    .flip-card-wrapper.rank-3 {
+        order: 1;
+        transform: translateY(20px) !important;
+    }
+
+    .flip-card-wrapper.rank-1 {
+        order: 2;
+        transform: translateY(0) !important;
+    }
+
+    .flip-card-wrapper.rank-2 {
+        order: 3;
+        transform: translateY(20px) !important;
+    }
+
+    /* 🔥 CARTES PLUS PETITES */
+    .flip-card-single {
+        width: 100px;
+        height: 140px;
+    }
+
+    .flip-card-wrapper.rank-1 .flip-card-single {
+        width: 110px;
+        height: 155px;
+    }
+
+    .flip-card-face {
+        padding: 12px 8px;
+    }
+
+    /* Badge plus petit */
+    .rank-badge {
+        width: 40px;
+        height: 40px;
+        font-size: 1.4rem;
+        margin-bottom: 8px;
+        border-width: 2px;
+    }
+
+    .flip-card-wrapper.rank-1 .rank-badge {
+        width: 45px;
+        height: 45px;
+        font-size: 1.6rem;
+    }
+
+    /* Nom plus petit */
+    .player-name-flip {
+        font-size: 0.75rem;
+        margin-bottom: 8px;
+        line-height: 1.2;
+    }
+
+    .flip-card-wrapper.rank-1 .player-name-flip {
+        font-size: 0.85rem;
+    }
+
+    /* Score plus petit */
+    .player-score-flip {
+        padding-top: 8px;
+        gap: 2px;
+    }
+
+    .score-value {
+        font-size: 1rem;
+    }
+
+    .score-value.lives-score {
+        font-size: 0.85rem;
+    }
+
+    .score-label {
+        font-size: 0.55rem;
+    }
+
+    /* Stats en dessous */
+    .game-stats-flip {
+        gap: 20px;
+        padding: 14px;
+        margin-bottom: 20px;
+    }
+
+    .stat-value-flip {
+        font-size: 1.3rem;
+    }
+
+    .stat-label-flip {
+        font-size: 0.65rem;
+    }
+
+    .stat-divider-flip {
+        height: 32px;
+    }
+
+    /* Bouton */
+    .btn-home-flip {
+        font-size: 0.85rem;
+        padding: 12px 20px;
+        max-width: 100%;
+    }
+
+    /* Égalité sur mobile */
+    .tie-section-flip {
+        margin-bottom: 24px;
+    }
+
+    .tie-badge-flip {
+        font-size: 1.2rem;
+        margin-bottom: 16px;
+    }
+
+    .tie-players-flip {
+        max-width: 100%;
+        padding: 0 12px;
+    }
+
+    .tie-player-flip {
+        padding: 12px 16px;
+        font-size: 0.85rem;
+    }
+
+    /* Aucun gagnant sur mobile */
+    .no-winner-lives {
+        padding: 40px 20px;
+    }
+
+    .skull-icon-big {
+        font-size: 3.5rem;
+        margin-bottom: 16px;
+    }
+
+    .no-winner-lives h2 {
+        font-size: 1.5rem;
+    }
+}
+
+/* 🔥 TRÈS PETITS ÉCRANS (<380px) */
+@media (max-width: 380px) {
+    .gameover-title-flip {
+        font-size: 1.1rem;
+        letter-spacing: 1px;
+    }
+
+    .podium-flip-cards {
+        gap: 8px;
+    }
+
+    .flip-card-single {
+        width: 85px;
+        height: 125px;
+    }
+
+    .flip-card-wrapper.rank-1 .flip-card-single {
+        width: 95px;
+        height: 140px;
+    }
+
+    .rank-badge {
+        width: 35px;
+        height: 35px;
+        font-size: 1.2rem;
+    }
+
+    .flip-card-wrapper.rank-1 .rank-badge {
+        width: 40px;
+        height: 40px;
+        font-size: 1.4rem;
+    }
+
+    .player-name-flip {
+        font-size: 0.65rem;
+    }
+
+    .flip-card-wrapper.rank-1 .player-name-flip {
+        font-size: 0.75rem;
+    }
+
+    .score-value {
+        font-size: 0.9rem;
+    }
+
+    .score-label {
+        font-size: 0.5rem;
+    }
+
+    .game-stats-flip {
+        gap: 16px;
+        padding: 12px;
+    }
+
+    .stat-value-flip {
+        font-size: 1.1rem;
+    }
+
+    .btn-home-flip {
+        font-size: 0.8rem;
+        padding: 11px 18px;
+    }
+}
+
+
+/* ========================================
+   BONUS MOBILE - ICÔNE + JAUGE CIRCULAIRE
+   ======================================== */
+
+@media (max-width: 614px) {
+
+    /* 🔥 Cacher le système desktop */
+    .combo-gauge-container,
+    .bonus-icon-container {
+        display: none !important;
+    }
+
+    /* 🆕 Icône mobile avec jauge circulaire */
+    .bonus-gauge-mobile {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        width: 56px;
+        height: 56px;
+        z-index: 500;
+        cursor: pointer;
+    }
+
+    /* SVG container */
+    .gauge-svg {
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+    }
+
+    /* Cercle de fond */
+    .gauge-circle-bg {
+        fill: none;
+        stroke: rgba(255, 255, 255, 0.1);
+        stroke-width: 4;
+    }
+
+    /* Cercle de progression */
+    .gauge-circle-progress {
+        fill: none;
+        stroke: var(--neon-primary);
+        stroke-width: 4;
+        stroke-linecap: round;
+        stroke-dasharray: 188;
+        transition: stroke-dashoffset 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        filter: drop-shadow(0 0 8px var(--neon-primary));
+    }
+
+    /* Icône centrale */
+    .gauge-icon-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 28px;
+        height: 28px;
+        background: rgba(31, 31, 31, 0.8);
+        backdrop-filter: blur(8px);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid rgba(255, 215, 0, 0.3);
+        transition: all 0.3s ease;
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+    }
+
+    .gauge-icon-center svg {
+        width: 18px;
+        height: 18px;
+        fill: var(--neon-primary);
+        filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.3));
+    }
+
+    /* Badge compteur */
+    .gauge-count-badge {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        width: 20px;
+        height: 20px;
+        background: #ff4757;
+        color: #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: 700;
+        border: 2px solid var(--bg-primary);
+        box-shadow: 0 0 12px rgba(255, 71, 87, 0.6);
+    }
+
+    /* 🆕 Particules autour de la jauge (après bonne réponse) */
+    .gauge-particles-mobile {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        overflow: visible;
+    }
+
+    .gauge-particle-mobile {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: radial-gradient(circle, var(--neon-primary), var(--neon-secondary));
+        border-radius: 50%;
+        opacity: 0;
+        box-shadow:
+            0 0 6px var(--neon-primary),
+            0 0 12px var(--neon-primary);
+        animation: particleBurstMobile 1s ease-out forwards;
+    }
+
+    @keyframes particleBurstMobile {
+        0% {
+            opacity: 1;
+            transform: translate(0, 0) scale(0.5);
+        }
+
+        50% {
+            opacity: 0.8;
+            transform: translate(var(--x), var(--y)) scale(1);
+        }
+
+        100% {
+            opacity: 0;
+            transform: translate(calc(var(--x) * 2), calc(var(--y) * 2)) scale(0.3);
+        }
+    }
+
+    /* ========================================
+   ARC DE CERCLE - MENU BONUS
+   ======================================== */
+
+    .bonus-arc-menu {
+        position: fixed;
+        bottom: 0;
+        right: 0;
+        width: 220px;
+        height: 220px;
+        pointer-events: none;
+        z-index: 560;
+        /* 🔥 Au-dessus de l'overlay */
+    }
+
+    .bonus-arc-item {
+        position: absolute;
+        width: 46px;
+        height: 46px;
+        background: rgba(20, 20, 20, 0.98);
+        /* 🔥 Plus opaque, pas de blur */
+        border: 2px solid rgba(255, 215, 0, 0.4);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        pointer-events: none;
+        opacity: 0;
+        transform: scale(0);
+        visibility: hidden;
+        z-index: 600;
+        /* 🔥 Au-dessus de tout */
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .bonus-arc-item.show {
+        opacity: 1;
+        transform: scale(1);
+        pointer-events: auto !important;
+        /* 🔥 Force le clic */
+        visibility: visible;
+        cursor: pointer;
+    }
+
+    .bonus-arc-item.show.available {
+        border-color: rgba(255, 215, 0, 0.7);
+        background: rgba(40, 35, 10, 0.98);
+        /* 🔥 Fond légèrement doré */
+        box-shadow:
+            0 4px 20px rgba(0, 0, 0, 0.5),
+            0 0 15px rgba(255, 215, 0, 0.2);
+    }
+
+    .bonus-arc-item.show.available:active {
+        transform: scale(0.9);
+        box-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
+    }
+
+    /* 🔥 Position arc (éventail vers le haut-gauche) */
+    .bonus-arc-item:nth-child(2) {
+        /* B1 - Gauche (180°) */
+        bottom: 45px;
+        right: 110px;
+        transition-delay: 0.05s;
+    }
+
+    .bonus-arc-item:nth-child(3) {
+        /* B2 - Haut-gauche (135°) */
+        bottom: 95px;
+        right: 92px;
+        transition-delay: 0.1s;
+    }
+
+    .bonus-arc-item:nth-child(4) {
+        /* B3 - Haut (90°) */
+        bottom: 110px;
+        right: 45px;
+        transition-delay: 0.15s;
+    }
+
+    .bonus-arc-item img {
+        width: 24px;
+        height: 24px;
+        object-fit: contain;
+        filter: none;
+        /* 🔥 Pas de filtre = netteté */
+        image-rendering: -webkit-optimize-contrast;
+        /* 🔥 Plus net */
+    }
+
+    .bonus-arc-item.available img {
+        filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.4));
+    }
+
+    /* États */
+    .bonus-arc-item.locked {
+        opacity: 0.3;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    .bonus-arc-item.available {
+        border-color: rgba(255, 215, 0, 0.6);
+        background: rgba(255, 215, 0, 0.08);
+    }
+
+    .bonus-arc-item.available:active {
+        transform: scale(0.9);
+    }
+
+    .bonus-arc-item.used {
+        opacity: 0.25;
+        cursor: not-allowed;
+        filter: grayscale(1);
+    }
+
+    .bonus-arc-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.4);
+        /* 🔥 Plus léger */
+        /* 🔥 SUPPRIMÉ: backdrop-filter: blur() */
+        z-index: 550;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+
+    .bonus-arc-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .bonus-arc-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* 🆕 Icône Shield/x2 au-dessus de l'icône bonus sur mobile */
+    .hud-shield-icon,
+    .hud-x2-icon {
+        position: fixed ;
+        right: 0 ;
+        left: 120px;
+        transform: none ;
+        width: 22px;
+        height: 22px ;
+        margin: auto;
+        top:57%
     }
 }

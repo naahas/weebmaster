@@ -20,12 +20,22 @@
                 <h1>ShonenMaster Admin</h1>
                 <p>Panel d'administration</p>
             </div>
-            <form onsubmit="handleLogin(event)">
+            <form onsubmit="handleLogin(event)" id="loginForm">
                 <div class="form-group">
                     <label>Code d'accès</label>
                     <input type="password" id="adminCode" placeholder="Entrez le code admin" required autofocus>
                 </div>
-                <button type="submit" class="btn-login">Se connecter</button>
+
+                <!-- Champ master password (caché par défaut) -->
+                <div class="form-group" id="masterPasswordGroup" style="display: none;">
+                    <label style="color: var(--warning);">Code d'accès dev</label>
+                    <input type="password" id="masterPassword" placeholder="Mot de passe développeur">
+                    <!-- <small style="color: var(--text-secondary); font-size: 0.7rem; display: block; margin-top: 6px;">
+                        Un admin est déjà connecté.
+                    </small> -->
+                </div>
+
+                <button type="submit" class="btn-login" id="loginBtn">Se connecter</button>
                 <div class="error-msg" id="errorMsg"></div>
             </form>
         </div>

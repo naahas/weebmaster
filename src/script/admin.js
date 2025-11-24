@@ -329,13 +329,21 @@ document.addEventListener('DOMContentLoaded', () => {
 async function handleLogin(event) {
     event.preventDefault();
     const password = document.getElementById('adminCode').value;
+    const masterPassword = document.getElementById('masterPassword').value;
     const errorMsg = document.getElementById('errorMsg');
+
+    // 🔥 AJOUTER : Nettoyer les anciens messages
+    errorMsg.innerHTML = ''; // Vider complètement
+    errorMsg.style.color = ''; // Reset de la couleur
 
     try {
         const response = await fetch('/admin/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password })
+            body: JSON.stringify({ 
+                password,
+                masterOverride: masterPassword || undefined
+            })
         });
 
         const data = await response.json();
@@ -343,21 +351,60 @@ async function handleLogin(event) {
         if (data.success) {
             document.getElementById('loginContainer').style.display = 'none';
             document.getElementById('adminPanel').style.display = 'block';
+            
+            // Afficher badge master si applicable
+            if (data.isMaster) {
+                showMasterBadge();
+            }
+            
             initSocket();
-
-            // 🆕 Attendre que socket soit connecté
             await new Promise(resolve => setTimeout(resolve, 500));
-
-            // 🆕 FORCER la restauration
             await restoreGameState();
             refreshStats();
             startStatsRefresh();
         } else {
-            errorMsg.textContent = 'Code incorrect';
+            // ⚠️ Si admin déjà connecté
+            if (data.error === 'admin_already_connected') {
+                // errorMsg.textContent = `${data.message} (depuis ${data.connectedSince} min)`;
+                errorMsg.style.color = 'var(--warning)'; // Orange au lieu de rouge
+                
+                // Afficher le champ master password
+                document.getElementById('masterPasswordGroup').style.display = 'block';
+                document.getElementById('masterPassword').focus();
+                
+                // Ajouter un hint pour le dev
+                const hint = document.createElement('small');
+                hint.style.color = 'var(--text-secondary)';
+                hint.style.fontSize = '0.65rem';
+                hint.style.display = 'block';
+                hint.style.marginTop = '8px';
+                hint.textContent = '💡 streamer déjà en activité , en attente de déconnexion';
+                errorMsg.appendChild(hint);
+            } else {
+                errorMsg.textContent = data.message || 'Code incorrect';
+                errorMsg.style.color = 'var(--danger)'; // 🔥 Rouge pour erreur normale
+            }
         }
     } catch (error) {
+        console.error('Erreur login:', error);
         errorMsg.textContent = 'Erreur de connexion';
+        errorMsg.style.color = 'var(--danger)';
     }
+}
+
+
+function showMasterBadge() {
+    const header = document.querySelector('.admin-header');
+    
+    const badge = document.createElement('div');
+    badge.className = 'master-admin-badge';
+    badge.innerHTML = '👑 MODE DEV';
+    
+    header.appendChild(badge);
+    
+    // Ajouter une notification discrète
+    console.log('%c👑 MODE DEV ACTIVÉ', 'color: #FFD700; font-size: 16px; font-weight: bold;');
+    console.log('%cVous êtes en mode observation. Le streamer n\'a pas été déconnecté.', 'color: #00ff88;');
 }
 
 async function checkAuth() {
@@ -2545,7 +2592,13 @@ if (document.getElementById('addQuestionForm')) {
 }
 
 
-
+window.addEventListener('beforeunload', () => {
+    fetch('/admin/logout-silent', {
+        method: 'POST',
+        credentials: 'same-origin',
+        keepalive: true
+    });
+});
 
 
 // ============ INIT ============

@@ -91,6 +91,21 @@ app.use(session({
     proxy: process.env.NODE_ENV === 'production'
 }));
 
+
+app.use('/admin/*', (req, res, next) => {
+    if (req.session.isAdmin) {
+        // Si admin normal
+        if (req.session.id === activeAdminSession) {
+            lastAdminActivity = Date.now();
+        }
+        // Si master, ne pas tracker (pas de timeout pour les devs)
+        if (req.session.isMasterAdmin) {
+            // Les masters n'ont pas de timeout
+        }
+    }
+    next();
+});
+
 // ============================================
 // Routes AUTH TWITCH
 // ============================================
@@ -150,6 +165,19 @@ app.get('/auth/twitch/callback', async (req, res) => {
 
 // Route de déconnexion
 app.get('/auth/logout', (req, res) => {
+    // Si c'est l'admin normal qui se déconnecte
+    if (req.session.id === activeAdminSession) {
+        activeAdminSession = null;
+        activeAdminLoginTime = null;
+        console.log('🔓 Slot admin normal libéré (logout)');
+    }
+    
+    // Si c'est un master qui se déconnecte
+    if (req.session.isMasterAdmin) {
+        masterAdminSessions.delete(req.session.id);
+        console.log(`👑 Master déconnecté (${masterAdminSessions.size} restant(s))`);
+    }
+    
     req.session.destroy();
     res.redirect('/');
 });
@@ -249,6 +277,15 @@ app.use(express.static('src/html'));
 app.use(express.static('src/style'));
 app.use(express.static('src/img'));
 app.use(express.static('src/script'));
+
+
+let activeAdminSession = null; // Session de l'admin connecté
+let activeAdminLoginTime = null; // Timestamp de connexion
+let masterAdminSessions = new Set();
+
+
+const MASTER_PASSWORD = process.env.MASTER_ADMIN_PASSWORD || 'cc';
+const ADMIN_TIMEOUT_MS = 10 * 60 * 1000;
 
 
 // ============================================
@@ -361,23 +398,66 @@ app.get('/admin', (req, res) => {
 
 // Login admin
 app.post('/admin/login', (req, res) => {
-    const { password } = req.body;
+    const { password, masterOverride } = req.body;
 
-    if (password === process.env.ADMIN_PASSWORD) {
+    // ========== CAS 1 : Master override (toi le dev) ==========
+    if (masterOverride && masterOverride === MASTER_PASSWORD) {
         req.session.isAdmin = true;
+        req.session.isMasterAdmin = true;
+        
+        // Ajouter à la liste des masters connectés (SANS déconnecter le streamer)
+        masterAdminSessions.add(req.session.id);
+        lastAdminActivity = Date.now();
 
-        // Forcer la sauvegarde de la session
+        req.session.save((err) => {
+            if (err) {
+                return res.status(500).json({ success: false, message: 'Erreur de session' });
+            }
+            console.log(`👑 MASTER ADMIN connecté (${masterAdminSessions.size} master(s) actif(s))`);
+            res.json({ 
+                success: true, 
+                isMaster: true,
+                canObserve: true // Indique que c'est un mode observation
+            });
+        });
+        return;
+    }
+
+    // ========== CAS 2 : Login normal ==========
+    if (password === process.env.ADMIN_PASSWORD) {
+        
+        // ⚠️ Vérifier si un admin NORMAL est déjà connecté
+        if (activeAdminSession && activeAdminSession !== req.session.id) {
+            const minutesConnected = Math.floor((Date.now() - activeAdminLoginTime) / 60000);
+            return res.status(409).json({ 
+                success: false,
+                error: 'admin_already_connected',
+                message: '',
+                connectedSince: minutesConnected,
+                requiresMaster: true
+            });
+        }
+
+        // Sinon, autoriser la connexion normale
+        req.session.isAdmin = true;
+        req.session.isMasterAdmin = false; // Pas un master
+        activeAdminSession = req.session.id;
+        activeAdminLoginTime = Date.now();
+        lastAdminActivity = Date.now();
+
         req.session.save((err) => {
             if (err) {
                 console.error('❌ Erreur sauvegarde session:', err);
                 return res.status(500).json({ success: false, message: 'Erreur de session' });
             }
-            // console.log('✅ Admin connecté - Session sauvegardée');
-            res.json({ success: true });
+            console.log('✅ Admin normal connecté - Slot pris');
+            res.json({ success: true, isMaster: false });
         });
-    } else {
-        res.status(401).json({ success: false, message: 'Mot de passe incorrect' });
+        return;
     }
+
+    // ========== CAS 3 : Mot de passe incorrect ==========
+    res.status(401).json({ success: false, message: 'Mot de passe incorrect' });
 });
 
 // Vérifier si admin
@@ -1237,6 +1317,38 @@ app.post('/admin/next-question', async (req, res) => {
 });
 
 
+app.post('/admin/logout-silent', (req, res) => {
+    if (req.session.id === activeAdminSession) {
+        activeAdminSession = null;
+        activeAdminLoginTime = null;
+        console.log('🔓 Slot admin normal libéré (silent)');
+    }
+    
+    if (req.session.isMasterAdmin) {
+        masterAdminSessions.delete(req.session.id);
+        console.log(`👑 Master déconnecté (silent) (${masterAdminSessions.size} restant(s))`);
+    }
+    
+    req.session.destroy();
+    res.json({ success: true });
+});
+
+
+// Vérifier le statut de connexion admin
+app.get('/admin/connection-status', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.json({ connected: false });
+    }
+
+    res.json({
+        connected: true,
+        isMaster: req.session.isMasterAdmin || false,
+        hasControl: req.session.id === activeAdminSession,
+        normalAdminConnected: !!activeAdminSession,
+        mastersConnected: masterAdminSessions.size
+    });
+});
+
 // Fonction pour calculer la répartition des questions par difficulté
 function getQuestionDistribution(totalQuestions) {
     return {
@@ -2016,11 +2128,19 @@ async function endGame(winner) {
             await db.updateUserStats(loser.twitchId, false, placement++);
         }
 
+        const playersData = Array.from(gameState.players.values()).map(p => ({
+            twitchId: p.twitchId,
+            username: p.username,
+            lives: p.lives,
+            correctAnswers: p.correctAnswers
+        }));
+
         io.emit('game-ended', {
             winner: winnerData,
             duration,
             totalQuestions: gameState.currentQuestionIndex,
-            gameMode: 'lives'
+            gameMode: 'lives',
+            playersData: playersData // 🔥 IMPORTANT
         });
 
         // Reset
@@ -2791,9 +2911,22 @@ function updateLiveAnswerStats() {
 // ============================================
 // Gestion des erreurs
 // ============================================
+
+
+setInterval(() => {
+    // Timeout uniquement pour l'admin NORMAL (pas les masters)
+    if (activeAdminSession && Date.now() - lastAdminActivity > ADMIN_TIMEOUT_MS) {
+        console.log('⏰ Timeout admin normal (10min) - Libération du slot');
+        activeAdminSession = null;
+        activeAdminLoginTime = null;
+    }
+}, 30000);
+
+
 process.on('unhandledRejection', (error) => {
     console.error('❌ Unhandled rejection:', error);
 });
+
 
 process.on('uncaughtException', (error) => {
     console.error('❌ Uncaught exception:', error);

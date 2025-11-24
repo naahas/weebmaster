@@ -9,6 +9,7 @@ createApp({
         return {
             // Authentification
             isAuthenticated: false,
+            showBonusArcMobile: false,
             username: '',
             twitchId: '',
 
@@ -97,7 +98,7 @@ createApp({
             availableBonuses: [],       // ['5050', 'reveal', 'extralife' ou 'doublex2']
             usedBonuses: [],            // Bonus déjà utilisés dans la partie
             showBonusModal: false,      // Afficher/masquer le modal
-            activeBonusEffect: null,
+            activeBonusEffect: 'shield',
 
             isLevelingUp: false,
         };
@@ -115,6 +116,36 @@ createApp({
     computed: {
         formattedPlayerPoints() {
             return this.playerPoints.toLocaleString('fr-FR');
+        },
+
+        isWinner() {
+            if (!this.gameEndData.winner) return false;
+
+            if (this.gameEndData.winner.tie) {
+                return this.gameEndData.winner.winners.some(w => w.username === this.username);
+            }
+
+            return this.gameEndData.winner.username === this.username;
+        },
+
+        livesModePodium() {
+            if (!this.gameEndData || this.gameEndData.gameMode !== 'lives') return [];
+
+            // Récupérer tous les joueurs depuis playersData (envoyé par le serveur)
+            const allPlayers = this.gameEndData.playersData || [];
+
+            // Trier par : 
+            // 1. Vies restantes (DESC)
+            // 2. Si égalité de vies : bonnes réponses (DESC)
+            const sorted = allPlayers.sort((a, b) => {
+                if (b.lives !== a.lives) {
+                    return b.lives - a.lives; // Plus de vies = meilleur
+                }
+                return b.correctAnswers - a.correctAnswers; // Plus de bonnes réponses = meilleur
+            });
+
+            // Retourner Top 3 (ou moins si moins de joueurs)
+            return sorted.slice(0, 3);
         },
 
         comboBarHeight() {
@@ -174,6 +205,12 @@ createApp({
             ];
 
             return bonuses.filter(b => b.available || b.used);
+        },
+
+        gaugeCircleOffset() {
+            const circumference = 188; // 2π × 30
+            const progress = this.comboBarHeight;
+            return circumference - (progress / 100) * circumference;
         }
     },
 
@@ -760,6 +797,7 @@ createApp({
                     // Pas de level-up, juste spawn particules si progression
                     if (data.comboProgress > oldProgress) {
                         this.spawnParticles();
+                        this.spawnParticlesMobile();
                     }
                 }
             });
@@ -1368,6 +1406,64 @@ createApp({
                 console.log('✅ Shield activé, effet appliqué');
             }
         },
+
+
+        confettiStyle(index) {
+            const colors = ['#FFD700', '#FFA500', '#FF8C00', '#00ff88', '#3b82f6'];
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            const randomX = Math.random() * 100;
+            const randomDelay = Math.random() * 2;
+            const randomDuration = 2 + Math.random() * 2;
+
+            return {
+                left: randomX + '%',
+                backgroundColor: randomColor,
+                animationDelay: randomDelay + 's',
+                animationDuration: randomDuration + 's'
+            };
+        },
+
+
+        toggleBonusArcMobile() {
+            if (!this.canUseBonus()) return;
+            this.showBonusArcMobile = !this.showBonusArcMobile;
+        },
+
+        closeBonusArcMobile() {
+            this.showBonusArcMobile = false;
+        },
+
+        useBonusArcMobile(bonusType) {
+            if (!this.canUseBonus() || !this.availableBonuses.includes(bonusType)) return;
+            this.showBonusArcMobile = false;
+            this.useBonus(bonusType);
+        },
+
+        // 🆕 Particules mobiles après bonne réponse
+        spawnParticlesMobile() {
+            const container = document.querySelector('.gauge-particles-mobile');
+            if (!container) return;
+
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'gauge-particle-mobile';
+
+                const angle = Math.random() * 360;
+                const distance = 30 + Math.random() * 20;
+                const x = Math.cos(angle * Math.PI / 180) * distance;
+                const y = Math.sin(angle * Math.PI / 180) * distance;
+
+                particle.style.setProperty('--x', `${x}px`);
+                particle.style.setProperty('--y', `${y}px`);
+                particle.style.left = '50%';
+                particle.style.top = '50%';
+
+                container.appendChild(particle);
+
+                setTimeout(() => particle.remove(), 1000);
+            }
+        }
+
     },
 
 

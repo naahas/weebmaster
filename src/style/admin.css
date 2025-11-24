@@ -2976,3 +2976,31 @@ body {
 }
 
 
+/* Master Admin Badge */
+.master-admin-badge {
+    position: absolute;
+    top: 16px;
+    right: 180px;
+    background: linear-gradient(135deg, #1a1d29, #2d3348);
+    border: 2px solid #FFD700;
+    color: #FFD700;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    animation: masterGlow 2s ease-in-out infinite;
+    z-index: 10;
+}
+
+@keyframes masterGlow {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        border-color: #FFD700;
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+        border-color: #FFA500;
+    }
+}

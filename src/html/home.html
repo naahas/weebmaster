@@ -247,80 +247,93 @@
                 </div><!-- Fin question-container-wrapper -->
             </div>
 
-            <!-- 🆕 GAME OVER AMÉLIORÉ (Bug 2 fix) -->
+            <!-- ============================================
+            ÉCRAN DE FIN - FLIP CARDS REVEAL
+            ============================================ -->
             <div class="content-section gameover-section" v-if="gameEnded">
-                <div class="gameover-card-compact">
-                    <div class="gameover-layout">
-                        <!-- Colonne gauche : Résultats du gagnant -->
-                        <div class="winner-column">
+                <!-- Confettis pour le gagnant uniquement -->
+                <div class="confetti-container" v-if="isWinner">
+                    <div class="confetti" v-for="n in 50" :key="n" :style="confettiStyle(n)"></div>
+                </div>
 
-                            <!-- 🔥 CAS 1: UN SEUL GAGNANT -->
-                            <div class="winner-box" v-if="gameEndData.winner && !gameEndData.winner.tie">
-                                <div class="trophy-icon">
-                                    <img src="trophy.png" alt="Trophy" class="trophy-img">
-                                </div>
-                                <div class="winner-badge">VAINQUEUR</div>
-                                <div class="winner-name">{{ gameEndData.winner.username }}</div>
+                <div class="gameover-flip-container">
+                    <!-- Titre -->
+                    <div class="gameover-header-flip">
+                        <h1 class="gameover-title-flip">PARTIE TERMINÉE</h1>
+                    </div>
 
-                                <!-- Affichage conditionnel selon le mode -->
-                                <div class="winner-stats" v-if="gameEndData.gameMode === 'points'">
-                                    <span class="points-icon">⭐</span>
-                                    <span class="points-number">{{ gameEndData.winner.points }}</span>
-                                    <span class="points-text">points</span>
-                                </div>
-                                <div class="winner-stats" v-if="gameEndData.gameMode === 'lives'">
-                                    {{ gameEndData.winner.correctAnswers }} bonnes réponses
-                                </div>
-                            </div>
+                    <!-- Podium Cards (Mode Points - Top 3) -->
+                    <div class="podium-flip-cards" v-if="gameEndData.podium && gameEndData.gameMode === 'points'">
+                        <div v-for="player in gameEndData.podium" :key="player.rank" class="flip-card-wrapper"
+                            :class="['rank-' + player.rank, { 'is-winner': player.username === gameEndData.winner.username }]"
+                            :style="{ animationDelay: (player.rank * 0.5) + 's' }">
 
-                            <!-- 🔥 CAS 2: ÉGALITÉ -->
-                            <div class="tie-box" v-if="gameEndData.winner && gameEndData.winner.tie">
-                                <div class="tie-badge">⚖️ Égalité</div>
-                                <div class="tie-winners-list">
-                                    <div class="tie-winner-item" v-for="winner in gameEndData.winner.winners"
-                                        :key="winner.username">
-                                        {{ winner.username }} - {{ winner.points }} pts
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 🔥 CAS 3: AUCUN GAGNANT -->
-                            <div class="no-winner-box" v-if="!gameEndData.winner">
-                                <div class="no-winner-icon">💀</div>
-                                <div class="no-winner-text">Aucun gagnant</div>
-                            </div>
-
-                            <!-- Stats de la partie -->
-                            <div class="game-stats-compact">
-                                <div class="stat-compact-item">
-                                    <span class="stat-number">{{ gameEndData.totalQuestions }}</span>
-                                    <span class="stat-label">Questions</span>
-                                </div>
-                                <div class="stat-divider-compact"></div>
-                                <div class="stat-compact-item">
-                                    <span class="stat-number">{{ formatDuration(gameEndData.duration) }}</span>
-                                    <span class="stat-label">Durée</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Colonne droite : Podium Top 3 (Mode Points uniquement) -->
-                        <div class="podium-column" v-if="gameEndData.podium && gameEndData.gameMode === 'points'">
-                            <!-- <h3 class="podium-title">🏆 Podium</h3> -->
-                            <div class="podium-compact-list">
-                                <div class="podium-compact-item" v-for="player in gameEndData.podium" :key="player.rank"
-                                    :class="'rank-' + player.rank">
-                                    <div class="podium-compact-rank">{{ player.rank }}</div>
-                                    <div class="podium-compact-info">
-                                        <span class="podium-compact-name">{{ player.username }}</span>
-                                        <span class="podium-compact-points">{{ player.points }} pts</span>
+                            <div class="flip-card-single">
+                                <!-- FACE UNIQUE (Rang + Nom + Points) -->
+                                <div class="flip-card-face">
+                                    <div class="rank-badge">{{ player.rank }}</div>
+                                    <div class="player-name-flip">{{ player.username }}</div>
+                                    <div class="player-score-flip">
+                                        <span class="score-value">{{ player.points }}</span>
+                                        <span class="score-label">pts</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <button class="btn-primary btn-home" @click="backToHome">
+                    <!-- Mode Vie - Podium Cards -->
+                    <div class="podium-flip-cards" v-if="gameEndData.gameMode === 'lives' && gameEndData.winner">
+                        <div class="no-winner-lives" v-if="!gameEndData.winner">
+                            <div class="skull-icon-big">💀</div>
+                            <h2>AUCUN SURVIVANT</h2>
+                        </div>
+
+                        <div v-for="(player, index) in livesModePodium" :key="player.twitchId" class="flip-card-wrapper"
+                            :class="['rank-' + (index + 1), { 'is-winner': index === 0 }]"
+                            :style="{ animationDelay: ((index + 1) * 0.5) + 's' }">
+
+                            <div class="flip-card-single">
+                                <!-- FACE UNIQUE (Rang + Nom + Vies + Bonnes réponses) -->
+                                <div class="flip-card-face">
+                                    <div class="rank-badge">{{ index + 1 }}</div>
+                                    <div class="player-name-flip">{{ player.username }}</div>
+                                    <div class="player-score-flip">
+                                        <span class="score-value lives-score">❤️ {{ player.lives }}</span>
+                                        <span class="score-label">{{ player.correctAnswers }} bonnes rép.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Égalité -->
+                    <div class="tie-section-flip" v-if="gameEndData.winner && gameEndData.winner.tie">
+                        <div class="tie-badge-flip">⚖️ ÉGALITÉ</div>
+                        <div class="tie-players-flip">
+                            <div class="tie-player-flip" v-for="winner in gameEndData.winner.winners"
+                                :key="winner.username">
+                                <span class="tie-player-name">{{ winner.username }}</span>
+                                <span class="tie-player-score">{{ winner.points }} pts</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats de la partie -->
+                    <div class="game-stats-flip">
+                        <div class="stat-flip">
+                            <span class="stat-value-flip">{{ gameEndData.totalQuestions }}</span>
+                            <span class="stat-label-flip">Questions</span>
+                        </div>
+                        <div class="stat-divider-flip"></div>
+                        <div class="stat-flip">
+                            <span class="stat-value-flip">{{ formatDuration(gameEndData.duration) }}</span>
+                            <span class="stat-label-flip">Durée</span>
+                        </div>
+                    </div>
+
+                    <!-- Bouton Retour -->
+                    <button class="btn-primary btn-home-flip" @click="backToHome">
                         Retour à l'accueil
                     </button>
                 </div>
@@ -564,6 +577,60 @@
                         </div>
                     </div>
                 </transition>
+            </div>
+        </div>
+
+
+        <!-- 🆕 BONUS MOBILE - Icône avec jauge circulaire (mobile uniquement) -->
+        <div class="bonus-gauge-mobile" v-if="gameInProgress && !gameEnded" @click="toggleBonusArcMobile">
+
+            <!-- SVG Gauge -->
+            <svg class="gauge-svg" viewBox="0 0 68 68">
+                <circle class="gauge-circle-bg" cx="34" cy="34" r="30"></circle>
+                <circle class="gauge-circle-progress" cx="34" cy="34" r="30"
+                    :style="{ strokeDashoffset: gaugeCircleOffset }"></circle>
+            </svg>
+
+            <!-- Icône centrale -->
+            <div class="gauge-icon-center" :class="{ active: availableBonuses.length > 0 }">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 2.18l8 3.6v8.55c0 4.65-3.2 8.95-8 10.05-4.8-1.1-8-5.4-8-10.05V7.78l8-3.6zM11 10v2h2v-2h-2zm0 4v6h2v-6h-2z" />
+                </svg>
+
+                <span class="gauge-count-badge" v-if="availableBonuses.length > 0">
+                    {{ availableBonuses.length }}
+                </span>
+            </div>
+
+            <!-- Particules (spawn après bonne réponse) -->
+            <div class="gauge-particles-mobile"></div>
+        </div>
+
+        <!-- 🆕 Menu Arc de Cercle -->
+        <!-- 🆕 Menu Arc de Cercle -->
+        <div class="bonus-arc-menu" v-if="gameInProgress && !gameEnded">
+            <!-- Overlay en premier (nth-child(1)) -->
+            <div class="bonus-arc-overlay" :class="{ active: showBonusArcMobile }" @click="closeBonusArcMobile"></div>
+
+            <!-- 50/50 (nth-child(2)) -->
+            <div class="bonus-arc-item" :class="[getBonusState('5050'), { show: showBonusArcMobile }]"
+                @click="useBonusArcMobile('5050')">
+                <img src="5050.png" alt="50/50">
+            </div>
+
+            <!-- Joker (nth-child(3)) -->
+            <div class="bonus-arc-item" :class="[getBonusState('reveal'), { show: showBonusArcMobile }]"
+                @click="useBonusArcMobile('reveal')">
+                <img src="reveal2.png" alt="Joker">
+            </div>
+
+            <!-- Shield/x2 (nth-child(4)) -->
+            <div class="bonus-arc-item"
+                :class="[getBonusState(gameMode === 'lives' ? 'shield' : 'doublex2'), { show: showBonusArcMobile }]"
+                @click="useBonusArcMobile(gameMode === 'lives' ? 'shield' : 'doublex2')">
+                <img :src="gameMode === 'lives' ? 'shield.png' : 'x2.png'"
+                    :alt="gameMode === 'lives' ? 'Bouclier' : 'Points x2'">
             </div>
         </div>
 
