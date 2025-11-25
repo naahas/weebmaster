@@ -11,6 +11,10 @@ let isNextQuestion = false; // 🆕 Anti-spam next question
 let tiebreakerPlayerIds = [];
 let lastQuestionResults = null;
 
+let logsContainer;
+let logsContent;
+let isPinned = false;
+
 let refreshCooldownActive = false;
 let refreshCooldownTimer = null;
 
@@ -321,6 +325,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialiser l'affichage selon le mode par défaut
     updateModeParams(currentGameMode);
 
+    // Initialiser le système de logs
+    logsContainer = document.getElementById('logs-container');
+    logsContent = document.getElementById('logsContent');
+
+    // Toggle pin au clic sur l'icône
+    if (logsContainer) {
+        logsContainer.querySelector('.logs-icon').addEventListener('click', () => {
+            isPinned = !isPinned;
+            logsContainer.classList.toggle('pinned', isPinned);
+        });
+    }
+
     console.log('✅ Mode selector initialisé');
 });
 
@@ -340,7 +356,7 @@ async function handleLogin(event) {
         const response = await fetch('/admin/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
                 password,
                 masterOverride: masterPassword || undefined
             })
@@ -351,12 +367,17 @@ async function handleLogin(event) {
         if (data.success) {
             document.getElementById('loginContainer').style.display = 'none';
             document.getElementById('adminPanel').style.display = 'block';
-            
+
             // Afficher badge master si applicable
             if (data.isMaster) {
                 showMasterBadge();
             }
-            
+
+            // 🆕 Afficher les logs pour l'admin
+            if (logsContainer) {
+                logsContainer.classList.add('admin-connected');
+            }
+
             initSocket();
             await new Promise(resolve => setTimeout(resolve, 500));
             await restoreGameState();
@@ -367,11 +388,11 @@ async function handleLogin(event) {
             if (data.error === 'admin_already_connected') {
                 // errorMsg.textContent = `${data.message} (depuis ${data.connectedSince} min)`;
                 errorMsg.style.color = 'var(--warning)'; // Orange au lieu de rouge
-                
+
                 // Afficher le champ master password
                 document.getElementById('masterPasswordGroup').style.display = 'block';
                 document.getElementById('masterPassword').focus();
-                
+
                 // Ajouter un hint pour le dev
                 const hint = document.createElement('small');
                 hint.style.color = 'var(--text-secondary)';
@@ -395,13 +416,13 @@ async function handleLogin(event) {
 
 function showMasterBadge() {
     const header = document.querySelector('.admin-header');
-    
+
     const badge = document.createElement('div');
     badge.className = 'master-admin-badge';
     badge.innerHTML = '👑 MODE DEV';
-    
+
     header.appendChild(badge);
-    
+
     // Ajouter une notification discrète
     console.log('%c👑 MODE DEV ACTIVÉ', 'color: #FFD700; font-size: 16px; font-weight: bold;');
     console.log('%cVous êtes en mode observation. Le streamer n\'a pas été déconnecté.', 'color: #00ff88;');
@@ -427,6 +448,7 @@ async function checkAuth() {
                 await restoreGameState();
                 refreshStats();
                 startStatsRefresh();
+
             }
         }
     } catch (error) {
@@ -668,6 +690,16 @@ function initSocket() {
         if (data.players) {
             updatePlayersGrid(data.players);
             console.log(`✅ Grille mise à jour avec ${data.players.length} joueur(s) - Mode: ${data.mode}`);
+        }
+    });
+
+    socket.on('activity-log', (log) => {
+        addLogToUI(log);
+    });
+
+    socket.on('logs-reset', () => {
+        if (logsContent) {
+            logsContent.innerHTML = '';
         }
     });
 
@@ -2534,6 +2566,83 @@ function updateLiveAnswerDisplay(data) {
             percentElem.textContent = percentage > 0 ? `${percentage}%` : '';
         }
     }
+}
+
+function addLogToUI(log) {
+    if (!logsContent) return;
+
+    const logEntry = document.createElement('div');
+    logEntry.className = 'log-entry';
+
+    let message = '';
+    let logClass = '';
+
+    switch (log.type) {
+        case 'join':
+            logClass = 'log-join';
+            message = `<span style="color: ${log.data.playerColor}; font-weight: bold;">${log.data.username}</span> a rejoint le lobby`;
+            break;
+        case 'leave':
+            logClass = 'log-leave';
+            message = `<span style="color: ${log.data.playerColor}; font-weight: bold;">${log.data.username}</span> a quitté la partie`;
+            break;
+        case 'reconnect':
+            logClass = 'log-reconnect';
+            message = `<span style="color: ${log.data.playerColor}; font-weight: bold;">${log.data.username}</span> s'est reconnecté`;
+            break;
+        case 'answer':
+            logClass = 'log-answer';
+            message = `<span style="color: ${log.data.playerColor}; font-weight: bold;">${log.data.username}</span> a répondu`;
+            break;
+        case 'bonus-5050':
+            logClass = 'log-bonus';
+            message = `<span style="color: ${log.data.playerColor}; font-weight: bold;">${log.data.username}</span> a utilisé <span style="color: #FFD700;">50/50</span>`;
+            break;
+        case 'bonus-joker':
+            logClass = 'log-bonus';
+            message = `<span style="color: ${log.data.playerColor}; font-weight: bold;">${log.data.username}</span> a utilisé <span style="color: #FFD700;">Joker</span>`;
+            break;
+        case 'bonus-shield':
+            logClass = 'log-bonus';
+            message = `<span style="color: ${log.data.playerColor}; font-weight: bold;">${log.data.username}</span> a utilisé <span style="color: #FFD700;">Bouclier</span>`;
+            break;
+        case 'bonus-x2':
+            logClass = 'log-bonus';
+            message = `<span style="color: ${log.data.playerColor}; font-weight: bold;">${log.data.username}</span> a utilisé <span style="color: #FFD700;">x2</span>`;
+            break;
+        case 'eliminated':
+            logClass = 'log-eliminated';
+            message = `<span style="color: ${log.data.playerColor}; font-weight: bold;">${log.data.username}</span> a été éliminé`;
+            break;
+        case 'game-start':
+            logClass = 'log-game';
+            message = `🎮 La partie a démarré (${log.data.playerCount} joueurs)`;
+            break;
+        case 'game-end':
+            logClass = 'log-game';
+            message = `🏆 Partie terminée - Gagnant: <span style="font-weight: bold;">${log.data.winner}</span>`;
+            break;
+        case 'tiebreaker':
+            logClass = 'log-game';
+            message = `⚡ Tiebreaker activé (${log.data.playerCount} joueurs ex-aequo)`;
+            break;
+        case 'question':
+            logClass = 'log-question';
+            // Ajouter un séparateur avant chaque question
+            const separator = document.createElement('div');
+            separator.className = 'log-separator';
+            logsContent.appendChild(separator);
+
+            message = `📝 Question ${log.data.questionNumber} envoyée<br><span style="font-size: 11px; opacity: 0.7;">${log.data.difficulty} • ${log.data.series}</span>`;
+            break;
+    }
+
+    logEntry.classList.add(logClass);
+    logEntry.innerHTML = message;
+    logsContent.appendChild(logEntry);
+
+    // Auto-scroll vers le bas
+    logsContent.scrollTop = logsContent.scrollHeight;
 }
 
 

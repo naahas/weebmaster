@@ -2,6 +2,11 @@
    WEEBMASTER - Styles CSS
    ============================================ */
 
+
+[v-cloak] {
+    display: none !important;
+}
+
 :root {
     /* Dark Theme (défaut) - Style Manga Doré */
     --bg-primary: #0a0a0a;

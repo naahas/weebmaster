@@ -213,9 +213,12 @@ body {
 }
 
 @keyframes pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 1;
     }
+
     50% {
         opacity: 0.5;
     }
@@ -317,9 +320,12 @@ body {
 }
 
 @keyframes pulse-timer {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 1;
     }
+
     50% {
         opacity: 0.4;
     }
@@ -363,10 +369,13 @@ body {
 }
 
 @keyframes yellowPulseBorder {
-    0%, 100% {
+
+    0%,
+    100% {
         border-color: rgba(255, 215, 0, 0.6);
         box-shadow: 0 0 12px rgba(255, 215, 0, 0.25);
     }
+
     50% {
         border-color: rgba(255, 215, 0, 0.9);
         box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
@@ -387,11 +396,14 @@ body {
 }
 
 @keyframes pulse-loading {
-    0%, 100% { 
-        opacity: 0.6; 
+
+    0%,
+    100% {
+        opacity: 0.6;
     }
-    50% { 
-        opacity: 0.4; 
+
+    50% {
+        opacity: 0.4;
     }
 }
 
@@ -756,7 +768,7 @@ body {
     background: var(--primary);
 }
 
-.settings-panel > * {
+.settings-panel>* {
     max-width: 100%;
     box-sizing: border-box;
 }
@@ -800,7 +812,7 @@ body {
     font-weight: 500;
 }
 
-.setting-item:has(.dual-inputs-container) > .setting-label {
+.setting-item:has(.dual-inputs-container)>.setting-label {
     display: none;
 }
 
@@ -935,6 +947,7 @@ body {
         opacity: 0;
         transform: translateY(10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -1203,10 +1216,13 @@ body {
 }
 
 @keyframes greenGlow {
-    0%, 100% {
+
+    0%,
+    100% {
         border-color: #00ff88;
         box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
     }
+
     50% {
         border-color: #5affb4;
         box-shadow: 0 0 18px rgba(0, 255, 136, 0.5);
@@ -1334,6 +1350,7 @@ body {
     from {
         transform: rotate(0deg);
     }
+
     to {
         transform: rotate(360deg);
     }
@@ -1384,12 +1401,16 @@ body {
 }
 
 @keyframes shake {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: rotate(0deg);
     }
+
     25% {
         transform: rotate(-10deg);
     }
+
     75% {
         transform: rotate(10deg);
     }
@@ -1650,9 +1671,12 @@ body {
 }
 
 @keyframes blink {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 1;
     }
+
     50% {
         opacity: 0.6;
     }
@@ -1745,6 +1769,7 @@ body {
         opacity: 0;
         transform: translateY(16px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -1803,6 +1828,7 @@ body {
         opacity: 0;
         transform: scale(0.9);
     }
+
     to {
         opacity: 1;
         transform: scale(1);
@@ -1993,10 +2019,13 @@ body {
 }
 
 @keyframes tiebreakerBorderPulse {
-    0%, 100% {
+
+    0%,
+    100% {
         border-color: var(--warning-color);
         opacity: 1;
     }
+
     50% {
         border-color: var(--warning-color);
         opacity: 0.4;
@@ -2115,9 +2144,12 @@ body {
 }
 
 @keyframes bounce {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: translateY(0);
     }
+
     50% {
         transform: translateY(-8.0px);
     }
@@ -2224,7 +2256,8 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 300px; /* 🔥 Hauteur minimum pour centrer verticalement */
+    min-height: 300px;
+    /* 🔥 Hauteur minimum pour centrer verticalement */
 }
 
 .empty-state-icon {
@@ -2253,7 +2286,7 @@ body {
     gap: 12px;
     overflow-y: auto;
     padding-right: 8.0px;
-    min-height: 100px; 
+    min-height: 100px;
 }
 
 /* 🔥 NOUVEAU: Centrer l'empty state si c'est le seul élément */
@@ -2301,6 +2334,7 @@ body {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -2656,12 +2690,10 @@ body {
     left: -50%;
     width: 200%;
     height: 200%;
-    background: linear-gradient(
-        45deg,
-        transparent 30%,
-        rgba(255, 255, 255, 0.08) 50%,
-        transparent 70%
-    );
+    background: linear-gradient(45deg,
+            transparent 30%,
+            rgba(255, 255, 255, 0.08) 50%,
+            transparent 70%);
     transform: translateX(-100%) translateY(-100%) rotate(45deg);
     transition: transform 0.6s ease;
     z-index: 1;
@@ -2778,11 +2810,15 @@ body {
     color: var(--text-secondary);
     text-align: center;
     font-weight: 500;
-    opacity: 0; /* 🔥 Caché par défaut */
-    transform: translateY(-5px); /* 🔥 Position décalée */
+    opacity: 0;
+    /* 🔥 Caché par défaut */
+    transform: translateY(-5px);
+    /* 🔥 Position décalée */
     transition: all 0.3s ease;
-    max-height: 0; /* 🔥 Hauteur 0 */
-    overflow: hidden; /* 🔥 Cacher le texte */
+    max-height: 0;
+    /* 🔥 Hauteur 0 */
+    overflow: hidden;
+    /* 🔥 Cacher le texte */
 }
 
 .serie-card-pro:hover .serie-card-subtitle {
@@ -2801,9 +2837,11 @@ body {
         opacity: 0;
         transform: translateY(-8px);
     }
+
     50% {
         transform: translateY(2px);
     }
+
     100% {
         opacity: 1;
         transform: translateY(0);
@@ -2965,10 +3003,13 @@ body {
 }
 
 @keyframes correctPulse {
-    0%, 100% {
+
+    0%,
+    100% {
         border-color: var(--success);
         box-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
     }
+
     50% {
         border-color: rgba(0, 255, 136, 0.6);
         box-shadow: 0 0 16px rgba(0, 255, 136, 0.5);
@@ -2995,12 +3036,178 @@ body {
 }
 
 @keyframes masterGlow {
-    0%, 100% {
+
+    0%,
+    100% {
         box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
         border-color: #FFD700;
     }
+
     50% {
         box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
         border-color: #FFA500;
+    }
+}
+
+/* ========== SYSTÈME DE LOGS (Style TikTok Live) ========== */
+.logs-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    pointer-events: none;
+    /* Ne pas bloquer les clics */
+    display: none;
+}
+
+
+.logs-container.admin-connected {
+    display: block; 
+}
+
+.logs-icon {
+    width: 25px;
+    height: 25px;
+    cursor: pointer;
+    transition: transform 0.2s, opacity 0.2s;
+    opacity: 0.7;
+    pointer-events: auto;
+    /* Seulement l'icône cliquable */
+}
+
+.logs-icon:hover {
+    transform: scale(1.1);
+    opacity: 1;
+}
+
+
+.logs-icon:hover {
+    transform: scale(1.1);
+    opacity: 1;
+}
+
+/* Indicateur d'épinglage */
+.logs-container.pinned .logs-icon {
+    opacity: 1;
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
+    border: 2px solid rgba(255, 215, 0, 0.4);
+    border-radius: 8px;
+    padding: 2px;
+}
+
+.logs-feed {
+    position: absolute;
+    bottom: 55px;
+    right: 0;
+    width: 280px;
+    max-height: 450px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.logs-container:hover .logs-feed,
+.logs-container.pinned .logs-feed {
+    opacity: 1;
+}
+
+.logs-header {
+    display: none;
+    /* Supprimé */
+}
+
+.logs-content {
+    padding: 10px 5px;
+    overflow-y: auto;
+    max-height: 450px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Masquer la scrollbar */
+.logs-content::-webkit-scrollbar {
+    display: none;
+}
+
+.log-entry {
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.9);
+    /* Très transparent */
+    backdrop-filter: blur(4px);
+    font-size: 11px;
+    line-height: 1.3;
+    color: rgba(255, 255, 255, 0.9);
+    animation: fadeInLog 0.3s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes fadeInLog {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.log-separator {
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(255, 215, 0, 0.2), transparent);
+    margin: 6px 0;
+}
+
+/* Couleurs par type - plus subtiles */
+.log-join {
+    border-left: 2px solid rgba(0, 255, 136, 0.6);
+    background: rgba(0, 255, 136, 0.05);
+}
+
+.log-leave {
+    border-left: 2px solid rgba(255, 71, 87, 0.6);
+    background: rgba(255, 71, 87, 0.05);
+}
+
+.log-eliminated {
+    border-left: 2px solid rgba(255, 71, 87, 0.6);
+    background: rgba(255, 71, 87, 0.08);
+}
+
+.log-answer {
+    border-left: 2px solid rgba(94, 173, 242, 0.5);
+    background: rgba(94, 173, 242, 0.05);
+}
+
+.log-bonus {
+    border-left: 2px solid rgba(255, 215, 0, 0.6);
+    background: rgba(255, 215, 0, 0.08);
+}
+
+.log-game {
+    border-left: 2px solid rgba(255, 215, 0, 0.7);
+    background: rgba(255, 215, 0, 0.12);
+    font-weight: 500;
+}
+
+.log-question {
+    border-left: 2px solid rgba(155, 89, 182, 0.6);
+    background: rgba(155, 89, 182, 0.08);
+}
+
+.log-reconnect {
+    border-left: 2px solid rgba(46, 213, 115, 0.6);
+    background: rgba(46, 213, 115, 0.08);
+}
+
+
+@media screen and (max-width: 768px) {
+    .logs-container {
+        display: none;
     }
 }

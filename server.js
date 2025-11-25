@@ -17,6 +17,17 @@ const MAX_GAMES_BEFORE_RESET = 5;
 let lastRefreshPlayersTime = 0;
 const REFRESH_COOLDOWN_MS = 20000;
 
+let activityLogs = [];
+const MAX_LOGS = 30;
+let playerColors = {}; // Associer chaque joueur à une couleur
+
+
+const PLAYER_COLORS = [
+    '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A',
+    '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2',
+    '#F8B739', '#52B788', '#E76F51', '#8E44AD'
+];
+
 
 // config/serieFilters.js
 const SERIE_FILTERS = {
@@ -171,13 +182,13 @@ app.get('/auth/logout', (req, res) => {
         activeAdminLoginTime = null;
         console.log('🔓 Slot admin normal libéré (logout)');
     }
-    
+
     // Si c'est un master qui se déconnecte
     if (req.session.isMasterAdmin) {
         masterAdminSessions.delete(req.session.id);
         console.log(`👑 Master déconnecté (${masterAdminSessions.size} restant(s))`);
     }
-    
+
     req.session.destroy();
     res.redirect('/');
 });
@@ -228,6 +239,7 @@ app.get('/game/state', (req, res) => {
             points: gameState.mode === 'points' ? (player.points || 0) : null,
             correctAnswers: player.correctAnswers,
             hasAnswered: gameState.answers.has(player.socketId),
+            selectedAnswer: gameState.answers.get(player.socketId)?.answer || null,
             comboData: comboData
         };
     });
@@ -404,7 +416,7 @@ app.post('/admin/login', (req, res) => {
     if (masterOverride && masterOverride === MASTER_PASSWORD) {
         req.session.isAdmin = true;
         req.session.isMasterAdmin = true;
-        
+
         // Ajouter à la liste des masters connectés (SANS déconnecter le streamer)
         masterAdminSessions.add(req.session.id);
         lastAdminActivity = Date.now();
@@ -414,8 +426,8 @@ app.post('/admin/login', (req, res) => {
                 return res.status(500).json({ success: false, message: 'Erreur de session' });
             }
             console.log(`👑 MASTER ADMIN connecté (${masterAdminSessions.size} master(s) actif(s))`);
-            res.json({ 
-                success: true, 
+            res.json({
+                success: true,
                 isMaster: true,
                 canObserve: true // Indique que c'est un mode observation
             });
@@ -425,11 +437,11 @@ app.post('/admin/login', (req, res) => {
 
     // ========== CAS 2 : Login normal ==========
     if (password === process.env.ADMIN_PASSWORD) {
-        
+
         // ⚠️ Vérifier si un admin NORMAL est déjà connecté
         if (activeAdminSession && activeAdminSession !== req.session.id) {
             const minutesConnected = Math.floor((Date.now() - activeAdminLoginTime) / 60000);
-            return res.status(409).json({ 
+            return res.status(409).json({
                 success: false,
                 error: 'admin_already_connected',
                 message: '',
@@ -480,6 +492,8 @@ app.post('/admin/toggle-game', (req, res) => {
 
     if (gameState.isActive) {
         console.log('✅ Jeu activé - Lobby ouvert');
+
+        resetLogs();
 
         // Reset la grille des joueurs à l'ouverture du lobby
         gameState.players.clear();
@@ -688,6 +702,9 @@ app.post('/admin/start-game', async (req, res) => {
         gameState.gameStartTime = Date.now();
         gameState.showResults = false;
         gameState.lastQuestionResults = null;
+
+        const playerCount = gameState.players.size;
+        addLog('game-start', { playerCount });
 
         // 🔥 Recharger les IDs utilisés (peut être vide si reset)
         gameState.usedQuestionIds = await db.getUsedQuestionIds();
@@ -1300,6 +1317,12 @@ app.post('/admin/next-question', async (req, res) => {
         gameState.liveAnswers.clear();
         updateLiveAnswerStats();
 
+        addLog('question', {
+            questionNumber: gameState.currentQuestionIndex,
+            difficulty: difficulty,
+            series: question.serie
+        });
+
 
         io.emit('new-question', questionData);
 
@@ -1323,12 +1346,12 @@ app.post('/admin/logout-silent', (req, res) => {
         activeAdminLoginTime = null;
         console.log('🔓 Slot admin normal libéré (silent)');
     }
-    
+
     if (req.session.isMasterAdmin) {
         masterAdminSessions.delete(req.session.id);
         console.log(`👑 Master déconnecté (silent) (${masterAdminSessions.size} restant(s))`);
     }
-    
+
     req.session.destroy();
     res.json({ success: true });
 });
@@ -1470,7 +1493,13 @@ function revealAnswers(correctAnswer) {
                         player.activeShield = false; // ✅ Consommer le Shield
                     } else {
                         player.lives--;
-                        if (player.lives === 0) eliminatedThisRound++;
+                        if (player.lives === 0) {
+                            eliminatedThisRound++;
+                            addLog('eliminated', {
+                                username: player.username,
+                                playerColor: playerColors[player.username]
+                            });
+                        }
                         status = 'afk';
                     }
                 } else {
@@ -1500,7 +1529,13 @@ function revealAnswers(correctAnswer) {
                         player.activeShield = false; // ✅ Consommer le Shield
                     } else {
                         player.lives--;
-                        if (player.lives === 0) eliminatedThisRound++;
+                        if (player.lives === 0) {
+                            eliminatedThisRound++;
+                            addLog('eliminated', {
+                                username: player.username,
+                                playerColor: playerColors[player.username]
+                            });
+                        }
                         status = 'wrong';
                     }
                 } else {
@@ -1657,6 +1692,12 @@ function revealAnswers(correctAnswer) {
                 gameState.lastQuestionResults = null;
                 gameState.answers.clear();
 
+                addLog('question', {
+                    questionNumber: gameState.currentQuestionIndex,
+                    difficulty: difficulty,
+                    series: question.serie
+                });
+
                 io.emit('new-question', questionData);
 
                 setTimeout(() => {
@@ -1793,6 +1834,8 @@ async function endGameByPoints() {
                 );
                 await db.updateUserStats(winner.twitchId, true, 1);
 
+                addLog('game-end', { winner: winner.username });
+
                 const winnerUser = await db.getUserByTwitchId(winner.twitchId);
 
                 const winnerData = {
@@ -1835,6 +1878,8 @@ async function endGameByPoints() {
             // Stocker les twitchId
             gameState.isTiebreaker = true;
             gameState.tiebreakerPlayers = winners.map(w => w.twitchId);
+
+            addLog('tiebreaker', { playerCount: winners.length });
 
             io.emit('tiebreaker-announced', {
                 tiebreakerPlayers: winners.map(w => ({
@@ -1922,6 +1967,12 @@ async function sendTiebreakerQuestion() {
         gameState.showResults = false;
         gameState.lastQuestionResults = null;
         gameState.answers.clear();
+
+        addLog('question', {
+            questionNumber: gameState.currentQuestionIndex,
+            difficulty: 'TIEBREAKER - EXTREME',
+            series: question.serie
+        });
 
         // Envoyer la question à TOUS les joueurs
         io.emit('new-question', questionData);
@@ -2110,6 +2161,8 @@ async function endGame(winner) {
                 duration
             );
             await db.updateUserStats(winner.twitchId, true, 1);
+
+            addLog('game-end', { winner: winner.username });
 
             const winnerUser = await db.getUserByTwitchId(winner.twitchId);
 
@@ -2469,6 +2522,9 @@ io.on('connection', (socket) => {
             correctAnswers: 0
         });
 
+        const playerColor = assignPlayerColor(data.username);
+        addLog('join', { username: data.username, playerColor });
+
         console.log(`✅ ${data.username} a rejoint le lobby`);
 
         io.emit('lobby-update', {
@@ -2490,6 +2546,9 @@ io.on('connection', (socket) => {
             gameState.players.delete(socket.id);
             gameState.answers.delete(socket.id);
             console.log(`👋 ${data.username} a quitté le lobby`);
+
+            const playerColor = playerColors[data.username];
+            addLog('leave', { username: data.username, playerColor });
 
             io.emit('lobby-update', {
                 playerCount: gameState.players.size,
@@ -2567,6 +2626,9 @@ io.on('connection', (socket) => {
 
             socket.emit('player-restored', restorationData);
 
+            const playerColor = playerColors[data.username] || assignPlayerColor(data.username);
+            addLog('reconnect', { username: data.username, playerColor });
+
             // Mise à jour lobby
             io.emit('lobby-update', {
                 playerCount: gameState.players.size,
@@ -2616,6 +2678,13 @@ io.on('connection', (socket) => {
             bonusActive: data.bonusActive // 🔥 AJOUTER CETTE LIGNE
         });
 
+        if (player) {
+            addLog('answer', {
+                username: player.username,
+                playerColor: playerColors[player.username]
+            });
+        }
+
         socket.emit('answer-recorded');
 
         gameState.liveAnswers.set(socket.id, data.answer);
@@ -2650,9 +2719,26 @@ io.on('connection', (socket) => {
         if (success) {
             console.log(`✅ Bonus "${bonusType}" utilisé par ${player.username}`);
 
+            // LOGS D'ACTIVITÉ
+            const playerColor = playerColors[player.username];
+            switch (bonusType) {
+                case '5050':
+                    addLog('bonus-5050', { username: player.username, playerColor });
+                    break;
+                case 'reveal':
+                    addLog('bonus-joker', { username: player.username, playerColor });
+                    break;
+                case 'shield':
+                    addLog('bonus-shield', { username: player.username, playerColor });
+                    break;
+                case 'doublex2':
+                    addLog('bonus-x2', { username: player.username, playerColor });
+                    break;
+            }
+
             // 🔥 NOUVEAU: Stocker le Shield dans les données du joueur
             if (bonusType === 'shield') {
-                player.activeShield = true; // ✅ Marquer le Shield comme actif
+                player.activeShield = true;
                 console.log(`🛡️ Shield marqué actif pour ${player.username}`);
             }
 
@@ -2681,6 +2767,11 @@ io.on('connection', (socket) => {
     // Déconnexion
     socket.on('disconnect', () => {
         const player = gameState.players.get(socket.id);
+
+        if (player) {
+            const playerColor = playerColors[player.username];
+            addLog('leave', { username: player.username, playerColor });
+        }
 
         // 🔥 Retirer du tracker d'authentification
         if (authenticatedUsers.has(socket.id)) {
@@ -2903,7 +2994,38 @@ function updateLiveAnswerStats() {
 
 
 
+function addLog(type, data) {
+    const log = {
+        id: Date.now() + Math.random(),
+        type: type,
+        data: data,
+        timestamp: Date.now()
+    };
 
+    activityLogs.push(log);
+    if (activityLogs.length > MAX_LOGS) {
+        activityLogs.shift();
+    }
+
+    io.emit('activity-log', log);
+}
+
+function resetLogs() {
+    activityLogs = [];
+    playerColors = {};
+    io.emit('logs-reset');
+}
+
+function assignPlayerColor(username) {
+    if (!playerColors[username]) {
+        const usedColors = Object.values(playerColors);
+        const availableColors = PLAYER_COLORS.filter(c => !usedColors.includes(c));
+        playerColors[username] = availableColors.length > 0
+            ? availableColors[0]
+            : PLAYER_COLORS[Object.keys(playerColors).length % PLAYER_COLORS.length];
+    }
+    return playerColors[username];
+}
 
 
 

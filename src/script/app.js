@@ -98,7 +98,7 @@ createApp({
             availableBonuses: [],       // ['5050', 'reveal', 'extralife' ou 'doublex2']
             usedBonuses: [],            // Bonus déjà utilisés dans la partie
             showBonusModal: false,      // Afficher/masquer le modal
-            activeBonusEffect: 'shield',
+            activeBonusEffect: 'null',
 
             isLevelingUp: false,
         };
@@ -403,6 +403,12 @@ createApp({
                             console.log(`✅ Vies restaurées: ${this.playerLives}`);
                         }
 
+                        if (currentPlayer.hasAnswered) {
+                            this.hasAnswered = true;
+                            this.selectedAnswer = currentPlayer.selectedAnswer;
+                            console.log(`✅ Réponse restaurée immédiatement: ${this.selectedAnswer}`);
+                        }
+
                         if (currentPlayer.comboData && this.comboLevel === 0 && this.comboProgress === 0) {
                             this.comboLevel = currentPlayer.comboData.comboLevel || 0;
                             this.comboProgress = currentPlayer.comboData.comboProgress || 0;
@@ -534,7 +540,6 @@ createApp({
                 }
             });
 
-            // Restauration du joueur
             // Restauration du joueur
             this.socket.on('player-restored', (data) => {
                 console.log('🔄 Données de restauration reçues:', data);
