@@ -895,10 +895,12 @@ createApp({
         },
 
         // ========== Question ==========
-        selectAnswer(answerIndex) {
+        selectAnswer(answerIndex, event) {
             if (this.hasAnswered || this.playerLives === 0) return;
 
             this.selectedAnswer = answerIndex;
+
+            if (event) this.spawnClickParticles(event);
 
             this.socket.emit('submit-answer', {
                 answer: answerIndex,
@@ -1013,12 +1015,12 @@ createApp({
                     color: { value: ['#FFD700', '#FFA500', '#FF8C00'] },
                     shape: { type: 'circle' },
                     opacity: {
-                        value: 0.7, // 🆕 Augmenté de 0.5 à 0.7
+                        value: 0.5, // 🆕 Augmenté de 0.5 à 0.7
                         random: true,
                         anim: { enable: true, speed: 0.8, opacity_min: 0.3, sync: false } // 🆕 Min à 0.3 au lieu de 0.1
                     },
                     size: {
-                        value: 4, // 🆕 Augmenté de 3 à 4
+                        value: 3, // 🆕 Augmenté de 3 à 4
                         random: true,
                         anim: { enable: true, speed: 2, size_min: 1, sync: false } // 🆕 Min à 1 au lieu de 0.5
                     },
@@ -1466,6 +1468,48 @@ createApp({
                 container.appendChild(particle);
 
                 setTimeout(() => particle.remove(), 1000);
+            }
+        },
+
+        spawnClickParticles(event) {
+            const x = event.clientX;
+            const y = event.clientY;
+
+            const particleCount = 12;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'click-particle';
+
+                // Direction complètement aléatoire
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 80 + Math.random() * 120; // 🔥 Très loin : 80-200px
+                const offsetX = Math.cos(angle) * distance;
+                const offsetY = Math.sin(angle) * distance;
+
+                // Taille aléatoire
+                const size = 4 + Math.random() * 6;
+
+                // Position de départ éparpillée
+                const startOffsetX = (Math.random() - 0.5) * 40;
+                const startOffsetY = (Math.random() - 0.5) * 20;
+
+                particle.style.left = (x + startOffsetX) + 'px';
+                particle.style.top = (y + startOffsetY) + 'px';
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.setProperty('--x', offsetX + 'px');
+                particle.style.setProperty('--y', offsetY + 'px');
+
+                // 🔥 Durée plus longue : 0.7s à 1.1s
+                const duration = 0.7 + Math.random() * 0.4;
+                particle.style.animationDuration = duration + 's';
+
+                document.body.appendChild(particle);
+
+                setTimeout(() => {
+                    particle.remove();
+                }, duration * 1000);
             }
         }
 

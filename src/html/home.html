@@ -117,13 +117,11 @@
                 <!-- HUD du joueur -->
                 <div class="player-hud">
                     <div class="hud-item">
-                        <span class="hud-label">Joueur</span>
                         <span class="hud-value">{{ username }}</span>
                     </div>
 
                     <!-- 🆕 Affichage conditionnel selon le mode -->
                     <div class="hud-item" v-if="gameMode === 'lives'">
-                        <span class="hud-label">Vies</span>
                         <div class="hearts">
                             <span v-for="n in 3" :key="n" class="heart" :class="{ lost: n > playerLives }">
                                 {{ n <= playerLives ? '❤️' : '🖤' }} </span>
@@ -131,7 +129,6 @@
                     </div>
 
                     <div class="hud-item points-display" v-if="gameMode === 'points'">
-                        <span class="hud-label">Points</span>
                         <div class="points-counter">
                             <!-- <span class="points-icon">⭐</span> -->
                             <span class="points-number">{{ formattedPlayerPoints }}</span>
@@ -139,8 +136,7 @@
                     </div>
 
                     <div class="hud-item">
-                        <span class="hud-label">Question</span>
-                        <span class="hud-value">{{ currentQuestionNumber }}</span>
+                        <span class="hud-value">Question {{ currentQuestionNumber }}</span>
                     </div>
 
 
@@ -186,7 +182,7 @@
                         <div class="answers-grid" :class="{ 'grid-6': currentQuestion.answers.length === 6 }">
                             <button v-for="(answer, index) in currentQuestion.answers" :key="index" class="answer-btn"
                                 :class="{ selected: selectedAnswer === index + 1, disabled: hasAnswered || playerLives === 0 }"
-                                @click="selectAnswer(index + 1)" :disabled="hasAnswered || playerLives === 0">
+                                @click="selectAnswer(index + 1, $event)" :disabled="hasAnswered || playerLives === 0">
                                 <span class="answer-number">{{ index + 1 }}</span>
                                 <span class="answer-text">{{ answer }}</span>
                             </button>
