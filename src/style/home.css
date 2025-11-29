@@ -508,6 +508,10 @@ body {
 }
 
 /* ========== HUD JOUEUR - Plus compact et discret ========== */
+
+
+
+
 .player-hud {
     display: flex;
     justify-content: space-between;
@@ -519,7 +523,6 @@ body {
     margin-bottom: 16px;
     border: 0.8px solid rgba(255, 255, 255, 0.05);
     position: relative;
-    /* 🔥 AJOUTER ces lignes */
     transition:
         border-color 0.8s ease-in-out,
         box-shadow 0.8s ease-in-out;
@@ -2037,6 +2040,7 @@ body {
     font-size: 0.85rem;
     color: var(--text-secondary);
     font-weight: 500;
+    width: 100%;
 }
 
 /* ============================================
@@ -5568,6 +5572,11 @@ body {
    BONUS MOBILE - ICÔNE + JAUGE CIRCULAIRE
    ======================================== */
 
+.bonus-gauge-mobile,
+.bonus-arc-menu {
+    display: none !important;
+}
+
 @media (max-width: 614px) {
 
     /* 🔥 Cacher le système desktop */
@@ -5585,6 +5594,12 @@ body {
         height: 56px;
         z-index: 500;
         cursor: pointer;
+        display: block !important;
+    }
+
+
+    .bonus-arc-menu {
+        display: block !important;
     }
 
     /* SVG container */

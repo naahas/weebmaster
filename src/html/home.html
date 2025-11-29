@@ -10,6 +10,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap"
         rel="stylesheet">
+
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="shortcut icon" type="image/png" href="icon.png">
+
+    <!-- Pour Apple/iOS -->
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <!-- Pour les résultats de recherche Google (optionnel) -->
+    <meta property="og:image" content="icon.png">
 </head>
 
 <body>
@@ -223,9 +232,10 @@
                 'unselected': selectedAnswer && selectedAnswer !== (index + 1) && (index + 1) !== questionResults.correctAnswer
             }">
                                 <span class="answer-text">{{ answer }}</span>
-                                <span class="result-icon" v-if="(index + 1) === questionResults.correctAnswer">✓</span>
-                                <span class="result-icon wrong-icon"
+                                <!-- <span class="result-icon" v-if="(index + 1) === questionResults.correctAnswer">✓</span> -->
+                                <!-- <span class="result-icon wrong-icon"
                                     v-if="selectedAnswer === (index + 1) && selectedAnswer !== questionResults.correctAnswer">✕</span>
+                             -->
                             </div>
                         </div>
 
