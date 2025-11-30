@@ -13,6 +13,9 @@ createApp({
             username: '',
             twitchId: '',
 
+            clickSound: null,
+
+
             tempCorrectAnswer: null,
 
             showBonusMenu: false,
@@ -111,6 +114,7 @@ createApp({
         this.initParticles();
         this.initSocket();
         this.loadTheme();
+        this.initSounds();
     },
 
     computed: {
@@ -900,6 +904,8 @@ createApp({
 
             this.selectedAnswer = answerIndex;
 
+            this.playSound(this.clickSound);
+
             if (event) this.spawnClickParticles(event);
 
             this.socket.emit('submit-answer', {
@@ -976,12 +982,34 @@ createApp({
             this.playerLives = 3;
             this.hasJoined = false;
             this.showResults = false;
+            this.playerPoints = 0;
 
-            // 🆕 Reset le système de combo
+            // Reset le système de combo
             this.resetComboSystem();
 
             localStorage.removeItem('hasJoinedLobby');
             localStorage.removeItem('lobbyTwitchId');
+
+            // 🆕 Demander l'état actuel du serveur pour rafraîchir le compteur
+            this.refreshGameState();
+        },
+
+        // 🆕 Ajoute cette nouvelle méthode juste après backToHome()
+        async refreshGameState() {
+            try {
+                const response = await fetch('/game/state');
+                const state = await response.json();
+
+                this.isGameActive = state.isActive;
+                this.playerCount = state.playerCount;
+                this.gameMode = state.mode || 'lives';
+                this.gameLives = state.lives || 3;
+                this.gameTime = state.questionTime || 10;
+
+                console.log(`🔄 État rafraîchi: ${this.playerCount} joueurs dans le lobby`);
+            } catch (error) {
+                console.error('Erreur refresh état:', error);
+            }
         },
 
         formatDuration(seconds) {
@@ -1511,9 +1539,21 @@ createApp({
                     particle.remove();
                 }, duration * 1000);
             }
-        }
+        },
 
-        
+        initSounds() {
+            this.clickSound = new Audio('click.mp3');
+            this.clickSound.volume = 0.5; // Volume à 50%
+        },
+
+        playSound(sound) {
+            if (sound) {
+                sound.currentTime = 0; // Reset au début
+                sound.play().catch(e => console.log('Audio blocked:', e));
+            }
+        },
+
+
 
     },
 

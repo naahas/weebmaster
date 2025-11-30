@@ -150,6 +150,13 @@ body {
 .admin-panel {
     display: none;
     min-height: 100vh;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+
+body:has(.admin-panel[style*="block"]) {
+    overflow: hidden;
 }
 
 /* ============================================
@@ -278,6 +285,8 @@ body {
     grid-template-columns: repeat(4, 1fr);
     gap: 12px;
     border-bottom: 0.8px solid var(--border);
+    max-width: 1600px;
+    margin: 0 auto;
 }
 
 .control-card {
@@ -469,11 +478,15 @@ body {
    LAYOUT
    ============================================ */
 
+   
+
 .admin-content {
     display: grid;
-    grid-template-columns: 25% 50% 25%;
-    min-height: calc(100vh - 160px);
+    grid-template-columns: 25% 1fr 25%;
+    height: calc(100vh - 130px);
     overflow: hidden;
+    max-width: 1800px;
+    margin: 0 auto;
 }
 
 .admin-grid {

@@ -17,9 +17,16 @@ const MAX_GAMES_BEFORE_RESET = 5;
 let lastRefreshPlayersTime = 0;
 const REFRESH_COOLDOWN_MS = 20000;
 
+let connectionsByIP = new Map();
+const MAX_CONNECTIONS_PER_IP = 5;
+
 let activityLogs = [];
 const MAX_LOGS = 30;
 let playerColors = {}; // Associer chaque joueur à une couleur
+
+let lastStatsUpdate = 0;
+const STATS_THROTTLE_MS = 500; // Max 2 updates par seconde
+let pendingStatsUpdate = false;
 
 
 const PLAYER_COLORS = [
@@ -287,6 +294,7 @@ app.get('/game/state', (req, res) => {
 // ============================================
 app.use(express.static('src/html'));
 app.use(express.static('src/style'));
+app.use(express.static('src/sound'));
 app.use(express.static('src/img'));
 app.use(express.static('src/script'));
 
@@ -1589,8 +1597,18 @@ function revealAnswers(correctAnswer) {
     io.emit('question-results', resultsData);
 
     // Vérifier fin de partie selon le mode
-    if (gameState.mode === 'lives' && alivePlayersAfter.length <= 1) {
-        endGame(alivePlayersAfter[0]);
+    if (gameState.mode === 'lives') {
+        // Recalculer les joueurs en vie APRÈS les mises à jour
+        const currentAlivePlayers = getAlivePlayers();
+        console.log(`🔍 Joueurs en vie après cette question: ${currentAlivePlayers.length}`);
+
+        if (currentAlivePlayers.length <= 1) {
+            // 0 ou 1 joueur restant = fin de partie
+            const winner = currentAlivePlayers.length === 1 ? currentAlivePlayers[0] : null;
+            console.log(`🏁 Fin de partie mode vie - Gagnant: ${winner ? winner.username : 'Aucun'}`);
+            endGame(winner);
+            return; // 🔥 IMPORTANT: Arrêter ici pour ne pas continuer avec le mode auto
+        }
     } else if (gameState.mode === 'points' && gameState.currentQuestionIndex >= gameState.questionsCount) {
         // Terminer automatiquement après la dernière question
         setTimeout(() => {
@@ -2493,7 +2511,18 @@ const io = new Server(server, {
 });
 
 io.on('connection', (socket) => {
-    console.log(`🔌 Nouveau socket connecté: ${socket.id}`);
+    // 🛡️ Protection anti-spam connexions
+    const ip = socket.handshake.headers['x-forwarded-for']?.split(',')[0] || socket.handshake.address;
+    const currentConnections = connectionsByIP.get(ip) || 0;
+
+    if (currentConnections >= MAX_CONNECTIONS_PER_IP) {
+        console.log(`⚠️ Connexion refusée - Trop de connexions depuis ${ip}`);
+        socket.disconnect(true);
+        return;
+    }
+
+    connectionsByIP.set(ip, currentConnections + 1);
+    console.log(`🔌 Nouveau socket connecté: ${socket.id} (IP: ${ip}, connexions: ${currentConnections + 1})`);
 
     // 🔥 NOUVEAU: Événement pour enregistrer l'authentification
     socket.on('register-authenticated', (data) => {
@@ -2688,7 +2717,7 @@ io.on('connection', (socket) => {
         socket.emit('answer-recorded');
 
         gameState.liveAnswers.set(socket.id, data.answer);
-        updateLiveAnswerStats();
+        throttledUpdateLiveAnswerStats();
 
         io.emit('answer-submitted', {
             socketId: socket.id,
@@ -2766,6 +2795,15 @@ io.on('connection', (socket) => {
 
     // Déconnexion
     socket.on('disconnect', () => {
+        const ip = socket.handshake.headers['x-forwarded-for']?.split(',')[0] || socket.handshake.address;
+        const currentConnections = connectionsByIP.get(ip) || 1;
+        if (currentConnections <= 1) {
+            connectionsByIP.delete(ip);
+        } else {
+            connectionsByIP.set(ip, currentConnections - 1);
+        }
+
+
         const player = gameState.players.get(socket.id);
 
         if (player) {
@@ -2988,6 +3026,29 @@ function updateLiveAnswerStats() {
         answeredCount: gameState.liveAnswers.size,
         totalPlayers: gameState.players.size
     });
+}
+
+// 🆕 Version throttlée - appeler celle-ci à la place
+function throttledUpdateLiveAnswerStats() {
+    const now = Date.now();
+
+    // Si assez de temps s'est écoulé, envoyer immédiatement
+    if (now - lastStatsUpdate >= STATS_THROTTLE_MS) {
+        lastStatsUpdate = now;
+        updateLiveAnswerStats();
+        pendingStatsUpdate = false;
+    }
+    // Sinon, programmer un envoi différé (si pas déjà programmé)
+    else if (!pendingStatsUpdate) {
+        pendingStatsUpdate = true;
+        const delay = STATS_THROTTLE_MS - (now - lastStatsUpdate);
+
+        setTimeout(() => {
+            lastStatsUpdate = Date.now();
+            updateLiveAnswerStats();
+            pendingStatsUpdate = false;
+        }, delay);
+    }
 }
 
 
