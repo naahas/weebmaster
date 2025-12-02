@@ -17,7 +17,7 @@
     <div class="login-container" id="loginContainer">
         <div class="login-box">
             <div class="login-logo">
-                <h1>ShonenMaster Admin</h1>
+                <h1>ShonenMaster</h1>
                 <p>Panel d'administration</p>
             </div>
             <form onsubmit="handleLogin(event)" id="loginForm">
@@ -51,6 +51,11 @@
                         <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
                     </svg>
                 </button>
+                <a href="/question" class="btn-home-icon" title="Ajouter une question">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                    </svg>
+                </a>
                 <h1>ShonenMaster Admin</h1>
             </div>
             <div class="header-actions">
@@ -316,101 +321,6 @@
             </div>
 
 
-            <!-- <div class="add-question-section"
-            style="grid-column: 1 / -1; margin-top: 32px; padding: 24px; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border);">
-            <h2 style="color: var(--primary); margin-bottom: 24px; font-size: 1.2rem;">➕ Ajouter une question</h2>
-
-            <form id="addQuestionForm" style="display: grid; gap: 16px;">
-                <div style="max-width: 600px;">
-                    <label
-                        style="display: block; color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">Question</label>
-                    <input type="text" id="questionText" required
-                        style="width: 100%; padding: 12px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: 'Poppins';">
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr; gap: 12px; max-width: 600px;">
-                    <div>
-                        <label
-                            style="display: block; color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">Réponse
-                            1</label>
-                        <input type="text" id="answer1" required
-                            style="width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: 'Poppins';">
-                    </div>
-                    <div>
-                        <label
-                            style="display: block; color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">Réponse
-                            2</label>
-                        <input type="text" id="answer2" required
-                            style="width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: 'Poppins';">
-                    </div>
-                    <div>
-                        <label
-                            style="display: block; color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">Réponse
-                            3</label>
-                        <input type="text" id="answer3" required
-                            style="width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: 'Poppins';">
-                    </div>
-                    <div>
-                        <label
-                            style="display: block; color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">Réponse
-                            4</label>
-                        <input type="text" id="answer4" required
-                            style="width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: 'Poppins';">
-                    </div>
-                    <div>
-                        <label
-                            style="display: block; color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">Réponse
-                            5</label>
-                        <input type="text" id="answer5" required
-                            style="width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: 'Poppins';">
-                    </div>
-                    <div>
-                        <label
-                            style="display: block; color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">Réponse
-                            6</label>
-                        <input type="text" id="answer6" required
-                            style="width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: 'Poppins';">
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-                    <div>
-                        <label
-                            style="display: block; color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">Bonne
-                            réponse (1-6)</label>
-                        <input type="number" id="correctAnswer" min="1" max="6" value="1" required
-                            style="width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: 'Poppins';">
-                    </div>
-                    <div>
-                        <label
-                            style="display: block; color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">Série</label>
-                        <input type="text" id="serie" required
-                            style="width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: 'Poppins';">
-                    </div>
-                    <div>
-                        <label
-                            style="display: block; color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">Difficulté</label>
-                        <select id="difficulty" required
-                            style="width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: 'Poppins';">
-                            <option value="veryeasy">Very Easy</option>
-                            <option value="easy">Easy</option>
-                            <option value="medium">Medium</option>
-                            <option value="hard">Hard</option>
-                            <option value="veryhard">Very Hard</option>
-                            <option value="extreme">Extreme</option>
-                        </select>
-                    </div>
-                </div>
-
-                <button type="submit"
-                    style="padding: 12px 24px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: var(--bg-main); border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-family: 'Poppins';">
-                    Ajouter la question
-                </button>
-            </form>
-
-            <div id="addQuestionStatus" style="margin-top: 16px; padding: 12px; border-radius: 8px; display: none;">
-            </div>
-        </div> -->
         </div>
 
         <!-- Overlay Backdrop -->

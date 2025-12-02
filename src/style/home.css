@@ -2701,9 +2701,7 @@ body {
 
     /* Notifications */
     .answer-notification {
-        left: 100px;
-        top: 58%;
-        padding: 6px 12px;
+        display: none;
     }
 
     .notif-username {

@@ -97,7 +97,7 @@ createApp({
 
             comboLevel: 0,              // Niveau actuel (0, 1, 2, 3)
             comboProgress: 0,           // Nombre de bonnes réponses
-            comboThresholds: [3, 7, 12], // Seuils : Lvl1=3, Lvl2=7 (3+4), Lvl3=12 (7+5)
+            comboThresholds: [3, 8, 14], // Seuils : Lvl1=3, Lvl2=7 (3+4), Lvl3=12 (7+5)
             availableBonuses: [],       // ['5050', 'reveal', 'extralife' ou 'doublex2']
             usedBonuses: [],            // Bonus déjà utilisés dans la partie
             showBonusModal: false,      // Afficher/masquer le modal
@@ -113,8 +113,32 @@ createApp({
         await this.loadLeaderboard();
         this.initParticles();
         this.initSocket();
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                console.log('📱 Onglet redevenu visible - vérification état...');
+
+                // Reconnecter la socket si morte
+                if (!this.socket.connected) {
+                    this.socket.connect();
+                }
+
+                if (this.gameInProgress && this.hasJoined && this.isAuthenticated) {
+                    this.socket.emit('reconnect-player', {
+                        twitchId: this.twitchId,
+                        username: this.username
+                    });
+                }
+
+                // Re-sync l'état du jeu
+                this.refreshGameState();
+            }
+        });
+
         this.loadTheme();
         this.initSounds();
+
+
     },
 
     computed: {
@@ -855,6 +879,7 @@ createApp({
             });
         },
 
+
         // 🆕 Afficher la notification quand un joueur répond
         showAnswerNotification(username) {
             const notification = document.createElement('div');
@@ -1206,7 +1231,8 @@ createApp({
                 !this.hasAnswered &&
                 this.gameInProgress &&
                 !this.showResults &&
-                this.timeRemaining > 0;
+                this.timeRemaining > 0 &&
+                (this.gameMode === 'points' || this.playerLives > 0);
         },
 
         useBonus(bonusType) {
@@ -1559,3 +1585,5 @@ createApp({
 
 
 }).mount('#app');
+
+

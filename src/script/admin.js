@@ -365,6 +365,8 @@ async function handleLogin(event) {
         const data = await response.json();
 
         if (data.success) {
+            sessionStorage.setItem('adminCode', password);
+
             document.getElementById('loginContainer').style.display = 'none';
             document.getElementById('adminPanel').style.display = 'block';
 
@@ -428,7 +430,10 @@ function showMasterBadge() {
     console.log('%cVous êtes en mode observation. Le streamer n\'a pas été déconnecté.', 'color: #00ff88;');
 }
 
+
+
 async function checkAuth() {
+    // D'abord essayer la session serveur existante
     try {
         const response = await fetch('/admin/check', {
             credentials: 'same-origin'
@@ -439,20 +444,56 @@ async function checkAuth() {
             if (data.isAdmin) {
                 document.getElementById('loginContainer').style.display = 'none';
                 document.getElementById('adminPanel').style.display = 'block';
+                
+                if (data.isMaster) showMasterBadge();
+                if (logsContainer) logsContainer.classList.add('admin-connected');
+                
                 initSocket();
-
-                // 🆕 Attendre que socket soit connecté
                 await new Promise(resolve => setTimeout(resolve, 500));
-
-                // 🆕 FORCER la restauration
                 await restoreGameState();
                 refreshStats();
                 startStatsRefresh();
-
+                return;
             }
         }
     } catch (error) {
-        console.log('Non authentifié');
+        console.log('Session serveur non valide');
+    }
+
+    // 🆕 Si pas de session serveur, essayer avec le code stocké
+    const savedCode = sessionStorage.getItem('adminCode');
+    if (savedCode) {
+        console.log('🔄 Tentative de reconnexion automatique...');
+        try {
+            const response = await fetch('/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: savedCode })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                console.log('✅ Reconnexion automatique réussie');
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                
+                if (data.isMaster) showMasterBadge();
+                if (logsContainer) logsContainer.classList.add('admin-connected');
+                
+                initSocket();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                await restoreGameState();
+                refreshStats();
+                startStatsRefresh();
+            } else {
+                // Code invalide ou admin déjà connecté, supprimer le code stocké
+                console.log('❌ Code stocké invalide, suppression');
+                sessionStorage.removeItem('adminCode');
+            }
+        } catch (error) {
+            console.log('Erreur reconnexion automatique:', error);
+        }
     }
 }
 

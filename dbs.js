@@ -137,7 +137,7 @@ const db = {
     },
 
     // 🆕 MODIFIÉ: Éviter les questions en double + Filtre série + Fallback
-    async getRandomQuestions(difficulty, count = 1, excludeIds = [], serieFilter = 'tout') {
+    async getRandomQuestions(difficulty, count = 1, excludeIds = [], serieFilter = 'tout', excludeSeries = []) {
         let query = supabase
             .from('questions')
             .select('*')
@@ -208,7 +208,18 @@ const db = {
 
         console.log(`✅ [DBS] ${questions.length} question(s) trouvée(s) pour difficulté "${difficulty}" avec filtre "${serieFilter}"`);
 
-        const availableQuestions = questions.filter(q => !excludeIds.includes(q.id));
+        let availableQuestions = questions.filter(q => !excludeIds.includes(q.id));
+
+        if (excludeSeries && excludeSeries.length > 0) {
+            const withoutRecentSeries = availableQuestions.filter(q => !excludeSeries.includes(q.serie));
+
+            if (withoutRecentSeries.length > 0) {
+                console.log(`🔄 ${excludeSeries.length} série(s) exclue(s), ${withoutRecentSeries.length} questions restantes`);
+                availableQuestions = withoutRecentSeries;
+            } else {
+                console.log(`⚠️ Pas assez de questions hors séries récentes - on garde tout`);
+            }
+        }
 
         if (availableQuestions.length === 0) {
             console.log('⚠️ Toutes les questions de difficulté "' + difficulty + '" ont été utilisées, réinitialisation...');

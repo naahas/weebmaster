@@ -324,6 +324,8 @@ const gameState = {
     showResults: false,
     lastQuestionResults: null,
 
+    recentSeries: [],
+
     mode: 'lives',
     lives: 3,
     questionTime: 10,
@@ -353,6 +355,24 @@ const authenticatedUsers = new Map();
 // ============================================
 // Helpers
 // ============================================
+
+// 🆕 Vérifie si on doit appliquer le cooldown de série
+function shouldApplySerieCooldown() {
+    return gameState.serieFilter === 'tout' || gameState.serieFilter === 'mainstream';
+}
+
+// 🆕 Ajoute une série à l'historique récent (garde les 5 dernières)
+function addToRecentSeries(serie) {
+    if (!shouldApplySerieCooldown()) return;
+
+    gameState.recentSeries.push(serie);
+    if (gameState.recentSeries.length > 5) {
+        gameState.recentSeries.shift(); // Retirer la plus ancienne
+    }
+    console.log(`📚 Séries récentes: [${gameState.recentSeries.join(', ')}]`);
+}
+
+
 function getDifficultyForQuestion(questionNumber) {
     if (gameState.difficultyMode === 'aleatoire') {
         // 🆕 MODE ALÉATOIRE - Éviter 2 fois la même difficulté
@@ -710,6 +730,7 @@ app.post('/admin/start-game', async (req, res) => {
         gameState.gameStartTime = Date.now();
         gameState.showResults = false;
         gameState.lastQuestionResults = null;
+        gameState.recentSeries = [];
 
         const playerCount = gameState.players.size;
         addLog('game-start', { playerCount });
@@ -1056,7 +1077,8 @@ app.post('/admin/trigger-auto-next', (req, res) => {
                 difficulty,
                 1,
                 gameState.usedQuestionIds,
-                gameState.serieFilter // 🔥 AJOUTER ICI
+                gameState.serieFilter,
+                shouldApplySerieCooldown() ? gameState.recentSeries : []  // 🆕
             );
 
 
@@ -1066,6 +1088,7 @@ app.post('/admin/trigger-auto-next', (req, res) => {
             }
 
             const question = questions[0];
+            addToRecentSeries(question.serie);
             await db.addUsedQuestion(question.id);
             gameState.usedQuestionIds.push(question.id);
 
@@ -1263,7 +1286,8 @@ app.post('/admin/next-question', async (req, res) => {
             difficulty,
             1,
             gameState.usedQuestionIds,
-            gameState.serieFilter // 🔥 VÉRIFIER que c'est bien passé ici
+            gameState.serieFilter,
+            shouldApplySerieCooldown() ? gameState.recentSeries : []  // 🆕
         );
 
 
@@ -1272,6 +1296,7 @@ app.post('/admin/next-question', async (req, res) => {
         }
 
         const question = questions[0];
+        addToRecentSeries(question.serie);
 
         // 🔥 DEBUG: Afficher la série de la question retournée
         console.log(`📌 Question série: ${question.serie}, difficulté: ${difficulty}`);
@@ -1656,7 +1681,8 @@ function revealAnswers(correctAnswer) {
                     difficulty,
                     1,
                     gameState.usedQuestionIds,
-                    gameState.serieFilter // 🔥 VÉRIFIER QUE C'EST BIEN LÀ
+                    gameState.serieFilter,
+                    shouldApplySerieCooldown() ? gameState.recentSeries : []  // 🆕
                 );
 
                 if (questions.length === 0) {
@@ -1665,6 +1691,7 @@ function revealAnswers(correctAnswer) {
                 }
 
                 const question = questions[0];
+                addToRecentSeries(question.serie);
                 await db.addUsedQuestion(question.id);
                 gameState.usedQuestionIds.push(question.id);
 
@@ -1929,7 +1956,8 @@ async function sendTiebreakerQuestion() {
             difficulty,
             1,
             gameState.usedQuestionIds,
-            gameState.serieFilter // 🔥 AJOUTER ICI
+            gameState.serieFilter,
+            shouldApplySerieCooldown() ? gameState.recentSeries : []  // 🆕
         );
 
 
@@ -1941,6 +1969,7 @@ async function sendTiebreakerQuestion() {
         }
 
         const question = questions[0];
+        addToRecentSeries(question.serie);
         await db.addUsedQuestion(question.id);
         gameState.usedQuestionIds.push(question.id);
 
@@ -2316,43 +2345,6 @@ app.post('/admin/update-settings', (req, res) => {
 });
 
 
-// Route pour ajouter une question
-app.post('/admin/add-question', async (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
-
-    try {
-        const { question, answer1, answer2, answer3, answer4, answer5, answer6, correctAnswer, serie, difficulty } = req.body;
-
-        // Utiliser supabase directement
-        const { data, error } = await supabase
-            .from('questions')
-            .insert({
-                question: question,
-                answer1: answer1,
-                answer2: answer2,
-                answer3: answer3,
-                answer4: answer4,
-                answer5: answer5,
-                answer6: answer6,
-                coanswer: parseInt(correctAnswer),
-                serie: serie,
-                difficulty: difficulty
-            })
-            .select()
-            .single();
-
-        if (error) throw error;
-
-        console.log('✅ Question ajoutée:', data.id);
-        res.json({ success: true, question: data });
-    } catch (error) {
-        console.error('❌ Erreur ajout question:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
 // ============================================
 // ROUTES PROFIL & BADGES
 // ============================================
@@ -2487,6 +2479,56 @@ app.get('/leaderboard', async (req, res) => {
     }
 });
 
+
+app.get('/question', (req, res) => {
+    res.sendFile(__dirname + '/src/html/question.html');
+});
+
+// API ajout question - avec code spécifique
+app.post('/api/add-question', async (req, res) => {
+    const { adminCode, question, answers, correctAnswer, serie, difficulty } = req.body;
+
+    // Vérifier le code (spécifique OU master)
+    if (adminCode !== process.env.QUESTION_ADMIN_CODE || adminCode === process.env.MASTER_ADMIN_CODE) {
+        return res.status(401).json({ error: 'Code invalide' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('questions')
+            .insert([{
+                question,
+                answer1: answers[0],
+                answer2: answers[1],
+                answer3: answers[2],
+                answer4: answers[3],
+                answer5: answers[4],
+                answer6: answers[5],
+                coanswer: correctAnswer,
+                serie,
+                difficulty
+            }]);
+
+        if (error) throw error;
+
+        res.json({ success: true, message: 'Question ajoutée !' });
+    } catch (error) {
+        console.error('Erreur ajout question:', error);
+        res.status(500).json({ error: 'Erreur lors de l\'ajout' });
+    }
+});
+
+
+app.post('/api/verify-question-code', (req, res) => {
+    const { code } = req.body;
+
+    if (code === process.env.QUESTION_ADMIN_CODE || code === process.env.MASTER_ADMIN_CODE) {
+        res.json({ success: true });
+    } else {
+        res.status(401).json({ success: false });
+    }
+});
+
 // ============================================
 // Socket.IO
 // ============================================
@@ -2610,11 +2652,13 @@ io.on('connection', (socket) => {
             const previousAnswer = gameState.answers.get(oldSocketId);
 
             // 🔥 Transférer les bonus
-            const oldBonusData = gameState.playerBonuses.get(oldSocketId);
-            if (oldBonusData) {
-                gameState.playerBonuses.set(socket.id, oldBonusData);
-                gameState.playerBonuses.delete(oldSocketId);
-                console.log(`🎁 Bonus transférés: ${oldSocketId} → ${socket.id}`);
+            if (oldSocketId !== socket.id) {
+                const oldBonusData = gameState.playerBonuses.get(oldSocketId);
+                if (oldBonusData) {
+                    gameState.playerBonuses.set(socket.id, oldBonusData);
+                    gameState.playerBonuses.delete(oldSocketId);
+                    console.log(`🎁 Bonus transférés: ${oldSocketId} → ${socket.id}`);
+                }
             }
 
             gameState.players.delete(oldSocketId);
@@ -2868,7 +2912,7 @@ io.on('connection', (socket) => {
 // ============================================
 
 // Seuils de combo
-const COMBO_THRESHOLDS = [3, 7, 12]; // Lvl1, Lvl2, Lvl3
+const COMBO_THRESHOLDS = [3, 8, 14]; // Lvl1, Lvl2, Lvl3
 
 // Mise à jour du combo d'un joueur (bonne réponse)
 function updatePlayerCombo(socketId) {

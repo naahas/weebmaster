@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShonenMaster - Ajouter une question</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="icon" type="image/png" href="icon.png">
+    <style>
+        :root {
+            --primary: #FFD700;
+            --primary-dark: #FFA500;
+            --bg-main: #0a0e27;
+            --bg-card: #141b34;
+            --bg-input: #0d1229;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a8c0;
+            --border: #1e2847;
+            --success: #00ff88;
+            --error: #ff4757;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+
+
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+        }
+
+        /* Container - petit pour login, large pour form */
+        .container {
+            width: 100%;
+            max-width: 360px;
+            transition: max-width 0.3s ease;
+        }
+
+        .container.expanded {
+            max-width: 900px;
+        }
+
+        /* Card */
+        .card {
+            background: var(--bg-card);
+            border: 1.6px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 12px;
+            position: relative;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Login card style */
+        .container:not(.expanded) .card {
+            padding: 40px 32px;
+        }
+
+        /* Login Section */
+        .login-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .login-section.hidden {
+            display: none;
+        }
+
+        /* Logo dans login */
+        .login-logo {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .login-logo h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 6px;
+        }
+
+        .login-logo p {
+            color: var(--text-secondary);
+            font-size: 0.72rem;
+        }
+
+        /* Form Section */
+        .form-section {
+            display: none;
+        }
+
+        .form-section.visible {
+            display: block;
+        }
+
+        /* Bouton déconnexion discret */
+        .btn-logout {
+            position: absolute;
+            top: 10px;
+            right: 14px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.6rem;
+            cursor: pointer;
+            opacity: 0.4;
+            transition: all 0.3s ease;
+        }
+
+        .btn-logout:hover {
+            opacity: 1;
+            color: var(--error);
+        }
+
+        /* Form Groups */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group label {
+            color: var(--text-secondary);
+            font-size: 0.65rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group label .required {
+            color: var(--error);
+        }
+
+        .form-group label .optional {
+            font-size: 0.55rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            text-transform: none;
+            opacity: 0.7;
+        }
+
+        /* Inputs */
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--bg-input);
+            border: 1.6px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.5;
+        }
+
+        /* Style input login */
+        .login-section input {
+            text-align: center;
+            padding: 12px 14px;
+        }
+
+        textarea {
+            resize: none;
+            min-height: 50px;
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0a8c0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+        }
+
+        select option {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        /* Layout principal du formulaire - 3 colonnes */
+        .form-layout {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-col {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Grid pour réponses - 1 colonne */
+        .answers-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .answers-grid .form-group {
+            position: relative;
+        }
+
+        .answer-number {
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            background: var(--primary);
+            color: var(--bg-main);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.55rem;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+
+        .answers-grid input {
+            padding-left: 34px;
+        }
+
+        /* Boutons */
+        .btn {
+            padding: 11px 18px;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--bg-main);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Status Messages */
+        .status {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            text-align: center;
+        }
+
+        .status.visible {
+            display: flex;
+            justify-content: center;
+        }
+
+        .status.success {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+
+        .status.error {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid var(--error);
+            color: var(--error);
+        }
+
+        /* Section title */
+        .section-title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 6px;
+        }
+
+        /* Footer link */
+        .footer-link {
+            text-align: center;
+        }
+
+        .footer-link a {
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-link a:hover {
+            color: var(--primary);
+        }
+
+        /* Loading spinner */
+        .spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid transparent;
+            border-top-color: var(--bg-main);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+            margin: 0 auto;
+        }
+
+        .btn-primary.loading .spinner {
+            display: block;
+        }
+
+        .btn-primary.loading .btn-text {
+            display: none;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Submit row */
+        .submit-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+
+        .submit-row .btn {
+            min-width: 160px;
+        }
+
+        .submit-row .status {
+            flex: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 850px) {
+            .form-layout {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .form-col:first-child {
+                grid-column: span 2;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .form-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .form-col:first-child {
+                grid-column: span 1;
+            }
+
+            .submit-row {
+                flex-direction: column;
+            }
+
+            .submit-row .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- <header class="header">
+        <h1>ShonenMaster</h1>
+        <p>Ajouter une nouvelle question</p>
+    </header> -->
+
+    <div class="container" id="container">
+        <div class="card">
+            <!-- Login Section -->
+            <div class="login-section" id="loginSection">
+                <div class="login-logo">
+                    <h1>ShonenMaster</h1>
+                    <p>Ajouter une question</p>
+                </div>
+                <div class="form-group">
+                    <label>Code admin <span class="required">*</span></label>
+                    <input type="password" id="adminCode" placeholder="Entrez le code admin">
+                </div>
+                <button class="btn btn-primary" onclick="verifyAdmin()">
+                    <span class="btn-text">Se connecter</span>
+                    <div class="spinner"></div>
+                </button>
+                <div class="status" id="loginStatus"></div>
+            </div>
+
+            <!-- Form Section -->
+            <div class="form-section" id="formSection">
+                <button class="btn-logout" onclick="logout()">Déconnexion</button>
+
+                <form id="questionForm" onsubmit="submitQuestion(event)">
+                    <div class="form-layout">
+                        <!-- Colonne 1 : Question + Métadonnées -->
+                        <div class="form-col">
+                            <!-- <div class="section-title">Question</div> -->
+                            <div class="form-group">
+                                <label>Texte <span class="required">*</span></label>
+                                <textarea id="questionText" placeholder="Ex: Quel est le nom du titan d'Eren ?"
+                                    required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Série <span class="required">*</span></label>
+                                <input type="text" id="serie" placeholder="Ex: Attack on Titan" required>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <div class="form-group">
+                                    <label>Difficulté</label>
+                                    <select id="difficulty" required>
+                                        <option value="veryeasy">Very Easy</option>
+                                        <option value="easy">Easy</option>
+                                        <option value="medium" selected>Medium</option>
+                                        <option value="hard">Hard</option>
+                                        <option value="veryhard">Very Hard</option>
+                                        <option value="extreme">Extreme</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Bonne rép.</label>
+                                    <select id="correctAnswer" required>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Colonne 2 : Réponses 1-3 -->
+                        <div class="form-col">
+                            <!-- <div class="section-title">Réponses 1-3</div> -->
+                            <div class="answers-grid">
+                                <div class="form-group">
+                                    <label>Réponse 1 <span class="required">*</span></label>
+                                    <span class="answer-number">1</span>
+                                    <input type="text" id="answer1" placeholder="Réponse..." required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Réponse 2 <span class="required">*</span></label>
+                                    <span class="answer-number">2</span>
+                                    <input type="text" id="answer2" placeholder="Réponse..." required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Réponse 3 <span class="required">*</span></label>
+                                    <span class="answer-number">3</span>
+                                    <input type="text" id="answer3" placeholder="Réponse..." required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Colonne 3 : Réponses 4-6 -->
+                        <div class="form-col">
+                            <!-- <div class="section-title">Réponses 4-6</div> -->
+                            <div class="answers-grid">
+                                <div class="form-group">
+                                    <label>Réponse 4 <span class="required">*</span></label>
+                                    <span class="answer-number">4</span>
+                                    <input type="text" id="answer4" placeholder="Réponse..." required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Réponse 5 <span class="required">*</span></label>
+                                    <span class="answer-number">5</span>
+                                    <input type="text" id="answer5" placeholder="Réponse..." required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Réponse 6 <span class="required">*</span></label>
+                                    <span class="answer-number">6</span>
+                                    <input type="text" id="answer6" placeholder="Réponse..." required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="submit-row">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <span class="btn-text">Ajouter la question</span>
+                            <div class="spinner"></div>
+                        </button>
+                        <div class="status" id="formStatus"></div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="footer-link">
+            <a href="/admin">←  Panel admin</a>
+        </div>
+    </div>
+
+    <script>
+        let adminCode = '';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedCode = sessionStorage.getItem('questionAdminCode');
+            if (savedCode) {
+                adminCode = savedCode;
+                showForm();
+            }
+        });
+
+        async function verifyAdmin() {
+            const codeInput = document.getElementById('adminCode');
+            const code = codeInput.value.trim();
+            const loginStatus = document.getElementById('loginStatus');
+            const btn = document.querySelector('.login-section .btn-primary');
+
+            if (!code) {
+                showStatus(loginStatus, 'Veuillez entrer le code', 'error');
+                return;
+            }
+
+            btn.classList.add('loading');
+
+            try {
+                const response = await fetch('/api/verify-question-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    adminCode = code;
+                    sessionStorage.setItem('questionAdminCode', code);
+                    showForm();
+                } else {
+                    showStatus(loginStatus, 'Code invalide', 'error');
+                }
+            } catch (error) {
+                showStatus(loginStatus, 'Erreur de connexion', 'error');
+            } finally {
+                btn.classList.remove('loading');
+            }
+        }
+
+        function showForm() {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('formSection').classList.add('visible');
+            document.getElementById('container').classList.add('expanded');
+        }
+
+        function logout() {
+            adminCode = '';
+            sessionStorage.removeItem('questionAdminCode');
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('formSection').classList.remove('visible');
+            document.getElementById('container').classList.remove('expanded');
+            document.getElementById('adminCode').value = '';
+        }
+
+        async function submitQuestion(event) {
+            event.preventDefault();
+
+            const btn = document.getElementById('submitBtn');
+            const formStatus = document.getElementById('formStatus');
+
+            const questionText = document.getElementById('questionText').value.trim();
+            const answers = [
+                document.getElementById('answer1').value.trim(),
+                document.getElementById('answer2').value.trim(),
+                document.getElementById('answer3').value.trim(),
+                document.getElementById('answer4').value.trim(),
+                document.getElementById('answer5').value.trim(),
+                document.getElementById('answer6').value.trim()
+            ].filter(a => a !== '');
+
+            const correctAnswer = parseInt(document.getElementById('correctAnswer').value);
+            const serie = document.getElementById('serie').value.trim();
+            const difficulty = document.getElementById('difficulty').value;
+
+            if (answers.length < 6) {
+                showStatus(formStatus, 'Les 6 réponses sont requises', 'error');
+                return;
+            }
+
+            if (correctAnswer > answers.length) {
+                showStatus(formStatus, `Bonne réponse doit être ≤ ${answers.length}`, 'error');
+                return;
+            }
+
+            btn.classList.add('loading');
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/add-question', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        adminCode,
+                        question: questionText,
+                        answers,
+                        correctAnswer,
+                        serie,
+                        difficulty
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showStatus(formStatus, '✓ Question ajoutée !', 'success');
+                    document.getElementById('questionForm').reset();
+                    document.getElementById('difficulty').value = 'medium';
+                } else {
+                    showStatus(formStatus, data.error || 'Erreur lors de l\'ajout', 'error');
+                }
+            } catch (error) {
+                showStatus(formStatus, 'Erreur de connexion', 'error');
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        }
+
+        function showStatus(element, message, type) {
+            element.textContent = message;
+            element.className = `status visible ${type}`;
+
+            if (type === 'success') {
+                setTimeout(() => {
+                    element.classList.remove('visible');
+                }, 4000);
+            }
+        }
+
+        document.getElementById('adminCode').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') verifyAdmin();
+        });
+
+
+        const inputOrder = [
+            'questionText',
+            'answer1',
+            'answer2',
+            'answer3',
+            'answer4',
+            'answer5',
+            'answer6',
+            'serie'
+        ];
+
+        inputOrder.forEach((id, index) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const nextIndex = index + 1;
+                        if (nextIndex < inputOrder.length) {
+                            document.getElementById(inputOrder[nextIndex]).focus();
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
