@@ -2519,6 +2519,56 @@ app.post('/api/add-question', async (req, res) => {
 });
 
 
+// Récupérer toutes les questions (avec filtre optionnel)
+app.get('/api/questions', async (req, res) => {
+    const { adminCode } = req.query;
+    
+    // Vérifier le code
+    if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
+        return res.status(401).json({ error: 'Code invalide' });
+    }
+    
+    try {
+        const { data, error } = await supabase
+            .from('questions')
+            .select('*')
+            .order('id', { ascending: false });
+        
+        if (error) throw error;
+        
+        res.json({ success: true, questions: data });
+    } catch (error) {
+        console.error('Erreur récupération questions:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+// Récupérer la liste des séries uniques
+app.get('/api/series', async (req, res) => {
+    const { adminCode } = req.query;
+    
+    if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
+        return res.status(401).json({ error: 'Code invalide' });
+    }
+    
+    try {
+        const { data, error } = await supabase
+            .from('questions')
+            .select('serie');
+        
+        if (error) throw error;
+        
+        // Extraire les séries uniques et trier
+        const uniqueSeries = [...new Set(data.map(q => q.serie).filter(s => s))].sort();
+        
+        res.json({ success: true, series: uniqueSeries });
+    } catch (error) {
+        console.error('Erreur récupération séries:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+
 app.post('/api/verify-question-code', (req, res) => {
     const { code } = req.body;
 
