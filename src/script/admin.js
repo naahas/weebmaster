@@ -2715,7 +2715,7 @@ async function openPlayerProfile(twitchId, username) {
     // Afficher la modale avec données de base
     document.getElementById('profileName').textContent = username;
     document.getElementById('profileAvatar').innerHTML = '<img src="warrior.png" alt="Avatar">';
-    document.getElementById('profileTitle').textContent = 'Chargement...';
+    document.getElementById('profileTitles').innerHTML = '<div class="player-profile-title">Chargement...</div>';
     document.getElementById('profilePlacement').textContent = '-';
     document.getElementById('profileGames').textContent = '-';
     document.getElementById('profileWins').textContent = '-';
@@ -2729,17 +2729,26 @@ async function openPlayerProfile(twitchId, username) {
 
         const data = await response.json();
 
-        // Mettre à jour les données
-        document.getElementById('profileTitle').textContent = data.titles?.current?.name || 'Novice';
-        document.getElementById('profilePlacement').textContent = data.user.last_placement ?
-            (data.user.last_placement === 1 ? '1er' : `${data.user.last_placement}ème`) : '-';
+        // Mettre à jour les badges (titre + vainqueur si 1er)
+        const titlesContainer = document.getElementById('profileTitles');
+        const titleBadge = `<div class="player-profile-title">${data.titles?.current?.name || 'Novice'}</div>`;
+        const winnerBadge = data.user.last_placement === 1 ? 
+            `<div class="player-profile-winner-badge">Dernier Vainqueur</div>` : '';
+        titlesContainer.innerHTML = titleBadge + winnerBadge;
+
+        // Mettre à jour le placement
+        const placement = data.user.last_placement;
+        document.getElementById('profilePlacement').textContent = placement ? 
+            (placement === 1 ? '1er' : placement === 2 ? '2ème' : `${placement}ème`) : '-';
+
+        // Mettre à jour les stats
         document.getElementById('profileGames').textContent = data.user.total_games_played || 0;
         document.getElementById('profileWins').textContent = data.user.total_victories || 0;
         document.getElementById('profileWinrate').textContent = `${data.user.win_rate || 0}%`;
 
     } catch (error) {
         console.error('❌ Erreur chargement profil:', error);
-        document.getElementById('profileTitle').textContent = 'Novice';
+        document.getElementById('profileTitles').innerHTML = '<div class="player-profile-title">Novice</div>';
     }
 }
 

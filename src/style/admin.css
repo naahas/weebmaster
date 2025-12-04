@@ -3301,3 +3301,34 @@ body:has(.admin-panel[style*="block"]) {
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
+
+
+.player-profile-titles {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
+.player-profile-winner-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--primary), #FFA500);
+    color: var(--bg-main);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    animation: winnerGlow 2s ease-in-out infinite;
+}
+
+@keyframes winnerGlow {
+    0%, 100% {
+        box-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+    }
+}

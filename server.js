@@ -2373,6 +2373,7 @@ app.get('/profile/:twitchId', async (req, res) => {
                 username: user.username,
                 total_games_played: user.total_games_played,
                 total_victories: user.total_victories,
+                last_placement: user.last_placement || null,
                 win_rate: user.total_games_played > 0
                     ? ((user.total_victories / user.total_games_played) * 100).toFixed(1)
                     : '0.0'
