@@ -391,8 +391,8 @@ function getDifficultyForQuestion(questionNumber) {
 
     // MODE CROISSANTE (logique actuelle)
     if (gameState.mode === 'lives') {
-        if (questionNumber <= 7) return 'veryeasy';
-        if (questionNumber <= 15) return 'easy';
+        if (questionNumber <= 5) return 'veryeasy';
+        if (questionNumber <= 12) return 'easy';
         if (questionNumber <= 25) return 'medium';
         if (questionNumber <= 35) return 'hard';
         if (questionNumber <= 45) return 'veryhard';
