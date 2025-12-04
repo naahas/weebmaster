@@ -1421,7 +1421,7 @@ function updatePlayersGridWithTiebreakerEffect(players) {
 
 
         return `
-        <div class="player-card ${statusClass} ${isEliminated ? 'eliminated' : ''} ${isTiebreaker ? 'tiebreaker' : ''} ${isLeader ? 'leader' : ''}">
+            <div class="player-card ${statusClass} ${isEliminated ? 'eliminated' : ''} ${isTiebreaker ? 'tiebreaker' : ''} ${isLeader ? 'leader' : ''}" onclick="openPlayerProfile('${player.twitchId}', '${player.username}')">
                 <div class="player-header">
                     <div class="player-username">${player.username}</div>
                     <div class="player-status">
@@ -1519,7 +1519,7 @@ function updatePlayersGridWithResults(playersData, playersDetails) {
 
         const isLeader = index === 0;
         return `
-            <div class="player-card ${statusClass} ${isEliminated ? 'eliminated' : ''} ${isTiebreaker ? 'tiebreaker' : ''} ${isLeader ? 'leader' : ''}">
+            <div class="player-card ${statusClass} ${isEliminated ? 'eliminated' : ''} ${isTiebreaker ? 'tiebreaker' : ''} ${isLeader ? 'leader' : ''}" onclick="openPlayerProfile('${player.twitchId}', '${player.username}')">
                 <div class="player-header">
                     <div class="player-username">${player.username}</div>
                     <div class="player-status">
@@ -2703,6 +2703,63 @@ function addLogToUI(log) {
     // Auto-scroll vers le bas
     logsContent.scrollTop = logsContent.scrollHeight;
 }
+
+
+// ============================================
+// PROFIL JOUEUR (clic sur carte)
+// ============================================
+
+async function openPlayerProfile(twitchId, username) {
+    const modal = document.getElementById('playerProfileModal');
+
+    // Afficher la modale avec données de base
+    document.getElementById('profileName').textContent = username;
+    document.getElementById('profileAvatar').innerHTML = '<img src="warrior.png" alt="Avatar">';
+    document.getElementById('profileTitle').textContent = 'Chargement...';
+    document.getElementById('profilePlacement').textContent = '-';
+    document.getElementById('profileGames').textContent = '-';
+    document.getElementById('profileWins').textContent = '-';
+    document.getElementById('profileWinrate').textContent = '-';
+
+    modal.classList.add('active');
+
+    try {
+        const response = await fetch(`/profile/${twitchId}`);
+        if (!response.ok) throw new Error('Profil non trouvé');
+
+        const data = await response.json();
+
+        // Mettre à jour les données
+        document.getElementById('profileTitle').textContent = data.titles?.current?.name || 'Novice';
+        document.getElementById('profilePlacement').textContent = data.user.last_placement ?
+            (data.user.last_placement === 1 ? '1er' : `${data.user.last_placement}ème`) : '-';
+        document.getElementById('profileGames').textContent = data.user.total_games_played || 0;
+        document.getElementById('profileWins').textContent = data.user.total_victories || 0;
+        document.getElementById('profileWinrate').textContent = `${data.user.win_rate || 0}%`;
+
+    } catch (error) {
+        console.error('❌ Erreur chargement profil:', error);
+        document.getElementById('profileTitle').textContent = 'Novice';
+    }
+}
+
+function closePlayerProfile() {
+    document.getElementById('playerProfileModal').classList.remove('active');
+}
+
+// Fermer avec Escape
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closePlayerProfile();
+    }
+});
+
+// Fermer en cliquant sur l'overlay
+document.getElementById('playerProfileModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'playerProfileModal') {
+        closePlayerProfile();
+    }
+});
 
 
 // Gestion du formulaire d'ajout de question
