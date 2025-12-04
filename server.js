@@ -1474,6 +1474,7 @@ function revealAnswers(correctAnswer) {
                 status: status,
                 responseTime: playerAnswer?.time || null,
                 isCorrect: isCorrect,
+                selectedAnswer: playerAnswer?.answer ? gameState.currentQuestion.answers[playerAnswer.answer - 1] : null,
                 pointsEarned: isCorrect ? getPointsForDifficulty(gameState.currentQuestion.difficulty) : 0 // 🔥 NOUVEAU
             });
         });
@@ -1587,6 +1588,7 @@ function revealAnswers(correctAnswer) {
                 status: status,
                 responseTime: playerAnswer?.time || null,
                 isCorrect: isCorrect,
+                selectedAnswer: playerAnswer?.answer ? gameState.currentQuestion.answers[playerAnswer.answer - 1] : null,
                 shieldUsed: hasShield // 🔥 Indiquer si le Shield a été utilisé
             });
         });
@@ -2522,20 +2524,20 @@ app.post('/api/add-question', async (req, res) => {
 // Récupérer toutes les questions (avec filtre optionnel)
 app.get('/api/questions', async (req, res) => {
     const { adminCode } = req.query;
-    
+
     // Vérifier le code
     if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
         return res.status(401).json({ error: 'Code invalide' });
     }
-    
+
     try {
         const { data, error } = await supabase
             .from('questions')
             .select('*')
             .order('id', { ascending: false });
-        
+
         if (error) throw error;
-        
+
         res.json({ success: true, questions: data });
     } catch (error) {
         console.error('Erreur récupération questions:', error);
@@ -2546,21 +2548,21 @@ app.get('/api/questions', async (req, res) => {
 // Récupérer la liste des séries uniques
 app.get('/api/series', async (req, res) => {
     const { adminCode } = req.query;
-    
+
     if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
         return res.status(401).json({ error: 'Code invalide' });
     }
-    
+
     try {
         const { data, error } = await supabase
             .from('questions')
             .select('serie');
-        
+
         if (error) throw error;
-        
+
         // Extraire les séries uniques et trier
         const uniqueSeries = [...new Set(data.map(q => q.serie).filter(s => s))].sort();
-        
+
         res.json({ success: true, series: uniqueSeries });
     } catch (error) {
         console.error('Erreur récupération séries:', error);

@@ -444,10 +444,10 @@ async function checkAuth() {
             if (data.isAdmin) {
                 document.getElementById('loginContainer').style.display = 'none';
                 document.getElementById('adminPanel').style.display = 'block';
-                
+
                 if (data.isMaster) showMasterBadge();
                 if (logsContainer) logsContainer.classList.add('admin-connected');
-                
+
                 initSocket();
                 await new Promise(resolve => setTimeout(resolve, 500));
                 await restoreGameState();
@@ -472,15 +472,15 @@ async function checkAuth() {
             });
 
             const data = await response.json();
-            
+
             if (data.success) {
                 console.log('✅ Reconnexion automatique réussie');
                 document.getElementById('loginContainer').style.display = 'none';
                 document.getElementById('adminPanel').style.display = 'block';
-                
+
                 if (data.isMaster) showMasterBadge();
                 if (logsContainer) logsContainer.classList.add('admin-connected');
-                
+
                 initSocket();
                 await new Promise(resolve => setTimeout(resolve, 500));
                 await restoreGameState();
@@ -1381,7 +1381,7 @@ function updatePlayersGridWithTiebreakerEffect(players) {
         detailsMap.set(detail.username, detail);
     });
 
-    grid.innerHTML = players.map(player => {
+    grid.innerHTML = players.map((player, index) => {
         const isEliminated = currentGameMode === 'lives' ? player.lives === 0 : false;
         const isTiebreaker = tiebreakerPlayerIds.includes(player.twitchId);
 
@@ -1401,7 +1401,6 @@ function updatePlayersGridWithTiebreakerEffect(players) {
             const lives = player.lives !== undefined ? player.lives : gameSettings.lives;
             statsHTML = `
                 <div class="player-lives">
-                    <span>Vies:</span>
                     ${[1, 2, 3].map(n =>
                 `<span class="heart-icon ${n <= lives ? 'active' : 'lost'}">
                             ${n <= lives ? '❤️' : '🖤'}
@@ -1413,14 +1412,16 @@ function updatePlayersGridWithTiebreakerEffect(players) {
             const points = player.points !== undefined && player.points !== null ? player.points : 0;
             statsHTML = `
                 <div class="player-points">
-                    <span class="points-label">Points:</span>
                     <span class="points-value">${points}</span>
                 </div>
             `;
         }
 
+        const isLeader = index === 0;
+
+
         return `
-            <div class="player-card ${statusClass} ${isEliminated ? 'eliminated' : ''} ${isTiebreaker ? 'tiebreaker' : ''}">
+        <div class="player-card ${statusClass} ${isEliminated ? 'eliminated' : ''} ${isTiebreaker ? 'tiebreaker' : ''} ${isLeader ? 'leader' : ''}">
                 <div class="player-header">
                     <div class="player-username">${player.username}</div>
                     <div class="player-status">
@@ -1428,6 +1429,15 @@ function updatePlayersGridWithTiebreakerEffect(players) {
                     </div>
                 </div>
                 ${statsHTML}
+                ${detail ? `
+                <div class="player-answer-overlay">
+                    ${detail.status === 'afk' ? `
+                        <img src="afk.png" alt="AFK" class="afk-icon">
+                    ` : `
+                        <span class="answer-value ${detail.isCorrect ? 'correct' : 'wrong'}">${detail.selectedAnswer || '?'}</span>
+                    `}
+                </div>
+                ` : ''}
             </div>
         `;
     }).join('');
@@ -1472,7 +1482,7 @@ function updatePlayersGridWithResults(playersData, playersDetails) {
     }
 
     // 🔥 Utiliser sortedPlayers au lieu de playersData
-    grid.innerHTML = sortedPlayers.map(player => {
+    grid.innerHTML = sortedPlayers.map((player, index) => {
         const detail = detailsMap.get(player.username);
 
         let statusClass = '';
@@ -1492,14 +1502,12 @@ function updatePlayersGridWithResults(playersData, playersDetails) {
             const points = player.points !== undefined && player.points !== null ? player.points : 0;
             statsHTML = `
                 <div class="player-points">
-                    <span class="points-label">Points:</span>
                     <span class="points-value">${points}</span>
                 </div>
             `;
         } else {
             statsHTML = `
                 <div class="player-lives">
-                    <span>Vies:</span>
                     ${[1, 2, 3].map(n =>
                 `<span class="heart-icon ${n <= player.lives ? 'active' : 'lost'}">
                             ${n <= player.lives ? '❤️' : '🖤'}
@@ -1509,8 +1517,9 @@ function updatePlayersGridWithResults(playersData, playersDetails) {
             `;
         }
 
+        const isLeader = index === 0;
         return `
-            <div class="player-card ${statusClass} ${isEliminated ? 'eliminated' : ''} ${isTiebreaker ? 'tiebreaker' : ''}">
+            <div class="player-card ${statusClass} ${isEliminated ? 'eliminated' : ''} ${isTiebreaker ? 'tiebreaker' : ''} ${isLeader ? 'leader' : ''}">
                 <div class="player-header">
                     <div class="player-username">${player.username}</div>
                     <div class="player-status">
@@ -1518,6 +1527,15 @@ function updatePlayersGridWithResults(playersData, playersDetails) {
                     </div>
                 </div>
                 ${statsHTML}
+                ${detail ? `
+                <div class="player-answer-overlay">
+                    ${detail.status === 'afk' ? `
+                        <img src="afk.png" alt="AFK" class="afk-icon">
+                    ` : `
+                        <span class="answer-value ${detail.isCorrect ? 'correct' : 'wrong'}">${detail.selectedAnswer || '?'}</span>
+                    `}
+                </div>
+                ` : ''}
             </div>
         `;
     }).join('');

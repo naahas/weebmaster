@@ -1,7 +1,6 @@
 /* ============================================
-   SHONENMASTER ADMIN - CSS 
+   SHONENMASTER ADMIN - CSS (CLEANED)
    ============================================ */
-
 
 * {
     margin: 0;
@@ -40,6 +39,10 @@ body {
         radial-gradient(circle at 80% 80%, rgba(255, 165, 0, 0.03) 0%, transparent 50%);
 }
 
+body:has(.admin-panel[style*="block"]) {
+    overflow: hidden;
+}
+
 /* ============================================
    LOGIN
    ============================================ */
@@ -59,7 +62,7 @@ body {
     padding: 40px 32px;
     max-width: 360px;
     width: 100%;
-    box-shadow: 0 8.0px 32px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .login-logo {
@@ -74,7 +77,7 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-bottom: 6.4px;
+    margin-bottom: 6px;
 }
 
 .login-logo p {
@@ -88,7 +91,7 @@ body {
 
 .form-group label {
     display: block;
-    margin-bottom: 6.4px;
+    margin-bottom: 6px;
     color: var(--text-secondary);
     font-size: 0.72rem;
     font-weight: 500;
@@ -100,7 +103,7 @@ body {
     padding: 11px 14px;
     background: var(--bg-main);
     border: 1.6px solid var(--border);
-    border-radius: 9.6px;
+    border-radius: 10px;
     color: var(--text-primary);
     font-family: 'Poppins', sans-serif;
     font-size: 0.8rem;
@@ -110,7 +113,7 @@ body {
 .form-group input:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 2.4px rgba(255, 215, 0, 0.1);
+    box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
 }
 
 .btn-login {
@@ -119,7 +122,7 @@ body {
     background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     color: var(--bg-main);
     border: none;
-    border-radius: 9.6px;
+    border-radius: 10px;
     font-family: 'Poppins', sans-serif;
     font-size: 0.8rem;
     font-weight: 600;
@@ -128,8 +131,8 @@ body {
 }
 
 .btn-login:hover {
-    transform: translateY(-1.6px);
-    box-shadow: 0 6.4px 16px var(--shadow);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px var(--shadow);
 }
 
 .btn-login:active {
@@ -154,18 +157,13 @@ body {
     margin: 0 auto;
 }
 
-
-body:has(.admin-panel[style*="block"]) {
-    overflow: hidden;
-}
-
 /* ============================================
    HEADER
    ============================================ */
 
 .admin-header {
     background: var(--bg-card);
-    border-bottom: 0.8px solid var(--border);
+    border-bottom: 1px solid var(--border);
     padding: 16px 24px;
     display: flex;
     justify-content: space-between;
@@ -173,7 +171,7 @@ body:has(.admin-panel[style*="block"]) {
     position: sticky;
     top: 0;
     z-index: 100;
-    backdrop-filter: blur(8.0px);
+    backdrop-filter: blur(8px);
 }
 
 .admin-header h1 {
@@ -187,15 +185,15 @@ body:has(.admin-panel[style*="block"]) {
 
 .header-actions {
     display: flex;
-    gap: 9.6px;
+    gap: 10px;
     align-items: center;
 }
 
 .status-badge {
     display: flex;
     align-items: center;
-    gap: 6.4px;
-    padding: 6.4px 13px;
+    gap: 6px;
+    padding: 6px 13px;
     background: var(--bg-main);
     border-radius: 16px;
     font-size: 0.68rem;
@@ -203,20 +201,20 @@ body:has(.admin-panel[style*="block"]) {
 }
 
 .status-dot {
-    width: 6.4px;
-    height: 6.4px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     animation: pulse 2s ease-in-out infinite;
 }
 
 .status-dot.active {
     background: var(--success);
-    box-shadow: 0 0 8.0px var(--success);
+    box-shadow: 0 0 8px var(--success);
 }
 
 .status-dot.inactive {
     background: var(--danger);
-    box-shadow: 0 0 8.0px var(--danger);
+    box-shadow: 0 0 8px var(--danger);
 }
 
 @keyframes pulse {
@@ -232,10 +230,10 @@ body:has(.admin-panel[style*="block"]) {
 }
 
 .btn-icon {
-    padding: 8.0px 11px;
+    padding: 8px 11px;
     background: var(--bg-main);
-    border: 0.8px solid var(--border);
-    border-radius: 8.0px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
     color: var(--text-primary);
     cursor: pointer;
     transition: all 0.3s ease;
@@ -244,14 +242,14 @@ body:has(.admin-panel[style*="block"]) {
 
 .btn-icon:hover {
     border-color: var(--primary);
-    transform: translateY(-1.6px);
+    transform: translateY(-2px);
 }
 
 .btn-home-icon {
     width: 32px;
     height: 32px;
     background: var(--bg-main);
-    border: 0.8px solid var(--border);
+    border: 1px solid var(--border);
     border-radius: 8px;
     color: var(--text-primary);
     cursor: pointer;
@@ -269,22 +267,15 @@ body:has(.admin-panel[style*="block"]) {
 }
 
 /* ============================================
-   BOUTONS CONTRÔLE
+   CONTROL BUTTONS
    ============================================ */
-
-.control-buttons-vertical {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
-    margin-bottom: 24px;
-}
 
 .control-buttons {
     padding: 16px 24px;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 12px;
-    border-bottom: 0.8px solid var(--border);
+    border-bottom: 1px solid var(--border);
     max-width: 1600px;
     margin: 0 auto;
 }
@@ -300,9 +291,9 @@ body:has(.admin-panel[style*="block"]) {
 }
 
 .control-card:hover:not(.disabled) {
-    transform: translateY(-3.2px);
+    transform: translateY(-3px);
     border-color: var(--primary);
-    box-shadow: 0 6.4px 16px var(--shadow);
+    box-shadow: 0 6px 16px var(--shadow);
 }
 
 .control-card.disabled {
@@ -343,7 +334,6 @@ body:has(.admin-panel[style*="block"]) {
 .control-card.lobby-active {
     border-color: var(--success) !important;
     border-width: 1.6px !important;
-    border-style: solid !important;
     background: linear-gradient(135deg, rgba(0, 255, 136, 0.15) 0%, rgba(0, 255, 136, 0.05) 100%) !important;
     box-shadow: 0 0 16px rgba(0, 255, 136, 0.2) !important;
 }
@@ -439,14 +429,11 @@ body:has(.admin-panel[style*="block"]) {
     color: var(--text-secondary);
 }
 
-
-/* 🔥 Boutons demi-largeur */
 .control-card.half-width {
     flex: 1;
     min-width: 0;
 }
 
-/* 🔥 Animation refresh icon */
 .refresh-icon {
     display: inline-block;
     transition: transform 0.3s ease;
@@ -456,18 +443,12 @@ body:has(.admin-panel[style*="block"]) {
     transform: rotate(180deg);
 }
 
-/* 🔥 État sobre pendant cooldown (juste opacité réduite) */
 .control-card.on-cooldown {
     opacity: 0.4;
     cursor: not-allowed;
     pointer-events: none;
 }
 
-.control-card.on-cooldown .refresh-icon {
-    animation: none;
-}
-
-/* 🔥 Cibler uniquement le bouton refresh, pas les autres */
 #refreshPlayersCard.on-cooldown {
     opacity: 0.4;
     cursor: not-allowed;
@@ -478,8 +459,6 @@ body:has(.admin-panel[style*="block"]) {
    LAYOUT
    ============================================ */
 
-   
-
 .admin-content {
     display: grid;
     grid-template-columns: 25% 1fr 25%;
@@ -489,22 +468,13 @@ body:has(.admin-panel[style*="block"]) {
     margin: 0 auto;
 }
 
-.admin-grid {
-    display: grid;
-    grid-template-columns: 280px 1fr 200px;
-    gap: 16px;
-    padding: 20px;
-    max-height: calc(100vh - 80px);
-    overflow: hidden;
-}
-
 /* ============================================
    LEFT PANEL
    ============================================ */
 
 .left-panel {
     padding: 24px;
-    border-right: 0.8px solid var(--border);
+    border-right: 1px solid var(--border);
     position: relative;
 }
 
@@ -517,8 +487,8 @@ body:has(.admin-panel[style*="block"]) {
 
 .stat-card {
     background: var(--bg-card);
-    border: 0.8px solid var(--border);
-    border-radius: 9.6px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
     padding: 16px;
     text-align: center;
 }
@@ -528,7 +498,7 @@ body:has(.admin-panel[style*="block"]) {
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    margin-bottom: 6.4px;
+    margin-bottom: 6px;
 }
 
 .stat-value {
@@ -555,16 +525,16 @@ body:has(.admin-panel[style*="block"]) {
 
 .toggle-buttons {
     display: flex;
-    gap: 9.6px;
+    gap: 10px;
     margin-bottom: 16px;
 }
 
 .toggle-btn {
     flex: 1;
-    padding: 9.6px 16px;
+    padding: 10px 16px;
     background: var(--bg-card);
     border: 1.6px solid var(--border);
-    border-radius: 9.6px;
+    border-radius: 10px;
     color: var(--text-primary);
     font-family: 'Poppins', sans-serif;
     font-size: 0.72rem;
@@ -575,7 +545,7 @@ body:has(.admin-panel[style*="block"]) {
 
 .toggle-btn:hover {
     border-color: var(--primary);
-    transform: translateY(-1.6px);
+    transform: translateY(-2px);
 }
 
 .toggle-btn.active {
@@ -600,7 +570,7 @@ body:has(.admin-panel[style*="block"]) {
     z-index: 200;
     padding: 20px;
     overflow-y: auto;
-    border-right: 0.8px solid var(--border);
+    border-right: 1px solid var(--border);
 }
 
 .overlay-panel.active {
@@ -643,7 +613,7 @@ body:has(.admin-panel[style*="block"]) {
     color: var(--text-primary);
     font-size: 1.2rem;
     cursor: pointer;
-    padding: 4.0px 8.0px;
+    padding: 4px 8px;
     transition: all 0.3s ease;
 }
 
@@ -659,9 +629,9 @@ body:has(.admin-panel[style*="block"]) {
 .data-table {
     width: 100%;
     background: var(--bg-card);
-    border-radius: 9.6px;
+    border-radius: 10px;
     overflow: hidden;
-    border: 0.8px solid var(--border);
+    border: 1px solid var(--border);
 }
 
 .data-table thead {
@@ -680,13 +650,26 @@ body:has(.admin-panel[style*="block"]) {
 
 .data-table td {
     padding: 10px;
-    border-top: 0.8px solid var(--border);
+    border-top: 1px solid var(--border);
     color: var(--text-primary);
     font-size: 0.85rem;
 }
 
 .data-table tr:hover {
     background: var(--bg-card-hover);
+}
+
+.data-table tr.qualified {
+    background: rgba(255, 217, 0, 0.329);
+    border-left: 3px solid var(--primary);
+}
+
+.data-table tr.qualified:hover {
+    background: rgba(255, 215, 0, 0.12);
+}
+
+.data-table tr.qualified td {
+    font-weight: 600;
 }
 
 .rank-badge {
@@ -721,7 +704,7 @@ body:has(.admin-panel[style*="block"]) {
 }
 
 /* ============================================
-   RIGHT PANEL (SETTINGS)
+   RIGHT PANEL (QUESTION/PLAYERS)
    ============================================ */
 
 .right-panel {
@@ -751,9 +734,13 @@ body:has(.admin-panel[style*="block"]) {
     background: var(--primary);
 }
 
+/* ============================================
+   SETTINGS PANEL
+   ============================================ */
+
 .settings-panel {
     padding: 12px;
-    border-left: 0.8px solid var(--border);
+    border-left: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -788,7 +775,7 @@ body:has(.admin-panel[style*="block"]) {
 
 .settings-section {
     background: var(--bg-card);
-    border: 0.8px solid var(--border);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 12px;
     overflow: hidden;
@@ -923,7 +910,7 @@ body:has(.admin-panel[style*="block"]) {
     border: none;
     cursor: pointer;
     transition: all 0.2s ease;
-    border-bottom: 0.8px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .mode-option:last-child {
@@ -1194,7 +1181,7 @@ body:has(.admin-panel[style*="block"]) {
 }
 
 /* ============================================
-   BOUTON MODE AUTO
+   AUTO MODE BUTTON
    ============================================ */
 
 .btn-auto-mode {
@@ -1293,13 +1280,13 @@ body:has(.admin-panel[style*="block"]) {
 }
 
 /* ============================================
-   BOUTONS RESET & SIGNALER
+   RESET & REPORT BUTTONS
    ============================================ */
 
 .reset-questions-section {
     margin-top: 8px;
     background: var(--bg-card);
-    border: 0.8px solid var(--border);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 12px;
     display: flex;
@@ -1349,7 +1336,7 @@ body:has(.admin-panel[style*="block"]) {
 }
 
 .reset-icon {
-    font-size: 1.0rem;
+    font-size: 1rem;
     animation: rotate-reset 2s linear infinite paused;
     opacity: 0.8;
 }
@@ -1404,7 +1391,7 @@ body:has(.admin-panel[style*="block"]) {
 }
 
 .report-icon {
-    font-size: 1.0rem;
+    font-size: 1rem;
     opacity: 0.8;
 }
 
@@ -1429,6 +1416,7 @@ body:has(.admin-panel[style*="block"]) {
     }
 }
 
+/* Report button in disabled settings */
 .settings-section.disabled .btn-report-question {
     opacity: 1 !important;
     pointer-events: auto !important;
@@ -1453,30 +1441,6 @@ body:has(.admin-panel[style*="block"]) {
     filter: none !important;
 }
 
-.settings-section.disabled .btn-report-question.question-active,
-.btn-report-question.question-active {
-    background: rgba(255, 165, 2, 0.12) !important;
-    border-color: rgba(255, 200, 50, 0.8) !important;
-    box-shadow: 0 0 12px rgba(255, 200, 50, 0.4) !important;
-}
-
-.settings-section.disabled .btn-report-question.question-active:hover,
-.btn-report-question.question-active:hover {
-    background: rgba(255, 165, 2, 0.18) !important;
-    border-color: rgba(255, 200, 50, 1) !important;
-    box-shadow: 0 0 16px rgba(255, 200, 50, 0.5) !important;
-    transform: translateY(-2px);
-}
-
-.settings-section.disabled .btn-report-question.question-active .report-text,
-.settings-section.disabled .btn-report-question.question-active .report-icon,
-.btn-report-question.question-active .report-text,
-.btn-report-question.question-active .report-icon {
-    color: #ffb84d !important;
-    opacity: 1 !important;
-    filter: none !important;
-}
-
 .settings-section.disabled .reset-questions-section {
     opacity: 1 !important;
     pointer-events: auto !important;
@@ -1489,70 +1453,18 @@ body:has(.admin-panel[style*="block"]) {
 }
 
 /* ============================================
-   DATABASE STATS
-   ============================================ */
-
-.db-stats {
-    background: var(--bg-card);
-    border: 0.8px solid var(--border);
-    border-radius: 8px;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.db-stats h3 {
-    font-size: 0.75rem;
-    color: var(--primary);
-    margin-bottom: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.db-stat-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 12px;
-    margin-bottom: 8px;
-}
-
-.db-stat-item:first-child {
-    padding-top: 0;
-}
-
-.db-stat-item:last-child {
-    padding-bottom: 0;
-    border-bottom: none;
-}
-
-.db-stat-label {
-    font-size: 0.7rem;
-    color: var(--text-secondary);
-    font-weight: 500;
-}
-
-.db-stat-value {
-    font-size: 0.9rem;
-    color: var(--primary);
-    font-weight: 700;
-}
-
-/* ============================================
    TABS
    ============================================ */
 
 .tabs-header {
     display: flex;
-    gap: 8.0px;
+    gap: 8px;
     margin-bottom: 16px;
     border-bottom: 1.6px solid var(--border);
 }
 
 .tab-btn {
-    padding: 9.6px 19px;
+    padding: 10px 19px;
     background: transparent;
     border: none;
     border-bottom: 2.4px solid transparent;
@@ -1597,12 +1509,12 @@ body:has(.admin-panel[style*="block"]) {
 
 .question-meta {
     display: flex;
-    gap: 8.0px;
+    gap: 8px;
     margin-bottom: 12px;
 }
 
 .meta-badge {
-    padding: 4.8px 11px;
+    padding: 5px 11px;
     border-radius: 16px;
     font-size: 0.6rem;
     font-weight: 600;
@@ -1612,7 +1524,7 @@ body:has(.admin-panel[style*="block"]) {
 .meta-badge.serie {
     background: var(--bg-main);
     color: var(--primary);
-    border: 0.8px solid var(--primary);
+    border: 1px solid var(--primary);
 }
 
 .meta-badge.difficulty {
@@ -1649,12 +1561,12 @@ body:has(.admin-panel[style*="block"]) {
 
 .timer-bar-wrapper {
     flex: 1;
-    height: 9.6px;
+    height: 10px;
     background: var(--bg-main);
     border-radius: 16px;
     overflow: hidden;
     position: relative;
-    border: 0.8px solid var(--border);
+    border: 1px solid var(--border);
 }
 
 .timer-bar-fill {
@@ -1695,18 +1607,6 @@ body:has(.admin-panel[style*="block"]) {
     }
 }
 
-.timer-text {
-    text-align: center;
-    margin-top: 6.4px;
-    font-size: 0.96rem;
-    font-weight: 700;
-    color: var(--primary);
-}
-
-.timer-text.warning {
-    color: var(--danger);
-}
-
 /* ============================================
    ANSWERS LIST
    ============================================ */
@@ -1714,20 +1614,45 @@ body:has(.admin-panel[style*="block"]) {
 .answers-list {
     display: flex;
     flex-direction: column;
-    gap: 8.0px;
+    gap: 8px;
 }
 
 .answer-item {
     display: flex;
     align-items: center;
-    gap: 9.6px;
-    padding: 9.6px 13px;
+    gap: 10px;
+    padding: 10px 13px;
     background: var(--bg-main);
-    border: 0.8px solid var(--border);
-    border-radius: 9.6px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
     transition: all 0.3s ease;
 }
 
+.answer-item.correct-answer {
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(0, 255, 136, 0.05));
+    border-color: var(--success);
+    animation: correctPulse 1.5s ease-in-out infinite;
+}
+
+.answer-item.correct-answer .answer-number {
+    background: var(--success);
+    color: var(--bg-main);
+    box-shadow: 0 0 12px var(--success);
+}
+
+@keyframes correctPulse {
+
+    0%,
+    100% {
+        border-color: var(--success);
+        box-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
+    }
+
+    50% {
+        border-color: rgba(0, 255, 136, 0.6);
+        box-shadow: 0 0 16px rgba(0, 255, 136, 0.5);
+    }
+}
 
 .answer-percentage {
     margin-left: auto;
@@ -1753,7 +1678,7 @@ body:has(.admin-panel[style*="block"]) {
     height: 26px;
     background: var(--primary);
     color: var(--bg-main);
-    border-radius: 6.4px;
+    border-radius: 6px;
     font-weight: 700;
     font-size: 0.8rem;
     flex-shrink: 0;
@@ -1790,7 +1715,7 @@ body:has(.admin-panel[style*="block"]) {
 }
 
 .results-display h3 {
-    font-size: 1.0rem;
+    font-size: 1rem;
     color: var(--primary);
     margin-bottom: 14px;
     text-align: center;
@@ -1928,8 +1853,8 @@ body:has(.admin-panel[style*="block"]) {
 
 .fastest-player {
     background: var(--bg-card);
-    border: 0.8px solid var(--border);
-    border-radius: 6.4px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
     padding: 8px 12px;
     text-align: center;
     color: var(--text-primary);
@@ -1942,7 +1867,7 @@ body:has(.admin-panel[style*="block"]) {
     font-size: 0.68rem;
     font-weight: 500;
     color: var(--text-secondary);
-    margin-right: 6.4px;
+    margin-right: 6px;
 }
 
 .fastest-player-name {
@@ -1950,7 +1875,7 @@ body:has(.admin-panel[style*="block"]) {
     font-size: 0.72rem;
     font-weight: 600;
     color: var(--primary);
-    margin: 0 4.8px;
+    margin: 0 5px;
 }
 
 .fastest-player-time {
@@ -1961,44 +1886,56 @@ body:has(.admin-panel[style*="block"]) {
 }
 
 /* ============================================
-   PLAYERS GRID
+   PLAYERS GRID (MERGED - NO DUPLICATES)
    ============================================ */
 
 .players-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(224px, 1fr));
+    grid-template-columns: repeat(4, 1fr); /* Force 4 colonnes */
     gap: 12px;
+    padding: 16px; /* Décolle des bords */
     max-height: calc(100vh - 240px);
+    min-height: 100px;
     overflow-y: auto;
-    padding-right: 8.0px;
+    padding-right: 8px;
 }
 
 .players-grid::-webkit-scrollbar {
-    width: 6.4px;
+    width: 6px;
 }
 
 .players-grid::-webkit-scrollbar-track {
     background: var(--bg-main);
-    border-radius: 8.0px;
+    border-radius: 8px;
 }
 
 .players-grid::-webkit-scrollbar-thumb {
     background: var(--border);
-    border-radius: 8.0px;
+    border-radius: 8px;
 }
 
 .players-grid::-webkit-scrollbar-thumb:hover {
     background: var(--primary);
 }
 
+.players-grid:has(.empty-state:only-child) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .player-card {
+    cursor: pointer;
     background: var(--bg-card);
     border: 1.6px solid var(--border);
-    border-radius: 9.6px;
-    padding: 16px;
+    border-radius: 10px;
+    padding: 22px 22px;
+    /* 16px -> 18px 20px */
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
+    min-height: 107px;
+    /* hauteur minimum */
 }
 
 .player-card::before {
@@ -2007,7 +1944,7 @@ body:has(.admin-panel[style*="block"]) {
     top: 0;
     left: 0;
     width: 100%;
-    height: 3.2px;
+    height: 3px;
     background: var(--border);
     transition: all 0.3s ease;
 }
@@ -2027,8 +1964,6 @@ body:has(.admin-panel[style*="block"]) {
 .player-card.tiebreaker {
     border-color: var(--warning-color) !important;
     animation: tiebreakerBorderPulse 1.5s ease-in-out infinite;
-    box-shadow: none !important;
-    background: var(--bg-card) !important;
 }
 
 @keyframes tiebreakerBorderPulse {
@@ -2046,92 +1981,111 @@ body:has(.admin-panel[style*="block"]) {
 }
 
 .player-card:hover:not(.eliminated) {
-    transform: translateY(-3.2px);
+    transform: translateY(-3px);
     border-color: var(--primary);
-    box-shadow: 0 6.4px 16px var(--shadow);
+    box-shadow: 0 6px 16px var(--shadow);
 }
 
 .player-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
+    /* plus d'espace avant les cœurs */
 }
 
+
 .player-username {
-    font-size: 0.88rem;
+    font-size: 0.77rem;
     font-weight: 600;
     color: var(--text-primary);
+    /* Anti-débordement */
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .player-status {
     display: flex;
     align-items: center;
-    gap: 6.4px;
 }
 
 .status-indicator {
-    width: 8.0px;
-    height: 8.0px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: var(--text-secondary);
 }
 
 .status-indicator.correct {
     background: var(--success);
-    box-shadow: 0 0 8.0px var(--success);
+    box-shadow: 0 0 8px var(--success);
 }
 
 .status-indicator.wrong {
     background: var(--danger);
-    box-shadow: 0 0 8.0px var(--danger);
+    box-shadow: 0 0 8px var(--danger);
 }
 
 .player-lives {
     display: flex;
-    gap: 4.8px;
+    gap: 6px;
+    /* espacement entre cœurs */
     align-items: center;
+    justify-content: center;
+    /* CENTRER les cœurs */
+}
+
+
+.player-lives span:first-child:not(.heart-icon) {
+    display: none !important;
 }
 
 .player-lives span {
     font-size: 0.6rem;
     color: var(--text-secondary);
-    margin-right: 3.2px;
+    margin-right: 3px;
 }
 
 .heart-icon {
-    font-size: 0.96rem;
+    font-size: 0.88rem;
+    /* 0.96rem -> 0.88rem */
 }
 
 .heart-icon.active {
     color: var(--danger);
-    filter: drop-shadow(0 0 3.2px var(--danger));
+    filter: drop-shadow(0 0 2px var(--danger));
 }
 
 .heart-icon.lost {
     color: var(--border);
+    opacity: 0.5;
 }
 
 .player-points {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 0;
+    /* pas de gap, juste le nombre */
     padding: 8px 0;
 }
 
+/* Cacher le label "Points:" */
 .points-label {
-    font-size: 0.7rem;
-    color: var(--text-secondary);
-    font-weight: 500;
+    display: none !important;
 }
 
 .points-value {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
+    /* légèrement réduit */
     font-weight: 700;
     color: var(--primary);
     text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
 }
+
+
 
 /* ============================================
    GAME END PANEL
@@ -2164,7 +2118,7 @@ body:has(.admin-panel[style*="block"]) {
     }
 
     50% {
-        transform: translateY(-8.0px);
+        transform: translateY(-8px);
     }
 }
 
@@ -2186,12 +2140,12 @@ body:has(.admin-panel[style*="block"]) {
     display: inline-block;
     background: var(--primary);
     color: var(--bg-main);
-    padding: 4.8px 13px;
+    padding: 5px 13px;
     border-radius: 16px;
     font-size: 0.64rem;
     font-weight: 700;
     letter-spacing: 0.8px;
-    margin-bottom: 9.6px;
+    margin-bottom: 10px;
 }
 
 .winner-name {
@@ -2216,11 +2170,11 @@ body:has(.admin-panel[style*="block"]) {
 
 .stat-value.hearts {
     font-size: 1.2rem;
-    letter-spacing: 2.4px;
+    letter-spacing: 2px;
 }
 
 .stat-divider {
-    width: 1.6px;
+    width: 2px;
     height: 32px;
     background: var(--border);
 }
@@ -2231,13 +2185,13 @@ body:has(.admin-panel[style*="block"]) {
     gap: 28px;
     margin-top: 16px;
     padding-top: 16px;
-    border-top: 0.8px solid var(--border);
+    border-top: 1px solid var(--border);
 }
 
 .summary-item {
     display: flex;
     flex-direction: column;
-    gap: 4.8px;
+    gap: 5px;
     text-align: center;
 }
 
@@ -2270,7 +2224,6 @@ body:has(.admin-panel[style*="block"]) {
     align-items: center;
     justify-content: center;
     min-height: 300px;
-    /* 🔥 Hauteur minimum pour centrer verticalement */
 }
 
 .empty-state-icon {
@@ -2281,32 +2234,12 @@ body:has(.admin-panel[style*="block"]) {
 
 .empty-state h3 {
     font-size: 0.96rem;
-    margin-bottom: 6.4px;
+    margin-bottom: 6px;
     color: var(--text-primary);
 }
 
 .empty-state p {
     font-size: 0.72rem;
-}
-
-/* ============================================
-   PLAYERS GRID
-   ============================================ */
-
-.players-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(224px, 1fr));
-    gap: 12px;
-    overflow-y: auto;
-    padding-right: 8.0px;
-    min-height: 100px;
-}
-
-/* 🔥 NOUVEAU: Centrer l'empty state si c'est le seul élément */
-.players-grid:has(.empty-state:only-child) {
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 /* ============================================
@@ -2539,7 +2472,7 @@ body:has(.admin-panel[style*="block"]) {
 }
 
 /* ============================================
-   PANEL SÉRIE
+   SERIE PANEL
    ============================================ */
 
 .serie-panel-backdrop {
@@ -2574,7 +2507,7 @@ body:has(.admin-panel[style*="block"]) {
     z-index: 200;
     padding: 20px;
     overflow-y: auto;
-    border-left: 0.8px solid var(--border);
+    border-left: 1px solid var(--border);
     box-shadow: -4px 0 16px rgba(0, 0, 0, 0.3);
 }
 
@@ -2824,14 +2757,10 @@ body:has(.admin-panel[style*="block"]) {
     text-align: center;
     font-weight: 500;
     opacity: 0;
-    /* 🔥 Caché par défaut */
     transform: translateY(-5px);
-    /* 🔥 Position décalée */
     transition: all 0.3s ease;
     max-height: 0;
-    /* 🔥 Hauteur 0 */
     overflow: hidden;
-    /* 🔥 Cacher le texte */
 }
 
 .serie-card-pro:hover .serie-card-subtitle {
@@ -2839,9 +2768,6 @@ body:has(.admin-panel[style*="block"]) {
     transform: translateY(0);
     max-height: 30px;
     margin-top: 4px;
-}
-
-.serie-card-pro:hover .serie-card-subtitle {
     animation: subtitleAppear 0.4s ease forwards;
 }
 
@@ -2862,175 +2788,9 @@ body:has(.admin-panel[style*="block"]) {
 }
 
 /* ============================================
-   RESPONSIVE
+   MASTER ADMIN BADGE
    ============================================ */
 
-@media (max-width: 1400px) {
-    .admin-grid {
-        grid-template-columns: 200px 1fr 200px;
-        gap: 12px;
-        padding: 16px;
-    }
-
-    .serie-panel {
-        width: 30%;
-    }
-
-    .questions-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
-
-@media (max-width: 1200px) {
-    .admin-grid {
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-
-    .left-panel,
-    .right-panel,
-    .settings-panel {
-        max-height: none;
-        border-left: none;
-        border-top: 0.8px solid var(--border);
-    }
-}
-
-@media (max-width: 1120px) {
-    .control-buttons {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (max-width: 819px) {
-    .admin-content {
-        grid-template-columns: 1fr;
-    }
-
-    .left-panel {
-        border-right: none;
-        border-bottom: 0.8px solid var(--border);
-    }
-
-    .overlay-panel {
-        width: 80%;
-    }
-
-    .charts-container {
-        grid-template-columns: 1fr;
-    }
-
-    .players-grid {
-        grid-template-columns: repeat(auto-fill, minmax(192px, 1fr));
-    }
-}
-
-@media (max-width: 768px) {
-    .admin-header {
-        flex-direction: column;
-        gap: 12px;
-        align-items: flex-start;
-    }
-
-    .header-actions {
-        width: 100%;
-        justify-content: space-between;
-    }
-
-    .settings-panel,
-    .settings-section,
-    .db-stats {
-        padding: 10px;
-    }
-
-    .serie-panel {
-        width: 80%;
-        max-width: none;
-    }
-
-    .serie-cards-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .serie-card-pro {
-        min-height: 85px;
-        padding: 18px 10px;
-    }
-
-    .serie-card-name {
-        font-size: 0.75rem;
-    }
-
-    .serie-card-subtitle {
-        font-size: 0.58rem;
-    }
-}
-
-@media (max-width: 614px) {
-    .control-buttons {
-        grid-template-columns: 1fr;
-    }
-
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .overlay-panel {
-        width: 100%;
-    }
-}
-
-
-
-/* 🔥 Mise en évidence joueurs qualifiés (≥3 parties) */
-.data-table tr.qualified {
-    background: rgba(255, 217, 0, 0.329);
-    border-left: 3px solid var(--primary);
-}
-
-.data-table tr.qualified:hover {
-    background: rgba(255, 215, 0, 0.12);
-}
-
-.data-table tr.qualified td {
-    font-weight: 600;
-}
-
-
-
-/* 🆕 Mise en évidence bonne réponse */
-.answer-item.correct-answer {
-    background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(0, 255, 136, 0.05));
-    border-color: var(--success);
-    animation: correctPulse 1.5s ease-in-out infinite;
-}
-
-.answer-item.correct-answer .answer-number {
-    background: var(--success);
-    color: var(--bg-main);
-    box-shadow: 0 0 12px var(--success);
-}
-
-@keyframes correctPulse {
-
-    0%,
-    100% {
-        border-color: var(--success);
-        box-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
-    }
-
-    50% {
-        border-color: rgba(0, 255, 136, 0.6);
-        box-shadow: 0 0 16px rgba(0, 255, 136, 0.5);
-    }
-}
-
-
-/* Master Admin Badge */
 .master-admin-badge {
     position: absolute;
     top: 16px;
@@ -3062,20 +2822,21 @@ body:has(.admin-panel[style*="block"]) {
     }
 }
 
-/* ========== SYSTÈME DE LOGS (Style TikTok Live) ========== */
+/* ============================================
+   LOGS SYSTEM (TikTok Live Style)
+   ============================================ */
+
 .logs-container {
     position: fixed;
     bottom: 20px;
     right: 20px;
     z-index: 9999;
     pointer-events: none;
-    /* Ne pas bloquer les clics */
     display: none;
 }
 
-
 .logs-container.admin-connected {
-    display: block; 
+    display: block;
 }
 
 .logs-icon {
@@ -3085,7 +2846,6 @@ body:has(.admin-panel[style*="block"]) {
     transition: transform 0.2s, opacity 0.2s;
     opacity: 0.7;
     pointer-events: auto;
-    /* Seulement l'icône cliquable */
 }
 
 .logs-icon:hover {
@@ -3093,13 +2853,6 @@ body:has(.admin-panel[style*="block"]) {
     opacity: 1;
 }
 
-
-.logs-icon:hover {
-    transform: scale(1.1);
-    opacity: 1;
-}
-
-/* Indicateur d'épinglage */
 .logs-container.pinned .logs-icon {
     opacity: 1;
     filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
@@ -3128,7 +2881,6 @@ body:has(.admin-panel[style*="block"]) {
 
 .logs-header {
     display: none;
-    /* Supprimé */
 }
 
 .logs-content {
@@ -3140,7 +2892,6 @@ body:has(.admin-panel[style*="block"]) {
     gap: 4px;
 }
 
-/* Masquer la scrollbar */
 .logs-content::-webkit-scrollbar {
     display: none;
 }
@@ -3149,7 +2900,6 @@ body:has(.admin-panel[style*="block"]) {
     padding: 6px 10px;
     border-radius: 6px;
     background: rgba(0, 0, 0, 0.9);
-    /* Très transparent */
     backdrop-filter: blur(4px);
     font-size: 11px;
     line-height: 1.3;
@@ -3176,7 +2926,6 @@ body:has(.admin-panel[style*="block"]) {
     margin: 6px 0;
 }
 
-/* Couleurs par type - plus subtiles */
 .log-join {
     border-left: 2px solid rgba(0, 255, 136, 0.6);
     background: rgba(0, 255, 136, 0.05);
@@ -3218,6 +2967,106 @@ body:has(.admin-panel[style*="block"]) {
     background: rgba(46, 213, 115, 0.08);
 }
 
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1400px) {
+    .serie-panel {
+        width: 30%;
+    }
+
+    .questions-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 1120px) {
+    .control-buttons {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 819px) {
+    .admin-content {
+        grid-template-columns: 1fr;
+    }
+
+    .left-panel {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .overlay-panel {
+        width: 80%;
+    }
+
+    .charts-container {
+        grid-template-columns: 1fr;
+    }
+
+    .players-grid {
+        grid-template-columns: repeat(auto-fill, minmax(192px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .settings-panel,
+    .settings-section {
+        padding: 10px;
+    }
+
+    .serie-panel {
+        width: 80%;
+        max-width: none;
+    }
+
+    .serie-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .serie-card-pro {
+        min-height: 85px;
+        padding: 18px 10px;
+    }
+
+    .serie-card-name {
+        font-size: 0.75rem;
+    }
+
+    .serie-card-subtitle {
+        font-size: 0.58rem;
+    }
+}
+
+@media (max-width: 614px) {
+    .control-buttons {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .overlay-panel {
+        width: 100%;
+    }
+}
 
 @media screen and (max-width: 768px) {
     .logs-container {
@@ -3226,3 +3075,80 @@ body:has(.admin-panel[style*="block"]) {
 }
 
 
+
+/* Couronne du leader */
+.player-card.leader {
+    position: relative;
+    overflow: visible;
+}
+
+.player-card.leader::after {
+    content: '';
+    position: absolute;
+    top: -30px;
+    left: -12px;
+    width: 45px;
+    height: 45px;
+    background-image: url('crown2.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    z-index: 10;
+    transform: rotate(-15deg);
+    animation: crownFloat 2s ease-in-out infinite;
+}
+
+@keyframes crownFloat {
+    0%, 100% {
+        transform: rotate(-15deg) translateY(0);
+    }
+    50% {
+        transform: rotate(-15deg) translateY(-5px);
+    }
+}
+
+/* Overlay réponse sur carte joueur */
+.player-answer-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 5;
+    padding: 12px;
+}
+
+.player-card:hover .player-answer-overlay {
+    opacity: 1;
+}
+
+.player-answer-overlay .answer-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: center;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.3;
+    max-width: 100%;
+}
+
+.player-answer-overlay .answer-value.correct {
+    color: var(--success);
+}
+
+.player-answer-overlay .answer-value.wrong {
+    color: var(--danger);
+}
+
+.player-answer-overlay .afk-icon {
+    width: 30px;
+    object-fit: contain;
+}
