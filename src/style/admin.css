@@ -3083,12 +3083,13 @@ body:has(.admin-panel[style*="block"]) {
 }
 
 .player-card.leader::after {
+    display: none;
     content: '';
     position: absolute;
-    top: -30px;
+    top: -20px;
     left: -12px;
-    width: 45px;
-    height: 45px;
+    width: 35px;
+    height: 35px;
     background-image: url('crown2.png');
     background-size: contain;
     background-repeat: no-repeat;
@@ -3312,7 +3313,8 @@ body:has(.admin-panel[style*="block"]) {
 }
 
 .player-profile-winner-badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     background: linear-gradient(135deg, var(--primary), #FFA500);
     color: var(--bg-main);
     padding: 4px 10px;
@@ -3322,6 +3324,8 @@ body:has(.admin-panel[style*="block"]) {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     animation: winnerGlow 2s ease-in-out infinite;
+    transform: translateY(-3px);
+
 }
 
 @keyframes winnerGlow {
@@ -3332,3 +3336,25 @@ body:has(.admin-panel[style*="block"]) {
         box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
     }
 }
+
+
+
+.skeleton-badge {
+    width: 60px;
+    height: 22px;
+    background: linear-gradient(90deg, var(--bg-main) 25%, var(--border) 50%, var(--bg-main) 75%);
+    background-size: 200% 100%;
+    animation: skeletonShine 1s infinite;
+    border-radius: 20px;
+}
+
+@keyframes skeletonShine {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+

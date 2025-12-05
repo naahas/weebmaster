@@ -21,6 +21,11 @@ let connectionsByIP = new Map();
 const MAX_CONNECTIONS_PER_IP = 5;
 
 let activityLogs = [];
+let lastGlobalWinner = null;
+
+
+
+
 const MAX_LOGS = 30;
 let playerColors = {}; // Associer chaque joueur à une couleur
 
@@ -244,6 +249,7 @@ app.get('/game/state', (req, res) => {
             username: player.username,
             lives: gameState.mode === 'lives' ? player.lives : null,
             points: gameState.mode === 'points' ? (player.points || 0) : null,
+            isLastGlobalWinner: player.twitchId === lastGlobalWinner,
             correctAnswers: player.correctAnswers,
             hasAnswered: gameState.answers.has(player.socketId),
             selectedAnswer: gameState.answers.get(player.socketId)?.answer || null,
@@ -625,6 +631,7 @@ app.post('/admin/set-lives', (req, res) => {
             players: Array.from(gameState.players.values()).map(p => ({
                 twitchId: p.twitchId,
                 username: p.username,
+                isLastGlobalWinner: p.twitchId === lastGlobalWinner,
                 lives: p.lives
             }))
         });
@@ -844,6 +851,7 @@ app.post('/admin/set-mode', (req, res) => {
         questionTime: gameState.questionTime,
         players: Array.from(gameState.players.values()).map(p => ({
             twitchId: p.twitchId,
+            isLastGlobalWinner: p.twitchId === lastGlobalWinner,
             username: p.username,
             lives: mode === 'lives' ? p.lives : null,
             points: mode === 'points' ? p.points : null
@@ -1605,7 +1613,8 @@ function revealAnswers(correctAnswer) {
         username: player.username,
         lives: player.lives,
         correctAnswers: player.correctAnswers,
-        points: player.points || 0
+        points: player.points || 0,
+        isLastGlobalWinner: player.twitchId === lastGlobalWinner
     }));
 
     const resultsData = {
@@ -1828,7 +1837,8 @@ function revealTiebreakerAnswers(correctAnswer) {
     const playersData = Array.from(gameState.players.values()).map(player => ({
         twitchId: player.twitchId,
         username: player.username,
-        points: player.points || 0
+        points: player.points || 0,
+        isLastGlobalWinner: player.twitchId === lastGlobalWinner
     }));
 
     const resultsData = {
@@ -1871,6 +1881,7 @@ async function endGameByPoints() {
         // CAS 1: UN SEUL GAGNANT
         if (winners.length === 1) {
             const winner = winners[0];
+            lastGlobalWinner = winner.twitchId;
 
             if (winner && winner.points > 0) {
                 await db.endGame(
@@ -2203,6 +2214,7 @@ async function endGame(winner) {
         let winnerData = null;
 
         if (winner) {
+            lastGlobalWinner = winner.twitchId;
             await db.endGame(
                 gameState.currentGameId,
                 winner.twitchId,
@@ -2234,7 +2246,8 @@ async function endGame(winner) {
             twitchId: p.twitchId,
             username: p.username,
             lives: p.lives,
-            correctAnswers: p.correctAnswers
+            correctAnswers: p.correctAnswers,
+            isLastGlobalWinner: p.twitchId === lastGlobalWinner
         }));
 
         io.emit('game-ended', {
@@ -2374,6 +2387,7 @@ app.get('/profile/:twitchId', async (req, res) => {
                 total_games_played: user.total_games_played,
                 total_victories: user.total_victories,
                 last_placement: user.last_placement || null,
+                isLastGlobalWinner: user.twitch_id === lastGlobalWinner,
                 win_rate: user.total_games_played > 0
                     ? ((user.total_victories / user.total_games_played) * 100).toFixed(1)
                     : '0.0'
@@ -2596,6 +2610,8 @@ const server = app.listen(PORT, () => {
     ║  Twitch Redirect: ${TWITCH_REDIRECT_URI}
     ╚═══════════════════════════════════════╝
     `);
+
+    loadLastGlobalWinner();
 });
 
 const io = new Server(server, {
@@ -2629,7 +2645,7 @@ io.on('connection', (socket) => {
     });
 
     // Rejoindre le lobby
-    socket.on('join-lobby', (data) => {
+    socket.on('join-lobby', async (data) => {
         if (!gameState.isActive) {
             return socket.emit('error', { message: 'Le jeu n\'est pas activé' });
         }
@@ -2638,12 +2654,15 @@ io.on('connection', (socket) => {
             return socket.emit('error', { message: 'Une partie est déjà en cours' });
         }
 
+        const userInfo = await db.getUserByTwitchId(data.twitchId);
+
         gameState.players.set(socket.id, {
             socketId: socket.id,
             twitchId: data.twitchId,
             username: data.username,
             lives: gameState.lives,
-            correctAnswers: 0
+            correctAnswers: 0,
+            lastPlacement: userInfo?.last_placement || null
         });
 
         const playerColor = assignPlayerColor(data.username);
@@ -2658,7 +2677,8 @@ io.on('connection', (socket) => {
             players: Array.from(gameState.players.values()).map(p => ({
                 twitchId: p.twitchId,
                 username: p.username,
-                lives: p.lives
+                lives: p.lives,
+                isLastGlobalWinner: p.twitchId === lastGlobalWinner,
             }))
         });
     });
@@ -2679,7 +2699,8 @@ io.on('connection', (socket) => {
                 players: Array.from(gameState.players.values()).map(p => ({
                     twitchId: p.twitchId,
                     username: p.username,
-                    lives: p.lives
+                    lives: p.lives,
+                    isLastGlobalWinner: p.twitchId === lastGlobalWinner,
                 }))
             });
         }
@@ -2761,6 +2782,7 @@ io.on('connection', (socket) => {
                 mode: gameState.mode,
                 players: Array.from(gameState.players.values()).map(p => ({
                     twitchId: p.twitchId,
+                    isLastGlobalWinner: p.twitchId === lastGlobalWinner,
                     username: p.username,
                     lives: gameState.mode === 'lives' ? p.lives : null,
                     points: gameState.mode === 'points' ? (p.points || 0) : null
@@ -2936,6 +2958,7 @@ io.on('connection', (socket) => {
                             players: Array.from(gameState.players.values()).map(p => ({
                                 twitchId: p.twitchId,
                                 username: p.username,
+                                isLastGlobalWinner: p.twitchId === lastGlobalWinner,
                                 lives: p.lives
                             }))
                         });
@@ -2950,6 +2973,7 @@ io.on('connection', (socket) => {
                     players: Array.from(gameState.players.values()).map(p => ({
                         twitchId: p.twitchId,
                         username: p.username,
+                        isLastGlobalWinner: p.twitchId === lastGlobalWinner,
                         lives: p.lives
                     }))
                 });
@@ -3185,6 +3209,21 @@ function assignPlayerColor(username) {
     return playerColors[username];
 }
 
+
+async function loadLastGlobalWinner() {
+    try {
+        const recentGames = await db.getRecentGames(10);
+        if (recentGames && recentGames.length > 0) {
+            const lastWonGame = recentGames.find(game => game.winner_twitch_id !== null);
+            if (lastWonGame) {
+                lastGlobalWinner = lastWonGame.winner_twitch_id;
+                console.log(`👑 Dernier vainqueur chargé: ${lastGlobalWinner}`);
+            }
+        }
+    } catch (error) {
+        console.error('❌ Erreur chargement dernier vainqueur:', error);
+    }
+}
 
 
 

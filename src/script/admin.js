@@ -1419,7 +1419,6 @@ function updatePlayersGridWithTiebreakerEffect(players) {
 
         const isLeader = index === 0;
 
-
         return `
             <div class="player-card ${statusClass} ${isEliminated ? 'eliminated' : ''} ${isTiebreaker ? 'tiebreaker' : ''} ${isLeader ? 'leader' : ''}" onclick="openPlayerProfile('${player.twitchId}', '${player.username}')">
                 <div class="player-header">
@@ -1518,6 +1517,7 @@ function updatePlayersGridWithResults(playersData, playersDetails) {
         }
 
         const isLeader = index === 0;
+
         return `
             <div class="player-card ${statusClass} ${isEliminated ? 'eliminated' : ''} ${isTiebreaker ? 'tiebreaker' : ''} ${isLeader ? 'leader' : ''}" onclick="openPlayerProfile('${player.twitchId}', '${player.username}')">
                 <div class="player-header">
@@ -2712,15 +2712,16 @@ function addLogToUI(log) {
 async function openPlayerProfile(twitchId, username) {
     const modal = document.getElementById('playerProfileModal');
 
-    // Afficher la modale avec données de base
+    // Afficher immédiatement avec skeleton
     document.getElementById('profileName').textContent = username;
     document.getElementById('profileAvatar').innerHTML = '<img src="warrior.png" alt="Avatar">';
-    document.getElementById('profileTitles').innerHTML = '<div class="player-profile-title">Chargement...</div>';
+    document.getElementById('profileTitles').innerHTML = '<div class="player-profile-title skeleton-badge"></div>';
     document.getElementById('profilePlacement').textContent = '-';
     document.getElementById('profileGames').textContent = '-';
     document.getElementById('profileWins').textContent = '-';
     document.getElementById('profileWinrate').textContent = '-';
 
+    // Afficher la modale IMMÉDIATEMENT
     modal.classList.add('active');
 
     try {
@@ -2729,19 +2730,17 @@ async function openPlayerProfile(twitchId, username) {
 
         const data = await response.json();
 
-        // Mettre à jour les badges (titre + vainqueur si 1er)
+        // Mettre à jour avec les vraies données
         const titlesContainer = document.getElementById('profileTitles');
         const titleBadge = `<div class="player-profile-title">${data.titles?.current?.name || 'Novice'}</div>`;
-        const winnerBadge = data.user.last_placement === 1 ? 
+        const winnerBadge = data.user.isLastGlobalWinner ? 
             `<div class="player-profile-winner-badge">Dernier Vainqueur</div>` : '';
         titlesContainer.innerHTML = titleBadge + winnerBadge;
 
-        // Mettre à jour le placement
         const placement = data.user.last_placement;
         document.getElementById('profilePlacement').textContent = placement ? 
             (placement === 1 ? '1er' : placement === 2 ? '2ème' : `${placement}ème`) : '-';
 
-        // Mettre à jour les stats
         document.getElementById('profileGames').textContent = data.user.total_games_played || 0;
         document.getElementById('profileWins').textContent = data.user.total_victories || 0;
         document.getElementById('profileWinrate').textContent = `${data.user.win_rate || 0}%`;
