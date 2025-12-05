@@ -9,7 +9,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
+
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="admin.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+
 </head>
 
 <body>
@@ -38,6 +43,39 @@
                 <button type="submit" class="btn-login" id="loginBtn">Se connecter</button>
                 <div class="error-msg" id="errorMsg"></div>
             </form>
+        </div>
+    </div>
+
+
+    <!-- ============ INTRO SCREEN ============ -->
+    <div class="intro-screen" id="introScreen" style="display: none;">
+        <!-- Vignette -->
+        <div class="vignette"></div>
+        
+        <!-- Particules -->
+        <div class="particles-container" id="particlesContainer"></div>
+        
+        <!-- Glow ambiant -->
+        <div class="ambient-glow" id="ambientGlow"></div>
+        
+        <!-- Logo -->
+        <div class="logo-container">
+            <div class="logo-text-container">
+                <!-- Trait de lumière -->
+                <div class="light-beam" id="lightBeam"></div>
+                
+                <span class="logo-text logo-shonen" id="logoShonen">SHONEN</span>
+                <div class="logo-separator" id="logoSeparator"></div>
+                <span class="logo-text logo-master" id="logoMaster">MASTER</span>
+                
+                <!-- Parapluie japonais -->
+                <img src="para.png" class="para-icon" id="paraIcon" alt="">
+            </div>
+            
+            <!-- Messages -->
+            <div class="intro-messages">
+                <span class="message-text" id="messageText"></span>
+            </div>
         </div>
     </div>
 

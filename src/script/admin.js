@@ -11,6 +11,14 @@ let isNextQuestion = false; // 🆕 Anti-spam next question
 let tiebreakerPlayerIds = [];
 let lastQuestionResults = null;
 
+
+// ============ INTRO VARIABLES ============
+let particleAnimations = [];
+let introStartTime = null;
+let introCompleted = false;
+const MAX_INTRO_DURATION = 8000;
+const introMessages = ['Initialisation...', 'Streamer connecté..', 'Chargement des données...', 'Accès au panel admin..'];
+
 let logsContainer;
 let logsContent;
 let isPinned = false;
@@ -341,6 +349,337 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+// ============================================
+// INTRO ANIMATION SYSTEM
+// ============================================
+
+function createParticles() {
+    const container = document.getElementById('particlesContainer');
+    if (!container) return;
+
+    container.innerHTML = '';
+    const numParticles = 25;
+
+    for (let i = 0; i < numParticles; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.id = `particle${i}`;
+
+        particle.style.left = `${Math.random() * 100}%`;
+        particle.style.top = `${Math.random() * 100}%`;
+
+        const size = 2 + Math.random() * 3;
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+
+        container.appendChild(particle);
+    }
+}
+
+function animateParticles() {
+    const particles = document.querySelectorAll('.particle');
+
+    particles.forEach((particle, i) => {
+        particle.style.opacity = 0.3 + Math.random() * 0.4;
+
+        const anim = anime({
+            targets: particle,
+            translateY: [0, -30 - Math.random() * 40],
+            translateX: [-10 + Math.random() * 20, -10 + Math.random() * 20],
+            opacity: [0.3 + Math.random() * 0.3, 0.5 + Math.random() * 0.3],
+            duration: 3000 + Math.random() * 2000,
+            delay: i * 50,
+            easing: 'easeInOutSine',
+            loop: true,
+            direction: 'alternate'
+        });
+        particleAnimations.push(anim);
+    });
+}
+
+function accelerateParticles() {
+    particleAnimations.forEach(anim => anim.pause());
+
+    anime({
+        targets: '.particle',
+        translateY: -window.innerHeight - 100,
+        opacity: {
+            value: 0,
+            duration: 1200,
+            easing: 'easeInQuad'
+        },
+        duration: 1500,
+        easing: 'easeInCubic',
+        delay: anime.stagger(20, { from: 'center' })
+    });
+}
+
+function startIdleAnimation() {
+    anime({
+        targets: '#ambientGlow',
+        opacity: [1, 0.7, 1],
+        scale: [1, 1.05, 1],
+        duration: 3000,
+        easing: 'easeInOutSine',
+        loop: true
+    });
+}
+
+function startTextPulse() {
+    anime({
+        targets: ['#logoShonen', '#logoMaster'],
+        opacity: [0.8, 0.6, 0.8],
+        duration: 2000,
+        easing: 'easeInOutSine',
+        loop: true
+    });
+}
+
+async function showIntroMessage(text) {
+    const msgEl = document.getElementById('messageText');
+    if (!msgEl) return;
+
+    msgEl.textContent = text;
+
+    await anime({
+        targets: msgEl,
+        opacity: [0, 1],
+        translateY: [10, 0],
+        duration: 400,
+        easing: 'easeOutQuad'
+    }).finished;
+}
+
+async function hideIntroMessage() {
+    const msgEl = document.getElementById('messageText');
+    if (!msgEl) return;
+
+    await anime({
+        targets: msgEl,
+        opacity: [1, 0],
+        translateY: [0, -10],
+        duration: 300,
+        easing: 'easeInQuad'
+    }).finished;
+}
+
+function sleepIntro(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function skipIntro() {
+    introCompleted = true;
+
+    // Stop toutes les animations
+    anime.remove('.particle');
+    anime.remove('#ambientGlow');
+    anime.remove('#lightBeam');
+    anime.remove('#logoSeparator');
+    anime.remove('#logoShonen');
+    anime.remove('#logoMaster');
+    anime.remove('#paraIcon');
+    anime.remove('#messageText');
+    anime.remove('.intro-screen');
+
+    particleAnimations.forEach(anim => anim.pause());
+
+    document.getElementById('introScreen').style.display = 'none';
+    showAdminPanel();
+}
+
+function resetIntroElements() {
+    const elements = {
+        'ambientGlow': { opacity: '0', transform: 'translate(-50%, -50%) scale(1)' },
+        'lightBeam': { opacity: '0', width: '0' },
+        'logoSeparator': { height: '0', opacity: '0' },
+        'logoShonen': { clipPath: 'inset(0 100% 0 0)', opacity: '0.8' },
+        'logoMaster': { clipPath: 'inset(0 100% 0 0)', opacity: '0.8' },
+        'paraIcon': { opacity: '0', transform: 'translateY(-15px) rotate(-25deg)' },
+        'messageText': { opacity: '0' }
+    };
+
+    for (const [id, styles] of Object.entries(elements)) {
+        const el = document.getElementById(id);
+        if (el) {
+            Object.assign(el.style, styles);
+        }
+    }
+
+    const msgText = document.getElementById('messageText');
+    if (msgText) msgText.textContent = '';
+
+    const particlesContainer = document.getElementById('particlesContainer');
+    if (particlesContainer) particlesContainer.innerHTML = '';
+
+    particleAnimations = [];
+}
+
+async function playIntro() {
+    introStartTime = Date.now();
+    introCompleted = false;
+
+    resetIntroElements();
+    createParticles();
+    animateParticles();
+
+    // 1. Glow ambiant
+    anime({
+        targets: '#ambientGlow',
+        opacity: [0, 1],
+        duration: 2000,
+        easing: 'easeOutQuad'
+    });
+
+    await sleepIntro(300);
+
+    // 2. Trait de lumière + Message 1
+    anime({
+        targets: '#lightBeam',
+        opacity: [0, 1, 0.4],
+        width: [0, 600],
+        duration: 600,
+        easing: 'easeOutQuad'
+    });
+
+    showIntroMessage(introMessages[0]);
+
+    // 3. Séparateur
+    await sleepIntro(50);
+    anime({
+        targets: '#logoSeparator',
+        height: [0, 50],
+        opacity: [0, 1],
+        duration: 400,
+        easing: 'easeOutQuad'
+    });
+
+    await sleepIntro(30);
+
+    // 4. SHONEN
+    anime({
+        targets: '#logoShonen',
+        clipPath: ['inset(0 100% 0 0)', 'inset(0 0% 0 0)'],
+        duration: 1200,
+        easing: 'easeOutQuad'
+    });
+
+    startTextPulse();
+
+    await sleepIntro(200);
+
+    // 5. MASTER
+    anime({
+        targets: '#logoMaster',
+        clipPath: ['inset(0 100% 0 0)', 'inset(0 0% 0 0)'],
+        duration: 1200,
+        easing: 'easeOutQuad'
+    });
+
+    // 6. Message 2
+    await sleepIntro(300);
+    await hideIntroMessage();
+    await sleepIntro(50);
+    await showIntroMessage(introMessages[1]);
+
+    // 7. Parapluie
+    await sleepIntro(200);
+    anime({
+        targets: '#paraIcon',
+        opacity: [0, 0.85],
+        translateY: [-15, 0],
+        rotate: [-25, -15],
+        duration: 700,
+        easing: 'easeOutQuad'
+    });
+
+    // 8. Message 3
+    await sleepIntro(400);
+    await hideIntroMessage();
+    await sleepIntro(50);
+    await showIntroMessage(introMessages[2]);
+
+    // 9. Idle animation
+    await sleepIntro(300);
+    startIdleAnimation();
+
+    await sleepIntro(400);
+
+    // 10. Message 4
+    await hideIntroMessage();
+    await sleepIntro(50);
+    await showIntroMessage(introMessages[3]);
+
+    await sleepIntro(600);
+
+    // 11. Accélérer particules
+    await hideIntroMessage();
+    accelerateParticles();
+
+    await sleepIntro(800);
+
+    // 12. Fade out
+    anime({
+        targets: '.intro-screen',
+        opacity: [1, 0],
+        duration: 800,  // 🔥 Plus long (était 600)
+        easing: 'easeInOutQuad',  // 🔥 Plus smooth
+        complete: () => {
+            introCompleted = true;
+            document.getElementById('introScreen').style.display = 'none';
+        }
+    });
+
+    // 🔥 Démarrer le panel PENDANT le fade-out (cross-fade)
+    await sleepIntro(300);
+    showAdminPanel();
+}
+
+function showAdminPanel() {
+    const adminPanel = document.getElementById('adminPanel');
+
+    // Préparer le panel (invisible mais présent)
+    adminPanel.style.display = 'block';
+    adminPanel.style.opacity = '0';
+    adminPanel.style.transform = 'translateY(20px)';
+
+    if (logsContainer) {
+        logsContainer.classList.add('admin-connected');
+    }
+
+    // Animation d'entrée du panel
+    anime({
+        targets: adminPanel,
+        opacity: [0, 1],
+        translateY: [20, 0],
+        duration: 800,
+        easing: 'easeOutQuad',
+        complete: () => {
+            // Reset les styles inline après l'animation
+            adminPanel.style.transform = '';
+        }
+    });
+
+    initSocket();
+
+    setTimeout(async () => {
+        await restoreGameState();
+        refreshStats();
+        startStatsRefresh();
+    }, 500);
+}
+
+// Gestion visibilité onglet (skip intro si trop long)
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && introStartTime && !introCompleted) {
+        const elapsed = Date.now() - introStartTime;
+        if (elapsed > MAX_INTRO_DURATION) {
+            console.log('⏭️ Intro trop longue, skip vers le panel');
+            skipIntro();
+        }
+    }
+});
+
+
 // ============ AUTH ============
 async function handleLogin(event) {
     event.preventDefault();
@@ -368,23 +707,21 @@ async function handleLogin(event) {
             sessionStorage.setItem('adminCode', password);
 
             document.getElementById('loginContainer').style.display = 'none';
-            document.getElementById('adminPanel').style.display = 'block';
 
             // Afficher badge master si applicable
             if (data.isMaster) {
                 showMasterBadge();
             }
 
-            // 🆕 Afficher les logs pour l'admin
-            if (logsContainer) {
-                logsContainer.classList.add('admin-connected');
+            // 🆕 Jouer l'intro seulement si pas déjà jouée cette session
+            if (shouldPlayIntro()) {
+                document.getElementById('introScreen').style.display = 'flex';
+                markIntroPlayed();
+                playIntro();
+            } else {
+                // Skip direct vers le panel
+                showAdminPanel();
             }
-
-            initSocket();
-            await new Promise(resolve => setTimeout(resolve, 500));
-            await restoreGameState();
-            refreshStats();
-            startStatsRefresh();
         } else {
             // ⚠️ Si admin déjà connecté
             if (data.error === 'admin_already_connected') {
@@ -443,16 +780,16 @@ async function checkAuth() {
             const data = await response.json();
             if (data.isAdmin) {
                 document.getElementById('loginContainer').style.display = 'none';
-                document.getElementById('adminPanel').style.display = 'block';
 
                 if (data.isMaster) showMasterBadge();
-                if (logsContainer) logsContainer.classList.add('admin-connected');
 
-                initSocket();
-                await new Promise(resolve => setTimeout(resolve, 500));
-                await restoreGameState();
-                refreshStats();
-                startStatsRefresh();
+                if (shouldPlayIntro()) {
+                    document.getElementById('introScreen').style.display = 'flex';
+                    markIntroPlayed();
+                    playIntro();
+                } else {
+                    showAdminPanel();
+                }
                 return;
             }
         }
@@ -474,18 +811,17 @@ async function checkAuth() {
             const data = await response.json();
 
             if (data.success) {
-                console.log('✅ Reconnexion automatique réussie');
                 document.getElementById('loginContainer').style.display = 'none';
-                document.getElementById('adminPanel').style.display = 'block';
 
                 if (data.isMaster) showMasterBadge();
-                if (logsContainer) logsContainer.classList.add('admin-connected');
 
-                initSocket();
-                await new Promise(resolve => setTimeout(resolve, 500));
-                await restoreGameState();
-                refreshStats();
-                startStatsRefresh();
+                if (shouldPlayIntro()) {
+                    document.getElementById('introScreen').style.display = 'flex';
+                    markIntroPlayed();
+                    playIntro();
+                } else {
+                    showAdminPanel();
+                }
             } else {
                 // Code invalide ou admin déjà connecté, supprimer le code stocké
                 console.log('❌ Code stocké invalide, suppression');
@@ -2733,12 +3069,12 @@ async function openPlayerProfile(twitchId, username) {
         // Mettre à jour avec les vraies données
         const titlesContainer = document.getElementById('profileTitles');
         const titleBadge = `<div class="player-profile-title">${data.titles?.current?.name || 'Novice'}</div>`;
-        const winnerBadge = data.user.isLastGlobalWinner ? 
+        const winnerBadge = data.user.isLastGlobalWinner ?
             `<div class="player-profile-winner-badge">Dernier Vainqueur</div>` : '';
         titlesContainer.innerHTML = titleBadge + winnerBadge;
 
         const placement = data.user.last_placement;
-        document.getElementById('profilePlacement').textContent = placement ? 
+        document.getElementById('profilePlacement').textContent = placement ?
             (placement === 1 ? '1er' : placement === 2 ? '2ème' : `${placement}ème`) : '-';
 
         document.getElementById('profileGames').textContent = data.user.total_games_played || 0;
@@ -2753,6 +3089,16 @@ async function openPlayerProfile(twitchId, username) {
 
 function closePlayerProfile() {
     document.getElementById('playerProfileModal').classList.remove('active');
+}
+
+// 🆕 Vérifie si l'intro a déjà été jouée cette session
+function shouldPlayIntro() {
+    return !sessionStorage.getItem('introPlayed');
+}
+
+// 🆕 Marque l'intro comme jouée
+function markIntroPlayed() {
+    sessionStorage.setItem('introPlayed', 'true');
 }
 
 // Fermer avec Escape

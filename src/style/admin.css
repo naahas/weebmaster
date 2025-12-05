@@ -3358,3 +3358,161 @@ body:has(.admin-panel[style*="block"]) {
 }
 
 
+/* ============================================
+   ÉCRAN D'INTRO - MINIMALISTE
+   ============================================ */
+.intro-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #030508;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+/* Vignette - assombrissement des bords */
+.vignette {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at center, transparent 0%, transparent 40%, rgba(0, 0, 0, 0.6) 100%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Container des particules */
+.particles-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 2;
+}
+
+.particle {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: var(--primary);
+    border-radius: 50%;
+    opacity: 0.4;
+    box-shadow: 0 0 6px var(--primary), 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+/* Glow ambiant subtil */
+.ambient-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 300px;
+    background: radial-gradient(ellipse, rgba(255, 215, 0, 0.04) 0%, transparent 70%);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 3;
+}
+
+/* Container du logo */
+.logo-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+/* Parapluie japonais */
+.para-icon {
+    position: absolute;
+    right: 5px;
+    top: -30px;
+    width: 55px;
+    height: 55px;
+    opacity: 0;
+    transform: translateY(-15px) rotate(-15deg);
+    z-index: -1;
+}
+
+/* Container texte horizontal */
+.logo-text-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+/* Texte principal */
+.logo-text {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+}
+
+.logo-shonen {
+    color: var(--primary);
+    opacity: 0.8;
+    clip-path: inset(0 100% 0 0);
+}
+
+.logo-master {
+    color: var(--text-primary);
+    opacity: 0.8;
+    clip-path: inset(0 100% 0 0);
+}
+
+/* Séparateur lumineux */
+.logo-separator {
+    width: 2px;
+    height: 0;
+    background: linear-gradient(180deg, transparent, var(--primary), transparent);
+    margin: 0 25px;
+    opacity: 0;
+    box-shadow: 0 0 20px var(--primary), 0 0 40px var(--primary);
+}
+
+/* Trait de lumière au milieu du texte */
+.light-beam {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.5), rgba(255, 255, 255, 0.8), rgba(255, 215, 0, 0.5), transparent);
+    box-shadow: 0 0 20px var(--primary), 0 0 40px var(--primary);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* Messages - juste en dessous du texte */
+.intro-messages {
+    margin-top: 15px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    color: rgba(160, 170, 190, 0.7);
+    letter-spacing: 2px;
+    text-align: center;
+    height: 24px;
+}
+
+.message-text {
+    display: inline-block;
+    opacity: 0;
+}
