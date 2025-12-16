@@ -24,7 +24,7 @@ let activityLogs = [];
 let lastGlobalWinner = null;
 
 
-
+let winnerScreenData = null;
 
 const MAX_LOGS = 30;
 let playerColors = {}; // Associer chaque joueur à une couleur
@@ -43,8 +43,8 @@ const PLAYER_COLORS = [
 
 // config/serieFilters.js
 const SERIE_FILTERS = {
-    tout: {
-        name: 'Tout',
+    overall : {
+        name: 'Overall',
         icon: '🌍',
         series: []
     },
@@ -171,7 +171,7 @@ app.get('/auth/twitch/callback', async (req, res) => {
 
         const twitchUser = userResponse.data.data[0];
 
-        // Créer ou mettre à jour l'utilisateur dans la DB
+        // Créer ou mettre à jour l'utilisateur dans la DB (avec avatar)
         await db.createOrUpdateUser(twitchUser.id, twitchUser.display_name);
 
         // Stocker dans la session
@@ -227,8 +227,9 @@ app.get('/game/state', (req, res) => {
         timeRemaining = Math.max(0, gameState.questionTime - elapsed);
     }
 
+    // 🔥 Construire les données des joueurs avec leurs réponses
     const playersData = Array.from(gameState.players.values()).map(player => {
-        // 🔥 FIX: Chercher les bonus par twitchId au lieu de socketId (qui change à chaque refresh)
+        // Chercher les bonus par twitchId
         let comboData = null;
         for (const [sid, bonusData] of gameState.playerBonuses.entries()) {
             const bonusPlayer = gameState.players.get(sid);
@@ -243,20 +244,26 @@ app.get('/game/state', (req, res) => {
             }
         }
 
+        // 🔥 NOUVEAU: Récupérer la réponse du joueur
+        const playerAnswer = gameState.answers.get(player.socketId);
+
         return {
             socketId: player.socketId,
             twitchId: player.twitchId,
             username: player.username,
+            title: player.title || 'Novice',
             lives: gameState.mode === 'lives' ? player.lives : null,
             points: gameState.mode === 'points' ? (player.points || 0) : null,
             isLastGlobalWinner: player.twitchId === lastGlobalWinner,
             correctAnswers: player.correctAnswers,
-            hasAnswered: gameState.answers.has(player.socketId),
-            selectedAnswer: gameState.answers.get(player.socketId)?.answer || null,
+            hasAnswered: !!playerAnswer,
+            selectedAnswerIndex: playerAnswer?.answer || null,
+            responseTime: playerAnswer?.time || null,
             comboData: comboData
         };
     });
 
+    // 🔥 Compter les réponses par option
     const answerCounts = {};
     gameState.liveAnswers.forEach((answerIndex) => {
         if (!answerCounts[answerIndex]) {
@@ -264,7 +271,6 @@ app.get('/game/state', (req, res) => {
         }
         answerCounts[answerIndex]++;
     });
-
 
     res.json({
         isActive: gameState.isActive,
@@ -285,6 +291,9 @@ app.get('/game/state', (req, res) => {
         serieFilter: gameState.serieFilter,
         isTiebreaker: gameState.isTiebreaker,
         liveAnswerCounts: answerCounts,
+        showingWinner: !!winnerScreenData,
+        winnerScreenData: winnerScreenData,
+        livesIcon: gameState.livesIcon,
         answeredCount: gameState.liveAnswers.size,
         autoMode: gameState.autoMode,
         tiebreakerPlayers: gameState.isTiebreaker
@@ -302,6 +311,7 @@ app.use(express.static('src/html'));
 app.use(express.static('src/style'));
 app.use(express.static('src/sound'));
 app.use(express.static('src/img'));
+app.use(express.static('src/img/avatar'));
 app.use(express.static('src/script'));
 
 
@@ -328,6 +338,7 @@ const gameState = {
     answers: new Map(),
     gameStartTime: null,
     showResults: false,
+    livesIcon: 'heart',
     lastQuestionResults: null,
 
     recentSeries: [],
@@ -516,8 +527,27 @@ app.get('/admin/auth', (req, res) => {
     res.json({ authenticated: req.session.isAdmin === true });
 });
 
+
+app.get('/admin/game-state', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    res.json({
+        isActive: gameState.isActive,
+        phase: gameState.inProgress ? 'playing' : (gameState.isActive ? 'lobby' : 'idle'),
+        players: Array.from(gameState.players.values()).map(p => ({
+            username: p.username,
+            twitch_id: p.twitchId,
+            title: p.title || 'Novice',
+            isChampion: p.twitchId === lastGlobalWinner
+        })),
+        playerCount: gameState.players.size
+    });
+});
+
 // Activer/désactiver le jeu
-app.post('/admin/toggle-game', (req, res) => {
+app.post('/admin/toggle-game', async (req, res) => {
     if (!req.session.isAdmin) {
         return res.status(403).json({ error: 'Non autorisé - Session expirée' });
     }
@@ -540,6 +570,7 @@ app.post('/admin/toggle-game', (req, res) => {
         gameState.gameStartTime = null;
         gameState.inProgress = false;
         gameState.currentGameId = null;
+        gameState.livesIcon = 'heart';
 
         // 🔥 NOUVEAU: Reset tiebreaker
         gameState.isTiebreaker = false;
@@ -553,10 +584,22 @@ app.post('/admin/toggle-game', (req, res) => {
         console.log('❌ Jeu désactivé');
 
         // Reset complet de l'état si une partie était en cours
-        if (gameState.inProgress) {
-            console.log('⚠️ Partie en cours annulée - Reset de l\'état');
+        if (gameState.inProgress && gameState.currentGameId) {
+            console.log('⚠️ Partie en cours annulée - Suppression de la BDD');
+
+            // 🔥 Supprimer la partie interrompue (pas de winner = pas de vraie partie)
+            try {
+                await supabase
+                    .from('games')
+                    .delete()
+                    .eq('id', gameState.currentGameId);
+                console.log(`🗑️ Partie ${gameState.currentGameId} supprimée (interrompue)`);
+            } catch (error) {
+                console.error('❌ Erreur suppression partie:', error);
+            }
         }
 
+        winnerScreenData = null;
         gameState.inProgress = false;
         gameState.currentGameId = null;
         gameState.currentQuestionIndex = 0;
@@ -626,13 +669,16 @@ app.post('/admin/set-lives', (req, res) => {
         // Notifier l'admin pour rafraîchir la grille joueurs
         io.emit('lobby-update', {
             playerCount: gameState.players.size,
+            livesIcon: gameState.livesIcon,
             lives: gameState.lives,
             questionTime: gameState.questionTime,
             players: Array.from(gameState.players.values()).map(p => ({
                 twitchId: p.twitchId,
                 username: p.username,
                 isLastGlobalWinner: p.twitchId === lastGlobalWinner,
-                lives: p.lives
+                lives: p.lives,
+                title: p.title || 'Novice',
+                avatarUrl: p.avatarUrl
             }))
         });
 
@@ -703,7 +749,7 @@ app.post('/admin/start-game', async (req, res) => {
 
     try {
         // 🔥 NOUVEAU: Vérifier si on a assez de questions AVANT de démarrer
-        const questionsNeeded = gameState.mode === 'points' ? gameState.questionsCount : 50; // 50 pour mode Vie (estimation haute)
+        const questionsNeeded = gameState.mode === 'points' ? gameState.questionsCount : 50;
 
         const usedQuestionIds = await db.getUsedQuestionIds();
         const availableQuestionsCount = await db.getAvailableQuestionsCount(
@@ -717,7 +763,7 @@ app.post('/admin/start-game', async (req, res) => {
         if (availableQuestionsCount < questionsNeeded) {
             console.log(`⚠️ Pas assez de questions (${availableQuestionsCount} < ${questionsNeeded}), reset automatique de l'historique...`);
             await db.resetUsedQuestions();
-            gameState.usedQuestionIds = []; // Reset aussi la liste en mémoire
+            gameState.usedQuestionIds = [];
             console.log('✅ Historique réinitialisé - Toutes les questions sont à nouveau disponibles');
         }
 
@@ -788,7 +834,95 @@ app.post('/admin/start-game', async (req, res) => {
             }
         });
 
+        // 🔥 NOUVEAU: Envoyer automatiquement la première question après 2s
+        setTimeout(async () => {
+            try {
+                gameState.currentQuestionIndex = 1;
+
+                const difficulty = getDifficultyForQuestion(1);
+                const questions = await db.getRandomQuestions(
+                    difficulty,
+                    1,
+                    gameState.usedQuestionIds,
+                    gameState.serieFilter,
+                    shouldApplySerieCooldown() ? gameState.recentSeries : []
+                );
+
+                if (questions.length === 0) {
+                    console.error('❌ Aucune question disponible');
+                    return;
+                }
+
+                const question = questions[0];
+                addToRecentSeries(question.serie);
+                await db.addUsedQuestion(question.id);
+                gameState.usedQuestionIds.push(question.id);
+
+                console.log(`📌 Question 1 - Difficulté: ${difficulty}`);
+
+                const allAnswers = [
+                    { text: question.answer1, index: 1 },
+                    { text: question.answer2, index: 2 },
+                    { text: question.answer3, index: 3 },
+                    { text: question.answer4, index: 4 },
+                    { text: question.answer5, index: 5 },
+                    { text: question.answer6, index: 6 }
+                ].filter(answer => answer.text !== null && answer.text !== '');
+
+                const correctAnswerObj = allAnswers.find(a => a.index === question.coanswer);
+                const wrongAnswers = allAnswers.filter(a => a.index !== question.coanswer);
+                const wrongAnswersNeeded = gameState.answersCount - 1;
+                const shuffledWrong = wrongAnswers.sort(() => 0.5 - Math.random()).slice(0, wrongAnswersNeeded);
+                const selectedAnswers = [correctAnswerObj, ...shuffledWrong];
+                const finalAnswers = selectedAnswers.sort(() => 0.5 - Math.random());
+                const newCorrectIndex = finalAnswers.findIndex(a => a.index === question.coanswer) + 1;
+
+                const questionData = {
+                    questionNumber: 1,
+                    totalQuestions: gameState.mode === 'points' ? gameState.questionsCount : null,
+                    questionId: question.id,
+                    question: question.question,
+                    answers: finalAnswers.map(a => a.text),
+                    serie: question.serie,
+                    difficulty: question.difficulty,
+                    timeLimit: gameState.questionTime
+                };
+
+                gameState.currentQuestion = {
+                    ...questionData,
+                    correctAnswer: newCorrectIndex,
+                    difficulty: question.difficulty
+                };
+
+                gameState.questionStartTime = Date.now();
+                gameState.showResults = false;
+                gameState.lastQuestionResults = null;
+                gameState.answers.clear();
+                gameState.liveAnswers.clear();
+
+                addLog('question', {
+                    questionNumber: 1,
+                    difficulty: difficulty,
+                    series: question.serie
+                });
+
+                // Envoyer la question aux joueurs
+                io.emit('new-question', questionData);
+
+                // Timer pour révéler les réponses
+                setTimeout(() => {
+                    if (gameState.inProgress) {
+                        revealAnswers(newCorrectIndex);
+                    }
+                }, gameState.questionTime * 1000);
+
+            } catch (error) {
+                console.error('❌ Erreur envoi première question:', error);
+            }
+        }, 2000);
+
         res.json({ success: true, gameId: game.id, mode: gameState.mode });
+
     } catch (error) {
         console.error('❌ Erreur démarrage partie:', error);
         res.status(500).json({ error: error.message });
@@ -847,6 +981,7 @@ app.post('/admin/set-mode', (req, res) => {
     io.emit('lobby-update', {
         playerCount: gameState.players.size,
         mode: gameState.mode,
+        livesIcon: gameState.livesIcon,
         lives: gameState.lives,
         questionTime: gameState.questionTime,
         players: Array.from(gameState.players.values()).map(p => ({
@@ -854,7 +989,9 @@ app.post('/admin/set-mode', (req, res) => {
             isLastGlobalWinner: p.twitchId === lastGlobalWinner,
             username: p.username,
             lives: mode === 'lives' ? p.lives : null,
-            points: mode === 'points' ? p.points : null
+            points: mode === 'points' ? p.points : null,
+            title: p.title || 'Novice',
+            avatarUrl: p.avatarUrl
         }))
     });
 
@@ -975,7 +1112,6 @@ app.get('/admin/serie-stats', async (req, res) => {
 });
 
 // Route pour changer le filtre série
-// Route pour changer le filtre série
 app.post('/admin/set-serie-filter', (req, res) => {
     if (!req.session.isAdmin) {
         return res.status(403).json({ error: 'Non autorisé' });
@@ -1023,6 +1159,13 @@ app.post('/admin/toggle-auto-mode', (req, res) => {
     gameState.autoMode = !gameState.autoMode;
     console.log(`⚙️ Mode Auto ${gameState.autoMode ? 'activé' : 'désactivé'}`);
 
+    // 🔥 AJOUTER - Annuler le timeout si on désactive le mode auto
+    if (!gameState.autoMode && gameState.autoModeTimeout) {
+        clearTimeout(gameState.autoModeTimeout);
+        gameState.autoModeTimeout = null;
+        console.log('⏹️ Timeout auto-mode annulé');
+    }
+
     io.emit('game-config-updated', {
         mode: gameState.mode,
         lives: gameState.lives,
@@ -1030,7 +1173,7 @@ app.post('/admin/toggle-auto-mode', (req, res) => {
         answersCount: gameState.answersCount,
         questionsCount: gameState.questionsCount,
         difficultyMode: gameState.difficultyMode,
-        autoMode: gameState.autoMode // 🆕
+        autoMode: gameState.autoMode
     });
 
     res.json({ success: true, autoMode: gameState.autoMode });
@@ -1139,6 +1282,12 @@ app.post('/admin/trigger-auto-next', (req, res) => {
             gameState.lastQuestionResults = null;
             gameState.answers.clear();
 
+            // Émettre l'event de préparation pour l'animation
+            io.emit('prepare-next-question');
+
+            // Attendre 400ms pour l'animation de fermeture
+            await new Promise(resolve => setTimeout(resolve, 400));
+
             io.emit('new-question', questionData);
 
             setTimeout(() => {
@@ -1150,7 +1299,7 @@ app.post('/admin/trigger-auto-next', (req, res) => {
         } catch (error) {
             console.error('❌ Erreur trigger auto:', error);
         }
-    }, 3000);
+    }, 5000);
 
     res.json({ success: true });
 });
@@ -1478,6 +1627,7 @@ function revealAnswers(correctAnswer) {
             playersDetails.push({
                 socketId: socketId,
                 username: player.username,
+                lives: player.lives,
                 points: player.points || 0,
                 status: status,
                 responseTime: playerAnswer?.time || null,
@@ -1592,6 +1742,7 @@ function revealAnswers(correctAnswer) {
             playersDetails.push({
                 socketId: socketId,
                 username: player.username,
+                lives: player.lives,
                 points: player.points || 0,
                 status: status,
                 responseTime: playerAnswer?.time || null,
@@ -1617,6 +1768,18 @@ function revealAnswers(correctAnswer) {
         isLastGlobalWinner: player.twitchId === lastGlobalWinner
     }));
 
+    let fastestPlayer = null;
+    playersDetails.forEach(p => {
+        if (p.isCorrect && p.responseTime !== null) {
+            if (!fastestPlayer || p.responseTime < fastestPlayer.time) {
+                fastestPlayer = {
+                    username: p.username,
+                    time: p.responseTime
+                };
+            }
+        }
+    });
+
     const resultsData = {
         correctAnswer,
         stats,
@@ -1624,7 +1787,8 @@ function revealAnswers(correctAnswer) {
         remainingPlayers: alivePlayersAfter.length,
         players: playersDetails,
         playersData: playersData,
-        gameMode: gameState.mode
+        gameMode: gameState.mode,
+        fastestPlayer: fastestPlayer
     };
 
     gameState.showResults = true;
@@ -1754,6 +1918,10 @@ function revealAnswers(correctAnswer) {
                     series: question.serie
                 });
 
+                // 🔥 Animation de fermeture avant la nouvelle question
+                io.emit('prepare-next-question');
+                await new Promise(resolve => setTimeout(resolve, 400));
+
                 io.emit('new-question', questionData);
 
                 setTimeout(() => {
@@ -1765,7 +1933,7 @@ function revealAnswers(correctAnswer) {
             } catch (error) {
                 console.error('❌ Erreur mode auto:', error);
             }
-        }, 3000); // 3 secondes
+        }, 5000); // 3 secondes
     }
 }
 
@@ -1917,12 +2085,27 @@ async function endGameByPoints() {
                     points: player.points || 0
                 }));
 
+                const { playersData, topPlayers } = await generateGameEndedData();
+
+                winnerScreenData = {
+                    winner: winnerData,
+                    podium: podium,
+                    duration,
+                    totalQuestions: gameState.currentQuestionIndex,
+                    gameMode: 'points',
+                    playersData,
+                    topPlayers,
+                    livesIcon: gameState.livesIcon
+                };
+
                 io.emit('game-ended', {
                     winner: winnerData,
                     podium: podium,
                     duration,
                     totalQuestions: gameState.currentQuestionIndex,
-                    gameMode: 'points'
+                    gameMode: 'points',
+                    playersData,
+                    topPlayers
                 });
 
                 // Reset complet
@@ -2118,12 +2301,28 @@ async function checkTiebreakerWinner() {
                 points: player.points || 0
             }));
 
+            const { playersData, topPlayers } = await generateGameEndedData();
+
+            winnerScreenData = {
+                winner: winnerData,
+                podium: podium,
+                duration,
+                totalQuestions: gameState.currentQuestionIndex,
+                gameMode: 'points',
+                playersData,
+                topPlayers,
+                livesIcon: gameState.livesIcon
+            };
+
+
             io.emit('game-ended', {
                 winner: winnerData,
                 podium: podium,
                 duration,
                 totalQuestions: gameState.currentQuestionIndex,
-                gameMode: 'points'
+                gameMode: 'points',
+                playersData,
+                topPlayers
             });
 
             // Reset complet
@@ -2195,12 +2394,28 @@ async function endGameWithTie() {
         points: player.points || 0
     }));
 
+    const { playersData, topPlayers } = await generateGameEndedData();
+
+    winnerScreenData = {
+        winner: winnerData,
+        podium: podium,
+        duration,
+        totalQuestions: gameState.currentQuestionIndex,
+        gameMode: 'points',
+        playersData,
+        topPlayers,
+        livesIcon: gameState.livesIcon
+    };
+
+
     io.emit('game-ended', {
         winner: winnerData,
         podium: podium,
         duration,
         totalQuestions: gameState.currentQuestionIndex,
-        gameMode: 'points'
+        gameMode: 'points',
+        playersData,
+        topPlayers
     });
 
     resetGameState();
@@ -2250,12 +2465,28 @@ async function endGame(winner) {
             isLastGlobalWinner: p.twitchId === lastGlobalWinner
         }));
 
+        const topPlayers = await db.getTopPlayers(10);
+
+
+        // 🔥 Stocker pour restauration
+        winnerScreenData = {
+            winner: winnerData,
+            duration,
+            totalQuestions: gameState.currentQuestionIndex,
+            gameMode: 'lives',
+            playersData: playersData,
+            topPlayers,
+            livesIcon: gameState.livesIcon
+        };
+
+
         io.emit('game-ended', {
             winner: winnerData,
             duration,
             totalQuestions: gameState.currentQuestionIndex,
             gameMode: 'lives',
-            playersData: playersData // 🔥 IMPORTANT
+            playersData: playersData,
+            topPlayers
         });
 
         // Reset
@@ -2274,8 +2505,8 @@ app.get('/admin/stats', async (req, res) => {
 
     try {
         const totalGames = await db.getTotalGames();
-        const topPlayers = await db.getTopPlayers(10);
-        const recentGames = await db.getRecentGames(5);
+        const topPlayers = await db.getTopPlayers(50);  // ← 50 joueurs max
+        const recentGames = await db.getRecentGames(7);
 
         res.json({
             totalGames,
@@ -2300,6 +2531,7 @@ app.get('/admin/db-stats', async (req, res) => {
 
     try {
         const allQuestions = await db.getAllQuestions();
+        const totalPlayers = await db.getTotalPlayers();  // ← AJOUTER
 
         // Compter les questions par difficulté
         const byDifficulty = {
@@ -2324,6 +2556,7 @@ app.get('/admin/db-stats', async (req, res) => {
         res.json({
             totalQuestions: allQuestions.length,
             totalSeries: seriesSet.size,
+            totalPlayers: totalPlayers,  // ← AJOUTER
             byDifficulty: byDifficulty
         });
     } catch (error) {
@@ -2384,6 +2617,7 @@ app.get('/profile/:twitchId', async (req, res) => {
             user: {
                 twitch_id: user.twitch_id,
                 username: user.username,
+                avatar_url: user.avatar_url || '/img/avatars/novice.png', // 🔥 NOUVEAU
                 total_games_played: user.total_games_played,
                 total_victories: user.total_victories,
                 last_placement: user.last_placement || null,
@@ -2412,6 +2646,47 @@ app.get('/profile/:twitchId', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+
+app.post('/profile/update-avatar', async (req, res) => {
+    try {
+        const { twitchId, avatarUrl } = req.body;
+
+        if (!twitchId || !avatarUrl) {
+            return res.status(400).json({ error: 'Paramètres manquants' });
+        }
+
+        const allowedAvatars = [
+            'novice.png',
+            'ninja.png',
+            'knight.png',
+            'knight2.png',
+            'girl.png',
+            'assassin.png',
+            'sorcier.png',
+            'totoro.png',
+            'melody.png'
+        ];
+
+        if (!allowedAvatars.includes(avatarUrl)) {
+            return res.status(400).json({ error: 'Avatar non autorisé' });
+        }
+
+        const updatedUser = await db.updateUserAvatar(twitchId, avatarUrl);
+
+        res.json({
+            success: true,
+            user: updatedUser
+        });
+    } catch (error) {
+        console.error('❌ Erreur update avatar:', error);
+        res.status(400).json({ error: error.message });
+    }
+});
+
+
+
+
 
 // Changer le titre actuel
 app.post('/profile/update-title', async (req, res) => {
@@ -2596,6 +2871,32 @@ app.post('/api/verify-question-code', (req, res) => {
     }
 });
 
+
+// POST /admin/set-lives-icon
+app.post('/admin/set-lives-icon', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    const { icon } = req.body;
+    const validIcons = ['heart', 'dragonball', 'flame', 'sharingan', 'katana', 'shuriken'];
+
+    if (!validIcons.includes(icon)) {
+        return res.status(400).json({ error: 'Invalid icon' });
+    }
+
+    gameState.livesIcon = icon;
+
+    // Broadcast aux clients
+    io.emit('lobby-update', {
+        livesIcon: icon
+    });
+
+    console.log(`🎨 Icône de vies changée: ${icon}`);
+    res.json({ success: true, icon });
+});
+
+
 // ============================================
 // Socket.IO
 // ============================================
@@ -2613,6 +2914,60 @@ const server = app.listen(PORT, () => {
 
     loadLastGlobalWinner();
 });
+
+
+// ============================================
+// STREAMERS PARTENAIRES - LIVE STATUS
+// ============================================
+const PARTNER_STREAMERS = ['MinoStreaming', 'pikinemadd'];
+let partnersLiveStatus = {}; // Cache du statut
+
+
+
+async function checkPartnersLive() {
+    try {
+        // Token Twitch (App Access Token)
+        const tokenRes = await axios.post('https://id.twitch.tv/oauth2/token', null, {
+            params: {
+                client_id: process.env.TWITCH_CLIENT_ID,
+                client_secret: process.env.TWITCH_CLIENT_SECRET,
+                grant_type: 'client_credentials'
+            }
+        });
+        const accessToken = tokenRes.data.access_token;
+
+        // Vérifier les streams
+        const userLogins = PARTNER_STREAMERS.join('&user_login=');
+        const streamsRes = await axios.get(
+            `https://api.twitch.tv/helix/streams?user_login=${userLogins}`,
+            {
+                headers: {
+                    'Client-ID': process.env.TWITCH_CLIENT_ID,
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            }
+        );
+
+        const liveStreams = streamsRes.data.data || [];
+
+        PARTNER_STREAMERS.forEach(streamer => {
+            partnersLiveStatus[streamer] = liveStreams.some(
+                stream => stream.user_login.toLowerCase() === streamer.toLowerCase()
+            );
+        });
+
+        // Émettre à tous les clients
+        io.emit('partners-live-status', partnersLiveStatus);
+        console.log('📡 Statut live partenaires:', partnersLiveStatus);
+
+    } catch (err) {
+        console.error('❌ Erreur check live partenaires:', err.message);
+    }
+}
+
+// Vérifier au démarrage puis toutes les 2 minutes
+checkPartnersLive();
+setInterval(checkPartnersLive, 120000);
 
 const io = new Server(server, {
     cors: {
@@ -2635,6 +2990,11 @@ io.on('connection', (socket) => {
     connectionsByIP.set(ip, currentConnections + 1);
     console.log(`🔌 Nouveau socket connecté: ${socket.id} (IP: ${ip}, connexions: ${currentConnections + 1})`);
 
+    // Envoyer immédiatement le statut live des partenaires
+    if (Object.keys(partnersLiveStatus).length > 0) {
+        socket.emit('partners-live-status', partnersLiveStatus);
+    }
+
     // 🔥 NOUVEAU: Événement pour enregistrer l'authentification
     socket.on('register-authenticated', (data) => {
         authenticatedUsers.set(socket.id, {
@@ -2643,6 +3003,7 @@ io.on('connection', (socket) => {
         });
         console.log(`✅ Utilisateur authentifié enregistré: ${data.username} (${socket.id})`);
     });
+
 
     // Rejoindre le lobby
     socket.on('join-lobby', async (data) => {
@@ -2654,7 +3015,45 @@ io.on('connection', (socket) => {
             return socket.emit('error', { message: 'Une partie est déjà en cours' });
         }
 
+        // 🔥 NOUVEAU: Vérifier si le joueur est déjà dans le lobby
+        let alreadyInLobby = false;
+        let existingSocketId = null;
+
+        for (const [socketId, player] of gameState.players.entries()) {
+            if (player.twitchId === data.twitchId) {
+                alreadyInLobby = true;
+                existingSocketId = socketId;
+                break;
+            }
+        }
+
+        if (alreadyInLobby) {
+            // Option 1: Refuser la connexion
+            // return socket.emit('error', { message: 'Vous êtes déjà dans le lobby' });
+
+            // Option 2: Remplacer l'ancienne connexion (recommandé)
+            console.log(`🔄 ${data.username} remplace sa connexion précédente`);
+            gameState.players.delete(existingSocketId);
+            gameState.answers.delete(existingSocketId);
+
+            // Déconnecter l'ancien socket
+            const oldSocket = io.sockets.sockets.get(existingSocketId);
+            if (oldSocket) {
+                oldSocket.emit('kicked', { reason: 'Connexion depuis un autre appareil' });
+                oldSocket.disconnect(true);
+            }
+        }
+
         const userInfo = await db.getUserByTwitchId(data.twitchId);
+        
+        // 🔥 Récupérer le titre actuel du joueur
+        let playerTitle = 'Novice';
+        if (userInfo && userInfo.current_title_id) {
+            const titleData = await db.getTitleById(userInfo.current_title_id);
+            if (titleData) {
+                playerTitle = titleData.title_name;
+            }
+        }
 
         gameState.players.set(socket.id, {
             socketId: socket.id,
@@ -2662,7 +3061,9 @@ io.on('connection', (socket) => {
             username: data.username,
             lives: gameState.lives,
             correctAnswers: 0,
-            lastPlacement: userInfo?.last_placement || null
+            lastPlacement: userInfo?.last_placement || null,
+            title: playerTitle,
+            avatarUrl: userInfo?.avatar_url || '/img/avatars/novice.png'
         });
 
         const playerColor = assignPlayerColor(data.username);
@@ -2673,11 +3074,14 @@ io.on('connection', (socket) => {
         io.emit('lobby-update', {
             playerCount: gameState.players.size,
             lives: gameState.lives,
+            livesIcon: gameState.livesIcon,
             questionTime: gameState.questionTime,
             players: Array.from(gameState.players.values()).map(p => ({
                 twitchId: p.twitchId,
                 username: p.username,
                 lives: p.lives,
+                title: p.title || 'Novice',
+                avatarUrl: p.avatarUrl,
                 isLastGlobalWinner: p.twitchId === lastGlobalWinner,
             }))
         });
@@ -2696,10 +3100,13 @@ io.on('connection', (socket) => {
 
             io.emit('lobby-update', {
                 playerCount: gameState.players.size,
+                livesIcon: gameState.livesIcon,
                 players: Array.from(gameState.players.values()).map(p => ({
                     twitchId: p.twitchId,
                     username: p.username,
                     lives: p.lives,
+                    title: p.title || 'Novice',
+                    avatarUrl: p.avatarUrl,
                     isLastGlobalWinner: p.twitchId === lastGlobalWinner,
                 }))
             });
@@ -2780,12 +3187,15 @@ io.on('connection', (socket) => {
             io.emit('lobby-update', {
                 playerCount: gameState.players.size,
                 mode: gameState.mode,
+                livesIcon: gameState.livesIcon,
                 players: Array.from(gameState.players.values()).map(p => ({
                     twitchId: p.twitchId,
                     isLastGlobalWinner: p.twitchId === lastGlobalWinner,
                     username: p.username,
                     lives: gameState.mode === 'lives' ? p.lives : null,
-                    points: gameState.mode === 'points' ? (p.points || 0) : null
+                    points: gameState.mode === 'points' ? (p.points || 0) : null,
+                    title: p.title || 'Novice',
+                    avatarUrl: p.avatarUrl
                 }))
             });
         } else {
@@ -2954,12 +3364,15 @@ io.on('connection', (socket) => {
                         gameState.answers.delete(socket.id);
 
                         io.emit('lobby-update', {
+                            livesIcon: gameState.livesIcon,
                             playerCount: gameState.players.size,
                             players: Array.from(gameState.players.values()).map(p => ({
                                 twitchId: p.twitchId,
                                 username: p.username,
                                 isLastGlobalWinner: p.twitchId === lastGlobalWinner,
-                                lives: p.lives
+                                lives: p.lives,
+                                title: p.title || 'Novice',
+                                avatarUrl: p.avatarUrl
                             }))
                         });
                     }
@@ -2969,12 +3382,15 @@ io.on('connection', (socket) => {
                 gameState.answers.delete(socket.id);
 
                 io.emit('lobby-update', {
+                    livesIcon: gameState.livesIcon,
                     playerCount: gameState.players.size,
                     players: Array.from(gameState.players.values()).map(p => ({
                         twitchId: p.twitchId,
                         username: p.username,
                         isLastGlobalWinner: p.twitchId === lastGlobalWinner,
-                        lives: p.lives
+                        lives: p.lives,
+                        title: p.title || 'Novice',
+                        avatarUrl: p.avatarUrl
                     }))
                 });
             }
@@ -3091,6 +3507,22 @@ function resetAllBonuses() {
     console.log('🔄 Reset de tous les bonus');
 }
 
+
+// FONCTION: Générer les données communes pour game-ended
+async function generateGameEndedData() {
+    const playersData = Array.from(gameState.players.values()).map(p => ({
+        twitchId: p.twitchId,
+        username: p.username,
+        lives: p.lives,
+        points: p.points || 0,
+        correctAnswers: p.correctAnswers,
+        isLastGlobalWinner: p.twitchId === lastGlobalWinner
+    }));
+
+    const topPlayers = await db.getTopPlayers(10);
+
+    return { playersData, topPlayers };
+}
 
 
 // FONCTION: Reset complet de l'état du jeu

@@ -4,74 +4,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShonenMaster - Panel REFONTE Admin</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    <title>ShonenMaster Admin - Prototype V2</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Bebas+Neue&family=Inter:wght@300;400;500;600&display=swap"
         rel="stylesheet">
-
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
     <link rel="stylesheet" href="admin.css">
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+
 
 </head>
 
+
 <body>
-    <!-- ============ LOGIN ============ -->
-    <div class="login-container" id="loginContainer">
+    <!-- Background -->
+    <div class="bg-grid"></div>
+    <div class="bg-text" id="bgText" style="display: none;">MASTER</div>
+
+
+
+    <!-- Login Container -->
+    <div id="loginContainer">
         <div class="login-box">
-            <div class="login-logo">
-                <h1>ShonenMaster</h1>
-                <p>Panel d'administration</p>
+            <div class="logo">
+                <span>Shonen</span><span>Master</span>
             </div>
-            <form onsubmit="handleLogin(event)" id="loginForm">
-                <div class="form-group">
-                    <label>Code d'accès</label>
-                    <input type="password" id="adminCode" placeholder="Entrez le code admin" required autofocus>
+            <h2>Panel d'administration</h2>
+
+            <form onsubmit="handleLogin(event)">
+                <input type="password" id="adminCode" placeholder="Entrez le code" required>
+
+                <div id="masterPasswordGroup" style="display: none;">
+                    <label>Code master</label>
+                    <input type="password" id="masterPassword" placeholder="Code master">
                 </div>
 
-                <!-- Champ master password (caché par défaut) -->
-                <div class="form-group" id="masterPasswordGroup" style="display: none;">
-                    <label style="color: var(--warning);">Code d'accès dev</label>
-                    <input type="password" id="masterPassword" placeholder="Mot de passe développeur">
-                    <!-- <small style="color: var(--text-secondary); font-size: 0.7rem; display: block; margin-top: 6px;">
-                        Un admin est déjà connecté.
-                    </small> -->
-                </div>
-
-                <button type="submit" class="btn-login" id="loginBtn">Se connecter</button>
-                <div class="error-msg" id="errorMsg"></div>
+                <button type="submit">Connexion</button>
             </form>
+
+            <div id="errorMsg" class="error-msg"></div>
         </div>
     </div>
 
 
-    <!-- ============ INTRO SCREEN ============ -->
+    <!-- ============================================
+    INTRO SCREEN
+    ============================================ -->
     <div class="intro-screen" id="introScreen" style="display: none;">
         <!-- Vignette -->
         <div class="vignette"></div>
-        
+
         <!-- Particules -->
         <div class="particles-container" id="particlesContainer"></div>
-        
+
         <!-- Glow ambiant -->
         <div class="ambient-glow" id="ambientGlow"></div>
-        
+
         <!-- Logo -->
         <div class="logo-container">
             <div class="logo-text-container">
                 <!-- Trait de lumière -->
                 <div class="light-beam" id="lightBeam"></div>
-                
+
                 <span class="logo-text logo-shonen" id="logoShonen">SHONEN</span>
                 <div class="logo-separator" id="logoSeparator"></div>
                 <span class="logo-text logo-master" id="logoMaster">MASTER</span>
-                
+
                 <!-- Parapluie japonais -->
                 <img src="para.png" class="para-icon" id="paraIcon" alt="">
             </div>
-            
+
             <!-- Messages -->
             <div class="intro-messages">
                 <span class="message-text" id="messageText"></span>
@@ -79,451 +81,1068 @@
         </div>
     </div>
 
-    <!-- ============ ADMIN PANEL ============ -->
-    <div class="admin-panel" id="adminPanel">
-        <!-- Header -->
-        <div class="admin-header">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <button class="btn-home-icon" onclick="goToHome()" title="Retour à l'accueil">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-                    </svg>
-                </button>
-                <a href="/question" class="btn-home-icon" title="Ajouter une question">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+    <!-- Header -->
+    <header class="header" id="mainHeader" style="display: none;">
+        <div class="logo">
+            <div class="logo-text">Shonen<span>Master</span></div>
+        </div>
+        <div class="header-right">
+            <div class="status-pill">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Inactif</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Cercle d'absorption -->
+    <div class="absorption-circle" id="absorptionCircle"></div>
+
+    <!-- Main Container -->
+    <main class="main-container" id="mainContainer" style="display: none;">
+
+
+        <!-- Panneau Récentes -->
+        <div class="recent-games-panel" id="recentPanel">
+            <div class="recent-games-header">
+                <span class="recent-games-title">Récentes</span>
+                <a href="#" class="recent-games-link" title="Voir toutes les parties">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
                     </svg>
                 </a>
-                <h1>ShonenMaster Admin</h1>
             </div>
-            <div class="header-actions">
-                <div class="status-badge">
-                    <div class="status-dot inactive" id="statusIndicator"></div>
-                    <span id="statusText">INACTIF</span>
+            <div class="recent-game-item">
+                <div class="recent-game-header">
+                    <span class="recent-game-date">Il y a 2h</span>
+                    <span class="recent-game-players">47 joueurs</span>
+                </div>
+                <div class="recent-game-winner">🏆 Gojo_Satoru</div>
+            </div>
+            <div class="recent-game-item">
+                <div class="recent-game-header">
+                    <span class="recent-game-date">Il y a 5h</span>
+                    <span class="recent-game-players">32 joueurs</span>
+                </div>
+                <div class="recent-game-winner">🏆 OnePieceKing</div>
+            </div>
+            <div class="recent-game-item">
+                <div class="recent-game-header">
+                    <span class="recent-game-date">Hier</span>
+                    <span class="recent-game-players">89 joueurs</span>
+                </div>
+                <div class="recent-game-winner">🏆 LuffyD</div>
+            </div>
+            <div class="recent-game-item">
+                <div class="recent-game-header">
+                    <span class="recent-game-date">Hier</span>
+                    <span class="recent-game-players">24 joueurs</span>
+                </div>
+                <div class="recent-game-winner">🏆 Mikasa</div>
+            </div>
+            <div class="recent-game-item">
+                <div class="recent-game-header">
+                    <span class="recent-game-date">Il y a 2j</span>
+                    <span class="recent-game-players">56 joueurs</span>
+                </div>
+                <div class="recent-game-winner">🏆 Tanjiro</div>
+            </div>
+            <div class="recent-game-item">
+                <div class="recent-game-header">
+                    <span class="recent-game-date">Il y a 2j</span>
+                    <span class="recent-game-players">41 joueurs</span>
+                </div>
+                <div class="recent-game-winner">🏆 AllMight</div>
+            </div>
+            <div class="recent-game-item">
+                <div class="recent-game-header">
+                    <span class="recent-game-date">Il y a 3j</span>
+                    <span class="recent-game-players">63 joueurs</span>
+                </div>
+                <div class="recent-game-winner">🏆 Eren_Jaeger</div>
+            </div>
+        </div>
+
+        <!-- ÉTAT IDLE -->
+        <div class="state-idle" id="stateIdle">
+            <div class="idle-main">
+                <div class="btn-wrapper" id="btnWrapper">
+                    <div class="particles-container">
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                    </div>
+                    <img src="newkoko2.png" alt="" class="btn-character">
+                    <div class="main-action-btn" id="openLobbyBtn">
+                        <div class="btn-content">
+                            <span class="btn-text">Jouer</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="idle-stats">
+                    <div class="idle-stat">
+                        <div class="idle-stat-value"></div>
+                        <div class="idle-stat-label">Parties</div>
+                    </div>
+                    <div class="idle-stat">
+                        <div class="idle-stat-value"></div>
+                        <div class="idle-stat-label">Joueurs</div>
+                    </div>
+                    <div class="idle-stat">
+                        <div class="idle-stat-value"></div>
+                        <div class="idle-stat-label">Questions</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lastgame-panel" id="lastgamePanel">
+                <div class="leaderboard-filters">
+                    <button class="filter-btn active" data-filter="all">Top 50</button>
+                    <button class="filter-btn" data-filter="top10">Top 10</button>
+                </div>
+                <div class="lastgame-scroll">
+                    <div class="lastgame-list" id="lastgameList"></div>
                 </div>
             </div>
         </div>
 
-        <!-- Boutons de contrôle (100% width) -->
-        <div class="control-buttons">
-            <div class="control-card primary" id="toggleGameCard" onclick="toggleGame()">
-                <h3 id="toggleGameBtn">Ouvrir lobby</h3>
-            </div>
-            <div class="control-card" id="startGameCard" onclick="startGame()">
-                <h3>Démarrer la partie</h3>
-            </div>
-            <div class="control-card" id="nextQuestionCard" onclick="nextQuestion()">
-                <h3>Question suivante</h3>
+        <!-- ÉTAT LOBBY -->
+        <div class="state-lobby" id="stateLobby">
+            <div class="lobby-layout">
+                <!-- Contenu principal -->
+                <div class="lobby-content">
+                    <!-- Paramètres gauche -->
+                    <div class="lobby-settings-panel">
+                        <div class="settings-panel-title">Paramètres</div>
+
+                        <!-- Mode de jeu -->
+                        <div class="setting-group mode-group">
+                            <div class="setting-group-header">
+                                <div class="setting-group-left">
+                                    <svg class="setting-group-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                        <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2" />
+                                    </svg>
+                                    <span class="setting-group-label">Mode</span>
+                                </div>
+                                <span class="setting-group-value" id="modeValue">Vies</span>
+                            </div>
+                            <div class="setting-group-options">
+                                <button class="setting-option-btn mode-btn active" data-mode="vie" data-value="Vies">
+                                    <span class="mode-btn-icon"><svg viewBox="0 0 24 24" fill="currentColor" width="14"
+                                            height="14">
+                                            <path
+                                                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                                        </svg></span>
+                                    <span class="mode-btn-label">Vies</span>
+                                </button>
+                                <button class="setting-option-btn mode-btn" data-mode="point" data-value="Points">
+                                    <span class="mode-btn-icon"><svg viewBox="0 0 24 24" fill="currentColor" width="14"
+                                            height="14">
+                                            <polygon
+                                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                        </svg></span>
+                                    <span class="mode-btn-label">Points</span>
+                                </button>
+                            </div>
+                        </div>
+
+
+
+
+                        <!-- Nombre de vies (visible en mode Vies) -->
+                        <div class="setting-group lives-group" id="livesGroup">
+                            <div class="setting-group-header">
+                                <div class="setting-group-left">
+                                    <svg class="setting-group-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                        <path
+                                            d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                                    </svg>
+                                    <span class="setting-group-label">Vies</span>
+                                </div>
+                                <span class="setting-group-value" id="livesValue">3</span>
+                            </div>
+                            <div class="setting-group-options">
+                                <button class="setting-option-btn" data-value="1">1</button>
+                                <button class="setting-option-btn" data-value="2">2</button>
+                                <button class="setting-option-btn active" data-value="3">3</button>
+                            </div>
+                        </div>
+
+
+                        <!-- Icône de vie -->
+                        <div class="setting-group lives-icon-group" id="livesIconGroup">
+                            <div class="setting-group-header">
+                                <div class="setting-group-left">
+                                    <svg class="setting-group-icon" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="2">
+                                        <path
+                                            d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                                    </svg>
+                                    <span class="setting-group-label">Icône</span>
+                                </div>
+                                <span class="setting-group-value" id="livesIconValue">Cœur</span>
+                            </div>
+                            <div class="setting-group-options lives-icon-selector">
+                                <button class="icon-btn active" data-icon="heart">
+                                    <div class="icon-preview">
+                                        <svg viewBox="0 0 24 24" fill="#ff6b6b">
+                                            <path
+                                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                                        </svg>
+                                    </div>
+                                    <span class="icon-label">Cœur</span>
+                                </button>
+                                <button class="icon-btn" data-icon="dragonball">
+                                    <div class="icon-preview">
+                                        <svg viewBox="0 0 24 24" fill="none">
+                                            <defs>
+                                                <radialGradient id="dbPrev" cx="30%" cy="30%">
+                                                    <stop offset="0%" stop-color="#ffaa00" />
+                                                    <stop offset="100%" stop-color="#ff6600" />
+                                                </radialGradient>
+                                            </defs>
+                                            <circle cx="12" cy="12" r="10" fill="url(#dbPrev)" />
+                                            <circle cx="12" cy="8" r="1.5" fill="#c00" />
+                                            <circle cx="9" cy="13" r="1.5" fill="#c00" />
+                                            <circle cx="15" cy="13" r="1.5" fill="#c00" />
+                                            <ellipse cx="8" cy="7" rx="3" ry="2" fill="#fff" opacity="0.4" />
+                                        </svg>
+                                    </div>
+                                    <span class="icon-label">D.Ball</span>
+                                </button>
+                                <button class="icon-btn" data-icon="sharingan">
+                                    <div class="icon-preview">
+                                        <svg viewBox="0 0 24 24" fill="none">
+                                            <circle cx="12" cy="12" r="10" fill="#cc0000" />
+                                            <circle cx="12" cy="12" r="3" fill="#000" />
+                                            <circle cx="12" cy="6" r="1.8" fill="#000" />
+                                            <circle cx="6.8" cy="15" r="1.8" fill="#000" />
+                                            <circle cx="17.2" cy="15" r="1.8" fill="#000" />
+                                        </svg>
+                                    </div>
+                                    <span class="icon-label">Sharingan</span>
+                                </button>
+                                <button class="icon-btn" data-icon="katana">
+                                    <div class="icon-preview">
+                                        <svg viewBox="0 0 32 24" fill="none">
+                                            <path d="M28 20L6 4" stroke="#c8c8c8" stroke-width="2"
+                                                stroke-linecap="round" />
+                                            <path d="M28 20L3 11" stroke="#d4d4d4" stroke-width="2"
+                                                stroke-linecap="round" />
+                                            <path d="M28 20L4 18" stroke="#b8b8b8" stroke-width="2"
+                                                stroke-linecap="round" />
+                                            <rect x="26" y="18" width="5" height="4" rx="1" fill="#8b6b4a" />
+                                        </svg>
+                                    </div>
+                                    <span class="icon-label">Katana</span>
+                                </button>
+                                <button class="icon-btn" data-icon="shuriken">
+                                    <div class="icon-preview">
+                                        <svg viewBox="0 0 24 24" fill="#888">
+                                            <path d="M12 2L14 10L22 12L14 14L12 22L10 14L2 12L10 10L12 2Z" />
+                                            <circle cx="12" cy="12" r="2.5" fill="#1a1a1a" />
+                                        </svg>
+                                    </div>
+                                    <span class="icon-label">Shuriken</span>
+                                </button>
+                            </div>
+                        </div>
+
+
+                        <!-- Questions (caché en mode Vies par défaut) -->
+                        <div class="setting-group questions-group hidden" id="questionsGroup"
+                            style="display: none; opacity: 0;">
+                            <div class="setting-group-header">
+                                <div class="setting-group-left">
+                                    <svg class="setting-group-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                                    </svg>
+                                    <span class="setting-group-label">Questions</span>
+                                </div>
+                                <span class="setting-group-value" id="questionsValue">20</span>
+                            </div>
+                            <div class="setting-group-options questions-options">
+                                <button class="setting-option-btn" data-value="15">15</button>
+                                <button class="setting-option-btn active" data-value="20">20</button>
+                                <button class="setting-option-btn" data-value="25">25</button>
+                                <button class="setting-option-btn" data-value="30">30</button>
+                                <button class="setting-option-btn" data-value="35">35</button>
+                                <button class="setting-option-btn" data-value="40">40</button>
+                                <button class="setting-option-btn" data-value="45">45</button>
+                                <button class="setting-option-btn" data-value="50">50</button>
+                            </div>
+                        </div>
+
+
+                        <!-- Timer - Slider -->
+                        <div class="setting-group timer-group">
+                            <div class="setting-group-header">
+                                <div class="setting-group-left">
+                                    <svg class="setting-group-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <polyline points="12 6 12 12 16 14" />
+                                    </svg>
+                                    <span class="setting-group-label">Timer</span>
+                                </div>
+                                <span class="setting-group-value" id="timerValue">10s</span>
+                            </div>
+                            <div class="setting-group-options timer-slider-container">
+                                <input type="range" class="timer-slider" id="timerSlider" min="5" max="15" value="10">
+                                <div class="timer-slider-labels">
+                                    <span>5s</span>
+                                    <span>15s</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Réponses -->
+                        <div class="setting-group">
+                            <div class="setting-group-header">
+                                <div class="setting-group-left">
+                                    <svg class="setting-group-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                        <rect x="3" y="3" width="7" height="7" />
+                                        <rect x="14" y="3" width="7" height="7" />
+                                        <rect x="14" y="14" width="7" height="7" />
+                                        <rect x="3" y="14" width="7" height="7" />
+                                    </svg>
+                                    <span class="setting-group-label">Réponses</span>
+                                </div>
+                                <span class="setting-group-value" id="answersValue">4</span>
+                            </div>
+                            <div class="setting-group-options answers-options">
+                                <button class="setting-option-btn active" data-value="4">4</button>
+                                <button class="setting-option-btn" data-value="6">6</button>
+                            </div>
+                        </div>
+
+
+
+                        <!-- Difficulté -->
+                        <div class="setting-group">
+                            <div class="setting-group-header">
+                                <div class="setting-group-left">
+                                    <svg class="setting-group-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                        <path
+                                            d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                    </svg>
+                                    <span class="setting-group-label">Difficulté</span>
+                                </div>
+                                <span class="setting-group-value" id="difficultyValue">Croissante</span>
+                            </div>
+                            <div class="setting-group-options difficulty-options">
+                                <button class="setting-option-btn active" data-value="Croissante">Croissante</button>
+                                <button class="setting-option-btn" data-value="Aléatoire">Aléatoire</button>
+                            </div>
+                        </div>
+
+                        <!-- Série - Opens Modal -->
+                        <div class="setting-group series-trigger" id="seriesTrigger">
+                            <div class="setting-group-header">
+                                <div class="setting-group-left">
+                                    <svg class="setting-group-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                                        <line x1="8" y1="21" x2="16" y2="21" />
+                                        <line x1="12" y1="17" x2="12" y2="21" />
+                                    </svg>
+                                    <span class="setting-group-label">Série</span>
+                                </div>
+                                <div class="series-value-container">
+                                    <span class="setting-group-value" id="seriesValue">Overall</span>
+                                    <svg class="series-arrow" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                        <polyline points="9 18 15 12 9 6" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                    </div>
+
+                    <!-- Grille joueurs centre -->
+                    <div class="lobby-center">
+                        <div class="lobby-grid-header">
+                            <div class="lobby-header-left">
+                                <span class="lobby-player-count-inline" id="lobbyPlayerCount">0</span>
+                                <span class="lobby-status-text">joueurs en attente</span>
+                            </div>
+                            <div class="lobby-header-right">
+
+                                <button class="header-text-btn refresh" id="refreshPlayersBtn">
+                                    <span>Actualiser</span>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                        <circle cx="8.5" cy="7" r="4" />
+                                    </svg>
+                                </button>
+
+                                <button class="header-close-btn" id="closeLobbyBtn">
+                                    <span>Fermer lobby</span>
+                                </button>
+
+                            </div>
+                        </div>
+                        <div class="players-grid-lobby" id="playersGridLobby"></div>
+                    </div>
+
+                    <!-- Actions droite - Gaming HUD -->
+                    <div class="lobby-actions-full">
+                        <button class="action-full-btn start disabled" id="startGameBtn">
+                            <span class="action-hud-line top"></span>
+                            <div class="action-full-content">
+                                <span class="action-full-label">Démarrer</span>
+                                <span class="action-full-sub">Lancer la partie</span>
+                            </div>
+                            <span class="action-hud-line bottom"></span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
-            <!-- 🔥 SIMPLIFIÉ: 2 boutons côte à côte -->
-            <div style="display: flex; gap: 12px; grid-column: span 1;">
-                <div class="control-card secondary half-width" onclick="refreshPage()">
-                    <h3>Actualiser</h3>
-                </div>
-                <div class="control-card secondary half-width" id="refreshPlayersCard" onclick="refreshAllPlayers()">
-                    <h3>
-                        <!-- <span class="refresh-icon">🔄</span> -->
-                        <span class="refresh-text">Actualiser 👥</span>
-                    </h3>
-                </div>
-            </div>
+
+
         </div>
 
-        <!-- Layout 30/70 -->
-        <div class="admin-content">
-            <!-- ============ LEFT PANEL (Stats + Controls) ============ -->
-            <div class="left-panel">
-                <!-- Stats Grid -->
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-label">Lobby</div>
-                        <div class="stat-value" id="playerCount">0</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Actifs</div>
-                        <div class="stat-value success" id="activePlayers">0</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Question</div>
-                        <div class="stat-value" id="currentQuestion">0</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Parties totales</div>
-                        <div class="stat-value" id="totalGames">0</div>
-                    </div>
-                </div>
+        <!-- ÉTAT GAME (En partie) -->
+        <div class="state-game" id="stateGame">
+            <div class="game-layout">
+                <!-- Wrapper Question (panel + boutons) -->
+                <div class="game-question-wrapper" id="gameQuestionWrapper">
+                    <!-- Panel Question -->
+                    <div class="game-question-panel" id="gameQuestionPanel">
 
-                <!-- Toggle Buttons -->
-                <div class="toggle-buttons">
-                    <button class="toggle-btn" onclick="toggleOverlay('top10')">
-                        🏆 Top 10 Joueurs
-                    </button>
-                    <button class="toggle-btn" onclick="toggleOverlay('recent')">
-                        📊 Parties récentes
-                    </button>
-                </div>
-            </div>
 
-            <!-- ============ RIGHT PANEL (Question/Players) ============ -->
-            <div class="right-panel">
-                <!-- Tabs -->
-                <div class="tabs-header">
-                    <button class="tab-btn active" onclick="switchTab('question')">
-                        Question en cours
-                    </button>
-                    <button class="tab-btn" onclick="switchTab('stats')">
-                        Statistiques
-                    </button>
-                    <button class="tab-btn" onclick="switchTab('players')">
-                        Grille joueurs
-                    </button>
-                </div>
-
-                <!-- Tab: Question -->
-                <div class="tab-content active" id="tabQuestion">
-                    <div id="questionContainer">
-                        <div class="empty-state">
-                            <div class="empty-state-icon">❓</div>
-                            <h3>Aucune question active</h3>
-                            <p>Démarrez une partie pour afficher les questions</p>
+                        <div class="panel-mini-actions">
+                            <button class="mini-action-btn report" title="Signaler">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                    <line x1="4" y1="22" x2="4" y2="15"></line>
+                                </svg>
+                            </button>
+                            <button class="mini-action-btn auto-toggle" id="autoToggleBtn" title="Auto/Manuel">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                </svg>
+                            </button>
                         </div>
-                    </div>
-                </div>
 
-                <!-- 🆕 Tab: Statistiques -->
-                <div class="tab-content" id="tabStats">
-                    <div id="resultsContainer" style="display: none;">
-                        <!-- Les charts seront injectés ici -->
-                    </div>
-                    <div class="empty-state" id="statsEmptyState">
-                        <div class="empty-state-icon">📊</div>
-                        <h3>Aucune statistique</h3>
-                        <p>Les statistiques s'afficheront après chaque question</p>
-                    </div>
-                </div>
+                        <!-- Badge Question X sur le border-top -->
+                        <span class="question-tab-badge" id="questionTabBadge">Question 1</span>
 
-
-                <!-- Tab: Players Grid -->
-                <div class="tab-content" id="tabPlayers">
-                    <div class="players-grid" id="playersGrid">
-                        <div class="empty-state">
-                            <div class="empty-state-icon">👥</div>
-                            <h3>Aucun joueur</h3>
-                            <p>Les joueurs apparaîtront ici une fois la partie lancée</p>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- ============ SETTINGS PANEL (RIGHT) ============ -->
-            <div class="settings-panel">
-                <!-- Overlay pour fermer le menu -->
-                <div class="mode-menu-overlay" id="modeMenuOverlay" onclick="toggleModeMenu()"></div>
-
-                <!-- Bouton Mode en haut -->
-                <div class="mode-selector-container">
-                    <button class="btn-mode-toggle" id="btnModeToggle" onclick="toggleModeMenu()">
-                        <span class="mode-icon">⚙️</span>
-                        <span class="mode-text" id="currentModeText">Mode Vie</span>
-                        <span class="mode-arrow">▼</span>
-                    </button>
-
-                    <!-- 🆕 Bouton Mode Auto à côté -->
-                    <button class="btn-auto-mode" id="autoModeBtn" onclick="toggleAutoMode()" data-tooltip="Manuel">
-                        <span class="auto-mode-text">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                                <path
-                                    d="M23 5.5V20c0 2.2-1.8 4-4 4h-7.3c-1.08 0-2.1-.43-2.85-1.19L1 14.83s1.26-1.23 1.3-1.25c.22-.19.49-.29.79-.29.22 0 .42.06.6.16.04.01 4.31 2.46 4.31 2.46V4c0-.83.67-1.5 1.5-1.5S11 3.17 11 4v7h1V1.5c0-.83.67-1.5 1.5-1.5S15 .67 15 1.5V11h1V2.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5V11h1V5.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5z" />
+                        <!-- Timer circulaire -->
+                        <div class="timer-container">
+                            <svg class="timer-circle" viewBox="0 0 50 50">
+                                <circle class="timer-circle-bg" cx="25" cy="25" r="22" />
+                                <circle class="timer-circle-progress" id="timerProgress" cx="25" cy="25" r="22" />
                             </svg>
-                        </span>
+                            <span class="timer-text" id="timerText">10</span>
+                        </div>
+
+                        <!-- Badges série + difficulté -->
+                        <div class="question-badges-row">
+                            <span class="question-series-badge" id="questionSeries">NARUTO</span>
+                            <span class="question-difficulty-badge" id="questionDifficulty">EASY</span>
+                        </div>
+
+                        <!-- Question -->
+                        <p class="question-text" id="questionText">Dans quel village réside Naruto ?</p>
+
+                        <!-- Réponses sans numéros -->
+                        <div class="answers-grid" id="answersGrid">
+                            <div class="answer-option" data-answer="0">
+                                <span class="answer-text">Konoha</span>
+                                <span class="answer-percent">0%</span>
+                            </div>
+                            <div class="answer-option" data-answer="1">
+                                <span class="answer-text">Suna</span>
+                                <span class="answer-percent">0%</span>
+                            </div>
+                            <div class="answer-option" data-answer="2">
+                                <span class="answer-text">Kiri</span>
+                                <span class="answer-percent">0%</span>
+                            </div>
+                            <div class="answer-option" data-answer="3">
+                                <span class="answer-text">Oto</span>
+                                <span class="answer-percent">0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Boutons SOUS le panel -->
+                    <div class="question-actions" id="questionActions">
+                        <button class="question-action-btn next" id="nextQuestionBtn">
+                            <span>Suivante</span>
+                            <!-- <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M5 12h14M12 5l7 7-7 7" />
+                            </svg> -->
+                        </button>
+                    </div>
+
+
+                </div>
+
+                <div class="game-logs-container" id="gameLogsContainer">
+                    <div class="game-logs-list" id="gameLogsList">
+                        <!-- Les logs apparaîtront ici -->
+                    </div>
+                </div>
+
+                <!-- Bouton toggle logs - en bas à droite -->
+                <button class="game-logs-toggle" id="gameLogsToggle" title="Afficher/Masquer les logs">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </button>
+
+
+
+                <!-- Panel Grille/Stats (DROITE) -->
+                <div class="game-main-panel" id="gameMainPanel">
+
+                    <button class="game-close-text-btn" id="gameCloseBtn">
+                        <span>Fermer lobby</span>
                     </button>
 
-                    <!-- Menu déroulant des modes -->
-                    <div class="mode-menu" id="modeMenu">
-                        <div class="mode-option selected" onclick="selectMode('lives')">
-                            <span class="mode-option-icon">❤️</span>
-                            <span class="mode-option-text">Mode Vie</span>
-                        </div>
-                        <div class="mode-option" onclick="selectMode('points')">
-                            <span class="mode-option-icon">⭐</span>
-                            <span class="mode-option-text">Mode Points</span>
-                        </div>
+                    <div class="panel-tabs">
+                        <button class="panel-tab active" data-tab="stats">Stats</button>
+                        <button class="panel-tab" data-tab="grille">Grille</button>
                     </div>
-                </div>
+                    <div class="panel-content">
 
-                <!-- Paramètres de partie -->
-                <div class="settings-section" id="gameSettings">
-                    <!-- Sous-paramètres Mode Vie -->
-                    <div class="mode-params" id="livesParams">
-                        <div class="setting-item">
-                            <label class="setting-label">Nombre de vies</label>
-                            <div class="lives-selector">
-                                <button class="lives-btn" onclick="setLives(1)" id="lives-1">1</button>
-                                <button class="lives-btn" onclick="setLives(2)" id="lives-2">2</button>
-                                <button class="lives-btn active" onclick="setLives(3)" id="lives-3">3</button>
+
+                        <!-- STRUCTURE HTML pour l'onglet Stats -->
+                        <div class="panel-tab-content active" id="tabStats">
+                            <div class="stats-charts-container">
+
+                                <!-- PIE CHART 1 : Réponses -->
+                                <div class="chart-block">
+                                    <h3 class="chart-title">Réponses</h3>
+                                    <div class="chart-wrapper">
+                                        <div class="pie-chart" id="responsesPie"></div>
+                                    </div>
+                                    <div class="chart-legend" id="responsesLegend">
+                                        <div class="legend-item correct">
+                                            <span class="legend-icon">✓</span>
+                                            <span class="legend-text">Bonne</span>
+                                            <span class="legend-value" id="correctCount">0</span>
+                                        </div>
+                                        <div class="legend-item wrong">
+                                            <span class="legend-icon">✗</span>
+                                            <span class="legend-text">Mauvaise</span>
+                                            <span class="legend-value" id="wrongCount">0</span>
+                                        </div>
+                                        <div class="legend-item timeout">
+                                            <span class="legend-icon">⏱</span>
+                                            <span class="legend-text">Pas répondu</span>
+                                            <span class="legend-value" id="timeoutCount">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- PIE CHART 2 : Vies (seulement en mode Vie) -->
+                                <div class="chart-block" id="livesChartBlock">
+                                    <h3 class="chart-title">Vies</h3>
+                                    <div class="chart-wrapper">
+                                        <div class="pie-chart" id="livesPie"></div>
+                                    </div>
+                                    <div class="chart-legend" id="livesLegend">
+                                        <div class="legend-item lives-3">
+                                            <span class="legend-icon">❤❤❤</span>
+                                            <span class="legend-text">3 vies</span>
+                                            <span class="legend-value" id="lives3Count">0</span>
+                                        </div>
+                                        <div class="legend-item lives-2">
+                                            <span class="legend-icon">❤❤</span>
+                                            <span class="legend-text">2 vies</span>
+                                            <span class="legend-value" id="lives2Count">0</span>
+                                        </div>
+                                        <div class="legend-item lives-1">
+                                            <span class="legend-icon">❤</span>
+                                            <span class="legend-text">1 vie</span>
+                                            <span class="legend-value" id="lives1Count">0</span>
+                                        </div>
+                                        <div class="legend-item lives-0">
+                                            <span class="legend-icon">💀</span>
+                                            <span class="legend-text">Éliminé</span>
+                                            <span class="legend-value" id="lives0Count">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- Plus rapide - centré en bas -->
+                            <div class="fastest-player" id="fastestPlayer">
+                                <span class="fastest-label">Plus rapide:</span>
+                                <span class="fastest-name" id="fastestName">-</span>
+                                <span class="fastest-time" id="fastestTime">-</span>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Sous-paramètres Mode Points -->
-                    <div class="mode-params" id="pointsParams" style="display: none;">
-                        <div class="setting-item">
-                            <label class="setting-label">Nombre de questions</label>
-                            <div class="questions-grid">
-                                <button class="questions-btn" onclick="setQuestions(15)" id="questions-15">15</button>
-                                <button class="questions-btn active" onclick="setQuestions(20)"
-                                    id="questions-20">20</button>
-                                <button class="questions-btn" onclick="setQuestions(25)" id="questions-25">25</button>
-                                <button class="questions-btn" onclick="setQuestions(30)" id="questions-30">30</button>
-                                <button class="questions-btn" onclick="setQuestions(35)" id="questions-35">35</button>
-                                <button class="questions-btn" onclick="setQuestions(40)" id="questions-40">40</button>
-                                <button class="questions-btn" onclick="setQuestions(45)" id="questions-45">45</button>
-                                <button class="questions-btn" onclick="setQuestions(50)" id="questions-50">50</button>
+
+
+                        <!-- Onglet Grille -->
+                        <div class="panel-tab-content" id="tabGrille">
+                            <div class="players-grid-game" id="playersGridGame">
+                                <!-- Cartes joueurs générées dynamiquement -->
                             </div>
                         </div>
-                    </div>
-
-
-                    <!-- Paramètres communs (toujours visibles) -->
-
-
-                    <div class="setting-item">
-                        <div class="dual-inputs-container">
-                            <div class="input-group">
-                                <label class="input-label">Temps</label>
-                                <select class="time-select" id="timeSelect" onchange="setTime(this.value)">
-                                    <option value="5">5s</option>
-                                    <option value="6">6s</option>
-                                    <option value="7">7s</option>
-                                    <option value="8">8s</option>
-                                    <option value="9">9s</option>
-                                    <option value="10" selected>10s</option>
-                                    <option value="11">11s</option>
-                                    <option value="12">12s</option>
-                                    <option value="13">13s</option>
-                                    <option value="14">14s</option>
-                                    <option value="15">15s</option>
-                                </select>
-                            </div>
-
-                            <div class="input-group">
-                                <label class="input-label">Réponses</label>
-                                <select class="answers-select" id="answersSelect" onchange="setAnswers(this.value)">
-                                    <option value="4" selected>4</option>
-                                    <option value="6">6</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 🆕 Paramètre Mode de difficulté (commun aux 2 modes) -->
-                    <div class="setting-item">
-                        <div class="dual-inputs-container">
-                            <div class="input-group">
-                                <label class="input-label">Difficulté</label>
-                                <button class="difficulty-mode-btn" id="difficultyModeBtn"
-                                    onclick="toggleDifficultyMode()">
-                                    <span class="diff-mode-icon"></span>
-                                    <span class="diff-mode-text">Croissante</span>
-                                </button>
-                            </div>
-
-                            <div class="input-group">
-                                <label class="input-label">Série</label>
-                                <button class="serie-filter-btn-compact" id="serieFilterBtn"
-                                    onclick="toggleSeriePanel()">
-                                    <div class="serie-filter-bg" id="serieFilterBg"></div>
-                                    <span class="serie-filter-text" id="serieFilterText">Overall</span>
-                                    <span class="serie-filter-arrow">▶</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-
-                    <!-- Reset Questions & Signaler Question - CÔTE À CÔTE -->
-                    <div class="reset-questions-section">
-                        <button class="btn-reset-questions" id="btnResetQuestions" onclick="resetQuestionsHistory()">
-                            <span class="reset-icon">♻️</span>
-                            <span class="reset-text">Reset</span>
-                        </button>
-
-                        <button class="btn-report-question" id="btnReportQuestion" onclick="openReportModal()">
-                            <span class="report-icon">❗</span>
-                            <span class="report-text">Report</span>
-                        </button>
                     </div>
                 </div>
             </div>
 
-
         </div>
 
-        <!-- Overlay Backdrop -->
-        <div class="overlay-backdrop" id="overlayBackdrop" onclick="closeOverlays()"></div>
 
-        <!-- Overlay: Top 10 -->
-        <div class="overlay-panel" id="overlayTop10">
-            <div class="overlay-header">
-                <h2>🏆 Top 10 Joueurs</h2>
-                <button class="close-overlay" onclick="closeOverlays()">✕</button>
+        <!-- Overlay GAME START -->
+        <div class="game-start-overlay" id="gameStartOverlay">
+            <div class="game-start-text" id="gameStartText">SHOWTIME</div>
+        </div>
+    </main>
+
+    <!-- Modal Séries -->
+    <div class="series-modal-overlay" id="seriesModalOverlay"></div>
+    <div class="series-modal" id="seriesModal">
+        <div class="series-modal-header">
+            <button class="series-modal-close" id="seriesModalClose">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="series-search-container">
+            <input type="text" class="series-search-input" id="seriesSearchInput" placeholder="Rechercher une série...">
+        </div>
+
+        <div class="series-grid" id="seriesGrid">
+            <!-- Overall -->
+            <div class="series-card active" data-series="overall" data-name="Overall">
+                <img src="overall.jpg" alt="Overall" class="series-card-bg">
+                <div class="series-card-overlay"></div>
+                <div class="series-card-check">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="3">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                </div>
+                <span class="series-card-name">Overall</span>
             </div>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Rang</th>
-                        <th>Joueur</th>
-                        <th>Victoires</th>
-                        <th>Parties</th>
-                    </tr>
-                </thead>
-                <tbody id="topPlayersTable">
-                    <tr>
-                        <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                            Aucune donnée disponible
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
 
-        <!-- Overlay: Recent Games -->
-        <div class="overlay-panel" id="overlayRecent">
-            <div class="overlay-header">
-                <h2>📊 Parties récentes</h2>
-                <button class="close-overlay" onclick="closeOverlays()">✕</button>
+            <!-- Mainstream -->
+            <div class="series-card" data-series="mainstream" data-name="Mainstream">
+                <img src="mainstream.jpg" alt="Mainstream" class="series-card-bg">
+                <div class="series-card-overlay"></div>
+                <div class="series-card-check">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="3">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                </div>
+                <span class="series-card-name">Mainstream</span>
             </div>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Gagnant</th>
-                        <th>Questions</th>
-                        <th>Date</th>
-                    </tr>
-                </thead>
-                <tbody id="recentGamesTable">
-                    <tr>
-                        <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                            Aucune donnée disponible
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+
+            <!-- Big 3 -->
+            <div class="series-card soon" data-series="big3" data-name="Big 3">
+                <img src="big3.png" alt="Big 3" class="series-card-bg">
+                <div class="series-card-overlay"></div>
+                <span class="series-card-soon">SOON</span>
+                <span class="series-card-name">Big 3</span>
+            </div>
+
+
+            <!-- Naruto -->
+            <div class="series-card soon" data-series="naruto" data-name="Naruto">
+                <img src="naruto2.png" alt="Naruto" class="series-card-bg">
+                <div class="series-card-overlay"></div>
+                <span class="series-card-soon">SOON</span>
+                <span class="series-card-name">Naruto</span>
+            </div>
+
+            <!-- One Piece -->
+            <div class="series-card soon" data-series="onepiece" data-name="One Piece">
+                <img src="op.png" alt="One Piece" class="series-card-bg">
+                <div class="series-card-overlay"></div>
+                <span class="series-card-soon">SOON</span>
+                <span class="series-card-name">One Piece</span>
+            </div>
+
+            <!-- Dragon Ball -->
+            <div class="series-card soon" data-series="dragonball" data-name="Dragon Ball">
+                <img src="dbz.png" alt="Dragon Ball" class="series-card-bg">
+                <div class="series-card-overlay"></div>
+                <span class="series-card-soon">SOON</span>
+                <span class="series-card-name">Dragon Ball</span>
+            </div>
+
+            <!-- Bleach -->
+            <div class="series-card soon" data-series="bleach" data-name="Bleach">
+                <img src="bleach.png" alt="Bleach" class="series-card-bg">
+                <div class="series-card-overlay"></div>
+                <span class="series-card-soon">SOON</span>
+                <span class="series-card-name">Bleach</span>
+            </div>
+
+            <!-- Demon Slayer -->
+            <div class="series-card soon" data-series="demonslayer" data-name="Demon Slayer">
+                <img src="kimetsu.png" alt="Demon Slayer" class="series-card-bg">
+                <div class="series-card-overlay"></div>
+                <span class="series-card-soon">SOON</span>
+                <span class="series-card-name">Demon Slayer</span>
+            </div>
+
+            <!-- Jujutsu Kaisen -->
+            <div class="series-card soon" data-series="jjk" data-name="Jujutsu Kaisen">
+                <img src="jjk.png" alt="Jujutsu Kaisen" class="series-card-bg">
+                <div class="series-card-overlay"></div>
+                <span class="series-card-soon">SOON</span>
+                <span class="series-card-name">Jujutsu Kaisen</span>
+            </div>
+
+            <!-- My Hero Academia -->
+            <div class="series-card soon" data-series="mha" data-name="My Hero Academia">
+                <img src="mha.png" alt="My Hero Academia" class="series-card-bg">
+                <div class="series-card-overlay"></div>
+                <span class="series-card-soon">SOON</span>
+                <span class="series-card-name">My Hero Academia</span>
+            </div>
+
+            <!-- Attack on Titan -->
+            <div class="series-card soon" data-series="aot" data-name="Attack on Titan">
+                <img src="snk.png" alt="Attack on Titan" class="series-card-bg">
+                <div class="series-card-overlay"></div>
+                <span class="series-card-soon">SOON</span>
+                <span class="series-card-name">Shingeki no Kyojin</span>
+            </div>
+
+            <!-- Hunter x Hunter -->
+            <div class="series-card soon" data-series="hxh" data-name="Hunter x Hunter">
+                <img src="hxh.png" alt="Hunter x Hunter" class="series-card-bg">
+                <div class="series-card-overlay"></div>
+                <span class="series-card-soon">SOON</span>
+                <span class="series-card-name">Hunter x Hunter</span>
+            </div>
+
+            <!-- Fullmetal Alchemist -->
+            <div class="series-card soon" data-series="fma" data-name="Fullmetal Alchemist">
+                <img src="fma.png" alt="Fullmetal Alchemist" class="series-card-bg">
+                <div class="series-card-overlay"></div>
+                <span class="series-card-soon">SOON</span>
+                <span class="series-card-name">Fullmetal Alchemist</span>
+            </div>
+
+            <!-- Death Note -->
+            <div class="series-card soon" data-series="deathnote" data-name="Death Note">
+                <img src="dn.png" alt="Death Note" class="series-card-bg">
+                <div class="series-card-overlay"></div>
+                <span class="series-card-soon">SOON</span>
+                <span class="series-card-name">Death Note</span>
+            </div>
+
+            <!-- Fairy Tail -->
+            <div class="series-card soon" data-series="fairytail" data-name="Fairy Tail">
+                <img src="fairytail.png" alt="Fairy Tail" class="series-card-bg">
+                <div class="series-card-overlay"></div>
+                <span class="series-card-soon">SOON</span>
+                <span class="series-card-name">Fairy Tail</span>
+            </div>
+
+            <!-- Jojo's Bizarre Adventure -->
+            <div class="series-card soon" data-series="deathnote" data-name="Jojo's Bizarre Adventure">
+                <img src="jojo.png" alt="Jojo" class="series-card-bg">
+                <div class="series-card-overlay"></div>
+                <span class="series-card-soon">SOON</span>
+                <span class="series-card-name">Jojo's Bizarre Adventure</span>
+            </div>
+
+            <!-- Nanatsu no Taizai -->
+            <div class="series-card soon" data-series="deathnote" data-name="Nanatsu no Taizai">
+                <img src="nanatsu.png" alt="Nanatsu" class="series-card-bg">
+                <div class="series-card-overlay"></div>
+                <span class="series-card-soon">SOON</span>
+                <span class="series-card-name">Nanatsu no Taizai</span>
+            </div>
+
+            <!-- Gintama -->
+            <div class="series-card soon" data-series="deathnote" data-name="Gintama">
+                <img src="gintama.png" alt="Gintama" class="series-card-bg">
+                <div class="series-card-overlay"></div>
+                <span class="series-card-soon">SOON</span>
+                <span class="series-card-name">Gintama</span>
+            </div>
+
+            <!-- Yu Gi Oh -->
+            <div class="series-card soon" data-series="deathnote" data-name="Yugioh">
+                <img src="yugioh.png" alt="YuGiOh" class="series-card-bg">
+                <div class="series-card-overlay"></div>
+                <span class="series-card-soon">SOON</span>
+                <span class="series-card-name">YuGiOh</span>
+            </div>
+
+            <!-- Pokemon  -->
+            <div class="series-card soon" data-series="deathnote" data-name="Pokemon">
+                <img src="pokemon.png" alt="Pokemon" class="series-card-bg">
+                <div class="series-card-overlay"></div>
+                <span class="series-card-soon">SOON</span>
+                <span class="series-card-name">Pokemon</span>
+            </div>
+
+            
 
         </div>
+    </div>
 
-        <!-- Modal Signalement -->
-        <div class="report-modal-overlay" id="reportModalOverlay" onclick="closeReportModal()">
-            <div class="report-modal" onclick="event.stopPropagation()">
-                <div class="report-modal-header">
-                    <h3>Demander un changement</h3>
-                    <button class="report-modal-close" onclick="closeReportModal()">✕</button>
+    <!-- Overlay Paramètres -->
+    <!-- OLD SETTINGS OVERLAY - Commented out
+    <div class="settings-overlay" id="settingsOverlay"></div>
+    -->
+
+    <!-- Carte Joueur 3D -->
+    <div class="player-card-container" id="playerCard">
+        <div class="player-card" id="playerCardInner">
+            <div class="player-card-shine"></div>
+            <div class="player-card-rank-badge" id="cardRankBadge">TOP 10</div>
+
+            <div class="player-card-header">
+                <div class="player-card-avatar">
+                    <img src="cardpic.png" alt="" id="cardAvatar">
                 </div>
-
-                <div class="report-modal-body">
-                    <p class="report-question-preview" id="reportQuestionPreview"></p>
-
-                    <div class="report-form-group">
-                        <label for="reportReason">Motif du signalement</label>
-                        <select id="reportReason" class="report-select">
-                            <option value="Augmenter la difficulté">Augmenter la difficulté</option>
-                            <option value="Baisser la difficulté">Baisser la difficulté</option>
-                            <option value="Corriger la question / réponses">Corriger la question / réponses</option>
-                            <option value="Changer la bonne réponse">Changer la bonne réponse</option>
-                            <option value="Reformuler la question">Reformuler la question
-                            </option>
-                            <option value="Enlever doublon">Enlever doublon</option>
-                            <!-- <option value="Autre">Autre</option>-->
-                        </select>
-                    </div>
+                <div class="player-card-identity">
+                    <div class="player-card-name" id="cardName">Gojo_Satoru</div>
+                    <div class="player-card-title" id="cardTitle">Novice</div>
                 </div>
-
-                <div class="report-modal-footer">
-                    <button class="btn-report-cancel" onclick="closeReportModal()">Annuler</button>
-                    <button class="btn-report-submit" onclick="submitReport()">Signaler</button>
+            </div>
+            <div class="player-card-stats">
+                <div class="player-card-stat">
+                    <div class="player-card-stat-value gold" id="cardWins">24</div>
+                    <div class="player-card-stat-label">Victoires</div>
                 </div>
+                <div class="player-card-stat">
+                    <div class="player-card-stat-value" id="cardGames">31</div>
+                    <div class="player-card-stat-label">Parties</div>
+                </div>
+                <div class="player-card-stat">
+                    <div class="player-card-stat-value green" id="cardTitles">2</div>
+                    <div class="player-card-stat-label">Titres</div>
+                </div>
+                <div class="player-card-stat">
+                    <div class="player-card-stat-value" id="cardBadges">5</div>
+                    <div class="player-card-stat-label">Badges</div>
+                </div>
+            </div>
+            <div class="player-card-winrate">
+                <div class="player-card-winrate-header">
+                    <span class="player-card-winrate-label">Winrate</span>
+                    <span class="player-card-winrate-value" id="cardWinrate">77%</span>
+                </div>
+                <div class="player-card-winrate-bar">
+                    <div class="player-card-winrate-fill" id="cardWinrateFill" style="width: 77%"></div>
+                </div>
+            </div>
+            <div class="player-card-lastplace">
+                <span class="player-card-lastplace-label">Dernier placement</span>
+                <span class="player-card-lastplace-value" id="cardLastPlace">1er</span>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal carte joueur -->
+    <div class="player-modal-overlay" id="playerModalOverlay"></div>
+    <div class="player-modal" id="playerModal">
+        <button class="player-modal-close" id="playerModalClose">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+        </button>
+
+        <div class="player-modal-card">
+            <div class="player-modal-avatar">
+                <img src="cardpic.png" alt="" id="playerModalAvatar">
+            </div>
+
+            <div class="player-modal-name" id="playerModalName">PlayerName</div>
+            <div class="player-modal-badge" id="playerModalBadge"></div>
+            <div class="player-modal-title" id="playerModalTitle"></div>
+
+            <div class="player-modal-stats">
+                <div class="player-modal-stat">
+                    <span class="stat-value" id="statGames">42</span>
+                    <span class="stat-label">Parties</span>
+                </div>
+                <div class="player-modal-stat">
+                    <span class="stat-value" id="statWins">12</span>
+                    <span class="stat-label">Victoires</span>
+                </div>
+                <div class="player-modal-stat">
+                    <span class="stat-value" id="statWinrate">28%</span>
+                    <span class="stat-label">Winrate</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal Signalement -->
+    <div class="report-modal-overlay" id="reportModalOverlay"></div>
+    <div class="report-modal" id="reportModal">
+        <div class="report-modal-header">
+            <h3 class="report-modal-title">Signaler une erreur</h3>
+            <button class="report-modal-close" id="reportModalClose">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+
+        <div class="report-modal-content">
+            <!-- Question affichée -->
+            <div class="report-question-display" id="reportQuestionText">
+                Dans quel village réside Naruto ?
+            </div>
+
+            <!-- Motif -->
+            <div class="report-field">
+                <label class="report-label">Motif du signalement</label>
+                <div class="report-select-wrapper">
+                    <select class="report-select" id="reportReason">
+                        <option value="Augmenter difficulté">Augmenter la difficulté</option>
+                        <option value="Baisser difficulté">Baisser la difficulté</option>
+                        <option value="Corriger question / reponses">Corriger la question / réponses</option>
+                        <option value="Changer bonne réponse">Changer la bonne réponse</option>
+                        <option value="Reformuler">Reformuler la question</option>
+                        <option value="Doublon">Enlever doublon</option>
+                        <!-- <option value="other">Autre</option> -->
+                    </select>
+                    <svg class="report-select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="report-actions">
+                <button class="report-btn cancel" id="reportCancelBtn">Annuler</button>
+                <button class="report-btn submit" id="reportSubmitBtn">Signaler</button>
             </div>
         </div>
 
 
     </div>
 
-    <!-- Toast Notification -->
-    <div class="toast-notification" id="toastNotification">
-        <span class="toast-icon">✓</span>
-        <span class="toast-text">Question signalée avec succès</span>
-    </div>
 
 
-    <!-- 🆕 Panel Filtre Série (vient de la droite) -->
-    <div class="serie-panel-backdrop" id="seriePanelBackdrop" onclick="closeSeriePanel()"></div>
-
-    <div class="serie-panel" id="seriePanel">
-        <div class="serie-panel-header">
-            <h2>📺 Filtrer par série</h2>
-            <button class="close-serie-panel" onclick="closeSeriePanel()">✕</button>
-        </div>
-
-        <!-- Searchbar -->
-        <div class="serie-search-container">
-            <input type="text" id="serieSearch" class="serie-search-input" placeholder=" Rechercher une série..."
-                oninput="filterSerieCards()">
-        </div>
-
-        <!-- Grille de cartes séries -->
-        <div class="serie-cards-grid" id="serieCardsGrid">
-            <!-- Les cartes seront injectées par JS -->
+    <!-- Modal Confirmation Fermeture -->
+    <div id="confirmModalOverlay" class="confirm-modal-overlay"></div>
+    <div id="confirmModal" class="confirm-modal">
+        <div class="confirm-modal-title">Fermer le lobby ?</div>
+        <div class="confirm-modal-text">La partie sera annulée</div>
+        <div class="confirm-modal-buttons">
+            <button id="confirmModalCancel" class="confirm-btn cancel">Annuler</button>
+            <button id="confirmModalConfirm" class="confirm-btn confirm">Confirmer</button>
         </div>
     </div>
 
 
-    <div id="logs-container" class="logs-container">
-        <img src="logs2.png" alt="Logs" class="logs-icon">
-        <div class="logs-feed">
-            <div class="logs-header">Activité en direct</div>
-            <div class="logs-content" id="logsContent">
-                <!-- Les logs s'ajoutent ici dynamiquement -->
-            </div>
-        </div>
-    </div>
+    <!-- ============================================
+                        WINNER SCREEN OVERLAY
+        ============================================ -->
+    <div class="winner-overlay" id="winnerOverlay">
+        <!-- Rayons lumineux -->
+        <div class="winner-rays" id="winnerRays"></div>
 
+        <!-- Particules -->
+        <div class="winner-particles" id="winnerParticles"></div>
 
-    <!-- Modale Profil Joueur -->
-    <div class="player-profile-modal-overlay" id="playerProfileModal">
-        <div class="player-profile-modal">
-            <div class="player-profile-header">
-                <div class="player-profile-avatar" id="profileAvatar">👤</div>
-                <div class="player-profile-info">
-                    <div class="player-profile-name" id="profileName">-</div>
-                    <div class="player-profile-titles" id="profileTitles">
-                        <div class="player-profile-title" id="profileTitle">Novice</div>
+        <!-- Layout principal : Vainqueur à gauche, Grille à droite -->
+        <div class="winner-layout">
+
+            <!-- Colonne Vainqueur -->
+            <div class="winner-container" id="winnerContainer">
+                <!-- Nom du gagnant -->
+                <div class="winner-name" id="winnerName" data-name="">-</div>
+
+                <!-- Ligne décorative -->
+                <div class="winner-line" id="winnerLine"></div>
+
+                <!-- Stats -->
+                <div class="winner-stats" id="winnerStats">
+                    <div class="winner-stat">
+                        <div class="winner-stat-value" id="winnerLives"><span class="heart">❤</span>
+                            1</div>
+                        <div class="winner-stat-label">Vies restantes</div>
                     </div>
-                    <div class="player-profile-placement">Dernier placement: <span id="profilePlacement">-</span></div>
+                    <div class="winner-stat">
+                        <div class="winner-stat-value gold" id="winnerTotalWins">0</div>
+                        <div class="winner-stat-label">Victoires totales</div>
+                    </div>
                 </div>
-                <button class="player-profile-close" onclick="closePlayerProfile()">✕</button>
+
+                <!-- Infos partie -->
+                <div class="winner-game-info" id="winnerGameInfo">
+                    <div class="winner-info-item">
+                        <div class="winner-info-value" id="infoQuestions">0</div>
+                        <div class="winner-info-label">Questions</div>
+                    </div>
+                    <div class="winner-info-item">
+                        <div class="winner-info-value" id="infoDuration">0s</div>
+                        <div class="winner-info-label">Durée</div>
+                    </div>
+                    <div class="winner-info-item">
+                        <div class="winner-info-value" id="infoPlayers">0</div>
+                        <div class="winner-info-label">Joueurs</div>
+                    </div>
+                </div>
+
+                <!-- Bouton Fermer Lobby -->
+                <button class="winner-close-lobby" id="winnerCloseLobby" onclick="closeWinner()">
+                    Fermer le lobby
+                </button>
             </div>
-            <div class="player-profile-stats">
-                <div class="player-profile-stat">
-                    <div class="player-profile-stat-value" id="profileGames">0</div>
-                    <div class="player-profile-stat-label">Parties</div>
+
+            <!-- Colonne Grille Joueurs -->
+            <div class="winner-players-grid" id="winnerPlayersGrid">
+                <div class="winner-grid-inner" id="winnerGridInner">
+                    <!-- Joueurs générés dynamiquement -->
                 </div>
-                <div class="player-profile-stat">
-                    <div class="player-profile-stat-value highlight" id="profileWins">0</div>
-                    <div class="player-profile-stat-label">Victoires</div>
-                </div>
-                <div class="player-profile-stat">
-                    <div class="player-profile-stat-value" id="profileWinrate">0%</div>
-                    <div class="player-profile-stat-label">Winrate</div>
-                </div>
+            </div>
+
+        </div>
+
+
+        <!-- Top 10 - Côté gauche -->
+        <div class="winner-top10" id="winnerTop10">
+            <div class="winner-top10-header">
+                <span class="winner-top10-title">Top 10</span>
+            </div>
+            <div class="winner-top10-list" id="winnerTop10List">
+                <!-- Généré dynamiquement -->
             </div>
         </div>
+
+
     </div>
 
-    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+
+    <!-- OLD SETTINGS PANEL - Commented out, now using inline settings
+    <div class="settings-panel" id="settingsPanelOLD">
+    </div>
+    -->
+
+
+    <script src="/socket.io/socket.io.js"></script>
     <script src="admin.js"></script>
+
 </body>
 
 </html>

@@ -1,359 +1,372 @@
-
-let socket;
-let statsInterval;
-let currentQuestionData = null;
-let timerInterval = null;
-let timeRemaining = 10;
-let isReloading = false; // 🆕 Flag pour éviter les reloads multiples
-let isTogglingGame = false; // 🆕 Anti-spam toggle game
-let isStartingGame = false; // 🆕 Anti-spam start game
-let isNextQuestion = false; // 🆕 Anti-spam next question
-let tiebreakerPlayerIds = [];
-let lastQuestionResults = null;
-
-
-// ============ INTRO VARIABLES ============
+// ============================================
+// VARIABLES INTRO
+// ============================================
 let particleAnimations = [];
 let introStartTime = null;
 let introCompleted = false;
 const MAX_INTRO_DURATION = 8000;
 const introMessages = ['Initialisation...', 'Streamer connecté..', 'Chargement des données...', 'Accès au panel admin..'];
 
-let logsContainer;
-let logsContent;
-let isPinned = false;
 
-let refreshCooldownActive = false;
-let refreshCooldownTimer = null;
+// ============================================
+// CONSTANTES SVG ICÔNES DE VIES
+// ============================================
 
-let currentSerieFilter = 'tout';
+const LIVES_ICONS = {
+    heart: `<svg viewBox="0 0 24 24" fill="#ff6b6b"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`,
 
-const SERIE_FILTERS = {
-    tout: {
-        name: 'Overall',
-        icon: '🌍',
-        series: [] // Vide = toutes les séries
-    },
-    big3: {
-        name: 'Big 3',
-        icon: '👑',
-        series: ['One Piece', 'Naruto', 'Bleach']
-    },
-    mainstream: {
-        name: 'Mainstream',
-        icon: '⭐',
-        series: [
-            'One Piece', 'Naruto', 'Bleach', 'Hunter x Hunter',
-            'Shingeki no Kyojin', 'Fullmetal Alchemist', 'Death Note',
-            'Dragon Ball', 'Demon Slayer', 'Jojo\'s Bizarre Adventure', 'My Hero Academia',
-            'Fairy Tail', 'Tokyo Ghoul', 'Nanatsu no Taizai', 'Kuroko no Basket'
-        ]
-    },
+    dragonball: `<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#ff8c00"/><circle cx="8" cy="6" r="2.5" fill="#ffb347" opacity="0.7"/><circle cx="12" cy="8" r="1.8" fill="#c00"/><circle cx="9" cy="13" r="1.8" fill="#c00"/><circle cx="15" cy="13" r="1.8" fill="#c00"/><ellipse cx="7" cy="6" rx="3" ry="2" fill="#fff" opacity="0.4"/></svg>`,
 
-    onepiece: {
-        name: 'One Piece',
-        icon: '',
-        series: ['One Piece']
-    },
+    sharingan: `<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#cc0000"/><circle cx="12" cy="12" r="3" fill="#000"/><circle cx="12" cy="6" r="1.8" fill="#000"/><circle cx="6.8" cy="15" r="1.8" fill="#000"/><circle cx="17.2" cy="15" r="1.8" fill="#000"/></svg>`,
 
-    naruto: {
-        name: 'Naruto',
-        icon: '',
-        series: ['Naruto']
-    },
-    dragonball: {
-        name: 'Dragon Ball',
-        icon: '',
-        series: ['Dragon Ball']
-    },
+    shuriken: `<svg viewBox="0 0 24 24" fill="#888"><path d="M12 2L14 10L22 12L14 14L12 22L10 14L2 12L10 10L12 2Z"/><circle cx="12" cy="12" r="2.5" fill="#0a0a0f"/></svg>`
+};
 
-    bleach: {
-        name: 'Bleach',
-        icon: '⚔️',
-        series: ['Bleach']
-    }
+// Katanas groupés - SVG dynamique selon nombre de vies
+const KATANA_SVGS = {
+    3: `<svg viewBox="0 0 32 24" fill="none" class="katana-group"><path d="M28 20L6 4" stroke="#c8c8c8" stroke-width="2" stroke-linecap="round"/><path d="M28 20L3 11" stroke="#d4d4d4" stroke-width="2" stroke-linecap="round"/><path d="M28 20L4 18" stroke="#b8b8b8" stroke-width="2" stroke-linecap="round"/><rect x="26" y="18" width="5" height="4" rx="1" fill="#8b6b4a"/></svg>`,
+    2: `<svg viewBox="0 0 32 24" fill="none" class="katana-group"><path d="M28 20L5 6" stroke="#c8c8c8" stroke-width="2" stroke-linecap="round"/><path d="M28 20L4 16" stroke="#d4d4d4" stroke-width="2" stroke-linecap="round"/><rect x="26" y="18" width="5" height="4" rx="1" fill="#8b6b4a"/></svg>`,
+    1: `<svg viewBox="0 0 24 24" fill="none"><path d="M22 18L4 10" stroke="#c8c8c8" stroke-width="2.5" stroke-linecap="round"/><rect x="20" y="16" width="4" height="4" rx="1" fill="#8b6b4a"/></svg>`,
+    0: `<svg viewBox="0 0 24 24" fill="none" class="lost"><path d="M22 18L4 10" stroke="#c8c8c8" stroke-width="2.5" stroke-linecap="round"/><rect x="20" y="16" width="4" height="4" rx="1" fill="#8b6b4a"/></svg>`
+};
+
+// Noms affichés pour chaque icône
+const LIVES_ICON_NAMES = {
+    heart: 'Cœur',
+    dragonball: 'D.Ball',
+    sharingan: 'Sharingan',
+    katana: 'Katana',
+    shuriken: 'Shuriken'
 };
 
 
+// ============================================
+// VARIABLES PARTICULES BOUTON
+// ============================================
+let isHovering = false;
+let hoverTransition = 0;
+let time = 0;
+let movementFadeIn = 0;
+let continuousAnimationId = null;
 
 
-let currentGameMode = 'lives'; // 'lives' ou 'points'
-let gameSettings = {
-    mode: 'lives',
-    lives: 3,
-    questions: 15,
-    timePerQuestion: 10,
-    answersCount: 4,
-    difficultyMode: 'croissante',
-    autoMode: false
-};
 
-// Toggle du menu de sélection de mode
-function toggleModeMenu() {
-    const menu = document.getElementById('modeMenu');
-    const btn = document.getElementById('btnModeToggle');
-    const overlay = document.getElementById('modeMenuOverlay');
+// ============================================
+// SOCKET.IO
+// ============================================
+let socket = null;
 
-    const isActive = menu.classList.contains('active');
+function initSocket() {
+    socket = io();
 
-    if (isActive) {
-        menu.classList.remove('active');
-        btn.classList.remove('active');
-        if (overlay) overlay.classList.remove('active');
-    } else {
-        menu.classList.add('active');
-        btn.classList.add('active');
-        if (overlay) overlay.classList.add('active');
-    }
+    // ===== ÉVÉNEMENTS LOBBY =====
+
+    socket.on('lobby-update', (data) => {
+        console.log('📥 lobby-update:', data);
+
+        if (data.livesIcon) {
+            updateLivesIconSelector(data.livesIcon);
+        }
+
+        // Mettre à jour les paramètres si envoyés
+        if (data.mode) updateModeDisplay(data.mode);
+        if (data.lives) updateLivesDisplay(data.lives);
+        if (data.questionTime) updateTimerDisplay(data.questionTime);
+
+        // Mettre à jour les joueurs APRÈS l'icône
+        if (data.players) {
+            updateLobbyPlayers(data.players);
+        }
+
+        // Mettre à jour le compteur
+        if (data.playerCount !== undefined) {
+            document.getElementById('lobbyPlayerCount').textContent = data.playerCount;
+        }
+    });
+
+    socket.on('game-activated', () => {
+        console.log('✅ Lobby ouvert');
+    });
+
+    socket.on('game-deactivated', () => {
+        console.log('❌ Lobby fermé');
+        // Vérifier qu'on est bien sur le lobby avant de fermer
+        if (stateLobby.classList.contains('active')) {
+            closeLobbyUI();
+        }
+    });
+
+    socket.on('game-started', (data) => {
+        console.log('🎮 Partie démarrée:', data);
+        gameSettings.mode = data.gameMode === 'lives' ? 'vie' : 'point';
+        gameSettings.totalQuestions = data.questionsCount || 20;
+        transitionToGame();
+    });
+
+    socket.on('new-question', (data) => {
+        console.log('📝 Nouvelle question:', data);
+        displayQuestion(data);
+    });
+
+
+    socket.on('question-results', (data) => {
+        console.log('📊 Résultats:', data);
+        console.log('📊 Stats:', data.stats);  // AJOUTER
+        console.log('📊 Fastest:', data.fastestPlayer);  // AJOUTER
+        displayResults(data);
+    });
+
+
+    socket.on('live-answer-stats', (data) => {
+        updateLiveStats(data);
+    });
+
+    socket.on('game-ended', (data) => {
+        console.log('🏆 Fin de partie:', data);
+        displayWinner(data);
+    });
+
+    socket.on('activity-log', (log) => {
+        handleActivityLog(log);
+    });
+
+    socket.on('tiebreaker-announced', (data) => {
+        console.log('⚔️ Tiebreaker:', data);
+        // Afficher message égalité
+    });
+
+    socket.on('connect', () => {
+        console.log('🔌 Socket connecté');
+    });
+
+    socket.on('disconnect', () => {
+        console.log('🔌 Socket déconnecté');
+    });
+
+    socket.on('logs-reset', () => {
+        const logsList = document.getElementById('gameLogsList');
+        if (logsList) {
+            logsList.innerHTML = '';
+        }
+    });
+
+    socket.on('prepare-next-question', () => {
+        console.log('🔄 Préparation question suivante (mode auto)');
+
+        hideGameCloseBtn();
+
+        const questionWrapper = document.getElementById('gameQuestionWrapper');
+        const mainPanel = document.getElementById('gameMainPanel');
+        const questionActions = document.getElementById('questionActions');
+
+        // Cacher le contenu
+        const questionText = document.getElementById('questionText');
+        const answersGrid = document.getElementById('answersGrid');
+        const questionBadges = document.querySelector('.question-badges-row');
+
+        if (questionText) questionText.style.opacity = '0';
+        if (answersGrid) answersGrid.style.opacity = '0';
+        if (questionBadges) questionBadges.style.opacity = '0';
+
+        // Lancer l'animation de fermeture
+        if (questionActions) questionActions.classList.remove('visible');
+        if (questionWrapper) questionWrapper.classList.add('closing');
+        if (mainPanel) mainPanel.classList.add('closing');
+
+        // Nettoyer après l'animation
+        setTimeout(() => {
+            if (questionWrapper) questionWrapper.classList.remove('closing', 'shifted');
+            if (mainPanel) mainPanel.classList.remove('visible', 'closing');
+        }, 400);
+    });
 }
 
-// Sélection d'un mode
-function selectMode(mode) {
-    // 🆕 Vérifier si une partie est en cours
-    if (isGameInProgress()) {
-        console.log('⚠️ Impossible de changer le mode pendant une partie');
-        toggleModeMenu(); // Fermer le menu quand même
-        return;
-    }
 
-    currentGameMode = mode;
-    gameSettings.mode = mode;
+function closeLobbyUI() {
 
-    // Fermer le menu
-    toggleModeMenu();
 
-    // Mettre à jour le texte du bouton
-    const modeText = document.getElementById('currentModeText');
-    if (mode === 'lives') {
-        modeText.textContent = 'Mode Vie';
-    } else if (mode === 'points') {
-        modeText.textContent = 'Mode Points';
-    }
+    // Vider la grille des joueurs
+    const grid = document.getElementById('playersGridLobby');
+    if (grid) grid.innerHTML = '';
+    document.getElementById('lobbyPlayerCount').textContent = '0';
 
-    // Afficher/masquer les paramètres selon le mode
-    updateModeParams(mode);
 
-    // Envoyer au serveur
-    fetch('/admin/set-mode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ mode: mode })
-    }).then(response => {
-        if (response.status === 400) {
-            return response.json().then(data => {
-                if (data.blocked) {
-                    console.log('❌ Changement de mode bloqué: partie en cours');
-                }
+    anime({
+        targets: stateLobby,
+        opacity: [1, 0],
+        duration: 400,
+        easing: 'easeOutQuad',
+        complete: () => {
+            stateLobby.classList.remove('active');
+            stateLobby.style.opacity = '';
+            stateIdle.style.display = 'grid';
+
+            // Réafficher les panneaux latéraux
+            recentPanel.classList.remove('hidden');
+            lastgamePanel.classList.remove('hidden');
+            recentPanel.style.opacity = '1';
+            lastgamePanel.style.opacity = '1';
+
+            // Reset background text
+            bgText.textContent = 'MASTER';
+            bgText.classList.remove('lobby-active');
+            statusDot.classList.remove('active');
+            statusText.textContent = 'Inactif';
+
+            // Réactiver le pulse du bouton
+            btnWrapper.classList.add('pulse-active');
+
+            // 🔥 NOUVEAU: Relancer l'animation des particules
+            movementFadeIn = 0; // Reset le fade-in
+            startContinuousAnimation();
+
+            // Réafficher le bouton JOUER
+            const mainBtn = document.querySelector('.main-action-btn');
+            if (mainBtn) {
+                mainBtn.style.opacity = '1';
+                mainBtn.style.transform = 'scale(1)';
+            }
+
+            // Réafficher le personnage chibi
+            const btnCharacter = document.querySelector('.btn-character');
+            if (btnCharacter) {
+                btnCharacter.style.opacity = '0.95';
+                btnCharacter.style.visibility = 'visible';
+                btnCharacter.classList.add('visible');
+            }
+
+            // Réafficher les particules
+            document.querySelectorAll('.btn-wrapper .particle').forEach(p => {
+                p.style.opacity = '0.6';
+            });
+
+            // Animations de retour
+            anime({
+                targets: '.idle-main',
+                opacity: [0, 1],
+                translateY: [20, 0],
+                duration: 500,
+                easing: 'easeOutCubic'
+            });
+
+            anime({
+                targets: '.idle-stats',
+                opacity: [0, 1],
+                duration: 500,
+                delay: 100,
+                easing: 'easeOutCubic'
+            });
+
+            anime({
+                targets: '.recent-games-panel',
+                opacity: [0, 1],
+                translateX: [-40, 0],
+                duration: 500,
+                delay: 200,
+                easing: 'easeOutCubic'
+            });
+
+            anime({
+                targets: '.lastgame-panel',
+                opacity: [0, 1],
+                translateX: [40, 0],
+                duration: 500,
+                delay: 200,
+                easing: 'easeOutCubic'
             });
         }
-        return response.json();
-    })
-        .then(data => {
-            if (data && data.success) {
-                console.log('✅ Mode changé:', data);
-            }
-        })
-        .catch(err => console.error('❌ Erreur changement mode:', err));
-
-    console.log(`✅ Mode changé: ${mode}`);
-}
-
-// Mettre à jour l'affichage des paramètres selon le mode
-function updateModeParams(mode) {
-    const livesParams = document.getElementById('livesParams');
-    const pointsParams = document.getElementById('pointsParams');
-
-    if (mode === 'lives') {
-        livesParams.style.display = 'block';
-        pointsParams.style.display = 'none';
-    } else if (mode === 'points') {
-        livesParams.style.display = 'none';
-        pointsParams.style.display = 'block';
-    }
-}
-
-// Définir le nombre de questions (Mode Points)
-function setQuestions(count) {
-    if (isGameInProgress()) return;
-
-    gameSettings.questions = count;
-
-    // Update UI
-    document.querySelectorAll('.questions-btn').forEach(btn => {
-        btn.classList.remove('active');
     });
-    document.getElementById(`questions-${count}`).classList.add('active');
-
-    // Envoyer au serveur
-    fetch('/admin/set-questions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ questions: count })
-    }).then(response => response.json())
-        .then(data => console.log('✅ Nombre de questions synchronisé:', data))
-        .catch(err => console.error('❌ Erreur sync questions:', err));
-
-    console.log(`✅ Nombre de questions: ${count}`);
 }
 
+// ============================================
+// AUTHENTIFICATION
+// ============================================
 
-// 🆕 Définir le mode de difficulté
-function toggleDifficultyMode() {
-    if (isGameInProgress()) return;
+async function handleLogin(event) {
+    event.preventDefault();
+    const password = document.getElementById('adminCode').value;
+    const masterPassword = document.getElementById('masterPassword').value;
+    const errorMsg = document.getElementById('errorMsg');
 
-    // Toggle entre croissante et aléatoire
-    gameSettings.difficultyMode = gameSettings.difficultyMode === 'croissante' ? 'aleatoire' : 'croissante';
+    errorMsg.innerHTML = '';
 
-    // Update UI
-    const diffBtn = document.getElementById('difficultyModeBtn');
-    if (diffBtn) {
-        diffBtn.classList.toggle('active');
-        const text = diffBtn.querySelector('.diff-mode-text');
-        if (text) {
-            text.textContent = gameSettings.difficultyMode === 'croissante' ? 'Croissante' : 'Aléatoire';
-        }
-    }
-
-    // Envoyer au serveur
-    fetch('/admin/set-difficulty-mode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ mode: gameSettings.difficultyMode })
-    }).then(response => response.json())
-        .then(data => console.log('✅ Mode de difficulté synchronisé:', data))
-        .catch(err => console.error('❌ Erreur sync difficulté:', err));
-
-    console.log(`✅ Mode de difficulté: ${gameSettings.difficultyMode}`);
-}
-
-
-
-// 🆕 Toggle Mode Auto
-async function toggleAutoMode() {
     try {
-        const response = await fetch('/admin/toggle-auto-mode', {
+        const response = await fetch('/admin/login', {
             method: 'POST',
-            credentials: 'same-origin'
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                password,
+                masterOverride: masterPassword || undefined
+            })
         });
-
-        if (response.status === 403) {
-            if (!isReloading) {
-                isReloading = true;
-                console.log('⚠️ Session expirée, rechargement...');
-                location.reload();
-            }
-            return;
-        }
 
         const data = await response.json();
 
         if (data.success) {
-            gameSettings.autoMode = data.autoMode;
+            document.getElementById('loginContainer').style.display = 'none';
 
-            // Update UI
-            const autoBtn = document.getElementById('autoModeBtn');
-            if (autoBtn) {
-                autoBtn.classList.toggle('active', data.autoMode);
-
-                // 🔥 Mettre à jour le tooltip
-                autoBtn.setAttribute('data-tooltip', data.autoMode ? 'Auto' : 'Manuel');
-
-                const text = autoBtn.querySelector('.auto-mode-text');
-                if (text) {
-                    text.innerHTML = data.autoMode
-                        ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>'
-                        : '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M23 5.5V20c0 2.2-1.8 4-4 4h-7.3c-1.08 0-2.1-.43-2.85-1.19L1 14.83s1.26-1.23 1.3-1.25c.22-.19.49-.29.79-.29.22 0 .42.06.6.16.04.01 4.31 2.46 4.31 2.46V4c0-.83.67-1.5 1.5-1.5S11 3.17 11 4v7h1V1.5c0-.83.67-1.5 1.5-1.5S15 .67 15 1.5V11h1V2.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5V11h1V5.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5z"/></svg>';
-                }
+            // Jouer l'intro ou skip
+            if (shouldPlayIntro()) {
+                document.getElementById('introScreen').style.display = 'flex';
+                markIntroPlayed();
+                playIntro();
+            } else {
+                showAdminPanel();
             }
-
-            updateNextQuestionButtonState();
-            console.log(`✅ Mode Auto ${data.autoMode ? 'activé' : 'désactivé'}`);
-
-            if (data.autoMode) {
-                fetch('/admin/trigger-auto-next', {
-                    method: 'POST',
-                    credentials: 'same-origin'
-                }).catch(err => console.error('❌ Erreur trigger auto:', err));
+        } else {
+            if (data.error === 'admin_already_connected') {
+                errorMsg.textContent = 'Un admin est déjà connecté';
+                document.getElementById('masterPasswordGroup').style.display = 'block';
+            } else {
+                errorMsg.textContent = data.message || 'Code incorrect';
             }
         }
     } catch (error) {
-        console.error('❌ Erreur toggle auto mode:', error);
+        console.error('Erreur login:', error);
+        errorMsg.textContent = 'Erreur de connexion';
     }
 }
 
-// Remplacer la fonction updateNextQuestionButtonState() :
-function updateNextQuestionButtonState() {
-    const nextCard = document.getElementById('nextQuestionCard');
-    if (!nextCard) return;
+async function checkAuth() {
+    try {
+        const response = await fetch('/admin/check', { credentials: 'same-origin' });
+        const data = await response.json();
 
-    if (gameSettings.autoMode) {
-        // 🔥 MODE AUTO: Désactiver le bouton ET ajouter le clignotement jaune
-        nextCard.classList.add('auto-mode-disabled');
+        if (data.isAdmin) {
+            document.getElementById('loginContainer').style.display = 'none';
 
-        // Ajouter le clignotement SEULEMENT si le bouton est actif (partie en cours)
-        if (nextCard.classList.contains('game-active') && !nextCard.classList.contains('disabled') && !nextCard.classList.contains('timer-blocked')) {
-            nextCard.classList.add('auto-mode-active');
+            if (shouldPlayIntro()) {
+                document.getElementById('introScreen').style.display = 'flex';
+                markIntroPlayed();
+                playIntro();
+            } else {
+                showAdminPanel();
+            }
         } else {
-            nextCard.classList.remove('auto-mode-active');
+            document.getElementById('loginContainer').style.display = 'flex';
+            document.getElementById('adminCode').focus(); // ← Focus auto
         }
-    } else {
-        // 🔥 MODE MANUEL: Activer le bouton et retirer le clignotement
-        nextCard.classList.remove('auto-mode-disabled');
-        nextCard.classList.remove('auto-mode-active');
+    } catch (error) {
+        console.log('Non authentifié');
+        document.getElementById('loginContainer').style.display = 'flex';
+        document.getElementById('adminCode').focus(); // ← Focus auto
     }
 }
 
-// Fermer le menu si on clique ailleurs
-document.addEventListener('click', (e) => {
-    const modeContainer = document.querySelector('.mode-selector-container');
-    const menu = document.getElementById('modeMenu');
+function shouldPlayIntro() {
+    return !sessionStorage.getItem('introPlayed');
+}
 
-    if (menu && modeContainer) {
-        if (!modeContainer.contains(e.target) && menu.classList.contains('active')) {
-            toggleModeMenu();
-        }
-    }
-})
-
-
-// Initialisation au chargement
-document.addEventListener('DOMContentLoaded', () => {
-    // Créer l'overlay si il n'existe pas
-    if (!document.getElementById('modeMenuOverlay')) {
-        const overlay = document.createElement('div');
-        overlay.id = 'modeMenuOverlay';
-        overlay.className = 'mode-menu-overlay';
-        overlay.onclick = toggleModeMenu;
-        document.body.appendChild(overlay);
-    }
-
-    // Initialiser l'affichage selon le mode par défaut
-    updateModeParams(currentGameMode);
-
-    // Initialiser le système de logs
-    logsContainer = document.getElementById('logs-container');
-    logsContent = document.getElementById('logsContent');
-
-    // Toggle pin au clic sur l'icône
-    if (logsContainer) {
-        logsContainer.querySelector('.logs-icon').addEventListener('click', () => {
-            isPinned = !isPinned;
-            logsContainer.classList.toggle('pinned', isPinned);
-        });
-    }
-
-    console.log('✅ Mode selector initialisé');
-});
+function markIntroPlayed() {
+    sessionStorage.setItem('introPlayed', 'true');
+}
 
 
 // ============================================
-// INTRO ANIMATION SYSTEM
+// INTRO ANIMATIONS
 // ============================================
 
-function createParticles() {
+function createIntroParticles() {
     const container = document.getElementById('particlesContainer');
     if (!container) return;
 
@@ -363,21 +376,17 @@ function createParticles() {
     for (let i = 0; i < numParticles; i++) {
         const particle = document.createElement('div');
         particle.className = 'particle';
-        particle.id = `particle${i}`;
-
         particle.style.left = `${Math.random() * 100}%`;
         particle.style.top = `${Math.random() * 100}%`;
-
         const size = 2 + Math.random() * 3;
         particle.style.width = `${size}px`;
         particle.style.height = `${size}px`;
-
         container.appendChild(particle);
     }
 }
 
-function animateParticles() {
-    const particles = document.querySelectorAll('.particle');
+function animateIntroParticles() {
+    const particles = document.querySelectorAll('.intro-screen .particle');
 
     particles.forEach((particle, i) => {
         particle.style.opacity = 0.3 + Math.random() * 0.4;
@@ -401,20 +410,16 @@ function accelerateParticles() {
     particleAnimations.forEach(anim => anim.pause());
 
     anime({
-        targets: '.particle',
+        targets: '.intro-screen .particle',
         translateY: -window.innerHeight - 100,
-        opacity: {
-            value: 0,
-            duration: 1200,
-            easing: 'easeInQuad'
-        },
+        opacity: { value: 0, duration: 1200, easing: 'easeInQuad' },
         duration: 1500,
         easing: 'easeInCubic',
         delay: anime.stagger(20, { from: 'center' })
     });
 }
 
-function startIdleAnimation() {
+function startIntroIdleAnimation() {
     anime({
         targets: '#ambientGlow',
         opacity: [1, 0.7, 1],
@@ -470,8 +475,7 @@ function sleepIntro(ms) {
 function skipIntro() {
     introCompleted = true;
 
-    // Stop toutes les animations
-    anime.remove('.particle');
+    anime.remove('.intro-screen .particle');
     anime.remove('#ambientGlow');
     anime.remove('#lightBeam');
     anime.remove('#logoSeparator');
@@ -500,9 +504,7 @@ function resetIntroElements() {
 
     for (const [id, styles] of Object.entries(elements)) {
         const el = document.getElementById(id);
-        if (el) {
-            Object.assign(el.style, styles);
-        }
+        if (el) Object.assign(el.style, styles);
     }
 
     const msgText = document.getElementById('messageText');
@@ -519,8 +521,8 @@ async function playIntro() {
     introCompleted = false;
 
     resetIntroElements();
-    createParticles();
-    animateParticles();
+    createIntroParticles();
+    animateIntroParticles();
 
     // 1. Glow ambiant
     anime({
@@ -600,7 +602,7 @@ async function playIntro() {
 
     // 9. Idle animation
     await sleepIntro(300);
-    startIdleAnimation();
+    startIntroIdleAnimation();
 
     await sleepIntro(400);
 
@@ -621,54 +623,20 @@ async function playIntro() {
     anime({
         targets: '.intro-screen',
         opacity: [1, 0],
-        duration: 800,  // 🔥 Plus long (était 600)
-        easing: 'easeInOutQuad',  // 🔥 Plus smooth
+        duration: 800,
+        easing: 'easeInOutQuad',
         complete: () => {
             introCompleted = true;
             document.getElementById('introScreen').style.display = 'none';
         }
     });
 
-    // 🔥 Démarrer le panel PENDANT le fade-out (cross-fade)
     await sleepIntro(300);
     showAdminPanel();
 }
 
-function showAdminPanel() {
-    const adminPanel = document.getElementById('adminPanel');
 
-    // Préparer le panel (invisible mais présent)
-    adminPanel.style.display = 'block';
-    adminPanel.style.opacity = '0';
-    adminPanel.style.transform = 'translateY(20px)';
-
-    if (logsContainer) {
-        logsContainer.classList.add('admin-connected');
-    }
-
-    // Animation d'entrée du panel
-    anime({
-        targets: adminPanel,
-        opacity: [0, 1],
-        translateY: [20, 0],
-        duration: 800,
-        easing: 'easeOutQuad',
-        complete: () => {
-            // Reset les styles inline après l'animation
-            adminPanel.style.transform = '';
-        }
-    });
-
-    initSocket();
-
-    setTimeout(async () => {
-        await restoreGameState();
-        refreshStats();
-        startStatsRefresh();
-    }, 500);
-}
-
-// Gestion visibilité onglet (skip intro si trop long)
+// Skip intro si trop long
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && introStartTime && !introCompleted) {
         const elapsed = Date.now() - introStartTime;
@@ -680,1298 +648,1645 @@ document.addEventListener('visibilitychange', () => {
 });
 
 
-// ============ AUTH ============
-async function handleLogin(event) {
-    event.preventDefault();
-    const password = document.getElementById('adminCode').value;
-    const masterPassword = document.getElementById('masterPassword').value;
-    const errorMsg = document.getElementById('errorMsg');
+// ============================================
+// AFFICHAGE PANEL ADMIN
+// ============================================
 
-    // 🔥 AJOUTER : Nettoyer les anciens messages
-    errorMsg.innerHTML = ''; // Vider complètement
-    errorMsg.style.color = ''; // Reset de la couleur
+async function showAdminPanel() {
+    // Initialiser Socket.io
+    initSocket();
 
-    try {
-        const response = await fetch('/admin/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                password,
-                masterOverride: masterPassword || undefined
-            })
-        });
+    // Charger les données
+    await loadIdleData();
 
-        const data = await response.json();
+    // Restaurer l'état du jeu AVANT d'afficher quoi que ce soit
+    const restored = await restoreGameState();
 
-        if (data.success) {
-            sessionStorage.setItem('adminCode', password);
-
-            document.getElementById('loginContainer').style.display = 'none';
-
-            // Afficher badge master si applicable
-            if (data.isMaster) {
-                showMasterBadge();
-            }
-
-            // 🆕 Jouer l'intro seulement si pas déjà jouée cette session
-            if (shouldPlayIntro()) {
-                document.getElementById('introScreen').style.display = 'flex';
-                markIntroPlayed();
-                playIntro();
-            } else {
-                // Skip direct vers le panel
-                showAdminPanel();
-            }
-        } else {
-            // ⚠️ Si admin déjà connecté
-            if (data.error === 'admin_already_connected') {
-                // errorMsg.textContent = `${data.message} (depuis ${data.connectedSince} min)`;
-                errorMsg.style.color = 'var(--warning)'; // Orange au lieu de rouge
-
-                // Afficher le champ master password
-                document.getElementById('masterPasswordGroup').style.display = 'block';
-                document.getElementById('masterPassword').focus();
-
-                // Ajouter un hint pour le dev
-                const hint = document.createElement('small');
-                hint.style.color = 'var(--text-secondary)';
-                hint.style.fontSize = '0.65rem';
-                hint.style.display = 'block';
-                hint.style.marginTop = '8px';
-                hint.textContent = '💡 streamer déjà en activité , en attente de déconnexion';
-                errorMsg.appendChild(hint);
-            } else {
-                errorMsg.textContent = data.message || 'Code incorrect';
-                errorMsg.style.color = 'var(--danger)'; // 🔥 Rouge pour erreur normale
-            }
-        }
-    } catch (error) {
-        console.error('Erreur login:', error);
-        errorMsg.textContent = 'Erreur de connexion';
-        errorMsg.style.color = 'var(--danger)';
+    // Si l'état a été restauré (lobby/game), ne pas afficher idle
+    if (restored) {
+        document.getElementById('mainHeader').style.display = '';
+        document.getElementById('mainContainer').style.display = '';
+        document.getElementById('bgText').style.display = '';
+        return;
     }
+
+    // Sinon, afficher l'état idle normal
+    document.getElementById('mainHeader').style.display = '';
+    document.getElementById('mainContainer').style.display = '';
+    document.getElementById('bgText').style.display = '';
+
+    startIdleAnimations();
+
+
 }
 
+function initPanel() {
+    // Afficher le contenu principal
+    document.getElementById('mainHeader').style.display = '';
+    document.getElementById('mainContainer').style.display = '';
+    document.getElementById('bgText').style.display = '';  // ← Ajouter cette ligne
 
-function showMasterBadge() {
-    const header = document.querySelector('.admin-header');
+    // Lancer les animations
+    startIdleAnimations();
 
-    const badge = document.createElement('div');
-    badge.className = 'master-admin-badge';
-    badge.innerHTML = '👑 MODE DEV';
-
-    header.appendChild(badge);
-
-    // Ajouter une notification discrète
-    console.log('%c👑 MODE DEV ACTIVÉ', 'color: #FFD700; font-size: 16px; font-weight: bold;');
-    console.log('%cVous êtes en mode observation. Le streamer n\'a pas été déconnecté.', 'color: #00ff88;');
+    // Charger les données
+    setTimeout(loadIdleData, 500);
 }
 
+// ============================================
+// ANIMATIONS IDLE (après login)
+// ============================================
 
+function startIdleAnimations() {
+    // Animation bouton
+    anime({
+        targets: '.main-action-btn',
+        scale: [0, 1],
+        opacity: [0, 1],
+        duration: 650,
+        easing: 'easeOutBack',
+        delay: 300,
+        complete: () => {
+            const wrapper = document.getElementById('btnWrapper');
+            if (wrapper) wrapper.classList.add('pulse-active');
+        }
+    });
 
-async function checkAuth() {
-    // D'abord essayer la session serveur existante
-    try {
-        const response = await fetch('/admin/check', {
-            credentials: 'same-origin'
-        });
+    // Personnage
+    const btnCharacter = document.querySelector('.btn-character');
+    if (btnCharacter) {
+        btnCharacter.style.opacity = '0';
+        btnCharacter.style.zIndex = '0';
+        btnCharacter.style.visibility = 'hidden';
 
-        if (response.ok) {
-            const data = await response.json();
-            if (data.isAdmin) {
-                document.getElementById('loginContainer').style.display = 'none';
-
-                if (data.isMaster) showMasterBadge();
-
-                if (shouldPlayIntro()) {
-                    document.getElementById('introScreen').style.display = 'flex';
-                    markIntroPlayed();
-                    playIntro();
-                } else {
-                    showAdminPanel();
+        setTimeout(() => {
+            btnCharacter.style.visibility = 'visible';
+            anime({
+                targets: '.btn-character',
+                opacity: [0, 0.95],
+                translateY: [50, 0],
+                scale: [0.85, 1],
+                duration: 550,
+                easing: 'easeOutCubic',
+                complete: () => {
+                    btnCharacter.style.zIndex = '10';
+                    btnCharacter.classList.add('visible');
                 }
-                return;
-            }
-        }
-    } catch (error) {
-        console.log('Session serveur non valide');
-    }
-
-    // 🆕 Si pas de session serveur, essayer avec le code stocké
-    const savedCode = sessionStorage.getItem('adminCode');
-    if (savedCode) {
-        console.log('🔄 Tentative de reconnexion automatique...');
-        try {
-            const response = await fetch('/admin/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password: savedCode })
             });
-
-            const data = await response.json();
-
-            if (data.success) {
-                document.getElementById('loginContainer').style.display = 'none';
-
-                if (data.isMaster) showMasterBadge();
-
-                if (shouldPlayIntro()) {
-                    document.getElementById('introScreen').style.display = 'flex';
-                    markIntroPlayed();
-                    playIntro();
-                } else {
-                    showAdminPanel();
-                }
-            } else {
-                // Code invalide ou admin déjà connecté, supprimer le code stocké
-                console.log('❌ Code stocké invalide, suppression');
-                sessionStorage.removeItem('adminCode');
-            }
-        } catch (error) {
-            console.log('Erreur reconnexion automatique:', error);
-        }
+        }, 1150);
     }
+
+    // Stats
+    anime({
+        targets: '.idle-stats',
+        opacity: [0, 1],
+        translateY: [30, 0],
+        duration: 600,
+        easing: 'easeOutCubic',
+        delay: 500
+    });
+
+    // Panneau récentes
+    anime({
+        targets: '.recent-games-panel',
+        opacity: [0, 1],
+        translateX: [-40, 0],
+        duration: 600,
+        easing: 'easeOutCubic',
+        delay: 400
+    });
+
+    anime({
+        targets: '.recent-game-item',
+        opacity: [0, 1],
+        translateX: [-20, 0],
+        delay: anime.stagger(80, { start: 600 }),
+        duration: 400,
+        easing: 'easeOutCubic'
+    });
+
+    // Leaderboard
+    anime({
+        targets: '.lastgame-panel',
+        opacity: [0, 1],
+        translateX: [40, 0],
+        duration: 600,
+        easing: 'easeOutCubic',
+        delay: 400
+    });
+
+    anime({
+        targets: '.lastgame-item',
+        opacity: [0, 1],
+        translateX: [20, 0],
+        delay: anime.stagger(50, { start: 600 }),
+        duration: 400,
+        easing: 'easeOutCubic'
+    });
+
+    // Particules idle
+    anime({
+        targets: '.particles-container .particle',
+        opacity: [0, 0.6],
+        scale: [0, 1],
+        delay: anime.stagger(100, { start: 1200 }),
+        duration: 600,
+        easing: 'easeOutCubic',
+        complete: startContinuousAnimation
+    });
 }
 
-async function restoreGameState() {
+// Vérifier l'auth au chargement
+document.addEventListener('DOMContentLoaded', checkAuth);
+
+// ============================================
+// CHARGEMENT DONNÉES RÉELLES - IDLE
+// ============================================
+
+async function loadIdleData() {
     try {
-        const response = await fetch('/game/state');
-        const state = await response.json();
+        // Charger stats générales
+        const statsResponse = await fetch('/admin/stats', { credentials: 'same-origin' });
+        if (statsResponse.ok) {
+            const stats = await statsResponse.json();
 
-        console.log('🔄 Restauration état:', state);
-
-        await new Promise(resolve => setTimeout(resolve, 200));
-
-        if (state.difficultyMode) {
-            gameSettings.difficultyMode = state.difficultyMode;
-            const diffBtn = document.getElementById('difficultyModeBtn');
-            if (diffBtn) {
-                if (state.difficultyMode === 'aleatoire') {
-                    diffBtn.classList.add('active');
-                } else {
-                    diffBtn.classList.remove('active');
-                }
-                const text = diffBtn.querySelector('.diff-mode-text');
-                if (text) {
-                    text.textContent = state.difficultyMode === 'croissante' ? 'Croissante' : 'Aléatoire';
-                }
-            }
-            console.log(`✅ Mode de difficulté restauré: ${state.difficultyMode}`);
-        }
-
-        // 🔥 NOUVEAU: Restaurer le filtre série
-        if (state.serieFilter) {
-            currentSerieFilter = state.serieFilter;
-
-            // Mettre à jour le bouton principal
-            const filterText = document.getElementById('serieFilterText');
-            if (filterText) {
-                // Mapper l'ID du filtre vers son nom d'affichage
-                const filterNames = {
-                    'tout': 'Overall',
-                    'big3': 'Big 3',
-                    'mainstream': 'Mainstream',
-                    'naruto': 'Naruto',
-                    'dragonball': 'Dragon Ball',
-                    'onepiece': 'One Piece',
-                    'bleach': 'Bleach'
-                };
-                filterText.textContent = filterNames[state.serieFilter] || 'Overall';
-            }
-
-            console.log(`✅ Filtre série restauré: ${state.serieFilter}`);
-        }
-
-        // Restaurer le mode
-        if (state.mode) {
-            currentGameMode = state.mode;
-            gameSettings.mode = state.mode;
-            const modeText = document.getElementById('currentModeText');
-            if (modeText) {
-                modeText.textContent = state.mode === 'lives' ? 'Mode Vie' : 'Mode Points';
-            }
-            updateModeParams(state.mode);
-        }
-
-        // Restaurer joueurs
-        if (state.players && state.players.length > 0) {
-            updatePlayersGrid(state.players);
-            console.log(`✅ ${state.players.length} joueurs restaurés`);
-        }
-
-        // Restaurer question en cours
-        if (state.currentQuestion && state.inProgress) {
-            console.log('✅ Question en cours restaurée');
-            switchTab('question');
-            await new Promise(resolve => setTimeout(resolve, 100));
-            displayQuestion(state.currentQuestion, state.timeRemaining || 0);
-
-            if (state.timeRemaining > 0) {
-                startAdminTimer(state.timeRemaining);
-            }
-        }
-
-        if (state.currentQuestion && state.liveAnswerCounts) {
-            console.log('📊 Restauration des stats live:', state.liveAnswerCounts);
-
-            // Attendre que le DOM soit prêt
+            // Mettre à jour les stats sous le bouton
+            const statValues = document.querySelectorAll('.idle-stat-value');
             setTimeout(() => {
-                updateLiveAnswerDisplay({
-                    answerCounts: state.liveAnswerCounts,
-                    answeredCount: state.answeredCount || 0,
-                    totalPlayers: state.playerCount || 0
-                });
-            }, 200);
-        }
+                if (statValues[0]) animateCounter(statValues[0], stats.totalGames || 0, 1200);
+            }, 600);
 
-        // Désactiver paramètres si partie en cours
-        if (state.inProgress) {
-            toggleSettingsAccess(false);
-            console.log('🔒 Paramètres désactivés');
-        } else {
-            toggleSettingsAccess(true);
-            console.log('🔓 Paramètres activés');
-        }
+            // Mettre à jour le leaderboard
+            if (stats.topPlayers && stats.topPlayers.length > 0) {
+                populateLeaderboard(stats.topPlayers);
+            }
 
-        // Restaurer TOUS les paramètres visuels
-        if (state.lives) {
-            gameSettings.lives = state.lives;
-            const livesButtons = document.querySelectorAll('.lives-btn');
-            if (livesButtons.length > 0) {
-                livesButtons.forEach(btn => btn.classList.remove('active'));
-                const livesBtn = document.getElementById(`lives-${state.lives}`);
-                if (livesBtn) livesBtn.classList.add('active');
+            // Mettre à jour les parties récentes
+            if (stats.recentGames && stats.recentGames.length > 0) {
+                populateRecentGames(stats.recentGames);
             }
         }
 
-        if (state.questionTime) {
-            gameSettings.timePerQuestion = state.questionTime;
-            const timeSelect = document.getElementById('timeSelect');
-            if (timeSelect) timeSelect.value = state.questionTime;
+        // Charger stats DB (nombre de questions ET joueurs)
+        const dbStatsResponse = await fetch('/admin/db-stats', { credentials: 'same-origin' });
+        if (dbStatsResponse.ok) {
+            const dbStats = await dbStatsResponse.json();
+            const statValues = document.querySelectorAll('.idle-stat-value');
+
+            setTimeout(() => {
+                if (statValues[1]) animateCounter(statValues[1], formatPlayerCount(dbStats.totalPlayers || 0), 1200);
+                if (statValues[2]) animateCounter(statValues[2], dbStats.totalQuestions || 500, 1200, '+');
+            }, 600);
         }
 
-        if (state.answersCount) {
-            gameSettings.answersCount = state.answersCount;
-            const answersSelect = document.getElementById('answersSelect');
-            if (answersSelect) {
-                answersSelect.value = state.answersCount;
-            }
-        }
-
-        if (state.questionsCount) {
-            gameSettings.questions = state.questionsCount;
-            const questionsButtons = document.querySelectorAll('.questions-btn');
-            if (questionsButtons.length > 0) {
-                questionsButtons.forEach(btn => btn.classList.remove('active'));
-                const questionsBtn = document.getElementById(`questions-${state.questionsCount}`);
-                if (questionsBtn) questionsBtn.classList.add('active');
-                console.log(`✅ Nombre de questions restauré: ${state.questionsCount}`);
-            }
-        }
-
-        if (state.autoMode !== undefined) {
-            gameSettings.autoMode = state.autoMode;
-            const autoBtn = document.getElementById('autoModeBtn');
-            if (autoBtn) {
-                autoBtn.classList.toggle('active', state.autoMode);
-                autoBtn.setAttribute('data-tooltip', state.autoMode ? 'Auto' : 'Manuel');
-
-                const text = autoBtn.querySelector('.auto-mode-text');
-                if (text) {
-                    text.innerHTML = state.autoMode
-                        ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>'
-                        : '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M23 5.5V20c0 2.2-1.8 4-4 4h-7.3c-1.08 0-2.1-.43-2.85-1.19L1 14.83s1.26-1.23 1.3-1.25c.22-.19.49-.29.79-.29.22 0 .42.06.6.16.04.01 4.31 2.46 4.31 2.46V4c0-.83.67-1.5 1.5-1.5S11 3.17 11 4v7h1V1.5c0-.83.67-1.5 1.5-1.5S15 .67 15 1.5V11h1V2.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5V11h1V5.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5z"/></svg>';
-                }
-            }
-            updateNextQuestionButtonState();
-            console.log(`✅ Mode Auto restauré: ${state.autoMode ? 'activé' : 'désactivé'}`);
-        }
-
-        if (state.isTiebreaker && state.tiebreakerPlayers) {
-            tiebreakerPlayerIds = state.tiebreakerPlayers.map(p => p.twitchId);
-            console.log('✅ Tiebreaker restauré:', tiebreakerPlayerIds);
-        }
-
-        await checkRefreshCooldown();
-
-
+        return true; // Données chargées
     } catch (error) {
-        console.error('❌ Erreur restauration état:', error);
+        console.error('❌ Erreur chargement données Idle:', error);
+
+        // Fallback en cas d'erreur
+        const statValues = document.querySelectorAll('.idle-stat-value');
+        if (statValues[0]) statValues[0].textContent = '0';
+        if (statValues[1]) statValues[1].textContent = '0';
+        if (statValues[2]) statValues[2].textContent = '+0';
+
+        return false;
     }
 }
 
-// ============ SOCKET ============
-function initSocket() {
-    socket = io();
+function formatPlayerCount(count) {
+    if (count >= 1000) {
+        return (count / 1000).toFixed(1) + 'K';
+    }
+    return count.toString();
+}
 
+function formatTimeAgo(dateStr) {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
 
-    socket.on('tiebreaker-announced', (data) => {
-        console.log('⚖️ Tiebreaker annoncé:', data);
+    if (diffMins < 60) return `Il y a ${diffMins}min`;
+    if (diffHours < 24) return `Il y a ${diffHours}h`;
+    if (diffDays === 1) return 'Hier';
+    return `Il y a ${diffDays}j`;
+}
 
-        // 🔥 Stocker les IDs des joueurs en tiebreaker
-        tiebreakerPlayerIds = data.tiebreakerPlayers.map(p => p.twitchId);
+// Peupler le leaderboard avec les vraies données
+function populateLeaderboard(players) {
+    const list = document.getElementById('lastgameList');
+    if (!list) return;
+    list.innerHTML = '';
 
-        // Mettre à jour la grille pour afficher le clignotement
-        updatePlayersGridWithTiebreaker();
+    // Créer les items originaux (sans doublons pour "Tous")
+    const items = players.map((player, index) => ({
+        player,
+        rank: index + 1,
+        isOriginal: true
+    }));
 
-        console.log(`⚔️ ${tiebreakerPlayerIds.length} joueurs en tiebreaker`);
+    // Ajouter les doublons pour le scroll infini (Top 10)
+    const duplicates = players.map((player, index) => ({
+        player,
+        rank: index + 1,
+        isOriginal: false
+    }));
+
+    const allItems = [...items, ...duplicates];
+
+    // Mélanger SEULEMENT les originaux pour l'affichage initial
+    const shuffledOriginals = items.sort(() => Math.random() - 0.5);
+
+    // Créer tous les éléments DOM
+    allItems.forEach((item) => {
+        const elem = document.createElement('div');
+        elem.className = `lastgame-item ${getRankClass(item.rank)}`;
+        elem.dataset.playerRank = item.rank;
+        elem.dataset.playerName = item.player.username;
+        elem.dataset.twitchId = item.player.twitch_id;
+        elem.dataset.duplicate = item.isOriginal ? 'false' : 'true';
+
+        const badgeNumber = getRankBadgeNumber(item.rank);
+        const badgeHtml = badgeNumber ? `<span class="lastgame-rank-badge">${badgeNumber}</span>` : '';
+
+        elem.innerHTML = `<div class="lastgame-name">${item.player.username}${badgeHtml}</div>`;
+
+        // Par défaut : cacher les doublons, afficher les originaux
+        elem.style.display = item.isOriginal ? 'flex' : 'none';
+
+        list.appendChild(elem);
     });
 
-    socket.on('tiebreaker-continues', (data) => {
-        console.log('⚖️ Tiebreaker continue:', data);
-
-        // 🔥 Mettre à jour les IDs
-        tiebreakerPlayerIds = data.tiebreakerPlayers.map(p => p.twitchId);
-
-        // Mettre à jour la grille
-        updatePlayersGridWithTiebreaker();
-
-        console.log(`⚔️ ${tiebreakerPlayerIds.length} joueurs encore en tiebreaker`);
+    // Réordonner visuellement les originaux (mélangés)
+    shuffledOriginals.forEach(item => {
+        const elem = list.querySelector(`.lastgame-item[data-player-name="${item.player.username}"][data-duplicate="false"]`);
+        if (elem) list.appendChild(elem);
     });
 
-    socket.on('new-question', (data) => {
-        console.log('📩 Question reçue:', data);
-        displayQuestion(data);
-        hideResults();
+    // Réattacher les events
+    setupPlayerCardEvents();
+    setupLeaderboardFilters();
+}
+
+
+function setupLeaderboardFilters() {
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Retirer active des autres
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const filter = btn.dataset.filter;
+            const list = document.getElementById('lastgameList');
+            const allItems = Array.from(list.querySelectorAll('.lastgame-item'));
+
+            if (filter === 'all') {
+                // "Tous" - Seulement les originaux (pas les doublons), mélangés
+                const originalItems = allItems.filter(item => item.dataset.duplicate === 'false');
+                const duplicateItems = allItems.filter(item => item.dataset.duplicate === 'true');
+
+                // Cacher les doublons
+                duplicateItems.forEach(item => {
+                    item.style.display = 'none';
+                });
+
+                // Mélanger et afficher les originaux
+                const shuffledItems = originalItems.sort(() => Math.random() - 0.5);
+
+                shuffledItems.forEach((item, index) => {
+                    item.style.display = 'flex';
+                    list.appendChild(item);
+
+                    anime({
+                        targets: item,
+                        opacity: [0, 1],
+                        translateX: [20, 0],
+                        duration: 300,
+                        delay: index * 15,
+                        easing: 'easeOutCubic'
+                    });
+                });
+
+            } else {
+                // "Top 10" - Trier par rang, afficher doublons pour scroll infini
+                const sortedItems = allItems.sort((a, b) => {
+                    const rankA = parseInt(a.dataset.playerRank);
+                    const rankB = parseInt(b.dataset.playerRank);
+                    const dupA = a.dataset.duplicate === 'true' ? 1 : 0;
+                    const dupB = b.dataset.duplicate === 'true' ? 1 : 0;
+
+                    // D'abord les originaux, puis les doublons, triés par rang
+                    if (dupA !== dupB) return dupA - dupB;
+                    return rankA - rankB;
+                });
+
+                let visibleIndex = 0;
+
+                sortedItems.forEach((item) => {
+                    const rank = parseInt(item.dataset.playerRank);
+                    list.appendChild(item);
+
+                    if (rank <= 10) {
+                        item.style.display = 'flex';
+                        anime({
+                            targets: item,
+                            opacity: [0, 1],
+                            translateX: [20, 0],
+                            duration: 300,
+                            delay: visibleIndex * 30,
+                            easing: 'easeOutCubic'
+                        });
+                        visibleIndex++;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            }
+        });
+    });
+}
+
+// Peupler les parties récentes
+function populateRecentGames(games) {
+    const panel = document.getElementById('recentPanel');
+    if (!panel) return;
+
+    // Garder le header
+    const header = panel.querySelector('.recent-games-header');
+    panel.innerHTML = '';
+    if (header) panel.appendChild(header);
+
+    games.slice(0, 7).forEach(game => {
+        const item = document.createElement('div');
+        item.className = 'recent-game-item';
+        item.innerHTML = `
+            <div class="recent-game-header">
+                <span class="recent-game-date">${formatTimeAgo(game.created_at)}</span>
+                <span class="recent-game-players">${game.total_players || '?'} joueurs</span>
+            </div>
+            <div class="recent-game-winner">🏆 ${game.winner?.username || 'N/A'}</div>
+        `;
+        panel.appendChild(item);
     });
 
-    socket.on('question-results', (data) => {
-        console.log('📊 Résultats reçus:', data);
-        displayResults(data);
-
-        // 🔥 Stocker les résultats pour usage ultérieur
-        lastQuestionResults = data;
+    // Animation d'entrée
+    anime({
+        targets: '.recent-game-item',
+        opacity: [0, 1],
+        translateX: [-20, 0],
+        delay: anime.stagger(80),
+        duration: 400,
+        easing: 'easeOutCubic'
     });
+}
 
-    socket.on('lobby-update', (data) => {
-        this.playerCount = data.playerCount;
 
-        // 🆕 Mettre à jour le mode si fourni
-        if (data.mode) {
-            currentGameMode = data.mode;
-            gameSettings.mode = data.mode;
 
-            const modeText = document.getElementById('currentModeText');
-            if (modeText) {
-                modeText.textContent = data.mode === 'lives' ? 'Mode Vie' : 'Mode Points';
+
+
+function startContinuousAnimation() {
+    const particles = document.querySelectorAll('.btn-wrapper .particle');
+
+    // 🔍 DEBUG
+    console.log('🔍 Particules trouvées:', particles.length);
+    console.log('🔍 stateIdle display:', document.getElementById('stateIdle')?.style.display);
+    console.log('🔍 btnWrapper visible:', document.getElementById('btnWrapper')?.offsetParent !== null);
+
+    if (!particles.length) {
+        console.log('❌ Aucune particule trouvée, abandon');
+        return;
+    }
+
+    // Annuler l'animation précédente si elle existe
+    if (continuousAnimationId) {
+        cancelAnimationFrame(continuousAnimationId);
+        continuousAnimationId = null;
+    }
+
+    function animate() {
+        time += 0.016;
+        if (movementFadeIn < 1) movementFadeIn += 0.02;
+
+        const targetTransition = isHovering ? 1 : 0;
+        hoverTransition += (targetTransition - hoverTransition) * 0.08;
+
+        const radius = 130;
+        const orbitSpeed = 0.8;
+
+        particles.forEach((particle, i) => {
+            // État normal : flottement doux
+            const floatX = Math.sin(time * 0.5 + i * 0.8) * 12 * movementFadeIn;
+            const floatY = Math.cos(time * 0.4 + i * 1.2) * 10 * movementFadeIn;
+            const floatScale = 1 + Math.sin(time * 0.3 + i) * 0.1 * movementFadeIn;
+            const floatOpacity = 0.6 + Math.sin(time * 0.25 + i * 0.5) * 0.1 * movementFadeIn;
+
+            // État hover : orbite circulaire
+            const angle = (i / particles.length) * Math.PI * 2 + time * orbitSpeed;
+            const orbitX = Math.cos(angle) * radius;
+            const orbitY = Math.sin(angle) * radius;
+            const orbitScale = 0.8;
+            const orbitOpacity = 0.55;
+
+            // Interpolation entre les deux états
+            const x = floatX + (orbitX - floatX) * hoverTransition;
+            const y = floatY + (orbitY - floatY) * hoverTransition;
+            const scale = floatScale + (orbitScale - floatScale) * hoverTransition;
+            const opacity = floatOpacity + (orbitOpacity - floatOpacity) * hoverTransition;
+
+            particle.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+            particle.style.opacity = opacity;
+        });
+
+        continuousAnimationId = requestAnimationFrame(animate);
+    }
+    animate();
+
+    console.log('✅ Animation démarrée, continuousAnimationId:', continuousAnimationId);
+}
+
+const btnWrapper = document.querySelector('.btn-wrapper');
+if (btnWrapper) {
+    btnWrapper.addEventListener('mouseenter', () => isHovering = true);
+    btnWrapper.addEventListener('mouseleave', () => isHovering = false);
+}
+
+// ============================================
+// LEADERBOARD
+// ============================================
+function getRankClass(rank) {
+    if (rank === 1) return 'top1';
+    if (rank === 2) return 'top2';
+    if (rank === 3) return 'top3';
+    if (rank <= 10) return 'top10';
+    return '';
+}
+
+function getRankBadgeNumber(rank) {
+    if (rank <= 3) return rank;
+    if (rank <= 10) return '10';
+    if (rank <= 50) return '50';
+    return '';
+}
+
+function populateLastGame() {
+    const list = document.getElementById('lastgameList');
+    list.innerHTML = '';
+    const allPlayers = [...allDbPlayers, ...allDbPlayers];
+
+    allPlayers.forEach(player => {
+        const item = document.createElement('div');
+        item.className = `lastgame-item ${getRankClass(player.rank)}`;
+        item.dataset.playerRank = player.rank;
+        item.dataset.playerName = player.name;
+
+        const badgeNumber = getRankBadgeNumber(player.rank);
+        const badgeHtml = badgeNumber ? `<span class="lastgame-rank-badge">${badgeNumber}</span>` : '';
+
+        item.innerHTML = `<div class="lastgame-name">${player.name}${badgeHtml}</div>`;
+        list.appendChild(item);
+    });
+}
+
+
+// Filtres avec animations
+document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const filter = btn.dataset.filter;
+        const items = document.querySelectorAll('.lastgame-item');
+
+        items.forEach((item, index) => {
+            const rank = parseInt(item.dataset.playerRank);
+            const shouldShow = filter === 'all' || rank <= 10;
+
+            if (shouldShow) {
+                item.style.display = 'flex';
+                anime({
+                    targets: item,
+                    opacity: [0, 1],
+                    translateX: [20, 0],
+                    duration: 300,
+                    delay: index * 20,
+                    easing: 'easeOutCubic'
+                });
+            } else {
+                anime({
+                    targets: item,
+                    opacity: [1, 0],
+                    translateX: [0, -20],
+                    duration: 200,
+                    easing: 'easeOutCubic',
+                    complete: () => {
+                        item.style.display = 'none';
+                    }
+                });
+            }
+        });
+    });
+});
+
+// ============================================
+// CARTE JOUEUR 3D AU HOVER
+// ============================================
+const playerCard = document.getElementById('playerCard');
+const playerCardInner = document.getElementById('playerCardInner');
+const cardRankBadge = document.getElementById('cardRankBadge');
+let hideCardTimeout;
+
+// Données fictives des joueurs
+const playerData = {
+    'Gojo_Satoru': { wins: 24, games: 31, titles: 3, badges: 7, title: 'Maître', lastPlace: 1 },
+    'OnePieceKing': { wins: 19, games: 28, titles: 2, badges: 5, title: 'Expert', lastPlace: 2 },
+    'LuffyD': { wins: 22, games: 35, titles: 2, badges: 6, title: 'Expert', lastPlace: 1 },
+    'Levi_Heichou': { wins: 20, games: 29, titles: 2, badges: 5, title: 'Expert', lastPlace: 3 },
+    'NarutoFan42': { wins: 17, games: 26, titles: 1, badges: 4, title: 'Avancé', lastPlace: 4 },
+    'AllMight': { wins: 16, games: 24, titles: 1, badges: 4, title: 'Avancé', lastPlace: 5 },
+    'Tanjiro': { wins: 15, games: 22, titles: 1, badges: 4, title: 'Avancé', lastPlace: 5 },
+    'VegetaPrince': { wins: 14, games: 23, titles: 1, badges: 3, title: 'Avancé', lastPlace: 6 },
+    'Deku_Hero': { wins: 13, games: 21, titles: 1, badges: 3, title: 'Avancé', lastPlace: 7 },
+    'Mikasa': { wins: 18, games: 25, titles: 1, badges: 4, title: 'Avancé', lastPlace: 3 },
+    'Eren_Jaeger': { wins: 12, games: 20, titles: 1, badges: 3, title: 'Avancé', lastPlace: 8 },
+    'Bakugo': { wins: 11, games: 19, titles: 0, badges: 2, title: 'Intermédiaire', lastPlace: 10 },
+    'Todoroki': { wins: 10, games: 18, titles: 0, badges: 2, title: 'Intermédiaire', lastPlace: 12 },
+    'Zenitsu': { wins: 8, games: 16, titles: 0, badges: 2, title: 'Novice', lastPlace: 15 },
+    'default': { wins: 5, games: 12, titles: 0, badges: 1, title: 'Novice', lastPlace: 20 }
+};
+
+function getRankBadgeClass(rank) {
+    if (rank === 1) return 'top1';
+    if (rank === 2) return 'top2';
+    if (rank === 3) return 'top3';
+    if (rank <= 10) return 'top10';
+    if (rank <= 50) return 'top50';
+    return '';
+}
+
+function getRankBadgeText(rank) {
+    if (rank <= 3) return 'TOP ' + rank;
+    if (rank <= 10) return 'TOP 10';
+    if (rank <= 50) return 'TOP 50';
+    return '';
+}
+
+function getPlaceClass(place) {
+    if (place === 1) return 'top1';
+    if (place <= 3) return 'top3';
+    return 'normal';
+}
+
+function setupPlayerCardEvents() {
+    const items = document.querySelectorAll('.lastgame-item');
+
+    items.forEach(item => {
+        item.addEventListener('mouseenter', async () => {
+            clearTimeout(hideCardTimeout);
+
+            const cardAvatar = document.getElementById('cardAvatar');
+            if (cardAvatar) {
+                cardAvatar.style.opacity = '0';
             }
 
-            updateModeParams(data.mode);
-        }
+            const name = item.dataset.playerName;
+            const rank = parseInt(item.dataset.playerRank);
+            const twitchId = item.dataset.twitchId;
 
-        // Mettre à jour les paramètres si fournis
-        if (data.lives) gameSettings.lives = data.lives;
-        if (data.questionTime) gameSettings.timePerQuestion = data.questionTime;
+            // Afficher la carte avec données de base immédiatement
+            const cardNameEl = document.getElementById('cardName');
+            cardNameEl.textContent = name;
+            if (name.length > 14) cardNameEl.style.fontSize = '0.7rem';
+            else if (name.length > 10) cardNameEl.style.fontSize = '0.8rem';
+            else cardNameEl.style.fontSize = '0.85rem';
 
-        // 🔥 NOUVEAU: Mettre à jour la grille avec les joueurs si fournis
-        if (data.players) {
-            updatePlayersGrid(data.players);
-            console.log(`✅ Grille mise à jour avec ${data.players.length} joueur(s) - Mode: ${data.mode}`);
-        }
-    });
+            // Badge de rang
+            const badgeClass = getRankBadgeClass(rank);
+            cardRankBadge.className = 'player-card-rank-badge ' + badgeClass;
+            cardRankBadge.textContent = getRankBadgeText(rank);
+            cardRankBadge.style.display = badgeClass ? 'flex' : 'none';
 
-    socket.on('activity-log', (log) => {
-        addLogToUI(log);
-    });
+            // Reset classes de la carte
+            playerCardInner.classList.remove('top1-card', 'top10-card');
+            if (rank === 1) playerCardInner.classList.add('top1-card');
+            else if (rank <= 10) playerCardInner.classList.add('top10-card');
 
-    socket.on('logs-reset', () => {
-        if (logsContent) {
-            logsContent.innerHTML = '';
-        }
-    });
+            // Afficher la carte
+            playerCard.classList.add('visible');
 
-    socket.on('game-started', (data) => {
-        console.log('🎮 Partie démarrée:', data);
-        toggleSettingsAccess(false); // 🆕 Désactiver les paramètres au démarrage
-        refreshStats();
-        // Afficher l'onglet grille joueurs automatiquement
-        switchTab('players');
-    });
+            // Charger les vraies données si twitchId disponible
+            if (twitchId) {
+                try {
+                    const response = await fetch(`/profile/${twitchId}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        const user = data.user;
 
-    socket.on('game-ended', (data) => {
-        console.log('🏁 Partie terminée:', data);
-        clearInterval(timerInterval);
-        hideResults();
-        displayGameEnd(data);
-        refreshStats();
-
-        tiebreakerPlayerIds = [];
-
-        // 🔥 FIX: Utiliser les données du podium pour mettre à jour la grille
-        if (data.podium && data.podium.length > 0) {
-            console.log('📊 Mise à jour grille avec scores finaux du podium');
-
-            // Transformer les données du podium en format compatible avec updatePlayersGrid
-            const finalPlayers = data.podium.map(player => ({
-                username: player.username,
-                points: player.points || 0,
-                lives: null,
-                correctAnswers: null,
-                twitchId: player.twitchId || null
-            }));
-
-            updatePlayersGrid(finalPlayers);
-        } else {
-            // Fallback : fetch /game/state si pas de podium
-            setTimeout(() => {
-                fetch('/game/state')
-                    .then(response => response.json())
-                    .then(state => {
-                        if (state.players && state.players.length > 0) {
-                            console.log('📊 Mise à jour grille avec scores finaux (fallback)');
-                            const sortedPlayers = state.players.sort((a, b) => {
-                                if (state.mode === 'points') {
-                                    return (b.points || 0) - (a.points || 0);
-                                } else {
-                                    if (b.lives !== a.lives) return b.lives - a.lives;
-                                    return (b.correctAnswers || 0) - (a.correctAnswers || 0);
-                                }
-                            });
-                            updatePlayersGrid(sortedPlayers);
+                        const cardAvatar = document.getElementById('cardAvatar');
+                        if (cardAvatar) {
+                            cardAvatar.src = user.avatar_url || 'novice.png';
+                            cardAvatar.onload = () => {
+                                cardAvatar.style.opacity = '1';
+                            };
                         }
-                    })
-                    .catch(err => console.error('❌ Erreur fetch scores finaux:', err));
-            }, 200);
-        }
-    });
 
-    // 🆕 Reset grille quand le lobby est ouvert (nouveau lobby)
-    socket.on('game-activated', () => {
-        console.log('✅ Lobby ouvert - Reset grille et affichage');
-        updatePlayersGrid([]); // Vider la grille
-        resetQuestionDisplay(); // Reset l'affichage question + panel fin
-        refreshStats();
+                        document.getElementById('cardTitle').textContent = data.titles?.current?.title_name || 'Novice';
+                        document.getElementById('cardWins').textContent = user.total_victories || 0;
+                        document.getElementById('cardGames').textContent = user.total_games_played || 0;
+                        document.getElementById('cardTitles').textContent = data.titles?.unlocked?.length || 0;
+                        document.getElementById('cardBadges').textContent =
+                            (data.badges?.games_played?.filter(b => b.unlocked).length || 0) +
+                            (data.badges?.games_won?.filter(b => b.unlocked).length || 0);
 
-        lastQuestionResults = null;
-    });
+                        const winrate = parseInt(user.win_rate) || 0;
+                        document.getElementById('cardWinrate').textContent = winrate + '%';
+                        document.getElementById('cardWinrateFill').style.width = winrate + '%';
 
-    // 🆕 Reset grille quand le lobby est fermé MAIS pas l'affichage (pour garder le panel de fin)
-    socket.on('game-deactivated', () => {
-        console.log('❌ Lobby fermé');
-        // ✅ NE PAS vider la grille ici pour garder le classement visible
-        // La grille sera vidée lors de la prochaine ouverture du lobby
-        refreshStats();
-        toggleSettingsAccess(true); // Réactiver les paramètres
-    });
-
-
-    socket.on('game-config-updated', (data) => {
-        if (data.mode) {
-            currentGameMode = data.mode;
-            gameSettings.mode = data.mode;
-
-            const modeText = document.getElementById('currentModeText');
-            if (modeText) {
-                modeText.textContent = data.mode === 'lives' ? 'Mode Vie' : 'Mode Points';
+                        const lastPlace = user.last_placement;
+                        const lastPlaceEl = document.getElementById('cardLastPlace');
+                        lastPlaceEl.textContent = lastPlace ?
+                            (lastPlace === 1 ? '1er' : lastPlace === 2 ? '2ème' : lastPlace + 'ème') : '-';
+                        lastPlaceEl.className = 'player-card-lastplace-value ' + getPlaceClass(lastPlace || 99);
+                    }
+                } catch (error) {
+                    console.error('Erreur chargement profil:', error);
+                    // Fallback sur données par défaut
+                    document.getElementById('cardTitle').textContent = 'Novice';
+                    document.getElementById('cardWins').textContent = '-';
+                    document.getElementById('cardGames').textContent = '-';
+                }
             }
-
-            updateModeParams(data.mode);
-        }
-
-        if (data.lives) gameSettings.lives = data.lives;
-        if (data.questionTime) gameSettings.timePerQuestion = data.questionTime;
-        if (data.answersCount) gameSettings.answersCount = data.answersCount;
-        if (data.questionsCount) gameSettings.questions = data.questionsCount;
-
-        console.log('⚙️ Config mise à jour:', data);
-    });
-
-
-    socket.on('live-answer-stats', (data) => {
-        updateLiveAnswerDisplay(data);
-    });
-}
-
-// ============ DISPLAY QUESTION ============
-function displayQuestion(data, initialTimeRemaining = null) {
-    currentQuestionData = data;
-    console.log("📝 Displaying question:", data);
-
-    updateLiveAnswerDisplay({
-        answerCounts: {},
-        answeredCount: 0,
-        totalPlayers: 0
-    });
-
-    const container = document.getElementById('questionContainer');
-
-    // Reset timer
-    clearInterval(timerInterval);
-    timeRemaining = initialTimeRemaining !== null ? initialTimeRemaining : data.timeLimit;
-
-    container.innerHTML = `
-        <div class="question-display">
-            <div class="question-meta">
-                <span class="meta-badge serie">${data.serie}</span>
-                <span class="meta-badge difficulty ${data.difficulty}">${data.difficulty.toUpperCase()}</span>
-            </div>
-            
-            <h3 class="question-text">${data.question}</h3>
-            
-            <div class="timer-bar-container">
-                <div class="timer-bar-wrapper">
-                    <div class="timer-bar-fill" id="timerBarFill"></div>
-                </div>
-                <div class="timer-text" id="timerText">${timeRemaining}s</div>
-            </div>
-            
-            <div class="answers-list">
-                ${data.answers.map((answer, index) => `
-                    <div class="answer-item" id="answer-${index + 1}">
-                        <div class="answer-number">${index + 1}</div>
-                        <div class="answer-text">${answer}</div>
-                        <div class="answer-percentage" id="percent-${index + 1}">0%</div>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-    `;
-
-    if (timeRemaining > 0) {
-        startTimer(data.timeLimit);
-    } else {
-        const fill = document.getElementById('timerBarFill');
-        const text = document.getElementById('timerText');
-        if (fill) fill.style.width = '0%';
-        if (text) {
-            text.textContent = '0s';
-            text.classList.add('warning');
-        }
-    }
-
-    document.getElementById('currentQuestion').textContent = data.questionNumber;
-
-    // 🆕 S'assurer qu'on est sur l'onglet Question
-    switchTab('question');
-
-    // Masquer les résultats
-    document.getElementById('resultsContainer').style.display = 'none';
-    document.getElementById('statsEmptyState').style.display = 'block';
-    container.style.display = 'block';
-}
-
-function startTimer(duration) {
-    const fill = document.getElementById('timerBarFill');
-    const text = document.getElementById('timerText');
-
-    timerInterval = setInterval(() => {
-        timeRemaining--;
-
-        const percentage = (timeRemaining / duration) * 100;
-        fill.style.width = percentage + '%';
-        text.textContent = timeRemaining + 's';
-
-        if (timeRemaining <= 3) {
-            fill.classList.add('warning');
-            text.classList.add('warning');
-        }
-
-        if (timeRemaining <= 0) {
-            clearInterval(timerInterval);
-        }
-    }, 1000);
-}
-
-// BUG FIX 2: Timer spécifique pour la restauration après refresh
-function startAdminTimer(initialTime) {
-    // Ne pas démarrer si le timer est presque fini (< 1 seconde)
-    if (initialTime < 1) {
-        console.log('⚠️ Timer trop court, pas de démarrage');
-        return;
-    }
-
-    const fill = document.getElementById('timerBarFill');
-    const text = document.getElementById('timerText');
-    const duration = 7; // Durée totale de base
-
-    if (!fill || !text) {
-        console.log('⚠️ Éléments timer non trouvés');
-        return;
-    }
-
-    // Définir l'état initial du timer
-    timeRemaining = initialTime;
-    const percentage = (timeRemaining / duration) * 100;
-    fill.style.width = percentage + '%';
-    text.textContent = timeRemaining + 's';
-
-    if (timeRemaining <= 3) {
-        fill.classList.add('warning');
-        text.classList.add('warning');
-    }
-
-    // Démarrer l'intervalle
-    clearInterval(timerInterval); // Clear any existing interval
-    timerInterval = setInterval(() => {
-        timeRemaining--;
-
-        const newPercentage = (timeRemaining / duration) * 100;
-        fill.style.width = newPercentage + '%';
-        text.textContent = timeRemaining + 's';
-
-        if (timeRemaining <= 3) {
-            fill.classList.add('warning');
-            text.classList.add('warning');
-        }
-
-        if (timeRemaining <= 0) {
-            clearInterval(timerInterval);
-            console.log('⏱️ Timer terminé après restauration');
-        }
-    }, 1000);
-
-    console.log(`✅ Timer démarré avec ${initialTime}s restantes`);
-}
-
-// ============ DISPLAY RESULTS ============
-function displayResults(data) {
-    console.log('📊 displayResults appelé avec:', data);
-    clearInterval(timerInterval);
-
-    // 🆕 Mettre en évidence la bonne réponse dans l'onglet Question
-    highlightCorrectAnswer(data.correctAnswer);
-
-    // 🆕 Afficher les stats dans l'onglet Statistiques
-    const resultsContainer = document.getElementById('resultsContainer');
-    const statsEmptyState = document.getElementById('statsEmptyState');
-
-    const correctCount = data.stats.correct;
-    const wrongCount = data.stats.wrong;
-    const afkCount = data.stats.afk;
-    const totalAnswers = correctCount + wrongCount + afkCount;
-
-    const lives3 = data.stats.livesDistribution[3] || 0;
-    const lives2 = data.stats.livesDistribution[2] || 0;
-    const lives1 = data.stats.livesDistribution[1] || 0;
-    const lives0 = data.stats.livesDistribution[0] || 0;
-    const totalPlayers = lives3 + lives2 + lives1 + lives0;
-
-    let fastestPlayer = null;
-    if (data.players) {
-        const correctPlayers = data.players.filter(p => p.isCorrect && p.responseTime);
-        if (correctPlayers.length > 0) {
-            fastestPlayer = correctPlayers.reduce((fastest, current) =>
-                current.responseTime < fastest.responseTime ? current : fastest
-            );
-        }
-    }
-
-    resultsContainer.innerHTML = `
-        <div class="results-display">
-            
-            <div class="charts-container ${currentGameMode === 'points' ? 'single-chart' : ''}">
-                <div class="chart-box">
-                    <div class="chart-title">Répartition des réponses</div>
-                    <div class="chart-with-legend">
-                        <div class="chart-legend">
-                            <div class="legend-item">
-                                <div class="legend-color" style="background: #00ff88;"></div>
-                                <span class="legend-label">✓</span>
-                                <span class="legend-value">${correctCount}</span>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-color" style="background: #ff4757;"></div>
-                                <span class="legend-label">✕</span>
-                                <span class="legend-value">${wrongCount}</span>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-color" style="background: #ffa502;"></div>
-                                <span class="legend-label">⏱</span>
-                                <span class="legend-value">${afkCount}</span>
-                            </div>
-                        </div>
-                        <svg id="answersChart" class="chart-svg" viewBox="0 0 100 100"></svg>
-                    </div>
-                </div>
-
-                ${currentGameMode === 'lives' ? `
-                <div class="chart-box">
-                    <div class="chart-title">Répartition des vies</div>
-                    <div class="chart-with-legend">
-                        <div class="chart-legend">
-                            <div class="legend-item">
-                                <div class="legend-color" style="background: #00ff88;"></div>
-                                <span class="legend-label">❤️❤️❤️</span>
-                                <span class="legend-value">${lives3}</span>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-color" style="background: #FFD700;"></div>
-                                <span class="legend-label">❤️❤️</span>
-                                <span class="legend-value">${lives2}</span>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-color" style="background: #ffa502;"></div>
-                                <span class="legend-label">❤️</span>
-                                <span class="legend-value">${lives1}</span>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-color" style="background: #ff4757;"></div>
-                                <span class="legend-label">💀</span>
-                                <span class="legend-value">${lives0}</span>
-                            </div>
-                        </div>
-                        <svg id="livesChart" class="chart-svg" viewBox="0 0 100 100"></svg>
-                    </div>
-                </div>
-                ` : ''}
-            </div>
-            
-            ${fastestPlayer ? `
-                <div class="fastest-player">
-                    <h4>⚡ Plus rapide:</h4>
-                    <span class="fastest-player-name">${fastestPlayer.username}</span>
-                    <span class="fastest-player-time">${(fastestPlayer.responseTime / 1000).toFixed(2)}s</span>
-                </div>
-            ` : ''}
-        </div>
-    `;
-
-    resultsContainer.style.display = 'block';
-    statsEmptyState.style.display = 'none';
-
-    // Générer les charts
-    setTimeout(() => {
-        if (totalAnswers > 0) {
-            const svg1 = document.getElementById('answersChart');
-            if (svg1) {
-                generatePieChart(svg1, [
-                    { value: correctCount, color: '#00ff88', label: '✓\n' + correctCount },
-                    { value: wrongCount, color: '#ff4757', label: '✕\n' + wrongCount },
-                    { value: afkCount, color: '#ffa502', label: '⏱\n' + afkCount }
-                ]);
-            }
-        }
-
-        if (totalPlayers > 0 && currentGameMode === 'lives') {
-            const svg2 = document.getElementById('livesChart');
-            if (svg2) {
-                generatePieChart(svg2, [
-                    { value: lives3, color: '#00ff88', label: '3❤\n' + lives3 },
-                    { value: lives2, color: '#FFD700', label: '2❤\n' + lives2 },
-                    { value: lives1, color: '#ffa502', label: '1❤\n' + lives1 },
-                    { value: lives0, color: '#ff4757', label: '💀\n' + lives0 }
-                ]);
-            }
-        }
-    }, 50);
-
-    document.getElementById('activePlayers').textContent = data.remainingPlayers;
-
-    if (data.playersData && data.players) {
-        updatePlayersGridWithResults(data.playersData, data.players);
-    }
-
-    // 🆕 Switcher automatiquement vers l'onglet Statistiques
-    setTimeout(() => {
-        switchTab('stats');
-    }, 300);
-
-    console.log('✅ Results displayed successfully');
-}
-
-
-// 🆕 Mettre en évidence la bonne réponse dans l'onglet Question
-function highlightCorrectAnswer(correctAnswerIndex) {
-    const answerElement = document.getElementById(`answer-${correctAnswerIndex}`);
-
-    if (answerElement) {
-        // Retirer le style de toutes les réponses d'abord
-        document.querySelectorAll('.answer-item').forEach(item => {
-            item.classList.remove('correct-answer', 'wrong-answer');
         });
 
-        // Ajouter la classe correct à la bonne réponse
-        answerElement.classList.add('correct-answer');
-
-        console.log(`✅ Réponse ${correctAnswerIndex} mise en évidence`);
-    }
-}
-
-// 🆕 Fonction pour générer un pie chart SVG avec labels (FIXED)
-function generatePieChart(svgElement, segments) {
-    console.log('🎨 generatePieChart appelé avec:', segments);
-
-    // Vider le SVG
-    while (svgElement.firstChild) {
-        svgElement.removeChild(svgElement.firstChild);
-    }
-
-    const centerX = 50;
-    const centerY = 50;
-    const radius = 40;
-    let currentAngle = -90;
-
-    // Filtrer les segments avec valeur > 0
-    const validSegments = segments.filter(s => s.value > 0);
-
-    console.log('✅ Valid segments:', validSegments);
-
-    if (validSegments.length === 0) {
-        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        text.setAttribute('x', '50');
-        text.setAttribute('y', '50');
-        text.setAttribute('text-anchor', 'middle');
-        text.setAttribute('fill', '#fff');
-        text.setAttribute('font-size', '8');
-        text.textContent = 'Aucune donnée';
-        svgElement.appendChild(text);
-        return;
-    }
-
-    // Calculer le total
-    const total = validSegments.reduce((sum, s) => sum + s.value, 0);
-    console.log('📊 Total:', total);
-
-    validSegments.forEach((segment, i) => {
-        const angle = (segment.value / total) * 360;
-        const startAngle = currentAngle;
-        const endAngle = currentAngle + angle;
-
-        console.log(`Segment ${i}:`, { angle, startAngle, endAngle, color: segment.color });
-
-        // Convertir en radians
-        const startRad = (startAngle * Math.PI) / 180;
-        const endRad = (endAngle * Math.PI) / 180;
-
-        // Points de départ et fin
-        const x1 = centerX + radius * Math.cos(startRad);
-        const y1 = centerY + radius * Math.sin(startRad);
-        const x2 = centerX + radius * Math.cos(endRad);
-        const y2 = centerY + radius * Math.sin(endRad);
-
-        const largeArc = angle > 180 ? 1 : 0;
-
-        // ⭐ FIX: Pour un cercle complet (360°), utiliser 2 arcs de 180°
-        let pathD;
-        if (angle >= 359.9) {
-            // Cercle complet : 2 demi-cercles
-            const midX = centerX - radius;
-            pathD = `M ${centerX},${centerY - radius} A ${radius},${radius} 0 0,1 ${centerX},${centerY + radius} A ${radius},${radius} 0 0,1 ${centerX},${centerY - radius} Z`;
-        } else {
-            pathD = `M ${centerX},${centerY} L ${x1},${y1} A ${radius},${radius} 0 ${largeArc},1 ${x2},${y2} Z`;
-        }
-        console.log('Path:', pathD);
-
-        // ⭐ CRÉER LE PATH AVEC createElementNS
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', pathD);
-        path.setAttribute('fill', segment.color);
-        path.setAttribute('stroke', '#1a1d29');
-        path.setAttribute('stroke-width', '1.5');
-        svgElement.appendChild(path);
-
-        currentAngle = endAngle;
+        item.addEventListener('mouseleave', () => {
+            hideCardTimeout = setTimeout(() => {
+                playerCard.classList.remove('visible');
+            }, 150);
+        });
     });
-
-    console.log('✅ SVG elements created successfully');
 }
 
-function hideResults() {
-    console.log('🔄 Hiding results, showing question');
-    document.getElementById('resultsContainer').style.display = 'none';
-    document.getElementById('resultsContainer').innerHTML = ''; // Vider le contenu
-    document.getElementById('questionContainer').style.display = 'block';
-}
+setupPlayerCardEvents();
 
-// 🆕 Reset l'affichage à l'état initial
-function resetQuestionDisplay() {
-    console.log('🔄 Reset question display');
-    const questionContainer = document.getElementById('questionContainer');
-    const resultsContainer = document.getElementById('resultsContainer');
+// ============================================
+// ANIMATION ABSORPTION - OUVERTURE LOBBY
+// ============================================
+const openLobbyBtn = document.getElementById('openLobbyBtn');
+const absorptionCircle = document.getElementById('absorptionCircle');
+const stateIdle = document.getElementById('stateIdle');
+const stateLobby = document.getElementById('stateLobby');
+const stateGame = document.getElementById('stateGame');
+const recentPanel = document.getElementById('recentPanel');
+const lastgamePanel = document.getElementById('lastgamePanel');
+const bgText = document.getElementById('bgText');
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
 
-    // Cacher les résultats
-    resultsContainer.style.display = 'none';
-    resultsContainer.innerHTML = '';
-
-    // Afficher le message par défaut
-    questionContainer.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon">❓</div>
-                    <h3>Aucune question active</h3>
-                    <p>Démarrez une partie pour afficher les questions</p>
-                </div>
-            `;
-    questionContainer.style.display = 'block';
-
-    // Revenir à l'onglet Question
-    switchTab('question');
-}
-
-// ============ GAME END PANEL ============
-function displayGameEnd(data) {
-    console.log('🏁 Affichage fin de partie:', data);
-
-    const resultsContainer = document.getElementById('resultsContainer');
-    const questionContainer = document.getElementById('questionContainer');
-
-    // Cacher la question et afficher le panel de fin
-    questionContainer.style.display = 'none';
-
-    if (!data.winner) {
-        resultsContainer.innerHTML = `
-            <div class="game-end-panel">
-                <div class="game-end-header">
-                    <h2>Partie terminée</h2>
-                </div>
-                <p>Aucun gagnant</p>
-            </div>
-        `;
-    } else {
-        // 🔥 FIX: Affichage selon le mode
-        let statsHTML = '';
-
-        if (data.gameMode === 'lives') {
-            const hearts = '❤️'.repeat(data.winner.livesRemaining || 0);
-            statsHTML = `
-                <div class="winner-stat">
-                    <div class="stat-label">Vies restantes</div>
-                    <div class="stat-value hearts">${hearts}</div>
-                </div>
-            `;
-        } else if (data.gameMode === 'points') {
-            statsHTML = `
-                <div class="winner-stat">
-                    <div class="stat-label">Points</div>
-                    <div class="stat-value">${data.winner.points || 0}</div>
-                </div>
-            `;
-        }
-
-        resultsContainer.innerHTML = `
-            <div class="game-end-panel">
-                <div class="game-end-header">
-                    <h2>Partie terminée !</h2>
-                </div>
-                
-                <div class="winner-section">
-                    <div class="winner-badge">VAINQUEUR</div>
-                    <div class="winner-name">${data.winner.username}</div>
-                    
-                    <div class="winner-stats">
-                        ${statsHTML}
-                        <div class="stat-divider"></div>
-                        <div class="winner-stat">
-                            <div class="stat-label">Victoires totales</div>
-                            <div class="stat-value">${data.winner.totalVictories}</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="game-summary">
-                    <div class="summary-item">
-                        <span class="summary-label">Questions</span>
-                        <span class="summary-value">${data.totalQuestions}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Durée</span>
-                        <span class="summary-value">${Math.floor(data.duration / 60)}m ${data.duration % 60}s</span>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    resultsContainer.style.display = 'block';
-}
-
-// ============ PLAYERS GRID ============
-function updatePlayersGrid(players) {
-    // 🔥 NOUVEAU: Toujours trier avant d'afficher
-    let sortedPlayers = [...players];
-
-    if (currentGameMode === 'points') {
-        sortedPlayers.sort((a, b) => (b.points || 0) - (a.points || 0));
-    } else {
-        sortedPlayers.sort((a, b) => {
-            if (b.lives !== a.lives) return b.lives - a.lives;
-            return (b.correctAnswers || 0) - (a.correctAnswers || 0);
-        });
-    }
-
-    // Utiliser la fonction avec effet tiebreaker qui gère déjà l'affichage
-    updatePlayersGridWithTiebreakerEffect(sortedPlayers);
-}
-
-
-// 🆕 Fonction modifiée de updatePlayersGrid avec effet tiebreaker
-function updatePlayersGridWithTiebreakerEffect(players) {
-    const grid = document.getElementById('playersGrid');
-
-    if (players.length === 0) {
-        grid.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">👥</div>
-                <h3>Aucun joueur</h3>
-                <p>Les joueurs apparaîtront ici une fois la partie lancée</p>
-            </div>
-        `;
-        return;
-    }
-
-    // 🔥 FIX: Récupérer les résultats de la dernière question
-    const playersDetails = lastQuestionResults?.players || [];
-
-    // Créer une map des détails pour accès rapide
-    const detailsMap = new Map();
-    playersDetails.forEach(detail => {
-        detailsMap.set(detail.username, detail);
-    });
-
-    grid.innerHTML = players.map((player, index) => {
-        const isEliminated = currentGameMode === 'lives' ? player.lives === 0 : false;
-        const isTiebreaker = tiebreakerPlayerIds.includes(player.twitchId);
-
-        // 🔥 Récupérer le status de la dernière question
-        const detail = detailsMap.get(player.username);
-        let statusClass = '';
-        if (detail) {
-            if (detail.status === 'correct') {
-                statusClass = 'correct';
-            } else if (detail.status === 'wrong' || detail.status === 'afk') {
-                statusClass = 'wrong';
-            }
-        }
-
-        let statsHTML = '';
-        if (currentGameMode === 'lives') {
-            const lives = player.lives !== undefined ? player.lives : gameSettings.lives;
-            statsHTML = `
-                <div class="player-lives">
-                    ${[1, 2, 3].map(n =>
-                `<span class="heart-icon ${n <= lives ? 'active' : 'lost'}">
-                            ${n <= lives ? '❤️' : '🖤'}
-                        </span>`
-            ).join('')}
-                </div>
-            `;
-        } else {
-            const points = player.points !== undefined && player.points !== null ? player.points : 0;
-            statsHTML = `
-                <div class="player-points">
-                    <span class="points-value">${points}</span>
-                </div>
-            `;
-        }
-
-        const isLeader = index === 0;
-
-        return `
-            <div class="player-card ${statusClass} ${isEliminated ? 'eliminated' : ''} ${isTiebreaker ? 'tiebreaker' : ''} ${isLeader ? 'leader' : ''}" onclick="openPlayerProfile('${player.twitchId}', '${player.username}')">
-                <div class="player-header">
-                    <div class="player-username">${player.username}</div>
-                    <div class="player-status">
-                        <div class="status-indicator ${statusClass}"></div>
-                    </div>
-                </div>
-                ${statsHTML}
-                ${detail ? `
-                <div class="player-answer-overlay">
-                    ${detail.status === 'afk' ? `
-                        <img src="afk.png" alt="AFK" class="afk-icon">
-                    ` : `
-                        <span class="answer-value ${detail.isCorrect ? 'correct' : 'wrong'}">${detail.selectedAnswer || '?'}</span>
-                    `}
-                </div>
-                ` : ''}
-            </div>
-        `;
-    }).join('');
-}
-
-// 🆕 Fonction pour mettre à jour la grille avec les résultats de la question
-function updatePlayersGridWithResults(playersData, playersDetails) {
-    const grid = document.getElementById('playersGrid');
-
-    if (!playersData || playersData.length === 0) {
-        grid.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">👥</div>
-                <h3>Aucun joueur</h3>
-                <p>Les joueurs apparaîtront ici une fois la partie lancée</p>
-            </div>
-        `;
-        return;
-    }
-
-    // 🔥 NOUVEAU: Trier les joueurs selon le mode
-    let sortedPlayers = [...playersData]; // Copie pour ne pas modifier l'original
-
-    if (currentGameMode === 'points') {
-        // Tri par points décroissants (du plus haut au plus bas)
-        sortedPlayers.sort((a, b) => (b.points || 0) - (a.points || 0));
-        console.log('📊 Joueurs triés par points:', sortedPlayers.map(p => `${p.username}: ${p.points}`));
-    } else {
-        // Mode Vie: tri par vies décroissantes, puis par bonnes réponses
-        sortedPlayers.sort((a, b) => {
-            if (b.lives !== a.lives) return b.lives - a.lives;
-            return (b.correctAnswers || 0) - (a.correctAnswers || 0);
-        });
-    }
-
-    // Créer une map des détails pour accès rapide
-    const detailsMap = new Map();
-    if (playersDetails) {
-        playersDetails.forEach(detail => {
-            detailsMap.set(detail.username, detail);
-        });
-    }
-
-    // 🔥 Utiliser sortedPlayers au lieu de playersData
-    grid.innerHTML = sortedPlayers.map((player, index) => {
-        const detail = detailsMap.get(player.username);
-
-        let statusClass = '';
-        if (detail) {
-            if (detail.status === 'correct') {
-                statusClass = 'correct';
-            } else if (detail.status === 'wrong' || detail.status === 'afk') {
-                statusClass = 'wrong';
-            }
-        }
-
-        const isEliminated = currentGameMode === 'lives' && player.lives === 0;
-        const isTiebreaker = tiebreakerPlayerIds.includes(player.twitchId);
-
-        let statsHTML = '';
-        if (currentGameMode === 'points') {
-            const points = player.points !== undefined && player.points !== null ? player.points : 0;
-            statsHTML = `
-                <div class="player-points">
-                    <span class="points-value">${points}</span>
-                </div>
-            `;
-        } else {
-            statsHTML = `
-                <div class="player-lives">
-                    ${[1, 2, 3].map(n =>
-                `<span class="heart-icon ${n <= player.lives ? 'active' : 'lost'}">
-                            ${n <= player.lives ? '❤️' : '🖤'}
-                        </span>`
-            ).join('')}
-                </div>
-            `;
-        }
-
-        const isLeader = index === 0;
-
-        return `
-            <div class="player-card ${statusClass} ${isEliminated ? 'eliminated' : ''} ${isTiebreaker ? 'tiebreaker' : ''} ${isLeader ? 'leader' : ''}" onclick="openPlayerProfile('${player.twitchId}', '${player.username}')">
-                <div class="player-header">
-                    <div class="player-username">${player.username}</div>
-                    <div class="player-status">
-                        <div class="status-indicator ${statusClass}"></div>
-                    </div>
-                </div>
-                ${statsHTML}
-                ${detail ? `
-                <div class="player-answer-overlay">
-                    ${detail.status === 'afk' ? `
-                        <img src="afk.png" alt="AFK" class="afk-icon">
-                    ` : `
-                        <span class="answer-value ${detail.isCorrect ? 'correct' : 'wrong'}">${detail.selectedAnswer || '?'}</span>
-                    `}
-                </div>
-                ` : ''}
-            </div>
-        `;
-    }).join('');
-}
-
-// ============ OVERLAYS ============
-function toggleOverlay(type) {
-    closeOverlays();
-
-    const backdrop = document.getElementById('overlayBackdrop');
-    backdrop.classList.add('active');
-
-    if (type === 'top10') {
-        document.getElementById('overlayTop10').classList.add('active');
-    } else if (type === 'recent') {
-        document.getElementById('overlayRecent').classList.add('active');
-    }
-}
-
-function closeOverlays() {
-    document.getElementById('overlayBackdrop').classList.remove('active');
-    document.getElementById('overlayTop10').classList.remove('active');
-    document.getElementById('overlayRecent').classList.remove('active');
-}
-
-// ============ TABS ============
-function switchTab(tab) {
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-
-    if (tab === 'question') {
-        document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
-        document.getElementById('tabQuestion').classList.add('active');
-    } else if (tab === 'stats') {
-        document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
-        document.getElementById('tabStats').classList.add('active');
-    } else if (tab === 'players') {
-        document.querySelector('.tab-btn:nth-child(3)').classList.add('active');
-        document.getElementById('tabPlayers').classList.add('active');
-    }
-}
-
-// ============ ACTIONS ============
-async function toggleGame() {
-    // 🆕 Anti-spam
-    if (isTogglingGame) {
-        console.log('⏳ Veuillez patienter...');
-        return;
-    }
-
-    isTogglingGame = true;
+openLobbyBtn.addEventListener('click', async () => {
 
     try {
+        const stateResponse = await fetch('/admin/game-state', { credentials: 'same-origin' });
+        const state = await stateResponse.json();
+
+        // Si lobby déjà ouvert, juste afficher l'UI
+        if (state.isActive || state.phase === 'lobby') {
+            console.log('Lobby déjà ouvert, affichage direct');
+            showLobbyUI(state.players || []);
+            return;
+        }
+
+        // Sinon, activer le lobby
         const response = await fetch('/admin/toggle-game', {
             method: 'POST',
             credentials: 'same-origin'
         });
 
-        if (response.status === 403) {
-            if (!isReloading) {
-                isReloading = true;
-                console.log('⚠️ Session expirée, rechargement...');
-                location.reload();
-            }
-            return;
-        }
-
-        if (!response.ok) {
-            console.error('❌ Erreur toggle-game:', response.status);
-            return;
-        }
-
         const data = await response.json();
-        updateGameStatus(data.isActive);
+        console.log('✅ Toggle lobby:', data);
 
-        // 🆕 Si on ouvre le lobby, reset l'affichage de fin de partie
-        if (data.isActive) {
-            resetQuestionDisplay();
-            toggleSettingsAccess(true); // Débloquer les paramètres
+        if (!data.isActive) {
+            console.log('Lobby fermé, annulation animation');
+            return;
         }
-
-        refreshStats();
     } catch (error) {
-        console.error('❌ Erreur toggleGame:', error);
-    } finally {
-        // 🆕 Débloquer après 1 seconde
-        setTimeout(() => {
-            isTogglingGame = false;
-        }, 1000);
-    }
-}
-
-async function startGame() {
-    // 🆕 Anti-spam
-    if (isStartingGame) {
-        console.log('⏳ Démarrage en cours...');
+        console.error('❌ Erreur:', error);
         return;
     }
 
-    isStartingGame = true;
+    // Position du bouton
+    const btnRect = openLobbyBtn.getBoundingClientRect();
+    const centerX = btnRect.left + btnRect.width / 2;
+    const centerY = btnRect.top + btnRect.height / 2;
+
+    // Calculer la taille nécessaire pour couvrir tout l'écran
+    const maxDim = Math.max(
+        Math.hypot(centerX, centerY),
+        Math.hypot(window.innerWidth - centerX, centerY),
+        Math.hypot(centerX, window.innerHeight - centerY),
+        Math.hypot(window.innerWidth - centerX, window.innerHeight - centerY)
+    ) * 2;
+
+    // Cacher les panneaux latéraux
+    recentPanel.classList.add('hidden');
+    lastgamePanel.classList.add('hidden');
+
+    // Désactiver le pulse
+    btnWrapper.classList.remove('pulse-active');
+
+    // Animation d'absorption
+    absorptionCircle.style.left = centerX + 'px';
+    absorptionCircle.style.top = centerY + 'px';
+    absorptionCircle.style.opacity = '1';
+
+    anime({
+        targets: absorptionCircle,
+        width: [185, maxDim],
+        height: [185, maxDim],
+        duration: 800,
+        easing: 'easeInOutQuart',
+        complete: () => {
+            // Cacher l'état idle
+            stateIdle.style.display = 'none';
+
+            // Afficher le lobby
+            stateLobby.classList.add('active');
+            stateLobby.style.pointerEvents = '';
+
+            bgText.textContent = 'LOBBY';
+            bgText.classList.add('lobby-active');
+            statusDot.classList.add('active');
+            statusText.textContent = 'Lobby ouvert';
+
+
+            // Fade out du cercle
+            anime({
+                targets: absorptionCircle,
+                opacity: [1, 0],
+                duration: 400,
+                easing: 'easeOutQuad',
+                complete: () => {
+                    absorptionCircle.style.width = '0';
+                    absorptionCircle.style.height = '0';
+                }
+            });
+
+            // Animation d'entrée du lobby
+            anime({
+                targets: stateLobby,
+                opacity: [0, 1],
+                duration: 500,
+                easing: 'easeOutQuad'
+            });
+
+            anime({
+                targets: '.lobby-stats',
+                opacity: [0, 1],
+                translateX: [-30, 0],
+                duration: 600,
+                delay: 200,
+                easing: 'easeOutCubic'
+            });
+
+            anime({
+                targets: '.lobby-actions-full',
+                opacity: [0, 1],
+                translateX: [30, 0],
+                duration: 600,
+                delay: 250,
+                easing: 'easeOutCubic'
+            });
+        }
+    });
+
+    // Fade out des éléments idle
+    anime({
+        targets: ['.idle-main', '.idle-stats'],
+        opacity: 0,
+        duration: 300,
+        easing: 'easeOutQuad'
+    });
+});
+
+// ============================================
+// GRILLE JOUEURS LOBBY
+// ============================================
+function populateLobbyPlayers() {
+    const grid = document.getElementById('playersGridLobby');
+    const countEl = document.getElementById('lobbyPlayerCount');
+    grid.innerHTML = '';
+
+    // Démarrer avec 0 joueurs pour test
+    const startWithPlayers = []; // mockPlayers pour avoir des joueurs
+
+    startWithPlayers.forEach((player, i) => {
+        const card = document.createElement('div');
+        card.className = 'player-card-mini';
+
+        // En lobby : pas de stats affichées
+        // En jeu : on affichera les coeurs ou points ici
+        card.innerHTML = `
+                    <div class="player-card-mini-badge"></div>
+                    <div class="player-card-mini-name">${player}</div>
+                    <div class="player-card-mini-stats">
+                        <!-- Vide en lobby, rempli en jeu -->
+                    </div>
+                `;
+        card.style.opacity = '0';
+        grid.appendChild(card);
+
+        anime({
+            targets: card,
+            opacity: [0, 1],
+            translateY: [12, 0],
+            delay: 300 + i * 30,
+            duration: 350,
+            easing: 'easeOutCubic'
+        });
+    });
+
+    // Animer le compteur
+    countEl.textContent = '0';
+}
+
+// ============================================
+// FERMETURE LOBBY
+// ============================================
+document.getElementById('closeLobbyBtn').addEventListener('click', async () => {
+    try {
+        // Appeler le serveur pour fermer le lobby
+        const response = await fetch('/admin/toggle-game', {
+            method: 'POST',
+            credentials: 'same-origin'
+        });
+
+        const data = await response.json();
+        console.log('🔒 Fermeture lobby:', data);
+
+        // Si le lobby est bien fermé, l'animation sera déclenchée par le socket 'game-deactivated'
+        // Mais on peut aussi la lancer directement ici pour plus de réactivité
+        if (!data.isActive) {
+            closeLobbyUI();
+        }
+    } catch (error) {
+        console.error('❌ Erreur fermeture lobby:', error);
+    }
+});
+
+// ============================================
+// ============================================
+// PARAMÈTRES INLINE - Gestion des options
+// ============================================
+
+// Options génériques (vies, questions, timer, difficulté)
+document.querySelectorAll('.setting-group:not(.mode-group):not(.series-group) .setting-option-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const group = btn.closest('.setting-group');
+        const valueDisplay = group.querySelector('.setting-group-value');
+
+        // Retirer active des autres
+        group.querySelectorAll('.setting-option-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Mettre à jour la valeur affichée
+        valueDisplay.textContent = btn.dataset.value;
+
+        // Animation
+        anime({
+            targets: valueDisplay,
+            scale: [1.15, 1],
+            duration: 300,
+            easing: 'easeOutBack'
+        });
+
+        // Si c'est le groupe des vies, mettre à jour les cartes joueurs
+        if (group.classList.contains('lives-group')) {
+            const lives = parseInt(btn.dataset.value) || 3;
+            document.querySelectorAll('.player-card-mini-stat').forEach(stat => {
+                stat.innerHTML = '❤️'.repeat(lives);
+            });
+        }
+    });
+});
+
+// Mode de jeu (Vies/Points)
+document.querySelectorAll('.mode-group .setting-option-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const group = btn.closest('.setting-group');
+        const valueDisplay = document.getElementById('modeValue');
+        const livesGroup = document.getElementById('livesGroup');
+        const questionsGroup = document.getElementById('questionsGroup');
+
+        group.querySelectorAll('.setting-option-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        valueDisplay.textContent = btn.dataset.value;
+
+        // Mode Vies : afficher vies, cacher questions
+        if (btn.dataset.mode === 'vie') {
+            // Afficher vies
+            livesGroup.style.display = 'block';
+            livesGroup.classList.remove('hidden');
+            anime({
+                targets: livesGroup,
+                opacity: [0, 1],
+                translateY: [-10, 0],
+                duration: 300,
+                easing: 'easeOutCubic'
+            });
+
+            // Cacher questions
+            anime({
+                targets: questionsGroup,
+                opacity: [1, 0],
+                translateY: [0, -10],
+                duration: 200,
+                easing: 'easeInCubic',
+                complete: () => {
+                    questionsGroup.style.display = 'none';
+                    questionsGroup.classList.add('hidden');
+                }
+            });
+
+
+            const lives = parseInt(document.querySelector('.lives-group .setting-option-btn.active')?.dataset.value) || 3;
+            document.querySelectorAll('.player-card-mini-stat').forEach(stat => {
+                stat.innerHTML = getLivesIconsHTML(selectedLivesIcon, lives, lives);
+            });
+
+        }
+        // Mode Points : cacher vies, afficher questions
+        else {
+            // Cacher vies
+            anime({
+                targets: livesGroup,
+                opacity: [1, 0],
+                translateY: [0, -10],
+                duration: 200,
+                easing: 'easeInCubic',
+                complete: () => {
+                    livesGroup.style.display = 'none';
+                    livesGroup.classList.add('hidden');
+                }
+            });
+
+            // Afficher questions
+            questionsGroup.style.display = 'block';
+            questionsGroup.classList.remove('hidden');
+            anime({
+                targets: questionsGroup,
+                opacity: [0, 1],
+                translateY: [-10, 0],
+                duration: 300,
+                easing: 'easeOutCubic'
+            });
+
+            document.querySelectorAll('.player-card-mini-stat').forEach(stat => {
+                stat.innerHTML = '<span class="player-points">0</span>';
+            });
+
+        }
+    });
+});
+
+// Dropdown séries - REMOVED, now using modal
+
+// Timer slider
+document.getElementById('timerSlider').addEventListener('input', (e) => {
+    const value = e.target.value;
+    document.getElementById('timerValue').textContent = value + 's';
+});
+
+// ============================================
+// SERIES MODAL
+// ============================================
+const seriesTrigger = document.getElementById('seriesTrigger');
+const seriesModal = document.getElementById('seriesModal');
+const seriesModalOverlay = document.getElementById('seriesModalOverlay');
+const seriesModalClose = document.getElementById('seriesModalClose');
+const seriesSearchInput = document.getElementById('seriesSearchInput');
+const seriesCards = document.querySelectorAll('.series-card:not(.soon)');
+const allSeriesCards = document.querySelectorAll('.series-card');
+
+function openSeriesModal() {
+    seriesModal.classList.add('active');
+    seriesModalOverlay.classList.add('active');
+    seriesSearchInput.focus();
+    
+    // Synchroniser avec le filtre actuel (Overall par défaut)
+    const currentValue = document.getElementById('seriesValue')?.textContent || 'Overall';
+    
+    document.querySelectorAll('.series-card').forEach(card => {
+        card.classList.toggle('active', card.dataset.name === currentValue);
+    });
+}
+
+function closeSeriesModal() {
+    seriesModal.classList.remove('active');
+    seriesModalOverlay.classList.remove('active');
+    seriesSearchInput.value = '';
+    filterSeries('');
+}
+
+seriesTrigger.addEventListener('click', openSeriesModal);
+seriesModalOverlay.addEventListener('click', closeSeriesModal);
+seriesModalClose.addEventListener('click', closeSeriesModal);
+
+// Series card selection
+seriesCards.forEach(card => {
+    card.addEventListener('click', () => {
+        // Remove active from all
+        document.querySelectorAll('.series-card').forEach(c => c.classList.remove('active'));
+        // Add active to clicked
+        card.classList.add('active');
+
+        // Update value display
+        const seriesName = card.dataset.name;
+        document.getElementById('seriesValue').textContent = seriesName;
+
+        // Animate check
+        anime({
+            targets: card.querySelector('.series-card-check'),
+            scale: [0.5, 1.2, 1],
+            duration: 400,
+            easing: 'easeOutBack'
+        });
+
+        // Close modal after short delay
+        setTimeout(closeSeriesModal, 300);
+    });
+});
+
+// Search filter
+function filterSeries(query) {
+    const lowerQuery = query.toLowerCase();
+    allSeriesCards.forEach(card => {
+        const name = card.dataset.name.toLowerCase();
+        if (name.includes(lowerQuery)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+seriesSearchInput.addEventListener('input', (e) => {
+    filterSeries(e.target.value);
+});
+
+// Close on Escape
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && seriesModal.classList.contains('active')) {
+        closeSeriesModal();
+    }
+});
+
+
+
+let playerIndex = 0;
+
+
+// ============================================
+// MODAL CARTE JOUEUR
+// ============================================
+const playerModalOverlay = document.getElementById('playerModalOverlay');
+const playerModal = document.getElementById('playerModal');
+const playerModalClose = document.getElementById('playerModalClose');
+
+async function openPlayerModal(playerName, isChampion, playerTitle, twitchId = null) {
+    const statGames = document.getElementById('statGames');
+    const statWins = document.getElementById('statWins');
+    const statWinrate = document.getElementById('statWinrate');
+
+    const modalAvatar = document.getElementById('playerModalAvatar');
+    if (modalAvatar) {
+        modalAvatar.style.opacity = '0';
+    }
+
+    // Activer animation barres
+    statGames.classList.add('loading');
+    statWins.classList.add('loading');
+    statWinrate.classList.add('loading');
+    statGames.textContent = '';
+    statWins.textContent = '';
+    statWinrate.textContent = '';
+
+    // Mettre à jour nom, badge, titre
+    document.getElementById('playerModalName').textContent = playerName;
+    document.getElementById('playerModalBadge').textContent = isChampion ? 'DERNIER VAINQUEUR' : '';
+    document.getElementById('playerModalTitle').textContent = playerTitle || '';
+
+    const modalCard = document.querySelector('.player-modal-card');
+    modalCard.classList.toggle('champion', isChampion);
+
+    // Afficher modal
+    document.getElementById('playerModalOverlay').classList.add('active');
+    document.getElementById('playerModal').classList.add('active');
+
+    // 🔥 Temps minimum de loading pour voir l'animation
+    const minLoadingTime = 600;
+    const startTime = Date.now();
+
+    let gamesValue = '0';
+    let winsValue = '0';
+    let winrateValue = '0%';
+
+    // Charger stats
+    if (twitchId) {
+        try {
+            const response = await fetch(`/profile/${twitchId}`);
+            const data = await response.json();
+
+            const modalAvatar = document.getElementById('playerModalAvatar');
+            if (modalAvatar) {
+                modalAvatar.src = data.user.avatar_url || 'cardpic.png';
+                modalAvatar.onload = () => {
+                    modalAvatar.style.opacity = '1';
+                };
+            }
+
+            gamesValue = data.user.total_games_played || 0;
+            winsValue = data.user.total_victories || 0;
+            winrateValue = (parseInt(data.user.win_rate) || 0) + '%';
+        } catch (e) {
+            console.error('Erreur chargement profil:', e);
+        }
+    }
+
+    // 🔥 Attendre le temps minimum avant d'afficher
+    const elapsed = Date.now() - startTime;
+    const remainingTime = Math.max(0, minLoadingTime - elapsed);
+
+    setTimeout(() => {
+        // Retirer loading avec animation
+        statGames.classList.remove('loading');
+        statWins.classList.remove('loading');
+        statWinrate.classList.remove('loading');
+
+        // Afficher les valeurs avec un léger délai entre chaque
+        setTimeout(() => {
+            statGames.textContent = gamesValue;
+            anime({
+                targets: statGames,
+                scale: [0.5, 1],
+                opacity: [0, 1],
+                duration: 300,
+                easing: 'easeOutBack'
+            });
+        }, 0);
+
+        setTimeout(() => {
+            statWins.textContent = winsValue;
+            anime({
+                targets: statWins,
+                scale: [0.5, 1],
+                opacity: [0, 1],
+                duration: 300,
+                easing: 'easeOutBack'
+            });
+        }, 100);
+
+        setTimeout(() => {
+            statWinrate.textContent = winrateValue;
+            anime({
+                targets: statWinrate,
+                scale: [0.5, 1],
+                opacity: [0, 1],
+                duration: 300,
+                easing: 'easeOutBack'
+            });
+        }, 200);
+
+    }, remainingTime);
+}
+
+function closePlayerModal() {
+    playerModalOverlay.classList.remove('active');
+    playerModal.classList.remove('active');
+}
+
+playerModalClose.addEventListener('click', closePlayerModal);
+playerModalOverlay.addEventListener('click', closePlayerModal);
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && playerModal.classList.contains('active')) {
+        closePlayerModal();
+    }
+});
+
+// ============================================
+// ÉTAT GAME - SYSTÈME COMPLET
+// ============================================
+let gameStarted = false;
+let currentQuestion = 0;
+let timerInterval = null;
+let timerValue = 10;
+let gameSettings = {
+    mode: 'vie',
+    lives: 3,
+    timer: 10,
+    totalQuestions: 20
+};
+
+
+// Joueurs en jeu
+let gamePlayers = [];
+
+
+function updateLobbyPlayers(players) {
+    const grid = document.getElementById('playersGridLobby');
+    const countEl = document.getElementById('lobbyPlayerCount');
+
+    if (!grid) return;
+
+    // Mettre à jour le compteur
+    if (countEl) countEl.textContent = players.length;
+
+    // Vider la grille
+    grid.innerHTML = '';
+
+    updateStartButton(players.length);
+
+    // Si pas de joueurs, juste laisser vide
+    if (players.length === 0) return;
+
+    // Sinon afficher les joueurs
+    players.forEach((player, index) => {
+        const card = document.createElement('div');
+        card.className = 'player-card-mini';
+
+        // Gérer les deux formats de données
+        const isChampion = player.isChampion || player.isLastGlobalWinner;
+        const twitchId = player.twitch_id || player.twitchId;
+
+        if (isChampion) card.classList.add('champion');
+
+        const currentLives = parseInt(document.querySelector('.lives-group .setting-option-btn.active')?.dataset.value) || 3;
+        const currentMode = document.querySelector('.mode-group .setting-option-btn.active')?.dataset.mode || 'vie';
+
+        card.dataset.twitchId = twitchId || '';
+
+        card.innerHTML = `
+        <div class="player-card-mini-badge"></div>
+        <div class="player-card-mini-name">${player.username}</div>
+        <div class="player-card-mini-title">${player.title || 'Novice'}</div>
+        <div class="player-card-mini-separator"></div>
+        <div class="player-card-mini-stat">
+            ${currentMode === 'vie' ? getLivesIconsHTML(selectedLivesIcon, currentLives, currentLives) : '<span class="player-points">0</span>'}
+        </div>
+    `;
+
+        // Clic pour ouvrir la modal
+        card.addEventListener('click', () => {
+            openPlayerModal(player.username, isChampion, player.title || 'Novice', twitchId);
+        });
+
+        card.style.opacity = '0';
+        card.style.cursor = 'pointer';
+        grid.appendChild(card);
+
+        anime({
+            targets: card,
+            opacity: [0, 1],
+            translateY: [12, 0],
+            delay: index * 30,
+            duration: 350,
+            easing: 'easeOutCubic'
+        });
+    });
+
+    updateStartButton(players.length);
+
+
+}
+
+// Fonction pour vérifier si le bouton démarrer doit être actif
+function updateStartButton(playerCount) {
+    const startBtn = document.getElementById('startGameBtn');
+    if (!startBtn) return;
+
+    if (playerCount >= 1) {
+        startBtn.classList.remove('disabled');
+    } else {
+        startBtn.classList.add('disabled');
+    }
+}
+
+// Récupérer les paramètres actuels
+function getGameSettings() {
+    gameSettings.mode = document.getElementById('modeValue').textContent.toLowerCase().includes('vie') ? 'vie' : 'point';
+    gameSettings.lives = parseInt(document.getElementById('livesValue')?.textContent || 3);
+    gameSettings.timer = parseInt(document.getElementById('timerValue').textContent);
+    gameSettings.answersCount = parseInt(document.getElementById('answersValue').textContent);  // AJOUTER
+}
+
+// Créer les cartes joueurs en mode jeu (style lobby)
+function createGamePlayerCards() {
+    const lobbyCards = document.querySelectorAll('.player-card-mini');
+    const gameGrid = document.getElementById('playersGridGame');
+    gameGrid.innerHTML = '';
+    gamePlayers = [];
+
+    lobbyCards.forEach((card, index) => {
+        const name = card.querySelector('.player-card-mini-name').textContent;
+        const isChampion = card.classList.contains('champion');
+        const titleEl = card.querySelector('.player-card-mini-title');
+        const playerTitle = titleEl ? titleEl.textContent : '';
+        const twitchId = card.dataset.twitchId || '';
+
+        const playerData = {
+            name: name,
+            twitchId: twitchId,
+            lives: gameSettings.lives,
+            points: 0,
+            isChampion: isChampion,
+            title: playerTitle,
+            eliminated: false,
+            hasAnswered: false,
+            answer: null
+        };
+        gamePlayers.push(playerData);
+
+        const gameCard = document.createElement('div');
+        gameCard.className = 'player-card-game' + (isChampion ? ' champion' : '');
+        gameCard.dataset.playerIndex = index;
+        gameCard.dataset.lives = gameSettings.lives;
+
+
+        if (gameSettings.mode === 'vie') {
+            const livesHtml = getLivesIconsHTML(selectedLivesIcon, gameSettings.lives, gameSettings.lives);
+            gameCard.innerHTML = `
+                <div class="answered-indicator"></div>
+                <div class="player-card-game-name">${name}</div>
+                <div class="player-card-game-lives">${livesHtml}</div>
+                <div class="player-card-game-answer-overlay">
+                    <span class="answer-text-display no-answer">Pas répondu</span>
+                </div>
+            `;
+        } else {
+            gameCard.innerHTML = `
+                <div class="answered-indicator"></div>
+                <div class="player-card-game-name">${name}</div>
+                <div class="player-card-game-points">0</div>
+                <div class="player-card-game-answer-overlay">
+                    <span class="answer-text-display no-answer">Pas répondu</span>
+                </div>
+            `;
+        }
+
+        // ===== CLIC SUR CARTE JOUEUR =====
+        gameCard.style.cursor = 'pointer';
+        gameCard.addEventListener('click', (e) => {
+            // Empêcher le clic si on survole l'overlay
+            if (e.target.closest('.player-card-game-answer-overlay')) return;
+
+            openPlayerModal(name, isChampion, playerTitle, twitchId);
+        });
+
+        gameGrid.appendChild(gameCard);
+    });
+}
+
+
+
+function updateTimerDisplay() {
+    const display = Math.max(0, timerValue); // Protection contre -1
+    document.getElementById('timerText').textContent = display;
+
+    const progress = document.getElementById('timerProgress');
+    const circumference = 2 * Math.PI * 22;
+    const offset = circumference * (1 - display / gameSettings.timer);
+    progress.style.strokeDashoffset = offset;
+}
+
+
+
+
+
+//QUESTION SUIVANTE
+document.getElementById('nextQuestionBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('nextQuestionBtn');
+    if (btn.classList.contains('loading')) return;
+
+    btn.classList.add('loading');
+    hideGameCloseBtn();
+
+    const questionWrapper = document.getElementById('gameQuestionWrapper');
+    const mainPanel = document.getElementById('gameMainPanel');
+    const questionActions = document.getElementById('questionActions');
+
+    // 🔥 1. CACHER le contenu IMMÉDIATEMENT
+    const questionText = document.getElementById('questionText');
+    const answersGrid = document.getElementById('answersGrid');
+    const questionBadges = document.querySelector('.question-badges-row');
+
+    if (questionText) questionText.style.opacity = '0';
+    if (answersGrid) answersGrid.style.opacity = '0';
+    if (questionBadges) questionBadges.style.opacity = '0';
+
+    // 🔥 2. LANCER l'animation IMMÉDIATEMENT
+    questionActions.classList.remove('visible');
+    questionWrapper.classList.add('closing');
+    mainPanel.classList.add('closing');
+
+    // 🔥 3. PUIS appeler le serveur (en parallèle)
+    try {
+        const response = await fetch('/admin/next-question', {
+            method: 'POST',
+            credentials: 'same-origin'
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error('❌ Erreur:', data.error);
+            if (data.blocked) {
+                console.log('⏳ Timer en cours:', data.timeRemaining);
+            }
+            // Restaurer si erreur
+            if (questionText) questionText.style.opacity = '1';
+            if (answersGrid) answersGrid.style.opacity = '1';
+            if (questionBadges) questionBadges.style.opacity = '1';
+            questionWrapper.classList.remove('closing');
+            mainPanel.classList.remove('closing');
+            btn.classList.remove('loading');
+            return;
+        }
+
+        // La nouvelle question arrivera via socket 'new-question'
+
+    } catch (error) {
+        console.error('❌ Erreur:', error);
+        btn.classList.remove('loading');
+    }
+
+    // 🔥 4. Nettoyer après l'animation
+    setTimeout(() => {
+        questionWrapper.classList.remove('closing', 'shifted');
+        mainPanel.classList.remove('visible', 'closing');
+        btn.classList.remove('loading');
+    }, 400);
+});
+
+
+
+
+
+// Tab switching pour le panel - DÉLÉGATION D'ÉVÉNEMENTS
+document.addEventListener('click', (e) => {
+    const tab = e.target.closest('.panel-tab');
+    if (!tab) return;
+
+    const targetTab = tab.dataset.tab;
+    if (!targetTab) return;
+
+    // Update tab buttons
+    document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+
+    // Update tab content
+    document.querySelectorAll('.panel-tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+
+    const tabContent = document.getElementById('tab' + targetTab.charAt(0).toUpperCase() + targetTab.slice(1));
+    if (tabContent) tabContent.classList.add('active');
+});
+
+// Transition vers l'état Game
+function transitionToGame() {
+    const stateLobby = document.getElementById('stateLobby');
+    const stateGame = document.getElementById('stateGame');
+    const bgText = document.querySelector('.bg-text');
+    const overlay = document.getElementById('gameStartOverlay');
+    const startText = document.getElementById('gameStartText');
+    const statusPill = document.querySelector('.status-pill');
+    const questionWrapper = document.getElementById('gameQuestionWrapper');
+
+    const startTexts = [
+        "READY.. FIGHT !",
+        "GO BEYOND !",
+        "GAME ON !",
+        "戦い !",
+        "戦闘開始 !",
+        "C'EST PARTI !",
+        "勝負だ !",
+        "SHOWTIME !"
+    ];
+    const randomText = startTexts[Math.floor(Math.random() * startTexts.length)];
+    if (startText) startText.textContent = randomText;
+
+
+    // Récupérer les paramètres
+    getGameSettings();
+
+
+    setStatsMode(gameSettings.mode === 'point' ? 'points' : 'vie');
+
+    // Créer les cartes joueurs
+    createGamePlayerCards();
+
+    // Reset complet du wrapper
+    // 🔥 RESET COMPLET du wrapper + panel + actions
+    questionWrapper.className = 'game-question-wrapper';
+    questionWrapper.removeAttribute('style');
+
+    const questionPanel = document.getElementById('gameQuestionPanel');
+    if (questionPanel) questionPanel.removeAttribute('style');
+
+    const mainPanel = document.getElementById('gameMainPanel');
+    if (mainPanel) {
+        mainPanel.className = 'game-main-panel';
+        mainPanel.removeAttribute('style');
+    }
+
+    const questionActions = document.getElementById('questionActions');
+    if (questionActions) {
+        questionActions.className = 'question-actions';
+        questionActions.removeAttribute('style');
+    }
+
+    const panelMiniActions = document.querySelector('.panel-mini-actions');
+    if (panelMiniActions) panelMiniActions.removeAttribute('style');
+
+    // Mettre à jour le header status
+    if (statusPill) {
+        statusPill.classList.add('game-mode');
+        document.getElementById('statusText').textContent = 'En partie';
+    }
+
+    // 1. Afficher l'overlay GAME START
+    overlay.classList.add('active');
+
+    // 2. Animation du texte GAME START
+    anime({
+        targets: startText,
+        keyframes: [
+            { scale: 0.5, opacity: 0 },
+            { scale: 1.1, opacity: 1 },
+            { scale: 1, opacity: 1 },
+            { scale: 20, opacity: 0 }
+        ],
+        duration: 2000,
+        easing: 'easeInOutQuad',
+        complete: () => {
+            overlay.classList.remove('active');
+            startText.style.transform = '';
+            startText.style.opacity = '';
+        }
+    });
+
+    // 3. Transition du lobby vers le jeu
+    setTimeout(() => {
+        stateLobby.style.opacity = '0';
+        stateLobby.style.transition = 'opacity 0.4s';
+
+        setTimeout(() => {
+            stateLobby.classList.remove('active');
+            stateLobby.style.opacity = '';
+            stateLobby.style.transition = '';
+
+            // Afficher state game
+            stateGame.classList.add('active');
+            stateGame.style.opacity = '1';
+            stateGame.style.pointerEvents = '';
+
+            bgText.classList.remove('lobby-active');
+            bgText.classList.add('game-active');
+            bgText.textContent = 'GAME';
+
+            // Lancer l'animation d'entrée
+            requestAnimationFrame(() => {
+                questionWrapper.classList.add('entering');
+            });
+
+            // Après l'animation, passer en état visible
+            questionWrapper.addEventListener('animationend', function handler(e) {
+                if (e.animationName !== 'questionEnter') return;
+                questionWrapper.removeEventListener('animationend', handler);
+                questionWrapper.classList.remove('entering');
+                questionWrapper.classList.add('visible');
+            });
+
+        }, 400);
+    }, 1500);
+
+    document.getElementById('gameLogsToggle')?.classList.add('active');
+
+
+}
+
+// Bouton Démarrer
+document.getElementById('startGameBtn').addEventListener('click', async () => {
+    const startBtn = document.getElementById('startGameBtn');
+
+    // Protection double-clic
+    if (startBtn.classList.contains('disabled')) return;
+    if (startBtn.classList.contains('loading')) return;  // AJOUTER
+    if (gameStarted) return;
+
+    // Bloquer immédiatement AVANT l'appel API
+    startBtn.classList.add('loading');  // AJOUTER
 
     try {
         const response = await fetch('/admin/start-game', {
@@ -1979,562 +2294,165 @@ async function startGame() {
             credentials: 'same-origin'
         });
 
-        if (response.status === 403) {
-            if (!isReloading) {
-                isReloading = true;
-                console.log('⚠️ Session expirée, rechargement...');
-                location.reload();
-            }
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error('❌ Erreur démarrage:', data.error);
+            alert(data.error || 'Impossible de démarrer la partie');
+            startBtn.classList.remove('loading');  // AJOUTER - débloquer si erreur
             return;
         }
 
-        const data = await response.json();
+        console.log('✅ Partie démarrée:', data);
+        gameStarted = true;
 
-        if (data.success) {
-            toggleSettingsAccess(false); // Bloquer les paramètres
-            refreshStats();
-        }
+        // Changer le texte du bouton
+        startBtn.querySelector('.action-full-label').textContent = 'En cours...';
+        startBtn.querySelector('.action-full-sub').textContent = 'Partie lancée';
+        startBtn.classList.add('started');
+
     } catch (error) {
-        console.error('Erreur démarrage:', error);
-    } finally {
-        // 🆕 Débloquer après 2 secondes
-        setTimeout(() => {
-            isStartingGame = false;
-        }, 2000);
+        console.error('❌ Erreur:', error);
+        alert('Erreur de connexion au serveur');
+        startBtn.classList.remove('loading');  // AJOUTER - débloquer si erreur
     }
-}
+});
 
-async function nextQuestion() {
-    const nextCard = document.getElementById('nextQuestionCard');
+let autoMode = false;
 
-    // 🆕 Bloquer si mode auto activé
-    if (gameSettings.autoMode) {
-        console.log('⚠️ Mode Auto activé - Bouton désactivé');
-        return;
-    }
-
-    // 🆕 Anti-spam
-    if (isNextQuestion) {
-        console.log('⏳ Question en cours d\'envoi...');
-        return;
-    }
-
-    isNextQuestion = true;
-
-    // Feedback visuel
-    nextCard.classList.add('loading');
-    nextCard.style.pointerEvents = 'none';
-
-    // 🆕 Ajouter l'état visuel de blocage
-    nextCard.classList.add('timer-blocked');
-    nextCard.classList.remove('game-active');
+document.getElementById('autoToggleBtn').addEventListener('click', async function () {
+    const btn = this;
+    const icon = btn.querySelector('svg');
 
     try {
-        const response = await fetch('/admin/next-question', {
+        const response = await fetch('/admin/toggle-auto-mode', {
             method: 'POST',
             credentials: 'same-origin'
         });
 
-        if (response.status === 403) {
-            if (!isReloading) {
-                isReloading = true;
-                console.log('⚠️ Session expirée, rechargement...');
-                location.reload();
-            }
-            return;
-        }
-
-        if (!response.ok) {
-            const data = await response.json();
-
-            // 🆕 Si bloqué par le timer (400 avec blocked: true)
-            if (response.status === 400 && data.blocked) {
-                console.log(`⏱ Timer actif - ${data.timeRemaining}s restantes`);
-                // Garder le visuel bloqué pendant le temps restant
-                setTimeout(() => {
-                    nextCard.classList.remove('timer-blocked');
-                    nextCard.classList.add('game-active');
-                    isNextQuestion = false;
-                }, data.timeRemaining * 1000);
-                return;
-            }
-
-            console.error('❌ Erreur next-question:', response.status);
-            nextCard.classList.remove('timer-blocked');
-            nextCard.classList.add('game-active');
-            return;
-        }
-
-        const data = await response.json();
-        if (data.success) {
-            console.log('✅ Question suivante envoyée');
-
-            // 🆕 Switch automatique vers l'onglet "Question en cours"
-            switchTab('question');
-            // 🆕 Garder le visuel bloqué pendant 7 secondes (durée du timer)
-            setTimeout(() => {
-                nextCard.classList.remove('timer-blocked');
-                nextCard.classList.add('game-active');
-                isNextQuestion = false;
-            }, 7000);
-        }
-    } catch (error) {
-        console.error('❌ Erreur nextQuestion:', error);
-        nextCard.classList.remove('timer-blocked');
-        nextCard.classList.add('game-active');
-        isNextQuestion = false;
-    } finally {
-        // 🆕 Débloquer après 2 secondes (temps de sécurité)
-        setTimeout(() => {
-            isNextQuestion = false;
-            nextCard.classList.remove('loading');
-            nextCard.style.pointerEvents = 'auto';
-        }, 2000);
-    }
-}
-
-// ============ GAME SETTINGS ============
-function setLives(lives) {
-    if (isGameInProgress()) return;
-
-    gameSettings.lives = lives;
-
-    // Update UI
-    document.querySelectorAll('.lives-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    document.getElementById(`lives-${lives}`).classList.add('active');
-
-    // 🆕 Utiliser la route spécifique /admin/set-lives
-    fetch('/admin/set-lives', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ lives: lives })
-    }).then(response => response.json())
-        .then(data => console.log('✅ Vies synchronisées:', data))
-        .catch(err => console.error('❌ Erreur sync vies:', err));
-
-    console.log(`✅ Vies définies: ${lives}`);
-}
-
-function setTime(seconds) {
-    if (isGameInProgress()) return;
-
-    gameSettings.timePerQuestion = parseInt(seconds);
-
-    // 🆕 Émettre vers le serveur pour synchroniser avec les clients
-    fetch('/admin/update-settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ lives: gameSettings.lives, timePerQuestion: gameSettings.timePerQuestion })
-    }).then(response => response.json())
-        .then(data => console.log('✅ Paramètres synchronisés'))
-        .catch(err => console.error('❌ Erreur sync paramètres:', err));
-
-    console.log(`✅ Temps défini: ${seconds}s`);
-}
-
-// Remplace la fonction setAnswers (vers ligne 350-370) :
-function setAnswers(count) {
-    if (isGameInProgress()) return;
-
-    gameSettings.answersCount = parseInt(count);
-
-    // Update UI - dropdown est automatiquement mis à jour
-    const answersSelect = document.getElementById('answersSelect');
-    if (answersSelect) {
-        answersSelect.value = count;
-    }
-
-    // Envoyer au serveur
-    fetch('/admin/set-answers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ answers: count })
-    }).then(response => response.json())
-        .then(data => console.log('✅ Nombre de réponses synchronisé:', data))
-        .catch(err => console.error('❌ Erreur sync réponses:', err));
-
-    console.log(`✅ Réponses définies: ${count}`);
-}
-
-function isGameInProgress() {
-    const startCard = document.getElementById('startGameCard');
-    return !startCard.classList.contains('game-active') &&
-        !startCard.classList.contains('disabled');
-}
-
-function toggleSettingsAccess(enabled) {
-    const settingsSection = document.getElementById('gameSettings');
-    const livesButtons = document.querySelectorAll('.lives-btn');
-    const questionsButtons = document.querySelectorAll('.questions-btn');
-    const timeSelect = document.getElementById('timeSelect');
-    const answersButtons = document.querySelectorAll('#answers-4, #answers-6');
-    const btnResetQuestions = document.getElementById('btnResetQuestions');
-    const btnModeToggle = document.getElementById('btnModeToggle'); // 🆕
-    const btnDifficultyMode = document.getElementById('difficultyModeBtn');
-    const btnReportQuestion = document.getElementById('btnReportQuestion'); // 🔥 NOUVEAU
-
-
-    if (enabled) {
-        settingsSection.classList.remove('disabled');
-        livesButtons.forEach(btn => btn.disabled = false);
-        questionsButtons.forEach(btn => btn.disabled = false);
-        timeSelect.disabled = false;
-        answersButtons.forEach(btn => btn.disabled = false);
-        if (btnResetQuestions) btnResetQuestions.disabled = false;
-        if (btnModeToggle) btnModeToggle.disabled = false; // 🆕
-        if (btnDifficultyMode) btnDifficultyMode.disabled = false;
-        if (btnReportQuestion) btnReportQuestion.disabled = false;
-
-    } else {
-        settingsSection.classList.add('disabled');
-        livesButtons.forEach(btn => btn.disabled = true);
-        questionsButtons.forEach(btn => btn.disabled = true);
-        timeSelect.disabled = true;
-        answersButtons.forEach(btn => btn.disabled = true);
-        if (btnResetQuestions) btnResetQuestions.disabled = true;
-        if (btnModeToggle) btnModeToggle.disabled = true; // 🆕
-        if (btnDifficultyMode) btnDifficultyMode.disabled = true;
-        if (btnReportQuestion) btnReportQuestion.disabled = false;
-
-    }
-}
-
-
-function refreshPage() {
-    location.reload();
-}
-
-
-// 🔄 Forcer le refresh de tous les joueurs
-async function refreshAllPlayers() {
-    // Vérifier si en cooldown
-    if (refreshCooldownActive) {
-        console.log('⏳ Cooldown actif - Veuillez attendre');
-        return;
-    }
-
-    try {
-        const response = await fetch('/admin/refresh-players', {
-            method: 'POST',
-            credentials: 'same-origin'
-        });
-
-        if (response.status === 403) {
-            if (!isReloading) {
-                isReloading = true;
-                console.log('⚠️ Session expirée, rechargement...');
-                location.reload();
-            }
-            return;
-        }
-
-        if (response.status === 429) {
-            const data = await response.json();
-            console.log(`⏳ Cooldown actif - ${data.remainingTime}s restantes`);
-            startRefreshCooldown(data.remainingTime);
-            return;
-        }
-
         const data = await response.json();
 
         if (data.success) {
-            console.log(`✅ ${data.playersRefreshed} joueur(s) refresh forcé`);
-            startRefreshCooldown(20);
-        }
-    } catch (error) {
-        console.error('❌ Erreur refresh joueurs:', error);
-    }
-}
+            autoMode = data.autoMode;
 
-// 🔥 Gérer le cooldown de 20s
-function startRefreshCooldown(initialTime = 20) {
-    refreshCooldownActive = true;
+            if (autoMode) {
+                btn.classList.add('active');
+                // Icône pause
+                icon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
 
-    const card = document.getElementById('refreshPlayersCard');
+                // Désactiver le bouton suivante
+                const nextBtn = document.getElementById('nextQuestionBtn');
+                if (nextBtn) {
+                    nextBtn.classList.add('auto-disabled');
+                    nextBtn.disabled = true;
+                }
 
-    // 🔥 Juste griser le bouton
-    card.classList.add('on-cooldown');
+                // Si on est déjà sur les résultats, déclencher le mode auto
+                const questionActions = document.getElementById('questionActions');
+                if (questionActions && questionActions.classList.contains('visible')) {
+                    fetch('/admin/trigger-auto-next', {
+                        method: 'POST',
+                        credentials: 'same-origin'
+                    });
+                }
 
-    // Clear any existing timer
-    if (refreshCooldownTimer) {
-        clearInterval(refreshCooldownTimer);
-    }
-
-    let timeLeft = initialTime;
-
-    refreshCooldownTimer = setInterval(() => {
-        timeLeft--;
-
-        if (timeLeft <= 0) {
-            clearInterval(refreshCooldownTimer);
-            refreshCooldownActive = false;
-            card.classList.remove('on-cooldown');
-            console.log('✅ Cooldown refresh terminé');
-        }
-    }, 1000);
-}
-
-
-// 🔥 Vérifier et restaurer le cooldown au chargement
-async function checkRefreshCooldown() {
-    try {
-        const response = await fetch('/admin/refresh-cooldown', {
-            credentials: 'same-origin'
-        });
-
-        if (response.status === 403) return;
-
-        const data = await response.json();
-
-        if (data.onCooldown && data.remainingTime > 0) {
-            console.log(`⏳ Cooldown restauré: ${data.remainingTime}s restantes`);
-            startRefreshCooldown(data.remainingTime);
-        }
-    } catch (error) {
-        console.error('❌ Erreur vérification cooldown:', error);
-    }
-}
-
-async function refreshStats() {
-    try {
-        const response = await fetch('/admin/stats', {
-            credentials: 'same-origin'
-        });
-
-        if (response.status === 403) {
-            if (!isReloading) {
-                isReloading = true;
-                console.log('⚠️ Session expirée, rechargement...');
-                clearInterval(statsInterval); // 🆕 Arrêter le refresh avant de recharger
-                location.reload();
-            }
-            return;
-        }
-
-        if (!response.ok) {
-            console.error('❌ Erreur refresh stats:', response.status);
-            return;
-        }
-
-        const data = await response.json();
-
-        // 🆕 Récupérer l'état du jeu pour le timer
-        const gameStateResponse = await fetch('/game/state', {
-            credentials: 'same-origin'
-        });
-        const gameState = await gameStateResponse.json();
-
-        document.getElementById('totalGames').textContent = data.totalGames;
-
-        // 🆕 Logique Lobby vs Actifs
-        if (data.gameInProgress) {
-            // Partie en cours : Lobby = 0, Actifs = joueurs en vie
-            document.getElementById('playerCount').textContent = '0';
-            document.getElementById('activePlayers').textContent = data.activePlayers;
-        } else {
-            // Avant/après partie : Lobby = joueurs qui rejoignent, Actifs = 0
-            document.getElementById('playerCount').textContent = data.currentPlayers;
-            document.getElementById('activePlayers').textContent = '0';
-        }
-
-        updateGameStatus(data.gameActive);
-
-        const startCard = document.getElementById('startGameCard');
-        const nextCard = document.getElementById('nextQuestionCard');
-
-        if (!data.gameActive || data.gameInProgress || data.currentPlayers === 0) {
-            startCard.classList.add('disabled');
-            startCard.classList.remove('game-active');
-        } else {
-            startCard.classList.remove('disabled');
-            startCard.classList.add('game-active'); // 🆕 Indicateur visuel
-        }
-
-        if (!data.gameInProgress) {
-            nextCard.classList.add('disabled');
-            nextCard.classList.remove('game-active');
-            nextCard.classList.remove('timer-blocked'); // 🆕 Retirer timer-blocked
-        } else {
-            nextCard.classList.remove('disabled');
-
-            // 🆕 Gérer l'état timer-blocked si une question est en cours
-            if (gameState.timeRemaining !== null && gameState.timeRemaining > 0) {
-                nextCard.classList.add('timer-blocked');
-                nextCard.classList.remove('game-active');
-                isNextQuestion = true;
-
-                // Débloquer après le temps restant
-                setTimeout(() => {
-                    nextCard.classList.remove('timer-blocked');
-                    nextCard.classList.add('game-active');
-                    isNextQuestion = false;
-                }, gameState.timeRemaining * 1000);
             } else {
-                nextCard.classList.remove('timer-blocked');
-                nextCard.classList.add('game-active');
+                btn.classList.remove('active');
+                // Icône play
+                icon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+
+                // Réactiver le bouton suivante
+                const nextBtn = document.getElementById('nextQuestionBtn');
+                if (nextBtn) {
+                    nextBtn.classList.remove('auto-disabled');
+                    nextBtn.disabled = false;
+                }
             }
-        }
 
-        const topPlayersTable = document.getElementById('topPlayersTable');
-        if (data.topPlayers.length === 0) {
-            topPlayersTable.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--text-secondary);">Aucune donnée disponible</td></tr>';
-        } else {
-            topPlayersTable.innerHTML = data.topPlayers.map((player, index) => {
-                // 🔥 NOUVEAU: Vérifier si le joueur est qualifié (≥3 parties)
-                const isQualified = player.total_games_played >= 3;
-
-                return `
-            <tr class="${isQualified ? 'qualified' : ''}">
-                <td><span class="rank-badge rank-${index + 1}">${index + 1}</span></td>
-                <td>${player.username}</td>
-                <td>${player.total_victories}</td>
-                <td>${player.total_games_played}</td>
-            </tr>
-        `;
-            }).join('');
-        }
-
-        const recentGamesTable = document.getElementById('recentGamesTable');
-        if (data.recentGames.length === 0) {
-            recentGamesTable.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--text-secondary);">Aucune donnée disponible</td></tr>';
-        } else {
-            recentGamesTable.innerHTML = data.recentGames.map(game => `
-                        <tr>
-                            <td>#${game.id}</td>
-                            <td>${game.winner ? game.winner.username : 'N/A'}</td>
-                            <td>${game.questions_count}</td>
-                            <td>${new Date(game.created_at).toLocaleDateString()}</td>
-                        </tr>
-                    `).join('');
+            // Animation feedback
+            anime({
+                targets: btn,
+                scale: [1, 1.1, 1],
+                duration: 300,
+                easing: 'easeOutBack'
+            });
         }
     } catch (error) {
-        console.error('Error refreshing stats:', error);
+        console.error('❌ Erreur toggle auto mode:', error);
     }
-}
+});
 
-function updateGameStatus(isActive) {
-    const statusText = document.getElementById('statusText');
-    const statusIndicator = document.getElementById('statusIndicator');
-    const toggleBtn = document.getElementById('toggleGameBtn');
-    const toggleCard = document.getElementById('toggleGameCard');
-
-    if (isActive) {
-        statusText.textContent = 'ACTIF';
-        statusIndicator.classList.remove('inactive');
-        statusIndicator.classList.add('active');
-        toggleBtn.textContent = 'Fermer lobby';
-        toggleCard.classList.add('lobby-active');
-    } else {
-        statusText.textContent = 'INACTIF';
-        statusIndicator.classList.remove('active');
-        statusIndicator.classList.add('inactive');
-        toggleBtn.textContent = 'Ouvrir lobby';
-        toggleCard.classList.remove('lobby-active');
-    }
-}
-
-function startStatsRefresh() {
-    statsInterval = setInterval(refreshStats, 3000);
+// Dans revealAnswers(), ajouter à la fin pour l'auto-mode :
+if (autoMode) {
+    setTimeout(() => {
+        document.getElementById('nextQuestionBtn').click();
+    }, 3000); // 3 secondes avant question suivante
 }
 
 
-// Reset Questions History
-async function resetQuestionsHistory() {
-    // 🆕 Vérifier si une partie est en cours
-    const btnResetQuestions = document.getElementById('btnResetQuestions');
-    if (btnResetQuestions && btnResetQuestions.disabled) {
-        console.log('⚠️ Impossible de reset pendant une partie');
-        return;
+// Ajouter APRÈS createGamePlayerCards() ou dans l'initialisation
+// Utiliser la délégation d'événement sur la grille plutôt que sur chaque carte
+
+document.getElementById('playersGridGame').addEventListener('click', (e) => {
+    const card = e.target.closest('.player-card-game');
+    if (!card) return;
+
+    // 🔥 Empêcher le double appel
+    if (e.target.closest('.player-card-game-answer-overlay')) return;
+
+    const playerIndex = parseInt(card.dataset.playerIndex);
+    const player = gamePlayers[playerIndex];
+
+    if (player) {
+        console.log('Clic sur:', player.name);
+        openPlayerModal(player.name, player.isChampion, player.title || '', player.twitchId);  // 🔥 AJOUTER twitchId
     }
-
-    if (!confirm('Réinitialiser l\'historique des questions ?\n\nToutes les questions redeviendront disponibles')) {
-        return;
-    }
-
-    try {
-        const response = await fetch('/admin/reset-questions-history', {
-            method: 'POST',
-            credentials: 'same-origin'
-        });
-
-        if (response.status === 403) {
-            alert('❌ Session expirée, rechargement...');
-            location.reload();
-            return;
-        }
-
-        const data = await response.json();
-
-        if (data.success) {
-            console.log('🔄 Reset effectué avec succès');
-        } else {
-            alert('❌ Erreur: ' + (data.error || 'Erreur inconnue'));
-        }
-    } catch (error) {
-        console.error('❌ Erreur reset:', error);
-        alert('❌ Erreur lors du reset: ' + error.message);
-    }
-}
+});
 
 
-function goToHome() {
-    window.location.href = '/';
-}
+// ============================================
+// MODAL SIGNALEMENT
+// ============================================
+const reportModal = document.getElementById('reportModal');
+const reportModalOverlay = document.getElementById('reportModalOverlay');
 
-
-// Ouvrir le modal de signalement
 function openReportModal() {
-    // Vérifier qu'une question est en cours
-    if (!currentQuestionData || !currentQuestionData.question) {
-        alert('❌ Aucune question en cours à signaler');
-        return;
-    }
+    const reportModal = document.getElementById('reportModal');
+    const reportModalOverlay = document.getElementById('reportModalOverlay');
 
-    // 🔥 FIX: Vérifier que l'élément existe avant de le modifier
-    const previewElement = document.getElementById('reportQuestionPreview');
-    if (!previewElement) {
-        console.error('❌ Element reportQuestionPreview introuvable');
-        alert('❌ Erreur: Modal de signalement non trouvé');
-        return;
-    }
-
-    // Afficher la question dans le preview
-    previewElement.textContent = currentQuestionData.question;
-
-    // Reset du select
-    const reasonSelect = document.getElementById('reportReason');
-    if (reasonSelect) {
-        reasonSelect.value = 'Augmenter la difficulté';
-    }
-
-    // Afficher le modal
-    const modalOverlay = document.getElementById('reportModalOverlay');
-    if (modalOverlay) {
-        modalOverlay.classList.add('active');
+    // Utiliser les vraies données de la question actuelle
+    if (currentQuestionData) {
+        document.getElementById('reportQuestionText').textContent = currentQuestionData.question;
     } else {
-        console.error('❌ Element reportModalOverlay introuvable');
-        alert('❌ Erreur: Modal de signalement non trouvé');
+        document.getElementById('reportQuestionText').textContent = 'Aucune question en cours';
     }
+
+    reportModal.classList.add('active');
+    reportModalOverlay.classList.add('active');
 }
 
-// Fermer le modal
 function closeReportModal() {
-    document.getElementById('reportModalOverlay').classList.remove('active');
+    reportModal.classList.remove('active');
+    reportModalOverlay.classList.remove('active');
 }
 
-// Soumettre le signalement
-async function submitReport() {
-    const reason = document.getElementById('reportReason').value;
+// Event listeners
+document.querySelector('.mini-action-btn.report').addEventListener('click', openReportModal);
+document.getElementById('reportModalClose').addEventListener('click', closeReportModal);
+document.getElementById('reportCancelBtn').addEventListener('click', closeReportModal);
+reportModalOverlay.addEventListener('click', closeReportModal);
 
-    if (!reason) {
-        alert('❌ Veuillez sélectionner un motif');
+document.getElementById('reportSubmitBtn').addEventListener('click', async () => {
+    const reason = document.getElementById('reportReason').value;
+    const btn = document.getElementById('reportSubmitBtn');
+
+    if (!currentQuestionData) {
+        console.error('Aucune question à signaler');
         return;
     }
+
+    btn.disabled = true;
+    btn.textContent = 'Envoi...';
 
     try {
         const response = await fetch('/admin/report-question', {
@@ -2542,645 +2460,2671 @@ async function submitReport() {
             headers: { 'Content-Type': 'application/json' },
             credentials: 'same-origin',
             body: JSON.stringify({
-                questionId: currentQuestionData.questionId || null,
+                questionId: currentQuestionData.questionId || null,  // ← questionId pas id
                 questionText: currentQuestionData.question,
-                difficulty: currentQuestionData.difficulty,
+                difficulty: currentQuestionData.difficulty || null,
                 reason: reason
             })
         });
 
-        if (response.status === 403) {
-            alert('❌ Session expirée, rechargement...');
-            location.reload();
-            return;
-        }
-
         const data = await response.json();
 
         if (data.success) {
-            closeReportModal();
-            // 🆕 Afficher la notification discrète
-            showToast();
-            console.log('✅ Signalement envoyé:', data);
+            btn.textContent = 'Envoyé ✓';
+            btn.style.background = 'rgba(0, 255, 136, 0.2)';
+            btn.style.borderColor = 'rgba(0, 255, 136, 0.5)';
+            btn.style.color = 'var(--green)';
+
+            setTimeout(() => {
+                closeReportModal();
+                setTimeout(() => {
+                    btn.textContent = 'Signaler';
+                    btn.style.background = '';
+                    btn.style.borderColor = '';
+                    btn.style.color = '';
+                    btn.disabled = false;
+                }, 300);
+            }, 800);
         } else {
-            alert('❌ Erreur: ' + (data.error || 'Erreur inconnue'));
+            throw new Error(data.error || 'Erreur inconnue');
         }
+
     } catch (error) {
         console.error('❌ Erreur signalement:', error);
-        alert('❌ Erreur lors du signalement: ' + error.message);
+
+        btn.textContent = 'Erreur ✗';
+        btn.style.background = 'rgba(255, 59, 92, 0.2)';
+        btn.style.borderColor = 'rgba(255, 59, 92, 0.5)';
+        btn.style.color = 'var(--red)';
+
+        setTimeout(() => {
+            btn.textContent = 'Signaler';
+            btn.style.background = '';
+            btn.style.borderColor = '';
+            btn.style.color = '';
+            btn.disabled = false;
+        }, 1500);
     }
-}
+});
 
-// 🆕 Fonction pour afficher le toast
-function showToast() {
-    const toast = document.getElementById('toastNotification');
-    toast.classList.add('show');
 
-    // Masquer après 3 secondes
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
-}
-
-// Fermer le modal avec Escape
+// Fermer avec Escape
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
+    if (e.key === 'Escape' && reportModal.classList.contains('active')) {
         closeReportModal();
     }
 });
 
+const gameCloseBtn = document.getElementById('gameCloseBtn');
+
+function showGameCloseBtn() {
+    if (gameCloseBtn) gameCloseBtn.classList.add('visible');
+}
+
+function hideGameCloseBtn() {
+    if (gameCloseBtn) gameCloseBtn.classList.remove('visible');
+}
 
 
-// 🆕 Fonction pour mettre à jour la grille avec effet tiebreaker
-function updatePlayersGridWithTiebreaker() {
-    // Récupérer les joueurs actuels depuis gameState via fetch
-    fetch('/game/state')
-        .then(response => response.json())
-        .then(state => {
-            if (state.players && state.players.length > 0) {
-                const playersData = state.players.map(p => ({
-                    twitchId: p.twitchId,
-                    username: p.username,
-                    lives: state.mode === 'lives' ? p.lives : null,
-                    points: state.mode === 'points' ? (p.points || 0) : null
-                }));
 
-                updatePlayersGridWithTiebreakerEffect(playersData);
-            }
-        })
-        .catch(err => console.error('❌ Erreur refresh grille tiebreaker:', err));
+// Configuration des couleurs
+const COLORS = {
+    correct: '#00ff88',
+    wrong: '#ff3b5c',
+    timeout: '#f0c040',
+    lives3: '#00ff88',
+    lives2: '#f0c040',
+    lives1: '#ff9f43',
+    lives0: '#6b7280'
+};
+
+/**
+ * Met à jour le pie chart des réponses avec animation
+ * @param {number} correct - Nombre de bonnes réponses
+ * @param {number} wrong - Nombre de mauvaises réponses
+ * @param {number} timeout - Nombre de non-réponses
+ */
+function updateResponsesPie(correct, wrong, timeout) {
+    const total = correct + wrong + timeout;
+    const pie = document.getElementById('responsesPie');
+
+    if (total === 0) {
+        pie.style.background = 'rgba(255, 255, 255, 0.08)';
+    } else {
+        const correctAngle = (correct / total) * 360;
+        const wrongAngle = correctAngle + (wrong / total) * 360;
+
+        pie.style.setProperty('--pie-color-1', COLORS.correct);
+        pie.style.setProperty('--pie-color-2', COLORS.wrong);
+        pie.style.setProperty('--pie-color-3', COLORS.timeout);
+
+        animatePieAngles(pie, correctAngle, wrongAngle);
+    }
+
+    document.getElementById('correctCount').textContent = correct;
+    document.getElementById('wrongCount').textContent = wrong;
+    document.getElementById('timeoutCount').textContent = timeout;
+}
+
+function updateLivesPie(lives3, lives2, lives1, lives0) {
+    const total = lives3 + lives2 + lives1 + lives0;
+    const pie = document.getElementById('livesPie');
+
+    if (total === 0) {
+        pie.style.background = 'rgba(255, 255, 255, 0.08)';
+    } else {
+        const angle1 = (lives3 / total) * 360;
+        const angle2 = angle1 + (lives2 / total) * 360;
+        const angle3 = angle2 + (lives1 / total) * 360;
+
+        pie.style.background = `conic-gradient(
+                    ${COLORS.lives3} 0deg ${angle1}deg,
+                    ${COLORS.lives2} ${angle1}deg ${angle2}deg,
+                    ${COLORS.lives1} ${angle2}deg ${angle3}deg,
+                    ${COLORS.lives0} ${angle3}deg 360deg
+                )`;
+    }
+
+    document.getElementById('lives3Count').textContent = lives3;
+    document.getElementById('lives2Count').textContent = lives2;
+    document.getElementById('lives1Count').textContent = lives1;
+    document.getElementById('lives0Count').textContent = lives0;
+}
+
+/**
+ * Anime les angles du pie chart progressivement
+ */
+function animatePieAngles(pie, targetAngle1, targetAngle2) {
+    let currentAngle1 = 0;
+    let currentAngle2 = 0;
+    const duration = 600;
+    const startTime = performance.now();
+
+    function animate(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+
+        currentAngle1 = targetAngle1 * eased;
+        currentAngle2 = targetAngle2 * eased;
+
+        pie.style.setProperty('--pie-angle-1', `${currentAngle1}deg`);
+        pie.style.setProperty('--pie-angle-2', `${currentAngle2}deg`);
+
+        if (progress < 1) requestAnimationFrame(animate);
+    }
+
+    requestAnimationFrame(animate);
+}
+
+/**
+ * Met à jour le joueur le plus rapide
+ */
+function updateFastestPlayer(name, timeMs) {
+    document.getElementById('fastestName').textContent = name || '-';
+    document.getElementById('fastestTime').textContent = timeMs ? (timeMs / 1000).toFixed(2) + 's' : '-';
+}
+
+/**
+ * Configure le mode (points ou vie)
+ * @param {string} mode - 'points' ou 'vie'
+ */
+function setStatsMode(mode) {
+    const container = document.querySelector('.stats-charts-container');
+    container.classList.toggle('mode-points', mode === 'points');
+}
+
+/**
+ * Réinitialise les stats avec animation
+ */
+function resetStats() {
+    // Réinitialiser les pies
+    const pies = document.querySelectorAll('.pie-chart');
+    pies.forEach(pie => {
+        pie.style.animation = 'none';
+        pie.offsetHeight; // Trigger reflow
+        pie.style.animation = null;
+    });
+
+    // Réinitialiser les légendes
+    const legends = document.querySelectorAll('.legend-item');
+    legends.forEach(item => {
+        item.style.animation = 'none';
+        item.offsetHeight;
+        item.style.animation = null;
+    });
+
+    // Valeurs à zéro avec animation
+    updateResponsesPie(0, 0, 0);
+    updateLivesPie(0, 0, 0, 0);
+    updateFastestPlayer(null, null);
 }
 
 
 // ============================================
-// FILTRE SÉRIE - Fonctions
+//    WINNER SCREEN - JAVASCRIPT
 // ============================================
-function toggleSeriePanel() {
-    const panel = document.getElementById('seriePanel');
-    const backdrop = document.getElementById('seriePanelBackdrop');
 
-    panel.classList.toggle('active');
-    backdrop.classList.toggle('active');
-
-    // 🔥 Générer les cartes au premier affichage OU à chaque ouverture (pour refresh stats)
-    if (panel.classList.contains('active')) {
-        generateSerieCards(); // 🔥 Recharger à chaque ouverture
+/**
+ * Créer les rayons lumineux
+ */
+function createWinnerRays() {
+    const raysContainer = document.getElementById('winnerRays');
+    if (!raysContainer) return;
+    raysContainer.innerHTML = '';
+    for (let i = 0; i < 12; i++) {
+        const ray = document.createElement('div');
+        ray.className = 'winner-ray';
+        ray.style.transform = `rotate(${i * 30}deg)`;
+        raysContainer.appendChild(ray);
     }
 }
 
-function closeSeriePanel() {
-    document.getElementById('seriePanel').classList.remove('active');
-    document.getElementById('seriePanelBackdrop').classList.remove('active');
+/**
+ * Créer les particules flottantes
+ */
+function createWinnerParticles() {
+    const container = document.getElementById('winnerParticles');
+    if (!container) return;
+    container.innerHTML = '';
+
+    for (let i = 0; i < 50; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'w-particle';
+        particle.style.left = Math.random() * 100 + '%'; // ✅ Tout l'écran
+        particle.style.top = (Math.random() * 80 + 20) + '%';
+        particle.style.width = (Math.random() * 5 + 2) + 'px';
+        particle.style.height = particle.style.width;
+        container.appendChild(particle);
+    }
+}
+
+/**
+ * Créer les confettis
+ */
+function createWinnerConfetti() {
+    const overlay = document.getElementById('winnerOverlay');
+    if (!overlay) return;
+    const colors = ['#f0c040', '#ffd700', '#00ff88', '#ff3b5c', '#64b4ff', '#fff'];
+    const shapes = ['square', 'circle', 'ribbon'];
+
+    for (let i = 0; i < 80; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti ' + shapes[Math.floor(Math.random() * shapes.length)];
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.animation = `confettiFall ${Math.random() * 3 + 4}s linear ${Math.random() * 2}s forwards`;
+        overlay.appendChild(confetti);
+    }
+}
+
+/**
+ * Animation des particules
+ */
+function animateWinnerParticles() {
+    particles.forEach((p, i) => {
+        setTimeout(() => {
+            p.style.animationDuration = duration + 's';
+            p.classList.add('active');  /* Ajoute la classe qui rend visible + anime */
+        }, i * 30);
+    });
+}
+
+/**
+ * Générer la grille de joueurs
+ */
+function generateWinnerPlayersGrid(players, winnerName, gameMode = 'lives', livesIcon = 'heart') {
+    const grid = document.getElementById('winnerGridInner');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const sorted = [...players].sort((a, b) => {
+        if (a.isWinner) return -1;
+        if (b.isWinner) return 1;
+
+        // 🔥 TRIER SELON LE MODE
+        if (gameMode === 'points') {
+            return (b.points || 0) - (a.points || 0);
+        } else {
+            if (a.status === 'eliminated' && b.status !== 'eliminated') return 1;
+            if (b.status === 'eliminated' && a.status !== 'eliminated') return -1;
+            return (b.lives || 0) - (a.lives || 0);
+        }
+    });
+
+    const medals = ['🥇', '🥈', '🥉'];
+    const medalClasses = ['gold', 'silver', 'bronze'];
+
+    sorted.forEach((player, index) => {
+        const card = document.createElement('div');
+        const playerName = player.username || player.name || 'Joueur';
+        const playerLives = player.lives ?? player.livesRemaining ?? 0;
+        const playerPoints = player.points || 0;
+
+        card.className = `winner-player-card ${player.status || ''}`;
+        if (player.isWinner) card.classList.add('winner');
+
+        // 🔥 ÉLIMINÉ seulement en mode vie
+        if (gameMode === 'lives' && playerLives <= 0 && !player.isWinner) {
+            card.classList.add('eliminated');
+        }
+
+        let medalHtml = '';
+        if (index < 3) {
+            card.classList.add('has-medal');
+            medalHtml = `<span class="winner-player-medal ${medalClasses[index]}">${medals[index]}</span>`;
+        }
+
+        // 🔥 AFFICHAGE SELON LE MODE
+        let statsHtml = '';
+        if (gameMode === 'points') {
+            statsHtml = `<div class="winner-player-points">${playerPoints.toLocaleString()} pts</div>`;
+        } else {
+            statsHtml = `<div class="winner-player-lives">${getLivesIconsHTML(livesIcon, playerLives, gameSettings.lives)}</div>`;
+        }
+
+        card.innerHTML = `
+            ${medalHtml}
+            <div class="winner-player-name">${playerName}</div>
+            ${statsHtml}
+        `;
+
+        grid.appendChild(card);
+    });
 }
 
 
+function showWinner(name, livesOrPoints, totalWins, questions, duration, playersData, topPlayers = [], gameMode = 'lives') {
+    const overlay = document.getElementById('winnerOverlay');
+    if (!overlay) return;
 
-async function generateSerieCards() {
-    const grid = document.getElementById('serieCardsGrid');
+    // === ANIMATION DE SORTIE DES PANELS ===
+    const questionWrapper = document.getElementById('gameQuestionWrapper');
+    const mainPanel = document.getElementById('gameMainPanel');
+    const questionActions = document.getElementById('questionActions');
 
-    // Afficher un loader pendant le chargement
-    grid.innerHTML = `
-        <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-secondary);">
-            <div style="font-size: 1.5rem; margin-bottom: 8px;">⏳</div>
-            <div>Chargement...</div>
-        </div>
-    `;
+    if (questionActions) questionActions.classList.add('winner-exit');
+    if (questionWrapper) questionWrapper.classList.add('winner-exit');
+    if (mainPanel) mainPanel.classList.add('winner-exit');
+
+    if (questionWrapper) questionWrapper.style.display = 'none';
+    if (mainPanel) mainPanel.style.display = 'none';
+    if (questionActions) questionActions.style.display = 'none';
+
+    const playerCount = Array.isArray(playersData) ? playersData.length : playersData;
+    const players = Array.isArray(playersData) ? playersData : [];
+
+
+    // Mettre à jour les données
+    document.getElementById('winnerName').textContent = name;
+    document.getElementById('winnerName').setAttribute('data-name', name);
+
+    document.getElementById('winnerName').classList.remove('long', 'very-long', 'ultra-long');
+    if (name.length > 20) {
+        document.getElementById('winnerName').classList.add('ultra-long');
+    } else if (name.length > 14) {
+        document.getElementById('winnerName').classList.add('very-long');
+    } else if (name.length > 10) {
+        document.getElementById('winnerName').classList.add('long');
+    }
+
+    // 🔥 ADAPTER SELON LE MODE
+    const winnerLivesEl = document.getElementById('winnerLives');
+    const livesLabelEl = winnerLivesEl?.closest('.winner-stat')?.querySelector('.winner-stat-label');
+
+    if (gameMode === 'points') {
+        winnerLivesEl.innerHTML = `<span class="points-icon">★</span> ${livesOrPoints.toLocaleString()}`;
+        if (livesLabelEl) livesLabelEl.textContent = 'Points';
+    } else {
+        winnerLivesEl.innerHTML = `<span class="heart">❤</span> ${livesOrPoints}`;
+        if (livesLabelEl) livesLabelEl.textContent = 'Vies restantes';
+    }
+
+    document.getElementById('winnerTotalWins').textContent = totalWins;
+    document.getElementById('infoQuestions').textContent = questions;
+    document.getElementById('infoDuration').textContent = duration;
+    document.getElementById('infoPlayers').textContent = playerCount;
+
+    // 🔥 PASSER LE MODE à la grille
+    generateWinnerPlayersGrid(players, name, gameMode, selectedLivesIcon);
+
+
+    // Générer le Top 10
+    if (topPlayers && topPlayers.length > 0) {
+        generateWinnerTop10(topPlayers);
+    }
+
+    // Préparer les éléments
+    createWinnerRays();
+    createWinnerParticles();
+
+    // Afficher l'overlay
+    overlay.classList.add('active');
+
+
+    // ========== SÉQUENCE D'ANIMATIONS (délai initial 1.5s) ==========
+
+    // 1. Rayons lumineux
+    setTimeout(() => {
+        document.getElementById('winnerRays').style.opacity = '1';
+        document.getElementById('winnerRays').style.transition = 'opacity 1s ease';
+    }, 900);
+
+    // 2. Container vainqueur (centré d'abord)
+    setTimeout(() => {
+        document.getElementById('winnerContainer').classList.add('visible');
+    }, 1000);
+
+    // 3. Nom du gagnant
+    setTimeout(() => {
+        document.getElementById('winnerName').classList.add('visible');
+    }, 1200);
+
+    // 4. Ligne décorative
+    setTimeout(() => {
+        document.getElementById('winnerLine').classList.add('visible');
+    }, 1400);
+
+    // 5. Stats
+    setTimeout(() => {
+        document.getElementById('winnerStats').classList.add('visible');
+    }, 1550);
+
+    // 6. Infos partie
+    setTimeout(() => {
+        document.getElementById('winnerGameInfo').classList.add('visible');
+    }, 1700);
+
+    // 7. Confettis
+    setTimeout(() => {
+        createWinnerConfetti();
+        animateWinnerParticles();
+    }, 1300);
+
+    // 8. Après un moment centré, décaler le vainqueur vers la gauche
+    setTimeout(() => {
+        document.getElementById('winnerContainer').classList.add('shifted');
+    }, 3600);
+
+    // 9. Puis afficher la grille
+    setTimeout(() => {
+        document.getElementById('winnerPlayersGrid').classList.add('visible');
+    }, 3800);
+
+    // 10. Bouton fermer lobby
+    setTimeout(() => {
+        document.getElementById('winnerCloseLobby').classList.add('visible');
+    }, 4300);
+
+    // 11. Top 10 apparaît 1s après la grille
+    setTimeout(() => {
+        document.getElementById('winnerTop10').classList.add('visible');
+
+        // Animation stagger des items
+        const items = document.querySelectorAll('.winner-top10-item');
+        items.forEach((item, i) => {
+            setTimeout(() => {
+                item.classList.add('visible');
+            }, i * 60);
+        });
+    }, 4800);
+}
+
+/**
+ * Fermer l'écran de victoire
+ */
+async function closeWinner() {
+    const overlay = document.getElementById('winnerOverlay');
+    if (!overlay) return;
 
     try {
-        // Récupérer les stats depuis le serveur
-        const response = await fetch('/admin/serie-stats', {
+        // Fermer le lobby côté serveur
+        await fetch('/admin/toggle-game', {
+            method: 'POST',
             credentials: 'same-origin'
         });
-
-        if (!response.ok) {
-            throw new Error('Erreur chargement stats');
-        }
-
-        const stats = await response.json();
-
-        // 🔥 PRODUCTION: Définir quelles cartes sont disponibles
-        const cards = [
-            {
-                id: 'tout',
-                name: 'Overall',
-                subtitle: stats.tout.subtitle,
-                bg: 'overall.jpg',
-                disabled: false // ✅ Disponible
-            },
-
-            {
-                id: 'mainstream',
-                name: 'Mainstream',
-                subtitle: stats.mainstream.subtitle,
-                bg: 'mainstream.jpg',
-                disabled: false // ✅ Disponible
-            },
-            {
-                id: 'big3',
-                name: 'Big 3',
-                subtitle: `${stats.big3.count} questions`,
-                bg: 'overall.jpg',
-                disabled: true // 🔥 Bientôt disponible
-            },
-
-            {
-                id: 'onepiece',
-                name: 'One Piece',
-                subtitle: `${stats.onepiece.count} questions`,
-                bg: 'op.png',
-                disabled: true // 🔥 Bientôt disponible
-            },
-
-            {
-                id: 'naruto',
-                name: 'Naruto',
-                subtitle: `${stats.naruto.count} questions`,
-                bg: 'naruto2.png',
-                disabled: true // 🔥 Bientôt disponible
-            },
-            {
-                id: 'dragonball',
-                name: 'Dragon Ball',
-                subtitle: `${stats.dragonball.count} questions`,
-                bg: 'dbz.png',
-                disabled: true // 🔥 Bientôt disponible
-            },
-
-            ,
-            {
-                id: 'bleach',
-                name: 'Bleach',
-                subtitle: `${stats.bleach.count} questions`,
-                bg: 'bleach.png',
-                disabled: true // 🔥 Bientôt disponible
-            },
-
-            /* ------------ Cartes Bientôt Disponibles ------------ */
-
-            ,
-            {
-                id: 'bleach',
-                name: 'Demon Slayer',
-                subtitle: `${stats.dragonball.count} questions`,
-                bg: 'overall.jpg',
-                disabled: true // 🔥 Bientôt disponible
-            },
-            ,
-            {
-                id: 'bleach',
-                name: 'Jujutsu Kaisen',
-                subtitle: `${stats.dragonball.count} questions`,
-                bg: 'overall.jpg',
-                disabled: true // 🔥 Bientôt disponible
-            },
-            ,
-            {
-                id: 'bleach',
-                name: 'My Hero Academia',
-                subtitle: `${stats.dragonball.count} questions`,
-                bg: 'overall.jpg',
-                disabled: true // 🔥 Bientôt disponible
-            },
-            ,
-            {
-                id: 'bleach',
-                name: 'Shingeki no Kyojin',
-                subtitle: `${stats.dragonball.count} questions`,
-                bg: 'overall.jpg',
-                disabled: true // 🔥 Bientôt disponible
-            },
-            ,
-            {
-                id: 'bleach',
-                name: 'Death Note',
-                subtitle: `${stats.dragonball.count} questions`,
-                bg: 'overall.jpg',
-                disabled: true // 🔥 Bientôt disponible
-            },
-            ,
-            {
-                id: 'bleach',
-                name: 'Hunter Hunter',
-                subtitle: `${stats.dragonball.count} questions`,
-                bg: 'overall.jpg',
-                disabled: true // 🔥 Bientôt disponible
-            }
-            ,
-            {
-                id: 'bleach',
-                name: 'Fairy Tail',
-                subtitle: `${stats.dragonball.count} questions`,
-                bg: 'overall.jpg',
-                disabled: true // 🔥 Bientôt disponible
-            },
-            ,
-            {
-                id: 'bleach',
-                name: 'Fullmetal Alchemist',
-                subtitle: `${stats.dragonball.count} questions`,
-                bg: 'overall.jpg',
-                disabled: true // 🔥 Bientôt disponible
-            },
-            ,
-            {
-                id: 'bleach',
-                name: 'Jojo\'s Bizarre Adventure',
-                subtitle: `${stats.dragonball.count} questions`,
-                bg: 'overall.jpg',
-                disabled: true // 🔥 Bientôt disponible
-            },
-            ,
-            {
-                id: 'bleach',
-                name: 'Vinland Saga',
-                subtitle: `${stats.dragonball.count} questions`,
-                bg: 'overall.jpg',
-                disabled: true // 🔥 Bientôt disponible
-            },
-            ,
-            {
-                id: 'bleach',
-                name: 'Tokyo Ghoul',
-                subtitle: `${stats.dragonball.count} questions`,
-                bg: 'overall.jpg',
-                disabled: true // 🔥 Bientôt disponible
-            },
-            ,
-            {
-                id: 'bleach',
-                name: 'Kuroko no Basket',
-                subtitle: `${stats.dragonball.count} questions`,
-                bg: 'overall.jpg',
-                disabled: true // 🔥 Bientôt disponible
-            },
-            ,
-            {
-                id: 'bleach',
-                name: 'Gintama',
-                subtitle: `${stats.dragonball.count} questions`,
-                bg: 'overall.jpg',
-                disabled: true // 🔥 Bientôt disponible
-            },
-            ,
-            {
-                id: 'bleach',
-                name: 'Nanatsu no Taizai',
-                subtitle: `${stats.dragonball.count} questions`,
-                bg: 'overall.jpg',
-                disabled: true // 🔥 Bientôt disponible
-            },
-            ,
-            {
-                id: 'bleach',
-                name: 'Yu Yu Hakusho',
-                subtitle: `${stats.dragonball.count} questions`,
-                bg: 'overall.jpg',
-                disabled: true // 🔥 Bientôt disponible
-            },
-            ,
-            {
-                id: 'bleach',
-                name: 'Yu-Gi-Oh!',
-                subtitle: `${stats.dragonball.count} questions`,
-                bg: 'overall.jpg',
-                disabled: true // 🔥 Bientôt disponible
-            },
-            {
-                id: 'bleach',
-                name: 'Pokemon',
-                subtitle: `${stats.dragonball.count} questions`,
-                bg: 'overall.jpg',
-                disabled: true // 🔥 Bientôt disponible
-            }
-
-
-        ];
-
-        // Générer les cartes
-        grid.innerHTML = cards.map(card => `
-            <div class="serie-card-pro ${currentSerieFilter === card.id ? 'selected' : ''} ${card.disabled ? 'disabled' : ''}" 
-                 data-serie="${card.id}" 
-                 data-name="${card.name.toLowerCase()}"
-                 ${card.disabled ? '' : `onclick="selectSerie('${card.id}', '${card.name}')"`}>
-                <div class="serie-card-bg" style="background-image: url('${card.bg}')"></div>
-                <div class="serie-shine-card"></div>
-                ${card.disabled ? '<div class="serie-card-soon">SOON</div>' : ''}
-                <div class="serie-card-content">
-                    <div class="serie-card-name">${card.name}</div>
-                    <div class="serie-card-subtitle">${card.subtitle}</div>
-                </div>
-            </div>
-        `).join('');
-
-        console.log('✅ Stats séries chargées:', stats);
-
     } catch (error) {
-        console.error('❌ Erreur chargement stats séries:', error);
-
-        grid.innerHTML = `
-            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--danger);">
-                <div style="font-size: 1.5rem; margin-bottom: 8px;">❌</div>
-                <div>Erreur de chargement</div>
-            </div>
-        `;
+        console.error('❌ Erreur fermeture lobby:', error);
     }
+
+    // Animation de fermeture
+    overlay.style.opacity = '0';
+
+    setTimeout(() => {
+        overlay.classList.remove('active');
+        overlay.style.opacity = '';
+
+        // Reset des éléments winner
+        document.getElementById('winnerRays').style.opacity = '0';
+        document.getElementById('winnerContainer').classList.remove('visible', 'shifted');
+        document.getElementById('winnerName').classList.remove('visible');
+        document.getElementById('winnerLine').classList.remove('visible');
+        document.getElementById('winnerStats').classList.remove('visible');
+        document.getElementById('winnerGameInfo').classList.remove('visible');
+        document.getElementById('winnerPlayersGrid').classList.remove('visible');
+        document.getElementById('winnerCloseLobby').classList.remove('visible');
+        document.getElementById('winnerTop10').classList.remove('visible');
+        document.querySelectorAll('.winner-top10-item').forEach(item => {
+            item.classList.remove('visible');
+        });
+
+        // Supprimer confettis
+        document.querySelectorAll('.confetti').forEach(c => c.remove());
+
+        // Retour à idle
+        returnToIdle();
+
+    }, 500);
 }
 
 
-function selectSerie(serieId, serieName) {
-    if (isGameInProgress()) {
-        console.log('⚠️ Impossible de changer le filtre pendant une partie');
-        return;
-    }
+// Init rayons au chargement
+document.addEventListener('DOMContentLoaded', createWinnerRays);
 
-    currentSerieFilter = serieId;
 
-    // 🔥 FIX: Mettre à jour visuellement TOUTES les cartes
-    document.querySelectorAll('.serie-card-pro').forEach(card => {
-        if (card.dataset.serie === serieId) {
-            card.classList.add('selected');
-        } else {
-            card.classList.remove('selected');
-        }
-    });
+// ============================================
+// SYSTÈME DE LOGS EN DIRECT
+// ============================================
 
-    // Mettre à jour le bouton principal
-    const filterText = document.getElementById('serieFilterText');
-    const filterBg = document.getElementById('serieFilterBg');
+const LOG_ICONS = {
+    answered: '✓',
+    bonus_5050: '⚡',
+    bonus_joker: '🃏',
+    bonus_shield: '🛡️',
+    bonus_x2: '✕2',
+    disconnected: '⚠',
+    reconnected: '↩'
+};
 
-    if (filterText) {
-        filterText.textContent = serieName;
-    }
+let logsVisible = true;
 
-    if (filterBg) {
-        filterBg.style.backgroundImage = `url('overall.jpg')`;
-    }
 
-    // Envoyer au serveur
-    fetch('/admin/set-serie-filter', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ filter: serieId })
-    }).then(response => response.json())
-        .then(data => console.log('✅ Filtre série synchronisé:', data))
-        .catch(err => console.error('❌ Erreur sync filtre série:', err));
+function addGameLog(type, playerName = null, extraData = null) {
+    const logsList = document.getElementById('gameLogsList');
+    if (!logsList) return;
 
-    console.log(`✅ Filtre série: ${serieName}`);
+    const log = document.createElement('div');
+    log.className = `game-log-item ${type}`;
 
-    // Fermer le panel
-    closeSeriePanel();
-}
+    let icon = LOG_ICONS[type] || '';
+    let text = '';
 
-function filterSerieCards() {
-    const search = document.getElementById('serieSearch').value.toLowerCase();
-    const cards = document.querySelectorAll('.serie-card-pro'); // 🔥 Changé de .serie-card à .serie-card-pro
-
-    cards.forEach(card => {
-        const name = card.dataset.name; // Récupère data-name
-        if (name && name.includes(search)) {
-            card.style.display = 'flex'; // 🔥 Changé de 'block' à 'flex' (pour le layout)
-        } else {
-            card.style.display = 'none';
-        }
-    });
-}
-
-function updateLiveAnswerDisplay(data) {
-    const { answerCounts, answeredCount } = data;
-
-    // Mettre à jour chaque pourcentage
-    for (let answerIndex = 1; answerIndex <= 6; answerIndex++) {
-        const count = answerCounts[answerIndex] || 0;
-        const percentage = answeredCount > 0
-            ? Math.round((count / answeredCount) * 100)
-            : 0;
-
-        const percentElem = document.getElementById(`percent-${answerIndex}`);
-        if (percentElem) {
-            percentElem.textContent = percentage > 0 ? `${percentage}%` : '';
-        }
-    }
-}
-
-function addLogToUI(log) {
-    if (!logsContent) return;
-
-    const logEntry = document.createElement('div');
-    logEntry.className = 'log-entry';
-
-    let message = '';
-    let logClass = '';
-
-    switch (log.type) {
+    switch (type) {
+        // === JOUEURS ===
         case 'join':
-            logClass = 'log-join';
-            message = `<span style="color: ${log.data.playerColor}; font-weight: bold;">${log.data.username}</span> a rejoint le lobby`;
+            text = `<span class="player-name">${playerName}</span> a rejoint`;
             break;
         case 'leave':
-            logClass = 'log-leave';
-            message = `<span style="color: ${log.data.playerColor}; font-weight: bold;">${log.data.username}</span> a quitté la partie`;
+            text = `<span class="player-name">${playerName}</span> a quitté`;
             break;
-        case 'reconnect':
-            logClass = 'log-reconnect';
-            message = `<span style="color: ${log.data.playerColor}; font-weight: bold;">${log.data.username}</span> s'est reconnecté`;
+        case 'disconnected':
+            text = `<span class="player-name">${playerName}</span> déconnecté`;
             break;
-        case 'answer':
-            logClass = 'log-answer';
-            message = `<span style="color: ${log.data.playerColor}; font-weight: bold;">${log.data.username}</span> a répondu`;
+        case 'reconnected':
+            text = `<span class="player-name">${playerName}</span> reconnecté`;
             break;
-        case 'bonus-5050':
-            logClass = 'log-bonus';
-            message = `<span style="color: ${log.data.playerColor}; font-weight: bold;">${log.data.username}</span> a utilisé <span style="color: #FFD700;">50/50</span>`;
-            break;
-        case 'bonus-joker':
-            logClass = 'log-bonus';
-            message = `<span style="color: ${log.data.playerColor}; font-weight: bold;">${log.data.username}</span> a utilisé <span style="color: #FFD700;">Joker</span>`;
-            break;
-        case 'bonus-shield':
-            logClass = 'log-bonus';
-            message = `<span style="color: ${log.data.playerColor}; font-weight: bold;">${log.data.username}</span> a utilisé <span style="color: #FFD700;">Bouclier</span>`;
-            break;
-        case 'bonus-x2':
-            logClass = 'log-bonus';
-            message = `<span style="color: ${log.data.playerColor}; font-weight: bold;">${log.data.username}</span> a utilisé <span style="color: #FFD700;">x2</span>`;
+        case 'answered':
+            text = `<span class="player-name">${playerName}</span> a répondu`;
             break;
         case 'eliminated':
-            logClass = 'log-eliminated';
-            message = `<span style="color: ${log.data.playerColor}; font-weight: bold;">${log.data.username}</span> a été éliminé`;
+            text = `<span class="player-name">${playerName}</span> éliminé`;
+            log.classList.add('eliminated');
             break;
-        case 'game-start':
-            logClass = 'log-game';
-            message = `🎮 La partie a démarré (${log.data.playerCount} joueurs)`;
+
+        // === BONUS ===
+        case 'bonus_5050':
+            text = `<span class="player-name">${playerName}</span> utilise <span class="bonus-name">50/50</span>`;
+            log.classList.add('bonus');
             break;
-        case 'game-end':
-            logClass = 'log-game';
-            message = `🏆 Partie terminée - Gagnant: <span style="font-weight: bold;">${log.data.winner}</span>`;
+        case 'bonus_joker':
+            text = `<span class="player-name">${playerName}</span> utilise <span class="bonus-name">Joker</span>`;
+            log.classList.add('bonus');
             break;
-        case 'tiebreaker':
-            logClass = 'log-game';
-            message = `⚡ Tiebreaker activé (${log.data.playerCount} joueurs ex-aequo)`;
+        case 'bonus_shield':
+            text = `<span class="player-name">${playerName}</span> utilise <span class="bonus-name">Bouclier</span>`;
+            log.classList.add('bonus');
+            break;
+        case 'bonus_x2':
+            text = `<span class="player-name">${playerName}</span> utilise <span class="bonus-name">x2</span>`;
+            log.classList.add('bonus');
+            break;
+
+        // === ÉVÉNEMENTS DE JEU ===
+        case 'game_start':
+            text = `Partie lancée avec <span class="highlight">${extraData?.playerCount || '?'}</span> joueurs`;
+            log.classList.add('event');
+            break;
+        case 'game_end':
+            text = `<span class="player-name">${extraData?.winner || '?'}</span> remporte la partie`;
+            log.classList.add('event', 'winner');
             break;
         case 'question':
-            logClass = 'log-question';
-            // Ajouter un séparateur avant chaque question
-            const separator = document.createElement('div');
-            separator.className = 'log-separator';
-            logsContent.appendChild(separator);
-
-            message = `📝 Question ${log.data.questionNumber} envoyée<br><span style="font-size: 11px; opacity: 0.7;">${log.data.difficulty} • ${log.data.series}</span>`;
+            text = `Question ${extraData?.questionNumber || '?'} - <span class="difficulty">${extraData?.difficulty || '?'}</span>`;
+            log.classList.add('event');
             break;
+        case 'tiebreaker':
+            text = `Égalité - Départage entre <span class="highlight">${extraData?.playerCount || '?'}</span> joueurs`;
+            log.classList.add('event', 'tiebreaker');
+            break;
+
+        default:
+            text = `${type}: ${playerName || ''}`;
     }
 
-    logEntry.classList.add(logClass);
-    logEntry.innerHTML = message;
-    logsContent.appendChild(logEntry);
+    if (icon) {
+        log.innerHTML = `<span class="game-log-icon">${icon}</span><span class="game-log-text">${text}</span>`;
+    } else {
+        log.innerHTML = `<span class="game-log-text">${text}</span>`;
+    }
 
-    // Auto-scroll vers le bas
-    logsContent.scrollTop = logsContent.scrollHeight;
+    logsList.appendChild(log);
+    logsList.scrollTop = logsList.scrollHeight;
+
+    // Limiter à 30 logs max
+    const logs = logsList.querySelectorAll('.game-log-item');
+    if (logs.length > 30) {
+        logs[0].remove();
+    }
+
+    // Fade out après 12 secondes
+    setTimeout(() => {
+        log.classList.add('fading');
+        setTimeout(() => {
+            if (log.parentNode) {
+                log.remove();
+            }
+        }, 500);
+    }, 12000);
+}
+
+
+
+// Event listener pour le toggle
+document.getElementById('gameLogsToggle')?.addEventListener('click', toggleLogsPanel);
+
+
+
+// Données Top 10 (en cas de bugs)
+const TOP10_DATA = [
+    { name: 'Shikamaru', wins: 999 },
+    { name: 'Gojo', wins: 998 },
+    { name: 'Zaraki', wins: 997 },
+    { name: 'Rengoku', wins: 996 },
+    { name: 'Doflamingo', wins: 995 },
+    { name: 'Piccolo', wins: 994 },
+    { name: 'Midoriya', wins: 993 },
+    { name: 'Lelouch', wins: 992 },
+    { name: 'Killua', wins: 991 },
+    { name: 'Mikasa', wins: 990 },
+];
+
+/**
+ * Générer le Top 10
+ */
+function generateWinnerTop10(data) {
+    const list = document.getElementById('winnerTop10List');
+    if (!list) return;
+    list.innerHTML = '';
+
+    data.slice(0, 10).forEach((player, index) => {
+        const item = document.createElement('div');
+        item.className = 'winner-top10-item';
+
+        // Supporter les deux formats (username/name, total_victories/wins)
+        const playerName = player.username || player.name || 'Joueur';
+        const playerWins = player.total_victories || player.wins || 0;
+
+        item.innerHTML = `
+            <span class="winner-top10-rank">${index + 1}</span>
+            <span class="winner-top10-name">${playerName}</span>
+            <span class="winner-top10-wins">${playerWins}</span>
+        `;
+        list.appendChild(item);
+    });
 }
 
 
 // ============================================
-// PROFIL JOUEUR (clic sur carte)
+// RESTAURATION ÉTAT DU JEU
 // ============================================
 
-async function openPlayerProfile(twitchId, username) {
-    const modal = document.getElementById('playerProfileModal');
-
-    // Afficher immédiatement avec skeleton
-    document.getElementById('profileName').textContent = username;
-    document.getElementById('profileAvatar').innerHTML = '<img src="warrior.png" alt="Avatar">';
-    document.getElementById('profileTitles').innerHTML = '<div class="player-profile-title skeleton-badge"></div>';
-    document.getElementById('profilePlacement').textContent = '-';
-    document.getElementById('profileGames').textContent = '-';
-    document.getElementById('profileWins').textContent = '-';
-    document.getElementById('profileWinrate').textContent = '-';
-
-    // Afficher la modale IMMÉDIATEMENT
-    modal.classList.add('active');
-
+async function restoreGameState() {
     try {
-        const response = await fetch(`/profile/${twitchId}`);
-        if (!response.ok) throw new Error('Profil non trouvé');
+        const response = await fetch('/game/state', { credentials: 'same-origin' });
+        if (!response.ok) return false;
 
-        const data = await response.json();
+        const state = await response.json();
+        console.log('🔄 État restauré:', state);
 
-        // Mettre à jour avec les vraies données
-        const titlesContainer = document.getElementById('profileTitles');
-        const titleBadge = `<div class="player-profile-title">${data.titles?.current?.name || 'Novice'}</div>`;
-        const winnerBadge = data.user.isLastGlobalWinner ?
-            `<div class="player-profile-winner-badge">Dernier Vainqueur</div>` : '';
-        titlesContainer.innerHTML = titleBadge + winnerBadge;
+        // 🔥 CAS 0: ÉCRAN WINNER AFFICHÉ
+        if (state.showingWinner && state.winnerScreenData) {
+            console.log('🏆 Restauration écran Winner');
 
-        const placement = data.user.last_placement;
-        document.getElementById('profilePlacement').textContent = placement ?
-            (placement === 1 ? '1er' : placement === 2 ? '2ème' : `${placement}ème`) : '-';
+            const data = state.winnerScreenData;
 
-        document.getElementById('profileGames').textContent = data.user.total_games_played || 0;
-        document.getElementById('profileWins').textContent = data.user.total_victories || 0;
-        document.getElementById('profileWinrate').textContent = `${data.user.win_rate || 0}%`;
+            // 🔥 RESTAURER L'ICÔNE AVANT LE WINNER
+            if (data.livesIcon) {
+                selectedLivesIcon = data.livesIcon;
+                updateLivesIconSelector(data.livesIcon);
+            }
+
+            // Afficher les éléments de base
+            document.getElementById('mainHeader').style.display = '';
+            document.getElementById('mainContainer').style.display = '';
+            document.getElementById('bgText').style.display = '';
+
+            // Cacher idle et lobby
+            document.getElementById('stateIdle').style.display = 'none';
+            document.getElementById('stateLobby').style.display = 'none';
+            document.getElementById('stateLobby').classList.remove('active');
+
+            // Cacher les panneaux latéraux
+            recentPanel.classList.add('hidden');
+            lastgamePanel.classList.add('hidden');
+
+            // Afficher l'écran winner
+            showWinner(
+                data.winner.username,
+                data.gameMode === 'points' ? (data.winner.points || 0) : (data.winner.livesRemaining || 0),
+                data.winner.totalVictories || 1,
+                data.totalQuestions,
+                formatDuration(data.duration),
+                data.playersData || [],
+                data.topPlayers || [],
+                data.gameMode
+            );
+
+            return true;
+        }
+
+        // === RESTAURER LES PARAMÈTRES ===
+        if (state.mode) updateModeUI(state.mode);
+        if (state.lives) updateLivesUI(state.lives);
+        if (state.questionsCount) updateQuestionsUI(state.questionsCount);
+        if (state.questionTime) updateTimerUI(state.questionTime);
+        if (state.answersCount) updateAnswersUI(state.answersCount);
+        if (state.difficultyMode) updateDifficultyUI(state.difficultyMode);
+        if (state.serieFilter) updateSerieFilterUI(state.serieFilter);
+
+        // 🔥 Restaurer l'icône ET la variable globale
+        if (state.livesIcon) {
+            selectedLivesIcon = state.livesIcon;
+            updateLivesIconSelector(state.livesIcon);
+        }
+
+        // Restaurer le mode auto
+        if (state.autoMode !== undefined) {
+            autoMode = state.autoMode;
+            const autoBtn = document.getElementById('autoToggleBtn');
+            const icon = autoBtn?.querySelector('svg');
+
+            if (autoMode && autoBtn && icon) {
+                autoBtn.classList.add('active');
+                icon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+            }
+        }
+
+        // === CAS 1: PARTIE EN COURS ===
+        if (state.inProgress) {
+            console.log('🎮 Restauration partie en cours');
+
+            // Récupérer les éléments DOM
+            const stateIdleEl = document.getElementById('stateIdle');
+            const stateLobbyEl = document.getElementById('stateLobby');
+            const stateGameEl = document.getElementById('stateGame');
+            const bgTextEl = document.getElementById('bgText');
+            const statusDotEl = document.getElementById('statusDot');
+            const statusTextEl = document.getElementById('statusText');
+            const recentPanelEl = document.getElementById('recentPanel');
+            const lastgamePanelEl = document.getElementById('lastgamePanel');
+            const btnWrapperEl = document.getElementById('btnWrapper');
+
+            // Mettre à jour gameSettings
+            gameSettings.mode = state.mode === 'lives' ? 'vie' : 'point';
+            gameSettings.lives = state.lives || 3;
+            gameSettings.timer = state.questionTime || 10;
+            gameSettings.totalQuestions = state.questionsCount || 20;
+
+            // Sauvegarder les joueurs
+            gamePlayers = state.players || [];
+
+            // Afficher l'état GAME directement
+            document.getElementById('mainContainer').style.display = '';
+            if (stateIdleEl) stateIdleEl.style.display = 'none';
+            if (stateLobbyEl) {
+                stateLobbyEl.style.display = 'none';
+                stateLobbyEl.classList.remove('active');
+            }
+            if (stateGameEl) {
+                stateGameEl.style.display = 'flex';
+                stateGameEl.classList.add('active');
+                stateGameEl.style.opacity = '1';
+                stateGameEl.style.pointerEvents = '';
+            }
+
+            if (bgTextEl) {
+                bgTextEl.textContent = 'GAME';
+                bgTextEl.classList.remove('lobby-active');
+                bgTextEl.classList.add('game-active');
+            }
+            if (statusDotEl) statusDotEl.classList.add('active');
+            if (statusTextEl) statusTextEl.textContent = 'En partie';
+
+            if (recentPanelEl) recentPanelEl.classList.add('hidden');
+            if (lastgamePanelEl) lastgamePanelEl.classList.add('hidden');
+            if (btnWrapperEl) btnWrapperEl.classList.remove('pulse-active');
+
+            // Configurer le mode stats
+            setStatsMode(gameSettings.mode === 'point' ? 'points' : 'vie');
+
+            // Créer les cartes joueurs dans la grille
+            console.log('🃏 Création cartes joueurs:', state.players.length, 'joueurs');
+            createGamePlayerCardsFromState(state.players);
+
+            // Afficher le toggle logs
+            document.getElementById('gameLogsToggle')?.classList.add('active');
+
+            // === CAS 1A: QUESTION EN COURS ===
+            if (state.currentQuestion && !state.showResults) {
+                console.log('📝 Restauration question en cours');
+
+                // Restaurer la question (sans animation)
+                restoreQuestionDisplay(state);
+
+                // Démarrer le timer visuel avec le temps restant
+                if (state.timeRemaining > 0) {
+                    startVisualTimer(state.timeRemaining, state.questionTime);
+                }
+
+                // Mettre à jour les stats live si des joueurs ont déjà répondu
+                if (state.liveAnswerCounts) {
+                    updateLiveStatsFromState(state);
+                }
+            }
+
+            // === CAS 1B: RÉSULTATS AFFICHÉS ===
+            else if (state.showResults && state.lastQuestionResults) {
+                console.log('📊 Restauration des résultats');
+
+                // Restaurer l'affichage de la question avec résultats
+                restoreResultsDisplay(state);
+
+                // Mettre à jour les cartes joueurs avec les réponses
+                updatePlayerCardsFromState(state.lastQuestionResults);
+
+                // Restaurer les statistiques
+                restoreStatsDisplay(state.lastQuestionResults);
+
+                const timerText = document.getElementById('timerText');
+                const timerContainer = timerText?.closest('.question-timer') || timerText?.parentElement;
+                if (timerContainer) {
+                    timerContainer.style.opacity = '0';
+                }
+            }
+
+            return true;
+        }
+
+        // === CAS 2: LOBBY OUVERT ===
+        else if (state.isActive) {
+            console.log('🚪 Restauration lobby');
+            showLobbyUI(state.players || []);
+            return true;
+        }
+
+        return false;
 
     } catch (error) {
-        console.error('❌ Erreur chargement profil:', error);
-        document.getElementById('profileTitles').innerHTML = '<div class="player-profile-title">Novice</div>';
+        console.log('Pas d\'état à restaurer:', error);
+        return false;
     }
 }
 
-function closePlayerProfile() {
-    document.getElementById('playerProfileModal').classList.remove('active');
-}
+// ============================================
+// FONCTIONS HELPER POUR LA RESTAURATION
+// ============================================
 
-// 🆕 Vérifie si l'intro a déjà été jouée cette session
-function shouldPlayIntro() {
-    return !sessionStorage.getItem('introPlayed');
-}
+function createGamePlayerCardsFromState(players) {
+    const gameGrid = document.getElementById('playersGridGame');
+    gameGrid.innerHTML = '';
+    gamePlayers = [];
 
-// 🆕 Marque l'intro comme jouée
-function markIntroPlayed() {
-    sessionStorage.setItem('introPlayed', 'true');
-}
-
-// Fermer avec Escape
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        closePlayerProfile();
-    }
-});
-
-// Fermer en cliquant sur l'overlay
-document.getElementById('playerProfileModal')?.addEventListener('click', (e) => {
-    if (e.target.id === 'playerProfileModal') {
-        closePlayerProfile();
-    }
-});
-
-
-// Gestion du formulaire d'ajout de question
-if (document.getElementById('addQuestionForm')) {
-    document.getElementById('addQuestionForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const statusDiv = document.getElementById('addQuestionStatus');
-        statusDiv.style.display = 'none';
-
-        const formData = {
-            question: document.getElementById('questionText').value,
-            answer1: document.getElementById('answer1').value,
-            answer2: document.getElementById('answer2').value,
-            answer3: document.getElementById('answer3').value,
-            answer4: document.getElementById('answer4').value,
-            answer5: document.getElementById('answer5').value,
-            answer6: document.getElementById('answer6').value,
-            correctAnswer: document.getElementById('correctAnswer').value,
-            serie: document.getElementById('serie').value,
-            difficulty: document.getElementById('difficulty').value
+    players.forEach((player, index) => {
+        const playerData = {
+            name: player.username,
+            twitchId: player.twitchId,
+            lives: player.lives || 0,
+            points: player.points || 0,
+            isChampion: player.isLastGlobalWinner,
+            title: player.title || 'Novice',
+            eliminated: player.lives === 0,
+            hasAnswered: player.hasAnswered || false,
+            answer: player.selectedAnswer || null
         };
+        gamePlayers.push(playerData);
+
+        const gameCard = document.createElement('div');
+        gameCard.className = 'player-card-game' + (player.isLastGlobalWinner ? ' champion' : '');
+        gameCard.dataset.playerIndex = index;
+        gameCard.dataset.lives = player.lives || 0;
+
+
+        if (gameSettings.mode === 'vie') {
+            const livesHtml = getLivesIconsHTML(selectedLivesIcon, player.lives, gameSettings.lives);
+            gameCard.innerHTML = `
+                <div class="answered-indicator"></div>
+                <div class="player-card-game-name">${player.username}</div>
+                <div class="player-card-game-lives">${livesHtml}</div>
+                <div class="player-card-game-answer-overlay">
+                    <span class="answer-text-display no-answer">Pas répondu</span>
+                </div>
+            `;
+        } else {
+            gameCard.innerHTML = `
+                <div class="answered-indicator"></div>
+                <div class="player-card-game-name">${player.username}</div>
+                <div class="player-card-game-points">${player.points || 0}</div>
+                <div class="player-card-game-answer-overlay">
+                    <span class="answer-text-display no-answer">Pas répondu</span>
+                </div>
+            `;
+        }
+
+        // Clic sur carte joueur
+        gameCard.style.cursor = 'pointer';
+        gameCard.addEventListener('click', (e) => {
+            if (e.target.closest('.player-card-game-answer-overlay')) return;
+            openPlayerModal(player.username, player.isLastGlobalWinner, player.title || 'Novice', player.twitchId);
+        });
+
+        gameGrid.appendChild(gameCard);
+    });
+}
+
+function restoreQuestionDisplay(state) {
+    const question = state.currentQuestion;
+    const questionWrapper = document.getElementById('gameQuestionWrapper');
+    const questionPanel = document.getElementById('gameQuestionPanel');
+    const mainPanel = document.getElementById('gameMainPanel');
+    const questionActions = document.getElementById('questionActions');
+
+
+    console.log('🔍 restoreQuestionDisplay - question:', question);
+    console.log('🔍 restoreQuestionDisplay - questionWrapper:', questionWrapper);
+    console.log('🔍 restoreQuestionDisplay - questionWrapper.className AVANT:', questionWrapper?.className);
+
+    // Reset complet (sans animation)
+    if (questionWrapper) {
+        questionWrapper.className = 'game-question-wrapper visible';
+    }
+
+    if (questionPanel) questionPanel.removeAttribute('style');
+    if (mainPanel) mainPanel.className = 'game-main-panel';
+    if (questionActions) questionActions.className = 'question-actions';
+
+    // Badges
+    const questionTabBadge = document.getElementById('questionTabBadge');
+    const questionSeries = document.getElementById('questionSeries');
+    const diffBadge = document.getElementById('questionDifficulty');
+
+    if (questionTabBadge) {
+        if (state.mode === 'points' && state.questionsCount) {
+            questionTabBadge.textContent = `Question ${state.currentQuestionIndex}/${state.questionsCount}`;
+        } else {
+            questionTabBadge.textContent = `Question ${state.currentQuestionIndex}`;
+        }
+    }
+
+    if (questionSeries) questionSeries.textContent = question.serie || 'Anime';
+
+    if (diffBadge) {
+        diffBadge.textContent = formatDifficulty(question.difficulty);
+        diffBadge.className = 'question-difficulty-badge ' + getDifficultyClass(question.difficulty);
+    }
+
+    // Question
+    const questionText = document.getElementById('questionText');
+    if (questionText) questionText.textContent = question.question;
+
+    // Stocker la question courante
+    currentQuestionData = question;
+
+    // Réponses
+    const answersGrid = document.getElementById('answersGrid');
+    if (answersGrid) {
+        answersGrid.innerHTML = '';
+
+        if (question.answers.length === 6) {
+            answersGrid.classList.add('six-answers');
+        } else {
+            answersGrid.classList.remove('six-answers');
+        }
+
+        question.answers.forEach((answer, i) => {
+            const answerEl = document.createElement('div');
+            answerEl.className = 'answer-option';
+            answerEl.dataset.answer = i + 1;
+
+            // 🔥 NOUVEAU: Afficher les pourcentages live
+            const answerIndex = i + 1;
+            const count = state.liveAnswerCounts?.[answerIndex] || 0;
+            const total = state.players?.length || 1;
+            const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+
+            const answerText = document.createElement('span');
+            answerText.className = 'answer-text';
+            answerText.textContent = answer;
+
+            const answerPercent = document.createElement('span');
+            answerPercent.className = 'answer-percent';
+            answerPercent.textContent = `${percent}%`;
+
+            answerEl.appendChild(answerText);
+            answerEl.appendChild(answerPercent);
+            answersGrid.appendChild(answerEl);
+        });
+    }
+
+    // 🔥 NOUVEAU: Marquer les joueurs qui ont déjà répondu
+    if (state.players) {
+        state.players.forEach(player => {
+            if (player.hasAnswered) {
+                const cards = document.querySelectorAll('.player-card-game');
+                cards.forEach(card => {
+                    const nameEl = card.querySelector('.player-card-game-name');
+                    if (nameEl && nameEl.textContent === player.username) {
+                        card.classList.add('has-answered');
+                    }
+                });
+            }
+        });
+    }
+
+    const questionTextEl = document.getElementById('questionText');
+    const answersGridEl = document.getElementById('answersGrid');
+    const questionBadges = document.querySelector('.question-badges-row');
+
+    if (questionTextEl) questionTextEl.style.opacity = '1';
+    if (answersGridEl) answersGridEl.style.opacity = '1';
+    if (questionBadges) questionBadges.style.opacity = '1';
+
+
+    console.log('🔍 restoreQuestionDisplay - questionText contenu:', document.getElementById('questionText')?.textContent);
+    console.log('🔍 restoreQuestionDisplay - answersGrid enfants:', document.getElementById('answersGrid')?.children.length);
+}
+
+function restoreResultsDisplay(state) {
+    const question = state.currentQuestion;
+    const results = state.lastQuestionResults;
+    const questionWrapper = document.getElementById('gameQuestionWrapper');
+    const mainPanel = document.getElementById('gameMainPanel');
+    const questionActions = document.getElementById('questionActions');
+
+    // Afficher la question d'abord
+    restoreQuestionDisplay(state);
+
+    // Révéler les réponses
+    const correctAnswer = results.correctAnswer;
+    document.querySelectorAll('.answer-option').forEach((option, i) => {
+        const answerIndex = i + 1;
+        option.classList.add('revealed');
+
+        if (answerIndex === correctAnswer) {
+            option.classList.add('correct');
+        } else {
+            option.classList.add('wrong');
+        }
+
+        // 🔥 Restaurer les pourcentages depuis les résultats
+        const total = state.players?.length || 1;
+        const count = state.liveAnswerCounts?.[answerIndex] || 0;
+        const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+        const percentEl = option.querySelector('.answer-percent');
+        if (percentEl) percentEl.textContent = `${percent}%`;
+    });
+
+    // Afficher le panel droit + boutons
+    if (questionWrapper) questionWrapper.classList.add('shifted');
+    if (mainPanel) mainPanel.classList.add('visible');
+    if (questionActions) questionActions.classList.add('visible');
+
+    // Focus sur l'onglet Stats
+    focusStatsTab();
+
+    // Gérer le bouton suivante selon le mode auto
+    const nextBtn = document.getElementById('nextQuestionBtn');
+    if (nextBtn) {
+        if (autoMode) {
+            nextBtn.classList.add('auto-disabled');
+            nextBtn.disabled = true;
+        } else {
+            nextBtn.classList.remove('auto-disabled');
+            nextBtn.disabled = false;
+        }
+    }
+
+    showGameCloseBtn();
+
+    // 🔥 Restaurer les stats
+    restoreStatsDisplay(results);
+
+    // 🔥 Mettre à jour les cartes joueurs
+    updatePlayerCardsFromState(results);
+}
+
+function updatePlayerCardsFromState(results) {
+    const correctAnswer = results.correctAnswer;
+    const currentAnswers = currentQuestionData?.answers || [];
+
+    results.players.forEach(playerResult => {
+        const cards = document.querySelectorAll('.player-card-game');
+        cards.forEach(card => {
+            const nameEl = card.querySelector('.player-card-game-name');
+            if (!nameEl || nameEl.textContent !== playerResult.username) return;
+
+            // Status visuel
+            card.classList.remove('correct-answer', 'wrong-answer', 'has-answered');
+
+            if (playerResult.isCorrect || playerResult.status === 'correct') {
+                card.classList.add('correct-answer');
+            } else {
+                card.classList.add('wrong-answer');
+            }
+
+            // Mode vie : mettre à jour les cœurs
+            if (gameSettings.mode === 'vie') {
+                const livesEl = card.querySelector('.player-card-game-lives');
+                if (livesEl && playerResult.lives !== undefined) {
+                    const hearts = livesEl.querySelectorAll('.heart');
+                    hearts.forEach((heart, i) => {
+                        if (i < playerResult.lives) {
+                            heart.classList.remove('lost');
+                        } else {
+                            heart.classList.add('lost');
+                        }
+                    });
+                }
+
+                // Marquer éliminé si 0 vies
+                if (playerResult.lives <= 0) {
+                    card.classList.add('eliminated');
+                }
+            }
+
+            // Mode points : mettre à jour les points
+            if (gameSettings.mode === 'point') {
+                const pointsEl = card.querySelector('.player-card-game-points');
+                if (pointsEl && playerResult.points !== undefined) {
+                    pointsEl.textContent = playerResult.points;
+                }
+            }
+
+            // 🔥 Overlay réponse - utiliser selectedAnswer du résultat
+            const overlay = card.querySelector('.answer-text-display');
+            if (overlay) {
+                if (playerResult.selectedAnswer) {
+                    overlay.textContent = playerResult.selectedAnswer;
+                    overlay.classList.remove('no-answer', 'wrong');
+                    if (!playerResult.isCorrect && playerResult.status !== 'correct') {
+                        overlay.classList.add('wrong');
+                    }
+                } else {
+                    overlay.textContent = 'Pas répondu';
+                    overlay.classList.add('no-answer');
+                    overlay.classList.remove('wrong');
+                }
+            }
+        });
+    });
+
+    // Trier la grille
+    setTimeout(() => {
+        sortPlayersGrid();
+    }, 100);
+}
+
+function restoreStatsDisplay(results) {
+    const correct = results.stats?.correct || 0;
+    const wrong = results.stats?.wrong || 0;
+    const afk = results.stats?.afk || 0;
+
+    // Compteurs texte
+    const correctCount = document.getElementById('correctCount');
+    const wrongCount = document.getElementById('wrongCount');
+    const timeoutCount = document.getElementById('timeoutCount');
+
+    if (correctCount) correctCount.textContent = correct;
+    if (wrongCount) wrongCount.textContent = wrong;
+    if (timeoutCount) timeoutCount.textContent = afk;
+
+    // Pie chart réponses
+    updateResponsesPie(correct, wrong, afk);
+
+    // Pie chart vies (si mode vies)
+    if (results.stats?.livesDistribution && gameSettings.mode === 'vie') {
+        updateLivesPie(
+            results.stats.livesDistribution[3] || 0,
+            results.stats.livesDistribution[2] || 0,
+            results.stats.livesDistribution[1] || 0,
+            results.stats.livesDistribution[0] || 0
+        );
+    }
+
+    // 🔥 Joueur le plus rapide
+    if (results.fastestPlayer) {
+        updateFastestPlayer(results.fastestPlayer.username, results.fastestPlayer.time);
+    } else {
+        updateFastestPlayer('-', null);
+    }
+}
+
+function updateLiveStatsFromState(state) {
+    const total = state.players.length;
+    const counts = state.liveAnswerCounts || {};
+
+    document.querySelectorAll('.answer-option').forEach((option, i) => {
+        const answerIndex = i + 1;
+        const count = counts[answerIndex] || 0;
+        const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+
+        const percentEl = option.querySelector('.answer-percent');
+        if (percentEl) {
+            percentEl.textContent = `${percent}%`;
+        }
+    });
+}
+
+function showLobbyUI(players = []) {
+    // Afficher le main container (pour le lobby)
+    document.getElementById('mainContainer').style.display = '';
+
+    // Cacher idle, afficher lobby directement
+    stateIdle.style.display = 'none';
+    stateLobby.classList.add('active');
+    stateLobby.style.opacity = '1';
+    stateLobby.style.pointerEvents = '';  // 🔥 AJOUTER
+
+    bgText.textContent = 'LOBBY';
+    bgText.classList.add('lobby-active');
+    statusDot.classList.add('active');
+    statusText.textContent = 'Lobby ouvert';
+
+    recentPanel.classList.add('hidden');
+    lastgamePanel.classList.add('hidden');
+    btnWrapper.classList.remove('pulse-active');
+
+    updateLobbyPlayers(players);
+
+    // Vérifier le cooldown au chargement
+    checkRefreshCooldown();
+}
+
+
+
+// ============================================
+// BOUTON ACTUALISER JOUEURS
+// ============================================
+const refreshPlayersBtn = document.getElementById('refreshPlayersBtn');
+
+if (refreshPlayersBtn) {
+
+    refreshPlayersBtn.addEventListener('click', async () => {
+        if (refreshPlayersBtn.classList.contains('loading') ||
+            refreshPlayersBtn.classList.contains('cooldown')) return;
+
+        refreshPlayersBtn.classList.add('loading');
 
         try {
-            const response = await fetch('/admin/add-question', {
+            const response = await fetch('/admin/refresh-players', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify(formData)
+                credentials: 'same-origin'
             });
 
             const data = await response.json();
 
-            if (data.success) {
-                statusDiv.textContent = '✅ Question ajoutée avec succès !';
-                statusDiv.style.background = 'rgba(16, 185, 129, 0.2)';
-                statusDiv.style.color = '#10b981';
-                statusDiv.style.border = '1px solid #10b981';
-                statusDiv.style.display = 'block';
-
-                // Reset form
-                document.getElementById('addQuestionForm').reset();
-
-            } else {
-                throw new Error(data.error);
+            if (response.status === 429) {
+                showRefreshCooldown(data.remainingTime);
+            } else if (data.success) {
+                console.log(`✅ ${data.playersRefreshed} joueur(s) actualisé(s)`);
+                showRefreshCooldown(20); // Lancer le cooldown de 20s
             }
         } catch (error) {
-            statusDiv.textContent = '❌ Erreur: ' + error.message;
-            statusDiv.style.background = 'rgba(239, 68, 68, 0.2)';
-            statusDiv.style.color = '#ef4444';
-            statusDiv.style.border = '1px solid #ef4444';
-            statusDiv.style.display = 'block';
+            console.error('❌ Erreur refresh:', error);
+        } finally {
+            refreshPlayersBtn.classList.remove('loading');
+        }
+    });
+}
+
+async function checkRefreshCooldown() {
+    try {
+        const response = await fetch('/admin/refresh-cooldown', { credentials: 'same-origin' });
+        const data = await response.json();
+
+        if (data.onCooldown && data.remainingTime > 0) {
+            showRefreshCooldown(data.remainingTime);
+        }
+    } catch (error) {
+        console.log('Pas de cooldown actif');
+    }
+}
+
+function showRefreshCooldown(seconds) {
+    const btn = document.getElementById('refreshPlayersBtn');
+    if (!btn) return;
+
+    const spanEl = btn.querySelector('span');
+    const originalText = 'Actualiser';
+
+    btn.classList.add('cooldown');
+    spanEl.textContent = `${seconds}s`;
+
+    const interval = setInterval(() => {
+        seconds--;
+        if (seconds <= 0) {
+            clearInterval(interval);
+            spanEl.textContent = originalText;
+            btn.classList.remove('cooldown');
+        } else {
+            spanEl.textContent = `${seconds}s`;
+        }
+    }, 1000);
+}
+
+
+
+
+// ============================================
+// FONCTIONS UPDATE UI - PARAMÈTRES
+// ============================================
+
+function updateModeUI(mode) {
+    const isLives = mode === 'lives';
+    const btnValue = isLives ? 'vie' : 'point';
+
+    // 🔥 AJOUTER - Mettre à jour gameSettings.mode
+    gameSettings.mode = isLives ? 'vie' : 'point';
+
+    // Boutons mode
+    document.querySelectorAll('.mode-group .setting-option-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === btnValue);
+    });
+
+    // Label
+    const modeValue = document.getElementById('modeValue');
+    if (modeValue) modeValue.textContent = isLives ? 'Vies' : 'Points';
+
+    // Afficher/cacher groupes
+    const livesGroup = document.getElementById('livesGroup');
+    const questionsGroup = document.getElementById('questionsGroup');
+    const livesIconGroup = document.getElementById('livesIconGroup'); // 🔥 AJOUTER
+
+    if (livesGroup && questionsGroup) {
+        if (isLives) {
+            // Mode Vies : afficher vies, cacher questions
+            livesGroup.style.display = 'block';
+            livesGroup.style.opacity = '1';
+            livesGroup.classList.remove('hidden');
+
+            questionsGroup.style.display = 'none';
+            questionsGroup.classList.add('hidden');
+
+            // 🔥 AJOUTER - Afficher icônes
+            if (livesIconGroup) {
+                livesIconGroup.style.display = '';
+                livesIconGroup.classList.remove('hidden');
+            }
+        } else {
+            // Mode Points : cacher vies, afficher questions
+            livesGroup.style.display = 'none';
+            livesGroup.classList.add('hidden');
+
+            questionsGroup.style.display = 'block';
+            questionsGroup.style.opacity = '1';
+            questionsGroup.classList.remove('hidden');
+
+            // 🔥 AJOUTER - Cacher icônes
+            if (livesIconGroup) {
+                livesIconGroup.style.display = 'none';
+                livesIconGroup.classList.add('hidden');
+            }
+        }
+    }
+
+    console.log(`✅ Mode UI restauré: ${mode}`);
+}
+
+function updateLivesUI(lives) {
+    // Boutons vies
+    document.querySelectorAll('.lives-group .setting-option-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.value) === lives);
+    });
+
+    // Label
+    const livesValue = document.getElementById('livesValue');
+    if (livesValue) livesValue.textContent = lives;
+
+    console.log(`✅ Vies UI restauré: ${lives}`);
+}
+
+function updateQuestionsUI(count) {
+    // Boutons questions
+    document.querySelectorAll('.questions-group .setting-option-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.value) === count);
+    });
+
+    // Label
+    const questionsValue = document.getElementById('questionsValue');
+    if (questionsValue) questionsValue.textContent = count;
+
+    console.log(`✅ Questions UI restauré: ${count}`);
+}
+
+function updateTimerUI(time) {
+    // Slider
+    const timerSlider = document.getElementById('timerSlider');
+    if (timerSlider) timerSlider.value = time;
+
+    // Label
+    const timerValue = document.getElementById('timerValue');
+    if (timerValue) timerValue.textContent = time + 's';
+
+    console.log(`✅ Timer UI restauré: ${time}s`);
+}
+
+function updateAnswersUI(count) {
+    // Boutons réponses
+    document.querySelectorAll('.answers-options .setting-option-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.value) === count);
+    });
+
+    // Label
+    const answersValue = document.getElementById('answersValue');
+    if (answersValue) answersValue.textContent = count;
+
+    console.log(`✅ Réponses UI restauré: ${count}`);
+}
+
+function updateDifficultyUI(mode) {
+    console.log('🔍 updateDifficultyUI appelée avec:', mode);
+    console.log('🔍 Type:', typeof mode);
+
+    const buttons = document.querySelectorAll('.difficulty-options .setting-option-btn');
+    console.log('🔍 Boutons trouvés:', buttons.length);
+
+    buttons.forEach(btn => {
+        console.log('🔍 Bouton data-value:', btn.dataset.value);
+    });
+
+    // Comparaison simple sans accent
+    const modeClean = mode.toLowerCase().replace('é', 'e');
+
+    buttons.forEach(btn => {
+        const btnValue = (btn.dataset.value || '').toLowerCase().replace('é', 'e');
+        const isActive = btnValue === modeClean;
+        console.log(`🔍 Comparaison: "${btnValue}" === "${modeClean}" => ${isActive}`);
+        btn.classList.toggle('active', isActive);
+    });
+
+    const difficultyValue = document.getElementById('difficultyValue');
+    if (difficultyValue) {
+        difficultyValue.textContent = mode === 'croissante' ? 'Croissante' : 'Aléatoire';
+    }
+}
+
+function updateSerieFilterUI(filter) {
+    // Cartes séries dans le modal
+    document.querySelectorAll('.series-card').forEach(card => {
+        card.classList.toggle('active', card.dataset.series === filter);
+    });
+
+    // Label principal
+    const seriesValue = document.getElementById('seriesValue');
+    if (seriesValue) {
+        const activeCard = document.querySelector(`.series-card[data-series="${filter}"]`);
+        if (activeCard) {
+            seriesValue.textContent = activeCard.dataset.name || filter;
+        }
+    }
+
+    // Mettre à jour la variable globale
+    if (typeof currentSerieFilter !== 'undefined') {
+        currentSerieFilter = filter;
+    }
+
+    console.log(`✅ Série UI restauré: ${filter}`);
+}
+
+
+
+// ============================================
+// LISTENERS PARAMÈTRES - CONNEXION SERVEUR
+// ============================================
+
+function initSettingsListeners() {
+
+    // === MODE (Vies / Points) ===
+    document.querySelectorAll('.mode-group .setting-option-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const mode = btn.dataset.mode;
+            const serverMode = mode === 'vie' ? 'lives' : 'points';
+
+            // Mettre à jour gameSettings localement
+            gameSettings.mode = mode;
+
+            // Mettre à jour visibilité du sélecteur d'icônes
+            updateLivesIconVisibility();
+
+            // Appel serveur
+            await fetch('/admin/set-mode', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ mode: serverMode })
+            });
+        });
+    });
+
+    // === VIES ===
+    document.querySelectorAll('.lives-group .setting-option-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const lives = parseInt(btn.dataset.value);
+
+            await fetch('/admin/set-lives', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ lives })
+            });
+        });
+    });
+
+    // === QUESTIONS (mode points) ===
+    document.querySelectorAll('.questions-group .setting-option-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const questions = parseInt(btn.dataset.value);
+
+            await fetch('/admin/set-questions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ questions })
+            });
+        });
+    });
+
+    // === TIMER (Slider) ===
+    const timerSlider = document.getElementById('timerSlider');
+    if (timerSlider) {
+        timerSlider.addEventListener('change', async (e) => {
+            await fetch('/admin/set-time', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ time: parseInt(e.target.value) })
+            });
+        });
+    }
+
+    // === RÉPONSES ===
+    document.querySelectorAll('.answers-options .setting-option-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const answers = parseInt(btn.dataset.value);
+
+            await fetch('/admin/set-answers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ answers })
+            });
+        });
+    });
+
+    // === DIFFICULTÉ ===
+    document.querySelectorAll('.difficulty-options .setting-option-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            // Enlever accent pour le serveur
+            const mode = btn.dataset.value.toLowerCase().replace('é', 'e');
+
+            console.log('📤 Envoi difficulté:', mode);
+
+            try {
+                const response = await fetch('/admin/set-difficulty-mode', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ mode })
+                });
+
+                const data = await response.json();
+                console.log('📥 Réponse:', response.status, data);
+            } catch (err) {
+                console.error('❌ Erreur:', err);
+            }
+        });
+    });
+
+    // === SÉRIE (dans le modal) ===
+    document.querySelectorAll('.series-card:not(.soon)').forEach(card => {
+        card.addEventListener('click', async () => {
+            const filter = card.dataset.series;
+
+            await fetch('/admin/set-serie-filter', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ filter })
+            });
+        });
+    });
+
+    console.log('✅ Settings listeners initialisés');
+}
+
+
+function displayQuestion(data) {
+    clearInterval(visualTimerInterval);
+
+    const questionWrapper = document.getElementById('gameQuestionWrapper');
+    const questionPanel = document.getElementById('gameQuestionPanel');
+    const mainPanel = document.getElementById('gameMainPanel');
+    const questionActions = document.getElementById('questionActions');
+    const panelMiniActions = document.querySelector('.panel-mini-actions');
+    const questionCard = document.querySelector('.question-card');
+    const answersGrid = document.getElementById('answersGrid');
+
+    // 🔥 RESET COMPLET
+    if (questionWrapper) {
+        questionWrapper.className = 'game-question-wrapper';
+        questionWrapper.removeAttribute('style');
+    }
+
+    if (questionPanel) {
+        questionPanel.removeAttribute('style');
+    }
+
+    if (panelMiniActions) {
+        panelMiniActions.removeAttribute('style');
+    }
+
+    if (mainPanel) {
+        mainPanel.className = 'game-main-panel';
+    }
+
+    if (questionActions) {
+        questionActions.className = 'question-actions';
+    }
+
+    // Forcer reflow
+    void questionWrapper.offsetWidth;
+
+    // 🔥 Lancer l'animation d'entrée
+    questionWrapper.classList.add('entering');
+
+    // 🔥 Après l'animation (1s + 0.5s delay), passer en visible
+    setTimeout(() => {
+        questionWrapper.classList.remove('entering');
+        questionWrapper.classList.add('visible');
+    }, 1500);
+
+
+    // REAFFICHER TIMER
+    const timerText = document.getElementById('timerText');
+    const timerContainer = timerText?.closest('.question-timer') || timerText?.parentElement;
+    if (timerContainer) {
+        timerContainer.style.opacity = '1';
+    }
+
+    // Mettre à jour les badges
+    const questionTabBadge = document.getElementById('questionTabBadge');
+    const questionSeries = document.getElementById('questionSeries');
+    const diffBadge = document.getElementById('questionDifficulty');
+
+    if (questionTabBadge) {
+        if (data.totalQuestions) {
+            questionTabBadge.textContent = `Question ${data.questionNumber}/${data.totalQuestions}`;
+        } else {
+            questionTabBadge.textContent = `Question ${data.questionNumber}`;
+        }
+    }
+    if (questionSeries) questionSeries.textContent = data.serie || 'Anime';
+
+    if (diffBadge) {
+        diffBadge.textContent = formatDifficulty(data.difficulty);
+        diffBadge.className = 'question-difficulty-badge ' + getDifficultyClass(data.difficulty);
+    }
+
+    const questionText = document.getElementById('questionText');
+    if (questionText) questionText.textContent = data.question;
+
+    if (!answersGrid) return;
+    answersGrid.innerHTML = '';
+
+    if (data.answers.length === 6) {
+        answersGrid.classList.add('six-answers');
+        if (questionCard) questionCard.classList.add('six-answers');
+    } else {
+        answersGrid.classList.remove('six-answers');
+        if (questionCard) questionCard.classList.remove('six-answers');
+    }
+
+    data.answers.forEach((answer, i) => {
+        const answerEl = document.createElement('div');
+        answerEl.className = 'answer-option';
+        answerEl.dataset.answer = i + 1;
+        answerEl.innerHTML = `
+            <span class="answer-text">${answer}</span>
+            <span class="answer-percent">0%</span>
+        `;
+        answersGrid.appendChild(answerEl);
+    });
+
+    document.querySelectorAll('.player-card-game').forEach(card => {
+        card.classList.remove('has-answered', 'correct-answer', 'wrong-answer');
+        const overlay = card.querySelector('.answer-text-display');
+        if (overlay) {
+            overlay.textContent = '';
+            overlay.classList.remove('wrong', 'no-answer');
+        }
+    });
+
+    // 🔥 Réafficher le contenu (était caché pendant la transition)
+    if (questionText) questionText.style.opacity = '1';
+    if (answersGrid) answersGrid.style.opacity = '1';
+    const questionBadges = document.querySelector('.question-badges-row');
+    if (questionBadges) questionBadges.style.opacity = '1';
+
+    currentQuestionData = data;
+    startVisualTimer(data.timeLimit);
+}
+
+
+function formatDifficulty(diff) {
+    const map = {
+        'veryeasy': 'Veryeasy',
+        'easy': 'Easy',
+        'medium': 'Medium',
+        'hard': 'Hard',
+        'veryhard': 'Veryhard',
+        'extreme': 'Extreme'
+    };
+    return map[diff] || diff;
+}
+
+function getDifficultyClass(diff) {
+    if (['veryeasy', 'easy'].includes(diff)) return 'easy';
+    if (diff === 'medium') return 'medium';
+    return 'hard';
+}
+
+let currentQuestionData = null;
+
+
+let visualTimerInterval = null;
+
+function startVisualTimer(seconds, totalTime = null) {
+    clearInterval(visualTimerInterval);
+
+    timerValue = seconds;
+    const maxTime = totalTime || gameSettings.timer;
+
+    // Mise à jour initiale avec le bon total
+    const display = Math.max(0, timerValue);
+    document.getElementById('timerText').textContent = display;
+
+    const progress = document.getElementById('timerProgress');
+    const timerText = document.getElementById('timerText');
+    const circumference = 2 * Math.PI * 22;
+
+    if (progress) {
+        progress.style.strokeDasharray = circumference;
+        // Calculer l'offset initial en fonction du temps restant
+        const offset = circumference * (1 - timerValue / maxTime);
+        progress.style.strokeDashoffset = offset;
+        progress.classList.remove('warning');
+    }
+    if (timerText) timerText.classList.remove('warning');
+
+    visualTimerInterval = setInterval(() => {
+        timerValue--;
+
+        // Check stop EN PREMIER
+        if (timerValue < 0) {
+            clearInterval(visualTimerInterval);
+            return;
+        }
+
+        // Mise à jour affichage
+        const display = Math.max(0, timerValue);
+        document.getElementById('timerText').textContent = display;
+
+        const offset = circumference * (1 - timerValue / maxTime);
+        progress.style.strokeDashoffset = offset;
+
+        // Puis warning
+        if (timerValue <= 3) {
+            if (progress) progress.classList.add('warning');
+            if (timerText) timerText.classList.add('warning');
+        }
+    }, 1000);
+}
+
+
+
+function displayResults(data) {
+    clearInterval(visualTimerInterval);
+
+    // 🔥 AJOUTER - Fade out du timer
+    const timerText = document.getElementById('timerText');
+    const timerProgress = document.getElementById('timerProgress');
+    const timerContainer = timerText?.closest('.question-timer') || timerText?.parentElement;
+
+    if (timerContainer) {
+        anime({
+            targets: timerContainer,
+            opacity: [1, 0],
+            duration: 300,
+            easing: 'easeOutQuad'
+        });
+    }
+
+    focusStatsTab();
+
+    const questionWrapper = document.getElementById('gameQuestionWrapper');
+    const mainPanel = document.getElementById('gameMainPanel');
+    const questionActions = document.getElementById('questionActions');
+
+    const correctAnswer = data.correctAnswer;
+
+    // Mettre à jour les options de réponse
+    document.querySelectorAll('.answer-option').forEach((option, i) => {
+        const answerIndex = i + 1;
+        option.classList.add('revealed');
+
+        setTimeout(() => {
+            if (answerIndex === correctAnswer) {
+                option.classList.add('correct');
+            } else {
+                option.classList.add('wrong');
+            }
+        }, 100 + i * 50);
+    });
+
+    // Afficher le panel droit
+    setTimeout(() => {
+        if (questionWrapper) questionWrapper.classList.add('shifted');
+        if (mainPanel) mainPanel.classList.add('visible');
+        if (questionActions) questionActions.classList.add('visible');
+        showGameCloseBtn();
+
+        // 🔥 AJOUTER - Gérer le bouton suivante selon le mode auto
+        const nextBtn = document.getElementById('nextQuestionBtn');
+        if (nextBtn) {
+            if (autoMode) {
+                nextBtn.classList.add('auto-disabled');
+                nextBtn.disabled = true;
+            } else {
+                nextBtn.classList.remove('auto-disabled');
+                nextBtn.disabled = false;
+            }
+        }
+    }, 350);
+
+    // Mettre à jour les cartes joueurs
+    if (data.players) {
+        data.players.forEach(playerResult => {
+            updatePlayerCard(playerResult, correctAnswer);
+        });
+    }
+
+
+    setTimeout(() => {
+        sortPlayersGrid();
+    }, 500);
+
+    // Mettre à jour les stats
+    setTimeout(() => {
+        if (data.stats) {
+            const correct = data.stats.correct || 0;
+            const wrong = data.stats.wrong || 0;
+            const afk = data.stats.afk || 0;
+
+            // Compteurs texte (utiliser les BONS IDs du HTML)
+            const correctCount = document.getElementById('correctCount');
+            const wrongCount = document.getElementById('wrongCount');
+            const timeoutCount = document.getElementById('timeoutCount');
+
+            if (correctCount) correctCount.textContent = correct;
+            if (wrongCount) wrongCount.textContent = wrong;
+            if (timeoutCount) timeoutCount.textContent = afk;
+
+            // Pie chart réponses
+            updateResponsesPie(correct, wrong, afk);
+
+            // 🔥 AJOUTER - Pie chart vies
+            if (data.stats.livesDistribution) {
+                updateLivesPie(
+                    data.stats.livesDistribution[3] || 0,
+                    data.stats.livesDistribution[2] || 0,
+                    data.stats.livesDistribution[1] || 0,
+                    data.stats.livesDistribution[0] || 0
+                );
+            }
+        }
+
+        // Joueur le plus rapide (seulement si quelqu'un a bien répondu)
+        if (data.fastestPlayer && data.stats?.correct > 0) {
+            updateFastestPlayer(data.fastestPlayer.username, data.fastestPlayer.time);
+        } else {
+            updateFastestPlayer('-', null);
+        }
+    }, 700);
+}
+
+
+function sortPlayersGrid() {
+    const grid = document.getElementById('playersGridGame');
+    if (!grid) return;
+
+    const cards = Array.from(grid.querySelectorAll('.player-card-game'));
+
+    cards.sort((a, b) => {
+        if (gameSettings.mode === 'point') {
+            // Mode Points : trier par points décroissants
+            const pointsA = parseInt(a.querySelector('.player-card-game-points')?.textContent) || 0;
+            const pointsB = parseInt(b.querySelector('.player-card-game-points')?.textContent) || 0;
+            return pointsB - pointsA;
+        } else {
+            // Mode Vie : trier par vies décroissantes (utiliser data-lives)
+            const livesA = parseInt(a.dataset.lives) || 0;
+            const livesB = parseInt(b.dataset.lives) || 0;
+            return livesB - livesA;
+        }
+    });
+
+    // Réinsérer dans l'ordre
+    cards.forEach(card => grid.appendChild(card));
+}
+
+function updatePlayerCard(playerResult, correctAnswer) {
+    const cards = document.querySelectorAll('.player-card-game');
+    const playerName = playerResult.username || playerResult.name;
+
+    cards.forEach(card => {
+        const nameEl = card.querySelector('.player-card-game-name');
+        if (!nameEl || nameEl.textContent !== playerName) return;
+
+        // Status visuel
+        card.classList.remove('correct-answer', 'wrong-answer', 'has-answered');
+
+        if (playerResult.isCorrect || playerResult.status === 'correct') {
+            card.classList.add('correct-answer');
+        } else {
+            card.classList.add('wrong-answer');
+        }
+
+        // Mode vie : mettre à jour les icônes
+        if (gameSettings.mode === 'vie') {
+            const livesEl = card.querySelector('.player-card-game-lives');
+            if (livesEl && playerResult.lives !== undefined) {
+                const targetLives = playerResult.lives;
+                card.dataset.lives = targetLives;
+
+                // Katana : remplacer tout le SVG
+                if (selectedLivesIcon === 'katana') {
+                    livesEl.innerHTML = getLivesIconsHTML('katana', targetLives, gameSettings.lives);
+                } else {
+                    // Autres icônes : mettre à jour les classes lost
+                    const icons = livesEl.querySelectorAll('.life-icon');
+                    icons.forEach((icon, i) => {
+                        if (i < targetLives) {
+                            icon.classList.remove('lost');
+                        } else if (!icon.classList.contains('lost')) {
+                            // Animation de perte
+                            icon.classList.add('losing');
+                            setTimeout(() => {
+                                icon.classList.remove('losing');
+                                icon.classList.add('lost');
+                            }, 400);
+                        }
+                    });
+                }
+
+                // Marquer éliminé si 0 vies
+                if (targetLives <= 0) {
+                    setTimeout(() => card.classList.add('eliminated'), 400);
+                }
+            }
+        }
+
+        // Mode points
+        if (gameSettings.mode === 'point' && playerResult.points !== undefined) {
+            const pointsEl = card.querySelector('.player-card-game-points');
+            if (pointsEl) pointsEl.textContent = playerResult.points;
+        }
+
+        // Overlay réponse
+        const overlay = card.querySelector('.answer-text-display');
+        if (overlay) {
+            if (playerResult.selectedAnswer) {
+                overlay.textContent = playerResult.selectedAnswer;
+                overlay.classList.remove('no-answer', 'wrong');
+                if (!playerResult.isCorrect) overlay.classList.add('wrong');
+            } else {
+                overlay.textContent = 'Pas répondu';
+                overlay.classList.add('no-answer');
+                overlay.classList.remove('wrong');
+            }
         }
     });
 }
 
 
-window.addEventListener('beforeunload', () => {
-    fetch('/admin/logout-silent', {
-        method: 'POST',
-        credentials: 'same-origin',
-        keepalive: true
+
+function updateLiveStats(data) {
+    // Mettre à jour les pourcentages sur les réponses
+    if (data.answerCounts) {
+        document.querySelectorAll('.answer-option').forEach((option, i) => {
+            const answerIndex = i + 1;
+            const count = data.answerCounts[answerIndex] || 0;
+            const total = data.answeredCount || 1;
+            const percent = Math.round((count / total) * 100) || 0;
+
+            const percentEl = option.querySelector('.answer-percent');
+            if (percentEl) percentEl.textContent = percent + '%';
+        });
+    }
+
+    // Mettre à jour indicateurs "a répondu" sur les cartes
+    // (optionnel - le serveur envoie 'player-answered' pour ça)
+}
+
+
+
+
+function displayWinner(data) {
+    gameStarted = false;
+
+    if (data.winner) {
+        showWinner(
+            data.winner.username,
+            data.gameMode === 'points' ? (data.winner.points || 0) : (data.winner.livesRemaining || 0),
+            data.winner.totalVictories || 1,
+            data.totalQuestions,
+            formatDuration(data.duration),
+            data.playersData || [],
+            data.topPlayers || [],
+            data.gameMode  // 🔥 AJOUTER - passer le mode
+        );
+    }
+
+    // Reset pour prochaine partie
+    const startBtn = document.getElementById('startGameBtn');
+    if (startBtn) {
+        startBtn.querySelector('.action-full-label').textContent = 'DÉMARRER';
+        startBtn.querySelector('.action-full-sub').textContent = 'Lancer la partie';
+        startBtn.classList.remove('started', 'loading');
+    }
+}
+
+function formatDuration(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}m ${secs}s`;
+}
+
+
+function handleActivityLog(log) {
+    if (!log || !log.type) return;
+
+    const data = log.data || {};
+    const username = data.username;
+
+    switch (log.type) {
+        case 'join':
+            addGameLog('join', username);
+            break;
+        case 'leave':
+            addGameLog('leave', username);
+            break;
+        case 'reconnect':
+            addGameLog('reconnected', username);
+            break;
+        case 'answer':
+            addGameLog('answered', username);
+            break;
+        case 'eliminated':
+            addGameLog('eliminated', username);
+            break;
+        case 'bonus-5050':
+            addGameLog('bonus_5050', username);
+            break;
+        case 'bonus-joker':
+            addGameLog('bonus_joker', username);
+            break;
+        case 'bonus-shield':
+            addGameLog('bonus_shield', username);
+            break;
+        case 'bonus-x2':
+            addGameLog('bonus_x2', username);
+            break;
+        case 'game-start':
+            addGameLog('game_start', null, { playerCount: data.playerCount });
+            break;
+        case 'game-end':
+            addGameLog('game_end', null, { winner: data.winner });
+            break;
+        case 'question':
+            addGameLog('question', null, {
+                questionNumber: data.questionNumber,
+                difficulty: data.difficulty
+            });
+            break;
+        case 'tiebreaker':
+            addGameLog('tiebreaker', null, { playerCount: data.playerCount });
+            break;
+    }
+}
+
+
+function toggleLogsPanel() {
+    const logsContainer = document.getElementById('gameLogsContainer');
+    const toggleBtn = document.getElementById('gameLogsToggle');
+    if (!logsContainer) return;
+
+    logsVisible = !logsVisible;
+
+    // Toggle la classe hidden (pas visible)
+    logsContainer.classList.toggle('hidden', !logsVisible);
+    toggleBtn?.classList.toggle('active', logsVisible);
+}
+
+function updateModeDisplay(mode) {
+    updateModeUI(mode);
+}
+
+function updateLivesDisplay(lives) {
+    updateLivesUI(lives);
+}
+
+
+// ============================================
+// MODAL CONFIRMATION FERMETURE LOBBY
+// ============================================
+
+function showConfirmModal() {
+    return new Promise((resolve) => {
+        const overlay = document.getElementById('confirmModalOverlay');
+        const modal = document.getElementById('confirmModal');
+        const cancelBtn = document.getElementById('confirmModalCancel');
+        const confirmBtn = document.getElementById('confirmModalConfirm');
+
+        // Afficher
+        overlay.classList.add('active');
+        modal.classList.add('active');
+
+        // Handlers
+        const cleanup = () => {
+            overlay.classList.remove('active');
+            modal.classList.remove('active');
+            cancelBtn.removeEventListener('click', onCancel);
+            confirmBtn.removeEventListener('click', onConfirm);
+            overlay.removeEventListener('click', onCancel);
+        };
+
+        const onCancel = () => {
+            cleanup();
+            resolve(false);
+        };
+
+        const onConfirm = () => {
+            cleanup();
+            resolve(true);
+        };
+
+        cancelBtn.addEventListener('click', onCancel);
+        confirmBtn.addEventListener('click', onConfirm);
+        overlay.addEventListener('click', onCancel);
+
+        // Escape pour annuler
+        const onEscape = (e) => {
+            if (e.key === 'Escape') {
+                document.removeEventListener('keydown', onEscape);
+                onCancel();
+            }
+        };
+        document.addEventListener('keydown', onEscape);
     });
+}
+
+document.getElementById('gameCloseBtn')?.addEventListener('click', async () => {
+    const confirmed = await showConfirmModal();
+    if (!confirmed) return;
+
+    try {
+        // Fermer le lobby (fait aussi le reset de la partie)
+        await fetch('/admin/toggle-game', {
+            method: 'POST',
+            credentials: 'same-origin'
+        });
+
+        // Retour à l'état idle
+        returnToIdle();
+
+    } catch (error) {
+        console.error('❌ Erreur fermeture:', error);
+    }
 });
 
+function returnToIdle() {
+    const stateGame = document.getElementById('stateGame');
+    const stateLobby = document.getElementById('stateLobby');
+    const stateIdle = document.getElementById('stateIdle');
+    const bgText = document.getElementById('bgText');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
 
-// ============ INIT ============
-checkAuth();
+    // Reset des états
+    gameStarted = false;
+
+    // Reset bouton démarrer
+    const startBtn = document.getElementById('startGameBtn');
+    if (startBtn) {
+        startBtn.querySelector('.action-full-label').textContent = 'DÉMARRER';
+        startBtn.querySelector('.action-full-sub').textContent = 'Lancer la partie';
+        startBtn.classList.remove('started', 'loading');
+        startBtn.classList.add('disabled');
+    }
+
+    // 🔥 Cacher game et lobby - RESET COMPLET avec styles inline
+    if (stateGame) {
+        stateGame.classList.remove('active');
+        stateGame.style.display = '';
+        stateGame.style.opacity = '';
+        stateGame.style.visibility = '';
+        stateGame.style.pointerEvents = 'none';
+    }
+    if (stateLobby) {
+        stateLobby.classList.remove('active');
+        stateLobby.style.display = '';
+        stateLobby.style.opacity = '';
+        stateLobby.style.visibility = '';
+        stateLobby.style.pointerEvents = 'none';
+    }
+
+    // Vider la grille lobby
+    const gridLobby = document.getElementById('playersGridLobby');
+    if (gridLobby) gridLobby.innerHTML = '';
+    const countEl = document.getElementById('lobbyPlayerCount');
+    if (countEl) countEl.textContent = '0';
+
+    // Vider la grille game
+    const gridGame = document.getElementById('playersGridGame');
+    if (gridGame) gridGame.innerHTML = '';
+
+    // Reset COMPLET question wrapper
+    const questionWrapper = document.getElementById('gameQuestionWrapper');
+    if (questionWrapper) {
+        questionWrapper.className = 'game-question-wrapper';
+        questionWrapper.removeAttribute('style');
+    }
+
+    const mainPanel = document.getElementById('gameMainPanel');
+    if (mainPanel) {
+        mainPanel.classList.remove('visible', 'closing');
+        mainPanel.removeAttribute('style');
+    }
+
+    const questionActions = document.getElementById('questionActions');
+    if (questionActions) {
+        questionActions.classList.remove('visible');
+        questionActions.removeAttribute('style');
+    }
+
+    // Reset les réponses
+    const answersGrid = document.getElementById('answersGrid');
+    if (answersGrid) {
+        answersGrid.innerHTML = '';
+        answersGrid.classList.remove('six-answers');
+    }
+
+    const questionCard = document.querySelector('.question-card');
+    if (questionCard) {
+        questionCard.classList.remove('six-answers');
+    }
+
+    // Reset timer
+    clearInterval(visualTimerInterval);
+    const timerProgress = document.getElementById('timerProgress');
+    const timerText = document.getElementById('timerText');
+    if (timerProgress) {
+        timerProgress.classList.remove('warning');
+        timerProgress.style.strokeDashoffset = '0';
+    }
+    if (timerText) {
+        timerText.classList.remove('warning');
+        timerText.textContent = '10';
+    }
+
+    // Afficher idle
+    stateIdle.style.display = 'grid';
+    stateIdle.style.opacity = '1';
+    stateIdle.style.visibility = 'visible';
+    stateIdle.style.pointerEvents = '';
+
+    // Reset header
+    bgText.textContent = 'MASTER';
+    bgText.classList.remove('lobby-active', 'game-active');
+    statusDot.classList.remove('active');
+    document.querySelector('.status-pill')?.classList.remove('game-mode');
+    statusText.textContent = 'Inactif';
+
+    // Réafficher les panneaux
+    recentPanel.classList.remove('hidden');
+    lastgamePanel.classList.remove('hidden');
+    recentPanel.style.opacity = '1';
+    lastgamePanel.style.opacity = '1';
+
+    // ============================================
+    // 🔥 FIX COMPLET PARTICULES ET BOUTON
+    // ============================================
+
+    // 1. Annuler toute animation en cours
+    if (continuousAnimationId) {
+        cancelAnimationFrame(continuousAnimationId);
+        continuousAnimationId = null;
+    }
+
+    // 2. Reset COMPLET des variables d'animation
+    isHovering = false;
+    hoverTransition = 0;
+    time = 0;
+    movementFadeIn = 0;
+
+    // 3. Reset du wrapper
+    const btnWrapperEl = document.getElementById('btnWrapper');
+    if (btnWrapperEl) {
+        btnWrapperEl.classList.add('pulse-active');
+        btnWrapperEl.style.pointerEvents = '';
+        btnWrapperEl.style.opacity = '1';
+        btnWrapperEl.style.transform = '';
+        btnWrapperEl.style.visibility = 'visible';
+        btnWrapperEl.style.display = '';
+
+        // Réattacher les event listeners pour le hover
+        btnWrapperEl.onmouseenter = () => { isHovering = true; };
+        btnWrapperEl.onmouseleave = () => { isHovering = false; };
+    }
+
+    // 4. Reset du bouton JOUER
+    const openLobbyBtn = document.getElementById('openLobbyBtn');
+    if (openLobbyBtn) {
+        openLobbyBtn.style.pointerEvents = '';
+        openLobbyBtn.style.opacity = '1';
+        openLobbyBtn.style.transform = '';
+        openLobbyBtn.style.display = '';
+        openLobbyBtn.style.visibility = 'visible';
+        openLobbyBtn.disabled = false;
+        openLobbyBtn.style.cursor = 'pointer';
+    }
+
+    // 5. Réafficher le bouton principal
+    const mainBtn = document.querySelector('.main-action-btn');
+    if (mainBtn) {
+        mainBtn.style.opacity = '1';
+        mainBtn.style.transform = 'scale(1)';
+        mainBtn.style.display = '';
+        mainBtn.style.pointerEvents = '';
+        mainBtn.style.visibility = 'visible';
+    }
+
+    // 6. INITIALISER les particules
+    const particles = document.querySelectorAll('.btn-wrapper .particle');
+    particles.forEach((p) => {
+        p.style.opacity = '0.6';
+        p.style.transform = 'translate(0px, 0px) scale(1)';
+        p.style.visibility = 'visible';
+        p.style.display = '';
+    });
+
+    // 7. Réafficher le personnage chibi
+    const btnCharacter = document.querySelector('.btn-character');
+    if (btnCharacter) {
+        btnCharacter.style.opacity = '0.95';
+        btnCharacter.style.visibility = 'visible';
+        btnCharacter.style.display = '';
+        btnCharacter.classList.add('visible');
+    }
+
+    // 8. Forcer un reflow puis lancer l'animation avec délai
+    void stateIdle.offsetWidth;
+
+    setTimeout(() => {
+        startContinuousAnimation();
+    }, 200);
+
+    // ============================================
+    // FIN FIX PARTICULES
+    // ============================================
+
+    // Animations de retour
+    anime({
+        targets: '.idle-main',
+        opacity: [0, 1],
+        translateY: [20, 0],
+        duration: 500,
+        easing: 'easeOutCubic'
+    });
+
+    anime({
+        targets: '.idle-stats',
+        opacity: [0, 1],
+        duration: 500,
+        delay: 100,
+        easing: 'easeOutCubic'
+    });
+
+    anime({
+        targets: '.recent-games-panel',
+        opacity: [0, 1],
+        translateX: [-40, 0],
+        duration: 500,
+        delay: 200,
+        easing: 'easeOutCubic'
+    });
+
+    anime({
+        targets: '.lastgame-panel',
+        opacity: [0, 1],
+        translateX: [40, 0],
+        duration: 500,
+        delay: 200,
+        easing: 'easeOutCubic'
+    });
+
+    setTimeout(() => {
+        loadIdleData();
+    }, 500);
+
+    console.log('✅ Retour à l\'état idle');
+}
 
 
+
+function focusStatsTab() {
+    // Activer l'onglet Stats
+    document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('.panel-tab[data-tab="stats"]')?.classList.add('active');
+
+    // Afficher le contenu Stats
+    document.querySelectorAll('.panel-tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tabStats')?.classList.add('active');
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getLivesIconsHTML(iconType, currentLives, maxLives) {
+    // Cas spécial : Katana (une seule icône groupée)
+    if (iconType === 'katana') {
+        const svgKey = Math.max(0, Math.min(3, currentLives));
+        const isLost = currentLives === 0;
+        return `<span class="life-icon katana-group${isLost ? ' lost' : ''}">${KATANA_SVGS[svgKey]}</span>`;
+    }
+
+    // Autres icônes : répéter maxLives fois
+    const iconSVG = LIVES_ICONS[iconType] || LIVES_ICONS.heart;
+    let html = '';
+
+    for (let i = 0; i < maxLives; i++) {
+        const isLost = i >= currentLives;
+        html += `<span class="life-icon${isLost ? ' lost' : ''}">${iconSVG}</span>`;
+    }
+
+    return html;
+}
+
+
+// ============================================
+// GESTION DU SÉLECTEUR D'ICÔNES
+// ============================================
+
+// Variable pour stocker l'icône sélectionnée
+let selectedLivesIcon = 'heart';
+
+/**
+ * Initialise le sélecteur d'icônes de vies
+ */
+function initLivesIconSelector() {
+    const iconBtns = document.querySelectorAll('.lives-icon-selector .icon-btn');
+    const iconValueDisplay = document.getElementById('livesIconValue');
+
+    iconBtns.forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const icon = btn.dataset.icon;
+
+            // UI: Mettre à jour la sélection
+            iconBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Mettre à jour l'affichage de la valeur (icône SVG)
+            if (iconValueDisplay) {
+                const iconSVG = LIVES_ICONS[icon] || LIVES_ICONS.heart;
+                iconValueDisplay.innerHTML = iconSVG;
+            }
+
+            selectedLivesIcon = icon;
+
+            // 🔥 NOUVEAU: Mettre à jour les cartes joueurs existantes
+            updateLobbyPlayersIcons();
+
+            // Envoyer au serveur
+            try {
+                await fetch('/admin/set-lives-icon', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ icon })
+                });
+            } catch (err) {
+                console.error('Erreur set-lives-icon:', err);
+            }
+        });
+    });
+
+    updateLivesIconVisibility();
+}
+
+
+function updateLobbyPlayersIcons() {
+    const currentLives = parseInt(document.querySelector('.lives-group .setting-option-btn.active')?.dataset.value) || 3;
+
+    document.querySelectorAll('.player-card-mini-stat').forEach(stat => {
+        stat.innerHTML = getLivesIconsHTML(selectedLivesIcon, currentLives, currentLives);
+    });
+}
+
+/**
+ * Met à jour la visibilité du sélecteur d'icônes selon le mode
+ */
+function updateLivesIconVisibility() {
+    const iconGroup = document.getElementById('livesIconGroup');
+    const isLivesMode = gameSettings.mode === 'vie';
+
+    if (iconGroup) {
+        iconGroup.classList.toggle('hidden', !isLivesMode);
+    }
+}
+
+/**
+ * Met à jour le sélecteur avec l'icône actuelle (depuis serveur)
+ */
+/**
+ * Met à jour le sélecteur avec l'icône actuelle (depuis serveur)
+ */
+function updateLivesIconSelector(icon) {
+    selectedLivesIcon = icon || 'heart';
+
+    const iconBtns = document.querySelectorAll('.lives-icon-selector .icon-btn');
+    const iconValueDisplay = document.getElementById('livesIconValue');
+
+    iconBtns.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.icon === selectedLivesIcon);
+    });
+
+    // Afficher l'icône SVG au lieu du nom texte
+    if (iconValueDisplay) {
+        const iconSVG = LIVES_ICONS[selectedLivesIcon] || LIVES_ICONS.heart;
+        iconValueDisplay.innerHTML = iconSVG;
+    }
+}
+
+
+
+
+// ============================================
+// ANIMATION COMPTEUR
+// ============================================
+function animateCounter(element, target, duration = 1500, prefix = '', suffix = '') {
+    const start = 0;
+    const startTime = performance.now();
+
+    // Si target contient 'K', convertir pour l'affichage final
+    const isFormatted = typeof target === 'string' && target.includes('K');
+    const numericTarget = isFormatted ? parseFloat(target) * 1000 : parseInt(target) || 0;
+
+    function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // Easing out cubic pour un effet satisfaisant
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.floor(start + (numericTarget - start) * eased);
+
+        // Formater selon le type
+        if (isFormatted && current >= 1000) {
+            element.textContent = prefix + (current / 1000).toFixed(1) + 'K' + suffix;
+        } else {
+            element.textContent = prefix + current.toLocaleString() + suffix;
+        }
+
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        } else {
+            // Valeur finale exacte
+            element.textContent = prefix + target + suffix;
+        }
+    }
+
+    requestAnimationFrame(update);
+}
+
+
+
+// Appeler après le DOM chargé
+document.addEventListener('DOMContentLoaded', () => {
+    initSettingsListeners();
+    initLivesIconSelector();
+});

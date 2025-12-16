@@ -22,14 +22,44 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const db = {
     // ========== USERS ==========
-    async createOrUpdateUser(twitchId, username) {
+    async createOrUpdateUser(twitchId, username, avatarUrl = null) {
+        // Vérifier si l'utilisateur existe déjà
+        const existingUser = await this.getUserByTwitchId(twitchId);
+
+        const updateData = {
+            twitch_id: twitchId,
+            username: username,
+            updated_at: new Date().toISOString()
+        };
+
+        // Si nouvel utilisateur, mettre avatar par défaut
+        if (!existingUser) {
+            updateData.avatar_url = avatarUrl || 'novice.png';
+        } else if (avatarUrl) {
+            // Si utilisateur existant ET avatar fourni, mettre à jour
+            updateData.avatar_url = avatarUrl;
+        }
+        // Sinon on ne touche pas à l'avatar existant
+
         const { data, error } = await supabase
             .from('users')
-            .upsert({
-                twitch_id: twitchId,
-                username: username,
+            .upsert(updateData, { onConflict: 'twitch_id' })
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
+
+
+    async updateUserAvatar(twitchId, avatarUrl) {
+        const { data, error } = await supabase
+            .from('users')
+            .update({
+                avatar_url: avatarUrl,
                 updated_at: new Date().toISOString()
-            }, { onConflict: 'twitch_id' })
+            })
+            .eq('twitch_id', twitchId)
             .select()
             .single();
 
@@ -518,6 +548,16 @@ const db = {
     },
 
 
+    async getTotalPlayers() {
+        const { count, error } = await supabase
+            .from('users')
+            .select('*', { count: 'exact', head: true });
+
+        if (error) throw error;
+        return count || 0;
+    }
+
+
 };
 
 // 🔥 HELPER: Définir l'ordre de fallback selon la difficulté
@@ -553,7 +593,10 @@ function getFallbackDifficulties(difficulty) {
     }
 
     return fallback;
-}
+};
+
+
+
 
 
 

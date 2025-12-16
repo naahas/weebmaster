@@ -45,6 +45,7 @@ createApp({
             showProfileModal: false,
             currentTab: 'profile',
             profileData: null,
+            savedScrollY: 0,
 
             // Leaderboard
             leaderboard: [],
@@ -104,15 +105,49 @@ createApp({
             activeBonusEffect: 'null',
 
             isLevelingUp: false,
+
+
+            streamersLive: {
+                MinoStreaming: false,
+                pikinemadd: false,
+            },
+
+
+            // Liste des partenaires (ordre d'affichage)
+            partnersList: [
+                { id: 'MinoStreaming', name: 'mino', avatar: 'mino.png' },
+                { id: 'pikinemadd', name: 'pikinemadd', avatar: 'pikine.png' }
+            ],
+
+
+            defaultAvatars: [
+                { id: 1, name: 'avatar1', url: 'novice.png', locked: false },
+                { id: 2, name: 'avatar2', url: 'ninja.png', locked: false },
+                { id: 3, name: 'avatar3', url: 'knight.png', locked: false },
+                { id: 4, name: 'avatar4', url: 'knight2.png', locked: false },
+                { id: 5, name: 'avatar5', url: 'girl.png', locked: false },
+                { id: 6, name: 'avatar6', url: 'assassin.png', locked: false },
+                { id: 7, name: 'avatar7', url: 'sorcier.png', locked: false },
+                { id: 8, name: 'avatar8', url: 'totoro.png', locked: false },
+                { id: 9, name: 'avatar9', url: 'melody.png', locked: false }
+            ],
+            twitchAvatarUrl: null,
         };
     },
 
     async mounted() {
+
+        setTimeout(() => {
+            this.animateLogo();
+        }, 700);
+
         await this.checkAuth();
         await this.restoreGameState();
         await this.loadLeaderboard();
+
         this.initParticles();
         this.initSocket();
+
 
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
@@ -139,9 +174,29 @@ createApp({
         this.initSounds();
 
 
+
     },
 
     computed: {
+
+        // 5 premiers streamers à afficher (live en priorité)
+        visibleStreamers() {
+            // Trier : live en premier
+            const sorted = [...this.partnersList].sort((a, b) => {
+                const aLive = this.streamersLive[a.id] ? 1 : 0;
+                const bLive = this.streamersLive[b.id] ? 1 : 0;
+                return bLive - aLive; // Live en premier
+            });
+
+            return sorted.slice(0, 5);
+        },
+
+        // Nombre de streamers cachés
+        hiddenStreamersCount() {
+            return Math.max(0, this.partnersList.length - 5);
+        },
+
+
         formattedPlayerPoints() {
             return this.playerPoints.toLocaleString('fr-FR');
         },
@@ -174,6 +229,59 @@ createApp({
 
             // Retourner Top 3 (ou moins si moins de joueurs)
             return sorted.slice(0, 3);
+        },
+
+        // 🆕 Podium unifié pour le nouveau design
+        podiumPlayers() {
+            if (!this.gameEndData) return [];
+            
+            if (this.gameEndData.gameMode === 'points' && this.gameEndData.podium) {
+                // Mode points : utiliser le podium du serveur
+                return this.gameEndData.podium.map(p => ({
+                    username: p.username,
+                    points: p.points,
+                    lives: undefined,
+                    rank: p.rank
+                }));
+            } else if (this.gameEndData.gameMode === 'lives') {
+                // Mode vies : utiliser livesModePodium
+                return this.livesModePodium.map((p, index) => ({
+                    username: p.username,
+                    lives: p.lives,
+                    correctAnswers: p.correctAnswers,
+                    points: undefined,
+                    rank: index + 1
+                }));
+            }
+            return [];
+        },
+
+        // 🆕 Mon classement (pour afficher si hors top 3)
+        myRank() {
+            if (!this.gameEndData || !this.gameEndData.playersData) return null;
+            
+            const allPlayers = this.gameEndData.playersData || [];
+            
+            // Trier les joueurs
+            let sorted;
+            if (this.gameEndData.gameMode === 'points') {
+                sorted = [...allPlayers].sort((a, b) => b.points - a.points);
+            } else {
+                sorted = [...allPlayers].sort((a, b) => {
+                    if (b.lives !== a.lives) return b.lives - a.lives;
+                    return b.correctAnswers - a.correctAnswers;
+                });
+            }
+            
+            // Trouver ma position
+            const myIndex = sorted.findIndex(p => p.twitchId === this.twitchId || p.username === this.username);
+            
+            if (myIndex === -1) return null;
+            
+            return {
+                rank: myIndex + 1,
+                ...sorted[myIndex]
+            };
         },
 
         comboBarHeight() {
@@ -243,6 +351,49 @@ createApp({
     },
 
     methods: {
+
+
+        animateLogo() {
+            const logoTitle = document.querySelector('.welcome-screen .logo-title');
+            if (!logoTitle) return;
+
+            const shonenSpan = logoTitle.querySelector('.neon-text');
+            const masterSpan = logoTitle.querySelector('.neon-text-alt');
+
+            if (!shonenSpan || !masterSpan) return;
+
+            // Séparer les lettres
+            const shonenText = shonenSpan.textContent;
+            const masterText = masterSpan.textContent;
+
+            shonenSpan.innerHTML = shonenText.split('').map(l =>
+                `<span class="letter">${l}</span>`
+            ).join('');
+
+            masterSpan.innerHTML = masterText.split('').map(l =>
+                `<span class="letter">${l}</span>`
+            ).join('');
+
+            // Révéler les spans (les lettres sont encore opacity: 0)
+            shonenSpan.style.visibility = 'visible';
+            masterSpan.style.visibility = 'visible';
+
+            // Animation avec anime.js
+            const letters = logoTitle.querySelectorAll('.letter');
+            const total = letters.length;
+            const middle = total / 2;
+
+            anime({
+                targets: letters,
+                opacity: [0, 1],
+                scale: [0, 1],
+                rotate: [180, 0],
+                duration: 1000,
+                delay: (el, i) => Math.abs(i - middle) * 80,
+                easing: 'easeOutElastic(1, .5)'
+            });
+        },
+
         // ========== Authentification ==========
         async checkAuth() {
             try {
@@ -279,19 +430,468 @@ createApp({
                 this.showProfileModal = true;
                 this.currentTab = 'profile';
 
+                // 🆕 Empêcher le décalage du contenu
+                this.savedScrollY = window.scrollY;
+                document.body.style.top = `-${this.savedScrollY}px`;
+                document.body.classList.add('modal-open');
+
+                // 🔥 NOUVEAU: Extraire l'avatar Twitch si c'est une URL Twitch
+                if (data.user.avatar_url && data.user.avatar_url.includes('jtvnw.net')) {
+                    this.twitchAvatarUrl = data.user.avatar_url;
+                } else {
+                    // Sinon, essayer de le récupérer depuis le serveur
+                    // (On pourrait aussi le stocker séparément en BDD)
+                    this.twitchAvatarUrl = data.user.twitch_avatar_url || null;
+                }
+
                 console.log('✅ Profil chargé:', data);
+
+                // Attendre le rendu puis animer
+                this.$nextTick(() => {
+                    this.animateProfileOpen();
+                });
+
             } catch (error) {
                 console.error('❌ Erreur chargement profil:', error);
-                this.showNotification('Erreur chargement profil', 'error');
             }
         },
 
         closeProfile() {
-            this.showProfileModal = false;
-            this.profileData = null;
+            // Animation de fermeture
+            const modal = this.$refs.profileModal;
+            if (modal) {
+                anime({
+                    targets: modal,
+                    scale: [1, 0.8],
+                    opacity: [1, 0],
+                    translateY: [0, 50],
+                    duration: 300,
+                    easing: 'easeInQuad',
+                    complete: () => {
+                        // 🔥 FIX: Reset les styles inline pour permettre réouverture
+                        modal.style.transform = '';
+                        modal.style.opacity = '';
+                        modal.style.scale = '';
+
+                        this.showProfileModal = false;
+                        this.profileData = null;
+                        
+                        // 🆕 Réactiver le scroll et restaurer la position
+                        document.body.classList.remove('modal-open');
+                        document.body.style.top = '';
+                        window.scrollTo(0, this.savedScrollY || 0);
+                    }
+                });
+            } else {
+                this.showProfileModal = false;
+                this.profileData = null;
+                
+                // 🆕 Réactiver le scroll et restaurer la position
+                document.body.classList.remove('modal-open');
+                document.body.style.top = '';
+                window.scrollTo(0, this.savedScrollY || 0);
+            }
         },
 
-        async equipTitle(titleId) {
+
+        animateProfileOpen() {
+            const modal = this.$refs.profileModal;
+            const scanLine = this.$refs.profileScanLine;
+            const tabIndicator = this.$refs.profileTabIndicator;
+            const activeTab = this.$refs.tabProfile;
+
+            if (!modal) return;
+
+            // Animer la scan line
+            if (scanLine) {
+                anime({
+                    targets: scanLine,
+                    opacity: [0, 1, 0],
+                    translateY: [0, 400],
+                    duration: 800,
+                    easing: 'easeInOutQuad',
+                    delay: 200
+                });
+            }
+
+            // Positionner l'indicateur de tab
+            if (tabIndicator && activeTab) {
+                setTimeout(() => {
+                    tabIndicator.style.left = activeTab.offsetLeft + 'px';
+                    tabIndicator.style.width = activeTab.offsetWidth + 'px';
+                }, 400);
+            }
+
+            // Animer le contenu du premier tab
+            setTimeout(() => {
+                this.animateProfileTabContent('profile');
+            }, 500);
+        },
+
+        // ========== AJOUTER switchProfileTab ==========
+        switchProfileTab(tabName) {
+            if (this.currentTab === tabName) return;
+
+            this.currentTab = tabName;
+
+            // Animer l'indicateur
+            const tabIndicator = this.$refs.profileTabIndicator;
+            let targetTab;
+
+            if (tabName === 'profile') targetTab = this.$refs.tabProfile;
+            else if (tabName === 'badges') targetTab = this.$refs.tabBadges;
+            else if (tabName === 'titres') targetTab = this.$refs.tabTitres;
+            else if (tabName === 'avatar') targetTab = this.$refs.tabAvatar; // 🔥 NOUVEAU
+
+            if (tabIndicator && targetTab) {
+                anime({
+                    targets: tabIndicator,
+                    left: targetTab.offsetLeft,
+                    width: targetTab.offsetWidth,
+                    duration: 400,
+                    easing: 'easeOutElastic(1, 0.5)'
+                });
+            }
+
+            // Animer le nouveau contenu
+            this.$nextTick(() => {
+                this.animateProfileTabContent(tabName);
+            });
+        },
+
+        // ========== AJOUTER animateProfileTabContent ==========
+        animateProfileTabContent(tabName) {
+            if (tabName === 'profile') {
+                const showcase = this.$refs.titleShowcase;
+                const cards = [this.$refs.statCard1, this.$refs.statCard2, this.$refs.statCard3].filter(Boolean);
+
+                // Reset
+                if (showcase) {
+                    anime.set(showcase, { opacity: 0, translateY: 20 });
+                }
+                cards.forEach(card => {
+                    anime.set(card, { opacity: 0, translateY: 30, scale: 0.9 });
+                });
+
+                // Animer le panel
+                const panel = this.$refs.panelProfile;
+                if (panel) {
+                    anime({
+                        targets: panel,
+                        opacity: [0, 1],
+                        duration: 300,
+                        easing: 'easeOutExpo'
+                    });
+                }
+
+                // Animer le showcase
+                if (showcase) {
+                    anime({
+                        targets: showcase,
+                        opacity: [0, 1],
+                        translateY: [20, 0],
+                        duration: 500,
+                        easing: 'easeOutExpo',
+                        delay: 100
+                    });
+                }
+
+                // Animer les cards avec stagger
+                anime({
+                    targets: cards,
+                    opacity: [0, 1],
+                    translateY: [30, 0],
+                    scale: [0.9, 1],
+                    duration: 500,
+                    easing: 'easeOutExpo',
+                    delay: anime.stagger(100, { start: 200 })
+                });
+
+                // Animer les compteurs
+                setTimeout(() => {
+                    this.animateProfileCounters();
+                }, 400);
+
+            } else if (tabName === 'badges') {
+                const categories = [this.$refs.badgesCat1, this.$refs.badgesCat2].filter(Boolean);
+                const panel = this.$refs.panelBadges;
+
+                // Reset
+                categories.forEach(cat => {
+                    anime.set(cat, { opacity: 0, translateX: -20 });
+                });
+
+                // Animer le panel
+                if (panel) {
+                    anime({
+                        targets: panel,
+                        opacity: [0, 1],
+                        duration: 300,
+                        easing: 'easeOutExpo'
+                    });
+                }
+
+                // Animer les catégories
+                anime({
+                    targets: categories,
+                    opacity: [0, 1],
+                    translateX: [-20, 0],
+                    duration: 400,
+                    easing: 'easeOutExpo',
+                    delay: anime.stagger(150, { start: 100 })
+                });
+
+                // Animer les badges
+                setTimeout(() => {
+                    const badges = panel?.querySelectorAll('.profile-badge-item');
+                    if (badges) {
+                        anime({
+                            targets: badges,
+                            opacity: (el) => el.classList.contains('locked') ? 0.35 : 1,
+                            scale: [0, 1],
+                            rotate: [-180, 0],
+                            duration: 600,
+                            easing: 'easeOutExpo',
+                            delay: anime.stagger(50, { grid: [5, 2], from: 'center' })
+                        });
+                    }
+                }, 200);
+
+            } else if (tabName === 'titres') {
+                const panel = this.$refs.panelTitres;
+                const rows = panel?.querySelectorAll('.profile-title-row');
+
+                // Animer le panel
+                if (panel) {
+                    anime({
+                        targets: panel,
+                        opacity: [0, 1],
+                        duration: 300,
+                        easing: 'easeOutExpo'
+                    });
+                }
+
+                // Animer les lignes
+                if (rows) {
+                    anime.set(rows, { opacity: 0, translateX: 50 });
+
+                    anime({
+                        targets: rows,
+                        opacity: (el) => el.classList.contains('locked') ? 0.4 : 1,
+                        translateX: [50, 0],
+                        duration: 500,
+                        easing: 'easeOutExpo',
+                        delay: anime.stagger(80, { start: 100 })
+                    });
+                }
+            } else if (tabName === 'avatar') {
+                const panel = this.$refs.panelAvatar;
+                const currentAvatar = panel?.querySelector('.profile-current-avatar');
+                const sections = [this.$refs.avatarSectionTwitch, this.$refs.avatarSectionDefault].filter(Boolean);
+                const avatarOptions = panel?.querySelectorAll('.profile-avatar-option');
+
+                // Animer le panel
+                if (panel) {
+                    anime({
+                        targets: panel,
+                        opacity: [0, 1],
+                        duration: 300,
+                        easing: 'easeOutExpo'
+                    });
+                }
+
+                // Animer l'avatar actuel
+                if (currentAvatar) {
+                    anime.set(currentAvatar, { opacity: 0, scale: 0.8 });
+                    anime({
+                        targets: currentAvatar,
+                        opacity: [0, 1],
+                        scale: [0.8, 1],
+                        duration: 500,
+                        easing: 'easeOutElastic(1, 0.5)',
+                        delay: 100
+                    });
+                }
+
+                // Animer les sections
+                anime({
+                    targets: sections,
+                    opacity: [0, 1],
+                    translateY: [20, 0],
+                    duration: 400,
+                    easing: 'easeOutExpo',
+                    delay: anime.stagger(100, { start: 200 })
+                });
+
+                // Animer les options d'avatar
+                if (avatarOptions) {
+                    anime.set(avatarOptions, { opacity: 0, scale: 0, rotate: -10 });
+                    anime({
+                        targets: avatarOptions,
+                        opacity: [0, 1],
+                        scale: [0, 1],
+                        rotate: [-10, 0],
+                        duration: 400,
+                        easing: 'easeOutBack',
+                        delay: anime.stagger(50, { start: 400, grid: [4, 3], from: 'first' })
+                    });
+                }
+            }
+        },
+
+
+        async selectAvatar(avatarUrl) {
+            if (!this.isAuthenticated || !this.profileData) return;
+
+            // Si c'est 'twitch', utiliser l'URL Twitch stockée
+            if (avatarUrl === 'twitch') {
+                if (!this.twitchAvatarUrl) {
+                    console.log('❌ Pas d\'avatar Twitch disponible');
+                    return;
+                }
+                avatarUrl = this.twitchAvatarUrl;
+            }
+
+            // Vérifier si c'est déjà l'avatar actuel
+            if (this.profileData.user.avatar_url === avatarUrl) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/profile/update-avatar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        twitchId: this.twitchId,
+                        avatarUrl: avatarUrl
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Mettre à jour localement
+                    this.profileData.user.avatar_url = avatarUrl;
+
+                    // Afficher le toast
+                    // this.showProfileToast('Avatar mis à jour !');
+
+                    // Animer le changement
+                    this.animateAvatarChange();
+
+                    console.log('✅ Avatar changé:', avatarUrl);
+                }
+            } catch (error) {
+                console.error('❌ Erreur changement avatar:', error);
+            }
+        },
+
+
+        animateAvatarChange() {
+            const preview = this.$refs.panelAvatar?.querySelector('.profile-avatar-preview');
+
+            if (preview) {
+                anime({
+                    targets: preview,
+                    scale: [1, 1.2, 1],
+                    rotate: [0, 10, -10, 0],
+                    duration: 600,
+                    easing: 'easeOutElastic(1, 0.5)'
+                });
+            }
+
+            // Animer aussi l'avatar dans le header
+            const headerAvatar = this.$refs.profileModal?.querySelector('.profile-avatar-wrapper');
+            if (headerAvatar) {
+                anime({
+                    targets: headerAvatar,
+                    scale: [1, 1.15, 1],
+                    duration: 500,
+                    easing: 'easeOutElastic(1, 0.5)'
+                });
+            }
+        },
+
+
+        // ========== AJOUTER animateProfileCounters ==========
+        animateProfileCounters() {
+            if (!this.profileData) return;
+
+            const games = this.profileData.user?.total_games_played || 0;
+            const wins = this.profileData.user?.total_victories || 0;
+            const winrate = parseFloat(this.profileData.user?.win_rate) || 0;
+
+            const counterGames = this.$refs.counterGames;
+            const counterWins = this.$refs.counterWins;
+            const counterWinrate = this.$refs.counterWinrate;
+
+            if (counterGames) {
+                anime({
+                    targets: { val: 0 },
+                    val: games,
+                    duration: 1000,
+                    round: 1,
+                    easing: 'easeOutExpo',
+                    update: (a) => {
+                        counterGames.textContent = Math.round(a.animations[0].currentValue);
+                    }
+                });
+            }
+
+            if (counterWins) {
+                anime({
+                    targets: { val: 0 },
+                    val: wins,
+                    duration: 1000,
+                    round: 1,
+                    easing: 'easeOutExpo',
+                    delay: 100,
+                    update: (a) => {
+                        counterWins.textContent = Math.round(a.animations[0].currentValue);
+                    }
+                });
+            }
+
+            if (counterWinrate) {
+                anime({
+                    targets: { val: 0 },
+                    val: winrate,
+                    duration: 1000,
+                    round: 1,
+                    easing: 'easeOutExpo',
+                    delay: 200,
+                    update: (a) => {
+                        counterWinrate.textContent = Math.round(a.animations[0].currentValue);
+                    }
+                });
+            }
+        },
+
+        // ========== AJOUTER rippleEffect ==========
+        rippleEffect(event) {
+            const card = event.currentTarget;
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+
+            const rect = card.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = event.clientX - rect.left - size / 2 + 'px';
+            ripple.style.top = event.clientY - rect.top - size / 2 + 'px';
+
+            card.appendChild(ripple);
+
+            anime({
+                targets: ripple,
+                scale: [0, 2],
+                opacity: [1, 0],
+                duration: 600,
+                easing: 'easeOutExpo',
+                complete: () => ripple.remove()
+            });
+        },
+
+        async equipTitleAnimated(titleId, titleName) {
             try {
                 const response = await fetch('/profile/update-title', {
                     method: 'POST',
@@ -305,15 +905,36 @@ createApp({
                 const data = await response.json();
 
                 if (data.success) {
+                    // Afficher le toast
+                    this.showProfileToast(`Titre "${titleName}" équipé !`);
+
                     // Recharger le profil
-                    await this.openProfile();
-                    this.showNotification('Titre équipé !', 'success');
+                    const profileResponse = await fetch(`/profile/${this.twitchId}`);
+                    this.profileData = await profileResponse.json();
+
+                    // Re-animer le tab titres
+                    this.$nextTick(() => {
+                        this.animateProfileTabContent('titres');
+                    });
                 }
             } catch (error) {
                 console.error('❌ Erreur équipement titre:', error);
-                this.showNotification('Erreur changement titre', 'error');
             }
         },
+
+        // ========== AJOUTER showProfileToast ==========
+        showProfileToast(message) {
+            const toast = this.$refs.profileToast;
+            if (!toast) return;
+
+            toast.textContent = message;
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500);
+        },
+
 
         toggleLeaderboard() {
             this.showLeaderboard = !this.showLeaderboard;
@@ -757,6 +1378,11 @@ createApp({
 
                 this.resetComboSystem();
 
+                // 🆕 Initialiser les animations du winner
+                this.$nextTick(() => {
+                    this.initWinnerAnimations();
+                });
+
                 // 🆕 Nettoyer localStorage car la partie est terminée
                 localStorage.removeItem('hasJoinedLobby');
                 localStorage.removeItem('lobbyTwitchId');
@@ -876,6 +1502,13 @@ createApp({
                 setTimeout(() => {
                     this.tempCorrectAnswer = null;
                 }, 100);
+            });
+
+
+            // Statut live des streamers partenaires
+            this.socket.on('partners-live-status', (liveStatus) => {
+                this.streamersLive = liveStatus;
+                console.log('📡 Statut live reçu:', liveStatus);
             });
         },
 
@@ -1484,6 +2117,94 @@ createApp({
             };
         },
 
+        // 🆕 Initialiser les animations du podium winner
+        initWinnerAnimations() {
+            // Créer les particules de fond
+            const particlesContainer = document.getElementById('winnerParticles');
+            if (particlesContainer) {
+                particlesContainer.innerHTML = '';
+                for (let i = 0; i < 40; i++) {
+                    const p = document.createElement('div');
+                    p.className = 'winner-particle' + (Math.random() > 0.6 ? ' accent' : '');
+                    p.style.left = Math.random() * 100 + '%';
+                    p.style.animationDelay = Math.random() * 12 + 's';
+                    p.style.animationDuration = (10 + Math.random() * 5) + 's';
+                    p.style.width = (2 + Math.random() * 3) + 'px';
+                    p.style.height = p.style.width;
+                    particlesContainer.appendChild(p);
+                }
+            }
+
+            // Démarrer les explosions aléatoires
+            this.startRandomExplosions();
+
+            // Burst de particules pour le winner
+            setTimeout(() => {
+                this.createWinnerBurst();
+            }, 3200);
+        },
+
+        startRandomExplosions() {
+            const container = document.getElementById('bgExplosions');
+            if (!container) return;
+
+            const createExplosion = () => {
+                const explosion = document.createElement('div');
+                explosion.className = 'bg-explosion';
+                explosion.style.left = (10 + Math.random() * 80) + '%';
+                explosion.style.top = (10 + Math.random() * 80) + '%';
+                container.appendChild(explosion);
+
+                const colors = ['#FFD700', '#F0C850', '#6366F1', '#8B5CF6', '#FFE55C'];
+                const particleCount = 8 + Math.floor(Math.random() * 8);
+
+                for (let i = 0; i < particleCount; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'bg-explosion-particle';
+                    const angle = (i / particleCount) * Math.PI * 2 + Math.random() * 0.5;
+                    const distance = 40 + Math.random() * 60;
+                    particle.style.setProperty('--ex', Math.cos(angle) * distance + 'px');
+                    particle.style.setProperty('--ey', Math.sin(angle) * distance + 'px');
+                    particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    particle.style.width = (2 + Math.random() * 4) + 'px';
+                    particle.style.height = particle.style.width;
+                    particle.style.animationDelay = (Math.random() * 0.1) + 's';
+                    explosion.appendChild(particle);
+                }
+
+                setTimeout(() => explosion.remove(), 2000);
+            };
+
+            // Créer des explosions périodiques
+            const scheduleExplosion = () => {
+                if (!this.gameEnded) return;
+                createExplosion();
+                setTimeout(scheduleExplosion, 1500 + Math.random() * 2500);
+            };
+
+            setTimeout(scheduleExplosion, 500);
+        },
+
+        createWinnerBurst() {
+            const burstContainer = document.getElementById('winnerBurst');
+            if (!burstContainer) return;
+
+            const colors = ['#FFD700', '#FFF8DC', '#F0C850', '#FFE55C', '#FFFFFF'];
+            for (let i = 0; i < 25; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'winner-burst-particle';
+                const angle = (i / 25) * Math.PI * 2;
+                const distance = 100 + Math.random() * 80;
+                particle.style.setProperty('--tx', Math.cos(angle) * distance + 'px');
+                particle.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
+                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.width = (4 + Math.random() * 5) + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.animationDelay = (Math.random() * 0.2) + 's';
+                burstContainer.appendChild(particle);
+            }
+        },
+
 
         toggleBonusArcMobile() {
             if (!this.canUseBonus()) return;
@@ -1585,5 +2306,3 @@ createApp({
 
 
 }).mount('#app');
-
-
