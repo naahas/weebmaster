@@ -1868,6 +1868,74 @@ body {
     max-width: 80rem;
 }
 
+/* ===== 🆕 IMAGE PERSONNAGE (DÉSACTIVÉ TEMPORAIREMENT) ===== */
+.character-image-container {
+    display: none;
+}
+
+.character-toggle {
+    display: none !important;
+}
+
+.character-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.5));
+}
+
+/* Toggle masquer images */
+.character-toggle {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 1.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    background: rgba(20, 20, 30, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 100;
+    transition: all 0.2s ease;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.state-game.active .character-toggle {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.character-toggle:hover {
+    background: rgba(40, 40, 50, 0.9);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.character-toggle svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    stroke: rgba(255, 255, 255, 0.6);
+}
+
+.character-toggle .toggle-icon-hide {
+    display: none;
+}
+
+.character-toggle.hidden .toggle-icon-show {
+    display: none;
+}
+
+.character-toggle.hidden .toggle-icon-hide {
+    display: block;
+}
+
+.character-toggle.hidden {
+    opacity: 0.5;
+}
+
 /* ===== WRAPPER QUESTION (panel + boutons) ===== */
 .game-question-wrapper {
     display: flex;
@@ -1937,6 +2005,7 @@ body {
     flex: 0 0 auto;
     width: 23.5rem;
     position: relative;
+    z-index: 10;  /* 🆕 Au-dessus de l'image personnage */
     background: linear-gradient(165deg, rgba(22, 26, 32, 0.98) 0%, rgba(14, 16, 20, 0.98) 100%);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 1rem;

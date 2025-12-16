@@ -56,6 +56,73 @@ const LIVES_ICON_NAMES = {
 
 
 // ============================================
+// 🆕 VARIABLES IMAGE PERSONNAGE
+// ============================================
+let characterImageEnabled = true;
+let characterShowTimeout = null;
+let characterHideTimeout = null;
+
+// Mapping série -> image (noms exacts de la DB)
+const CHARACTER_IMAGES = {
+    'fire force': 'questionpic/fireforce.png',
+    'beelzebub': 'questionpic/beelzebub.png',
+    'slam dunk': 'questionpic/slamdunk.png',
+    'hajime no ippo': 'questionpic/hajimenoippo.png',
+    'great teacher onizuka': 'questionpic/gto.png',
+    'berserk': 'questionpic/berserk.png',
+    'fate/stay night': 'questionpic/fate.png',
+    'gantz': 'questionpic/gantz.png',
+    'demon slayer': 'questionpic/demonslayer.png',
+    'saint seiya': 'questionpic/saintseiya.png',
+    'dandadan': 'questionpic/dandadan.png',
+    'riku-do': 'questionpic/rikudo.png',
+    'food wars': 'questionpic/foodwars.png',
+    'blue exorcist': 'questionpic/blueexorcist.png',
+    'katekyo hitman reborn': 'questionpic/reborn.png',
+    'platinum end': 'questionpic/platinumend.png',
+    'jujutsu kaisen': 'questionpic/jujutsukaisen.png',
+    'jujustu kaisen': 'questionpic/jujutsukaisen.png', // typo dans la DB
+    'nana': 'questionpic/nana.png',
+    'shingeki no kyojin': 'questionpic/shingekinokyojin.png',
+    'prisonnier riku': 'questionpic/prisonnieriku.png',
+    'erased': 'questionpic/erased.png',
+    'one punch man': 'questionpic/onepunchman.png',
+    'bleach': 'questionpic/bleach.png',
+    'the promised neverland': 'questionpic/promisedneverland.png',
+    'yugioh': 'questionpic/yugioh.png',
+    'fairy tail': 'questionpic/fairytail.png',
+    'tokyo ghoul': 'questionpic/tokyoghoul.png',
+    'death note': 'questionpic/deathnote.png',
+    'dr. stone': 'questionpic/drstone.png',
+    'one piece': 'questionpic/onepiece.png',
+    'tokyo revengers': 'questionpic/tokyorevengers.png',
+    'kuroko no basket': 'questionpic/kurokosbasket.png',
+    'hunter hunter': 'questionpic/hunterxhunter.png',
+    'naruto': 'questionpic/naruto.png',
+    'blue lock': 'questionpic/bluelock.png',
+    'i am a hero': 'questionpic/iamahero.png',
+    'divers': 'questionpic/divers.png',
+    'nanatsu no taizai': 'questionpic/nanatsunotaizai.png',
+    'fullmetal alchemist': 'questionpic/fullmetalalchemist.png',
+    'dragon ball': 'questionpic/dragonball.png',
+    'jojo\'s bizarre adventure': 'questionpic/jojo.png',
+    'pokemon': 'questionpic/pokemon.png',
+    'black clover': 'questionpic/blackclover.png',
+    'bakuman': 'questionpic/bakuman.png',
+    'yu yu hakusho': 'questionpic/yuyuhakusho.png',
+    'hokuto no ken': 'questionpic/hokutonoken.png',
+    'prophecy': 'questionpic/prophecy.png',
+    'green blood': 'questionpic/greenblood.png',
+    'spy family': 'questionpic/spyfamily.png',
+    'frieren': 'questionpic/frieren.png',
+    'tomodachi game': 'questionpic/tomodachigame.png',
+    'my hero academia': 'questionpic/myheroacademia.png',
+    'vinland saga': 'questionpic/vinlandsaga.png',
+    'gunnm': 'questionpic/gunnm.png'
+};
+
+
+// ============================================
 // VARIABLES PARTICULES BOUTON
 // ============================================
 let isHovering = false;
@@ -2241,6 +2308,10 @@ function transitionToGame() {
         statusPill.classList.add('game-mode');
         document.getElementById('statusText').textContent = 'En partie';
     }
+    
+    // 🆕 Cacher le bouton déconnexion
+    const logoutBtn = document.getElementById('headerLogoutBtn');
+    if (logoutBtn) logoutBtn.style.display = 'none';
 
     // 1. Afficher l'overlay GAME START
     overlay.classList.add('active');
@@ -3300,6 +3371,10 @@ async function restoreGameState() {
             if (recentPanelEl) recentPanelEl.classList.add('hidden');
             if (lastgamePanelEl) lastgamePanelEl.classList.add('hidden');
             if (btnWrapperEl) btnWrapperEl.classList.remove('pulse-active');
+            
+            // 🆕 Cacher le bouton déconnexion
+            const logoutBtn = document.getElementById('headerLogoutBtn');
+            if (logoutBtn) logoutBtn.style.display = 'none';
 
             // Configurer le mode stats
             setStatsMode(gameSettings.mode === 'point' ? 'points' : 'vie');
@@ -4226,6 +4301,10 @@ function displayQuestion(data) {
     if (questionBadges) questionBadges.style.opacity = '1';
 
     currentQuestionData = data;
+    
+    // 🆕 Image personnage (DÉSACTIVÉ TEMPORAIREMENT)
+    // showCharacterImage(data.serie, data.timeLimit);
+    
     startVisualTimer(data.timeLimit);
 }
 
@@ -4249,6 +4328,92 @@ function getDifficultyClass(diff) {
 }
 
 let currentQuestionData = null;
+
+
+// ============================================
+// 🆕 FONCTIONS IMAGE PERSONNAGE
+// ============================================
+
+function showCharacterImage(serie, timeLimit) {
+    if (!characterImageEnabled) return;
+    
+    const container = document.getElementById('characterImageContainer');
+    const img = document.getElementById('characterImage');
+    if (!container || !img) return;
+    
+    // Normaliser le nom de série
+    const normalizedSerie = serie.toLowerCase().trim();
+    const imagePath = CHARACTER_IMAGES[normalizedSerie];
+    
+    if (!imagePath) {
+        console.log(`🖼️ Pas d'image pour la série: ${serie}`);
+        return;
+    }
+    
+    // Annuler les timeouts précédents
+    clearTimeout(characterShowTimeout);
+    clearTimeout(characterHideTimeout);
+    
+    // Cacher d'abord
+    container.classList.remove('visible', 'hiding');
+    
+    // Charger l'image
+    img.src = imagePath;
+    img.alt = serie;
+    
+    // Afficher après 1s
+    characterShowTimeout = setTimeout(() => {
+        container.classList.add('visible');
+        console.log(`🖼️ Affichage personnage: ${serie}`);
+    }, 1000);
+    
+    // Cacher 1s avant la fin du timer
+    const hideDelay = (timeLimit - 1) * 1000;
+    if (hideDelay > 1000) {
+        characterHideTimeout = setTimeout(() => {
+            hideCharacterImage();
+        }, hideDelay);
+    }
+}
+
+function hideCharacterImage() {
+    const container = document.getElementById('characterImageContainer');
+    if (!container) return;
+    
+    container.classList.remove('visible');
+    container.classList.add('hiding');
+    
+    // Nettoyer après l'animation
+    setTimeout(() => {
+        container.classList.remove('hiding');
+    }, 600);
+}
+
+function toggleCharacterImages() {
+    characterImageEnabled = !characterImageEnabled;
+    const toggle = document.getElementById('characterToggle');
+    
+    if (toggle) {
+        toggle.classList.toggle('hidden', !characterImageEnabled);
+    }
+    
+    // Si on désactive, cacher immédiatement l'image actuelle
+    if (!characterImageEnabled) {
+        hideCharacterImage();
+        clearTimeout(characterShowTimeout);
+        clearTimeout(characterHideTimeout);
+    }
+    
+    console.log(`🖼️ Images personnages: ${characterImageEnabled ? 'activées' : 'désactivées'}`);
+}
+
+// Initialiser le toggle au chargement
+document.addEventListener('DOMContentLoaded', () => {
+    const toggle = document.getElementById('characterToggle');
+    if (toggle) {
+        toggle.addEventListener('click', toggleCharacterImages);
+    }
+});
 
 
 let visualTimerInterval = null;
@@ -4304,6 +4469,11 @@ function startVisualTimer(seconds, totalTime = null) {
 
 function displayResults(data) {
     clearInterval(visualTimerInterval);
+    
+    // 🆕 Image personnage (DÉSACTIVÉ TEMPORAIREMENT)
+    // hideCharacterImage();
+    // clearTimeout(characterShowTimeout);
+    // clearTimeout(characterHideTimeout);
 
     // 🔥 AJOUTER - Fade out du timer
     const timerText = document.getElementById('timerText');
