@@ -237,8 +237,7 @@ app.get('/game/state', (req, res) => {
                 comboData = {
                     comboLevel: bonusData.comboLevel,
                     comboProgress: bonusData.comboProgress,
-                    availableBonuses: bonusData.availableBonuses,
-                    usedBonuses: bonusData.usedBonuses
+                    bonusInventory: bonusData.bonusInventory
                 };
                 break;
             }
@@ -364,8 +363,201 @@ const gameState = {
 
     serieFilter: 'tout',
 
-    playerBonuses: new Map()
+    playerBonuses: new Map(),
+    
+    // 🆕 Système de défis
+    activeChallenges: [],           // Les 3 défis de la partie actuelle
+    playerChallenges: new Map()     // Progression des défis par joueur
 };
+
+// ============================================
+// 🆕 SYSTÈME DE DÉFIS
+// ============================================
+
+const CHALLENGE_POOLS = {
+    // Pool 50/50 - Facile
+    '5050': [
+        { id: 'speed3s', name: 'Éclair', description: 'Bonne réponse en moins de 3s', target: 1, type: 'speed' },
+        { id: 'streak3', name: 'Précis', description: '3 bonnes réponses d\'affilée', target: 3, type: 'streak' },
+        { id: 'total5', name: 'Quintuplé', description: '5 bonnes réponses', target: 5, type: 'total' }
+    ],
+    // Pool Joker - Moyen
+    'reveal': [
+        { id: 'first', name: 'Rapide', description: 'Etre le plus rapide à bien répondre', target: 1, type: 'first' },
+        { id: 'streak5', name: 'Déchaîné', description: '5 bonnes réponses d\'affilée', target: 5, type: 'streak' },
+        { id: 'hard', name: 'Téméraire', description: 'Bien répondre à une question Hard', target: 1, type: 'difficulty' }
+    ],
+    // Pool Bouclier/x2 - Difficile
+    'shield': [
+        { id: 'veryhard', name: 'Expert', description: 'Bien répondre à question VeryHard+', target: 1, type: 'difficulty' },
+        { id: 'series7', name: 'Polyvalent', description: 'Bien répondre sur 7 séries différentes', target: 7, type: 'series' },
+        { id: 'streak12', name: 'Légendaire', description: '12 bonnes réponses d\'affilée', target: 12, type: 'streak' }
+    ]
+};
+
+// Générer les 3 défis pour une partie
+function generateChallenges() {
+    const challenges = [];
+    
+    // 1. Tirer un défi 50/50
+    const pool5050 = CHALLENGE_POOLS['5050'];
+    const challenge5050 = { ...pool5050[Math.floor(Math.random() * pool5050.length)], reward: '5050' };
+    challenges.push(challenge5050);
+    
+    // 2. Tirer un défi Joker
+    const poolReveal = CHALLENGE_POOLS['reveal'];
+    const challengeReveal = { ...poolReveal[Math.floor(Math.random() * poolReveal.length)], reward: 'reveal' };
+    challenges.push(challengeReveal);
+    
+    // 3. Tirer un défi Bouclier/x2 (avec restriction si filtre actif)
+    let poolShield = [...CHALLENGE_POOLS['shield']];
+    
+    // Option A : Exclure series7 si filtre ≠ overall/mainstream
+    if (gameState.serieFilter !== 'tout' && gameState.serieFilter !== 'mainstream') {
+        poolShield = poolShield.filter(c => c.id !== 'series7');
+    }
+    
+    const challengeShield = { ...poolShield[Math.floor(Math.random() * poolShield.length)], reward: gameState.mode === 'lives' ? 'shield' : 'doublex2' };
+    challenges.push(challengeShield);
+    
+    console.log(`🎯 Défis générés: ${challenges.map(c => c.id).join(', ')}`);
+    return challenges;
+}
+
+// Initialiser la progression des défis pour un joueur
+function initPlayerChallenges(socketId) {
+    const progress = {
+        challenges: {},
+        currentStreak: 0,
+        seriesAnswered: new Set()
+    };
+    
+    // Initialiser chaque défi actif
+    gameState.activeChallenges.forEach(challenge => {
+        progress.challenges[challenge.id] = {
+            progress: 0,
+            target: challenge.target,
+            completed: false
+        };
+    });
+    
+    gameState.playerChallenges.set(socketId, progress);
+}
+
+// Vérifier et mettre à jour les défis après une réponse
+function checkChallenges(socketId, answerData) {
+    const playerProgress = gameState.playerChallenges.get(socketId);
+    if (!playerProgress) return [];
+    
+    const { correct, responseTime, difficulty, series, isFirst } = answerData;
+    const completedChallenges = [];
+    
+    // Mettre à jour le streak
+    if (correct) {
+        playerProgress.currentStreak++;
+        if (series) {
+            playerProgress.seriesAnswered.add(series);
+        }
+    } else {
+        playerProgress.currentStreak = 0;
+    }
+    
+    // Vérifier chaque défi actif
+    gameState.activeChallenges.forEach(challenge => {
+        const cp = playerProgress.challenges[challenge.id];
+        if (!cp || cp.completed) return;
+        
+        let progressMade = false;
+        
+        switch (challenge.type) {
+            case 'speed':
+                // Bonne réponse en moins de 3s
+                if (correct && responseTime < 3000) {
+                    cp.progress = 1;
+                    progressMade = true;
+                }
+                break;
+                
+            case 'streak':
+                // X bonnes réponses d'affilée
+                if (correct) {
+                    cp.progress = playerProgress.currentStreak;
+                    progressMade = true;
+                } else {
+                    cp.progress = 0; // Reset à 0 si mauvaise réponse
+                }
+                break;
+                
+            case 'total':
+                // X bonnes réponses au total
+                if (correct) {
+                    cp.progress++;
+                    progressMade = true;
+                }
+                break;
+                
+            case 'first':
+                // Premier à bien répondre
+                if (correct && isFirst) {
+                    cp.progress = 1;
+                    progressMade = true;
+                }
+                break;
+                
+            case 'difficulty':
+                // Réussir une question de difficulté spécifique
+                if (correct) {
+                    if (challenge.id === 'hard' && difficulty === 'hard') {
+                        cp.progress = 1;
+                        progressMade = true;
+                    } else if (challenge.id === 'veryhard' && (difficulty === 'veryhard' || difficulty === 'extreme')) {
+                        cp.progress = 1;
+                        progressMade = true;
+                    }
+                }
+                break;
+                
+            case 'series':
+                // Réussir sur X séries différentes
+                if (correct) {
+                    cp.progress = playerProgress.seriesAnswered.size;
+                    progressMade = true;
+                }
+                break;
+        }
+        
+        // Vérifier si défi complété
+        if (progressMade && cp.progress >= cp.target && !cp.completed) {
+            cp.completed = true;
+            completedChallenges.push({
+                challengeId: challenge.id,
+                reward: challenge.reward
+            });
+            console.log(`🏆 Défi "${challenge.name}" complété par ${socketId} ! Récompense: ${challenge.reward}`);
+        }
+    });
+    
+    return completedChallenges;
+}
+
+// Obtenir l'état des défis pour un joueur (pour envoi au client)
+function getPlayerChallengesState(socketId) {
+    const playerProgress = gameState.playerChallenges.get(socketId);
+    if (!playerProgress) return [];
+    
+    return gameState.activeChallenges.map(challenge => {
+        const cp = playerProgress.challenges[challenge.id];
+        return {
+            id: challenge.id,
+            name: challenge.name,
+            description: challenge.description,
+            reward: challenge.reward,
+            progress: cp ? cp.progress : 0,
+            target: challenge.target,
+            completed: cp ? cp.completed : false
+        };
+    });
+}
 
 const authenticatedUsers = new Map();
 
@@ -794,6 +986,11 @@ app.post('/admin/start-game', async (req, res) => {
         gameState.playerBonuses.clear();
         console.log('🔄 Bonus reset pour nouvelle partie');
 
+        // 🆕 Générer les défis pour cette partie
+        gameState.activeChallenges = generateChallenges();
+        gameState.playerChallenges.clear();
+        console.log('🎯 Défis initialisés pour la partie');
+
         // Initialiser les joueurs selon le mode
         gameState.players.forEach((player, socketId) => {
             if (gameState.mode === 'lives') {
@@ -803,13 +1000,15 @@ app.post('/admin/start-game', async (req, res) => {
                 player.points = 0;
             }
 
-            // 🆕 Initialiser les bonus du joueur
+            // 🆕 Initialiser les bonus du joueur avec inventaire
             gameState.playerBonuses.set(socketId, {
                 comboLevel: 0,
                 comboProgress: 0,
-                availableBonuses: [],
-                usedBonuses: []
+                bonusInventory: { '5050': 0, 'reveal': 0, 'shield': 0, 'doublex2': 0 }
             });
+
+            // 🆕 Initialiser les défis du joueur
+            initPlayerChallenges(socketId);
         });
 
         console.log(`🎮 Partie démarrée (Mode: ${gameState.mode.toUpperCase()}) - ${totalPlayers} joueurs - Filtre: ${gameState.serieFilter}`);
@@ -823,7 +1022,8 @@ app.post('/admin/start-game', async (req, res) => {
                     totalPlayers,
                     isParticipating: true,
                     gameMode: gameState.mode,
-                    questionsCount: gameState.mode === 'points' ? gameState.questionsCount : null
+                    questionsCount: gameState.mode === 'points' ? gameState.questionsCount : null,
+                    challenges: getPlayerChallengesState(socketId) // 🆕 Envoyer les défis
                 });
             } else {
                 socket.emit('game-started', {
@@ -1774,9 +1974,59 @@ function revealAnswers(correctAnswer) {
             if (!fastestPlayer || p.responseTime < fastestPlayer.time) {
                 fastestPlayer = {
                     username: p.username,
+                    socketId: p.socketId, // 🆕 Ajouter socketId pour identifier le premier
                     time: p.responseTime
                 };
             }
+        }
+    });
+
+    // 🆕 DÉFIS : Vérifier les défis pour chaque joueur
+    const currentDifficulty = gameState.currentQuestion?.difficulty || 'medium';
+    const currentSeries = gameState.currentQuestion?.serie || '';
+    
+    playersDetails.forEach(p => {
+        const playerAnswer = gameState.answers.get(p.socketId);
+        if (!playerAnswer) return;
+        
+        const answerData = {
+            correct: p.isCorrect,
+            responseTime: p.responseTime || 999999,
+            difficulty: currentDifficulty,
+            series: currentSeries,
+            isFirst: fastestPlayer && fastestPlayer.socketId === p.socketId
+        };
+        
+        const completedChallenges = checkChallenges(p.socketId, answerData);
+        
+        // Si des défis sont complétés, ajouter les bonus à l'inventaire
+        if (completedChallenges.length > 0) {
+            const bonusData = gameState.playerBonuses.get(p.socketId);
+            if (bonusData) {
+                completedChallenges.forEach(({ reward }) => {
+                    bonusData.bonusInventory[reward]++;
+                    console.log(`🎁 Bonus ${reward} ajouté à ${p.username} (total: ${bonusData.bonusInventory[reward]})`);
+                });
+                
+                // Envoyer mise à jour des bonus au joueur
+                const socket = io.sockets.sockets.get(p.socketId);
+                if (socket) {
+                    socket.emit('combo-updated', {
+                        comboLevel: bonusData.comboLevel,
+                        comboProgress: bonusData.comboProgress,
+                        bonusInventory: bonusData.bonusInventory
+                    });
+                }
+            }
+        }
+        
+        // Envoyer mise à jour des défis au joueur
+        const socket = io.sockets.sockets.get(p.socketId);
+        if (socket) {
+            socket.emit('challenges-updated', {
+                challenges: getPlayerChallengesState(p.socketId),
+                completedChallenges: completedChallenges
+            });
         }
     });
 
@@ -3140,6 +3390,14 @@ io.on('connection', (socket) => {
                     gameState.playerBonuses.delete(oldSocketId);
                     console.log(`🎁 Bonus transférés: ${oldSocketId} → ${socket.id}`);
                 }
+                
+                // 🆕 Transférer les défis aussi
+                const oldChallengesData = gameState.playerChallenges.get(oldSocketId);
+                if (oldChallengesData) {
+                    gameState.playerChallenges.set(socket.id, oldChallengesData);
+                    gameState.playerChallenges.delete(oldSocketId);
+                    console.log(`🎯 Défis transférés: ${oldSocketId} → ${socket.id}`);
+                }
             }
 
             gameState.players.delete(oldSocketId);
@@ -3157,6 +3415,12 @@ io.on('connection', (socket) => {
 
             console.log(`🔄 ${data.username} reconnecté - Mode: ${gameState.mode}, Points: ${existingPlayer.points || 0}, Vies: ${existingPlayer.lives}`);
 
+            // 🆕 Initialiser les défis SEULEMENT si pas transférés (nouveau joueur mid-game)
+            if (!gameState.playerChallenges.has(socket.id) && gameState.activeChallenges.length > 0) {
+                initPlayerChallenges(socket.id);
+                console.log(`🎯 Nouveaux défis initialisés pour joueur reconnecté`);
+            }
+
             const restorationData = {
                 currentQuestionIndex: gameState.currentQuestionIndex,
                 hasAnswered: !!previousAnswer,
@@ -3166,9 +3430,9 @@ io.on('connection', (socket) => {
                 comboData: gameState.playerBonuses.get(socket.id) ? {
                     comboLevel: gameState.playerBonuses.get(socket.id).comboLevel,
                     comboProgress: gameState.playerBonuses.get(socket.id).comboProgress,
-                    availableBonuses: gameState.playerBonuses.get(socket.id).availableBonuses,
-                    usedBonuses: gameState.playerBonuses.get(socket.id).usedBonuses
-                } : null
+                    bonusInventory: gameState.playerBonuses.get(socket.id).bonusInventory
+                } : null,
+                challenges: getPlayerChallengesState(socket.id) // 🆕 Envoyer les défis
             };
 
             if (gameState.mode === 'lives') {
@@ -3431,7 +3695,7 @@ function updatePlayerCombo(socketId) {
         if (bonusData.comboProgress >= threshold) {
             bonusData.comboLevel++;
 
-            // Débloquer le bonus correspondant
+            // Débloquer le bonus correspondant - 🔥 REFONTE: Incrémenter l'inventaire
             let bonusType = '';
             if (bonusData.comboLevel === 1) {
                 bonusType = '5050';
@@ -3441,11 +3705,10 @@ function updatePlayerCombo(socketId) {
                 bonusType = gameState.mode === 'lives' ? 'shield' : 'doublex2';
             }
 
-            if (bonusType && !bonusData.availableBonuses.includes(bonusType)) {
-                bonusData.availableBonuses.push(bonusType);
+            if (bonusType) {
+                bonusData.bonusInventory[bonusType]++;
+                console.log(`🎉 Level up ! Joueur ${socketId}: Lvl${bonusData.comboLevel}, Bonus: ${bonusType} (x${bonusData.bonusInventory[bonusType]})`);
             }
-
-            console.log(`🎉 Level up ! Joueur ${socketId}: Lvl${bonusData.comboLevel}, Bonus: ${bonusType}`);
         }
     }
 
@@ -3455,9 +3718,9 @@ function updatePlayerCombo(socketId) {
         socket.emit('combo-updated', {
             comboLevel: bonusData.comboLevel,
             comboProgress: bonusData.comboProgress,
-            availableBonuses: bonusData.availableBonuses
+            bonusInventory: bonusData.bonusInventory
         });
-        console.log(`📡 combo-updated envoyé: level=${bonusData.comboLevel}, progress=${bonusData.comboProgress}`);
+        console.log(`📡 combo-updated envoyé: level=${bonusData.comboLevel}, progress=${bonusData.comboProgress}, inventory=${JSON.stringify(bonusData.bonusInventory)}`);
     }
 }
 
@@ -3474,37 +3737,35 @@ function resetPlayerCombo(socketId) {
         socket.emit('combo-updated', {
             comboLevel: bonusData.comboLevel,
             comboProgress: bonusData.comboProgress,
-            availableBonuses: bonusData.availableBonuses
+            bonusInventory: bonusData.bonusInventory
         });
     }
 }
 
-// Utilisation d'un bonus
+// Utilisation d'un bonus - 🔥 REFONTE: Décrémenter l'inventaire
 function usePlayerBonus(socketId, bonusType) {
     const bonusData = gameState.playerBonuses.get(socketId);
     if (!bonusData) return false;
 
-    // Vérifier que le bonus est disponible
-    if (!bonusData.availableBonuses.includes(bonusType)) {
+    // Vérifier que le bonus est disponible dans l'inventaire
+    if (!bonusData.bonusInventory[bonusType] || bonusData.bonusInventory[bonusType] <= 0) {
         return false;
     }
 
-    // Retirer le bonus des disponibles
-    const index = bonusData.availableBonuses.indexOf(bonusType);
-    bonusData.availableBonuses.splice(index, 1);
+    // Décrémenter l'inventaire
+    bonusData.bonusInventory[bonusType]--;
 
-    // Ajouter aux utilisés
-    bonusData.usedBonuses.push(bonusType);
-
-    console.log(`✅ Bonus "${bonusType}" utilisé par joueur ${socketId}`);
+    console.log(`✅ Bonus "${bonusType}" utilisé par joueur ${socketId} (reste: ${bonusData.bonusInventory[bonusType]})`);
 
     return true;
 }
 
-// Reset des bonus en fin de partie
+// Reset des bonus et défis en fin de partie
 function resetAllBonuses() {
     gameState.playerBonuses.clear();
-    console.log('🔄 Reset de tous les bonus');
+    gameState.activeChallenges = [];
+    gameState.playerChallenges.clear();
+    console.log('🔄 Reset de tous les bonus et défis');
 }
 
 

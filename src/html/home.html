@@ -753,33 +753,35 @@
                 @click="showBonusMenu = !showBonusMenu">
 
                 <!-- Icône principale -->
-                <div class="bonus-main-icon" :class="{ active: availableBonuses.length > 0 }">
+                <div class="bonus-main-icon" :class="{ active: hasUnusedBonuses }">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <path
                             d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 2.18l8 3.6v8.55c0 4.65-3.2 8.95-8 10.05-4.8-1.1-8-5.4-8-10.05V7.78l8-3.6zM11 10v2h2v-2h-2zm0 4v6h2v-6h-2z" />
                     </svg>
 
                     <!-- Badge notification (seulement si bonus disponibles) -->
-                    <span class="bonus-count-badge" v-if="availableBonuses.length > 0 && playerLives > 0">
-                        {{ availableBonuses.length }}
+                    <span class="bonus-count-badge" v-if="hasUnusedBonuses && playerLives > 0">
+                        {{ unusedBonusCount }}
                     </span>
                 </div>
 
-                <!-- Menu des bonus (3 bandelettes) -->
+                <!-- Menu des bonus (3 bandelettes) - 🔥 REFONTE avec compteurs -->
                 <transition name="bonus-menu">
                     <div class="bonus-menu" v-show="showBonusMenu" @click.stop>
                         <!-- Bonus 1 : 50/50 -->
                         <div class="bonus-strip" :class="[getBonusState('5050'), { disabled: !canUseBonus() }]"
                             @click="useBonusStrip('5050')">
-                            <img src="5050.png" alt="50/50" class="bonus-icon-img"> &nbsp;
+                            <img src="5050.png" alt="50/50" class="bonus-icon-img">
                             <span class="bonus-strip-text">50/50</span>
+                            <span class="bonus-strip-count">{{ bonusInventory['5050'] }}</span>
                         </div>
 
                         <!-- Bonus 2 : Joker -->
                         <div class="bonus-strip" :class="[getBonusState('reveal'), { disabled: !canUseBonus() }]"
                             @click="useBonusStrip('reveal')">
-                            <img src="reveal2.png" alt="Révéler" class="bonus-icon-img"> &nbsp;
+                            <img src="reveal2.png" alt="Joker" class="bonus-icon-img">
                             <span class="bonus-strip-text">Joker</span>
+                            <span class="bonus-strip-count">{{ bonusInventory['reveal'] }}</span>
                         </div>
 
                         <!-- Bonus 3 : Points x2 / Shield -->
@@ -787,11 +789,78 @@
                             :class="[getBonusState(gameMode === 'lives' ? 'shield' : 'doublex2'), { disabled: !canUseBonus() }]"
                             @click="useBonusStrip(gameMode === 'lives' ? 'shield' : 'doublex2')">
                             <img :src="gameMode === 'lives' ? 'shield.png' : 'x2.png'"
-                                :alt="gameMode === 'lives' ? 'Bouclier' : 'Points x2'" class="bonus-icon-img"> &nbsp;
+                                :alt="gameMode === 'lives' ? 'Bouclier' : 'Points x2'" class="bonus-icon-img">
                             <span class="bonus-strip-text">{{ gameMode === 'lives' ? 'Bouclier' : 'Points x2' }}</span>
+                            <span class="bonus-strip-count">{{ bonusInventory[gameMode === 'lives' ? 'shield' : 'doublex2'] }}</span>
                         </div>
                     </div>
                 </transition>
+            </div>
+        </div>
+
+
+        <!-- 🆕 SYSTÈME DE DÉFIS - Bandelettes à gauche -->
+        <div class="challenges-container" v-if="gameInProgress && !gameEnded && challenges.length > 0">
+            <div class="challenge-strip" 
+                 v-for="challenge in challenges" 
+                 :key="challenge.id"
+                 :class="{ completed: challenge.completed }">
+                
+                <!-- Icône SVG selon le type de défi -->
+                <div class="challenge-icon">
+                    <!-- Éclair (speed) -->
+                    <svg v-if="challenge.id === 'speed3s'" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7 2v11h3v9l7-12h-4l4-8z"/>
+                    </svg>
+                    <!-- Streak / Combo -->
+                    <svg v-else-if="challenge.id.startsWith('streak')" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                    </svg>
+                    <!-- Total -->
+                    <svg v-else-if="challenge.id === 'total5'" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                    <!-- Premier (first) -->
+                    <svg v-else-if="challenge.id === 'first'" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                    <!-- Difficulté (hard/veryhard) -->
+                    <svg v-else-if="challenge.id === 'hard' || challenge.id === 'veryhard'" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                    </svg>
+                    <!-- Séries (series7) -->
+                    <svg v-else-if="challenge.id === 'series7'" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+                    </svg>
+                    <!-- Default -->
+                    <svg v-else viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                </div>
+                
+                <!-- Contenu du défi -->
+                <div class="challenge-content">
+                    <div class="challenge-title">{{ challenge.name }}</div>
+                    <div class="challenge-desc">{{ challenge.description }}</div>
+                    <!-- Barre de progression -->
+                    <div class="challenge-progress-bar" v-if="challenge.target > 1 && !challenge.completed">
+                        <div class="challenge-progress-fill" 
+                             :style="{ width: Math.min(100, (challenge.progress / challenge.target) * 100) + '%' }">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Récompense -->
+                <div class="challenge-reward">
+                    <span class="reward-text">{{ getBonusName(challenge.reward) }}</span>
+                </div>
+                
+                <!-- Checkbox completion -->
+                <div class="challenge-checkbox">
+                    <svg v-if="challenge.completed" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                </div>
             </div>
         </div>
 
@@ -807,14 +876,14 @@
             </svg>
 
             <!-- Icône centrale -->
-            <div class="gauge-icon-center" :class="{ active: availableBonuses.length > 0 }">
+            <div class="gauge-icon-center" :class="{ active: hasUnusedBonuses }">
                 <svg viewBox="0 0 24 24" fill="currentColor">
                     <path
                         d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 2.18l8 3.6v8.55c0 4.65-3.2 8.95-8 10.05-4.8-1.1-8-5.4-8-10.05V7.78l8-3.6zM11 10v2h2v-2h-2zm0 4v6h2v-6h-2z" />
                 </svg>
 
-                <span class="gauge-count-badge" v-if="availableBonuses.length > 0 && playerLives > 0">
-                    {{ availableBonuses.length }}
+                <span class="gauge-count-badge" v-if="hasUnusedBonuses && playerLives > 0">
+                    {{ unusedBonusCount }}
                 </span>
             </div>
 
@@ -831,12 +900,14 @@
             <div class="bonus-arc-item" :class="[getBonusState('5050'), { show: showBonusArcMobile }]"
                 @click="useBonusArcMobile('5050')">
                 <img src="5050.png" alt="50/50">
+                <span class="bonus-arc-count" v-if="bonusInventory['5050'] > 0">x{{ bonusInventory['5050'] }}</span>
             </div>
 
             <!-- Joker (nth-child(3)) -->
             <div class="bonus-arc-item" :class="[getBonusState('reveal'), { show: showBonusArcMobile }]"
                 @click="useBonusArcMobile('reveal')">
                 <img src="reveal2.png" alt="Joker">
+                <span class="bonus-arc-count" v-if="bonusInventory['reveal'] > 0">x{{ bonusInventory['reveal'] }}</span>
             </div>
 
             <!-- Shield/x2 (nth-child(4)) -->
@@ -845,8 +916,53 @@
                 @click="useBonusArcMobile(gameMode === 'lives' ? 'shield' : 'doublex2')">
                 <img :src="gameMode === 'lives' ? 'shield.png' : 'x2.png'"
                     :alt="gameMode === 'lives' ? 'Bouclier' : 'Points x2'">
+                <span class="bonus-arc-count" v-if="bonusInventory[gameMode === 'lives' ? 'shield' : 'doublex2'] > 0">x{{ bonusInventory[gameMode === 'lives' ? 'shield' : 'doublex2'] }}</span>
             </div>
         </div>
+
+
+        <!-- 🆕 DÉFIS MOBILE - Icône en bas gauche -->
+        <div class="challenges-mobile-icon" v-if="gameInProgress && !gameEnded && challenges.length > 0" 
+             @click="showChallengesMobile = !showChallengesMobile">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+            <!-- Badge nombre de défis non complétés -->
+            <span class="challenges-mobile-badge" v-if="challenges.filter(c => !c.completed).length > 0">
+                {{ challenges.filter(c => !c.completed).length }}
+            </span>
+        </div>
+
+        <!-- 🆕 DÉFIS MOBILE - Modal centré -->
+        <transition name="challenges-modal">
+            <div class="challenges-mobile-overlay" v-if="showChallengesMobile" @click="showChallengesMobile = false">
+                <div class="challenges-mobile-modal" @click.stop>
+                    <div class="challenges-mobile-header">
+                        <button class="challenges-mobile-close" @click="showChallengesMobile = false">✕</button>
+                    </div>
+                    <div class="challenges-mobile-list">
+                        <div class="challenge-mobile-item" 
+                             v-for="challenge in challenges" 
+                             :key="challenge.id"
+                             :class="{ completed: challenge.completed }">
+                            <div class="challenge-mobile-left">
+                                <div class="challenge-mobile-name">{{ challenge.name }}</div>
+                                <div class="challenge-mobile-desc">{{ challenge.description }}</div>
+                                <div class="challenge-mobile-progress-bar" v-if="challenge.target > 1">
+                                    <div class="challenge-mobile-progress-fill" 
+                                         :style="{ width: Math.min(100, (challenge.progress / challenge.target) * 100) + '%' }">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="challenge-mobile-right">
+                                <span class="challenge-mobile-reward">+{{ getBonusName(challenge.reward) }}</span>
+                                <div class="challenge-mobile-check" v-if="challenge.completed">✓</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
 
 
         <!-- Panel Streamers Partenaires -->

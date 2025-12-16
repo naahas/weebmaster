@@ -99,10 +99,13 @@ createApp({
             comboLevel: 0,              // Niveau actuel (0, 1, 2, 3)
             comboProgress: 0,           // Nombre de bonnes réponses
             comboThresholds: [3, 8, 14], // Seuils : Lvl1=3, Lvl2=7 (3+4), Lvl3=12 (7+5)
-            availableBonuses: [],       // ['5050', 'reveal', 'extralife' ou 'doublex2']
-            usedBonuses: [],            // Bonus déjà utilisés dans la partie
+            bonusInventory: { '5050': 0, 'reveal': 0, 'shield': 0, 'doublex2': 0 }, // 🔥 REFONTE: Inventaire avec compteurs
             showBonusModal: false,      // Afficher/masquer le modal
             activeBonusEffect: 'null',
+
+            // 🆕 Système de défis
+            challenges: [],             // Les 3 défis de la partie [{id, name, description, reward, progress, target, completed}]
+            showChallengesMobile: false, // Afficher le modal défis sur mobile
 
             isLevelingUp: false,
 
@@ -307,40 +310,39 @@ createApp({
             return this.comboLevel >= 3 ? 'MAX' : this.comboLevel.toString();
         },
 
+        // 🔥 REFONTE: Vérifie si au moins un bonus disponible
         hasUnusedBonuses() {
-            return this.availableBonuses.length > 0;
+            return Object.values(this.bonusInventory).some(count => count > 0);
         },
 
+        // 🔥 REFONTE: Total de tous les bonus disponibles
         unusedBonusCount() {
-            return this.availableBonuses.length;
+            return Object.values(this.bonusInventory).reduce((sum, count) => sum + count, 0);
         },
 
+        // 🔥 REFONTE: Liste avec compteurs individuels
         bonusList() {
-            const bonuses = [
+            const thirdBonusId = this.gameMode === 'lives' ? 'shield' : 'doublex2';
+            return [
                 {
                     id: '5050',
                     name: '50/50',
                     desc: 'Élimine 50% des mauvaises réponses',
-                    available: this.availableBonuses.includes('5050'),
-                    used: this.usedBonuses.includes('5050')
+                    count: this.bonusInventory['5050'] || 0
                 },
                 {
                     id: 'reveal',
-                    name: 'Révéler',
+                    name: 'Joker',
                     desc: 'Affiche la bonne réponse',
-                    available: this.availableBonuses.includes('reveal'),
-                    used: this.usedBonuses.includes('reveal')
+                    count: this.bonusInventory['reveal'] || 0
                 },
                 {
-                    id: this.gameMode === 'lives' ? 'shield' : 'doublex2', // 🔥 CHANGÉ
+                    id: thirdBonusId,
                     name: this.gameMode === 'lives' ? 'Bouclier' : 'Points x2',
                     desc: this.gameMode === 'lives' ? 'Protège contre une perte de vie' : 'Double les points de cette question',
-                    available: this.availableBonuses.includes(this.gameMode === 'lives' ? 'shield' : 'doublex2'),
-                    used: this.usedBonuses.includes(this.gameMode === 'lives' ? 'shield' : 'doublex2')
+                    count: this.bonusInventory[thirdBonusId] || 0
                 }
             ];
-
-            return bonuses.filter(b => b.available || b.used);
         },
 
         gaugeCircleOffset() {
@@ -1061,9 +1063,8 @@ createApp({
                         if (currentPlayer.comboData && this.comboLevel === 0 && this.comboProgress === 0) {
                             this.comboLevel = currentPlayer.comboData.comboLevel || 0;
                             this.comboProgress = currentPlayer.comboData.comboProgress || 0;
-                            this.availableBonuses = [...(currentPlayer.comboData.availableBonuses || [])];
-                            this.usedBonuses = [...(currentPlayer.comboData.usedBonuses || [])];
-                            console.log(`✅ Combo restauré via /game/state: Lvl${this.comboLevel}, Progress:${this.comboProgress}`);
+                            this.bonusInventory = currentPlayer.comboData.bonusInventory || { '5050': 0, 'reveal': 0, 'shield': 0, 'doublex2': 0 };
+                            console.log(`✅ Combo restauré via /game/state: Lvl${this.comboLevel}, Progress:${this.comboProgress}, Inventory:${JSON.stringify(this.bonusInventory)}`);
                         }
                     }
                 }
@@ -1205,9 +1206,14 @@ createApp({
                 if (data.comboData) {
                     this.comboLevel = data.comboData.comboLevel || 0;
                     this.comboProgress = data.comboData.comboProgress || 0;
-                    this.availableBonuses = [...(data.comboData.availableBonuses || [])];
-                    this.usedBonuses = [...(data.comboData.usedBonuses || [])];
-                    console.log(`✅ Combo restauré via player-restored (prioritaire): Lvl${this.comboLevel}, Progress:${this.comboProgress}`);
+                    this.bonusInventory = data.comboData.bonusInventory || { '5050': 0, 'reveal': 0, 'shield': 0, 'doublex2': 0 };
+                    console.log(`✅ Combo restauré via player-restored (prioritaire): Lvl${this.comboLevel}, Progress:${this.comboProgress}, Inventory:${JSON.stringify(this.bonusInventory)}`);
+                }
+
+                // 🆕 Restaurer les défis
+                if (data.challenges) {
+                    this.challenges = data.challenges;
+                    console.log(`✅ Défis restaurés: ${this.challenges.map(c => c.name).join(', ')}`);
                 }
 
                 this.currentQuestionNumber = data.currentQuestionIndex;
@@ -1287,6 +1293,12 @@ createApp({
                         this.playerLives = this.gameLives;
                     } else {
                         this.playerPoints = 0;
+                    }
+
+                    // 🆕 Initialiser les défis
+                    if (data.challenges) {
+                        this.challenges = data.challenges;
+                        console.log('🎯 Défis reçus:', this.challenges.map(c => c.name).join(', '));
                     }
 
                     this.showNotification(`La partie commence avec ${data.totalPlayers} joueurs !`, 'success');
@@ -1432,16 +1444,16 @@ createApp({
                     // Mettre à jour SEULEMENT les données (pas la jauge visuelle)
                     this.comboLevel = data.comboLevel;
                     this.comboProgress = data.comboProgress;
-                    this.availableBonuses = data.availableBonuses;
+                    this.bonusInventory = data.bonusInventory || this.bonusInventory;
                     return; // ❌ NE PAS continuer
                 }
 
                 // Mise à jour normale des données
                 this.comboLevel = data.comboLevel;
                 this.comboProgress = data.comboProgress;
-                this.availableBonuses = data.availableBonuses;
+                this.bonusInventory = data.bonusInventory || this.bonusInventory;
 
-                console.log(`📡 Combo reçu du serveur: Lvl${this.comboLevel}, Progress:${this.comboProgress}`);
+                console.log(`📡 Combo reçu du serveur: Lvl${this.comboLevel}, Progress:${this.comboProgress}, Inventory:${JSON.stringify(this.bonusInventory)}`);
 
                 // 🔥 Détecter si on vient de LEVEL-UP
                 if (data.comboLevel > oldLevel) {
@@ -1462,15 +1474,13 @@ createApp({
             });
 
 
-            // 🆕 Bonus utilisé (confirmation)
+            // 🆕 Bonus utilisé (confirmation) - 🔥 REFONTE: Décrémenter l'inventaire
             this.socket.on('bonus-used', (data) => {
                 if (data.success) {
-                    // Retirer localement aussi
-                    const index = this.availableBonuses.indexOf(data.bonusType);
-                    if (index > -1) {
-                        this.availableBonuses.splice(index, 1);
+                    // Décrémenter localement aussi
+                    if (this.bonusInventory[data.bonusType] > 0) {
+                        this.bonusInventory[data.bonusType]--;
                     }
-                    this.usedBonuses.push(data.bonusType);
 
                     // Appliquer l'effet
                     this.applyBonusEffect(data.bonusType);
@@ -1502,6 +1512,27 @@ createApp({
                 setTimeout(() => {
                     this.tempCorrectAnswer = null;
                 }, 100);
+            });
+
+
+            // 🆕 Mise à jour des défis
+            this.socket.on('challenges-updated', (data) => {
+                console.log('🎯 Défis mis à jour:', data);
+                
+                // Mettre à jour la progression des défis
+                if (data.challenges) {
+                    this.challenges = data.challenges;
+                }
+                
+                // Si un défi vient d'être complété, jouer une animation
+                if (data.completedChallenges && data.completedChallenges.length > 0) {
+                    data.completedChallenges.forEach(({ challengeId, reward }) => {
+                        const challenge = this.challenges.find(c => c.id === challengeId);
+                        if (challenge) {
+                            this.showNotification(`🎯 Défi "${challenge.name}" complété ! +1 ${this.getBonusName(reward)}`, 'success');
+                        }
+                    });
+                }
             });
 
 
@@ -1868,10 +1899,11 @@ createApp({
                 (this.gameMode === 'points' || this.playerLives > 0);
         },
 
+        // 🔥 REFONTE: Utiliser bonusInventory
         useBonus(bonusType) {
-            console.log(`🎮 useBonus appelé avec: ${bonusType}`); // 🧪 DEBUG
+            console.log(`🎮 useBonus appelé avec: ${bonusType}`);
 
-            if (!this.availableBonuses.includes(bonusType)) {
+            if (!this.bonusInventory[bonusType] || this.bonusInventory[bonusType] <= 0) {
                 console.log('⚠️ Bonus non disponible');
                 return;
             }
@@ -1879,17 +1911,13 @@ createApp({
             // Envoyer au serveur
             this.socket.emit('use-bonus', { bonusType });
 
-            // Marquer comme utilisé
-            const index = this.availableBonuses.indexOf(bonusType);
-            if (index > -1) {
-                this.availableBonuses.splice(index, 1);
-            }
-            this.usedBonuses.push(bonusType);
+            // Décrémenter localement
+            this.bonusInventory[bonusType]--;
 
             // Appliquer l'effet
-            this.applyBonusEffect(bonusType); // 🔥 IMPORTANT
+            this.applyBonusEffect(bonusType);
 
-            console.log(`✅ Bonus ${bonusType} utilisé. Effet actif: ${this.activeBonusEffect}`); // 🧪 DEBUG
+            console.log(`✅ Bonus ${bonusType} utilisé. Reste: ${this.bonusInventory[bonusType]}`);
         },
 
         applyBonusEffect(bonusType) {
@@ -2046,15 +2074,28 @@ createApp({
             }
         },
 
+        // 🔥 REFONTE: Reset avec bonusInventory
         resetComboSystem() {
             this.comboLevel = 0;
             this.comboProgress = 0;
-            this.availableBonuses = [];
-            this.usedBonuses = [];
+            this.bonusInventory = { '5050': 0, 'reveal': 0, 'shield': 0, 'doublex2': 0 };
             this.activeBonusEffect = null;
             this.showBonusModal = false;
+            this.challenges = []; // 🆕 Reset les défis
+            this.showChallengesMobile = false; // 🆕 Fermer le modal défis mobile
 
-            console.log('🔄 Système de combo complètement reset');
+            console.log('🔄 Système de combo et défis complètement reset');
+        },
+
+        // 🆕 Helper pour obtenir le nom d'un bonus
+        getBonusName(bonusType) {
+            const names = {
+                '5050': '50/50',
+                'reveal': 'Joker',
+                'shield': 'Bouclier',
+                'doublex2': 'Points x2'
+            };
+            return names[bonusType] || bonusType;
         },
 
         beforeUnmount() {
@@ -2065,28 +2106,25 @@ createApp({
         },
 
 
-        // 🆕 Déterminer l'état d'un bonus
+        // 🔥 REFONTE: Déterminer l'état d'un bonus avec bonusInventory
         getBonusState(bonusType) {
-            if (this.usedBonuses.includes(bonusType)) {
-                return 'used';
-            }
-
-            if (this.availableBonuses.includes(bonusType)) {
-                // 🔥 SUPPRIMÉ : La vérification des 3 vies
+            const count = this.bonusInventory[bonusType] || 0;
+            
+            if (count > 0) {
                 return 'available';
             }
 
             return 'locked';
         },
 
-        // 🆕 Utiliser un bonus depuis une bandelette
+        // 🔥 REFONTE: Utiliser un bonus depuis une bandelette
         useBonusStrip(bonusType) {
             if (!this.canUseBonus()) {
                 console.log('⚠️ Impossible d\'utiliser un bonus maintenant');
                 return;
             }
 
-            if (!this.availableBonuses.includes(bonusType)) {
+            if (!this.bonusInventory[bonusType] || this.bonusInventory[bonusType] <= 0) {
                 console.log('⚠️ Bonus non disponible');
                 return;
             }
@@ -2215,8 +2253,9 @@ createApp({
             this.showBonusArcMobile = false;
         },
 
+        // 🔥 REFONTE: Utiliser bonusInventory
         useBonusArcMobile(bonusType) {
-            if (!this.canUseBonus() || !this.availableBonuses.includes(bonusType)) return;
+            if (!this.canUseBonus() || !this.bonusInventory[bonusType] || this.bonusInventory[bonusType] <= 0) return;
             this.showBonusArcMobile = false;
             this.useBonus(bonusType);
         },
