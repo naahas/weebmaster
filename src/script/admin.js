@@ -9,6 +9,21 @@ const introMessages = ['Initialisation...', 'Streamer connecté..', 'Chargement 
 
 
 // ============================================
+// 🆕 FONCTION DÉCONNEXION ADMIN
+// ============================================
+function adminLogout() {
+    // Appeler logout pour libérer le slot, puis rediriger vers /admin
+    fetch('/auth/logout')
+        .then(() => {
+            window.location.href = '/admin';
+        })
+        .catch(() => {
+            window.location.href = '/admin';
+        });
+}
+
+
+// ============================================
 // CONSTANTES SVG ICÔNES DE VIES
 // ============================================
 
@@ -200,6 +215,10 @@ function closeLobbyUI() {
             stateLobby.classList.remove('active');
             stateLobby.style.opacity = '';
             stateIdle.style.display = 'grid';
+            
+            // 🆕 Réafficher le bouton déconnexion
+            const logoutBtn = document.getElementById('headerLogoutBtn');
+            if (logoutBtn) logoutBtn.style.display = 'flex';
 
             // Réafficher les panneaux latéraux
             recentPanel.classList.remove('hidden');
@@ -833,9 +852,13 @@ async function loadIdleData() {
             const dbStats = await dbStatsResponse.json();
             const statValues = document.querySelectorAll('.idle-stat-value');
 
+            // 🆕 Arrondir à la centaine inférieure
+            const roundedPlayers = Math.floor((dbStats.totalPlayers || 0) / 100) * 100;
+            const roundedQuestions = Math.floor((dbStats.totalQuestions || 0) / 100) * 100;
+
             setTimeout(() => {
-                if (statValues[1]) animateCounter(statValues[1], formatPlayerCount(dbStats.totalPlayers || 0), 1200);
-                if (statValues[2]) animateCounter(statValues[2], dbStats.totalQuestions || 500, 1200, '+');
+                if (statValues[1]) animateCounter(statValues[1], formatPlayerCount(roundedPlayers), 1200, '+');
+                if (statValues[2]) animateCounter(statValues[2], roundedQuestions, 1200, '+');
             }, 600);
         }
 
@@ -1408,6 +1431,10 @@ openLobbyBtn.addEventListener('click', async () => {
         complete: () => {
             // Cacher l'état idle
             stateIdle.style.display = 'none';
+            
+            // 🆕 Cacher le bouton déconnexion
+            const logoutBtn = document.getElementById('headerLogoutBtn');
+            if (logoutBtn) logoutBtn.style.display = 'none';
 
             // Afficher le lobby
             stateLobby.classList.add('active');
@@ -3703,6 +3730,10 @@ function showLobbyUI(players = []) {
     stateLobby.classList.add('active');
     stateLobby.style.opacity = '1';
     stateLobby.style.pointerEvents = '';  // 🔥 AJOUTER
+    
+    // 🆕 Cacher le bouton déconnexion
+    const logoutBtn = document.getElementById('headerLogoutBtn');
+    if (logoutBtn) logoutBtn.style.display = 'none';
 
     bgText.textContent = 'LOBBY';
     bgText.classList.add('lobby-active');
@@ -4771,6 +4802,10 @@ function returnToIdle() {
     stateIdle.style.opacity = '1';
     stateIdle.style.visibility = 'visible';
     stateIdle.style.pointerEvents = '';
+    
+    // 🆕 Réafficher le bouton déconnexion
+    const logoutBtn = document.getElementById('headerLogoutBtn');
+    if (logoutBtn) logoutBtn.style.display = 'flex';
 
     // Reset header
     bgText.textContent = 'MASTER';
