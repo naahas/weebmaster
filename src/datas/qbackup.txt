@@ -1,0 +1,541 @@
+
+id,question,answer1,answer2,answer3,answer4,answer5,answer6,coanswer,serie,difficulty,created_at
+1,Quel est le fruit du démon mangé par Luffy ?,Gomu Gomu no Mi,Mera Mera no Mi,Hito Hito no Mi,Ope Ope no Mi,Koro Koro no Mi,Zoubi Zoubi no Mi,1,One Piece,veryeasy,2025-10-26 22:56:10.147201+00
+5,Dans quelle équipe appartient Sakura ?,Equipe 7,Equipe 8,Equipe 9,Equipe 10,Equipe 6,Equipe 5,1,Naruto,veryeasy,2025-10-30 16:42:53.205206+00
+6,Quel Jutsu doit maîtriser Naruto pour être diplômé de l'académie ?,Transformation,Clonage,Substitution,Téléportation,Disparition,Connexion,2,Naruto,veryeasy,2025-10-30 16:42:53.205206+00
+7,Qui est reponsable de la mort des parents de Iruka ?,Naruto,Obito,Kyubi,Tobirama,Orochimaru,Mizuki,3,Naruto,easy,2025-10-30 16:42:53.205206+00
+8,Quel personnage arrive à la 1ère place du premier sondage de popularité du Manga ?,Naruto,Sasuke,Minato,Itachi,Kakashi,Madara,5,Naruto,veryhard,2025-10-30 16:42:53.205206+00
+9,Quel est le lien de parenté entre Konohamaru et Hiruzen ?,Hiruzen est le père de Konohamaru,Hiruzen est le grand-père de Konohamaru,Hiruzen est l’oncle de Konohamaru,Hiruzen est le cousin de Konohamaru,Hiruzen est le frère de Konohamaru,Hiruzen est le meilleur ami de Konohamaru,2,Naruto,veryeasy,2025-10-30 16:42:53.205206+00
+10,Avec quel jutsu Naruto parvient-il à vaincre Ebisu ?,Technique du Harem,"Technique du Crapaud ",Technique du Clonade,Technique de la Transformation inversée,Technique de la Boule de Feu,Technique du Loup,1,Naruto,easy,2025-10-30 16:42:53.205206+00
+11,"Parmi ces personnages , qui fait partie de l'équipe 8 ?",Genma,Shino,Shikamaru,Sasuke,Rock lee,Temari,2,Naruto,medium,2025-10-30 16:42:53.205206+00
+12,Qui est l'auteur du livre dont raffole Kakashi ?,Jiraiya,Iruka,Hiruzen,Ebisu,Inoichi,Karin,1,Naruto,easy,2025-10-30 16:42:53.205206+00
+13,Comment s'appelle le père de Naruto Uzumaki ?,Minato,Boruto,Hiruzen,Jiraiya,Kakashi,Iruka,1,Naruto,veryeasy,2025-10-30 16:46:43.115066+00
+14,"Selon Kakashi, à combien s'élève le taux d'échec de l'épreuve de survie ?",66%,80%,50%,90%,75%,60%,1,Naruto,hard,2025-10-30 16:46:43.115066+00
+15,Quel est le nom du chat que l'équipe 7 était chargée d'attraper lors de sa première mission ?,Sora,Tora,Numa,Neko,Koka,Yu,2,Naruto,veryhard,2025-10-30 16:46:43.115066+00
+16,Quels sont les 5 villages les plus puissants ?,Iwa Kumo Kiri Suna Konoha,Konoha Suna Ame Iwa Kumo,Kumo Iwa Konoha Taki Suna,Taki Suna Konoha Ame Kiri,Suna Kumo Ame Taki Konoha,Oto Konoha Kumo Suna Kiri,1,Naruto,medium,2025-10-30 16:46:43.115066+00
+17,De quelle couleur sont les yeux de Kakuzu ?,Noir,Blanc,Rouge,Vert,Jaune,Rose,4,Naruto,hard,2025-10-30 16:46:43.115066+00
+18,A quelle équipe appartient Shikamaru ?,Team 8,Team 9,Team 10,Team 6,Team 11,Team 5,3,Naruto,medium,2025-10-30 16:46:43.115066+00
+19,Quel membre de l'Akatsuki à capturé Roshi ?,Itachi,Kisame,Deidara,Konan,Sasori,Kakuzu,2,Naruto,medium,2025-10-30 16:46:43.115066+00
+20,Dans quelle prison est amené Riku lors de sa première incarcération,L'île du paradis,Le dôme de l'enfer,Le purgatoire des âmes,La forteresse du désespoir,Le gouffre éternel,Le labyrinthe des oubliés,1,One Piece,hard,2025-10-30 16:46:43.115066+00
+21,Comment était surnommée Nico Robin au sein de Baroque Works ?,Miss All Sunday,Miss Wednesday,Miss Black Monday,Miss Saturday,Miss 0,Miss Poneglyph,1,One Piece,medium,2025-10-30 16:46:43.115066+00
+23,Quel sabre zoro a t-il recu de Kuina ?,Yubashiri,Emma,Sandai Kitetsu,Nidai Kitetsu,Shisui,Wado Ichimonji,6,One Piece,medium,2025-10-30 16:46:43.115066+00
+24,Comment s'appellent les membres de l'équipage de Usopp ?,Oignon piment et carotte,Piment tomate et oignon,Tomate salade et tomate,Salade tomate et oignon,Jambon oignon et Oignon,Fromage tomate et salade,1,One Piece,hard,2025-10-30 16:46:43.115066+00
+25,De combien de berry nami avait t-elle besoin pour libérer son village d'Arlong ?,300 000 000,100 000 000,150 000 000,200 000 000,250 000 000,50 000 000,2,One Piece,medium,2025-10-30 16:46:43.115066+00
+26,Quel membre Shanks a t-il perdu en protégeant Luffy ?,Son bras droit,Son bras gauche,Sa jambre droite,Sa jambre gauche,Son oeil droit,Son oeil gauche,2,One Piece,veryeasy,2025-10-30 16:46:43.115066+00
+27,Pour quelle raison Zoro et Luffy se battent-ils à Whiskey Peak ?,Parce que Zoro à mangé la nourriture de Luffy,Parce qu'ils sont manipulés,Parce que Zoro à blessé ceux qui les ont nourris,Pour tester leur capacité,Pour passer le temps,Parce qu'ils ont les yeux bandés,3,One Piece,medium,2025-10-30 16:46:43.115066+00
+28,Qui possède le Pika Pika no mi ?,Kizaru,Pica,Ener,Foxy,Jozu,Gild Tesoro,1,One Piece,easy,2025-10-30 16:46:43.115066+00
+29,"Sur Little Garden, avec quel mugiwara Crocodile parle t-il par escargophone ?",Sanji,Zoro,Usopp,Nami,Chopper,Robin,1,One Piece,hard,2025-10-30 16:46:43.115066+00
+30,Quel est le montant de la première prime de Nami ?,16 millions de berrys,32 millions de berrys,12 millions de berrys,8 millions de berrys,10 millions de berrys,6 millions de berrys,1,One Piece,medium,2025-10-30 16:46:43.115066+00
+31,"Lors du Davy back fight, quel mugiwara Foxy choisit-il pour rejoindre son équipage ?",Chopper,Robin,Usopp,Zoro,Sanji,Nami,1,One Piece,veryhard,2025-10-30 16:46:43.115066+00
+32,Pour quelle raison Norland a t-il été exécuté ?,Pour vol d'une grosse quantité d'or,Pour endommagement de la cloche d'or de Shandora,Pour meurtre du roi des shandias,Pour mensonge à propos d'une cité d'or,Pour avoir enfreint le code des marins,Pour s'être marié à une indigène,4,One Piece,hard,2025-10-30 16:46:43.115066+00
+33,Quelle information contient le ponéglyphe de Skypiea ?,L'emplacement de Pluton,L'emplacement de Poséidon,L'emplacement de Uranus,Des informations sur le siècle oublié,Des informations sur la vie du roi des pirates,L'emplacement de Laugh Tale,2,One Piece,veryhard,2025-10-30 16:46:43.115066+00
+34,Où Luffy rencontre t-il Barbe noire pour la première fois ?,Mocktown,Loguetown,Impel Down,Marineford,Skypiea,Alabasta,1,One Piece,medium,2025-10-30 16:46:43.115066+00
+35,Quel est le surnom de Zeff ?,Zeff a la jambe rouge,Zeff aux pieds rouges,Zeff aux jambes rouges,Zeff a la jambe jaune,Zeff aux couteaux d'argent,Zeff aux mains d'argent,2,One Piece,medium,2025-10-30 16:46:43.115066+00
+36,Où se trouve l'arbre de la Cognition ?,Ohara,History Land,Marineford,Skypiea,Jaya,Zou,1,One Piece,veryhard,2025-10-30 16:46:43.115066+00
+37,Quel type d'oiseau à permis aux mugiwara de trouver l'emplacement du Knock up stream pour se rendre à Skypiea ?,South Bird,North Bird,East Bird,West Bird,Knock Bird,Gold Bird,1,One Piece,extreme,2025-10-30 16:46:43.115066+00
+38,Quel dial Wiper utilise t-il systématiquement sur Ener ?,Reject Dial,Impact Dial,Jet Dial,Stone Dial,Flash Dial,Heat Dial,1,One Piece,hard,2025-10-30 16:46:43.115066+00
+39,Quelle est la première personne à s'être échappé d'impel down ?,Shiki,Roger,Barbe Blanche,Shanks,Luffy,Rocks,1,One Piece,medium,2025-10-30 16:46:43.115066+00
+40,Pourquoi Kuro s'est-il fait passer pour un majordome ?,Pour finir par toucher l'héritage de Kaya,Pour se rapprocher de Kaya et l'épouser,Pour respecter la volonté de son prédécesseur,Parce qu'il est recherché par un groupe de mercenaire,Parce qu'il à perdu la mémoire,Parce qu'il adore les majordomes,1,One Piece,easy,2025-10-30 16:46:43.115066+00
+41,Quelles sont les paroles de Sabo prononcées à Dragon lors de leur première rencontre ?,JE VEUX VIVRE,J'AI HONTE D'ÊTRE UN NOBLE,JE VEUX MOURIR,JE VEUX SAUVER MES PARENTS,JE VEUX PRENDRE LA MER,JE VEUX DEVENIR PLUS FORT,2,One Piece,veryhard,2025-10-30 16:46:43.115066+00
+42,Pourquoi les mugiwaras se rendent-ils au royaume de Drum ?,Pour trouver un nouveau compagnon,Pour soigner Nami,Parce qu'ils sont en manque de nourriture,Parce que leur log pose est cassé,Pour acheter des vêtements chauds,Pour retrouver Zoro qui s'est perdu,2,One Piece,easy,2025-10-30 16:46:43.115066+00
+43,Quel âge a Kureha ?,Entre 150 et 200,Plus de 200,Entre 100 et 150,Entre 50 et 100,Entre 500 et 1000,Entre 300 et 350,3,One Piece,veryhard,2025-10-30 16:46:43.115066+00
+44,Qui possède actuellement le fruit de l'invisibilité ?,Absalom,Shiryu,Doc Q,Catarina Devon,Hiluluk,Helmeppo,2,One Piece,medium,2025-10-30 16:46:43.115066+00
+45,Qui a vaincu Kumadori du CP9 ?,Franky,Chopper,Nami,Sanji,Robin,Usopp,2,One Piece,medium,2025-10-30 16:46:43.115066+00
+46,Quelle est la première créature que les Mugiwaras rencontrent à Thriller Bark ?,Un cyclope,Un cerbère,Un griffon,Un centaure,Un dragon,Un sphinx,2,One Piece,easy,2025-10-30 16:46:43.115066+00
+47,A combien de mètres de profondeur se situe l'île des hommes poissons ?,10 000 m,50 000 m,100 000 m,30 000 m,300 000 m,20 000 m,1,One Piece,hard,2025-10-30 16:46:43.115066+00
+48,"Parmi ces noms, lequel n'est pas le véritable nom d'un personnage ?",Franky,Nami,Kyros,Cavendish,Tashigi,Katakuri,1,One Piece,hard,2025-10-30 16:46:43.115066+00
+49,Qui est le commandant de la 3eme divison dans l'équipage de Barbe Blanche ?,Marco,Jozu,Ace,Vista,Izo,Thatch,2,One Piece,easy,2025-10-30 16:46:43.115066+00
+50,Quel est le rêve le Franky ?,Parcourir le monde à bord de son bateau,Devenir le roi des charpentiers,Créer une île flottante,Avoir un vaisseau de guerre personnel,Trouver l'arbre d'Adam,Rencontrer le Dr Vegapunk,1,One Piece,veryhard,2025-10-30 16:46:43.115066+00
+51,Quelle était la seule facon de sauver Fisher Tiger de la mort ?,Lui faire manger un fruit du démon,Lui donner une transfusion de sang humain,L'emmener dans un hôpital à Saboady,Que sa fille soit présente auprès de lui,L'exposer à la lumière de la lune,L'enfermer dans une bulle d'oxygène,2,One Piece,hard,2025-10-30 16:46:43.115066+00
+52,Que signifie la marque sur le dos de Hancock ?,Un tatouage familiale,Un symbole esclavagiste,Un motif dédié à son amour pour Luffy,Une symbole de pouvoir,Une bénédiction des dieux,Un motif signifiant la liberté féminine,2,One Piece,medium,2025-10-30 16:46:43.115066+00
+53,Quelle la particularité d'un Eternal pose ?,Il pointe vers Raftel,Il se réinitialise après chaque destination,Il pointe toujours vers la même île,Il pointe vers l'île la plus proche,Il pointe vers les îles célestes,Il se réinitialise tous les 6 mois,3,One Piece,hard,2025-10-30 16:46:43.115066+00
+54,Quel est le nom de la drogue utilisé par Caesar sur les enfants de Punk Hazard ?,A7HC2,NHC10,C8QH3,KH5D0,XJ123,ZCES4,2,One Piece,extreme,2025-10-30 16:46:43.115066+00
+55,"A Punk Hazard, qui s'est retrouvé dans le corps de Franky à cause de Law ?",Nami,Usopp,Smoker,Sanji,Chopper,Robin,1,One Piece,hard,2025-10-30 16:46:43.115066+00
+56,Quel mugiwara a déjà parlé à Oden ?,Franky,Robin,Brook,Jinbe,Chopper,Zoro,1,One Piece,medium,2025-10-30 16:46:43.115066+00
+57,Qui a dit à Luffy que Shanks faisait partie de l'équipage de Roger ?,Rayleigh,Robin,Baggy,Garp,Barbe Noire,Sengoku,1,One Piece,medium,2025-10-30 16:46:43.115066+00
+58,Quelles sont les chances d'obtenir des pouvoirs après avoir mangé un SMILE ?,1%,5%,10%,99%,50%,90%,3,One Piece,extreme,2025-10-30 16:46:43.115066+00
+59,Quel Tobiroppo était en fait un membre du CP9 ?,X Drake,Who's Who,Page One,Sasaki,Black Maria,Ulti,2,One Piece,medium,2025-10-30 16:46:43.115066+00
+60,Qui ne faisait pas partie de l'équipe scientifique MADS ?,Sentomaru,Caesar,Judge,Queen,Vegapunk,Stussy,1,One Piece,veryhard,2025-10-30 16:46:43.115066+00
+61,Comment s'appelle l'épée de Big mom ?,Zeus,Hera,Prometheus,Napoleon,Athena,Hades,4,One Piece,hard,2025-10-30 16:46:43.115066+00
+62,De quel pays sont originaires les ponéglyphes ?,Du pays des Wa,De l'île des hommes poissons,De Zou,D'Erbaf,De Skypiea,De Jaya,1,One Piece,hard,2025-10-30 16:46:43.115066+00
+63,Pour quelle raison Garp ne veut pas être amiral ?,Parce qu'il pense qu'il n'est pas assez fort,Parce qu'il y a trop de responsabilités,Parce qu'il refuse d'être plus haut gradé que Sengoku,Parce qu'il ne veut pas être sous les ordres des dragons célestes,Parce qu'il à commis un acte impardonnable pour un marine,Parce qu'il est trop violent,4,One Piece,hard,2025-10-30 16:46:43.115066+00
+64,Qui est le fils ainé de Big mom ?,Katakuri,Daifuku,Perospero,Cracker,Oven,Opera,3,One Piece,veryhard,2025-10-30 16:46:43.115066+00
+65,De quelle couleur sont les cheveux de Niji ?,Vert,Bleu,Rouge,Noir,Jaune,Violet,2,One Piece,easy,2025-10-30 16:46:43.115066+00
+66,Qui donne l'ordre à Zunesha d'attaquer l'équipage de Jack ?,Luffy,Momonosuke,Chopper,Nekomamushi,Inuarashi,Wanda,2,One Piece,hard,2025-10-30 16:46:43.115066+00
+67,Quel autre membre actuel de la pire génération était sur l'île où Corazon est mort ?,X Drake,Jewelry Bonney,Urouge,Capone Bege,Basil Hawkins,Scratchmen Apoo,1,One Piece,veryhard,2025-10-30 16:46:43.115066+00
+68,Pourquoi Jack s'est-il rendu à Zou ?,Pour détruire l'île,Pour trouver Raizo,Pour tuer Nekomamushi et Inuarashi,Pour voler le Road Poneglyph,Pour retrouver Kaido,Pour enlever Momonosuke,2,One Piece,medium,2025-10-30 16:46:43.115066+00
+69,De quelle race est Bepo ?,Wotan,Mink,Balaffre,Tontatta,Okama,Kumate,2,One Piece,medium,2025-10-30 16:46:43.115066+00
+70,Quelle apparence prend la sorcière Higurashi afin de destabiliser Oden contre Kaido ?,Momonosuke,Hiyori,Toki,Kinemon,Sukiyaki,Hyogoro,1,One Piece,hard,2025-10-30 16:46:43.115066+00
+71,Pendant combien d'années Oden a t-il dansé nu pour remplir sa promesse ?,1 an,2 ans,3 ans,4 ans,5 ans,6 ans,5,One Piece,veryhard,2025-10-30 16:46:43.115066+00
+72,"Sur Skypiea, qui est le prélat des Ballons ?",Wiper,Satori,Conis,Gedatsu,Omm,Gan Fall,2,One Piece,veryhard,2025-10-30 16:46:43.115066+00
+73,"A Saboady, qui a été le premier mugiwara à disparaître a cause du pouvoir de Kuma ?",Zoro,Usopp,Luffy,Nami,Robin,Brook,1,One Piece,hard,2025-10-30 16:46:43.115066+00
+74,Comment s'appelle la poudre qui permet de faire tomber la pluie à Alabasta ?,Rain Powder,Dance Powder,Marten Powder,Cloud Powder,Dust Powder,Blow Powder,2,One Piece,extreme,2025-10-30 16:46:43.115066+00
+75,Comment s'appelle la femme de Kinemon ?,O tama,O kiku,O tsuru,O kana,O najimi,O soru,3,One Piece,medium,2025-10-30 16:46:43.115066+00
+76,Quelle est l'espèce qui se vend le mieux au marché d'esclave de Saboady ?,Les nains,Les sirènes,Les dragons,Les géants,Les harpies,Les lunarias,2,One Piece,easy,2025-10-30 16:46:43.115066+00
+77,Qui parmi ces personnes ne peut pas utiliser le Haki des Rois ?,Yamato,King,Don Chinjao,Sengoku,Eustass Kid,Boa Hancock,2,One Piece,easy,2025-10-30 16:46:43.115066+00
+78,"Parmi les 20 rois fondateurs du gouvernement mondial, lequel à refusé de rester à Marie joie ?",Le roi d'Alabasta,Le roi de Goa,Le roi de Drum,Le roi de Dressrosa,Le roi de Germa,Le roi de Torino,1,One Piece,veryhard,2025-10-30 16:46:43.115066+00
+79,Quel est le nom de l'opération menée par les Tontattas pour faire tomber Doflamingo à Dressrosa ?,S.O.P,G.O.D,T.T.A,T.A.S,V.H.T,H.O.S,1,One Piece,veryhard,2025-10-30 16:46:43.115066+00
+80,Quelles sont les 3 armes antiques ?,Poséidon Pluton et Jupiter,Vénus Pluton et Poséidon,Pluton Poséidon et Uranus,Vénus Saturne et Jupiter,Pluton Jupiter et Vénus,Jupiter Poséidon et Vénus,3,One Piece,hard,2025-10-30 16:46:43.115066+00
+81,Lequel de ces membres de Baroque Works les mugiwaras affrontent sur Little Garden?,Mr 1,Mr 2,Mr 3,Mr 5,Mr 7,Mr 0,3,One Piece,medium,2025-10-30 16:46:43.115066+00
+82,Qui est la 6e personne à avoir rejoint l'équipage de Luffy ?,Chopper,Robin,Franky,Sanji,Brook,Usopp,2,One Piece,easy,2025-10-30 16:46:43.115066+00
+83,De quel bloc de combattant luffy ressort-il vainqueur au Colosseum de Dressrosa ?,Bloc A,Bloc B,Bloc C,Bloc D,Bloc E,Bloc F,3,One Piece,extreme,2025-10-30 16:46:43.115066+00
+84,De quel équipage faisait partie Brook avant de rejoindre les Mugiwaras ?,Soul Pirates,Rumbar Pirates,Whale Pirates,Funk Pirates,Flouz Pirates,Sea Jester Crew,2,One Piece,hard,2025-10-30 16:46:43.115066+00
+85,Pendant combien d'années Brook a erré seul sur son bateau après la mort de son équipage ?,50 ans,60 ans,10 ans,100 ans,20 ans,30 ans,1,One Piece,veryhard,2025-10-30 16:46:43.115066+00
+86,Pourquoi Cavendish déteste les Supernovas ?,Ils ont tous une prime plus élevée que la sienne,Ils ont ruiné sa réputation,Il est jaloux de ne pas faire parti des Supernovas,Ils ont détruit son royaume,Ils l'ont trahi par le passé,Ils détestent les pirates en général,2,One Piece,hard,2025-10-30 16:46:43.115066+00
+87,Qui a tué Monet ?,Zoro,Caesar,Law,Smoker,Tashigi,Doflamingo,2,One Piece,hard,2025-10-30 16:46:43.115066+00
+88,Pourquoi Arlong à tué Belmer ?,Elle a tenté de libérer Nami de la base d'Arlong,Elle à insulté Arlong de lâche,Elle n'a pas pu payer la taxe du village,Elle était au courant des affaires entre la Marine et Arlong,Elle à tué un des hommes d'Arlong,Elle s'est interposé pour protéger Nojiko,3,One Piece,medium,2025-10-30 16:46:43.115066+00
+89,En quoi se déguisent les mugiwaras dès leur arrivée à Dressrosa ?,En vieillards,En officiers de la marine,En filles,En hommes d'affaires,En nobles,En gladiateurs,1,One Piece,hard,2025-10-30 16:46:43.115066+00
+90,Quelle condition Law impose à Joker pour qu'il lui livre Caesar ?,Il doit renoncer à son titre de corsaire,Il doit abandonner son statut de roi de Dressrosa,Il doit libérer tous les jouets de la ville,Il doit lui dire où se trouve Kanjuro,Il doit dissoudre son équipage,Il doit lui fournir des informations sur Kaido,1,One Piece,hard,2025-10-30 16:46:43.115066+00
+91,Pour quelle raison le fruit de Law est considéré comme le fruit Ultime ?,Il peut donner la vie éternelle,Il peut réssuciter une personne,Il peut être transmis à quelqu'un d'autre,Il empêche a son utilisateur de se noyer,Il permet à son utilisateur d'en manger un autre,Il permet à son utilisateur de se séparer de son fruit,1,One Piece,hard,2025-10-30 16:46:43.115066+00
+92,Quel numéro porte Nobunaga au sein de la Brigate Fantôme ?,1,3,5,7,9,11,1,Hunter Hunter,hard,2025-10-30 16:46:43.115066+00
+93,Quel est le type de nen de Gon ?,Spécification,Manipulation,Emission,Transformation,Matérialisation,Renforcement,6,Hunter Hunter,easy,2025-10-30 16:46:43.115066+00
+94,Quel est le type de nen de Killua ?,Spécification,Manipulation,Emission,Transformation,Matérialisation,Renforcement,4,Hunter Hunter,easy,2025-10-30 16:46:43.115066+00
+95,Quel est le type de nen de Hisoka ?,Spécification,Manipulation,Emission,Transformation,Matérialisation,Renforcement,4,Hunter Hunter,medium,2025-10-30 16:46:43.115066+00
+96,Quel est le type de nen de Leorio ?,Spécification,Manipulation,Emission,Transformation,Matérialisation,Renforcement,3,Hunter Hunter,hard,2025-10-30 16:46:43.115066+00
+97,Quel est le type de nen de base de Kurapika ?,Spécification,Manipulation,Emission,Transformation,Matérialisation,Renforcement,5,Hunter Hunter,medium,2025-10-30 16:46:43.115066+00
+98,Quel est l'activité principale dont est spécialisée la famille Zoldyck ?,Le vol,La production d'armes,Le baseball,La pêche,L'assassinat,la cuisine,5,Hunter Hunter,veryeasy,2025-10-30 16:46:43.115066+00
+99,Avec quel arme se bat Pokkle ?,Batte,Hache,Fusil,Dagues,Épée,Arc,6,Hunter Hunter,medium,2025-10-30 16:46:43.115066+00
+100,Comment est appelée la capacité spéciale de Nen de Kuroro Lucilfer ?,Ability Seaker,Phantom Thief,Soul Destroyer,Stolen Gift,Nen Absorber,Skill Hunter,6,Hunter Hunter,hard,2025-10-30 16:46:43.115066+00
+101,Quel numéro porte Killua lors de l'épreuve de chasse de l'examen des Hunters ?,44,405,199,404,100,99,6,Hunter Hunter,hard,2025-10-30 16:46:43.115066+00
+102,Quel numéro porte Gon lors de l'épreuve de chasse de l'examen des Hunters ?,100,101,44,99,404,405,6,Hunter Hunter,hard,2025-10-30 16:46:43.115066+00
+103,Dans quel domaine Komugi est t-elle championne du monde ?,Gungi,Shogi,Go,Majong,Dama,Jiangxi,1,Hunter Hunter,medium,2025-10-30 16:46:43.115066+00
+104,De quelle guilde provient initialement Gajeel Redfox ?,Phantom Lord,Shadow Fang,Dragon Claw,Oblivion Heart,Dark Phoenix,Moonlit Howl,1,Fairy Tail,easy,2025-10-30 16:46:43.115066+00
+105,Sur quelle partie du corps de Natsu se trouve sa marque de guilde ?,Épaule droite,Main gauche,Pectoral gauche,Dos,Mollet droit,Avant-bras gauche,1,Fairy Tail,veryeasy,2025-10-30 16:46:43.115066+00
+106,"Parmi ces faits, lequel caractérise le mieux Cana Alberona ?",Elle adore boire de l'alcool,Elle a une peur panique des chiens,Elle ne sait pas nager,Elle collectionne des cartes rares,Elle a un talent pour la cuisine,Elle est somnambule,1,Fairy Tail,medium,2025-10-30 16:46:43.115066+00
+107,A quelle guilde appartient Hibiki ?,Handsome Calamity,Blue Pegasus,Sabertooth,Lamia Scale,Hound Holy,Raven Tail,2,Fairy Tail,medium,2025-10-30 16:46:43.115066+00
+108,Quel est le surnom de Erza Scarlet ?,Titania,Fairy Hills,Magnolia Oger,Hime,Fiore Queen,Lioness,1,Fairy Tail,easy,2025-10-30 16:46:43.115066+00
+109,Quel est l'attribut de magie de Wendy ?,Magie du ciel,Magie du tonnerre,Magie de la pluie,Magie des astres,Magie de la terre,Magie de l'amour,1,Fairy Tail,easy,2025-10-30 16:46:43.115066+00
+110,Quelle est la particularité de Grey Fullbuster ?,Il se déshabille sans cesse,Il ne supporte pas les femmes,Il ne mange jamais,Il à peur des chats,Il est sourd,Il maîtrise les 5 éléments,1,Fairy Tail,veryeasy,2025-10-30 16:46:43.115066+00
+111,Pour quelle raison Laxus Dreyar prend d'assaut Fairy Tail ?,Pour devenir le maître et renforcer la guilde,Pour se venger de son grand père qui l'a abandonné,Pour tester ses nouveaux pouvoirs,Parce qu'il était manipulé par une autre guilde,Par jalousie envers Erza,C'est une demande du maître de la guilde lui-même,1,Fairy Tail,medium,2025-10-30 16:46:43.115066+00
+112,À quelle génération de Dragon Slayer appartiennent Sting et Rogue ?,1ere génération,2eme génération,3eme génération,4eme génération,5eme génération,6eme génération,3,Fairy Tail,hard,2025-10-30 16:46:43.115066+00
+113,"Lors de l'examen de Rang S, qui est le partenaire de Natsu ?",Grey,Gajeel,Happy,Lucy,Erza,Lisanna,3,Fairy Tail,medium,2025-10-30 16:46:43.115066+00
+114,"Lors de l'examen de Rang S, quel duo fait face à Erza Scarlet ?",Lisanna et Juvia,Loki et Grey,Natsu et Happy,Gajeel et Levy,Elfman et Evergreen,Cana et Lucy,1,Fairy Tail,veryhard,2025-10-30 16:46:43.115066+00
+115,Comment est appelé le monde parallèle d'Earthland ?,Edolas,Xerath,Tartaros,Kardia,Stellar,Fiore,1,Fairy Tail,medium,2025-10-30 16:46:43.115066+00
+116,Qui ne fait pas partie de la Team Fairy Tail A lors des Grands Jeux Magiques ?,Elfman,Lucy,Grey,Erza,Natsu,Gajeel,6,Fairy Tail,hard,2025-10-30 16:46:43.115066+00
+117,Comment est surnommé Natsu Dragneel ?,Salamander,Cross Fire,Dragon Bastard,Fire Monster,Deathcharge,Dragonsoul,1,Fairy Tail,easy,2025-10-30 16:46:43.115066+00
+118,Quel personnage a été élevé par Skiadrum ?,Rogue,Sting,Wendy,Gajeel,Cobra,Acnologia,1,Fairy Tail,hard,2025-10-30 16:46:43.115066+00
+119,Quelle est la particularité des Dragon Slayer de 2ème génération ?,Ils ont un Lacryma implanté en eux,Ils maîtrisent 2 éléments,Ils ont été elevé par un Dragon,Ils ont tous les cheveux rouges,Leur espérance de vie est courte,Ils sont issus d'une expérience chimique,1,Fairy Tail,hard,2025-10-30 16:46:43.115066+00
+120,Quelle est la magie de Ultear ?,Magie du temps,Magie de l'espace,Magie de scellement,Magie de guérison,Magie des ténèbres,Magie de glace,1,Fairy Tail,medium,2025-10-30 16:46:43.115066+00
+121,Qui parmi ces personnages ne fait pas partie d'Oracion Seis ?,Brain,Midnight,Cobra,Sorano,Richard,Ichiya,6,Fairy Tail,medium,2025-10-30 16:46:43.115066+00
+122,"Lors des grands Jeux Magiques, qui fait face à Jellal ?",Jura,Erza,Natsu,Laxus,Sting,Minerva,1,Fairy Tail,hard,2025-10-30 16:46:43.115066+00
+123,Quelle guilde a terminé à la 1ère place des préliminaires des Grands Jeux Magiques ?,Sabertooth,Fairy Tail,Raven Tail,Blue Pegasus,Lamia Scale,Twilight Ogre,1,Fairy Tail,veryhard,2025-10-30 16:46:43.115066+00
+124,Quel personnage complète à lui seul l'épreuve du Pandémonium des Grands jeux magiques ?,Erza Scarlet,Laxus Dreyar,String Eucliffe,Natsu Dragneel,Jellal Fernandez,Rogue Cheney,1,Fairy Tail,hard,2025-10-30 16:46:43.115066+00
+125,Combien de clefs d'or du zodiaques possède Yukino ?,1,2,3,4,5,6,2,Fairy Tail,veryhard,2025-10-30 16:46:43.115066+00
+126,Combien de temps dans le monde réel correspond à 1 jour dans le monde des esprits ?,1 heure,3 mois,6 mois,1 an,1 semaine,1 seconde,2,Fairy Tail,extreme,2025-10-30 16:46:43.115066+00
+127,Combien de temps Ultear à t-elle pu remonter grâce à sa magie Last Age ?,1 minute,10 secondes,1 heure,10 minutes,3 minutes,3 secondes,1,Fairy Tail,veryhard,2025-10-30 16:46:43.115066+00
+128,Sur quelle partie du corps Lisanna possède sa marque de guilde ?,Le bras,Le dos,La cuisse,Le pied,Le ventre,L'épaule,3,Fairy Tail,hard,2025-10-30 16:46:43.115066+00
+129,Qui devient le maître temporaire de la guilde Fairy Tail pendant la disparition des membres durant 7 ans ?,Macao,Wakaba,Mest,Romeo,Loki,Gildartz,1,Fairy Tail,medium,2025-10-30 16:46:43.115066+00
+130,De quel gang Renoma Sasaki est-il le chef ?,Red Phoenix Clan,Double Dragon Cross,Crimson Fang Brotherhood,Iron Wolf Gang,Black Thunder Syndicate,Shadow Blade Legion,2,Prisonnier Riku,veryhard,2025-10-30 16:46:43.115066+00
+131,Comment est surnommé Ichiro Tanaka ?,Le roi de l'évasion,Le maître des déguisements,L'illusionniste,Le prince des prisonniers,La terreur des geoliers,Le prisonnier légendaire,1,Prisonnier Riku,hard,2025-10-30 16:46:43.115066+00
+132,"Parmi ces étapes, laquelle ne figure pas dans le plan des protagonistes pour s'évader de l'île du paradis ?",Voler des costumes de gardiens,Fabriquer un deltaplane,Voler un hélicoptère,Fabriquer des fausses têtes,Accéder à la salle de contrôle de la prison,Enlever les bracelets électoniques,5,Prisonnier Riku,veryhard,2025-10-30 16:46:43.115066+00
+133,Quel type de restaurant Eda Shiro voudrait-il ouvrir une fois sorti de prison ?,Un restaurant de ramen,Un restaurant de sushis,Un restaurant de yakitori,Un restaurant de curry,Un restaurant de barbecue,Un restaurant de tempura,2,Prisonnier Riku,veryhard,2025-10-30 16:46:43.115066+00
+134,Qu'aime par dessus tout Takagi ?,Les animaux,Les femmes,Les cheveux,Les jeux vidéos,Les vêtements,Les séries romantiques,1,Prisonnier Riku,veryhard,2025-10-30 16:46:43.115066+00
+135,Quel type d'arme utilise Sawada pour se battre ?,Des fils,Des pistolets,Des boomerangs,Des couteaux,Des assiettes,Des balles de tennis,1,Prisonnier Riku,hard,2025-10-30 16:46:43.115066+00
+136,Quelle menuiserie riku integre t-il dès son arrivée à la prison ?,24e menuiserie,25e menuiserie,26e menuiserie,27e menuiserie,28e menuiserie,29e menuiserie,4,Prisonnier Riku,extreme,2025-10-30 16:46:43.115066+00
+137,De quelle famille mafieuse Tsuna devient-il le Boss ?,Varia Family,Vongola Family,Millefiore Family,Simon Family,Nero Family,Cavallone Family,2,Katekyo Hitman Reborn,easy,2025-10-30 16:46:43.115066+00
+138,Quel type de créature est Puck ?,Un sorcier,Un elfe,Un golem,Un troll,Un phénix,un dragon,2,Berserk,medium,2025-10-30 16:46:43.115066+00
+139,Dans quel endroit se sont rencontrés Guts et Puck ?,Une taverne,Une forêt,Une grotte,Un château,Une ferme,Une église,1,Berserk,medium,2025-10-30 16:46:43.115066+00
+140,Comment est surnommé Guts ?,Le Chevalier Noir,L'Ange des ténèbres,Le Maraudeur Solitaire,Le Maudit du Midland,Le Boucher Sanguinaire,Le Bretteur Déchu,1,Berserk,easy,2025-10-30 16:46:43.115066+00
+141,Quel groupe de mercenaire est dirigé par Griffith ?,La Troupe du Faucon,Les Éperviers d'Argent,La Compagnie des Lames Blanches,L'Ordre des Griffons Blancs,La Brigade Écarlate,Les Guerriers du Midland,1,Berserk,medium,2025-10-30 16:46:43.115066+00
+142,Que permet la poussière d'elfe ?,Soigner les blessures,Provoquer des hallucinations,Accroître la force physique,Rendre invisible temporairement,Faire léviter des êtres vivants,Adoucir les esprits,1,Berserk,hard,2025-10-30 16:46:43.115066+00
+143,Qu'est-ce qu'une Béhérit ?,Une relique maudite,Une clé légendaire,Un collier sacré,Une dimension parallèle,Une personne devenue immortel,Une explosion de gaz,1,Berserk,hard,2025-10-30 16:46:43.115066+00
+144,Combien de membres comptent les God Hands ?,5,10,7,3,1,9,1,Berserk,medium,2025-10-30 16:46:43.115066+00
+145,A quelle fréquence apparaissent les Béhérit pourpres ?,Tous les 216 ans,Tous les millénaires,Tous les 99 ans,Tous les 1001 ans,Tous les 13 ans,Tous les 501 ans,1,Berserk,extreme,2025-10-30 16:46:43.115066+00
+146,Par quel moyen Guts détecte-t-il la présence de ses ennemis ?,Par sa marque du sacrifice,Par son instinct de guerrier,Par la couleur de son épée,Par le pouvoir de son oeil gauche,Grâce aux vibrations du sol,Grâce à l'aide de son compagnon elfique,1,Berserk,hard,2025-10-30 16:46:43.115066+00
+147,"Parmi ces personnages, lequel à survécu au cours de l'Éclipse ?",Rickert,Judeau,Pippin,Corkus,Gaston,Vargas,1,Berserk,medium,2025-10-30 16:46:43.115066+00
+148,Qu'est-il arrivé à Casca suite à l'Éclipse ?,Elle a perdu la mémoire,Elle a été transformée en apôtre,Elle a été emprisonnée dans une autre dimension,Elle a développé des visions prophétiques,Elle à changé de sexe,Elle à perdu l'usage de tous ses membres,1,Berserk,hard,2025-10-30 16:46:43.115066+00
+149,Quel est le véritable objectif de Griffith ?,Devenir un God Hand,Devenir roi de son propre royaume,Devenir immortel,De réssuciter ses parents,S'unir à la princesse du Midland,Se venger de Casca,2,Berserk,veryhard,2025-10-30 16:46:43.115066+00
+150,Comment Griffith s'est-il débarassé de la reine du Midland ?,En la brûlant vive,En l'exilant loin du royaume,En la faisant assassiner par Guts,En l'empoisonnant avec un flacon,En lui fendant le crâne personnellement,En la laissant mourir de faim,1,Berserk,veryhard,2025-10-30 16:46:43.115066+00
+151,Comment est appelé l'épée de Guts ?,Dragonslayer,Eclipse Blade,Demon's Edge,GodKiller,Black Fang,Steel Breaker,1,Berserk,hard,2025-10-30 16:46:43.115066+00
+152,Quel groupe de mercenaires est commandé par le roi du Midland pour tuer Guts ?,Les Bakirakas,Les Vassalons,Les Vorkarias,Les Black Arrows,Les Zarikas,Les Kharakas,1,Berserk,hard,2025-10-30 16:46:43.115066+00
+153,Qui dirige l'ordre du molosse noir ?,Wyald,Locus,Zodd,Grunbeld,Femto,Void,1,Berserk,hard,2025-10-30 16:46:43.115066+00
+154,Qui offre l'armure du Berserker à Guts ?,Flora,Schierke,Slan,Rickert,Casca,Serpico,1,Berserk,veryhard,2025-10-30 16:46:43.115066+00
+155,"Qui fait équipe avec Guts pour combattre Ganishka, l'empereur des Kushan ?",Zodd,Griffith,Casca,Serpico,Isidro,Wyald,1,Berserk,hard,2025-10-30 16:46:43.115066+00
+156,Comment se nomme la cité utopique fondée par Griffith ?,Falconia,Utopia,Regalia,Dawnwall,Demonia,Edenia,1,Berserk,veryhard,2025-10-30 16:46:43.115066+00
+157,Quelle God Hand apparait dans le Qliphoth ?,Slan,Zodd,Ubik,Conrad,Femto,Void,1,Berserk,veryhard,2025-10-30 16:46:43.115066+00
+158,Dans quel endroit sont abrités les guerriers-démons de Griffith ?,Le Pandémonium,Le Jardin d'Éden,L'Abysse,L'Antre d'Hadès,Le Netherworld,La Death Parade,1,Berserk,veryhard,2025-10-30 16:46:43.115066+00
+159,Pour quelle raison Farnèse accompagne t-elle Guts dans son voyage ?,Pour chercher sa propre identité,Par amour pour Guts,Pour rester auprès de Casca,Pour retrouver la foi,Pour devenir plus forte physiquement,Par soif d'aventure,1,Berserk,veryhard,2025-10-30 16:46:43.115066+00
+160,Que se passe t-il lorsque Baby Beel pleure ?,Il produit de l'électricité,Il téléporte aléatoirement les personnes aux alentours,Il flotte pendant un temps limité,Il grandit temporairement,Il arrête le temps pendant 5 min,Il provoque des séismes,1,Beelzebub,hard,2025-10-30 16:46:43.115066+00
+161,Comment se nomme le frère de Porco ?,Marcel,Calie,Rosso,Falco,Reiner,Andrew,1,Shingeki no Kyojin,medium,2025-10-30 16:46:43.115066+00
+162,Quel est l'identité du Titan Bestial ?,Bertholdt,Reiner,Zeke,Connie,Eren,Mikasa,3,Shingeki no Kyojin,easy,2025-10-30 16:46:43.115066+00
+163,Qui est le chef ultime des trois corps d'armée ?,Daris Zackley,Kael Arcturus,Ragos Velnar,Graad Seizel,Varkas Leone,Drein Astor,1,Shingeki no Kyojin,hard,2025-10-30 16:46:43.115066+00
+164,Quel est le vrai nom de Christa Lenz ?,Historia Reiss,Historia Fritz,Historia Jaeger,Historia Ackermann,Historia Blaze,Historia Ford,1,Shingeki no Kyojin,easy,2025-10-30 16:46:43.115066+00
+165,Dans quelle saison de l'Anime découvre t-on l'identité du Titan Cuirassé et Titan Colossal,Saison 1,Saison 2,Saison 3,Saison 4,Saison 5,Saison 6,2,Shingeki no Kyojin,easy,2025-10-30 16:46:43.115066+00
+166,Qui était l'hôte du Titan Asaillant avant Grisha ?,Eren Kruger,Zeke Jaeger,Daris Zacklet,Dot Fritz,Ymir,Dina Fritz,1,Shingeki no Kyojin,medium,2025-10-30 16:46:43.115066+00
+167,Quel camp d'Eldiens est victime de l'assaut d'Eren lors de son offensive contre Mahr ?,Revelio,Slava,Odiha,Trost,Lakua,Shinganshina,1,Shingeki no Kyojin,hard,2025-10-30 16:46:43.115066+00
+168,Quels sont les 3 murs principaux de l'île de Paradis ?,Maria Rose Sina,Myra Rosa Selma,Zara Elna Saria,Rose Sina Myra,Maria Zara Rose,Sina Rose Zara,1,Shingeki no Kyojin,veryeasy,2025-10-30 16:46:43.115066+00
+169,De quel district Eren est-il originaire ?,Shinganshina,Trost,Stohess,Orvul,Hermiha,Revelio,1,Shingeki no Kyojin,easy,2025-10-30 16:46:43.115066+00
+170,Qui parmi ces personnages à rencontré Goku en premier ?,Bulma,Krillin,Tortue Génial,Yajirobe,Yamcha,Oolong,1,Dragon Ball,veryeasy,2025-10-30 16:46:43.115066+00
+171,Quelle formule est écrite sur la veste de Senku ?,E = mc²,C = pw²,A² = B² + C²,W = v² - w²,W = F⋅d,PV = nRT,1,Dr. Stone,easy,2025-10-30 16:46:43.115066+00
+172,Quelle est le modèle de la voiture du sous-directeur ?,Toyota Cresta,Toyota Avalon,Toyota GT86,Toyota Corolla,Toyota Kaira,Toyota Yaris,1,Great Teacher Onizuka,hard,2025-10-30 16:46:43.115066+00
+173,Quel pourcentage de la population possède des pouvoirs ?,80%,70%,50%,10%,5%,90%,1,My Hero Academia,medium,2025-10-30 16:46:43.115066+00
+174,Qui est le protagoniste de la 4eme partie ?,Joseph Joestar,Josuke Higashikata,Giorno Giovanna,Jotaro Kujo,Jonathan Joestar,Jolyne Cujoh,2,Jojo's Bizarre Adventure,veryeasy,2025-10-30 16:46:43.115066+00
+175,Comment se nomme la plante permettant de repousser les démons ?,Glycine,Mycine,Orchidee,Artemisia,Euphorbe,Coleus,1,Demon Slayer,medium,2025-10-30 16:46:43.115066+00
+176,Quel carte n'a jamais été utilisé par Yugi ?,Le Magicien des ténèbres,Le Magicien du temps,Slifer le Dragon du Ciel,Gearfried le chevalier d'Acier,Gaïa le chevalier implacable,Buster Blader,4,YuGiOh,hard,2025-10-30 16:46:43.115066+00
+177,Quelle nourriture mange constamment Mello ?,Des bonbons,Du chocolat,Des nouilles,Des bananes,Des yaourts,Du pain,2,Death Note,easy,2025-10-30 16:46:43.115066+00
+178,Quel groupe de personnage accompagne Gohan sur namek ?,Bulma et Krillin,Krillin et Goku,Goku et Bulma,Krillin et Tortue Génial,Bulma et Tortue Génial,Goku et Piccolo,1,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+179,De quoi est passionné Okarun ?,D'extraterrestre,De robots,De voyages temporels,De mythologie,De civilisations antiques,D'animaux fantastiques,1,DanDaDan,easy,2025-10-30 16:46:43.115066+00
+180,Quelle activité exerce la grand mère de Momo Ayase ?,Médium,Herboriste,Apothicaire,Institutrice,Tarologue,Médecin,1,DanDaDan,medium,2025-10-30 16:46:43.115066+00
+181,Quelle vitesse peut atteindre au maximum mémé Turbo ?,100 km/h,1000 km/h,10 km/h,500 km/h,50 km/h,20 000 km/h,1,DanDaDan,hard,2025-10-30 16:46:43.115066+00
+182,Qui est Jiji pour Momo ?,Son premier amour,Son oncle,Son professeur de svt,Son gendre,Son rival,Son pire ennemi,1,DanDaDan,medium,2025-10-30 16:46:43.115066+00
+183,Quelle est la particularité d'Aira ?,Elle est très vaniteuse,Elle déteste les hommes,Elle ne dort jamais,Elle change de coupe tous les jours,Elle ne sait pas lire,Elle a 330 de qi,1,DanDaDan,medium,2025-10-30 16:46:43.115066+00
+184,Comment s'appelle le café dans lequel Kaneki commence à travailler ?,Antique,Despair,Quinella,Ghost,Rabbit,White,1,Tokyo Ghoul,easy,2025-10-30 16:46:43.115066+00
+185,Dans quel arrondissement de Tokyo se situe le QG du CCG ?,1er,3eme,20eme,19eme,10eme,11eme,1,Tokyo Ghoul,medium,2025-10-30 16:46:43.115066+00
+186,Sous quelle condition peut-on monter sur le nuage magique ?,Avoir le coeur pur,Etre de sang royal,Avoir bu de l'eau bénite,Etre un garçon,Avoir rencontré dieu,Porter un talisman magique,1,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+187,Quelle boule de cristal possédait Tortue Génial avant de rencontrer Goku et ses amis ?,Boule à 3 étoiles,Boule à 7 étoiles,Boule à 1 étoiles,Boule à 2 étoiles,Boule à 5 étoiles,Boule à 6 étoiles,1,Dragon Ball,veryhard,2025-10-30 16:46:43.115066+00
+188,Qui parmi ces personnes ne peut pas monter sur le nuage magique ?,Gohan,Goku,Chichi,Lunch,Bulma,Oob,5,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+189,De quel pouvoir Oolong est-il doté ?,Il peut se métamorphoser,Il peut devenir invisible,Il peut se téléporter,Il peut sauter très haut,Il peut voir à travers les vêtements,Il peut voir l'avenir,1,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+190,Pendant combien de temps peut se transformer Oolong ?,5 minutes,1 minute,10 minutes,30 minutes,30 secondes,5 secondes,1,Dragon Ball,hard,2025-10-30 16:46:43.115066+00
+191,Quelle activité Yamcha exerçait-il à l'origine ?,Bandit,Aviateur,Joueur de Baseball,Avocat,Vendeur de crack,Vigile,1,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+192,"Où réside Gyumao, le père de Chi-Chi ?",Mont Frypan,Kame House,Capsule Corporation,West City,Dream Land,Basil Island,1,Dragon Ball,hard,2025-10-30 16:46:43.115066+00
+193,"En quoi Toninjinka, le chef du gang des lapins, peut-il transformer ses ennemis ?",En carotte,En fromage,En poivron,En trèfle,En tomate,En feuille,1,Dragon Ball,medium,2025-10-30 16:46:43.115066+00
+194,Qui à formulé le tout premier voeu auprès de Shenron ?,Goku,Pillaf,Oolong,Yamcha,Bulma,Chichi,3,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+195,Quel à été le voeu d'Oolong auprès de Shenron ?,Avoir une culotte,Devenir riche,Devenir beau,Avoir une petite amie,Pouvoir voler,Remonter le temps,1,Dragon Ball,medium,2025-10-30 16:46:43.115066+00
+196,Quel est le délai nécessaire avant de pouvoir réutiliser les Dragon Ball après leur utilisation ?,1 an,3 ans,6 mois,3 mois,1 mois,3 semaines,1,Dragon Ball,medium,2025-10-30 16:46:43.115066+00
+197,Que se passe t-il lorsqu'une personne presse la queue de singe de Goku ?,Il perd sa force,Il se transforme en singe,Il s'endort,Il devient violent,Il se transforme en fille,Il devient plus fort,1,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+198,Que se passe t-il lorsque Lunch éternue ?,Elle devient violente,Elle change la météo,Elle se téléporte aléatoirement,Elle provoque des tornades,Elle lévite temporairement,Elle devient toute nue,1,Dragon Ball,medium,2025-10-30 16:46:43.115066+00
+199,Quelle épreuve ne faisait pas partie de l'entraînement de Goku et Krillin sous la supervision de Tortue Géniale ?,Labourer des champs,Livrer du lait,Nager avec des requins,Chercher un caillou dans une fôret,Porter des carapaces de 60kg,Escalader des montagnes,6,Dragon Ball,hard,2025-10-30 16:46:43.115066+00
+200,Comment est surnommé Lize Kamishiro ?,La Goinfre,La Faucheuse,La Démone,L'Ourson,La Mère Porteuse,La Chasseuse,1,Tokyo Ghoul,easy,2025-10-30 16:46:43.115066+00
+201,Quel est l'auteur préféré de Kaneki ?,Sen Takatsuki,Sui Ishida,Inio Kazuya,Yogiri Yato,Yotsume Kohru,Emma Kazuya,1,Tokyo Ghoul,hard,2025-10-30 16:46:43.115066+00
+202,Quelle est la véritable identité de Sen Takatsuki ?,Eto Yoshimura,Lize Kashimiro,Renji Yomo,Hideyoshi Nagachika,Fueguchi Hinami,Ichika Kaneki,1,Tokyo Ghoul,hard,2025-10-30 16:46:43.115066+00
+203,Quel est le lien de parenté entre Yomo et Toka ?,Oncle et nièce,frère et soeur,Père et fille,Cousins,Grand père et petit fille,Aucun lien de parenté,1,Tokyo Ghoul,veryhard,2025-10-30 16:46:43.115066+00
+204,De quel type est le Kagune de Touka Kirishima ?,Ailé,Blindé,A queue,Ecailleux,Fumée,Brumeux,1,Tokyo Ghoul,hard,2025-10-30 16:46:43.115066+00
+205,Quelle denrée permet aux Ghoules de réprimer leur besoins cannibales ?,Du Café,Du Lait,Des Biscuits,Du Sucre,Du Yaourt,Des pommes,1,Tokyo Ghoul,medium,2025-10-30 16:46:43.115066+00
+206,Comment appelle t-on les armes des inspecteurs du CCG ?,Quinque,Arata,GhoulSlayer,RC Blade,Kagune,Wickle,1,Tokyo Ghoul,easy,2025-10-30 16:46:43.115066+00
+207,Quel nombre est associé à Suzuya Juzo ?,9,1,13,99,56,30,3,Tokyo Ghoul,hard,2025-10-30 16:46:43.115066+00
+208,Qui est surnommé l'Ange de la mort ?,Juzo Suzuya,Kisho Arima,Kaneki Ken,Ayato Kirishima,Yoshimura Kuzen,Kuki Urie,2,Tokyo Ghoul,medium,2025-10-30 16:46:43.115066+00
+209,Quelle organisation de Ghouls est connu pour s'opposer au CCG ?,Aogiri,V,Pierrots,CCG,Kuroi Yagi,Neo Ghoul,1,Tokyo Ghoul,medium,2025-10-30 16:46:43.115066+00
+210,Qui a fondé Aogiri ?,Eto Yoshimura,Kisho Arima,Yakumo Oomori,Rei Suzuya,Furuta Washuu,Kaneki Ken,1,Tokyo Ghoul,veryhard,2025-10-30 16:46:43.115066+00
+211,Qui devient le partenaire de Amon après le mort de Mado ?,Akira,Suzuya,Hide,Ayato,Noro,Shiro,1,Tokyo Ghoul,hard,2025-10-30 16:46:43.115066+00
+212,Qui est surnommé le Gourmet ?,Tsukiyama Shu,Ayato Kirishima,Renji Yomo,Uta,Furuta,Kuki Urie,1,Tokyo Ghoul,medium,2025-10-30 16:46:43.115066+00
+213,Qu'arrive t-il à Kaneki après son premier affrontement avec Kisho Arima ?,Il meurt,Il perd la mémoire,Il redevient humain,Il rajeunit,Il devient aveugle,Il devient méchant,2,Tokyo Ghoul,medium,2025-10-30 16:46:43.115066+00
+214,Quelle organisation Kaneki rejoint-il après sa perte de mémoire ?,L'Arbre d'Aogiri,Le CCG,Les Chèvres Noirs,Les V,Les enfants du jardin,Les Washuus,2,Tokyo Ghoul,medium,2025-10-30 16:46:43.115066+00
+215,Comment Saiko Yonebayashi surnomme t-elle Kaneki ?,Grand frère,Maman,Papa,Chéri,Beau gosse,Esclave,2,Tokyo Ghoul,veryhard,2025-10-30 16:46:43.115066+00
+216,Sous quelle idendité vit Kaneki après son affrontement contre Kisho Arima ?,Haise Sasaki,Rei Juzo,Arima Suzuya,Kuki Urie,Amon Akira,Yoshimura Ken,1,Tokyo Ghoul,easy,2025-10-30 16:46:43.115066+00
+217,Quelle organisation fondée par Kaneki à pour but d'unifier les Ghoules et les humains ?,Les chèvres noirs,Les lapins rouges,Les démons blancs,Les assassins pourpres,Les chiens blancs,Les chats noirs,1,Tokyo Ghoul,veryhard,2025-10-30 16:46:43.115066+00
+218,"Parmi ces personnages, qui ne fait pas partie du groupe des Quinckes ?",Mutsuki,Sasaki,Urie,Shirazu,Yonebayashi,Furuta,6,Tokyo Ghoul,veryhard,2025-10-30 16:46:43.115066+00
+219,Sous quelle condition peut-on monter sur le nuage magique ?,Avoir le coeur pur,Etre de sang royal,Avoir bu de l'eau bénite,Etre un garçon,Avoir rencontré dieu,Porter un talisman magique,1,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+221,Qui parmi ces personnes ne peut pas monter sur le nuage magique ?,Gohan,Goku,Chichi,Lunch,Bulma,Oob,5,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+223,Pendant combien de temps peut se transformer Oolong ?,5 minutes,1 minute,10 minutes,30 minutes,30 secondes,5 secondes,1,Dragon Ball,hard,2025-10-30 16:46:43.115066+00
+224,Quelle activité Yamcha exerçait-il à l'origine ?,Bandit,Aviateur,Joueur de Baseball,Avocat,Vendeur de crack,Vigile,1,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+226,"En quoi Toninjinka, le chef du gang des lapins, peut-il transformer ses ennemis ?",En carotte,En fromage,En poivron,En trèfle,En tomate,En feuille,1,Dragon Ball,medium,2025-10-30 16:46:43.115066+00
+227,Qui à formulé le tout premier voeu auprès de Shenron ?,Goku,Pillaf,Oolong,Yamcha,Bulma,Chichi,3,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+228,Quel à été le voeu d'Oolong auprès de Shenron ?,Avoir une culotte,Devenir riche,Devenir beau,Avoir une petite amie,Pouvoir voler,Remonter le temps,1,Dragon Ball,medium,2025-10-30 16:46:43.115066+00
+229,Quel est le délai nécessaire avant de pouvoir réutiliser les Dragon Ball après leur utilisation ?,1 an,3 ans,6 mois,3 mois,1 mois,3 semaines,1,Dragon Ball,medium,2025-10-30 16:46:43.115066+00
+230,Que se passe t-il lorsqu'une personne presse la queue de singe de Goku ?,Il perd sa force,Il se transforme en singe,Il s'endort,Il devient violent,Il se transforme en fille,Il devient plus fort,1,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+231,Que se passe t-il lorsque Lunch éternue ?,Elle devient violente,Elle change la météo,Elle se téléporte aléatoirement,Elle provoque des tornades,Elle lévite temporairement,Elle devient toute nue,1,Dragon Ball,medium,2025-10-30 16:46:43.115066+00
+232,Quelle épreuve ne faisait pas partie de l'entraînement de Goku et Krillin sous la supervision de Tortue Géniale ?,Labourer des champs,Livrer du lait,Nager avec des requins,Chercher un caillou dans une fôret,Porter des carapaces de 60kg,Escalader des montagnes,6,Dragon Ball,hard,2025-10-30 16:46:43.115066+00
+233,Quel temps Tortue Géniale a-t-il réalisé au 100m lors de son entraînement avec Goku et Krillin ?,5.6 sec,8.1 sec,10.9 sec,11 sec,3.3 sec,6.9 sec,1,Dragon Ball,extreme,2025-10-30 16:46:43.115066+00
+234,Que marque Tortue Géniale sur la pierre que doivent trouver Goku et Krillin lors de leur entraînement ?,Tortue,Entrainement,Courage,Chauve,Femme,Puissance,1,Dragon Ball,veryhard,2025-10-30 16:46:43.115066+00
+235,Où se déroule le Tenkaichi Budokai ?,Sur l'île Papaya,Dans la ville de Haru,Sur l'île de Wasteland,Dans la ville de WestCity,Au village de Sen,Sur l'île de Shinchu,1,Dragon Ball,hard,2025-10-30 16:46:43.115066+00
+236,À quelle édition du Tenkaichi Budokai Goku participe-t-il pour la première fois ?,21ème,22ème,20ème,23ème,24ème,25ème,1,Dragon Ball,hard,2025-10-30 16:46:43.115066+00
+237,À quelle fréquence le Tenkaichi Budokai est-il organisé ?,Tous les 10 ans,Tous les ans,Tous les 5 ans,Tous les 3 ans,Tous les 2 ans,Tous les 7 ans,3,Dragon Ball,veryhard,2025-10-30 16:46:43.115066+00
+238,Sous quelle identité participe Tortue Géniale au Tenkaichi Budokai ?,Jackie Chun,Amond,An Azuki,Dobobon,Dr Auto,Colonel Silver,1,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+239,Qui oppose la finale du 2e Tenkaichi Budokai présenté dans la série ?,Goku et Jackie Chun,Goku et Piccolo,Goku et Tenshinhan,Goku et Krillin,Jackie Chun et Tenshinhan,Piccolo et Jackie Chun,3,Dragon Ball,hard,2025-10-30 16:46:43.115066+00
+240,Qui remporte le 2e Tenkaichi Budokai présenté dans la série ?,Goku,Jackie Chun,Piccolo,Tenshinhan,Yamcha,Krillin,4,Dragon Ball,medium,2025-10-30 16:46:43.115066+00
+241,Quelle est la particularité de Krillin ?,Il fait 2 mètres,Il n'a pas de nez,Il est aveugle,Il est unijambiste,Il est français,Il est immensément riche,2,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+242,Quel est le véritable nom de Son Goku ?,Kakarot,Turtle,Cumber,Tarble,Trunks,Shinchu,1,Dragon Ball,veryeasy,2025-10-30 16:46:43.115066+00
+243,Sur quelle planète est né Goku ?,La Planète Ankoku,La Planète Yardra,La Planète Vegeta,La Planète Kuhn,La Planète Luud,La Planète Makyo,3,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+244,Quel est le premier membre de l'Armée du Ruban Rouge que Goku affronte ?,Commandant Silver,Général Blue,Sergent Metallic,Général Red,Colonel Violet,Sergent Murasaki,1,Dragon Ball,veryhard,2025-10-30 16:46:43.115066+00
+245,Qui dirige l'Armée du Ruban Rouge ?,Général Red,Commandant Blue,Colonel Black,Commandant Silver,Colonel Rainbow,Sergent Chef White,1,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+246,Qui est Murasaki ?,Un Samurai,Un Ninja,Un Ermite,Un Robot,Un Ours,Un Dinosaure,2,Dragon Ball,hard,2025-10-30 16:46:43.115066+00
+247,Quel est le secret du Général Blue ?,Il est Homosexuel,Il a plus de 200 ans,Il n'a pas de bras,Il peut voir de très loin,Il a les yeux de couleurs différentes,Il à peur des humains,1,Dragon Ball,medium,2025-10-30 16:46:43.115066+00
+248,Quel personnage provenant d'un autre manga de Toriyama apparaît dans le manga ?,Aralé,Jack,Sora,Puison,Yakon,Naruto,1,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+249,Sous quelle apparence Karin est présenté ?,Un chien,Un chat,Un lapin,Un cheval,Un dinosaure,Un cygne,2,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+250,Comment Tao Pai Pai élimine t-il le Général Blue ?,D'un coup de langue,D'un lancer de couteau,Par éttoufement,Par la pensée,D'un coup de marteau,En le poussant d'une fenêtre,1,Dragon Ball,hard,2025-10-30 16:46:43.115066+00
+251,Quelle est l'attaque signature de Tao Pai Pai ?,Makankosappo,Dodonpa,Accel Dance,Bad Laser,Kikoho,Kamehameha,2,Dragon Ball,medium,2025-10-30 16:46:43.115066+00
+252,Quel est le lien de parenté entre Tortue Géniale et Baba la Voyante ?,Frère et soeur,Cousins,Mère et fils,Grand mère et petit fils,Oncle et nièce,Père et fille,1,Dragon Ball,medium,2025-10-30 16:46:43.115066+00
+253,Qui ne fait pas partie du groupe de combattants de Baba la voyante ?,Draculaman,Suké,Momie,Diableman,Son Gohan,Pillaf,6,Dragon Ball,hard,2025-10-30 16:46:43.115066+00
+254,Combien de fois Shenron a t-il été invoqué avant Dragon Ball Z ?,1 fois,2 fois,3 fois,4 fois,5 fois,6 fois,4,Dragon Ball,veryhard,2025-10-30 16:46:43.115066+00
+255,Par quelle technique le roi démon Piccolo à t-il été jadis emprisonné ?,Sokidan,Mafuba,Buku Jutsu,Otori,Big Bang,Change Attack,2,Dragon Ball,hard,2025-10-30 16:46:43.115066+00
+256,"Parmi ces personnages, qui a déjà tué Shenron ?",Piccolo,Frieza,Cell,Vegeta,Raditz,Trunks,1,Dragon Ball,medium,2025-10-30 16:46:43.115066+00
+257,A quoi servait à l'origine le baton magique de Goku ?,A lier la tour Karin au palais divin,A lier la terre à la lune,A labourer des champs,A construire des barrages,A faire de la musique,A chasser des démons,1,Dragon Ball,medium,2025-10-30 16:46:43.115066+00
+258,Quelle est la seule personne que Goku affronte à 2 reprises lors des Tenkaichi Budokai ?,Roi Chapa,Tambourine,Jackie Chun,Krillin,Devilman,Upa,1,Dragon Ball,veryhard,2025-10-30 16:46:43.115066+00
+259,Qui parmi ces personnages n'a pas participé au 3e Tenkaichi Budokai de la série ?,Chichi,Krillin,Piccolo,Chiaozu,Yamcha,Tenshinhan,4,Dragon Ball,medium,2025-10-30 16:46:43.115066+00
+260,Comment s'appelle l'attaque signature de Yamcha ?,Sokidan,Garlic Gun,Mafuba,Rogaku,Kenfuken,Mystic Thieve,1,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+261,Combien de temps s'est-il écoulé entre Dragon Ball et Dragon Ball Z ?,5 ans,10 ans,3 ans,1 ans,7 ans,6 mois,1,Dragon Ball,veryhard,2025-10-30 16:46:43.115066+00
+262,Que voulait devenir Gohan étant enfant ?,Un grand Scientifique,Un Détective privé,Un bon Photographe,Un Acteur connu,Un grand Spationaute,Un Chanteur très doué,1,Dragon Ball,hard,2025-10-30 16:46:43.115066+00
+263,Quel est le lien de parenté entre Goku et Raditz ?,Frères,Cousins,Oncle et neveu,Père et fils,Grand père et petit fils,Rivaux,1,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+264,Quel est le lien de parenté entre Gohan et Raditz ?,Frères,Cousins,Oncle et neveu,Père et fils,Grand père et petit fils,Rivaux,3,Dragon Ball,medium,2025-10-30 16:46:43.115066+00
+265,Qu'est-ce que le Makankosanpo ?,Un rayon démoniaque,Un boîte mortelle,Un plat savoureux,Une île paradisiaque,Un titre de chanson,Un animal légendaire,1,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+266,Qui tue Goku pour la première fois ?,Piccolo,Raditz,Vegeta,Frieza,Krillin,Cell,1,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+267,En combien de temps Goku a t-il parcouru le chemin du Serpent ?,1 mois,3 mois,6 mois,1 an,1 semaine,4 semaines,3,Dragon Ball,hard,2025-10-30 16:46:43.115066+00
+268,Qui est responsable de la mort de Nappa ?,Vegeta,Goku,Krillin,Piccolo,Gohan,Yamcha,1,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+269,"Pour quelle raison Gohan, Krillin et Bulma se rendent sur Namek ?",Pour ressusciter leur amis,Pour découvrir une nouvelle planète,Pour faire avancer la technologie,Pour vaincre Freezer,Pour tester le vaisseau de Bulma,Pour rencontrer le roi des Nameks,1,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+270,A quel endroit le tout puissant a t-il passé son enfance sur terre ?,Yunzabit,Kokonut,Zardra,Minoto,Pila,Cesiova,1,Dragon Ball,extreme,2025-10-30 16:46:43.115066+00
+271,En combien de temps Goku arrive t-il sur Namek en vaisseau ?,6 jours,3 jours,1 mois,20 jours,10 jours,2 mois,1,Dragon Ball,veryhard,2025-10-30 16:46:43.115066+00
+272,Pour quelle raison Frieza veut-il réunir les 7 dragon ball ?,Pour obtenir la vie éternelle,Pour réssuciter son père,Pour devenir plus grand,Pour pouvoir respirer dans l'espace,Pour être multilingue,Pour faire disparaître tous les Saiyans,1,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+273,Combien de personnes comporte le commando Ginyu ?,5,3,7,4,6,8,1,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+274,"Parmi ces personnages, qui ne fait partie du commando Ginyu ?",Jeese,Barta,Recome,Guildo,Ginyu,Kiwi,6,Dragon Ball,medium,2025-10-30 16:46:43.115066+00
+275,Avec qui Ginyu échange t-il de corps sur Namek ?,Vegeta,Goku,Gohan,Krillin,Freezer,Nail,2,Dragon Ball,veryeasy,2025-10-30 16:46:43.115066+00
+276,De quelle couleur est la peau de Jeese ?,Bleue,Rouge,Verte,Jaune,Violette,Blanche,2,Dragon Ball,medium,2025-10-30 16:46:43.115066+00
+277,Avec quel personne Piccolo fusionne t-il sur Namek ?,Dende,Nail,Yasu,Chapa,Jeese,Goku,2,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+278,Quelle est l'utilité des Senzus ?,S'endormir très rapidement,Guérir instantanément,Se téléporter à souhait,Devenir plus costaud,Pouvoir voler temporairement,Devenir polyglotte,2,Dragon Ball,veryeasy,2025-10-30 16:46:43.115066+00
+279,"Parmi ces personnages, lequel peut arrêter le temps ?",Guildo,Kiwi,Dodoria,Zabon,Mineta,Tapion,1,Dragon Ball,medium,2025-10-30 16:46:43.115066+00
+280,"Sur Namek, quel était la force de combat de Freezer non transformé ?",530 000,190 000,250 000,910 000,700 000,660 666,1,Dragon Ball,veryhard,2025-10-30 16:46:43.115066+00
+281,"Sur Namek, avec quel animal Ginyu effectue t-il le Body Change ?",Une tortue,Une grenouille,Un loup,Un poisson,Un ecureuil,Un ours,2,Dragon Ball,medium,2025-10-30 16:46:43.115066+00
+282,Sur quelle planète Goku à t-il appris la téléportation ?,Yardrat,Batapi,Namek,Vegeta,Kaishin,Makyo,1,Dragon Ball,medium,2025-10-30 16:46:43.115066+00
+283,"Selon Trunks, comment Goku est-il censé mourir après l'arrivée des cyborgs ?",D'une maladie incurable,Tué par les Cyborgs,De vieillesse,Tué par Vegeta,D'une explosion de Ki,Absorbé par Cell,1,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+284,"Selon Trunks, à quelle date les Cyborgs sont-ils censés arrivés sur Terre ?",12 Mai,20 Mars,1 Février,11 Juillet,3 Septembre,7 Octobre,1,Dragon Ball,extreme,2025-10-30 16:46:43.115066+00
+285,Quel cyborg n'apparaît pas dans la série ?,C-8,C-19,C-17,C-21,C-16,C-20,4,Dragon Ball,veryhard,2025-10-30 16:46:43.115066+00
+286,A quel moment Cell est-il arrivé sur Terre ?,Au moment de l'arrivée des 2 Saiyans sur Terre,Après la défaite de Mecha Freezer,Au moment de l'arrivée de Raditz,Après la victoire Goku au Tenkaichi Budokai,A la naissance de Gohan,En même temps que l'arrivée de C-19 et C-20,2,Dragon Ball,veryhard,2025-10-30 16:46:43.115066+00
+287,A combien de temps équivaut une journée terrestre dans la salle de l'esprit et du temps ?,1 an,100 jours,6 mois,24 heures,1 heure,3 ans,1,Dragon Ball,medium,2025-10-30 16:46:43.115066+00
+288,"Au cours d'une vie, combien de temps une personne peut-elle rester au maximum dans la salle de l'esprit et du temps ?",2 jours,24 heures,1 semaine,1 an,6 mois,3 mois,1,Dragon Ball,veryhard,2025-10-30 16:46:43.115066+00
+289,A quel lycée Gohan a t-il étudié ?,Orange Star High School,Satan City High School,Golden Moon High School,Citrus Valley High School,Capsule Corp High School,Black Blossom High School,1,Dragon Ball,hard,2025-10-30 16:46:43.115066+00
+290,Quel groupe de personnage accompagne Gohan sur namek ?,Bulma et Krillin,Krillin et Goku,Goku et Bulma,Krillin et Tortue Génial,Bulma et Tortue Génial,Goku et Piccolo,1,Dragon Ball,easy,2025-10-30 16:46:43.115066+00
+291,Comment meurt Kurono Kei ?,Percuté par un métro,Chute d'un immeuble,Mordu par un loup,Écrasé par un ours,Flingué par des mafieux,Noyé dans la piscine,1,Gantz,medium,2025-10-30 16:46:43.115066+00
+292,Qui est le premier extraterrestre que les protagonistes doivent éliminer ?,Martien Poireau,Statue Bouddha,Tanaka Alien,T-REX,Big Mama,Birdman,1,Gantz,hard,2025-10-30 16:46:43.115066+00
+293,Dans quel lieu les protagonistes effectuent leur 3eme mission ?,Dans un temple bouddhiste,Sur la planète mars,Dans le colisée de rome,Dans une supérette,Dans un lycée,Dans une forêt,1,Gantz,veryhard,2025-10-30 16:46:43.115066+00
+294,A quel endroit Izumi a commis sa fusillade et tué d'innombrables personnes ?,Shinjuku,Akihabara,Asakusa,Shibuya,Harajuku,Ikebukuro,1,Gantz,extreme,2025-10-30 16:46:43.115066+00
+295,Pour quelle raison Kurono a t-il commencé a sortir avec Tae Kojima ?,A cause d'un gage,Par curiosité,Pour s'entraîner à parler aux filles,Pour faire plaisir à son frère,Par intérêt commun,Pour la réconforter,1,Gantz,extreme,2025-10-30 16:46:43.115066+00
+296,Qui est gantz ?,Une boule noire,Un acteur connu,Une planète naine,Une arme nucléaire,Un démon humanoïde,Un vaiseau spatial,1,Gantz,medium,2025-10-30 16:46:43.115066+00
+297,Que se passe t-il si les participants du jeu de Gantz s'éloignent de la zone autorisé ?,Leur tête explose,Ils sont téléportés à un endroit au hasard sur terre,Ils meurts asphyxiés,Ils subissent des hallucinations,Ils perdent l'usage de leur 4 membres,Ils perdent la mémoire,1,Gantz,medium,2025-10-30 16:46:43.115066+00
+298,"Parmi ces propositions, laquelle représente une option disponible lorsqu'un joueur atteint 100 points ?",Réssuciter une personne,Tuer une personne de son choix,Devenir riche,Connaître l'amour instantanément,Voyager dans le temps,Devenir connu,1,Gantz,veryhard,2025-10-30 16:46:43.115066+00
+299,Dans quel pays a lieu la derniere mission de Gantz ?,En Italie,En Chine,Au Canada,Aux Etats-Unis,En France,Au Brésil,1,Gantz,extreme,2025-10-30 16:46:43.115066+00
+300,De quelle division Aizen était-il le capitaine ?,5e division,1ere division,11e division,13e division,2e division,6e division,1,Bleach,medium,2025-10-30 16:46:43.115066+00
+301,De qui Aizen était-il le vice capitaine ?,Hirako Shinji,Kensei Muguruma,Ichimaru Gin,Kyouraku Shunsui,Kuchiki Byakurei,Shihohin Yoruichi,1,Bleach,hard,2025-10-30 16:46:43.115066+00
+302,Qui est l'Espada de rang 1 ?,Barragan,Stark,Hallibel,Nnoitra,Grimmjow,Yammy,2,Bleach,easy,2025-10-30 16:46:43.115066+00
+303,Qui est lieutenant de Hitsugaya Toshiro ?,Rangiku Matsumoto,Isagi Shukei,Izuru Kira,Iba Tetsuzaemon,Abarai Renji,Madarame Ikkaku,1,Bleach,medium,2025-10-30 16:46:43.115066+00
+304,Quelle est la particularité de Kaname Tosen ?,Il est manchot,Il est aveugle,Il est travesti,Il est très petit,Il ne mange que du sucre,Il dort 23h par jour,2,Bleach,medium,2025-10-30 16:46:43.115066+00
+305,Qui a vaincu Stark ?,Kyoraku,Aizen,Ichigo,Zaraki,Hitsugaya,Love,1,Bleach,easy,2025-10-30 16:46:43.115066+00
+306,Quelle type d'arme utilise Stark ?,Des dagues,Des pistolets,Des roquettes,Des couteaux,Des chaînes,Des boomerangs,2,Bleach,medium,2025-10-30 16:46:43.115066+00
+307,"Après la défaite d'Yhwach, que devient Chad ?",Un boxer professionnel,Un médecin très reconnu,Un grand chercheur,Un humaniste,Un grand écrivain,Un acteur connu,1,Bleach,hard,2025-10-30 16:46:43.115066+00
+308,Où finissent les âmes des défunts qui ne sont pas acceptées par la Soul Society ?,Au Rukongai,A Karakura,Au Hueco Mundo,Au palais des esprits,Au jardin d'Eden,Au Seireitei,1,Bleach,veryhard,2025-10-30 16:46:43.115066+00
+309,"Après la défaite d'Aizen, qui devient le capitaine de la 9e division ?",Muguruma Kensei,Hirako Shinji,Yadomaru Lisa,Mashiro Kuna,Aikawa Love,Rojuro Otoribashi,1,Bleach,hard,2025-10-30 16:46:43.115066+00
+310,De quelle couleur sont les yeux de Ichimaru Gin ?,Rouge,Bleu,Jaune,Blanc,Vert,Rose,2,Bleach,medium,2025-10-30 16:46:43.115066+00
+311,Pour quelle raison Gin à t-il décidé de suivre Aizen ?,Pour venger son amie d'enfance,Pour devenir plus fort,Pour se sentir rassuré,Pour devenir un Espada,Par amitié avec Aizen,Pour devenir le bras droit d'Aizen,1,Bleach,medium,2025-10-30 16:46:43.115066+00
+312,Comment est appelé l'énergie spirituelle ?,Reiatsu,Shitsu,Gosu,Bakutsu,Bukutsu,Kitsu,1,Bleach,easy,2025-10-30 16:46:43.115066+00
+313,Qui a vaincu Nnoitra ?,Kenpachi Zaraki,Kuchiki Byakuya,Kurosaki Ichigo,Grimmjow Jaggerjack,Uryu Ishida,Sado Yasutora,1,Bleach,hard,2025-10-30 16:46:43.115066+00
+314,Comment s'appelle la ville flottante où réside les plus riches ?,Zalem,Kuzutetsu,Toyo,Monity,Graal,Saint Utopia,1,Gunnm,veryhard,2025-10-30 16:46:43.115066+00
+315,Quel est le vrai nom de Gally/Alita ?,Yoko,Lucy,Ichika,Aira,Ibuki,Emma,1,Gunnm,veryhard,2025-10-30 16:46:43.115066+00
+316,De quelle planète provient Gally ?,Mars,Jupiter,Saturne,Neptune,Pluton,Uranus,1,Gunnm,hard,2025-10-30 16:46:43.115066+00
+317,Quel est le manga préféré de Mashiro ?,Ashita no Joe,Death Note,One Piece,Saint Seiya,Hajime no Ippo,Hokuto no Ken,1,Bakuman,hard,2025-10-30 16:46:43.115066+00
+318,Comment s'appelle le duo formé par les deux protagonistes ?,Ashirogi Muto,Masaki Tsubo,Takarashi Yugi,Future M,Star Platinum,Mugen Ato,1,Bakuman,veryhard,2025-10-30 16:46:43.115066+00
+319,Qui est le frère biologique de Kenshiro ?,Toki,Raoh,Kaioh,Ray,Souther,Hyoh,6,Hokuto no Ken,hard,2025-10-30 16:46:43.115066+00
+320,Quel est l'art martial pratiqué par Kenshiro ?,Nanto Seiken,Hokuto Shinken,Hokuto Ryuken,Hokuto Soke,Hokuto Sanka Ken,Nanto Genmaken,2,Hokuto no Ken,medium,2025-10-30 16:46:43.115066+00
+321,Comment se nomme le cheval de Raioh ?,Kokuoh,Kagemaru,Kurotsuki,Kurohoshi,Kurokiba,Kokuryu,1,Hokuto no Ken,veryhard,2025-10-30 16:46:43.115066+00
+322,Quelle apparition symbolise la mort imminente lorsqu'elle est observée ?,Comète de sang,Aurore macabre,Flamme spectrale,Lune noire,Étoile annonciatrice,Halo du crépuscule,5,Hokuto no Ken,medium,2025-10-30 16:46:43.115066+00
+323,En quoi consiste l'art martial du Hokuto Shinken ?,Maîtrise des techniques d'escrime au sabre,Contrôle mental des ennemis grâce à la méditation,Contrôle total des points vitaux,La défense et l'esquive,Technique de projection et de lutte au sol,Style de combat utilisant des prises de soumission,3,Hokuto no Ken,easy,2025-10-30 16:46:43.115066+00
+324,Quel surnom s'est donné Raoh au cours de sa quête d'empereur ?,Rei-Oh,Ken-Oh,Goku-Oh,Ten-Oh,Shin-Oh,Ryu-Oh,2,Hokuto no Ken,medium,2025-10-30 16:46:43.115066+00
+325,Quelle autre école d'arts martiaux est la rivale directe du Hokuto ?,Seito Gekken,Gento Ryu,Raito Ken,Kaito Shinken,Taito Ryu,Nanto Seiken,6,Hokuto no Ken,veryhard,2025-10-30 16:46:43.115066+00
+326,Quel est le secret du corps de Souther ?,Il peut régénérer ses membres instantanément,Ses organes sont inversés,Son corps est fait d'argile,Ses os sont creux et très légers,Il est immunisé contre le poison,Il a 7 membres,2,Hokuto no Ken,hard,2025-10-30 16:46:43.115066+00
+327,Pour quelle raison Kenshiro se rend t-il dans le pays des Asuras ?,Pour retrouver son frère disparu,Pour sauver Lynn,Pour récupérer la relique du Hokuto,Pour retrouver son village natal,Pour sauver son maître,Pour apprendre l'histoire du Hokuto,2,Hokuto no Ken,hard,2025-10-30 16:46:43.115066+00
+328,Combien de frères biologiques Raioh a t-il ?,1,2,3,4,5,6,2,Hokuto no Ken,hard,2025-10-30 16:46:43.115066+00
+329,A quelle étoile du Nanto est associé Rey ?,Étoile du courage,Étoile de la vengeance,Étoile de la sagesse,Étoile du destin,Étoile de la tempête,Étoile de la justice,6,Hokuto no Ken,hard,2025-10-30 16:46:43.115066+00
+330,De qui Kenshiro est-il amoureux ?,Yuria,Lynn,Mamiya,Sayaka,Pandore,Liam,1,Hokuto no Ken,easy,2025-10-30 16:46:43.115066+00
+331,"Parmi ces propositions, laquelle est vraie à propos de Katagiri Yuichi ?",Il est très pauvre,Il excelle en langues étrangères,Il est marié,Il mange beaucoup sans grossir,Il n'aime pas les filles,Il est déjà allé en prison,1,Tomodachi Game,medium,2025-10-30 16:46:43.115066+00
+332,Quel est le 2e Jeu du Tomodachi Game auquel Yuichi et ses amis participent ?,Le plateau des médisances,Cache cache amical,Kokuri-san,Ja Jan Ken,All Bet Game,Jeu sans amis,1,Tomodachi Game,medium,2025-10-30 16:46:43.115066+00
+333,Quel est le montant total de la dette contracté par les protagonistes au début du jeu ?,20 000 000 de yens,10 000 000 de yens,100 000 000 de yens,50 000 000 de yens,2 000 000 de yens,500 000 000 de yens,1,Tomodachi Game,hard,2025-10-30 16:46:43.115066+00
+334,Comment s'appelle l'animateur du jeu ?,Kokoro,Manabu,Sui,Tet,Monokuma,Tomodachi,2,Tomodachi Game,medium,2025-10-30 16:46:43.115066+00
+335,A quel sport Riku s'engage t-il ?,La Boxe,La Natation,Le Baseball,Le Vélo,Le Basket,Le Tennis,1,Riku-do,medium,2025-10-30 16:46:43.115066+00
+336,Quelle ceinture Riku vise t-il à obtenir ?,Ceinture OPBF,Ceinture WBO,Ceinture WBA,Ceinture WBOC,Ceinture IBFO,Ceinture PFO,1,Riku-do,veryhard,2025-10-30 16:46:43.115066+00
+337,Combien de Chevaliers de Bronze d'Athena existe t-il ?,88,108,68,18,128,8,1,Saint Seiya,hard,2025-10-30 16:46:43.115066+00
+338,Quel armure est portée par Seiya ?,Armure de pégase,Armure du cygne,Armure du dragon,Armure du singe,Armure du guerrier,Armure du bélier,1,Saint Seiya,veryeasy,2025-10-30 16:46:43.115066+00
+339,"Au cours de l'histoire, quel est le véritable objectif de Seiya ?",Retrouver sa soeur,Devenir chevalier d'Or,Devenir le grand Pope,Sauver l'humanité,Se marier avec Athena,Devenir plus fort que son maître,1,Saint Seiya,easy,2025-10-30 16:46:43.115066+00
+340,Par quelle constellation est protégé Shiryu ?,Le Dragon,Le Cygne,La Vierge,La Balance,Le Phoenix,Le Lion,1,Saint Seiya,easy,2025-10-30 16:46:43.115066+00
+341,Par quelle constellation est protégé Shun ?,Andromède,Phénix,Cassiopée,Asteryon,Taureau,Licorne,1,Saint Seiya,medium,2025-10-30 16:46:43.115066+00
+342,Par quelle constellation est protégé Ikki ?,Le Phénix,Le Lion,Le Caméleon,La Vierge,Le Centaure,Les Gémeaux,1,Saint Seiya,medium,2025-10-30 16:46:43.115066+00
+343,Par quelle constellation est protégé Hyoga ?,Le Cygne,Le Dragon,L'Hydre,Le Dauphin,La Colombe,L'Aigle,1,Saint Seiya,medium,2025-10-30 16:46:43.115066+00
+344,Qui est le frère biologique de Shun ?,Ikki,Shiryu,Hyoga,Dohko,Saga,null,1,Saint Seiya,medium,2025-10-30 16:46:43.115066+00
+345,Qui est le Chevalier d'Or de la Vierge ?,Shaka,Deathmask,Mû,Aiolia,Milo,Camus,1,Saint Seiya,medium,2025-10-30 16:46:43.115066+00
+346,Qui est le premier Chevalier d'Or apparu dans le manga ?,Aiolia,Saga,Shaka,Mû,Dohko,Shion,1,Saint Seiya,extreme,2025-10-30 16:46:43.115066+00
+347,Quelle est la véritable identité du Grand Pope au cours de l'arc du Sanctuaire ?,Saga,Kanon,Shion,Athena,Hadès,Shura,1,Saint Seiya,medium,2025-10-30 16:46:43.115066+00
+348,Quelle est la particularité de Saga ?,Il a une double personnalité,Il est immortel,Il est le plus jeune Chevalier d'Or,Il est le frère jumeau du grand Pope,C'est un Dieu déguisé en Chevalier,Il maîtrise les techniques de tous les autres chevaliers d'Or,1,Saint Seiya,hard,2025-10-30 16:46:43.115066+00
+349,Quel est le principal critère que Hadès utilise pour choisir sa réincarnation ?,Avoir le coeur le plus pur,Être né lors d'une éclipse lunaire,Avoir le cosmos le plus puissant,Être de la famille d'Athéna,Avoir pris part à une guerre sainte,Être né sous le signe du Scorpion,1,Saint Seiya,hard,2025-10-30 16:46:43.115066+00
+350,Qui est l'auteur de l'attaque Diamond Dust ?,Hyoga,Milo,Ikki,Mû,Shion,Poseidon,1,Saint Seiya,easy,2025-10-30 16:46:43.115066+00
+351,Qui est l'auteur de l'attaque Ho Yoku Tensho ?,Ikki,Shun,Shiryu,Saga,Shaka,Hyoga,1,Saint Seiya,medium,2025-10-30 16:46:43.115066+00
+352,À quelle chevalier d'Or Seiya est-il destiné à succéder ?,Le Sagittaire,Le Lion,Le Verseau,Les Gémeaux,Le Capricorne,La Balance,1,Saint Seiya,medium,2025-10-30 16:46:43.115066+00
+353,À quelle chevalier d'Or Ikki est-il destiné à succéder ?,Le Sagittaire,Le Lion,Le Verseau,Les Gémeaux,Le Capricorne,La Balance,2,Saint Seiya,hard,2025-10-30 16:46:43.115066+00
+354,Comment Poiseidon a t-il été vaincu ?,Il a été scellé,Il a été tué par Saga,Il est tombé amoureux d'Athena,Il a été téléporté dans l'espace,Il est mort naturellement,Il se jette dans la lave,1,Saint Seiya,medium,2025-10-30 16:46:43.115066+00
+355,À combien s'élève l'effectif des Spectres d'Hadès ?,99,108,12,7,55,69,2,Saint Seiya,hard,2025-10-30 16:46:43.115066+00
+356,"A la toute fin de la trame principale, qu'arrive t-il aux protagonistes ?",Ils perdent la mémoire,Ils meurent tous au combat,Ils deviennent Chevaliers Divins,Ils deviennent Dieux de l'Olympe,Ils sont envoyés dans le futur,Ils quittent la Terre pour une autre planète,1,Saint Seiya,veryhard,2025-10-30 16:46:43.115066+00
+357,Quelle est l'attaque signature du Chevalier d'Or des Gémeaux ?,Excalibur,Galaxian Explosion,Rozan Sho ryu Ha,Aurora Borealis,Bloody Rose,Crimson Stinger,2,Saint Seiya,medium,2025-10-30 16:46:43.115066+00
+358,Dans quel corps Hadès choisit-il de se réincarner ?,Shun,Seiya,Shiryu,Ikki,Seika,Hyoga,1,Saint Seiya,medium,2025-10-30 16:46:43.115066+00
+359,De quel pays est originaire Thorfinn ?,Islande,Danemark,Irlande,Angleterre,Suède,Norvège,1,Vinland Saga,easy,2025-10-31 18:41:51.889069+00
+360,Quel est le lien de parenté entre Thorfinn et Ylva ?,Frères et soeurs,Neveu et tante,Mère et fils,Cousins,Meilleurs amis,Grand mère et petit fils,1,Vinland Saga,veryeasy,2025-10-31 18:48:49.503566+00
+361,Pour quelle raison le roi Sven à t-il envoyé son fils Canute sur le champ de bataille ?,Pour qu'il meurt en pleine bataille,Pour l'endurcir,Pour faire soumettre l'Angleterre,Pour faire soumettre le Danemark,Pour qu'il porte un message à son frère Harald,Pour assassiner le roi d'Angleterre,1,Vinland Saga,medium,2025-10-31 18:51:21.776861+00
+362,Pour quelle raison Thors a t-il déserté l'armée danoise ?,Pour vivre paisiblement avec sa famille,Pour découvrir le Vinland,Parce qu'il fut trahi par ses camarades,Par chantage de la part de Floki,Pour devenir roi d'Islande,Parce qu'il désapprouve les decisions de ses supérieurs,1,Vinland Saga,veryeasy,2025-10-31 18:57:33.378148+00
+363,De quel pays est originaire Askeladd ?,Pays de Galles,Danemark,Agnleterre,Islande,Norvège,Suède,1,Vinland Saga,medium,2025-10-31 18:59:08.252696+00
+364,Qu'est-ce qui caractérise Thorkell ?,Il adore se battre,Il aime les femmes plus que tout,Il déteste les Vikings,Il ne mange que du saumon,Il est le plus petit de sa faction,Il a un excellent odorat,1,Vinland Saga,veryeasy,2025-10-31 19:01:38.502497+00
+365,Qui est responsable de la mort du roi Sven ?,Askeladd,Thorfinn,Thorkell,Floki,Canute,Helga,1,Vinland Saga,easy,2025-10-31 19:02:16.580703+00
+366,Pour quelle raison Thorfinn veut-il tuer Askeladd ?,Pour venger son père,Pour prendre sa place de chef d'escadron,Pour devenir un vrai guerrier,Pour devenir plus fort,Pour remplir sa mission confié par le roi,Pour le fun,1,Vinland Saga,veryeasy,2025-10-31 19:04:13.785479+00
+367,Pour quelle raison Thorkell s'est-il allié aux forces Anglaises ?,"Parce qu’il trouvait les Danois trop faibles ","Pour rendre jaloux son frère ",Pour impressioner Thors,Parce qu’il avait été trahi par ses supérieurs Danois,Par égard envers sa nouvelle famille Anglaise,Parce que les richesses Anglaises l'intéresse,1,Vinland Saga,medium,2025-10-31 19:06:59.875917+00
+368,"Au cours de sa fuite face à Thorkell , Askeladd tombe sur un village en pleine nuit et décide de décimer tous les habitants , combien étaient-ils ?",Une soixantaine,Une diziane,Une vingtaine,Une centaine,Une cinquantaine,Une trentaine,1,Vinland Saga,extreme,2025-10-31 19:09:27.353141+00
+369,De quel faction Thors était-il le chef ?,Des Jomsvikings,Des Skjaldborg,Des Vallhunds,Des Varangians,Des Rygjar,Des Svear,1,Vinland Saga,easy,2025-10-31 19:12:00.375992+00
+370,Quelle est la carte maîtresse de Yugi Muto ?,Le Magicien des ténèbres,Le Dragon blanc aux yeux bleus,Obélisk le tourmenteur,Exodia le maudit,Le Dragon noir aux yeux rouges,Le Dragon ailé de Râ,1,YuGiOh,easy,2025-10-31 19:14:17.832984+00
+371,Quelle est la carte maîtresse de Seto Kaiba ?,Le Dragon Blanc aux yeux bleus,Slifer le dragon du ciel,Vorse Raider,Le Magicien du Chaos,Le Magicien du temps,Le Seigneur des ténèbres,1,YuGiOh,veryeasy,2025-10-31 19:16:45.848554+00
+372,De quel pays est originaire Marik Ishtar ?,Egypte,Japon,Indonésie,Arabie Saoudite,Soudan,Maroc,1,YuGiOh,medium,2025-10-31 19:18:57.356086+00
+373,Combien d’objets du Millénium existent-ils ?,7,5,10,9,3,12,1,YuGiOh,medium,2025-10-31 19:20:29.449787+00
+374,Quel est le vrai nom du Pharaon ?,Atem,Seto,Marik,Gladius,Akunadin,Karim,1,YuGiOh,medium,2025-10-31 19:21:49.810825+00
+375,"Au cours du manga , combien de duels Yugi/Yami Yugi a t-il perdu ?",4,2,1,3,6,5,1,YuGiOh,veryhard,2025-10-31 19:25:50.630877+00
+376,Qui à été le tout premier adversaire de Yugi ?,Ushio,Kaiba,Joey,Marik,Bakura,Tristan,1,YuGiOh,hard,2025-10-31 19:27:00.898446+00
+377,Quel est le nom Japonais de Joey Wheeler ?,Jonouchi Katsuya,Honda Hiroto,Katsuragi Ryo,Yamashiro Kaito,Fujimura Sora,Kurogane Jiro,1,YuGiOh,hard,2025-10-31 19:28:20.0789+00
+378,De quelle couleur sont les cheveux d'Emma ?,Orange,Rouge,Violet,Rose,Noir,Blanc,1,The Promised Neverland,veryeasy,2025-10-31 19:29:53.764802+00
+379,Dans quel orphelinat Emma et ses amis vivent-ils au début de la série ?,Grace Field House,Sunny Valley,Silverwind House,Rosewood Orphanage,Havenbrook,Maple Grove Fate,1,The Promised Neverland,easy,2025-10-31 19:32:17.210878+00
+380,Quel est la particularité des Sangs-Maudits ?,Garder leur apparences humaines,Lire dans les pensées des humains,Etre immortel,Ne pas pouvoir enfanter d'humains ni de démons,Ne pas pouvoir vivre sous le soleil,Contrôler mentalement leur congénères,1,The Promised Neverland,hard,2025-10-31 19:34:34.510988+00
+381,"Athlétiquement parlant , qui est le plus fort parmi ces personnages ?",Emma,Ray,Norman,Phil,Gilda,Don,1,The Promised Neverland,veryeasy,2025-10-31 19:36:02.427777+00
+382,Comment est surnommé Ketil ?,Ketil aux poings de fer,Ketil le Fermier Doré,Ketil la Hache Silencieuse,Ketil le Pacifique,Ketil à la tête rouge,Ketil le Tueur du Nord,1,Vinland Saga,hard,2025-11-01 03:27:49.904136+00
+383,Sous quel pseudo le protagoniste publie t-il ses vidéos sur Youtube ?,Paperboy,"VlogSensei ",WebGhost,StreamKid,PixelMan,NetRider,1,Prophecy,extreme,2025-11-01 03:36:14.115948+00
+384,Comment sont appelés les zombies par les habitants de Tokyo ?,Les ZQN,Les XZ,Les Zombito,Les Z-Like,Les Autres,Les Freeman,1,I am a Hero,extreme,2025-11-01 03:39:29.718271+00
+385,Quel était le métier de Hideo Suzuki avant l'épidémie de Zombie ?,Mangaka,Chauffeur de Taxi,Journaliste,Infirmier,Professeur au lycée,Vendeur de téléphone,1,I am a Hero,veryhard,2025-11-01 03:42:35.819856+00
+386,"Au cours du Royaume des Duellistes , combien d'étoiles faut-il rassembler pour pouvoir entrer au chateau de Pegasus ?",10,5,3,20,100,21,1,YuGiOh,hard,2025-11-01 03:44:14.00461+00
+387,A l'aide de quelle carte Yugi parvient-il a vaincre Pegasus ?,Le Magicien sombre du Chaos,Gaia le chevalier des ténèbres,La Malédiction du dragon,La Magicienne des ténèbres,Mahad Oracle palladium,Le Gardien celtique,1,YuGiOh,veryhard,2025-11-01 03:46:34.643743+00
+388,Qui parmi ces personnages utilise un Deck Insecte ?,Insector Haga,Rex Raptor,Tea Gardner,Joey Wheeler,Bakura Ryo,Mai Valentine,1,YuGiOh,easy,2025-11-01 03:48:08.984656+00
+389,De quoi est essentiellement composé le deck de Mai Valentine ?,De Harpies,De Dragons,D'Elfes,De Sirènes,De Baleines,De Lutins,1,YuGiOh,medium,2025-11-01 03:50:15.747147+00
+390,Quels personnages s’affrontent lors de la finale du tournoi Battle City ?,Yugi et Marik,Yugi et Kaiba,Yugi et Joey,Marik et Kaiba,Marik et Bakura,Yugi et Bakura,1,YuGiOh,medium,2025-11-01 04:12:27.697188+00
+391,Quel personnage Yugi affronte t-il en premier au cours du tournoi Battle City ?,Jack Hunter,Arkana,Marik Ishtar,Seto Kaiba,Bakura Ryo,Joey Wheeler,1,YuGiOh,veryhard,2025-11-01 04:14:36.465663+00
+392,De quelle maladie souffre la soeur de Joey ?,Elle est aveugle,Elle est sourde,Elle est paraplégique,Elle est amnésique,Elle est asthmatique,Elle est diabétique,1,YuGiOh,hard,2025-11-01 04:17:23.889665+00
+393,Qui est le propriétaire de l'anneau du milenium ?,Bakura Ryo,Marik Ishtar,Isis Ishtar,Shadi,Maximillion Pegasus,Seto Kaiba,1,YuGiOh,hard,2025-11-01 04:22:03.610319+00
+394,Quel nom est donné à l'immense Quartier bidonville abritant les hors la loi et les sans abris?,Five Points,Red Alley,Black Hollow,East End,Dark District,Death Valley,1,Green Blood,extreme,2025-11-01 04:26:18.757278+00
+395,Comment Mirai a t-il tenté de se suicider ?,En se jetant du haut d'un immeuble,En se jetant a la mer,En se jetant sous un train,En s’intoxiquant avec des médicaments,En se pendant,En se poignardant avec un lame,1,Platinum End,veryhard,2025-11-01 04:40:23.609414+00
+396,Qui est l'ange protecteur de Mirai ?,Nasse,Bare,Rubel,Meiza,Tenema,Yulo,1,Platinum End,hard,2025-11-01 04:41:39.317031+00
+397,A quoi sert la flèche blanche ?,A tuer,A voler,Se téléporter,Se rendre invisible,Lire dans les pensée,Pouvoir ressuciter,1,Platinum End,hard,2025-11-01 04:43:53.442348+00
+398,Pendant combien de temps la flèche rouge permet-elle de se faire aimer ?,33 jours,99 jours,6 jours,7 jours,1 heure,48 heures,1,Platinum End,extreme,2025-11-01 04:44:54.148222+00
+399,Combien de personnes sont candidats pour l'élection de Dieu ?,13,5,10,7,20,99,1,Platinum End,extreme,2025-11-01 04:46:12.002575+00
+400,"Au début de la série , qui est Sawada Tsunayoshi ?",Un simple collégien,Un lycéen surdoué,Un scientifique renommé,Un délinquant descolarisé,Un assassin expert,"Un jeune employé ",1,Katekyo Hitman Reborn,veryeasy,2025-11-01 04:54:22.240387+00
+401,Qui est le gardien des Nuages de la famille Vongola ?,Hibari Kyouya,Yamamoto Takeshi,Mukuro Rokudo,Gokudera Hayato,Lambo,Sasagawa Ryohei,1,Katekyo Hitman Reborn,medium,2025-11-01 04:55:50.602655+00
+402,Qui est le gardien de la tempête de la famille Vongola ?,Gokudera Hayato,Yamamoto Takeshi,Mukuro Rokudo,Hibari Kyouya,Sasagawa Ryohei,Chrome Dokuro,1,Katekyo Hitman Reborn,medium,2025-11-01 04:56:43.513021+00
+403,Dans quel ville se déroule l'histoire ?,Namimori,Sapporo,Fujihara,Hanamura,Sakuragi,Minamika,1,Katekyo Hitman Reborn,hard,2025-11-01 04:58:26.080855+00
+404,De qui Sawada Tsuna est-il amoureux ?,Sasagawa Kyoko,Haru Miura,Bianchi,Lal Mirch,Chrome Dokuro,Luce,1,Katekyo Hitman Reborn,easy,2025-11-01 05:00:35.0527+00
+405,Qu'est-ce qu'un Arcobaleno ?,Un bébé surpuissant,Un objet magique,Un prince déchu,Un pouvoir magique,"Un fantôme protecteur ",Un boss mafieux,1,Katekyo Hitman Reborn,hard,2025-11-01 05:04:38.90795+00
+406,"Lors de l'affrontement contre la Varia , qui s'oppose à Squalo ?",Yamamoto Takeshi,Gokudera Hayato,Sawada Tsunayoshi,Lambo,Sasagawa Ryohei,Hibari Kyoya,1,Katekyo Hitman Reborn,hard,2025-11-01 05:06:25.818817+00
+407,Qu'est-ce qui caractérise Sawada Tsunayoshi ?,C'est un collégien très médiocre,C'est un musicien talentueux,C'est un étudiant surdoué,Il est accro aux jeux vidéos,Il est pyromane,Il est allergique aux animaux,1,Katekyo Hitman Reborn,veryeasy,2025-11-01 05:09:49.850359+00
+408,Quel est l'arme de prédilection de Hibari ?,Des tonfas,Des nunchakus,Des dagues,Des chaînes metalliques,Des gants de boxe,Des petits katanas,1,Katekyo Hitman Reborn,medium,2025-11-01 15:37:43.502227+00
+409,"De quelle génération Vongola , Tsuna est-il le boss ?",10eme,1ere,3eme,99eme,20eme,7eme,1,Katekyo Hitman Reborn,easy,2025-11-01 15:38:56.75404+00
+410,"Selon Reborn , qui est considéré comme le gardien Vongola le plus puissant ?",Hibari Kyouya,Mukuro Rokudo,Gokudera Hayato,Yamamoto Takeshi,Sasagawa Ryohei,Chrome Dokuro,1,Katekyo Hitman Reborn,hard,2025-11-01 15:40:29.892622+00
+411,De quel attribut Sasagawa Ryohei est-il le gardien Vongola ?,Du soleil,De la pluie,De la tempête,De la brume,Des nuages,De l'orage,1,Katekyo Hitman Reborn,hard,2025-11-01 15:42:07.298944+00
+412,Qu'est-ce que la Tri-ni-sette ?,Un ensemble désignant 21 objets,La loi mafieuse interdisant le meurtre,L'alliance entre les 3 plus grandes familles mafieuse s,Un rituel permettant d'inaugurer le prochain parrain Vongola,Une arme de destruction massive,Un évènement mafieux tabou,1,Katekyo Hitman Reborn,veryhard,2025-11-01 15:47:23.870726+00
+413,Sous quelle apparence Reborn apparaît-il pour la première fois ?,Bébé,Vieillard,Fantôme,Lézard,Adolescent,Femme,1,Katekyo Hitman Reborn,veryeasy,2025-11-01 15:50:10.075513+00
+414,Qui est le premier Gardien que Tsuna rencontre après son arrivée dans le futur ?,Gokudera Hayato,Lambo,Hibari Kyouya,Chrome Dokuro,Sasagawa Ryohei,Yamamoto Takeshi,1,Katekyo Hitman Reborn,veryhard,2025-11-01 15:52:43.361146+00
+415,"Au cours du manga , à l'aide de quelle carte Yugi parvient-il à vaincre Kaiba lors de leur premier affrontement ?",Le Dragon Blanc aux yeux bleus,Exodia le maudit,Le Magicien des ténèbres,Le Magicien sombre du Chaos,Elfe mystique,La Malédiction du Dragon,1,YuGiOh,extreme,2025-11-01 15:55:39.250925+00
+416,Quelle arme permet à Lambo d’échanger sa place avec son lui-même âgé de 10 ans de plus ?,Un Bazooka,Un Revolver,Un Miroir,Un Cube,Une Cloche,Une Flute,1,Katekyo Hitman Reborn,easy,2025-11-01 15:58:41.333891+00
+417,Qui est Snake ?,Un mercenaire,Un viking,Un roi,Un paysan,Un fermier,Un prince,1,Vinland Saga,medium,2025-11-01 17:22:43.668124+00
+418,Dans quelle ville vit Kurosaki Ichigo ?,Karakura,Natahira,Fuyuki,Inaba,Rukongai,Soulcity,1,Bleach,easy,2025-11-02 15:08:43.858828+00
+419,"Quelle est la particularité de Ichigo ? ",Il peut voir les fantômes,Il peut lire dans les pensées,Il peut se transformer en Chat,Il peut se dédoubler,Il peut arrêter le temps,Il peut léviter,1,Bleach,veryeasy,2025-11-02 15:14:12.799309+00
+420,Comment appelle t-on le premier stade de transformation des Zanpakutos ?,Shikai,Bankai,Dokai,Suikai,Zenkai,Honkai,1,Bleach,easy,2025-11-02 15:15:16.570031+00
+421,Quel est le pouvoir du Zanpakuto de Izuru Kira ?,Il peut doubler le poids de ce qu'il touche,Il absorbe l’énergie spirituelle de ses adversaires,Il paralyse la cible pendant quelques secondes,"Il réduit la vitesse de son ennemi ","Il peut téléporter ses ennemis ",Il peut changer la forme de sa cible,1,Bleach,medium,2025-11-02 15:17:59.643149+00
+422,Comment se nomme le Zanpakuto de Urahara Kisuke ?,Benihime,Orihime,Wabihime,Shigahime,Otohime,Shiihime,1,Bleach,medium,2025-11-02 15:19:27.284525+00
+423,Pour quelle raison Aizen voulait-il s'emparer d'Orihime ?,Pour mettre la main sur son pouvoir,Parce qu'il la trouvait à son goût physiquement,Pour enrager Ichigo et le faire devenir plus fort,Parce qu'elle est de sa famille,Pour la transformer en Hollow,Pour l'utiliser comme monnaie d'échange,1,Bleach,medium,2025-11-02 15:21:27.382847+00
+424,Comment appelle t-on les armes des Shinigamis ?,Zanpakutos,Reiryoku,Hakuda,Bakudo,Hado,Seirukai,1,Bleach,veryeasy,2025-11-02 15:23:03.938637+00
+425,Quel lien unit Edward et Alphonse ?,Ils sont frères,Ils sont père et fils,Ils sont amis d'enfance,Ils sont rivaux depuis toujours,Ils sont pires ennemis,Ils sont cousins,1,Fullmetal Alchemist,veryeasy,2025-11-02 15:25:07.95336+00
+426,Pour quelle raison Sacha ne s'est-il pas vu attribuer un Pokemon starter ?,Il s'est levé trop tard,Il n'en voulait pas,Il n'aime pas les Pokemons,Il a echoué au test du Professeur Chen,Il n'avait pas l'âge requis,Il en avait déjà un,1,Pokemon,easy,2025-11-02 15:28:00.069924+00
+427,De quel type est le Pokemon est Pikachu ?,Electrique,Dragon,Feu,Psy,Ténèbre,Sol,1,Pokemon,veryeasy,2025-11-02 15:30:00.990615+00
+428,Quel Pokemon emblématique parle et fait partie de la Team Rocket ?,Miaouss,Arbok,Salameche,Smogogo,Persian,Demolosse,1,Pokemon,veryeasy,2025-11-02 15:31:14.71065+00
+429,Où se situe le trou caractéristique des Hollow sur Nnoitra ?,Son oeil,Sa langue,Sa cuisse,Son front,Sa main,Son torse,1,Bleach,hard,2025-11-02 15:32:49.04578+00
+430,Quel pouvoir est introduit dans la partie 1 ?,Le Hamon,Les Stands,Le Han,Le Spin,Le Haja,Le Stack,1,Jojo's Bizarre Adventure,easy,2025-11-02 15:58:26.8768+00
+431,Qui est le protagoniste de la partie 1 ?,Jonathan,Joseph,Josuke,Jolyne,Jotaro,Johnny,1,Jojo's Bizarre Adventure,veryeasy,2025-11-02 15:59:07.683894+00
+434,Qui est le détenteur du stand 'The Fool' ?,Iggy,Hot Horse,Diavolo,Polnareff,Holy Kujo,D'Arby,1,Jojo's Bizarre Adventure,hard,2025-11-02 16:05:26.037033+00
+435,Pour quelle raison Jotaro et ses compagnons se rendent-ils en Égypte ?,Pour retrouver Dio,Pour trouver l’origine des Stands,Pour sceller un artefact,Pour sauver Polnareff,Pour empêcher la résurrection de Kars,Pour retrouver le corps de Jonathan,1,Jojo's Bizarre Adventure,easy,2025-11-02 16:08:38.778001+00
+436,Quel est le pouvoir du Stand King Crimson ?,Effacer une séquence temporelle,Inverser les actions adverses,Se téléporter instantanément qu'importe la distance,Voler le pouvoir des autres Stands,Remonter le temps,Créer des tsunamis gigantesques,1,Jojo's Bizarre Adventure,medium,2025-11-02 16:15:29.970511+00
+437,De quelle couleur sont les cheveux de Jonathan Joestar ?,Bleu,Rouge,Noir,Violet,Jaune,Vert,1,Jojo's Bizarre Adventure,veryeasy,2025-11-02 16:17:23.668779+00
+438,A quel endroit L dévoile son identité à Kira ?,A l'université,Au restaurant,A la bibliothèque,"Au commissariat ",Au cinéma,Dans le hall d'un immeuble,1,Death Note,easy,2025-11-03 22:09:36.198288+00
+439,Quel est le fruit préféré de Ryuk ?,Pomme,Poire,Raisin,Cerise,Orange,Banane,1,Death Note,veryeasy,2025-11-03 22:10:36.327374+00
+440,Combien de temps s'écoule t-il avant la mort d'une personne dont le nom a été écrit dans un Death Note ?,40 secondes,1 minute,6 minutes et 45 secondes,30 secondes,1 minute et 11 secondes,5 secondes,1,Death Note,easy,2025-11-03 22:13:14.267636+00
+441,Quel âge a Eikichi Onizuka au début de la série ?,22 ans,23 ans,21 ans,20 ans,25 ans,24 ans,1,Great Teacher Onizuka,veryeasy,2025-11-03 22:16:35.549405+00
+442,Quel sport Ippo décide t-il d’apprendre au début de la série ?,La boxe,Le karaté,Le judo,Le sumo,Le kendo,Le mma,1,Hajime no Ippo,veryeasy,2025-11-03 22:19:43.563527+00
+443,"Parmi ces personnages , qui ne peut pas utiliser le Kamehameha ?",Yajirobe,Cell,Yamcha,Goten,Krillin,Majin Buu,1,Dragon Ball,veryeasy,2025-11-03 22:39:45.632402+00
+444,"Parmi ces personnages , qui ne peut pas utiliser le Rasengan ?",Tobirama,Kakashi,Jiraiya,Konohamaru,Minato,Naruto,1,Naruto,veryeasy,2025-11-03 22:41:09.325039+00
+445,Que représente le symbole du clan Uchiha ?,Un éventail,Un serpent,Une flamme,Un corbeau,"Un kunai ",Une épée,1,Naruto,easy,2025-11-03 22:42:21.859668+00
+446,Combien de coups Thorfinn doit-il recevoir pour obtenir audience auprès du roi Knut ?,100,50,10,1000,5,1,1,Vinland Saga,medium,2025-11-03 22:44:10.176919+00
+447,Qui est responsable de la mort de Ace ?,Akainu,Fujitora,Kizaru,Aokiji,Mihawk,Sengoku,1,One Piece,veryeasy,2025-11-03 22:55:35.088021+00
+448,Quelle est la particularité de la planète Namek ?,Il ne fait jamais nuit,La gravité est nulle,Le ciel est violet,Les saisons changent chaque jour,Le soleil change de couleur,Des séismes surviennes toutes les heures,1,Dragon Ball,easy,2025-11-03 22:58:24.681144+00
+449,Qui est le pilier du Son ?,Uzui Tengen,Rengoku Kyojuro,Iguro Obanai,Shinazugawa Sanemi,Mitsuri Kanroji,Tomioka Giyu,1,Demon Slayer,veryeasy,2025-11-03 23:00:38.665415+00
+450,Quel nom porte l'épée de Meliodas ?,Lostvayne,Hellfang,Crimson Wrath,Nightbane,Shadowcleaver,Bloodreaver,1,Nanatsu no Taizai,hard,2025-11-03 23:04:26.818069+00
+451,Qui personnage représente le pêché de l'avarice ?,Ban,Diane,Escanor,Merlin,Gowther,King,1,Nanatsu no Taizai,easy,2025-11-03 23:05:48.139228+00
+452,Qu'est-ce qui caractérise Ban ?,"Il est immortel ",Il dort les yeux ouverts,Il est invisible,Il ne mange jamais,Il peut changer de taille,Il a 3 bras,1,Nanatsu no Taizai,veryeasy,2025-11-03 23:08:21.182396+00
+453,"Parmi les 7 pêchés capitaux, combien sont des femmes ?",2,1,3,4,5,0,1,Nanatsu no Taizai,easy,2025-11-03 23:22:06.706318+00
+454,Quelle est la couleur des flammes de Rin Okumura ?,Bleues,Rouges,Vertes,Violettes,Jaunes,Noires,1,Blue Exorcist,medium,2025-11-03 23:43:48.924076+00
+455,De quelle couleur sont les cheveux de Midorima Shintarou ?,Vert,Rouge,Bleu,Violet,Orange,Jaune,1,Kuroko no Basket,veryeasy,2025-11-03 23:45:11.217754+00
+456,De quelle équipe fait partie Kise Ryota ?,Kaijo,Rakuzan,Yosen,Toou,Shutoku,Kirisaki Daiji,1,Kuroko no Basket,medium,2025-11-03 23:46:47.814431+00
+457,Comment est surnommé Kuroko Tetsuya ?,Le joueur fantôme,Le roi du dunk,Le meneur inflexible,L’éclair bleu,Le magicien du terrain,L’as silencieux,1,Kuroko no Basket,veryeasy,2025-11-03 23:47:44.567979+00
+458,Comment meurt Yusuke au début de la série ?,Percuté par un véhicule,Noyé dans une rivière,Chute fatale d'un immeuble,Electrocuté,Mangé par un ours,Poignardé par un yakuza,1,Yu Yu Hakusho,easy,2025-11-03 23:54:23.126117+00
+459,Suite à quelle mort Gohan se transforme-t-il en Super Saiyan 2 ?,C-16,Piccolo,Goku,Trunks,Chichi,Bulma,1,Dragon Ball,veryeasy,2025-11-07 17:52:34.037974+00
+460,Qui parmi ces personnages ne possède pas de fruit du démon ?,Franky,Crocodile,Baggy,Lucci,Bartolomeo,Ener,1,One Piece,veryeasy,2025-11-07 18:00:23.792821+00
+461,Dans quel village réside Naruto ?,Konoha,Suna,Kiri,Oto,Kumo,Iwa,1,Naruto,veryeasy,2025-11-07 18:03:16.870209+00
+462,Quel animal est capable d'invoquer Tsunade ?,Une limace,Un crapaud,Un serpent,Un faucon,Un cheval,Un ours,1,Naruto,easy,2025-11-07 18:06:23.503793+00
+463,Comment Tobi nomme t-il son projet ayant pour but de rétablir la paix ?,Oeil de Lune,Cercle de la Paix,Aube Éternelle,Nuit du Renouveau,Cycle de la lumière,Monde Parfait,1,Naruto,medium,2025-11-07 18:09:40.244326+00
+464,Qui parmi ces personnages ne portent pas de lunettes ?,"Ibiki ",Chojuro,Karin,Ebisu,Kabuto,Shino,1,Naruto,medium,2025-11-07 18:11:39.92213+00
+465,Qui est le 2e Hokage ?,"Tobirama ","Hashirama ",Hiruzen,Minato,Tsunade,Danzo,1,Naruto,veryeasy,2025-11-07 18:12:21.300576+00
+466,Quel capitaine du Gotei 13 Ichigo rencontre t-il en premier ?,Byakuya,Gin,Zaraki,Yamamoto,Yoruichi,Aizen,1,Bleach,easy,2025-11-07 18:13:20.008438+00
+467,Comment est surnommé Hisoka ?,Le magicien,Le joker,Le clown,L’illusionniste,Le charmeur de cartes,Le chasseur,1,Hunter Hunter,veryeasy,2025-11-07 18:15:40.925692+00
+468,Quelle est la première épreuve de l'examen des Hunters ?,Une course d’endurance,Un test écrit,Une chasse au monstre,Un combat un contre un,Une épreuve de cuisine,Une épreuve de survie dans la forêt,1,Hunter Hunter,veryeasy,2025-11-07 18:18:52.455361+00
+469,Quel est le véritable objectif de Kurapika ?,Venger son clan et récupérer les yeux de ses camarades,Trouver le trésor caché des Kurta,Sauver sa mère du Monde des Chimères,Détruire l’Association des Hunters,Retrouver le chef de la Brigade Fantôme pour un pacte de paix,Devenir un Hunter professionnel reconnu,1,Hunter Hunter,veryeasy,2025-11-07 18:23:06.321022+00
+470,Quel est le Stand de Dio Brando ?,The World,Gold Experience,The Universe,Killer Queen,God Hand,King Death,1,Jojo's Bizarre Adventure,easy,2025-11-07 18:27:06.485377+00
+471,Qui possède l'Alter Dark Shadow ?,Fumikage Tokoyami,Eijiro Kirishima,Tenya Iida,Shoto Todoroki,Blaze Omber,Uraraka Ochaco,1,My Hero Academia,easy,2025-11-07 18:29:41.774973+00
+472,Dans quel lycée étudie Sakuragi Hanamichi ?,Shohoku,Ryonan,Shoyo,Kainan,Seirin,Toda,1,Slam Dunk,easy,2025-11-07 19:30:37.59464+00
+473,Comment Hanamichi surnomme t-il le capitaine de l'équipe de Basket ?,Le gorille,Le lion,L'éléphant,L'ours,L'insecte,L'escargot,1,Slam Dunk,hard,2025-11-07 19:31:54.744428+00
+474,Pour quelle raison Sakuragi décide t-il de faire du Basket ?,Pour impressionner une fille,Pour devenir le meilleur joueur du Japon,Pour suivre les traces de son frère,Par devenir plus fort que son rival,Pour rester en forme,Pour tester un nouveau sport,1,Slam Dunk,easy,2025-11-07 19:33:53.651628+00
+475,De quel club Aota est-il le capitaine ?,Judo,Escrime,Tennis,Natation,Football,Echecs,1,Slam Dunk,hard,2025-11-08 16:27:22.499389+00
+476,Quel type de magasin le grand père de Yugi tient-il ?,Un magasin de jouets,Un magasin de meubles,Un magasin d’antiquités,Une librairie,Un magasin de musique,Un magasin de sport,1,YuGiOh,medium,2025-11-08 16:30:34.450041+00
+477,Quelle est la première équipe que Shohoku affronte au cours de l’histoire ?,Ryonan,Rakuzan,Takezato,Shoyo,Toyotama,Rikkaidai,1,Slam Dunk,hard,2025-11-08 16:32:18.898489+00
+478,Quel identifiant est inscrit sur le cou d’Emma ?,63194,72145,58231,49126,81194,37509,1,The Promised Neverland,veryhard,2025-11-09 16:50:56.887264+00
+479,"Quel numéro est tatoué sur le cou de Ray ? ",81194,51032,63194,70195,72184,89142,1,The Promised Neverland,veryhard,2025-11-09 16:51:37.81697+00
+480,Quel numéro est tatoué sur le cou de Norman ?,22194,42139,61194,23145,25164,30197,1,The Promised Neverland,veryhard,2025-11-09 16:52:10.958686+00
+481,Qui ne fait pas partie de l'équipe de basket du lycée Shohoku ?,Sendo,Sakuragi,Rukawa,Akagi,Miyagi,Mitsui,1,Slam Dunk,medium,2025-11-09 16:54:38.058592+00
+482,Quelles sont les trois grandes familles à l'origine de la guerre du Graal ?,"Tohsaka, Matou et Einzbern","Emiya, Tohsaka et Makiri","Einzbern, Harway et Atlas","Matou, El-Melloi et Barthomeloi","Tohsaka, Fujimura et Aozaki","Einzbern, Matou et Arima",1,Fate/stay night,hard,2025-11-09 16:58:07.199169+00
+483,Qu'est-ce qu'un Noble Phantasm ?,L’attaque ultime d'un servant,Un sort interdit utilisé par les maîtres,Une pierre magique amplifiant le mana,Un artefact permettant d’invoquer un Servant,Un esprit gardien des familles fondatrices,Une relique issue du Saint Graal,1,Fate/stay night,hard,2025-11-09 17:01:39.719766+00
+484,Que se passe-t-il lorsqu’une personne remporte la Guerre du Graal ?,"Il voit son voeu exaucé ",Il devient immortel,Il se voit accorder le titre de Grand mage,Tous ses adversaires sont effacés de l’histoire,Il hérite du pouvoir des familles fondatrices,Il obtient le pouvoir de tout les servants,1,Fate/stay night,hard,2025-11-09 17:04:47.199782+00
+485,Laquelle de ces classes de Servants n’existe pas ?,Slayer,Caster,Foreigner,Lancer,Archer,Berseker,1,Fate/stay night,veryhard,2025-11-09 17:07:52.536038+00
+486,Dans quel opus Mordred apparaît-elle en tant que Servant ?,Fate/Apocrypha,Fate/Zero,Fate/Grand Order,Fate/Extra,Fate/Stay Night,Fate/Strange Fake,1,Fate/stay night,hard,2025-11-09 17:11:28.339799+00
+487,Qui est le capitaine de l'équipe de Seirin ?,Hyuga Junpei,Kagami Taiga,Izuki Shun,"Mitobe Rinnosuke ",Riko Aida,Kiyoshi Teipei,1,Kuroko no Basket,medium,2025-11-09 17:15:51.844073+00
+488,Quel est l'atout majeur de Izuki Shun ?,Sa vision de jeu,Sa puissance de dunk,Son tir à trois points,Son endurance,Sa vitesse explosive,Sa défense physique,1,Kuroko no Basket,hard,2025-11-09 17:35:22.033235+00
+489,En quoi Midorima a-t-il une confiance absolue ?,Aux prédictions des horoscopes,Aux conseils de son entraineur,En sa grande soeur,"A ses lunettes ",A ses baskets,Aux formules mathématiques,1,Kuroko no Basket,easy,2025-11-09 17:39:41.806776+00
+490,Quel membre de la Génération des Miracles Kagami rencontre t-il en premier ?,Kise Ryota,Midorima Shintarou,Daiki Aomine,Seijuro Akashi,Atsushi Murasakibara,Haizaki Shogo,1,Kuroko no Basket,easy,2025-11-09 17:41:47.877946+00
+491,De quelle couleur sont les cheveux de Kuroko ?,Bleu,Rouge,Vert,Violet,Noir,Orange,1,Kuroko no Basket,veryeasy,2025-11-09 18:12:43.886001+00
+492,Quel est le pouvoir de la mère de Izuku ?,Elle peut attirer des objets vers elle,Elle peut cracher du feu,Elle peut léviter,Elle peut réparer des appareils automatiquement,Elle peut soigner ses blessures,Elle peut se téléporter sur de très courtes distances,1,My Hero Academia,medium,2025-11-09 18:29:07.342774+00
+493,Qui est le plus grand ennemi d'All Might ?,All For One,Shigaraki Tomura,Sir Nighteye,Katsuki Bakugo,Stain,Gran Torino,1,My Hero Academia,veryeasy,2025-11-09 18:29:59.699377+00
+494,Qui est le joueur star de l'équipe de basket du lycée Ryonan ?,Sendo,Hanagata,Maki,Fujima,Rukawa,Miyagi,1,Slam Dunk,hard,2025-11-11 16:36:41.970028+00
+495,Suite à quel match Sakuragi se rase les cheveux ?,Kainan,Shoyo,Ryonan,Vorpal Sword,Takezuko,Tooru,1,Slam Dunk,medium,2025-11-11 17:20:21.673593+00
+496,Quel surnom donne Mikey à Takemichi ?,Takemichou,Takkun,Takechan,Takechou,Takmichan,Takke,1,Tokyo Revengers,medium,2025-11-29 19:45:17.80979+00
+497,En quelle classe takemichi se retrouve t-il après etre retourné dans le passé ?,En 4eme,En 3eme,En Seconde,En Terminale,En 5eme,En Première,1,Tokyo Revengers,hard,2025-11-29 19:46:18.684435+00
+498,Quel age a Frieren ?,Plus de 1000 ans,3 mois,Environ 100 ans,Environ 300 ans,Environ 500 ans,1 an,1,Frieren,easy,2025-11-29 19:47:50.508237+00
+499,"Quel déclencheur permet à Takemichi de revenir dans le passé ? ",Une poignée de main,Un regard vers le ciel,Une sieste,"Un cri ",Un blessure a la main,Un bisou sur la joue,1,Tokyo Revengers,easy,2025-11-29 19:49:55.424938+00
+500,À quelle espèce appartient Frieren ?,Elfe,Nymphe,Sylfe,Sorcière,Humaine,Démonne,1,Frieren,easy,2025-11-29 19:50:51.956157+00
+501,"Quel cadeau Frieren offre-t-elle à Fern pour son seizième anniversaire ? ",Une broche,"Un collier ",Un baton magique,Une cape,Un grimoire,Un banquet,1,Frieren,hard,2025-11-29 19:52:17.498032+00
+502,"Quel est le métier Naoto ? ",Policier,Pompier,Professeur,Boucher,Vendeur,Menuisier,1,Tokyo Revengers,easy,2025-11-29 19:53:10.647747+00
+503,De qui Stark est-il l'apprenti ?,Eisen,Heiter,Himmel,Frieren,Ubel,Serie,1,Frieren,medium,2025-11-29 19:54:35.876938+00
+504,Quel est le sort magique favori de Frieren ?,Champ de fleurs,Bouclier élémentaire,Rayon de glace,Rainbow blazer,Zoltraak,Arbre sacré,1,Frieren,veryhard,2025-11-29 19:58:34.142189+00
+505,Pourquoi Ubel a-t-elle été refusée à son dernier examen de mage de première classe ?,Pour le meurtre d’un examinateur,Pour avoir utilisé un sort interdit,"Pour retard ",Pour insulte envers l'organisateur,Pour port d'arme interdite,"Pour tricherie ",1,Frieren,hard,2025-11-29 20:05:15.602803+00
+506,"Parmi ces candidats, lequel a été recalé par Serie à l’examen de mage de première classe ?",Kanne,Denken,Ubel,Wirbel,Fern,Land,1,Frieren,veryhard,2025-11-29 20:08:35.970745+00
+507,"Pour quelle raison Denken veut devenir un mage de première classe ? ",Pour pouvoir retourner dans son village natal,Pour devenir le plus puissant mage du royaume,Pour accéder aux archives interdites,Pour gagner la reconnaissance de Serie,Pour atteindre le même titre que son frère,Pour prouver sa supériorité sur Frieren,1,Frieren,hard,2025-11-29 20:11:46.585219+00
+508,De qui Frieren était-elle l'apprentie ?,Flamme,Serie,Aura,Tot,Fern,Ubel,1,Frieren,hard,2025-11-29 20:14:11.033676+00
+509,Pour quelle raison Sein décide t-il d'accompagner Frieren dans son voyage ?,Pour retrouver son ami d'enfance,Parce qu'il est amoureux de Frieren,"Pour devenir plus fort ",Pour explorer de nouveaux territoires,Pour aider Frieren à vaincre le roi Demon,Pour l'argent,1,Frieren,veryhard,2025-11-29 20:17:07.661823+00
+510,A quelle espèce appartient Eisen ?,Nain,Troll,Orc,Demon,Humain,Geant,1,Frieren,medium,2025-11-29 20:19:15.922224+00
+511,"Parmi ces propositions, qu’est-ce qui caractérise le mieux Heiter ?",Il boit beaucoup,Il déteste la magie,Il adore les animaux,Il cuisine très mal,Il est obsédé par les trésors,Il déteste les femmes,1,Frieren,medium,2025-11-29 20:21:01.820537+00
+512,De quelle couleur sont les cheveux d’Itadori ?,Rose,Bleu,Violet,Vert,Jaune,Noir,1,Jujutsu Kaisen,veryeasy,2025-12-01 17:56:31.17186+00
+514,Comment s'appelle le traître de l'équipe Z de Blue Lock ?,Jingo Raichi,Wataru Kuon,Asahi Naruhaya,Gin Gagamaru,Gurimu Igarashi,Ryosuke Kira,2,Blue Lock,medium,2025-12-02 11:32:24.68181+00
+515,Comment s'appelle le cochon de Shizune ?,Pakkun,Hawk,Tonton,Gamakichi,Manda,Tantan,3,Naruto,medium,2025-12-02 11:36:09.987686+00
+517,Comment s'appelle le docteur de Genos ?,Dr. Genus,Dr. Maneko,Dr. Higuro,Dr. Kuseno,Dr. Robotnik,Dr. Elotiro,4,One Punch Man,hard,2025-12-02 11:42:45.072335+00
+518,De quelle couleur sont les cheveux de Renji Abarai ?,Bleu,Rouge,Violet,Jaune,Vert,Noir,2,Bleach,veryeasy,2025-12-02 11:45:50.272625+00
+519,Quel personnage d'animation emblématique apparaît sur le logo du Studio Ghibli ?,Totoro,Kiki,Princesse Mononoké,Porco Rosso,Eren,Nami,1,Divers,veryeasy,2025-12-02 11:47:34.446208+00
+520,Quel est le numéro de brigade de Shinra ?,8,6,3,1,2,7,1,Fire Force,easy,2025-12-02 11:55:00.296356+00
+521,Comment s'appelle le village d'origine de Asta et Yuno ?,Sossi,Clover,Hadge,Spade,Heart,Kikka,3,Black Clover,medium,2025-12-02 11:57:41.698482+00
+522,Combien de trèfle a le grimoire de Asta ?,3,4,5,2,1,6,3,Black Clover,veryeasy,2025-12-02 12:01:22.454636+00
+523,Quel est l'alter de Mei Hatsume ?,Zoom,Chronostasis,Rembobinage,Bulles,Engine,Effacement,1,My Hero Academia,hard,2025-12-02 12:05:38.357451+00
+524,Comment s'appelle la cloche que Luffy sonne à Marineford ?,Rok Bell,Ringo,Ox Bell,Cloch,Marin Bell,Ringu,3,One Piece,medium,2025-12-02 12:08:12.47639+00
+525,Combien de sœurs Ichigo a-t-il ?,2,3,5,1,4,6,1,Bleach,easy,2025-12-02 18:41:54.484873+00
+526,Quel rang occupe Akaza parmi les lunes supérieures ?,3,2,1,4,5,6,1,Demon Slayer,easy,2025-12-03 13:50:37.220308+00
+527,Quel insecte apparaît près de Satoru avant qu'il ne soit projeté dans le passé ?,Papillon,Chenille,Fourmi,Libellule,Coccinelle,Abeille,1,Erased,medium,2025-12-03 13:53:21.234298+00
+529,"Qui a dessiné le manga ""Dr. Stone"" ?",Boichi,Yusuke Murata,Yusuke Nomura,Naoki Urasawa,Takeshi Obata,Takehiko Inoue,1,Divers,medium,2025-12-03 13:59:01.962257+00
+530,Qui est le dernier Pokémon de la 1re génération (le 151) ?,Mew,Mewtwo,Dracolosse,Draco,Sulfura,Artikodin,1,Pokemon,medium,2025-12-03 14:00:37.243053+00
+531,Comment s'appelle le/la seiyuu (doubleur) Japonais de Monkey D. Luffy ?,Mayumi Tanaka,Kenjiro Tsuda,Akemi Okamura,Kazuya Nakai,Hiroaki Hirata,Ikue Ootani,1,Divers,hard,2025-12-03 14:05:16.274337+00
+532,"Lors du rassemblement au camp militaire, quel aliment mange Sasha devant l'instructeur Keith Shadis ?",Une pomme de terre,Une pomme,Du pain,Du maïs,Du lait,Du Pepe Chicken,1,Shingeki No Kyojin,easy,2025-12-03 14:07:31.95435+00
+533,Quelle actrice plaît physiquement à Aoi Todo ?,Jennifer Lawrence,Emma Watson,Scarlett Johanson,Jessica Alba,Zendaya,Madelyn Cline,1,Jujutsu Kaisen,medium,2025-12-03 14:09:19.514138+00
+534,Quel personnage se bat avec un balai ?,Benimaru,Joker,Leonardo Burns,Maki Oze,Iris,Hibana,1,Fire Force,medium,2025-12-03 14:11:26.342508+00
+535,Quelle est la particularité des deux personnages principaux ?,Elles ont le même prénom,Elles ont le même père,Elles aiment le même homme,Elles détestent le rouge,Elles ont le même rire,Elles ont le même métier,1,Nana,medium,2025-12-03 14:13:18.641088+00
+536,Quel objet Isabella ramasse-t-elle à la fin du tout premier épisode ?,Une peluche,Une fleur,Une pièce,Une arme,Une écharpe,Un bonnet,1,The Promised Neverland,easy,2025-12-03 14:15:27.108782+00
+537,Dans quelle ère se déroule les aventures de Tanjiro ?,Taishô,Edo,Meiji,Yayoi,Heisei,Nara,1,Demon Slayer,hard,2025-12-03 14:19:48.742114+00
+538,"Quel est la traduction française du manga ""Maison Ikkoku"" ?",Juliette je t'aime,Jeanne et Serge,Princesse Sarah,Enfer & Paradis,Le Collège Fou Fou Fou,Amer Béton,1,Divers,veryhard,2025-12-03 14:22:19.552905+00
+539,"Si on ne précise pas les circonstances de la mort, en combien de temps l'individu inscrit sur le cahier mourra ?",40 secondes,20 secondes,"37,5 secondes",60 secondes,50 secondes,35 secondes,1,Death Note,medium,2025-12-03 14:24:42.883349+00
+540,"Qui a dit ""Peu importe combien on a d'alliés, on meurt toujours tout seul"" ?",Gojo,Megumi,Todo,Geto,Sukuna,Jogo,1,Jujustu Kaisen,medium,2025-12-03 14:25:52.088341+00
+541,Quel est le manga le plus vendu de tous les temps ?,One Piece,Golgo 13,Dragon Ball,Doraemon,Detective Conan,Demon Slayer,1,Divers,easy,2025-12-03 14:28:31.287813+00
+542,Quelle oeuvre n'est pas un Seinen ?,Chainsaw Man,Vinland Saga,Berserk,Kingdom,Oshi No Ko,Rainbow,1,Divers,easy,2025-12-03 15:03:16.79392+00
+543,Dans quelle maison d'édition est édité le manga My Hero Academia ?,Ki-oon,Crunchyroll Manga,Glénat,Kana,Kurokawa,Pika,1,Divers,medium,2025-12-03 15:06:19.711577+00
+544,Quel nom de héros porte Midoriya Izuku ?,Deku,Kacchan,Stain,All might,Green warrior,Drush,1,My Hero Academia,veryeasy,2025-12-04 17:14:46.806125+00
+545,Quelle est la spécialité de Nikumi ?,La viande,Le couscous,Les patates,Le riz,Les pattes,Le pain,1,Food Wars,medium,2025-12-04 17:56:14.320563+00
+546,Quel nom de code porte Loid Forger ?,Twilight,Nightfall,Cipher-7,Silent Hawk,Grey Wolf,Dagger,1,Spy Family,veryeasy,2025-12-04 17:58:11.300257+00
+547,Quel est l'alter de Bakugo ?,Explosion,Nightwing,Save them all,Vision,One For All,Zoom,1,My Hero Academia,veryeasy,2025-12-04 18:06:45.171349+00
+548,De quelle capacité est dotée Anya Forger ?,Lire dans les pensées,Léviter,Parler aux animaux,Voir dans le futur,Capter les ondes sonores,Détecter les mensonges,1,Spy Family,veryeasy,2025-12-04 18:08:15.195817+00
+549,Dans quelle académie Anya forger étudie t-elle ?,Eden,Bond,Paradise,Spylight,Rainbow,Idol,1,Spy Family,medium,2025-12-05 20:59:41.59823+00
+550,Quelle équipe a été la première à se qualifier lors de l’épreuve de la Forêt de la Mort pendant l’examen Chunin ?,Gaara Temari Kankuro,Naruto Sasuke Salura,Neji Lee Tenten,Kiba Hinata Shino,Shikamaru Choji Ino,Dosu Zaku Kin,1,Naruto,hard,2025-12-05 21:03:53.353436+00
+551,Qui est l’inventeur du Rasengan ?,Minato,Jiraiya,Tobirama,Naruto,Ashura,Hagoromo,1,Naruto,medium,2025-12-05 21:05:54.013803+00

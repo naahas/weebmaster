@@ -572,6 +572,98 @@
             margin: 0 auto 12px;
         }
 
+        /* 🆕 Boutons d'action sur les questions */
+        .question-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-action {
+            padding: 5px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.6rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-action:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-action.delete:hover {
+            border-color: var(--error);
+            color: var(--error);
+        }
+
+        /* 🆕 Modal d'édition */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 14, 39, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-overlay.visible {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border: 1.6px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            width: 100%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: var(--error);
+        }
+
         /* Responsive */
         @media (max-width: 850px) {
             .form-layout {
@@ -769,6 +861,100 @@
         </div>
     </div>
 
+    <!-- 🆕 Modal d'édition -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">✏️ Modifier la question</span>
+                <button class="modal-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form id="editForm" onsubmit="submitEdit(event)">
+                <input type="hidden" id="editId">
+                <div class="form-layout">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>Texte <span class="required">*</span></label>
+                            <textarea id="editQuestionText" placeholder="Question..." required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Série <span class="required">*</span></label>
+                            <input type="text" id="editSerie" placeholder="Ex: Attack on Titan" required>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div class="form-group">
+                                <label>Difficulté</label>
+                                <select id="editDifficulty" required>
+                                    <option value="veryeasy">Very Easy</option>
+                                    <option value="easy">Easy</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="hard">Hard</option>
+                                    <option value="veryhard">Very Hard</option>
+                                    <option value="extreme">Extreme</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Bonne rép.</label>
+                                <select id="editCorrectAnswer" required>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="answers-grid">
+                            <div class="form-group">
+                                <label>Réponse 1 <span class="required">*</span></label>
+                                <span class="answer-number">1</span>
+                                <input type="text" id="editAnswer1" placeholder="Réponse..." required>
+                            </div>
+                            <div class="form-group">
+                                <label>Réponse 2 <span class="required">*</span></label>
+                                <span class="answer-number">2</span>
+                                <input type="text" id="editAnswer2" placeholder="Réponse..." required>
+                            </div>
+                            <div class="form-group">
+                                <label>Réponse 3 <span class="required">*</span></label>
+                                <span class="answer-number">3</span>
+                                <input type="text" id="editAnswer3" placeholder="Réponse..." required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="answers-grid">
+                            <div class="form-group">
+                                <label>Réponse 4 <span class="required">*</span></label>
+                                <span class="answer-number">4</span>
+                                <input type="text" id="editAnswer4" placeholder="Réponse..." required>
+                            </div>
+                            <div class="form-group">
+                                <label>Réponse 5 <span class="required">*</span></label>
+                                <span class="answer-number">5</span>
+                                <input type="text" id="editAnswer5" placeholder="Réponse..." required>
+                            </div>
+                            <div class="form-group">
+                                <label>Réponse 6 <span class="required">*</span></label>
+                                <span class="answer-number">6</span>
+                                <input type="text" id="editAnswer6" placeholder="Réponse..." required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="submit-row">
+                    <button type="submit" class="btn btn-primary" id="editSubmitBtn">
+                        <span class="btn-text">Sauvegarder</span>
+                        <div class="spinner"></div>
+                    </button>
+                    <div class="status" id="editStatus"></div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         let adminCode = '';
         let allQuestions = [];
@@ -940,7 +1126,7 @@
             }
 
             listContainer.innerHTML = questions.map(q => `
-                <div class="question-item">
+                <div class="question-item" data-id="${q.id}">
                     <div class="question-item-header">
                         <div class="question-text">${escapeHtml(q.question)}</div>
                         <div class="question-meta">
@@ -955,6 +1141,9 @@
                             const isCorrect = q.coanswer === i;
                             return `<div class="answer-item ${isCorrect ? 'correct' : ''}">${i}. ${escapeHtml(answer)}</div>`;
                         }).join('')}
+                    </div>
+                    <div class="question-actions">
+                        <button class="btn-action" onclick="openEditModal(${q.id})">✏️ Modifier</button>
                     </div>
                 </div>
             `).join('');
@@ -1061,6 +1250,147 @@
                 });
             }
         });
+
+        // 🆕 Ouvrir le modal d'édition
+        function openEditModal(questionId) {
+            const question = allQuestions.find(q => q.id === questionId);
+            if (!question) return;
+
+            document.getElementById('editId').value = question.id;
+            document.getElementById('editQuestionText').value = question.question;
+            document.getElementById('editSerie').value = question.serie || '';
+            document.getElementById('editDifficulty').value = question.difficulty || 'medium';
+            document.getElementById('editCorrectAnswer').value = question.coanswer || 1;
+            document.getElementById('editAnswer1').value = question.answer1 || '';
+            document.getElementById('editAnswer2').value = question.answer2 || '';
+            document.getElementById('editAnswer3').value = question.answer3 || '';
+            document.getElementById('editAnswer4').value = question.answer4 || '';
+            document.getElementById('editAnswer5').value = question.answer5 || '';
+            document.getElementById('editAnswer6').value = question.answer6 || '';
+
+            document.getElementById('editModal').classList.add('visible');
+            document.getElementById('editStatus').className = 'status';
+        }
+
+        // Fermer le modal
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('visible');
+        }
+
+        // Fermer en cliquant sur l'overlay
+        document.getElementById('editModal').addEventListener('click', (e) => {
+            if (e.target.id === 'editModal') closeEditModal();
+        });
+
+        // Soumettre la modification
+        async function submitEdit(event) {
+            event.preventDefault();
+
+            const btn = document.getElementById('editSubmitBtn');
+            const editStatus = document.getElementById('editStatus');
+
+            const id = document.getElementById('editId').value;
+            const questionText = document.getElementById('editQuestionText').value.trim();
+            const answers = [
+                document.getElementById('editAnswer1').value.trim(),
+                document.getElementById('editAnswer2').value.trim(),
+                document.getElementById('editAnswer3').value.trim(),
+                document.getElementById('editAnswer4').value.trim(),
+                document.getElementById('editAnswer5').value.trim(),
+                document.getElementById('editAnswer6').value.trim()
+            ];
+            const correctAnswer = parseInt(document.getElementById('editCorrectAnswer').value);
+            const serie = document.getElementById('editSerie').value.trim();
+            const difficulty = document.getElementById('editDifficulty').value;
+
+            if (answers.filter(a => a !== '').length < 6) {
+                showStatus(editStatus, 'Les 6 réponses sont requises', 'error');
+                return;
+            }
+
+            btn.classList.add('loading');
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/update-question', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        adminCode,
+                        id,
+                        question: questionText,
+                        answers,
+                        correctAnswer,
+                        serie,
+                        difficulty
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showStatus(editStatus, '✓ Question modifiée !', 'success');
+                    
+                    // Mettre à jour la question dans allQuestions
+                    const index = allQuestions.findIndex(q => q.id == id);
+                    if (index !== -1) {
+                        allQuestions[index] = {
+                            ...allQuestions[index],
+                            question: questionText,
+                            serie,
+                            difficulty,
+                            coanswer: correctAnswer,
+                            answer1: answers[0],
+                            answer2: answers[1],
+                            answer3: answers[2],
+                            answer4: answers[3],
+                            answer5: answers[4],
+                            answer6: answers[5]
+                        };
+                    }
+                    
+                    filterQuestions();
+                    
+                    setTimeout(() => closeEditModal(), 1000);
+                } else {
+                    showStatus(editStatus, data.error || 'Erreur lors de la modification', 'error');
+                }
+            } catch (error) {
+                showStatus(editStatus, 'Erreur de connexion', 'error');
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        }
+
+        // 🆕 Supprimer une question
+        async function deleteQuestion(questionId) {
+            if (!confirm('Supprimer cette question ?')) return;
+
+            try {
+                const response = await fetch('/api/delete-question', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        adminCode,
+                        id: questionId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Retirer de allQuestions
+                    allQuestions = allQuestions.filter(q => q.id !== questionId);
+                    document.getElementById('totalCount').textContent = allQuestions.length;
+                    filterQuestions();
+                } else {
+                    alert(data.error || 'Erreur lors de la suppression');
+                }
+            } catch (error) {
+                alert('Erreur de connexion');
+            }
+        }
     </script>
 </body>
 

@@ -43,7 +43,7 @@ const PLAYER_COLORS = [
 
 // config/serieFilters.js
 const SERIE_FILTERS = {
-    overall: {
+    overall : {
         name: 'Overall',
         icon: '🌍',
         series: []
@@ -364,7 +364,7 @@ const gameState = {
     serieFilter: 'tout',
 
     playerBonuses: new Map(),
-
+    
     // 🆕 Système de défis
     activeChallenges: [],           // Les 3 défis de la partie actuelle
     playerChallenges: new Map()     // Progression des défis par joueur
@@ -398,28 +398,28 @@ const CHALLENGE_POOLS = {
 // Générer les 3 défis pour une partie
 function generateChallenges() {
     const challenges = [];
-
+    
     // 1. Tirer un défi 50/50
     const pool5050 = CHALLENGE_POOLS['5050'];
     const challenge5050 = { ...pool5050[Math.floor(Math.random() * pool5050.length)], reward: '5050' };
     challenges.push(challenge5050);
-
+    
     // 2. Tirer un défi Joker
     const poolReveal = CHALLENGE_POOLS['reveal'];
     const challengeReveal = { ...poolReveal[Math.floor(Math.random() * poolReveal.length)], reward: 'reveal' };
     challenges.push(challengeReveal);
-
+    
     // 3. Tirer un défi Bouclier/x2 (avec restriction si filtre actif)
     let poolShield = [...CHALLENGE_POOLS['shield']];
-
+    
     // Option A : Exclure series7 si filtre ≠ overall/mainstream
     if (gameState.serieFilter !== 'tout' && gameState.serieFilter !== 'mainstream') {
         poolShield = poolShield.filter(c => c.id !== 'series7');
     }
-
+    
     const challengeShield = { ...poolShield[Math.floor(Math.random() * poolShield.length)], reward: gameState.mode === 'lives' ? 'shield' : 'doublex2' };
     challenges.push(challengeShield);
-
+    
     console.log(`🎯 Défis générés: ${challenges.map(c => c.id).join(', ')}`);
     return challenges;
 }
@@ -431,7 +431,7 @@ function initPlayerChallenges(socketId) {
         currentStreak: 0,
         seriesAnswered: new Set()
     };
-
+    
     // Initialiser chaque défi actif
     gameState.activeChallenges.forEach(challenge => {
         progress.challenges[challenge.id] = {
@@ -440,7 +440,7 @@ function initPlayerChallenges(socketId) {
             completed: false
         };
     });
-
+    
     gameState.playerChallenges.set(socketId, progress);
 }
 
@@ -448,10 +448,10 @@ function initPlayerChallenges(socketId) {
 function checkChallenges(socketId, answerData) {
     const playerProgress = gameState.playerChallenges.get(socketId);
     if (!playerProgress) return [];
-
+    
     const { correct, responseTime, difficulty, series, isFirst } = answerData;
     const completedChallenges = [];
-
+    
     // Mettre à jour le streak
     if (correct) {
         playerProgress.currentStreak++;
@@ -461,14 +461,14 @@ function checkChallenges(socketId, answerData) {
     } else {
         playerProgress.currentStreak = 0;
     }
-
+    
     // Vérifier chaque défi actif
     gameState.activeChallenges.forEach(challenge => {
         const cp = playerProgress.challenges[challenge.id];
         if (!cp || cp.completed) return;
-
+        
         let progressMade = false;
-
+        
         switch (challenge.type) {
             case 'speed':
                 // Bonne réponse en moins de 3s
@@ -477,7 +477,7 @@ function checkChallenges(socketId, answerData) {
                     progressMade = true;
                 }
                 break;
-
+                
             case 'streak':
                 // X bonnes réponses d'affilée
                 if (correct) {
@@ -487,7 +487,7 @@ function checkChallenges(socketId, answerData) {
                     cp.progress = 0; // Reset à 0 si mauvaise réponse
                 }
                 break;
-
+                
             case 'total':
                 // X bonnes réponses au total
                 if (correct) {
@@ -495,7 +495,7 @@ function checkChallenges(socketId, answerData) {
                     progressMade = true;
                 }
                 break;
-
+                
             case 'first':
                 // Premier à bien répondre
                 if (correct && isFirst) {
@@ -503,7 +503,7 @@ function checkChallenges(socketId, answerData) {
                     progressMade = true;
                 }
                 break;
-
+                
             case 'difficulty':
                 // Réussir une question de difficulté spécifique
                 if (correct) {
@@ -516,7 +516,7 @@ function checkChallenges(socketId, answerData) {
                     }
                 }
                 break;
-
+                
             case 'series':
                 // Réussir sur X séries différentes
                 if (correct) {
@@ -525,7 +525,7 @@ function checkChallenges(socketId, answerData) {
                 }
                 break;
         }
-
+        
         // Vérifier si défi complété
         if (progressMade && cp.progress >= cp.target && !cp.completed) {
             cp.completed = true;
@@ -536,7 +536,7 @@ function checkChallenges(socketId, answerData) {
             console.log(`🏆 Défi "${challenge.name}" complété par ${socketId} ! Récompense: ${challenge.reward}`);
         }
     });
-
+    
     return completedChallenges;
 }
 
@@ -544,7 +544,7 @@ function checkChallenges(socketId, answerData) {
 function getPlayerChallengesState(socketId) {
     const playerProgress = gameState.playerChallenges.get(socketId);
     if (!playerProgress) return [];
-
+    
     return gameState.activeChallenges.map(challenge => {
         const cp = playerProgress.challenges[challenge.id];
         return {
@@ -636,10 +636,8 @@ function getEliminatedCount() {
 async function logVisit(page) {
     try {
         await supabase.from('visits').insert({ page });
-    } catch (e) { }
+    } catch (e) {}
 }
-
-
 
 
 app.get('/', (req, res) => {
@@ -721,7 +719,6 @@ app.post('/admin/login', (req, res) => {
     res.status(401).json({ success: false, message: 'Mot de passe incorrect' });
 });
 
-
 // 🆕 Route secrète pour voir les visites
 app.get('/visits-stats', async (req, res) => {
     try {
@@ -752,8 +749,8 @@ app.get('/visits-stats', async (req, res) => {
         res.json({
             total: { home: homeCount || 0, admin: adminCount || 0 },
             recent: {
-                home: homeVisits?.map(v => new Date(v.timestamp).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })) || [],
-                admin: adminVisits?.map(v => new Date(v.timestamp).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })) || []
+                home: homeVisits?.map(v => new Date(v.timestamp).toLocaleString('fr-FR')) || [],
+                admin: adminVisits?.map(v => new Date(v.timestamp).toLocaleString('fr-FR')) || []
             }
         });
     } catch (e) {
@@ -2036,11 +2033,11 @@ function revealAnswers(correctAnswer) {
     // 🆕 DÉFIS : Vérifier les défis pour chaque joueur
     const currentDifficulty = gameState.currentQuestion?.difficulty || 'medium';
     const currentSeries = gameState.currentQuestion?.serie || '';
-
+    
     playersDetails.forEach(p => {
         const playerAnswer = gameState.answers.get(p.socketId);
         if (!playerAnswer) return;
-
+        
         const answerData = {
             correct: p.isCorrect,
             responseTime: p.responseTime || 999999,
@@ -2048,9 +2045,9 @@ function revealAnswers(correctAnswer) {
             series: currentSeries,
             isFirst: fastestPlayer && fastestPlayer.socketId === p.socketId
         };
-
+        
         const completedChallenges = checkChallenges(p.socketId, answerData);
-
+        
         // Si des défis sont complétés, ajouter les bonus à l'inventaire
         if (completedChallenges.length > 0) {
             const bonusData = gameState.playerBonuses.get(p.socketId);
@@ -2059,7 +2056,7 @@ function revealAnswers(correctAnswer) {
                     bonusData.bonusInventory[reward]++;
                     console.log(`🎁 Bonus ${reward} ajouté à ${p.username} (total: ${bonusData.bonusInventory[reward]})`);
                 });
-
+                
                 // Envoyer mise à jour des bonus au joueur
                 const socket = io.sockets.sockets.get(p.socketId);
                 if (socket) {
@@ -2071,7 +2068,7 @@ function revealAnswers(correctAnswer) {
                 }
             }
         }
-
+        
         // Envoyer mise à jour des défis au joueur
         const socket = io.sockets.sockets.get(p.socketId);
         if (socket) {
@@ -3113,6 +3110,67 @@ app.post('/api/add-question', async (req, res) => {
 });
 
 
+// 🆕 Modifier une question
+app.post('/api/update-question', async (req, res) => {
+    const { adminCode, id, question, answers, correctAnswer, serie, difficulty } = req.body;
+
+    // Vérifier le code
+    if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
+        return res.status(401).json({ error: 'Code invalide' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('questions')
+            .update({
+                question,
+                answer1: answers[0],
+                answer2: answers[1],
+                answer3: answers[2],
+                answer4: answers[3],
+                answer5: answers[4],
+                answer6: answers[5],
+                coanswer: correctAnswer,
+                serie,
+                difficulty
+            })
+            .eq('id', id);
+
+        if (error) throw error;
+
+        res.json({ success: true, message: 'Question modifiée !' });
+    } catch (error) {
+        console.error('Erreur modification question:', error);
+        res.status(500).json({ error: 'Erreur lors de la modification' });
+    }
+});
+
+
+// 🆕 Supprimer une question
+app.post('/api/delete-question', async (req, res) => {
+    const { adminCode, id } = req.body;
+
+    // Vérifier le code
+    if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
+        return res.status(401).json({ error: 'Code invalide' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('questions')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+
+        res.json({ success: true, message: 'Question supprimée !' });
+    } catch (error) {
+        console.error('Erreur suppression question:', error);
+        res.status(500).json({ error: 'Erreur lors de la suppression' });
+    }
+});
+
+
 // Récupérer toutes les questions (avec filtre optionnel)
 app.get('/api/questions', async (req, res) => {
     const { adminCode } = req.query;
@@ -3347,7 +3405,7 @@ io.on('connection', (socket) => {
         }
 
         const userInfo = await db.getUserByTwitchId(data.twitchId);
-
+        
         // 🔥 Récupérer le titre actuel du joueur
         let playerTitle = 'Novice';
         if (userInfo && userInfo.current_title_id) {
@@ -3442,7 +3500,7 @@ io.on('connection', (socket) => {
                     gameState.playerBonuses.delete(oldSocketId);
                     console.log(`🎁 Bonus transférés: ${oldSocketId} → ${socket.id}`);
                 }
-
+                
                 // 🆕 Transférer les défis aussi
                 const oldChallengesData = gameState.playerChallenges.get(oldSocketId);
                 if (oldChallengesData) {
