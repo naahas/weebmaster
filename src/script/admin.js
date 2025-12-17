@@ -2114,7 +2114,7 @@ function createGamePlayerCards() {
                 <div class="player-card-game-name">${name}</div>
                 <div class="player-card-game-lives">${livesHtml}</div>
                 <div class="player-card-game-answer-overlay">
-                    <span class="answer-text-display no-answer">Pas répondu</span>
+                    <span class="answer-text-display no-answer"><img src="zzzzz.png" alt="AFK" class="afk-icon"></span>
                 </div>
             `;
         } else {
@@ -2123,7 +2123,7 @@ function createGamePlayerCards() {
                 <div class="player-card-game-name">${name}</div>
                 <div class="player-card-game-points">0</div>
                 <div class="player-card-game-answer-overlay">
-                    <span class="answer-text-display no-answer">Pas répondu</span>
+                    <span class="answer-text-display no-answer"><img src="zzzzz.png" alt="AFK" class="afk-icon"></span>
                 </div>
             `;
         }
@@ -3478,7 +3478,7 @@ function createGamePlayerCardsFromState(players) {
                 <div class="player-card-game-name">${player.username}</div>
                 <div class="player-card-game-lives">${livesHtml}</div>
                 <div class="player-card-game-answer-overlay">
-                    <span class="answer-text-display no-answer">Pas répondu</span>
+                    <span class="answer-text-display no-answer"><img src="zzzzz.png" alt="AFK" class="afk-icon"></span>
                 </div>
             `;
         } else {
@@ -3487,7 +3487,7 @@ function createGamePlayerCardsFromState(players) {
                 <div class="player-card-game-name">${player.username}</div>
                 <div class="player-card-game-points">${player.points || 0}</div>
                 <div class="player-card-game-answer-overlay">
-                    <span class="answer-text-display no-answer">Pas répondu</span>
+                    <span class="answer-text-display no-answer"><img src="zzzzz.png" alt="AFK" class="afk-icon"></span>
                 </div>
             `;
         }
@@ -3731,7 +3731,7 @@ function updatePlayerCardsFromState(results) {
                         overlay.classList.add('wrong');
                     }
                 } else {
-                    overlay.textContent = 'Pas répondu';
+                    overlay.innerHTML = '<img src="zzzzz.png" alt="AFK" class="afk-icon">';
                     overlay.classList.add('no-answer');
                     overlay.classList.remove('wrong');
                 }
@@ -4672,7 +4672,7 @@ function updatePlayerCard(playerResult, correctAnswer) {
                 overlay.classList.remove('no-answer', 'wrong');
                 if (!playerResult.isCorrect) overlay.classList.add('wrong');
             } else {
-                overlay.textContent = 'Pas répondu';
+                overlay.innerHTML = '<img src="zzzzz.png" alt="AFK" class="afk-icon">';
                 overlay.classList.add('no-answer');
                 overlay.classList.remove('wrong');
             }
@@ -4747,6 +4747,9 @@ function handleActivityLog(log) {
             break;
         case 'leave':
             addGameLog('leave', username);
+            break;
+        case 'disconnect':
+            addGameLog('disconnected', username);
             break;
         case 'reconnect':
             addGameLog('reconnected', username);

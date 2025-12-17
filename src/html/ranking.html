@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShonenMaster - Classement</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="icon.png">
+    <style>
+        :root {
+            --bg-main: #0a0e1a;
+            --bg-card: #0d1220;
+            --bg-card-hover: #141c2f;
+            --gold: #f0c14b;
+            --gold-dim: rgba(240, 193, 75, 0.5);
+            --text: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.5);
+            --text-dim: rgba(255, 255, 255, 0.3);
+            --border: rgba(255, 255, 255, 0.06);
+            --rank-1: #ffd700;
+            --rank-2: #b8c5d1;
+            --rank-3: #cd7f32;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-main);
+            color: var(--text);
+            height: 100vh;
+            padding: 1.5rem 2rem;
+            overflow: hidden;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            color: var(--text-dim);
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            border-color: var(--gold-dim);
+            color: var(--gold);
+        }
+
+        .back-btn svg {
+            width: 1.1rem;
+            height: 1.1rem;
+        }
+
+        .page-title {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1rem;
+        }
+
+        .page-title span {
+            color: var(--gold);
+        }
+
+        .filters-bar {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .filter-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            padding: 0.5rem 1rem;
+            border-radius: 0.4rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn:hover {
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .filter-btn.active {
+            background: rgba(240, 193, 75, 0.15);
+            color: var(--gold);
+        }
+
+        .filter-btn.soon {
+            color: var(--gold);
+            animation: pulse-soon 0.4s ease;
+        }
+
+        .filter-divider {
+            width: 1px;
+            height: 1.5rem;
+            background: var(--border);
+        }
+
+        .filter-note {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-left: auto;
+            margin-right: 1.5rem;
+            cursor: help;
+            position: relative;
+        }
+
+        .filter-note:hover {
+            color: var(--gold-dim);
+        }
+
+        .filter-note::before {
+            content: '❓';
+            font-size: 0.7rem;
+        }
+
+        .filter-note .tooltip {
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            margin-bottom: 0.5rem;
+            background: rgba(20, 20, 25, 0.95);
+            border: 1px solid var(--gold-dim);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            font-size: 0.7rem;
+            color: var(--text);
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            line-height: 1.6;
+        }
+
+        .filter-note:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-input {
+            width: 200px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem 0.5rem 2.25rem;
+            color: var(--text);
+            font-size: 0.75rem;
+            font-family: 'Poppins', sans-serif;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-dim);
+        }
+
+        .search-input:focus {
+            border-color: var(--gold-dim);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-dim);
+            font-size: 0.8rem;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 1.5rem;
+            height: calc(100vh - 180px);
+        }
+
+        .ranking-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            overflow: hidden;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .table-header {
+            display: grid;
+            grid-template-columns: 50px 1fr 70px 60px 55px 60px 65px 115px 100px;
+            gap: 1rem;
+            padding: 0.75rem 1.25rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05rem;
+            font-weight: 600;
+        }
+
+        .ranking-list {
+            flex: 1;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(240, 193, 75, 0.15) transparent;
+        }
+
+        .ranking-list::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .ranking-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .ranking-list::-webkit-scrollbar-thumb {
+            background: rgba(240, 193, 75, 0.15);
+            border-radius: 3px;
+        }
+
+        .ranking-list::-webkit-scrollbar-thumb:hover {
+            background: rgba(240, 193, 75, 0.25);
+        }
+
+        .player-row {
+            display: grid;
+            grid-template-columns: 50px 1fr 70px 60px 55px 60px 65px 115px 100px;
+            gap: 1rem;
+            padding: 0.85rem 1.25rem;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            transition: all 0.15s ease;
+        }
+
+        .player-row:last-child {
+            border-bottom: none;
+        }
+
+        .player-row:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .player-row.rank-1 { background: rgba(255, 215, 0, 0.04); }
+        .player-row.rank-2 { background: rgba(184, 197, 209, 0.03); }
+        .player-row.rank-3 { background: rgba(205, 127, 50, 0.03); }
+
+        .player-row.rank-1:hover { background: rgba(255, 215, 0, 0.08); }
+        .player-row.rank-2:hover { background: rgba(184, 197, 209, 0.06); }
+        .player-row.rank-3:hover { background: rgba(205, 127, 50, 0.06); }
+
+        .rank-badge {
+            width: 2.25rem;
+            height: 2.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-dim);
+        }
+
+        .rank-1 .rank-badge {
+            background: rgba(255, 215, 0, 0.15);
+            color: var(--rank-1);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+
+        .rank-2 .rank-badge {
+            background: rgba(184, 197, 209, 0.15);
+            color: var(--rank-2);
+            border: 1px solid rgba(184, 197, 209, 0.2);
+        }
+
+        .rank-3 .rank-badge {
+            background: rgba(205, 127, 50, 0.15);
+            color: var(--rank-3);
+            border: 1px solid rgba(205, 127, 50, 0.2);
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .player-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .rank-1 .player-name { color: var(--rank-1); }
+        .rank-2 .player-name { color: var(--rank-2); }
+        .rank-3 .player-name { color: var(--rank-3); }
+
+        .player-title {
+            font-size: 0.6rem;
+            font-weight: 500;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.3rem;
+            background: rgba(240, 193, 75, 0.1);
+            color: var(--gold-dim);
+            border: 1px solid rgba(240, 193, 75, 0.15);
+            white-space: nowrap;
+        }
+
+        .stat-cell {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .stat-cell.winrate {
+            color: var(--gold);
+            font-weight: 600;
+        }
+
+        .stat-cell.titles {
+            color: var(--text-dim);
+            font-size: 0.7rem;
+        }
+
+        .stat-cell.activity {
+            color: var(--text-dim);
+            font-size: 0.7rem;
+        }
+
+        .stat-cell.last {
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+        }
+
+        .stat-cell.streak {
+            color: #ff6b35;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .podium-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+        }
+
+        .card-title {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.1rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .podium {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 0.5rem;
+            padding-top: 1rem;
+        }
+
+        .podium-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .podium-medal {
+            font-size: 1.75rem;
+        }
+
+        .podium-item.first .podium-medal { font-size: 2.25rem; }
+
+        .podium-player {
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-align: center;
+            max-width: 80px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .podium-item.first .podium-player { color: var(--rank-1); }
+        .podium-item.second .podium-player { color: var(--rank-2); }
+        .podium-item.third .podium-player { color: var(--rank-3); }
+
+        .podium-bar {
+            width: 70px;
+            border-radius: 0.4rem 0.4rem 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .podium-item.first .podium-bar {
+            height: 80px;
+            background: linear-gradient(180deg, rgba(255, 215, 0, 0.25), rgba(255, 215, 0, 0.08));
+            color: var(--rank-1);
+        }
+
+        .podium-item.second .podium-bar {
+            height: 60px;
+            background: linear-gradient(180deg, rgba(184, 197, 209, 0.2), rgba(184, 197, 209, 0.05));
+            color: var(--rank-2);
+        }
+
+        .podium-item.third .podium-bar {
+            height: 40px;
+            background: linear-gradient(180deg, rgba(205, 127, 50, 0.2), rgba(205, 127, 50, 0.05));
+            color: var(--rank-3);
+        }
+
+        .games-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+        }
+
+        .games-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .game-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+        }
+
+        .game-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .game-mode {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .game-date {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+        }
+
+        .game-winner {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .winner-label {
+            font-size: 0.75rem;
+        }
+
+        .winner-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--gold);
+        }
+
+        .game-players {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+        }
+
+        .view-all-link {
+            display: block;
+            text-align: center;
+            margin-top: 1rem;
+            padding: 0.6rem;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-decoration: none;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .view-all-link:hover {
+            color: var(--gold);
+            border-color: var(--gold-dim);
+            background: rgba(240, 193, 75, 0.05);
+        }
+
+        .view-all-link.soon {
+            color: var(--gold);
+            border-color: var(--gold-dim);
+            background: rgba(240, 193, 75, 0.08);
+            animation: pulse-soon 0.4s ease;
+        }
+
+        @keyframes pulse-soon {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+
+        .loading, .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            color: var(--text-dim);
+            font-size: 0.75rem;
+        }
+
+        .loading-spinner {
+            width: 2rem;
+            height: 2rem;
+            border: 2px solid var(--border);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 0.75rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 1200px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+            .side-panel {
+                display: none;
+            }
+            .side-panel-mobile {
+                display: block;
+                margin-top: 1.5rem;
+            }
+        }
+
+        /* Mobile side panel */
+        .side-panel-mobile {
+            display: none;
+        }
+
+        .side-panel-mobile .recent-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .mobile-info-banner {
+            display: none;
+            background: rgba(240, 193, 75, 0.08);
+            border: 1px solid var(--gold-dim);
+            border-radius: 0.5rem;
+            padding: 0.6rem 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
+
+        .mobile-info-banner span {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .mobile-info-banner .info-icon {
+            width: 14px;
+            height: 14px;
+            color: var(--gold-dim);
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 900px) {
+            body {
+                height: auto;
+                min-height: 100vh;
+                overflow: auto;
+                padding: 1rem;
+                padding-bottom: 2rem;
+            }
+            .mobile-info-banner {
+                display: block;
+            }
+            .table-header {
+                display: none;
+            }
+            .player-row {
+                grid-template-columns: 50px 1fr auto;
+            }
+            .player-row > *:nth-child(3),
+            .player-row > *:nth-child(4),
+            .player-row > *:nth-child(6),
+            .player-row > *:nth-child(7),
+            .player-row > *:nth-child(8),
+            .player-row > *:nth-child(9) {
+                display: none;
+            }
+            .filter-note {
+                display: none;
+            }
+            .main-layout {
+                height: auto;
+            }
+            .ranking-card {
+                height: auto;
+                max-height: none;
+            }
+            .ranking-list {
+                max-height: none;
+                overflow: visible;
+            }
+            .side-panel-mobile {
+                display: block;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            .filters-bar {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            .filter-divider {
+                display: none;
+            }
+            .filter-group {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            .search-box {
+                width: 100%;
+                margin-left: 0;
+                margin-top: 0.5rem;
+            }
+            .search-input {
+                width: 100%;
+            }
+            .player-row {
+                padding: 0.75rem;
+            }
+            .rank-badge {
+                width: 28px;
+                height: 28px;
+                font-size: 0.7rem;
+            }
+            .player-name {
+                font-size: 0.8rem;
+            }
+            .player-title {
+                font-size: 0.55rem;
+                padding: 0.15rem 0.4rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <header class="header">
+            <div class="header-left">
+                <a href="/" class="back-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                <h1 class="page-title">🏆 <span>Shonen</span>Master · Classement</h1>
+            </div>
+        </header>
+
+        <div class="filters-bar">
+            <div class="filter-group">
+                <button class="filter-btn" :class="{ active: filter === 'all' }" @click="setFilter('all')">Tous</button>
+                <button class="filter-btn" :class="{ active: filter === 'top10' }" @click="setFilter('top10')">Top 10</button>
+                <button class="filter-btn" :class="{ active: filter === 'top50' }" @click="setFilter('top50')">Top 50</button>
+            </div>
+            <div class="filter-divider"></div>
+            <div class="filter-group">
+                <button class="filter-btn" :class="{ active: mode === 'all' }" @click="setMode('all')">Global</button>
+                <button class="filter-btn" :class="{ active: mode === 'lives', soon: modeSoon === 'lives' }" @click="showModeSoon('lives')">{{ modeSoon === 'lives' ? '✨ SOON ✨' : 'Vies' }}</button>
+                <button class="filter-btn" :class="{ active: mode === 'points', soon: modeSoon === 'points' }" @click="showModeSoon('points')">{{ modeSoon === 'points' ? '✨ SOON ✨' : 'Points' }}</button>
+            </div>
+            <div class="filter-divider"></div>
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" v-model="searchQuery" placeholder="Rechercher un joueur...">
+            </div>
+            <span class="filter-note">
+                Je ne trouve pas un joueur
+                <span class="tooltip">Joueurs comptabilisés : 3 parties minimum<br>Parties comptabilisées : 15 joueurs minimum</span>
+            </span>
+        </div>
+
+        <!-- Mobile info banner -->
+        <div class="mobile-info-banner">
+            <span>
+                <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                Joueurs comptabilisés : 3 parties minimum
+            </span>
+            <span>
+                <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                    <polyline points="2 17 12 22 22 17"/>
+                    <polyline points="2 12 12 17 22 12"/>
+                </svg>
+                Parties comptabilisées : 15 joueurs minimum
+            </span>
+        </div>
+
+        <div class="main-layout">
+            <div class="ranking-card">
+                <div class="table-header">
+                    <span>#</span>
+                    <span>Joueur</span>
+                    <span style="text-align: center;">Parties</span>
+                    <span style="text-align: center;">Wins</span>
+                    <span style="text-align: center;">WR</span>
+                    <span style="text-align: center;">Titres</span>
+                    <span style="text-align: center;">Actif</span>
+                    <span style="text-align: center;">Dernier placement</span>
+                    <span style="text-align: center;">Meilleure série</span>
+                </div>
+
+                <div class="ranking-list" v-if="!loading">
+                    <div v-for="(player, index) in filteredPlayers" :key="player.twitch_id" 
+                         class="player-row" :class="getRankClass(index)">
+                        <div class="rank-badge">{{ index + 1 }}</div>
+                        <div class="player-info">
+                            <span class="player-name">{{ player.username }}</span>
+                            <span class="player-title">{{ player.title_name || 'Novice' }}</span>
+                        </div>
+                        <div class="stat-cell">{{ player.games_played || 0 }}</div>
+                        <div class="stat-cell">{{ player.wins || 0 }}</div>
+                        <div class="stat-cell winrate">{{ formatWinrate(player.win_rate) }}%</div>
+                        <div class="stat-cell titles">{{ player.titles_unlocked || 1 }}/{{ player.total_titles || totalTitles }}</div>
+                        <div class="stat-cell activity">{{ formatActivity(player.last_activity) }}</div>
+                        <div class="stat-cell last">{{ player.last_placement ? '#' + player.last_placement : '-' }}</div>
+                        <div class="stat-cell streak">{{ player.best_win_streak || '-' }}</div>
+                    </div>
+
+                    <div v-if="filteredPlayers.length === 0" class="empty-state">
+                        <p>Aucun joueur trouvé</p>
+                    </div>
+                </div>
+
+                <div v-else class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Chargement...</p>
+                </div>
+            </div>
+
+            <div class="side-panel">
+                <div class="podium-card" v-if="players.length >= 3">
+                    <div class="card-title">🏆 Podium</div>
+                    <div class="podium">
+                        <div class="podium-item second">
+                            <span class="podium-medal">🥈</span>
+                            <span class="podium-player">{{ players[1]?.username }}</span>
+                            <div class="podium-bar">2</div>
+                        </div>
+                        <div class="podium-item first">
+                            <span class="podium-medal">🥇</span>
+                            <span class="podium-player">{{ players[0]?.username }}</span>
+                            <div class="podium-bar">1</div>
+                        </div>
+                        <div class="podium-item third">
+                            <span class="podium-medal">🥉</span>
+                            <span class="podium-player">{{ players[2]?.username }}</span>
+                            <div class="podium-bar">3</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="games-card">
+                    <div class="card-title">🎮 Parties récentes</div>
+                    <div class="games-list">
+                        <div v-for="game in recentGames" :key="game.id" class="game-item">
+                            <div class="game-info">
+                                <div class="game-mode">{{ game.mode }}</div>
+                                <div class="game-date">{{ game.date }}</div>
+                            </div>
+                            <div class="game-winner">
+                                <span class="winner-label">🏆</span>
+                                <span class="winner-name">{{ game.winner }}</span>
+                            </div>
+                            <div class="game-players">{{ game.players }} joueurs</div>
+                        </div>
+                    </div>
+                    <div class="view-all-link" :class="{ soon: showSoon }" @click="showSoonText">
+                        {{ showSoon ? '✨ SOON ✨' : 'Voir toutes les parties →' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Side Panel -->
+        <div class="side-panel-mobile">
+            <!-- Parties récentes Mobile -->
+            <div class="recent-section">
+                <div class="card-title" style="margin-bottom: 1rem;">🎮 Parties récentes</div>
+                <div class="games-list">
+                    <div v-for="game in recentGames" :key="game.id" class="game-item">
+                        <div class="game-info">
+                            <div class="game-mode">{{ game.mode }}</div>
+                            <div class="game-date">{{ game.date }}</div>
+                        </div>
+                        <div class="game-winner">
+                            <span class="winner-label">🏆</span>
+                            <span class="winner-name">{{ game.winner }}</span>
+                        </div>
+                        <div class="game-players">{{ game.players }} joueurs</div>
+                    </div>
+                    <div v-if="recentGames.length === 0" style="color: var(--text-dim); font-size: 0.75rem; text-align: center; padding: 1rem;">
+                        Aucune partie récente
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    players: [],
+                    recentGames: [],
+                    loading: true,
+                    filter: 'all',
+                    mode: 'all',
+                    searchQuery: '',
+                    totalTitles: 10,
+                    showSoon: false,
+                    modeSoon: null
+                }
+            },
+            computed: {
+                filteredPlayers() {
+                    let result = [...this.players];
+                    if (this.filter === 'top10') {
+                        result = result.slice(0, 10);
+                    } else if (this.filter === 'top50') {
+                        result = result.slice(0, 50);
+                    }
+                    if (this.searchQuery.trim()) {
+                        const query = this.searchQuery.toLowerCase();
+                        result = result.filter(p => p.username.toLowerCase().includes(query));
+                    }
+                    return result;
+                }
+            },
+            methods: {
+                setFilter(filter) {
+                    this.filter = filter;
+                },
+                setMode(mode) {
+                    this.mode = mode;
+                },
+                showModeSoon(mode) {
+                    this.modeSoon = mode;
+                    setTimeout(() => {
+                        this.modeSoon = null;
+                    }, 2000);
+                },
+                getRankClass(index) {
+                    if (index === 0) return 'rank-1';
+                    if (index === 1) return 'rank-2';
+                    if (index === 2) return 'rank-3';
+                    return '';
+                },
+                formatWinrate(rate) {
+                    if (!rate) return '0';
+                    return Math.round(Number(rate));
+                },
+                formatActivity(date) {
+                    if (!date) return '-';
+                    const now = new Date();
+                    const activity = new Date(date);
+                    const diff = Math.floor((now - activity) / 1000);
+                    if (diff < 3600) return Math.floor(diff / 60) + 'min';
+                    if (diff < 86400) return Math.floor(diff / 3600) + 'h';
+                    if (diff < 604800) return Math.floor(diff / 86400) + 'j';
+                    return Math.floor(diff / 604800) + 'sem';
+                },
+                async loadRanking() {
+                    try {
+                        const response = await fetch('/leaderboard?limit=500');
+                        const data = await response.json();
+                        this.players = Array.isArray(data) ? data : (data.leaderboard || []);
+                    } catch (error) {
+                        console.error('Erreur chargement classement:', error);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async loadRecentGames() {
+                    try {
+                        const response = await fetch('/api/recent-games?limit=3');
+                        const data = await response.json();
+                        if (data.success && data.games) {
+                            this.recentGames = data.games.map(game => ({
+                                id: game.id,
+                                mode: game.mode === 'points' ? 'Points' : 'Vies',
+                                date: this.formatGameDate(game.created_at),
+                                winner: game.winner?.username || '-',
+                                players: game.total_players || 0
+                            }));
+                        }
+                    } catch (error) {
+                        console.error('Erreur chargement parties récentes:', error);
+                        this.recentGames = [];
+                    }
+                },
+                formatGameDate(dateStr) {
+                    if (!dateStr) return '-';
+                    const date = new Date(dateStr);
+                    const now = new Date();
+                    const diffMs = now - date;
+                    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays === 0) return "Aujourd'hui";
+                    if (diffDays === 1) return 'Hier';
+                    if (diffDays < 7) return `Il y a ${diffDays}j`;
+                    return `Il y a ${Math.floor(diffDays / 7)}sem`;
+                },
+                showSoonText() {
+                    this.showSoon = true;
+                    setTimeout(() => {
+                        this.showSoon = false;
+                    }, 2000);
+                },
+                async loadTotalTitles() {
+                    try {
+                        const response = await fetch('/titles');
+                        const data = await response.json();
+                        if (data.success) {
+                            this.totalTitles = data.titles.length;
+                        }
+                    } catch (error) {
+                        console.error('Erreur chargement titres:', error);
+                    }
+                }
+            },
+            mounted() {
+                this.loadRanking();
+                this.loadRecentGames();
+                this.loadTotalTitles();
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

@@ -544,6 +544,34 @@ body {
     color: var(--gold);
 }
 
+/* 🆕 Bouton redirection ranking */
+.ranking-redirect-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 0.5rem;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-decoration: none;
+    margin-left: 0.25rem;
+}
+
+.ranking-redirect-btn svg {
+    width: 0.85rem;
+    height: 0.85rem;
+}
+
+.ranking-redirect-btn:hover {
+    border-color: rgba(255, 215, 0, 0.5);
+    color: var(--gold);
+    background: rgba(255, 215, 0, 0.1);
+}
+
 .lastgame-scroll {
     overflow: hidden;
     height: 30rem;
@@ -2812,6 +2840,12 @@ body {
 .player-card-game-answer-overlay .answer-text-display.no-answer {
     color: var(--text-dim);
     font-style: italic;
+}
+
+.player-card-game-answer-overlay .afk-icon {
+    width: 28px;
+    height: 28px;
+    opacity: 0.7;
 }
 
 .player-card-game-name {

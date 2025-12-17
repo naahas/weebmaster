@@ -2290,6 +2290,41 @@ body {
     font-weight: 500;
 }
 
+/* 🆕 Wrapper titre + icône redirection */
+.leaderboard-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ranking-redirect-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.4rem;
+    height: 1.4rem;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 0.35rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-decoration: none;
+    margin-top: -6px;
+    margin-left: 3px;
+}
+
+.ranking-redirect-btn svg {
+    width: 0.7rem;
+    height: 0.7rem;
+}
+
+.ranking-redirect-btn:hover {
+    border-color: rgba(255, 215, 0, 0.5);
+    color: var(--gold);
+    background: rgba(255, 215, 0, 0.1);
+}
+
 .leaderboard-list {
     display: flex;
     flex-direction: column;

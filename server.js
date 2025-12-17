@@ -13,6 +13,7 @@ const app = express();
 const PORT = process.env.PORT || 7000;
 
 const MAX_GAMES_BEFORE_RESET = 5;
+const MIN_PLAYERS_FOR_STATS = 15; // Minimum de joueurs pour comptabiliser les stats
 
 let lastRefreshPlayersTime = 0;
 const REFRESH_COOLDOWN_MS = 20000;
@@ -360,6 +361,8 @@ const gameState = {
 
     autoMode: false,
     autoModeTimeout: null,
+    
+    initialPlayerCount: 0, // Nombre de joueurs au début de la partie
 
     serieFilter: 'tout',
 
@@ -653,6 +656,12 @@ app.get('/', (req, res) => {
 app.get('/admin', (req, res) => {
     logVisit('admin');
     res.sendFile(__dirname + '/src/html/admin.html');
+});
+
+// 🆕 Page Ranking
+app.get('/ranking', (req, res) => {
+    logVisit('ranking');
+    res.sendFile(__dirname + '/src/html/ranking.html');
 });
 
 // Login admin
@@ -1016,10 +1025,11 @@ app.post('/admin/start-game', async (req, res) => {
             gameState.usedQuestionIds = [];
         }
 
-        const game = await db.createGame(totalPlayers);
+        const game = await db.createGame(totalPlayers, gameState.mode);
 
         gameState.inProgress = true;
         gameState.currentGameId = game.id;
+        gameState.initialPlayerCount = totalPlayers; // 🆕 Stocker le nombre initial
         gameState.currentQuestionIndex = 0;
         gameState.gameStartTime = Date.now();
         gameState.showResults = false;
@@ -2357,7 +2367,20 @@ async function endGameByPoints() {
                     gameState.currentQuestionIndex,
                     duration
                 );
-                await db.updateUserStats(winner.twitchId, true, 1);
+                
+                // 🆕 Stats comptabilisées uniquement si 15+ joueurs
+                if (gameState.initialPlayerCount >= MIN_PLAYERS_FOR_STATS) {
+                    await db.updateUserStats(winner.twitchId, true, 1);
+                    
+                    // Mettre à jour les stats des perdants
+                    let placement = 2;
+                    for (const player of sortedPlayers.slice(1)) {
+                        await db.updateUserStats(player.twitchId, false, placement++);
+                    }
+                    console.log(`📊 Stats mises à jour (${gameState.initialPlayerCount} joueurs)`);
+                } else {
+                    console.log(`⚠️ Stats NON comptabilisées (${gameState.initialPlayerCount} < ${MIN_PLAYERS_FOR_STATS} joueurs)`);
+                }
 
                 addLog('game-end', { winner: winner.username });
 
@@ -2370,12 +2393,6 @@ async function endGameByPoints() {
                 };
 
                 console.log(`🏆 Gagnant: ${winner.username} avec ${winner.points} points`);
-
-                // Mettre à jour les stats des perdants
-                let placement = 2;
-                for (const player of sortedPlayers.slice(1)) {
-                    await db.updateUserStats(player.twitchId, false, placement++);
-                }
 
                 // Créer le podium Top 3
                 const podium = sortedPlayers.slice(0, 3).map((player, index) => ({
@@ -2572,7 +2589,25 @@ async function checkTiebreakerWinner() {
                 gameState.currentQuestionIndex,
                 duration
             );
-            await db.updateUserStats(winner.twitchId, true, 1);
+            
+            // 🆕 Stats comptabilisées uniquement si 15+ joueurs
+            if (gameState.initialPlayerCount >= MIN_PLAYERS_FOR_STATS) {
+                await db.updateUserStats(winner.twitchId, true, 1);
+
+                // Mettre à jour les stats des perdants
+                const allPlayers = Array.from(gameState.players.values())
+                    .sort((a, b) => (b.points || 0) - (a.points || 0));
+
+                let placement = 2;
+                for (const player of allPlayers) {
+                    if (player.twitchId !== winner.twitchId) {
+                        await db.updateUserStats(player.twitchId, false, placement++);
+                    }
+                }
+                console.log(`📊 Stats mises à jour après tiebreaker (${gameState.initialPlayerCount} joueurs)`);
+            } else {
+                console.log(`⚠️ Stats NON comptabilisées après tiebreaker (${gameState.initialPlayerCount} < ${MIN_PLAYERS_FOR_STATS} joueurs)`);
+            }
 
             const winnerUser = await db.getUserByTwitchId(winner.twitchId);
 
@@ -2582,19 +2617,10 @@ async function checkTiebreakerWinner() {
                 totalVictories: winnerUser ? winnerUser.total_victories : 1
             };
 
-            // Mettre à jour les stats des perdants
-            const allPlayers = Array.from(gameState.players.values())
-                .sort((a, b) => (b.points || 0) - (a.points || 0));
-
-            let placement = 2;
-            for (const player of allPlayers) {
-                if (player.twitchId !== winner.twitchId) {
-                    await db.updateUserStats(player.twitchId, false, placement++);
-                }
-            }
-
             // Créer le podium Top 3
-            const podium = allPlayers.slice(0, 3).map((player, index) => ({
+            const allPlayersSorted = Array.from(gameState.players.values())
+                .sort((a, b) => (b.points || 0) - (a.points || 0));
+            const podium = allPlayersSorted.slice(0, 3).map((player, index) => ({
                 rank: index + 1,
                 username: player.username,
                 points: player.points || 0
@@ -2668,13 +2694,19 @@ async function endGameWithTie() {
         duration
     );
 
-    for (const winner of winners) {
-        await db.updateUserStats(winner.twitchId, true, 1);
-    }
+    // 🆕 Stats comptabilisées uniquement si 15+ joueurs
+    if (gameState.initialPlayerCount >= MIN_PLAYERS_FOR_STATS) {
+        for (const winner of winners) {
+            await db.updateUserStats(winner.twitchId, true, 1);
+        }
 
-    let placement = winners.length + 1;
-    for (const player of sortedPlayers.slice(winners.length)) {
-        await db.updateUserStats(player.twitchId, false, placement++);
+        let placement = winners.length + 1;
+        for (const player of sortedPlayers.slice(winners.length)) {
+            await db.updateUserStats(player.twitchId, false, placement++);
+        }
+        console.log(`📊 Stats mises à jour (égalité, ${gameState.initialPlayerCount} joueurs)`);
+    } else {
+        console.log(`⚠️ Stats NON comptabilisées (égalité, ${gameState.initialPlayerCount} < ${MIN_PLAYERS_FOR_STATS} joueurs)`);
     }
 
     const winnerData = {
@@ -2735,7 +2767,21 @@ async function endGame(winner) {
                 gameState.currentQuestionIndex,
                 duration
             );
-            await db.updateUserStats(winner.twitchId, true, 1);
+            
+            // 🆕 Stats comptabilisées uniquement si 15+ joueurs
+            if (gameState.initialPlayerCount >= MIN_PLAYERS_FOR_STATS) {
+                await db.updateUserStats(winner.twitchId, true, 1);
+                
+                // Mettre à jour les stats des autres joueurs
+                const losers = Array.from(gameState.players.values()).filter(p => p !== winner);
+                let placement = 2;
+                for (const loser of losers) {
+                    await db.updateUserStats(loser.twitchId, false, placement++);
+                }
+                console.log(`📊 Stats mises à jour (mode vies, ${gameState.initialPlayerCount} joueurs)`);
+            } else {
+                console.log(`⚠️ Stats NON comptabilisées (mode vies, ${gameState.initialPlayerCount} < ${MIN_PLAYERS_FOR_STATS} joueurs)`);
+            }
 
             addLog('game-end', { winner: winner.username });
 
@@ -2747,13 +2793,6 @@ async function endGame(winner) {
                 livesRemaining: winner.lives,
                 totalVictories: winnerUser ? winnerUser.total_victories : 1
             };
-        }
-
-        // Mettre à jour les stats des autres joueurs
-        const losers = Array.from(gameState.players.values()).filter(p => p !== winner);
-        let placement = 2;
-        for (const loser of losers) {
-            await db.updateUserStats(loser.twitchId, false, placement++);
         }
 
         const playersData = Array.from(gameState.players.values()).map(p => ({
@@ -3067,6 +3106,19 @@ app.get('/leaderboard', async (req, res) => {
     } catch (error) {
         console.error('❌ Erreur leaderboard:', error);
         res.status(500).json({ error: error.message });
+    }
+});
+
+
+// Récupérer les parties récentes
+app.get('/api/recent-games', async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 5;
+        const games = await db.getRecentGames(limit);
+        res.json({ success: true, games });
+    } catch (error) {
+        console.error('❌ Erreur recent-games:', error);
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
@@ -3523,6 +3575,12 @@ io.on('connection', (socket) => {
             delete existingPlayer.disconnectedAt;
             delete existingPlayer.disconnectedSocketId;
 
+            // 🔄 Annuler le log "disconnect" en attente si présent
+            if (existingPlayer.pendingDisconnectLog) {
+                clearTimeout(existingPlayer.pendingDisconnectLog);
+                delete existingPlayer.pendingDisconnectLog;
+            }
+
             console.log(`🔄 ${data.username} reconnecté - Mode: ${gameState.mode}, Points: ${existingPlayer.points || 0}, Vies: ${existingPlayer.lives}`);
 
             // 🆕 Initialiser les défis SEULEMENT si pas transférés (nouveau joueur mid-game)
@@ -3554,8 +3612,12 @@ io.on('connection', (socket) => {
 
             socket.emit('player-restored', restorationData);
 
+            // 🔄 Log "reconnect" seulement si "disconnect" avait été affiché
             const playerColor = playerColors[data.username] || assignPlayerColor(data.username);
-            addLog('reconnect', { username: data.username, playerColor });
+            if (existingPlayer.disconnectLogged) {
+                addLog('reconnect', { username: data.username, playerColor });
+                delete existingPlayer.disconnectLogged;
+            }
 
             // Mise à jour lobby
             io.emit('lobby-update', {
@@ -3711,7 +3773,12 @@ io.on('connection', (socket) => {
 
         if (player) {
             const playerColor = playerColors[player.username];
-            addLog('leave', { username: player.username, playerColor });
+            // 🔄 Délai avant d'afficher le log "disconnect" (évite le spam lors de changement d'onglet)
+            player.pendingDisconnectLog = setTimeout(() => {
+                addLog('disconnect', { username: player.username, playerColor });
+                player.disconnectLogged = true;
+                delete player.pendingDisconnectLog;
+            }, 3000); // 3 secondes
         }
 
         // 🔥 Retirer du tracker d'authentification
@@ -3734,6 +3801,11 @@ io.on('connection', (socket) => {
                     const currentPlayer = gameState.players.get(socket.id);
                     if (currentPlayer && currentPlayer.disconnectedAt === player.disconnectedAt) {
                         console.log(`❌ ${player.username} définitivement déconnecté`);
+                        
+                        // 🔄 Log "a quitté" quand le joueur est définitivement supprimé
+                        const playerColor = playerColors[currentPlayer.username];
+                        addLog('leave', { username: currentPlayer.username, playerColor });
+                        
                         gameState.players.delete(socket.id);
                         gameState.answers.delete(socket.id);
 
@@ -3906,6 +3978,7 @@ function resetGameState() {
     gameState.lastQuestionResults = null;
     gameState.questionStartTime = null;
     gameState.gameStartTime = null;
+    gameState.initialPlayerCount = 0; // 🆕 Reset du compteur initial
     gameState.players.clear();
     gameState.answers.clear();
     gameState.isTiebreaker = false;

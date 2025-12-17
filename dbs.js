@@ -82,12 +82,18 @@ const db = {
         const user = await this.getUserByTwitchId(twitchId);
         if (!user) return null;
 
+        // Calculer les win streaks
+        const currentStreak = isWinner ? (user.current_win_streak || 0) + 1 : 0;
+        const bestStreak = Math.max(user.best_win_streak || 0, currentStreak);
+
         const { data, error } = await supabase
             .from('users')
             .update({
                 total_victories: isWinner ? user.total_victories + 1 : user.total_victories,
                 last_placement: placement,
                 total_games_played: user.total_games_played + 1,
+                current_win_streak: currentStreak,
+                best_win_streak: bestStreak,
                 updated_at: new Date().toISOString()
             })
             .eq('twitch_id', twitchId)
@@ -106,6 +112,7 @@ const db = {
         const { data, error } = await supabase
             .from('users')
             .select('*')
+            .gte('total_games_played', 3)
             .order('total_victories', { ascending: false })
             .limit(limit);
 
@@ -270,12 +277,13 @@ const db = {
     },
 
     // ========== GAMES ==========
-    async createGame(totalPlayers) {
+    async createGame(totalPlayers, mode = 'lives') {
         const { data, error } = await supabase
             .from('games')
             .insert({
                 questions_count: 0,
-                total_players: totalPlayers
+                total_players: totalPlayers,
+                mode: mode
             })
             .select()
             .single();
@@ -329,6 +337,7 @@ const db = {
                 *,
                 winner:users!games_winner_twitch_id_fkey(username)
             `)
+            .gte('total_players', 15) // 🆕 Seulement les parties avec 15+ joueurs
             .order('created_at', { ascending: false })
             .limit(limit);
 
@@ -485,25 +494,50 @@ const db = {
                 total_victories,
                 total_games_played,
                 current_title_id,
+                last_placement,
+                updated_at,
+                best_win_streak,
                 titles:current_title_id (
                     title_name
                 )
             `)
             .gte('total_games_played', 3)
             .order('total_victories', { ascending: false })
-            .order('total_games_played', { ascending: true }) // Départager par nombre de parties
+            .order('total_games_played', { ascending: true })
             .limit(limit);
 
         if (error) throw error;
 
-        // Calculer le win rate
-        return (data || []).map(user => ({
-            ...user,
-            win_rate: user.total_games_played > 0
-                ? ((user.total_victories / user.total_games_played) * 100).toFixed(1)
-                : '0.0',
-            title_name: user.titles?.title_name || 'Novice'
-        }));
+        // Récupérer tous les titres pour calculer titles_unlocked
+        const allTitles = await this.getAllTitles();
+        const totalTitlesCount = allTitles.length;
+
+        // Calculer les stats pour chaque joueur
+        return (data || []).map(user => {
+            // Calculer les titres débloqués
+            const unlockedCount = allTitles.filter(title => {
+                if (title.title_type === 'games_played') {
+                    return user.total_games_played >= title.requirement_value;
+                }
+                if (title.title_type === 'games_won') {
+                    return user.total_victories >= title.requirement_value;
+                }
+                return false;
+            }).length;
+
+            return {
+                ...user,
+                win_rate: user.total_games_played > 0
+                    ? ((user.total_victories / user.total_games_played) * 100).toFixed(1)
+                    : '0.0',
+                title_name: user.titles?.title_name || 'Novice',
+                titles_unlocked: unlockedCount,
+                total_titles: totalTitlesCount,
+                last_activity: user.updated_at,
+                wins: user.total_victories,
+                games_played: user.total_games_played
+            };
+        });
     },
 
 
