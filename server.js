@@ -392,7 +392,7 @@ const CHALLENGE_POOLS = {
     ],
     // Pool Bouclier/x2 - Difficile
     'shield': [
-        { id: 'veryhard', name: 'Expert', description: 'Bien répondre à une question VeryHard+', target: 1, type: 'difficulty' },
+        { id: 'veryhard', name: 'Expert', description: 'Bien répondre à question VeryHard+', target: 1, type: 'difficulty' },
         { id: 'series7', name: 'Polyvalent', description: 'Bien répondre sur 7 séries différentes', target: 7, type: 'series' },
         { id: 'streak12', name: 'Légendaire', description: '12 bonnes réponses d\'affilée', target: 12, type: 'streak' }
     ]
@@ -636,18 +636,19 @@ function getEliminatedCount() {
 // ============================================
 // 🆕 TRACKING VISITES (discret)
 // ============================================
-async function logVisit(page, twitchUsername = null) {
+async function logVisit(page, twitchUsername = null, userAgent = null) {
     try {
         await supabase.from('visits').insert({ 
             page,
-            twitch_username: twitchUsername 
+            twitch_username: twitchUsername,
+            user_agent: userAgent
         });
     } catch (e) {}
 }
 
 
 app.get('/', (req, res) => {
-    logVisit('home', req.session?.username || null);
+    logVisit('home', req.session?.username || null, req.headers['user-agent'] || null);
     res.sendFile(__dirname + '/src/html/home.html');
 });
 
@@ -657,13 +658,13 @@ app.get('/', (req, res) => {
 
 // Page admin
 app.get('/admin', (req, res) => {
-    logVisit('admin', req.session?.username || null);
+    logVisit('admin', req.session?.username || null, req.headers['user-agent'] || null);
     res.sendFile(__dirname + '/src/html/admin.html');
 });
 
 // 🆕 Page Ranking
 app.get('/ranking', (req, res) => {
-    logVisit('ranking', req.session?.username || null);
+    logVisit('ranking', req.session?.username || null, req.headers['user-agent'] || null);
     res.sendFile(__dirname + '/src/html/ranking.html');
 });
 
