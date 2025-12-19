@@ -270,7 +270,7 @@
             <!-- ============================================
             ÉCRAN DE FIN - NOUVEAU PODIUM DESIGN
             ============================================ -->
-            <div class="content-section gameover-section" v-if="gameEnded">
+            <div class="content-section gameover-section" v-if="gameEnded && podiumPlayers.length > 0">
                 <!-- Particules de fond -->
                 <div class="winner-particles" id="winnerParticles"></div>
                 

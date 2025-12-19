@@ -7,7 +7,7 @@ const express = require('express');
 const session = require('express-session');
 const { Server } = require('socket.io');
 const axios = require('axios');
-const { db, supabase } = require('./dbs');
+const { db, supabase, SERIES_FILTERS, getFilterSeries } = require('./dbs');
 
 const app = express();
 const PORT = process.env.PORT || 7000;
@@ -42,51 +42,7 @@ const PLAYER_COLORS = [
 ];
 
 
-// config/serieFilters.js
-const SERIE_FILTERS = {
-    overall : {
-        name: 'Overall',
-        icon: '🌍',
-        series: []
-    },
-    big3: {
-        name: 'Big 3',
-        icon: '👑',
-        series: ['One Piece', 'Naruto', 'Bleach']
-    },
-    mainstream: {
-        name: 'Mainstream',
-        icon: '⭐',
-        series: [
-            'One Piece', 'Naruto', 'Bleach', 'Hunter x Hunter',
-            'Shingeki no Kyojin', 'Fullmetal Alchemist', 'Death Note',
-            'Dragon Ball', 'Demon Slayer', 'Jojo\'s Bizarre Adventure', 'My Hero Academia',
-            'Fairy Tail', 'Tokyo Ghoul', 'Nanatsu no Taizai', 'Kuroko no Basket'
-        ]
-    },
-    onepiece: {
-        name: 'One Piece',
-        icon: '🏴‍☠️',
-        series: ['One Piece']
-    },
-    naruto: {
-        name: 'Naruto',
-        icon: '🍥',
-        series: ['Naruto']
-    },
-    dragonball: {
-        name: 'Dragon Ball',
-        icon: '🐉',
-        series: ['Dragon Ball']
-    },
-
-    bleach: {
-        name: 'Bleach',
-        icon: '⚔️',
-        series: ['Bleach']
-    }
-};
-
+// SERIES_FILTERS importé depuis dbs.js
 
 // Détection automatique de l'URL de redirection
 const TWITCH_REDIRECT_URI = process.env.TWITCH_REDIRECT_URI ||
@@ -1341,8 +1297,8 @@ app.get('/admin/serie-stats', async (req, res) => {
 
         const stats = {};
 
-        // 🔥 AUTOMATIQUE: Générer les stats pour chaque filtre dans SERIE_FILTERS
-        for (const [filterId, filterConfig] of Object.entries(SERIE_FILTERS)) {
+        // 🔥 AUTOMATIQUE: Générer les stats pour chaque filtre dans SERIES_FILTERS
+        for (const [filterId, filterConfig] of Object.entries(SERIES_FILTERS)) {
             if (filterId === 'tout') {
                 stats.tout = {
                     count: allQuestions.length,
@@ -1390,8 +1346,8 @@ app.post('/admin/set-serie-filter', (req, res) => {
 
     const { filter } = req.body;
 
-    // 🔥 AUTOMATIQUE: Validation basée sur SERIE_FILTERS
-    if (!SERIE_FILTERS[filter]) {
+    // 🔥 AUTOMATIQUE: Validation basée sur SERIES_FILTERS
+    if (!SERIES_FILTERS[filter]) {
         return res.status(400).json({ error: 'Filtre invalide' });
     }
 
@@ -2797,6 +2753,18 @@ async function endGame(winner) {
                 livesRemaining: winner.lives,
                 totalVictories: winnerUser ? winnerUser.total_victories : 1
             };
+        } else {
+            // 🆕 Cas aucun gagnant - terminer la partie en DB quand même
+            console.log('💀 Fin de partie sans gagnant');
+            if (gameState.currentGameId) {
+                await db.endGame(
+                    gameState.currentGameId,
+                    null, // Pas de winner
+                    gameState.currentQuestionIndex,
+                    duration
+                );
+            }
+            addLog('game-end', { winner: 'Aucun' });
         }
 
         const playersData = Array.from(gameState.players.values()).map(p => ({
@@ -2822,20 +2790,32 @@ async function endGame(winner) {
         };
 
 
-        io.emit('game-ended', {
-            winner: winnerData,
-            duration,
-            totalQuestions: gameState.currentQuestionIndex,
-            gameMode: 'lives',
-            playersData: playersData,
-            topPlayers
-        });
+        // 🆕 N'envoyer game-ended que s'il y a un gagnant
+        if (winner) {
+            io.emit('game-ended', {
+                winner: winnerData,
+                duration,
+                totalQuestions: gameState.currentQuestionIndex,
+                gameMode: 'lives',
+                playersData: playersData,
+                topPlayers
+            });
+        }
 
         // Reset
         resetGameState();
 
+        // 🆕 Si aucun gagnant, fermer le lobby automatiquement
+        if (!winner) {
+            console.log('🔒 Fermeture automatique du lobby (aucun gagnant)');
+            gameState.isActive = false;
+            io.emit('game-deactivated');
+        }
+
     } catch (error) {
         console.error('❌ Erreur fin de partie:', error);
+        // 🆕 Reset même en cas d'erreur pour débloquer
+        resetGameState();
     }
 }
 
@@ -3529,6 +3509,73 @@ io.on('connection', (socket) => {
         }
     });
 
+    // 🆕 Kick un joueur manuellement (depuis l'admin)
+    socket.on('kick-player', (data) => {
+        const { username, twitchId } = data;
+        if (!username) return;
+
+        console.log(`🚫 Kick demandé pour: ${username}`);
+
+        // Trouver le joueur par username ou twitchId
+        let targetSocketId = null;
+        let targetPlayer = null;
+
+        for (const [socketId, player] of gameState.players.entries()) {
+            if (player.username === username || player.twitchId === twitchId) {
+                targetSocketId = socketId;
+                targetPlayer = player;
+                break;
+            }
+        }
+
+        if (targetSocketId && targetPlayer) {
+            // Supprimer le joueur
+            gameState.players.delete(targetSocketId);
+            gameState.answers.delete(targetSocketId);
+
+            console.log(`🚫 ${username} a été kick par le streamer`);
+
+            // Notifier le joueur qu'il a été kick
+            const targetSocket = io.sockets.sockets.get(targetSocketId);
+            if (targetSocket) {
+                targetSocket.emit('kicked', { reason: 'Tu as été exclu par le streamer' });
+                // 🆕 Ne pas déconnecter le socket pour que le joueur reçoive les événements (game-started, etc.)
+            }
+
+            // Log pour les admins
+            const playerColor = playerColors[username];
+            addLog('kick', { username, playerColor });
+
+            // Mettre à jour le lobby/game pour tout le monde
+            io.emit('lobby-update', {
+                playerCount: gameState.players.size,
+                livesIcon: gameState.livesIcon,
+                players: Array.from(gameState.players.values()).map(p => ({
+                    twitchId: p.twitchId,
+                    username: p.username,
+                    lives: p.lives,
+                    title: p.title || 'Novice',
+                    avatarUrl: p.avatarUrl,
+                    isLastGlobalWinner: p.twitchId === lastGlobalWinner,
+                }))
+            });
+
+            // 🆕 Vérifier si la partie doit se terminer après le kick
+            if (gameState.inProgress && gameState.mode === 'lives') {
+                const currentAlivePlayers = getAlivePlayers();
+                console.log(`🔍 Joueurs en vie après kick: ${currentAlivePlayers.length}`);
+                
+                if (currentAlivePlayers.length <= 1) {
+                    const winner = currentAlivePlayers.length === 1 ? currentAlivePlayers[0] : null;
+                    console.log(`🏁 Fin de partie après kick - Gagnant: ${winner ? winner.username : 'Aucun'}`);
+                    endGame(winner);
+                }
+            }
+        } else {
+            console.log(`⚠️ Joueur ${username} non trouvé pour kick`);
+        }
+    });
+
     // Reconnexion d'un joueur (nouveau événement)
     socket.on('reconnect-player', (data) => {
         if (!gameState.inProgress) {
@@ -3795,38 +3842,12 @@ io.on('connection', (socket) => {
         if (player) {
             console.log(`🔌 ${player.username} déconnecté (socket: ${socket.id})`);
 
-            // Si une partie est en cours, NE PAS supprimer le joueur immédiatement
+            // Si une partie est en cours, NE PAS supprimer le joueur
             if (gameState.inProgress) {
-                console.log(`⏳ Attente de reconnexion pour ${player.username}...`);
+                console.log(`⏳ ${player.username} marqué comme déconnecté (reste dans la partie)`);
                 player.disconnectedAt = Date.now();
                 player.disconnectedSocketId = socket.id;
-
-                setTimeout(() => {
-                    const currentPlayer = gameState.players.get(socket.id);
-                    if (currentPlayer && currentPlayer.disconnectedAt === player.disconnectedAt) {
-                        console.log(`❌ ${player.username} définitivement déconnecté`);
-                        
-                        // 🔄 Log "a quitté" quand le joueur est définitivement supprimé
-                        const playerColor = playerColors[currentPlayer.username];
-                        addLog('leave', { username: currentPlayer.username, playerColor });
-                        
-                        gameState.players.delete(socket.id);
-                        gameState.answers.delete(socket.id);
-
-                        io.emit('lobby-update', {
-                            livesIcon: gameState.livesIcon,
-                            playerCount: gameState.players.size,
-                            players: Array.from(gameState.players.values()).map(p => ({
-                                twitchId: p.twitchId,
-                                username: p.username,
-                                isLastGlobalWinner: p.twitchId === lastGlobalWinner,
-                                lives: p.lives,
-                                title: p.title || 'Novice',
-                                avatarUrl: p.avatarUrl
-                            }))
-                        });
-                    }
-                }, 30000);
+                // 🆕 On ne supprime plus automatiquement - l'admin peut kick manuellement si besoin
             } else {
                 gameState.players.delete(socket.id);
                 gameState.answers.delete(socket.id);

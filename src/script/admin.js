@@ -62,6 +62,9 @@ let characterImageEnabled = true;
 let characterShowTimeout = null;
 let characterHideTimeout = null;
 
+// 🆕 État pour masquer les pourcentages (anti-triche)
+let hidePercentsEnabled = false;
+
 // Mapping série -> image (noms exacts de la DB)
 const CHARACTER_IMAGES = {
     'fire force': 'questionpic/fireforce.png',
@@ -172,10 +175,8 @@ function initSocket() {
 
     socket.on('game-deactivated', () => {
         console.log('❌ Lobby fermé');
-        // Vérifier qu'on est bien sur le lobby avant de fermer
-        if (stateLobby.classList.contains('active')) {
-            closeLobbyUI();
-        }
+        // 🆕 Retourner à l'idle depuis n'importe quel état (lobby ou game)
+        returnToIdle();
     });
 
     socket.on('game-started', (data) => {
@@ -2028,10 +2029,23 @@ function updateLobbyPlayers(players) {
         <div class="player-card-mini-stat">
             ${currentMode === 'vie' ? getLivesIconsHTML(selectedLivesIcon, currentLives, currentLives) : '<span class="player-points">0</span>'}
         </div>
+        <button class="player-card-mini-kick" title="Exclure ${player.username}">
+            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
     `;
 
+        // ===== CLIC SUR BOUTON KICK =====
+        const kickBtn = card.querySelector('.player-card-mini-kick');
+        if (kickBtn) {
+            kickBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                kickPlayer(player.username, twitchId, card);
+            });
+        }
+
         // Clic pour ouvrir la modal
-        card.addEventListener('click', () => {
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.player-card-mini-kick')) return;
             openPlayerModal(player.username, isChampion, player.title || 'Novice', twitchId);
         });
 
@@ -2105,6 +2119,7 @@ function createGamePlayerCards() {
         gameCard.className = 'player-card-game' + (isChampion ? ' champion' : '');
         gameCard.dataset.playerIndex = index;
         gameCard.dataset.lives = gameSettings.lives;
+        gameCard.dataset.twitchId = twitchId || '';
 
 
         if (gameSettings.mode === 'vie') {
@@ -2116,6 +2131,9 @@ function createGamePlayerCards() {
                 <div class="player-card-game-answer-overlay">
                     <span class="answer-text-display no-answer"><img src="zzzzz.png" alt="AFK" class="afk-icon"></span>
                 </div>
+                <button class="player-card-game-kick" title="Exclure ${name}">
+                    <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
             `;
         } else {
             gameCard.innerHTML = `
@@ -2125,14 +2143,27 @@ function createGamePlayerCards() {
                 <div class="player-card-game-answer-overlay">
                     <span class="answer-text-display no-answer"><img src="zzzzz.png" alt="AFK" class="afk-icon"></span>
                 </div>
+                <button class="player-card-game-kick" title="Exclure ${name}">
+                    <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
             `;
+        }
+
+        // ===== CLIC SUR BOUTON KICK =====
+        const kickBtn = gameCard.querySelector('.player-card-game-kick');
+        if (kickBtn) {
+            kickBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                kickPlayer(name, twitchId, gameCard);
+            });
         }
 
         // ===== CLIC SUR CARTE JOUEUR =====
         gameCard.style.cursor = 'pointer';
         gameCard.addEventListener('click', (e) => {
-            // Empêcher le clic si on survole l'overlay
+            // Empêcher le clic si on survole l'overlay ou le bouton kick
             if (e.target.closest('.player-card-game-answer-overlay')) return;
+            if (e.target.closest('.player-card-game-kick')) return;
 
             openPlayerModal(name, isChampion, playerTitle, twitchId);
         });
@@ -3091,7 +3122,8 @@ const LOG_ICONS = {
     bonus_shield: '🛡️',
     bonus_x2: '✕2',
     disconnected: '⚠',
-    reconnected: '↩'
+    reconnected: '↩',
+    kicked: '🚫'
 };
 
 let logsVisible = true;
@@ -3127,6 +3159,10 @@ function addGameLog(type, playerName = null, extraData = null) {
         case 'eliminated':
             text = `<span class="player-name">${playerName}</span> éliminé`;
             log.classList.add('eliminated');
+            break;
+        case 'kicked':
+            text = `<span class="player-name">${playerName}</span> kick`;
+            log.classList.add('kicked');
             break;
 
         // === BONUS ===
@@ -3421,6 +3457,7 @@ async function restoreGameState() {
                 const timerContainer = timerText?.closest('.question-timer') || timerText?.parentElement;
                 if (timerContainer) {
                     timerContainer.style.opacity = '0';
+                    showHidePercentButton(false); // 🆕 Masquer le bouton œil
                 }
             }
 
@@ -3469,6 +3506,7 @@ function createGamePlayerCardsFromState(players) {
         gameCard.className = 'player-card-game' + (player.isLastGlobalWinner ? ' champion' : '');
         gameCard.dataset.playerIndex = index;
         gameCard.dataset.lives = player.lives || 0;
+        gameCard.dataset.twitchId = player.twitchId || '';
 
 
         if (gameSettings.mode === 'vie') {
@@ -3480,6 +3518,9 @@ function createGamePlayerCardsFromState(players) {
                 <div class="player-card-game-answer-overlay">
                     <span class="answer-text-display no-answer"><img src="zzzzz.png" alt="AFK" class="afk-icon"></span>
                 </div>
+                <button class="player-card-game-kick" title="Exclure ${player.username}">
+                    <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
             `;
         } else {
             gameCard.innerHTML = `
@@ -3489,13 +3530,26 @@ function createGamePlayerCardsFromState(players) {
                 <div class="player-card-game-answer-overlay">
                     <span class="answer-text-display no-answer"><img src="zzzzz.png" alt="AFK" class="afk-icon"></span>
                 </div>
+                <button class="player-card-game-kick" title="Exclure ${player.username}">
+                    <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
             `;
+        }
+
+        // ===== CLIC SUR BOUTON KICK =====
+        const kickBtn = gameCard.querySelector('.player-card-game-kick');
+        if (kickBtn) {
+            kickBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                kickPlayer(player.username, player.twitchId, gameCard);
+            });
         }
 
         // Clic sur carte joueur
         gameCard.style.cursor = 'pointer';
         gameCard.addEventListener('click', (e) => {
             if (e.target.closest('.player-card-game-answer-overlay')) return;
+            if (e.target.closest('.player-card-game-kick')) return;
             openPlayerModal(player.username, player.isLastGlobalWinner, player.title || 'Novice', player.twitchId);
         });
 
@@ -3585,6 +3639,9 @@ function restoreQuestionDisplay(state) {
             answerEl.appendChild(answerPercent);
             answersGrid.appendChild(answerEl);
         });
+        
+        // 🆕 Appliquer l'état masquage des pourcentages
+        applyHidePercentsState();
     }
 
     // 🔥 NOUVEAU: Marquer les joueurs qui ont déjà répondu
@@ -4239,6 +4296,7 @@ function displayQuestion(data) {
     const timerContainer = timerText?.closest('.question-timer') || timerText?.parentElement;
     if (timerContainer) {
         timerContainer.style.opacity = '1';
+        showHidePercentButton(true); // 🆕 Afficher le bouton œil
     }
 
     // Mettre à jour les badges
@@ -4284,6 +4342,9 @@ function displayQuestion(data) {
         `;
         answersGrid.appendChild(answerEl);
     });
+
+    // 🆕 Appliquer l'état masquage des pourcentages
+    applyHidePercentsState();
 
     document.querySelectorAll('.player-card-game').forEach(card => {
         card.classList.remove('has-answered', 'correct-answer', 'wrong-answer');
@@ -4488,6 +4549,9 @@ function displayResults(data) {
             easing: 'easeOutQuad'
         });
     }
+    
+    // 🆕 Masquer le bouton œil
+    showHidePercentButton(false);
 
     focusStatsTab();
 
@@ -4747,6 +4811,13 @@ function handleActivityLog(log) {
             break;
         case 'leave':
             addGameLog('leave', username);
+            // 🆕 Supprimer la carte du joueur de la grille
+            removePlayerCard(username);
+            break;
+        case 'kick':
+            addGameLog('kicked', username);
+            // Supprimer la carte du joueur de la grille
+            removePlayerCard(username);
             break;
         case 'disconnect':
             addGameLog('disconnected', username);
@@ -4788,6 +4859,123 @@ function handleActivityLog(log) {
             addGameLog('tiebreaker', null, { playerCount: data.playerCount });
             break;
     }
+}
+
+
+// 🆕 Fonction pour supprimer la carte d'un joueur (lobby + game)
+function removePlayerCard(username) {
+    if (!username) return;
+
+    // Chercher dans la grille du lobby
+    const lobbyGrid = document.getElementById('playersGridLobby');
+    if (lobbyGrid) {
+        const lobbyCards = lobbyGrid.querySelectorAll('.player-card-mini');
+        lobbyCards.forEach(card => {
+            const nameEl = card.querySelector('.player-card-mini-name');
+            if (nameEl && nameEl.textContent === username) {
+                // Animation de fade out puis suppression
+                card.style.transition = 'opacity 0.3s, transform 0.3s';
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.8)';
+                setTimeout(() => card.remove(), 300);
+            }
+        });
+    }
+
+    // Chercher dans la grille de jeu (en partie)
+    const gameGrid = document.getElementById('playersGridGame');
+    if (gameGrid) {
+        const gameCards = gameGrid.querySelectorAll('.player-card-game');
+        gameCards.forEach(card => {
+            const nameEl = card.querySelector('.player-card-game-name');
+            if (nameEl && nameEl.textContent === username) {
+                // Animation de fade out puis suppression
+                card.style.transition = 'opacity 0.3s, transform 0.3s';
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.8)';
+                setTimeout(() => card.remove(), 300);
+            }
+        });
+    }
+
+    console.log(`🗑️ Carte de ${username} supprimée`);
+}
+
+
+// ============================================
+// 🆕 MODAL CONFIRMATION KICK
+// ============================================
+let pendingKick = null; // Stocke les infos du kick en attente
+
+function openKickModal(username, twitchId, cardElement) {
+    pendingKick = { username, twitchId, cardElement };
+    
+    document.getElementById('kickModalUsername').textContent = username;
+    document.getElementById('kickModalOverlay').classList.add('active');
+    document.getElementById('kickModal').classList.add('active');
+}
+
+function closeKickModal() {
+    document.getElementById('kickModalOverlay').classList.remove('active');
+    document.getElementById('kickModal').classList.remove('active');
+    pendingKick = null;
+}
+
+function confirmKick() {
+    if (!pendingKick) return;
+    
+    const { username, twitchId, cardElement } = pendingKick;
+    
+    // Émettre l'événement au serveur
+    socket.emit('kick-player', { username, twitchId });
+    
+    // Animation de suppression de la carte
+    if (cardElement) {
+        cardElement.style.transition = 'opacity 0.3s, transform 0.3s';
+        cardElement.style.opacity = '0';
+        cardElement.style.transform = 'scale(0.8)';
+        setTimeout(() => cardElement.remove(), 300);
+    }
+    
+    console.log(`🚫 ${username} a été kick par le streamer`);
+    closeKickModal();
+}
+
+// Initialisation des listeners du modal kick
+function initKickModal() {
+    const overlay = document.getElementById('kickModalOverlay');
+    const cancelBtn = document.getElementById('kickModalCancel');
+    const confirmBtn = document.getElementById('kickModalConfirm');
+    
+    if (overlay) overlay.addEventListener('click', closeKickModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeKickModal);
+    if (confirmBtn) confirmBtn.addEventListener('click', confirmKick);
+}
+
+// Fonction pour kick un joueur manuellement (bouton poubelle)
+function kickPlayer(username, twitchId, cardElement) {
+    if (!username) return;
+    
+    const stateLobby = document.getElementById('stateLobby');
+    const isInLobby = stateLobby && stateLobby.classList.contains('active');
+    
+    // Dans le lobby → kick direct (pas de modal)
+    if (isInLobby) {
+        socket.emit('kick-player', { username, twitchId });
+
+        if (cardElement) {
+            cardElement.style.transition = 'opacity 0.3s, transform 0.3s';
+            cardElement.style.opacity = '0';
+            cardElement.style.transform = 'scale(0.8)';
+            setTimeout(() => cardElement.remove(), 300);
+        }
+
+        console.log(`🚫 ${username} a été kick par le streamer`);
+        return;
+    }
+    
+    // En partie → modal de confirmation
+    openKickModal(username, twitchId, cardElement);
 }
 
 
@@ -5335,4 +5523,56 @@ function animateCounter(element, target, duration = 1500, prefix = '', suffix = 
 document.addEventListener('DOMContentLoaded', () => {
     initSettingsListeners();
     initLivesIconSelector();
+    initHidePercentButton();
+    initKickModal();
 });
+
+// 🆕 Initialiser le bouton pour masquer les pourcentages
+function initHidePercentButton() {
+    const btn = document.getElementById('hidePercentBtn');
+    if (!btn) return;
+    
+    btn.addEventListener('click', () => {
+        hidePercentsEnabled = !hidePercentsEnabled;
+        btn.classList.toggle('hidden', hidePercentsEnabled);
+        
+        const answersGrid = document.getElementById('answersGrid');
+        if (answersGrid) {
+            answersGrid.classList.toggle('hide-percents', hidePercentsEnabled);
+        }
+        
+        console.log(`👁️ Pourcentages ${hidePercentsEnabled ? 'masqués' : 'visibles'}`);
+    });
+}
+
+// 🆕 Afficher/masquer le bouton œil (appelé avec le timer)
+function showHidePercentButton(show) {
+    const btn = document.getElementById('hidePercentBtn');
+    if (btn) {
+        btn.classList.toggle('visible', show);
+        
+        // 🆕 Si on masque le bouton (fin de question), réafficher les % pour voir les résultats
+        // Mais on NE reset PAS hidePercentsEnabled pour conserver l'état à la prochaine question
+        if (!show) {
+            const answersGrid = document.getElementById('answersGrid');
+            if (answersGrid) {
+                answersGrid.classList.remove('hide-percents');
+            }
+        }
+    }
+}
+
+// 🆕 Appliquer l'état hide-percents à la grille (conserve l'état entre questions)
+function applyHidePercentsState() {
+    const answersGrid = document.getElementById('answersGrid');
+    const btn = document.getElementById('hidePercentBtn');
+    
+    if (answersGrid && hidePercentsEnabled) {
+        answersGrid.classList.add('hide-percents');
+    }
+    
+    // Mettre à jour l'icône du bouton selon l'état
+    if (btn) {
+        btn.classList.toggle('hidden', hidePercentsEnabled);
+    }
+}

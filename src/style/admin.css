@@ -1660,6 +1660,49 @@ body {
     background-position: center;
     z-index: 10;
 }
+
+/* ========== BOUTON KICK LOBBY (POUBELLE) ========== */
+.player-card-mini-kick {
+    position: absolute;
+    bottom: -0.4rem;
+    right: -0.4rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    background: rgba(20, 24, 30, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.2s ease;
+    z-index: 15;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.player-card-mini:hover .player-card-mini-kick {
+    opacity: 1;
+}
+
+.player-card-mini-kick:hover {
+    background: rgba(220, 53, 69, 0.9);
+    border-color: rgba(220, 53, 69, 0.5);
+    transform: scale(1.1);
+}
+
+.player-card-mini-kick svg {
+    width: 0.75rem;
+    height: 0.75rem;
+    stroke: rgba(255, 255, 255, 0.6);
+    stroke-width: 2;
+    fill: none;
+}
+
+.player-card-mini-kick:hover svg {
+    stroke: #fff;
+}
+
 /* ========== MODAL CARTE JOUEUR ========== */
 .player-modal-overlay {
     position: fixed;
@@ -2140,6 +2183,66 @@ body {
     right: 1.25rem;
     width: 2.5rem;
     height: 2.5rem;
+}
+
+/* 🆕 Bouton masquer pourcentages */
+.hide-percent-btn {
+    position: absolute;
+    top: -0.35rem;
+    left: -0.35rem;
+    width: 1.6rem;
+    height: 1.6rem;
+    background: rgba(20, 24, 30, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 20;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.hide-percent-btn.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.hide-percent-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.hide-percent-btn .eye-icon {
+    width: 0.85rem;
+    height: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+    transition: color 0.2s ease;
+}
+
+.hide-percent-btn:hover .eye-icon {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.hide-percent-btn .eye-closed {
+    display: none;
+}
+
+.hide-percent-btn.hidden .eye-open {
+    display: none;
+}
+
+.hide-percent-btn.hidden .eye-closed {
+    display: block;
+    color: var(--red);
+}
+
+/* Cacher les pourcentages */
+.answers-grid.hide-percents .answer-percent {
+    opacity: 0 !important;
 }
 
 .timer-circle {
@@ -2791,6 +2894,45 @@ body {
 .player-card-game:hover::before {
     width: 3.125rem;
     opacity: 0.7;
+}
+
+/* Bouton Kick pour cartes game */
+.player-card-game-kick {
+    position: absolute;
+    bottom: -0.5rem;
+    right: -0.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    background: rgba(20, 22, 30, 0.95);
+    border: 1px solid rgba(255, 59, 92, 0.4);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    z-index: 20;
+}
+
+.player-card-game-kick svg {
+    width: 0.7rem;
+    height: 0.7rem;
+    stroke: var(--red);
+    stroke-width: 2;
+    fill: none;
+}
+
+.player-card-game:hover .player-card-game-kick {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.player-card-game-kick:hover {
+    background: rgba(255, 59, 92, 0.25);
+    border-color: var(--red);
+    transform: scale(1.15) !important;
 }
 
 /* Overlay réponse au hover */
@@ -6253,6 +6395,9 @@ body {
     color: var(--gold);
 }
 
+/* Bouton Kick pour cartes mini (lobby) */
+
+
 /* Animation barres défilantes */
 @keyframes barsScroll {
     0% { transform: translateY(0); }
@@ -6414,6 +6559,97 @@ body {
 .confirm-btn.confirm:hover {
     background: rgba(255, 59, 92, 0.25);
     border-color: rgba(255, 59, 92, 0.5);
+}
+
+/* ========== MODAL CONFIRMATION KICK ========== */
+.kick-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 9998;
+}
+
+.kick-modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.kick-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    background: rgba(18, 18, 22, 0.98);
+    border: 1px solid rgba(255, 59, 92, 0.2);
+    border-radius: 0.625rem;
+    padding: 1rem 1.5rem;
+    text-align: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 9999;
+    box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.5);
+}
+
+.kick-modal.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.kick-modal-text {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 1rem;
+}
+
+.kick-modal-text span {
+    color: #ff3b5c;
+    font-weight: 600;
+}
+
+.kick-modal-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.kick-btn {
+    padding: 0.4rem 1.25rem;
+    border-radius: 0.35rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+}
+
+.kick-btn.cancel {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.kick-btn.cancel:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.kick-btn.confirm {
+    background: rgba(255, 59, 92, 0.15);
+    border-color: rgba(255, 59, 92, 0.35);
+    color: #ff3b5c;
+}
+
+.kick-btn.confirm:hover {
+    background: rgba(255, 59, 92, 0.3);
+    border-color: rgba(255, 59, 92, 0.6);
 }
 
 /* Points dans winner screen */

@@ -17,6 +17,55 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // ============================================
+// 🎯 FILTRES SÉRIES CENTRALISÉS
+// ============================================
+const SERIES_FILTERS = {
+    tout: {
+        name: 'Tout',
+        icon: '🌐',
+        series: []
+    },
+    big3: {
+        name: 'Big 3',
+        icon: '👑',
+        series: ['One Piece', 'Naruto', 'Bleach']
+    },
+    mainstream: {
+        name: 'Mainstream',
+        icon: '⭐',
+        series: [
+            'One Piece', 'Naruto', 'Bleach', 'Hunter x Hunter',
+            'Shingeki no Kyojin', 'Fullmetal Alchemist', 'Death Note',
+            'Dragon Ball', 'Demon Slayer', 'Jojo\'s Bizarre Adventure', 'My Hero Academia',
+            'Fairy Tail', 'Tokyo Ghoul', 'Nanatsu no Taizai', 'Kuroko no Basket', 'Chainsaw Man'
+        ]
+    },
+    onepiece: {
+        name: 'One Piece',
+        icon: '🏴‍☠️',
+        series: ['One Piece']
+    },
+    naruto: {
+        name: 'Naruto',
+        icon: '🍥',
+        series: ['Naruto']
+    },
+    dragonball: {
+        name: 'Dragon Ball',
+        icon: '🐉',
+        series: ['Dragon Ball', 'Dragon Ball Z', 'Dragon Ball Super']
+    },
+    bleach: {
+        name: 'Bleach',
+        icon: '⚔️',
+        series: ['Bleach']
+    }
+};
+
+// Helper pour obtenir les séries d'un filtre
+const getFilterSeries = (filterId) => SERIES_FILTERS[filterId]?.series || [];
+
+// ============================================
 // Fonctions utilitaires pour la base de données
 // ============================================
 
@@ -136,24 +185,9 @@ const db = {
             .from('questions')
             .select('id', { count: 'exact' });
 
-        // 🔥 AUTOMATIQUE: Même config que getRandomQuestions
-        const filterConfig = {
-            'tout': [],
-            'big3': ['One Piece', 'Naruto', 'Bleach'],
-            'mainstream': [
-                'One Piece', 'Naruto', 'Bleach', 'Hunter x Hunter',
-                'Shingeki no Kyojin', 'Fullmetal Alchemist', 'Death Note',
-                'Dragon Ball', 'Demon Slayer', 'Jojo\'s Bizarre Adventure', 'My Hero Academia',
-                'Fairy Tail', 'Tokyo Ghoul', 'Nanatsu no Taizai', 'Kuroko no Basket'
-            ],
-            'naruto': ['Naruto'],
-            'dragonball': ['Dragon Ball', 'Dragon Ball Z', 'Dragon Ball Super'],
-            'onepiece': ['One Piece'],
-            'bleach': ['Bleach'] // 🔥 Facile à ajouter !
-        };
+        const series = getFilterSeries(serieFilter);
 
-        if (serieFilter !== 'tout' && filterConfig[serieFilter]) {
-            const series = filterConfig[serieFilter];
+        if (serieFilter !== 'tout' && series.length > 0) {
             if (series.length === 1) {
                 query = query.eq('serie', series[0]);
             } else {
@@ -182,26 +216,11 @@ const db = {
 
         console.log(`🔍 [DBS] Filtre série reçu: "${serieFilter}"`);
 
-        // 🔥 AUTOMATIQUE: Appliquer le filtre basé sur SERIE_FILTERS
-        // Note: On doit importer SERIE_FILTERS depuis server.js ou le définir ici aussi
-        const filterConfig = {
-            'tout': [],
-            'big3': ['One Piece', 'Naruto', 'Bleach'],
-            'mainstream': [
-                'One Piece', 'Naruto', 'Bleach', 'Hunter x Hunter',
-                'Shingeki no Kyojin', 'Fullmetal Alchemist', 'Death Note',
-                'Dragon Ball', 'Demon Slayer', 'Jojo\'s Bizarre Adventure', 'My Hero Academia',
-                'Fairy Tail', 'Tokyo Ghoul', 'Nanatsu no Taizai', 'Kuroko no Basket'
-            ],
-            'naruto': ['Naruto'],
-            'dragonball': ['Dragon Ball', 'Dragon Ball Z', 'Dragon Ball Super'],
-            'onepiece': ['One Piece'],
-            'bleach': ['Bleach'] // 🔥 Facile à ajouter !
-        };
+        // 🔥 Utiliser SERIES_FILTERS centralisé
+        const series = getFilterSeries(serieFilter);
 
         // Appliquer le filtre si ce n'est pas "tout"
-        if (serieFilter !== 'tout' && filterConfig[serieFilter]) {
-            const series = filterConfig[serieFilter];
+        if (serieFilter !== 'tout' && series.length > 0) {
             if (series.length === 1) {
                 query = query.eq('serie', series[0]);
             } else {
@@ -643,4 +662,4 @@ function getFallbackDifficulties(difficulty) {
 
 
 
-module.exports = { supabase, db };
+module.exports = { supabase, db, SERIES_FILTERS, getFilterSeries };

@@ -220,14 +220,18 @@ createApp({
             // Récupérer tous les joueurs depuis playersData (envoyé par le serveur)
             const allPlayers = this.gameEndData.playersData || [];
 
+            // 🆕 Vérifier s'il y a au moins 1 survivant (sinon = aucun gagnant)
+            const hasWinner = allPlayers.some(p => p.lives > 0);
+            if (!hasWinner) return [];
+
             // Trier par : 
             // 1. Vies restantes (DESC)
             // 2. Si égalité de vies : bonnes réponses (DESC)
-            const sorted = allPlayers.sort((a, b) => {
+            const sorted = [...allPlayers].sort((a, b) => {
                 if (b.lives !== a.lives) {
                     return b.lives - a.lives; // Plus de vies = meilleur
                 }
-                return b.correctAnswers - a.correctAnswers; // Plus de bonnes réponses = meilleur
+                return (b.correctAnswers || 0) - (a.correctAnswers || 0); // Plus de bonnes réponses = meilleur
             });
 
             // Retourner Top 3 (ou moins si moins de joueurs)
@@ -353,6 +357,27 @@ createApp({
     },
 
     methods: {
+
+        // 🆕 Afficher une notification de kick discrète en bas
+        showKickNotification() {
+            // Supprimer une notification existante si présente
+            const existing = document.querySelector('.kick-notification');
+            if (existing) existing.remove();
+            
+            const notif = document.createElement('div');
+            notif.className = 'kick-notification';
+            notif.innerHTML = `Tu as été exclus...`;
+            document.body.appendChild(notif);
+            
+            // Animation d'entrée
+            setTimeout(() => notif.classList.add('show'), 10);
+            
+            // Disparition après 4 secondes
+            setTimeout(() => {
+                notif.classList.remove('show');
+                setTimeout(() => notif.remove(), 300);
+            }, 4000);
+        },
 
 
         animateLogo() {
@@ -1179,14 +1204,18 @@ createApp({
                     this.needsReconnect = false;
                 }
 
-                // 🆕 Re-joindre le lobby si l'état a été restauré
-                if (this.shouldRejoinLobby && this.isGameActive && !this.gameInProgress) {
+                // 🆕 Re-joindre le lobby si l'état a été restauré (sauf si kick)
+                const wasKicked = sessionStorage.getItem('wasKicked');
+                if (this.shouldRejoinLobby && this.isGameActive && !this.gameInProgress && !wasKicked) {
                     this.socket.emit('join-lobby', {
                         twitchId: this.twitchId,
                         username: this.username
                     });
                     this.shouldRejoinLobby = false;
                     console.log('✅ Re-jointure automatique du lobby après refresh');
+                } else if (wasKicked) {
+                    console.log('🚫 Rejoin auto bloqué - joueur kick');
+                    this.shouldRejoinLobby = false;
                 }
             });
 
@@ -1273,9 +1302,10 @@ createApp({
 
                 this.resetComboSystem();
 
-                // Nettoyer localStorage
+                // Nettoyer localStorage et sessionStorage
                 localStorage.removeItem('hasJoinedLobby');
                 localStorage.removeItem('lobbyTwitchId');
+                sessionStorage.removeItem('wasKicked'); // 🆕 Clear kick flag pour prochaine partie
 
                 this.showNotification('Le jeu a été désactivé', 'info');
             });
@@ -1383,6 +1413,29 @@ createApp({
             });
 
             this.socket.on('game-ended', (data) => {
+                // 🆕 Ne pas afficher le podium si le joueur a été kick
+                const wasKicked = sessionStorage.getItem('wasKicked');
+                if (wasKicked) {
+                    console.log('🚫 Podium ignoré - joueur kick');
+                    this.gameStartedOnServer = false;
+                    // Nettoyer localStorage car la partie est terminée
+                    localStorage.removeItem('hasJoinedLobby');
+                    localStorage.removeItem('lobbyTwitchId');
+                    return;
+                }
+                
+                // 🆕 Ne pas afficher le podium si le joueur n'a pas participé
+                // Vérifier si le joueur est dans playersData
+                const isParticipant = data.playersData && data.playersData.some(p => 
+                    p.twitchId === this.twitchId || p.username === this.username
+                );
+                
+                if (!isParticipant) {
+                    console.log('👀 Podium ignoré - spectateur');
+                    this.gameStartedOnServer = false;
+                    return;
+                }
+                
                 this.gameEnded = true;
                 this.gameStartedOnServer = false; // 🆕 Reset flag
                 this.gameEndData = data;
@@ -1401,7 +1454,54 @@ createApp({
             });
 
             this.socket.on('error', (data) => {
+                // 🆕 Si canSpectate = true, le joueur n'est plus dans la partie
+                if (data.canSpectate) {
+                    console.log('👀 Passage en mode spectateur - plus dans la partie');
+                    this.hasJoined = false;
+                    this.gameInProgress = false;
+                    // Forcer l'affichage "Partie en cours"
+                    this.gameStartedOnServer = true;
+                    this.isGameActive = true;
+                    // Nettoyer localStorage
+                    localStorage.removeItem('hasJoinedLobby');
+                    localStorage.removeItem('lobbyTwitchId');
+                }
                 this.showNotification(data.message, 'error');
+            });
+
+            // 🆕 Handler quand le joueur est kick par le streamer
+            this.socket.on('kicked', (data) => {
+                console.log('🚫 Vous avez été kick:', data.reason);
+                
+                // Réinitialiser l'état du joueur
+                this.hasJoined = false;
+                this.gameInProgress = false;
+                // Note: on garde isGameActive et gameStartedOnServer tels quels 
+                // pour que le joueur voie le bon écran (lobby ou partie en cours)
+                this.currentQuestion = null;
+                this.selectedAnswer = null;
+                this.hasAnswered = false;
+                this.showResults = false;
+                this.playerLives = 3;
+                this.playerPoints = 0;
+                this.playerCount = 0; // 🆕 Reset le compteur visuellement
+                this.gameEnded = false; // 🆕 Reset pour éviter d'afficher le podium
+                
+                // Stopper le timer si actif
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+                
+                // Marquer comme kick pour empêcher le rejoin auto
+                sessionStorage.setItem('wasKicked', 'true');
+                
+                // 🆕 Clear le localStorage pour reset l'état "dans la partie"
+                localStorage.removeItem('hasJoinedLobby');
+                localStorage.removeItem('lobbyTwitchId');
+                
+                // Afficher une notification discrète en bas
+                this.showKickNotification();
             });
 
 
@@ -1572,6 +1672,9 @@ createApp({
                 this.showNotification('Vous devez être connecté !', 'error');
                 return;
             }
+
+            // 🆕 Clear le flag kick pour permettre le rejoin
+            sessionStorage.removeItem('wasKicked');
 
             this.socket.emit('join-lobby', {
                 twitchId: this.twitchId,
