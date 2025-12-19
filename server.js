@@ -3275,7 +3275,7 @@ app.post('/admin/set-lives-icon', (req, res) => {
     }
 
     const { icon } = req.body;
-    const validIcons = ['heart', 'dragonball', 'flame', 'sharingan', 'katana', 'shuriken'];
+    const validIcons = ['heart', 'dragonball', 'flame', 'sharingan', 'katana', 'shuriken', 'konoha', 'alchemy', 'curse', 'kunai', 'star4'];
 
     if (!validIcons.includes(icon)) {
         return res.status(400).json({ error: 'Invalid icon' });
