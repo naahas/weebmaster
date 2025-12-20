@@ -120,7 +120,6 @@ const CHARACTER_IMAGES = {
     'blue lock': 'questionpic/bluelock.png',
     'i am a hero': 'questionpic/iamahero.png',
     'divers': 'questionpic/divers.png',
-    'nanatsu no taizai': 'questionpic/nanatsunotaizai.png',
     'fullmetal alchemist': 'questionpic/fullmetalalchemist.png',
     'dragon ball': 'questionpic/dragonball.png',
     'jojo\'s bizarre adventure': 'questionpic/jojo.png',
@@ -2246,7 +2245,7 @@ function updateTimerDisplay() {
     document.getElementById('timerText').textContent = display;
 
     const progress = document.getElementById('timerProgress');
-    const circumference = 2 * Math.PI * 22;
+    const circumference = 226; // 2 * π * 36 (rayon du cercle chakra)
     const offset = circumference * (1 - display / gameSettings.timer);
     progress.style.strokeDashoffset = offset;
 }
@@ -3520,10 +3519,9 @@ async function restoreGameState() {
                 // Restaurer les statistiques
                 restoreStatsDisplay(state.lastQuestionResults);
 
-                const timerText = document.getElementById('timerText');
-                const timerContainer = timerText?.closest('.question-timer') || timerText?.parentElement;
-                if (timerContainer) {
-                    timerContainer.style.opacity = '0';
+                const timerChakra = document.getElementById('timerChakra');
+                if (timerChakra) {
+                    timerChakra.style.opacity = '0';
                     showHidePercentButton(false); // 🆕 Masquer le bouton œil
                 }
             }
@@ -3664,6 +3662,9 @@ function restoreQuestionDisplay(state) {
         diffBadge.textContent = formatDifficulty(question.difficulty);
         diffBadge.className = 'question-difficulty-badge ' + getDifficultyClass(question.difficulty);
     }
+
+    // 🆕 Mettre à jour la couleur du timer Chakra selon la difficulté
+    updateTimerChakraColor(question.difficulty);
 
     // Question
     const questionText = document.getElementById('questionText');
@@ -4328,6 +4329,7 @@ function initSettingsListeners() {
 
 function displayQuestion(data) {
     clearInterval(visualTimerInterval);
+    if (visualTimerRAF) cancelAnimationFrame(visualTimerRAF);
 
     const questionWrapper = document.getElementById('gameQuestionWrapper');
     const questionPanel = document.getElementById('gameQuestionPanel');
@@ -4373,10 +4375,10 @@ function displayQuestion(data) {
 
 
     // REAFFICHER TIMER
-    const timerText = document.getElementById('timerText');
-    const timerContainer = timerText?.closest('.question-timer') || timerText?.parentElement;
-    if (timerContainer) {
-        timerContainer.style.opacity = '1';
+    const timerChakra = document.getElementById('timerChakra');
+    if (timerChakra) {
+        timerChakra.style.opacity = '1';
+        timerChakra.classList.remove('warning');
         showHidePercentButton(true); // 🆕 Afficher le bouton œil
     }
 
@@ -4398,6 +4400,9 @@ function displayQuestion(data) {
         diffBadge.textContent = formatDifficulty(data.difficulty);
         diffBadge.className = 'question-difficulty-badge ' + getDifficultyClass(data.difficulty);
     }
+
+    // 🆕 Mettre à jour la couleur du timer Chakra selon la difficulté
+    updateTimerChakraColor(data.difficulty);
 
     const questionText = document.getElementById('questionText');
     if (questionText) questionText.textContent = data.question;
@@ -4467,6 +4472,28 @@ function getDifficultyClass(diff) {
     if (['veryeasy', 'easy'].includes(diff)) return 'easy';
     if (diff === 'medium') return 'medium';
     return 'hard';
+}
+
+// 🆕 Fonction pour mettre à jour la couleur du timer Chakra selon la difficulté
+function updateTimerChakraColor(difficulty) {
+    const timerChakra = document.getElementById('timerChakra');
+    if (!timerChakra) return;
+    
+    // Retirer toutes les classes de difficulté
+    timerChakra.classList.remove(
+        'difficulty-veryeasy',
+        'difficulty-easy',
+        'difficulty-medium',
+        'difficulty-hard',
+        'difficulty-veryhard',
+        'difficulty-extreme'
+    );
+    
+    // Ajouter la classe correspondante
+    const diffLower = (difficulty || 'medium').toLowerCase();
+    timerChakra.classList.add(`difficulty-${diffLower}`);
+    
+    console.log(`⏱️ Timer Chakra: couleur ${diffLower}`);
 }
 
 let currentQuestionData = null;
@@ -4559,72 +4586,77 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 let visualTimerInterval = null;
+let visualTimerRAF = null; // 🆕 Pour requestAnimationFrame
 
 function startVisualTimer(seconds, totalTime = null) {
+    // Arrêter tout timer précédent
     clearInterval(visualTimerInterval);
+    if (visualTimerRAF) cancelAnimationFrame(visualTimerRAF);
 
-    timerValue = seconds;
     const maxTime = totalTime || gameSettings.timer;
-
-    // Mise à jour initiale avec le bon total
-    const display = Math.max(0, timerValue);
-    document.getElementById('timerText').textContent = display;
+    const startTime = Date.now();
+    const duration = seconds * 1000; // Durée en ms
 
     const progress = document.getElementById('timerProgress');
     const timerText = document.getElementById('timerText');
-    const circumference = 2 * Math.PI * 22;
+    const timerChakra = document.getElementById('timerChakra');
+    const circumference = 226; // 2 * π * 36 (rayon du cercle chakra)
 
     if (progress) {
         progress.style.strokeDasharray = circumference;
-        // Calculer l'offset initial en fonction du temps restant
-        const offset = circumference * (1 - timerValue / maxTime);
-        progress.style.strokeDashoffset = offset;
-        progress.classList.remove('warning');
     }
-    if (timerText) timerText.classList.remove('warning');
+    if (timerChakra) timerChakra.classList.remove('warning');
 
-    visualTimerInterval = setInterval(() => {
-        timerValue--;
+    // 🆕 Animation fluide avec requestAnimationFrame
+    function animate() {
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, duration - elapsed);
+        const remainingSeconds = Math.ceil(remaining / 1000);
+        const progress100 = remaining / (maxTime * 1000); // Progress de 0 à 1
 
-        // Check stop EN PREMIER
-        if (timerValue < 0) {
-            clearInterval(visualTimerInterval);
-            return;
+        // Mise à jour du cercle (fluide)
+        if (progress) {
+            const offset = circumference * (1 - progress100);
+            progress.style.strokeDashoffset = offset;
         }
 
-        // Mise à jour affichage
-        const display = Math.max(0, timerValue);
-        document.getElementById('timerText').textContent = display;
-
-        const offset = circumference * (1 - timerValue / maxTime);
-        progress.style.strokeDashoffset = offset;
-
-        // Puis warning
-        if (timerValue <= 3) {
-            if (progress) progress.classList.add('warning');
-            if (timerText) timerText.classList.add('warning');
+        // Mise à jour du nombre (par seconde)
+        if (timerText) {
+            timerText.textContent = remainingSeconds;
         }
-    }, 1000);
+
+        // Warning à 3 secondes
+        if (remainingSeconds <= 3 && remainingSeconds > 0) {
+            if (timerChakra) timerChakra.classList.add('warning');
+        }
+
+        // Continuer l'animation si pas terminé
+        if (remaining > 0) {
+            visualTimerRAF = requestAnimationFrame(animate);
+        }
+    }
+
+    // Démarrer l'animation
+    visualTimerRAF = requestAnimationFrame(animate);
 }
 
 
 
 function displayResults(data) {
     clearInterval(visualTimerInterval);
+    if (visualTimerRAF) cancelAnimationFrame(visualTimerRAF); // 🆕 Arrêter l'animation fluide
     
     // 🆕 Image personnage (DÉSACTIVÉ TEMPORAIREMENT)
     // hideCharacterImage();
     // clearTimeout(characterShowTimeout);
     // clearTimeout(characterHideTimeout);
 
-    // 🔥 AJOUTER - Fade out du timer
-    const timerText = document.getElementById('timerText');
-    const timerProgress = document.getElementById('timerProgress');
-    const timerContainer = timerText?.closest('.question-timer') || timerText?.parentElement;
+    // 🔥 Fade out du timer Chakra
+    const timerChakra = document.getElementById('timerChakra');
 
-    if (timerContainer) {
+    if (timerChakra) {
         anime({
-            targets: timerContainer,
+            targets: timerChakra,
             opacity: [1, 0],
             duration: 300,
             easing: 'easeOutQuad'
@@ -5228,15 +5260,19 @@ function returnToIdle() {
 
     // Reset timer
     clearInterval(visualTimerInterval);
+    if (visualTimerRAF) cancelAnimationFrame(visualTimerRAF);
     const timerProgress = document.getElementById('timerProgress');
     const timerText = document.getElementById('timerText');
+    const timerChakra = document.getElementById('timerChakra');
     if (timerProgress) {
-        timerProgress.classList.remove('warning');
         timerProgress.style.strokeDashoffset = '0';
     }
     if (timerText) {
-        timerText.classList.remove('warning');
         timerText.textContent = '10';
+    }
+    if (timerChakra) {
+        timerChakra.classList.remove('warning');
+        timerChakra.style.opacity = '1';
     }
 
     // Afficher idle
