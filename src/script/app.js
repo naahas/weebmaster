@@ -95,6 +95,29 @@ createApp({
             needsReconnect: false,
             shouldRejoinLobby: false,
 
+            // Lobby Tips
+            currentTip: '',
+            tipKey: 0,
+            tipIndex: 0,
+            tipInterval: null,
+            lobbyTips: [
+                "Récoltez des bonus en répondant correctement et en complétant des défis !",
+                "Chaque bonus n'est utilisable que 2 fois maximum par partie",
+                "Actuellement, Dragon Ball est la série qui comptabilise le plus de questions",
+                "Un mode par équipe est en cours de développement",
+                "Sauf indication contraire, chaque question porte sur la version manga de la série",
+                "Des avatars et des titres sont disponibles dans votre profil",
+                "Plus vous participez à des parties, plus vous débloquerez de badges",
+                "Les titres et avatars d'un joueur sont visibles dans le classement et en live",
+                "Des événements inter-communautaires comme des duels et tournois sont en préparation",
+                "Un classement détaillé des joueurs est accessible depuis l'écran d'accueil",
+                "Vous pouvez signaler des bugs ou suggérer des améliorations",
+                "Vous pourrez bientôt proposer vos propres questions qui seront évaluées",
+                "Trois défis sont disponibles chaque partie, complétez-les pour gagner des bonus",
+                "Les défis se renouvellent à chaque nouvelle partie",
+                "En mode points, la difficulté des questions détermine les points gagnés"
+            ],
+
 
             comboLevel: 0,              // Niveau actuel (0, 1, 2, 3)
             comboProgress: 0,           // Nombre de bonnes réponses
@@ -151,6 +174,10 @@ createApp({
         this.initParticles();
         this.initSocket();
 
+        // 🆕 Démarrer les tips si connecté et pas en partie
+        if (this.isAuthenticated && !this.gameInProgress) {
+            this.startTipsRotation();
+        }
 
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
@@ -356,7 +383,60 @@ createApp({
         }
     },
 
+    watch: {
+        // 🆕 Gérer les tips automatiquement quand l'état du jeu change
+        gameInProgress(newVal, oldVal) {
+            if (this.isAuthenticated) {
+                if (newVal) {
+                    // Partie commence → arrêter les tips
+                    this.stopTipsRotation();
+                } else if (oldVal && !newVal) {
+                    // Partie termine → redémarrer les tips
+                    this.startTipsRotation();
+                }
+            }
+        }
+    },
+
     methods: {
+
+        // ============================================
+        // LOBBY TIPS
+        // ============================================
+        startTipsRotation() {
+            // Mélanger les tips aléatoirement
+            this.shuffleTips();
+            
+            // Afficher le premier tip
+            this.showNextTip();
+            
+            // Rotation toutes les 7 secondes
+            this.tipInterval = setInterval(() => {
+                this.showNextTip();
+            }, 7000);
+        },
+
+        stopTipsRotation() {
+            if (this.tipInterval) {
+                clearInterval(this.tipInterval);
+                this.tipInterval = null;
+            }
+            this.currentTip = '';
+        },
+
+        showNextTip() {
+            this.currentTip = this.lobbyTips[this.tipIndex];
+            this.tipKey++; // Force Vue à recréer l'élément pour relancer l'animation
+            this.tipIndex = (this.tipIndex + 1) % this.lobbyTips.length;
+        },
+
+        shuffleTips() {
+            // Mélange Fisher-Yates
+            for (let i = this.lobbyTips.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [this.lobbyTips[i], this.lobbyTips[j]] = [this.lobbyTips[j], this.lobbyTips[i]];
+            }
+        },
 
         // 🆕 Afficher une notification de kick discrète en bas
         showKickNotification() {
@@ -1282,7 +1362,7 @@ createApp({
             });
 
             this.socket.on('game-deactivated', () => {
-                // 🆕 Reset COMPLET de l'état du jeu
+                // Reset COMPLET de l'état du jeu
                 this.isGameActive = false;
                 this.gameInProgress = false;
                 this.gameStartedOnServer = false; // 🆕 Reset flag
@@ -1530,6 +1610,13 @@ createApp({
             this.socket.on('bonus-unlocked', (data) => {
                 console.log(`🎁 Nouveau bonus débloqué: ${data.bonusType} (Lvl${data.level})`);
                 this.animateLevelUp();
+            });
+
+            // 🆕 Bonus rapidité reçu (+500 pts) - Notification uniquement
+            this.socket.on('speed-bonus', (data) => {
+                console.log(`⚡ Bonus rapidité: +${data.points} pts`);
+                this.showNotification(`⚡ Bonus rapidité ! +${data.points} pts`, 'success');
+                // Les points sont déjà inclus dans question-results, pas besoin de les mettre à jour ici
             });
 
             this.socket.on('combo-updated', (data) => {

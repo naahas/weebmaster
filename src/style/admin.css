@@ -883,6 +883,56 @@ body {
     letter-spacing: 1px;
 }
 
+/* Tooltip icon for settings */
+.setting-tooltip-icon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0.25rem;
+    color: var(--text-dim);
+    opacity: 0.4;
+    cursor: help;
+    transition: opacity 0.2s;
+}
+
+.setting-tooltip-icon:hover {
+    opacity: 1;
+    color: var(--gold);
+}
+
+.setting-tooltip-icon::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20, 20, 30, 0.95);
+    border: 1px solid rgba(240, 192, 64, 0.3);
+    color: rgba(255, 255, 255, 0.6);
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    white-space: nowrap;
+    max-width: 250px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.4;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.setting-tooltip-icon:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
 .setting-group-value {
     font-family: 'Space Grotesk', sans-serif;
     font-size: 0.8rem;
@@ -1019,6 +1069,11 @@ body {
 
 /* Réponses - 2 colonnes */
 .setting-group .answers-options {
+    grid-template-columns: 1fr 1fr;
+}
+
+/* Bonus rapidité - 2 colonnes */
+.setting-group .speed-bonus-options {
     grid-template-columns: 1fr 1fr;
 }
 

@@ -9088,3 +9088,60 @@ body.modal-open {
         transform: scale(0.9);
     }
 }
+
+/* ============================================
+   LOBBY TIPS (PC uniquement)
+   ============================================ */
+
+.lobby-tips-container {
+    position: fixed;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    pointer-events: none;
+}
+
+.lobby-tip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.85rem;
+    animation: tipFadeInOut 7s ease forwards;
+}
+
+.tip-icon {
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.tip-text {
+    text-align: center;
+    line-height: 1.4;
+}
+
+@keyframes tipFadeInOut {
+    0% { opacity: 0; transform: translateY(10px); }
+    12% { opacity: 1; transform: translateY(0); }
+    88% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-5px); }
+}
+
+/* Ajustements mobile */
+@media (max-width: 768px) {
+    .lobby-tips-container {
+        bottom: 1.5rem;
+        width: 95%;
+        padding: 0 0.5rem;
+    }
+
+    .lobby-tip {
+        font-size: 0.75rem;
+        padding: 0.5rem 0.8rem;
+    }
+
+    .tip-icon {
+        font-size: 0.8rem;
+    }
+}

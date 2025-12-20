@@ -451,6 +451,14 @@
             </svg>
         </button>
 
+        <!-- Tips informatifs (PC uniquement, visible si connecté et pas en jeu) -->
+        <div class="lobby-tips-container" v-if="isAuthenticated && !gameInProgress && currentTip">
+            <div class="lobby-tip" :key="tipKey">
+                <span class="tip-icon">💡</span>
+                <span class="tip-text">{{ currentTip }}</span>
+            </div>
+        </div>
+
         <!-- ============================================
              MODAL PROFIL ULTRA-ANIMATED
              ============================================ -->

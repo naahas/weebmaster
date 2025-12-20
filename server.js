@@ -305,6 +305,7 @@ const gameState = {
     answersCount: 4,
     questionsCount: 20,
     usedQuestionIds: [],
+    speedBonus: true, // 🆕 Bonus rapidité (500 pts au plus rapide en mode points)
 
     liveAnswers: new Map(),
 
@@ -1244,6 +1245,19 @@ app.post('/admin/set-questions', (req, res) => {
     res.json({ success: true, questionsCount: gameState.questionsCount });
 });
 
+// 🆕 Route pour activer/désactiver le bonus rapidité (mode points uniquement)
+app.post('/admin/set-speed-bonus', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    const { enabled } = req.body;
+    gameState.speedBonus = enabled === true;
+    console.log(`⚡ Bonus rapidité: ${gameState.speedBonus ? 'Activé' : 'Désactivé'}`);
+
+    res.json({ success: true, speedBonus: gameState.speedBonus });
+});
+
 
 // Route pour changer le mode de difficulté
 app.post('/admin/set-difficulty-mode', (req, res) => {
@@ -1999,6 +2013,38 @@ function revealAnswers(correctAnswer) {
             }
         }
     });
+
+    // 🆕 BONUS RAPIDITÉ : +500 points au joueur le plus rapide (mode points uniquement)
+    if (gameState.mode === 'points' && gameState.speedBonus && fastestPlayer) {
+        const SPEED_BONUS_POINTS = 500;
+        
+        // Mettre à jour les points du joueur dans gameState
+        const player = gameState.players.get(fastestPlayer.socketId);
+        if (player) {
+            player.points = (player.points || 0) + SPEED_BONUS_POINTS;
+            console.log(`⚡ Bonus rapidité: ${fastestPlayer.username} +${SPEED_BONUS_POINTS} pts (total: ${player.points})`);
+            
+            // Mettre à jour playersDetails pour les résultats
+            const playerDetail = playersDetails.find(p => p.socketId === fastestPlayer.socketId);
+            if (playerDetail) {
+                playerDetail.points = player.points;
+                playerDetail.speedBonus = SPEED_BONUS_POINTS;
+                // 🔥 IMPORTANT: Ajouter le bonus à pointsEarned pour le calcul côté client
+                playerDetail.pointsEarned = (playerDetail.pointsEarned || 0) + SPEED_BONUS_POINTS;
+            }
+            
+            // Notifier le joueur du bonus (juste pour la notification)
+            const socket = io.sockets.sockets.get(fastestPlayer.socketId);
+            if (socket) {
+                socket.emit('speed-bonus', { 
+                    points: SPEED_BONUS_POINTS
+                });
+            }
+        }
+        
+        // Ajouter l'info au fastestPlayer pour l'affichage
+        fastestPlayer.speedBonus = SPEED_BONUS_POINTS;
+    }
 
     // 🆕 DÉFIS : Vérifier les défis pour chaque joueur
     const currentDifficulty = gameState.currentQuestion?.difficulty || 'medium';

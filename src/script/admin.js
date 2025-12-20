@@ -1686,13 +1686,14 @@ document.querySelectorAll('.mode-group .setting-option-btn').forEach(btn => {
         const valueDisplay = document.getElementById('modeValue');
         const livesGroup = document.getElementById('livesGroup');
         const questionsGroup = document.getElementById('questionsGroup');
+        const speedBonusGroup = document.getElementById('speedBonusGroup'); // 🆕
 
         group.querySelectorAll('.setting-option-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
 
         valueDisplay.textContent = btn.dataset.value;
 
-        // Mode Vies : afficher vies, cacher questions
+        // Mode Vies : afficher vies, cacher questions et speedBonus
         if (btn.dataset.mode === 'vie') {
             // Afficher vies
             livesGroup.style.display = 'block';
@@ -1718,6 +1719,19 @@ document.querySelectorAll('.mode-group .setting-option-btn').forEach(btn => {
                 }
             });
 
+            // 🆕 Cacher speedBonus
+            anime({
+                targets: speedBonusGroup,
+                opacity: [1, 0],
+                translateY: [0, -10],
+                duration: 200,
+                easing: 'easeInCubic',
+                complete: () => {
+                    speedBonusGroup.style.display = 'none';
+                    speedBonusGroup.classList.add('hidden');
+                }
+            });
+
 
             const lives = parseInt(document.querySelector('.lives-group .setting-option-btn.active')?.dataset.value) || 3;
             document.querySelectorAll('.player-card-mini-stat').forEach(stat => {
@@ -1725,7 +1739,7 @@ document.querySelectorAll('.mode-group .setting-option-btn').forEach(btn => {
             });
 
         }
-        // Mode Points : cacher vies, afficher questions
+        // Mode Points : cacher vies, afficher questions et speedBonus
         else {
             // Cacher vies
             anime({
@@ -1751,6 +1765,17 @@ document.querySelectorAll('.mode-group .setting-option-btn').forEach(btn => {
                 easing: 'easeOutCubic'
             });
 
+            // 🆕 Afficher speedBonus
+            speedBonusGroup.style.display = 'block';
+            speedBonusGroup.classList.remove('hidden');
+            anime({
+                targets: speedBonusGroup,
+                opacity: [0, 1],
+                translateY: [-10, 0],
+                duration: 300,
+                easing: 'easeOutCubic'
+            });
+
             document.querySelectorAll('.player-card-mini-stat').forEach(stat => {
                 stat.innerHTML = '<span class="player-points">0</span>';
             });
@@ -1765,6 +1790,33 @@ document.querySelectorAll('.mode-group .setting-option-btn').forEach(btn => {
 document.getElementById('timerSlider').addEventListener('input', (e) => {
     const value = e.target.value;
     document.getElementById('timerValue').textContent = value + 's';
+});
+
+// 🆕 Bonus rapidité (Oui/Non)
+document.querySelectorAll('.speed-bonus-options .setting-option-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const group = btn.closest('.setting-group');
+        const valueDisplay = document.getElementById('speedBonusValue');
+        
+        group.querySelectorAll('.setting-option-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        const isEnabled = btn.dataset.value === 'true';
+        valueDisplay.textContent = isEnabled ? 'Oui' : 'Non';
+        
+        // Envoyer au serveur
+        try {
+            await fetch('/admin/set-speed-bonus', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ enabled: isEnabled })
+            });
+            console.log(`⚡ Bonus rapidité: ${isEnabled ? 'Activé' : 'Désactivé'}`);
+        } catch (error) {
+            console.error('Erreur set-speed-bonus:', error);
+        }
+    });
 });
 
 // ============================================
@@ -3996,10 +4048,11 @@ function updateModeUI(mode) {
     const livesGroup = document.getElementById('livesGroup');
     const questionsGroup = document.getElementById('questionsGroup');
     const livesIconGroup = document.getElementById('livesIconGroup'); // 🔥 AJOUTER
+    const speedBonusGroup = document.getElementById('speedBonusGroup'); // 🆕
 
     if (livesGroup && questionsGroup) {
         if (isLives) {
-            // Mode Vies : afficher vies, cacher questions
+            // Mode Vies : afficher vies, cacher questions et speedBonus
             livesGroup.style.display = 'block';
             livesGroup.style.opacity = '1';
             livesGroup.classList.remove('hidden');
@@ -4012,8 +4065,14 @@ function updateModeUI(mode) {
                 livesIconGroup.style.display = '';
                 livesIconGroup.classList.remove('hidden');
             }
+            
+            // 🆕 Cacher speedBonus
+            if (speedBonusGroup) {
+                speedBonusGroup.style.display = 'none';
+                speedBonusGroup.classList.add('hidden');
+            }
         } else {
-            // Mode Points : cacher vies, afficher questions
+            // Mode Points : cacher vies, afficher questions et speedBonus
             livesGroup.style.display = 'none';
             livesGroup.classList.add('hidden');
 
@@ -4025,6 +4084,13 @@ function updateModeUI(mode) {
             if (livesIconGroup) {
                 livesIconGroup.style.display = 'none';
                 livesIconGroup.classList.add('hidden');
+            }
+            
+            // 🆕 Afficher speedBonus
+            if (speedBonusGroup) {
+                speedBonusGroup.style.display = 'block';
+                speedBonusGroup.style.opacity = '1';
+                speedBonusGroup.classList.remove('hidden');
             }
         }
     }
