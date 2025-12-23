@@ -813,6 +813,21 @@ function startIdleAnimations() {
         }
     });
 
+    // Badge Mode
+    const modeBadge = document.getElementById('modeBadge');
+    if (modeBadge) {
+        setTimeout(() => {
+            modeBadge.classList.add('visible');
+            anime({
+                targets: modeBadge,
+                opacity: [0, 1],
+                translateX: [-20, 0],
+                duration: 400,
+                easing: 'easeOutCubic'
+            });
+        }, 800);
+    }
+
     // Personnage
     const btnCharacter = document.querySelector('.btn-character');
     if (btnCharacter) {
@@ -1211,10 +1226,10 @@ function startContinuousAnimation() {
     console.log('✅ Animation démarrée, continuousAnimationId:', continuousAnimationId);
 }
 
-const btnWrapper = document.querySelector('.btn-wrapper');
-if (btnWrapper) {
-    btnWrapper.addEventListener('mouseenter', () => isHovering = true);
-    btnWrapper.addEventListener('mouseleave', () => isHovering = false);
+const mainActionBtn = document.querySelector('.main-action-btn');
+if (mainActionBtn) {
+    mainActionBtn.addEventListener('mouseenter', () => isHovering = true);
+    mainActionBtn.addEventListener('mouseleave', () => isHovering = false);
 }
 
 // ============================================
@@ -1448,20 +1463,101 @@ const bgText = document.getElementById('bgText');
 const statusDot = document.getElementById('statusDot');
 const statusText = document.getElementById('statusText');
 
-openLobbyBtn.addEventListener('click', async () => {
+// ============================================
+// MODAL SÉLECTION MODE DE JEU
+// ============================================
+const modeModalOverlay = document.getElementById('modeModalOverlay');
+const modeModalContent = document.getElementById('modeModalContent');
+const modeClassiqueCard = document.getElementById('modeClassiqueCard');
+const modeRivaliteCard = document.getElementById('modeRivaliteCard');
+const modeCards = document.querySelectorAll('.mode-card');
+const modeBadge = document.getElementById('modeBadge');
 
+// Mode actuel (pour le futur quand Rivalité sera disponible)
+let currentGameMode = 'classic';
+
+function openModeModal() {
+    modeModalOverlay.classList.add('active');
+    modeModalContent.classList.add('active');
+    
+    // Ajouter animation-done après l'animation pour permettre le hover
+    modeCards.forEach((card, index) => {
+        card.classList.remove('animation-done');
+        const delay = index === 0 ? 650 : 750;
+        setTimeout(() => {
+            card.classList.add('animation-done');
+        }, delay);
+    });
+}
+
+function closeModeModal() {
+    modeModalOverlay.classList.remove('active');
+    modeModalContent.classList.remove('active');
+    modeCards.forEach(card => card.classList.remove('animation-done'));
+}
+
+// Fermer le modal au clic sur l'overlay
+modeModalOverlay.addEventListener('click', closeModeModal);
+
+// Empêcher la propagation des clics sur le contenu du modal
+modeModalContent.addEventListener('click', (e) => {
+    // Si on clique sur le fond du content (pas sur une carte), fermer le modal
+    if (e.target === modeModalContent || e.target.classList.contains('mode-cards-container')) {
+        closeModeModal();
+    }
+});
+
+// Empêcher la propagation des clics sur les cartes
+modeCards.forEach(card => {
+    card.addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
+});
+
+// Fermer avec Escape
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modeModalContent.classList.contains('active')) {
+        closeModeModal();
+    }
+});
+
+// Clic sur le badge -> ouvre le modal de sélection de mode
+modeBadge.addEventListener('click', () => {
+    openModeModal();
+});
+
+// Clic sur le bouton JOUER -> lance directement le lobby
+openLobbyBtn.addEventListener('click', async () => {
+    // Vérifier d'abord si un lobby est déjà ouvert
     try {
         const stateResponse = await fetch('/admin/game-state', { credentials: 'same-origin' });
         const state = await stateResponse.json();
 
-        // Si lobby déjà ouvert, juste afficher l'UI
+        // Si lobby déjà ouvert, juste afficher l'UI directement
         if (state.isActive || state.phase === 'lobby') {
             console.log('Lobby déjà ouvert, affichage direct');
             showLobbyUI(state.players || []);
             return;
         }
+    } catch (error) {
+        console.error('❌ Erreur vérification état:', error);
+    }
+    
+    // Lancer directement le lobby en mode actuel (Classique)
+    await launchLobby();
+});
 
-        // Sinon, activer le lobby
+// Clic sur carte Classique -> sélectionner et fermer le modal
+modeClassiqueCard.addEventListener('click', async () => {
+    currentGameMode = 'classic';
+    closeModeModal();
+    // Le mode est sélectionné, l'utilisateur peut maintenant cliquer sur JOUER
+});
+
+// Fonction pour lancer le lobby
+async function launchLobby() {
+    try {
+        // Activer le lobby
         const response = await fetch('/admin/toggle-game', {
             method: 'POST',
             credentials: 'same-origin'
@@ -1575,6 +1671,13 @@ openLobbyBtn.addEventListener('click', async () => {
         duration: 300,
         easing: 'easeOutQuad'
     });
+}
+
+// Clic sur carte Rivalité (disabled) -> ne rien faire
+modeRivaliteCard.addEventListener('click', (e) => {
+    e.stopPropagation();
+    // Mode non disponible pour l'instant
+    console.log('Mode Rivalité - Coming soon!');
 });
 
 // ============================================
@@ -5323,10 +5426,6 @@ function returnToIdle() {
         btnWrapperEl.style.transform = '';
         btnWrapperEl.style.visibility = 'visible';
         btnWrapperEl.style.display = '';
-
-        // Réattacher les event listeners pour le hover
-        btnWrapperEl.onmouseenter = () => { isHovering = true; };
-        btnWrapperEl.onmouseleave = () => { isHovering = false; };
     }
 
     // 4. Reset du bouton JOUER
@@ -5339,6 +5438,18 @@ function returnToIdle() {
         openLobbyBtn.style.visibility = 'visible';
         openLobbyBtn.disabled = false;
         openLobbyBtn.style.cursor = 'pointer';
+        
+        // Réattacher les event listeners pour le hover des particules
+        openLobbyBtn.onmouseenter = () => { isHovering = true; };
+        openLobbyBtn.onmouseleave = () => { isHovering = false; };
+    }
+
+    // 4.5 Reset du badge mode
+    const modeBadgeEl = document.getElementById('modeBadge');
+    if (modeBadgeEl) {
+        modeBadgeEl.classList.add('visible');
+        modeBadgeEl.style.opacity = '1';
+        modeBadgeEl.style.visibility = 'visible';
     }
 
     // 5. Réafficher le bouton principal

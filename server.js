@@ -267,6 +267,7 @@ app.use(express.static('src/html'));
 app.use(express.static('src/style'));
 app.use(express.static('src/sound'));
 app.use(express.static('src/img'));
+app.use(express.static('src/img/questionpic'));
 app.use(express.static('src/img/avatar'));
 app.use(express.static('src/script'));
 
@@ -3252,6 +3253,86 @@ app.post('/api/delete-question', async (req, res) => {
     }
 });
 
+// 🆕 Récupérer les IDs des questions utilisées
+app.get('/api/used-questions', async (req, res) => {
+    const { adminCode } = req.query;
+
+    if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
+        return res.status(401).json({ error: 'Code invalide' });
+    }
+
+    try {
+        const usedIds = await db.getUsedQuestionIds();
+        res.json({ success: true, usedIds });
+    } catch (error) {
+        console.error('Erreur récupération questions utilisées:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+// 🆕 Marquer une question comme utilisée (exclure)
+app.post('/api/mark-question-used', async (req, res) => {
+    const { adminCode, questionId } = req.body;
+
+    if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
+        return res.status(401).json({ error: 'Code invalide' });
+    }
+
+    try {
+        await db.addUsedQuestion(questionId);
+        gameState.usedQuestionIds.push(questionId);
+        console.log(`🚫 Question ${questionId} marquée comme utilisée (exclue)`);
+        res.json({ success: true, message: 'Question exclue' });
+    } catch (error) {
+        console.error('Erreur marquage question:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+// 🆕 Retirer une question de l'historique (réactiver)
+app.post('/api/unmark-question-used', async (req, res) => {
+    const { adminCode, questionId } = req.body;
+
+    if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
+        return res.status(401).json({ error: 'Code invalide' });
+    }
+
+    try {
+        const { error } = await supabase
+            .from('used_questions')
+            .delete()
+            .eq('question_id', questionId);
+
+        if (error) throw error;
+
+        // Retirer du gameState aussi
+        gameState.usedQuestionIds = gameState.usedQuestionIds.filter(id => id !== questionId);
+        console.log(`✅ Question ${questionId} réactivée (retirée de l'historique)`);
+        res.json({ success: true, message: 'Question réactivée' });
+    } catch (error) {
+        console.error('Erreur réactivation question:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+// 🆕 Reset toutes les questions utilisées (via page question.html)
+app.post('/api/reset-used-questions', async (req, res) => {
+    const { adminCode } = req.body;
+
+    if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
+        return res.status(401).json({ error: 'Code invalide' });
+    }
+
+    try {
+        await db.resetUsedQuestions();
+        gameState.usedQuestionIds = [];
+        console.log('🔄 Historique des questions réinitialisé (via page questions)');
+        res.json({ success: true, message: 'Historique réinitialisé' });
+    } catch (error) {
+        console.error('Erreur reset questions:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
 
 // Récupérer toutes les questions (avec filtre optionnel)
 app.get('/api/questions', async (req, res) => {

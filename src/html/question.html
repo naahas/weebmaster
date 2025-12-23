@@ -604,6 +604,92 @@
             color: var(--error);
         }
 
+        .btn-action.exclude {
+            border-color: rgba(255, 100, 0, 0.3);
+            color: rgba(255, 100, 0, 0.8);
+        }
+
+        .btn-action.exclude:hover {
+            border-color: #ff6400;
+            color: #ff6400;
+            background: rgba(255, 100, 0, 0.1);
+        }
+
+        .btn-action.reactivate {
+            border-color: rgba(0, 255, 136, 0.3);
+            color: rgba(0, 255, 136, 0.8);
+        }
+
+        .btn-action.reactivate:hover {
+            border-color: var(--success);
+            color: var(--success);
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        /* Question exclue */
+        .question-item.excluded {
+            opacity: 0.5;
+            border-color: rgba(255, 100, 0, 0.3);
+        }
+
+        .question-item.excluded:hover {
+            opacity: 0.8;
+        }
+
+        .excluded-badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.55rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            background: rgba(255, 100, 0, 0.2);
+            color: #ff6400;
+            margin-left: 6px;
+        }
+
+        /* Header actions (reset) */
+        .list-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .used-questions-info {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .used-questions-info span {
+            color: #ff6400;
+            font-weight: 600;
+        }
+
+        .btn-reset-history {
+            padding: 6px 12px;
+            border: 1px solid rgba(255, 100, 0, 0.3);
+            border-radius: 6px;
+            background: transparent;
+            color: #ff6400;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-reset-history:hover {
+            background: rgba(255, 100, 0, 0.1);
+            border-color: #ff6400;
+        }
+
+        .btn-reset-history:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         /* 🆕 Modal d'édition */
         .modal-overlay {
             position: fixed;
@@ -827,6 +913,16 @@
 
                 <!-- Tab: Liste -->
                 <div class="tab-content" id="tabList">
+                    <!-- Header actions -->
+                    <div class="list-header-top">
+                        <div class="used-questions-info">
+                            🚫 Questions exclues : <span id="usedCount">0</span>
+                        </div>
+                        <button class="btn-reset-history" id="resetHistoryBtn" onclick="resetUsedQuestions()">
+                            🔄 Reset historique
+                        </button>
+                    </div>
+
                     <div class="list-header">
                         <select id="filterSerie" onchange="filterQuestions()">
                             <option value="">Toutes les séries</option>
@@ -959,6 +1055,7 @@
         let adminCode = '';
         let allQuestions = [];
         let allSeries = [];
+        let usedQuestionIds = []; // 🆕 IDs des questions exclues
 
         document.addEventListener('DOMContentLoaded', () => {
             const savedCode = sessionStorage.getItem('questionAdminCode');
@@ -1046,14 +1143,16 @@
             `;
 
             try {
-                // Charger questions et séries en parallèle
-                const [questionsRes, seriesRes] = await Promise.all([
+                // Charger questions, séries et questions utilisées en parallèle
+                const [questionsRes, seriesRes, usedRes] = await Promise.all([
                     fetch(`/api/questions?adminCode=${encodeURIComponent(adminCode)}`),
-                    fetch(`/api/series?adminCode=${encodeURIComponent(adminCode)}`)
+                    fetch(`/api/series?adminCode=${encodeURIComponent(adminCode)}`),
+                    fetch(`/api/used-questions?adminCode=${encodeURIComponent(adminCode)}`)
                 ]);
 
                 const questionsData = await questionsRes.json();
                 const seriesData = await seriesRes.json();
+                const usedData = await usedRes.json();
 
                 if (questionsData.success) {
                     allQuestions = questionsData.questions;
@@ -1063,6 +1162,11 @@
                 if (seriesData.success) {
                     allSeries = seriesData.series;
                     populateSeriesFilter();
+                }
+
+                if (usedData.success) {
+                    usedQuestionIds = usedData.usedIds;
+                    document.getElementById('usedCount').textContent = usedQuestionIds.length;
                 }
 
                 filterQuestions();
@@ -1125,10 +1229,15 @@
                 return;
             }
 
-            listContainer.innerHTML = questions.map(q => `
-                <div class="question-item" data-id="${q.id}">
+            listContainer.innerHTML = questions.map(q => {
+                const isExcluded = usedQuestionIds.includes(q.id);
+                return `
+                <div class="question-item ${isExcluded ? 'excluded' : ''}" data-id="${q.id}">
                     <div class="question-item-header">
-                        <div class="question-text">${escapeHtml(q.question)}</div>
+                        <div class="question-text">
+                            ${escapeHtml(q.question)}
+                            ${isExcluded ? '<span class="excluded-badge">EXCLUE</span>' : ''}
+                        </div>
                         <div class="question-meta">
                             <span class="badge badge-serie">${escapeHtml(q.serie || 'N/A')}</span>
                             <span class="badge badge-difficulty ${q.difficulty}">${q.difficulty}</span>
@@ -1144,9 +1253,13 @@
                     </div>
                     <div class="question-actions">
                         <button class="btn-action" onclick="openEditModal(${q.id})">✏️ Modifier</button>
+                        ${isExcluded 
+                            ? `<button class="btn-action reactivate" onclick="unmarkQuestionUsed(${q.id})">✅ Réactiver</button>`
+                            : `<button class="btn-action exclude" onclick="markQuestionUsed(${q.id})">🚫 Exclure</button>`
+                        }
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         function escapeHtml(text) {
@@ -1389,6 +1502,85 @@
                 }
             } catch (error) {
                 alert('Erreur de connexion');
+            }
+        }
+
+        // 🆕 Marquer une question comme utilisée (exclure)
+        async function markQuestionUsed(questionId) {
+            try {
+                const response = await fetch('/api/mark-question-used', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminCode, questionId })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    usedQuestionIds.push(questionId);
+                    document.getElementById('usedCount').textContent = usedQuestionIds.length;
+                    filterQuestions();
+                } else {
+                    alert(data.error || 'Erreur');
+                }
+            } catch (error) {
+                alert('Erreur de connexion');
+            }
+        }
+
+        // 🆕 Retirer une question de l'historique (réactiver)
+        async function unmarkQuestionUsed(questionId) {
+            try {
+                const response = await fetch('/api/unmark-question-used', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminCode, questionId })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    usedQuestionIds = usedQuestionIds.filter(id => id !== questionId);
+                    document.getElementById('usedCount').textContent = usedQuestionIds.length;
+                    filterQuestions();
+                } else {
+                    alert(data.error || 'Erreur');
+                }
+            } catch (error) {
+                alert('Erreur de connexion');
+            }
+        }
+
+        // 🆕 Reset toutes les questions utilisées
+        async function resetUsedQuestions() {
+            if (!confirm(`Réactiver les ${usedQuestionIds.length} questions exclues ?`)) return;
+
+            const btn = document.getElementById('resetHistoryBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Reset...';
+
+            try {
+                const response = await fetch('/api/reset-used-questions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminCode })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    usedQuestionIds = [];
+                    document.getElementById('usedCount').textContent = 0;
+                    filterQuestions();
+                    alert('✅ Toutes les questions ont été réactivées !');
+                } else {
+                    alert(data.error || 'Erreur');
+                }
+            } catch (error) {
+                alert('Erreur de connexion');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔄 Reset historique';
             }
         }
     </script>

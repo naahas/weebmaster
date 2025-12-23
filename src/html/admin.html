@@ -195,6 +195,13 @@
                             <span class="btn-text">Jouer</span>
                         </div>
                     </div>
+                    
+                    <!-- Badge Mode -->
+                    <div class="mode-badge" id="modeBadge">
+                        <span class="mode-badge-line top"></span>
+                        <span class="mode-badge-line bottom"></span>
+                        Classic Mode
+                    </div>
                 </div>
                 <div class="idle-stats">
                     <div class="idle-stat">
@@ -1267,6 +1274,81 @@
     <div class="settings-panel" id="settingsPanelOLD">
     </div>
     -->
+
+
+    <!-- ============================================
+         MODAL SÉLECTION MODE DE JEU
+         ============================================ -->
+    <div class="mode-modal-overlay" id="modeModalOverlay"></div>
+    <div class="mode-modal-content" id="modeModalContent">
+        <div class="mode-cards-container">
+            <!-- Mode Classique -->
+            <div class="mode-card classique" id="modeClassiqueCard">
+                <div class="mode-card-neon-line"></div>
+                <div class="mode-card-bg"></div>
+                <div class="mode-card-overlay"></div>
+                <div class="mode-character-glow"></div>
+                
+                <div class="mode-character-wrapper">
+                    <div class="mode-character-aura">
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                    </div>
+                    <img src="saber2.png" alt="Character" class="mode-card-character">
+                </div>
+                
+                <div class="mode-card-content">
+                    <div class="mode-card-label">Mode Solo</div>
+                    <h3 class="mode-card-title">Classique</h3>
+                    <div class="mode-card-separator"></div>
+                    <p class="mode-card-desc">Ta communauté s'affronte, un seul joueur sera couronné vainqueur</p>
+                </div>
+            </div>
+
+            <!-- Mode Inter-Communauté (Disabled) -->
+            <div class="mode-card inter-commu disabled" id="modeRivaliteCard">
+                <div class="mode-card-neon-line"></div>
+                <div class="mode-card-bg"></div>
+                <div class="mode-card-overlay"></div>
+                <div class="mode-character-glow"></div>
+                
+                <div class="mode-character-wrapper dual">
+                    <div class="mode-character-aura">
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                    </div>
+                    <img src="genshin4.png" alt="Team A" class="mode-card-character char-left">
+                    <img src="genshin2.png" alt="Team B" class="mode-card-character char-right">
+                </div>
+                
+                <div class="mode-card-content">
+                    <div class="mode-card-label">Mode Équipe</div>
+                    <h3 class="mode-card-title">Rivalité</h3>
+                    <div class="mode-card-separator"></div>
+                    <p class="mode-card-desc">2 streamers s'affrontent à travers leur communauté</p>
+                </div>
+                
+                <!-- Badge SOON - Bande subtile -->
+                <div class="mode-soon-band">PROCHAINEMENT</div>
+            </div>
+        </div>
+    </div>
 
 
     <script src="/socket.io/socket.io.js"></script>

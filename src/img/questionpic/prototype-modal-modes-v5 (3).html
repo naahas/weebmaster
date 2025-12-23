@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShonenMaster - Modal Modes V5</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Bebas+Neue&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #08090d;
+            --bg-elevated: #0f1117;
+            --bg-card: #12141a;
+            --gold: #f0c040;
+            --purple: #8b5cf6;
+            --blue: #3b82f6;
+            --text: #ffffff;
+            --text-dim: #6b7280;
+            --border: #1e2130;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+        }
+
+        /* Bouton JOUER */
+        .play-btn {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, var(--bg-card), var(--bg));
+            border: 2px solid var(--border);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+        }
+
+        .play-btn:hover {
+            border-color: var(--gold);
+            box-shadow: 0 0 60px rgba(240, 192, 64, 0.25);
+            transform: scale(1.05);
+        }
+
+        .play-btn span {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--text-dim);
+            transition: all 0.3s;
+        }
+
+        .play-btn:hover span {
+            color: var(--gold);
+        }
+
+        /* ============================================
+           MODAL
+           ============================================ */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.5s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 101;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.5s ease;
+        }
+
+        .modal-content.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* ============================================
+           CARDS CONTAINER
+           ============================================ */
+        .cards-container {
+            display: flex;
+            gap: 3.5rem;
+            perspective: 1000px;
+        }
+
+        /* ============================================
+           MODE CARD - Style épuré
+           ============================================ */
+        .mode-card {
+            position: relative;
+            width: 280px;
+            height: 420px;
+            border-radius: 16px;
+            cursor: pointer;
+            overflow: visible;
+            opacity: 0;
+            transform: translateY(40px);
+            transition: transform 0.15s ease;
+        }
+
+        .modal-content.active .mode-card {
+            animation: cardAppear 0.5s ease forwards;
+        }
+
+        .modal-content.active .mode-card:nth-child(1) {
+            animation-delay: 0.15s;
+        }
+
+        .modal-content.active .mode-card:nth-child(2) {
+            animation-delay: 0.25s;
+        }
+
+        @keyframes cardAppear {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Classe ajoutée après animation pour permettre le hover */
+        .modal-content.active .mode-card.animation-done {
+            animation: none !important;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .modal-content.active .mode-card.animation-done:hover {
+            transform: scale(1.02) !important;
+        }
+
+        .mode-card.disabled {
+            cursor: default;
+        }
+
+        .modal-content.active .mode-card.animation-done.disabled:hover {
+            transform: scale(1.015) !important;
+        }
+
+        /* Glow effect autour de la carte au hover */
+        .mode-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border-radius: 18px;
+            opacity: 0;
+            transition: all 0.5s ease;
+            z-index: -1;
+        }
+
+        .mode-card.classique::before {
+            background: linear-gradient(135deg, var(--gold), transparent, var(--gold));
+            box-shadow: 0 0 40px rgba(240, 192, 64, 0.3), 0 0 80px rgba(240, 192, 64, 0.1);
+        }
+
+        .mode-card.inter-commu::before {
+            background: linear-gradient(135deg, var(--purple), transparent, var(--blue));
+            box-shadow: 0 0 40px rgba(139, 92, 246, 0.3), 0 0 80px rgba(139, 92, 246, 0.1);
+        }
+
+        .mode-card:hover::before {
+            opacity: 1;
+        }
+
+        .mode-card.disabled:hover::before {
+            opacity: 0.4;
+        }
+
+        /* Character wrapper avec aura */
+        .character-wrapper {
+            position: absolute;
+            bottom: 135px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 12;
+        }
+
+        .character-wrapper.dual {
+            bottom: 125px;
+            width: 280px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+        }
+
+        /* Aura autour des personnages */
+        .character-aura {
+            position: absolute;
+            top: -20px;
+            left: -40px;
+            right: -40px;
+            bottom: -20px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .aura-particle {
+            position: absolute;
+            width: 2px;
+            height: 12px;
+            border-radius: 50%;
+            opacity: 0;
+            filter: blur(0.5px);
+            transition: opacity 0.5s ease;
+        }
+
+        .mode-card:hover .aura-particle {
+            opacity: 1;
+        }
+
+        .mode-card.classique .aura-particle {
+            background: linear-gradient(to top, transparent, var(--gold), transparent);
+            box-shadow: 0 0 6px var(--gold), 0 0 12px var(--gold);
+        }
+
+        .mode-card.inter-commu .aura-particle {
+            background: linear-gradient(to top, transparent, var(--purple), transparent);
+            box-shadow: 0 0 6px var(--purple), 0 0 12px var(--purple);
+        }
+
+        /* Positions des particules autour du personnage */
+        .aura-particle:nth-child(1) { left: 15%; top: 60%; animation: aura-float 3s linear infinite; }
+        .aura-particle:nth-child(2) { left: 5%; top: 40%; animation: aura-float 3.3s linear infinite 0.3s; height: 16px; }
+        .aura-particle:nth-child(3) { left: 25%; top: 20%; animation: aura-float 2.8s linear infinite 0.6s; }
+        .aura-particle:nth-child(4) { right: 25%; top: 20%; animation: aura-float 3.1s linear infinite 0.2s; height: 14px; }
+        .aura-particle:nth-child(5) { right: 5%; top: 40%; animation: aura-float 2.9s linear infinite 0.5s; }
+        .aura-particle:nth-child(6) { right: 15%; top: 60%; animation: aura-float 3.2s linear infinite 0.8s; height: 18px; }
+        .aura-particle:nth-child(7) { left: 35%; top: 10%; animation: aura-float 2.7s linear infinite 0.4s; width: 2px; height: 10px; }
+        .aura-particle:nth-child(8) { right: 35%; top: 10%; animation: aura-float 3.4s linear infinite 0.7s; width: 2px; height: 10px; }
+        .aura-particle:nth-child(9) { left: 0%; top: 50%; animation: aura-float 2.6s linear infinite 0.1s; height: 15px; }
+        .aura-particle:nth-child(10) { right: 0%; top: 50%; animation: aura-float 3s linear infinite 0.9s; height: 15px; }
+
+        /* Accélération au hover */
+        .mode-card:hover .aura-particle:nth-child(1) { animation-duration: 1.5s; }
+        .mode-card:hover .aura-particle:nth-child(2) { animation-duration: 1.6s; }
+        .mode-card:hover .aura-particle:nth-child(3) { animation-duration: 1.4s; }
+        .mode-card:hover .aura-particle:nth-child(4) { animation-duration: 1.55s; }
+        .mode-card:hover .aura-particle:nth-child(5) { animation-duration: 1.45s; }
+        .mode-card:hover .aura-particle:nth-child(6) { animation-duration: 1.6s; }
+        .mode-card:hover .aura-particle:nth-child(7) { animation-duration: 1.35s; }
+        .mode-card:hover .aura-particle:nth-child(8) { animation-duration: 1.7s; }
+        .mode-card:hover .aura-particle:nth-child(9) { animation-duration: 1.3s; }
+        .mode-card:hover .aura-particle:nth-child(10) { animation-duration: 1.5s; }
+
+        @keyframes aura-float {
+            0% {
+                transform: translateY(0) scaleY(0.8);
+                opacity: 0;
+            }
+            15% {
+                opacity: 0.7;
+            }
+            50% {
+                opacity: 1;
+            }
+            85% {
+                opacity: 0.5;
+            }
+            100% {
+                transform: translateY(-60px) scaleY(1);
+                opacity: 0;
+            }
+        }
+
+        .mode-card.disabled:hover .aura-particle {
+            opacity: 0.5;
+        }
+
+        /* Soon badge fusionné avec la carte */
+        .soon-badge {
+            position: absolute;
+            bottom: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.45rem 1.8rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 3px;
+            color: var(--purple);
+            z-index: 30;
+            transition: all 0.4s ease;
+        }
+
+        .mode-card.disabled:hover .soon-badge {
+            border-color: rgba(139, 92, 246, 0.4);
+            color: var(--purple);
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.15);
+        }
+
+        /* Neon line effect on card edge */
+        .card-neon-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 16px;
+            pointer-events: none;
+            z-index: 2;
+            overflow: hidden;
+        }
+
+        .card-neon-line::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(
+                transparent 0deg,
+                transparent 340deg,
+                var(--gold) 360deg
+            );
+            opacity: 0;
+            animation: rotate-neon 4s linear infinite;
+            transition: opacity 0.5s ease;
+        }
+
+        .mode-card.inter-commu .card-neon-line::before {
+            background: conic-gradient(
+                transparent 0deg,
+                transparent 340deg,
+                var(--purple) 360deg
+            );
+        }
+
+        .mode-card:hover .card-neon-line::before {
+            opacity: 0.6;
+        }
+
+        .mode-card.disabled:hover .card-neon-line::before {
+            opacity: 0.3;
+        }
+
+        .card-neon-line::after {
+            content: '';
+            position: absolute;
+            inset: 2px;
+            background: var(--bg-card);
+            border-radius: 14px;
+        }
+
+        @keyframes rotate-neon {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Séparateur entre titre et description */
+        .card-separator {
+            width: 40px;
+            height: 2px;
+            margin: 0.6rem auto;
+            border-radius: 2px;
+            opacity: 0.6;
+        }
+
+        .mode-card.classique .card-separator {
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        }
+
+        .mode-card.inter-commu .card-separator {
+            background: linear-gradient(90deg, transparent, var(--purple), transparent);
+        }
+
+        /* Card background */
+        .card-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            transition: all 0.5s ease;
+            z-index: 3;
+        }
+
+        .mode-card:hover .card-bg {
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .mode-card.classique:hover .card-bg {
+            border-color: rgba(240, 192, 64, 0.35);
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.7), 0 0 50px rgba(240, 192, 64, 0.08);
+        }
+
+        .mode-card.inter-commu:hover .card-bg {
+            border-color: rgba(139, 92, 246, 0.35);
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.7), 0 0 50px rgba(139, 92, 246, 0.08);
+        }
+
+        /* Gradient overlay pour le texte */
+        .card-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60%;
+            background: linear-gradient(
+                to top,
+                rgba(8, 9, 13, 0.98) 0%,
+                rgba(8, 9, 13, 0.85) 40%,
+                transparent 100%
+            );
+            border-radius: 0 0 16px 16px;
+            z-index: 6;
+        }
+
+        /* ============================================
+           PERSONNAGE (dépasse de la carte)
+           ============================================ */
+        .card-character {
+            position: relative;
+            height: 370px;
+            width: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.7));
+            transition: transform 0.4s ease, filter 0.4s ease;
+            z-index: 2;
+            -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 85%);
+            mask-image: linear-gradient(to bottom, black 40%, transparent 85%);
+        }
+
+        .mode-card:hover .card-character {
+            transform: translateY(-15px);
+            filter: drop-shadow(0 30px 50px rgba(0, 0, 0, 0.8));
+        }
+
+        /* Glow */
+        .character-glow {
+            position: absolute;
+            bottom: 160px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            opacity: 0;
+            filter: blur(70px);
+            transition: all 0.5s ease;
+            z-index: 5;
+        }
+
+        .mode-card:hover .character-glow {
+            opacity: 0.7;
+        }
+
+        .mode-card.classique .character-glow {
+            background: var(--gold);
+        }
+
+        .mode-card.inter-commu .character-glow {
+            background: var(--purple);
+        }
+
+        /* ============================================
+           CONTENU TEXTE (en bas, légèrement remonté)
+           ============================================ */
+        .card-content {
+            position: absolute;
+            bottom: 2rem;
+            left: 0;
+            right: 0;
+            padding: 0 1.5rem;
+            text-align: center;
+            z-index: 25;
+        }
+
+        .card-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.6rem;
+            opacity: 0.8;
+        }
+
+        .mode-card.classique .card-label {
+            color: var(--gold);
+        }
+
+        .mode-card.inter-commu .card-label {
+            color: var(--purple);
+        }
+
+        .card-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.2rem;
+            letter-spacing: 2px;
+            color: var(--text);
+            line-height: 1;
+            margin-bottom: 0.6rem;
+        }
+
+        .card-desc {
+            font-size: 0.78rem;
+            color: var(--text-dim);
+            line-height: 1.55;
+        }
+
+        /* ============================================
+           INTER-COMMU: 2 personnages
+           ============================================ */
+        .character-wrapper.dual .card-character {
+            position: relative;
+            height: 330px;
+            transition: transform 0.4s ease, filter 0.4s ease;
+        }
+
+        .character-wrapper.dual .card-character.char-left {
+            z-index: 3;
+            height: 400px;
+            margin-right: -40px;
+        }
+
+        .character-wrapper.dual .card-character.char-right {
+            z-index: 2;
+            height: 400px;
+            transform: scaleX(-1);
+            margin-left: -50px;
+        }
+
+        .mode-card.inter-commu:hover .card-character.char-left {
+            transform: translateY(-15px);
+        }
+
+        .mode-card.inter-commu:hover .card-character.char-right {
+            transform: scaleX(-1) translateY(-15px);
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 768px) {
+            .cards-container {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            .mode-card {
+                width: 260px;
+                height: 380px;
+            }
+
+            .card-character {
+                height: 280px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+
+    <button class="play-btn" id="playBtn">
+        <span>JOUER</span>
+    </button>
+
+    <div class="modal-overlay" id="modalOverlay"></div>
+
+    <div class="modal-content" id="modalContent">
+        <div class="cards-container">
+            <!-- Mode Classique -->
+            <div class="mode-card classique" id="modeClassique">
+                <div class="card-neon-line"></div>
+                <div class="card-bg"></div>
+                <div class="card-overlay"></div>
+                <div class="character-glow"></div>
+                
+                <div class="character-wrapper">
+                    <div class="character-aura">
+                        <div class="aura-particle"></div>
+                        <div class="aura-particle"></div>
+                        <div class="aura-particle"></div>
+                        <div class="aura-particle"></div>
+                        <div class="aura-particle"></div>
+                        <div class="aura-particle"></div>
+                        <div class="aura-particle"></div>
+                        <div class="aura-particle"></div>
+                        <div class="aura-particle"></div>
+                        <div class="aura-particle"></div>
+                    </div>
+                    <img src="saber2.png" alt="Character" class="card-character">
+                </div>
+                
+                <div class="card-content">
+                    <div class="card-label">Mode Solo</div>
+                    <h3 class="card-title">Classique</h3>
+                    <div class="card-separator"></div>
+                    <p class="card-desc">Ta communauté s'affronte, un seul joueur sera couronné vainqueur</p>
+                </div>
+            </div>
+
+            <!-- Mode Inter-Communauté -->
+            <div class="mode-card inter-commu disabled" id="modeInterCommu">
+                <div class="card-neon-line"></div>
+                <div class="card-bg"></div>
+                <div class="card-overlay"></div>
+                <div class="character-glow"></div>
+                
+                <div class="character-wrapper dual">
+                    <div class="character-aura">
+                        <div class="aura-particle"></div>
+                        <div class="aura-particle"></div>
+                        <div class="aura-particle"></div>
+                        <div class="aura-particle"></div>
+                        <div class="aura-particle"></div>
+                        <div class="aura-particle"></div>
+                        <div class="aura-particle"></div>
+                        <div class="aura-particle"></div>
+                        <div class="aura-particle"></div>
+                        <div class="aura-particle"></div>
+                    </div>
+                    <img src="genshin4.png" alt="Team A" class="card-character char-left">
+                    <img src="genshin2.png" alt="Team B" class="card-character char-right">
+                </div>
+                
+                <div class="card-content">
+                    <div class="card-label">Mode Équipe</div>
+                    <h3 class="card-title">Rivalité</h3>
+                    <div class="card-separator"></div>
+                    <p class="card-desc">2 streamers s'affrontent à travers leur communauté</p>
+                </div>
+                
+                <!-- Badge SOON en dessous -->
+                <div class="soon-badge">SOON</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const playBtn = document.getElementById('playBtn');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalContent = document.getElementById('modalContent');
+        const modeCards = document.querySelectorAll('.mode-card');
+
+        function openModal() {
+            modalOverlay.classList.add('active');
+            modalContent.classList.add('active');
+            
+            // Ajouter animation-done après l'animation pour permettre le hover
+            modeCards.forEach((card, index) => {
+                card.classList.remove('animation-done');
+                const delay = index === 0 ? 650 : 750; // 0.15s + 0.5s et 0.25s + 0.5s
+                setTimeout(() => {
+                    card.classList.add('animation-done');
+                }, delay);
+            });
+        }
+
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+            modalContent.classList.remove('active');
+            modeCards.forEach(card => card.classList.remove('animation-done'));
+        }
+
+        playBtn.addEventListener('click', openModal);
+        modalOverlay.addEventListener('click', closeModal);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        document.getElementById('modeClassique').addEventListener('click', () => {
+            alert('Mode Classique → Lobby');
+            closeModal();
+        });
+
+        document.getElementById('modeInterCommu').addEventListener('click', () => {
+            alert('Mode Inter-Communauté → Création défi');
+            closeModal();
+        });
+    </script>
+</body>
+</html>
