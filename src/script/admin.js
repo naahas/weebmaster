@@ -1477,12 +1477,20 @@ const modeBadge = document.getElementById('modeBadge');
 let currentGameMode = 'classic';
 
 function openModeModal() {
+    // Reset des styles inline avant d'ouvrir (au cas où)
+    anime.remove(modeModalOverlay);
+    anime.remove(modeClassiqueCard);
+    anime.remove(modeRivaliteCard);
+    modeModalOverlay.removeAttribute('style');
+    modeClassiqueCard.removeAttribute('style');
+    modeRivaliteCard.removeAttribute('style');
+    
     modeModalOverlay.classList.add('active');
     modeModalContent.classList.add('active');
     
     // Ajouter animation-done après l'animation pour permettre le hover
     modeCards.forEach((card, index) => {
-        card.classList.remove('animation-done');
+        card.classList.remove('animation-done', 'selecting');
         const delay = index === 0 ? 650 : 750;
         setTimeout(() => {
             card.classList.add('animation-done');
@@ -1491,9 +1499,19 @@ function openModeModal() {
 }
 
 function closeModeModal() {
+    // Arrêter toutes les animations anime.js en cours sur ces éléments
+    anime.remove(modeModalOverlay);
+    anime.remove(modeClassiqueCard);
+    anime.remove(modeRivaliteCard);
+    
     modeModalOverlay.classList.remove('active');
     modeModalContent.classList.remove('active');
-    modeCards.forEach(card => card.classList.remove('animation-done'));
+    modeCards.forEach(card => card.classList.remove('animation-done', 'selecting'));
+    
+    // Reset complet des styles inline pour la prochaine ouverture
+    modeModalOverlay.removeAttribute('style');
+    modeClassiqueCard.removeAttribute('style');
+    modeRivaliteCard.removeAttribute('style');
 }
 
 // Fermer le modal au clic sur l'overlay
@@ -1549,9 +1567,55 @@ openLobbyBtn.addEventListener('click', async () => {
 
 // Clic sur carte Classique -> sélectionner et fermer le modal
 modeClassiqueCard.addEventListener('click', async () => {
+    if (modeClassiqueCard.classList.contains('selecting')) return;
+    
     currentGameMode = 'classic';
-    closeModeModal();
-    // Le mode est sélectionné, l'utilisateur peut maintenant cliquer sur JOUER
+    
+    // Mettre à jour le texte du badge
+    const badgeText = modeBadge.querySelector('.mode-badge-text');
+    if (badgeText) badgeText.textContent = 'Classic Mode';
+    
+    modeClassiqueCard.classList.add('selecting');
+    
+    // Cacher l'autre carte
+    anime({
+        targets: modeRivaliteCard,
+        opacity: 0,
+        scale: 0.9,
+        duration: 150,
+        easing: 'easeOutQuad'
+    });
+    
+    // Fade le fond
+    anime({
+        targets: modeModalOverlay,
+        opacity: [1, 0],
+        duration: 300,
+        delay: 50,
+        easing: 'easeOutQuad'
+    });
+    
+    // Animation Pop & Vanish (gold)
+    anime.timeline()
+        .add({
+            targets: modeClassiqueCard,
+            scale: [1, 1.2],
+            boxShadow: ['0 0 0px rgba(240, 192, 64, 0)', '0 0 60px rgba(240, 192, 64, 1)'],
+            duration: 150,
+            easing: 'easeOutQuad'
+        })
+        .add({
+            targets: modeClassiqueCard,
+            scale: [1.2, 0],
+            opacity: [1, 0],
+            boxShadow: ['0 0 60px rgba(240, 192, 64, 1)', '0 0 0px rgba(240, 192, 64, 0)'],
+            duration: 200,
+            easing: 'easeInQuad',
+            complete: () => {
+                closeModeModal();
+                modeClassiqueCard.classList.remove('selecting');
+            }
+        });
 });
 
 // Fonction pour lancer le lobby
@@ -1674,10 +1738,59 @@ async function launchLobby() {
 }
 
 // Clic sur carte Rivalité (disabled) -> ne rien faire
-modeRivaliteCard.addEventListener('click', (e) => {
-    e.stopPropagation();
-    // Mode non disponible pour l'instant
-    console.log('Mode Rivalité - Coming soon!');
+modeRivaliteCard.addEventListener('click', async () => {
+    if (modeRivaliteCard.classList.contains('selecting')) return;
+    
+    currentGameMode = 'rivalry';
+    
+    // Mettre à jour le texte du badge
+    const badgeText = modeBadge.querySelector('.mode-badge-text');
+    if (badgeText) badgeText.textContent = 'Rivalry Mode';
+    
+    modeRivaliteCard.classList.add('selecting');
+    
+    // Cacher l'autre carte
+    anime({
+        targets: modeClassiqueCard,
+        opacity: 0,
+        scale: 0.9,
+        duration: 150,
+        easing: 'easeOutQuad'
+    });
+    
+    // Fade le fond
+    anime({
+        targets: modeModalOverlay,
+        opacity: [1, 0],
+        duration: 300,
+        delay: 50,
+        easing: 'easeOutQuad'
+    });
+    
+    // Animation Pop & Vanish (violet)
+    anime.timeline()
+        .add({
+            targets: modeRivaliteCard,
+            scale: [1, 1.2],
+            boxShadow: ['0 0 0px rgba(139, 92, 246, 0)', '0 0 60px rgba(139, 92, 246, 1)'],
+            duration: 150,
+            easing: 'easeOutQuad'
+        })
+        .add({
+            targets: modeRivaliteCard,
+            scale: [1.2, 0],
+            opacity: [1, 0],
+            boxShadow: ['0 0 60px rgba(139, 92, 246, 1)', '0 0 0px rgba(139, 92, 246, 0)'],
+            duration: 200,
+            easing: 'easeInQuad',
+            complete: () => {
+                closeModeModal();
+                modeRivaliteCard.classList.remove('selecting');
+            }
+        });
+    
+    // TODO: Implémenter le flow Rivalité avec auth Twitch
+    console.log('Mode Rivalité sélectionné');
 });
 
 // ============================================

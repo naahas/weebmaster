@@ -8134,6 +8134,11 @@ body {
     opacity: 0 !important;
 }
 
+/* Classe pour bloquer les clics pendant l'animation */
+.mode-card.selecting {
+    pointer-events: none !important;
+}
+
 /* ============================================
    MEDIA QUERY ÉCRANS 2K+
    ============================================ */
