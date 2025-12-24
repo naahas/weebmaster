@@ -92,6 +92,13 @@ app.use('/admin/*', (req, res, next) => {
 
 // Route pour démarrer l'auth Twitch
 app.get('/auth/twitch', (req, res) => {
+    // Stocker d'où vient la requête (admin ou joueur)
+    if (req.query.from === 'admin') {
+        req.session.twitchAuthFrom = 'admin';
+    } else {
+        req.session.twitchAuthFrom = 'player';
+    }
+    
     const twitchAuthUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${process.env.TWITCH_CLIENT_ID}&redirect_uri=${encodeURIComponent(TWITCH_REDIRECT_URI)}&response_type=code&scope=user:read:email`;
     res.redirect(twitchAuthUrl);
 });
@@ -99,9 +106,10 @@ app.get('/auth/twitch', (req, res) => {
 // Callback Twitch OAuth
 app.get('/auth/twitch/callback', async (req, res) => {
     const { code } = req.query;
+    const fromAdmin = req.session.twitchAuthFrom === 'admin';
 
     if (!code) {
-        return res.redirect('/?error=auth_failed');
+        return res.redirect(fromAdmin ? '/admin?error=auth_failed' : '/?error=auth_failed');
     }
 
     try {
@@ -134,12 +142,36 @@ app.get('/auth/twitch/callback', async (req, res) => {
         // Stocker dans la session
         req.session.twitchId = twitchUser.id;
         req.session.username = twitchUser.display_name;
+        req.session.twitchAvatar = twitchUser.profile_image_url;
         req.session.isAuthenticated = true;
+        
+        // Stocker les infos Twitch pour l'admin
+        if (fromAdmin) {
+            req.session.adminTwitchUser = {
+                id: twitchUser.id,
+                login: twitchUser.login,
+                display_name: twitchUser.display_name,
+                profile_image_url: twitchUser.profile_image_url
+            };
+        }
 
-        res.redirect('/');
+        // Rediriger vers la bonne page
+        res.redirect(fromAdmin ? '/admin' : '/');
     } catch (error) {
         console.error('❌ Erreur auth Twitch:', error.message);
-        res.redirect('/?error=auth_failed');
+        res.redirect(fromAdmin ? '/admin?error=auth_failed' : '/?error=auth_failed');
+    }
+});
+
+// Status Twitch pour l'admin
+app.get('/auth/twitch/status', (req, res) => {
+    if (req.session.adminTwitchUser) {
+        res.json({
+            connected: true,
+            user: req.session.adminTwitchUser
+        });
+    } else {
+        res.json({ connected: false });
     }
 });
 

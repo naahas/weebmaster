@@ -1476,6 +1476,123 @@ const modeBadge = document.getElementById('modeBadge');
 // Mode actuel (pour le futur quand Rivalité sera disponible)
 let currentGameMode = 'classic';
 
+// ============================================
+// TWITCH CONNECT
+// ============================================
+const twitchConnectBtn = document.getElementById('twitchConnectBtn');
+const twitchDisconnectedState = document.getElementById('twitchDisconnectedState');
+const twitchConnectedState = document.getElementById('twitchConnectedState');
+const twitchUsername = document.getElementById('twitchUsername');
+
+let twitchUser = null; // { id, login, display_name, profile_image_url }
+
+// Connexion Twitch
+function connectTwitch() {
+    console.log('Connexion Twitch...');
+    // Rediriger vers OAuth Twitch avec le paramètre admin
+    window.location.href = '/auth/twitch?from=admin';
+}
+
+// Déconnexion Twitch
+function disconnectTwitch() {
+    twitchUser = null;
+    updateTwitchUI();
+    // TODO: Appeler l'API pour invalider le token
+}
+
+// Mise à jour de l'UI
+function updateTwitchUI() {
+    if (twitchUser) {
+        twitchDisconnectedState.style.display = 'none';
+        twitchConnectedState.style.display = 'flex';
+        twitchUsername.textContent = twitchUser.display_name;
+    } else {
+        twitchDisconnectedState.style.display = 'flex';
+        twitchConnectedState.style.display = 'none';
+    }
+}
+
+// Message quand Twitch requis pour Rivalité
+function showTwitchRequiredMessage() {
+    // Shake la carte Rivalité
+    anime({
+        targets: modeRivaliteCard,
+        translateX: [-8, 8, -6, 6, -4, 4, 0],
+        duration: 400,
+        easing: 'easeInOutQuad'
+    });
+    
+    // Créer le toast si pas déjà présent
+    let toast = document.getElementById('twitchRequiredToast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'twitchRequiredToast';
+        toast.className = 'twitch-required-toast';
+        toast.innerHTML = `
+            <span class="toast-msg">Connexion requise pour ce mode</span>
+            <span class="toast-link">Se connecter ?</span>
+        `;
+        document.body.appendChild(toast);
+        
+        // Event listener pour le lien
+        toast.querySelector('.toast-link').addEventListener('click', () => {
+            hideTwitchRequiredMessage();
+            closeModeModal();
+            connectTwitch();
+        });
+    }
+    
+    // Afficher le toast
+    toast.classList.add('show');
+    
+    // Highlight le bouton Twitch
+    const twitchWrapper = document.getElementById('twitchConnectBtn');
+    twitchWrapper.classList.add('highlight');
+    
+    // Cacher après 3s
+    setTimeout(() => {
+        hideTwitchRequiredMessage();
+    }, 3000);
+}
+
+// Cacher le toast
+function hideTwitchRequiredMessage() {
+    const toast = document.getElementById('twitchRequiredToast');
+    if (toast) {
+        toast.classList.remove('show');
+    }
+    const twitchWrapper = document.getElementById('twitchConnectBtn');
+    if (twitchWrapper) {
+        twitchWrapper.classList.remove('highlight');
+    }
+}
+
+// Event listener - Clic pour se connecter
+twitchConnectBtn.addEventListener('click', (e) => {
+    if (!twitchUser) {
+        connectTwitch();
+    }
+});
+
+// Vérifier si déjà connecté au chargement
+async function checkTwitchAuth() {
+    try {
+        const response = await fetch('/auth/twitch/status', { credentials: 'same-origin' });
+        if (response.ok) {
+            const data = await response.json();
+            if (data.connected && data.user) {
+                twitchUser = data.user;
+                updateTwitchUI();
+            }
+        }
+    } catch (error) {
+        console.log('Twitch auth check:', error);
+    }
+}
+
+// Appeler au chargement
+checkTwitchAuth();
+
 function openModeModal() {
     // Reset des styles inline avant d'ouvrir (au cas où)
     anime.remove(modeModalOverlay);
@@ -1512,6 +1629,9 @@ function closeModeModal() {
     modeModalOverlay.removeAttribute('style');
     modeClassiqueCard.removeAttribute('style');
     modeRivaliteCard.removeAttribute('style');
+    
+    // Cacher le toast Twitch si visible
+    hideTwitchRequiredMessage();
 }
 
 // Fermer le modal au clic sur l'overlay
@@ -1741,6 +1861,13 @@ async function launchLobby() {
 modeRivaliteCard.addEventListener('click', async () => {
     if (modeRivaliteCard.classList.contains('selecting')) return;
     
+    // Vérifier si connecté à Twitch
+    if (!twitchUser) {
+        // Afficher le message de connexion requise
+        showTwitchRequiredMessage();
+        return;
+    }
+    
     currentGameMode = 'rivalry';
     
     // Mettre à jour le texte du badge
@@ -1789,8 +1916,7 @@ modeRivaliteCard.addEventListener('click', async () => {
             }
         });
     
-    // TODO: Implémenter le flow Rivalité avec auth Twitch
-    console.log('Mode Rivalité sélectionné');
+    console.log('Mode Rivalité sélectionné - Streamer:', twitchUser.display_name);
 });
 
 // ============================================
