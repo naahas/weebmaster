@@ -104,13 +104,47 @@
                     <div class="corner-decoration corner-br"></div>
 
                     <h2>La partie va commencer...</h2>
+                    
+                    <!-- Mode Rivalité: Statut choix d'équipe -->
+                    <div class="team-choice-status" v-if="lobbyMode === 'rivalry'">
+                        <span v-if="teamCooldownActive">Choix d'équipe dans {{ teamCooldownSeconds }}s</span>
+                        <span v-else>Choix d'équipe disponible</span>
+                    </div>
+                    
+                    <!-- Mode Rivalité: Sélection d'équipe -->
+                    <div class="teams-container" v-if="lobbyMode === 'rivalry'">
+                        <div 
+                            class="team-card team-blue" 
+                            :class="{ selected: selectedTeam === 1, cooldown: teamCooldownActive }"
+                            @click="selectTeam(1)"
+                        >
+                            <div class="team-icon">⚔️</div>
+                            <div class="team-name">{{ teamNames[1] }}</div>
+                            <div class="team-count">{{ teamCounts[1] }} joueur{{ teamCounts[1] > 1 ? 's' : '' }}</div>
+                        </div>
+                        <div 
+                            class="team-card team-gold" 
+                            :class="{ selected: selectedTeam === 2, cooldown: teamCooldownActive }"
+                            @click="selectTeam(2)"
+                        >
+                            <div class="team-icon">🛡️</div>
+                            <div class="team-name">{{ teamNames[2] }}</div>
+                            <div class="team-count">{{ teamCounts[2] }} joueur{{ teamCounts[2] > 1 ? 's' : '' }}</div>
+                        </div>
+                    </div>
 
-                    <div class="players-box">
+                    <!-- Mode Classic: Compteur de joueurs -->
+                    <div class="players-box" v-if="lobbyMode === 'classic'">
                         <span class="players-count">{{ playerCount }}</span>
                         <img src="people5.png" alt="Joueurs" class="players-icon">
                     </div>
 
-                    <button class="btn-primary" @click="joinLobby" :disabled="hasJoined">
+                    <button 
+                        class="btn-primary" 
+                        :class="{ joined: hasJoined }"
+                        @click="joinLobby" 
+                        :disabled="hasJoined || (lobbyMode === 'rivalry' && !selectedTeam)"
+                    >
                         {{ hasJoined ? 'Vous êtes dans la partie !' : 'Rejoindre la partie' }}
                     </button>
                 </div>
@@ -139,8 +173,13 @@
             <div class="content-section game-section" v-if="gameInProgress && isAuthenticated && !gameEnded">
                 <!-- HUD du joueur -->
                 <div class="player-hud">
-                    <div class="hud-item">
+                    <div class="hud-item hud-username-item">
                         <span class="hud-value">{{ username }}</span>
+                        <!-- 🆕 Badge équipe en mode Rivalité -->
+                        <span class="hud-team-badge" v-if="lobbyMode === 'rivalry' && selectedTeam" 
+                              :class="'team-' + selectedTeam">
+                            {{ teamNames[selectedTeam] }}
+                        </span>
                     </div>
 
                     <!-- 🆕 Affichage conditionnel selon le mode -->
@@ -254,8 +293,19 @@
                         </div>
 
                         <!-- Stats discrètes en bas -->
-                        <div class="survivors-count" v-if="!questionResults.isTiebreaker">
+                        <div class="survivors-count" v-if="!questionResults.isTiebreaker && lobbyMode === 'classic'">
                             👤 {{ questionResults.remainingPlayers }} restants
+                        </div>
+                        
+                        <!-- 🆕 Stats équipe du joueur en mode Rivalité - Style V6 Glow -->
+                        <div class="my-team-score-wrapper" 
+                             v-if="!questionResults.isTiebreaker && lobbyMode === 'rivalry' && selectedTeam"
+                             :key="'team-score-' + currentQuestionNumber + '-' + showResults">
+                            <div class="my-team-score animate-in" :class="'team-' + selectedTeam">
+                                <span class="team-name">{{ teamNames[selectedTeam] }}</span>
+                                <span class="team-separator"></span>
+                                <span class="team-value">{{ teamScores[selectedTeam] }} {{ gameMode === 'lives' ? '👤' : '⭐' }}</span>
+                            </div>
                         </div>
 
                         <!-- 🔥 Message tiebreaker -->
@@ -299,19 +349,19 @@
                                     </defs>
                                 </svg>
                             </div>
-                            <div class="podium-card">
+                            <div class="podium-card" :class="{ 'team-card': podiumPlayers[1].isTeam, 'team-1': podiumPlayers[1].team === 1, 'team-2': podiumPlayers[1].team === 2 }">
                                 <div class="podium-player-name">{{ podiumPlayers[1].username }}</div>
                                 <div class="podium-stats single-stat">
-                                    <div class="podium-stat" v-if="gameEndData.gameMode === 'lives'">
+                                    <div class="podium-stat" v-if="gameEndData.gameMode === 'lives' || gameEndData.gameMode === 'rivalry-lives'">
                                         <div class="podium-stat-val">
                                             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                                             {{ podiumPlayers[1].lives }}
                                         </div>
-                                        <div class="podium-stat-label">Vies</div>
+                                        <div class="podium-stat-label">{{ podiumPlayers[1].isTeam ? 'Vies équipe' : 'Vies' }}</div>
                                     </div>
-                                    <div class="podium-stat" v-if="gameEndData.gameMode === 'points'">
+                                    <div class="podium-stat" v-if="gameEndData.gameMode === 'points' || gameEndData.gameMode === 'rivalry-points'">
                                         <div class="podium-stat-val">{{ podiumPlayers[1].points || 0 }}</div>
-                                        <div class="podium-stat-label">Points</div>
+                                        <div class="podium-stat-label">{{ podiumPlayers[1].isTeam ? 'Points équipe' : 'Points' }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -337,7 +387,7 @@
                                     </defs>
                                 </svg>
                             </div>
-                            <div class="podium-card">
+                            <div class="podium-card" :class="{ 'team-card': podiumPlayers[0].isTeam, 'team-1': podiumPlayers[0].team === 1, 'team-2': podiumPlayers[0].team === 2 }">
                                 <div class="podium-light-burst"></div>
                                 <div class="podium-particle-burst" id="winnerBurst"></div>
                                 <div class="podium-winner-content">
@@ -355,16 +405,16 @@
                                     </div>
                                     <div class="podium-player-name">{{ podiumPlayers[0].username }}</div>
                                     <div class="podium-stats single-stat">
-                                        <div class="podium-stat" v-if="gameEndData.gameMode === 'lives'">
+                                        <div class="podium-stat" v-if="gameEndData.gameMode === 'lives' || gameEndData.gameMode === 'rivalry-lives'">
                                             <div class="podium-stat-val">
                                                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                                                 {{ podiumPlayers[0].lives }}
                                             </div>
-                                            <div class="podium-stat-label">Vies</div>
+                                            <div class="podium-stat-label">{{ podiumPlayers[0].isTeam ? 'Vies équipe' : 'Vies' }}</div>
                                         </div>
-                                        <div class="podium-stat" v-if="gameEndData.gameMode === 'points'">
+                                        <div class="podium-stat" v-if="gameEndData.gameMode === 'points' || gameEndData.gameMode === 'rivalry-points'">
                                             <div class="podium-stat-val">{{ podiumPlayers[0].points || 0 }}</div>
-                                            <div class="podium-stat-label">Points</div>
+                                            <div class="podium-stat-label">{{ podiumPlayers[0].isTeam ? 'Points équipe' : 'Points' }}</div>
                                         </div>
                                     </div>
                                 </div>

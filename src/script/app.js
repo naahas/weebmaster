@@ -39,6 +39,16 @@ createApp({
             // Lobby
             playerCount: 0,
             hasJoined: false,
+            
+            // Mode Rivalité
+            lobbyMode: 'classic', // 'classic' ou 'rivalry'
+            selectedTeam: null, // 1 ou 2
+            teamNames: { 1: 'Team A', 2: 'Team B' },
+            teamCounts: { 1: 0, 2: 0 },
+            teamScores: { 1: 0, 2: 0 }, // 🆕 Vies restantes ou points totaux par équipe
+            teamCooldownActive: false,
+            teamCooldownSeconds: 0,
+            teamCooldownInterval: null,
 
 
             // Profil & Badges
@@ -173,6 +183,9 @@ createApp({
 
         this.initParticles();
         this.initSocket();
+        
+        // 🆕 Restaurer le cooldown d'équipe après refresh
+        this.restoreTeamCooldown();
 
         // 🆕 Démarrer les tips si connecté et pas en partie
         if (this.isAuthenticated && !this.gameInProgress) {
@@ -269,6 +282,27 @@ createApp({
         podiumPlayers() {
             if (!this.gameEndData) return [];
             
+            // 🆕 Mode Rivalité
+            if (this.gameEndData.gameMode === 'rivalry-lives' || this.gameEndData.gameMode === 'rivalry-points') {
+                // En mode rivalité, on affiche les équipes au lieu des joueurs
+                const teamScores = this.gameEndData.teamScores || { 1: 0, 2: 0 };
+                const teamNames = this.gameEndData.teamNames || { 1: 'Team A', 2: 'Team B' };
+                
+                const teams = [
+                    { team: 1, teamName: teamNames[1], score: teamScores[1] },
+                    { team: 2, teamName: teamNames[2], score: teamScores[2] }
+                ].sort((a, b) => b.score - a.score);
+                
+                return teams.map((t, index) => ({
+                    username: t.teamName,
+                    isTeam: true,
+                    team: t.team,
+                    points: this.gameEndData.gameMode === 'rivalry-points' ? t.score : undefined,
+                    lives: this.gameEndData.gameMode === 'rivalry-lives' ? t.score : undefined,
+                    rank: index + 1
+                }));
+            }
+            
             if (this.gameEndData.gameMode === 'points' && this.gameEndData.podium) {
                 // Mode points : utiliser le podium du serveur
                 return this.gameEndData.podium.map(p => ({
@@ -288,6 +322,12 @@ createApp({
                 }));
             }
             return [];
+        },
+        
+        // 🆕 Vérifier si c'est un mode rivalité
+        isRivalryMode() {
+            if (!this.gameEndData) return false;
+            return this.gameEndData.gameMode === 'rivalry-lives' || this.gameEndData.gameMode === 'rivalry-points';
         },
 
         // 🆕 Mon classement (pour afficher si hors top 3)
@@ -1112,6 +1152,20 @@ createApp({
                 if (state.mode) {
                     this.gameMode = state.mode;
                 }
+                
+                // 🆕 Restaurer le mode Rivalité
+                if (state.lobbyMode) {
+                    this.lobbyMode = state.lobbyMode;
+                }
+                if (state.teamNames) {
+                    this.teamNames = state.teamNames;
+                }
+                if (state.teamCounts) {
+                    this.teamCounts = state.teamCounts;
+                }
+                if (state.teamScores) {
+                    this.teamScores = state.teamScores;
+                }
 
                 if (state.lives) this.gameLives = state.lives;
                 if (state.questionTime) this.gameTime = state.questionTime;
@@ -1122,8 +1176,19 @@ createApp({
                 if (!state.isActive) {
                     localStorage.removeItem('hasJoinedLobby');
                     localStorage.removeItem('lobbyTwitchId');
+                    localStorage.removeItem('selectedTeam');
+                    localStorage.removeItem('teamCooldownEnd');
                     console.log('🧹 localStorage nettoyé (jeu non actif)');
                     return;
+                }
+                
+                // 🆕 Restaurer l'équipe sélectionnée en mode Rivalité
+                if (this.lobbyMode === 'rivalry') {
+                    const savedTeam = localStorage.getItem('selectedTeam');
+                    if (savedTeam) {
+                        this.selectedTeam = parseInt(savedTeam);
+                        console.log(`✅ Équipe restaurée: Team ${this.selectedTeam}`);
+                    }
                 }
 
                 if (this.isAuthenticated) {
@@ -1287,12 +1352,21 @@ createApp({
                 // 🆕 Re-joindre le lobby si l'état a été restauré (sauf si kick)
                 const wasKicked = sessionStorage.getItem('wasKicked');
                 if (this.shouldRejoinLobby && this.isGameActive && !this.gameInProgress && !wasKicked) {
-                    this.socket.emit('join-lobby', {
-                        twitchId: this.twitchId,
-                        username: this.username
-                    });
-                    this.shouldRejoinLobby = false;
-                    console.log('✅ Re-jointure automatique du lobby après refresh');
+                    // En mode rivalité, vérifier qu'on a une équipe
+                    if (this.lobbyMode === 'rivalry' && !this.selectedTeam) {
+                        console.log('⚠️ Mode Rivalité mais pas d\'équipe sauvegardée - pas de rejoin auto');
+                        this.shouldRejoinLobby = false;
+                        this.hasJoined = false;
+                        localStorage.removeItem('hasJoinedLobby');
+                    } else {
+                        this.socket.emit('join-lobby', {
+                            twitchId: this.twitchId,
+                            username: this.username,
+                            team: this.lobbyMode === 'rivalry' ? this.selectedTeam : null
+                        });
+                        this.shouldRejoinLobby = false;
+                        console.log(`✅ Re-jointure automatique du lobby après refresh${this.selectedTeam ? ` (Team ${this.selectedTeam})` : ''}`);
+                    }
                 } else if (wasKicked) {
                     console.log('🚫 Rejoin auto bloqué - joueur kick');
                     this.shouldRejoinLobby = false;
@@ -1351,6 +1425,18 @@ createApp({
                 // 🆕 Mettre à jour les paramètres si fournis
                 if (data && data.lives) this.gameLives = data.lives;
                 if (data && data.questionTime) this.gameTime = data.questionTime;
+                // 🆕 Mode Rivalité
+                if (data && data.lobbyMode) {
+                    this.lobbyMode = data.lobbyMode;
+                    if (data.lobbyMode === 'rivalry') {
+                        // Restaurer l'équipe sélectionnée si elle existe
+                        const savedTeam = localStorage.getItem('selectedTeam');
+                        if (savedTeam) {
+                            this.selectedTeam = parseInt(savedTeam);
+                        }
+                    }
+                }
+                if (data && data.teamNames) this.teamNames = data.teamNames;
                 this.showNotification('Le jeu est maintenant actif ! 🎮', 'success');
             });
 
@@ -1376,6 +1462,12 @@ createApp({
                 this.playerLives = this.gameLives;  // 🆕 Utiliser gameLives configuré
                 this.playerCount = 0;
                 this.playerPoints = 0;
+                
+                // 🆕 Reset mode Rivalité
+                this.lobbyMode = 'classic';
+                this.selectedTeam = null;
+                this.teamCounts = { 1: 0, 2: 0 };
+                this.endTeamCooldown();
 
                 // Arrêter le timer si actif
                 this.stopTimer();
@@ -1385,6 +1477,8 @@ createApp({
                 // Nettoyer localStorage et sessionStorage
                 localStorage.removeItem('hasJoinedLobby');
                 localStorage.removeItem('lobbyTwitchId');
+                localStorage.removeItem('selectedTeam');
+                localStorage.removeItem('teamCooldownEnd');
                 sessionStorage.removeItem('wasKicked'); // 🆕 Clear kick flag pour prochaine partie
 
                 this.showNotification('Le jeu a été désactivé', 'info');
@@ -1393,6 +1487,17 @@ createApp({
             this.socket.on('game-started', (data) => {
                 this.gameStartedOnServer = true;
                 this.gameMode = data.gameMode || 'lives';
+                
+                // 🆕 Mode Rivalité
+                if (data.lobbyMode) {
+                    this.lobbyMode = data.lobbyMode;
+                }
+                if (data.teamNames) {
+                    this.teamNames = data.teamNames;
+                }
+                if (data.playerTeam) {
+                    this.selectedTeam = data.playerTeam;
+                }
 
                 if (data.isParticipating) {
                     document.body.classList.add('game-active');
@@ -1422,6 +1527,21 @@ createApp({
                 // 🆕 Mettre à jour les paramètres si fournis
                 if (data.lives) this.gameLives = data.lives;
                 if (data.questionTime) this.gameTime = data.questionTime;
+                
+                // 🆕 Mode Rivalité
+                if (data.lobbyMode) {
+                    this.lobbyMode = data.lobbyMode;
+                    // Si on passe en classic, reset les données d'équipe
+                    if (data.lobbyMode === 'classic') {
+                        this.selectedTeam = null;
+                        this.teamCounts = { 1: 0, 2: 0 };
+                        localStorage.removeItem('selectedTeam');
+                        localStorage.removeItem('teamCooldownEnd');
+                        this.endTeamCooldown();
+                    }
+                }
+                if (data.teamNames) this.teamNames = data.teamNames;
+                if (data.teamCounts) this.teamCounts = data.teamCounts;
             });
 
             // 🔒 BUG FIX 1: Empêcher l'affichage des questions si non inscrit au lobby
@@ -1445,6 +1565,12 @@ createApp({
                 this.stopTimer();
                 this.questionResults = results;
                 this.showResults = true;
+                
+                // 🆕 Mettre à jour les scores d'équipe en mode Rivalité
+                if (results.lobbyMode === 'rivalry' && results.teamScores) {
+                    this.teamScores = results.teamScores;
+                    if (results.teamNames) this.teamNames = results.teamNames;
+                }
 
                 // 🔥 Déplacer myResult ici pour être accessible partout
 
@@ -1501,6 +1627,8 @@ createApp({
                     // Nettoyer localStorage car la partie est terminée
                     localStorage.removeItem('hasJoinedLobby');
                     localStorage.removeItem('lobbyTwitchId');
+                    localStorage.removeItem('selectedTeam');
+                    localStorage.removeItem('teamCooldownEnd');
                     return;
                 }
                 
@@ -1531,6 +1659,8 @@ createApp({
                 // 🆕 Nettoyer localStorage car la partie est terminée
                 localStorage.removeItem('hasJoinedLobby');
                 localStorage.removeItem('lobbyTwitchId');
+                localStorage.removeItem('selectedTeam');
+                localStorage.removeItem('teamCooldownEnd');
             });
 
             this.socket.on('error', (data) => {
@@ -1545,6 +1675,8 @@ createApp({
                     // Nettoyer localStorage
                     localStorage.removeItem('hasJoinedLobby');
                     localStorage.removeItem('lobbyTwitchId');
+                    localStorage.removeItem('selectedTeam');
+                    localStorage.removeItem('teamCooldownEnd');
                 }
                 this.showNotification(data.message, 'error');
             });
@@ -1759,13 +1891,20 @@ createApp({
                 this.showNotification('Vous devez être connecté !', 'error');
                 return;
             }
+            
+            // En mode rivalité, vérifier qu'une équipe est sélectionnée
+            if (this.lobbyMode === 'rivalry' && !this.selectedTeam) {
+                this.showNotification('Choisissez une équipe !', 'error');
+                return;
+            }
 
             // 🆕 Clear le flag kick pour permettre le rejoin
             sessionStorage.removeItem('wasKicked');
 
             this.socket.emit('join-lobby', {
                 twitchId: this.twitchId,
-                username: this.username
+                username: this.username,
+                team: this.lobbyMode === 'rivalry' ? this.selectedTeam : null
             });
 
             this.hasJoined = true;
@@ -1773,8 +1912,84 @@ createApp({
             // 🆕 Sauvegarder l'état dans localStorage
             localStorage.setItem('hasJoinedLobby', 'true');
             localStorage.setItem('lobbyTwitchId', this.twitchId);
+            if (this.lobbyMode === 'rivalry' && this.selectedTeam) {
+                localStorage.setItem('selectedTeam', this.selectedTeam);
+            }
 
             this.showNotification('Vous avez rejoint le lobby !', 'success');
+        },
+        
+        // Sélectionner une équipe (mode Rivalité)
+        selectTeam(team) {
+            if (this.teamCooldownActive) return;
+            if (this.selectedTeam === team) return;
+            
+            this.selectedTeam = team;
+            
+            // Sauvegarder dans localStorage
+            localStorage.setItem('selectedTeam', team);
+            
+            // Émettre le changement au serveur si déjà dans le lobby
+            if (this.hasJoined) {
+                this.socket.emit('change-team', { team: team });
+            }
+            
+            // Lancer le cooldown
+            this.startTeamCooldown();
+        },
+        
+        // Démarrer le cooldown de changement d'équipe
+        startTeamCooldown() {
+            this.teamCooldownActive = true;
+            this.teamCooldownSeconds = 20;
+            
+            // Sauvegarder le timestamp de fin du cooldown
+            const cooldownEnd = Date.now() + (20 * 1000);
+            localStorage.setItem('teamCooldownEnd', cooldownEnd);
+            
+            this.teamCooldownInterval = setInterval(() => {
+                this.teamCooldownSeconds--;
+                if (this.teamCooldownSeconds <= 0) {
+                    this.endTeamCooldown();
+                }
+            }, 1000);
+        },
+        
+        // Fin du cooldown
+        endTeamCooldown() {
+            if (this.teamCooldownInterval) {
+                clearInterval(this.teamCooldownInterval);
+                this.teamCooldownInterval = null;
+            }
+            this.teamCooldownActive = false;
+            this.teamCooldownSeconds = 0;
+            localStorage.removeItem('teamCooldownEnd');
+        },
+        
+        // Restaurer le cooldown après refresh
+        restoreTeamCooldown() {
+            const cooldownEnd = localStorage.getItem('teamCooldownEnd');
+            if (cooldownEnd) {
+                const remaining = Math.ceil((parseInt(cooldownEnd) - Date.now()) / 1000);
+                if (remaining > 0) {
+                    this.teamCooldownActive = true;
+                    this.teamCooldownSeconds = remaining;
+                    this.teamCooldownInterval = setInterval(() => {
+                        this.teamCooldownSeconds--;
+                        if (this.teamCooldownSeconds <= 0) {
+                            this.endTeamCooldown();
+                        }
+                    }, 1000);
+                } else {
+                    localStorage.removeItem('teamCooldownEnd');
+                }
+            }
+            
+            // Restaurer l'équipe sélectionnée
+            const savedTeam = localStorage.getItem('selectedTeam');
+            if (savedTeam) {
+                this.selectedTeam = parseInt(savedTeam);
+            }
         },
 
         // ========== Question ==========

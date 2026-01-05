@@ -109,6 +109,25 @@ body {
     gap: 0.9375rem;
 }
 
+/* Badge mode dans le header */
+.mode-badge-header {
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: rgba(240, 192, 64, 0.1);
+    border: 1px solid rgba(240, 192, 64, 0.25);
+    color: rgba(240, 192, 64, 0.8);
+}
+
+.mode-badge-header.rivalry {
+    background: rgba(139, 92, 246, 0.1);
+    border-color: rgba(139, 92, 246, 0.25);
+    color: rgba(139, 92, 246, 0.8);
+}
+
 .status-pill {
     display: flex;
     align-items: center;
@@ -243,6 +262,23 @@ body {
 .mode-badge.visible {
     opacity: 1;
     visibility: visible;
+}
+
+/* Mode Rivalité - couleur violette */
+.mode-badge.rivalry {
+    color: rgba(139, 92, 246, 0.6);
+}
+
+.mode-badge.rivalry::before {
+    background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.1), transparent);
+}
+
+.mode-badge.rivalry .mode-badge-line {
+    background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.4), rgba(139, 92, 246, 0.6));
+}
+
+.mode-badge.rivalry:hover {
+    color: rgba(139, 92, 246, 0.9);
 }
 
 /* Slide reveal effect */
@@ -1006,7 +1042,7 @@ body {
 .lobby-settings-panel {
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 0.2rem;
     overflow-y: auto;
     padding-right: 0.625rem;
@@ -1376,6 +1412,210 @@ body {
 .setting-group.series-trigger:hover .series-arrow {
     opacity: 1;
     transform: translateX(0.1875rem);
+}
+
+/* ========== TEAMS GROUP (Mode Rivalité) ========== */
+.setting-group.teams-group {
+    border-color: rgba(139, 92, 246, 0.2);
+}
+
+.setting-group.teams-group .setting-group-icon {
+    stroke: rgba(139, 92, 246, 0.6);
+}
+
+.setting-group.teams-group .setting-group-label {
+    color: rgba(139, 92, 246, 0.8);
+}
+
+.teams-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.setting-group.teams-group:hover .teams-inputs {
+    max-height: 10rem;
+    margin-top: 0.75rem;
+    opacity: 1;
+}
+
+.spectate-link-row {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.setting-group.teams-group:hover .spectate-link-row {
+    max-height: 5rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    opacity: 1;
+}
+
+.team-input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-left: 0.5rem;
+}
+
+.team-color-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.team-color-dot.team-1 {
+    background: #3b82f6;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+}
+
+.team-color-dot.team-2 {
+    background: #f0c040;
+    box-shadow: 0 0 8px rgba(240, 192, 64, 0.5);
+}
+
+.team-name-input {
+    flex: 1;
+    max-width: calc(100% - 1.5rem);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-family: 'Space Grotesk', sans-serif;
+    transition: all 0.2s ease;
+}
+
+.team-name-input:focus {
+    outline: none;
+    border-color: rgba(139, 92, 246, 0.4);
+    background: rgba(139, 92, 246, 0.05);
+}
+
+.team-name-input::placeholder {
+    color: rgba(255, 255, 255, 0.25);
+}
+
+.spectate-link-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    width: 100%;
+    padding: 0.5rem;
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: 6px;
+    color: rgba(139, 92, 246, 0.7);
+    font-size: 0.55rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.spectate-link-btn svg {
+    width: 12px;
+    height: 12px;
+}
+
+.spectate-link-btn:hover {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: rgba(139, 92, 246, 0.4);
+    color: #a78bfa;
+}
+
+.spectate-link-btn.copied {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: rgba(34, 197, 94, 0.3);
+    color: #22c55e;
+}
+
+/* Player card team colors - Neon Outline Style */
+.player-card-mini.team-1 {
+    border: 1px solid #3b82f6;
+    box-shadow: 0 0 5px #3b82f6, 0 0 10px rgba(59, 130, 246, 0.3);
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.player-card-mini.team-1:hover {
+    box-shadow: 0 0 8px #3b82f6, 0 0 15px rgba(59, 130, 246, 0.4);
+}
+
+.player-card-mini.team-1::before {
+    background: #3b82f6;
+}
+
+.player-card-mini.team-1 .player-card-mini-badge {
+    background: #3b82f6;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+}
+
+.player-card-mini.team-2 {
+    border: 1px solid #f0c040;
+    box-shadow: 0 0 5px #f0c040, 0 0 10px rgba(240, 192, 64, 0.3);
+    background: rgba(240, 192, 64, 0.05);
+}
+
+.player-card-mini.team-2:hover {
+    box-shadow: 0 0 8px #f0c040, 0 0 15px rgba(240, 192, 64, 0.4);
+}
+
+.player-card-mini.team-2::before {
+    background: #f0c040;
+}
+
+.player-card-mini.team-2 .player-card-mini-badge {
+    background: #f0c040;
+    box-shadow: 0 0 8px rgba(240, 192, 64, 0.6);
+}
+
+/* Team counters in lobby header */
+.team-counters {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-left: 1rem;
+}
+
+.team-counter {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.team-counter .team-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.team-counter .team-dot.team-1 {
+    background: #3b82f6;
+}
+
+.team-counter .team-dot.team-2 {
+    background: #f0c040;
+}
+
+.team-counter .team-count {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
 }
 
 /* ========== SERIES MODAL ========== */
@@ -3079,6 +3319,7 @@ body {
 
 /* ===== PANEL GRILLE/STATS (DROITE) ===== */
 .game-main-panel {
+    position: relative;
     flex: 0 0 0;
     width: 0;
     min-height: 32.5rem;
@@ -3153,6 +3394,7 @@ body {
 .panel-content {
     flex: 1;
     overflow: hidden;
+    overflow-x: hidden;
     position: relative;
 }
 
@@ -3164,6 +3406,7 @@ body {
     visibility: hidden;
     transition: all 0.3s ease;
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 #tabGrille {
@@ -3227,7 +3470,7 @@ body {
     grid-template-columns: repeat(4, 1fr);
     gap: 1.25rem;
     justify-content: center;
-    max-width: 43.75rem;
+    max-width: 38rem;
     margin: 0 auto;
 }
 
@@ -3235,17 +3478,17 @@ body {
 .player-card-game {
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 0.75rem;
-    padding: 1rem 0.875rem;
+    border-radius: 0.625rem;
+    padding: 0.875rem 0.75rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
     transition: all 0.3s ease;
     position: relative;
     cursor: pointer;
-    min-height: 5.9375rem;
-    min-width: 8.75rem;
+    min-height: 5.25rem;
+    min-width: 7.75rem;
 }
 
 .player-card-game:hover {
@@ -5062,7 +5305,7 @@ body {
 /* Bouton Fermer en jeu - style comme lobby */
 .game-close-text-btn {
     position: absolute;
-    top: -1.5625rem;
+    top: -1.5rem;
     right: 6rem;
     padding: 0;
     background: transparent;
@@ -5082,7 +5325,7 @@ body {
 }
 
 .game-close-text-btn span {
-    font-size: 0.6rem;
+    font-size: 0.5rem;
     font-weight: 500;
     color: var(--text-dim);
     opacity: 0.5;
@@ -8279,4 +8522,288 @@ body {
     .mode-badge {
         right: -320px;
     }
+}
+/* ============================================
+   MODE RIVALITÉ - GRAPHIQUE ÉQUIPES
+   ============================================ */
+
+/* Wrapper spécifique pour le graphique équipes */
+.teams-chart-wrapper {
+    padding-top: 0.2rem;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* Container du graphique en barres */
+.teams-bar-chart {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 1rem;
+    flex: 1;
+    padding: 0 0.3rem 1.2rem;
+    min-height: 100px;
+}
+
+.team-bar-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    width: 55px;
+}
+
+.team-bar {
+    width: 100%;
+    min-height: 60px;
+    border-radius: 4px 4px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: height 0.5s ease;
+}
+
+.team-1-bar {
+    background: linear-gradient(180deg, #60a5fa, #3b82f6);
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
+}
+
+.team-2-bar {
+    background: linear-gradient(180deg, #fcd34d, #f0c040);
+    box-shadow: 0 0 12px rgba(240, 192, 64, 0.5);
+}
+
+.team-bar-value {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+
+.team-bar-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding-bottom: 0.2rem;
+}
+
+/* ============================================
+   MODE RIVALITÉ - CARTES JOUEURS EN PARTIE
+   ============================================ */
+
+/* Badge équipe en coin supérieur droit */
+.team-badge-game {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+    border: 3px solid;
+    background: #000;
+}
+
+.team-badge-game.team-1 {
+    border-color: #3b82f6;
+    color: #60a5fa;
+    box-shadow: 3px 3px 0 #1d4ed8;
+}
+
+.team-badge-game.team-2 {
+    border-color: #f0c040;
+    color: #fcd34d;
+    box-shadow: 3px 3px 0 #b45309;
+}
+
+/* =============================================
+   TOGGLE TRI GRILLE - MODE RIVALITÉ
+   ============================================= */
+
+.grid-sort-toggle {
+    display: none;
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 5px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 20;
+}
+
+.grid-sort-toggle.visible {
+    display: flex;
+}
+
+.grid-sort-toggle.visible {
+    display: flex;
+}
+
+.sort-option {
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 5px;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sort-option span {
+    display: none;
+}
+
+.sort-option svg {
+    width: 13px;
+    height: 13px;
+    stroke: currentColor;
+    transition: all 0.2s ease;
+}
+
+.sort-option:hover {
+    color: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.sort-option.active {
+    color: #1a1a1a;
+    background: var(--gold);
+}
+
+.sort-option.active svg {
+    stroke: #1a1a1a;
+}
+
+/* Animation FLIP pour le tri */
+.player-card-game {
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+}
+
+.player-card-game.sorting {
+    transition: none;
+}
+
+/* Séparateur d'équipe (visible en tri par équipe) */
+.team-separator {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    margin: 0.5rem 0;
+    grid-column: 1 / -1;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: linear-gradient(180deg, rgba(12, 14, 18, 0.98) 0%, rgba(12, 14, 18, 0.95) 80%, transparent 100%);
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+}
+
+.team-separator::before,
+.team-separator::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+}
+
+.team-separator-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    border: 1px solid;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.team-separator-count {
+    font-size: 0.55rem;
+    opacity: 0.7;
+    font-weight: 500;
+}
+
+.team-separator.team-1 .team-separator-label {
+    color: #60a5fa;
+    border-color: rgba(59, 130, 246, 0.3);
+    background: rgba(59, 130, 246, 0.15);
+}
+
+.team-separator.team-2 .team-separator-label {
+    color: #fcd34d;
+    border-color: rgba(240, 192, 64, 0.3);
+    background: rgba(240, 192, 64, 0.15);
+}
+
+/* Boutons navigation équipe */
+.team-nav-buttons {
+    display: none;
+    position: absolute;
+    bottom: 15px;
+    right: 10px;
+    flex-direction: column;
+    gap: 0.35rem;
+    z-index: 20;
+}
+
+.team-nav-buttons.visible {
+    display: flex;
+}
+
+.team-nav-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border: 1px solid;
+    background: var(--bg-card);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.55rem;
+    font-weight: 700;
+}
+
+.team-nav-btn.team-1 {
+    color: #60a5fa;
+    border-color: rgba(59, 130, 246, 0.4);
+}
+
+.team-nav-btn.team-1:hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: #60a5fa;
+}
+
+.team-nav-btn.team-2 {
+    color: #fcd34d;
+    border-color: rgba(240, 192, 64, 0.4);
+}
+
+.team-nav-btn.team-2:hover {
+    background: rgba(240, 192, 64, 0.2);
+    border-color: #fcd34d;
 }

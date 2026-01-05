@@ -353,6 +353,122 @@ body {
     margin: 0 auto 1rem auto;
 }
 
+/* ==================== MODE RIVALITÉ - SÉLECTION ÉQUIPE ==================== */
+.team-choice-status {
+    text-align: center;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin: -0.5rem 0 1rem 0;
+    transition: color 0.3s ease;
+}
+
+.team-choice-status span {
+    color: rgba(240, 192, 64, 0.6);
+}
+
+.teams-container {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.team-card {
+    flex: 1;
+    padding: 1rem 0.75rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    position: relative;
+}
+
+.team-card.team-blue {
+    background: linear-gradient(180deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.02) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.team-card.team-blue:hover:not(.cooldown) {
+    border-color: rgba(59, 130, 246, 0.6);
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+}
+
+.team-card.team-blue.selected {
+    border-color: #3b82f6;
+    box-shadow: 0 0 10px #3b82f6, 0 0 25px rgba(59, 130, 246, 0.4), 0 0 40px rgba(59, 130, 246, 0.2);
+    background: linear-gradient(180deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%);
+}
+
+.team-card.team-gold {
+    background: linear-gradient(180deg, rgba(240, 192, 64, 0.08) 0%, rgba(240, 192, 64, 0.02) 100%);
+    border: 1px solid rgba(240, 192, 64, 0.3);
+}
+
+.team-card.team-gold:hover:not(.cooldown) {
+    border-color: rgba(240, 192, 64, 0.6);
+    box-shadow: 0 0 8px rgba(240, 192, 64, 0.3);
+}
+
+.team-card.team-gold.selected {
+    border-color: #f0c040;
+    box-shadow: 0 0 10px #f0c040, 0 0 25px rgba(240, 192, 64, 0.4), 0 0 40px rgba(240, 192, 64, 0.2);
+    background: linear-gradient(180deg, rgba(240, 192, 64, 0.15) 0%, rgba(240, 192, 64, 0.05) 100%);
+}
+
+.team-card.cooldown {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.team-icon {
+    width: 32px;
+    height: 32px;
+    margin: 0 auto 0.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.team-card.team-blue .team-icon {
+    background: rgba(59, 130, 246, 0.15);
+}
+
+.team-card.team-blue.selected .team-icon {
+    background: rgba(59, 130, 246, 0.3);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+}
+
+.team-card.team-gold .team-icon {
+    background: rgba(240, 192, 64, 0.15);
+}
+
+.team-card.team-gold.selected .team-icon {
+    background: rgba(240, 192, 64, 0.3);
+    box-shadow: 0 0 15px rgba(240, 192, 64, 0.4);
+}
+
+.team-card .team-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+}
+
+.team-card.team-blue .team-name { color: #60a5fa; }
+.team-card.team-gold .team-name { color: #f0c040; }
+
+.team-card .team-count {
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* Bouton rejoint en vert */
+.btn-primary.joined {
+    background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+    color: #fff !important;
+}
+
 .lobby-header {
     text-align: center;
     margin-bottom: 1.5rem;
@@ -543,6 +659,21 @@ body {
         box-shadow 0.8s ease-in-out;
 }
 
+/* Forcer les items latéraux à avoir la même largeur pour centrer le milieu */
+.player-hud > .hud-item:first-child,
+.player-hud > .hud-item:last-child {
+    flex: 1;
+    min-width: 0;
+}
+
+.player-hud > .hud-item:first-child {
+    align-items: flex-start;
+}
+
+.player-hud > .hud-item:last-child {
+    align-items: flex-end;
+}
+
 
 .hud-shield-icon {
     position: absolute;
@@ -614,6 +745,13 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
+    align-items: center;
+}
+
+/* 🆕 Pour le pseudo + badge en ligne */
+.hud-item.hud-username-item {
+    flex-direction: row;
+    gap: 0.3rem;
     align-items: center;
 }
 
@@ -3219,7 +3357,7 @@ body {
 }
 
 .points-number {
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: 700;
     color: var(--neon-primary);
     text-shadow: 0 0 0.5rem rgba(255, 215, 0, 0.3);
@@ -9144,4 +9282,183 @@ body.modal-open {
     .tip-icon {
         font-size: 0.8rem;
     }
+}
+
+/* ============================================
+   MODE RIVALITÉ - HUD ET SCORES D'ÉQUIPE
+   ============================================ */
+
+/* Badge d'équipe dans le HUD - à droite du pseudo */
+.hud-team-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-left: 0.4rem;
+    letter-spacing: 0.3px;
+    vertical-align: middle;
+    line-height: 1.2;
+}
+
+.hud-team-badge.team-1 {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.1));
+    border: 1px solid #3b82f6;
+    color: #60a5fa;
+}
+
+.hud-team-badge.team-2 {
+    background: linear-gradient(135deg, rgba(240, 192, 64, 0.3), rgba(240, 192, 64, 0.1));
+    border: 1px solid #f0c040;
+    color: #f0c040;
+}
+
+/* Score de mon équipe sous les réponses - Style V6 Glow */
+.my-team-score-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 3.5rem;
+}
+
+.my-team-score {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 8px;
+    font-size: 0.72rem;
+    opacity: 0.9;
+}
+
+/* Animation d'apparition directe */
+.my-team-score.animate-in {
+    opacity: 0;
+    animation: teamScoreAppear 0.5s ease-out 0.5s forwards;
+}
+
+@keyframes teamScoreAppear {
+    0% {
+        opacity: 0;
+        transform: translateY(10px) scale(0.9);
+    }
+    60% {
+        transform: translateY(-2px) scale(1.02);
+    }
+    100% {
+        opacity: 0.9;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.my-team-score .team-name {
+    font-weight: 600;
+}
+
+.my-team-score .team-separator {
+    width: 12px;
+    height: 2px;
+    border-radius: 1px;
+    opacity: 0.5;
+}
+
+.my-team-score .team-value {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+}
+
+/* Couleur selon l'équipe */
+.my-team-score.team-1 {
+    background: rgba(96, 165, 250, 0.1);
+    box-shadow: 0 0 15px rgba(96, 165, 250, 0.15);
+}
+
+.my-team-score.team-1 .team-name {
+    color: #60a5fa;
+}
+
+.my-team-score.team-1 .team-separator {
+    background: #60a5fa;
+}
+
+.my-team-score.team-2 {
+    background: rgba(240, 192, 64, 0.1);
+    box-shadow: 0 0 15px rgba(240, 192, 64, 0.15);
+}
+
+.my-team-score.team-2 .team-name {
+    color: #f0c040;
+}
+
+.my-team-score.team-2 .team-separator {
+    background: #f0c040;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .hud-team-badge {
+        display: none;
+    }
+    
+    .my-team-score-wrapper {
+        margin-top: 2.5rem;
+    }
+    
+    .my-team-score {
+        font-size: 0.65rem;
+        padding: 0.25rem 0.6rem;
+    }
+}
+
+/* ============================================
+   MODE RIVALITÉ - PODIUM ÉQUIPES
+   ============================================ */
+
+/* Cartes d'équipe dans le podium */
+.podium-card.team-card {
+    position: relative;
+}
+
+.podium-card.team-card.team-1 {
+    border-color: #3b82f6;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+.podium-card.team-card.team-2 {
+    border-color: #f0c040;
+    box-shadow: 0 0 20px rgba(240, 192, 64, 0.3);
+}
+
+.podium-card.team-card.team-1 .podium-player-name {
+    color: #60a5fa;
+}
+
+.podium-card.team-card.team-2 .podium-player-name {
+    color: #f0c040;
+}
+
+/* Icône d'équipe optionnelle */
+.podium-card.team-card::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.podium-card.team-card.team-1::before {
+    content: '⚔️';
+    background: rgba(59, 130, 246, 0.3);
+}
+
+.podium-card.team-card.team-2::before {
+    content: '🛡️';
+    background: rgba(240, 192, 64, 0.3);
 }

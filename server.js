@@ -215,6 +215,12 @@ app.get('/game/state', (req, res) => {
         const elapsed = Math.floor((Date.now() - gameState.questionStartTime) / 1000);
         timeRemaining = Math.max(0, gameState.questionTime - elapsed);
     }
+    
+    // 🆕 Mettre à jour les compteurs d'équipe
+    if (gameState.lobbyMode === 'rivalry') {
+        updateTeamCounts();
+        updateTeamScores(); // 🆕 Calculer les scores d'équipe
+    }
 
     // 🔥 Construire les données des joueurs avec leurs réponses
     const playersData = Array.from(gameState.players.values()).map(player => {
@@ -247,7 +253,8 @@ app.get('/game/state', (req, res) => {
             hasAnswered: !!playerAnswer,
             selectedAnswerIndex: playerAnswer?.answer || null,
             responseTime: playerAnswer?.time || null,
-            comboData: comboData
+            comboData: comboData,
+            team: player.team || null  // 🆕 Équipe du joueur
         };
     });
 
@@ -284,6 +291,11 @@ app.get('/game/state', (req, res) => {
         livesIcon: gameState.livesIcon,
         answeredCount: gameState.liveAnswers.size,
         autoMode: gameState.autoMode,
+        // 🆕 Mode Rivalité
+        lobbyMode: gameState.lobbyMode,
+        teamNames: gameState.teamNames,
+        teamCounts: gameState.teamCounts,
+        teamScores: gameState.lobbyMode === 'rivalry' ? gameState.teamScores : null, // 🆕 Scores d'équipe
         tiebreakerPlayers: gameState.isTiebreaker
             ? Array.from(gameState.players.values())
                 .filter(p => gameState.tiebreakerPlayers.includes(p.twitchId))
@@ -358,10 +370,95 @@ const gameState = {
 
     playerBonuses: new Map(),
     
+    // 🆕 Mode Rivalité
+    lobbyMode: 'classic', // 'classic' ou 'rivalry'
+    teamNames: { 1: 'Team A', 2: 'Team B' },
+    teamCounts: { 1: 0, 2: 0 },
+    teamScores: { 1: 0, 2: 0 }, // Vies restantes ou points totaux par équipe
+    
     // 🆕 Système de défis
     activeChallenges: [],           // Les 3 défis de la partie actuelle
     playerChallenges: new Map()     // Progression des défis par joueur
 };
+
+// ============================================
+// 🆕 HELPER - BROADCAST LOBBY UPDATE
+// ============================================
+
+function updateTeamCounts() {
+    gameState.teamCounts = { 1: 0, 2: 0 };
+    for (const player of gameState.players.values()) {
+        if (player.team === 1) gameState.teamCounts[1]++;
+        else if (player.team === 2) gameState.teamCounts[2]++;
+    }
+}
+
+// 🆕 Calculer les scores d'équipe (vies restantes ou points totaux)
+function updateTeamScores() {
+    gameState.teamScores = { 1: 0, 2: 0 };
+    
+    for (const player of gameState.players.values()) {
+        if (!player.team) continue;
+        
+        if (gameState.mode === 'lives') {
+            // 🆕 Compter les joueurs encore en vie (lives > 0)
+            if (player.lives > 0) {
+                gameState.teamScores[player.team] += 1;
+            }
+        } else {
+            // Additionner les points
+            gameState.teamScores[player.team] += player.points || 0;
+        }
+    }
+}
+
+// 🆕 Vérifier si une équipe a gagné (mode rivalité)
+function checkRivalryWinner() {
+    if (gameState.lobbyMode !== 'rivalry') return null;
+    
+    updateTeamScores();
+    
+    if (gameState.mode === 'lives') {
+        // En mode vie : une équipe gagne si l'autre a 0 vies
+        const team1Alive = gameState.teamScores[1] > 0;
+        const team2Alive = gameState.teamScores[2] > 0;
+        
+        if (!team1Alive && team2Alive) return 2;
+        if (!team2Alive && team1Alive) return 1;
+        if (!team1Alive && !team2Alive) return 'draw'; // Égalité (rare)
+    }
+    // En mode points : pas de victoire anticipée, on continue jusqu'à la fin
+    
+    return null;
+}
+
+function broadcastLobbyUpdate() {
+    // Mettre à jour les compteurs d'équipe
+    if (gameState.lobbyMode === 'rivalry') {
+        updateTeamCounts();
+    }
+    
+    io.emit('lobby-update', {
+        playerCount: gameState.players.size,
+        lives: gameState.lives,
+        livesIcon: gameState.livesIcon,
+        questionTime: gameState.questionTime,
+        // Mode Rivalité
+        lobbyMode: gameState.lobbyMode,
+        teamNames: gameState.teamNames,
+        teamCounts: gameState.teamCounts,
+        // Liste des joueurs
+        players: Array.from(gameState.players.values()).map(p => ({
+            twitchId: p.twitchId,
+            username: p.username,
+            lives: p.lives,
+            title: p.title || 'Novice',
+            avatarUrl: p.avatarUrl,
+            team: p.team || null,
+            isLastGlobalWinner: p.twitchId === lastGlobalWinner,
+        }))
+    });
+}
 
 // ============================================
 // 🆕 SYSTÈME DE DÉFIS
@@ -800,6 +897,18 @@ app.post('/admin/toggle-game', async (req, res) => {
 
     if (gameState.isActive) {
         console.log('✅ Jeu activé - Lobby ouvert');
+        
+        // 🆕 Récupérer le mode et les noms d'équipe depuis la requête
+        const { lobbyMode, teamNames } = req.body || {};
+        gameState.lobbyMode = lobbyMode || 'classic';
+        if (teamNames) {
+            gameState.teamNames = teamNames;
+        } else {
+            gameState.teamNames = { 1: 'Team A', 2: 'Team B' };
+        }
+        gameState.teamCounts = { 1: 0, 2: 0 };
+        
+        console.log(`🎮 Mode: ${gameState.lobbyMode}${gameState.lobbyMode === 'rivalry' ? ` (${gameState.teamNames[1]} vs ${gameState.teamNames[2]})` : ''}`);
 
         resetLogs();
 
@@ -822,7 +931,9 @@ app.post('/admin/toggle-game', async (req, res) => {
 
         io.emit('game-activated', {
             lives: gameState.lives,
-            questionTime: gameState.questionTime
+            questionTime: gameState.questionTime,
+            lobbyMode: gameState.lobbyMode,
+            teamNames: gameState.teamNames
         });
     } else {
         console.log('❌ Jeu désactivé');
@@ -856,6 +967,11 @@ app.post('/admin/toggle-game', async (req, res) => {
         gameState.gameStartTime = null;
 
         gameState.playerBonuses.clear();
+        
+        // 🆕 Reset mode Rivalité
+        gameState.lobbyMode = 'classic';
+        gameState.teamNames = { 1: 'Team A', 2: 'Team B' };
+        gameState.teamCounts = { 1: 0, 2: 0 };
 
         io.emit('game-deactivated');
     }
@@ -911,20 +1027,7 @@ app.post('/admin/set-lives', (req, res) => {
         });
 
         // Notifier l'admin pour rafraîchir la grille joueurs
-        io.emit('lobby-update', {
-            playerCount: gameState.players.size,
-            livesIcon: gameState.livesIcon,
-            lives: gameState.lives,
-            questionTime: gameState.questionTime,
-            players: Array.from(gameState.players.values()).map(p => ({
-                twitchId: p.twitchId,
-                username: p.username,
-                isLastGlobalWinner: p.twitchId === lastGlobalWinner,
-                lives: p.lives,
-                title: p.title || 'Novice',
-                avatarUrl: p.avatarUrl
-            }))
-        });
+        broadcastLobbyUpdate();
 
         console.log(`✅ Vies mises à jour pour ${gameState.players.size} joueur(s) dans le lobby`);
     }
@@ -1076,13 +1179,20 @@ app.post('/admin/start-game', async (req, res) => {
                     isParticipating: true,
                     gameMode: gameState.mode,
                     questionsCount: gameState.mode === 'points' ? gameState.questionsCount : null,
-                    challenges: getPlayerChallengesState(socketId) // 🆕 Envoyer les défis
+                    challenges: getPlayerChallengesState(socketId), // 🆕 Envoyer les défis
+                    // 🆕 Mode Rivalité
+                    lobbyMode: gameState.lobbyMode,
+                    teamNames: gameState.teamNames,
+                    playerTeam: player.team || null
                 });
             } else {
                 socket.emit('game-started', {
                     totalPlayers,
                     isParticipating: false,
-                    gameMode: gameState.mode
+                    gameMode: gameState.mode,
+                    // 🆕 Mode Rivalité
+                    lobbyMode: gameState.lobbyMode,
+                    teamNames: gameState.teamNames
                 });
             }
         });
@@ -1231,22 +1341,7 @@ app.post('/admin/set-mode', (req, res) => {
         questionsCount: gameState.questionsCount
     });
 
-    io.emit('lobby-update', {
-        playerCount: gameState.players.size,
-        mode: gameState.mode,
-        livesIcon: gameState.livesIcon,
-        lives: gameState.lives,
-        questionTime: gameState.questionTime,
-        players: Array.from(gameState.players.values()).map(p => ({
-            twitchId: p.twitchId,
-            isLastGlobalWinner: p.twitchId === lastGlobalWinner,
-            username: p.username,
-            lives: mode === 'lives' ? p.lives : null,
-            points: mode === 'points' ? p.points : null,
-            title: p.title || 'Novice',
-            avatarUrl: p.avatarUrl
-        }))
-    });
+    broadcastLobbyUpdate();
 
     res.json({ success: true, mode: gameState.mode });
 });
@@ -1899,7 +1994,8 @@ function revealAnswers(correctAnswer) {
                 responseTime: playerAnswer?.time || null,
                 isCorrect: isCorrect,
                 selectedAnswer: playerAnswer?.answer ? gameState.currentQuestion.answers[playerAnswer.answer - 1] : null,
-                pointsEarned: isCorrect ? getPointsForDifficulty(gameState.currentQuestion.difficulty) : 0 // 🔥 NOUVEAU
+                pointsEarned: isCorrect ? getPointsForDifficulty(gameState.currentQuestion.difficulty) : 0, // 🔥 NOUVEAU
+                team: player.team || null // 🆕 Équipe du joueur
             });
         });
     } else {
@@ -2014,7 +2110,8 @@ function revealAnswers(correctAnswer) {
                 responseTime: playerAnswer?.time || null,
                 isCorrect: isCorrect,
                 selectedAnswer: playerAnswer?.answer ? gameState.currentQuestion.answers[playerAnswer.answer - 1] : null,
-                shieldUsed: hasShield // 🔥 Indiquer si le Shield a été utilisé
+                shieldUsed: hasShield, // 🔥 Indiquer si le Shield a été utilisé
+                team: player.team || null // 🆕 Équipe du joueur
             });
         });
 
@@ -2031,7 +2128,8 @@ function revealAnswers(correctAnswer) {
         lives: player.lives,
         correctAnswers: player.correctAnswers,
         points: player.points || 0,
-        isLastGlobalWinner: player.twitchId === lastGlobalWinner
+        isLastGlobalWinner: player.twitchId === lastGlobalWinner,
+        team: player.team || null // 🆕 Équipe du joueur
     }));
 
     let fastestPlayer = null;
@@ -2128,6 +2226,11 @@ function revealAnswers(correctAnswer) {
         }
     });
 
+    // 🆕 Mettre à jour les scores d'équipe en mode Rivalité
+    if (gameState.lobbyMode === 'rivalry') {
+        updateTeamScores();
+    }
+
     const resultsData = {
         correctAnswer,
         stats,
@@ -2136,7 +2239,11 @@ function revealAnswers(correctAnswer) {
         players: playersDetails,
         playersData: playersData,
         gameMode: gameState.mode,
-        fastestPlayer: fastestPlayer
+        fastestPlayer: fastestPlayer,
+        // 🆕 Données équipe pour mode Rivalité
+        lobbyMode: gameState.lobbyMode,
+        teamScores: gameState.lobbyMode === 'rivalry' ? gameState.teamScores : null,
+        teamNames: gameState.lobbyMode === 'rivalry' ? gameState.teamNames : null
     };
 
     gameState.showResults = true;
@@ -2150,18 +2257,40 @@ function revealAnswers(correctAnswer) {
         const currentAlivePlayers = getAlivePlayers();
         console.log(`🔍 Joueurs en vie après cette question: ${currentAlivePlayers.length}`);
 
-        if (currentAlivePlayers.length <= 1) {
-            // 0 ou 1 joueur restant = fin de partie
-            const winner = currentAlivePlayers.length === 1 ? currentAlivePlayers[0] : null;
-            console.log(`🏁 Fin de partie mode vie - Gagnant: ${winner ? winner.username : 'Aucun'}`);
-            endGame(winner);
-            return; // 🔥 IMPORTANT: Arrêter ici pour ne pas continuer avec le mode auto
+        // 🆕 MODE RIVALITÉ : Vérifier si une équipe est éliminée
+        if (gameState.lobbyMode === 'rivalry') {
+            const rivalryWinner = checkRivalryWinner();
+            if (rivalryWinner && rivalryWinner !== 'draw') {
+                console.log(`🏆 Fin de partie Rivalité - Équipe gagnante: Team ${rivalryWinner} (${gameState.teamNames[rivalryWinner]})`);
+                endGameRivalry(rivalryWinner);
+                return;
+            } else if (rivalryWinner === 'draw') {
+                console.log(`⚖️ Égalité en mode Rivalité - Les deux équipes éliminées`);
+                endGameRivalry('draw');
+                return;
+            }
+        } else {
+            // Mode classique
+            if (currentAlivePlayers.length <= 1) {
+                // 0 ou 1 joueur restant = fin de partie
+                const winner = currentAlivePlayers.length === 1 ? currentAlivePlayers[0] : null;
+                console.log(`🏁 Fin de partie mode vie - Gagnant: ${winner ? winner.username : 'Aucun'}`);
+                endGame(winner);
+                return; // 🔥 IMPORTANT: Arrêter ici pour ne pas continuer avec le mode auto
+            }
         }
     } else if (gameState.mode === 'points' && gameState.currentQuestionIndex >= gameState.questionsCount) {
-        // Terminer automatiquement après la dernière question
-        setTimeout(() => {
-            endGameByPoints();
-        }, 100);
+        // 🆕 MODE RIVALITÉ : Fin par points
+        if (gameState.lobbyMode === 'rivalry') {
+            setTimeout(() => {
+                endGameRivalryPoints();
+            }, 100);
+        } else {
+            // Terminer automatiquement après la dernière question
+            setTimeout(() => {
+                endGameByPoints();
+            }, 100);
+        }
     }
 
 
@@ -2898,6 +3027,150 @@ async function endGame(winner) {
     }
 }
 
+// 🆕 Fin de partie mode Rivalité (vie)
+async function endGameRivalry(winningTeam) {
+    const duration = Math.floor((Date.now() - gameState.gameStartTime) / 1000);
+    
+    try {
+        updateTeamScores();
+        
+        const teamData = {
+            team: winningTeam === 'draw' ? null : winningTeam,
+            teamName: winningTeam === 'draw' ? 'Égalité' : gameState.teamNames[winningTeam],
+            livesRemaining: winningTeam === 'draw' ? 0 : gameState.teamScores[winningTeam],
+            isDraw: winningTeam === 'draw'
+        };
+        
+        // Log
+        addLog('game-end', { winner: teamData.teamName, mode: 'rivalry' });
+        console.log(`🏆 Mode Rivalité terminé - ${teamData.teamName} gagne avec ${teamData.livesRemaining} vies`);
+        
+        const playersData = Array.from(gameState.players.values()).map(p => ({
+            twitchId: p.twitchId,
+            username: p.username,
+            lives: p.lives,
+            points: p.points || 0,
+            correctAnswers: p.correctAnswers,
+            team: p.team,
+            isLastGlobalWinner: false
+        }));
+        
+        const topPlayers = await db.getTopPlayers(10);
+        
+        // Stocker pour restauration
+        winnerScreenData = {
+            winner: teamData,
+            teamScores: gameState.teamScores,
+            teamNames: gameState.teamNames,
+            duration,
+            totalQuestions: gameState.currentQuestionIndex,
+            gameMode: 'rivalry-lives',
+            playersData: playersData,
+            topPlayers,
+            livesIcon: gameState.livesIcon
+        };
+        
+        io.emit('game-ended', {
+            winner: teamData,
+            teamScores: gameState.teamScores,
+            teamNames: gameState.teamNames,
+            duration,
+            totalQuestions: gameState.currentQuestionIndex,
+            gameMode: 'rivalry-lives',
+            playersData: playersData,
+            topPlayers
+        });
+        
+        resetGameState();
+        
+    } catch (error) {
+        console.error('❌ Erreur fin de partie Rivalité:', error);
+        resetGameState();
+    }
+}
+
+// 🆕 Fin de partie mode Rivalité (points)
+async function endGameRivalryPoints() {
+    const duration = Math.floor((Date.now() - gameState.gameStartTime) / 1000);
+    
+    try {
+        updateTeamScores();
+        
+        const team1Points = gameState.teamScores[1];
+        const team2Points = gameState.teamScores[2];
+        
+        let winningTeam;
+        if (team1Points > team2Points) {
+            winningTeam = 1;
+        } else if (team2Points > team1Points) {
+            winningTeam = 2;
+        } else {
+            winningTeam = 'draw';
+        }
+        
+        const teamData = {
+            team: winningTeam === 'draw' ? null : winningTeam,
+            teamName: winningTeam === 'draw' ? 'Égalité' : gameState.teamNames[winningTeam],
+            points: winningTeam === 'draw' ? team1Points : gameState.teamScores[winningTeam],
+            isDraw: winningTeam === 'draw'
+        };
+        
+        // Log
+        addLog('game-end', { winner: teamData.teamName, mode: 'rivalry-points' });
+        console.log(`🏆 Mode Rivalité (points) terminé - ${teamData.teamName} gagne avec ${teamData.points} points`);
+        
+        const playersData = Array.from(gameState.players.values()).map(p => ({
+            twitchId: p.twitchId,
+            username: p.username,
+            lives: p.lives,
+            points: p.points || 0,
+            correctAnswers: p.correctAnswers,
+            team: p.team,
+            isLastGlobalWinner: false
+        }));
+        
+        // Créer le podium par équipe
+        const podium = [
+            { rank: 1, teamName: gameState.teamNames[1], points: team1Points, team: 1 },
+            { rank: 2, teamName: gameState.teamNames[2], points: team2Points, team: 2 }
+        ].sort((a, b) => b.points - a.points);
+        
+        const topPlayers = await db.getTopPlayers(10);
+        
+        // Stocker pour restauration
+        winnerScreenData = {
+            winner: teamData,
+            teamScores: gameState.teamScores,
+            teamNames: gameState.teamNames,
+            podium,
+            duration,
+            totalQuestions: gameState.currentQuestionIndex,
+            gameMode: 'rivalry-points',
+            playersData: playersData,
+            topPlayers,
+            livesIcon: gameState.livesIcon
+        };
+        
+        io.emit('game-ended', {
+            winner: teamData,
+            teamScores: gameState.teamScores,
+            teamNames: gameState.teamNames,
+            podium,
+            duration,
+            totalQuestions: gameState.currentQuestionIndex,
+            gameMode: 'rivalry-points',
+            playersData: playersData,
+            topPlayers
+        });
+        
+        resetGameState();
+        
+    } catch (error) {
+        console.error('❌ Erreur fin de partie Rivalité (points):', error);
+        resetGameState();
+    }
+}
+
 // Stats admin
 app.get('/admin/stats', async (req, res) => {
     if (!req.session.isAdmin) {
@@ -3569,6 +3842,11 @@ io.on('connection', (socket) => {
         if (gameState.inProgress) {
             return socket.emit('error', { message: 'Une partie est déjà en cours' });
         }
+        
+        // 🆕 En mode rivalité, vérifier qu'une équipe est fournie
+        if (gameState.lobbyMode === 'rivalry' && !data.team) {
+            return socket.emit('error', { message: 'Vous devez choisir une équipe' });
+        }
 
         // 🔥 NOUVEAU: Vérifier si le joueur est déjà dans le lobby
         let alreadyInLobby = false;
@@ -3588,13 +3866,20 @@ io.on('connection', (socket) => {
 
             // Option 2: Remplacer l'ancienne connexion (recommandé)
             console.log(`🔄 ${data.username} remplace sa connexion précédente`);
+            
+            // 🆕 Annuler le timeout de suppression si existant
+            const existingPlayer = gameState.players.get(existingSocketId);
+            if (existingPlayer && existingPlayer.pendingRemoval) {
+                clearTimeout(existingPlayer.pendingRemoval);
+                console.log(`⏱️ Timeout de suppression annulé pour ${data.username}`);
+            }
+            
             gameState.players.delete(existingSocketId);
             gameState.answers.delete(existingSocketId);
 
-            // Déconnecter l'ancien socket
+            // Déconnecter l'ancien socket (sans envoyer kicked pour éviter de reset le localStorage)
             const oldSocket = io.sockets.sockets.get(existingSocketId);
             if (oldSocket) {
-                oldSocket.emit('kicked', { reason: 'Connexion depuis un autre appareil' });
                 oldSocket.disconnect(true);
             }
         }
@@ -3618,28 +3903,34 @@ io.on('connection', (socket) => {
             correctAnswers: 0,
             lastPlacement: userInfo?.last_placement || null,
             title: playerTitle,
-            avatarUrl: userInfo?.avatar_url || '/img/avatars/novice.png'
+            avatarUrl: userInfo?.avatar_url || '/img/avatars/novice.png',
+            team: gameState.lobbyMode === 'rivalry' ? data.team : null  // 🆕 Équipe
         });
 
         const playerColor = assignPlayerColor(data.username);
         addLog('join', { username: data.username, playerColor });
 
-        console.log(`✅ ${data.username} a rejoint le lobby`);
+        console.log(`✅ ${data.username} a rejoint le lobby${data.team ? ` (Team ${data.team})` : ''}`);
 
-        io.emit('lobby-update', {
-            playerCount: gameState.players.size,
-            lives: gameState.lives,
-            livesIcon: gameState.livesIcon,
-            questionTime: gameState.questionTime,
-            players: Array.from(gameState.players.values()).map(p => ({
-                twitchId: p.twitchId,
-                username: p.username,
-                lives: p.lives,
-                title: p.title || 'Novice',
-                avatarUrl: p.avatarUrl,
-                isLastGlobalWinner: p.twitchId === lastGlobalWinner,
-            }))
-        });
+        // 🆕 Utiliser la fonction helper
+        broadcastLobbyUpdate();
+    });
+    
+    // 🆕 Changer d'équipe (mode Rivalité)
+    socket.on('change-team', (data) => {
+        if (gameState.lobbyMode !== 'rivalry') return;
+        if (gameState.inProgress) return;
+        
+        const player = gameState.players.get(socket.id);
+        if (!player) return;
+        
+        const oldTeam = player.team;
+        player.team = data.team;
+        
+        console.log(`🔄 ${player.username} change d'équipe: Team ${oldTeam} → Team ${data.team}`);
+        
+        // Mettre à jour tous les clients
+        broadcastLobbyUpdate();
     });
 
     // Quitter le lobby
@@ -3653,18 +3944,7 @@ io.on('connection', (socket) => {
             const playerColor = playerColors[data.username];
             addLog('leave', { username: data.username, playerColor });
 
-            io.emit('lobby-update', {
-                playerCount: gameState.players.size,
-                livesIcon: gameState.livesIcon,
-                players: Array.from(gameState.players.values()).map(p => ({
-                    twitchId: p.twitchId,
-                    username: p.username,
-                    lives: p.lives,
-                    title: p.title || 'Novice',
-                    avatarUrl: p.avatarUrl,
-                    isLastGlobalWinner: p.twitchId === lastGlobalWinner,
-                }))
-            });
+            broadcastLobbyUpdate();
         }
     });
 
@@ -3706,18 +3986,7 @@ io.on('connection', (socket) => {
             addLog('kick', { username, playerColor });
 
             // Mettre à jour le lobby/game pour tout le monde
-            io.emit('lobby-update', {
-                playerCount: gameState.players.size,
-                livesIcon: gameState.livesIcon,
-                players: Array.from(gameState.players.values()).map(p => ({
-                    twitchId: p.twitchId,
-                    username: p.username,
-                    lives: p.lives,
-                    title: p.title || 'Novice',
-                    avatarUrl: p.avatarUrl,
-                    isLastGlobalWinner: p.twitchId === lastGlobalWinner,
-                }))
-            });
+            broadcastLobbyUpdate();
 
             // 🆕 Vérifier si la partie doit se terminer après le kick
             if (gameState.inProgress && gameState.mode === 'lives') {
@@ -3830,20 +4099,7 @@ io.on('connection', (socket) => {
             }
 
             // Mise à jour lobby
-            io.emit('lobby-update', {
-                playerCount: gameState.players.size,
-                mode: gameState.mode,
-                livesIcon: gameState.livesIcon,
-                players: Array.from(gameState.players.values()).map(p => ({
-                    twitchId: p.twitchId,
-                    isLastGlobalWinner: p.twitchId === lastGlobalWinner,
-                    username: p.username,
-                    lives: gameState.mode === 'lives' ? p.lives : null,
-                    points: gameState.mode === 'points' ? (p.points || 0) : null,
-                    title: p.title || 'Novice',
-                    avatarUrl: p.avatarUrl
-                }))
-            });
+            broadcastLobbyUpdate();
         } else {
             socket.emit('error', {
                 message: 'Vous ne pouvez pas rejoindre une partie en cours',
@@ -4008,21 +4264,17 @@ io.on('connection', (socket) => {
                 player.disconnectedSocketId = socket.id;
                 // 🆕 On ne supprime plus automatiquement - l'admin peut kick manuellement si besoin
             } else {
-                gameState.players.delete(socket.id);
-                gameState.answers.delete(socket.id);
-
-                io.emit('lobby-update', {
-                    livesIcon: gameState.livesIcon,
-                    playerCount: gameState.players.size,
-                    players: Array.from(gameState.players.values()).map(p => ({
-                        twitchId: p.twitchId,
-                        username: p.username,
-                        isLastGlobalWinner: p.twitchId === lastGlobalWinner,
-                        lives: p.lives,
-                        title: p.title || 'Novice',
-                        avatarUrl: p.avatarUrl
-                    }))
-                });
+                // 🆕 En lobby, attendre 5 secondes avant de supprimer (permet le refresh)
+                player.pendingRemoval = setTimeout(() => {
+                    // Vérifier que le joueur n'a pas re-rejoint entre temps
+                    const stillExists = gameState.players.get(socket.id);
+                    if (stillExists && stillExists.pendingRemoval) {
+                        console.log(`🗑️ ${player.username} supprimé du lobby (timeout 5s)`);
+                        gameState.players.delete(socket.id);
+                        gameState.answers.delete(socket.id);
+                        broadcastLobbyUpdate();
+                    }
+                }, 5000);
             }
         }
     });

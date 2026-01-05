@@ -764,28 +764,163 @@
         }
 
         @media (max-width: 600px) {
+            body {
+                padding: 12px;
+            }
+            
+            .container {
+                max-width: 100%;
+            }
+            
+            .card {
+                padding: 16px;
+                border-radius: 12px;
+            }
+            
+            .container:not(.expanded) .card {
+                padding: 24px 16px;
+            }
+            
             .form-layout {
                 grid-template-columns: 1fr;
+                gap: 12px;
             }
+            
             .form-col:first-child {
                 grid-column: span 1;
             }
+            
+            .form-group {
+                gap: 4px;
+            }
+            
+            .form-group label {
+                font-size: 0.6rem;
+            }
+            
+            input,
+            select,
+            textarea {
+                padding: 12px;
+                font-size: 16px; /* Empêche le zoom sur iOS */
+                border-radius: 8px;
+            }
+            
+            textarea {
+                min-height: 60px;
+            }
+            
+            .answers-grid {
+                gap: 10px;
+            }
+            
+            .answers-grid input {
+                padding-left: 38px;
+            }
+            
+            .answer-number {
+                width: 20px;
+                height: 20px;
+                font-size: 0.6rem;
+                left: 10px;
+            }
+            
+            /* Difficulté et bonne réponse en colonne sur mobile */
+            div[style*="grid-template-columns: 1fr 1fr"] {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 10px !important;
+            }
+            
             .submit-row {
                 flex-direction: column;
+                gap: 10px;
+                margin-top: 16px;
+                padding-top: 16px;
             }
+            
             .submit-row .btn {
                 width: 100%;
+                min-width: unset;
+                padding: 14px;
+                font-size: 0.85rem;
             }
+            
+            .tabs {
+                gap: 6px;
+                margin-bottom: 16px;
+                padding-bottom: 10px;
+            }
+            
+            .tab-btn {
+                padding: 10px 14px;
+                font-size: 0.7rem;
+                flex: 1;
+                text-align: center;
+            }
+            
             .list-header {
                 flex-direction: column;
+                gap: 10px;
             }
+            
             .list-header select,
             .list-header .search-input {
                 max-width: 100%;
                 width: 100%;
             }
+            
             .question-answers {
                 grid-template-columns: 1fr;
+            }
+            
+            .btn-logout {
+                font-size: 0.55rem;
+                top: 8px;
+                right: 10px;
+            }
+            
+            .login-logo h1 {
+                font-size: 1.4rem;
+            }
+            
+            .login-logo p {
+                font-size: 0.65rem;
+            }
+            
+            .status {
+                font-size: 0.68rem;
+                padding: 10px;
+            }
+        }
+        
+        /* Très petits écrans (iPhone SE, etc.) */
+        @media (max-width: 380px) {
+            body {
+                padding: 8px;
+            }
+            
+            .card {
+                padding: 14px;
+            }
+            
+            .container:not(.expanded) .card {
+                padding: 20px 14px;
+            }
+            
+            input,
+            select,
+            textarea {
+                padding: 10px;
+            }
+            
+            .tab-btn {
+                padding: 8px 10px;
+                font-size: 0.65rem;
+            }
+            
+            .submit-row .btn {
+                padding: 12px;
             }
         }
     </style>

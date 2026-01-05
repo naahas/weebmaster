@@ -34,6 +34,8 @@ const LIVES_ICONS = {
 
     sharingan: `<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#cc0000"/><circle cx="12" cy="12" r="3" fill="#000"/><circle cx="12" cy="6" r="1.8" fill="#000"/><circle cx="6.8" cy="15" r="1.8" fill="#000"/><circle cx="17.2" cy="15" r="1.8" fill="#000"/></svg>`,
 
+    katana: `<svg viewBox="0 0 24 24" fill="none"><path d="M20 18L4 8" stroke="#c8c8c8" stroke-width="2" stroke-linecap="round"/><rect x="18" y="16" width="4" height="4" rx="1" fill="#8b6b4a"/></svg>`,
+
     shuriken: `<svg viewBox="0 0 24 24" fill="#888"><path d="M12 2L14 10L22 12L14 14L12 22L10 14L2 12L10 10L12 2Z"/><circle cx="12" cy="12" r="2.5" fill="#0a0a0f"/></svg>`,
 
     konoha: `<svg viewBox="0 0 24 24" fill="none"><path d="M12 2C8 2 4 6 4 12c0 4 2 7 5 8.5-.5-2-.5-4 1-6 1.5-2 3-3 3-3s1.5 1 3 3c1.5 2 1.5 4 1 6 3-1.5 5-4.5 5-8.5 0-6-4-10-8-10z" fill="#4ade80"/><path d="M12 8c-1 1-2 3-2 5s1 3 2 4c1-1 2-2 2-4s-1-4-2-5z" fill="#22c55e"/></svg>`,
@@ -287,6 +289,15 @@ function closeLobbyUI() {
     if (grid) grid.innerHTML = '';
     document.getElementById('lobbyPlayerCount').textContent = '0';
 
+    // 🆕 Cacher le badge de mode
+    const modeBadgeHeader = document.getElementById('modeBadgeHeader');
+    if (modeBadgeHeader) modeBadgeHeader.style.display = 'none';
+
+    // 🆕 Reset les éléments d'équipe
+    const teamsGroup = document.getElementById('teamsGroup');
+    if (teamsGroup) teamsGroup.style.display = 'none';
+    const teamCounters = document.getElementById('teamCounters');
+    if (teamCounters) teamCounters.remove();
 
     anime({
         targets: stateLobby,
@@ -301,6 +312,10 @@ function closeLobbyUI() {
             // 🆕 Réafficher le bouton déconnexion
             const logoutBtn = document.getElementById('headerLogoutBtn');
             if (logoutBtn) logoutBtn.style.display = 'flex';
+            
+            // 🆕 Réafficher le bouton Twitch
+            const twitchBtn = document.getElementById('twitchConnectBtn');
+            if (twitchBtn) twitchBtn.style.display = 'flex';
 
             // Réafficher les panneaux latéraux
             recentPanel.classList.remove('hidden');
@@ -1473,8 +1488,55 @@ const modeRivaliteCard = document.getElementById('modeRivaliteCard');
 const modeCards = document.querySelectorAll('.mode-card');
 const modeBadge = document.getElementById('modeBadge');
 
-// Mode actuel (pour le futur quand Rivalité sera disponible)
-let currentGameMode = 'classic';
+// Mode actuel - Restaurer depuis sessionStorage ou classic par défaut
+let currentGameMode = sessionStorage.getItem('adminGameMode') || 'classic';
+
+// Mettre à jour le badge au chargement si rivalité
+if (currentGameMode === 'rivalry') {
+    const badgeText = modeBadge?.querySelector('.mode-badge-text');
+    if (badgeText) badgeText.textContent = 'Rivalry Mode';
+    if (modeBadge) modeBadge.classList.add('rivalry');
+}
+
+// Fonction pour changer le mode avec persistance
+function setGameMode(mode) {
+    currentGameMode = mode;
+    sessionStorage.setItem('adminGameMode', mode);
+    
+    // Mettre à jour le badge
+    const badgeText = modeBadge?.querySelector('.mode-badge-text');
+    if (mode === 'rivalry') {
+        if (badgeText) badgeText.textContent = 'Rivalry Mode';
+        if (modeBadge) modeBadge.classList.add('rivalry');
+    } else {
+        if (badgeText) badgeText.textContent = 'Classic Mode';
+        if (modeBadge) modeBadge.classList.remove('rivalry');
+    }
+
+    // Afficher/cacher le toggle de tri selon le mode
+    updateGridSortToggleVisibility();
+}
+
+// Gérer la visibilité du toggle de tri (uniquement en Rivalité ET onglet Grille)
+function updateGridSortToggleVisibility() {
+    const sortToggle = document.getElementById('gridSortToggle');
+    if (sortToggle) {
+        const isGrilleActive = document.getElementById('tabGrille')?.classList.contains('active');
+        if (currentGameMode === 'rivalry' && isGrilleActive) {
+            sortToggle.classList.add('visible');
+        } else {
+            sortToggle.classList.remove('visible');
+            // Reset au tri par score si on quitte le mode rivalité
+            if (currentGameMode !== 'rivalry') {
+                gridSortMode = 'score';
+                const scoreBtn = sortToggle.querySelector('[data-sort="score"]');
+                const teamBtn = sortToggle.querySelector('[data-sort="team"]');
+                if (scoreBtn) scoreBtn.classList.add('active');
+                if (teamBtn) teamBtn.classList.remove('active');
+            }
+        }
+    }
+}
 
 // ============================================
 // TWITCH CONNECT
@@ -1536,6 +1598,8 @@ function showTwitchRequiredMessage() {
         
         // Event listener pour le lien
         toast.querySelector('.toast-link').addEventListener('click', () => {
+            // Sauvegarder que l'utilisateur voulait Rivalité
+            sessionStorage.setItem('pendingRivalryMode', 'true');
             hideTwitchRequiredMessage();
             closeModeModal();
             connectTwitch();
@@ -1583,6 +1647,13 @@ async function checkTwitchAuth() {
             if (data.connected && data.user) {
                 twitchUser = data.user;
                 updateTwitchUI();
+                
+                // Vérifier si l'utilisateur voulait sélectionner Rivalité
+                if (sessionStorage.getItem('pendingRivalryMode') === 'true') {
+                    sessionStorage.removeItem('pendingRivalryMode');
+                    // Sélectionner le mode Rivalité (sans ouvrir le lobby)
+                    setGameMode('rivalry');
+                }
             }
         }
     } catch (error) {
@@ -1689,11 +1760,7 @@ openLobbyBtn.addEventListener('click', async () => {
 modeClassiqueCard.addEventListener('click', async () => {
     if (modeClassiqueCard.classList.contains('selecting')) return;
     
-    currentGameMode = 'classic';
-    
-    // Mettre à jour le texte du badge
-    const badgeText = modeBadge.querySelector('.mode-badge-text');
-    if (badgeText) badgeText.textContent = 'Classic Mode';
+    setGameMode('classic');
     
     modeClassiqueCard.classList.add('selecting');
     
@@ -1741,10 +1808,20 @@ modeClassiqueCard.addEventListener('click', async () => {
 // Fonction pour lancer le lobby
 async function launchLobby() {
     try {
+        // Préparer les données du mode
+        const lobbyData = {
+            lobbyMode: currentGameMode,
+            teamNames: currentGameMode === 'rivalry' ? getTeamNames() : null
+        };
+        
         // Activer le lobby
         const response = await fetch('/admin/toggle-game', {
             method: 'POST',
-            credentials: 'same-origin'
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(lobbyData)
         });
 
         const data = await response.json();
@@ -1797,6 +1874,12 @@ async function launchLobby() {
             // 🆕 Cacher le bouton déconnexion
             const logoutBtn = document.getElementById('headerLogoutBtn');
             if (logoutBtn) logoutBtn.style.display = 'none';
+            
+            // 🆕 Cacher le bouton Twitch si pas connecté
+            const twitchBtn = document.getElementById('twitchConnectBtn');
+            if (twitchBtn && !twitchUser) {
+                twitchBtn.style.display = 'none';
+            }
 
             // Afficher le lobby
             stateLobby.classList.add('active');
@@ -1806,6 +1889,49 @@ async function launchLobby() {
             bgText.classList.add('lobby-active');
             statusDot.classList.add('active');
             statusText.textContent = 'Lobby ouvert';
+
+            // 🆕 Afficher le badge de mode dans le header
+            const modeBadgeHeader = document.getElementById('modeBadgeHeader');
+            const modeBadgeText = document.getElementById('modeBadgeText');
+            if (modeBadgeHeader && modeBadgeText) {
+                modeBadgeHeader.style.display = 'block';
+                if (currentGameMode === 'rivalry') {
+                    modeBadgeText.textContent = 'Rivalité';
+                    modeBadgeHeader.classList.add('rivalry');
+                } else {
+                    modeBadgeText.textContent = 'Classic';
+                    modeBadgeHeader.classList.remove('rivalry');
+                }
+            }
+
+            // 🆕 Afficher/cacher la section équipes selon le mode
+            const teamsGroup = document.getElementById('teamsGroup');
+            const lobbyHeaderLeft = document.querySelector('.lobby-header-left');
+            
+            if (currentGameMode === 'rivalry') {
+                if (teamsGroup) teamsGroup.style.display = 'block';
+                
+                // Ajouter les compteurs d'équipe si pas déjà présents
+                if (lobbyHeaderLeft && !document.getElementById('teamCounters')) {
+                    const teamCountersHTML = `
+                        <div class="team-counters" id="teamCounters">
+                            <div class="team-counter">
+                                <span class="team-dot team-1"></span>
+                                <span class="team-count" id="team1Count">0</span>
+                            </div>
+                            <div class="team-counter">
+                                <span class="team-dot team-2"></span>
+                                <span class="team-count" id="team2Count">0</span>
+                            </div>
+                        </div>
+                    `;
+                    lobbyHeaderLeft.insertAdjacentHTML('beforeend', teamCountersHTML);
+                }
+            } else {
+                if (teamsGroup) teamsGroup.style.display = 'none';
+                const teamCounters = document.getElementById('teamCounters');
+                if (teamCounters) teamCounters.remove();
+            }
 
 
             // Fade out du cercle
@@ -1868,11 +1994,7 @@ modeRivaliteCard.addEventListener('click', async () => {
         return;
     }
     
-    currentGameMode = 'rivalry';
-    
-    // Mettre à jour le texte du badge
-    const badgeText = modeBadge.querySelector('.mode-badge-text');
-    if (badgeText) badgeText.textContent = 'Rivalry Mode';
+    setGameMode('rivalry');
     
     modeRivaliteCard.classList.add('selecting');
     
@@ -2391,6 +2513,9 @@ let gameSettings = {
     totalQuestions: 20
 };
 
+// Mode de tri de la grille (score ou team) - uniquement pour Rivalité
+let gridSortMode = 'score';
+
 
 // Joueurs en jeu
 let gamePlayers = [];
@@ -2411,7 +2536,20 @@ function updateLobbyPlayers(players) {
     updateStartButton(players.length);
 
     // Si pas de joueurs, juste laisser vide
-    if (players.length === 0) return;
+    if (players.length === 0) {
+        // Reset compteurs équipes
+        if (currentGameMode === 'rivalry') {
+            const team1Count = document.getElementById('team1Count');
+            const team2Count = document.getElementById('team2Count');
+            if (team1Count) team1Count.textContent = '0';
+            if (team2Count) team2Count.textContent = '0';
+        }
+        return;
+    }
+
+    // Compteurs pour les équipes
+    let team1Players = 0;
+    let team2Players = 0;
 
     // Sinon afficher les joueurs
     players.forEach((player, index) => {
@@ -2423,6 +2561,18 @@ function updateLobbyPlayers(players) {
         const twitchId = player.twitch_id || player.twitchId;
 
         if (isChampion) card.classList.add('champion');
+
+        // 🆕 Attribuer une équipe en mode Rivalité
+        if (currentGameMode === 'rivalry') {
+            // Si le joueur a déjà une équipe assignée, l'utiliser
+            // Sinon attribuer alternativement pour équilibrer
+            const playerTeam = player.team || ((index % 2) + 1);
+            card.classList.add(`team-${playerTeam}`);
+            card.dataset.team = playerTeam;
+            
+            if (playerTeam === 1) team1Players++;
+            else team2Players++;
+        }
 
         const currentLives = parseInt(document.querySelector('.lives-group .setting-option-btn.active')?.dataset.value) || 3;
         const currentMode = document.querySelector('.mode-group .setting-option-btn.active')?.dataset.mode || 'vie';
@@ -2471,6 +2621,14 @@ function updateLobbyPlayers(players) {
         });
     });
 
+    // 🆕 Mettre à jour les compteurs d'équipes
+    if (currentGameMode === 'rivalry') {
+        const team1Count = document.getElementById('team1Count');
+        const team2Count = document.getElementById('team2Count');
+        if (team1Count) team1Count.textContent = team1Players;
+        if (team2Count) team2Count.textContent = team2Players;
+    }
+
     updateStartButton(players.length);
 
 
@@ -2509,6 +2667,7 @@ function createGamePlayerCards() {
         const titleEl = card.querySelector('.player-card-mini-title');
         const playerTitle = titleEl ? titleEl.textContent : '';
         const twitchId = card.dataset.twitchId || '';
+        const playerTeam = card.dataset.team || null; // 🆕 Récupérer l'équipe
 
         const playerData = {
             name: name,
@@ -2517,6 +2676,7 @@ function createGamePlayerCards() {
             points: 0,
             isChampion: isChampion,
             title: playerTitle,
+            team: playerTeam, // 🆕 Stocker l'équipe
             eliminated: false,
             hasAnswered: false,
             answer: null
@@ -2525,15 +2685,27 @@ function createGamePlayerCards() {
 
         const gameCard = document.createElement('div');
         gameCard.className = 'player-card-game' + (isChampion ? ' champion' : '');
+        
+        // 🆕 Ajouter classe d'équipe en mode Rivalité
+        if (currentGameMode === 'rivalry' && playerTeam) {
+            gameCard.classList.add(`team-${playerTeam}`);
+        }
+        
         gameCard.dataset.playerIndex = index;
         gameCard.dataset.lives = gameSettings.lives;
         gameCard.dataset.twitchId = twitchId || '';
+        gameCard.dataset.team = playerTeam || ''; // 🆕 Stocker l'équipe
 
 
         if (gameSettings.mode === 'vie') {
             const livesHtml = getLivesIconsHTML(selectedLivesIcon, gameSettings.lives, gameSettings.lives);
+            // 🆕 Badge équipe pour mode Rivalité
+            const teamBadgeHtml = (currentGameMode === 'rivalry' && playerTeam) 
+                ? `<span class="team-badge-game team-${playerTeam}">${playerTeam === '1' ? 'A' : 'B'}</span>` 
+                : '';
             gameCard.innerHTML = `
                 <div class="answered-indicator"></div>
+                ${teamBadgeHtml}
                 <div class="player-card-game-name">${name}</div>
                 <div class="player-card-game-lives">${livesHtml}</div>
                 <div class="player-card-game-answer-overlay">
@@ -2544,8 +2716,13 @@ function createGamePlayerCards() {
                 </button>
             `;
         } else {
+            // 🆕 Badge équipe pour mode Rivalité
+            const teamBadgeHtml = (currentGameMode === 'rivalry' && playerTeam) 
+                ? `<span class="team-badge-game team-${playerTeam}">${playerTeam === '1' ? 'A' : 'B'}</span>` 
+                : '';
             gameCard.innerHTML = `
                 <div class="answered-indicator"></div>
+                ${teamBadgeHtml}
                 <div class="player-card-game-name">${name}</div>
                 <div class="player-card-game-points">0</div>
                 <div class="player-card-game-answer-overlay">
@@ -2684,6 +2861,16 @@ document.addEventListener('click', (e) => {
 
     const tabContent = document.getElementById('tab' + targetTab.charAt(0).toUpperCase() + targetTab.slice(1));
     if (tabContent) tabContent.classList.add('active');
+
+    // Cacher le toggle de tri si on n'est pas sur l'onglet Grille
+    const sortToggle = document.getElementById('gridSortToggle');
+    if (sortToggle) {
+        if (targetTab === 'grille' && currentGameMode === 'rivalry') {
+            sortToggle.classList.add('visible');
+        } else {
+            sortToggle.classList.remove('visible');
+        }
+    }
 });
 
 // Transition vers l'état Game
@@ -2719,6 +2906,9 @@ function transitionToGame() {
     // Créer les cartes joueurs
     createGamePlayerCards();
 
+    // Afficher/cacher le toggle de tri selon le mode Rivalité
+    updateGridSortToggleVisibility();
+
     // Reset complet du wrapper
     // 🔥 RESET COMPLET du wrapper + panel + actions
     questionWrapper.className = 'game-question-wrapper';
@@ -2751,6 +2941,12 @@ function transitionToGame() {
     // 🆕 Cacher le bouton déconnexion
     const logoutBtn = document.getElementById('headerLogoutBtn');
     if (logoutBtn) logoutBtn.style.display = 'none';
+    
+    // 🆕 Cacher le bouton Twitch si pas connecté
+    const twitchBtn = document.getElementById('twitchConnectBtn');
+    if (twitchBtn && !twitchUser) {
+        twitchBtn.style.display = 'none';
+    }
 
     // 1. Afficher l'overlay GAME START
     overlay.classList.add('active');
@@ -3126,6 +3322,45 @@ function updateLivesPie(lives3, lives2, lives1, lives0) {
     document.getElementById('lives2Count').textContent = lives2;
     document.getElementById('lives1Count').textContent = lives1;
     document.getElementById('lives0Count').textContent = lives0;
+}
+
+// 🆕 Met à jour le graphique des équipes (mode Rivalité)
+function updateTeamsChart(teamScores, teamNames, gameMode) {
+    const teamsBlock = document.getElementById('teamsChartBlock');
+    if (!teamsBlock) return;
+    
+    // Afficher le bloc
+    teamsBlock.style.display = 'block';
+    
+    const team1Score = teamScores[1] || 0;
+    const team2Score = teamScores[2] || 0;
+    const maxScore = Math.max(team1Score, team2Score, 1); // Éviter division par 0
+    
+    // Mettre à jour les barres (hauteur min 60px, max 95px)
+    const team1Bar = document.getElementById('team1Bar');
+    const team2Bar = document.getElementById('team2Bar');
+    
+    if (team1Bar) {
+        const height = Math.max(60, (team1Score / maxScore) * 95);
+        team1Bar.style.height = height + 'px';
+    }
+    
+    if (team2Bar) {
+        const height = Math.max(60, (team2Score / maxScore) * 95);
+        team2Bar.style.height = height + 'px';
+    }
+    
+    // Mettre à jour les valeurs affichées dans les barres
+    const team1Value = document.getElementById('team1Value');
+    const team2Value = document.getElementById('team2Value');
+    if (team1Value) team1Value.textContent = team1Score;
+    if (team2Value) team2Value.textContent = team2Score;
+    
+    // Mettre à jour les labels courts (A/B)
+    const team1Label = document.getElementById('team1Label');
+    const team2Label = document.getElementById('team2Label');
+    if (team1Label) team1Label.textContent = 'A';
+    if (team2Label) team2Label.textContent = 'B';
 }
 
 /**
@@ -3724,16 +3959,35 @@ async function restoreGameState() {
             recentPanel.classList.add('hidden');
             lastgamePanel.classList.add('hidden');
 
+            // 🆕 Gérer le mode Rivalité
+            const isRivalryMode = data.gameMode === 'rivalry-lives' || data.gameMode === 'rivalry-points';
+            
+            let winnerName, winnerScore, totalVictories, displayGameMode;
+            
+            if (isRivalryMode) {
+                // Mode Rivalité : afficher le nom de l'équipe
+                winnerName = data.winner.teamName || 'Équipe gagnante';
+                winnerScore = data.winner.livesRemaining || data.winner.points || 0;
+                totalVictories = 1;
+                displayGameMode = data.gameMode === 'rivalry-points' ? 'points' : 'lives';
+            } else {
+                // Mode classique
+                winnerName = data.winner.username;
+                winnerScore = data.gameMode === 'points' ? (data.winner.points || 0) : (data.winner.livesRemaining || 0);
+                totalVictories = data.winner.totalVictories || 1;
+                displayGameMode = data.gameMode;
+            }
+
             // Afficher l'écran winner
             showWinner(
-                data.winner.username,
-                data.gameMode === 'points' ? (data.winner.points || 0) : (data.winner.livesRemaining || 0),
-                data.winner.totalVictories || 1,
+                winnerName,
+                winnerScore,
+                totalVictories,
                 data.totalQuestions,
                 formatDuration(data.duration),
                 data.playersData || [],
                 data.topPlayers || [],
-                data.gameMode
+                displayGameMode
             );
 
             return true;
@@ -3747,6 +4001,17 @@ async function restoreGameState() {
         if (state.answersCount) updateAnswersUI(state.answersCount);
         if (state.difficultyMode) updateDifficultyUI(state.difficultyMode);
         if (state.serieFilter) updateSerieFilterUI(state.serieFilter);
+        
+        // 🆕 Gestion du mode Rivalité
+        if (state.isActive && state.lobbyMode) {
+            // Jeu actif → restaurer le mode depuis le serveur
+            setGameMode(state.lobbyMode);
+            console.log(`🎮 Mode restauré depuis serveur: ${currentGameMode}`);
+        } else if (!state.isActive) {
+            // Jeu pas actif (serveur restart, etc.) → reset à classic
+            setGameMode('classic');
+            console.log(`🎮 Mode reset à classic (jeu inactif)`);
+        }
 
         // 🔥 Restaurer l'icône ET la variable globale
         if (state.livesIcon) {
@@ -3819,6 +4084,12 @@ async function restoreGameState() {
             // 🆕 Cacher le bouton déconnexion
             const logoutBtn = document.getElementById('headerLogoutBtn');
             if (logoutBtn) logoutBtn.style.display = 'none';
+            
+            // 🆕 Cacher le bouton Twitch si pas connecté
+            const twitchBtn = document.getElementById('twitchConnectBtn');
+            if (twitchBtn && !twitchUser) {
+                twitchBtn.style.display = 'none';
+            }
 
             // Configurer le mode stats
             setStatsMode(gameSettings.mode === 'point' ? 'points' : 'vie');
@@ -3826,6 +4097,11 @@ async function restoreGameState() {
             // Créer les cartes joueurs dans la grille
             console.log('🃏 Création cartes joueurs:', state.players.length, 'joueurs');
             createGamePlayerCardsFromState(state.players);
+            
+            // 🆕 Restaurer le graphique équipes si mode Rivalité
+            if (state.lobbyMode === 'rivalry' && state.teamScores) {
+                updateTeamsChart(state.teamScores, state.teamNames, state.mode);
+            }
 
             // Afficher le toggle logs
             document.getElementById('gameLogsToggle')?.classList.add('active');
@@ -3903,6 +4179,7 @@ function createGamePlayerCardsFromState(players) {
             points: player.points || 0,
             isChampion: player.isLastGlobalWinner,
             title: player.title || 'Novice',
+            team: player.team || null, // 🆕 Équipe du joueur
             eliminated: player.lives === 0,
             hasAnswered: player.hasAnswered || false,
             answer: player.selectedAnswer || null
@@ -3911,15 +4188,27 @@ function createGamePlayerCardsFromState(players) {
 
         const gameCard = document.createElement('div');
         gameCard.className = 'player-card-game' + (player.isLastGlobalWinner ? ' champion' : '');
+        
+        // 🆕 Ajouter classe d'équipe en mode Rivalité
+        if (currentGameMode === 'rivalry' && player.team) {
+            gameCard.classList.add(`team-${player.team}`);
+        }
+        
         gameCard.dataset.playerIndex = index;
         gameCard.dataset.lives = player.lives || 0;
         gameCard.dataset.twitchId = player.twitchId || '';
+        gameCard.dataset.team = player.team || ''; // 🆕 Stocker l'équipe
 
 
         if (gameSettings.mode === 'vie') {
             const livesHtml = getLivesIconsHTML(selectedLivesIcon, player.lives, gameSettings.lives);
+            // 🆕 Badge équipe pour mode Rivalité
+            const teamBadgeHtml = (currentGameMode === 'rivalry' && player.team) 
+                ? `<span class="team-badge-game team-${player.team}">${player.team === 1 || player.team === '1' ? 'A' : 'B'}</span>` 
+                : '';
             gameCard.innerHTML = `
                 <div class="answered-indicator"></div>
+                ${teamBadgeHtml}
                 <div class="player-card-game-name">${player.username}</div>
                 <div class="player-card-game-lives">${livesHtml}</div>
                 <div class="player-card-game-answer-overlay">
@@ -3930,8 +4219,13 @@ function createGamePlayerCardsFromState(players) {
                 </button>
             `;
         } else {
+            // 🆕 Badge équipe pour mode Rivalité
+            const teamBadgeHtml = (currentGameMode === 'rivalry' && player.team) 
+                ? `<span class="team-badge-game team-${player.team}">${player.team === 1 || player.team === '1' ? 'A' : 'B'}</span>` 
+                : '';
             gameCard.innerHTML = `
                 <div class="answered-indicator"></div>
+                ${teamBadgeHtml}
                 <div class="player-card-game-name">${player.username}</div>
                 <div class="player-card-game-points">${player.points || 0}</div>
                 <div class="player-card-game-answer-overlay">
@@ -4238,6 +4532,11 @@ function restoreStatsDisplay(results) {
             results.stats.livesDistribution[0] || 0
         );
     }
+    
+    // 🆕 Graphique équipes (si mode rivalité)
+    if (results.lobbyMode === 'rivalry' && results.teamScores) {
+        updateTeamsChart(results.teamScores, results.teamNames, results.gameMode);
+    }
 
     // 🔥 Joueur le plus rapide
     if (results.fastestPlayer) {
@@ -4276,6 +4575,26 @@ function showLobbyUI(players = []) {
     // 🆕 Cacher le bouton déconnexion
     const logoutBtn = document.getElementById('headerLogoutBtn');
     if (logoutBtn) logoutBtn.style.display = 'none';
+    
+    // 🆕 Cacher le bouton Twitch si pas connecté
+    const twitchBtn = document.getElementById('twitchConnectBtn');
+    if (twitchBtn && !twitchUser) {
+        twitchBtn.style.display = 'none';
+    }
+
+    // 🆕 Afficher le badge de mode dans le header
+    const modeBadgeHeader = document.getElementById('modeBadgeHeader');
+    const modeBadgeText = document.getElementById('modeBadgeText');
+    if (modeBadgeHeader && modeBadgeText) {
+        modeBadgeHeader.style.display = 'block';
+        if (currentGameMode === 'rivalry') {
+            modeBadgeText.textContent = 'Rivalité';
+            modeBadgeHeader.classList.add('rivalry');
+        } else {
+            modeBadgeText.textContent = 'Classic';
+            modeBadgeHeader.classList.remove('rivalry');
+        }
+    }
 
     bgText.textContent = 'LOBBY';
     bgText.classList.add('lobby-active');
@@ -4285,6 +4604,35 @@ function showLobbyUI(players = []) {
     recentPanel.classList.add('hidden');
     lastgamePanel.classList.add('hidden');
     btnWrapper.classList.remove('pulse-active');
+
+    // 🆕 Afficher/cacher la section équipes selon le mode
+    const teamsGroup = document.getElementById('teamsGroup');
+    const lobbyHeaderLeft = document.querySelector('.lobby-header-left');
+    
+    if (currentGameMode === 'rivalry') {
+        if (teamsGroup) teamsGroup.style.display = 'block';
+        
+        // Ajouter les compteurs d'équipe si pas déjà présents
+        if (lobbyHeaderLeft && !document.getElementById('teamCounters')) {
+            const teamCountersHTML = `
+                <div class="team-counters" id="teamCounters">
+                    <div class="team-counter">
+                        <span class="team-dot team-1"></span>
+                        <span class="team-count" id="team1Count">0</span>
+                    </div>
+                    <div class="team-counter">
+                        <span class="team-dot team-2"></span>
+                        <span class="team-count" id="team2Count">0</span>
+                    </div>
+                </div>
+            `;
+            lobbyHeaderLeft.insertAdjacentHTML('beforeend', teamCountersHTML);
+        }
+    } else {
+        if (teamsGroup) teamsGroup.style.display = 'none';
+        const teamCounters = document.getElementById('teamCounters');
+        if (teamCounters) teamCounters.remove();
+    }
 
     updateLobbyPlayers(players);
 
@@ -5098,32 +5446,124 @@ function displayResults(data) {
         } else {
             updateFastestPlayer('-', null);
         }
+        
+        // 🆕 Mode Rivalité : Mettre à jour les scores d'équipe
+        if (data.lobbyMode === 'rivalry' && data.teamScores) {
+            updateTeamsChart(data.teamScores, data.teamNames, data.gameMode);
+        }
     }, 700);
 }
 
 
-function sortPlayersGrid() {
+function sortPlayersGrid(animate = false) {
     const grid = document.getElementById('playersGridGame');
     if (!grid) return;
 
-    const cards = Array.from(grid.querySelectorAll('.player-card-game'));
+    // Supprimer les séparateurs existants
+    grid.querySelectorAll('.team-separator').forEach(sep => sep.remove());
 
-    cards.sort((a, b) => {
+    const cards = Array.from(grid.querySelectorAll('.player-card-game'));
+    if (cards.length === 0) return;
+
+    // FLIP Animation - Phase 1: Enregistrer les positions initiales
+    const positions = new Map();
+    if (animate) {
+        cards.forEach(card => {
+            const rect = card.getBoundingClientRect();
+            positions.set(card, { x: rect.left, y: rect.top });
+        });
+    }
+
+    // Fonction de tri par score
+    const sortByScore = (a, b) => {
         if (gameSettings.mode === 'point') {
-            // Mode Points : trier par points décroissants
             const pointsA = parseInt(a.querySelector('.player-card-game-points')?.textContent) || 0;
             const pointsB = parseInt(b.querySelector('.player-card-game-points')?.textContent) || 0;
             return pointsB - pointsA;
         } else {
-            // Mode Vie : trier par vies décroissantes (utiliser data-lives)
             const livesA = parseInt(a.dataset.lives) || 0;
             const livesB = parseInt(b.dataset.lives) || 0;
             return livesB - livesA;
         }
-    });
+    };
 
-    // Réinsérer dans l'ordre
+    // Fonction de tri par équipe
+    const sortByTeam = (a, b) => {
+        const teamA = a.classList.contains('team-1') ? 1 : (a.classList.contains('team-2') ? 2 : 3);
+        const teamB = b.classList.contains('team-1') ? 1 : (b.classList.contains('team-2') ? 2 : 3);
+        
+        if (teamA !== teamB) return teamA - teamB;
+        
+        // Au sein de la même équipe, trier par score
+        return sortByScore(a, b);
+    };
+
+    // Appliquer le tri selon le mode
+    const isRivalite = currentGameMode === 'rivalry';
+    
+    if (isRivalite && gridSortMode === 'team') {
+        cards.sort(sortByTeam);
+    } else {
+        cards.sort(sortByScore);
+    }
+
+    // Réinsérer les cartes triées
     cards.forEach(card => grid.appendChild(card));
+
+    // Ajouter séparateurs si tri par équipe
+    if (isRivalite && gridSortMode === 'team') {
+        const team1Cards = cards.filter(c => c.classList.contains('team-1'));
+        const team2Cards = cards.filter(c => c.classList.contains('team-2'));
+
+        // Ajouter séparateur avant équipe A si elle a des joueurs
+        if (team1Cards.length > 0) {
+            const sepA = document.createElement('div');
+            sepA.className = 'team-separator team-1';
+            sepA.id = 'teamSeparator1';
+            sepA.innerHTML = `<span class="team-separator-label">Équipe A <span class="team-separator-count">(${team1Cards.length})</span></span>`;
+            grid.insertBefore(sepA, team1Cards[0]);
+        }
+
+        // Ajouter séparateur avant équipe B si elle a des joueurs
+        if (team2Cards.length > 0) {
+            const sepB = document.createElement('div');
+            sepB.className = 'team-separator team-2';
+            sepB.id = 'teamSeparator2';
+            sepB.innerHTML = `<span class="team-separator-label">Équipe B <span class="team-separator-count">(${team2Cards.length})</span></span>`;
+            grid.insertBefore(sepB, team2Cards[0]);
+        }
+
+        // Afficher les boutons de navigation
+        updateTeamNavVisibility(true);
+    } else {
+        // Cacher les boutons de navigation
+        updateTeamNavVisibility(false);
+    }
+
+    // FLIP Animation - Phase 2: Calculer et animer
+    if (animate && positions.size > 0) {
+        cards.forEach(card => {
+            const oldPos = positions.get(card);
+            if (!oldPos) return;
+
+            const newRect = card.getBoundingClientRect();
+            const deltaX = oldPos.x - newRect.left;
+            const deltaY = oldPos.y - newRect.top;
+
+            if (deltaX === 0 && deltaY === 0) return;
+
+            // Appliquer la transformation inverse
+            card.classList.add('sorting');
+            card.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+
+            // Forcer le reflow
+            card.offsetHeight;
+
+            // Retirer la classe sorting et animer vers la position finale
+            card.classList.remove('sorting');
+            card.style.transform = '';
+        });
+    }
 }
 
 function updatePlayerCard(playerResult, correctAnswer) {
@@ -5226,15 +5666,32 @@ function displayWinner(data) {
     gameStarted = false;
 
     if (data.winner) {
+        // 🆕 Gérer le mode Rivalité
+        const isRivalryMode = data.gameMode === 'rivalry-lives' || data.gameMode === 'rivalry-points';
+        
+        let winnerName, winnerScore, totalVictories;
+        
+        if (isRivalryMode) {
+            // Mode Rivalité : afficher le nom de l'équipe
+            winnerName = data.winner.teamName || 'Équipe gagnante';
+            winnerScore = data.winner.livesRemaining || data.winner.points || 0;
+            totalVictories = 1; // Pas de compteur de victoires pour les équipes
+        } else {
+            // Mode classique
+            winnerName = data.winner.username;
+            winnerScore = data.gameMode === 'points' ? (data.winner.points || 0) : (data.winner.livesRemaining || 0);
+            totalVictories = data.winner.totalVictories || 1;
+        }
+        
         showWinner(
-            data.winner.username,
-            data.gameMode === 'points' ? (data.winner.points || 0) : (data.winner.livesRemaining || 0),
-            data.winner.totalVictories || 1,
+            winnerName,
+            winnerScore,
+            totalVictories,
             data.totalQuestions,
             formatDuration(data.duration),
             data.playersData || [],
             data.topPlayers || [],
-            data.gameMode  // 🔥 AJOUTER - passer le mode
+            isRivalryMode ? (data.gameMode === 'rivalry-points' ? 'points' : 'lives') : data.gameMode
         );
     }
 
@@ -5626,6 +6083,10 @@ function returnToIdle() {
     // 🆕 Réafficher le bouton déconnexion
     const logoutBtn = document.getElementById('headerLogoutBtn');
     if (logoutBtn) logoutBtn.style.display = 'flex';
+    
+    // 🆕 Réafficher le bouton Twitch
+    const twitchBtn = document.getElementById('twitchConnectBtn');
+    if (twitchBtn) twitchBtn.style.display = 'flex';
 
     // Reset header
     bgText.textContent = 'MASTER';
@@ -6041,5 +6502,117 @@ function applyHidePercentsState() {
     // Mettre à jour l'icône du bouton selon l'état
     if (btn) {
         btn.classList.toggle('hidden', hidePercentsEnabled);
+    }
+}
+
+// ============================================
+// 🆕 MODE RIVALITÉ - GESTION ÉQUIPES
+// ============================================
+
+// Initialiser les listeners pour le mode Rivalité
+function initRivalryMode() {
+    const copySpectateLink = document.getElementById('copySpectateLink');
+    
+    if (copySpectateLink) {
+        copySpectateLink.addEventListener('click', () => {
+            // Générer le lien spectateur (basé sur l'URL actuelle + mode spectate)
+            const spectateUrl = `${window.location.origin}/spectate`;
+            
+            navigator.clipboard.writeText(spectateUrl).then(() => {
+                copySpectateLink.classList.add('copied');
+                copySpectateLink.querySelector('span').textContent = 'Lien copié !';
+                
+                setTimeout(() => {
+                    copySpectateLink.classList.remove('copied');
+                    copySpectateLink.querySelector('span').textContent = 'Lien streamer';
+                }, 2000);
+            }).catch(err => {
+                console.error('Erreur copie:', err);
+            });
+        });
+    }
+}
+
+// Récupérer les noms d'équipes
+function getTeamNames() {
+    const team1Input = document.getElementById('team1Name');
+    const team2Input = document.getElementById('team2Name');
+    
+    return {
+        1: team1Input?.value.trim() || 'Team A',
+        2: team2Input?.value.trim() || 'Team B'
+    };
+}
+
+// Mettre à jour l'UI du badge de mode (près du bouton JOUER)
+function updateModeBadgeUI() {
+    const modeBadge = document.getElementById('modeBadge');
+    if (!modeBadge) return;
+    
+    const badgeText = modeBadge.querySelector('.mode-badge-text');
+    if (badgeText) {
+        if (currentGameMode === 'rivalry') {
+            badgeText.textContent = 'Rivalry Mode';
+            modeBadge.classList.add('rivalry');
+        } else {
+            badgeText.textContent = 'Classic Mode';
+            modeBadge.classList.remove('rivalry');
+        }
+    }
+}
+
+// Appel init au chargement
+document.addEventListener('DOMContentLoaded', () => {
+    initRivalryMode();
+    
+    // Mettre à jour le badge de mode selon localStorage
+    updateModeBadgeUI();
+
+    // Mettre à jour la visibilité du toggle de tri
+    updateGridSortToggleVisibility();
+
+    // Event listeners pour le toggle de tri en mode Rivalité
+    const sortToggle = document.getElementById('gridSortToggle');
+    if (sortToggle) {
+        sortToggle.querySelectorAll('.sort-option').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const newSortMode = btn.dataset.sort;
+                if (newSortMode === gridSortMode) return;
+
+                // Mettre à jour l'état actif
+                sortToggle.querySelectorAll('.sort-option').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Changer le mode et retrier avec animation
+                gridSortMode = newSortMode;
+                sortPlayersGrid(true);
+            });
+        });
+    }
+
+    // Event listeners pour les boutons de navigation entre équipes
+    const teamNavButtons = document.getElementById('teamNavButtons');
+    if (teamNavButtons) {
+        teamNavButtons.querySelectorAll('.team-nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const team = btn.dataset.team;
+                const separator = document.getElementById(`teamSeparator${team}`);
+                if (separator) {
+                    separator.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    }
+});
+
+// Gérer la visibilité des boutons de navigation entre équipes
+function updateTeamNavVisibility(show) {
+    const navButtons = document.getElementById('teamNavButtons');
+    if (navButtons) {
+        if (show) {
+            navButtons.classList.add('visible');
+        } else {
+            navButtons.classList.remove('visible');
+        }
     }
 }

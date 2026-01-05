@@ -110,6 +110,10 @@
                     <span class="twitch-text" id="twitchUsername">Pseudo</span>
                 </div>
             </div>
+            <!-- Badge mode (visible en lobby) -->
+            <div class="mode-badge-header" id="modeBadgeHeader" style="display: none;">
+                <span class="mode-badge-text" id="modeBadgeText">Classic</span>
+            </div>
             <div class="status-pill">
                 <div class="status-dot" id="statusDot"></div>
                 <span id="statusText">Inactif</span>
@@ -257,6 +261,40 @@
                     <!-- Paramètres gauche -->
                     <div class="lobby-settings-panel">
                         <div class="settings-panel-title">Paramètres</div>
+
+                        <!-- Section Équipes (visible en mode Rivalité) - EN HAUT -->
+                        <div class="setting-group teams-group" id="teamsGroup" style="display: none;">
+                            <div class="setting-group-header">
+                                <div class="setting-group-left">
+                                    <svg class="setting-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="9" cy="7" r="4"/>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                    </svg>
+                                    <span class="setting-group-label">Équipes</span>
+                                </div>
+                            </div>
+                            <div class="teams-inputs">
+                                <div class="team-input-row">
+                                    <span class="team-color-dot team-1"></span>
+                                    <input type="text" id="team1Name" class="team-name-input" placeholder="Team A" maxlength="20">
+                                </div>
+                                <div class="team-input-row">
+                                    <span class="team-color-dot team-2"></span>
+                                    <input type="text" id="team2Name" class="team-name-input" placeholder="Team B" maxlength="20">
+                                </div>
+                            </div>
+                            <div class="spectate-link-row">
+                                <button class="spectate-link-btn" id="copySpectateLink">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                    </svg>
+                                    <span>Lien streamer</span>
+                                </button>
+                            </div>
+                        </div>
 
                         <!-- Mode de jeu -->
                         <div class="setting-group mode-group">
@@ -736,21 +774,42 @@
                     </svg>
                 </button>
 
-
+                <!-- Bouton Fermer lobby - au dessus du panel -->
+                <button class="game-close-text-btn" id="gameCloseBtn">
+                    <span>Fermer lobby</span>
+                </button>
 
                 <!-- Panel Grille/Stats (DROITE) -->
                 <div class="game-main-panel" id="gameMainPanel">
 
-                    <button class="game-close-text-btn" id="gameCloseBtn">
-                        <span>Fermer lobby</span>
-                    </button>
+                    <!-- Toggle tri pour mode Rivalité - fixe sur le côté -->
+                    <div class="grid-sort-toggle" id="gridSortToggle">
+                        <button class="sort-option active" data-sort="score" title="Trier par score">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                        </button>
+                        <button class="sort-option" data-sort="team" title="Trier par équipe">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Boutons navigation équipes -->
+                    <div class="team-nav-buttons" id="teamNavButtons">
+                        <button class="team-nav-btn team-1" data-team="1" title="Aller à l'équipe A">A</button>
+                        <button class="team-nav-btn team-2" data-team="2" title="Aller à l'équipe B">B</button>
+                    </div>
 
                     <div class="panel-tabs">
                         <button class="panel-tab active" data-tab="stats">Stats</button>
                         <button class="panel-tab" data-tab="grille">Grille</button>
                     </div>
                     <div class="panel-content">
-
 
                         <!-- STRUCTURE HTML pour l'onglet Stats -->
                         <div class="panel-tab-content active" id="tabStats">
@@ -807,6 +866,27 @@
                                             <span class="legend-icon">💀</span>
                                             <span class="legend-text">Éliminé</span>
                                             <span class="legend-value" id="lives0Count">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- PIE CHART 3 : Équipes (seulement en mode Rivalité) -->
+                                <div class="chart-block" id="teamsChartBlock" style="display: none;">
+                                    <h3 class="chart-title">Équipes</h3>
+                                    <div class="chart-wrapper teams-chart-wrapper">
+                                        <div class="teams-bar-chart" id="teamsBars">
+                                            <div class="team-bar-container">
+                                                <div class="team-bar team-1-bar" id="team1Bar">
+                                                    <span class="team-bar-value" id="team1Value">0</span>
+                                                </div>
+                                                <span class="team-bar-label" id="team1Label">A</span>
+                                            </div>
+                                            <div class="team-bar-container">
+                                                <div class="team-bar team-2-bar" id="team2Bar">
+                                                    <span class="team-bar-value" id="team2Value">0</span>
+                                                </div>
+                                                <span class="team-bar-label" id="team2Label">B</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
