@@ -184,8 +184,11 @@ createApp({
         this.initParticles();
         this.initSocket();
         
-        // 🆕 Restaurer le cooldown d'équipe après refresh
-        this.restoreTeamCooldown();
+        // 🆕 Restaurer l'équipe sélectionnée après refresh
+        const savedTeam = localStorage.getItem('selectedTeam');
+        if (savedTeam) {
+            this.selectedTeam = parseInt(savedTeam);
+        }
 
         // 🆕 Démarrer les tips si connecté et pas en partie
         if (this.isAuthenticated && !this.gameInProgress) {
@@ -1537,11 +1540,21 @@ createApp({
                         this.teamCounts = { 1: 0, 2: 0 };
                         localStorage.removeItem('selectedTeam');
                         localStorage.removeItem('teamCooldownEnd');
-                        this.endTeamCooldown();
                     }
                 }
                 if (data.teamNames) this.teamNames = data.teamNames;
                 if (data.teamCounts) this.teamCounts = data.teamCounts;
+            });
+            
+            // 🆕 L'admin a changé notre équipe
+            this.socket.on('team-changed', (data) => {
+                if (data.newTeam) {
+                    const oldTeam = this.selectedTeam;
+                    this.selectedTeam = data.newTeam;
+                    localStorage.setItem('selectedTeam', data.newTeam);
+                    console.log(`🔄 [ADMIN] Équipe changée: Team ${oldTeam} → Team ${data.newTeam}`);
+                    this.showNotification(`Tu as été déplacé dans ${this.teamNames[data.newTeam]}`, 'info');
+                }
             });
 
             // 🔒 BUG FIX 1: Empêcher l'affichage des questions si non inscrit au lobby
@@ -1921,76 +1934,31 @@ createApp({
         
         // Sélectionner une équipe (mode Rivalité)
         selectTeam(team) {
-            if (this.teamCooldownActive) return;
+            // Bloquer si déjà dans le lobby
+            if (this.hasJoined) return;
             if (this.selectedTeam === team) return;
             
             this.selectedTeam = team;
             
             // Sauvegarder dans localStorage
             localStorage.setItem('selectedTeam', team);
-            
-            // Émettre le changement au serveur si déjà dans le lobby
-            if (this.hasJoined) {
-                this.socket.emit('change-team', { team: team });
-            }
-            
-            // Lancer le cooldown
-            this.startTeamCooldown();
         },
         
-        // Démarrer le cooldown de changement d'équipe
-        startTeamCooldown() {
-            this.teamCooldownActive = true;
-            this.teamCooldownSeconds = 20;
+        // Sélectionner une équipe ET rejoindre le lobby (nouveau modal V9)
+        selectAndJoinTeam(team) {
+            // Bloquer si déjà dans le lobby
+            if (this.hasJoined) return;
             
-            // Sauvegarder le timestamp de fin du cooldown
-            const cooldownEnd = Date.now() + (20 * 1000);
-            localStorage.setItem('teamCooldownEnd', cooldownEnd);
+            // Sélectionner l'équipe
+            this.selectedTeam = team;
+            localStorage.setItem('selectedTeam', team);
             
-            this.teamCooldownInterval = setInterval(() => {
-                this.teamCooldownSeconds--;
-                if (this.teamCooldownSeconds <= 0) {
-                    this.endTeamCooldown();
-                }
-            }, 1000);
+            // Rejoindre automatiquement le lobby
+            this.joinLobby();
         },
         
-        // Fin du cooldown
-        endTeamCooldown() {
-            if (this.teamCooldownInterval) {
-                clearInterval(this.teamCooldownInterval);
-                this.teamCooldownInterval = null;
-            }
-            this.teamCooldownActive = false;
-            this.teamCooldownSeconds = 0;
-            localStorage.removeItem('teamCooldownEnd');
-        },
-        
-        // Restaurer le cooldown après refresh
-        restoreTeamCooldown() {
-            const cooldownEnd = localStorage.getItem('teamCooldownEnd');
-            if (cooldownEnd) {
-                const remaining = Math.ceil((parseInt(cooldownEnd) - Date.now()) / 1000);
-                if (remaining > 0) {
-                    this.teamCooldownActive = true;
-                    this.teamCooldownSeconds = remaining;
-                    this.teamCooldownInterval = setInterval(() => {
-                        this.teamCooldownSeconds--;
-                        if (this.teamCooldownSeconds <= 0) {
-                            this.endTeamCooldown();
-                        }
-                    }, 1000);
-                } else {
-                    localStorage.removeItem('teamCooldownEnd');
-                }
-            }
-            
-            // Restaurer l'équipe sélectionnée
-            const savedTeam = localStorage.getItem('selectedTeam');
-            if (savedTeam) {
-                this.selectedTeam = parseInt(savedTeam);
-            }
-        },
+        // Note: Les fonctions de cooldown d'équipe ont été supprimées
+        // Le joueur choisit son équipe une seule fois avant de rejoindre
 
         // ========== Question ==========
         selectAnswer(answerIndex, event) {

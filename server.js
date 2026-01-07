@@ -14,6 +14,7 @@ const PORT = process.env.PORT || 7000;
 
 const MAX_GAMES_BEFORE_RESET = 5;
 const MIN_PLAYERS_FOR_STATS = 15; // Minimum de joueurs pour comptabiliser les stats
+const MIN_PLAYERS_FOR_TEAM_STATS = 20; // Minimum de joueurs pour comptabiliser les stats en mode Rivalité
 
 let lastRefreshPlayersTime = 0;
 const REFRESH_COOLDOWN_MS = 20000;
@@ -357,6 +358,9 @@ const gameState = {
     // Tiebreaker
     isTiebreaker: false,
     tiebreakerPlayers: [],
+    isRivalryTiebreaker: false, // 🆕 Tiebreaker en mode Rivalité
+    rivalryTiebreakerTimeout: null, // 🆕 Timeout pour le tiebreaker rivalry
+    rivalryRevealTimeout: null, // 🆕 Timeout pour révéler les réponses du tiebreaker
 
     difficultyMode: 'croissante',
     lastDifficulty: null,
@@ -1093,6 +1097,36 @@ app.post('/admin/start-game', async (req, res) => {
             error: 'Impossible de démarrer : aucun joueur dans le lobby'
         });
     }
+    
+    // 🆕 Minimum 2 joueurs pour lancer une partie
+    if (totalPlayers < 2) {
+        return res.status(400).json({
+            success: false,
+            error: 'Impossible de démarrer : minimum 2 joueurs requis'
+        });
+    }
+
+    // 🆕 Vérifier que les deux équipes ont des joueurs en mode Rivalité
+    if (gameState.lobbyMode === 'rivalry') {
+        let team1Count = 0;
+        let team2Count = 0;
+        
+        gameState.players.forEach(player => {
+            if (player.team === 1) team1Count++;
+            else if (player.team === 2) team2Count++;
+        });
+        
+        console.log(`🔍 Vérification équipes: Team A = ${team1Count}, Team B = ${team2Count}`);
+        
+        if (team1Count === 0 || team2Count === 0) {
+            const emptyTeam = team1Count === 0 ? gameState.teamNames[1] : gameState.teamNames[2];
+            return res.status(400).json({
+                success: false,
+                error: `Impossible de démarrer : l'équipe "${emptyTeam}" n'a aucun joueur`,
+                errorType: 'empty_team'
+            });
+        }
+    }
 
     try {
         // 🔥 NOUVEAU: Vérifier si on a assez de questions AVANT de démarrer
@@ -1568,6 +1602,12 @@ app.post('/admin/trigger-auto-next', (req, res) => {
     gameState.autoModeTimeout = setTimeout(async () => {
         try {
             if (!gameState.inProgress || !gameState.autoMode) return;
+            
+            // 🆕 Ne pas interférer avec les tiebreakers
+            if (gameState.isTiebreaker || gameState.isRivalryTiebreaker) {
+                console.log('⚠️ Mode auto ignoré : tiebreaker en cours');
+                return;
+            }
 
             console.log('🤖 Mode Auto (trigger manuel) : Passage à la question suivante');
 
@@ -1784,6 +1824,13 @@ app.post('/admin/next-question', async (req, res) => {
             await sendTiebreakerQuestion();
             return res.json({ success: true, tiebreaker: true });
         }
+        
+        // 🆕 RIVALRY TIEBREAKER: Si tiebreaker rivalry, lancer une question de départage
+        if (gameState.isRivalryTiebreaker) {
+            console.log('⚔️ Admin lance une question de départage Rivalry');
+            await sendRivalryTiebreakerQuestion();
+            return res.json({ success: true, rivalryTiebreaker: true });
+        }
 
         // Logique normale
         gameState.currentQuestionIndex++;
@@ -1937,6 +1984,12 @@ function getQuestionDistribution(totalQuestions) {
 
 // Fonction pour révéler les réponses
 function revealAnswers(correctAnswer) {
+    // 🆕 Si tiebreaker rivalry en cours, ne pas interférer
+    if (gameState.isRivalryTiebreaker) {
+        console.log('⚠️ revealAnswers ignoré : tiebreaker rivalry en cours');
+        return;
+    }
+    
     const stats = {
         correct: 0,
         wrong: 0,
@@ -2285,6 +2338,7 @@ function revealAnswers(correctAnswer) {
             setTimeout(() => {
                 endGameRivalryPoints();
             }, 100);
+            return; // 🆕 IMPORTANT: Arrêter pour ne pas continuer avec le mode auto
         } else {
             // Terminer automatiquement après la dernière question
             setTimeout(() => {
@@ -2296,6 +2350,12 @@ function revealAnswers(correctAnswer) {
 
     // 🆕 MODE AUTO : Passer automatiquement à la question suivante après 3s
     if (gameState.autoMode && gameState.inProgress) {
+        // 🆕 Ne pas interférer avec les tiebreakers (ils ont leur propre logique)
+        if (gameState.isTiebreaker || gameState.isRivalryTiebreaker) {
+            console.log('⏱️ Mode Auto : Tiebreaker en cours, pas d\'interférence');
+            return;
+        }
+        
         console.log('⏱️ Mode Auto : Question suivante dans 3s...');
 
         // Annuler le timeout précédent si existant
@@ -2305,6 +2365,9 @@ function revealAnswers(correctAnswer) {
 
         gameState.autoModeTimeout = setTimeout(async () => {
             if (!gameState.inProgress) return; // Sécurité : vérifier que la partie est toujours en cours
+            
+            // 🆕 Double vérification tiebreaker
+            if (gameState.isTiebreaker || gameState.isRivalryTiebreaker) return;
 
             console.log('🤖 Mode Auto : Passage automatique à la question suivante');
 
@@ -2844,6 +2907,350 @@ async function checkTiebreakerWinner() {
     }
 }
 
+// 🆕 RIVALRY TIEBREAKER: Envoyer une question de départage entre équipes
+async function sendRivalryTiebreakerQuestion() {
+    try {
+        gameState.currentQuestionIndex++;
+
+        // Difficulté selon le mode choisi
+        let difficulty;
+        if (gameState.difficultyMode === 'croissante') {
+            difficulty = 'extreme';
+        } else {
+            // Mode aléatoire : choisir une difficulté au hasard
+            const difficulties = ['easy', 'medium', 'hard', 'extreme'];
+            difficulty = difficulties[Math.floor(Math.random() * difficulties.length)];
+        }
+
+        const questions = await db.getRandomQuestions(
+            difficulty,
+            1,
+            gameState.usedQuestionIds,
+            gameState.serieFilter,
+            shouldApplySerieCooldown() ? gameState.recentSeries : []
+        );
+
+        if (questions.length === 0) {
+            console.error('❌ Aucune question disponible pour tiebreaker rivalry');
+            // Fallback: terminer avec égalité
+            await endRivalryWithTie();
+            return;
+        }
+
+        const question = questions[0];
+        addToRecentSeries(question.serie);
+        await db.addUsedQuestion(question.id);
+        gameState.usedQuestionIds.push(question.id);
+
+        console.log(`⚔️ Question de départage Rivalry #${gameState.currentQuestionIndex} - Difficulté: ${difficulty.toUpperCase()}`);
+
+        // Préparer les réponses
+        const allAnswers = [
+            { text: question.answer1, index: 1 },
+            { text: question.answer2, index: 2 },
+            { text: question.answer3, index: 3 },
+            { text: question.answer4, index: 4 },
+            { text: question.answer5, index: 5 },
+            { text: question.answer6, index: 6 }
+        ].filter(answer => answer.text !== null && answer.text !== '');
+
+        const correctAnswerObj = allAnswers.find(a => a.index === question.coanswer);
+        const wrongAnswers = allAnswers.filter(a => a.index !== question.coanswer);
+        const wrongAnswersNeeded = gameState.answersCount - 1;
+        const shuffledWrong = wrongAnswers.sort(() => 0.5 - Math.random()).slice(0, wrongAnswersNeeded);
+        const selectedAnswers = [correctAnswerObj, ...shuffledWrong];
+        const finalAnswers = selectedAnswers.sort(() => 0.5 - Math.random());
+        const newCorrectIndex = finalAnswers.findIndex(a => a.index === question.coanswer) + 1;
+
+        const questionData = {
+            questionNumber: gameState.currentQuestionIndex,
+            totalQuestions: null,
+            questionId: question.id,
+            question: question.question,
+            answers: finalAnswers.map(a => a.text),
+            serie: question.serie,
+            difficulty: `DÉPARTAGE - ${difficulty.toUpperCase()}`,
+            timeLimit: gameState.questionTime,
+            isRivalryTiebreaker: true
+        };
+
+        gameState.currentQuestion = {
+            ...questionData,
+            correctAnswer: newCorrectIndex
+        };
+
+        gameState.questionStartTime = Date.now();
+        gameState.showResults = false;
+        gameState.lastQuestionResults = null;
+        gameState.answers.clear();
+
+        addLog('question', {
+            questionNumber: gameState.currentQuestionIndex,
+            difficulty: `DÉPARTAGE - ${difficulty.toUpperCase()}`,
+            series: question.serie
+        });
+
+        // Envoyer la question à TOUS les joueurs
+        io.emit('new-question', questionData);
+
+        // 🆕 Annuler l'ancien timeout de révélation si existant
+        if (gameState.rivalryRevealTimeout) {
+            clearTimeout(gameState.rivalryRevealTimeout);
+        }
+
+        // Attendre la fin du timer PUIS révéler et vérifier
+        gameState.rivalryRevealTimeout = setTimeout(() => {
+            if (gameState.inProgress && gameState.isRivalryTiebreaker) {
+                revealRivalryTiebreakerAnswers(newCorrectIndex);
+            }
+        }, gameState.questionTime * 1000);
+
+    } catch (error) {
+        console.error('❌ Erreur question tiebreaker rivalry:', error);
+    }
+}
+
+// 🆕 RIVALRY TIEBREAKER: Révéler les réponses et calculer les scores
+async function revealRivalryTiebreakerAnswers(correctAnswer) {
+    console.log('⚔️ Révélation résultats tiebreaker Rivalry');
+    
+    // 🆕 Marquer qu'on est en phase de résultats
+    gameState.showResults = true;
+
+    const results = {
+        correctAnswer,
+        players: [],
+        stats: { correct: 0, wrong: 0, afk: 0 }
+    };
+
+    // Calculer les points pour chaque joueur (utiliser socketId comme clé)
+    gameState.players.forEach((player, socketId) => {
+        const playerAnswer = gameState.answers.get(socketId);
+        
+        let isCorrect = false;
+        let pointsEarned = 0;
+
+        if (playerAnswer) {
+            isCorrect = playerAnswer.answer === correctAnswer;
+            if (isCorrect) {
+                pointsEarned = 3000; // Points fixes pour tiebreaker
+                player.points = (player.points || 0) + pointsEarned;
+                results.stats.correct++;
+                console.log(`✅ ${player.username} (Team ${player.team}) +3000 pts = ${player.points}`);
+            } else {
+                results.stats.wrong++;
+                console.log(`❌ ${player.username} (Team ${player.team}) mauvaise réponse`);
+            }
+        } else {
+            results.stats.afk++;
+            console.log(`⏸️ ${player.username} (Team ${player.team}) AFK`);
+        }
+
+        results.players.push({
+            socketId: socketId,
+            twitchId: player.twitchId,
+            username: player.username,
+            answer: playerAnswer?.answer || null,
+            isCorrect,
+            pointsEarned,
+            totalPoints: player.points || 0,
+            team: player.team
+        });
+    });
+
+    // Recalculer les scores d'équipe
+    updateTeamScores();
+
+    // Envoyer les résultats
+    io.emit('question-results', {
+        correctAnswer,
+        players: results.players,
+        stats: results.stats,
+        teamScores: gameState.teamScores,
+        isRivalryTiebreaker: true
+    });
+
+    console.log(`⚔️ Scores après tiebreaker: Team A = ${gameState.teamScores[1]}, Team B = ${gameState.teamScores[2]}`);
+
+    // Vérifier si on a un gagnant
+    await checkRivalryTiebreakerWinner();
+}
+
+// 🆕 RIVALRY TIEBREAKER: Vérifier si une équipe a pris l'avantage
+async function checkRivalryTiebreakerWinner() {
+    const team1Score = gameState.teamScores[1];
+    const team2Score = gameState.teamScores[2];
+
+    console.log(`🔍 Vérification gagnant tiebreaker Rivalry: ${team1Score} vs ${team2Score}`);
+    console.log(`🔍 État: inProgress=${gameState.inProgress}, isRivalryTiebreaker=${gameState.isRivalryTiebreaker}`);
+
+    if (team1Score !== team2Score) {
+        // 🎉 UNE ÉQUIPE GAGNE !
+        const winningTeam = team1Score > team2Score ? 1 : 2;
+        console.log(`🏆 Tiebreaker Rivalry terminé: ${gameState.teamNames[winningTeam]} gagne avec ${gameState.teamScores[winningTeam]} points !`);
+
+        // 🆕 Annuler TOUS les timeouts
+        if (gameState.rivalryTiebreakerTimeout) {
+            clearTimeout(gameState.rivalryTiebreakerTimeout);
+            gameState.rivalryTiebreakerTimeout = null;
+            console.log('⏹️ rivalryTiebreakerTimeout annulé');
+        }
+        if (gameState.rivalryRevealTimeout) {
+            clearTimeout(gameState.rivalryRevealTimeout);
+            gameState.rivalryRevealTimeout = null;
+            console.log('⏹️ rivalryRevealTimeout annulé');
+        }
+        if (gameState.autoModeTimeout) {
+            clearTimeout(gameState.autoModeTimeout);
+            gameState.autoModeTimeout = null;
+            console.log('⏹️ autoModeTimeout annulé');
+        }
+        
+        gameState.isRivalryTiebreaker = false;
+        console.log('✅ isRivalryTiebreaker = false');
+
+        // Terminer la partie normalement
+        const duration = Math.floor((Date.now() - gameState.gameStartTime) / 1000);
+
+        const teamData = {
+            team: winningTeam,
+            teamName: gameState.teamNames[winningTeam],
+            points: gameState.teamScores[winningTeam],
+            isDraw: false
+        };
+
+        addLog('game-end', { winner: teamData.teamName, mode: 'rivalry-points-tiebreaker' });
+
+        // 🆕 Mise à jour des stats équipe (si 20+ joueurs)
+        if (gameState.initialPlayerCount >= MIN_PLAYERS_FOR_TEAM_STATS) {
+            for (const player of gameState.players.values()) {
+                const isWinner = player.team === winningTeam;
+                await db.updateTeamStats(player.twitchId, isWinner);
+            }
+            console.log(`📊 Stats équipe mises à jour après tiebreaker (${gameState.initialPlayerCount} joueurs)`);
+        } else {
+            console.log(`⚠️ Stats équipe NON comptabilisées après tiebreaker (${gameState.initialPlayerCount} < ${MIN_PLAYERS_FOR_TEAM_STATS} joueurs)`);
+        }
+
+        const playersData = Array.from(gameState.players.values()).map(p => ({
+            twitchId: p.twitchId,
+            username: p.username,
+            lives: p.lives,
+            points: p.points || 0,
+            correctAnswers: p.correctAnswers,
+            team: p.team,
+            isLastGlobalWinner: false
+        }));
+
+        const podium = [
+            { rank: 1, teamName: gameState.teamNames[1], points: team1Score, team: 1 },
+            { rank: 2, teamName: gameState.teamNames[2], points: team2Score, team: 2 }
+        ].sort((a, b) => b.points - a.points);
+
+        const topPlayers = await db.getTopPlayers(10);
+
+        winnerScreenData = {
+            winner: teamData,
+            teamScores: gameState.teamScores,
+            teamNames: gameState.teamNames,
+            podium,
+            duration,
+            totalQuestions: gameState.currentQuestionIndex,
+            gameMode: 'rivalry-points',
+            playersData,
+            topPlayers,
+            livesIcon: gameState.livesIcon
+        };
+
+        io.emit('game-ended', {
+            winner: teamData,
+            teamScores: gameState.teamScores,
+            teamNames: gameState.teamNames,
+            podium,
+            duration,
+            totalQuestions: gameState.currentQuestionIndex,
+            gameMode: 'rivalry-points',
+            playersData,
+            topPlayers
+        });
+
+        resetGameState();
+
+    } else {
+        // ⚖️ ENCORE ÉGALITÉ
+        console.log(`⚖️ Toujours égalité: ${team1Score} - ${team2Score}`);
+
+        io.emit('tiebreaker-continues', {
+            mode: 'rivalry',
+            team1Score,
+            team2Score,
+            teamNames: gameState.teamNames,
+            message: '⚖️ Encore égalité ! Cliquez sur "Question suivante"'
+        });
+
+        // 🆕 Si mode auto activé, lancer automatiquement après 3s
+        if (gameState.autoMode) {
+            console.log('🤖 Mode Auto : Prochaine question de départage dans 3s...');
+            if (gameState.rivalryTiebreakerTimeout) {
+                clearTimeout(gameState.rivalryTiebreakerTimeout);
+            }
+            gameState.rivalryTiebreakerTimeout = setTimeout(async () => {
+                if (gameState.inProgress && gameState.isRivalryTiebreaker) {
+                    await sendRivalryTiebreakerQuestion();
+                }
+            }, 3000);
+        } else {
+            console.log('⚠️ En attente que l\'admin lance la prochaine question de départage...');
+        }
+    }
+}
+
+// 🆕 RIVALRY: Terminer avec égalité (fallback si plus de questions)
+async function endRivalryWithTie() {
+    const duration = Math.floor((Date.now() - gameState.gameStartTime) / 1000);
+    
+    const teamData = {
+        team: null,
+        teamName: 'Égalité',
+        points: gameState.teamScores[1],
+        isDraw: true
+    };
+
+    addLog('game-end', { winner: 'Égalité', mode: 'rivalry-points' });
+    console.log(`🏆 Mode Rivalité terminé en ÉGALITÉ: ${gameState.teamScores[1]} - ${gameState.teamScores[2]}`);
+
+    const playersData = Array.from(gameState.players.values()).map(p => ({
+        twitchId: p.twitchId,
+        username: p.username,
+        lives: p.lives,
+        points: p.points || 0,
+        correctAnswers: p.correctAnswers,
+        team: p.team,
+        isLastGlobalWinner: false
+    }));
+
+    const podium = [
+        { rank: 1, teamName: gameState.teamNames[1], points: gameState.teamScores[1], team: 1 },
+        { rank: 1, teamName: gameState.teamNames[2], points: gameState.teamScores[2], team: 2 }
+    ];
+
+    const topPlayers = await db.getTopPlayers(10);
+
+    io.emit('game-ended', {
+        winner: teamData,
+        teamScores: gameState.teamScores,
+        teamNames: gameState.teamNames,
+        podium,
+        duration,
+        totalQuestions: gameState.currentQuestionIndex,
+        gameMode: 'rivalry-points',
+        playersData,
+        topPlayers
+    });
+
+    resetGameState();
+}
+
 
 // FONCTION: Terminer avec égalité (fallback si plus de questions)
 async function endGameWithTie() {
@@ -3045,6 +3452,17 @@ async function endGameRivalry(winningTeam) {
         addLog('game-end', { winner: teamData.teamName, mode: 'rivalry' });
         console.log(`🏆 Mode Rivalité terminé - ${teamData.teamName} gagne avec ${teamData.livesRemaining} vies`);
         
+        // 🆕 Mise à jour des stats équipe (si 20+ joueurs)
+        if (gameState.initialPlayerCount >= MIN_PLAYERS_FOR_TEAM_STATS && winningTeam !== 'draw') {
+            for (const player of gameState.players.values()) {
+                const isWinner = player.team === winningTeam;
+                await db.updateTeamStats(player.twitchId, isWinner);
+            }
+            console.log(`📊 Stats équipe mises à jour (${gameState.initialPlayerCount} joueurs)`);
+        } else {
+            console.log(`⚠️ Stats équipe NON comptabilisées (${gameState.initialPlayerCount} < ${MIN_PLAYERS_FOR_TEAM_STATS} joueurs ou égalité)`);
+        }
+        
         const playersData = Array.from(gameState.players.values()).map(p => ({
             twitchId: p.twitchId,
             username: p.username,
@@ -3099,25 +3517,68 @@ async function endGameRivalryPoints() {
         const team1Points = gameState.teamScores[1];
         const team2Points = gameState.teamScores[2];
         
+        // 🆕 TIEBREAKER: Si égalité, lancer une question de départage
+        if (team1Points === team2Points) {
+            console.log(`⚖️ ÉGALITÉ RIVALRY: ${team1Points} - ${team2Points} → Question de départage !`);
+            
+            gameState.isRivalryTiebreaker = true;
+            
+            addLog('tiebreaker', { mode: 'rivalry', score: team1Points, playerCount: gameState.players.size });
+            
+            io.emit('tiebreaker-announced', {
+                mode: 'rivalry',
+                team1Score: team1Points,
+                team2Score: team2Points,
+                teamNames: gameState.teamNames,
+                message: '⚖️ Égalité ! Question de départage...'
+            });
+            
+            // 🆕 Si mode auto activé, lancer automatiquement après 3s
+            if (gameState.autoMode) {
+                console.log('🤖 Mode Auto : Question de départage dans 3s...');
+                if (gameState.rivalryTiebreakerTimeout) {
+                    clearTimeout(gameState.rivalryTiebreakerTimeout);
+                }
+                gameState.rivalryTiebreakerTimeout = setTimeout(async () => {
+                    if (gameState.inProgress && gameState.isRivalryTiebreaker) {
+                        await sendRivalryTiebreakerQuestion();
+                    }
+                }, 3000);
+            } else {
+                console.log('⚠️ En attente que l\'admin lance la question de départage (clic sur Question suivante)...');
+            }
+            
+            return; // Ne pas terminer la partie
+        }
+        
         let winningTeam;
         if (team1Points > team2Points) {
             winningTeam = 1;
-        } else if (team2Points > team1Points) {
-            winningTeam = 2;
         } else {
-            winningTeam = 'draw';
+            winningTeam = 2;
         }
         
         const teamData = {
-            team: winningTeam === 'draw' ? null : winningTeam,
-            teamName: winningTeam === 'draw' ? 'Égalité' : gameState.teamNames[winningTeam],
-            points: winningTeam === 'draw' ? team1Points : gameState.teamScores[winningTeam],
-            isDraw: winningTeam === 'draw'
+            team: winningTeam,
+            teamName: gameState.teamNames[winningTeam],
+            points: gameState.teamScores[winningTeam],
+            isDraw: false
         };
         
         // Log
         addLog('game-end', { winner: teamData.teamName, mode: 'rivalry-points' });
         console.log(`🏆 Mode Rivalité (points) terminé - ${teamData.teamName} gagne avec ${teamData.points} points`);
+        
+        // 🆕 Mise à jour des stats équipe (si 20+ joueurs)
+        if (gameState.initialPlayerCount >= MIN_PLAYERS_FOR_TEAM_STATS) {
+            for (const player of gameState.players.values()) {
+                const isWinner = player.team === winningTeam;
+                await db.updateTeamStats(player.twitchId, isWinner);
+            }
+            console.log(`📊 Stats équipe mises à jour (${gameState.initialPlayerCount} joueurs)`);
+        } else {
+            console.log(`⚠️ Stats équipe NON comptabilisées (${gameState.initialPlayerCount} < ${MIN_PLAYERS_FOR_TEAM_STATS} joueurs)`);
+        }
         
         const playersData = Array.from(gameState.players.values()).map(p => ({
             twitchId: p.twitchId,
@@ -3932,6 +4393,46 @@ io.on('connection', (socket) => {
         // Mettre à jour tous les clients
         broadcastLobbyUpdate();
     });
+    
+    // 🆕 Admin change l'équipe d'un joueur
+    socket.on('admin-change-team', (data) => {
+        if (gameState.lobbyMode !== 'rivalry') return;
+        if (gameState.inProgress) return;
+        
+        const { twitchId, username, newTeam } = data;
+        if (!newTeam) return;
+        
+        // Trouver le joueur par twitchId ou username
+        let targetSocketId = null;
+        let targetPlayer = null;
+        
+        for (const [socketId, player] of gameState.players.entries()) {
+            if ((twitchId && player.twitchId === twitchId) || 
+                (username && player.username === username)) {
+                targetSocketId = socketId;
+                targetPlayer = player;
+                break;
+            }
+        }
+        
+        if (targetPlayer) {
+            const oldTeam = targetPlayer.team;
+            targetPlayer.team = newTeam;
+            
+            console.log(`🔄 [ADMIN] ${targetPlayer.username} changé: Team ${oldTeam} → Team ${newTeam}`);
+            
+            // Notifier le joueur concerné de son changement d'équipe
+            const targetSocket = io.sockets.sockets.get(targetSocketId);
+            if (targetSocket) {
+                targetSocket.emit('team-changed', { newTeam: newTeam });
+            }
+            
+            // Mettre à jour tous les clients
+            broadcastLobbyUpdate();
+        } else {
+            console.log(`⚠️ [ADMIN] Joueur non trouvé: twitchId=${twitchId}, username=${username}`);
+        }
+    });
 
     // Quitter le lobby
     socket.on('leave-lobby', (data) => {
@@ -4395,7 +4896,8 @@ async function generateGameEndedData() {
         lives: p.lives,
         points: p.points || 0,
         correctAnswers: p.correctAnswers,
-        isLastGlobalWinner: p.twitchId === lastGlobalWinner
+        isLastGlobalWinner: p.twitchId === lastGlobalWinner,
+        team: p.team || null // 🆕 Inclure l'équipe pour mode Rivalité
     }));
 
     const topPlayers = await db.getTopPlayers(10);
@@ -4419,6 +4921,17 @@ function resetGameState() {
     gameState.answers.clear();
     gameState.isTiebreaker = false;
     gameState.tiebreakerPlayers = [];
+    gameState.isRivalryTiebreaker = false; // 🆕 Reset tiebreaker Rivalry
+    
+    // 🆕 Annuler le timeout du tiebreaker rivalry
+    if (gameState.rivalryTiebreakerTimeout) {
+        clearTimeout(gameState.rivalryTiebreakerTimeout);
+        gameState.rivalryTiebreakerTimeout = null;
+    }
+    if (gameState.rivalryRevealTimeout) {
+        clearTimeout(gameState.rivalryRevealTimeout);
+        gameState.rivalryRevealTimeout = null;
+    }
 
     gameState.players.forEach(player => {
         player.activeShield = false;

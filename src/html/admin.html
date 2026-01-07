@@ -275,23 +275,24 @@
                                     <span class="setting-group-label">Équipes</span>
                                 </div>
                             </div>
-                            <div class="teams-inputs">
-                                <div class="team-input-row">
-                                    <span class="team-color-dot team-1"></span>
-                                    <input type="text" id="team1Name" class="team-name-input" placeholder="Team A" maxlength="20">
-                                </div>
-                                <div class="team-input-row">
-                                    <span class="team-color-dot team-2"></span>
-                                    <input type="text" id="team2Name" class="team-name-input" placeholder="Team B" maxlength="20">
-                                </div>
-                            </div>
-                            <div class="spectate-link-row">
-                                <button class="spectate-link-btn" id="copySpectateLink">
+
+                            <!-- Boutons équilibrer et shuffle -->
+                            <div class="team-actions-row">
+                                <button class="team-action-btn" id="rebalanceTeamsBtn" title="Déplace le minimum de joueurs pour équilibrer">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                        <path d="M12 3v18M3 9l4-4 4 4M17 9l-4-4-4 4M3 15l4 4 4-4M17 15l-4 4-4-4"/>
                                     </svg>
-                                    <span>Lien streamer</span>
+                                    <span>Équilibrer</span>
+                                </button>
+                                <button class="team-action-btn shuffle" id="shuffleTeamsBtn" title="Mélange tous les joueurs aléatoirement">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="16 3 21 3 21 8"/>
+                                        <line x1="4" y1="20" x2="21" y2="3"/>
+                                        <polyline points="21 16 21 21 16 21"/>
+                                        <line x1="15" y1="15" x2="21" y2="21"/>
+                                        <line x1="4" y1="4" x2="9" y2="9"/>
+                                    </svg>
+                                    <span>Shuffle</span>
                                 </button>
                             </div>
                         </div>
@@ -499,7 +500,7 @@
                                 <span class="setting-group-value" id="questionsValue">20</span>
                             </div>
                             <div class="setting-group-options questions-options">
-                                <button class="setting-option-btn" data-value="15">15</button>
+                                <button class="setting-option-btn" data-value="5">5</button>
                                 <button class="setting-option-btn active" data-value="20">20</button>
                                 <button class="setting-option-btn" data-value="25">25</button>
                                 <button class="setting-option-btn" data-value="30">30</button>
@@ -1138,9 +1139,10 @@
                 </div>
             </div>
             <div class="player-card-stats">
-                <div class="player-card-stat">
+                <div class="player-card-stat stat-with-team">
                     <div class="player-card-stat-value gold" id="cardWins">24</div>
                     <div class="player-card-stat-label">Victoires</div>
+                    <div class="team-victories-badge" id="cardTeamWins">+0</div>
                 </div>
                 <div class="player-card-stat">
                     <div class="player-card-stat-value" id="cardGames">31</div>
@@ -1204,6 +1206,16 @@
                     <span class="stat-value" id="statWinrate">28%</span>
                     <span class="stat-label">Winrate</span>
                 </div>
+            </div>
+
+            <!-- Bouton changement d'équipe (visible en mode Rivalité) -->
+            <div class="player-modal-team-switch" id="playerModalTeamSwitch" style="display: none;">
+                <button class="team-switch-btn" id="teamSwitchBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M7 16V4M7 4L3 8M7 4L11 8M17 8V20M17 20L21 16M17 20L13 16"/>
+                    </svg>
+                    <span id="teamSwitchLabel">Passer en équipe B</span>
+                </button>
             </div>
         </div>
     </div>

@@ -157,6 +157,26 @@ const db = {
         return data;
     },
 
+    // 🆕 Stats pour le mode Rivalité (équipe)
+    async updateTeamStats(twitchId, isWinner) {
+        const user = await this.getUserByTwitchId(twitchId);
+        if (!user) return null;
+
+        const { data, error } = await supabase
+            .from('users')
+            .update({
+                team_victories: isWinner ? (user.team_victories || 0) + 1 : (user.team_victories || 0),
+                team_games_played: (user.team_games_played || 0) + 1,
+                updated_at: new Date().toISOString()
+            })
+            .eq('twitch_id', twitchId)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
+
     async getTopPlayers(limit = 10) {
         const { data, error } = await supabase
             .from('users')

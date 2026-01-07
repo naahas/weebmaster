@@ -1434,6 +1434,12 @@ function setupPlayerCardEvents() {
                             (data.badges?.games_played?.filter(b => b.unlocked).length || 0) +
                             (data.badges?.games_won?.filter(b => b.unlocked).length || 0);
 
+                        // 🆕 Pastille victoires équipe
+                        const teamWins = user.team_victories || 0;
+                        const teamWinsBadge = document.getElementById('cardTeamWins');
+                        teamWinsBadge.textContent = '+' + teamWins;
+                        teamWinsBadge.classList.toggle('zero', teamWins === 0);
+
                         const winrate = parseInt(user.win_rate) || 0;
                         document.getElementById('cardWinrate').textContent = winrate + '%';
                         document.getElementById('cardWinrateFill').style.width = winrate + '%';
@@ -1535,6 +1541,269 @@ function updateGridSortToggleVisibility() {
                 if (teamBtn) teamBtn.classList.remove('active');
             }
         }
+    }
+}
+
+// ============================================
+// RÉÉQUILIBRAGE ÉQUIPES
+// ============================================
+let currentModalPlayer = null; // Joueur actuellement dans la modal
+
+// Fonction toast simple pour les notifications
+function showToast(message, type = 'info') {
+    // Créer le toast s'il n'existe pas
+    let toast = document.getElementById('simpleToast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'simpleToast';
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            z-index: 10000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        `;
+        document.body.appendChild(toast);
+    }
+
+    // Style selon le type
+    if (type === 'success') {
+        toast.style.background = 'rgba(34, 197, 94, 0.9)';
+        toast.style.color = '#fff';
+    } else if (type === 'error') {
+        toast.style.background = 'rgba(239, 68, 68, 0.9)';
+        toast.style.color = '#fff';
+    } else {
+        toast.style.background = 'rgba(59, 130, 246, 0.9)';
+        toast.style.color = '#fff';
+    }
+
+    toast.textContent = message;
+    
+    // Afficher
+    requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+    });
+
+    // Cacher après 3s
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(100px)';
+    }, 3000);
+}
+
+// 🆕 Mini-log discret pour les actions d'équipe
+function showMiniLog(message) {
+    let log = document.getElementById('miniLog');
+    if (!log) {
+        log = document.createElement('div');
+        log.id = 'miniLog';
+        log.style.cssText = `
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            padding: 0.3rem 0.6rem;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 3px;
+            font-size: 0.55rem;
+            font-family: monospace;
+            color: rgba(255, 255, 255, 0.45);
+            z-index: 10000;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.15s ease;
+            pointer-events: none;
+        `;
+        document.body.appendChild(log);
+    }
+
+    log.textContent = message;
+    
+    requestAnimationFrame(() => {
+        log.style.opacity = '1';
+        log.style.transform = 'translateY(0)';
+    });
+
+    setTimeout(() => {
+        log.style.opacity = '0';
+        log.style.transform = 'translateY(10px)';
+    }, 1500);
+}
+
+// Compter les joueurs par équipe
+function getTeamCounts() {
+    const grid = document.getElementById('playersGridLobby');
+    if (!grid) return { team1: 0, team2: 0 };
+    
+    const team1 = grid.querySelectorAll('.player-card-mini.team-1').length;
+    const team2 = grid.querySelectorAll('.player-card-mini.team-2').length;
+    return { team1, team2 };
+}
+
+// Rééquilibrer les équipes (les plus récents bougent)
+function rebalanceTeams() {
+    const grid = document.getElementById('playersGridLobby');
+    if (!grid) return;
+
+    const team1Cards = Array.from(grid.querySelectorAll('.player-card-mini.team-1'));
+    const team2Cards = Array.from(grid.querySelectorAll('.player-card-mini.team-2'));
+    
+    const diff = Math.abs(team1Cards.length - team2Cards.length);
+    if (diff <= 1) {
+        // Mini effet rouge sur le bouton
+        const btn = document.getElementById('rebalanceTeamsBtn');
+        if (btn) {
+            btn.style.transition = 'all 0.15s ease';
+            btn.style.boxShadow = '0 0 12px rgba(239, 68, 68, 0.6)';
+            btn.style.borderColor = 'rgba(239, 68, 68, 0.8)';
+            setTimeout(() => {
+                btn.style.boxShadow = '';
+                btn.style.borderColor = '';
+            }, 400);
+        }
+        return;
+    }
+
+    const toMove = Math.floor(diff / 2);
+    let movedCount = 0;
+
+    if (team1Cards.length > team2Cards.length) {
+        // Déplacer les derniers de team1 vers team2
+        const cardsToMove = team1Cards.slice(-toMove);
+        cardsToMove.forEach(card => {
+            switchCardTeam(card, 2);
+            movedCount++;
+        });
+    } else {
+        // Déplacer les derniers de team2 vers team1
+        const cardsToMove = team2Cards.slice(-toMove);
+        cardsToMove.forEach(card => {
+            switchCardTeam(card, 1);
+            movedCount++;
+        });
+    }
+
+    // Mettre à jour les compteurs
+    updateTeamCounters();
+}
+
+// Changer l'équipe d'une carte
+function switchCardTeam(card, newTeam) {
+    const oldTeam = card.classList.contains('team-1') ? 1 : 2;
+    if (oldTeam === newTeam) return;
+
+    // Mettre à jour les classes
+    card.classList.remove('team-1', 'team-2');
+    card.classList.add(`team-${newTeam}`);
+    card.dataset.team = newTeam;
+
+    // Mettre à jour le badge
+    const badge = card.querySelector('.team-badge-lobby');
+    if (badge) {
+        badge.classList.remove('team-1', 'team-2');
+        badge.classList.add(`team-${newTeam}`);
+        badge.textContent = newTeam === 1 ? 'A' : 'B';
+    }
+    
+    // 🆕 Émettre au serveur pour synchroniser avec le joueur
+    const twitchId = card.dataset.twitchId;
+    const username = card.querySelector('.player-card-mini-name')?.textContent;
+    
+    if (socket && (twitchId || username)) {
+        socket.emit('admin-change-team', {
+            twitchId: twitchId,
+            username: username,
+            newTeam: newTeam
+        });
+        console.log(`🔄 [ADMIN] ${username}: Team ${oldTeam} → Team ${newTeam}`);
+    }
+}
+
+// Mettre à jour les compteurs d'équipe dans le header
+function updateTeamCounters() {
+    const counts = getTeamCounts();
+    const team1CountEl = document.getElementById('team1Count');
+    const team2CountEl = document.getElementById('team2Count');
+    if (team1CountEl) team1CountEl.textContent = counts.team1;
+    if (team2CountEl) team2CountEl.textContent = counts.team2;
+    
+    // 🆕 Mettre à jour l'état du bouton démarrer
+    const grid = document.getElementById('playersGridLobby');
+    const playerCount = grid ? grid.querySelectorAll('.player-card-mini').length : 0;
+    updateStartButton(playerCount);
+}
+
+// Initialiser le bouton rééquilibrer
+function initRebalanceButton() {
+    const btn = document.getElementById('rebalanceTeamsBtn');
+    if (btn) {
+        btn.addEventListener('click', rebalanceTeams);
+    }
+    
+    const shuffleBtn = document.getElementById('shuffleTeamsBtn');
+    if (shuffleBtn) {
+        shuffleBtn.addEventListener('click', shuffleTeams);
+    }
+}
+
+// Mélanger aléatoirement tous les joueurs entre les équipes
+function shuffleTeams() {
+    const grid = document.getElementById('playersGridLobby');
+    if (!grid) return;
+
+    const allCards = Array.from(grid.querySelectorAll('.player-card-mini'));
+    if (allCards.length === 0) {
+        showMiniLog('aucun joueur');
+        return;
+    }
+
+    // Mélanger le tableau (Fisher-Yates)
+    for (let i = allCards.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allCards[i], allCards[j]] = [allCards[j], allCards[i]];
+    }
+
+    // Assigner alternativement aux équipes
+    allCards.forEach((card, index) => {
+        const newTeam = (index % 2) + 1;
+        switchCardTeam(card, newTeam);
+    });
+
+    // Mettre à jour les compteurs
+    updateTeamCounters();
+}
+
+// Gérer le changement d'équipe depuis la modal
+function initTeamSwitchInModal() {
+    const switchBtn = document.getElementById('teamSwitchBtn');
+    if (switchBtn) {
+        switchBtn.addEventListener('click', () => {
+            if (!currentModalPlayer) return;
+
+            const grid = document.getElementById('playersGridLobby');
+            const card = Array.from(grid.querySelectorAll('.player-card-mini')).find(c => {
+                const name = c.querySelector('.player-card-mini-name')?.textContent;
+                return name === currentModalPlayer.name;
+            });
+
+            if (card) {
+                const currentTeam = card.classList.contains('team-1') ? 1 : 2;
+                const newTeam = currentTeam === 1 ? 2 : 1;
+
+                switchCardTeam(card, newTeam);
+                updateTeamCounters();
+                closePlayerModal();
+            }
+        });
     }
 }
 
@@ -1763,6 +2032,10 @@ modeClassiqueCard.addEventListener('click', async () => {
     setGameMode('classic');
     
     modeClassiqueCard.classList.add('selecting');
+    
+    // 🆕 Retirer immédiatement les classes active pour désactiver pointer-events
+    modeModalOverlay.classList.remove('active');
+    modeModalContent.classList.remove('active');
     
     // Cacher l'autre carte
     anime({
@@ -1997,6 +2270,10 @@ modeRivaliteCard.addEventListener('click', async () => {
     setGameMode('rivalry');
     
     modeRivaliteCard.classList.add('selecting');
+    
+    // 🆕 Retirer immédiatement les classes active pour désactiver pointer-events
+    modeModalOverlay.classList.remove('active');
+    modeModalContent.classList.remove('active');
     
     // Cacher l'autre carte
     anime({
@@ -2388,6 +2665,9 @@ async function openPlayerModal(playerName, isChampion, playerTitle, twitchId = n
         modalAvatar.style.opacity = '0';
     }
 
+    // Stocker le joueur actuel pour le changement d'équipe
+    currentModalPlayer = { name: playerName, twitchId };
+
     // Activer animation barres
     statGames.classList.add('loading');
     statWins.classList.add('loading');
@@ -2403,6 +2683,16 @@ async function openPlayerModal(playerName, isChampion, playerTitle, twitchId = n
 
     const modalCard = document.querySelector('.player-modal-card');
     modalCard.classList.toggle('champion', isChampion);
+
+    // Gérer le bouton de changement d'équipe (seulement en mode Rivalité)
+    const teamSwitchDiv = document.getElementById('playerModalTeamSwitch');
+    const teamSwitchBtn = document.getElementById('teamSwitchBtn');
+    const teamSwitchLabel = document.getElementById('teamSwitchLabel');
+    
+    // 🆕 Masquer le bouton de changement d'équipe (l'admin peut cliquer sur le badge directement)
+    if (teamSwitchDiv) {
+        teamSwitchDiv.style.display = 'none';
+    }
 
     // Afficher modal
     document.getElementById('playerModalOverlay').classList.add('active');
@@ -2579,8 +2869,13 @@ function updateLobbyPlayers(players) {
 
         card.dataset.twitchId = twitchId || '';
 
+        // Badge d'équipe si en mode Rivalité
+        const teamBadgeHTML = (currentGameMode === 'rivalry' && card.dataset.team) 
+            ? `<span class="team-badge-lobby team-${card.dataset.team}">${card.dataset.team === '1' ? 'A' : 'B'}</span>`
+            : '<div class="player-card-mini-badge"></div>';
+
         card.innerHTML = `
-        <div class="player-card-mini-badge"></div>
+        ${teamBadgeHTML}
         <div class="player-card-mini-name">${player.username}</div>
         <div class="player-card-mini-title">${player.title || 'Novice'}</div>
         <div class="player-card-mini-separator"></div>
@@ -2601,9 +2896,23 @@ function updateLobbyPlayers(players) {
             });
         }
 
+        // ===== CLIC SUR BADGE ÉQUIPE =====
+        const teamBadge = card.querySelector('.team-badge-lobby');
+        if (teamBadge) {
+            teamBadge.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const currentTeam = card.classList.contains('team-1') ? 1 : 2;
+                const newTeam = currentTeam === 1 ? 2 : 1;
+
+                switchCardTeam(card, newTeam);
+                updateTeamCounters();
+            });
+        }
+
         // Clic pour ouvrir la modal
         card.addEventListener('click', (e) => {
             if (e.target.closest('.player-card-mini-kick')) return;
+            if (e.target.closest('.team-badge-lobby')) return;
             openPlayerModal(player.username, isChampion, player.title || 'Novice', twitchId);
         });
 
@@ -2639,10 +2948,39 @@ function updateStartButton(playerCount) {
     const startBtn = document.getElementById('startGameBtn');
     if (!startBtn) return;
 
-    if (playerCount >= 1) {
-        startBtn.classList.remove('disabled');
+    // 🆕 En mode Rivalité, vérifier que les deux équipes ont des joueurs
+    if (currentGameMode === 'rivalry') {
+        const team1Count = parseInt(document.getElementById('team1Count')?.textContent || '0');
+        const team2Count = parseInt(document.getElementById('team2Count')?.textContent || '0');
+        
+        // 🆕 Minimum 2 joueurs au total ET au moins 1 dans chaque équipe
+        if (playerCount >= 2 && team1Count >= 1 && team2Count >= 1) {
+            startBtn.classList.remove('disabled');
+            startBtn.title = '';
+        } else {
+            startBtn.classList.add('disabled');
+            if (playerCount < 2) {
+                startBtn.title = 'Minimum 2 joueurs requis';
+            } else if (team1Count === 0 && team2Count === 0) {
+                startBtn.title = 'Les deux équipes sont vides';
+            } else if (team1Count === 0) {
+                startBtn.title = 'L\'équipe A n\'a aucun joueur';
+            } else if (team2Count === 0) {
+                startBtn.title = 'L\'équipe B n\'a aucun joueur';
+            }
+        }
     } else {
-        startBtn.classList.add('disabled');
+        // Mode classique - minimum 2 joueurs
+        if (playerCount >= 2) {
+            startBtn.classList.remove('disabled');
+            startBtn.title = '';
+        } else if (playerCount === 1) {
+            startBtn.classList.add('disabled');
+            startBtn.title = 'Minimum 2 joueurs requis';
+        } else {
+            startBtn.classList.add('disabled');
+            startBtn.title = 'Aucun joueur dans le lobby';
+        }
     }
 }
 
@@ -2908,6 +3246,16 @@ function transitionToGame() {
 
     // Afficher/cacher le toggle de tri selon le mode Rivalité
     updateGridSortToggleVisibility();
+    
+    // 🆕 Cacher le graphique des équipes si mode classique
+    const teamsChartBlock = document.getElementById('teamsChartBlock');
+    if (teamsChartBlock) {
+        if (currentGameMode === 'rivalry') {
+            teamsChartBlock.style.display = 'block';
+        } else {
+            teamsChartBlock.style.display = 'none';
+        }
+    }
 
     // Reset complet du wrapper
     // 🔥 RESET COMPLET du wrapper + panel + actions
@@ -3031,7 +3379,14 @@ document.getElementById('startGameBtn').addEventListener('click', async () => {
 
         if (!response.ok) {
             console.error('❌ Erreur démarrage:', data.error);
-            alert(data.error || 'Impossible de démarrer la partie');
+            
+            // 🆕 Afficher un toast plus joli au lieu d'un alert
+            if (data.errorType === 'empty_team') {
+                showToast(data.error, 'error');
+            } else {
+                showToast(data.error || 'Impossible de démarrer la partie', 'error');
+            }
+            
             startBtn.classList.remove('loading');  // AJOUTER - débloquer si erreur
             return;
         }
@@ -3336,17 +3691,17 @@ function updateTeamsChart(teamScores, teamNames, gameMode) {
     const team2Score = teamScores[2] || 0;
     const maxScore = Math.max(team1Score, team2Score, 1); // Éviter division par 0
     
-    // Mettre à jour les barres (hauteur min 60px, max 95px)
+    // Mettre à jour les barres (hauteur min 80px, max 160px)
     const team1Bar = document.getElementById('team1Bar');
     const team2Bar = document.getElementById('team2Bar');
     
     if (team1Bar) {
-        const height = Math.max(60, (team1Score / maxScore) * 95);
+        const height = Math.max(80, (team1Score / maxScore) * 160);
         team1Bar.style.height = height + 'px';
     }
     
     if (team2Bar) {
-        const height = Math.max(60, (team2Score / maxScore) * 95);
+        const height = Math.max(80, (team2Score / maxScore) * 160);
         team2Bar.style.height = height + 'px';
     }
     
@@ -3510,12 +3865,16 @@ function generateWinnerPlayersGrid(players, winnerName, gameMode = 'lives', live
     if (!grid) return;
     grid.innerHTML = '';
 
+    // 🆕 Détecter si mode rivalité
+    const isRivalryMode = gameMode === 'rivalry-lives' || gameMode === 'rivalry-points';
+    const effectiveGameMode = isRivalryMode ? (gameMode === 'rivalry-points' ? 'points' : 'lives') : gameMode;
+
     const sorted = [...players].sort((a, b) => {
         if (a.isWinner) return -1;
         if (b.isWinner) return 1;
 
         // 🔥 TRIER SELON LE MODE
-        if (gameMode === 'points') {
+        if (effectiveGameMode === 'points') {
             return (b.points || 0) - (a.points || 0);
         } else {
             if (a.status === 'eliminated' && b.status !== 'eliminated') return 1;
@@ -3532,31 +3891,40 @@ function generateWinnerPlayersGrid(players, winnerName, gameMode = 'lives', live
         const playerName = player.username || player.name || 'Joueur';
         const playerLives = player.lives ?? player.livesRemaining ?? 0;
         const playerPoints = player.points || 0;
+        const playerTeam = player.team;
 
         card.className = `winner-player-card ${player.status || ''}`;
         if (player.isWinner) card.classList.add('winner');
 
         // 🔥 ÉLIMINÉ seulement en mode vie
-        if (gameMode === 'lives' && playerLives <= 0 && !player.isWinner) {
+        if (effectiveGameMode === 'lives' && playerLives <= 0 && !player.isWinner) {
             card.classList.add('eliminated');
         }
 
-        let medalHtml = '';
-        if (index < 3) {
+        // 🆕 Badge différent selon le mode
+        let badgeHtml = '';
+        if (isRivalryMode && playerTeam) {
+            // Mode Rivalité : afficher le badge d'équipe
+            const teamClass = playerTeam === 1 ? 'team-a' : 'team-b';
+            const teamLetter = playerTeam === 1 ? 'A' : 'B';
+            badgeHtml = `<span class="winner-player-team-badge ${teamClass}">${teamLetter}</span>`;
+            card.classList.add('has-team-badge');
+        } else if (!isRivalryMode && index < 3) {
+            // Mode Classique : afficher les médailles
             card.classList.add('has-medal');
-            medalHtml = `<span class="winner-player-medal ${medalClasses[index]}">${medals[index]}</span>`;
+            badgeHtml = `<span class="winner-player-medal ${medalClasses[index]}">${medals[index]}</span>`;
         }
 
         // 🔥 AFFICHAGE SELON LE MODE
         let statsHtml = '';
-        if (gameMode === 'points') {
+        if (effectiveGameMode === 'points') {
             statsHtml = `<div class="winner-player-points">${playerPoints.toLocaleString()} pts</div>`;
         } else {
             statsHtml = `<div class="winner-player-lives">${getLivesIconsHTML(livesIcon, playerLives, gameSettings.lives)}</div>`;
         }
 
         card.innerHTML = `
-            ${medalHtml}
+            ${badgeHtml}
             <div class="winner-player-name">${playerName}</div>
             ${statsHtml}
         `;
@@ -3569,6 +3937,10 @@ function generateWinnerPlayersGrid(players, winnerName, gameMode = 'lives', live
 function showWinner(name, livesOrPoints, totalWins, questions, duration, playersData, topPlayers = [], gameMode = 'lives') {
     const overlay = document.getElementById('winnerOverlay');
     if (!overlay) return;
+
+    // 🆕 Détecter si mode rivalité
+    const isRivalryMode = gameMode === 'rivalry-lives' || gameMode === 'rivalry-points';
+    const effectiveGameMode = isRivalryMode ? (gameMode === 'rivalry-points' ? 'points' : 'lives') : gameMode;
 
     // === ANIMATION DE SORTIE DES PANELS ===
     const questionWrapper = document.getElementById('gameQuestionWrapper');
@@ -3604,7 +3976,7 @@ function showWinner(name, livesOrPoints, totalWins, questions, duration, players
     const winnerLivesEl = document.getElementById('winnerLives');
     const livesLabelEl = winnerLivesEl?.closest('.winner-stat')?.querySelector('.winner-stat-label');
 
-    if (gameMode === 'points') {
+    if (effectiveGameMode === 'points') {
         winnerLivesEl.innerHTML = `<span class="points-icon">★</span> ${livesOrPoints.toLocaleString()}`;
         if (livesLabelEl) livesLabelEl.textContent = 'Points';
     } else {
@@ -3617,7 +3989,7 @@ function showWinner(name, livesOrPoints, totalWins, questions, duration, players
     document.getElementById('infoDuration').textContent = duration;
     document.getElementById('infoPlayers').textContent = playerCount;
 
-    // 🔥 PASSER LE MODE à la grille
+    // 🔥 PASSER LE MODE COMPLET à la grille (pour détecter rivalité)
     generateWinnerPlayersGrid(players, name, gameMode, selectedLivesIcon);
 
 
@@ -5159,8 +5531,17 @@ function formatDifficulty(diff) {
 }
 
 function getDifficultyClass(diff) {
-    if (['veryeasy', 'easy'].includes(diff)) return 'easy';
-    if (diff === 'medium') return 'medium';
+    const diffLower = (diff || '').toLowerCase();
+    
+    // 🆕 Gérer les difficultés de tiebreaker (DÉPARTAGE - XXX)
+    if (diffLower.includes('départage') || diffLower.includes('tiebreaker')) {
+        return 'tiebreaker';
+    }
+    
+    if (['veryeasy', 'easy'].includes(diffLower)) return 'easy';
+    if (diffLower === 'medium') return 'medium';
+    if (diffLower === 'hard') return 'hard';
+    if (diffLower === 'extreme') return 'extreme';
     return 'hard';
 }
 
@@ -5176,11 +5557,19 @@ function updateTimerChakraColor(difficulty) {
         'difficulty-medium',
         'difficulty-hard',
         'difficulty-veryhard',
-        'difficulty-extreme'
+        'difficulty-extreme',
+        'difficulty-tiebreaker'
     );
     
     // Ajouter la classe correspondante
-    const diffLower = (difficulty || 'medium').toLowerCase();
+    let diffLower = (difficulty || 'medium').toLowerCase();
+    
+    // 🆕 Gérer les difficultés de tiebreaker (DÉPARTAGE - XXX)
+    if (diffLower.includes('départage') || diffLower.includes('tiebreaker')) {
+        // Utiliser le style tiebreaker spécial
+        diffLower = 'tiebreaker';
+    }
+    
     timerChakra.classList.add(`difficulty-${diffLower}`);
     
     console.log(`⏱️ Timer Chakra: couleur ${diffLower}`);
@@ -5683,6 +6072,7 @@ function displayWinner(data) {
             totalVictories = data.winner.totalVictories || 1;
         }
         
+        // 🆕 Passer le gameMode complet pour détecter le mode rivalité
         showWinner(
             winnerName,
             winnerScore,
@@ -5691,7 +6081,7 @@ function displayWinner(data) {
             formatDuration(data.duration),
             data.playersData || [],
             data.topPlayers || [],
-            isRivalryMode ? (data.gameMode === 'rivalry-points' ? 'points' : 'lives') : data.gameMode
+            data.gameMode // Passer le gameMode complet au lieu de le convertir
         );
     }
 
@@ -6072,6 +6462,12 @@ function returnToIdle() {
     if (timerChakra) {
         timerChakra.classList.remove('warning');
         timerChakra.style.opacity = '1';
+    }
+    
+    // 🆕 Cacher le graphique des équipes
+    const teamsChartBlock = document.getElementById('teamsChartBlock');
+    if (teamsChartBlock) {
+        teamsChartBlock.style.display = 'none';
     }
 
     // Afficher idle
@@ -6533,14 +6929,11 @@ function initRivalryMode() {
     }
 }
 
-// Récupérer les noms d'équipes
+// Récupérer les noms d'équipes (valeurs par défaut)
 function getTeamNames() {
-    const team1Input = document.getElementById('team1Name');
-    const team2Input = document.getElementById('team2Name');
-    
     return {
-        1: team1Input?.value.trim() || 'Team A',
-        2: team2Input?.value.trim() || 'Team B'
+        1: 'Team A',
+        2: 'Team B'
     };
 }
 
@@ -6570,6 +6963,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Mettre à jour la visibilité du toggle de tri
     updateGridSortToggleVisibility();
+
+    // Initialiser les contrôles de rééquilibrage
+    initRebalanceButton();
+    initTeamSwitchInModal();
 
     // Event listeners pour le toggle de tri en mode Rivalité
     const sortToggle = document.getElementById('gridSortToggle');

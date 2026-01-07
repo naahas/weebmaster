@@ -96,7 +96,41 @@
             <!-- État: Lobby (jeu activé, en attente) -->
             <div class="content-section" v-if="isGameActive && !gameInProgress && isAuthenticated && !gameStartedOnServer">
 
-                <div class="lobby-card">
+                <!-- Mode Rivalité: Modal choix d'équipe -->
+                <div class="rivalry-modal" v-if="lobbyMode === 'rivalry'">
+                    <div class="rivalry-modal-title">{{ hasJoined ? (selectedTeam === 1 ? teamNames[1] : teamNames[2]) : 'Rivalité' }}</div>
+                    <div class="rivalry-modal-subtitle">{{ hasJoined ? 'En attente du lancement...' : 'Choisis ton camp' }}</div>
+                    <div class="rivalry-teams">
+                        <div 
+                            class="rivalry-team-card team-blue" 
+                            :class="{ selected: selectedTeam === 1, disabled: hasJoined && selectedTeam !== 1 }"
+                            @click="selectAndJoinTeam(1)"
+                        >
+                            <svg class="rivalry-team-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M6 3h12l4 6-10 13L2 9l4-6z"/>
+                                <path d="M2 9h20"/>
+                                <path d="M10 3l-4 6 6 13 6-13-4-6"/>
+                            </svg>
+                            <div class="rivalry-team-name">{{ teamNames[1] }}</div>
+                            <div class="rivalry-team-count">{{ teamCounts[1] }} joueur{{ teamCounts[1] > 1 ? 's' : '' }}</div>
+                        </div>
+                        <div 
+                            class="rivalry-team-card team-gold" 
+                            :class="{ selected: selectedTeam === 2, disabled: hasJoined && selectedTeam !== 2 }"
+                            @click="selectAndJoinTeam(2)"
+                        >
+                            <svg class="rivalry-team-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/>
+                                <line x1="12" y1="22" x2="12" y2="2"/>
+                            </svg>
+                            <div class="rivalry-team-name">{{ teamNames[2] }}</div>
+                            <div class="rivalry-team-count">{{ teamCounts[2] }} joueur{{ teamCounts[2] > 1 ? 's' : '' }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mode Classic: Lobby card standard -->
+                <div class="lobby-card" v-if="lobbyMode === 'classic'">
                     <!-- Coins décoratifs -->
                     <div class="corner-decoration corner-tl"></div>
                     <div class="corner-decoration corner-tr"></div>
@@ -105,36 +139,8 @@
 
                     <h2>La partie va commencer...</h2>
                     
-                    <!-- Mode Rivalité: Statut choix d'équipe -->
-                    <div class="team-choice-status" v-if="lobbyMode === 'rivalry'">
-                        <span v-if="teamCooldownActive">Choix d'équipe dans {{ teamCooldownSeconds }}s</span>
-                        <span v-else>Choix d'équipe disponible</span>
-                    </div>
-                    
-                    <!-- Mode Rivalité: Sélection d'équipe -->
-                    <div class="teams-container" v-if="lobbyMode === 'rivalry'">
-                        <div 
-                            class="team-card team-blue" 
-                            :class="{ selected: selectedTeam === 1, cooldown: teamCooldownActive }"
-                            @click="selectTeam(1)"
-                        >
-                            <div class="team-icon">⚔️</div>
-                            <div class="team-name">{{ teamNames[1] }}</div>
-                            <div class="team-count">{{ teamCounts[1] }} joueur{{ teamCounts[1] > 1 ? 's' : '' }}</div>
-                        </div>
-                        <div 
-                            class="team-card team-gold" 
-                            :class="{ selected: selectedTeam === 2, cooldown: teamCooldownActive }"
-                            @click="selectTeam(2)"
-                        >
-                            <div class="team-icon">🛡️</div>
-                            <div class="team-name">{{ teamNames[2] }}</div>
-                            <div class="team-count">{{ teamCounts[2] }} joueur{{ teamCounts[2] > 1 ? 's' : '' }}</div>
-                        </div>
-                    </div>
-
                     <!-- Mode Classic: Compteur de joueurs -->
-                    <div class="players-box" v-if="lobbyMode === 'classic'">
+                    <div class="players-box">
                         <span class="players-count">{{ playerCount }}</span>
                         <img src="people5.png" alt="Joueurs" class="players-icon">
                     </div>
@@ -143,7 +149,7 @@
                         class="btn-primary" 
                         :class="{ joined: hasJoined }"
                         @click="joinLobby" 
-                        :disabled="hasJoined || (lobbyMode === 'rivalry' && !selectedTeam)"
+                        :disabled="hasJoined"
                     >
                         {{ hasJoined ? 'Vous êtes dans la partie !' : 'Rejoindre la partie' }}
                     </button>
