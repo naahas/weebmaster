@@ -114,7 +114,6 @@ createApp({
                 "Récoltez des bonus en répondant correctement et en complétant des défis !",
                 "Chaque bonus n'est utilisable que 2 fois maximum par partie",
                 "Actuellement, Dragon Ball est la série qui comptabilise le plus de questions",
-                "Un mode par équipe est en cours de développement",
                 "Sauf indication contraire, chaque question porte sur la version manga de la série",
                 "Des avatars et des titres sont disponibles dans votre profil",
                 "Plus vous participez à des parties, plus vous débloquerez de badges",
