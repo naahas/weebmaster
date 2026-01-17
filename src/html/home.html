@@ -155,6 +155,26 @@
                     </button>
                 </div>
 
+                <!-- Mode FizzBuzz: Lobby card vert (style simple) -->
+                <div class="lobby-card fizzbuzz-lobby" v-if="lobbyMode === 'bombanime'">
+                    <h2>La partie va commencer...</h2>
+                    
+                    <!-- Compteur de joueurs -->
+                    <div class="players-box fizzbuzz-players">
+                        <span class="players-count">{{ playerCount }}</span>
+                        <img src="people5.png" alt="Joueurs" class="players-icon">
+                    </div>
+
+                    <button 
+                        class="btn-primary btn-fizzbuzz" 
+                        :class="{ joined: hasJoined, 'lobby-full-error': lobbyFullError }"
+                        @click="joinLobby" 
+                        :disabled="hasJoined"
+                    >
+                        {{ hasJoined ? 'Vous êtes dans la partie !' : (lobbyFullError ? 'Session complète, en attente...' : 'Rejoindre la partie') }}
+                    </button>
+                </div>
+
                 <button class="btn-secondary" @click="logout">
                     Déconnexion
                 </button>
@@ -176,7 +196,261 @@
             </div>
 
             <!-- État: Partie en cours -->
-            <div class="content-section game-section" v-if="gameInProgress && isAuthenticated && !gameEnded">
+            <div class="content-section game-section" 
+                 :class="{ 'no-animation': lobbyMode === 'bombanime' }"
+                 v-if="gameInProgress && isAuthenticated && !gameEnded">
+                
+                <!-- ============================================
+                     MODE BOMBANIME - Interface de jeu
+                     ============================================ -->
+                <template v-if="lobbyMode === 'bombanime' && !gameEnded">
+                    <div class="bombanime-game-container" v-if="bombanime.playersData.length > 0">
+                        
+                        <!-- 🔊 Contrôle du son -->
+                        <div class="sound-control" :class="{ muted: soundMuted }">
+                            <button class="sound-btn" @click="toggleSound">
+                                <svg v-if="!soundMuted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                                </svg>
+                                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                                    <line x1="23" y1="9" x2="17" y2="15"/>
+                                    <line x1="17" y1="9" x2="23" y2="15"/>
+                                </svg>
+                            </button>
+                            <input 
+                                type="range" 
+                                class="sound-slider" 
+                                min="0" 
+                                max="100" 
+                                :value="soundVolume" 
+                                @input="setSoundVolume($event.target.value)"
+                                v-if="!soundMuted"
+                            >
+                        </div>
+                        
+                        <!-- Zone du cercle de joueurs -->
+                        <div class="bombanime-circle" :style="{ '--circle-size': getBombanimeCircleSize() + 'px' }">
+                            <!-- Joueurs en cercle -->
+                            <div 
+                                v-for="(player, index) in bombanime.playersData" 
+                                :key="player.twitchId"
+                                class="bombanime-player-slot"
+                                :data-twitch-id="player.twitchId"
+                                :data-player-count="bombanime.playersData.length"
+                                :class="{ 
+                                    'active': player.twitchId === bombanime.currentPlayerTwitchId,
+                                    'eliminated': !player.isAlive,
+                                    'is-me': player.twitchId === twitchId,
+                                    'success': player.twitchId === bombanime.successPlayerTwitchId,
+                                    'intro-hidden': bombanime.introPhase === 'players' && index >= bombanime.introPlayersRevealed,
+                                    'intro-reveal': bombanime.introPhase === 'players' && index < bombanime.introPlayersRevealed
+                                }"
+                                :style="getBombanimePlayerStyle(index, bombanime.playersData.length)"
+                            >
+                                <!-- Nom au-dessus -->
+                                <div class="player-name">{{ player.username }}</div>
+                                
+                                <!-- Container hexagone -->
+                                <div class="player-hex-container">
+                                    <div class="player-hex" :style="{ width: getBombanimeHexSize() + 'px', height: getBombanimeHexSize() + 'px' }">
+                                        <svg viewBox="0 0 100 100">
+                                            <polygon points="50,3 97,25 97,75 50,97 3,75 3,25"/>
+                                        </svg>
+                                        <img class="player-avatar" :src="player.avatarUrl || '/img/avatars/novice.png'" :alt="player.username" @error="$event.target.src='/img/avatars/novice.png'"/>
+                                    </div>
+                                    <!-- Badge cœurs -->
+                                    <div class="player-lives">
+                                        <svg v-for="n in 2" :key="'heart-' + player.twitchId + '-' + n + '-' + player.lives" class="player-life" :class="{ lost: n > player.lives }" viewBox="0 0 24 24">
+                                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                        </svg>
+                                    </div>
+                                    <!-- Cadenas (déjà utilisé) -->
+                                    <div class="player-lock" :id="'lock-' + player.twitchId">
+                                        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                                    </div>
+                                    <!-- Particules alphabet complet -->
+                                    <div class="alphabet-particles">
+                                        <div class="alphabet-particle"></div>
+                                        <div class="alphabet-particle"></div>
+                                        <div class="alphabet-particle"></div>
+                                        <div class="alphabet-particle"></div>
+                                        <div class="alphabet-particle"></div>
+                                        <div class="alphabet-particle"></div>
+                                    </div>
+                                    <!-- Particules succès (bonne réponse) -->
+                                    <div class="success-particles">
+                                        <div class="success-particle"></div>
+                                        <div class="success-particle"></div>
+                                        <div class="success-particle"></div>
+                                        <div class="success-particle"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Réponse en-dessous -->
+                                <div class="player-answer" 
+                                     :class="{ 'typing': player.twitchId === bombanime.currentPlayerTwitchId }"
+                                     :style="{ fontSize: getAnswerFontSize() }"
+                                     v-if="player.twitchId === bombanime.currentPlayerTwitchId 
+                                           ? (player.currentTyping !== null ? player.currentTyping : player.lastAnswer)
+                                           : player.lastAnswer">
+                                    {{ player.twitchId === bombanime.currentPlayerTwitchId 
+                                       ? (player.currentTyping !== null ? player.currentTyping : player.lastAnswer)
+                                       : player.lastAnswer }}
+                                </div>
+                            </div>
+                            
+                            <!-- Bombe au centre -->
+                            <div class="bomb-container">
+                                <div class="bomb" 
+                                     :class="{ 'danger': bombanime.timeRemaining <= 5, 'critical': bombanime.timeRemaining <= 2 }"
+                                     :style="{ width: getBombSize() + 'px', height: getBombSize() + 'px', '--bomb-size': getBombSize() + 'px' }">
+                                    <div class="bomb-fuse-container" :style="{ transform: 'rotate(' + getBombFuseAngle() + 'deg)' }">
+                                        <div class="bomb-cap"></div>
+                                        <div class="bomb-fuse"></div>
+                                        <div class="bomb-spark"></div>
+                                    </div>
+                                    <div class="bomb-body">
+                                        <div class="bomb-highlight"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Zone de saisie (EN DEHORS du container flex) -->
+                    <div class="input-zone" v-if="bombanime.playersData.length > 0 && playerLives > 0" :class="{
+                        'intro-hidden': bombanime.introPhase === 'players'
+                    }">
+                        <div class="game-input-container">
+                            <input 
+                                type="text" 
+                                class="game-input"
+                                id="bombanimeInput"
+                                v-model="bombanime.inputValue"
+                                @keyup.enter="submitBombanimeName"
+                                @input="emitTyping"
+                                :placeholder="getFormattedSerieName()"
+                                autocomplete="off"
+                                :class="{ 'error': bombanime.lastError, 'disabled': !bombanime.isMyTurn || bombanime.introPhase }"
+                                :disabled="!bombanime.isMyTurn || bombanime.introPhase"
+                            >
+                            <div class="input-underline" :class="{ 'disabled': !bombanime.isMyTurn || bombanime.introPhase }"></div>
+                            <div class="feedback-message" :class="{ show: bombanime.lastError, error: bombanime.lastError }">
+                                {{ getBombanimeErrorMessage() }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Panel Alphabet (EN DEHORS du container flex) -->
+                    <!-- Desktop : panel fixe à droite -->
+                    <div class="alphabet-panel" v-if="bombanime.playersData.length > 0 && !isMobile" :class="{ 
+                        'intro-offscreen': bombanime.introPhase === 'players'
+                    }">
+                        <!-- Gros cœur qui se remplit -->
+                        <div class="alphabet-heart-main" id="alphabetHeartMain" :class="{ 'completing': bombanime.heartCompleting, 'letter-added': bombanime.heartPulse }">
+                            <svg class="heart-bg" viewBox="0 0 24 24">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                            </svg>
+                            <svg class="heart-fill" viewBox="0 0 24 24" :style="{ clipPath: 'inset(' + (100 - getAlphabetHeartFill()) + '% 0 0 0)' }">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                            </svg>
+                            <!-- Sparkles pour l'animation -->
+                            <div class="sparkle-container">
+                                <div class="sparkle"></div>
+                                <div class="sparkle"></div>
+                                <div class="sparkle"></div>
+                                <div class="sparkle"></div>
+                                <div class="sparkle"></div>
+                                <div class="sparkle"></div>
+                                <div class="sparkle"></div>
+                                <div class="sparkle"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Grille des lettres -->
+                        <div class="alphabet-grid">
+                            <div 
+                                v-for="letter in 'ABCDEFGHIJKLMNOPQRSTUVWX'.split('')" 
+                                :key="letter"
+                                class="alphabet-letter"
+                                :id="'letter-' + letter"
+                                :class="{ 'used': hasLetter(letter), 'just-added': bombanime.justAddedLetters.includes(letter) }"
+                            >
+                                {{ letter }}
+                            </div>
+                            <!-- Dernière ligne Y-Z centrée -->
+                            <div class="alphabet-last-row">
+                                <div class="alphabet-letter" :id="'letter-Y'" :class="{ 'used': hasLetter('Y'), 'just-added': bombanime.justAddedLetters.includes('Y') }">Y</div>
+                                <div class="alphabet-letter" :id="'letter-Z'" :class="{ 'used': hasLetter('Z'), 'just-added': bombanime.justAddedLetters.includes('Z') }">Z</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 📱 Mobile : Bouton alphabet en haut à droite -->
+                    <button 
+                        class="alphabet-mobile-btn" 
+                        v-if="bombanime.playersData.length > 0 && isMobile"
+                        @click="toggleMobileAlphabet"
+                        :class="{ 
+                            'intro-hidden': bombanime.introPhase === 'players',
+                            'letter-added': bombanime.mobileAlphabetPulse
+                        }"
+                    >
+                        <svg class="alphabet-btn-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                        <svg class="alphabet-btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    
+                    <!-- 📱 Mobile : Drawer alphabet -->
+                    <div class="alphabet-mobile-drawer" v-if="isMobile && isMobileAlphabetOpen" @click.self="toggleMobileAlphabet">
+                        <div class="alphabet-mobile-content">
+                            <button class="alphabet-mobile-close" @click="toggleMobileAlphabet">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                            
+                            <!-- Cœur progress -->
+                            <div class="alphabet-heart-main" :class="{ 'completing': bombanime.heartCompleting, 'letter-added': bombanime.heartPulse }">
+                                <svg class="heart-bg" viewBox="0 0 24 24">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                </svg>
+                                <svg class="heart-fill" viewBox="0 0 24 24" :style="{ clipPath: 'inset(' + (100 - getAlphabetHeartFill()) + '% 0 0 0)' }">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                </svg>
+                            </div>
+                            
+                            <!-- Grille des lettres (A-X) -->
+                            <div class="alphabet-grid-mobile">
+                                <div 
+                                    v-for="letter in 'ABCDEFGHIJKLMNOPQRSTUVWX'.split('')" 
+                                    :key="letter"
+                                    class="alphabet-letter"
+                                    :class="{ 'used': hasLetter(letter), 'just-added': bombanime.justAddedLetters.includes(letter) }"
+                                >
+                                    {{ letter }}
+                                </div>
+                            </div>
+                            <!-- Dernière ligne Y-Z centrée -->
+                            <div class="alphabet-last-row-mobile">
+                                <div class="alphabet-letter" :class="{ 'used': hasLetter('Y'), 'just-added': bombanime.justAddedLetters.includes('Y') }">Y</div>
+                                <div class="alphabet-letter" :class="{ 'used': hasLetter('Z'), 'just-added': bombanime.justAddedLetters.includes('Z') }">Z</div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- ============================================
+                     MODE CLASSIQUE/RIVALRY - Interface de jeu
+                     ============================================ -->
+                <template v-else>
                 <!-- HUD du joueur -->
                 <div class="player-hud">
                     <div class="hud-item hud-username-item">
@@ -321,6 +595,7 @@
                         </div>
                     </div>
                 </div><!-- Fin question-container-wrapper -->
+                </template><!-- Fin template classique/rivalry -->
             </div>
 
             <!-- ============================================
@@ -797,8 +1072,54 @@
 
         <!-- 🆕 SYSTÈME DE COMBO & BONUS -->
 
+        <!-- ============================================
+             ÉCRAN DE FIN BOMBANIME
+             ============================================ -->
+        <div class="bombanime-winner-screen" v-if="gameEnded && gameEndData && gameEndData.gameMode === 'bombanime'">
+            <div class="winner-content">
+                <!-- Couronne animée -->
+                <div class="winner-crown">
+                    <svg viewBox="0 0 64 64" class="crown-svg">
+                        <path d="M32 8L40 24L56 16L48 40H16L8 16L24 24L32 8Z" fill="currentColor"/>
+                        <rect x="14" y="40" width="36" height="8" rx="2" fill="currentColor"/>
+                    </svg>
+                </div>
+                
+                <!-- Titre -->
+                <div class="winner-title">Victoire</div>
+                
+                <!-- Nom du gagnant -->
+                <div class="winner-name" v-if="gameEndData.winner">
+                    {{ gameEndData.winner.username }}
+                </div>
+                <div class="winner-name no-winner" v-else>
+                    Aucun gagnant
+                </div>
+                
+                <!-- Stats de la partie -->
+                <div class="winner-stats">
+                    <div class="winner-stat">
+                        <span class="stat-value">{{ gameEndData.namesUsed || 0 }}</span>
+                        <span class="stat-label">personnages</span>
+                    </div>
+                    <div class="winner-stat">
+                        <span class="stat-value">{{ formatDuration(gameEndData.duration) }}</span>
+                        <span class="stat-label">durée</span>
+                    </div>
+                </div>
+                
+                <!-- Bouton retour -->
+                <button class="winner-back-btn" @click="returnToLobby">
+                    Retour
+                </button>
+            </div>
+            
+            <!-- Particules de célébration -->
+            <div class="winner-particles"></div>
+        </div>
+
         <!-- Jauge de Combo (Desktop uniquement - côté droit) -->
-        <div class="combo-gauge-container" v-if="gameInProgress && !gameEnded">
+        <div class="combo-gauge-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime'">
             <!-- 🔥 Particules EN DEHORS de la jauge -->
             <div class="combo-particles-external"></div>
 
@@ -821,7 +1142,7 @@
         </div>
 
         <!-- 🆕 NOUVEAU SYSTÈME BONUS - Icône + Hover Menu -->
-        <div class="bonus-icon-container" v-if="gameInProgress && !gameEnded">
+        <div class="bonus-icon-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime'">
             <div class="bonus-icon-wrapper" @mouseenter="showBonusMenu = true" @mouseleave="showBonusMenu = false"
                 @click="showBonusMenu = !showBonusMenu">
 
@@ -873,7 +1194,7 @@
 
 
         <!-- 🆕 SYSTÈME DE DÉFIS - Bandelettes à gauche -->
-        <div class="challenges-container" v-if="gameInProgress && !gameEnded && challenges.length > 0">
+        <div class="challenges-container" v-if="gameInProgress && !gameEnded && challenges.length > 0 && lobbyMode !== 'bombanime'">
             <div class="challenge-strip" 
                  v-for="challenge in challenges" 
                  :key="challenge.id"
@@ -938,8 +1259,8 @@
         </div>
 
 
-        <!-- 🆕 BONUS MOBILE - Icône avec jauge circulaire (mobile uniquement) -->
-        <div class="bonus-gauge-mobile" v-if="gameInProgress && !gameEnded" @click="toggleBonusArcMobile">
+        <!-- 🆕 BONUS MOBILE - Icône avec jauge circulaire (mobile uniquement, pas en FizzBuzz) -->
+        <div class="bonus-gauge-mobile" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime'" @click="toggleBonusArcMobile">
 
             <!-- SVG Gauge -->
             <svg class="gauge-svg" viewBox="0 0 68 68">
@@ -964,8 +1285,8 @@
             <div class="gauge-particles-mobile"></div>
         </div>
 
-        <!-- 🆕 Menu Arc de Cercle -->
-        <div class="bonus-arc-menu" v-if="gameInProgress && !gameEnded">
+        <!-- 🆕 Menu Arc de Cercle (pas en FizzBuzz) -->
+        <div class="bonus-arc-menu" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime'">
             <!-- Overlay en premier (nth-child(1)) -->
             <div class="bonus-arc-overlay" :class="{ active: showBonusArcMobile }" @click="closeBonusArcMobile"></div>
 
@@ -994,8 +1315,8 @@
         </div>
 
 
-        <!-- 🆕 DÉFIS MOBILE - Icône en bas gauche -->
-        <div class="challenges-mobile-icon" v-if="gameInProgress && !gameEnded && challenges.length > 0" 
+        <!-- 🆕 DÉFIS MOBILE - Icône en bas gauche (pas en FizzBuzz) -->
+        <div class="challenges-mobile-icon" v-if="gameInProgress && !gameEnded && challenges.length > 0 && lobbyMode !== 'bombanime'" 
              @click="showChallengesMobile = !showChallengesMobile">
             <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>

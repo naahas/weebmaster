@@ -153,12 +153,99 @@ let continuousAnimationId = null;
 
 
 // ============================================
+// 🔊 SYSTÈME AUDIO ADMIN
+// ============================================
+const adminSounds = {};
+let adminSoundMuted = localStorage.getItem('adminSoundMuted') === 'true';
+let adminSoundVolume = parseInt(localStorage.getItem('adminSoundVolume')) || 50;
+
+function initAdminSounds() {
+    adminSounds.bombanimePass = createPreloadedSound('slash3.mp3');
+    adminSounds.bombanimeWrong = createPreloadedSound('wrong.mp3');
+    adminSounds.bombanimeUsed = createPreloadedSound('lock1.mp3');
+    adminSounds.bombanimeExplosion = createPreloadedSound('explode.mp3');
+    console.log('🔊 Sons admin initialisés');
+    
+    // Initialiser le contrôle visuel
+    initSoundControl();
+}
+
+function createPreloadedSound(src, volume = 0.5) {
+    const sound = new Audio(src);
+    sound.volume = volume;
+    sound.preload = 'auto';
+    sound.load();
+    return sound;
+}
+
+function playAdminSound(sound) {
+    if (!sound || adminSoundMuted) return;
+    const clone = sound.cloneNode();
+    clone.volume = (adminSoundVolume / 100) * 0.7;
+    clone.play().catch(e => console.log('Audio blocked:', e));
+}
+
+function initSoundControl() {
+    const control = document.getElementById('adminSoundControl');
+    const btn = document.getElementById('adminSoundBtn');
+    const slider = document.getElementById('adminSoundSlider');
+    const soundOn = btn?.querySelector('.sound-on');
+    const soundOff = btn?.querySelector('.sound-off');
+    
+    if (!control || !btn || !slider) return;
+    
+    // Appliquer l'état initial
+    slider.value = adminSoundVolume;
+    updateSoundControlUI();
+    
+    // Toggle mute
+    btn.addEventListener('click', () => {
+        adminSoundMuted = !adminSoundMuted;
+        localStorage.setItem('adminSoundMuted', adminSoundMuted);
+        updateSoundControlUI();
+    });
+    
+    // Slider volume
+    slider.addEventListener('input', (e) => {
+        adminSoundVolume = parseInt(e.target.value);
+        localStorage.setItem('adminSoundVolume', adminSoundVolume);
+    });
+    
+    function updateSoundControlUI() {
+        if (adminSoundMuted) {
+            control.classList.add('muted');
+            if (soundOn) soundOn.style.display = 'none';
+            if (soundOff) soundOff.style.display = 'block';
+        } else {
+            control.classList.remove('muted');
+            if (soundOn) soundOn.style.display = 'block';
+            if (soundOff) soundOff.style.display = 'none';
+        }
+    }
+}
+
+// Afficher/Cacher le contrôle de son
+function showSoundControl(show) {
+    const control = document.getElementById('adminSoundControl');
+    if (control) {
+        if (show) {
+            control.classList.add('visible');
+        } else {
+            control.classList.remove('visible');
+        }
+    }
+}
+
+// ============================================
 // SOCKET.IO
 // ============================================
 let socket = null;
 
 function initSocket() {
     socket = io();
+    
+    // 🔊 Initialiser les sons
+    initAdminSounds();
 
     // ===== ÉVÉNEMENTS LOBBY =====
 
@@ -183,6 +270,16 @@ function initSocket() {
         if (data.playerCount !== undefined) {
             document.getElementById('lobbyPlayerCount').textContent = data.playerCount;
         }
+        
+        // 💣 BombAnime - Afficher/Cacher badge MAX
+        const maxBadge = document.getElementById('lobbyMaxBadge');
+        if (maxBadge) {
+            if (data.isLobbyFull && data.lobbyMode === 'bombanime') {
+                maxBadge.style.display = 'inline-block';
+            } else {
+                maxBadge.style.display = 'none';
+            }
+        }
     });
 
     socket.on('game-activated', () => {
@@ -196,6 +293,11 @@ function initSocket() {
     });
 
     socket.on('game-started', (data) => {
+        // Ignorer en mode BombAnime (géré par bombanime-game-started)
+        if (currentGameMode === 'bombanime') {
+            console.log('🎮 game-started ignoré en mode BombAnime');
+            return;
+        }
         console.log('🎮 Partie démarrée:', data);
         gameSettings.mode = data.gameMode === 'lives' ? 'vie' : 'point';
         gameSettings.totalQuestions = data.questionsCount || 20;
@@ -203,12 +305,16 @@ function initSocket() {
     });
 
     socket.on('new-question', (data) => {
+        // Ignorer en mode BombAnime
+        if (currentGameMode === 'bombanime') return;
         console.log('📝 Nouvelle question:', data);
         displayQuestion(data);
     });
 
 
     socket.on('question-results', (data) => {
+        // Ignorer en mode BombAnime
+        if (currentGameMode === 'bombanime') return;
         console.log('📊 Résultats:', data);
         console.log('📊 Stats:', data.stats);  // AJOUTER
         console.log('📊 Fastest:', data.fastestPlayer);  // AJOUTER
@@ -221,6 +327,11 @@ function initSocket() {
     });
 
     socket.on('game-ended', (data) => {
+        // Ignorer en mode BombAnime (géré par bombanime-game-ended)
+        if (currentGameMode === 'bombanime') {
+            console.log('🎮 game-ended ignoré en mode BombAnime');
+            return;
+        }
         console.log('🏆 Fin de partie:', data);
         displayWinner(data);
     });
@@ -246,6 +357,153 @@ function initSocket() {
         const logsList = document.getElementById('gameLogsList');
         if (logsList) {
             logsList.innerHTML = '';
+        }
+    });
+
+    // ============================================
+    // 💣 BOMBANIME - Socket Handlers
+    // ============================================
+    
+    socket.on('bombanime-game-started', (data) => {
+        console.log('💣 BombAnime démarré:', data);
+        // 🆕 Supprimer les données du winner précédent
+        sessionStorage.removeItem('bombanimeWinnerData');
+        clearBombanimeLogs();
+        showBombanimeCircle(data);
+        showSoundControl(true); // 🔊 Afficher contrôle son
+    });
+    
+    // 🆕 Handler pour la reconnexion - restaurer l'état BombAnime
+    socket.on('bombanime-state', (data) => {
+        console.log('💣 État BombAnime reçu:', data);
+        
+        // Cacher l'overlay winner classique si présent
+        const classicWinnerOverlay = document.getElementById('winnerOverlay');
+        if (classicWinnerOverlay) {
+            classicWinnerOverlay.classList.remove('active');
+        }
+        
+        if (data.active) {
+            // Restaurer l'état BombAnime
+            showBombanimeCircle({
+                serie: data.serie,
+                timer: data.timer,
+                playersData: data.playersData,
+                playersOrder: data.playersOrder,
+                currentPlayerTwitchId: data.currentPlayerTwitchId
+            });
+            
+            showSoundControl(true); // 🔊 Afficher contrôle son
+            
+            // Mettre à jour le timer restant
+            bombanimeState.timeRemaining = data.timeRemaining || data.timer;
+            
+            // 🆕 Tourner la bombe vers le joueur actuel après un court délai (DOM prêt)
+            setTimeout(() => {
+                rotateBombToPlayer(data.currentPlayerTwitchId);
+                updateBombDangerState();
+                
+                // 🆕 Restaurer les dernières réponses des joueurs (sauf le joueur actuel)
+                data.playersData.forEach(player => {
+                    if (player.twitchId !== data.currentPlayerTwitchId && player.lastAnswer) {
+                        const playerSlot = document.getElementById(`player-slot-${player.twitchId}`);
+                        if (playerSlot) {
+                            let typingEl = playerSlot.querySelector('.player-typing');
+                            if (!typingEl) {
+                                typingEl = document.createElement('div');
+                                typingEl.className = 'player-typing';
+                                playerSlot.appendChild(typingEl);
+                            }
+                            typingEl.textContent = player.lastAnswer.toUpperCase();
+                            typingEl.classList.add('last-answer');
+                            typingEl.classList.remove('has-text');
+                        }
+                    }
+                });
+            }, 50);
+            
+            // Démarrer le timer visuel
+            if (bombanimeState.timerInterval) {
+                clearInterval(bombanimeState.timerInterval);
+            }
+            bombanimeState.timerInterval = setInterval(() => {
+                bombanimeState.timeRemaining--;
+                updateBombDangerState();
+                if (bombanimeState.timeRemaining <= 0) {
+                    clearInterval(bombanimeState.timerInterval);
+                }
+            }, 1000);
+            
+            console.log('✅ État BombAnime restauré');
+        } else {
+            // Si BombAnime n'est pas actif, nettoyer le sessionStorage du winner
+            // (le serveur a probablement redémarré, donc pas de partie en cours)
+            sessionStorage.removeItem('bombanimeWinnerData');
+            
+            if (currentGameMode === 'bombanime') {
+                console.log('💣 BombAnime non actif - retour à l\'idle');
+                returnToIdle();
+            }
+        }
+    });
+    
+    socket.on('bombanime-turn-start', (data) => {
+        console.log('💣 Tour de:', data.currentPlayerUsername);
+        updateBombanimeCircle(data);
+    });
+    
+    socket.on('bombanime-name-accepted', (data) => {
+        console.log('✅ Nom accepté:', data.name, 'par', data.playerUsername);
+        playAdminSound(adminSounds.bombanimePass); // 🔊
+        addBombanimeLog('success', data);
+        onBombanimeNameAccepted(data);
+    });
+    
+    socket.on('bombanime-name-rejected', (data) => {
+        console.log('❌ Nom rejeté:', data.name, 'raison:', data.reason);
+        // 🔊 Son selon la raison
+        if (data.reason === 'already_used') {
+            playAdminSound(adminSounds.bombanimeUsed);
+        } else {
+            playAdminSound(adminSounds.bombanimeWrong);
+        }
+        onBombanimeNameRejected(data);
+    });
+    
+    socket.on('bombanime-explosion', (data) => {
+        console.log('💥 Explosion sur:', data.playerUsername);
+        playAdminSound(adminSounds.bombanimeExplosion); // 🔊
+        addBombanimeLog('explosion', data);
+        if (data.eliminated) {
+            addBombanimeLog('elimination', data);
+        }
+        onBombanimeExplosion(data);
+    });
+    
+    socket.on('bombanime-alphabet-complete', (data) => {
+        console.log('🎉 Alphabet complet:', data.playerUsername, '+1 vie');
+        onBombanimeAlphabetComplete(data);
+    });
+    
+    socket.on('bombanime-game-ended', (data) => {
+        console.log('🏆 BombAnime terminé:', data);
+        showSoundControl(false); // 🔊 Cacher contrôle son
+        displayBombanimeWinner(data);
+    });
+    
+    // 🆕 Handler pour le texte tapé en temps réel
+    socket.on('bombanime-typing', (data) => {
+        const playerSlot = document.querySelector(`.player-slot[data-twitch-id="${data.playerTwitchId}"]`);
+        if (playerSlot) {
+            let typingEl = playerSlot.querySelector('.player-typing');
+            if (!typingEl) {
+                typingEl = document.createElement('div');
+                typingEl.className = 'player-typing';
+                playerSlot.appendChild(typingEl);
+            }
+            typingEl.textContent = data.text || '';
+            typingEl.classList.remove('last-answer');
+            typingEl.classList.toggle('has-text', !!data.text);
         }
     });
 
@@ -277,6 +535,12 @@ function initSocket() {
             if (questionWrapper) questionWrapper.classList.remove('closing', 'shifted');
             if (mainPanel) mainPanel.classList.remove('visible', 'closing');
         }, 400);
+    });
+    
+    // 🆕 Demander l'état BombAnime à la connexion (pour la reconnexion)
+    socket.on('connect', () => {
+        console.log('🔌 Socket connecté - Demande état BombAnime');
+        socket.emit('bombanime-get-state');
     });
 }
 
@@ -1491,6 +1755,7 @@ const modeModalOverlay = document.getElementById('modeModalOverlay');
 const modeModalContent = document.getElementById('modeModalContent');
 const modeClassiqueCard = document.getElementById('modeClassiqueCard');
 const modeRivaliteCard = document.getElementById('modeRivaliteCard');
+const modeBombanimeCard = document.getElementById('modeBombanimeCard');
 const modeCards = document.querySelectorAll('.mode-card');
 const modeBadge = document.getElementById('modeBadge');
 
@@ -1509,14 +1774,28 @@ function setGameMode(mode) {
     currentGameMode = mode;
     sessionStorage.setItem('adminGameMode', mode);
     
+    // 🆕 Supprimer les données du winner BombAnime si on change de mode
+    if (mode !== 'bombanime') {
+        sessionStorage.removeItem('bombanimeWinnerData');
+    }
+    
     // Mettre à jour le badge
     const badgeText = modeBadge?.querySelector('.mode-badge-text');
+    modeBadge?.classList.remove('rivalry', 'bombanime');
+    
+    // Mettre à jour le bouton Jouer et les particules
+    btnWrapper?.classList.remove('rivalry', 'bombanime');
+    
     if (mode === 'rivalry') {
         if (badgeText) badgeText.textContent = 'Rivalry Mode';
         if (modeBadge) modeBadge.classList.add('rivalry');
+        if (btnWrapper) btnWrapper.classList.add('rivalry');
+    } else if (mode === 'bombanime') {
+        if (badgeText) badgeText.textContent = 'BombAnime Mode';
+        if (modeBadge) modeBadge.classList.add('bombanime');
+        if (btnWrapper) btnWrapper.classList.add('bombanime');
     } else {
         if (badgeText) badgeText.textContent = 'Classic Mode';
-        if (modeBadge) modeBadge.classList.remove('rivalry');
     }
 
     // Afficher/cacher le toggle de tri selon le mode
@@ -1938,9 +2217,11 @@ function openModeModal() {
     anime.remove(modeModalOverlay);
     anime.remove(modeClassiqueCard);
     anime.remove(modeRivaliteCard);
+    anime.remove(modeBombanimeCard);
     modeModalOverlay.removeAttribute('style');
     modeClassiqueCard.removeAttribute('style');
     modeRivaliteCard.removeAttribute('style');
+    modeBombanimeCard.removeAttribute('style');
     
     modeModalOverlay.classList.add('active');
     modeModalContent.classList.add('active');
@@ -1948,7 +2229,7 @@ function openModeModal() {
     // Ajouter animation-done après l'animation pour permettre le hover
     modeCards.forEach((card, index) => {
         card.classList.remove('animation-done', 'selecting');
-        const delay = index === 0 ? 650 : 750;
+        const delay = 650 + (index * 100);
         setTimeout(() => {
             card.classList.add('animation-done');
         }, delay);
@@ -1960,6 +2241,7 @@ function closeModeModal() {
     anime.remove(modeModalOverlay);
     anime.remove(modeClassiqueCard);
     anime.remove(modeRivaliteCard);
+    anime.remove(modeBombanimeCard);
     
     modeModalOverlay.classList.remove('active');
     modeModalContent.classList.remove('active');
@@ -1969,6 +2251,7 @@ function closeModeModal() {
     modeModalOverlay.removeAttribute('style');
     modeClassiqueCard.removeAttribute('style');
     modeRivaliteCard.removeAttribute('style');
+    modeBombanimeCard.removeAttribute('style');
     
     // Cacher le toast Twitch si visible
     hideTwitchRequiredMessage();
@@ -2037,9 +2320,9 @@ modeClassiqueCard.addEventListener('click', async () => {
     modeModalOverlay.classList.remove('active');
     modeModalContent.classList.remove('active');
     
-    // Cacher l'autre carte
+    // Cacher les autres cartes
     anime({
-        targets: modeRivaliteCard,
+        targets: [modeRivaliteCard, modeBombanimeCard],
         opacity: 0,
         scale: 0.9,
         duration: 150,
@@ -2084,7 +2367,13 @@ async function launchLobby() {
         // Préparer les données du mode
         const lobbyData = {
             lobbyMode: currentGameMode,
-            teamNames: currentGameMode === 'rivalry' ? getTeamNames() : null
+            teamNames: currentGameMode === 'rivalry' ? getTeamNames() : null,
+            // 💣 Paramètres BombAnime
+            bombanimeSerie: currentGameMode === 'bombanime' ? selectedBombanimeSerie : null,
+            bombanimeTimer: currentGameMode === 'bombanime' ? 
+                (document.getElementById('bombanimeTimerSlider')?.value || 8) : null,
+            bombanimeLives: currentGameMode === 'bombanime' ?
+                parseInt(document.querySelector('.bombanime-lives-group .setting-option-btn.active')?.dataset.value) || 2 : null
         };
         
         // Activer le lobby
@@ -2168,21 +2457,76 @@ async function launchLobby() {
             const modeBadgeText = document.getElementById('modeBadgeText');
             if (modeBadgeHeader && modeBadgeText) {
                 modeBadgeHeader.style.display = 'block';
+                modeBadgeHeader.classList.remove('rivalry', 'bombanime');
                 if (currentGameMode === 'rivalry') {
                     modeBadgeText.textContent = 'Rivalité';
                     modeBadgeHeader.classList.add('rivalry');
+                } else if (currentGameMode === 'bombanime') {
+                    modeBadgeText.textContent = 'BombAnime';
+                    modeBadgeHeader.classList.add('bombanime');
                 } else {
                     modeBadgeText.textContent = 'Classic';
-                    modeBadgeHeader.classList.remove('rivalry');
                 }
             }
 
-            // 🆕 Afficher/cacher la section équipes selon le mode
+            // 🆕 Afficher/cacher les sections selon le mode
             const teamsGroup = document.getElementById('teamsGroup');
             const lobbyHeaderLeft = document.querySelector('.lobby-header-left');
             
-            if (currentGameMode === 'rivalry') {
+            // Paramètres classiques
+            const modeGroup = document.querySelector('.mode-group');
+            const livesGroup = document.getElementById('livesGroup');
+            const livesIconGroup = document.getElementById('livesIconGroup');
+            const questionsGroup = document.getElementById('questionsGroup');
+            const speedBonusGroup = document.getElementById('speedBonusGroup');
+            const timerGroup = document.querySelector('.timer-group');
+            const answersGroup = document.querySelector('.setting-group:has(.answers-options)');
+            const difficultyGroup = document.querySelector('.setting-group:has(.difficulty-options)');
+            const seriesTrigger = document.getElementById('seriesTrigger');
+            
+            // Paramètres BombAnime
+            const bombanimeSerieGroup = document.getElementById('bombanimeSerieGroup');
+            const bombanimeLivesGroup = document.getElementById('bombanimeLivesGroup');
+            const bombanimeTimerGroup = document.getElementById('bombanimeTimerGroup');
+            const bombanimeBotsGroup = document.getElementById('bombanimeBotsGroup');
+            
+            if (currentGameMode === 'bombanime') {
+                // Mode BombAnime
+                if (teamsGroup) teamsGroup.style.display = 'none';
+                if (modeGroup) modeGroup.style.display = 'none';
+                if (livesGroup) livesGroup.style.display = 'none';
+                if (livesIconGroup) livesIconGroup.style.display = 'none';
+                if (questionsGroup) questionsGroup.style.display = 'none';
+                if (speedBonusGroup) speedBonusGroup.style.display = 'none';
+                if (timerGroup) timerGroup.style.display = 'none';
+                if (answersGroup) answersGroup.style.display = 'none';
+                if (difficultyGroup) difficultyGroup.style.display = 'none';
+                if (seriesTrigger) seriesTrigger.style.display = 'none';
+                
+                if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'block';
+                if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'block';
+                if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'block';
+                // Bots réactivés temporairement
+                if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'block';
+                
+                const teamCounters = document.getElementById('teamCounters');
+                if (teamCounters) teamCounters.remove();
+                
+            } else if (currentGameMode === 'rivalry') {
+                // Mode Rivalité
                 if (teamsGroup) teamsGroup.style.display = 'block';
+                if (modeGroup) modeGroup.style.display = 'block';
+                if (livesGroup) livesGroup.style.display = 'block';
+                if (livesIconGroup) livesIconGroup.style.display = 'block';
+                if (timerGroup) timerGroup.style.display = 'block';
+                if (answersGroup) answersGroup.style.display = 'block';
+                if (difficultyGroup) difficultyGroup.style.display = 'block';
+                if (seriesTrigger) seriesTrigger.style.display = 'block';
+                
+                if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
+                if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
+                if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
+                if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'none';
                 
                 // Ajouter les compteurs d'équipe si pas déjà présents
                 if (lobbyHeaderLeft && !document.getElementById('teamCounters')) {
@@ -2201,7 +2545,21 @@ async function launchLobby() {
                     lobbyHeaderLeft.insertAdjacentHTML('beforeend', teamCountersHTML);
                 }
             } else {
+                // Mode Classique
                 if (teamsGroup) teamsGroup.style.display = 'none';
+                if (modeGroup) modeGroup.style.display = 'block';
+                if (livesGroup) livesGroup.style.display = 'block';
+                if (livesIconGroup) livesIconGroup.style.display = 'block';
+                if (timerGroup) timerGroup.style.display = 'block';
+                if (answersGroup) answersGroup.style.display = 'block';
+                if (difficultyGroup) difficultyGroup.style.display = 'block';
+                if (seriesTrigger) seriesTrigger.style.display = 'block';
+                
+                if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
+                if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
+                if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
+                if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'none';
+                
                 const teamCounters = document.getElementById('teamCounters');
                 if (teamCounters) teamCounters.remove();
             }
@@ -2256,16 +2614,9 @@ async function launchLobby() {
     });
 }
 
-// Clic sur carte Rivalité (disabled) -> ne rien faire
+// Clic sur carte Rivalité
 modeRivaliteCard.addEventListener('click', async () => {
     if (modeRivaliteCard.classList.contains('selecting')) return;
-    
-    // Vérifier si connecté à Twitch
-    if (!twitchUser) {
-        // Afficher le message de connexion requise
-        showTwitchRequiredMessage();
-        return;
-    }
     
     setGameMode('rivalry');
     
@@ -2275,9 +2626,9 @@ modeRivaliteCard.addEventListener('click', async () => {
     modeModalOverlay.classList.remove('active');
     modeModalContent.classList.remove('active');
     
-    // Cacher l'autre carte
+    // Cacher les autres cartes
     anime({
-        targets: modeClassiqueCard,
+        targets: [modeClassiqueCard, modeBombanimeCard],
         opacity: 0,
         scale: 0.9,
         duration: 150,
@@ -2315,7 +2666,67 @@ modeRivaliteCard.addEventListener('click', async () => {
             }
         });
     
-    console.log('Mode Rivalité sélectionné - Streamer:', twitchUser.display_name);
+    console.log('Mode Rivalité sélectionné');
+});
+
+// Clic sur carte BombAnime -> sélectionner et fermer le modal
+modeBombanimeCard.addEventListener('click', async () => {
+    if (modeBombanimeCard.classList.contains('selecting')) return;
+    
+    setGameMode('bombanime');
+    
+    modeBombanimeCard.classList.add('selecting');
+    
+    // Retirer immédiatement les classes active pour désactiver pointer-events
+    modeModalOverlay.classList.remove('active');
+    modeModalContent.classList.remove('active');
+    
+    // Cacher les autres cartes
+    anime({
+        targets: [modeClassiqueCard, modeRivaliteCard],
+        opacity: 0,
+        scale: 0.9,
+        duration: 150,
+        easing: 'easeOutQuad'
+    });
+    
+    // Fade le fond
+    anime({
+        targets: modeModalOverlay,
+        opacity: [1, 0],
+        duration: 300,
+        delay: 50,
+        easing: 'easeOutQuad'
+    });
+    
+    // Animation Pop & Vanish (vert)
+    anime.timeline()
+        .add({
+            targets: modeBombanimeCard,
+            scale: [1, 1.2],
+            boxShadow: ['0 0 0px rgba(74, 222, 128, 0)', '0 0 60px rgba(74, 222, 128, 1)'],
+            duration: 150,
+            easing: 'easeOutQuad'
+        })
+        .add({
+            targets: modeBombanimeCard,
+            scale: [1.2, 0],
+            opacity: [1, 0],
+            boxShadow: ['0 0 60px rgba(74, 222, 128, 1)', '0 0 0px rgba(74, 222, 128, 0)'],
+            duration: 200,
+            easing: 'easeInQuad',
+            complete: () => {
+                closeModeModal();
+                modeBombanimeCard.classList.remove('selecting');
+            }
+        });
+    
+    console.log('Mode BombAnime sélectionné');
+});
+
+// Empêcher propagation des clics sur BombAnime
+modeBombanimeCard.addEventListener('click', (e) => {
+    e.stopPropagation();
 });
 
 // ============================================
@@ -2388,6 +2799,110 @@ document.getElementById('closeLobbyBtn').addEventListener('click', async () => {
 // PARAMÈTRES INLINE - Gestion des options
 // ============================================
 
+// ============================================
+// BOMBANIME - Dropdown Séries Underline
+// ============================================
+const bombanimeDropdown = document.getElementById('bombanimeSerieGroup');
+const bombanimeDropdownTrigger = document.getElementById('bombanimeDropdownTrigger');
+let selectedBombanimeSerie = 'Naruto';
+
+// Toggle dropdown
+if (bombanimeDropdownTrigger) {
+    bombanimeDropdownTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        bombanimeDropdown.classList.toggle('open');
+    });
+}
+
+// Fermer au clic extérieur
+document.addEventListener('click', (e) => {
+    if (bombanimeDropdown && !bombanimeDropdown.contains(e.target)) {
+        bombanimeDropdown.classList.remove('open');
+    }
+});
+
+// Sélection d'une série (délégation sur document)
+document.addEventListener('click', async (e) => {
+    const item = e.target.closest('.bombanime-dropdown-item');
+    if (!item) return;
+    
+    e.stopPropagation();
+    
+    const seriesValue = item.dataset.series;
+    const seriesName = item.dataset.name;
+    const seriesCount = item.dataset.count;
+    
+    // Retirer selected des autres
+    document.querySelectorAll('.bombanime-dropdown-item').forEach(i => i.classList.remove('selected'));
+    item.classList.add('selected');
+    
+    // Mettre à jour la valeur affichée
+    const nameDisplay = document.getElementById('bombanimeSerieValue');
+    const countDisplay = document.getElementById('bombanimeSerieCount');
+    
+    if (nameDisplay) {
+        nameDisplay.textContent = seriesName;
+        anime({
+            targets: nameDisplay,
+            scale: [1.1, 1],
+            duration: 200,
+            easing: 'easeOutQuad'
+        });
+    }
+    
+    if (countDisplay) {
+        countDisplay.textContent = '• ' + seriesCount;
+    }
+    
+    selectedBombanimeSerie = seriesValue;
+    console.log(`🎮 Série BombAnime: ${seriesValue} (${seriesCount} persos)`);
+    
+    // Envoyer la mise à jour au serveur si on est en mode bombanime
+    if (currentGameMode === 'bombanime') {
+        try {
+            const response = await fetch('/admin/bombanime/update-serie', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ serie: seriesValue })
+            });
+            if (response.ok) {
+                console.log(`✅ Série mise à jour sur le serveur: ${seriesValue}`);
+            }
+        } catch (error) {
+            console.error('❌ Erreur mise à jour série:', error);
+        }
+    }
+    
+    // Fermer le dropdown
+    const dropdown = document.getElementById('bombanimeSerieGroup');
+    if (dropdown) {
+        dropdown.classList.remove('open');
+        console.log('🔽 Dropdown fermé');
+    }
+});
+
+// ============================================
+// BOMBANIME - Slider Timer
+// ============================================
+const bombanimeTimerSlider = document.getElementById('bombanimeTimerSlider');
+if (bombanimeTimerSlider) {
+    bombanimeTimerSlider.addEventListener('input', () => {
+        const value = bombanimeTimerSlider.value;
+        const valueDisplay = document.getElementById('bombanimeTimerValue');
+        if (valueDisplay) {
+            valueDisplay.textContent = value + 's';
+            anime({
+                targets: valueDisplay,
+                scale: [1.1, 1],
+                duration: 150,
+                easing: 'easeOutQuad'
+            });
+        }
+        console.log(`⏱️ Timer BombAnime: ${value}s`);
+    });
+}
+
 // Options génériques (vies, questions, timer, difficulté)
 document.querySelectorAll('.setting-group:not(.mode-group):not(.series-group) .setting-option-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -2409,11 +2924,19 @@ document.querySelectorAll('.setting-group:not(.mode-group):not(.series-group) .s
             easing: 'easeOutBack'
         });
 
-        // Si c'est le groupe des vies, mettre à jour les cartes joueurs
+        // Si c'est le groupe des vies classique, mettre à jour les cartes joueurs
         if (group.classList.contains('lives-group')) {
             const lives = parseInt(btn.dataset.value) || 3;
             document.querySelectorAll('.player-card-mini-stat').forEach(stat => {
                 stat.innerHTML = '❤️'.repeat(lives);
+            });
+        }
+        
+        // Si c'est le groupe des vies BombAnime, mettre à jour les cartes joueurs
+        if (group.classList.contains('bombanime-lives-group')) {
+            const lives = parseInt(btn.dataset.value) || 1;
+            document.querySelectorAll('.player-card-mini-stat').forEach(stat => {
+                stat.innerHTML = getLivesIconsHTML(selectedLivesIcon, lives, lives);
             });
         }
     });
@@ -2641,6 +3164,10 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && seriesModal.classList.contains('active')) {
         closeSeriesModal();
     }
+    // BombAnime dropdown
+    if (e.key === 'Escape' && bombanimeDropdown && bombanimeDropdown.classList.contains('open')) {
+        bombanimeDropdown.classList.remove('open');
+    }
 });
 
 
@@ -2864,8 +3391,19 @@ function updateLobbyPlayers(players) {
             else team2Players++;
         }
 
-        const currentLives = parseInt(document.querySelector('.lives-group .setting-option-btn.active')?.dataset.value) || 3;
-        const currentMode = document.querySelector('.mode-group .setting-option-btn.active')?.dataset.mode || 'vie';
+        // Récupérer les vies selon le mode de jeu
+        let currentLives;
+        let currentMode;
+        
+        if (currentGameMode === 'bombanime') {
+            // Mode BombAnime - utiliser le paramètre BombAnime
+            currentLives = parseInt(document.querySelector('.bombanime-lives-group .setting-option-btn.active')?.dataset.value) || 1;
+            currentMode = 'vie'; // BombAnime est toujours en mode vies
+        } else {
+            // Mode classique ou rivalité
+            currentLives = parseInt(document.querySelector('.lives-group .setting-option-btn.active')?.dataset.value) || 3;
+            currentMode = document.querySelector('.mode-group .setting-option-btn.active')?.dataset.mode || 'vie';
+        }
 
         card.dataset.twitchId = twitchId || '';
 
@@ -2936,6 +3474,19 @@ function updateLobbyPlayers(players) {
         const team2Count = document.getElementById('team2Count');
         if (team1Count) team1Count.textContent = team1Players;
         if (team2Count) team2Count.textContent = team2Players;
+    }
+    
+    // 🤖 Mettre à jour le compteur de bots en mode BombAnime
+    if (currentGameMode === 'bombanime') {
+        const botsCount = players.filter(p => p.isFake).length;
+        const botsCountEl = document.getElementById('bombanimeBotsCount');
+        if (botsCountEl) botsCountEl.textContent = botsCount;
+        
+        // Désactiver le bouton si 12 bots max (13 joueurs max - au moins 1 vrai joueur)
+        const addBotBtn = document.getElementById('bombanimeAddBotBtn');
+        if (addBotBtn) {
+            addBotBtn.disabled = players.length >= 13;
+        }
     }
 
     updateStartButton(players.length);
@@ -3370,9 +3921,22 @@ document.getElementById('startGameBtn').addEventListener('click', async () => {
     startBtn.classList.add('loading');  // AJOUTER
 
     try {
+        // Préparer les données (paramètres BombAnime si en mode BombAnime)
+        const startData = {};
+        if (currentGameMode === 'bombanime') {
+            startData.bombanimeLives = parseInt(document.querySelector('.bombanime-lives-group .setting-option-btn.active')?.dataset.value) || 2;
+            startData.bombanimeTimer = parseInt(document.getElementById('bombanimeTimerSlider')?.value) || 8;
+            startData.bombanimeSerie = selectedBombanimeSerie || 'Naruto';
+            console.log('💣 Paramètres BombAnime envoyés:', startData);
+        }
+        
         const response = await fetch('/admin/start-game', {
             method: 'POST',
-            credentials: 'same-origin'
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(startData)
         });
 
         const data = await response.json();
@@ -4307,9 +4871,16 @@ async function restoreGameState() {
 
         // 🔥 CAS 0: ÉCRAN WINNER AFFICHÉ
         if (state.showingWinner && state.winnerScreenData) {
-            console.log('🏆 Restauration écran Winner');
-
             const data = state.winnerScreenData;
+            
+            // 💣 Ignorer si c'est un winner BombAnime (géré séparément)
+            if (data.gameMode === 'bombanime') {
+                console.log('💣 Winner BombAnime ignoré - géré par bombanime-state');
+                // Ne pas afficher le winner classique, laisser returnToIdle se faire
+                return false;
+            }
+            
+            console.log('🏆 Restauration écran Winner');
 
             // 🔥 RESTAURER L'ICÔNE AVANT LE WINNER
             if (data.livesIcon) {
@@ -4523,6 +5094,18 @@ async function restoreGameState() {
         else if (state.isActive) {
             console.log('🚪 Restauration lobby');
             showLobbyUI(state.players || []);
+            
+            // 💣 Restaurer le badge MAX si lobby BombAnime plein
+            const maxBadge = document.getElementById('lobbyMaxBadge');
+            if (maxBadge) {
+                if (state.isLobbyFull && state.lobbyMode === 'bombanime') {
+                    maxBadge.style.display = 'inline-block';
+                    console.log('🔴 Badge MAX restauré');
+                } else {
+                    maxBadge.style.display = 'none';
+                }
+            }
+            
             return true;
         }
 
@@ -4959,12 +5542,15 @@ function showLobbyUI(players = []) {
     const modeBadgeText = document.getElementById('modeBadgeText');
     if (modeBadgeHeader && modeBadgeText) {
         modeBadgeHeader.style.display = 'block';
+        modeBadgeHeader.classList.remove('rivalry', 'bombanime');
         if (currentGameMode === 'rivalry') {
             modeBadgeText.textContent = 'Rivalité';
             modeBadgeHeader.classList.add('rivalry');
+        } else if (currentGameMode === 'bombanime') {
+            modeBadgeText.textContent = 'BombAnime';
+            modeBadgeHeader.classList.add('bombanime');
         } else {
             modeBadgeText.textContent = 'Classic';
-            modeBadgeHeader.classList.remove('rivalry');
         }
     }
 
@@ -4977,12 +5563,67 @@ function showLobbyUI(players = []) {
     lastgamePanel.classList.add('hidden');
     btnWrapper.classList.remove('pulse-active');
 
-    // 🆕 Afficher/cacher la section équipes selon le mode
+    // 🆕 Afficher/cacher les sections selon le mode
     const teamsGroup = document.getElementById('teamsGroup');
     const lobbyHeaderLeft = document.querySelector('.lobby-header-left');
     
-    if (currentGameMode === 'rivalry') {
+    // Paramètres classiques (à cacher en mode BombAnime)
+    const modeGroup = document.querySelector('.mode-group');
+    const livesGroup = document.getElementById('livesGroup');
+    const livesIconGroup = document.getElementById('livesIconGroup');
+    const questionsGroup = document.getElementById('questionsGroup');
+    const speedBonusGroup = document.getElementById('speedBonusGroup');
+    const timerGroup = document.querySelector('.timer-group');
+    const answersGroup = document.querySelector('.setting-group:has(.answers-options)');
+    const difficultyGroup = document.querySelector('.setting-group:has(.difficulty-options)');
+    const seriesTrigger = document.getElementById('seriesTrigger');
+    
+    // Paramètres BombAnime
+    const bombanimeSerieGroup = document.getElementById('bombanimeSerieGroup');
+    const bombanimeLivesGroup = document.getElementById('bombanimeLivesGroup');
+    const bombanimeTimerGroup = document.getElementById('bombanimeTimerGroup');
+    const bombanimeBotsGroup = document.getElementById('bombanimeBotsGroup');
+    
+    if (currentGameMode === 'bombanime') {
+        // Mode BombAnime : cacher les paramètres classiques
+        if (teamsGroup) teamsGroup.style.display = 'none';
+        if (modeGroup) modeGroup.style.display = 'none';
+        if (livesGroup) livesGroup.style.display = 'none';
+        if (livesIconGroup) livesIconGroup.style.display = 'none';
+        if (questionsGroup) questionsGroup.style.display = 'none';
+        if (speedBonusGroup) speedBonusGroup.style.display = 'none';
+        if (timerGroup) timerGroup.style.display = 'none';
+        if (answersGroup) answersGroup.style.display = 'none';
+        if (difficultyGroup) difficultyGroup.style.display = 'none';
+        if (seriesTrigger) seriesTrigger.style.display = 'none';
+        
+        // Afficher les paramètres BombAnime
+        if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'block';
+        if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'block';
+        if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'block';
+        // Bots réactivés temporairement
+        if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'block';
+        
+        // Retirer les compteurs d'équipe
+        const teamCounters = document.getElementById('teamCounters');
+        if (teamCounters) teamCounters.remove();
+        
+    } else if (currentGameMode === 'rivalry') {
+        // Mode Rivalité
         if (teamsGroup) teamsGroup.style.display = 'block';
+        if (modeGroup) modeGroup.style.display = 'block';
+        if (livesGroup) livesGroup.style.display = 'block';
+        if (livesIconGroup) livesIconGroup.style.display = 'block';
+        if (timerGroup) timerGroup.style.display = 'block';
+        if (answersGroup) answersGroup.style.display = 'block';
+        if (difficultyGroup) difficultyGroup.style.display = 'block';
+        if (seriesTrigger) seriesTrigger.style.display = 'block';
+        
+        // Cacher les paramètres BombAnime
+        if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
+        if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
+        if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
+        if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'none';
         
         // Ajouter les compteurs d'équipe si pas déjà présents
         if (lobbyHeaderLeft && !document.getElementById('teamCounters')) {
@@ -5001,7 +5642,22 @@ function showLobbyUI(players = []) {
             lobbyHeaderLeft.insertAdjacentHTML('beforeend', teamCountersHTML);
         }
     } else {
+        // Mode Classique
         if (teamsGroup) teamsGroup.style.display = 'none';
+        if (modeGroup) modeGroup.style.display = 'block';
+        if (livesGroup) livesGroup.style.display = 'block';
+        if (livesIconGroup) livesIconGroup.style.display = 'block';
+        if (timerGroup) timerGroup.style.display = 'block';
+        if (answersGroup) answersGroup.style.display = 'block';
+        if (difficultyGroup) difficultyGroup.style.display = 'block';
+        if (seriesTrigger) seriesTrigger.style.display = 'block';
+        
+        // Cacher les paramètres BombAnime
+        if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
+        if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
+        if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
+        if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'none';
+        
         const teamCounters = document.getElementById('teamCounters');
         if (teamCounters) teamCounters.remove();
     }
@@ -6371,6 +7027,9 @@ document.getElementById('gameCloseBtn')?.addEventListener('click', async () => {
 });
 
 function returnToIdle() {
+    // 🔊 Cacher le contrôle de son
+    showSoundControl(false);
+    
     const stateGame = document.getElementById('stateGame');
     const stateLobby = document.getElementById('stateLobby');
     const stateIdle = document.getElementById('stateIdle');
@@ -6397,7 +7056,35 @@ function returnToIdle() {
         stateGame.style.opacity = '';
         stateGame.style.visibility = '';
         stateGame.style.pointerEvents = 'none';
+        
+        // Réafficher le game-layout (caché en mode BombAnime)
+        const gameLayout = stateGame.querySelector('.game-layout');
+        if (gameLayout) gameLayout.style.display = '';
     }
+    
+    // Cacher le container BombAnime
+    const bombanimeContainer = document.getElementById('bombanimeAdminContainer');
+    if (bombanimeContainer) bombanimeContainer.style.display = 'none';
+    
+    // Cacher le bouton fermer BombAnime
+    const bombanimeCloseBtn = document.getElementById('bombanimeCloseLobbyBtn');
+    if (bombanimeCloseBtn) bombanimeCloseBtn.style.display = 'none';
+    
+    // Cacher le panneau de logs BombAnime
+    const logsPanel = document.getElementById('bombanimeLogsPanel');
+    if (logsPanel) logsPanel.style.display = 'none';
+    
+    // Supprimer l'overlay winner BombAnime
+    const winnerOverlay = document.getElementById('bombanimeWinnerOverlay');
+    if (winnerOverlay) winnerOverlay.remove();
+    
+    // Cacher l'overlay winner classique
+    const classicWinnerOverlay = document.getElementById('winnerOverlay');
+    if (classicWinnerOverlay) classicWinnerOverlay.classList.remove('active');
+    
+    // Nettoyer le sessionStorage BombAnime
+    sessionStorage.removeItem('bombanimeWinnerData');
+    
     if (stateLobby) {
         stateLobby.classList.remove('active');
         stateLobby.style.display = '';
@@ -6759,7 +7446,15 @@ function initLivesIconSelector() {
 
 
 function updateLobbyPlayersIcons() {
-    const currentLives = parseInt(document.querySelector('.lives-group .setting-option-btn.active')?.dataset.value) || 3;
+    let currentLives;
+    
+    if (currentGameMode === 'bombanime') {
+        // Mode BombAnime - utiliser le paramètre BombAnime
+        currentLives = parseInt(document.querySelector('.bombanime-lives-group .setting-option-btn.active')?.dataset.value) || 1;
+    } else {
+        // Mode classique ou rivalité
+        currentLives = parseInt(document.querySelector('.lives-group .setting-option-btn.active')?.dataset.value) || 3;
+    }
 
     document.querySelectorAll('.player-card-mini-stat').forEach(stat => {
         stat.innerHTML = getLivesIconsHTML(selectedLivesIcon, currentLives, currentLives);
@@ -7013,3 +7708,782 @@ function updateTeamNavVisibility(show) {
         }
     }
 }
+
+// ============================================
+// 💣 BOMBANIME - Fonctions Admin
+// ============================================
+
+let bombanimeState = {
+    playersOrder: [],
+    playersData: [],
+    currentPlayerTwitchId: null,
+    timer: 8,
+    timeRemaining: 8,
+    timerInterval: null,
+    serie: 'Naruto',
+    lastValidName: null
+};
+
+// Afficher le cercle BombAnime
+function showBombanimeCircle(data) {
+    bombanimeState.playersOrder = data.playersOrder;
+    bombanimeState.playersData = data.playersData;
+    bombanimeState.timer = data.timer;
+    bombanimeState.timeRemaining = data.timer; // Reset le timer
+    bombanimeState.serie = data.serie;
+    bombanimeState.lastValidName = null;
+    bombanimeState.currentPlayerTwitchId = null; // Reset pour que la bombe pointe vers le haut pendant l'intro
+    
+    console.log('💣 showBombanimeCircle - currentPlayerTwitchId reset à null');
+    
+    // Clear l'interval précédent si existant
+    if (bombanimeState.timerInterval) {
+        clearInterval(bombanimeState.timerInterval);
+        bombanimeState.timerInterval = null;
+    }
+    
+    console.log('💣 showBombanimeCircle appelé avec:', data);
+    
+    // Récupérer les éléments
+    const stateLobby = document.getElementById('stateLobby');
+    const stateGame = document.getElementById('stateGame');
+    
+    // Cacher immédiatement le lobby
+    if (stateLobby) {
+        stateLobby.classList.remove('active');
+        stateLobby.style.display = 'none';
+    }
+    
+    // Afficher l'écran de jeu
+    if (stateGame) {
+        // Cacher tous les éléments du mode quiz classique
+        const gameQuestionWrapper = document.getElementById('gameQuestionWrapper');
+        const gameMainPanel = document.getElementById('gameMainPanel');
+        const characterImageContainer = document.getElementById('characterImageContainer');
+        const gameFizzbuzzPanel = document.getElementById('gameFizzbuzzPanel');
+        const gameLogsContainer = document.getElementById('gameLogsContainer');
+        const gameLogsToggle = document.getElementById('gameLogsToggle');
+        const gameCloseBtn = document.getElementById('gameCloseBtn');
+        const gameLayout = stateGame.querySelector('.game-layout');
+        
+        if (gameQuestionWrapper) gameQuestionWrapper.style.display = 'none';
+        if (gameMainPanel) gameMainPanel.style.display = 'none';
+        if (characterImageContainer) characterImageContainer.style.display = 'none';
+        if (gameFizzbuzzPanel) gameFizzbuzzPanel.style.display = 'none';
+        // Cacher les logs et boutons du mode quiz
+        if (gameLogsContainer) gameLogsContainer.style.display = 'none';
+        if (gameLogsToggle) gameLogsToggle.style.display = 'none';
+        if (gameCloseBtn) gameCloseBtn.style.display = 'none';
+        // Cacher le game-layout entier
+        if (gameLayout) gameLayout.style.display = 'none';
+        
+        // Créer ou afficher le conteneur BombAnime
+        let bombanimeContainer = document.getElementById('bombanimeAdminContainer');
+        if (!bombanimeContainer) {
+            bombanimeContainer = document.createElement('div');
+            bombanimeContainer.id = 'bombanimeAdminContainer';
+            bombanimeContainer.className = 'bombanime-admin-container';
+            // Ajouter au body pour un centrage parfait
+            document.body.appendChild(bombanimeContainer);
+        }
+        // Forcer les styles de centrage
+        bombanimeContainer.style.cssText = `
+            display: flex;
+            position: fixed;
+            top: 3.5rem;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 200;
+        `;
+        
+        // Créer ou afficher le panneau de logs
+        let logsPanel = document.getElementById('bombanimeLogsPanel');
+        if (!logsPanel) {
+            logsPanel = document.createElement('div');
+            logsPanel.id = 'bombanimeLogsPanel';
+            logsPanel.className = 'bombanime-logs-panel';
+            logsPanel.innerHTML = `
+                <div class="logs-list" id="bombanimeLogsList"></div>
+                <div class="logs-footer">
+                    <button class="bombanime-close-lobby-btn" id="bombanimeCloseLobbyBtn">Fermer lobby</button>
+                </div>
+            `;
+            bombanimeContainer.insertBefore(logsPanel, bombanimeContainer.firstChild);
+        } else {
+            // S'assurer que le footer et le bouton existent
+            let footer = logsPanel.querySelector('.logs-footer');
+            if (!footer) {
+                footer = document.createElement('div');
+                footer.className = 'logs-footer';
+                footer.innerHTML = `<button class="bombanime-close-lobby-btn" id="bombanimeCloseLobbyBtn">Fermer lobby</button>`;
+                logsPanel.appendChild(footer);
+            }
+        }
+        
+        // Toujours attacher l'événement au bouton et le rendre visible
+        const closeBtn = logsPanel.querySelector('#bombanimeCloseLobbyBtn');
+        if (closeBtn) {
+            closeBtn.onclick = closeLobby;
+            closeBtn.style.display = '';  // Réafficher le bouton
+        }
+        
+        logsPanel.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            position: absolute;
+            left: 0;
+            top: 16px;
+            bottom: 16px;
+            width: 240px;
+            padding-left: 16px;
+            z-index: 10;
+            background: linear-gradient(90deg, 
+                rgba(15, 15, 20, 0.7) 0%, 
+                rgba(15, 15, 20, 0.7) 60%,
+                rgba(15, 15, 20, 0.1) 90%, 
+                transparent 100%
+            );
+        `;
+        
+        // Créer la zone de jeu principale si elle n'existe pas
+        let gameZone = document.getElementById('bombanimeGameZone');
+        if (!gameZone) {
+            gameZone = document.createElement('div');
+            gameZone.id = 'bombanimeGameZone';
+            gameZone.className = 'bombanime-game-zone';
+            bombanimeContainer.appendChild(gameZone);
+        }
+        gameZone.style.cssText = `
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+        
+        // Activer l'écran de jeu
+        stateGame.classList.add('active');
+        stateGame.style.display = 'flex';
+        stateGame.style.opacity = '1';
+        stateGame.style.pointerEvents = '';
+        
+        console.log('✅ stateGame activé');
+    }
+    
+    // Rendre le cercle
+    renderBombanimeCircle();
+}
+
+// Ajouter une entrée dans le panneau de logs BombAnime
+function addBombanimeLog(type, data) {
+    const logsList = document.getElementById('bombanimeLogsList');
+    if (!logsList) return;
+    
+    // Ne pas logger les alphabets complets ni les erreurs
+    if (type === 'alphabet' || type === 'error' || type === 'start' || type === 'turn') return;
+    
+    const logEntry = document.createElement('div');
+    logEntry.className = `log-entry log-${type}`;
+    
+    let content = '';
+    
+    switch (type) {
+        case 'success':
+            content = `
+                <div class="log-dot"></div>
+                <div class="log-content">
+                    <span class="log-player">${data.playerUsername}</span>
+                    <span class="log-answer">${data.name}</span>
+                </div>
+            `;
+            break;
+        case 'explosion':
+            content = `
+                <div class="log-dot"></div>
+                <div class="log-content">
+                    <span class="log-player">${data.playerUsername}</span>
+                    <span class="log-answer">a explosé!</span>
+                </div>
+            `;
+            break;
+        case 'elimination':
+            content = `
+                <div class="log-dot"></div>
+                <div class="log-content">
+                    <span class="log-player">${data.playerUsername}</span>
+                    <span class="log-answer">éliminé!</span>
+                </div>
+            `;
+            break;
+        default:
+            return; // Ne pas afficher les autres types
+    }
+    
+    logEntry.innerHTML = content;
+    
+    // Ajouter en haut de la liste
+    logsList.insertBefore(logEntry, logsList.firstChild);
+    
+    // Limiter à 50 entrées
+    while (logsList.children.length > 50) {
+        logsList.removeChild(logsList.lastChild);
+    }
+    
+    // Animation d'entrée
+    logEntry.style.opacity = '0';
+    logEntry.style.transform = 'translateX(-20px)';
+    requestAnimationFrame(() => {
+        logEntry.style.transition = 'all 0.3s ease';
+        logEntry.style.opacity = '1';
+        logEntry.style.transform = 'translateX(0)';
+    });
+}
+
+// Vider les logs BombAnime
+function clearBombanimeLogs() {
+    const logsList = document.getElementById('bombanimeLogsList');
+    if (logsList) {
+        logsList.innerHTML = '';
+    }
+}
+
+// Rendre le cercle de joueurs (style v22)
+function renderBombanimeCircle() {
+    const container = document.getElementById('bombanimeGameZone') || document.getElementById('bombanimeAdminContainer');
+    if (!container) {
+        console.error('❌ Container BombAnime non trouvé');
+        return;
+    }
+    
+    const players = bombanimeState.playersData;
+    const currentTwitchId = bombanimeState.currentPlayerTwitchId;
+    const playerCount = players.length;
+    
+    console.log('🔄 renderBombanimeCircle - Joueurs:', playerCount, 'Current:', currentTwitchId);
+    
+    // Configuration adaptative - même formule que côté joueur
+    const circleSize = 500 + (playerCount * 22);
+    const hexSize = Math.max(48, 92 - (playerCount * 3.5));
+    
+    // Taille de la bombe adaptative (moins de variation)
+    const bombSize = Math.min(70, Math.max(58, 48 + (playerCount * 1.7)));
+    
+    const centerX = circleSize / 2;
+    const centerY = circleSize / 2;
+    
+    // Distance minimum entre joueurs et bombe (augmente quand il y a moins de joueurs)
+    const minDistanceFromBomb = 60 + (13 - playerCount) * 5;
+    const baseRadius = (circleSize / 2) - hexSize - 20;
+    const radius = Math.max(baseRadius, (bombSize / 2) + hexSize + minDistanceFromBomb);
+    
+    const offsetAngle = Math.PI / playerCount;
+    
+    let playersHTML = '';
+    
+    players.forEach((player, index) => {
+        const angle = (index / playerCount) * 2 * Math.PI - Math.PI / 2 + offsetAngle;
+        const x = centerX + radius * Math.cos(angle);
+        const y = centerY + radius * Math.sin(angle);
+        
+        const isCurrent = player.twitchId === currentTwitchId;
+        const isDead = !player.isAlive;
+        
+        // Générer les cœurs SVG
+        let heartsHTML = '';
+        for (let i = 0; i < 2; i++) {
+            const lostClass = i >= player.lives ? 'lost' : '';
+            heartsHTML += `<svg class="player-life ${lostClass}" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+        }
+        
+        playersHTML += `
+            <div class="player-slot ${isCurrent ? 'active' : ''} ${isDead ? 'eliminated' : ''}" 
+                 style="left: ${x}px; top: ${y}px; --hex-size: ${hexSize}px;"
+                 data-twitch-id="${player.twitchId}"
+                 id="player-slot-${player.twitchId}"
+                 data-player-count="${playerCount}">
+                <div class="player-name">${player.username}</div>
+                <div class="player-hex-container">
+                    <div class="player-hex" style="width: ${hexSize}px; height: ${hexSize}px;">
+                        <svg viewBox="0 0 100 100">
+                            <polygon points="50,3 97,25 97,75 50,97 3,75 3,25"/>
+                        </svg>
+                        <img class="player-avatar" src="${player.avatarUrl || '/img/avatars/novice.png'}" alt="${player.username}" onerror="this.src='/img/avatars/novice.png'"/>
+                        <div class="success-particles">
+                            <div class="success-particle"></div>
+                            <div class="success-particle"></div>
+                            <div class="success-particle"></div>
+                            <div class="success-particle"></div>
+                        </div>
+                    </div>
+                    <div class="player-lives">${heartsHTML}</div>
+                    <div class="player-lock" id="lock-${player.twitchId}">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    // Calculer l'angle de la mèche vers le joueur actif
+    const currentIndex = players.findIndex(p => p.twitchId === currentTwitchId);
+    let fuseAngle = 0;
+    if (currentIndex !== -1) {
+        const angle = (currentIndex / playerCount) * 2 * Math.PI - Math.PI / 2 + offsetAngle;
+        fuseAngle = (angle * 180 / Math.PI) + 90;
+    }
+    
+    // Bombe chibi au centre (sans texte)
+    const dangerClass = bombanimeState.timeRemaining <= 5 ? (bombanimeState.timeRemaining <= 2 ? 'critical' : 'danger') : '';
+    const bombHTML = `
+        <div class="bomb-container">
+            <div class="bomb ${dangerClass}" style="width: ${bombSize}px; height: ${bombSize}px; --bomb-size: ${bombSize}px;">
+                <div class="bomb-fuse-container" id="bombFuseContainer">
+                    <div class="bomb-cap"></div>
+                    <div class="bomb-fuse"></div>
+                    <div class="bomb-spark"></div>
+                </div>
+                <div class="bomb-body">
+                    <div class="bomb-highlight"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Le bouton Fermer le lobby est maintenant dans le panneau de logs
+    
+    container.innerHTML = `
+        <div class="players-circle" style="width: ${circleSize}px; height: ${circleSize}px; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);">
+            ${playersHTML}
+            ${bombHTML}
+        </div>
+    `;
+    
+    // Animer la rotation de la mèche (après insertion dans le DOM)
+    requestAnimationFrame(() => {
+        const fuseContainer = document.getElementById('bombFuseContainer');
+        if (fuseContainer) {
+            console.log('🔄 Rotation mèche vers:', fuseAngle, '° (currentTwitchId:', currentTwitchId, ')');
+            fuseContainer.style.transform = `rotate(${fuseAngle}deg)`;
+        }
+    });
+}
+
+// Mettre à jour le cercle (nouveau tour)
+function updateBombanimeCircle(data) {
+    bombanimeState.currentPlayerTwitchId = data.currentPlayerTwitchId;
+    bombanimeState.timeRemaining = data.timer;
+    
+    console.log('🔄 updateBombanimeCircle - Tour de:', data.currentPlayerUsername);
+    
+    // Redémarrer le timer visuel
+    if (bombanimeState.timerInterval) {
+        clearInterval(bombanimeState.timerInterval);
+    }
+    
+    // 🆕 Reset immédiat de la couleur de la bombe
+    updateBombDangerState();
+    
+    bombanimeState.timerInterval = setInterval(() => {
+        bombanimeState.timeRemaining--;
+        
+        // Mise à jour légère: juste les classes danger/critical
+        updateBombDangerState();
+        
+        if (bombanimeState.timeRemaining <= 0) {
+            clearInterval(bombanimeState.timerInterval);
+        }
+    }, 1000);
+    
+    // Mettre à jour le joueur actif et tourner la bombe
+    updateActivePlayer(data.currentPlayerTwitchId);
+    rotateBombToPlayer(data.currentPlayerTwitchId);
+    
+    // Clear uniquement le texte tapé du prochain joueur actif (pas les last-answer des autres)
+    const nextPlayerSlot = document.getElementById(`player-slot-${data.currentPlayerTwitchId}`);
+    if (nextPlayerSlot) {
+        const typingEl = nextPlayerSlot.querySelector('.player-typing');
+        if (typingEl) {
+            typingEl.textContent = '';
+            typingEl.classList.remove('has-text', 'last-answer');
+        }
+    }
+}
+
+// Mise à jour légère des classes danger
+function updateBombDangerState() {
+    const bomb = document.querySelector('.bomb');
+    if (!bomb) return;
+    
+    bomb.classList.remove('danger', 'critical');
+    if (bombanimeState.timeRemaining <= 2) {
+        bomb.classList.add('critical');
+    } else if (bombanimeState.timeRemaining <= 5) {
+        bomb.classList.add('danger');
+    }
+}
+
+// Mettre à jour le joueur actif (sans re-render)
+function updateActivePlayer(twitchId) {
+    // Enlever active de tous
+    document.querySelectorAll('.player-slot.active').forEach(el => el.classList.remove('active'));
+    // Ajouter active au nouveau joueur
+    const playerSlot = document.getElementById(`player-slot-${twitchId}`);
+    if (playerSlot) {
+        playerSlot.classList.add('active');
+    }
+}
+
+// Tourner la bombe vers un joueur avec animation
+function rotateBombToPlayer(twitchId) {
+    const players = bombanimeState.playersData;
+    const playerCount = players.length;
+    const currentIndex = players.findIndex(p => p.twitchId === twitchId);
+    
+    if (currentIndex === -1) return;
+    
+    const offsetAngle = Math.PI / playerCount;
+    const angle = (currentIndex / playerCount) * 2 * Math.PI - Math.PI / 2 + offsetAngle;
+    const fuseAngle = (angle * 180 / Math.PI) + 90;
+    
+    const fuseContainer = document.getElementById('bombFuseContainer');
+    if (fuseContainer) {
+        fuseContainer.style.transform = `rotate(${fuseAngle}deg)`;
+    }
+}
+
+// Nom accepté
+function onBombanimeNameAccepted(data) {
+    bombanimeState.playersData = data.playersData;
+    bombanimeState.lastValidName = data.name;
+    
+    // 🆕 Reset immédiat de la couleur de la bombe (gris)
+    const bomb = document.querySelector('.bomb');
+    if (bomb) {
+        bomb.classList.remove('danger', 'critical');
+    }
+    
+    // 🆕 Animation de succès sur le joueur qui a répondu
+    const playerSlot = document.getElementById(`player-slot-${data.playerTwitchId}`);
+    if (playerSlot) {
+        playerSlot.classList.add('success');
+        setTimeout(() => playerSlot.classList.remove('success'), 500);
+        
+        // Garder la dernière réponse visible (grisée)
+        let typingEl = playerSlot.querySelector('.player-typing');
+        if (typingEl) {
+            typingEl.textContent = data.name.toUpperCase();
+            typingEl.classList.remove('has-text');
+            typingEl.classList.add('last-answer');
+        }
+    }
+    
+    // Tourner la bombe IMMÉDIATEMENT vers le prochain joueur
+    if (data.nextPlayerTwitchId) {
+        bombanimeState.currentPlayerTwitchId = data.nextPlayerTwitchId;
+        updateActivePlayer(data.nextPlayerTwitchId);
+        rotateBombToPlayer(data.nextPlayerTwitchId);
+        
+        // Clear le texte tapé uniquement du prochain joueur actif
+        const nextPlayerSlot = document.getElementById(`player-slot-${data.nextPlayerTwitchId}`);
+        if (nextPlayerSlot) {
+            const nextTypingEl = nextPlayerSlot.querySelector('.player-typing');
+            if (nextTypingEl) {
+                nextTypingEl.textContent = '';
+                nextTypingEl.classList.remove('has-text', 'last-answer');
+            }
+        }
+    }
+    
+    console.log('✅ BombAnime: Nom accepté -', data.name, 'par', data.playerUsername);
+}
+
+// Nom rejeté
+function onBombanimeNameRejected(data) {
+    const playerSlot = document.getElementById(`player-slot-${data.playerTwitchId}`);
+    const lock = document.getElementById(`lock-${data.playerTwitchId}`);
+    
+    // Animation de shake sur le joueur (pour toutes les erreurs)
+    if (playerSlot) {
+        playerSlot.classList.add('shake-error');
+        setTimeout(() => playerSlot.classList.remove('shake-error'), 400);
+    }
+    
+    // Si c'est "already_used", afficher aussi le cadenas
+    if (data.reason === 'already_used' && lock) {
+        lock.classList.add('show');
+        setTimeout(() => lock.classList.remove('show'), 600);
+    }
+    
+    console.log('❌ BombAnime: Nom rejeté -', data.name, '-', data.reason);
+}
+
+// Explosion sur un joueur
+function onBombanimeExplosion(data) {
+    bombanimeState.playersData = data.playersData;
+    
+    if (bombanimeState.timerInterval) {
+        clearInterval(bombanimeState.timerInterval);
+    }
+    
+    // 🆕 Garder la tentative de réponse du joueur qui explose (grisée)
+    const playerSlotForTyping = document.getElementById(`player-slot-${data.playerTwitchId}`);
+    if (playerSlotForTyping) {
+        const typingEl = playerSlotForTyping.querySelector('.player-typing');
+        if (typingEl && typingEl.textContent) {
+            // Garder le texte actuel et le griser
+            typingEl.classList.remove('has-text');
+            typingEl.classList.add('last-answer');
+        }
+    }
+    
+    // Délai pour synchroniser avec l'affichage
+    setTimeout(() => {
+        // Animation d'explosion sur le joueur
+        const playerSlot = document.getElementById(`player-slot-${data.playerTwitchId}`);
+        if (playerSlot) {
+            playerSlot.classList.add('exploding');
+            
+            // Animer la perte de vie (coeur qui disparaît)
+            const lives = playerSlot.querySelectorAll('.player-life:not(.lost)');
+            if (lives.length > 0) {
+                const lastHeart = lives[lives.length - 1];
+                lastHeart.classList.add('lost');
+            }
+            
+            setTimeout(() => {
+                playerSlot.classList.remove('exploding');
+                
+                // Si le joueur est éliminé
+                if (data.livesRemaining <= 0) {
+                    playerSlot.classList.add('eliminated');
+                }
+            }, 250);
+        }
+        
+        // Animation de la bombe (shake)
+        const bomb = document.querySelector('.bomb');
+        if (bomb) {
+            bomb.classList.add('exploding');
+            setTimeout(() => bomb.classList.remove('exploding'), 250);
+        }
+    }, 50); // Délai minimal
+    
+    console.log('💥 BombAnime: Explosion sur', data.playerUsername, '- Vies restantes:', data.livesRemaining);
+}
+
+// Alphabet complet
+function onBombanimeAlphabetComplete(data) {
+    const player = bombanimeState.playersData.find(p => p.twitchId === data.playerTwitchId);
+    if (player) {
+        player.lives = data.newLives;
+    }
+    
+    // Animer le gain de vie
+    const playerSlot = document.getElementById(`player-slot-${data.playerTwitchId}`);
+    if (playerSlot) {
+        // Réactiver un coeur perdu
+        const lostHearts = playerSlot.querySelectorAll('.player-life.lost');
+        if (lostHearts.length > 0) {
+            lostHearts[0].classList.remove('lost');
+        }
+        
+        // Animation de succès
+        playerSlot.classList.add('alphabet-complete');
+        setTimeout(() => playerSlot.classList.remove('alphabet-complete'), 1000);
+    }
+    
+    console.log('🎉 BombAnime: Alphabet complet -', data.playerUsername, '+1 vie');
+}
+
+// Afficher le gagnant BombAnime
+function displayBombanimeWinner(data) {
+    if (bombanimeState.timerInterval) {
+        clearInterval(bombanimeState.timerInterval);
+    }
+    
+    // 🆕 Sauvegarder les données du winner pour restauration au refresh
+    sessionStorage.setItem('bombanimeWinnerData', JSON.stringify({
+        winner: data.winner,
+        namesUsed: data.namesUsed,
+        duration: data.duration
+    }));
+    
+    // 🆕 Cacher l'écran winner classique s'il est visible
+    const classicWinnerOverlay = document.getElementById('winnerOverlay');
+    if (classicWinnerOverlay) {
+        classicWinnerOverlay.classList.remove('active');
+        classicWinnerOverlay.style.display = 'none';
+    }
+    
+    const bombanimeContainer = document.getElementById('bombanimeAdminContainer');
+    if (bombanimeContainer) {
+        bombanimeContainer.style.display = 'none';
+    }
+    
+    // Créer l'écran winner BombAnime
+    let winnerOverlay = document.getElementById('bombanimeWinnerOverlay');
+    if (!winnerOverlay) {
+        winnerOverlay = document.createElement('div');
+        winnerOverlay.id = 'bombanimeWinnerOverlay';
+        winnerOverlay.className = 'bombanime-winner-overlay';
+        document.body.appendChild(winnerOverlay);
+    }
+    
+    const winnerName = data.winner ? data.winner.username : 'Aucun gagnant';
+    
+    winnerOverlay.innerHTML = `
+        <div class="bombanime-winner-content">
+            <div class="bombanime-winner-crown">
+                <svg viewBox="0 0 64 64">
+                    <path d="M32 8L40 24L56 20L48 40H16L8 20L24 24L32 8Z"/>
+                    <rect x="14" y="40" width="36" height="8" rx="2"/>
+                </svg>
+            </div>
+            
+            <div class="bombanime-winner-label">VAINQUEUR</div>
+            <div class="bombanime-winner-name">${winnerName}</div>
+            
+            <div class="bombanime-winner-stats">
+                <div class="bombanime-winner-stat">
+                    <div class="bombanime-winner-stat-value">${data.namesUsed || 0}</div>
+                    <div class="bombanime-winner-stat-label">Personnages</div>
+                </div>
+                <div class="bombanime-winner-stat">
+                    <div class="bombanime-winner-stat-value">${formatDuration(data.duration)}</div>
+                    <div class="bombanime-winner-stat-label">Temps de jeu</div>
+                </div>
+            </div>
+            
+            <button class="bombanime-winner-close-btn" onclick="closeBombanimeWinner()">
+                <span>Fermer le lobby</span>
+            </button>
+        </div>
+    `;
+    
+    // Afficher avec animation séquentielle
+    requestAnimationFrame(() => {
+        winnerOverlay.classList.add('active');
+    });
+}
+
+// Fermer l'écran winner BombAnime et fermer le lobby
+async function closeBombanimeWinner() {
+    // 🆕 Supprimer les données du winner du sessionStorage
+    sessionStorage.removeItem('bombanimeWinnerData');
+    
+    const winnerOverlay = document.getElementById('bombanimeWinnerOverlay');
+    if (winnerOverlay) {
+        winnerOverlay.classList.remove('active');
+        setTimeout(() => {
+            winnerOverlay.remove();
+        }, 500);
+    }
+    
+    // Cacher le container BombAnime
+    const bombanimeContainer = document.getElementById('bombanimeAdminContainer');
+    if (bombanimeContainer) bombanimeContainer.style.display = 'none';
+    
+    // Cacher le bouton fermer BombAnime
+    const bombanimeCloseBtn = document.getElementById('bombanimeCloseLobbyBtn');
+    if (bombanimeCloseBtn) bombanimeCloseBtn.style.display = 'none';
+    
+    try {
+        // Fermer le lobby via l'API
+        await fetch('/admin/toggle-game', {
+            method: 'POST',
+            credentials: 'same-origin'
+        });
+        
+        // Retour à l'état idle
+        returnToIdle();
+        
+    } catch (error) {
+        console.error('❌ Erreur fermeture lobby:', error);
+        // En cas d'erreur, retourner quand même à l'idle
+        returnToIdle();
+    }
+}
+
+// 🆕 Fonction pour fermer le lobby BombAnime et retourner à l'idle
+async function closeLobby() {
+    const confirmed = await showConfirmModal();
+    if (!confirmed) return;
+    
+    try {
+        // Fermer le lobby BombAnime (endpoint spécifique)
+        await fetch('/admin/bombanime/close-lobby', {
+            method: 'POST',
+            credentials: 'same-origin'
+        });
+        
+        // Nettoyer le sessionStorage
+        sessionStorage.removeItem('bombanimeWinnerData');
+        
+        // Cacher l'overlay winner si présent
+        const winnerOverlay = document.getElementById('bombanimeWinnerOverlay');
+        if (winnerOverlay) {
+            winnerOverlay.remove();
+        }
+        
+        // Cacher le container BombAnime
+        const bombanimeContainer = document.getElementById('bombanimeAdminContainer');
+        if (bombanimeContainer) {
+            bombanimeContainer.style.display = 'none';
+        }
+        
+        // Cacher le bouton fermer BombAnime
+        const bombanimeCloseBtn = document.getElementById('bombanimeCloseLobbyBtn');
+        if (bombanimeCloseBtn) bombanimeCloseBtn.style.display = 'none';
+        
+        // Cacher le panneau de logs
+        const logsPanel = document.getElementById('bombanimeLogsPanel');
+        if (logsPanel) logsPanel.style.display = 'none';
+        
+        // Retour à l'état idle
+        returnToIdle();
+        
+    } catch (error) {
+        console.error('❌ Erreur fermeture lobby BombAnime:', error);
+    }
+}
+
+// Formater la durée
+function formatDuration(seconds) {
+    if (!seconds) return '0s';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    if (mins > 0) {
+        return `${mins}m ${secs}s`;
+    }
+    return `${secs}s`;
+}
+
+// 🆕 TEMPORAIRE: Ajouter un joueur fictif pour les tests
+function addFakePlayer() {
+    if (socket && socket.connected) {
+        socket.emit('bombanime-add-fake-player');
+        console.log('🤖 Demande d\'ajout de joueur fictif envoyée');
+    } else {
+        console.error('❌ Socket non connecté');
+    }
+}
+
+// Raccourci clavier: Appuyer sur "F" pour ajouter un fake player (mode BombAnime uniquement)
+// DÉSACTIVÉ - Bots désactivés
+/*
+document.addEventListener('keydown', (e) => {
+    // Ignorer si on est dans un input
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    
+    // Touche F pour ajouter un fake player
+    if (e.key === 'f' || e.key === 'F') {
+        if (currentGameMode === 'bombanime') {
+            addFakePlayer();
+        }
+    }
+});
+*/

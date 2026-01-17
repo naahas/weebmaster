@@ -236,6 +236,11 @@ body {
     animation: fadeInUp 0.8s ease;
 }
 
+/* Désactiver l'animation pour BombAnime (le transform crée un containing block qui casse position:fixed) */
+.content-section.no-animation {
+    animation: none;
+}
+
 .game-section {
     max-width: 62.5rem;
     width: 100%;
@@ -280,7 +285,7 @@ body {
 
 .info-card h2,
 .lobby-card h2 {
-    font-size: 1.3rem;
+    font-size: 1.1rem;
     margin-bottom: 0.75rem;
     background: linear-gradient(135deg, var(--neon-primary), var(--neon-secondary));
     -webkit-background-clip: text;
@@ -306,7 +311,8 @@ body {
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 1.5rem; /* Augmenter */
+    margin-bottom: 1.5rem;
+    /* Augmenter */
     text-align: left;
 }
 
@@ -335,8 +341,10 @@ body {
 
 .separator {
     height: 2px;
-    width: 50%; /* Ajouter */
-    margin: 0 auto 1.25rem; /* Modifier */
+    width: 50%;
+    /* Ajouter */
+    margin: 0 auto 1.25rem;
+    /* Modifier */
     background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.3), transparent);
 }
 
@@ -434,8 +442,13 @@ body {
     pointer-events: none;
 }
 
-.rivalry-team-card.team-blue::after { border-color: rgba(59, 130, 246, 0.5); }
-.rivalry-team-card.team-gold::after { border-color: rgba(240, 192, 64, 0.5); }
+.rivalry-team-card.team-blue::after {
+    border-color: rgba(59, 130, 246, 0.5);
+}
+
+.rivalry-team-card.team-gold::after {
+    border-color: rgba(240, 192, 64, 0.5);
+}
 
 /* Hover state */
 .rivalry-team-card:not(.disabled):hover::after {
@@ -502,8 +515,13 @@ body {
     transition: all 0.3s ease;
 }
 
-.rivalry-team-card.team-blue .rivalry-team-icon { color: #60a5fa; }
-.rivalry-team-card.team-gold .rivalry-team-icon { color: #fcd34d; }
+.rivalry-team-card.team-blue .rivalry-team-icon {
+    color: #60a5fa;
+}
+
+.rivalry-team-card.team-gold .rivalry-team-icon {
+    color: #fcd34d;
+}
 
 /* Team name */
 .rivalry-team-name {
@@ -515,8 +533,13 @@ body {
     transition: all 0.3s ease;
 }
 
-.rivalry-team-card.team-blue .rivalry-team-name { color: #60a5fa; }
-.rivalry-team-card.team-gold .rivalry-team-name { color: #fcd34d; }
+.rivalry-team-card.team-blue .rivalry-team-name {
+    color: #60a5fa;
+}
+
+.rivalry-team-card.team-gold .rivalry-team-name {
+    color: #fcd34d;
+}
 
 /* Team count */
 .rivalry-team-count {
@@ -531,36 +554,36 @@ body {
         padding: 1.5rem 1rem;
         margin: 0 1rem 1rem;
     }
-    
+
     .rivalry-modal-title {
         font-size: 0.85rem;
         letter-spacing: 2px;
     }
-    
+
     .rivalry-modal-subtitle {
         font-size: 0.5rem;
         margin-bottom: 1.25rem;
     }
-    
+
     .rivalry-teams {
         gap: 0.75rem;
     }
-    
+
     .rivalry-team-card {
         max-width: 120px;
         padding: 1.2rem 0.75rem;
     }
-    
+
     .rivalry-team-icon {
         width: 32px;
         height: 32px;
         margin-bottom: 0.6rem;
     }
-    
+
     .rivalry-team-name {
         font-size: 0.75rem;
     }
-    
+
     .rivalry-team-count {
         font-size: 0.5rem;
     }
@@ -670,8 +693,13 @@ body {
     margin-bottom: 0.2rem;
 }
 
-.team-card.team-blue .team-name { color: #60a5fa; }
-.team-card.team-gold .team-name { color: #f0c040; }
+.team-card.team-blue .team-name {
+    color: #60a5fa;
+}
+
+.team-card.team-gold .team-name {
+    color: #f0c040;
+}
 
 .team-card .team-count {
     font-size: 0.6rem;
@@ -875,17 +903,17 @@ body {
 }
 
 /* Forcer les items latéraux à avoir la même largeur pour centrer le milieu */
-.player-hud > .hud-item:first-child,
-.player-hud > .hud-item:last-child {
+.player-hud>.hud-item:first-child,
+.player-hud>.hud-item:last-child {
     flex: 1;
     min-width: 0;
 }
 
-.player-hud > .hud-item:first-child {
+.player-hud>.hud-item:first-child {
     align-items: flex-start;
 }
 
-.player-hud > .hud-item:last-child {
+.player-hud>.hud-item:last-child {
     align-items: flex-end;
 }
 
@@ -2973,7 +3001,7 @@ body {
     }
 
     /* Bouton déconnexion avec même marge que les cartes */
-    .content-section > .btn-secondary {
+    .content-section>.btn-secondary {
         margin-left: 1.25rem;
         margin-right: 1.25rem;
         width: calc(100% - 2.5rem);
@@ -3445,7 +3473,7 @@ body {
         left: 50%;
         transform: translateX(-50%) translateY(20px);
     }
-    
+
     .kick-notification.show {
         transform: translateX(-50%) translateY(0);
     }
@@ -6445,14 +6473,16 @@ body {
     color: var(--neon-primary);
     margin-bottom: 0.75rem;
     font-weight: 600;
-    text-align: center; /* Centré */
+    text-align: center;
+    /* Centré */
 }
 
 .streamers-list {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    padding: 0.5rem; /* Padding autour des streamers */
+    padding: 0.5rem;
+    /* Padding autour des streamers */
     background: rgba(255, 255, 255, 0.02);
     border-radius: 0.5rem;
 }
@@ -6652,9 +6682,11 @@ body {
     0% {
         box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7);
     }
+
     50% {
         box-shadow: 0 0 0 8px rgba(255, 0, 0, 0);
     }
+
     100% {
         box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
     }
@@ -6718,15 +6750,17 @@ body {
 }
 
 @keyframes katanaSlash {
-    0% { 
+    0% {
         transform: translateX(-100%) scaleX(0.5);
         opacity: 0;
     }
-    50% { 
+
+    50% {
         transform: translateX(0) scaleX(1);
         opacity: 1;
     }
-    100% { 
+
+    100% {
         transform: translateX(100%) scaleX(0.5);
         opacity: 0;
     }
@@ -6765,7 +6799,7 @@ body {
     border: 1px solid rgba(255, 215, 0, 0.2);
     border-radius: 1.5rem;
     padding: 2rem;
-    box-shadow: 
+    box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.4),
         inset 0 1px 0 rgba(255, 215, 0, 0.1);
     position: relative;
@@ -6780,36 +6814,36 @@ body {
     pointer-events: none;
 }
 
-.corner-tl { 
-    top: 10px; 
-    left: 10px; 
-    border-right: none; 
-    border-bottom: none; 
-    border-radius: 8px 0 0 0; 
+.corner-tl {
+    top: 10px;
+    left: 10px;
+    border-right: none;
+    border-bottom: none;
+    border-radius: 8px 0 0 0;
 }
 
-.corner-tr { 
-    top: 10px; 
-    right: 10px; 
-    border-left: none; 
-    border-bottom: none; 
-    border-radius: 0 8px 0 0; 
+.corner-tr {
+    top: 10px;
+    right: 10px;
+    border-left: none;
+    border-bottom: none;
+    border-radius: 0 8px 0 0;
 }
 
-.corner-bl { 
-    bottom: 10px; 
-    left: 10px; 
-    border-right: none; 
-    border-top: none; 
-    border-radius: 0 0 0 8px; 
+.corner-bl {
+    bottom: 10px;
+    left: 10px;
+    border-right: none;
+    border-top: none;
+    border-radius: 0 0 0 8px;
 }
 
-.corner-br { 
-    bottom: 10px; 
-    right: 10px; 
-    border-left: none; 
-    border-top: none; 
-    border-radius: 0 0 8px 0; 
+.corner-br {
+    bottom: 10px;
+    right: 10px;
+    border-left: none;
+    border-top: none;
+    border-radius: 0 0 8px 0;
 }
 
 /* Mobile - Info card margins */
@@ -6820,49 +6854,49 @@ body {
         max-width: calc(100% - 3rem);
         padding: 1.25rem 1rem;
     }
-    
+
     .info-card h2 {
         font-size: 1rem;
         margin-bottom: 0.5rem;
     }
-    
+
     .info-card p {
         font-size: 0.75rem;
     }
-    
+
     .user-welcome {
         gap: 0.5rem;
         margin-bottom: 0.75rem;
     }
-    
+
     .avatar-icon {
         width: 2rem;
         height: 2rem;
         font-size: 1rem;
     }
-    
+
     .welcome-text {
         font-size: 0.65rem;
     }
-    
+
     .username {
         font-size: 0.9rem;
     }
-    
-    .content-section > .btn-secondary {
+
+    .content-section>.btn-secondary {
         margin-left: 1.5rem;
         margin-right: 1.5rem;
         width: calc(100% - 3rem);
         padding: 0.6rem 1rem;
         font-size: 0.8rem;
     }
-    
+
     /* Corner decorations smaller */
     .corner-decoration {
         width: 25px;
         height: 25px;
     }
-    
+
     .lobby-card .corner-decoration {
         width: 25px;
         height: 25px;
@@ -6879,7 +6913,7 @@ body {
     border: 1px solid rgba(255, 215, 0, 0.2);
     border-radius: 1.5rem;
     padding: 2rem;
-    box-shadow: 
+    box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.4),
         inset 0 1px 0 rgba(255, 215, 0, 0.1);
     position: relative;
@@ -6895,13 +6929,40 @@ body {
     pointer-events: none;
 }
 
-.lobby-card .corner-tl { top: 10px; left: 10px; border-right: none; border-bottom: none; border-radius: 8px 0 0 0; }
-.lobby-card .corner-tr { top: 10px; right: 10px; border-left: none; border-bottom: none; border-radius: 0 8px 0 0; }
-.lobby-card .corner-bl { bottom: 10px; left: 10px; border-right: none; border-top: none; border-radius: 0 0 0 8px; }
-.lobby-card .corner-br { bottom: 10px; right: 10px; border-left: none; border-top: none; border-radius: 0 0 8px 0; }
+.lobby-card .corner-tl {
+    top: 10px;
+    left: 10px;
+    border-right: none;
+    border-bottom: none;
+    border-radius: 8px 0 0 0;
+}
+
+.lobby-card .corner-tr {
+    top: 10px;
+    right: 10px;
+    border-left: none;
+    border-bottom: none;
+    border-radius: 0 8px 0 0;
+}
+
+.lobby-card .corner-bl {
+    bottom: 10px;
+    left: 10px;
+    border-right: none;
+    border-top: none;
+    border-radius: 0 0 0 8px;
+}
+
+.lobby-card .corner-br {
+    bottom: 10px;
+    right: 10px;
+    border-left: none;
+    border-top: none;
+    border-radius: 0 0 8px 0;
+}
 
 .lobby-card h2 {
-    font-size: 1.4rem;
+    font-size: 1.15rem;
     font-weight: 700;
     text-align: center;
     margin-bottom: 1.5rem;
@@ -6919,45 +6980,45 @@ body {
         max-width: calc(100% - 3rem);
         padding: 1.25rem 1rem;
     }
-    
+
     .lobby-card h2 {
         font-size: 0.85rem;
         margin-bottom: 0.875rem;
         font-weight: 600;
     }
-    
+
     .players-box {
         padding: 0.6rem 1.25rem;
         margin-bottom: 0.875rem;
     }
-    
+
     .players-count {
         font-size: 1.3rem;
     }
-    
+
     .players-icon {
         width: 1.5rem;
         height: 1.5rem;
     }
-    
+
     .lobby-card .btn-primary {
         padding: 0.55rem 1rem;
         font-size: 0.75rem;
     }
-    
+
     .lobby-card .corner-decoration {
         width: 22px;
         height: 22px;
     }
-    
-    .content-section > .btn-secondary {
+
+    .content-section>.btn-secondary {
         margin-left: 1.5rem;
         margin-right: 1.5rem;
         width: calc(100% - 3rem);
         padding: 0.55rem 1rem;
         font-size: 0.75rem;
     }
-    
+
     /* Badge EN LIVE */
     .live-badge {
         padding: 0.15rem 0.5rem;
@@ -6966,7 +7027,7 @@ body {
         border-radius: 0.5rem;
         margin-top: 0.5rem;
     }
-    
+
     .pulse-dot {
         width: 0.25rem;
         height: 0.25rem;
@@ -7046,7 +7107,7 @@ body.modal-open {
     border: 1px solid rgba(255, 215, 0, 0.2);
     border-radius: 1.5rem;
     overflow: hidden;
-    box-shadow: 
+    box-shadow:
         0 0 0 1px rgba(255, 215, 0, 0.1),
         0 25px 50px rgba(0, 0, 0, 0.5),
         0 0 100px rgba(255, 215, 0, 0.1);
@@ -7077,10 +7138,37 @@ body.modal-open {
     height: 30px;
 }
 
-.profile-modal .corner-tl { top: 8px; left: 8px; border-right: none; border-bottom: none; border-radius: 6px 0 0 0; }
-.profile-modal .corner-tr { top: 8px; right: 8px; border-left: none; border-bottom: none; border-radius: 0 6px 0 0; }
-.profile-modal .corner-bl { bottom: 8px; left: 8px; border-right: none; border-top: none; border-radius: 0 0 0 6px; }
-.profile-modal .corner-br { bottom: 8px; right: 8px; border-left: none; border-top: none; border-radius: 0 0 6px 0; }
+.profile-modal .corner-tl {
+    top: 8px;
+    left: 8px;
+    border-right: none;
+    border-bottom: none;
+    border-radius: 6px 0 0 0;
+}
+
+.profile-modal .corner-tr {
+    top: 8px;
+    right: 8px;
+    border-left: none;
+    border-bottom: none;
+    border-radius: 0 6px 0 0;
+}
+
+.profile-modal .corner-bl {
+    bottom: 8px;
+    left: 8px;
+    border-right: none;
+    border-top: none;
+    border-radius: 0 0 0 6px;
+}
+
+.profile-modal .corner-br {
+    bottom: 8px;
+    right: 8px;
+    border-left: none;
+    border-top: none;
+    border-radius: 0 0 6px 0;
+}
 
 /* Scan line effect */
 .profile-scan-line {
@@ -7155,12 +7243,10 @@ body.modal-open {
     right: -3px;
     bottom: -3px;
     border-radius: 50%;
-    background: conic-gradient(
-        from 0deg,
-        var(--neon-primary),
-        var(--neon-secondary),
-        var(--neon-primary)
-    );
+    background: conic-gradient(from 0deg,
+            var(--neon-primary),
+            var(--neon-secondary),
+            var(--neon-primary));
     animation: profileAvatarRingSpin 4s linear infinite;
     opacity: 0.8;
 }
@@ -7177,8 +7263,13 @@ body.modal-open {
 }
 
 @keyframes profileAvatarRingSpin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Image Avatar */
@@ -7314,9 +7405,17 @@ body.modal-open {
     transform: translateY(0);
 }
 
-.profile-overlay.active .profile-tab-btn:nth-child(1) { transition-delay: 0.25s; }
-.profile-overlay.active .profile-tab-btn:nth-child(2) { transition-delay: 0.30s; }
-.profile-overlay.active .profile-tab-btn:nth-child(3) { transition-delay: 0.35s; }
+.profile-overlay.active .profile-tab-btn:nth-child(1) {
+    transition-delay: 0.25s;
+}
+
+.profile-overlay.active .profile-tab-btn:nth-child(2) {
+    transition-delay: 0.30s;
+}
+
+.profile-overlay.active .profile-tab-btn:nth-child(3) {
+    transition-delay: 0.35s;
+}
 
 .profile-tab-btn:hover {
     color: var(--text-primary);
@@ -7384,7 +7483,9 @@ body.modal-open {
 }
 
 @keyframes profileRotateBg {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .profile-title-label {
@@ -7567,8 +7668,15 @@ body.modal-open {
 }
 
 @keyframes profileBadgePulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4); }
-    50% { box-shadow: 0 0 15px 5px rgba(255, 215, 0, 0.2); }
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 15px 5px rgba(255, 215, 0, 0.2);
+    }
 }
 
 .profile-lock-symbol {
@@ -7594,18 +7702,21 @@ body.modal-open {
     left: -50%;
     width: 200%;
     height: 200%;
-    background: linear-gradient(
-        45deg,
-        transparent 40%,
-        rgba(255, 255, 255, 0.1) 50%,
-        transparent 60%
-    );
+    background: linear-gradient(45deg,
+            transparent 40%,
+            rgba(255, 255, 255, 0.1) 50%,
+            transparent 60%);
     animation: profileBadgeShine 3s ease-in-out infinite;
 }
 
 @keyframes profileBadgeShine {
-    0% { transform: translateX(-100%) rotate(45deg); }
-    100% { transform: translateX(100%) rotate(45deg); }
+    0% {
+        transform: translateX(-100%) rotate(45deg);
+    }
+
+    100% {
+        transform: translateX(100%) rotate(45deg);
+    }
 }
 
 /* ===== TAB TITRES ===== */
@@ -7710,8 +7821,15 @@ body.modal-open {
 }
 
 @keyframes profileCheckBounce {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.3); }
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.3);
+    }
 }
 
 .profile-status-badge.locked {
@@ -7754,11 +7872,17 @@ body.modal-open {
 }
 
 @keyframes profileToastIn {
-    to { transform: translateX(-50%) translateY(0); opacity: 1; }
+    to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
 }
 
 @keyframes profileToastOut {
-    to { transform: translateX(-50%) translateY(100px); opacity: 0; }
+    to {
+        transform: translateX(-50%) translateY(100px);
+        opacity: 0;
+    }
 }
 
 /* ===== RESPONSIVE ===== */
@@ -7836,20 +7960,20 @@ body.modal-open {
         width: 42px;
         height: 42px;
     }
-    
+
     .profile-avatar-default svg {
         width: 22px;
         height: 22px;
     }
-    
+
     .profile-username {
         font-size: 1.15rem;
     }
-    
+
     .profile-user-info {
         gap: 0.75rem;
     }
-    
+
     .profile-header {
         padding: 1.25rem;
     }
@@ -7885,12 +8009,10 @@ body.modal-open {
     right: -4px;
     bottom: -4px;
     border-radius: 50%;
-    background: conic-gradient(
-        from 0deg,
-        var(--neon-primary),
-        var(--neon-secondary),
-        var(--neon-primary)
-    );
+    background: conic-gradient(from 0deg,
+            var(--neon-primary),
+            var(--neon-secondary),
+            var(--neon-primary));
     animation: profileAvatarRingSpin 4s linear infinite;
     opacity: 0.9;
 }
@@ -8108,9 +8230,17 @@ body.modal-open {
 }
 
 @keyframes profileAvatarBadgePop {
-    0% { transform: scale(0); }
-    50% { transform: scale(1.3); }
-    100% { transform: scale(1); }
+    0% {
+        transform: scale(0);
+    }
+
+    50% {
+        transform: scale(1.3);
+    }
+
+    100% {
+        transform: scale(1);
+    }
 }
 
 /* ===== CADENAS ===== */
@@ -8134,21 +8264,21 @@ body.modal-open {
         grid-template-columns: repeat(3, 1fr);
         gap: 0.5rem;
     }
-    
+
     .profile-avatar-option {
         padding: 0.5rem;
     }
-    
+
     .profile-avatar-option-img {
         width: 42px;
         height: 42px;
     }
-    
+
     .profile-avatar-preview {
         width: 75px;
         height: 75px;
     }
-    
+
     .profile-avatar-default-large svg {
         width: 38px;
         height: 38px;
@@ -8160,6 +8290,7 @@ body.modal-open {
         grid-template-columns: repeat(3, 1fr);
     }
 }
+
 /* ============================================
    🆕 NOUVEAU PODIUM DESIGN - WINNER SCREEN
    ============================================ */
@@ -8201,10 +8332,23 @@ body.modal-open {
 }
 
 @keyframes winnerFloatUp {
-    0% { opacity: 0; transform: translateY(100vh) scale(1); }
-    10% { opacity: 0.7; }
-    90% { opacity: 0.5; }
-    100% { opacity: 0; transform: translateY(-10vh) scale(0.5); }
+    0% {
+        opacity: 0;
+        transform: translateY(100vh) scale(1);
+    }
+
+    10% {
+        opacity: 0.7;
+    }
+
+    90% {
+        opacity: 0.5;
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-10vh) scale(0.5);
+    }
 }
 
 /* Explosions de fond */
@@ -8231,8 +8375,15 @@ body.modal-open {
 }
 
 @keyframes bgExplodeParticle {
-    0% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
-    100% { opacity: 0; transform: translate(var(--ex), var(--ey)) scale(0); }
+    0% {
+        opacity: 0.8;
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(var(--ex), var(--ey)) scale(0);
+    }
 }
 
 /* Podium */
@@ -8273,8 +8424,15 @@ body.modal-open {
 }
 
 @keyframes fadeInUp {
-    0% { opacity: 0; transform: translateY(20px); }
-    100% { opacity: 1; transform: translateY(0); }
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .podium-place {
@@ -8284,13 +8442,28 @@ body.modal-open {
     opacity: 0;
 }
 
-.podium-place.third { animation: podiumRiseUp 0.6s ease-out 0.3s forwards; }
-.podium-place.second { animation: podiumRiseUp 0.6s ease-out 1.3s forwards; }
-.podium-place.first { animation: podiumRiseUp 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 2.3s forwards; }
+.podium-place.third {
+    animation: podiumRiseUp 0.6s ease-out 0.3s forwards;
+}
+
+.podium-place.second {
+    animation: podiumRiseUp 0.6s ease-out 1.3s forwards;
+}
+
+.podium-place.first {
+    animation: podiumRiseUp 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 2.3s forwards;
+}
 
 @keyframes podiumRiseUp {
-    0% { opacity: 0; transform: translateY(50px) scale(0.9); }
-    100% { opacity: 1; transform: translateY(0) scale(1); }
+    0% {
+        opacity: 0;
+        transform: translateY(50px) scale(0.9);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 /* Médailles */
@@ -8303,9 +8476,15 @@ body.modal-open {
     animation: medalAppear 0.5s ease-out forwards;
 }
 
-.podium-place.third .podium-medal { animation-delay: 0.3s; }
-.podium-place.second .podium-medal { animation-delay: 1.3s; }
-.podium-place.first .podium-medal { 
+.podium-place.third .podium-medal {
+    animation-delay: 0.3s;
+}
+
+.podium-place.second .podium-medal {
+    animation-delay: 1.3s;
+}
+
+.podium-place.first .podium-medal {
     width: clamp(3rem, 5vw, 4rem);
     height: clamp(3rem, 5vw, 4rem);
     filter: drop-shadow(0 4px 15px rgba(240, 200, 80, 0.4));
@@ -8313,8 +8492,15 @@ body.modal-open {
 }
 
 @keyframes medalAppear {
-    0% { opacity: 0; transform: scale(0.5) translateY(-20px); }
-    100% { opacity: 1; transform: scale(1) translateY(0); }
+    0% {
+        opacity: 0;
+        transform: scale(0.5) translateY(-20px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
 /* Cartes */
@@ -8358,7 +8544,7 @@ body.modal-open {
     padding: clamp(1.5rem, 2.5vw, 2.75rem) clamp(1.25rem, 2.5vw, 2.75rem);
     background: linear-gradient(135deg, rgba(240, 200, 80, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
     border-color: rgba(240, 200, 80, 0.2);
-    box-shadow: 
+    box-shadow:
         0 25px 50px -12px rgba(240, 200, 80, 0.15),
         inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
@@ -8368,7 +8554,7 @@ body.modal-open {
 }
 
 .podium-place.first .podium-card:hover {
-    box-shadow: 
+    box-shadow:
         0 30px 60px -12px rgba(240, 200, 80, 0.25),
         inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
@@ -8405,9 +8591,21 @@ body.modal-open {
 }
 
 @keyframes podiumBurstExpand {
-    0% { width: 0; height: 0; opacity: 1; }
-    50% { opacity: 0.8; }
-    100% { width: 400px; height: 400px; opacity: 0; }
+    0% {
+        width: 0;
+        height: 0;
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.8;
+    }
+
+    100% {
+        width: 400px;
+        height: 400px;
+        opacity: 0;
+    }
 }
 
 /* Particle burst container */
@@ -8429,8 +8627,15 @@ body.modal-open {
 }
 
 @keyframes winnerBurstAnim {
-    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); }
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(var(--tx), var(--ty)) scale(0);
+    }
 }
 
 /* Winner content (revealed after burst) */
@@ -8440,8 +8645,15 @@ body.modal-open {
 }
 
 @keyframes winnerContentReveal {
-    0% { opacity: 0; transform: scale(0.9); }
-    100% { opacity: 1; transform: scale(1); }
+    0% {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 /* Couronne */
@@ -8460,8 +8672,15 @@ body.modal-open {
 }
 
 @keyframes crownRevealAnim {
-    0% { opacity: 0; transform: scale(0.5) translateY(-10px); }
-    100% { opacity: 1; transform: scale(1) translateY(0); }
+    0% {
+        opacity: 0;
+        transform: scale(0.5) translateY(-10px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
 /* Nom du joueur */
@@ -8485,8 +8704,15 @@ body.modal-open {
 }
 
 @keyframes textShineAnim {
-    0%, 100% { background-position: 0% center; }
-    50% { background-position: 200% center; }
+
+    0%,
+    100% {
+        background-position: 0% center;
+    }
+
+    50% {
+        background-position: 200% center;
+    }
 }
 
 /* Stats Grid */
@@ -8607,7 +8833,9 @@ body.modal-open {
 }
 
 @keyframes fadeInAnim {
-    to { opacity: 1; }
+    to {
+        opacity: 1;
+    }
 }
 
 .your-rank-position {
@@ -8707,156 +8935,491 @@ body.modal-open {
    ============================================ */
 
 @media (max-width: 750px) {
-    .winner-podium { gap: 1rem; }
-    .podium-card { 
-        min-width: 9rem; 
+    .winner-podium {
+        gap: 1rem;
+    }
+
+    .podium-card {
+        min-width: 9rem;
         padding: 1.5rem 1.25rem;
     }
-    .podium-place.first .podium-card { 
-        min-width: 11rem; 
-        padding: 1.75rem 1.5rem; 
+
+    .podium-place.first .podium-card {
+        min-width: 11rem;
+        padding: 1.75rem 1.5rem;
     }
-    .podium-player-name { font-size: 0.95rem; }
-    .podium-place.first .podium-player-name { font-size: 1.1rem; }
-    .podium-medal { width: 2.75rem; height: 2.75rem; }
-    .podium-place.first .podium-medal { width: 3.25rem; height: 3.25rem; }
-    .podium-crown { width: 2.125rem; height: 2.125rem; }
-    .podium-stat-val { font-size: 1rem; }
-    .podium-place.first .podium-stat-val { font-size: 1.1rem; }
-    .podium-place.first .podium-step { height: 4.375rem; }
-    .podium-place.second .podium-step { height: 2.8rem; }
-    .podium-place.third .podium-step { height: 1.75rem; }
+
+    .podium-player-name {
+        font-size: 0.95rem;
+    }
+
+    .podium-place.first .podium-player-name {
+        font-size: 1.1rem;
+    }
+
+    .podium-medal {
+        width: 2.75rem;
+        height: 2.75rem;
+    }
+
+    .podium-place.first .podium-medal {
+        width: 3.25rem;
+        height: 3.25rem;
+    }
+
+    .podium-crown {
+        width: 2.125rem;
+        height: 2.125rem;
+    }
+
+    .podium-stat-val {
+        font-size: 1rem;
+    }
+
+    .podium-place.first .podium-stat-val {
+        font-size: 1.1rem;
+    }
+
+    .podium-place.first .podium-step {
+        height: 4.375rem;
+    }
+
+    .podium-place.second .podium-step {
+        height: 2.8rem;
+    }
+
+    .podium-place.third .podium-step {
+        height: 1.75rem;
+    }
 }
 
 @media (max-width: 600px) {
-    .winner-container { padding: 1.5rem 1rem; }
-    .winner-podium { gap: 0.5rem; margin-bottom: 2rem; }
-    .podium-card { 
-        min-width: 6.5rem; 
+    .winner-container {
+        padding: 1.5rem 1rem;
+    }
+
+    .winner-podium {
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .podium-card {
+        min-width: 6.5rem;
         padding: 1.25rem 0.75rem;
         border-radius: 1rem;
     }
-    .podium-place.first .podium-card { 
-        min-width: 8rem; 
-        padding: 1.5rem 1rem; 
+
+    .podium-place.first .podium-card {
+        min-width: 8rem;
+        padding: 1.5rem 1rem;
     }
-    .podium-player-name { font-size: 0.75rem; }
-    .podium-place.first .podium-player-name { font-size: 0.9rem; }
-    .podium-medal { width: 2.375rem; height: 2.375rem; margin-bottom: 0.75rem; }
-    .podium-place.first .podium-medal { width: 2.875rem; height: 2.875rem; }
-    .podium-crown { width: 1.75rem; height: 1.75rem; margin-bottom: 0.5rem; }
-    .podium-stats { gap: 0.4rem; }
-    .podium-stat { padding: 0.5rem 0.25rem; border-radius: 0.5rem; }
-    .podium-stat-val { font-size: 0.85rem; gap: 0.2rem; }
-    .podium-stat-val svg { width: 0.75rem; height: 0.75rem; }
-    .podium-place.first .podium-stat-val { font-size: 0.95rem; }
-    .podium-place.first .podium-stat-val svg { width: 0.875rem; height: 0.875rem; }
-    .podium-stat-label { font-size: 0.55rem; }
-    .podium-place.first .podium-step { height: 3.125rem; }
-    .podium-place.second .podium-step { height: 2rem; }
-    .podium-place.third .podium-step { height: 1.25rem; }
-    .your-rank-section { padding: 1rem 1.25rem; gap: 1rem; margin-bottom: 2rem; }
-    .your-rank-number { font-size: 1.25rem; }
-    .your-rank-name { font-size: 0.85rem; }
-    .your-rank-stats { font-size: 0.7rem; }
-    .btn-winner-back { font-size: 0.85rem; padding: 0.6rem 1.5rem; }
+
+    .podium-player-name {
+        font-size: 0.75rem;
+    }
+
+    .podium-place.first .podium-player-name {
+        font-size: 0.9rem;
+    }
+
+    .podium-medal {
+        width: 2.375rem;
+        height: 2.375rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .podium-place.first .podium-medal {
+        width: 2.875rem;
+        height: 2.875rem;
+    }
+
+    .podium-crown {
+        width: 1.75rem;
+        height: 1.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .podium-stats {
+        gap: 0.4rem;
+    }
+
+    .podium-stat {
+        padding: 0.5rem 0.25rem;
+        border-radius: 0.5rem;
+    }
+
+    .podium-stat-val {
+        font-size: 0.85rem;
+        gap: 0.2rem;
+    }
+
+    .podium-stat-val svg {
+        width: 0.75rem;
+        height: 0.75rem;
+    }
+
+    .podium-place.first .podium-stat-val {
+        font-size: 0.95rem;
+    }
+
+    .podium-place.first .podium-stat-val svg {
+        width: 0.875rem;
+        height: 0.875rem;
+    }
+
+    .podium-stat-label {
+        font-size: 0.55rem;
+    }
+
+    .podium-place.first .podium-step {
+        height: 3.125rem;
+    }
+
+    .podium-place.second .podium-step {
+        height: 2rem;
+    }
+
+    .podium-place.third .podium-step {
+        height: 1.25rem;
+    }
+
+    .your-rank-section {
+        padding: 1rem 1.25rem;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .your-rank-number {
+        font-size: 1.25rem;
+    }
+
+    .your-rank-name {
+        font-size: 0.85rem;
+    }
+
+    .your-rank-stats {
+        font-size: 0.7rem;
+    }
+
+    .btn-winner-back {
+        font-size: 0.85rem;
+        padding: 0.6rem 1.5rem;
+    }
 }
 
 @media (max-width: 400px) {
-    .winner-podium { gap: 0.35rem; }
-    .podium-card { min-width: 5.5rem; padding: 1rem 0.5rem; }
-    .podium-place.first .podium-card { min-width: 6.875rem; padding: 1.25rem 0.75rem; }
-    .podium-player-name { font-size: 0.65rem; }
-    .podium-place.first .podium-player-name { font-size: 0.8rem; }
-    .podium-medal { width: 2rem; height: 2rem; }
-    .podium-place.first .podium-medal { width: 2.5rem; height: 2.5rem; }
-    .podium-crown { width: 1.5rem; height: 1.5rem; }
-    .podium-stat { padding: 0.4rem 0.2rem; }
-    .podium-stat-val { font-size: 0.75rem; }
-    .podium-place.first .podium-stat-val { font-size: 0.85rem; }
-    .podium-stat-label { font-size: 0.5rem; }
-    .podium-place.first .podium-step { height: 2.5rem; }
-    .podium-place.second .podium-step { height: 1.625rem; }
-    .podium-place.third .podium-step { height: 1rem; }
-    .your-rank-section { flex-direction: column; gap: 0.5rem; padding: 1rem; }
-    .your-rank-divider { width: 50px; height: 1px; }
-    .your-rank-info { align-items: center; }
+    .winner-podium {
+        gap: 0.35rem;
+    }
+
+    .podium-card {
+        min-width: 5.5rem;
+        padding: 1rem 0.5rem;
+    }
+
+    .podium-place.first .podium-card {
+        min-width: 6.875rem;
+        padding: 1.25rem 0.75rem;
+    }
+
+    .podium-player-name {
+        font-size: 0.65rem;
+    }
+
+    .podium-place.first .podium-player-name {
+        font-size: 0.8rem;
+    }
+
+    .podium-medal {
+        width: 2rem;
+        height: 2rem;
+    }
+
+    .podium-place.first .podium-medal {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+
+    .podium-crown {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+
+    .podium-stat {
+        padding: 0.4rem 0.2rem;
+    }
+
+    .podium-stat-val {
+        font-size: 0.75rem;
+    }
+
+    .podium-place.first .podium-stat-val {
+        font-size: 0.85rem;
+    }
+
+    .podium-stat-label {
+        font-size: 0.5rem;
+    }
+
+    .podium-place.first .podium-step {
+        height: 2.5rem;
+    }
+
+    .podium-place.second .podium-step {
+        height: 1.625rem;
+    }
+
+    .podium-place.third .podium-step {
+        height: 1rem;
+    }
+
+    .your-rank-section {
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 1rem;
+    }
+
+    .your-rank-divider {
+        width: 50px;
+        height: 1px;
+    }
+
+    .your-rank-info {
+        align-items: center;
+    }
 }
 
 /* Landscape phone */
 @media (max-height: 500px) and (orientation: landscape) {
-    .winner-container { padding: 1rem; }
-    .winner-podium { margin-bottom: 1.5rem; }
-    .podium-medal { width: 2.25rem; height: 2.25rem; margin-bottom: 0.5rem; }
-    .podium-place.first .podium-medal { width: 2.75rem; height: 2.75rem; }
-    .podium-card { padding: 1rem 0.75rem; }
-    .podium-place.first .podium-card { padding: 1.25rem 1rem; }
-    .podium-crown { width: 1.625rem; height: 1.625rem; margin-bottom: 0.4rem; }
-    .podium-player-name { font-size: 0.8rem; margin-bottom: 0.75rem; }
-    .podium-place.first .podium-player-name { font-size: 0.95rem; }
-    .podium-stats { gap: 0.4rem; }
-    .podium-stat { padding: 0.4rem 0.25rem; }
-    .podium-stat-val { font-size: 0.85rem; }
-    .podium-place.first .podium-step { height: 2.5rem; }
-    .podium-place.second .podium-step { height: 1.75rem; }
-    .podium-place.third .podium-step { height: 1.125rem; }
-    .your-rank-section { padding: 0.75rem 1rem; margin-bottom: 1rem; }
+    .winner-container {
+        padding: 1rem;
+    }
+
+    .winner-podium {
+        margin-bottom: 1.5rem;
+    }
+
+    .podium-medal {
+        width: 2.25rem;
+        height: 2.25rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .podium-place.first .podium-medal {
+        width: 2.75rem;
+        height: 2.75rem;
+    }
+
+    .podium-card {
+        padding: 1rem 0.75rem;
+    }
+
+    .podium-place.first .podium-card {
+        padding: 1.25rem 1rem;
+    }
+
+    .podium-crown {
+        width: 1.625rem;
+        height: 1.625rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .podium-player-name {
+        font-size: 0.8rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .podium-place.first .podium-player-name {
+        font-size: 0.95rem;
+    }
+
+    .podium-stats {
+        gap: 0.4rem;
+    }
+
+    .podium-stat {
+        padding: 0.4rem 0.25rem;
+    }
+
+    .podium-stat-val {
+        font-size: 0.85rem;
+    }
+
+    .podium-place.first .podium-step {
+        height: 2.5rem;
+    }
+
+    .podium-place.second .podium-step {
+        height: 1.75rem;
+    }
+
+    .podium-place.third .podium-step {
+        height: 1.125rem;
+    }
+
+    .your-rank-section {
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+    }
 }
 
 /* High resolution screens (2K, 4K) */
 @media (min-width: 1920px) {
-    .winner-container { max-width: 70rem; }
-    .winner-podium { gap: 3.5rem; }
-    .podium-card { 
+    .winner-container {
+        max-width: 70rem;
+    }
+
+    .winner-podium {
+        gap: 3.5rem;
+    }
+
+    .podium-card {
         min-width: 15rem;
         padding: 2.75rem;
         border-radius: 1.75rem;
     }
+
     .podium-place.first .podium-card {
         min-width: 18rem;
         padding: 3.25rem;
     }
-    .podium-medal { width: 4.5rem; height: 4.5rem; }
-    .podium-place.first .podium-medal { width: 5.5rem; height: 5.5rem; }
-    .podium-crown { width: 3.5rem; height: 3.5rem; }
-    .podium-player-name { font-size: 1.5rem; }
-    .podium-place.first .podium-player-name { font-size: 1.875rem; }
-    .podium-stat-val { font-size: 1.5rem; }
-    .podium-place.first .podium-stat-val { font-size: 1.75rem; }
-    .podium-stat-label { font-size: 0.875rem; }
-    .podium-place.first .podium-step { height: 7rem; }
-    .podium-place.second .podium-step { height: 4.5rem; }
-    .podium-place.third .podium-step { height: 2.8rem; }
-    .your-rank-section { max-width: 32rem; padding: 1.75rem 2.5rem; }
-    .your-rank-number { font-size: 2rem; }
-    .your-rank-name { font-size: 1.25rem; }
-    .your-rank-stats { font-size: 1rem; }
-    .btn-winner-back { font-size: 1.1rem; padding: 1rem 3rem; }
+
+    .podium-medal {
+        width: 4.5rem;
+        height: 4.5rem;
+    }
+
+    .podium-place.first .podium-medal {
+        width: 5.5rem;
+        height: 5.5rem;
+    }
+
+    .podium-crown {
+        width: 3.5rem;
+        height: 3.5rem;
+    }
+
+    .podium-player-name {
+        font-size: 1.5rem;
+    }
+
+    .podium-place.first .podium-player-name {
+        font-size: 1.875rem;
+    }
+
+    .podium-stat-val {
+        font-size: 1.5rem;
+    }
+
+    .podium-place.first .podium-stat-val {
+        font-size: 1.75rem;
+    }
+
+    .podium-stat-label {
+        font-size: 0.875rem;
+    }
+
+    .podium-place.first .podium-step {
+        height: 7rem;
+    }
+
+    .podium-place.second .podium-step {
+        height: 4.5rem;
+    }
+
+    .podium-place.third .podium-step {
+        height: 2.8rem;
+    }
+
+    .your-rank-section {
+        max-width: 32rem;
+        padding: 1.75rem 2.5rem;
+    }
+
+    .your-rank-number {
+        font-size: 2rem;
+    }
+
+    .your-rank-name {
+        font-size: 1.25rem;
+    }
+
+    .your-rank-stats {
+        font-size: 1rem;
+    }
+
+    .btn-winner-back {
+        font-size: 1.1rem;
+        padding: 1rem 3rem;
+    }
 }
 
 @media (min-width: 2560px) {
-    .winner-container { max-width: 90rem; }
-    .winner-podium { gap: 5rem; }
-    .podium-card { 
+    .winner-container {
+        max-width: 90rem;
+    }
+
+    .winner-podium {
+        gap: 5rem;
+    }
+
+    .podium-card {
         min-width: 20rem;
         padding: 3.5rem;
         border-radius: 2rem;
     }
+
     .podium-place.first .podium-card {
         min-width: 24rem;
         padding: 4rem;
     }
-    .podium-medal { width: 6rem; height: 6rem; }
-    .podium-place.first .podium-medal { width: 7rem; height: 7rem; }
-    .podium-crown { width: 4.5rem; height: 4.5rem; }
-    .podium-player-name { font-size: 1.875rem; }
-    .podium-place.first .podium-player-name { font-size: 2.25rem; }
-    .podium-stat-val { font-size: 1.875rem; }
-    .podium-place.first .podium-stat-val { font-size: 2.125rem; }
-    .podium-stat-label { font-size: 1rem; }
-    .podium-place.first .podium-step { height: 9rem; }
-    .podium-place.second .podium-step { height: 6rem; }
-    .podium-place.third .podium-step { height: 3.75rem; }
+
+    .podium-medal {
+        width: 6rem;
+        height: 6rem;
+    }
+
+    .podium-place.first .podium-medal {
+        width: 7rem;
+        height: 7rem;
+    }
+
+    .podium-crown {
+        width: 4.5rem;
+        height: 4.5rem;
+    }
+
+    .podium-player-name {
+        font-size: 1.875rem;
+    }
+
+    .podium-place.first .podium-player-name {
+        font-size: 2.25rem;
+    }
+
+    .podium-stat-val {
+        font-size: 1.875rem;
+    }
+
+    .podium-place.first .podium-stat-val {
+        font-size: 2.125rem;
+    }
+
+    .podium-stat-label {
+        font-size: 1rem;
+    }
+
+    .podium-place.first .podium-step {
+        height: 9rem;
+    }
+
+    .podium-place.second .podium-step {
+        height: 6rem;
+    }
+
+    .podium-place.third .podium-step {
+        height: 3.75rem;
+    }
 }
 
 
@@ -8881,16 +9444,16 @@ body.modal-open {
     align-items: flex-start;
     gap: 0.6rem;
     padding: 0.75rem 1rem;
-    background: linear-gradient(90deg, 
-        rgba(20, 20, 30, 0.95) 0%, 
-        rgba(15, 15, 22, 0.9) 100%);
+    background: linear-gradient(90deg,
+            rgba(20, 20, 30, 0.95) 0%,
+            rgba(15, 15, 22, 0.9) 100%);
     border-left: 3px solid #f0c14b;
     border-radius: 0 6px 6px 0;
     transition: all 0.4s ease;
     position: relative;
     overflow: hidden;
     min-width: 300px;
-    
+
     /* 🆕 Animation d'apparition */
     animation: slideInFromLeft 0.5s ease-out forwards;
     opacity: 0;
@@ -8914,9 +9477,11 @@ body.modal-open {
         opacity: 0;
         transform: translateX(-100%);
     }
+
     70% {
         transform: translateX(5%);
     }
+
     100% {
         opacity: 1;
         transform: translateX(0);
@@ -8932,15 +9497,17 @@ body.modal-open {
 }
 
 @keyframes challengeComplete {
-    0% { 
+    0% {
         box-shadow: 0 0 20px rgba(72, 187, 120, 0.6);
         opacity: 1;
     }
+
     50% {
         box-shadow: 0 0 30px rgba(72, 187, 120, 0.8);
         opacity: 0.8;
     }
-    100% { 
+
+    100% {
         box-shadow: none;
         opacity: 0.35;
     }
@@ -9076,31 +9643,31 @@ body.modal-open {
         gap: 1.5rem;
         max-width: 260px;
     }
-    
+
     .challenge-strip {
         min-width: 240px;
         padding: 0.6rem 0.8rem;
         gap: 0.5rem;
     }
-    
+
     .challenge-icon {
         width: 16px;
         height: 16px;
     }
-    
+
     .challenge-title {
         font-size: 0.7rem;
     }
-    
+
     .challenge-desc {
         font-size: 0.6rem;
     }
-    
+
     .reward-text {
         font-size: 0.55rem;
         padding: 0.1rem 0.35rem;
     }
-    
+
     .challenge-checkbox {
         width: 16px;
         height: 16px;
@@ -9114,16 +9681,16 @@ body.modal-open {
         gap: 2rem;
         max-width: 320px;
     }
-    
+
     .challenge-strip {
         min-width: 300px;
         padding: 0.75rem 1rem;
     }
-    
+
     .challenge-title {
         font-size: 0.8rem;
     }
-    
+
     .challenge-desc {
         font-size: 0.68rem;
     }
@@ -9136,36 +9703,36 @@ body.modal-open {
         gap: 2.5rem;
         max-width: 320px;
     }
-    
+
     .challenge-strip {
         min-width: 300px;
         padding: 0.8rem 1rem;
         border-left-width: 4px;
     }
-    
+
     .challenge-icon {
         width: 20px;
         height: 20px;
     }
-    
+
     .challenge-title {
         font-size: 0.8rem;
     }
-    
+
     .challenge-desc {
         font-size: 0.7rem;
     }
-    
+
     .reward-text {
         font-size: 0.6rem;
         padding: 0.15rem 0.45rem;
     }
-    
+
     .challenge-checkbox {
         width: 20px;
         height: 20px;
     }
-    
+
     .challenge-progress-bar {
         height: 3px;
     }
@@ -9178,37 +9745,37 @@ body.modal-open {
         gap: 3rem;
         max-width: 380px;
     }
-    
+
     .challenge-strip {
         min-width: 360px;
         padding: 0.9rem 1.1rem;
         border-left-width: 4px;
         border-radius: 0 8px 8px 0;
     }
-    
+
     .challenge-icon {
         width: 24px;
         height: 24px;
     }
-    
+
     .challenge-title {
         font-size: 0.9rem;
     }
-    
+
     .challenge-desc {
         font-size: 0.75rem;
     }
-    
+
     .reward-text {
         font-size: 0.65rem;
         padding: 0.2rem 0.5rem;
     }
-    
+
     .challenge-checkbox {
         width: 24px;
         height: 24px;
     }
-    
+
     .challenge-progress-bar {
         height: 3px;
         margin-top: 0.4rem;
@@ -9475,10 +10042,25 @@ body.modal-open {
 }
 
 @keyframes tipFadeInOut {
-    0% { opacity: 0; transform: translateY(10px); }
-    12% { opacity: 1; transform: translateY(0); }
-    88% { opacity: 1; transform: translateY(0); }
-    100% { opacity: 0; transform: translateY(-5px); }
+    0% {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    12% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    88% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
 }
 
 /* Ajustements mobile */
@@ -9558,9 +10140,11 @@ body.modal-open {
         opacity: 0;
         transform: translateY(10px) scale(0.9);
     }
+
     60% {
         transform: translateY(-2px) scale(1.02);
     }
+
     100% {
         opacity: 0.9;
         transform: translateY(0) scale(1);
@@ -9615,11 +10199,11 @@ body.modal-open {
     .hud-team-badge {
         display: none;
     }
-    
+
     .my-team-score-wrapper {
         margin-top: 2.5rem;
     }
-    
+
     .my-team-score {
         font-size: 0.65rem;
         padding: 0.25rem 0.6rem;
@@ -9676,4 +10260,2285 @@ body.modal-open {
 .podium-card.team-card.team-2::before {
     content: '🛡️';
     background: rgba(240, 192, 64, 0.3);
+}
+
+/* ============================================
+   MODE FIZZBUZZ - STYLES
+   ============================================ */
+
+/* Variables FizzBuzz */
+:root {
+    --fizzbuzz-green: #4ade80;
+    --fizzbuzz-green-dark: #22c55e;
+    --fizzbuzz-green-glow: rgba(74, 222, 128, 0.4);
+}
+
+/* ===== LOBBY FIZZBUZZ ===== */
+.fizzbuzz-lobby {
+    border-color: rgba(74, 222, 128, 0.3) !important;
+}
+
+.fizzbuzz-lobby .corner-decoration {
+    background: linear-gradient(135deg, var(--fizzbuzz-green), transparent) !important;
+}
+
+.fizzbuzz-lobby h2 {
+    color: var(--fizzbuzz-green);
+    background: none;
+    -webkit-background-clip: unset;
+    -webkit-text-fill-color: var(--fizzbuzz-green);
+    background-clip: unset;
+}
+
+.fizzbuzz-players .players-count {
+    color: var(--fizzbuzz-green);
+}
+
+.btn-fizzbuzz {
+    background: linear-gradient(135deg, var(--fizzbuzz-green-dark), var(--fizzbuzz-green)) !important;
+    box-shadow: 0 4px 20px rgba(74, 222, 128, 0.3) !important;
+}
+
+.btn-fizzbuzz:hover {
+    box-shadow: 0 6px 30px rgba(74, 222, 128, 0.5) !important;
+}
+
+.btn-fizzbuzz.joined {
+    background: rgba(74, 222, 128, 0.2) !important;
+    border: 2px solid var(--fizzbuzz-green) !important;
+    color: var(--fizzbuzz-green) !important;
+}
+
+.btn-fizzbuzz.lobby-full-error {
+    background: rgba(239, 68, 68, 0.15) !important;
+    border: 2px solid rgba(239, 68, 68, 0.6) !important;
+    color: #ef4444 !important;
+    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2) !important;
+}
+
+.btn-fizzbuzz.lobby-full-error:hover {
+    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3) !important;
+}
+
+/* ===== HUD FIZZBUZZ ===== */
+.fizzbuzz-hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: rgba(0, 0, 0, 0.4);
+    border-bottom: 1px solid rgba(74, 222, 128, 0.2);
+    margin-bottom: 1rem;
+}
+
+.fizzbuzz-username {
+    font-weight: 600;
+    color: var(--fizzbuzz-green);
+    font-size: 0.9rem;
+}
+
+.fizzbuzz-lives {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.fizzbuzz-heart {
+    font-size: 1.2rem;
+    transition: transform 0.3s, opacity 0.3s;
+}
+
+.fizzbuzz-heart.lost {
+    opacity: 0.4;
+    transform: scale(0.9);
+}
+
+.fizzbuzz-round {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* ===== CONTENEUR JEU FIZZBUZZ ===== */
+.fizzbuzz-game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem;
+}
+
+/* Nom à trouver */
+.fizzbuzz-target {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.fizzbuzz-target-label {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.fizzbuzz-target-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--fizzbuzz-green);
+    text-shadow: 0 0 20px var(--fizzbuzz-green-glow);
+}
+
+/* Timer circulaire */
+.fizzbuzz-timer {
+    position: relative;
+    width: 80px;
+    height: 80px;
+}
+
+.fizzbuzz-timer-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.fizzbuzz-timer-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.1);
+    stroke-width: 6;
+}
+
+.fizzbuzz-timer-progress {
+    fill: none;
+    stroke: var(--fizzbuzz-green);
+    stroke-width: 6;
+    stroke-linecap: round;
+    stroke-dasharray: 283;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 0.1s linear, stroke 0.3s;
+}
+
+.fizzbuzz-timer-progress.warning {
+    stroke: #ef4444;
+}
+
+.fizzbuzz-timer-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--fizzbuzz-green);
+}
+
+.fizzbuzz-timer-text.warning {
+    color: #ef4444;
+    animation: pulse-warning 0.5s ease-in-out infinite;
+}
+
+@keyframes pulse-warning {
+
+    0%,
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    50% {
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+}
+
+/* ===== GRILLE DE CARTES ===== */
+.fizzbuzz-cards-grid {
+    display: grid;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 500px;
+}
+
+.fizzbuzz-cards-grid.grid-6 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.fizzbuzz-cards-grid.grid-8 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+/* Carte personnage */
+.fizzbuzz-card {
+    position: relative;
+    aspect-ratio: 3/4;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+}
+
+.fizzbuzz-card:hover:not(.disabled) {
+    transform: scale(1.05);
+    border-color: rgba(74, 222, 128, 0.5);
+    box-shadow: 0 0 20px var(--fizzbuzz-green-glow);
+}
+
+.fizzbuzz-card.selected {
+    border-color: var(--fizzbuzz-green);
+    box-shadow: 0 0 30px var(--fizzbuzz-green-glow);
+    transform: scale(1.02);
+}
+
+.fizzbuzz-card.disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.fizzbuzz-card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.fizzbuzz-card-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(74, 222, 128, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fizzbuzz-card-overlay svg {
+    width: 40px;
+    height: 40px;
+    color: white;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Résultats des cartes */
+.fizzbuzz-card.result {
+    cursor: default;
+}
+
+.fizzbuzz-card.result.correct {
+    border-color: var(--fizzbuzz-green);
+    box-shadow: 0 0 30px var(--fizzbuzz-green-glow);
+}
+
+.fizzbuzz-card.result.correct::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    color: white;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+    background: var(--fizzbuzz-green);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fizzbuzz-card.result.wrong {
+    border-color: #ef4444;
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+}
+
+.fizzbuzz-card.result.wrong::after {
+    content: '✕';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    color: white;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+    background: #ef4444;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fizzbuzz-card-name {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.5rem;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+    font-size: 0.7rem;
+    color: white;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* État éliminé */
+.fizzbuzz-eliminated {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    z-index: 10;
+}
+
+.fizzbuzz-eliminated-icon {
+    font-size: 3rem;
+}
+
+.fizzbuzz-eliminated h3 {
+    color: #ef4444;
+    font-size: 1.5rem;
+}
+
+.fizzbuzz-eliminated p {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+}
+
+/* ===== RÉSULTATS FIZZBUZZ ===== */
+.fizzbuzz-results-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem;
+}
+
+.fizzbuzz-result-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.fizzbuzz-result-label {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.fizzbuzz-result-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--fizzbuzz-green);
+}
+
+.fizzbuzz-stats {
+    margin-top: 1rem;
+}
+
+.fizzbuzz-remaining {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* ===== RESPONSIVE MOBILE ===== */
+/* Styles fizzbuzz responsive */
+@media (max-width: 600px) {
+    .fizzbuzz-cards-grid.grid-6 {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+    }
+
+    .fizzbuzz-cards-grid.grid-8 {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.4rem;
+    }
+
+    .fizzbuzz-target-name {
+        font-size: 1.25rem;
+    }
+
+    .fizzbuzz-timer {
+        width: 60px;
+        height: 60px;
+    }
+
+    .fizzbuzz-timer-text {
+        font-size: 1.2rem;
+    }
+}
+
+/* ============================================
+   💣 BOMBANIME - Styles v22 (Exact prototype)
+   ============================================ */
+
+/* Container principal */
+.bombanime-game-container {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0a0a0f;
+    z-index: 50;
+}
+
+/* 🔊 Contrôle du son */
+.sound-control {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    z-index: 100;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    animation: soundControlAppear 0.3s ease-out;
+}
+
+@keyframes soundControlAppear {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.sound-control:hover {
+    background: rgba(0, 0, 0, 0.7);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.sound-control.muted {
+    opacity: 0.5;
+}
+
+.sound-btn {
+    width: 28px;
+    height: 28px;
+    padding: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sound-btn:hover {
+    color: #22c55e;
+    transform: scale(1.1);
+}
+
+.sound-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.sound-slider {
+    width: 60px;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sound-slider:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.sound-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    background: #22c55e;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sound-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+}
+
+.sound-slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    background: #22c55e;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+}
+
+/* Loader de chargement */
+.bombanime-loading {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #0a0a0f;
+    z-index: 50;
+    gap: 1rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 1rem;
+}
+
+.bombanime-loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(240, 192, 64, 0.2);
+    border-top-color: #f0c040;
+    border-radius: 50%;
+    animation: spinner-rotate 0.8s linear infinite;
+}
+
+@keyframes spinner-rotate {
+    to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   ÉCRAN DE FIN - WINNER SCREEN
+   ============================================ */
+.bombanime-winner-screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0a0a0f;
+    z-index: 100;
+    animation: winner-fade-in 0.5s ease-out;
+}
+
+@keyframes winner-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.winner-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    text-align: center;
+    animation: winner-content-rise 0.6s ease-out 0.2s both;
+}
+
+@keyframes winner-content-rise {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Couronne */
+.winner-crown {
+    animation: crown-appear 0.8s ease-out 0.3s both;
+}
+
+@keyframes crown-appear {
+    0% {
+        opacity: 0;
+        transform: scale(0.5) rotate(-10deg);
+    }
+    50% {
+        transform: scale(1.1) rotate(5deg);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+.crown-svg {
+    width: 80px;
+    height: 80px;
+    color: #f0c040;
+    filter: drop-shadow(0 0 20px rgba(240, 192, 64, 0.5));
+}
+
+/* Titre */
+.winner-title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+}
+
+/* Nom du gagnant - SPÉCIFIQUE BOMBANIME */
+.bombanime-winner-screen .winner-name {
+    font-size: 3rem;
+    font-weight: 700;
+    color: #f0c040;
+    text-shadow: 0 0 20px rgba(240, 192, 64, 0.3);
+    /* Reset des propriétés du gradient */
+    background: none;
+    -webkit-background-clip: unset;
+    -webkit-text-fill-color: #f0c040;
+    background-clip: unset;
+}
+
+.bombanime-winner-screen .winner-name.no-winner {
+    color: rgba(255, 255, 255, 0.4);
+    -webkit-text-fill-color: rgba(255, 255, 255, 0.4);
+    text-shadow: none;
+    font-size: 2rem;
+}
+
+/* Stats */
+.winner-stats {
+    display: flex;
+    gap: 3rem;
+    margin-top: 1rem;
+    animation: stats-fade-in 0.5s ease-out 0.8s both;
+}
+
+@keyframes stats-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.winner-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.winner-stat .stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.winner-stat .stat-label {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+/* Bouton retour */
+.winner-back-btn {
+    margin-top: 2rem;
+    padding: 0.75rem 2.5rem;
+    background: rgba(240, 192, 64, 0.1);
+    border: none;
+    border-radius: 25px;
+    color: rgba(240, 192, 64, 0.8);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    animation: btn-fade-in 0.5s ease-out 1s both;
+}
+
+@keyframes btn-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.winner-back-btn:hover {
+    background: rgba(240, 192, 64, 0.2);
+    color: #f0c040;
+    transform: scale(1.05);
+}
+
+/* Particules de célébration */
+.winner-particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.winner-particles::before,
+.winner-particles::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: #f0c040;
+    border-radius: 50%;
+    animation: particle-float 3s ease-in-out infinite;
+}
+
+.winner-particles::before {
+    left: 20%;
+    top: 30%;
+    animation-delay: 0s;
+}
+
+.winner-particles::after {
+    right: 25%;
+    top: 40%;
+    animation-delay: 1.5s;
+}
+
+@keyframes particle-float {
+    0%, 100% {
+        opacity: 0;
+        transform: translateY(0) scale(0);
+    }
+    10% {
+        opacity: 0.8;
+        transform: translateY(0) scale(1);
+    }
+    90% {
+        opacity: 0.8;
+        transform: translateY(-100px) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-120px) scale(0);
+    }
+}
+
+/* ============================================
+   CERCLE DE JOUEURS
+   ============================================ */
+.bombanime-circle {
+    position: relative;
+    width: var(--circle-size, 650px);
+    height: var(--circle-size, 650px);
+    flex-shrink: 0;
+    /* Pas de transition au chargement - seulement pour les changements de taille en jeu */
+}
+
+/* ============================================
+   STYLE HEXAGON + HEARTS BADGE
+   ============================================ */
+.bombanime-player-slot {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    transform: translate(-50%, -50%);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: default;
+}
+
+/* ============================================
+   ANIMATIONS D'INTRO - Début de partie
+   ============================================ */
+.bombanime-player-slot.intro-hidden {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.8);
+}
+
+.bombanime-player-slot.intro-reveal {
+    animation: player-dezoom 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes player-dezoom {
+    0% { 
+        opacity: 0; 
+        transform: translate(-50%, -50%) scale(1.8);
+    }
+    100% { 
+        opacity: 1; 
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+.bombanime-player-slot .player-name {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.35);
+    font-weight: 500;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 130px;
+    text-align: center;
+}
+
+.bombanime-player-slot.active .player-name {
+    color: #f0c040;
+}
+
+/* Moi-même quand ce n'est PAS mon tour - jaune doré atténué */
+.bombanime-player-slot.is-me .player-name {
+    color: rgba(240, 192, 64, 0.55);
+}
+
+/* Moi-même quand c'est MON tour - jaune doré vif */
+.bombanime-player-slot.active.is-me .player-name {
+    color: #f0c040;
+}
+
+.player-hex-container {
+    position: relative;
+}
+
+.player-hex {
+    width: 70px;
+    height: 70px;
+    position: relative;
+}
+
+.player-hex svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 6px rgba(240, 192, 64, 0.3));
+    transition: filter 0.2s ease;
+}
+
+.player-hex svg polygon {
+    fill: #101018;
+    stroke: rgba(255,255,255,0.08);
+    stroke-width: 2;
+    transition: all 0.2s ease;
+}
+
+.bombanime-player-slot.active .player-hex svg {
+    filter: drop-shadow(0 0 10px rgba(240, 192, 64, 0.5));
+}
+
+.bombanime-player-slot.active .player-hex svg polygon {
+    stroke: #f0c040;
+}
+
+/* Moi-même quand ce n'est PAS mon tour - hexagone jaune doré atténué */
+.bombanime-player-slot.is-me .player-hex svg {
+    filter: drop-shadow(0 0 6px rgba(240, 192, 64, 0.2));
+}
+
+.bombanime-player-slot.is-me .player-hex svg polygon {
+    stroke: rgba(240, 192, 64, 0.5);
+}
+
+/* Moi-même quand c'est MON tour - hexagone jaune doré vif */
+.bombanime-player-slot.active.is-me .player-hex svg {
+    filter: drop-shadow(0 0 10px rgba(240, 192, 64, 0.5));
+}
+
+.bombanime-player-slot.active.is-me .player-hex svg polygon {
+    stroke: #f0c040;
+}
+
+.bombanime-player-slot.eliminated .player-hex svg {
+    filter: none;
+}
+
+.bombanime-player-slot.eliminated .player-hex svg polygon {
+    opacity: 0.3;
+    stroke: rgba(255,255,255,0.03);
+}
+
+.player-avatar {
+    position: absolute;
+    left: 50%;
+    bottom: 8%;
+    transform: translateX(-50%);
+    width: 72%;
+    height: 72%;
+    border-radius: 50%;
+    object-fit: cover;
+    transition: all 0.2s ease;
+    filter: grayscale(40%) brightness(0.65);
+    opacity: 0.55;
+}
+
+.bombanime-player-slot.active .player-avatar {
+    filter: grayscale(0%) brightness(1.1);
+    box-shadow: 0 0 15px rgba(240, 192, 64, 0.4);
+    opacity: 1;
+}
+
+/* Moi-même quand ce n'est PAS mon tour - avatar légèrement doré */
+.bombanime-player-slot.is-me .player-avatar {
+    filter: grayscale(0%) brightness(0.95);
+    box-shadow: 0 0 10px rgba(240, 192, 64, 0.3);
+    opacity: 0.8;
+}
+
+/* Moi-même quand c'est MON tour - avatar doré vif */
+.bombanime-player-slot.active.is-me .player-avatar {
+    filter: grayscale(0%) brightness(1.15);
+    box-shadow: 0 0 20px rgba(240, 192, 64, 0.5);
+    opacity: 1;
+}
+
+.bombanime-player-slot.eliminated .player-avatar {
+    filter: grayscale(100%) brightness(0.4);
+    opacity: 0.35;
+}
+
+/* Animation succès - avatar brille brièvement */
+.bombanime-player-slot.success .player-avatar {
+    filter: grayscale(0%) brightness(1.3);
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(125, 206, 160, 0.6);
+}
+
+/* Hearts Badge */
+.player-lives {
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 2px;
+    background: rgba(0,0,0,0.85);
+    padding: 3px 6px;
+    border-radius: 10px;
+    z-index: 5;
+}
+
+.player-life {
+    width: 12px;
+    height: 12px;
+    fill: #ef4444;
+    transition: all 0.2s ease;
+    transform-origin: center;
+}
+
+.player-life.lost {
+    fill: rgba(255,255,255,0.15);
+    animation: heart-break 0.3s ease-out forwards;
+}
+
+@keyframes heart-break {
+    0% {
+        fill: #ef4444;
+        transform: scale(1);
+    }
+    40% {
+        fill: #ef4444;
+        transform: scale(1.2);
+    }
+    100% {
+        fill: rgba(255,255,255,0.15);
+        transform: scale(1);
+    }
+}
+
+/* Answer zone - Style JKLM */
+.player-answer {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.25);
+    background: transparent;
+    padding: 0;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-weight: 600;
+    transition: color 0.2s ease;
+    max-width: 130px;
+}
+
+.bombanime-player-slot.active .player-answer {
+    color: #f0c040;
+    text-shadow: 0 0 10px rgba(240, 192, 64, 0.5);
+}
+
+/* ============================================
+   ANIMATION SUCCÈS - Bonne réponse
+   ============================================ */
+.bombanime-player-slot.success .player-hex {
+    animation: success-tilt-scale 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bombanime-player-slot.success .player-hex svg {
+    animation: success-hex-glow 0.4s ease-out;
+}
+
+@keyframes success-tilt-scale {
+    0% { transform: rotate(0deg) scale(1); }
+    40% { transform: rotate(-10deg) scale(1.12); }
+    100% { transform: rotate(0deg) scale(1); }
+}
+
+@keyframes success-hex-glow {
+    0% { filter: drop-shadow(0 0 8px rgba(240, 192, 64, 0.4)); }
+    40% { filter: drop-shadow(0 0 22px rgba(255, 215, 0, 0.95)); }
+    100% { filter: drop-shadow(0 0 8px rgba(240, 192, 64, 0.4)); }
+}
+
+/* Particules de succès */
+.success-particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: visible;
+}
+
+.success-particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: #ffd700;
+    border-radius: 50%;
+    opacity: 0;
+    box-shadow: 0 0 6px rgba(255, 215, 0, 0.8);
+}
+
+.bombanime-player-slot.success .success-particle {
+    animation: success-particle-burst 0.5s ease-out forwards;
+}
+
+@keyframes success-particle-burst {
+    0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
+    30% { opacity: 1; transform: translate(var(--px), var(--py)) scale(1); }
+    100% { opacity: 0; transform: translate(calc(var(--px) * 1.8), calc(var(--py) * 1.8)) scale(0.3); }
+}
+
+.success-particle:nth-child(1) { top: 50%; left: 50%; --px: -18px; --py: -22px; animation-delay: 0ms; }
+.success-particle:nth-child(2) { top: 50%; left: 50%; --px: 20px; --py: -18px; animation-delay: 50ms; }
+.success-particle:nth-child(3) { top: 50%; left: 50%; --px: -22px; --py: 12px; animation-delay: 100ms; }
+.success-particle:nth-child(4) { top: 50%; left: 50%; --px: 18px; --py: 15px; animation-delay: 75ms; }
+
+/* Already used - shake avatar + cadenas */
+.bombanime-player-slot.already-used {
+    animation: avatar-shake 0.4s ease;
+}
+
+/* Shake error - nom invalide (visible par tous) */
+.bombanime-player-slot.shake-error {
+    animation: avatar-shake 0.4s ease;
+}
+
+/* 🆕 Explosion - perte de vie (shake sur le joueur) */
+.bombanime-player-slot.exploding {
+    animation: explode-shake 0.25s ease;
+}
+
+@keyframes avatar-shake {
+    0%, 100% { transform: translate(-50%, -50%) translateX(0); }
+    15% { transform: translate(-50%, -50%) translateX(-6px); }
+    30% { transform: translate(-50%, -50%) translateX(6px); }
+    45% { transform: translate(-50%, -50%) translateX(-5px); }
+    60% { transform: translate(-50%, -50%) translateX(5px); }
+    75% { transform: translate(-50%, -50%) translateX(-3px); }
+    90% { transform: translate(-50%, -50%) translateX(3px); }
+}
+
+/* Shake plus intense pour l'explosion */
+@keyframes explode-shake {
+    0%, 100% { transform: translate(-50%, -50%); }
+    10% { transform: translate(-58%, -50%); }
+    20% { transform: translate(-42%, -50%); }
+    30% { transform: translate(-56%, -44%); }
+    40% { transform: translate(-44%, -56%); }
+    50% { transform: translate(-50%, -42%); }
+    60% { transform: translate(-56%, -50%); }
+    70% { transform: translate(-44%, -50%); }
+    80% { transform: translate(-50%, -56%); }
+    90% { transform: translate(-50%, -44%); }
+}
+
+/* Alphabet complet - Animation visible par tous */
+.bombanime-player-slot.alphabet-complete {
+    z-index: 100;
+}
+
+/* Utiliser l'animation de succès (tilt-scale) */
+.bombanime-player-slot.alphabet-complete .player-hex {
+    animation: success-tilt-scale 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bombanime-player-slot.alphabet-complete .player-hex svg {
+    animation: success-hex-glow 0.5s ease-out;
+}
+
+/* Pas de changement de stroke vert, garder la couleur dorée */
+.bombanime-player-slot.alphabet-complete .player-hex svg polygon {
+    stroke: #f0c040;
+}
+
+.bombanime-player-slot.alphabet-complete .player-avatar {
+    filter: grayscale(0%) brightness(1.1);
+    box-shadow: 0 0 15px rgba(240, 192, 64, 0.5);
+}
+
+.bombanime-player-slot.alphabet-complete .player-name {
+    color: #f0c040;
+}
+
+/* Particules dorées ACCENTUÉES pour alphabet complet */
+.alphabet-particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: visible;
+}
+
+.alphabet-particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: #ffd700;
+    border-radius: 50%;
+    opacity: 0;
+    box-shadow: 0 0 12px rgba(255, 215, 0, 1), 0 0 25px rgba(255, 200, 50, 0.8);
+}
+
+.bombanime-player-slot.alphabet-complete .alphabet-particle {
+    animation: alphabet-particle-float 0.8s ease-out forwards;
+}
+
+@keyframes alphabet-particle-float {
+    0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
+    20% { opacity: 1; transform: translate(var(--px), var(--py)) scale(1.8); }
+    100% { opacity: 0; transform: translate(calc(var(--px) * 2.8), calc(var(--py) * 2.8 - 20px)) scale(0.3); }
+}
+
+.alphabet-particle:nth-child(1) { top: 50%; left: 50%; --px: -28px; --py: -32px; animation-delay: 0ms; }
+.alphabet-particle:nth-child(2) { top: 50%; left: 50%; --px: 30px; --py: -28px; animation-delay: 40ms; }
+.alphabet-particle:nth-child(3) { top: 50%; left: 50%; --px: -32px; --py: 20px; animation-delay: 80ms; }
+.alphabet-particle:nth-child(4) { top: 50%; left: 50%; --px: 28px; --py: 25px; animation-delay: 60ms; }
+.alphabet-particle:nth-child(5) { top: 50%; left: 50%; --px: 0px; --py: -38px; animation-delay: 20ms; }
+.alphabet-particle:nth-child(6) { top: 50%; left: 50%; --px: -38px; --py: -10px; animation-delay: 100ms; }
+
+.player-lock {
+    position: absolute;
+    right: -38px;
+    top: 50%;
+    transform: translateY(-50%) rotate(8deg);
+    opacity: 0;
+    pointer-events: none;
+    color: #888888;
+}
+
+.player-lock svg {
+    width: 24px;
+    height: 24px;
+    fill: #888888;
+    stroke: #aaaaaa;
+    filter: drop-shadow(0 0 4px rgba(150, 150, 150, 0.5));
+}
+
+.player-lock.show {
+    animation: lock-popup 0.6s ease-out forwards;
+}
+
+@keyframes lock-popup {
+    0% { opacity: 0; transform: translateY(-40%) rotate(8deg); }
+    25% { opacity: 1; transform: translateY(-50%) rotate(8deg); }
+    65% { opacity: 1; transform: translateY(-55%) rotate(8deg); }
+    100% { opacity: 0; transform: translateY(-60%) rotate(8deg); }
+}
+
+/* ============================================
+   BOMBE CHIBI + SOFT GLOW FLAME
+   ============================================ */
+.bomb-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+}
+
+.bomb {
+    width: 70px;
+    height: 70px;
+    position: relative;
+}
+
+/* Corps de la bombe Chibi */
+.bomb-body {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(160deg, #4a4a5a 0%, #2a2a35 40%, #15151d 100%);
+    border-radius: 50%;
+    border: 4px solid #3a3a45;
+    position: relative;
+    box-shadow: 8px 8px 0 rgba(0,0,0,0.5);
+    transition: all 0.3s ease;
+    animation: bomb-pulse 0.35s ease-in-out infinite;
+}
+
+@keyframes bomb-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.035); }
+}
+
+/* Reflet principal */
+.bomb-body::before {
+    content: '';
+    position: absolute;
+    top: 6%;
+    left: 10%;
+    width: 45%;
+    height: 40%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 40%, transparent 60%);
+    border-radius: 50%;
+}
+
+/* Reflet secondaire */
+.bomb-body::after {
+    content: '';
+    position: absolute;
+    top: 15%;
+    right: 15%;
+    width: 10px;
+    height: 10px;
+    background: rgba(255,255,255,0.6);
+    border-radius: 50%;
+}
+
+.bomb-highlight {
+    position: absolute;
+    top: 25%;
+    right: 22%;
+    width: 4px;
+    height: 4px;
+    background: rgba(255,255,255,0.35);
+    border-radius: 50%;
+}
+
+/* États danger/critical */
+.bomb.danger .bomb-body {
+    background: linear-gradient(160deg, #7a5a2a 0%, #5a3a15 40%, #2d1a08 100%);
+    border-color: #885500;
+    box-shadow: 8px 8px 0 rgba(0,0,0,0.5), 0 0 15px rgba(255, 150, 0, 0.15), 0 0 30px rgba(255, 120, 0, 0.08);
+    animation: bomb-pulse-danger 0.28s ease-in-out infinite;
+}
+
+@keyframes bomb-pulse-danger {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.045); }
+}
+
+.bomb.critical .bomb-body {
+    background: linear-gradient(160deg, #8a2a2a 0%, #5a1010 40%, #2d0505 100%);
+    border-color: #881212;
+    box-shadow: 8px 8px 0 rgba(0,0,0,0.5), 0 0 18px rgba(255, 50, 50, 0.2), 0 0 35px rgba(255, 0, 0, 0.1);
+    animation: bomb-pulse-critical 0.12s ease-in-out infinite;
+}
+
+@keyframes bomb-pulse-critical {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+}
+
+/* Container mèche (pour rotation) */
+.bomb-fuse-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    transition: transform 0.18s ease-out;
+}
+
+/* Capuchon - position proportionnelle à la taille de la bombe */
+.bomb-cap {
+    position: absolute;
+    bottom: calc(var(--bomb-size, 70px) * 0.4);
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(var(--bomb-size, 70px) * 0.27);
+    height: calc(var(--bomb-size, 70px) * 0.16);
+    background: linear-gradient(180deg, #6a6a7a 0%, #4a4a5a 100%);
+    border-radius: 5px 5px 0 0;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.4);
+    z-index: 1;
+}
+
+/* Mèche rayée style dynamite - position proportionnelle */
+.bomb-fuse {
+    position: absolute;
+    bottom: calc(var(--bomb-size, 70px) * 0.54);
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(var(--bomb-size, 70px) * 0.07);
+    height: calc(var(--bomb-size, 70px) * 0.67);
+    background: repeating-linear-gradient(
+        180deg,
+        #c4956a 0px,
+        #c4956a 6px,
+        #8B5A2B 6px,
+        #8B5A2B 12px
+    );
+    border-radius: 4px;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.4);
+    transform-origin: bottom center;
+}
+
+/* Étincelle au bout de la mèche - position proportionnelle */
+.bomb-spark {
+    position: absolute;
+    bottom: calc(var(--bomb-size, 70px) * 1.2);
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(var(--bomb-size, 70px) * 0.13);
+    height: calc(var(--bomb-size, 70px) * 0.13);
+    background: radial-gradient(circle at 50% 50%, 
+        #fff 0%, 
+        #fffae0 30%,
+        #ffc800 60%, 
+        rgba(255, 150, 0, 0) 100%
+    );
+    border-radius: 50%;
+    animation: spark-pulse 0.3s ease-in-out infinite;
+    box-shadow: 0 0 8px rgba(255, 200, 50, 0.9), 0 0 15px rgba(255, 150, 0, 0.6);
+}
+
+@keyframes spark-pulse {
+    0%, 100% { transform: translateX(-50%) scale(1); opacity: 1; }
+    50% { transform: translateX(-50%) scale(1.2); opacity: 0.85; }
+}
+
+/* États étincelle danger/critical */
+.bomb.danger .bomb-spark {
+    width: 11px;
+    height: 11px;
+    background: radial-gradient(circle at 50% 50%, 
+        #fff 0%, 
+        #ffee80 25%,
+        #ff9500 55%, 
+        rgba(255, 100, 0, 0) 100%
+    );
+    box-shadow: 0 0 8px rgba(255, 150, 0, 0.5), 0 0 15px rgba(255, 100, 0, 0.25);
+    animation: spark-pulse-danger 0.15s ease-in-out infinite;
+}
+
+@keyframes spark-pulse-danger {
+    0%, 100% { transform: translateX(-50%) scale(1); opacity: 1; }
+    50% { transform: translateX(-50%) scale(1.35); opacity: 0.9; }
+}
+
+.bomb.critical .bomb-spark {
+    width: 13px;
+    height: 13px;
+    background: radial-gradient(circle at 50% 50%, 
+        #fff 0%, 
+        #ffaaaa 20%,
+        #ff3300 50%, 
+        rgba(255, 0, 0, 0) 100%
+    );
+    box-shadow: 0 0 10px rgba(255, 50, 50, 0.5), 0 0 20px rgba(255, 0, 0, 0.3);
+    animation: spark-pulse-critical 0.08s ease-in-out infinite;
+}
+
+@keyframes spark-pulse-critical {
+    0%, 100% { transform: translateX(-50%) scale(1); opacity: 1; }
+    50% { transform: translateX(-50%) scale(1.5); opacity: 0.95; }
+}
+
+/* ============================================
+   INPUT - Style minimaliste
+   ============================================ */
+.input-zone {
+    position: fixed;
+    bottom: 1.5%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    /* Transition pour le fade-in */
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+/* Animation intro - Input caché */
+.input-zone.intro-hidden {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+}
+
+.game-input-container { 
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.game-input {
+    width: 420px;
+    padding: 1rem 1.8rem;
+    background: transparent;
+    border: none;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: rgba(255, 250, 235, 0.95);
+    outline: none;
+    transition: all 0.3s ease;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.game-input::placeholder {
+    color: rgba(240, 192, 64, 0.3);
+    font-weight: 400;
+    font-size: 0.85rem;
+}
+
+.game-input.disabled {
+    color: rgba(255, 250, 235, 0.3);
+    cursor: not-allowed;
+}
+
+.game-input.disabled::placeholder {
+    color: rgba(255, 250, 235, 0.15);
+}
+
+.input-underline {
+    width: 60%;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 1px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.input-underline.disabled {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.input-underline::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0%;
+    height: 100%;
+    background: rgba(240, 192, 64, 0.6);
+    border-radius: 1px;
+    transition: width 0.3s ease;
+}
+
+.game-input:focus + .input-underline::after {
+    width: 100%;
+}
+
+.game-input.error + .input-underline {
+    background: rgba(239, 68, 68, 0.5);
+}
+
+/* Shake pour personnage non reconnu */
+.game-input.shake-error {
+    animation: input-shake 0.4s ease;
+}
+
+@keyframes input-shake {
+    0%, 100% { transform: translateX(0); }
+    15% { transform: translateX(-8px); }
+    30% { transform: translateX(8px); }
+    45% { transform: translateX(-6px); }
+    60% { transform: translateX(6px); }
+    75% { transform: translateX(-4px); }
+    90% { transform: translateX(4px); }
+}
+
+.feedback-message {
+    position: absolute;
+    bottom: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    opacity: 0;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.feedback-message.show { 
+    opacity: 1; 
+    animation: feedback-pop 0.3s ease; 
+}
+
+@keyframes feedback-pop {
+    0% { transform: translateX(-50%) scale(0.9) translateY(-5px); opacity: 0; }
+    100% { transform: translateX(-50%) scale(1) translateY(0); opacity: 1; }
+}
+
+.feedback-message.error { 
+    background: rgba(239, 68, 68, 0.15); 
+    color: #f87171; 
+}
+
+.feedback-message.success { 
+    background: rgba(240, 192, 64, 0.15); 
+    color: #f0c040; 
+}
+
+/* Message attente */
+.waiting-message {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+}
+
+.waiting-message strong {
+    color: #f0c040;
+}
+
+.eliminated-message {
+    position: fixed;
+    bottom: 6%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.4);
+    text-align: center;
+    z-index: 100;
+}
+
+/* ============================================
+   ALPHABET PANEL - Gros cœur + Hexagones
+   ============================================ */
+.alphabet-panel {
+    position: fixed;
+    right: 2.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 1.2rem;
+    background: rgba(0,0,0,0.4);
+    border-radius: 1rem;
+    border: 1px solid rgba(255,255,255,0.05);
+    height: 80vh;
+    justify-content: space-between;
+    z-index: 100;
+    /* Transition pour le slide-in */
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.25s ease;
+}
+
+/* Animation intro - Panel hors écran à droite */
+.alphabet-panel.intro-offscreen {
+    transform: translateY(-50%) translateX(calc(100% + 3rem));
+    opacity: 0;
+}
+
+/* Gros cœur en haut */
+.alphabet-heart-main {
+    position: relative;
+    width: 75px;
+    height: 70px;
+    flex-shrink: 0;
+}
+
+.alphabet-heart-main .heart-bg {
+    position: absolute;
+    inset: 0;
+    fill: rgba(240, 192, 64, 0.15);
+}
+
+/* Grille hexagones */
+.alphabet-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.9rem 0.5rem;
+    flex-grow: 1;
+    align-content: center;
+}
+
+.alphabet-letter {
+    width: 52px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.18);
+    background: rgba(255,255,255,0.03);
+    clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+    transition: all 0.3s ease;
+}
+
+.alphabet-letter.used {
+    color: #f0c040;
+    background: rgba(240, 192, 64, 0.15);
+    text-shadow: 0 0 10px rgba(240, 192, 64, 0.5);
+}
+
+.alphabet-letter.just-added {
+    animation: letter-pop 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes letter-pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); background: rgba(240, 192, 64, 0.3); }
+    100% { transform: scale(1); }
+}
+
+/* Dernière ligne Y-Z centrée */
+.alphabet-last-row {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* ============================================
+   ANIMATIONS COMPLÉTION ALPHABET
+   ============================================ */
+
+/* Animation de complétion du cœur */
+@keyframes heart-complete-pulse {
+    0% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(240, 192, 64, 0.5)); }
+    15% { transform: scale(1.3); filter: drop-shadow(0 0 25px rgba(240, 192, 64, 1)); }
+    30% { transform: scale(1.1); filter: drop-shadow(0 0 18px rgba(240, 192, 64, 0.8)); }
+    45% { transform: scale(1.25); filter: drop-shadow(0 0 30px rgba(240, 192, 64, 1)); }
+    60% { transform: scale(1.1); filter: drop-shadow(0 0 15px rgba(240, 192, 64, 0.7)); }
+    75% { transform: scale(1.2); filter: drop-shadow(0 0 22px rgba(240, 192, 64, 0.9)); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(240, 192, 64, 0.5)); }
+}
+
+@keyframes heart-shine {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    30% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(2.5); }
+}
+
+@keyframes sparkle {
+    0% { opacity: 0; transform: translate(0, 0) scale(0); }
+    50% { opacity: 1; transform: translate(var(--tx), var(--ty)) scale(1); }
+    100% { opacity: 0; transform: translate(calc(var(--tx) * 2), calc(var(--ty) * 2)) scale(0); }
+}
+
+.alphabet-heart-main.completing {
+    animation: heart-complete-pulse 800ms ease-out forwards;
+}
+
+.alphabet-heart-main.completing::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, rgba(240, 192, 64, 0.7) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: heart-shine 700ms ease-out forwards;
+    pointer-events: none;
+}
+
+/* Sparkles sur le gros cœur */
+.sparkle-container {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: visible;
+}
+
+.sparkle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: #f0c040;
+    border-radius: 50%;
+    opacity: 0;
+}
+
+.alphabet-heart-main.completing .sparkle {
+    animation: sparkle 600ms ease-out forwards;
+}
+
+.sparkle:nth-child(1) { top: 50%; left: 50%; --tx: -30px; --ty: -25px; animation-delay: 0ms; }
+.sparkle:nth-child(2) { top: 50%; left: 50%; --tx: 30px; --ty: -20px; animation-delay: 50ms; }
+.sparkle:nth-child(3) { top: 50%; left: 50%; --tx: -25px; --ty: 25px; animation-delay: 100ms; }
+.sparkle:nth-child(4) { top: 50%; left: 50%; --tx: 25px; --ty: 22px; animation-delay: 75ms; }
+.sparkle:nth-child(5) { top: 50%; left: 50%; --tx: 0px; --ty: -35px; animation-delay: 25ms; }
+.sparkle:nth-child(6) { top: 50%; left: 50%; --tx: -35px; --ty: 0px; animation-delay: 125ms; }
+.sparkle:nth-child(7) { top: 50%; left: 50%; --tx: 35px; --ty: 5px; animation-delay: 100ms; }
+.sparkle:nth-child(8) { top: 50%; left: 50%; --tx: 0px; --ty: 35px; animation-delay: 150ms; }
+
+/* Message +1 VIE - Supprimé, remplacé par effet cœur amélioré */
+
+/* Effet de remplissage du cœur amélioré */
+.alphabet-heart-main .heart-fill {
+    position: absolute;
+    inset: 0;
+    fill: #f0c040;
+    transition: clip-path 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    filter: drop-shadow(0 0 8px rgba(240, 192, 64, 0.5));
+}
+
+/* Pulse subtil quand une lettre est ajoutée */
+.alphabet-heart-main.letter-added .heart-fill {
+    animation: heart-letter-pulse 0.4s ease-out;
+}
+
+@keyframes heart-letter-pulse {
+    0% { filter: drop-shadow(0 0 8px rgba(240, 192, 64, 0.5)); }
+    50% { filter: drop-shadow(0 0 18px rgba(240, 192, 64, 0.9)); transform: scale(1.08); }
+    100% { filter: drop-shadow(0 0 8px rgba(240, 192, 64, 0.5)); transform: scale(1); }
+}
+
+/* Animation de complétion encore plus spectaculaire */
+.alphabet-heart-main.completing .heart-fill {
+    animation: heart-complete-fill 800ms ease-out forwards;
+}
+
+@keyframes heart-complete-fill {
+    0% { filter: drop-shadow(0 0 8px rgba(240, 192, 64, 0.5)); transform: scale(1); }
+    25% { filter: drop-shadow(0 0 35px rgba(240, 192, 64, 1)); transform: scale(1.2); }
+    50% { filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.8)); transform: scale(1.15); }
+    75% { filter: drop-shadow(0 0 40px rgba(240, 192, 64, 1)); transform: scale(1.25); }
+    100% { filter: drop-shadow(0 0 8px rgba(240, 192, 64, 0.5)); transform: scale(1); }
+}
+
+/* ============================================
+   RESPONSIVE BOMBANIME
+   ============================================ */
+@media (max-width: 1200px) {
+    .alphabet-panel {
+        right: 1rem;
+        padding: 1rem 0.8rem;
+        height: 70vh;
+    }
+    
+    .alphabet-heart-main {
+        width: 60px;
+        height: 55px;
+    }
+    
+    .alphabet-letter {
+        width: 42px;
+        height: 38px;
+        font-size: 1rem;
+    }
+}
+
+/* ============================================
+   📱 BOMBANIME - RESPONSIVE MOBILE
+   ============================================ */
+
+/* Bouton alphabet mobile (haut droite) */
+.alphabet-mobile-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 14px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(240, 192, 64, 0.3);
+    border-radius: 25px;
+    color: #f0c040;
+    cursor: pointer;
+    z-index: 100;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.alphabet-mobile-btn:hover,
+.alphabet-mobile-btn:active {
+    background: rgba(0, 0, 0, 0.8);
+    border-color: rgba(240, 192, 64, 0.6);
+    transform: scale(1.05);
+}
+
+.alphabet-mobile-btn .alphabet-btn-heart {
+    width: 22px;
+    height: 22px;
+    fill: rgba(240, 192, 64, 0.4);
+    stroke: #f0c040;
+    stroke-width: 1.5;
+}
+
+.alphabet-mobile-btn .alphabet-btn-arrow {
+    width: 16px;
+    height: 16px;
+    stroke: rgba(240, 192, 64, 0.7);
+    transition: transform 0.3s ease;
+}
+
+.alphabet-mobile-btn:hover .alphabet-btn-arrow,
+.alphabet-mobile-btn:active .alphabet-btn-arrow {
+    transform: translateY(2px);
+    stroke: #f0c040;
+}
+
+.alphabet-mobile-btn.intro-hidden {
+    opacity: 0;
+    transform: translateX(50px);
+    pointer-events: none;
+}
+
+/* Animation glow quand lettre ajoutée */
+.alphabet-mobile-btn.letter-added {
+    animation: alphabetBtnGlow 0.6s ease-out;
+}
+
+@keyframes alphabetBtnGlow {
+    0% {
+        box-shadow: 0 0 0 0 rgba(240, 192, 64, 0.6);
+        border-color: rgba(240, 192, 64, 0.3);
+    }
+    30% {
+        box-shadow: 0 0 20px 8px rgba(240, 192, 64, 0.5), 0 0 40px 15px rgba(240, 192, 64, 0.2);
+        border-color: #f0c040;
+        transform: scale(1.1);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(240, 192, 64, 0);
+        border-color: rgba(240, 192, 64, 0.3);
+        transform: scale(1);
+    }
+}
+
+.alphabet-mobile-btn.letter-added .alphabet-btn-heart {
+    animation: heartPulseBtn 0.6s ease-out;
+}
+
+@keyframes heartPulseBtn {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.3); fill: rgba(240, 192, 64, 0.8); }
+    100% { transform: scale(1); }
+}
+
+/* Drawer alphabet mobile */
+.alphabet-mobile-drawer {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.alphabet-mobile-content {
+    background: rgba(15, 15, 20, 0.95);
+    border: 1px solid rgba(240, 192, 64, 0.2);
+    border-radius: 1rem;
+    padding: 1.8rem;
+    max-width: 360px;
+    width: 92%;
+    position: relative;
+    animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp {
+    from { 
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.alphabet-mobile-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.alphabet-mobile-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.alphabet-mobile-close svg {
+    width: 18px;
+    height: 18px;
+}
+
+.alphabet-mobile-content .alphabet-heart-main {
+    width: 55px;
+    height: 50px;
+    margin: 0 auto 2rem;
+}
+
+.alphabet-grid-mobile {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.6rem;
+}
+
+.alphabet-grid-mobile .alphabet-letter {
+    width: 100%;
+    aspect-ratio: 1;
+    font-size: 1rem;
+}
+
+/* Dernière ligne Y-Z centrée */
+.alphabet-last-row-mobile {
+    display: flex;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-top: 0.6rem;
+}
+
+.alphabet-last-row-mobile .alphabet-letter {
+    width: calc((100% - 0.6rem * 5) / 6);
+    aspect-ratio: 1;
+    font-size: 1rem;
+}
+
+/* ============================================
+   📱 MEDIA QUERIES BOMBANIME
+   ============================================ */
+
+/* Tablette */
+@media (max-width: 1024px) {
+    .alphabet-panel {
+        right: 1.5rem;
+        padding: 1rem;
+        height: 75vh;
+    }
+    
+    .alphabet-heart-main {
+        width: 60px;
+        height: 55px;
+    }
+    
+    .alphabet-letter {
+        width: 42px;
+        height: 38px;
+        font-size: 1rem;
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    /* Contrôle son en haut à gauche */
+    .sound-control {
+        top: 20px;
+        bottom: auto;
+        left: 20px;
+        padding: 5px 8px;
+    }
+    
+    .sound-btn {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .sound-btn svg {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .sound-slider {
+        width: 50px;
+    }
+    
+    /* Noms des joueurs plus petits mais plus de caractères */
+    .bombanime-player-slot .player-name {
+        font-size: 0.7rem;
+        max-width: 120px;
+    }
+    
+    /* Vies plus petites */
+    .player-lives {
+        bottom: -12px;
+        gap: 2px;
+    }
+    
+    .player-life {
+        width: 12px;
+        height: 12px;
+    }
+    
+    /* Input zone */
+    .input-zone {
+        bottom: 8%;
+    }
+    
+    .game-input {
+        font-size: 1rem;
+        padding: 0.6rem 1rem;
+        max-width: 280px;
+    }
+    
+    .game-input::placeholder {
+        font-size: 0.75rem;
+    }
+    
+    /* Message éliminé */
+    .eliminated-message {
+        font-size: 0.85rem;
+        bottom: 4%;
+    }
+    
+    /* Message attente */
+    .waiting-message {
+        font-size: 0.85rem;
+    }
+    
+    /* Réponses joueurs */
+    .player-answer {
+        max-width: 110px;
+    }
+    
+    /* Reflet bombe plus petit */
+    .bomb-highlight {
+        width: 3px;
+        height: 3px;
+    }
+    
+    /* Cadenas */
+    .player-lock {
+        right: -28px;
+    }
+    
+    .player-lock svg {
+        width: 18px;
+        height: 18px;
+    }
+    
+    /* Winner screen mobile */
+    .crown-svg {
+        width: 55px;
+        height: 55px;
+    }
+    
+    .winner-title {
+        font-size: 0.85rem;
+        letter-spacing: 0.2em;
+    }
+    
+    .bombanime-winner-screen .winner-name {
+        font-size: 2rem;
+    }
+    
+    .bombanime-winner-screen .winner-name.no-winner {
+        font-size: 1.5rem;
+    }
+    
+    .winner-stats {
+        gap: 2rem;
+    }
+    
+    .winner-stat .stat-value {
+        font-size: 1.2rem;
+    }
+    
+    .winner-stat .stat-label {
+        font-size: 0.65rem;
+    }
+    
+    .winner-back-btn {
+        padding: 0.6rem 2rem;
+        font-size: 0.85rem;
+    }
+    
+    .winner-content {
+        gap: 1rem;
+    }
+}
+
+/* Mobile petit */
+@media (max-width: 480px) {
+    .bombanime-player-slot .player-name {
+        font-size: 0.6rem;
+        max-width: 100px;
+    }
+    
+    .player-lives {
+        bottom: -10px;
+    }
+    
+    .player-life {
+        width: 10px;
+        height: 10px;
+    }
+    
+    .game-input {
+        font-size: 0.9rem;
+        max-width: 240px;
+    }
+    
+    .input-zone {
+        bottom: 6%;
+    }
+    
+    .player-answer {
+        max-width: 90px;
+    }
+    
+    /* Reflet bombe plus petit */
+    .bomb-highlight {
+        width: 2px;
+        height: 2px;
+    }
+    
+    .player-lock {
+        right: -22px;
+    }
+    
+    .player-lock svg {
+        width: 14px;
+        height: 14px;
+    }
+    
+    /* Bouton alphabet mobile plus petit */
+    .alphabet-mobile-btn {
+        padding: 6px 10px;
+    }
+    
+    .alphabet-mobile-btn .alphabet-btn-heart {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .alphabet-mobile-btn .alphabet-btn-arrow {
+        width: 12px;
+        height: 12px;
+    }
+    
+    /* Drawer plus compact */
+    .alphabet-mobile-content {
+        padding: 1.2rem;
+    }
+    
+    .alphabet-mobile-content .alphabet-heart-main {
+        margin-bottom: 1.2rem;
+    }
+    
+    .alphabet-grid-mobile {
+        gap: 0.5rem;
+    }
+    
+    .alphabet-grid-mobile .alphabet-letter {
+        font-size: 0.9rem;
+    }
+    
+    .alphabet-last-row-mobile {
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+    
+    .alphabet-last-row-mobile .alphabet-letter {
+        font-size: 0.9rem;
+    }
+    
+    /* Winner screen mobile petit */
+    .crown-svg {
+        width: 45px;
+        height: 45px;
+    }
+    
+    .winner-title {
+        font-size: 0.75rem;
+        letter-spacing: 0.15em;
+    }
+    
+    .bombanime-winner-screen .winner-name {
+        font-size: 1.6rem;
+    }
+    
+    .bombanime-winner-screen .winner-name.no-winner {
+        font-size: 1.3rem;
+    }
+    
+    .winner-stats {
+        gap: 1.5rem;
+    }
+    
+    .winner-stat .stat-value {
+        font-size: 1rem;
+    }
+    
+    .winner-stat .stat-label {
+        font-size: 0.6rem;
+    }
+    
+    .winner-back-btn {
+        padding: 0.5rem 1.5rem;
+        font-size: 0.8rem;
+        margin-top: 1.5rem;
+    }
+    
+    .winner-content {
+        gap: 0.8rem;
+    }
+}
+
+/* Paysage mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+    .bombanime-player-slot .player-name {
+        font-size: 0.55rem;
+    }
+    
+    .player-life {
+        width: 9px;
+        height: 9px;
+    }
+    
+    .input-zone {
+        bottom: 5%;
+    }
+    
+    .game-input {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.8rem;
+        max-width: 200px;
+    }
+    
+    .sound-control {
+        top: 10px;
+        left: 10px;
+        padding: 4px 6px;
+    }
+    
+    .alphabet-mobile-btn {
+        top: 10px;
+        right: 10px;
+        padding: 4px 8px;
+    }
 }

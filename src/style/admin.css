@@ -128,6 +128,12 @@ body {
     color: rgba(139, 92, 246, 0.8);
 }
 
+.mode-badge-header.bombanime {
+    background: rgba(74, 222, 128, 0.1);
+    border-color: rgba(74, 222, 128, 0.25);
+    color: rgba(74, 222, 128, 0.8);
+}
+
 .status-pill {
     display: flex;
     align-items: center;
@@ -279,6 +285,23 @@ body {
 
 .mode-badge.rivalry:hover {
     color: rgba(139, 92, 246, 0.9);
+}
+
+/* Mode BombAnime - Vert */
+.mode-badge.bombanime {
+    color: rgba(74, 222, 128, 0.6);
+}
+
+.mode-badge.bombanime::before {
+    background: linear-gradient(90deg, transparent, rgba(74, 222, 128, 0.1), transparent);
+}
+
+.mode-badge.bombanime .mode-badge-line {
+    background: linear-gradient(90deg, transparent, rgba(74, 222, 128, 0.4), rgba(74, 222, 128, 0.6));
+}
+
+.mode-badge.bombanime:hover {
+    color: rgba(74, 222, 128, 0.9);
 }
 
 /* Slide reveal effect */
@@ -453,6 +476,44 @@ body {
     text-shadow: 0 0 1.25rem rgba(240, 192, 64, 0.5);
 }
 
+/* Mode Rivalry - Bouton violet */
+.btn-wrapper.rivalry .main-action-btn:hover {
+    border-color: #8b5cf6;
+    box-shadow: 0 0 3.75rem rgba(139, 92, 246, 0.25);
+}
+
+.btn-wrapper.rivalry .main-action-btn::before {
+    background: conic-gradient(from 0deg, transparent, #8b5cf6, transparent);
+}
+
+.btn-wrapper.rivalry .main-action-btn:hover .btn-text {
+    color: #8b5cf6;
+    text-shadow: 0 0 1.25rem rgba(139, 92, 246, 0.5);
+}
+
+.btn-wrapper.rivalry::before {
+    border-color: #8b5cf6;
+}
+
+/* Mode FizzBuzz - Bouton vert */
+.btn-wrapper.fizzbuzz .main-action-btn:hover {
+    border-color: #4ade80;
+    box-shadow: 0 0 3.75rem rgba(74, 222, 128, 0.25);
+}
+
+.btn-wrapper.fizzbuzz .main-action-btn::before {
+    background: conic-gradient(from 0deg, transparent, #4ade80, transparent);
+}
+
+.btn-wrapper.fizzbuzz .main-action-btn:hover .btn-text {
+    color: #4ade80;
+    text-shadow: 0 0 1.25rem rgba(74, 222, 128, 0.5);
+}
+
+.btn-wrapper.fizzbuzz::before {
+    border-color: #4ade80;
+}
+
 /* Particules */
 .particles-container {
     position: absolute;
@@ -471,6 +532,45 @@ body {
     opacity: 0;
     pointer-events: none;
     box-shadow: 0 0 0.375rem rgba(255, 215, 0, 0.5);
+}
+
+/* Particules mode Rivalry - Violet */
+.btn-wrapper.rivalry .particle {
+    background: #8b5cf6;
+    box-shadow: 0 0 0.375rem rgba(139, 92, 246, 0.5);
+}
+
+/* Particules mode FizzBuzz - Vert */
+.btn-wrapper.fizzbuzz .particle {
+    background: #4ade80;
+    box-shadow: 0 0 0.375rem rgba(74, 222, 128, 0.5);
+}
+
+/* ============================================
+   MODE BOMBANIME - Styles verts
+   ============================================ */
+.btn-wrapper.bombanime .main-action-btn:hover {
+    border-color: #4ade80;
+    box-shadow: 0 0 3.75rem rgba(74, 222, 128, 0.25);
+}
+
+.btn-wrapper.bombanime .main-action-btn::before {
+    background: conic-gradient(from 0deg, transparent, #4ade80, transparent);
+}
+
+.btn-wrapper.bombanime .main-action-btn:hover .btn-text {
+    color: #4ade80;
+    text-shadow: 0 0 1.25rem rgba(74, 222, 128, 0.5);
+}
+
+.btn-wrapper.bombanime::before {
+    border-color: #4ade80;
+}
+
+/* Particules mode BombAnime - Vert */
+.btn-wrapper.bombanime .particle {
+    background: #4ade80;
+    box-shadow: 0 0 0.375rem rgba(74, 222, 128, 0.5);
 }
 
 .particle:nth-child(1) { left: 50%; top: 50%; }
@@ -1224,6 +1324,11 @@ body {
 
 /* Mode de jeu - 2 colonnes */
 .setting-group.mode-group .setting-group-options {
+    grid-template-columns: 1fr 1fr;
+}
+
+/* Options à 2 choix - pleine largeur */
+.setting-group-options.two-options {
     grid-template-columns: 1fr 1fr;
 }
 
@@ -2045,6 +2150,46 @@ body {
     text-transform: uppercase;
     letter-spacing: 2px;
     opacity: 0.5;
+}
+
+.lobby-max-badge {
+    margin-left: 8px;
+    padding: 2px 8px;
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    border-radius: 4px;
+    color: #ef4444;
+    font-size: 0.55rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    animation: maxBadgePulse 2s ease-in-out infinite;
+}
+
+@keyframes maxBadgePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* 🆕 TEMPORAIRE: Bouton pour ajouter des joueurs fictifs */
+.add-fake-btn {
+    margin-left: 1rem;
+    padding: 0.3rem 0.6rem;
+    background: rgba(240, 192, 64, 0.15);
+    border: 1px solid rgba(240, 192, 64, 0.3);
+    border-radius: 4px;
+    color: var(--gold);
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.add-fake-btn:hover {
+    background: rgba(240, 192, 64, 0.25);
+    border-color: rgba(240, 192, 64, 0.5);
 }
 
 .players-grid-lobby {
@@ -4100,6 +4245,11 @@ body {
     text-transform: uppercase;
     letter-spacing: 1px;
     transition: all 0.3s;
+}
+
+/* Enlever uppercase en mode cooldown pour afficher "20s" au lieu de "20S" */
+.header-text-btn.cooldown span {
+    text-transform: none;
 }
 
 .header-text-btn svg {
@@ -8323,6 +8473,11 @@ body {
     box-shadow: 0 0 40px rgba(139, 92, 246, 0.3), 0 0 80px rgba(139, 92, 246, 0.1);
 }
 
+.mode-card.bombanime::before {
+    background: linear-gradient(135deg, #22c55e, transparent, #10b981);
+    box-shadow: 0 0 40px rgba(34, 197, 94, 0.3), 0 0 80px rgba(34, 197, 94, 0.1);
+}
+
 .mode-card:hover::before {
     opacity: 1;
 }
@@ -8381,6 +8536,11 @@ body {
 .mode-card.inter-commu .mode-aura-particle {
     background: linear-gradient(to top, transparent, #8b5cf6, transparent);
     box-shadow: 0 0 6px #8b5cf6, 0 0 12px #8b5cf6;
+}
+
+.mode-card.bombanime .mode-aura-particle {
+    background: linear-gradient(to top, transparent, #22c55e, transparent);
+    box-shadow: 0 0 6px #22c55e, 0 0 12px #22c55e;
 }
 
 /* Positions des particules */
@@ -8594,6 +8754,10 @@ body {
     background: #8b5cf6;
 }
 
+.mode-card.bombanime .mode-character-glow {
+    background: #22c55e;
+}
+
 /* Card content */
 .mode-card-content {
     position: absolute;
@@ -8610,12 +8774,17 @@ body {
     bottom: 3.2rem;
 }
 
+/* Aligner le texte de FizzBuzz avec les autres */
+.mode-card.fizzbuzz .mode-card-content {
+    bottom: 2.8rem;
+}
+
 .mode-card-label {
-    font-size: 0.6rem;
+    font-size: 0.55rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 2px;
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.5rem;
     opacity: 0.8;
 }
 
@@ -8627,19 +8796,28 @@ body {
     color: #8b5cf6;
 }
 
+.mode-card.bombanime .mode-card-label {
+    color: #22c55e;
+}
+
+/* Aligner le texte de BombAnime avec les autres */
+.mode-card.bombanime .mode-card-content {
+    bottom: 3.2rem;
+}
+
 .mode-card-title {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 2rem;
+    font-size: 1.85rem;
     letter-spacing: 2px;
     color: #ffffff;
     line-height: 1;
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.5rem;
 }
 
 .mode-card-separator {
     width: 40px;
     height: 2px;
-    margin: 0.6rem auto;
+    margin: 0.5rem auto;
     border-radius: 2px;
     opacity: 0.6;
 }
@@ -8652,10 +8830,100 @@ body {
     background: linear-gradient(90deg, transparent, #8b5cf6, transparent);
 }
 
+.mode-card.bombanime .mode-card-separator {
+    background: linear-gradient(90deg, transparent, #22c55e, transparent);
+}
+
 .mode-card-desc {
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     color: #6b7280;
-    line-height: 1.55;
+    line-height: 1.5;
+}
+
+/* Indicateur nombre de joueurs - Badge en bas à droite */
+.mode-card-players {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 6px;
+    background: rgba(30, 30, 35, 0.95);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 30;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    transition: all 0.3s ease;
+}
+
+.mode-card:hover .mode-card-players {
+    transform: scale(1.05);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5);
+}
+
+.mode-players-icon {
+    width: 10px;
+    height: 10px;
+    stroke: rgba(255, 255, 255, 0.5);
+}
+
+.mode-players-count {
+    font-size: 0.55rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: 0.3px;
+}
+
+.mode-card.classique .mode-card-players {
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.mode-card.classique:hover .mode-card-players {
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);
+}
+
+.mode-card.classique .mode-players-count {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.mode-card.classique .mode-players-icon {
+    stroke: rgba(255, 255, 255, 0.5);
+}
+
+.mode-card.inter-commu .mode-card-players {
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.mode-card.inter-commu:hover .mode-card-players {
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);
+}
+
+.mode-card.inter-commu .mode-players-count {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.mode-card.inter-commu .mode-players-icon {
+    stroke: rgba(255, 255, 255, 0.5);
+}
+
+.mode-card.bombanime .mode-card-players {
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.mode-card.bombanime:hover .mode-card-players {
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);
+}
+
+.mode-card.bombanime .mode-players-count {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.mode-card.bombanime .mode-players-icon {
+    stroke: rgba(255, 255, 255, 0.5);
 }
 
 /* Dual characters */
@@ -8667,13 +8935,12 @@ body {
 
 .mode-character-wrapper.dual .mode-card-character.char-left {
     z-index: 3;
-    margin-right: -40px;
+    margin-right: -20px;
 }
 
 .mode-character-wrapper.dual .mode-card-character.char-right {
     z-index: 2;
-    transform: scaleX(-1);
-    margin-left: -40px;
+    margin-left: -20px;
 }
 
 .mode-card.inter-commu:hover .mode-card-character.char-left {
@@ -8681,7 +8948,7 @@ body {
 }
 
 .mode-card.inter-commu:hover .mode-card-character.char-right {
-    transform: scaleX(-1) translateY(-15px);
+    transform: translateY(-15px);
 }
 
 /* Désactiver le mouvement pour la carte disabled */
@@ -8690,7 +8957,7 @@ body {
 }
 
 .mode-card.inter-commu.disabled:hover .mode-card-character.char-right {
-    transform: scaleX(-1) !important;
+    transform: none !important;
 }
 
 /* Disabled card styling (grayed out) */
@@ -9017,4 +9284,1982 @@ body {
 .team-nav-btn.team-2:hover {
     background: rgba(240, 192, 64, 0.2);
     border-color: #fcd34d;
+}
+/* ============================================
+   MODE FIZZBUZZ + CARTES SECONDAIRES
+   ============================================ */
+
+/* Séparateur vertical entre modes principaux et secondaires */
+.mode-cards-separator {
+    width: 1px;
+    height: 320px;
+    background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+    margin: 0 1.5rem;
+    align-self: center;
+}
+
+/* Cartes secondaires (FizzBuzz, À venir) - Plus petites */
+.mode-card.secondary {
+    width: 220px;
+    height: 340px;
+}
+
+.mode-card.secondary .mode-card-character {
+    height: 260px;
+}
+
+.mode-card.secondary .mode-character-wrapper {
+    bottom: 110px;
+}
+
+.mode-card.secondary .mode-card-content {
+    bottom: 1.5rem;
+    padding: 0 1.2rem;
+}
+
+.mode-card.secondary .mode-card-title {
+    font-size: 1.6rem;
+}
+
+.mode-card.secondary .mode-card-label {
+    font-size: 0.5rem;
+    margin-bottom: 0.4rem;
+}
+
+.mode-card.secondary .mode-card-desc {
+    font-size: 0.65rem;
+    line-height: 1.4;
+}
+
+.mode-card.secondary .mode-card-separator {
+    width: 30px;
+    margin: 0.4rem auto;
+}
+
+/* Badge Nouveau / Bientôt */
+.mode-card-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.5rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    z-index: 30;
+}
+
+.mode-card-badge.new {
+    background: linear-gradient(135deg, #4ade80, #22c55e);
+    color: #000;
+}
+
+.mode-card-badge.coming {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Stats pour FizzBuzz */
+.mode-card-stats {
+    display: flex;
+    justify-content: center;
+    gap: 1.2rem;
+    margin-top: 0.8rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mode-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.mode-stat-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    color: #4ade80;
+}
+
+.mode-stat-label {
+    font-size: 0.5rem;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Style spécifique FizzBuzz - Vert */
+.mode-card.fizzbuzz .mode-card-label {
+    color: #4ade80;
+}
+
+.mode-card.fizzbuzz .mode-card-separator {
+    background: linear-gradient(90deg, transparent, #4ade80, transparent);
+}
+
+.mode-card.fizzbuzz .mode-character-glow {
+    background: #4ade80;
+}
+
+.mode-card.fizzbuzz .mode-aura-particle {
+    background: linear-gradient(to top, transparent, #4ade80, transparent);
+    box-shadow: 0 0 6px #4ade80, 0 0 12px #4ade80;
+}
+
+.mode-card.fizzbuzz .mode-card-neon-line::before {
+    background: conic-gradient(transparent 0deg, transparent 340deg, #4ade80 360deg);
+}
+
+.mode-card.fizzbuzz::before {
+    background: linear-gradient(135deg, #4ade80, transparent, #22c55e);
+    box-shadow: 0 0 40px rgba(74, 222, 128, 0.3), 0 0 80px rgba(74, 222, 128, 0.1);
+}
+
+.mode-card.fizzbuzz:hover .mode-card-bg {
+    border-color: rgba(74, 222, 128, 0.35);
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.7), 0 0 50px rgba(74, 222, 128, 0.08);
+}
+
+/* Style spécifique Coming Soon - Gris */
+.mode-card.coming-soon .mode-card-label {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.mode-card.coming-soon .mode-card-separator {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
+.mode-card.coming-soon .mode-card-character {
+    filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.7)) grayscale(0.6) brightness(0.5);
+}
+
+.mode-card.coming-soon .mode-card-bg {
+    filter: grayscale(0.5) brightness(0.5);
+}
+
+.mode-card.coming-soon .mode-card-content {
+    opacity: 0.6;
+}
+
+.mode-card.coming-soon:hover .mode-card-character {
+    transform: none !important;
+}
+
+.mode-card.coming-soon:hover::before {
+    opacity: 0.2 !important;
+}
+
+/* Animation d'apparition pour la 3e carte */
+.mode-modal-content.active .mode-card:nth-child(3) {
+    animation-delay: 0.35s;
+}
+
+/* Ajustement container pour 3 cartes */
+.mode-cards-container {
+    align-items: center;
+}
+
+/* ============================================
+   PARAMÈTRES BOMBANIME
+   ============================================ */
+
+/* Style vert pour les options BombAnime */
+.bombanime-lives-group .setting-option-btn.active,
+.bombanime-timer-group .setting-option-btn.active {
+    background: rgba(74, 222, 128, 0.15);
+    border-color: rgba(74, 222, 128, 0.5);
+    color: #4ade80;
+}
+
+.bombanime-lives-group .setting-option-btn:hover,
+.bombanime-timer-group .setting-option-btn:hover {
+    border-color: rgba(74, 222, 128, 0.4);
+    color: #4ade80;
+}
+
+/* Labels verts pour BombAnime */
+.bombanime-serie-trigger .setting-group-label,
+.bombanime-lives-group .setting-group-label,
+.bombanime-timer-group .setting-group-label {
+    color: rgba(74, 222, 128, 0.8);
+}
+
+.bombanime-serie-trigger .setting-group-icon,
+.bombanime-lives-group .setting-group-icon,
+.bombanime-timer-group .setting-group-icon {
+    stroke: #4ade80;
+}
+
+.bombanime-serie-trigger .setting-group-value,
+.bombanime-lives-group .setting-group-value,
+.bombanime-timer-group .setting-group-value {
+    color: #4ade80;
+}
+
+/* Dropdown Underline Élégant BombAnime */
+.bombanime-serie-dropdown {
+    position: relative;
+}
+
+.bombanime-dropdown-trigger {
+    width: 100%;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(74, 222, 128, 0.25);
+    color: #4ade80;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.bombanime-dropdown-trigger::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: #4ade80;
+    transition: width 0.3s ease;
+}
+
+.bombanime-dropdown-trigger:hover::after,
+.bombanime-serie-dropdown.open .bombanime-dropdown-trigger::after {
+    width: 100%;
+}
+
+.bombanime-dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.bombanime-serie-dropdown .setting-group-icon {
+    stroke: #4ade80;
+}
+
+.bombanime-serie-dropdown .setting-group-label {
+    color: rgba(74, 222, 128, 0.8);
+}
+
+.bombanime-dropdown-value {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0 0.75rem 1.625rem;
+}
+
+.bombanime-dropdown-name {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #4ade80;
+}
+
+.bombanime-dropdown-count {
+    font-size: 0.6rem;
+    color: rgba(74, 222, 128, 0.45);
+}
+
+.bombanime-dropdown-arrow {
+    width: 14px;
+    height: 14px;
+    stroke: #4ade80;
+    opacity: 0.5;
+    transition: all 0.2s;
+}
+
+.bombanime-serie-dropdown.open .bombanime-dropdown-arrow {
+    transform: rotate(180deg);
+    opacity: 1;
+}
+
+.bombanime-dropdown-trigger:hover .bombanime-dropdown-arrow {
+    opacity: 0.8;
+}
+
+/* Menu dropdown */
+.bombanime-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: linear-gradient(180deg, rgba(20, 25, 30, 0.98) 0%, rgba(15, 18, 22, 0.98) 100%);
+    border: 1px solid rgba(74, 222, 128, 0.15);
+    border-radius: 0.625rem;
+    padding: 0.375rem;
+    max-height: 240px;
+    overflow-y: auto;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 100;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.bombanime-serie-dropdown.open .bombanime-dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* Items dropdown */
+.bombanime-dropdown-item {
+    padding: 0.6rem 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-radius: 0.375rem;
+    position: relative;
+}
+
+.bombanime-dropdown-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 0;
+    background: #4ade80;
+    border-radius: 2px;
+    transition: height 0.2s;
+}
+
+.bombanime-dropdown-item:hover::before,
+.bombanime-dropdown-item.selected::before {
+    height: 55%;
+}
+
+.bombanime-dropdown-item:hover {
+    background: rgba(74, 222, 128, 0.05);
+    padding-left: 0.875rem;
+}
+
+.bombanime-dropdown-item.selected {
+    background: rgba(74, 222, 128, 0.08);
+    padding-left: 0.875rem;
+}
+
+.bombanime-dropdown-item-name {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.65);
+    transition: color 0.15s;
+}
+
+.bombanime-dropdown-item:hover .bombanime-dropdown-item-name {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.bombanime-dropdown-item.selected .bombanime-dropdown-item-name {
+    color: #4ade80;
+    font-weight: 500;
+}
+
+.bombanime-dropdown-item-count {
+    font-size: 0.7rem;
+    color: rgba(74, 222, 128, 0.35);
+    font-weight: 500;
+}
+
+.bombanime-dropdown-item.selected .bombanime-dropdown-item-count {
+    color: rgba(74, 222, 128, 0.7);
+}
+
+/* Scrollbar dropdown */
+.bombanime-dropdown-menu::-webkit-scrollbar {
+    width: 4px;
+}
+
+.bombanime-dropdown-menu::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.bombanime-dropdown-menu::-webkit-scrollbar-thumb {
+    background: rgba(74, 222, 128, 0.25);
+    border-radius: 2px;
+}
+
+.bombanime-dropdown-menu::-webkit-scrollbar-thumb:hover {
+    background: rgba(74, 222, 128, 0.4);
+}
+
+/* Slider Timer BombAnime */
+.bombanime-timer-slider-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.bombanime-timer-group {
+    overflow: visible;
+}
+
+.bombanime-timer-group .setting-group-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    max-height: 0;
+    padding: 0 0.75rem;
+    opacity: 0;
+    overflow: visible;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bombanime-timer-group:hover .setting-group-options {
+    max-height: 7rem;
+    padding: 1.25rem 0.75rem 1rem;
+    opacity: 1;
+}
+
+.bombanime-timer-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(74, 222, 128, 0.15);
+    outline: none;
+    cursor: pointer;
+    overflow: visible;
+}
+
+.bombanime-timer-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #4ade80;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+    transition: all 0.2s;
+}
+
+.bombanime-timer-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(74, 222, 128, 0.7);
+}
+
+.bombanime-timer-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #4ade80;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+}
+
+.timer-slider-labels.bombanime {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: rgba(74, 222, 128, 0.6);
+}
+
+/* 🤖 TEMPORAIRE: Styles pour le bouton d'ajout de bots */
+.bombanime-bots-group {
+    border-color: rgba(74, 222, 128, 0.15);
+}
+
+.bombanime-bots-group .setting-group-label,
+.bombanime-bots-group .setting-group-icon {
+    color: rgba(74, 222, 128, 0.7);
+}
+
+.bombanime-bots-group .setting-group-value {
+    color: #4ade80;
+    font-weight: 600;
+}
+
+.bombanime-bots-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.bombanime-add-bot-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px solid rgba(74, 222, 128, 0.3);
+    border-radius: 8px;
+    color: #4ade80;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    justify-content: center;
+}
+
+.bombanime-add-bot-btn:hover {
+    background: rgba(74, 222, 128, 0.2);
+    border-color: rgba(74, 222, 128, 0.5);
+    transform: translateY(-1px);
+}
+
+.bombanime-add-bot-btn:active {
+    transform: translateY(0);
+}
+
+.bombanime-add-bot-btn svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+}
+
+.bombanime-add-bot-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Badge header pour BombAnime */
+.mode-badge-header.fizzbuzz {
+    background: rgba(74, 222, 128, 0.1);
+    border-color: rgba(74, 222, 128, 0.25);
+    color: rgba(74, 222, 128, 0.8);
+}
+
+/* Badge mode selector pour BombAnime */
+.mode-badge.fizzbuzz {
+    color: rgba(74, 222, 128, 0.6);
+}
+
+.mode-badge.fizzbuzz::before {
+    background: linear-gradient(90deg, transparent, rgba(74, 222, 128, 0.1), transparent);
+}
+
+.mode-badge.fizzbuzz .mode-badge-line {
+    background: linear-gradient(90deg, transparent, rgba(74, 222, 128, 0.4), rgba(74, 222, 128, 0.6));
+}
+
+.mode-badge.fizzbuzz:hover {
+    color: rgba(74, 222, 128, 0.9);
+}
+
+/* Responsive - écrans plus petits */
+@media (max-width: 1400px) {
+    .mode-cards-container {
+        gap: 1.5rem;
+    }
+    
+    .mode-cards-separator {
+        margin: 0 1rem;
+    }
+    
+    .mode-card {
+        width: 250px;
+        height: 380px;
+    }
+    
+    .mode-card.secondary {
+        width: 190px;
+        height: 300px;
+    }
+    
+    .mode-card.secondary .mode-card-character {
+        height: 220px;
+    }
+}
+/* ============================================
+   💣 BOMBANIME - Styles Admin (v22)
+   ============================================ */
+
+.bombanime-admin-container {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: stretch;
+    justify-content: flex-start;
+    background: #0a0a0f;
+    z-index: 200;
+}
+
+/* ============================================
+   PANNEAU DE LOGS À GAUCHE - Style Clean Minimal Sharp
+   ============================================ */
+.bombanime-logs-panel {
+    width: 240px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: linear-gradient(90deg, 
+        rgba(15, 15, 20, 0.7) 0%, 
+        rgba(15, 15, 20, 0.7) 60%,
+        rgba(15, 15, 20, 0.1) 90%, 
+        transparent 100%
+    );
+}
+
+.logs-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.6rem 0;
+    padding-bottom: 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+}
+
+.logs-list::-webkit-scrollbar {
+    width: 3px;
+}
+
+.logs-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.logs-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+}
+
+.logs-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Entrée de log - Style A */
+.log-entry {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.8rem;
+    transition: opacity 0.15s ease;
+}
+
+/* Point stylé devant le pseudo */
+.log-dot {
+    width: 6px;
+    height: 6px;
+    background: rgba(125, 206, 160, 0.7);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.log-entry.log-explosion .log-dot {
+    background: rgba(255, 107, 107, 0.7);
+}
+
+.log-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.log-player {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.log-answer {
+    font-size: 0.65rem;
+    color: rgba(125, 206, 160, 0.6);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+}
+
+.log-entry.log-explosion .log-answer {
+    color: rgba(255, 107, 107, 0.6);
+}
+
+/* ============================================
+   ZONE DE JEU PRINCIPALE
+   ============================================ */
+.bombanime-game-zone {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Cercle de joueurs */
+.players-circle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Slot joueur */
+.player-slot {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    transform: translate(-50%, -50%);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.player-slot .player-name {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.35);
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.player-slot.active .player-name {
+    color: #f0c040;
+}
+
+.player-hex-container {
+    position: relative;
+}
+
+.player-hex {
+    position: relative;
+}
+
+.player-hex svg {
+    width: 100%;
+    height: 100%;
+}
+
+.player-hex svg polygon {
+    fill: #101018;
+    stroke: rgba(255,255,255,0.08);
+    stroke-width: 2;
+    transition: all 0.2s ease;
+}
+
+.player-slot.active .player-hex svg {
+    filter: drop-shadow(0 0 12px rgba(240, 192, 64, 0.5));
+}
+
+.player-slot.active .player-hex svg polygon {
+    stroke: #f0c040;
+}
+
+.player-slot.eliminated .player-hex svg polygon {
+    opacity: 0.3;
+    stroke: rgba(255,255,255,0.03);
+}
+
+.player-letter {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.5);
+    transition: all 0.2s ease;
+}
+
+.player-slot.active .player-letter {
+    color: #f0c040;
+}
+
+.player-slot.eliminated .player-letter {
+    opacity: 0.3;
+}
+
+/* Player avatar (BombAnime) */
+.player-hex .player-avatar {
+    position: absolute;
+    left: 50%;
+    bottom: 8%;
+    transform: translateX(-50%);
+    width: 72%;
+    height: 72%;
+    border-radius: 50%;
+    object-fit: cover;
+    transition: all 0.2s ease;
+    filter: grayscale(30%) brightness(0.8);
+    opacity: 0.7;
+}
+
+.player-slot.active .player-hex .player-avatar {
+    filter: grayscale(0%) brightness(1.1);
+    box-shadow: 0 0 15px rgba(240, 192, 64, 0.4);
+    opacity: 1;
+}
+
+.player-slot.eliminated .player-hex .player-avatar {
+    filter: grayscale(100%) brightness(0.4);
+    opacity: 0.4;
+}
+
+/* Animation succès - avatar brille brièvement */
+.player-slot.success .player-hex .player-avatar {
+    filter: grayscale(0%) brightness(1.3);
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(125, 206, 160, 0.6);
+}
+
+/* Badge cœurs */
+.player-lives {
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 2px;
+    background: rgba(0,0,0,0.85);
+    padding: 3px 6px;
+    border-radius: 10px;
+    z-index: 5;
+}
+
+.player-life {
+    width: 11px;
+    height: 11px;
+    fill: #ef4444;
+    transition: all 0.2s ease;
+    transform-origin: center;
+}
+
+.player-life.lost {
+    fill: rgba(255,255,255,0.15);
+    animation: heart-break 0.3s ease-out forwards;
+}
+
+@keyframes heart-break {
+    0% {
+        fill: #ef4444;
+        transform: scale(1);
+    }
+    40% {
+        fill: #ef4444;
+        transform: scale(1.2);
+    }
+    100% {
+        fill: rgba(255,255,255,0.15);
+        transform: scale(1);
+    }
+}
+
+/* Zone réponse */
+.player-answer {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.25);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-weight: 600;
+    margin-top: 0.75rem;
+    transition: color 0.2s ease;
+}
+
+.player-slot.active .player-answer {
+    color: #f0c040;
+    text-shadow: 0 0 10px rgba(240, 192, 64, 0.5);
+}
+
+/* Already used - shake avatar + cadenas */
+.player-slot.already-used {
+    animation: avatar-shake 0.4s ease;
+}
+
+/* Shake error - nom invalide */
+.player-slot.shake-error {
+    animation: avatar-shake 0.4s ease;
+}
+
+.player-slot.shake-error .player-hex polygon {
+    stroke: #ef4444;
+    filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.6));
+}
+
+@keyframes avatar-shake {
+    0%, 100% { transform: translate(-50%, -50%) translateX(0); }
+    15% { transform: translate(-50%, -50%) translateX(-6px); }
+    30% { transform: translate(-50%, -50%) translateX(6px); }
+    45% { transform: translate(-50%, -50%) translateX(-5px); }
+    60% { transform: translate(-50%, -50%) translateX(5px); }
+    75% { transform: translate(-50%, -50%) translateX(-3px); }
+    90% { transform: translate(-50%, -50%) translateX(3px); }
+}
+
+.player-lock {
+    position: absolute;
+    right: -38px;
+    top: 50%;
+    transform: translateY(-50%) rotate(8deg);
+    opacity: 0;
+    pointer-events: none;
+    color: #888888;
+}
+
+.player-lock svg {
+    width: 24px;
+    height: 24px;
+    fill: #888888;
+    stroke: #aaaaaa;
+    filter: drop-shadow(0 0 4px rgba(150, 150, 150, 0.5));
+}
+
+.player-lock.show {
+    animation: lock-popup 0.6s ease-out forwards;
+}
+
+@keyframes lock-popup {
+    0% { opacity: 0; transform: translateY(-40%) rotate(8deg); }
+    25% { opacity: 1; transform: translateY(-50%) rotate(8deg); }
+    65% { opacity: 1; transform: translateY(-55%) rotate(8deg); }
+    100% { opacity: 0; transform: translateY(-60%) rotate(8deg); }
+}
+
+/* ============================================
+   BOMBE CHIBI
+   ============================================ */
+.bomb-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.bomb {
+    width: 70px;
+    height: 70px;
+    position: relative;
+}
+
+.bomb-body {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(160deg, #4a4a5a 0%, #2a2a35 40%, #15151d 100%);
+    border-radius: 50%;
+    border: 4px solid #3a3a45;
+    position: relative;
+    box-shadow: 8px 8px 0 rgba(0,0,0,0.5);
+    animation: bomb-pulse 0.35s ease-in-out infinite;
+}
+
+@keyframes bomb-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.035); }
+}
+
+.bomb-body::before {
+    content: '';
+    position: absolute;
+    top: 6%;
+    left: 10%;
+    width: 45%;
+    height: 40%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 40%, transparent 60%);
+    border-radius: 50%;
+}
+
+.bomb-body::after {
+    content: '';
+    position: absolute;
+    top: 15%;
+    right: 15%;
+    width: 10px;
+    height: 10px;
+    background: rgba(255,255,255,0.6);
+    border-radius: 50%;
+}
+
+.bomb.danger .bomb-body {
+    background: linear-gradient(160deg, #7a5a2a 0%, #5a3a15 40%, #2d1a08 100%);
+    border-color: #885500;
+    animation: bomb-pulse-danger 0.28s ease-in-out infinite;
+}
+
+@keyframes bomb-pulse-danger {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.045); }
+}
+
+.bomb.critical .bomb-body {
+    background: linear-gradient(160deg, #8a2a2a 0%, #5a1010 40%, #2d0505 100%);
+    border-color: #881212;
+    animation: bomb-pulse-critical 0.12s ease-in-out infinite;
+}
+
+@keyframes bomb-pulse-critical {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+}
+
+/* Mèche */
+.bomb-fuse-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bomb-cap {
+    position: absolute;
+    bottom: calc(var(--bomb-size, 70px) * 0.4);
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(var(--bomb-size, 70px) * 0.27);
+    height: calc(var(--bomb-size, 70px) * 0.16);
+    background: linear-gradient(180deg, #6a6a7a 0%, #4a4a5a 100%);
+    border-radius: 5px 5px 0 0;
+    z-index: 1;
+}
+
+.bomb-fuse {
+    position: absolute;
+    bottom: calc(var(--bomb-size, 70px) * 0.54);
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(var(--bomb-size, 70px) * 0.07);
+    height: calc(var(--bomb-size, 70px) * 0.67);
+    background: repeating-linear-gradient(180deg, #c4956a 0px, #c4956a 6px, #8B5A2B 6px, #8B5A2B 12px);
+    border-radius: 4px;
+}
+
+.bomb-spark {
+    position: absolute;
+    bottom: calc(var(--bomb-size, 70px) * 1.2);
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(var(--bomb-size, 70px) * 0.13);
+    height: calc(var(--bomb-size, 70px) * 0.13);
+    background: radial-gradient(circle at 50% 50%, #fff 0%, #fffae0 30%, #ffc800 60%, rgba(255, 150, 0, 0) 100%);
+    border-radius: 50%;
+    animation: spark-pulse 0.3s ease-in-out infinite;
+    box-shadow: 0 0 8px rgba(255, 200, 50, 0.9), 0 0 15px rgba(255, 150, 0, 0.6);
+}
+
+@keyframes spark-pulse {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.2); }
+}
+
+.bomb.danger .bomb-spark {
+    width: 11px;
+    height: 11px;
+    background: radial-gradient(circle at 50% 50%, #fff 0%, #ffee80 25%, #ff9500 55%, rgba(255, 100, 0, 0) 100%);
+}
+
+.bomb.critical .bomb-spark {
+    width: 13px;
+    height: 13px;
+    background: radial-gradient(circle at 50% 50%, #fff 0%, #ffaaaa 20%, #ff3300 50%, rgba(255, 0, 0, 0) 100%);
+}
+
+/* Timer */
+.bomb-timer {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #fff;
+    margin-top: 0.5rem;
+}
+
+.bomb-timer.danger {
+    color: #ff9500;
+}
+
+.bomb-timer.critical {
+    color: #ff3300;
+    animation: timer-pulse 0.3s ease-in-out infinite;
+}
+
+@keyframes timer-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.bomb-serie {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 0.3rem;
+}
+
+/* Dernier nom */
+.last-name-display {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.last-name-display span {
+    color: #f0c040;
+    font-weight: 600;
+}
+
+/* Animations feedback */
+.player-slot.success-flash .player-hex svg polygon {
+    stroke: #4ade80;
+    filter: drop-shadow(0 0 15px rgba(74, 222, 128, 0.6));
+}
+
+.player-slot.error-flash .player-hex svg polygon {
+    stroke: #ef4444;
+    filter: drop-shadow(0 0 15px rgba(239, 68, 68, 0.6));
+}
+
+.player-slot.exploding {
+    animation: explode-shake 0.35s ease;
+}
+
+@keyframes explode-shake {
+    0%, 100% { transform: translate(-50%, -50%); }
+    10% { transform: translate(-58%, -50%); }
+    20% { transform: translate(-42%, -50%); }
+    30% { transform: translate(-56%, -44%); }
+    40% { transform: translate(-44%, -56%); }
+    50% { transform: translate(-50%, -42%); }
+    60% { transform: translate(-56%, -50%); }
+    70% { transform: translate(-44%, -50%); }
+    80% { transform: translate(-50%, -56%); }
+    90% { transform: translate(-50%, -44%); }
+}
+
+/* Bomb explosion animation */
+.bomb.exploding {
+    animation: bomb-explode-shake 0.5s ease;
+}
+
+@keyframes bomb-explode-shake {
+    0%, 100% { transform: scale(1); }
+    10% { transform: scale(1.1) rotate(5deg); }
+    20% { transform: scale(0.95) rotate(-5deg); }
+    30% { transform: scale(1.1) rotate(3deg); }
+    40% { transform: scale(0.95) rotate(-3deg); }
+    50% { transform: scale(1.15); }
+    60% { transform: scale(0.9); }
+    70% { transform: scale(1.1); }
+    80% { transform: scale(0.95); }
+    90% { transform: scale(1.05); }
+}
+
+/* ============================================
+   ANIMATION SUCCÈS - Bonne réponse
+   ============================================ */
+.player-slot.success .player-hex {
+    animation: success-tilt-scale 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.player-slot.success .player-hex svg {
+    animation: success-hex-glow 0.4s ease-out;
+}
+
+@keyframes success-tilt-scale {
+    0% { transform: rotate(0deg) scale(1); }
+    40% { transform: rotate(-10deg) scale(1.12); }
+    100% { transform: rotate(0deg) scale(1); }
+}
+
+@keyframes success-hex-glow {
+    0% { filter: drop-shadow(0 0 8px rgba(240, 192, 64, 0.4)); }
+    40% { filter: drop-shadow(0 0 22px rgba(255, 215, 0, 0.95)); }
+    100% { filter: drop-shadow(0 0 8px rgba(240, 192, 64, 0.4)); }
+}
+
+/* Particules de succès */
+.success-particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: visible;
+}
+
+.success-particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: #ffd700;
+    border-radius: 50%;
+    opacity: 0;
+    box-shadow: 0 0 6px rgba(255, 215, 0, 0.8);
+}
+
+.player-slot.success .success-particle {
+    animation: success-particle-burst 0.5s ease-out forwards;
+}
+
+@keyframes success-particle-burst {
+    0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
+    30% { opacity: 1; transform: translate(var(--px), var(--py)) scale(1); }
+    100% { opacity: 0; transform: translate(calc(var(--px) * 1.8), calc(var(--py) * 1.8)) scale(0.3); }
+}
+
+.success-particle:nth-child(1) { top: 50%; left: 50%; --px: -18px; --py: -22px; animation-delay: 0ms; }
+.success-particle:nth-child(2) { top: 50%; left: 50%; --px: 20px; --py: -18px; animation-delay: 50ms; }
+.success-particle:nth-child(3) { top: 50%; left: 50%; --px: -22px; --py: 12px; animation-delay: 100ms; }
+.success-particle:nth-child(4) { top: 50%; left: 50%; --px: 18px; --py: 15px; animation-delay: 75ms; }
+
+/* Animation alphabet complet - même animation que succès + particules accentuées */
+.player-slot.alphabet-complete .player-hex {
+    animation: success-tilt-scale 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.player-slot.alphabet-complete .player-hex svg {
+    animation: success-hex-glow 0.5s ease-out;
+}
+
+/* Particules accentuées pour alphabet complet */
+.player-slot.alphabet-complete .success-particle {
+    width: 6px;
+    height: 6px;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 1), 0 0 20px rgba(255, 200, 50, 0.6);
+    animation: alphabet-particle-burst 0.8s ease-out forwards;
+}
+
+@keyframes alphabet-particle-burst {
+    0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
+    20% { opacity: 1; transform: translate(var(--px), var(--py)) scale(1.8); }
+    100% { opacity: 0; transform: translate(calc(var(--px) * 2.5), calc(var(--py) * 2.5 - 15px)) scale(0.3); }
+}
+
+/* ============================================
+   BOMBANIME GAME - Styles identiques au joueur
+   ============================================ */
+
+.bombanime-admin-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 3.5rem;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 161;
+}
+
+.players-circle {
+    position: relative;
+}
+
+/* Player slot */
+.player-slot {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    transition: all 0.3s ease;
+}
+
+.player-slot .player-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.35);
+    text-align: center;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.player-slot.active .player-name {
+    color: #f0c040;
+    font-weight: 600;
+    text-shadow: 0 0 10px rgba(240, 192, 64, 0.5);
+}
+
+.player-slot.eliminated .player-name {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* Hexagon container */
+.player-hex-container {
+    position: relative;
+}
+
+.player-hex {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.player-hex svg {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.player-hex polygon {
+    fill: rgba(20, 20, 30, 0.9);
+    stroke: rgba(255, 255, 255, 0.15);
+    stroke-width: 2;
+    transition: all 0.3s ease;
+}
+
+.player-slot.active .player-hex svg {
+    filter: drop-shadow(0 0 10px rgba(240, 192, 64, 0.5));
+}
+
+.player-slot.active .player-hex polygon {
+    fill: rgba(40, 35, 20, 0.95);
+    stroke: #f0c040;
+    stroke-width: 3;
+}
+
+.player-slot.eliminated .player-hex polygon {
+    fill: rgba(15, 15, 20, 0.8);
+    stroke: rgba(255, 255, 255, 0.08);
+}
+
+.player-avatar {
+    position: absolute;
+    left: 50%;
+    bottom: 8%;
+    transform: translateX(-50%);
+    z-index: 2;
+    width: 72%;
+    height: 72%;
+    border-radius: 50%;
+    object-fit: cover;
+    transition: all 0.2s ease;
+    filter: grayscale(30%) brightness(0.8);
+    opacity: 0.7;
+}
+
+.player-slot.active .player-avatar {
+    filter: grayscale(0%) brightness(1.1);
+    box-shadow: 0 0 15px rgba(240, 192, 64, 0.4);
+    opacity: 1;
+}
+
+.player-slot.eliminated .player-avatar {
+    filter: grayscale(100%) brightness(0.4);
+    opacity: 0.4;
+}
+
+/* Animation succès - avatar brille brièvement */
+.player-slot.success .player-avatar {
+    filter: grayscale(0%) brightness(1.3);
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(125, 206, 160, 0.6);
+}
+
+/* Player lives */
+.player-lives {
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 2px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 3px 6px;
+    border-radius: 10px;
+}
+
+.player-life {
+    width: 14px;
+    height: 14px;
+    fill: #ef4444;
+    filter: drop-shadow(0 0 3px rgba(239, 68, 68, 0.5));
+    transition: all 0.3s ease;
+}
+
+.player-life.lost {
+    fill: rgba(255, 255, 255, 0.15);
+    filter: none;
+}
+
+/* Player answer */
+.player-answer {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 8px;
+    max-width: 100px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Player typing en temps réel */
+.player-typing {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.25);
+    font-weight: 600;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    transition: color 0.2s ease;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Tailles adaptatives selon le nombre de joueurs */
+.player-slot[data-player-count="5"] .player-typing,
+.player-slot[data-player-count="6"] .player-typing {
+    font-size: 0.75rem;
+    max-width: 130px;
+}
+
+.player-slot[data-player-count="7"] .player-typing,
+.player-slot[data-player-count="8"] .player-typing {
+    font-size: 0.7rem;
+    max-width: 120px;
+}
+
+.player-slot[data-player-count="9"] .player-typing,
+.player-slot[data-player-count="10"] .player-typing {
+    font-size: 0.65rem;
+    max-width: 110px;
+}
+
+.player-slot[data-player-count="11"] .player-typing,
+.player-slot[data-player-count="12"] .player-typing,
+.player-slot[data-player-count="13"] .player-typing {
+    font-size: 0.6rem;
+    max-width: 100px;
+}
+
+.player-typing.has-text {
+    color: #f0c040;
+    text-shadow: 0 0 10px rgba(240, 192, 64, 0.5);
+}
+
+.player-typing.last-answer {
+    color: rgba(255, 255, 255, 0.25);
+    text-shadow: none;
+}
+
+/* Bomb container */
+.bomb-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.bomb {
+    width: 70px;
+    height: 70px;
+    position: relative;
+}
+
+.bomb-body {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(160deg, #4a4a5a 0%, #2a2a35 40%, #15151d 100%);
+    border-radius: 50%;
+    border: 4px solid #3a3a45;
+    position: relative;
+    box-shadow: 8px 8px 0 rgba(0,0,0,0.5);
+    transition: all 0.3s ease;
+    animation: bomb-pulse 0.35s ease-in-out infinite;
+}
+
+@keyframes bomb-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.035); }
+}
+
+.bomb-body::before {
+    content: '';
+    position: absolute;
+    top: 6%;
+    left: 10%;
+    width: 45%;
+    height: 40%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 40%, transparent 60%);
+    border-radius: 50%;
+}
+
+.bomb-body::after {
+    content: '';
+    position: absolute;
+    top: 15%;
+    right: 15%;
+    width: 10px;
+    height: 10px;
+    background: rgba(255,255,255,0.6);
+    border-radius: 50%;
+}
+
+.bomb-highlight {
+    position: absolute;
+    top: 25%;
+    right: 22%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255,255,255,0.4);
+    border-radius: 50%;
+}
+
+/* Bomb danger states */
+.bomb.danger .bomb-body {
+    background: linear-gradient(160deg, #7a5a2a 0%, #5a3a15 40%, #2d1a08 100%);
+    border-color: #885500;
+    box-shadow: 8px 8px 0 rgba(0,0,0,0.5), 0 0 15px rgba(255, 150, 0, 0.15);
+    animation: bomb-pulse-danger 0.28s ease-in-out infinite;
+}
+
+@keyframes bomb-pulse-danger {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.045); }
+}
+
+.bomb.critical .bomb-body {
+    background: linear-gradient(160deg, #8a2a2a 0%, #5a1010 40%, #2d0505 100%);
+    border-color: #881212;
+    box-shadow: 8px 8px 0 rgba(0,0,0,0.5), 0 0 18px rgba(255, 50, 50, 0.2);
+    animation: bomb-pulse-critical 0.12s ease-in-out infinite;
+}
+
+@keyframes bomb-pulse-critical {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+}
+
+/* Bomb fuse */
+.bomb-fuse-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bomb-cap {
+    position: absolute;
+    bottom: calc(var(--bomb-size, 70px) * 0.4);
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(var(--bomb-size, 70px) * 0.27);
+    height: calc(var(--bomb-size, 70px) * 0.16);
+    background: linear-gradient(180deg, #6a6a7a 0%, #4a4a5a 100%);
+    border-radius: 4px 4px 0 0;
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.4);
+    z-index: 1;
+}
+
+.bomb-fuse {
+    position: absolute;
+    bottom: calc(var(--bomb-size, 70px) * 0.54);
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(var(--bomb-size, 70px) * 0.07);
+    height: calc(var(--bomb-size, 70px) * 0.67);
+    background: repeating-linear-gradient(
+        180deg,
+        #c4956a 0px,
+        #c4956a 5px,
+        #8B5A2B 5px,
+        #8B5A2B 10px
+    );
+    border-radius: 3px;
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.4);
+    transform-origin: bottom center;
+}
+
+.bomb-spark {
+    position: absolute;
+    bottom: calc(var(--bomb-size, 70px) * 1.2);
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(var(--bomb-size, 70px) * 0.13);
+    height: calc(var(--bomb-size, 70px) * 0.13);
+    background: radial-gradient(circle at 50% 50%, 
+        #fff 0%, 
+        #fffae0 30%,
+        #ffc800 60%, 
+        rgba(255, 150, 0, 0) 100%
+    );
+    border-radius: 50%;
+    animation: spark-pulse 0.3s ease-in-out infinite;
+    box-shadow: 0 0 6px rgba(255, 200, 50, 0.9), 0 0 12px rgba(255, 150, 0, 0.6);
+}
+
+@keyframes spark-pulse {
+    0%, 100% { transform: translateX(-50%) scale(1); opacity: 1; }
+    50% { transform: translateX(-50%) scale(1.2); opacity: 0.85; }
+}
+
+.bomb.danger .bomb-spark {
+    width: 11px;
+    height: 11px;
+    box-shadow: 0 0 12px rgba(255, 180, 50, 1), 0 0 25px rgba(255, 130, 0, 0.7);
+}
+
+.bomb.critical .bomb-spark {
+    width: 13px;
+    height: 13px;
+    background: radial-gradient(circle at 50% 50%, 
+        #fff 0%, 
+        #ffcccc 30%,
+        #ff4444 60%, 
+        rgba(255, 0, 0, 0) 100%
+    );
+    box-shadow: 0 0 15px rgba(255, 100, 100, 1), 0 0 30px rgba(255, 50, 50, 0.8);
+    animation: spark-pulse-critical 0.15s ease-in-out infinite;
+}
+
+@keyframes spark-pulse-critical {
+    0%, 100% { transform: translateX(-50%) scale(1); opacity: 1; }
+    50% { transform: translateX(-50%) scale(1.4); opacity: 0.9; }
+}
+
+/* Bomb serie label */
+.bomb-serie {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: rgba(240, 192, 64, 0.7);
+    font-weight: 500;
+}
+
+/* Last name display */
+.last-name-display {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.last-name-display span {
+    color: #4ade80;
+    font-weight: 500;
+}
+
+/* Bouton Fermer Lobby BombAnime - Subtil */
+.bombanime-close-lobby-btn {
+    background: transparent;
+    border: none;
+    padding: 8px 0;
+    cursor: pointer;
+    font-size: 0.5rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.2);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.bombanime-close-lobby-btn:hover {
+    color: rgba(240, 192, 64, 0.6);
+}
+
+/* Footer fixe pour le bouton */
+.logs-footer {
+    flex-shrink: 0;
+    padding: 0.6rem 0.8rem;
+    padding-bottom: 0.8rem;
+    text-align: center;
+    margin-right: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* ============================================
+   BOMBANIME WINNER SCREEN
+   ============================================ */
+
+.bombanime-winner-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 15, 0.98);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+.bombanime-winner-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.bombanime-winner-content {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+/* Couronne */
+.bombanime-winner-crown {
+    width: 56px;
+    height: 56px;
+    opacity: 0;
+    transform: translateY(-20px) scale(0.8);
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.bombanime-winner-overlay.active .bombanime-winner-crown {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.bombanime-winner-crown svg {
+    width: 100%;
+    height: 100%;
+    fill: var(--gold, #f0c040);
+    filter: drop-shadow(0 0 12px rgba(240, 192, 64, 0.4));
+}
+
+/* Label VAINQUEUR */
+.bombanime-winner-label {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.4s ease 0.15s;
+}
+
+.bombanime-winner-overlay.active .bombanime-winner-label {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Nom du vainqueur */
+.bombanime-winner-name {
+    font-size: 2.2rem;
+    font-weight: 600;
+    color: var(--gold, #f0c040);
+    text-shadow: 0 0 20px rgba(240, 192, 64, 0.3);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.4s ease 0.25s;
+}
+
+.bombanime-winner-overlay.active .bombanime-winner-name {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Stats container */
+.bombanime-winner-stats {
+    display: flex;
+    gap: 3rem;
+    margin-top: 1.5rem;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.4s ease 0.4s;
+}
+
+.bombanime-winner-overlay.active .bombanime-winner-stats {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.bombanime-winner-stat {
+    text-align: center;
+}
+
+.bombanime-winner-stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.bombanime-winner-stat-label {
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.35);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 0.25rem;
+}
+
+/* Bouton moderne */
+.bombanime-winner-close-btn {
+    margin-top: 2.5rem;
+    padding: 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.4s ease 0.55s;
+}
+
+.bombanime-winner-overlay.active .bombanime-winner-close-btn {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.bombanime-winner-close-btn span {
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    transition: all 0.3s ease;
+}
+
+.bombanime-winner-close-btn::before {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    right: 50%;
+    height: 1px;
+    background: var(--gold, #f0c040);
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.bombanime-winner-close-btn:hover span {
+    color: var(--gold, #f0c040);
+    text-shadow: 0 0 15px rgba(240, 192, 64, 0.5);
+}
+
+.bombanime-winner-close-btn:hover::before {
+    left: 0;
+    right: 0;
+    opacity: 0.6;
+}
+
+/* ============================================
+   🔊 CONTRÔLE DU SON ADMIN
+   ============================================ */
+
+.admin-sound-control {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 25px;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    opacity: 0;
+    transform: translateY(20px);
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.admin-sound-control.visible {
+    opacity: 0.6;
+    transform: translateY(0);
+    pointer-events: auto;
+    visibility: visible;
+}
+
+.admin-sound-control.visible:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.admin-sound-control.muted {
+    /* opacity géré par .visible */
+}
+
+.admin-sound-control.visible.muted {
+    opacity: 0.4;
+}
+
+.admin-sound-btn {
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-sound-btn:hover {
+    color: var(--gold);
+    transform: scale(1.1);
+}
+
+.admin-sound-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.admin-sound-slider {
+    width: 70px;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.admin-sound-slider:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.admin-sound-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--gold);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.admin-sound-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 10px rgba(240, 192, 64, 0.5);
+}
+
+.admin-sound-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: var(--gold);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+}
+
+.admin-sound-control.muted .admin-sound-slider {
+    display: none;
 }

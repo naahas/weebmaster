@@ -611,6 +611,154 @@
                             </div>
                         </div>
 
+                        <!-- ============================================
+                             PARAMÈTRES BOMBANIME (visibles en mode BombAnime)
+                             ============================================ -->
+                        
+                        <!-- Série BombAnime - Dropdown Underline Élégant -->
+                        <div class="setting-group bombanime-serie-dropdown" id="bombanimeSerieGroup" style="display: none;">
+                            <div class="bombanime-dropdown-trigger" id="bombanimeDropdownTrigger">
+                                <div class="setting-group-header bombanime-dropdown-header">
+                                    <div class="setting-group-left">
+                                        <svg class="setting-group-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                                            <line x1="8" y1="21" x2="16" y2="21" />
+                                            <line x1="12" y1="17" x2="12" y2="21" />
+                                        </svg>
+                                        <span class="setting-group-label">Série</span>
+                                    </div>
+                                    <svg class="bombanime-dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                </div>
+                                <div class="bombanime-dropdown-value">
+                                    <span class="bombanime-dropdown-name" id="bombanimeSerieValue">Naruto</span>
+                                    <span class="bombanime-dropdown-count" id="bombanimeSerieCount">• 446</span>
+                                </div>
+                            </div>
+                            <div class="bombanime-dropdown-menu" id="bombanimeDropdownMenu">
+                                <div class="bombanime-dropdown-item selected" data-series="Naruto" data-name="Naruto" data-count="446">
+                                    <span class="bombanime-dropdown-item-name">Naruto</span>
+                                    <span class="bombanime-dropdown-item-count">446</span>
+                                </div>
+                                <div class="bombanime-dropdown-item" data-series="OnePiece" data-name="One Piece" data-count="783">
+                                    <span class="bombanime-dropdown-item-name">One Piece</span>
+                                    <span class="bombanime-dropdown-item-count">783</span>
+                                </div>
+                                <div class="bombanime-dropdown-item" data-series="Dbz" data-name="Dragon Ball Z" data-count="359">
+                                    <span class="bombanime-dropdown-item-name">Dragon Ball Z</span>
+                                    <span class="bombanime-dropdown-item-count">359</span>
+                                </div>
+                                <div class="bombanime-dropdown-item" data-series="Mha" data-name="My Hero Academia" data-count="704">
+                                    <span class="bombanime-dropdown-item-name">My Hero Academia</span>
+                                    <span class="bombanime-dropdown-item-count">704</span>
+                                </div>
+                                <div class="bombanime-dropdown-item" data-series="Bleach" data-name="Bleach" data-count="451">
+                                    <span class="bombanime-dropdown-item-name">Bleach</span>
+                                    <span class="bombanime-dropdown-item-count">451</span>
+                                </div>
+                                <div class="bombanime-dropdown-item" data-series="Jojo" data-name="Jojo" data-count="406">
+                                    <span class="bombanime-dropdown-item-name">Jojo</span>
+                                    <span class="bombanime-dropdown-item-count">406</span>
+                                </div>
+                                <div class="bombanime-dropdown-item" data-series="Hxh" data-name="Hunter x Hunter" data-count="345">
+                                    <span class="bombanime-dropdown-item-name">Hunter x Hunter</span>
+                                    <span class="bombanime-dropdown-item-count">345</span>
+                                </div>
+                                <div class="bombanime-dropdown-item" data-series="FairyTail" data-name="Fairy Tail" data-count="366">
+                                    <span class="bombanime-dropdown-item-name">Fairy Tail</span>
+                                    <span class="bombanime-dropdown-item-count">366</span>
+                                </div>
+                                <div class="bombanime-dropdown-item" data-series="Pokemon" data-name="Pokémon" data-count="1249">
+                                    <span class="bombanime-dropdown-item-name">Pokémon</span>
+                                    <span class="bombanime-dropdown-item-count">1249</span>
+                                </div>
+                                <div class="bombanime-dropdown-item" data-series="Snk" data-name="Attack on Titan" data-count="219">
+                                    <span class="bombanime-dropdown-item-name">Attack on Titan</span>
+                                    <span class="bombanime-dropdown-item-count">219</span>
+                                </div>
+                                <div class="bombanime-dropdown-item" data-series="DemonSlayer" data-name="Demon Slayer" data-count="157">
+                                    <span class="bombanime-dropdown-item-name">Demon Slayer</span>
+                                    <span class="bombanime-dropdown-item-count">157</span>
+                                </div>
+                                <div class="bombanime-dropdown-item" data-series="JujutsuKaisen" data-name="Jujutsu Kaisen" data-count="186">
+                                    <span class="bombanime-dropdown-item-name">Jujutsu Kaisen</span>
+                                    <span class="bombanime-dropdown-item-count">186</span>
+                                </div>
+                                <div class="bombanime-dropdown-item" data-series="Reborn" data-name="Reborn" data-count="225">
+                                    <span class="bombanime-dropdown-item-name">Reborn</span>
+                                    <span class="bombanime-dropdown-item-count">225</span>
+                                </div>
+                                <div class="bombanime-dropdown-item" data-series="DeathNote" data-name="Death Note" data-count="88">
+                                    <span class="bombanime-dropdown-item-name">Death Note</span>
+                                    <span class="bombanime-dropdown-item-count">88</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Vies BombAnime -->
+                        <div class="setting-group bombanime-lives-group" id="bombanimeLivesGroup" style="display: none;">
+                            <div class="setting-group-header">
+                                <div class="setting-group-left">
+                                    <svg class="setting-group-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                                    </svg>
+                                    <span class="setting-group-label">Vies</span>
+                                </div>
+                                <span class="setting-group-value" id="bombanimeLivesValue">2</span>
+                            </div>
+                            <div class="setting-group-options bombanime-lives-options two-options">
+                                <button class="setting-option-btn" data-value="1">1</button>
+                                <button class="setting-option-btn active" data-value="2">2</button>
+                            </div>
+                        </div>
+
+                        <!-- Timer Bombe BombAnime - Slider -->
+                        <div class="setting-group bombanime-timer-group" id="bombanimeTimerGroup" style="display: none;">
+                            <div class="setting-group-header">
+                                <div class="setting-group-left">
+                                    <svg class="setting-group-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <polyline points="12 6 12 12 16 14" />
+                                    </svg>
+                                    <span class="setting-group-label">Timer bombe</span>
+                                </div>
+                                <span class="setting-group-value" id="bombanimeTimerValue">8s</span>
+                            </div>
+                            <div class="setting-group-options bombanime-timer-slider-container">
+                                <input type="range" class="bombanime-timer-slider" id="bombanimeTimerSlider" min="5" max="10" value="8">
+                                <div class="timer-slider-labels bombanime">
+                                    <span>5s</span>
+                                    <span>10s</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 🤖 TEMPORAIRE: Bouton ajout de bots pour tester -->
+                        <!-- <div class="setting-group bombanime-bots-group" id="bombanimeBotsGroup">
+                            <div class="setting-group-header">
+                                <div class="setting-group-left">
+                                    <svg class="setting-group-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                        <rect x="3" y="11" width="18" height="10" rx="2"/>
+                                        <circle cx="8.5" cy="16" r="1.5"/>
+                                        <circle cx="15.5" cy="16" r="1.5"/>
+                                        <path d="M12 2v4"/>
+                                        <path d="M8 6h8"/>
+                                    </svg>
+                                    <span class="setting-group-label">Test Bots</span>
+                                </div>
+                                <span class="setting-group-value" id="bombanimeBotsCount">0</span>
+                            </div>
+                            <div class="setting-group-options bombanime-bots-buttons">
+                                <button class="bombanime-add-bot-btn" id="bombanimeAddBotBtn" onclick="addFakePlayer()">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                        <path d="M12 5v14M5 12h14"/>
+                                    </svg>
+                                    <span>Ajouter un bot</span>
+                                </button>
+                            </div>
+                        </div> -->
+
 
 
                     </div>
@@ -621,6 +769,7 @@
                             <div class="lobby-header-left">
                                 <span class="lobby-player-count-inline" id="lobbyPlayerCount">0</span>
                                 <span class="lobby-status-text">joueurs en attente</span>
+                                <span class="lobby-max-badge" id="lobbyMaxBadge" style="display: none;">MAX</span>
                             </div>
                             <div class="lobby-header-right">
 
@@ -669,7 +818,7 @@
 
                 <!-- Wrapper Question (panel + boutons) -->
                 <div class="game-question-wrapper" id="gameQuestionWrapper">
-                    <!-- Panel Question -->
+                    <!-- Panel Question CLASSIQUE -->
                     <div class="game-question-panel" id="gameQuestionPanel">
 
 
@@ -745,6 +894,52 @@
                             <div class="answer-option" data-answer="3">
                                 <span class="answer-text">Oto</span>
                                 <span class="answer-percent">0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Panel Question FIZZBUZZ -->
+                    <div class="game-question-panel fizzbuzz-panel" id="gameFizzbuzzPanel" style="display: none;">
+                        <div class="panel-mini-actions">
+                            <button class="mini-action-btn auto-toggle" id="autoToggleBtnFB" title="Auto/Manuel">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Badge Tour -->
+                        <span class="question-tab-badge fizzbuzz-badge" id="fizzbuzzTabBadge">Tour 1</span>
+
+                        <!-- Timer FizzBuzz circulaire vert -->
+                        <div class="fizzbuzz-admin-timer" id="fizzbuzzAdminTimer">
+                            <svg class="fizzbuzz-admin-timer-svg" viewBox="0 0 100 100">
+                                <circle class="fizzbuzz-admin-timer-bg" cx="50" cy="50" r="45"/>
+                                <circle class="fizzbuzz-admin-timer-progress" id="fizzbuzzTimerProgress" cx="50" cy="50" r="45"/>
+                            </svg>
+                            <span class="fizzbuzz-admin-timer-text" id="fizzbuzzTimerText">10</span>
+                        </div>
+
+                        <!-- Nom du personnage à trouver -->
+                        <div class="fizzbuzz-admin-target">
+                            <span class="fizzbuzz-admin-target-label">TROUVE</span>
+                            <span class="fizzbuzz-admin-target-name" id="fizzbuzzTargetName">Naruto Uzumaki</span>
+                        </div>
+
+                        <!-- Grille de cartes -->
+                        <div class="fizzbuzz-admin-cards" id="fizzbuzzCardsGrid">
+                            <!-- Cartes générées dynamiquement -->
+                        </div>
+
+                        <!-- Stats en bas -->
+                        <div class="fizzbuzz-admin-stats">
+                            <div class="fizzbuzz-stat">
+                                <span class="fizzbuzz-stat-value" id="fizzbuzzRemainingPlayers">0</span>
+                                <span class="fizzbuzz-stat-label">Restants</span>
+                            </div>
+                            <div class="fizzbuzz-stat">
+                                <span class="fizzbuzz-stat-value" id="fizzbuzzEliminatedCount">0</span>
+                                <span class="fizzbuzz-stat-label">Éliminés</span>
                             </div>
                         </div>
                     </div>
@@ -1413,11 +1608,20 @@
                     <div class="mode-card-label">Mode Solo</div>
                     <h3 class="mode-card-title">Classique</h3>
                     <div class="mode-card-separator"></div>
-                    <p class="mode-card-desc">Ta communauté s'affronte, un seul joueur sera couronné vainqueur</p>
+                    <p class="mode-card-desc">Ta communauté s'affronte dans un quiz, un seul sera couronné vainqueur</p>
+                </div>
+                <div class="mode-card-players">
+                    <svg class="mode-players-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span class="mode-players-count">∞</span>
                 </div>
             </div>
 
-            <!-- Mode Inter-Communauté (Disabled) -->
+            <!-- Mode Rivalité -->
             <div class="mode-card inter-commu" id="modeRivaliteCard">
                 <div class="mode-card-neon-line"></div>
                 <div class="mode-card-bg"></div>
@@ -1437,18 +1641,84 @@
                         <div class="mode-aura-particle"></div>
                         <div class="mode-aura-particle"></div>
                     </div>
-                    <img src="genshin4.png" alt="Team A" class="mode-card-character char-left">
-                    <img src="genshin2.png" alt="Team B" class="mode-card-character char-right">
+                    <img src="ai.png" alt="Team A" class="mode-card-character char-left">
+                    <img src="shinobu.png" alt="Team B" class="mode-card-character char-right">
                 </div>
                 
                 <div class="mode-card-content">
                     <div class="mode-card-label">Mode Équipe</div>
                     <h3 class="mode-card-title">Rivalité</h3>
                     <div class="mode-card-separator"></div>
-                    <p class="mode-card-desc">2 streamers s'affrontent à travers leur communauté</p>
+                    <p class="mode-card-desc">2 équipes s'affrontent dans un quiz, qui dominera ?</p>
+                </div>
+                <div class="mode-card-players">
+                    <svg class="mode-players-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span class="mode-players-count">∞</span>
+                </div>
+            </div>
+
+            <!-- Mode BombAnime -->
+            <div class="mode-card bombanime" id="modeBombanimeCard">
+                <div class="mode-card-neon-line"></div>
+                <div class="mode-card-bg"></div>
+                <div class="mode-card-overlay"></div>
+                <div class="mode-character-glow"></div>
+                
+                <div class="mode-character-wrapper">
+                    <div class="mode-character-aura">
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                    </div>
+                    <img src="lambo.png" alt="BombAnime" class="mode-card-character">
+                </div>
+                
+                <div class="mode-card-content">
+                    <div class="mode-card-label">Mode Solo</div>
+                    <h3 class="mode-card-title">BombAnime</h3>
+                    <div class="mode-card-separator"></div>
+                    <p class="mode-card-desc">Tape des noms de persos avant que la bombe explose !</p>
+                </div>
+                <div class="mode-card-players">
+                    <svg class="mode-players-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span class="mode-players-count">13</span>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- 🔊 Contrôle du son Admin -->
+    <div class="admin-sound-control" id="adminSoundControl">
+        <button class="admin-sound-btn" id="adminSoundBtn" title="Activer/Désactiver le son">
+            <svg class="sound-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+            </svg>
+            <svg class="sound-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                <line x1="23" y1="9" x2="17" y2="15"/>
+                <line x1="17" y1="9" x2="23" y2="15"/>
+            </svg>
+        </button>
+        <input type="range" class="admin-sound-slider" id="adminSoundSlider" min="0" max="100" value="50">
     </div>
 
 

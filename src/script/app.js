@@ -14,6 +14,13 @@ createApp({
             twitchId: '',
 
             clickSound: null,
+            sounds: {}, // 💣 Sons BombAnime
+            soundMuted: localStorage.getItem('soundMuted') === 'true',
+            soundVolume: parseInt(localStorage.getItem('soundVolume')) || 50,
+
+            // 📱 Responsive
+            isMobile: window.innerWidth <= 768,
+            isMobileAlphabetOpen: false,
 
 
             tempCorrectAnswer: null,
@@ -32,7 +39,7 @@ createApp({
 
             // État du jeu
             isGameActive: false,
-            gameInProgress: false,
+            gameInProgress: sessionStorage.getItem('bombanimeInProgress') === 'true',
             gameStartedOnServer: false,
             gameEnded: false,
 
@@ -41,7 +48,7 @@ createApp({
             hasJoined: false,
             
             // Mode Rivalité
-            lobbyMode: 'classic', // 'classic' ou 'rivalry'
+            lobbyMode: sessionStorage.getItem('bombanimeInProgress') === 'true' ? 'bombanime' : 'classic', // 'classic' ou 'rivalry' ou 'fizzbuzz'
             selectedTeam: null, // 1 ou 2
             teamNames: { 1: 'Team A', 2: 'Team B' },
             teamCounts: { 1: 0, 2: 0 },
@@ -49,6 +56,14 @@ createApp({
             teamCooldownActive: false,
             teamCooldownSeconds: 0,
             teamCooldownInterval: null,
+            
+            // 💣 BombAnime - Lobby plein
+            isLobbyFull: false,
+            maxPlayers: 13,
+            lobbyFullError: false,
+
+            // Mode FizzBuzz
+            fizzbuzzMaxLives: 1, // Nombre max de vies en FizzBuzz (1 ou 2)
 
 
             // Profil & Badges
@@ -147,6 +162,44 @@ createApp({
                 pikinemadd: false,
             },
 
+            // ============================================
+            // 💣 BOMBANIME - État côté joueur
+            // ============================================
+            bombanime: {
+                active: false,
+                serie: 'Naruto',
+                timer: 8,
+                timeRemaining: 8,
+                timerInterval: null,
+                playersOrder: [],
+                playersData: [],
+                currentPlayerTwitchId: null,
+                isMyTurn: false,
+                inputValue: '',
+                lastValidName: null,
+                lastError: null,
+                usedNamesCount: 0,
+                // Alphabet personnel
+                myAlphabet: [],
+                alphabetLetters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+                // Animations
+                justAddedLetters: [],
+                heartCompleting: false,
+                heartPulse: false,
+                mobileAlphabetPulse: false, // 📱 Animation bouton alphabet mobile
+                showLifeGained: false,
+                successPlayerTwitchId: null,
+                // Debug
+                debugInfo: null,
+                debugMs: null, // 🆕 Timer en millisecondes pour debug
+                debugMsInterval: null, // 🆕 Interval pour le timer ms
+                // Animation intro
+                introPhase: null,  // 'players' | 'panel' | 'bomb' | 'ready' | null
+                introPlayersRevealed: 0,
+                // Contrôle de la direction de la bombe
+                bombPointingUp: true
+            },
+
 
             // Liste des partenaires (ordre d'affichage)
             partnersList: [
@@ -218,8 +271,14 @@ createApp({
         this.loadTheme();
         this.initSounds();
 
+        // 📱 Listener resize pour le responsive
+        window.addEventListener('resize', this.handleResize);
+        this.handleResize(); // Appel initial
 
-
+    },
+    
+    beforeDestroy() {
+        window.removeEventListener('resize', this.handleResize);
     },
 
     computed: {
@@ -244,6 +303,14 @@ createApp({
 
         formattedPlayerPoints() {
             return this.playerPoints.toLocaleString('fr-FR');
+        },
+
+        // Timer circulaire FizzBuzz (stroke-dashoffset)
+        fizzbuzzTimerOffset() {
+            // Circumference = 2 * PI * r = 2 * 3.14159 * 45 ≈ 283
+            const circumference = 283;
+            const progress = this.timerProgress / 100;
+            return circumference * (1 - progress);
         },
 
         isWinner() {
@@ -1373,6 +1440,12 @@ createApp({
                     console.log('🚫 Rejoin auto bloqué - joueur kick');
                     this.shouldRejoinLobby = false;
                 }
+                
+                // 💣 Demander l'état BombAnime si en mode BombAnime
+                if (this.lobbyMode === 'bombanime') {
+                    this.socket.emit('bombanime-get-state');
+                    console.log('💣 Demande état BombAnime après connexion');
+                }
             });
 
             // Restauration du joueur
@@ -1427,7 +1500,7 @@ createApp({
                 // 🆕 Mettre à jour les paramètres si fournis
                 if (data && data.lives) this.gameLives = data.lives;
                 if (data && data.questionTime) this.gameTime = data.questionTime;
-                // 🆕 Mode Rivalité
+                // 🆕 Mode Rivalité / BombAnime
                 if (data && data.lobbyMode) {
                     this.lobbyMode = data.lobbyMode;
                     if (data.lobbyMode === 'rivalry') {
@@ -1436,6 +1509,12 @@ createApp({
                         if (savedTeam) {
                             this.selectedTeam = parseInt(savedTeam);
                         }
+                    } else if (data.lobbyMode === 'bombanime') {
+                        // Mode BombAnime - initialiser les vies et la série
+                        this.playerLives = data.lives || 2;
+                        this.bombanime.serie = data.bombanimeSerie || 'Naruto';
+                        this.bombanime.timer = data.bombanimeTimer || 8;
+                        console.log('💣 Mode BombAnime activé:', this.bombanime.serie);
                     }
                 }
                 if (data && data.teamNames) this.teamNames = data.teamNames;
@@ -1487,6 +1566,12 @@ createApp({
             });
 
             this.socket.on('game-started', (data) => {
+                // Ignorer en mode BombAnime (géré par bombanime-game-started)
+                if (this.lobbyMode === 'bombanime') {
+                    console.log('🎮 game-started ignoré en mode BombAnime');
+                    return;
+                }
+                
                 this.gameStartedOnServer = true;
                 this.gameMode = data.gameMode || 'lives';
                 
@@ -1543,6 +1628,20 @@ createApp({
                 }
                 if (data.teamNames) this.teamNames = data.teamNames;
                 if (data.teamCounts) this.teamCounts = data.teamCounts;
+                
+                // 💣 BombAnime - Lobby plein
+                if (data.lobbyMode === 'bombanime') {
+                    this.isLobbyFull = data.isLobbyFull || false;
+                    this.maxPlayers = data.maxPlayers || 13;
+                    // Reset l'erreur si le lobby n'est plus plein
+                    if (!data.isLobbyFull && this.lobbyFullError) {
+                        this.lobbyFullError = false;
+                        console.log('💣 Place disponible - bouton réactivé');
+                    }
+                } else {
+                    this.isLobbyFull = false;
+                    this.lobbyFullError = false;
+                }
             });
             
             // 🆕 L'admin a changé notre équipe
@@ -1690,6 +1789,18 @@ createApp({
                     localStorage.removeItem('selectedTeam');
                     localStorage.removeItem('teamCooldownEnd');
                 }
+                
+                // 💣 Lobby BombAnime plein
+                if (data.message && data.message.includes('plein')) {
+                    this.lobbyFullError = true;
+                    this.hasJoined = false; // Le joueur n'a PAS rejoint
+                    // Nettoyer localStorage car le join a échoué
+                    localStorage.removeItem('hasJoinedLobby');
+                    localStorage.removeItem('lobbyTwitchId');
+                    console.log('💣 Lobby plein - en attente d\'une place');
+                    return; // Ne pas afficher la notification, le bouton change déjà
+                }
+                
                 this.showNotification(data.message, 'error');
             });
 
@@ -1872,6 +1983,497 @@ createApp({
                 this.streamersLive = liveStatus;
                 console.log('📡 Statut live reçu:', liveStatus);
             });
+
+            // ============================================
+            // 💣 BOMBANIME - Socket Handlers
+            // ============================================
+            
+            this.socket.on('bombanime-game-started', (data) => {
+                console.log('💣 BombAnime démarré:', data);
+                
+                // 🆕 Marquer que la partie a démarré sur le serveur (pour le panneau spectateur)
+                this.gameStartedOnServer = true;
+                
+                // 🆕 Si le joueur n'a pas rejoint, ne pas afficher la partie (mode spectateur)
+                if (!this.hasJoined) {
+                    console.log('⏳ BombAnime en cours - Vous êtes spectateur');
+                    this.gameInProgress = false;
+                    return;
+                }
+                
+                // ========== INITIALISER L'INTRO D'ABORD ==========
+                // Important: définir introPhase AVANT playersData pour éviter le flash
+                this.bombanime.introPhase = 'players';
+                this.bombanime.introPlayersRevealed = 0;
+                this.bombanime.currentPlayerTwitchId = null;
+                this.bombanime.bombPointingUp = true; // Bombe vers le haut jusqu'au premier tour
+                this.bombanime.isMyTurn = false; // 🆕 Reset isMyTurn pour éviter l'input activé au mauvais moment
+                
+                // Maintenant mettre à jour les données
+                this.bombanime.active = true;
+                this.bombanime.serie = data.serie;
+                this.bombanime.timer = data.timer;
+                this.bombanime.timeRemaining = data.timer; // 🆕 Reset timeRemaining pour éviter la bombe rouge
+                this.bombanime.inputValue = ''; // 🆕 Reset input à chaque nouvelle partie
+                this.bombanime.playersOrder = [...data.playersOrder];
+                this.bombanime.playersData = [...data.playersData];
+                this.bombanime.usedNamesCount = 0;
+                this.bombanime.myAlphabet = [];
+                this.gameInProgress = true;
+                this.gameEnded = false;
+                
+                // 🆕 Clear le timer précédent s'il existe
+                if (this.bombanime.timerInterval) {
+                    clearInterval(this.bombanime.timerInterval);
+                    this.bombanime.timerInterval = null;
+                }
+                if (this.bombanime.debugMsInterval) {
+                    clearInterval(this.bombanime.debugMsInterval);
+                    this.bombanime.debugMsInterval = null;
+                }
+                this.bombanime.debugMs = null;
+                
+                // 🆕 Forcer le refresh pour appliquer le nouveau timeRemaining
+                this.$forceUpdate();
+                
+                // Sauvegarder l'état pour éviter le flash au refresh
+                sessionStorage.setItem('bombanimeInProgress', 'true');
+                
+                // Initialiser les vies du joueur depuis playersData
+                const myData = data.playersData.find(p => p.twitchId === this.twitchId);
+                if (myData) {
+                    this.playerLives = myData.lives;
+                }
+                
+                document.body.classList.add('game-active');
+                
+                // ========== ANIMATION D'INTRO ==========
+                const totalPlayers = data.playersData.length;
+                const playerRevealDelay = 150; // 150ms entre chaque joueur
+                
+                // Révéler les joueurs séquentiellement (après un court délai pour que le DOM soit prêt)
+                this.$nextTick(() => {
+                    for (let i = 0; i < totalPlayers; i++) {
+                        setTimeout(() => {
+                            this.bombanime.introPlayersRevealed = i + 1;
+                        }, i * playerRevealDelay);
+                    }
+                });
+                
+                // Phase 2: Afficher le panel alphabet (après tous les joueurs)
+                setTimeout(() => {
+                    this.bombanime.introPhase = 'panel';
+                }, totalPlayers * playerRevealDelay + 200);
+                
+                // Phase 3: Animation de la bombe
+                setTimeout(() => {
+                    this.bombanime.introPhase = 'bomb';
+                }, totalPlayers * playerRevealDelay + 800);
+                
+                // Phase 4: Prêt à jouer
+                setTimeout(() => {
+                    this.bombanime.introPhase = 'ready';
+                    this.showNotification(`💣 BombAnime démarre ! Série: ${data.serie}`, 'success');
+                }, totalPlayers * playerRevealDelay + 1200);
+                
+                // Fin de l'intro (le serveur enverra bombanime-turn-start après ~3s)
+                setTimeout(() => {
+                    this.bombanime.introPhase = null;
+                }, totalPlayers * playerRevealDelay + 2000);
+            });
+            
+            this.socket.on('bombanime-turn-start', (data) => {
+                console.log('💣 Tour de:', data.currentPlayerUsername);
+                this.bombanime.currentPlayerTwitchId = data.currentPlayerTwitchId;
+                this.bombanime.bombPointingUp = false; // La bombe tourne vers le joueur
+                this.bombanime.timeRemaining = data.timer;
+                this.bombanime.lastError = null;
+                
+                // Reset les currentTyping de tous les joueurs (null = pas encore tapé)
+                this.bombanime.playersData.forEach(p => {
+                    p.currentTyping = null;
+                });
+                
+                // Forcer le re-render pour mettre à jour l'angle de la mèche
+                this.$forceUpdate();
+                
+                // Démarrer le timer visuel
+                this.startBombanimeTimer();
+                
+                // 🆕 Attendre que l'intro soit terminée avant d'activer isMyTurn
+                const activateTurn = () => {
+                    this.bombanime.isMyTurn = data.currentPlayerTwitchId === this.twitchId;
+                    
+                    // Focus sur l'input si c'est mon tour
+                    if (this.bombanime.isMyTurn) {
+                        this.$nextTick(() => {
+                            const input = document.getElementById('bombanimeInput');
+                            if (input) input.focus();
+                        });
+                    }
+                };
+                
+                // Si l'intro est encore en cours, attendre qu'elle soit finie
+                if (this.bombanime.introPhase) {
+                    const checkIntro = setInterval(() => {
+                        if (!this.bombanime.introPhase) {
+                            clearInterval(checkIntro);
+                            // Petit délai supplémentaire pour l'animation de la bombe
+                            setTimeout(activateTurn, 300);
+                        }
+                    }, 50);
+                } else {
+                    activateTurn();
+                }
+            });
+            
+            this.socket.on('bombanime-name-accepted', (data) => {
+                console.log('✅ Nom accepté:', data.name);
+                
+                // 🔊 Son de passage de tour
+                this.playSound(this.sounds.bombanimePass);
+                
+                // DEBUG: Afficher le temps restant
+                if (data.playerTwitchId === this.twitchId && data.debugTimeRemainingMs !== undefined) {
+                    const timeRemainingSec = (data.debugTimeRemainingMs / 1000).toFixed(3);
+                    this.bombanime.debugInfo = `✅ Réponse à ${timeRemainingSec}s restants (turnId=${data.debugTurnId})`;
+                    console.log(`🔍 DEBUG: ${this.bombanime.debugInfo}`);
+                    // Garder le message 5 secondes
+                    setTimeout(() => {
+                        if (this.bombanime.debugInfo && this.bombanime.debugInfo.includes('Réponse')) {
+                            this.bombanime.debugInfo = null;
+                        }
+                    }, 5000);
+                }
+                
+                // Animation de succès visible par TOUS sur le joueur qui vient de répondre
+                this.bombanime.successPlayerTwitchId = data.playerTwitchId;
+                setTimeout(() => {
+                    this.bombanime.successPlayerTwitchId = null;
+                }, 500);
+                
+                this.bombanime.playersData = [...data.playersData];
+                this.bombanime.lastValidName = data.name;
+                this.bombanime.usedNamesCount++;
+                this.bombanime.inputValue = '';
+                
+                // Tourner la bombe IMMÉDIATEMENT vers le prochain joueur
+                if (data.nextPlayerTwitchId) {
+                    this.bombanime.currentPlayerTwitchId = data.nextPlayerTwitchId;
+                }
+                
+                // Mettre à jour mon alphabet et animer les nouvelles lettres si c'était ma réponse
+                if (data.playerTwitchId === this.twitchId) {
+                    // Trouver les nouvelles lettres (pas encore dans myAlphabet)
+                    const oldAlphabet = new Set(this.bombanime.myAlphabet);
+                    const newLetters = (data.newLetters || []).filter(l => !oldAlphabet.has(l));
+                    
+                    // Déclencher l'animation des lettres et du cœur
+                    if (newLetters.length > 0) {
+                        this.bombanime.justAddedLetters = newLetters;
+                        this.bombanime.heartPulse = true;
+                        this.bombanime.mobileAlphabetPulse = true; // 📱 Animation bouton mobile
+                        
+                        // Retirer les classes après les animations
+                        setTimeout(() => {
+                            this.bombanime.justAddedLetters = [];
+                            this.bombanime.heartPulse = false;
+                            this.bombanime.mobileAlphabetPulse = false;
+                        }, 600);
+                    }
+                    
+                    this.bombanime.myAlphabet = data.alphabet;
+                }
+                
+                // Forcer le re-render
+                this.$forceUpdate();
+            });
+            
+            this.socket.on('bombanime-name-rejected', (data) => {
+                console.log('❌ Nom rejeté:', data.reason);
+                
+                // Trouver le slot du joueur actuel (visible par tous)
+                const playerSlot = document.querySelector('.bombanime-player-slot.active');
+                
+                // Si c'est "already_used", afficher le cadenas et shake
+                if (data.reason === 'already_used') {
+                    // 🔊 Son "déjà utilisé"
+                    this.playSound(this.sounds.bombanimeUsed);
+                    
+                    const lock = document.getElementById('lock-' + this.bombanime.currentPlayerTwitchId);
+                    
+                    if (playerSlot) {
+                        playerSlot.classList.add('already-used');
+                        setTimeout(() => playerSlot.classList.remove('already-used'), 400);
+                    }
+                    
+                    if (lock) {
+                        lock.classList.add('show');
+                        setTimeout(() => lock.classList.remove('show'), 600);
+                    }
+                    
+                    // Clear l'input seulement si c'est moi
+                    if (data.playerTwitchId === this.twitchId) {
+                        this.bombanime.inputValue = '';
+                    }
+                } else if (data.reason === 'character_not_found') {
+                    // 🔊 Son "personnage inconnu"
+                    this.playSound(this.sounds.bombanimeWrong);
+                    
+                    // Personnage non reconnu: shake le joueur (visible par tous)
+                    if (playerSlot) {
+                        playerSlot.classList.add('shake-error');
+                        setTimeout(() => playerSlot.classList.remove('shake-error'), 400);
+                    }
+                    
+                    // Clear l'input et shake seulement si c'est moi
+                    if (data.playerTwitchId === this.twitchId) {
+                        const input = document.getElementById('bombanimeInput');
+                        if (input) {
+                            input.classList.add('shake-error');
+                            setTimeout(() => input.classList.remove('shake-error'), 400);
+                        }
+                        this.bombanime.inputValue = '';
+                    }
+                } else {
+                    // Autres erreurs: shake le joueur et afficher le message
+                    if (playerSlot) {
+                        playerSlot.classList.add('shake-error');
+                        setTimeout(() => playerSlot.classList.remove('shake-error'), 400);
+                    }
+                    
+                    if (data.playerTwitchId === this.twitchId) {
+                        this.bombanime.lastError = data.reason;
+                        
+                        // Feedback visuel sur l'input
+                        const input = document.getElementById('bombanimeInput');
+                        if (input) {
+                            input.classList.add('error');
+                            setTimeout(() => input.classList.remove('error'), 500);
+                        }
+                    }
+                }
+            });
+            
+            // Écouter les frappes en temps réel des autres joueurs
+            this.socket.on('bombanime-typing', (data) => {
+                // Mettre à jour le currentTyping du joueur
+                const player = this.bombanime.playersData.find(p => p.twitchId === data.playerTwitchId);
+                if (player) {
+                    player.currentTyping = data.text;
+                    this.$forceUpdate();
+                }
+            });
+            
+            this.socket.on('bombanime-explosion', (data) => {
+                console.log('💥 Explosion sur:', data.playerUsername);
+                
+                // 🔊 Son d'explosion
+                this.playSound(this.sounds.bombanimeExplosion);
+                
+                // 🆕 Garder la tentative de réponse du joueur qui explose
+                const explodingPlayer = this.bombanime.playersData.find(p => p.twitchId === data.playerTwitchId);
+                if (explodingPlayer && explodingPlayer.currentTyping) {
+                    explodingPlayer.lastAnswer = explodingPlayer.currentTyping;
+                }
+                
+                // 🆕 Désactiver immédiatement l'input si c'est mon tour qui explose
+                if (data.playerTwitchId === this.twitchId) {
+                    this.bombanime.isMyTurn = false;
+                    this.bombanime.inputValue = '';
+                    // Défocuser l'input
+                    const input = document.getElementById('bombanimeInput');
+                    if (input) input.blur();
+                }
+                
+                // DEBUG: Afficher l'explosion avec timing
+                if (data.playerTwitchId === this.twitchId) {
+                    const elapsedSec = data.debugElapsedMs ? (data.debugElapsedMs / 1000).toFixed(3) : '?';
+                    this.bombanime.debugInfo = `💥 EXPLOSION après ${elapsedSec}s (turnId=${data.debugTurnId})`;
+                    console.log(`🔍 DEBUG: ${this.bombanime.debugInfo}`);
+                }
+                
+                // Arrêter le timer immédiatement
+                if (this.bombanime.timerInterval) {
+                    clearInterval(this.bombanime.timerInterval);
+                }
+                if (this.bombanime.debugMsInterval) {
+                    clearInterval(this.bombanime.debugMsInterval);
+                }
+                
+                // 🆕 Animation de shake sur le joueur qui explose (avec délai)
+                setTimeout(() => {
+                    const playerSlot = document.querySelector(`.bombanime-player-slot[data-twitch-id="${data.playerTwitchId}"]`);
+                    if (playerSlot) {
+                        playerSlot.classList.add('exploding');
+                        setTimeout(() => {
+                            playerSlot.classList.remove('exploding');
+                        }, 250);
+                    }
+                }, 50); // Délai minimal
+                
+                // Notification immédiate si c'est moi
+                if (data.playerTwitchId === this.twitchId) {
+                    this.playerLives = data.livesRemaining;
+                    if (data.isEliminated) {
+                        this.showNotification('💀 Vous êtes éliminé !', 'error');
+                    } else {
+                        this.showNotification('💥 -1 vie !', 'error');
+                    }
+                }
+                
+                // Sauvegarder la tentative de réponse avant la mise à jour
+                const attemptedAnswer = explodingPlayer ? explodingPlayer.currentTyping : null;
+                
+                // Retarder la mise à jour visuelle des playersData pour l'animation
+                setTimeout(() => {
+                    this.bombanime.playersData = [...data.playersData];
+                    
+                    // Restaurer la tentative de réponse
+                    if (attemptedAnswer) {
+                        const player = this.bombanime.playersData.find(p => p.twitchId === data.playerTwitchId);
+                        if (player) {
+                            player.lastAnswer = attemptedAnswer;
+                        }
+                    }
+                    
+                    this.$forceUpdate();
+                }, 50); // Synchronisé avec le shake
+            });
+            
+            this.socket.on('bombanime-alphabet-complete', (data) => {
+                console.log('🎉 Alphabet complet:', data.playerUsername);
+                
+                // Animation visible par TOUS sur l'hexagone du joueur
+                const playerSlot = document.querySelector(`.bombanime-player-slot[data-twitch-id="${data.playerTwitchId}"]`);
+                if (playerSlot) {
+                    playerSlot.classList.add('alphabet-complete');
+                    setTimeout(() => {
+                        playerSlot.classList.remove('alphabet-complete');
+                    }, 1200);
+                }
+                
+                // Mettre à jour les vies dans playersData pour tous
+                const player = this.bombanime.playersData.find(p => p.twitchId === data.playerTwitchId);
+                if (player) {
+                    setTimeout(() => {
+                        player.lives = data.newLives;
+                        this.$forceUpdate();
+                    }, 400);
+                }
+                
+                if (data.playerTwitchId === this.twitchId) {
+                    // Déclencher l'animation spectaculaire du cœur (pour moi)
+                    this.bombanime.heartCompleting = true;
+                    
+                    // Mettre à jour mes vies locales
+                    setTimeout(() => {
+                        this.playerLives = data.newLives;
+                        this.bombanime.myAlphabet = []; // Reset
+                    }, 400);
+                    
+                    // Retirer l'animation après sa fin
+                    setTimeout(() => {
+                        this.bombanime.heartCompleting = false;
+                    }, 850);
+                    
+                    // Notification
+                    this.showNotification('🎉 Alphabet complet ! +1 vie', 'success');
+                }
+            });
+            
+            this.socket.on('bombanime-game-ended', (data) => {
+                console.log('🏆 BombAnime terminé:', data);
+                this.bombanime.active = false;
+                this.gameEnded = true;
+                this.gameStartedOnServer = false; // 🆕 Reset pour les spectateurs
+                
+                // Supprimer l'état de sessionStorage
+                sessionStorage.removeItem('bombanimeInProgress');
+                
+                // Arrêter le timer
+                if (this.bombanime.timerInterval) {
+                    clearInterval(this.bombanime.timerInterval);
+                }
+                if (this.bombanime.debugMsInterval) {
+                    clearInterval(this.bombanime.debugMsInterval);
+                }
+                
+                // Stocker les données de fin
+                this.gameEndData = {
+                    winner: data.winner,
+                    ranking: data.ranking,
+                    duration: data.duration,
+                    gameMode: 'bombanime',
+                    serie: data.serie,
+                    namesUsed: data.namesUsed
+                };
+            });
+            
+            this.socket.on('bombanime-state', (data) => {
+                console.log('💣 État BombAnime reçu:', data);
+                if (data.active) {
+                    // 🆕 Vérifier si le joueur fait partie de la partie
+                    const myData = data.playersData.find(p => p.twitchId === this.twitchId);
+                    
+                    // 🆕 Si le joueur n'est pas dans la partie, mode spectateur
+                    if (!myData) {
+                        console.log('⏳ BombAnime en cours - Vous êtes spectateur (reconnexion)');
+                        this.gameStartedOnServer = true;
+                        this.gameInProgress = false;
+                        return;
+                    }
+                    
+                    // Mettre à jour l'état BombAnime
+                    this.bombanime.active = true;
+                    this.bombanime.serie = data.serie;
+                    this.bombanime.timer = data.timer;
+                    this.bombanime.timeRemaining = data.timeRemaining || data.timer;
+                    this.bombanime.currentPlayerTwitchId = data.currentPlayerTwitchId;
+                    this.bombanime.bombPointingUp = false; // 🆕 Partie en cours, bombe vers le joueur
+                    this.bombanime.playersOrder = [...data.playersOrder];
+                    this.bombanime.playersData = [...data.playersData];
+                    this.bombanime.myAlphabet = data.myAlphabet || [];
+                    this.bombanime.usedNamesCount = data.usedNamesCount || 0;
+                    this.bombanime.isMyTurn = data.currentPlayerTwitchId === this.twitchId;
+                    
+                    // Mettre à jour l'état global
+                    this.gameInProgress = true;
+                    this.lobbyMode = 'bombanime';
+                    
+                    // Mettre à jour les vies du joueur
+                    this.playerLives = myData.lives;
+                    
+                    // Démarrer le timer
+                    this.startBombanimeTimer();
+                    
+                    // Forcer le re-render
+                    this.$forceUpdate();
+                    
+                    // Auto-focus sur l'input si c'est mon tour (après refresh)
+                    if (this.bombanime.isMyTurn) {
+                        this.$nextTick(() => {
+                            const input = document.getElementById('bombanimeInput');
+                            if (input) input.focus();
+                        });
+                    }
+                    
+                    console.log('✅ État BombAnime restauré - Mon tour:', this.bombanime.isMyTurn);
+                } else {
+                    // Partie non active - nettoyer l'état
+                    sessionStorage.removeItem('bombanimeInProgress');
+                    if (this.lobbyMode === 'bombanime' && this.gameInProgress) {
+                        this.gameInProgress = false;
+                        this.lobbyMode = 'classic';
+                    }
+                }
+            });
+            
+            // 🆕 Mise à jour de la série BombAnime (pendant le lobby)
+            this.socket.on('bombanime-serie-updated', (data) => {
+                console.log('💣 Série BombAnime mise à jour:', data.serie);
+                this.bombanime.serie = data.serie;
+            });
         },
 
 
@@ -1977,6 +2579,22 @@ createApp({
             console.log(`📤 Réponse envoyée: ${answerIndex}, bonus: ${this.activeBonusEffect}`);
         },
 
+        // Sélection carte FizzBuzz
+        selectFizzbuzzCard(cardIndex) {
+            if (this.hasAnswered || this.playerLives === 0) return;
+
+            this.selectedAnswer = cardIndex;
+
+            this.playSound(this.clickSound);
+
+            this.socket.emit('submit-answer', {
+                answer: cardIndex,
+                bonusActive: null // Pas de bonus en mode FizzBuzz
+            });
+
+            console.log(`📤 Carte FizzBuzz sélectionnée: ${cardIndex}`);
+        },
+
         startTimer(initialTime = null) {
             // Ne pas restart le timer s'il tourne déjà
             if (this.timerInterval) {
@@ -2077,6 +2695,39 @@ createApp({
             const mins = Math.floor(seconds / 60);
             const secs = seconds % 60;
             return `${mins}:${secs.toString().padStart(2, '0')}`;
+        },
+        
+        // Retour au menu principal après fin de partie BombAnime
+        returnToLobby() {
+            // Reset l'état BombAnime
+            this.bombanime.active = false;
+            this.bombanime.playersData = [];
+            this.bombanime.currentPlayerTwitchId = null;
+            this.bombanime.myAlphabet = [];
+            this.bombanime.usedNamesCount = 0;
+            this.bombanime.inputValue = '';
+            this.bombanime.justAddedLetters = [];
+            this.bombanime.heartCompleting = false;
+            this.bombanime.heartPulse = false;
+            this.bombanime.mobileAlphabetPulse = false;
+            this.bombanime.successPlayerTwitchId = null;
+            this.bombanime.debugInfo = null;
+            this.bombanime.introPhase = null;
+            this.bombanime.introPlayersRevealed = 0;
+            this.bombanime.bombPointingUp = true; // 🆕 Reset pour la prochaine partie
+            
+            // Reset l'état global
+            this.gameInProgress = false;
+            this.gameEnded = false;
+            this.gameEndData = null;
+            this.hasJoined = false;
+            this.lobbyMode = 'classic';
+            
+            // Supprimer du localStorage et sessionStorage
+            localStorage.removeItem('hasJoinedLobby');
+            sessionStorage.removeItem('bombanimeInProgress');
+            
+            console.log('🔙 Retour au menu principal');
         },
 
         // ========== Thème ==========
@@ -2701,16 +3352,334 @@ createApp({
 
         initSounds() {
             this.clickSound = new Audio('click.mp3');
-            this.clickSound.volume = 0.5; // Volume à 50%
+            this.clickSound.volume = 0.5;
+            
+            // 💣 Sons BombAnime (placés dans src/sound/)
+            this.sounds = {
+                bombanimePass: this.createPreloadedSound('slash3.mp3'),
+                bombanimeWrong: this.createPreloadedSound('wrong.mp3'),
+                bombanimeUsed: this.createPreloadedSound('lock1.mp3'),
+                bombanimeExplosion: this.createPreloadedSound('explode.mp3'),
+            };
+        },
+        
+        // Créer un son préchargé pour réduire la latence
+        createPreloadedSound(src, volume = 0.5) {
+            const sound = new Audio(src);
+            sound.volume = volume;
+            sound.preload = 'auto';
+            // Forcer le chargement en mémoire
+            sound.load();
+            return sound;
         },
 
         playSound(sound) {
-            if (sound) {
-                sound.currentTime = 0; // Reset au début
-                sound.play().catch(e => console.log('Audio blocked:', e));
+            if (!sound || this.soundMuted) return;
+            
+            // Cloner le son pour éviter le délai de reset si déjà en lecture
+            const clone = sound.cloneNode();
+            clone.volume = (this.soundVolume / 100) * 0.7; // Max 70% pour pas être trop fort
+            clone.play().catch(e => console.log('Audio blocked:', e));
+        },
+        
+        toggleSound() {
+            this.soundMuted = !this.soundMuted;
+            localStorage.setItem('soundMuted', this.soundMuted);
+        },
+        
+        setSoundVolume(value) {
+            this.soundVolume = parseInt(value);
+            localStorage.setItem('soundVolume', this.soundVolume);
+        },
+        
+        // 📱 Gestion du responsive
+        handleResize() {
+            this.isMobile = window.innerWidth <= 768;
+            // Fermer l'alphabet mobile si on passe en desktop
+            if (!this.isMobile) {
+                this.isMobileAlphabetOpen = false;
             }
+            // Force re-render pour recalculer les tailles
+            this.$forceUpdate();
+        },
+        
+        toggleMobileAlphabet() {
+            this.isMobileAlphabetOpen = !this.isMobileAlphabetOpen;
         },
 
+        // ============================================
+        // 💣 BOMBANIME - Méthodes
+        // ============================================
+        
+        startBombanimeTimer() {
+            // Arrêter le timer précédent
+            if (this.bombanime.timerInterval) {
+                clearInterval(this.bombanime.timerInterval);
+            }
+            if (this.bombanime.debugMsInterval) {
+                clearInterval(this.bombanime.debugMsInterval);
+            }
+            
+            // 🆕 Timer en millisecondes PRÉCIS avec Date.now()
+            const startTime = Date.now();
+            const totalMs = this.bombanime.timeRemaining * 1000;
+            this.bombanime.debugMs = totalMs;
+            
+            this.bombanime.debugMsInterval = setInterval(() => {
+                const elapsed = Date.now() - startTime;
+                this.bombanime.debugMs = Math.max(0, totalMs - elapsed);
+            }, 50); // 50ms suffit pour un affichage fluide
+            
+            this.bombanime.timerInterval = setInterval(() => {
+                this.bombanime.timeRemaining--;
+                if (this.bombanime.timeRemaining <= 0) {
+                    clearInterval(this.bombanime.timerInterval);
+                    clearInterval(this.bombanime.debugMsInterval);
+                    this.bombanime.debugMs = 0;
+                    
+                    // 🆕 Désactiver immédiatement l'input quand le timer atteint 0
+                    if (this.bombanime.isMyTurn) {
+                        this.bombanime.isMyTurn = false;
+                        this.bombanime.inputValue = '';
+                        // Défocuser l'input
+                        const input = document.getElementById('bombanimeInput');
+                        if (input) input.blur();
+                    }
+                }
+            }, 1000);
+        },
+        
+        // Émettre ce que le joueur tape en temps réel
+        emitTyping() {
+            if (!this.bombanime.isMyTurn) return;
+            
+            // Mettre à jour localement aussi pour que le joueur voie sa propre frappe
+            const myPlayer = this.bombanime.playersData.find(p => p.twitchId === this.twitchId);
+            if (myPlayer) {
+                myPlayer.currentTyping = this.bombanime.inputValue.toUpperCase();
+                this.$forceUpdate();
+            }
+            
+            // Envoyer aux autres joueurs
+            this.socket.emit('bombanime-typing', {
+                text: this.bombanime.inputValue.toUpperCase()
+            });
+        },
+        
+        submitBombanimeName() {
+            if (!this.bombanime.isMyTurn) return;
+            if (!this.bombanime.inputValue.trim()) return;
+            
+            // DEBUG: Afficher le temps local restant au moment de la soumission
+            const localTimeRemaining = this.bombanime.timeRemaining.toFixed(2);
+            this.bombanime.debugInfo = `📤 Envoi à ${localTimeRemaining}s (local)...`;
+            console.log(`🔍 DEBUG: Soumission à ${localTimeRemaining}s restants (local)`);
+            
+            this.socket.emit('bombanime-submit-name', {
+                name: this.bombanime.inputValue.trim().toUpperCase()
+            });
+        },
+        
+        // Obtenir ma position dans le cercle
+        getBombanimeMyPosition() {
+            return this.bombanime.playersOrder.indexOf(this.twitchId);
+        },
+        
+        // Calculer la taille du cercle selon le nombre de joueurs
+        getBombanimeCircleSize() {
+            const playerCount = this.bombanime.playersData.length;
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            
+            // Mobile portrait - cercle plus grand pour espacer les joueurs
+            if (screenWidth <= 480) {
+                const baseSize = 280;
+                const perPlayer = 18;
+                return Math.min(screenWidth - 40, baseSize + (playerCount * perPlayer));
+            }
+            // Mobile paysage / petite tablette
+            if (screenWidth <= 768 || screenHeight <= 500) {
+                const baseSize = 320;
+                const perPlayer = 20;
+                return Math.min(screenWidth - 60, baseSize + (playerCount * perPlayer));
+            }
+            // Tablette
+            if (screenWidth <= 1024) {
+                const baseSize = 420;
+                const perPlayer = 18;
+                return baseSize + (playerCount * perPlayer);
+            }
+            // Desktop (actuel)
+            const baseSize = 500;
+            const perPlayer = 22;
+            return baseSize + (playerCount * perPlayer);
+        },
+        
+        // Calculer la taille de la bombe selon le nombre de joueurs
+        getBombSize() {
+            const total = this.bombanime.playersData.length;
+            const screenWidth = window.innerWidth;
+            
+            // Mobile - plus petit
+            if (screenWidth <= 480) {
+                return Math.min(42, Math.max(32, 28 + (total * 1)));
+            }
+            // Tablette
+            if (screenWidth <= 768) {
+                return Math.min(55, Math.max(42, 36 + (total * 1.3)));
+            }
+            // Desktop
+            return Math.min(70, Math.max(58, 48 + (total * 1.7)));
+        },
+        
+        // Calculer le style de position d'un joueur
+        getBombanimePlayerStyle(index, total) {
+            const circleSize = this.getBombanimeCircleSize();
+            const hexSize = this.getBombanimeHexSize();
+            const centerX = circleSize / 2;
+            const centerY = circleSize / 2;
+            
+            // Radius = rayon du cercle moins la moitié de l'hexagone pour que les joueurs soient à l'intérieur
+            // On utilise un pourcentage fixe du cercle pour garantir un vrai cercle
+            const radius = (circleSize / 2) - (hexSize / 2) - 10;
+            
+            // Vrai cercle complet avec décalage pour éviter joueur pile en bas
+            // Offset d'un demi-segment pour décaler tous les joueurs
+            const offsetAngle = Math.PI / total;
+            // -90° pour commencer en haut, + offset pour décaler
+            const angle = ((index / total) * 2 * Math.PI) - (Math.PI / 2) + offsetAngle;
+            
+            const x = centerX + radius * Math.cos(angle);
+            const y = centerY + radius * Math.sin(angle);
+            
+            return {
+                left: x + 'px',
+                top: y + 'px'
+            };
+        },
+        
+        // Déterminer si le texte de réponse doit être au-dessus (pour éviter chevauchements)
+        isAnswerAbove(index, total) {
+            // Pas utilisé pour l'instant, toujours en dessous
+            return false;
+        },
+        
+        // Calculer la taille de l'hexagone selon le nombre de joueurs
+        getBombanimeHexSize() {
+            const playerCount = this.bombanime.playersData.length;
+            const screenWidth = window.innerWidth;
+            
+            // Mobile - plus petit pour laisser de l'espace
+            if (screenWidth <= 480) {
+                const baseSize = 48;
+                const reduction = 1.8;
+                return Math.max(30, baseSize - (playerCount * reduction));
+            }
+            // Tablette
+            if (screenWidth <= 768) {
+                const baseSize = 65;
+                const reduction = 2.2;
+                return Math.max(40, baseSize - (playerCount * reduction));
+            }
+            // Desktop
+            const baseSize = 105;
+            const reduction = 3.5;
+            return Math.max(58, baseSize - (playerCount * reduction));
+        },
+        
+        // Calculer la taille de la police des réponses selon le nombre de joueurs
+        getAnswerFontSize() {
+            const total = this.bombanime.playersData.length;
+            const screenWidth = window.innerWidth;
+            
+            // Mobile
+            if (screenWidth <= 480) {
+                return Math.max(0.55, 0.85 - (total * 0.025)) + 'rem';
+            }
+            // Tablette
+            if (screenWidth <= 768) {
+                return Math.max(0.65, 1.0 - (total * 0.03)) + 'rem';
+            }
+            // Desktop
+            return Math.max(0.75, 1.2 - (total * 0.035)) + 'rem';
+        },
+        
+        // Calculer l'angle de la mèche de la bombe
+        getBombFuseAngle() {
+            // Si bombPointingUp est true, la bombe pointe vers le haut (0°)
+            if (this.bombanime.bombPointingUp) {
+                return 0;
+            }
+            
+            const currentIndex = this.bombanime.playersData.findIndex(
+                p => p.twitchId === this.bombanime.currentPlayerTwitchId
+            );
+            if (currentIndex === -1) {
+                return 0;
+            }
+            
+            const total = this.bombanime.playersData.length;
+            
+            // Même calcul que getBombanimePlayerStyle
+            const offsetAngle = Math.PI / total;
+            const angle = ((currentIndex / total) * 2 * Math.PI) - (Math.PI / 2) + offsetAngle;
+            
+            // Convertir en degrés pour CSS (0° = haut en CSS)
+            return (angle * 180 / Math.PI) + 90;
+        },
+        
+        // Calculer la position d'un joueur dans le cercle (en degrés)
+        getBombanimePlayerAngle(index, total) {
+            const offsetAngle = 180 / total;
+            return ((index / total) * 360) - 90 + offsetAngle;
+        },
+        
+        // Vérifier si une lettre est dans mon alphabet
+        hasLetter(letter) {
+            return this.bombanime.myAlphabet.includes(letter);
+        },
+        
+        // Obtenir le message d'erreur formaté
+        getBombanimeErrorMessage() {
+            const messages = {
+                'character_not_found': 'Personnage inconnu',
+                'already_used': 'Déjà utilisé !',
+                'not_your_turn': 'Ce n\'est pas ton tour',
+                'invalid_input': 'Entrée invalide'
+            };
+            return messages[this.bombanime.lastError] || this.bombanime.lastError;
+        },
+        
+        // Formater le nom de la série pour l'affichage (JujutsuKaisen -> Jujutsu Kaisen)
+        getFormattedSerieName() {
+            const serieNames = {
+                'Naruto': 'Naruto',
+                'OnePiece': 'One Piece',
+                'Dbz': 'Dragon Ball Z',
+                'Mha': 'My Hero Academia',
+                'Bleach': 'Bleach',
+                'Jojo': 'Jojo',
+                'Hxh': 'Hunter x Hunter',
+                'FairyTail': 'Fairy Tail',
+                'Pokemon': 'Pokémon',
+                'Snk': 'Attack on Titan',
+                'DemonSlayer': 'Demon Slayer',
+                'JujutsuKaisen': 'Jujutsu Kaisen',
+                'Reborn': 'Reborn',
+                'DeathNote': 'Death Note'
+            };
+            return serieNames[this.bombanime.serie] || this.bombanime.serie;
+        },
+        
+        // Obtenir les données d'un joueur par twitchId
+        getBombanimePlayer(twitchId) {
+            return this.bombanime.playersData.find(p => p.twitchId === twitchId);
+        },
+        
+        // Calculer le pourcentage de remplissage du cœur alphabet
+        getAlphabetHeartFill() {
+            return (this.bombanime.myAlphabet.length / 26) * 100;
+        },
 
 
     },

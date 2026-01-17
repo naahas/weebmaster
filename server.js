@@ -42,6 +42,40 @@ const PLAYER_COLORS = [
     '#F8B739', '#52B788', '#E76F51', '#8E44AD'
 ];
 
+// ============================================
+// BOMBANIME - Données et Configuration
+// ============================================
+const fs = require('fs');
+const path = require('path');
+
+// Charger les personnages depuis le JSON
+let BOMBANIME_CHARACTERS = {};
+try {
+    const bombDataPath = path.join(__dirname, 'bombdata.json');
+    const bombData = JSON.parse(fs.readFileSync(bombDataPath, 'utf8'));
+    BOMBANIME_CHARACTERS = bombData.Character || {};
+    console.log('✅ BombAnime: Données chargées -', Object.keys(BOMBANIME_CHARACTERS).length, 'séries');
+    
+    // Log du nombre de personnages par série
+    for (const [serie, chars] of Object.entries(BOMBANIME_CHARACTERS)) {
+        console.log(`   📌 ${serie}: ${chars.length} personnages`);
+    }
+} catch (error) {
+    console.error('❌ Erreur chargement bombdata.json:', error.message);
+}
+
+// Configuration BombAnime
+const BOMBANIME_CONFIG = {
+    MIN_PLAYERS: 2,
+    MAX_PLAYERS: 13,
+    DEFAULT_LIVES: 2,
+    DEFAULT_TIMER: 8,
+    ALPHABET_BONUS_LIVES: 1
+};
+
+// 💣 Set pour réserver les places pendant le traitement async (évite les race conditions)
+const pendingJoins = new Set();
+
 
 // SERIES_FILTERS importé depuis dbs.js
 
@@ -222,6 +256,11 @@ app.get('/game/state', (req, res) => {
         updateTeamCounts();
         updateTeamScores(); // 🆕 Calculer les scores d'équipe
     }
+    
+    // 💣 Vérifier si le lobby BombAnime est plein
+    const isBombanimeMode = gameState.lobbyMode === 'bombanime';
+    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : Infinity;
+    const isLobbyFull = isBombanimeMode && gameState.players.size >= maxPlayers;
 
     // 🔥 Construire les données des joueurs avec leurs réponses
     const playersData = Array.from(gameState.players.values()).map(player => {
@@ -297,11 +336,28 @@ app.get('/game/state', (req, res) => {
         teamNames: gameState.teamNames,
         teamCounts: gameState.teamCounts,
         teamScores: gameState.lobbyMode === 'rivalry' ? gameState.teamScores : null, // 🆕 Scores d'équipe
+        // 💣 BombAnime - Lobby plein
+        maxPlayers: maxPlayers,
+        isLobbyFull: isLobbyFull,
         tiebreakerPlayers: gameState.isTiebreaker
             ? Array.from(gameState.players.values())
                 .filter(p => gameState.tiebreakerPlayers.includes(p.twitchId))
                 .map(p => ({ twitchId: p.twitchId, username: p.username }))
-            : []
+            : [],
+        // 💣 Mode BombAnime
+        bombanime: gameState.lobbyMode === 'bombanime' ? {
+            active: gameState.bombanime.active,
+            serie: gameState.bombanime.serie,
+            timer: gameState.bombanime.timer,
+            currentPlayerTwitchId: gameState.bombanime.currentPlayerTwitchId,
+            playersOrder: gameState.bombanime.playersOrder,
+            playersData: gameState.bombanime.active ? getBombanimePlayersData() : [],
+            usedNamesCount: gameState.bombanime.usedNames.size,
+            direction: gameState.bombanime.bombDirection,
+            timeRemaining: gameState.bombanime.turnStartTime ? 
+                Math.max(0, gameState.bombanime.timer - Math.floor((Date.now() - gameState.bombanime.turnStartTime) / 1000)) : 
+                gameState.bombanime.timer
+        } : null
     });
 });
 
@@ -382,7 +438,29 @@ const gameState = {
     
     // 🆕 Système de défis
     activeChallenges: [],           // Les 3 défis de la partie actuelle
-    playerChallenges: new Map()     // Progression des défis par joueur
+    playerChallenges: new Map(),     // Progression des défis par joueur
+    
+    // ============================================
+    // 💣 BOMBANIME - État du mode
+    // ============================================
+    bombanime: {
+        active: false,              // Mode BombAnime actif
+        serie: 'Naruto',            // Série sélectionnée
+        timer: 8,                   // Timer par défaut (secondes)
+        playersOrder: [],           // Ordre des joueurs (twitchIds) dans le cercle
+        currentPlayerIndex: 0,      // Index du joueur actuel dans playersOrder
+        currentPlayerTwitchId: null,// TwitchId du joueur qui doit jouer
+        usedNames: new Set(),       // Noms déjà utilisés dans la partie
+        playerAlphabets: new Map(), // Map<twitchId, Set<lettre>> - Lettres collectées par joueur
+        playerLastAnswers: new Map(), // Map<twitchId, string> - Dernière réponse de chaque joueur
+        turnTimeout: null,          // Timeout du tour actuel
+        turnId: 0,                  // Identifiant unique du tour (pour éviter race conditions)
+        turnStartTime: null,        // Timestamp du début du tour
+        lastValidName: null,        // Dernier nom validé
+        bombDirection: 1,           // 1 = sens horaire, -1 = anti-horaire
+        isPaused: false,            // Pause entre les tours
+        eliminatedPlayers: []       // Joueurs éliminés (pour affichage)
+    }
 };
 
 // ============================================
@@ -442,6 +520,11 @@ function broadcastLobbyUpdate() {
         updateTeamCounts();
     }
     
+    // Vérifier si le lobby BombAnime est plein
+    const isBombanimeMode = gameState.lobbyMode === 'bombanime';
+    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : Infinity;
+    const isLobbyFull = isBombanimeMode && gameState.players.size >= maxPlayers;
+    
     io.emit('lobby-update', {
         playerCount: gameState.players.size,
         lives: gameState.lives,
@@ -451,6 +534,9 @@ function broadcastLobbyUpdate() {
         lobbyMode: gameState.lobbyMode,
         teamNames: gameState.teamNames,
         teamCounts: gameState.teamCounts,
+        // BombAnime - Lobby plein
+        maxPlayers: maxPlayers,
+        isLobbyFull: isLobbyFull,
         // Liste des joueurs
         players: Array.from(gameState.players.values()).map(p => ({
             twitchId: p.twitchId,
@@ -878,6 +964,11 @@ app.get('/admin/game-state', (req, res) => {
         return res.status(403).json({ error: 'Non autorisé' });
     }
 
+    // Vérifier si le lobby BombAnime est plein
+    const isBombanimeMode = gameState.lobbyMode === 'bombanime';
+    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : Infinity;
+    const isLobbyFull = isBombanimeMode && gameState.players.size >= maxPlayers;
+
     res.json({
         isActive: gameState.isActive,
         phase: gameState.inProgress ? 'playing' : (gameState.isActive ? 'lobby' : 'idle'),
@@ -887,7 +978,10 @@ app.get('/admin/game-state', (req, res) => {
             title: p.title || 'Novice',
             isChampion: p.twitchId === lastGlobalWinner
         })),
-        playerCount: gameState.players.size
+        playerCount: gameState.players.size,
+        lobbyMode: gameState.lobbyMode,
+        maxPlayers: maxPlayers,
+        isLobbyFull: isLobbyFull
     });
 });
 
@@ -903,7 +997,7 @@ app.post('/admin/toggle-game', async (req, res) => {
         console.log('✅ Jeu activé - Lobby ouvert');
         
         // 🆕 Récupérer le mode et les noms d'équipe depuis la requête
-        const { lobbyMode, teamNames } = req.body || {};
+        const { lobbyMode, teamNames, bombanimeSerie, bombanimeTimer, bombanimeLives } = req.body || {};
         gameState.lobbyMode = lobbyMode || 'classic';
         if (teamNames) {
             gameState.teamNames = teamNames;
@@ -912,13 +1006,22 @@ app.post('/admin/toggle-game', async (req, res) => {
         }
         gameState.teamCounts = { 1: 0, 2: 0 };
         
-        console.log(`🎮 Mode: ${gameState.lobbyMode}${gameState.lobbyMode === 'rivalry' ? ` (${gameState.teamNames[1]} vs ${gameState.teamNames[2]})` : ''}`);
+        // 💣 Configuration BombAnime
+        if (lobbyMode === 'bombanime') {
+            gameState.bombanime.serie = bombanimeSerie || 'Naruto';
+            gameState.bombanime.timer = bombanimeTimer || BOMBANIME_CONFIG.DEFAULT_TIMER;
+            gameState.bombanime.lives = bombanimeLives || BOMBANIME_CONFIG.DEFAULT_LIVES;
+            console.log(`💣 BombAnime configuré: ${gameState.bombanime.serie} - ${gameState.bombanime.timer}s - ${gameState.bombanime.lives} vies`);
+        }
+        
+        console.log(`🎮 Mode: ${gameState.lobbyMode}${gameState.lobbyMode === 'rivalry' ? ` (${gameState.teamNames[1]} vs ${gameState.teamNames[2]})` : ''}${gameState.lobbyMode === 'bombanime' ? ` (${gameState.bombanime.serie})` : ''}`);
 
         resetLogs();
 
         // Reset la grille des joueurs à l'ouverture du lobby
         gameState.players.clear();
         gameState.answers.clear();
+        pendingJoins.clear(); // 🔓 Reset les réservations
         gameState.currentQuestionIndex = 0;
         gameState.currentQuestion = null;
         gameState.showResults = false;
@@ -937,7 +1040,10 @@ app.post('/admin/toggle-game', async (req, res) => {
             lives: gameState.lives,
             questionTime: gameState.questionTime,
             lobbyMode: gameState.lobbyMode,
-            teamNames: gameState.teamNames
+            teamNames: gameState.teamNames,
+            // 💣 Données BombAnime
+            bombanimeSerie: gameState.bombanime.serie,
+            bombanimeTimer: gameState.bombanime.timer
         });
     } else {
         console.log('❌ Jeu désactivé');
@@ -967,6 +1073,7 @@ app.post('/admin/toggle-game', async (req, res) => {
         gameState.lastQuestionResults = null;
         gameState.players.clear();
         gameState.answers.clear();
+        pendingJoins.clear(); // 🔓 Reset les réservations
         gameState.questionStartTime = null;
         gameState.gameStartTime = null;
 
@@ -976,11 +1083,67 @@ app.post('/admin/toggle-game', async (req, res) => {
         gameState.lobbyMode = 'classic';
         gameState.teamNames = { 1: 'Team A', 2: 'Team B' };
         gameState.teamCounts = { 1: 0, 2: 0 };
+        
+        // 💣 Reset BombAnime
+        resetBombanimeState();
 
         io.emit('game-deactivated');
     }
 
     res.json({ isActive: gameState.isActive });
+});
+
+// 💣 Mettre à jour la série BombAnime
+app.post('/admin/bombanime/update-serie', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+    
+    const { serie } = req.body;
+    
+    if (!serie) {
+        return res.status(400).json({ error: 'Série manquante' });
+    }
+    
+    // Vérifier que la série existe
+    if (!BOMBANIME_CHARACTERS[serie]) {
+        return res.status(400).json({ error: 'Série inconnue' });
+    }
+    
+    gameState.bombanime.serie = serie;
+    console.log(`💣 Série BombAnime mise à jour: ${serie} (${BOMBANIME_CHARACTERS[serie].length} personnages)`);
+    
+    // Notifier les joueurs du changement de série
+    io.emit('bombanime-serie-updated', { 
+        serie: serie,
+        characterCount: BOMBANIME_CHARACTERS[serie].length 
+    });
+    
+    res.json({ success: true, serie: serie });
+});
+
+// 💣 Fermer le lobby BombAnime spécifiquement
+app.post('/admin/bombanime/close-lobby', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+    
+    // Fermer le lobby
+    gameState.isActive = false;
+    gameState.inProgress = false;
+    
+    // Reset BombAnime
+    resetBombanimeState();
+    
+    // Reset winnerScreenData
+    winnerScreenData = null;
+    
+    // Notifier les clients
+    io.emit('game-deactivated');
+    io.emit('bombanime-lobby-closed');
+    
+    console.log('💣 Lobby BombAnime fermé');
+    res.json({ success: true });
 });
 
 // Mettre à jour les paramètres du jeu (vies et temps)
@@ -1104,6 +1267,48 @@ app.post('/admin/start-game', async (req, res) => {
             success: false,
             error: 'Impossible de démarrer : minimum 2 joueurs requis'
         });
+    }
+
+    // 💣 MODE BOMBANIME - Démarrage spécial
+    if (gameState.lobbyMode === 'bombanime') {
+        // Récupérer les paramètres envoyés
+        const { bombanimeLives, bombanimeTimer, bombanimeSerie } = req.body || {};
+        
+        // Mettre à jour la série si fournie
+        if (bombanimeSerie && BOMBANIME_CHARACTERS[bombanimeSerie]) {
+            gameState.bombanime.serie = bombanimeSerie;
+            console.log(`💣 Série BombAnime: ${gameState.bombanime.serie}`);
+        }
+        
+        // Mettre à jour les paramètres si fournis
+        if (bombanimeLives) {
+            gameState.bombanime.lives = parseInt(bombanimeLives);
+            console.log(`💣 Vies BombAnime mises à jour: ${gameState.bombanime.lives}`);
+        }
+        if (bombanimeTimer) {
+            gameState.bombanime.timer = parseInt(bombanimeTimer);
+            console.log(`💣 Timer BombAnime mis à jour: ${gameState.bombanime.timer}s`);
+        }
+        
+        // Vérifier les limites de joueurs
+        if (totalPlayers > BOMBANIME_CONFIG.MAX_PLAYERS) {
+            return res.status(400).json({
+                success: false,
+                error: `Maximum ${BOMBANIME_CONFIG.MAX_PLAYERS} joueurs en mode BombAnime`
+            });
+        }
+        
+        try {
+            const result = await startBombanimeGame();
+            if (result.success) {
+                return res.json({ success: true, mode: 'bombanime' });
+            } else {
+                return res.status(400).json({ success: false, error: result.error });
+            }
+        } catch (error) {
+            console.error('❌ Erreur démarrage BombAnime:', error);
+            return res.status(500).json({ success: false, error: error.message });
+        }
     }
 
     // 🆕 Vérifier que les deux équipes ont des joueurs en mode Rivalité
@@ -4258,6 +4463,508 @@ async function checkPartnersLive() {
 checkPartnersLive();
 setInterval(checkPartnersLive, 120000);
 
+// ============================================
+// 💣 BOMBANIME - Fonctions de jeu
+// ============================================
+
+// Valider un nom de personnage
+function validateBombanimeCharacter(name, serie) {
+    if (!name || !serie) return { valid: false, reason: 'invalid_input' };
+    
+    const characters = BOMBANIME_CHARACTERS[serie];
+    if (!characters) return { valid: false, reason: 'serie_not_found' };
+    
+    const normalizedName = name.trim().toUpperCase();
+    
+    // Vérifier si le nom est dans la liste
+    const isValid = characters.some(char => char.toUpperCase() === normalizedName);
+    
+    if (!isValid) return { valid: false, reason: 'character_not_found' };
+    
+    // Vérifier si le nom a déjà été utilisé
+    if (gameState.bombanime.usedNames.has(normalizedName)) {
+        return { valid: false, reason: 'already_used' };
+    }
+    
+    return { valid: true, normalizedName };
+}
+
+// Obtenir la première lettre d'un nom (pour l'alphabet)
+function getFirstLetter(name) {
+    if (!name) return null;
+    const normalized = name.trim().toUpperCase();
+    const firstChar = normalized.charAt(0);
+    // Vérifier que c'est une lettre A-Z
+    if (/^[A-Z]$/.test(firstChar)) {
+        return firstChar;
+    }
+    return null;
+}
+
+// Extraire toutes les lettres uniques d'un nom (A-Z seulement)
+function getAllLetters(name) {
+    if (!name) return [];
+    const normalized = name.trim().toUpperCase();
+    const letters = new Set();
+    for (const char of normalized) {
+        if (/^[A-Z]$/.test(char)) {
+            letters.add(char);
+        }
+    }
+    return Array.from(letters);
+}
+
+// Vérifier si un joueur a complété l'alphabet
+function checkAlphabetComplete(twitchId) {
+    const alphabet = gameState.bombanime.playerAlphabets.get(twitchId);
+    if (!alphabet) return false;
+    return alphabet.size >= 26;
+}
+
+// Obtenir les joueurs BombAnime encore en vie
+function getAliveBombanimePlayers() {
+    return Array.from(gameState.players.values()).filter(p => p.lives > 0);
+}
+
+// Passer au joueur suivant dans le cercle
+function getNextBombanimePlayer() {
+    const alivePlayers = getAliveBombanimePlayers();
+    if (alivePlayers.length <= 1) return null;
+    
+    const currentTwitchId = gameState.bombanime.currentPlayerTwitchId;
+    const playersOrder = gameState.bombanime.playersOrder;
+    const direction = gameState.bombanime.bombDirection;
+    
+    // Trouver l'index du joueur actuel dans l'ordre ORIGINAL
+    const currentIndexInOriginal = playersOrder.indexOf(currentTwitchId);
+    
+    // Parcourir dans la direction jusqu'à trouver un joueur vivant
+    let nextIndex = currentIndexInOriginal;
+    for (let i = 0; i < playersOrder.length; i++) {
+        nextIndex = (nextIndex + direction + playersOrder.length) % playersOrder.length;
+        const candidateTwitchId = playersOrder[nextIndex];
+        
+        // Vérifier si ce joueur est vivant
+        const candidate = Array.from(gameState.players.values()).find(p => p.twitchId === candidateTwitchId);
+        if (candidate && candidate.lives > 0) {
+            return candidateTwitchId;
+        }
+    }
+    
+    return null;
+}
+
+// Démarrer le tour d'un joueur BombAnime
+function startBombanimeTurn(twitchId) {
+    if (!gameState.bombanime.active) return;
+    
+    // Annuler le timeout précédent
+    if (gameState.bombanime.turnTimeout) {
+        clearTimeout(gameState.bombanime.turnTimeout);
+    }
+    
+    // Incrémenter l'identifiant de tour (protection contre race conditions)
+    gameState.bombanime.turnId++;
+    const currentTurnId = gameState.bombanime.turnId;
+    
+    gameState.bombanime.currentPlayerTwitchId = twitchId;
+    gameState.bombanime.turnStartTime = Date.now();
+    gameState.bombanime.isPaused = false;
+    
+    // Trouver le joueur
+    const player = Array.from(gameState.players.values()).find(p => p.twitchId === twitchId);
+    if (!player) return;
+    
+    console.log(`💣 Tour de ${player.username} (${gameState.bombanime.timer}s) [turnId=${currentTurnId}]`);
+    
+    // Envoyer l'état à tous les clients
+    io.emit('bombanime-turn-start', {
+        currentPlayerTwitchId: twitchId,
+        currentPlayerUsername: player.username,
+        timer: gameState.bombanime.timer,
+        playersOrder: gameState.bombanime.playersOrder,
+        direction: gameState.bombanime.bombDirection
+    });
+    
+    // Timeout pour l'explosion - vérifie turnId pour éviter race condition
+    gameState.bombanime.turnTimeout = setTimeout(() => {
+        // Si le turnId a changé, le joueur a répondu à temps
+        if (gameState.bombanime.turnId !== currentTurnId) {
+            console.log(`⏱️ Explosion annulée [turnId changé: ${currentTurnId} -> ${gameState.bombanime.turnId}]`);
+            return;
+        }
+        bombExplode(twitchId);
+    }, gameState.bombanime.timer * 1000);
+}
+
+// La bombe explose sur un joueur
+function bombExplode(twitchId) {
+    if (!gameState.bombanime.active) return;
+    
+    // IMPORTANT: Vérifier que c'est toujours le tour de ce joueur
+    // Si ce n'est plus son tour, c'est qu'il a répondu à temps (race condition évitée)
+    if (gameState.bombanime.currentPlayerTwitchId !== twitchId) {
+        console.log(`⏱️ Explosion ignorée pour ${twitchId} - ce n'est plus son tour (a répondu à temps)`);
+        return;
+    }
+    
+    const player = Array.from(gameState.players.values()).find(p => p.twitchId === twitchId);
+    if (!player) return;
+    
+    // Calculer le temps écoulé depuis le début du tour
+    const elapsedMs = Date.now() - gameState.bombanime.turnStartTime;
+    console.log(`💥 EXPLOSION sur ${player.username}! (après ${elapsedMs}ms, turnId=${gameState.bombanime.turnId})`);
+    
+    // Retirer une vie
+    player.lives--;
+    
+    const isEliminated = player.lives <= 0;
+    
+    if (isEliminated) {
+        gameState.bombanime.eliminatedPlayers.push({
+            twitchId: player.twitchId,
+            username: player.username,
+            rank: getAliveBombanimePlayers().length + 1
+        });
+        console.log(`☠️ ${player.username} ÉLIMINÉ!`);
+    }
+    
+    // Envoyer l'événement d'explosion
+    io.emit('bombanime-explosion', {
+        playerTwitchId: twitchId,
+        playerUsername: player.username,
+        livesRemaining: player.lives,
+        isEliminated: isEliminated,
+        playersData: getBombanimePlayersData(),
+        // Debug
+        debugElapsedMs: elapsedMs,
+        debugTurnId: gameState.bombanime.turnId
+    });
+    
+    // Vérifier si la partie est terminée
+    const alivePlayers = getAliveBombanimePlayers();
+    if (alivePlayers.length <= 1) {
+        endBombanimeGame(alivePlayers[0] || null);
+        return;
+    }
+    
+    // Pause puis passer au joueur suivant
+    gameState.bombanime.isPaused = true;
+    setTimeout(() => {
+        const nextPlayerTwitchId = getNextBombanimePlayer();
+        if (nextPlayerTwitchId) {
+            startBombanimeTurn(nextPlayerTwitchId);
+        }
+    }, 100); // Passage de tour pendant le shake
+}
+
+// Soumettre un nom BombAnime
+function submitBombanimeName(socketId, name) {
+    if (!gameState.bombanime.active) return { success: false, reason: 'game_not_active' };
+    
+    const player = gameState.players.get(socketId);
+    if (!player) return { success: false, reason: 'player_not_found' };
+    
+    // Vérifier que c'est le tour de ce joueur
+    if (player.twitchId !== gameState.bombanime.currentPlayerTwitchId) {
+        return { success: false, reason: 'not_your_turn' };
+    }
+    
+    // IMPORTANT: Vérifier que le temps n'est pas écoulé côté serveur
+    // Ceci empêche les réponses qui arrivent après l'expiration du timer
+    const elapsedMs = Date.now() - gameState.bombanime.turnStartTime;
+    const timerMs = gameState.bombanime.timer * 1000;
+    if (elapsedMs >= timerMs) {
+        console.log(`⏱️ Réponse REJETÉE pour ${player.username} - temps écoulé (${elapsedMs}ms >= ${timerMs}ms)`);
+        return { success: false, reason: 'time_expired' };
+    }
+    
+    // Valider le nom
+    const validation = validateBombanimeCharacter(name, gameState.bombanime.serie);
+    
+    if (!validation.valid) {
+        console.log(`❌ Nom invalide: "${name}" - ${validation.reason}`);
+        
+        io.emit('bombanime-name-rejected', {
+            playerTwitchId: player.twitchId,
+            name: name,
+            reason: validation.reason
+        });
+        
+        return { success: false, reason: validation.reason };
+    }
+    
+    // Nom valide!
+    const normalizedName = validation.normalizedName;
+    gameState.bombanime.usedNames.add(normalizedName);
+    gameState.bombanime.lastValidName = normalizedName;
+    
+    // Ajouter TOUTES les lettres du nom à l'alphabet du joueur
+    const allLetters = getAllLetters(normalizedName);
+    if (allLetters.length > 0) {
+        if (!gameState.bombanime.playerAlphabets.has(player.twitchId)) {
+            gameState.bombanime.playerAlphabets.set(player.twitchId, new Set());
+        }
+        const playerAlphabet = gameState.bombanime.playerAlphabets.get(player.twitchId);
+        
+        const newLetters = allLetters.filter(letter => !playerAlphabet.has(letter));
+        allLetters.forEach(letter => playerAlphabet.add(letter));
+        
+        if (newLetters.length > 0) {
+            console.log(`✅ ${player.username}: "${normalizedName}" - Nouvelles lettres: ${newLetters.join(', ')} (Total: ${playerAlphabet.size}/26)`);
+        } else {
+            console.log(`✅ ${player.username}: "${normalizedName}" - Aucune nouvelle lettre (Total: ${playerAlphabet.size}/26)`);
+        }
+        
+        // Vérifier si l'alphabet est complet
+        if (checkAlphabetComplete(player.twitchId)) {
+            console.log(`🎉 ${player.username} a complété l'alphabet! +1 vie`);
+            player.lives += BOMBANIME_CONFIG.ALPHABET_BONUS_LIVES;
+            
+            // Reset l'alphabet du joueur
+            gameState.bombanime.playerAlphabets.set(player.twitchId, new Set());
+            
+            io.emit('bombanime-alphabet-complete', {
+                playerTwitchId: player.twitchId,
+                playerUsername: player.username,
+                newLives: player.lives
+            });
+        }
+    }
+    
+    // Annuler le timeout d'explosion et incrémenter turnId
+    // L'incrémentation invalide le callback même s'il est déjà dans la queue d'événements
+    if (gameState.bombanime.turnTimeout) {
+        clearTimeout(gameState.bombanime.turnTimeout);
+        gameState.bombanime.turnTimeout = null;
+    }
+    gameState.bombanime.turnId++; // Invalide l'ancien timeout immédiatement
+    
+    // Calculer le prochain joueur
+    const nextPlayerTwitchId = getNextBombanimePlayer();
+    
+    // Changer le joueur actuel
+    if (nextPlayerTwitchId) {
+        gameState.bombanime.currentPlayerTwitchId = nextPlayerTwitchId;
+    }
+    
+    // Sauvegarder la dernière réponse du joueur
+    gameState.bombanime.playerLastAnswers.set(player.twitchId, normalizedName);
+    
+    // Calculer le temps restant au moment de la validation (pour debug)
+    const debugElapsedMs = Date.now() - gameState.bombanime.turnStartTime;
+    const timeRemainingMs = (gameState.bombanime.timer * 1000) - debugElapsedMs;
+    
+    console.log(`⏱️ Réponse validée avec ${timeRemainingMs}ms restants (turnId=${gameState.bombanime.turnId})`);
+    
+    // Envoyer la confirmation avec le prochain joueur
+    io.emit('bombanime-name-accepted', {
+        playerTwitchId: player.twitchId,
+        playerUsername: player.username,
+        name: normalizedName,
+        newLetters: getAllLetters(normalizedName),
+        alphabet: Array.from(gameState.bombanime.playerAlphabets.get(player.twitchId) || []),
+        playersData: getBombanimePlayersData(),
+        nextPlayerTwitchId: nextPlayerTwitchId,  // Pour rotation immédiate de la bombe
+        // Debug info
+        debugTimeRemainingMs: timeRemainingMs,
+        debugTurnId: gameState.bombanime.turnId
+    });
+    
+    // Démarrer le tour du prochain joueur (avec son nouveau timer)
+    setTimeout(() => {
+        if (nextPlayerTwitchId) {
+            startBombanimeTurn(nextPlayerTwitchId);
+        }
+    }, 30); // 30ms - quasi-instantané
+    
+    return { success: true };
+}
+
+// Obtenir les données des joueurs BombAnime pour l'affichage
+function getBombanimePlayersData() {
+    const playersData = [];
+    
+    gameState.bombanime.playersOrder.forEach((twitchId, index) => {
+        const player = Array.from(gameState.players.values()).find(p => p.twitchId === twitchId);
+        if (player) {
+            playersData.push({
+                twitchId: player.twitchId,
+                username: player.username,
+                lives: player.lives,
+                isAlive: player.lives > 0,
+                isCurrent: player.twitchId === gameState.bombanime.currentPlayerTwitchId,
+                alphabet: Array.from(gameState.bombanime.playerAlphabets.get(twitchId) || []),
+                lastAnswer: gameState.bombanime.playerLastAnswers.get(twitchId) || '',
+                position: index,
+                avatarUrl: player.avatarUrl || '/img/avatars/novice.png'
+            });
+        }
+    });
+    
+    return playersData;
+}
+
+// Démarrer une partie BombAnime
+async function startBombanimeGame() {
+    const players = Array.from(gameState.players.values());
+    
+    if (players.length < BOMBANIME_CONFIG.MIN_PLAYERS) {
+        return { success: false, error: `Minimum ${BOMBANIME_CONFIG.MIN_PLAYERS} joueurs requis` };
+    }
+    
+    if (players.length > BOMBANIME_CONFIG.MAX_PLAYERS) {
+        return { success: false, error: `Maximum ${BOMBANIME_CONFIG.MAX_PLAYERS} joueurs` };
+    }
+    
+    console.log(`💣 Démarrage BombAnime - ${players.length} joueurs - Série: ${gameState.bombanime.serie}`);
+    
+    // Reset état BombAnime
+    gameState.bombanime.active = true;
+    gameState.bombanime.usedNames = new Set();
+    gameState.bombanime.playerAlphabets = new Map();
+    gameState.bombanime.playerLastAnswers = new Map();
+    gameState.bombanime.eliminatedPlayers = [];
+    gameState.bombanime.bombDirection = 1;
+    gameState.bombanime.lastValidName = null;
+    
+    // Donner des lastAnswers par défaut aux fake players (utilise le fakeCharacterName stocké)
+    players.forEach(player => {
+        if (player.isFake && player.fakeCharacterName) {
+            gameState.bombanime.playerLastAnswers.set(player.twitchId, player.fakeCharacterName);
+        }
+    });
+    gameState.bombanime.turnId = 0; // Reset l'identifiant de tour
+    
+    // Mélanger les joueurs pour l'ordre du cercle
+    const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
+    gameState.bombanime.playersOrder = shuffledPlayers.map(p => p.twitchId);
+    
+    // Initialiser les alphabets ET les vies des joueurs
+    players.forEach(player => {
+        gameState.bombanime.playerAlphabets.set(player.twitchId, new Set());
+        player.lives = gameState.bombanime.lives || BOMBANIME_CONFIG.DEFAULT_LIVES; // Utiliser les vies BombAnime
+    });
+    
+    // Marquer la partie comme en cours
+    gameState.inProgress = true;
+    gameState.gameStartTime = Date.now();
+    gameState.initialPlayerCount = players.length;
+    
+    // Envoyer l'événement de démarrage
+    io.emit('bombanime-game-started', {
+        serie: gameState.bombanime.serie,
+        timer: gameState.bombanime.timer,
+        playersOrder: gameState.bombanime.playersOrder,
+        playersData: getBombanimePlayersData(),
+        totalCharacters: BOMBANIME_CHARACTERS[gameState.bombanime.serie]?.length || 0
+    });
+    
+    // Choisir un joueur aléatoire pour commencer
+    const randomStartIndex = Math.floor(Math.random() * gameState.bombanime.playersOrder.length);
+    gameState.bombanime.currentPlayerIndex = randomStartIndex;
+    
+    // Commencer avec le joueur aléatoire après un délai
+    setTimeout(() => {
+        const firstPlayer = gameState.bombanime.playersOrder[randomStartIndex];
+        startBombanimeTurn(firstPlayer);
+    }, 3000); // 3s avant le premier tour
+    
+    return { success: true };
+}
+
+// Terminer une partie BombAnime
+async function endBombanimeGame(winner) {
+    if (!gameState.bombanime.active) return;
+    
+    // Annuler le timeout
+    if (gameState.bombanime.turnTimeout) {
+        clearTimeout(gameState.bombanime.turnTimeout);
+    }
+    
+    gameState.bombanime.active = false;
+    
+    const duration = Math.floor((Date.now() - gameState.gameStartTime) / 1000);
+    
+    console.log(`🏆 Fin BombAnime - Gagnant: ${winner ? winner.username : 'Aucun'}`);
+    
+    // Construire le classement
+    const ranking = [];
+    
+    // Le gagnant en premier
+    if (winner) {
+        ranking.push({
+            rank: 1,
+            twitchId: winner.twitchId,
+            username: winner.username,
+            lives: winner.lives
+        });
+    }
+    
+    // Puis les éliminés (dans l'ordre inverse d'élimination)
+    const eliminated = [...gameState.bombanime.eliminatedPlayers].reverse();
+    eliminated.forEach((p, index) => {
+        ranking.push({
+            rank: index + 2,
+            twitchId: p.twitchId,
+            username: p.username,
+            lives: 0
+        });
+    });
+    
+    // Stocker pour l'écran de fin
+    winnerScreenData = {
+        winner: winner ? {
+            twitchId: winner.twitchId,
+            username: winner.username,
+            lives: winner.lives
+        } : null,
+        ranking: ranking,
+        duration: duration,
+        gameMode: 'bombanime',
+        serie: gameState.bombanime.serie,
+        namesUsed: gameState.bombanime.usedNames.size
+    };
+    
+    io.emit('bombanime-game-ended', {
+        winner: winner ? {
+            twitchId: winner.twitchId,
+            username: winner.username,
+            lives: winner.lives
+        } : null,
+        ranking: ranking,
+        duration: duration,
+        serie: gameState.bombanime.serie,
+        namesUsed: gameState.bombanime.usedNames.size
+    });
+    
+    // Reset
+    resetBombanimeState();
+    resetGameState();
+}
+
+// Reset l'état BombAnime
+function resetBombanimeState() {
+    if (gameState.bombanime.turnTimeout) {
+        clearTimeout(gameState.bombanime.turnTimeout);
+    }
+    
+    gameState.bombanime.active = false;
+    gameState.bombanime.playersOrder = [];
+    gameState.bombanime.currentPlayerIndex = 0;
+    gameState.bombanime.currentPlayerTwitchId = null;
+    gameState.bombanime.usedNames = new Set();
+    gameState.bombanime.playerAlphabets = new Map();
+    gameState.bombanime.playerLastAnswers = new Map();
+    gameState.bombanime.turnTimeout = null;
+    gameState.bombanime.turnId = 0;
+    gameState.bombanime.turnStartTime = null;
+    gameState.bombanime.lastValidName = null;
+    gameState.bombanime.bombDirection = 1;
+    gameState.bombanime.isPaused = false;
+    gameState.bombanime.eliminatedPlayers = [];
+}
+
 const io = new Server(server, {
     cors: {
         origin: "*",
@@ -4304,48 +5011,64 @@ io.on('connection', (socket) => {
             return socket.emit('error', { message: 'Une partie est déjà en cours' });
         }
         
-        // 🆕 En mode rivalité, vérifier qu'une équipe est fournie
-        if (gameState.lobbyMode === 'rivalry' && !data.team) {
-            return socket.emit('error', { message: 'Vous devez choisir une équipe' });
+        // 🔒 Vérifier si ce joueur est déjà en cours de traitement (anti-spam)
+        if (pendingJoins.has(data.twitchId)) {
+            console.log(`⏳ ${data.username} déjà en cours de traitement`);
+            return socket.emit('error', { message: 'Connexion en cours...' });
         }
-
-        // 🔥 NOUVEAU: Vérifier si le joueur est déjà dans le lobby
-        let alreadyInLobby = false;
+        
+        // 🔥 Vérifier si le joueur est déjà dans le lobby (reconnexion)
+        let isReconnection = false;
         let existingSocketId = null;
-
         for (const [socketId, player] of gameState.players.entries()) {
             if (player.twitchId === data.twitchId) {
-                alreadyInLobby = true;
+                isReconnection = true;
                 existingSocketId = socketId;
                 break;
             }
         }
-
-        if (alreadyInLobby) {
-            // Option 1: Refuser la connexion
-            // return socket.emit('error', { message: 'Vous êtes déjà dans le lobby' });
-
-            // Option 2: Remplacer l'ancienne connexion (recommandé)
-            console.log(`🔄 ${data.username} remplace sa connexion précédente`);
-            
-            // 🆕 Annuler le timeout de suppression si existant
-            const existingPlayer = gameState.players.get(existingSocketId);
-            if (existingPlayer && existingPlayer.pendingRemoval) {
-                clearTimeout(existingPlayer.pendingRemoval);
-                console.log(`⏱️ Timeout de suppression annulé pour ${data.username}`);
-            }
-            
-            gameState.players.delete(existingSocketId);
-            gameState.answers.delete(existingSocketId);
-
-            // Déconnecter l'ancien socket (sans envoyer kicked pour éviter de reset le localStorage)
-            const oldSocket = io.sockets.sockets.get(existingSocketId);
-            if (oldSocket) {
-                oldSocket.disconnect(true);
+        
+        // 💣 En mode BombAnime, vérifier la limite avec les places réservées
+        if (gameState.lobbyMode === 'bombanime' && !isReconnection) {
+            const currentCount = gameState.players.size + pendingJoins.size;
+            if (currentCount >= BOMBANIME_CONFIG.MAX_PLAYERS) {
+                console.log(`🚫 Lobby plein: ${gameState.players.size} joueurs + ${pendingJoins.size} en attente >= ${BOMBANIME_CONFIG.MAX_PLAYERS}`);
+                return socket.emit('error', { message: `Le lobby est plein (maximum ${BOMBANIME_CONFIG.MAX_PLAYERS} joueurs)` });
             }
         }
+        
+        // 🆕 En mode rivalité, vérifier qu'une équipe est fournie (AVANT réservation)
+        if (gameState.lobbyMode === 'rivalry' && !data.team) {
+            return socket.emit('error', { message: 'Vous devez choisir une équipe' });
+        }
+        
+        // 🔒 Réserver la place AVANT les opérations async
+        pendingJoins.add(data.twitchId);
+        console.log(`🔒 Place réservée pour ${data.username} (pending: ${pendingJoins.size})`);
+        
+        try {
+            if (isReconnection) {
+                // Remplacer l'ancienne connexion
+                console.log(`🔄 ${data.username} remplace sa connexion précédente`);
+                
+                // 🆕 Annuler le timeout de suppression si existant
+                const existingPlayer = gameState.players.get(existingSocketId);
+                if (existingPlayer && existingPlayer.pendingRemoval) {
+                    clearTimeout(existingPlayer.pendingRemoval);
+                    console.log(`⏱️ Timeout de suppression annulé pour ${data.username}`);
+                }
+                
+                gameState.players.delete(existingSocketId);
+                gameState.answers.delete(existingSocketId);
 
-        const userInfo = await db.getUserByTwitchId(data.twitchId);
+                // Déconnecter l'ancien socket (sans envoyer kicked pour éviter de reset le localStorage)
+                const oldSocket = io.sockets.sockets.get(existingSocketId);
+                if (oldSocket) {
+                    oldSocket.disconnect(true);
+                }
+            }
+
+            const userInfo = await db.getUserByTwitchId(data.twitchId);
         
         // 🔥 Récupérer le titre actuel du joueur
         let playerTitle = 'Novice';
@@ -4375,6 +5098,12 @@ io.on('connection', (socket) => {
 
         // 🆕 Utiliser la fonction helper
         broadcastLobbyUpdate();
+        
+        } finally {
+            // 🔓 Libérer la réservation
+            pendingJoins.delete(data.twitchId);
+            console.log(`🔓 Place libérée pour ${data.username} (pending: ${pendingJoins.size})`);
+        }
     });
     
     // 🆕 Changer d'équipe (mode Rivalité)
@@ -4725,6 +5454,157 @@ io.on('connection', (socket) => {
         }
     });
 
+    // ============================================
+    // 💣 BOMBANIME - Socket Handlers
+    // ============================================
+    
+    // Soumettre un nom de personnage
+    socket.on('bombanime-submit-name', (data) => {
+        if (!gameState.bombanime.active) return;
+        
+        const result = submitBombanimeName(socket.id, data.name);
+        
+        if (!result.success) {
+            // L'erreur est déjà envoyée dans submitBombanimeName
+        }
+    });
+    
+    // Broadcaster ce que le joueur tape en temps réel
+    socket.on('bombanime-typing', (data) => {
+        if (!gameState.bombanime.active) return;
+        
+        const player = gameState.players.get(socket.id);
+        if (!player) return;
+        
+        // Vérifier que c'est bien le tour de ce joueur
+        if (player.twitchId !== gameState.bombanime.currentPlayerTwitchId) return;
+        
+        // Broadcaster à tous les autres joueurs
+        socket.broadcast.emit('bombanime-typing', {
+            playerTwitchId: player.twitchId,
+            text: data.text || ''
+        });
+    });
+    
+    // Demander l'état actuel du jeu BombAnime (pour reconnexion)
+    socket.on('bombanime-get-state', () => {
+        if (!gameState.bombanime.active) {
+            socket.emit('bombanime-state', { active: false });
+            return;
+        }
+        
+        const player = gameState.players.get(socket.id);
+        const myAlphabet = player ? 
+            Array.from(gameState.bombanime.playerAlphabets.get(player.twitchId) || []) : 
+            [];
+        
+        socket.emit('bombanime-state', {
+            active: true,
+            serie: gameState.bombanime.serie,
+            timer: gameState.bombanime.timer,
+            currentPlayerTwitchId: gameState.bombanime.currentPlayerTwitchId,
+            playersOrder: gameState.bombanime.playersOrder,
+            playersData: getBombanimePlayersData(),
+            myAlphabet: myAlphabet,
+            usedNamesCount: gameState.bombanime.usedNames.size,
+            direction: gameState.bombanime.bombDirection,
+            timeRemaining: gameState.bombanime.turnStartTime ? 
+                Math.max(0, gameState.bombanime.timer - Math.floor((Date.now() - gameState.bombanime.turnStartTime) / 1000)) : 
+                gameState.bombanime.timer
+        });
+    });
+    
+    // 🆕 TEMPORAIRE: Ajouter un joueur fictif pour les tests
+    socket.on('bombanime-add-fake-player', () => {
+        if (gameState.inProgress) {
+            console.log('❌ Impossible d\'ajouter un joueur fictif en cours de partie');
+            return;
+        }
+        
+        // Pseudos réalistes style Twitch
+        const fakeNames = [
+            'xNarutoFan_99', 'SakuraChan_', 'OnePieceLover', 'ZoroSlash42',
+            'LuffyGumGum', 'SasukeDark_', 'KakashiSensei', 'HinataShy',
+            'GaaraOfSand', 'ItachiLegend', 'MadaraGod_', 'TobiramaH2O'
+        ];
+        
+        // Noms de personnages longs pour tester le rendu (max 15 chars)
+        const fakeCharacterNames = [
+            'SASUKE UCHIHA', 'MONKEY D LUFFY', 'RORONOA ZORO', 'PORTGAS D ACE',
+            'TRAFALGAR LAW', 'VINSMOKE SANJI', 'NICO ROBIN', 'DOFLAMINGO',
+            'KATAKURI', 'UZUMAKI NARUTO', 'KAKASHI HATAKE', 'MADARA UCHIHA'
+        ];
+        
+        // Trouver un nom non utilisé
+        const usedNames = Array.from(gameState.players.values()).map(p => p.username);
+        const availableIndex = fakeNames.findIndex(name => !usedNames.includes(name));
+        
+        if (availableIndex === -1) {
+            console.log('❌ Plus de noms fictifs disponibles');
+            return;
+        }
+        
+        if (gameState.players.size >= 13) {
+            console.log('❌ Maximum 13 joueurs atteint');
+            return;
+        }
+        
+        const availableName = fakeNames[availableIndex];
+        const fakeCharacterName = fakeCharacterNames[availableIndex] || 'PERSONNAGE';
+        
+        const fakeId = 'fake-' + Date.now();
+        const fakeTwitchId = 'fake-twitch-' + Date.now();
+        
+        const fakePlayer = {
+            socketId: fakeId,
+            odemonId: fakeId,
+            odemonAvatar: '/default-avatar.png',
+            odemonBgColor: '#333',
+            odemonBgUrl: null,
+            odemonGradient: 'none',
+            odemonEmoji: null,
+            twitchId: fakeTwitchId,
+            username: availableName,
+            lives: gameState.bombanime.lives || BOMBANIME_CONFIG.DEFAULT_LIVES,
+            points: 0,
+            correctAnswers: 0,
+            wrongAnswers: 0,
+            answered: false,
+            hasAnsweredFirst: false,
+            hasUsedBonus: false,
+            usedBonuses: [],
+            team: null,
+            joinedAt: Date.now(),
+            isFake: true,
+            fakeCharacterName: fakeCharacterName
+        };
+        
+        gameState.players.set(fakeId, fakePlayer);
+        
+        console.log(`🤖 Joueur fictif ajouté: ${availableName} avec réponse "${fakeCharacterName}" (Total: ${gameState.players.size})`);
+        
+        // Notifier tous les clients
+        io.emit('player-joined', {
+            odemonId: fakeId,
+            odemonAvatar: fakePlayer.odemonAvatar,
+            odemonBgColor: fakePlayer.odemonBgColor,
+            odemonBgUrl: fakePlayer.odemonBgUrl,
+            odemonGradient: fakePlayer.odemonGradient,
+            odemonEmoji: fakePlayer.odemonEmoji,
+            twitchId: fakeTwitchId,
+            username: availableName,
+            lives: fakePlayer.lives,
+            points: 0,
+            correctAnswers: 0,
+            wrongAnswers: 0,
+            team: null,
+            isFake: true,
+            fakeCharacterName: fakeCharacterName
+        });
+        
+        io.emit('player-count', gameState.players.size);
+    });
+
     // Déconnexion
     socket.on('disconnect', () => {
         const ip = socket.handshake.headers['x-forwarded-for']?.split(',')[0] || socket.handshake.address;
@@ -4919,6 +5799,7 @@ function resetGameState() {
     gameState.initialPlayerCount = 0; // 🆕 Reset du compteur initial
     gameState.players.clear();
     gameState.answers.clear();
+    pendingJoins.clear(); // 🔓 Reset les réservations
     gameState.isTiebreaker = false;
     gameState.tiebreakerPlayers = [];
     gameState.isRivalryTiebreaker = false; // 🆕 Reset tiebreaker Rivalry
