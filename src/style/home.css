@@ -1066,13 +1066,13 @@ body {
 /* 🆕 Barre de timer horizontale ultra-fine */
 .timer-bar-container {
     width: 100%;
-    height: 0.1875rem;
-    background: rgba(255, 255, 255, 0.1);
+    height: 5px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 100px;
+    overflow: hidden;
     position: relative;
     margin-top: 0.75rem;
     margin-bottom: 1.5rem;
-    border-radius: 0.125rem;
-    overflow: hidden;
     transition: opacity 0.3s ease;
 }
 
@@ -1083,15 +1083,25 @@ body {
 
 .timer-bar-progress {
     height: 100%;
-    background: linear-gradient(90deg, #00ff88 0%, #00d46e 100%);
-    transition: background 0.3s ease, box-shadow 0.3s ease;
-    border-radius: 0.125rem;
-    box-shadow: 0 0 0.625rem rgba(0, 255, 136, 0.5);
+    background: linear-gradient(90deg, #b8960c 0%, #d4af37 40%, #f0d060 100%);
+    border-radius: 100px;
+    position: relative;
+    transition: background 0.3s ease;
+}
+
+.timer-bar-progress::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 100%);
+    border-radius: 100px 100px 0 0;
 }
 
 .timer-bar-progress.warning {
-    background: linear-gradient(90deg, #ff4757 0%, #ff2e43 100%);
-    box-shadow: 0 0 0.625rem rgba(255, 71, 87, 0.5);
+    background: linear-gradient(90deg, #cc3344 0%, #ff4757 40%, #ff6b7a 100%);
 }
 
 @keyframes pulse-warning {
@@ -6269,7 +6279,7 @@ body {
 
     /* Timer bar */
     .timer-bar-container {
-        height: 0.3rem;
+        height: 6px;
         margin-bottom: 2rem;
     }
 
@@ -7030,6 +7040,282 @@ body {
     .pulse-dot {
         width: 0.25rem;
         height: 0.25rem;
+    }
+}
+
+/* ==================== NOUVEAU DESIGN LOBBY CARD V3 ==================== */
+.lobby-card-v3 {
+    background: linear-gradient(180deg, rgba(15, 15, 20, 0.95) 0%, rgba(10, 10, 14, 0.98) 100%);
+    border: 1px solid rgba(212, 175, 55, 0.15);
+    border-radius: 18px;
+    padding: 2.5rem 3rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s ease;
+    max-width: 560px;
+    width: 100%;
+    margin: 0 auto 1rem;
+}
+
+.lobby-card-v3:hover {
+    border-color: rgba(212, 175, 55, 0.3);
+}
+
+/* Ligne dorée en haut */
+.lobby-card-v3 .lobby-glow-line {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.5), transparent);
+}
+
+/* Icône */
+.lobby-card-v3 .lobby-icon {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 1.25rem;
+    stroke: rgba(212, 175, 55, 0.7);
+    transition: all 0.3s ease;
+}
+
+.lobby-card-v3:hover .lobby-icon {
+    stroke: rgba(212, 175, 55, 0.9);
+    transform: scale(1.05);
+}
+
+/* Titre */
+.lobby-card-v3 .lobby-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+    margin-bottom: 0.4rem;
+    background: none;
+    -webkit-text-fill-color: unset;
+}
+
+/* Sous-titre */
+.lobby-card-v3 .lobby-subtitle {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.35);
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+    margin-bottom: 1.75rem;
+}
+
+/* Ligne compteur joueurs */
+.lobby-card-v3 .lobby-players-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 1.75rem;
+}
+
+.lobby-card-v3 .lobby-players-line .lobby-line {
+    width: 50px;
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+    transition: all 0.3s ease;
+}
+
+.lobby-card-v3:hover .lobby-players-line .lobby-line {
+    width: 65px;
+    background: rgba(212, 175, 55, 0.3);
+}
+
+.lobby-card-v3 .lobby-players-line .lobby-count {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.4);
+}
+
+.lobby-card-v3 .lobby-players-line .lobby-count strong {
+    color: #d4af37;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+/* Dot animé */
+.lobby-card-v3 .lobby-dot {
+    width: 7px;
+    height: 7px;
+    background: #d4af37;
+    border-radius: 50%;
+    animation: lobby-dot-pulse 1.5s ease-in-out infinite;
+    box-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
+}
+
+@keyframes lobby-dot-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+/* Bouton */
+.lobby-card-v3 .lobby-btn {
+    background: linear-gradient(135deg, #d4af37 0%, #c9a227 100%);
+    border: none;
+    color: #0a0a0f;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 1rem 2.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    position: relative;
+    min-width: 180px;
+}
+
+.lobby-card-v3 .lobby-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 8px;
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.5);
+    transition: box-shadow 0.3s ease;
+}
+
+.lobby-card-v3 .lobby-btn:hover {
+    transform: translateY(-2px);
+}
+
+.lobby-card-v3 .lobby-btn:hover::after {
+    animation: lobby-btn-pulse 1s ease-out infinite;
+}
+
+@keyframes lobby-btn-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.5); }
+    100% { box-shadow: 0 0 0 12px rgba(212, 175, 55, 0); }
+}
+
+.lobby-card-v3 .lobby-btn:active {
+    transform: translateY(0);
+}
+
+/* État joined */
+.lobby-card-v3 .lobby-btn.joined {
+    background: rgba(212, 175, 55, 0.12);
+    color: #d4af37;
+    border: 1px solid rgba(212, 175, 55, 0.25);
+    cursor: default;
+}
+
+.lobby-card-v3 .lobby-btn.joined::after {
+    display: none;
+}
+
+.lobby-card-v3 .lobby-btn.joined:hover {
+    transform: none;
+}
+
+/* État lobby full */
+.lobby-card-v3 .lobby-btn.lobby-full-error {
+    background: rgba(255, 100, 100, 0.15);
+    color: rgba(255, 150, 150, 0.8);
+    border: 1px solid rgba(255, 100, 100, 0.25);
+    cursor: not-allowed;
+}
+
+.lobby-card-v3 .lobby-btn.lobby-full-error::after {
+    display: none;
+}
+
+/* ==================== RESPONSIVE LOBBY CARD V3 ==================== */
+@media (max-width: 38.375rem) {
+    .lobby-card-v3 {
+        margin-left: 1.5rem;
+        margin-right: 1.5rem;
+        max-width: calc(100% - 3rem);
+        padding: 2rem 1.5rem;
+        border-radius: 14px;
+    }
+    
+    .lobby-card-v3 .lobby-icon {
+        width: 42px;
+        height: 42px;
+        margin-bottom: 1rem;
+    }
+    
+    .lobby-card-v3 .lobby-title {
+        font-size: 1rem;
+    }
+    
+    .lobby-card-v3 .lobby-subtitle {
+        font-size: 0.6rem;
+        letter-spacing: 2px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .lobby-card-v3 .lobby-players-line {
+        margin-bottom: 1.5rem;
+    }
+    
+    .lobby-card-v3 .lobby-players-line .lobby-line {
+        width: 28px;
+    }
+    
+    .lobby-card-v3:hover .lobby-players-line .lobby-line {
+        width: 36px;
+    }
+    
+    .lobby-card-v3 .lobby-players-line .lobby-count {
+        font-size: 0.7rem;
+    }
+    
+    .lobby-card-v3 .lobby-players-line .lobby-count strong {
+        font-size: 0.85rem;
+    }
+    
+    .lobby-card-v3 .lobby-dot {
+        width: 6px;
+        height: 6px;
+    }
+    
+    .lobby-card-v3 .lobby-btn {
+        padding: 0.85rem 2rem;
+        font-size: 0.75rem;
+        min-width: 160px;
+    }
+}
+
+@media (max-width: 24rem) {
+    .lobby-card-v3 {
+        margin-left: 1rem;
+        margin-right: 1rem;
+        max-width: calc(100% - 2rem);
+        padding: 1.5rem 1.25rem;
+    }
+    
+    .lobby-card-v3 .lobby-icon {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .lobby-card-v3 .lobby-title {
+        font-size: 0.9rem;
+    }
+    
+    .lobby-card-v3 .lobby-subtitle {
+        font-size: 0.55rem;
+        margin-bottom: 1.25rem;
+    }
+    
+    .lobby-card-v3 .lobby-players-line {
+        margin-bottom: 1.25rem;
+        gap: 0.5rem;
+    }
+    
+    .lobby-card-v3 .lobby-btn {
+        padding: 0.75rem 1.5rem;
+        font-size: 0.7rem;
+        min-width: 140px;
     }
 }
 

@@ -129,49 +129,60 @@
                     </div>
                 </div>
 
-                <!-- Mode Classic: Lobby card standard -->
-                <div class="lobby-card" v-if="lobbyMode === 'classic'">
-                    <!-- Coins décoratifs -->
-                    <div class="corner-decoration corner-tl"></div>
-                    <div class="corner-decoration corner-tr"></div>
-                    <div class="corner-decoration corner-bl"></div>
-                    <div class="corner-decoration corner-br"></div>
-
-                    <h2>La partie va commencer...</h2>
-                    
-                    <!-- Mode Classic: Compteur de joueurs -->
-                    <div class="players-box">
-                        <span class="players-count">{{ playerCount }}</span>
-                        <img src="people5.png" alt="Joueurs" class="players-icon">
+                <!-- Mode Classic: Lobby card -->
+                <div class="lobby-card lobby-card-v3" v-if="lobbyMode === 'classic'">
+                    <div class="lobby-glow-line"></div>
+                    <svg class="lobby-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <h2 class="lobby-title">La partie va commencer</h2>
+                    <div class="lobby-subtitle">Mode Classique</div>
+                    <div class="lobby-players-line">
+                        <span class="lobby-line"></span>
+                        <span class="lobby-count">
+                            <span class="lobby-dot"></span>
+                            <strong>{{ playerCount }}</strong> en attente
+                        </span>
+                        <span class="lobby-line"></span>
                     </div>
-
                     <button 
-                        class="btn-primary" 
+                        class="lobby-btn" 
                         :class="{ joined: hasJoined }"
                         @click="joinLobby" 
                         :disabled="hasJoined"
                     >
-                        {{ hasJoined ? 'Vous êtes dans la partie !' : 'Rejoindre la partie' }}
+                        {{ hasJoined ? 'Vous êtes dans la partie' : 'Rejoindre' }}
                     </button>
                 </div>
 
-                <!-- Mode FizzBuzz: Lobby card vert (style simple) -->
-                <div class="lobby-card fizzbuzz-lobby" v-if="lobbyMode === 'bombanime'">
-                    <h2>La partie va commencer...</h2>
-                    
-                    <!-- Compteur de joueurs -->
-                    <div class="players-box fizzbuzz-players">
-                        <span class="players-count">{{ playerCount }}</span>
-                        <img src="people5.png" alt="Joueurs" class="players-icon">
+                <!-- Mode BombAnime: Lobby card -->
+                <div class="lobby-card lobby-card-v3 lobby-bombanime" v-if="lobbyMode === 'bombanime'">
+                    <div class="lobby-glow-line"></div>
+                    <svg class="lobby-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="12" cy="14" r="8"/>
+                        <path d="M12 6V2"/>
+                        <path d="M9 2h6"/>
+                    </svg>
+                    <h2 class="lobby-title">La partie va commencer</h2>
+                    <div class="lobby-subtitle">Mode BombAnime</div>
+                    <div class="lobby-players-line">
+                        <span class="lobby-line"></span>
+                        <span class="lobby-count">
+                            <span class="lobby-dot"></span>
+                            <strong>{{ playerCount }}</strong> en attente
+                        </span>
+                        <span class="lobby-line"></span>
                     </div>
-
                     <button 
-                        class="btn-primary btn-fizzbuzz" 
+                        class="lobby-btn" 
                         :class="{ joined: hasJoined, 'lobby-full-error': lobbyFullError }"
                         @click="joinLobby" 
                         :disabled="hasJoined"
                     >
-                        {{ hasJoined ? 'Vous êtes dans la partie !' : (lobbyFullError ? 'Session complète, en attente...' : 'Rejoindre la partie') }}
+                        {{ hasJoined ? 'Vous êtes dans la partie' : (lobbyFullError ? 'Session complète...' : 'Rejoindre') }}
                     </button>
                 </div>
 
