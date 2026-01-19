@@ -371,6 +371,7 @@ function initSocket() {
         clearBombanimeLogs();
         showBombanimeCircle(data);
         showSoundControl(true); // 🔊 Afficher contrôle son
+        showSuggestionButton(true); // Afficher bouton suggestions
     });
     
     // 🆕 Handler pour la reconnexion - restaurer l'état BombAnime
@@ -394,6 +395,7 @@ function initSocket() {
             });
             
             showSoundControl(true); // 🔊 Afficher contrôle son
+            showSuggestionButton(true); // Afficher bouton suggestions
             
             // Mettre à jour le timer restant
             bombanimeState.timeRemaining = data.timeRemaining || data.timer;
@@ -485,9 +487,16 @@ function initSocket() {
         onBombanimeAlphabetComplete(data);
     });
     
+    // 🎯 Handler pour bonus vie extra utilisé
+    socket.on('bombanime-player-lives-updated', (data) => {
+        console.log('❤️ Vies mises à jour:', data.playerUsername, data.lives);
+        onBombanimePlayerLivesUpdated(data);
+    });
+    
     socket.on('bombanime-game-ended', (data) => {
         console.log('🏆 BombAnime terminé:', data);
         showSoundControl(false); // 🔊 Cacher contrôle son
+        showSuggestionButton(false); // Cacher bouton suggestions
         displayBombanimeWinner(data);
     });
     
@@ -2449,6 +2458,10 @@ async function launchLobby() {
 
             bgText.textContent = 'LOBBY';
             bgText.classList.add('lobby-active');
+            bgText.classList.remove('bombanime-mode');
+            if (currentGameMode === 'bombanime') {
+                bgText.classList.add('bombanime-mode');
+            }
             statusDot.classList.add('active');
             statusText.textContent = 'Lobby ouvert';
 
@@ -4170,11 +4183,16 @@ document.addEventListener('keydown', (e) => {
 const gameCloseBtn = document.getElementById('gameCloseBtn');
 
 function showGameCloseBtn() {
-    if (gameCloseBtn) gameCloseBtn.classList.add('visible');
+    if (gameCloseBtn) {
+        gameCloseBtn.style.display = ''; // Reset inline style
+        gameCloseBtn.classList.add('visible');
+    }
 }
 
 function hideGameCloseBtn() {
-    if (gameCloseBtn) gameCloseBtn.classList.remove('visible');
+    if (gameCloseBtn) {
+        gameCloseBtn.classList.remove('visible');
+    }
 }
 
 
@@ -5556,6 +5574,10 @@ function showLobbyUI(players = []) {
 
     bgText.textContent = 'LOBBY';
     bgText.classList.add('lobby-active');
+    bgText.classList.remove('bombanime-mode');
+    if (currentGameMode === 'bombanime') {
+        bgText.classList.add('bombanime-mode');
+    }
     statusDot.classList.add('active');
     statusText.textContent = 'Lobby ouvert';
 
@@ -7029,6 +7051,7 @@ document.getElementById('gameCloseBtn')?.addEventListener('click', async () => {
 function returnToIdle() {
     // 🔊 Cacher le contrôle de son
     showSoundControl(false);
+    showSuggestionButton(false); // Cacher bouton suggestions
     
     const stateGame = document.getElementById('stateGame');
     const stateLobby = document.getElementById('stateLobby');
@@ -7173,7 +7196,7 @@ function returnToIdle() {
 
     // Reset header
     bgText.textContent = 'MASTER';
-    bgText.classList.remove('lobby-active', 'game-active');
+    bgText.classList.remove('lobby-active', 'game-active', 'bombanime-mode');
     statusDot.classList.remove('active');
     document.querySelector('.status-pill')?.classList.remove('game-mode');
     statusText.textContent = 'Inactif';
@@ -8018,6 +8041,18 @@ function renderBombanimeCircle() {
                             <div class="success-particle"></div>
                             <div class="success-particle"></div>
                         </div>
+                        <!-- 🎯 Éléments animation gain de vie -->
+                        <div class="life-glow-ring"></div>
+                        <div class="life-glow-ring ring-2"></div>
+                        <div class="life-heart-overlay">
+                            <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                        </div>
+                        <div class="life-particles">
+                            <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+                            <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+                            <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+                            <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+                        </div>
                     </div>
                     <div class="player-lives">${heartsHTML}</div>
                     <div class="player-lock" id="lock-${player.twitchId}">
@@ -8056,7 +8091,7 @@ function renderBombanimeCircle() {
     // Le bouton Fermer le lobby est maintenant dans le panneau de logs
     
     container.innerHTML = `
-        <div class="players-circle" style="width: ${circleSize}px; height: ${circleSize}px; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);">
+        <div class="players-circle bombanime-appear" style="width: ${circleSize}px; height: ${circleSize}px; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);">
             ${playersHTML}
             ${bombHTML}
         </div>
@@ -8291,12 +8326,53 @@ function onBombanimeAlphabetComplete(data) {
             lostHearts[0].classList.remove('lost');
         }
         
-        // Animation de succès
+        // Animation de succès alphabet
         playerSlot.classList.add('alphabet-complete');
-        setTimeout(() => playerSlot.classList.remove('alphabet-complete'), 1000);
+        
+        // 🎯 Ajouter aussi l'animation de gain de vie (particules + cœur + rings)
+        playerSlot.classList.remove('life-gained');
+        void playerSlot.offsetWidth; // Force reflow
+        playerSlot.classList.add('life-gained');
+        
+        setTimeout(() => {
+            playerSlot.classList.remove('alphabet-complete');
+            playerSlot.classList.remove('life-gained');
+        }, 1000);
     }
     
     console.log('🎉 BombAnime: Alphabet complet -', data.playerUsername, '+1 vie');
+}
+
+// 🎯 Mise à jour des vies après bonus vie extra
+function onBombanimePlayerLivesUpdated(data) {
+    // Mettre à jour les données locales
+    bombanimeState.playersData = data.playersData;
+    
+    const player = bombanimeState.playersData.find(p => p.twitchId === data.playerTwitchId);
+    if (!player) return;
+    
+    // Animer le gain de vie sur le slot du joueur
+    const playerSlot = document.getElementById(`player-slot-${data.playerTwitchId}`);
+    if (playerSlot) {
+        // Mettre à jour l'affichage des vies
+        const livesContainer = playerSlot.querySelector('.player-lives');
+        if (livesContainer) {
+            const hearts = livesContainer.querySelectorAll('.player-life');
+            hearts.forEach((heart, index) => {
+                if (index < data.lives) {
+                    heart.classList.remove('lost');
+                } else {
+                    heart.classList.add('lost');
+                }
+            });
+        }
+        
+        // Animation de gain de vie
+        playerSlot.classList.add('life-gained');
+        setTimeout(() => playerSlot.classList.remove('life-gained'), 800);
+    }
+    
+    console.log('❤️ BombAnime: Vie bonus utilisée -', data.playerUsername, 'a maintenant', data.lives, 'vies');
 }
 
 // Afficher le gagnant BombAnime
@@ -8487,3 +8563,234 @@ document.addEventListener('keydown', (e) => {
     }
 });
 */
+
+// ============================================
+// SUGGESTION SYSTEM - MINIMALISTE
+// ============================================
+
+let suggestionAnimeListLoaded = false;
+
+document.addEventListener('DOMContentLoaded', () => {
+    initSuggestionSystem();
+});
+
+function initSuggestionSystem() {
+    // Bouton flottant
+    const flagBtn = document.getElementById('suggestionFlagBtn');
+    if (flagBtn) {
+        flagBtn.addEventListener('click', openSuggestionModal);
+    }
+    
+    // Fermer modal
+    const closeBtn = document.getElementById('closeSuggestionBtn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeSuggestionModal);
+    }
+    
+    // Overlay
+    const overlay = document.getElementById('suggestionModalOverlay');
+    if (overlay) {
+        overlay.addEventListener('click', closeSuggestionModal);
+    }
+    
+    // Type toggle (Nouveau / Variante)
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            const type = btn.dataset.type;
+            document.getElementById('suggestionType').value = type;
+            
+            const variantField = document.getElementById('variantField');
+            if (variantField) {
+                variantField.style.display = type === 'variant' ? 'block' : 'none';
+            }
+        });
+    });
+    
+    // Form submit
+    const form = document.getElementById('suggestionForm');
+    if (form) {
+        form.addEventListener('submit', handleSuggestionSubmit);
+    }
+}
+
+// Afficher/cacher le bouton flottant pendant une partie BombAnime
+function showSuggestionButton(show) {
+    const btn = document.getElementById('suggestionFlagBtn');
+    if (btn) {
+        btn.style.display = show ? 'flex' : 'none';
+    }
+}
+
+function openSuggestionModal() {
+    const modal = document.getElementById('suggestionModal');
+    const overlay = document.getElementById('suggestionModalOverlay');
+    
+    if (modal && overlay) {
+        overlay.classList.add('active');
+        modal.classList.add('active');
+        
+        // Charger les animes si pas déjà fait
+        if (!suggestionAnimeListLoaded) {
+            loadSuggestionAnimes();
+        }
+    }
+}
+
+function closeSuggestionModal() {
+    const modal = document.getElementById('suggestionModal');
+    const overlay = document.getElementById('suggestionModalOverlay');
+    
+    if (modal && overlay) {
+        overlay.classList.remove('active');
+        modal.classList.remove('active');
+    }
+}
+
+// Mapping des noms propres des séries
+const animeDisplayNames = {
+    'Naruto': 'Naruto',
+    'OnePiece': 'One Piece',
+    'Dbz': 'Dragon Ball Z',
+    'Mha': 'My Hero Academia',
+    'Bleach': 'Bleach',
+    'Jojo': 'JoJo\'s Bizarre Adventure',
+    'Hxh': 'Hunter x Hunter',
+    'Snk': 'Attack on Titan',
+    'DemonSlayer': 'Demon Slayer',
+    'JujutsuKaisen': 'Jujutsu Kaisen',
+    'DeathNote': 'Death Note',
+    'FairyTail': 'Fairy Tail',
+    'Pokemon': 'Pokémon',
+    'Reborn': 'Reborn!',
+    'Aot': 'Attack on Titan',
+    'Ds': 'Demon Slayer',
+    'Jjk': 'Jujutsu Kaisen',
+    'Dn': 'Death Note',
+    'Ft': 'Fairy Tail',
+    'Op': 'One Piece',
+    'Db': 'Dragon Ball',
+    'Dbs': 'Dragon Ball Super'
+};
+
+function getAnimeDisplayName(key) {
+    return animeDisplayNames[key] || key;
+}
+
+async function loadSuggestionAnimes() {
+    try {
+        const response = await fetch('/admin/bombanime/animes', {
+            credentials: 'same-origin'
+        });
+        const data = await response.json();
+        
+        if (data.animes) {
+            const select = document.getElementById('suggestionAnime');
+            if (select) {
+                select.innerHTML = '<option value="">Sélectionner</option>';
+                data.animes.forEach(anime => {
+                    const option = document.createElement('option');
+                    option.value = anime.key;
+                    option.textContent = getAnimeDisplayName(anime.key);
+                    select.appendChild(option);
+                });
+                suggestionAnimeListLoaded = true;
+            }
+        }
+    } catch (error) {
+        console.error('Erreur chargement animes:', error);
+    }
+}
+
+async function handleSuggestionSubmit(e) {
+    e.preventDefault();
+    
+    const anime = document.getElementById('suggestionAnime').value;
+    const characterName = document.getElementById('suggestionName').value;
+    const type = document.getElementById('suggestionType').value;
+    const variantOf = document.getElementById('suggestionVariantOf')?.value || null;
+    const submitBtn = document.querySelector('.suggestion-submit');
+    
+    if (!anime || !characterName) {
+        showSuggestionToast('Remplir tous les champs', true);
+        return;
+    }
+    
+    if (type === 'variant' && !variantOf) {
+        showSuggestionToast('Indiquer le personnage principal', true);
+        return;
+    }
+    
+    try {
+        const response = await fetch('/admin/bombanime/suggestion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                type,
+                anime,
+                characterName,
+                variantOf: type === 'variant' ? variantOf : null,
+                details: null
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Effet success sur le bouton
+            submitBtn.classList.add('success');
+            submitBtn.textContent = 'Envoyé ✓';
+            
+            // Fermer le modal après un court délai
+            setTimeout(() => {
+                const modal = document.getElementById('suggestionModal');
+                const overlay = document.getElementById('suggestionModalOverlay');
+                
+                modal.classList.add('closing');
+                overlay.style.opacity = '0';
+                
+                setTimeout(() => {
+                    modal.classList.remove('active', 'closing');
+                    overlay.classList.remove('active');
+                    overlay.style.opacity = '';
+                    
+                    // Reset form
+                    document.getElementById('suggestionForm').reset();
+                    document.getElementById('variantField').style.display = 'none';
+                    document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelector('.toggle-btn[data-type="add"]').classList.add('active');
+                    document.getElementById('suggestionType').value = 'add';
+                    
+                    // Reset bouton
+                    submitBtn.classList.remove('success');
+                    submitBtn.textContent = 'Envoyer';
+                }, 250);
+            }, 600);
+        } else {
+            showSuggestionToast(data.error || 'Erreur', true);
+        }
+    } catch (error) {
+        console.error('Erreur envoi suggestion:', error);
+        showSuggestionToast('Erreur de connexion', true);
+    }
+}
+
+function showSuggestionToast(message, isError = false) {
+    const existing = document.querySelector('.suggestion-toast');
+    if (existing) existing.remove();
+    
+    const toast = document.createElement('div');
+    toast.className = `suggestion-toast ${isError ? 'error' : ''}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => toast.classList.add('show'), 10);
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 200);
+    }, 2500);
+}

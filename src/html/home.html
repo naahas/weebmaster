@@ -246,7 +246,8 @@
                                     'is-me': player.twitchId === twitchId,
                                     'success': player.twitchId === bombanime.successPlayerTwitchId,
                                     'intro-hidden': bombanime.introPhase === 'players' && index >= bombanime.introPlayersRevealed,
-                                    'intro-reveal': bombanime.introPhase === 'players' && index < bombanime.introPlayersRevealed
+                                    'intro-reveal': bombanime.introPhase === 'players' && index < bombanime.introPlayersRevealed,
+                                    'life-gained': bombanime.lifeGainedPlayerTwitchId === player.twitchId
                                 }"
                                 :style="getBombanimePlayerStyle(index, bombanime.playersData.length)"
                             >
@@ -260,6 +261,18 @@
                                             <polygon points="50,3 97,25 97,75 50,97 3,75 3,25"/>
                                         </svg>
                                         <img class="player-avatar" :src="player.avatarUrl || '/img/avatars/novice.png'" :alt="player.username" @error="$event.target.src='/img/avatars/novice.png'"/>
+                                        <!-- 🎯 Éléments animation gain de vie (dans player-hex) -->
+                                        <div class="life-glow-ring"></div>
+                                        <div class="life-glow-ring ring-2"></div>
+                                        <div class="life-heart-overlay">
+                                            <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                                        </div>
+                                        <div class="life-particles">
+                                            <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+                                            <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+                                            <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+                                            <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+                                        </div>
                                     </div>
                                     <!-- Badge cœurs -->
                                     <div class="player-lives">
@@ -389,23 +402,141 @@
                         </div>
                     </div>
                     
-                    <!-- 📱 Mobile : Bouton alphabet en haut à droite -->
-                    <button 
-                        class="alphabet-mobile-btn" 
-                        v-if="bombanime.playersData.length > 0 && isMobile"
-                        @click="toggleMobileAlphabet"
-                        :class="{ 
-                            'intro-hidden': bombanime.introPhase === 'players',
-                            'letter-added': bombanime.mobileAlphabetPulse
-                        }"
-                    >
-                        <svg class="alphabet-btn-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                        </svg>
-                        <svg class="alphabet-btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                    </button>
+                    <!-- 🎯 Desktop: Panneau Défis BombAnime (à gauche) -->
+                    <div class="bombanime-challenges-panel" v-if="bombanime.playersData.length > 0 && !isMobile && bombanime.challenges.length > 0" :class="{ 
+                        'intro-offscreen-left': bombanime.introPhase === 'players'
+                    }">
+                        <div class="challenges-list">
+                            <div 
+                                v-for="challenge in bombanime.challenges" 
+                                :key="challenge.id"
+                                class="challenge-item"
+                                :class="{ 
+                                    'completed': challenge.completed,
+                                    'in-progress': !challenge.completed && challenge.progress > 0,
+                                    'just-completed': bombanime.challengeJustCompleted === challenge.id,
+                                    'used': challenge.completed && (
+                                        (challenge.reward === 'freeCharacter' && !bombanime.bonuses.freeCharacter) ||
+                                        (challenge.reward === 'extraLife' && !bombanime.bonuses.extraLife)
+                                    )
+                                }"
+                            >
+                                <div class="challenge-content">
+                                    <div class="challenge-title">
+                                        {{ challenge.target }} perso{{ challenge.target > 1 ? 's' : '' }} en <span class="challenge-letter">{{ challenge.letter }}</span>
+                                    </div>
+                                    <div class="challenge-progress-bar">
+                                        <div class="progress-fill" :style="{ width: Math.min(100, (challenge.progress / challenge.target) * 100) + '%' }"></div>
+                                    </div>
+                                </div>
+                                <button 
+                                    class="challenge-bonus-btn"
+                                    :class="{ 
+                                        'available': challenge.completed && (
+                                            (challenge.reward === 'freeCharacter' && bombanime.bonuses.freeCharacter > 0) ||
+                                            (challenge.reward === 'extraLife' && bombanime.bonuses.extraLife > 0)
+                                        ),
+                                        'type-gift': challenge.reward === 'freeCharacter',
+                                        'not-my-turn': challenge.reward === 'freeCharacter' && !bombanime.isMyTurn
+                                    }"
+                                    :disabled="!challenge.completed || (
+                                        (challenge.reward === 'freeCharacter' && (!bombanime.bonuses.freeCharacter || !bombanime.isMyTurn)) ||
+                                        (challenge.reward === 'extraLife' && !bombanime.bonuses.extraLife)
+                                    )"
+                                    @click.stop="challenge.reward === 'freeCharacter' ? useBombanimeFreeCharacter() : useBombanimeExtraLife()"
+                                >
+                                    <svg v-if="challenge.reward === 'extraLife'" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                                    <svg v-else viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2z"/></svg>
+                                    <span class="bonus-count" v-if="challenge.completed && (
+                                        (challenge.reward === 'freeCharacter' && bombanime.bonuses.freeCharacter > 0) ||
+                                        (challenge.reward === 'extraLife' && bombanime.bonuses.extraLife > 0)
+                                    )">{{ challenge.reward === 'extraLife' ? bombanime.bonuses.extraLife : bombanime.bonuses.freeCharacter }}</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 📱 Mobile : Boutons intégrés (2 icônes) -->
+                    <div class="bombanime-mobile-toolbar" v-if="bombanime.playersData.length > 0 && isMobile" :class="{ 'intro-hidden': bombanime.introPhase === 'players' }">
+                        <!-- Bouton Alphabet -->
+                        <button 
+                            class="mobile-toolbar-btn alphabet"
+                            @click="toggleMobileAlphabet"
+                            :class="{ 'letter-added': bombanime.mobileAlphabetPulse }"
+                        >
+                            <svg viewBox="0 0 24 24"><path d="M2.5 4v3h5v12h3V7h5V4h-13zm19 5h-9v3h3v7h3v-7h3V9z"/></svg>
+                        </button>
+                        
+                        <!-- Bouton Bonus (fusionné défis + bonus) -->
+                        <button 
+                            class="mobile-toolbar-btn bonus"
+                            v-if="bombanime.challenges.length > 0"
+                            @click="toggleBombanimeChallengesModal"
+                            :class="{ 'has-available': hasBombanimeBonuses() && getTotalBombanimeBonuses() > 0 }"
+                        >
+                            <svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-1.8c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9zM9 4.2c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9zM20 19H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 12 7.4l3.38 4.6L17 10.83 14.92 8H20v6z"/></svg>
+                            <span class="toolbar-count" v-if="getTotalBombanimeBonuses() > 0">{{ getTotalBombanimeBonuses() }}</span>
+                        </button>
+                    </div>
+                    
+                    <!-- 🎁 Mobile: Modal Bonus (anciennement Défis) -->
+                    <div class="bombanime-modal-overlay" v-if="isMobile && bombanime.showChallengesModal" @click.self="toggleBombanimeChallengesModal">
+                        <div class="bombanime-modal-content challenges-modal">
+                            <div class="modal-header">
+                                <div class="modal-header-icon bonus">
+                                    <svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-1.8c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9zM9 4.2c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9zM20 19H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 12 7.4l3.38 4.6L17 10.83 14.92 8H20v6z"/></svg>
+                                </div>
+                                <h3>Bonus</h3>
+                                <button class="modal-close-btn" @click="toggleBombanimeChallengesModal">
+                                    <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <div 
+                                    v-for="challenge in bombanime.challenges" 
+                                    :key="challenge.id"
+                                    class="modal-challenge-item"
+                                    :class="{ 
+                                        'completed': challenge.completed, 
+                                        'in-progress': !challenge.completed && challenge.progress > 0,
+                                        'bonus-available': challenge.completed && (
+                                            (challenge.reward === 'freeCharacter' && bombanime.bonuses.freeCharacter > 0) ||
+                                            (challenge.reward === 'extraLife' && bombanime.bonuses.extraLife > 0)
+                                        ),
+                                        'type-gift': challenge.reward === 'freeCharacter',
+                                        'used': challenge.completed && (
+                                            (challenge.reward === 'freeCharacter' && !bombanime.bonuses.freeCharacter) ||
+                                            (challenge.reward === 'extraLife' && !bombanime.bonuses.extraLife)
+                                        ),
+                                        'not-my-turn': challenge.reward === 'freeCharacter' && challenge.completed && bombanime.bonuses.freeCharacter > 0 && !bombanime.isMyTurn
+                                    }"
+                                    @click="challenge.completed && (
+                                        (challenge.reward === 'freeCharacter' && bombanime.bonuses.freeCharacter > 0 && bombanime.isMyTurn) ||
+                                        (challenge.reward === 'extraLife' && bombanime.bonuses.extraLife > 0)
+                                    ) ? (challenge.reward === 'freeCharacter' ? useBombanimeFreeCharacter() : useBombanimeExtraLife(), toggleBombanimeChallengesModal()) : null"
+                                >
+                                    <div class="modal-challenge-icon">
+                                        <svg v-if="!challenge.completed" viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+                                        <svg v-else-if="challenge.reward === 'extraLife'" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                                        <svg v-else viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2z"/></svg>
+                                    </div>
+                                    <div class="modal-challenge-content">
+                                        <div class="modal-challenge-title">
+                                            <span v-if="!challenge.completed">{{ challenge.target }} perso{{ challenge.target > 1 ? 's' : '' }} en <span class="letter">{{ challenge.letter }}</span></span>
+                                            <span v-else>{{ challenge.reward === 'extraLife' ? '+1 Vie' : 'Perso gratuit' }}</span>
+                                        </div>
+                                        <div class="modal-challenge-progress">
+                                            <div class="progress-bar">
+                                                <div class="progress-fill" :style="{ width: Math.min(100, (challenge.progress / challenge.target) * 100) + '%' }"></div>
+                                            </div>
+                                            <span class="progress-text" v-if="!challenge.completed">{{ challenge.progress }}/{{ challenge.target }}</span>
+                                            <span class="bonus-count" v-else>×{{ challenge.reward === 'extraLife' ? bombanime.bonuses.extraLife : bombanime.bonuses.freeCharacter }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- 📱 Mobile : Drawer alphabet -->
                     <div class="alphabet-mobile-drawer" v-if="isMobile && isMobileAlphabetOpen" @click.self="toggleMobileAlphabet">
@@ -502,7 +633,7 @@
                     <!-- 🆕 Barre de timer horizontale ultra-fine (toujours présente pour éviter les décalages) -->
                     <div class="timer-bar-container" :class="{ hidden: !currentQuestion || showResults }">
                         <div class="timer-bar-progress" :style="{ width: timerProgress + '%' }"
-                            :class="{ warning: timeRemaining <= 3 }"></div>
+                            :class="{ warning: timerWarning }"></div>
                     </div>
 
                     <!-- Question -->

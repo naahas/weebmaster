@@ -669,8 +669,8 @@
                                     <span class="bombanime-dropdown-item-name">Fairy Tail</span>
                                     <span class="bombanime-dropdown-item-count">366</span>
                                 </div>
-                                <div class="bombanime-dropdown-item" data-series="Pokemon" data-name="Pokémon" data-count="1249">
-                                    <span class="bombanime-dropdown-item-name">Pokémon</span>
+                                <div class="bombanime-dropdown-item" data-series="Pokemon" data-name="Pokemon" data-count="1249">
+                                    <span class="bombanime-dropdown-item-name">Pokemon</span>
                                     <span class="bombanime-dropdown-item-count">1249</span>
                                 </div>
                                 <div class="bombanime-dropdown-item" data-series="Snk" data-name="Attack on Titan" data-count="219">
@@ -1703,6 +1703,55 @@
             </div>
         </div>
     </div>
+
+    <!-- ============================================
+         MODAL SUGGESTION (style B3)
+         ============================================ -->
+    <div class="suggestion-modal-overlay" id="suggestionModalOverlay"></div>
+    <div class="suggestion-modal" id="suggestionModal">
+        <div class="suggestion-modal-header">
+            <span class="suggestion-modal-title">Suggestion</span>
+            <button class="suggestion-modal-close" id="closeSuggestionBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <form class="suggestion-modal-body" id="suggestionForm">
+            <div class="suggestion-field">
+                <label>Anime</label>
+                <select id="suggestionAnime" required>
+                    <option value="">Sélectionner</option>
+                </select>
+            </div>
+            <div class="suggestion-field">
+                <label>Nom</label>
+                <input type="text" id="suggestionName" placeholder="Ichigo Kurosaki..." required>
+            </div>
+            <div class="suggestion-field">
+                <label>Type</label>
+                <div class="suggestion-toggle">
+                    <button type="button" class="toggle-btn active" data-type="add">Nouveau</button>
+                    <button type="button" class="toggle-btn" data-type="variant">Variante</button>
+                </div>
+                <input type="hidden" id="suggestionType" value="add">
+            </div>
+            <div class="suggestion-field" id="variantField" style="display: none;">
+                <label>Variante de</label>
+                <input type="text" id="suggestionVariantOf" placeholder="Ichigo...">
+            </div>
+            <button type="submit" class="suggestion-submit">Envoyer</button>
+        </form>
+    </div>
+
+    <!-- Bouton Suggestion Flag (séparé) -->
+    <button class="suggestion-flag-btn" id="suggestionFlagBtn" style="display: none;" title="Suggérer un personnage">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+            <line x1="4" y1="22" x2="4" y2="15"/>
+        </svg>
+    </button>
 
     <!-- 🔊 Contrôle du son Admin -->
     <div class="admin-sound-control" id="adminSoundControl">

@@ -628,6 +628,92 @@ const db = {
 
         if (error) throw error;
         return count || 0;
+    },
+
+    // ========== BOMBANIME SUGGESTIONS ==========
+    async createSuggestion({ type, anime, characterName, variantOf, details, submittedBy }) {
+        const { data, error } = await supabase
+            .from('bombanime_suggestions')
+            .insert({
+                type,
+                anime,
+                character_name: characterName,
+                variant_of: variantOf || null,
+                details: details || null,
+                submitted_by: submittedBy,
+                status: 'pending'
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
+        console.log(`📝 Suggestion BombAnime créée: ${type} - ${characterName} (${anime})`);
+        return data;
+    },
+
+    async getSuggestions(status = null, limit = 50) {
+        let query = supabase
+            .from('bombanime_suggestions')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(limit);
+
+        if (status) {
+            query = query.eq('status', status);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return data || [];
+    },
+
+    async updateSuggestionStatus(id, status, adminNotes = null) {
+        const updateData = {
+            status,
+            updated_at: new Date().toISOString()
+        };
+        
+        if (adminNotes !== null) {
+            updateData.admin_notes = adminNotes;
+        }
+
+        const { data, error } = await supabase
+            .from('bombanime_suggestions')
+            .update(updateData)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        console.log(`✅ Suggestion ${id} mise à jour: ${status}`);
+        return data;
+    },
+
+    async deleteSuggestion(id) {
+        const { error } = await supabase
+            .from('bombanime_suggestions')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+        console.log(`🗑️ Suggestion ${id} supprimée`);
+    },
+
+    async getSuggestionsCount() {
+        const { data, error } = await supabase
+            .from('bombanime_suggestions')
+            .select('status');
+
+        if (error) throw error;
+
+        const counts = {
+            total: data.length,
+            pending: data.filter(s => s.status === 'pending').length,
+            approved: data.filter(s => s.status === 'approved').length,
+            rejected: data.filter(s => s.status === 'rejected').length
+        };
+
+        return counts;
     }
 
 

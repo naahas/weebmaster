@@ -84,7 +84,9 @@ createApp({
             hasAnswered: false,
             timeRemaining: 7,
             timerProgress: 100,
+            timerWarning: false,
             timerInterval: null,
+            timerAnimationId: null,
 
             // Résultats
             showResults: false,
@@ -188,7 +190,9 @@ createApp({
                 heartPulse: false,
                 mobileAlphabetPulse: false, // 📱 Animation bouton alphabet mobile
                 showLifeGained: false,
+                showLifeGainedAnimation: false, // 🎯 Animation bonus vie extra
                 successPlayerTwitchId: null,
+                lifeGainedPlayerTwitchId: null,
                 // Debug
                 debugInfo: null,
                 debugMs: null, // 🆕 Timer en millisecondes pour debug
@@ -197,7 +201,13 @@ createApp({
                 introPhase: null,  // 'players' | 'panel' | 'bomb' | 'ready' | null
                 introPlayersRevealed: 0,
                 // Contrôle de la direction de la bombe
-                bombPointingUp: true
+                bombPointingUp: true,
+                // 🎯 Défis et bonus BombAnime
+                challenges: [],              // [{id, name, description, reward, letter, progress, target, completed}]
+                bonuses: { freeCharacter: 0, extraLife: 0 },
+                showChallengesModal: false,  // Modal défis sur mobile
+                showBonusesModal: false,     // Modal bonus sur mobile
+                challengeJustCompleted: null // Pour animation de défi complété
             },
 
 
@@ -1316,10 +1326,12 @@ createApp({
                     if (state.timeRemaining > 0) {
                         this.timeRemaining = state.timeRemaining;
                         this.timerProgress = (state.timeRemaining / this.gameTime) * 100;
+                        this.timerWarning = state.timeRemaining <= 3;
                         this.startTimer(state.timeRemaining);
                     } else {
                         this.timeRemaining = 0;
                         this.timerProgress = 0;
+                        this.timerWarning = true;
                     }
 
                     console.log(`✅ Question restaurée avec ${state.timeRemaining}s restantes`);
@@ -2019,6 +2031,17 @@ createApp({
                 this.bombanime.playersData = [...data.playersData];
                 this.bombanime.usedNamesCount = 0;
                 this.bombanime.myAlphabet = [];
+                
+                // 🎯 Initialiser les défis BombAnime
+                this.bombanime.challenges = (data.challenges || []).map(c => ({
+                    ...c,
+                    progress: 0,
+                    completed: false
+                }));
+                this.bombanime.bonuses = { freeCharacter: 0, extraLife: 0 };
+                this.bombanime.challengeJustCompleted = null;
+                console.log('🎯 Défis BombAnime:', this.bombanime.challenges);
+                
                 this.gameInProgress = true;
                 this.gameEnded = false;
                 
@@ -2183,6 +2206,30 @@ createApp({
                     }
                     
                     this.bombanime.myAlphabet = data.alphabet;
+                    
+                    // 🎯 Mettre à jour les défis et bonus
+                    if (data.challenges) {
+                        this.bombanime.challenges = data.challenges;
+                    }
+                    if (data.bonuses) {
+                        this.bombanime.bonuses = data.bonuses;
+                    }
+                    
+                    // 🎯 Notification si défi complété
+                    if (data.completedChallenges && data.completedChallenges.length > 0) {
+                        data.completedChallenges.forEach(cc => {
+                            const challenge = this.bombanime.challenges.find(c => c.id === cc.challengeId);
+                            if (challenge) {
+                                this.bombanime.challengeJustCompleted = challenge.id;
+                                const rewardText = cc.reward === 'extraLife' ? '❤️ +1 Vie' : '🎁 Perso Gratuit';
+                                this.showNotification(`🎯 Défi complété: ${challenge.name} → ${rewardText}`, 'success');
+                                
+                                setTimeout(() => {
+                                    this.bombanime.challengeJustCompleted = null;
+                                }, 2000);
+                            }
+                        });
+                    }
                 }
                 
                 // Forcer le re-render
@@ -2344,14 +2391,26 @@ createApp({
             this.socket.on('bombanime-alphabet-complete', (data) => {
                 console.log('🎉 Alphabet complet:', data.playerUsername);
                 
-                // Animation visible par TOUS sur l'hexagone du joueur
-                const playerSlot = document.querySelector(`.bombanime-player-slot[data-twitch-id="${data.playerTwitchId}"]`);
-                if (playerSlot) {
-                    playerSlot.classList.add('alphabet-complete');
+                // Animation alphabet visible par TOUS sur l'hexagone du joueur
+                this.$nextTick(() => {
+                    const playerSlot = document.querySelector(`.bombanime-player-slot[data-twitch-id="${data.playerTwitchId}"]`);
+                    if (playerSlot) {
+                        playerSlot.classList.add('alphabet-complete');
+                        
+                        setTimeout(() => {
+                            playerSlot.classList.remove('alphabet-complete');
+                        }, 1200);
+                    }
+                });
+                
+                // 🎯 Animation gain de vie via Vue (réactive)
+                setTimeout(() => {
+                    this.bombanime.lifeGainedPlayerTwitchId = data.playerTwitchId;
+                    
                     setTimeout(() => {
-                        playerSlot.classList.remove('alphabet-complete');
-                    }, 1200);
-                }
+                        this.bombanime.lifeGainedPlayerTwitchId = null;
+                    }, 800);
+                }, 200);
                 
                 // Mettre à jour les vies dans playersData pour tous
                 const player = this.bombanime.playersData.find(p => p.twitchId === data.playerTwitchId);
@@ -2444,6 +2503,16 @@ createApp({
                     // Mettre à jour les vies du joueur
                     this.playerLives = myData.lives;
                     
+                    // 🎯 Restaurer les défis et bonus
+                    if (data.challenges) {
+                        this.bombanime.challenges = data.challenges;
+                        console.log('🎯 Défis restaurés:', this.bombanime.challenges);
+                    }
+                    if (data.bonuses) {
+                        this.bombanime.bonuses = data.bonuses;
+                        console.log('🎁 Bonus restaurés:', this.bombanime.bonuses);
+                    }
+                    
                     // Démarrer le timer
                     this.startBombanimeTimer();
                     
@@ -2473,6 +2542,84 @@ createApp({
             this.socket.on('bombanime-serie-updated', (data) => {
                 console.log('💣 Série BombAnime mise à jour:', data.serie);
                 this.bombanime.serie = data.serie;
+            });
+            
+            // 🎯 BONUS BOMBANIME - Perso gratuit reçu
+            this.socket.on('bombanime-free-character', (data) => {
+                console.log('🎁 Perso gratuit reçu:', data.character);
+                
+                // Mettre le personnage dans l'input
+                this.bombanime.inputValue = data.character;
+                
+                // Mettre à jour les bonus restants
+                if (data.bonusesRemaining) {
+                    this.bombanime.bonuses = data.bonusesRemaining;
+                }
+                
+                // Auto-focus sur l'input
+                this.$nextTick(() => {
+                    const input = document.getElementById('bombanimeInput');
+                    if (input) input.focus();
+                });
+                
+                this.showNotification(`🎁 Perso gratuit: ${data.character} - Appuie sur Entrée !`, 'info');
+            });
+            
+            // 🎯 BONUS BOMBANIME - Vie extra utilisée
+            this.socket.on('bombanime-extra-life-used', (data) => {
+                console.log('❤️ Vie extra utilisée:', data);
+                
+                // Mettre à jour les vies
+                this.playerLives = data.newLives;
+                
+                // Mettre à jour les bonus restants
+                if (data.bonusesRemaining) {
+                    this.bombanime.bonuses = data.bonusesRemaining;
+                }
+                
+                // Notification
+                if (data.wasWasted) {
+                    this.showNotification(`❤️ Vie extra gâchée - Tu étais déjà au max !`, 'warning');
+                } else {
+                    this.showNotification(`❤️ +1 Vie ! (${data.newLives} vies)`, 'success');
+                }
+                // L'animation est déclenchée par bombanime-player-lives-updated
+            });
+            
+            // 🎯 BONUS BOMBANIME - Mise à jour vies d'un joueur
+            this.socket.on('bombanime-player-lives-updated', (data) => {
+                console.log('❤️ Vies mises à jour:', data.playerUsername, data.lives);
+                this.bombanime.playersData = [...data.playersData];
+                
+                // Si c'est moi, mettre à jour mes vies
+                if (data.playerTwitchId === this.twitchId) {
+                    this.playerLives = data.lives;
+                }
+                
+                // 🎯 Déclencher l'animation via Vue (réactive)
+                this.bombanime.lifeGainedPlayerTwitchId = data.playerTwitchId;
+                
+                setTimeout(() => {
+                    this.bombanime.lifeGainedPlayerTwitchId = null;
+                }, 800);
+            });
+            
+            // 🎯 BONUS BOMBANIME - Erreur
+            this.socket.on('bombanime-bonus-error', (data) => {
+                console.log('❌ Erreur bonus:', data.error);
+                let message = 'Erreur';
+                switch (data.error) {
+                    case 'not_your_turn':
+                        message = 'Ce n\'est pas ton tour !';
+                        break;
+                    case 'no_bonus_available':
+                        message = 'Tu n\'as pas ce bonus !';
+                        break;
+                    case 'no_character_available':
+                        message = 'Plus de personnages disponibles !';
+                        break;
+                }
+                this.showNotification(`❌ ${message}`, 'error');
             });
         },
 
@@ -2596,40 +2743,53 @@ createApp({
         },
 
         startTimer(initialTime = null) {
-            // Ne pas restart le timer s'il tourne déjà
-            if (this.timerInterval) {
-                console.log('⚠️ Timer déjà en cours');
-                return;
-            }
+            // Arrêter tout timer existant d'abord
+            this.stopTimer();
 
-            this.timeRemaining = initialTime !== null ? initialTime : this.gameTime;
-            this.timerProgress = (this.timeRemaining / this.gameTime) * 100;
+            // Utiliser le temps passé en paramètre ou gameTime par défaut
+            const remainingTime = initialTime !== null ? initialTime : this.gameTime;
+            const totalTime = this.gameTime; // Temps total de la question (pour calculer le %)
+            
+            this.timeRemaining = remainingTime;
+            // Calculer la progression initiale basée sur le temps restant vs temps total
+            this.timerProgress = (remainingTime / totalTime) * 100;
+            this.timerWarning = remainingTime <= 3;
 
             // 🆕 Animation fluide avec requestAnimationFrame
             const startTime = Date.now();
-            const duration = this.timeRemaining * 1000; // Durée en ms
+            const duration = remainingTime * 1000; // Durée restante en ms
 
             const animate = () => {
                 const elapsed = Date.now() - startTime;
                 const remaining = Math.max(0, duration - elapsed);
 
-                // 🆕 Mise à jour continue de la progression
-                this.timerProgress = (remaining / (this.gameTime * 1000)) * 100;
-                this.timeRemaining = Math.ceil(remaining / 1000); // Arrondi pour l'affichage du nombre
+                // Calculer la progression basée sur le temps TOTAL (pas la durée restante)
+                const remainingSeconds = remaining / 1000;
+                this.timerProgress = (remainingSeconds / totalTime) * 100;
+                this.timeRemaining = Math.ceil(remainingSeconds);
+                
+                // Warning basé sur le temps réel en ms
+                this.timerWarning = remaining <= 3000;
 
-                if (remaining > 0) {
-                    requestAnimationFrame(animate);
+                if (remaining > 0 && this.timerAnimationId) {
+                    this.timerAnimationId = requestAnimationFrame(animate);
                 } else {
                     this.timerProgress = 0;
                     this.timeRemaining = 0;
-                    this.stopTimer();
+                    this.timerWarning = true;
+                    this.timerAnimationId = null;
                 }
             };
 
-            requestAnimationFrame(animate);
+            this.timerAnimationId = requestAnimationFrame(animate);
         },
 
         stopTimer() {
+            if (this.timerAnimationId) {
+                cancelAnimationFrame(this.timerAnimationId);
+                this.timerAnimationId = null;
+            }
+            // Garder aussi pour compatibilité si ancien code utilisé
             if (this.timerInterval) {
                 clearInterval(this.timerInterval);
                 this.timerInterval = null;
@@ -2711,6 +2871,7 @@ createApp({
             this.bombanime.heartPulse = false;
             this.bombanime.mobileAlphabetPulse = false;
             this.bombanime.successPlayerTwitchId = null;
+            this.bombanime.lifeGainedPlayerTwitchId = null;
             this.bombanime.debugInfo = null;
             this.bombanime.introPhase = null;
             this.bombanime.introPlayersRevealed = 0;
@@ -3478,6 +3639,56 @@ createApp({
             this.socket.emit('bombanime-submit-name', {
                 name: this.bombanime.inputValue.trim().toUpperCase()
             });
+        },
+        
+        // 🎯 Utiliser le bonus "Perso Gratuit"
+        useBombanimeFreeCharacter() {
+            if (!this.bombanime.isMyTurn) {
+                this.showNotification('❌ Ce n\'est pas ton tour !', 'error');
+                return;
+            }
+            if (!this.bombanime.bonuses || this.bombanime.bonuses.freeCharacter <= 0) {
+                this.showNotification('❌ Tu n\'as pas ce bonus !', 'error');
+                return;
+            }
+            
+            console.log('🎁 Utilisation bonus Perso Gratuit');
+            this.socket.emit('bombanime-use-free-character');
+        },
+        
+        // 🎯 Utiliser le bonus "Vie Extra"
+        useBombanimeExtraLife() {
+            if (!this.bombanime.bonuses || this.bombanime.bonuses.extraLife <= 0) {
+                this.showNotification('❌ Tu n\'as pas ce bonus !', 'error');
+                return;
+            }
+            
+            console.log('❤️ Utilisation bonus Vie Extra');
+            this.socket.emit('bombanime-use-extra-life');
+        },
+        
+        // 🎯 Toggle modal défis (mobile)
+        toggleBombanimeChallengesModal() {
+            this.bombanime.showChallengesModal = !this.bombanime.showChallengesModal;
+            this.bombanime.showBonusesModal = false; // Fermer l'autre
+        },
+        
+        // 🎯 Toggle modal bonus (mobile)
+        toggleBombanimeBonusesModal() {
+            this.bombanime.showBonusesModal = !this.bombanime.showBonusesModal;
+            this.bombanime.showChallengesModal = false; // Fermer l'autre
+        },
+        
+        // 🎯 Vérifier si le joueur a des bonus BombAnime disponibles
+        hasBombanimeBonuses() {
+            return this.bombanime.bonuses && 
+                   (this.bombanime.bonuses.freeCharacter > 0 || this.bombanime.bonuses.extraLife > 0);
+        },
+        
+        // 🎯 Obtenir le total des bonus BombAnime
+        getTotalBombanimeBonuses() {
+            if (!this.bombanime.bonuses) return 0;
+            return (this.bombanime.bonuses.freeCharacter || 0) + (this.bombanime.bonuses.extraLife || 0);
         },
         
         // Obtenir ma position dans le cercle

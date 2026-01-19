@@ -77,6 +77,10 @@ body {
     color: rgba(0, 255, 136, 0.045);
 }
 
+.bg-text.lobby-active.bombanime-mode {
+    color: rgba(212, 175, 55, 0.06);
+}
+
 /* Header */
 .header {
     position: fixed;
@@ -9469,34 +9473,34 @@ body {
 /* Style vert pour les options BombAnime */
 .bombanime-lives-group .setting-option-btn.active,
 .bombanime-timer-group .setting-option-btn.active {
-    background: rgba(74, 222, 128, 0.15);
-    border-color: rgba(74, 222, 128, 0.5);
-    color: #4ade80;
+    background: rgba(212, 175, 55, 0.15);
+    border-color: rgba(212, 175, 55, 0.5);
+    color: var(--gold);
 }
 
 .bombanime-lives-group .setting-option-btn:hover,
 .bombanime-timer-group .setting-option-btn:hover {
-    border-color: rgba(74, 222, 128, 0.4);
-    color: #4ade80;
+    border-color: rgba(212, 175, 55, 0.4);
+    color: var(--gold);
 }
 
-/* Labels verts pour BombAnime */
+/* Labels dorés pour BombAnime */
 .bombanime-serie-trigger .setting-group-label,
 .bombanime-lives-group .setting-group-label,
 .bombanime-timer-group .setting-group-label {
-    color: rgba(74, 222, 128, 0.8);
+    color: rgba(212, 175, 55, 0.8);
 }
 
 .bombanime-serie-trigger .setting-group-icon,
 .bombanime-lives-group .setting-group-icon,
 .bombanime-timer-group .setting-group-icon {
-    stroke: #4ade80;
+    stroke: var(--gold);
 }
 
 .bombanime-serie-trigger .setting-group-value,
 .bombanime-lives-group .setting-group-value,
 .bombanime-timer-group .setting-group-value {
-    color: #4ade80;
+    color: var(--gold);
 }
 
 /* Dropdown Underline Élégant BombAnime */
@@ -9525,7 +9529,7 @@ body {
     left: 0;
     width: 0;
     height: 2px;
-    background: #4ade80;
+    background: var(--gold);
     transition: width 0.3s ease;
 }
 
@@ -9542,11 +9546,11 @@ body {
 }
 
 .bombanime-serie-dropdown .setting-group-icon {
-    stroke: #4ade80;
+    stroke: var(--gold);
 }
 
 .bombanime-serie-dropdown .setting-group-label {
-    color: rgba(74, 222, 128, 0.8);
+    color: rgba(212, 175, 55, 0.8);
 }
 
 .bombanime-dropdown-value {
@@ -9559,18 +9563,18 @@ body {
 .bombanime-dropdown-name {
     font-size: 0.7rem;
     font-weight: 500;
-    color: #4ade80;
+    color: var(--gold);
 }
 
 .bombanime-dropdown-count {
     font-size: 0.6rem;
-    color: rgba(74, 222, 128, 0.45);
+    color: rgba(212, 175, 55, 0.45);
 }
 
 .bombanime-dropdown-arrow {
     width: 14px;
     height: 14px;
-    stroke: #4ade80;
+    stroke: var(--gold);
     opacity: 0.5;
     transition: all 0.2s;
 }
@@ -9591,7 +9595,7 @@ body {
     left: 0;
     right: 0;
     background: linear-gradient(180deg, rgba(20, 25, 30, 0.98) 0%, rgba(15, 18, 22, 0.98) 100%);
-    border: 1px solid rgba(74, 222, 128, 0.15);
+    border: 1px solid rgba(212, 175, 55, 0.15);
     border-radius: 0.625rem;
     padding: 0.375rem;
     max-height: 240px;
@@ -9630,7 +9634,7 @@ body {
     transform: translateY(-50%);
     width: 3px;
     height: 0;
-    background: #4ade80;
+    background: var(--gold);
     border-radius: 2px;
     transition: height 0.2s;
 }
@@ -9641,12 +9645,12 @@ body {
 }
 
 .bombanime-dropdown-item:hover {
-    background: rgba(74, 222, 128, 0.05);
+    background: rgba(212, 175, 55, 0.05);
     padding-left: 0.875rem;
 }
 
 .bombanime-dropdown-item.selected {
-    background: rgba(74, 222, 128, 0.08);
+    background: rgba(212, 175, 55, 0.08);
     padding-left: 0.875rem;
 }
 
@@ -9661,18 +9665,18 @@ body {
 }
 
 .bombanime-dropdown-item.selected .bombanime-dropdown-item-name {
-    color: #4ade80;
+    color: var(--gold);
     font-weight: 500;
 }
 
 .bombanime-dropdown-item-count {
     font-size: 0.7rem;
-    color: rgba(74, 222, 128, 0.35);
+    color: rgba(212, 175, 55, 0.35);
     font-weight: 500;
 }
 
 .bombanime-dropdown-item.selected .bombanime-dropdown-item-count {
-    color: rgba(74, 222, 128, 0.7);
+    color: rgba(212, 175, 55, 0.7);
 }
 
 /* Scrollbar dropdown */
@@ -9685,12 +9689,12 @@ body {
 }
 
 .bombanime-dropdown-menu::-webkit-scrollbar-thumb {
-    background: rgba(74, 222, 128, 0.25);
+    background: rgba(212, 175, 55, 0.25);
     border-radius: 2px;
 }
 
 .bombanime-dropdown-menu::-webkit-scrollbar-thumb:hover {
-    background: rgba(74, 222, 128, 0.4);
+    background: rgba(212, 175, 55, 0.4);
 }
 
 /* Slider Timer BombAnime */
@@ -9727,7 +9731,7 @@ body {
     width: 100%;
     height: 6px;
     border-radius: 3px;
-    background: rgba(74, 222, 128, 0.15);
+    background: rgba(212, 175, 55, 0.15);
     outline: none;
     cursor: pointer;
     overflow: visible;
@@ -9739,46 +9743,46 @@ body {
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: #4ade80;
+    background: var(--gold);
     cursor: pointer;
-    box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
     transition: all 0.2s;
 }
 
 .bombanime-timer-slider::-webkit-slider-thumb:hover {
     transform: scale(1.1);
-    box-shadow: 0 0 15px rgba(74, 222, 128, 0.7);
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.7);
 }
 
 .bombanime-timer-slider::-moz-range-thumb {
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: #4ade80;
+    background: var(--gold);
     cursor: pointer;
     border: none;
-    box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
 }
 
 .timer-slider-labels.bombanime {
     display: flex;
     justify-content: space-between;
     font-size: 0.7rem;
-    color: rgba(74, 222, 128, 0.6);
+    color: rgba(212, 175, 55, 0.6);
 }
 
 /* 🤖 TEMPORAIRE: Styles pour le bouton d'ajout de bots */
 .bombanime-bots-group {
-    border-color: rgba(74, 222, 128, 0.15);
+    border-color: rgba(212, 175, 55, 0.15);
 }
 
 .bombanime-bots-group .setting-group-label,
 .bombanime-bots-group .setting-group-icon {
-    color: rgba(74, 222, 128, 0.7);
+    color: rgba(212, 175, 55, 0.7);
 }
 
 .bombanime-bots-group .setting-group-value {
-    color: #4ade80;
+    color: var(--gold);
     font-weight: 600;
 }
 
@@ -9902,6 +9906,18 @@ body {
         rgba(15, 15, 20, 0.1) 90%, 
         transparent 100%
     );
+    animation: logsSlideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes logsSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 .logs-list {
@@ -10003,6 +10019,22 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Animation d'apparition dezoom fade-in */
+.players-circle.bombanime-appear {
+    animation: bombanimeAppear 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes bombanimeAppear {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.15);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
 }
 
 /* Slot joueur */
@@ -10534,6 +10566,133 @@ body {
     0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
     20% { opacity: 1; transform: translate(var(--px), var(--py)) scale(1.8); }
     100% { opacity: 0; transform: translate(calc(var(--px) * 2.5), calc(var(--py) * 2.5 - 15px)) scale(0.3); }
+}
+
+/* 🎯 Animation bonus vie extra - Variante 3: Double Ring */
+.player-slot .life-glow-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 70px;
+    height: 70px;
+    border: 3px solid rgba(255, 100, 100, 0.6);
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 45;
+}
+
+.player-slot .life-glow-ring.ring-2 {
+    width: 90px;
+    height: 90px;
+}
+
+.player-slot .life-heart-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 80px;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 50;
+}
+
+.player-slot .life-heart-overlay svg {
+    width: 100%;
+    height: 100%;
+    fill: #ff6b6b;
+}
+
+.player-slot .life-particles {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    z-index: 55;
+}
+
+.player-slot .life-particles .particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: #ff6b6b;
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgba(255, 100, 100, 0.8);
+    opacity: 0;
+}
+
+.player-slot.life-gained {
+    animation: life-slot-zoom 0.7s ease-out;
+    z-index: 100;
+}
+
+.player-slot.life-gained .player-hex svg {
+    animation: life-hex-glow 0.7s ease-out;
+}
+
+.player-slot.life-gained .life-heart-overlay {
+    animation: life-heart-appear 0.5s ease-out forwards;
+}
+
+.player-slot.life-gained .life-glow-ring {
+    animation: life-ring-expand 0.7s ease-out forwards;
+}
+
+.player-slot.life-gained .life-glow-ring.ring-2 {
+    animation-delay: 0.1s;
+}
+
+.player-slot.life-gained .life-particles .particle {
+    animation: life-particle-burst 0.6s ease-out forwards;
+    animation-delay: 0.1s;
+}
+
+@keyframes life-slot-zoom {
+    0% { transform: translate(-50%, -50%) scale(1); }
+    25% { transform: translate(-50%, -50%) scale(1.3); }
+    50% { transform: translate(-50%, -50%) scale(1.15); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes life-hex-glow {
+    0% { filter: none; }
+    25% { filter: drop-shadow(0 0 30px rgba(255, 100, 150, 1)); }
+    100% { filter: none; }
+}
+
+@keyframes life-heart-appear {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    25% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.3); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.6); }
+}
+
+@keyframes life-ring-expand {
+    0% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(2.5); }
+}
+
+.player-slot .life-particles .particle:nth-child(1) { --tx: 70px; --ty: 0; }
+.player-slot .life-particles .particle:nth-child(2) { --tx: 50px; --ty: 50px; }
+.player-slot .life-particles .particle:nth-child(3) { --tx: 0; --ty: 70px; }
+.player-slot .life-particles .particle:nth-child(4) { --tx: -50px; --ty: 50px; }
+.player-slot .life-particles .particle:nth-child(5) { --tx: -70px; --ty: 0; }
+.player-slot .life-particles .particle:nth-child(6) { --tx: -50px; --ty: -50px; }
+.player-slot .life-particles .particle:nth-child(7) { --tx: 0; --ty: -70px; }
+.player-slot .life-particles .particle:nth-child(8) { --tx: 50px; --ty: -50px; }
+.player-slot .life-particles .particle:nth-child(9) { --tx: 35px; --ty: 60px; }
+.player-slot .life-particles .particle:nth-child(10) { --tx: -35px; --ty: 60px; }
+.player-slot .life-particles .particle:nth-child(11) { --tx: -60px; --ty: -25px; }
+.player-slot .life-particles .particle:nth-child(12) { --tx: 60px; --ty: -25px; }
+
+@keyframes life-particle-burst {
+    0% { opacity: 1; transform: translate(0, 0) scale(1); }
+    100% { opacity: 0; transform: translate(var(--tx), calc(var(--ty) - 15px)) scale(0.4); }
 }
 
 /* ============================================
@@ -11262,4 +11421,275 @@ body {
 
 .admin-sound-control.muted .admin-sound-slider {
     display: none;
+}
+
+/* ============================================
+   SUGGESTION SYSTEM - B3 STYLE
+   ============================================ */
+
+/* Bouton Flag Rouge (séparé, à gauche du son) */
+.suggestion-flag-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 180px;
+    width: 36px;
+    height: 36px;
+    background: rgba(180, 60, 60, 0.15);
+    border: 1px solid rgba(180, 60, 60, 0.25);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    z-index: 1000;
+}
+
+.suggestion-flag-btn:hover {
+    background: rgba(180, 60, 60, 0.25);
+    border-color: rgba(180, 60, 60, 0.4);
+}
+
+.suggestion-flag-btn svg {
+    width: 16px;
+    height: 16px;
+    stroke: rgba(220, 80, 80, 0.7);
+}
+
+/* Modal Overlay */
+.suggestion-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 9998;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+}
+
+.suggestion-modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Modal B3 - Agrandi */
+.suggestion-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    width: 340px;
+    background: #111118;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    overflow: hidden;
+}
+
+.suggestion-modal.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* Header avec fond subtil */
+.suggestion-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px 20px;
+    position: relative;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.suggestion-modal-title {
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.suggestion-modal-close {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 26px;
+    height: 26px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.3;
+    transition: opacity 0.15s ease;
+}
+
+.suggestion-modal-close:hover {
+    opacity: 0.5;
+}
+
+.suggestion-modal-close svg {
+    width: 14px;
+    height: 14px;
+    stroke: white;
+}
+
+/* Body */
+.suggestion-modal-body {
+    padding: 18px 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Fields */
+.suggestion-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.suggestion-field label {
+    font-size: 10px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.35);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.suggestion-field input,
+.suggestion-field select {
+    width: 100%;
+    padding: 11px 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    color: white;
+    font-size: 13px;
+    font-family: inherit;
+    transition: all 0.15s ease;
+}
+
+.suggestion-field input::placeholder {
+    color: rgba(255, 255, 255, 0.2);
+}
+
+.suggestion-field input:focus,
+.suggestion-field select:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.suggestion-field select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.3)' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+}
+
+.suggestion-field select option {
+    background: #111118;
+    color: white;
+}
+
+/* Toggle */
+.suggestion-toggle {
+    display: flex;
+    gap: 8px;
+}
+
+.suggestion-toggle .toggle-btn {
+    flex: 1;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.suggestion-toggle .toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.suggestion-toggle .toggle-btn.active {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Submit */
+.suggestion-submit {
+    margin-top: 6px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.07);
+    border: none;
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.suggestion-submit:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.suggestion-submit:active {
+    transform: scale(0.98);
+}
+
+.suggestion-submit.success {
+    background: rgba(34, 197, 94, 0.25);
+    color: rgba(134, 239, 172, 0.95);
+    pointer-events: none;
+}
+
+/* Modal fade out success */
+.suggestion-modal.closing {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+    transition: all 0.25s ease;
+}
+
+/* Toast - gardé pour les erreurs uniquement */
+.suggestion-toast {
+    position: fixed;
+    bottom: 80px;
+    right: 24px;
+    padding: 12px 16px;
+    background: rgba(20, 20, 30, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+    z-index: 10000;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+}
+
+.suggestion-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.suggestion-toast.error {
+    border-color: rgba(180, 60, 60, 0.3);
 }

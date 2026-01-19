@@ -47,6 +47,7 @@ const PLAYER_COLORS = [
 // ============================================
 const fs = require('fs');
 const path = require('path');
+const { getAllNamesToBlock } = require('./character-variants');
 
 // Charger les personnages depuis le JSON
 let BOMBANIME_CHARACTERS = {};
@@ -459,7 +460,11 @@ const gameState = {
         lastValidName: null,        // Dernier nom validé
         bombDirection: 1,           // 1 = sens horaire, -1 = anti-horaire
         isPaused: false,            // Pause entre les tours
-        eliminatedPlayers: []       // Joueurs éliminés (pour affichage)
+        eliminatedPlayers: [],      // Joueurs éliminés (pour affichage)
+        // 🎯 DÉFIS BOMBANIME
+        challenges: [],             // Les 2 défis [{id, letter, target, reward, name, description}]
+        playerChallenges: new Map(), // Map<twitchId, {challenges: {id: {progress, target, completed}}, lettersGiven: Map}>
+        playerBonuses: new Map()    // Map<twitchId, {freeCharacter: 0, extraLife: 0}>
     }
 };
 
@@ -1144,6 +1149,109 @@ app.post('/admin/bombanime/close-lobby', (req, res) => {
     
     console.log('💣 Lobby BombAnime fermé');
     res.json({ success: true });
+});
+
+// ============================================
+// 📝 BOMBANIME SUGGESTIONS ROUTES
+// ============================================
+
+// Créer une nouvelle suggestion
+app.post('/admin/bombanime/suggestion', async (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+    
+    try {
+        const { type, anime, characterName, variantOf, details } = req.body;
+        
+        if (!type || !anime || !characterName) {
+            return res.status(400).json({ error: 'Champs requis manquants' });
+        }
+        
+        const suggestion = await db.createSuggestion({
+            type,
+            anime,
+            characterName: characterName.toUpperCase().trim(),
+            variantOf: variantOf ? variantOf.toUpperCase().trim() : null,
+            details,
+            submittedBy: req.session.adminUsername || 'Admin'
+        });
+        
+        res.json({ success: true, suggestion });
+    } catch (error) {
+        console.error('Erreur création suggestion:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+// Récupérer les suggestions
+app.get('/admin/bombanime/suggestions', async (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+    
+    try {
+        const { status } = req.query;
+        const suggestions = await db.getSuggestions(status || null);
+        const counts = await db.getSuggestionsCount();
+        
+        res.json({ suggestions, counts });
+    } catch (error) {
+        console.error('Erreur récupération suggestions:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+// Mettre à jour le statut d'une suggestion
+app.post('/admin/bombanime/suggestion/:id/status', async (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+    
+    try {
+        const { id } = req.params;
+        const { status, adminNotes } = req.body;
+        
+        if (!['pending', 'approved', 'rejected'].includes(status)) {
+            return res.status(400).json({ error: 'Statut invalide' });
+        }
+        
+        const suggestion = await db.updateSuggestionStatus(parseInt(id), status, adminNotes);
+        res.json({ success: true, suggestion });
+    } catch (error) {
+        console.error('Erreur mise à jour suggestion:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+// Supprimer une suggestion
+app.delete('/admin/bombanime/suggestion/:id', async (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+    
+    try {
+        const { id } = req.params;
+        await db.deleteSuggestion(parseInt(id));
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Erreur suppression suggestion:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+// Récupérer la liste des animes disponibles pour les suggestions
+app.get('/admin/bombanime/animes', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+    
+    const animes = Object.keys(BOMBANIME_CHARACTERS).map(key => ({
+        key,
+        count: BOMBANIME_CHARACTERS[key].length
+    }));
+    
+    res.json({ animes });
 });
 
 // Mettre à jour les paramètres du jeu (vies et temps)
@@ -4521,6 +4629,162 @@ function checkAlphabetComplete(twitchId) {
     return alphabet.size >= 26;
 }
 
+// ============================================
+// 🎯 BOMBANIME - Système de Défis
+// ============================================
+
+// Lettres communes (exclut Q, X, W, Z pour le défi 3 persos)
+const COMMON_LETTERS = 'ABCDEFGHIJKLMNOPRSTUY'.split('');
+const ALL_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+// Générer les 2 défis BombAnime pour une partie
+function generateBombanimeChallenges() {
+    const challenges = [];
+    
+    // Défi 1: 3 personnages commençant par lettre X (lettres communes uniquement)
+    const letter3 = COMMON_LETTERS[Math.floor(Math.random() * COMMON_LETTERS.length)];
+    challenges.push({
+        id: 'three_letters',
+        type: 'three_letters',
+        letter: letter3,
+        target: 3,
+        reward: 'extraLife',
+        name: `3 persos en "${letter3}"`,
+        description: `Donnez 3 personnages commençant par "${letter3}"`
+    });
+    
+    // Défi 2: 1 personnage commençant par lettre Y (toutes lettres)
+    // On évite la même lettre que le défi 1 si possible
+    let letter1;
+    do {
+        letter1 = ALL_LETTERS[Math.floor(Math.random() * ALL_LETTERS.length)];
+    } while (letter1 === letter3 && ALL_LETTERS.length > 1);
+    
+    challenges.push({
+        id: 'one_letter',
+        type: 'one_letter',
+        letter: letter1,
+        target: 1,
+        reward: 'freeCharacter',
+        name: `1 perso en "${letter1}"`,
+        description: `Donnez 1 personnage commençant par "${letter1}"`
+    });
+    
+    console.log(`🎯 Défis BombAnime générés: "${letter3}" (x3) et "${letter1}" (x1)`);
+    return challenges;
+}
+
+// Initialiser la progression des défis pour un joueur BombAnime
+function initBombanimePlayerChallenges(twitchId) {
+    const progress = {
+        challenges: {},
+        lettersGiven: new Map() // Map<letter, count> pour tracker les lettres données
+    };
+    
+    // Initialiser chaque défi actif
+    gameState.bombanime.challenges.forEach(challenge => {
+        progress.challenges[challenge.id] = {
+            progress: 0,
+            target: challenge.target,
+            completed: false,
+            letter: challenge.letter
+        };
+    });
+    
+    gameState.bombanime.playerChallenges.set(twitchId, progress);
+    
+    // Initialiser les bonus du joueur
+    if (!gameState.bombanime.playerBonuses.has(twitchId)) {
+        gameState.bombanime.playerBonuses.set(twitchId, {
+            freeCharacter: 0,
+            extraLife: 0
+        });
+    }
+}
+
+// Vérifier et mettre à jour les défis BombAnime après une réponse valide
+function checkBombanimeChallenges(twitchId, characterName) {
+    const playerProgress = gameState.bombanime.playerChallenges.get(twitchId);
+    if (!playerProgress) return [];
+    
+    const completedChallenges = [];
+    const firstLetter = characterName.charAt(0).toUpperCase();
+    
+    // Mettre à jour le compteur de lettres
+    const currentCount = playerProgress.lettersGiven.get(firstLetter) || 0;
+    playerProgress.lettersGiven.set(firstLetter, currentCount + 1);
+    
+    // Vérifier chaque défi actif
+    gameState.bombanime.challenges.forEach(challenge => {
+        const cp = playerProgress.challenges[challenge.id];
+        if (!cp || cp.completed) return;
+        
+        // Vérifier si la première lettre correspond au défi
+        if (firstLetter === challenge.letter) {
+            cp.progress = playerProgress.lettersGiven.get(challenge.letter) || 0;
+            
+            // Vérifier si défi complété
+            if (cp.progress >= cp.target && !cp.completed) {
+                cp.completed = true;
+                completedChallenges.push({
+                    challengeId: challenge.id,
+                    reward: challenge.reward
+                });
+                
+                // Ajouter le bonus à l'inventaire du joueur
+                const bonuses = gameState.bombanime.playerBonuses.get(twitchId);
+                if (bonuses) {
+                    bonuses[challenge.reward]++;
+                    console.log(`🏆 Défi BombAnime "${challenge.name}" complété par ${twitchId} ! Bonus: ${challenge.reward} (total: ${bonuses[challenge.reward]})`);
+                }
+            }
+        }
+    });
+    
+    return completedChallenges;
+}
+
+// Obtenir l'état des défis BombAnime pour un joueur (pour envoi au client)
+function getBombanimePlayerChallengesState(twitchId) {
+    const playerProgress = gameState.bombanime.playerChallenges.get(twitchId);
+    if (!playerProgress) return [];
+    
+    return gameState.bombanime.challenges.map(challenge => {
+        const cp = playerProgress.challenges[challenge.id];
+        return {
+            id: challenge.id,
+            name: challenge.name,
+            description: challenge.description,
+            reward: challenge.reward,
+            letter: challenge.letter,
+            progress: cp ? cp.progress : 0,
+            target: challenge.target,
+            completed: cp ? cp.completed : false
+        };
+    });
+}
+
+// Obtenir les bonus BombAnime d'un joueur
+function getBombanimePlayerBonuses(twitchId) {
+    return gameState.bombanime.playerBonuses.get(twitchId) || { freeCharacter: 0, extraLife: 0 };
+}
+
+// Obtenir un personnage aléatoire non utilisé pour le bonus perso gratuit
+function getRandomUnusedCharacter(serie) {
+    const characters = BOMBANIME_CHARACTERS[serie];
+    if (!characters) return null;
+    
+    // Filtrer les personnages non utilisés
+    const unusedCharacters = characters.filter(char => 
+        !gameState.bombanime.usedNames.has(char.toUpperCase())
+    );
+    
+    if (unusedCharacters.length === 0) return null;
+    
+    // Retourner un personnage aléatoire
+    return unusedCharacters[Math.floor(Math.random() * unusedCharacters.length)];
+}
+
 // Obtenir les joueurs BombAnime encore en vie
 function getAliveBombanimePlayers() {
     return Array.from(gameState.players.values()).filter(p => p.lives > 0);
@@ -4696,7 +4960,17 @@ function submitBombanimeName(socketId, name) {
     
     // Nom valide!
     const normalizedName = validation.normalizedName;
-    gameState.bombanime.usedNames.add(normalizedName);
+    
+    // 🎯 Bloquer le nom ET toutes ses variantes
+    const characters = BOMBANIME_CHARACTERS[gameState.bombanime.serie] || [];
+    const allVariants = getAllNamesToBlock(normalizedName, characters, gameState.bombanime.serie);
+    
+    for (const variant of allVariants) {
+        gameState.bombanime.usedNames.add(variant.toUpperCase());
+    }
+    
+    console.log(`🔒 Noms bloqués: ${allVariants.join(', ')}`);
+    
     gameState.bombanime.lastValidName = normalizedName;
     
     // Ajouter TOUTES les lettres du nom à l'alphabet du joueur
@@ -4751,6 +5025,11 @@ function submitBombanimeName(socketId, name) {
     // Sauvegarder la dernière réponse du joueur
     gameState.bombanime.playerLastAnswers.set(player.twitchId, normalizedName);
     
+    // 🎯 Vérifier les défis BombAnime
+    const completedChallenges = checkBombanimeChallenges(player.twitchId, normalizedName);
+    const playerChallengesState = getBombanimePlayerChallengesState(player.twitchId);
+    const playerBonuses = getBombanimePlayerBonuses(player.twitchId);
+    
     // Calculer le temps restant au moment de la validation (pour debug)
     const debugElapsedMs = Date.now() - gameState.bombanime.turnStartTime;
     const timeRemainingMs = (gameState.bombanime.timer * 1000) - debugElapsedMs;
@@ -4766,6 +5045,10 @@ function submitBombanimeName(socketId, name) {
         alphabet: Array.from(gameState.bombanime.playerAlphabets.get(player.twitchId) || []),
         playersData: getBombanimePlayersData(),
         nextPlayerTwitchId: nextPlayerTwitchId,  // Pour rotation immédiate de la bombe
+        // 🎯 Défis et bonus
+        challenges: playerChallengesState,
+        bonuses: playerBonuses,
+        completedChallenges: completedChallenges,
         // Debug info
         debugTimeRemainingMs: timeRemainingMs,
         debugTurnId: gameState.bombanime.turnId
@@ -4846,6 +5129,16 @@ async function startBombanimeGame() {
         player.lives = gameState.bombanime.lives || BOMBANIME_CONFIG.DEFAULT_LIVES; // Utiliser les vies BombAnime
     });
     
+    // 🎯 Générer les défis BombAnime
+    gameState.bombanime.challenges = generateBombanimeChallenges();
+    gameState.bombanime.playerChallenges = new Map();
+    gameState.bombanime.playerBonuses = new Map();
+    
+    // Initialiser les défis et bonus pour chaque joueur
+    players.forEach(player => {
+        initBombanimePlayerChallenges(player.twitchId);
+    });
+    
     // Marquer la partie comme en cours
     gameState.inProgress = true;
     gameState.gameStartTime = Date.now();
@@ -4857,7 +5150,16 @@ async function startBombanimeGame() {
         timer: gameState.bombanime.timer,
         playersOrder: gameState.bombanime.playersOrder,
         playersData: getBombanimePlayersData(),
-        totalCharacters: BOMBANIME_CHARACTERS[gameState.bombanime.serie]?.length || 0
+        totalCharacters: BOMBANIME_CHARACTERS[gameState.bombanime.serie]?.length || 0,
+        // 🎯 Défis BombAnime
+        challenges: gameState.bombanime.challenges.map(c => ({
+            id: c.id,
+            name: c.name,
+            description: c.description,
+            reward: c.reward,
+            letter: c.letter,
+            target: c.target
+        }))
     });
     
     // Choisir un joueur aléatoire pour commencer
@@ -5469,6 +5771,89 @@ io.on('connection', (socket) => {
         }
     });
     
+    // 🎯 Utiliser le bonus "Perso Gratuit" - donne un personnage aléatoire non utilisé
+    socket.on('bombanime-use-free-character', () => {
+        if (!gameState.bombanime.active) return;
+        
+        const player = gameState.players.get(socket.id);
+        if (!player) return;
+        
+        // Vérifier que c'est le tour de ce joueur
+        if (player.twitchId !== gameState.bombanime.currentPlayerTwitchId) {
+            socket.emit('bombanime-bonus-error', { error: 'not_your_turn' });
+            return;
+        }
+        
+        // Vérifier que le joueur a ce bonus
+        const bonuses = gameState.bombanime.playerBonuses.get(player.twitchId);
+        if (!bonuses || bonuses.freeCharacter <= 0) {
+            socket.emit('bombanime-bonus-error', { error: 'no_bonus_available' });
+            return;
+        }
+        
+        // Obtenir un personnage aléatoire non utilisé
+        const freeChar = getRandomUnusedCharacter(gameState.bombanime.serie);
+        if (!freeChar) {
+            socket.emit('bombanime-bonus-error', { error: 'no_character_available' });
+            return;
+        }
+        
+        // Décrémenter le bonus
+        bonuses.freeCharacter--;
+        
+        console.log(`🎁 ${player.username} utilise Perso Gratuit: "${freeChar}" (reste: ${bonuses.freeCharacter})`);
+        
+        // Envoyer le personnage au joueur (il n'a plus qu'à appuyer sur Entrée)
+        socket.emit('bombanime-free-character', {
+            character: freeChar,
+            bonusesRemaining: bonuses
+        });
+    });
+    
+    // 🎯 Utiliser le bonus "Vie Extra" - ajoute une vie (max 2)
+    socket.on('bombanime-use-extra-life', () => {
+        if (!gameState.bombanime.active) return;
+        
+        const player = gameState.players.get(socket.id);
+        if (!player) return;
+        
+        // Vérifier que le joueur a ce bonus
+        const bonuses = gameState.bombanime.playerBonuses.get(player.twitchId);
+        if (!bonuses || bonuses.extraLife <= 0) {
+            socket.emit('bombanime-bonus-error', { error: 'no_bonus_available' });
+            return;
+        }
+        
+        // Décrémenter le bonus
+        bonuses.extraLife--;
+        
+        // Ajouter une vie (max 2, sinon gâché)
+        const maxLives = gameState.bombanime.lives || BOMBANIME_CONFIG.DEFAULT_LIVES;
+        const oldLives = player.lives;
+        
+        if (player.lives < maxLives) {
+            player.lives++;
+            console.log(`❤️ ${player.username} utilise Vie Extra: ${oldLives} -> ${player.lives} (reste: ${bonuses.extraLife})`);
+        } else {
+            console.log(`❤️ ${player.username} utilise Vie Extra mais déjà au max (${player.lives}/${maxLives}) - GÂCHÉ`);
+        }
+        
+        // Notifier tout le monde de la mise à jour des vies
+        io.emit('bombanime-player-lives-updated', {
+            playerTwitchId: player.twitchId,
+            playerUsername: player.username,
+            lives: player.lives,
+            playersData: getBombanimePlayersData()
+        });
+        
+        // Envoyer confirmation au joueur
+        socket.emit('bombanime-extra-life-used', {
+            newLives: player.lives,
+            wasWasted: oldLives >= maxLives,
+            bonusesRemaining: bonuses
+        });
+    });
+    
     // Broadcaster ce que le joueur tape en temps réel
     socket.on('bombanime-typing', (data) => {
         if (!gameState.bombanime.active) return;
@@ -5498,6 +5883,10 @@ io.on('connection', (socket) => {
             Array.from(gameState.bombanime.playerAlphabets.get(player.twitchId) || []) : 
             [];
         
+        // 🎯 Récupérer les défis et bonus du joueur
+        const myChallenges = player ? getBombanimePlayerChallengesState(player.twitchId) : [];
+        const myBonuses = player ? getBombanimePlayerBonuses(player.twitchId) : { freeCharacter: 0, extraLife: 0 };
+        
         socket.emit('bombanime-state', {
             active: true,
             serie: gameState.bombanime.serie,
@@ -5510,7 +5899,10 @@ io.on('connection', (socket) => {
             direction: gameState.bombanime.bombDirection,
             timeRemaining: gameState.bombanime.turnStartTime ? 
                 Math.max(0, gameState.bombanime.timer - Math.floor((Date.now() - gameState.bombanime.turnStartTime) / 1000)) : 
-                gameState.bombanime.timer
+                gameState.bombanime.timer,
+            // 🎯 Défis et bonus
+            challenges: myChallenges,
+            bonuses: myBonuses
         });
     });
     
