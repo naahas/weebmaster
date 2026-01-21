@@ -4180,6 +4180,37 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+// ============================================
+// BOUTON INFO - OUVRE LE LIEN DE PREUVE
+// ============================================
+const infoBtn = document.getElementById('infoBtn');
+
+// Ouvrir le lien de preuve dans un nouvel onglet
+function openProofLink() {
+    if (!currentQuestionData || !currentQuestionData.proof_url) return;
+    window.open(currentQuestionData.proof_url, '_blank');
+}
+
+// Mettre à jour l'état du badge info selon la disponibilité de la preuve
+function updateInfoBadge() {
+    if (!infoBtn) return;
+    
+    if (!currentQuestionData || !currentQuestionData.proof_url) {
+        infoBtn.classList.add('disabled');
+    } else {
+        infoBtn.classList.remove('disabled');
+    }
+}
+
+// Event listener pour le bouton info
+if (infoBtn) {
+    infoBtn.addEventListener('click', () => {
+        if (!infoBtn.classList.contains('disabled')) {
+            openProofLink();
+        }
+    });
+}
+
 const gameCloseBtn = document.getElementById('gameCloseBtn');
 
 function showGameCloseBtn() {
@@ -5281,6 +5312,9 @@ function restoreQuestionDisplay(state) {
 
     // Stocker la question courante
     currentQuestionData = question;
+    
+    // Mettre à jour le badge info
+    updateInfoBadge();
 
     // Réponses
     const answersGrid = document.getElementById('answersGrid');
@@ -6188,6 +6222,9 @@ function displayQuestion(data) {
     if (questionBadges) questionBadges.style.opacity = '1';
 
     currentQuestionData = data;
+    
+    // Mettre à jour le badge info
+    updateInfoBadge();
     
     // 🆕 Image personnage (DÉSACTIVÉ TEMPORAIREMENT)
     // showCharacterImage(data.serie, data.timeLimit);

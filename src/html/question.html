@@ -647,6 +647,46 @@
             margin-left: 6px;
         }
 
+        /* Badge preuve */
+        .proof-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 4px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            color: #60a5fa;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .proof-indicator:hover {
+            background: rgba(59, 130, 246, 0.25);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        .proof-indicator svg {
+            width: 10px;
+            height: 10px;
+        }
+
+        .no-proof {
+            opacity: 0.4;
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            cursor: default;
+        }
+
+        .no-proof:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
         /* Header actions (reset) */
         .list-header-top {
             display: flex;
@@ -969,6 +1009,10 @@
                                     <label>Série <span class="required">*</span></label>
                                     <input type="text" id="serie" placeholder="Ex: Attack on Titan" required>
                                 </div>
+                                <div class="form-group">
+                                    <label>Lien preuve</label>
+                                    <input type="url" id="proofUrl" placeholder="https://wiki.fandom.com/...">
+                                </div>
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                                     <div class="form-group">
                                         <label>Difficulté</label>
@@ -1110,6 +1154,10 @@
                         <div class="form-group">
                             <label>Série <span class="required">*</span></label>
                             <input type="text" id="editSerie" placeholder="Ex: Attack on Titan" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Lien preuve</label>
+                            <input type="url" id="editProofUrl" placeholder="https://wiki.fandom.com/...">
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div class="form-group">
@@ -1366,6 +1414,7 @@
 
             listContainer.innerHTML = questions.map(q => {
                 const isExcluded = usedQuestionIds.includes(q.id);
+                const hasProof = q.proof_url && q.proof_url.trim() !== '';
                 return `
                 <div class="question-item ${isExcluded ? 'excluded' : ''}" data-id="${q.id}">
                     <div class="question-item-header">
@@ -1376,6 +1425,23 @@
                         <div class="question-meta">
                             <span class="badge badge-serie">${escapeHtml(q.serie || 'N/A')}</span>
                             <span class="badge badge-difficulty ${q.difficulty}">${q.difficulty}</span>
+                            ${hasProof 
+                                ? `<a href="${escapeHtml(q.proof_url)}" target="_blank" class="proof-indicator" title="Voir la preuve">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                        <polyline points="15 3 21 3 21 9"/>
+                                        <line x1="10" y1="14" x2="21" y2="3"/>
+                                    </svg>
+                                    PREUVE
+                                   </a>`
+                                : `<span class="proof-indicator no-proof" title="Pas de preuve">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <line x1="15" y1="9" x2="9" y2="15"/>
+                                        <line x1="9" y1="9" x2="15" y2="15"/>
+                                    </svg>
+                                   </span>`
+                            }
                         </div>
                     </div>
                     <div class="question-answers">
@@ -1424,6 +1490,7 @@
             const correctAnswer = parseInt(document.getElementById('correctAnswer').value);
             const serie = document.getElementById('serie').value.trim();
             const difficulty = document.getElementById('difficulty').value;
+            const proofUrl = document.getElementById('proofUrl').value.trim();
 
             if (answers.filter(a => a !== '').length < 6) {
                 showStatus(formStatus, 'Les 6 réponses sont requises', 'error');
@@ -1443,7 +1510,8 @@
                         answers,
                         correctAnswer,
                         serie,
-                        difficulty
+                        difficulty,
+                        proof_url: proofUrl || null
                     })
                 });
 
@@ -1507,6 +1575,7 @@
             document.getElementById('editId').value = question.id;
             document.getElementById('editQuestionText').value = question.question;
             document.getElementById('editSerie').value = question.serie || '';
+            document.getElementById('editProofUrl').value = question.proof_url || '';
             document.getElementById('editDifficulty').value = question.difficulty || 'medium';
             document.getElementById('editCorrectAnswer').value = question.coanswer || 1;
             document.getElementById('editAnswer1').value = question.answer1 || '';
@@ -1550,6 +1619,7 @@
             const correctAnswer = parseInt(document.getElementById('editCorrectAnswer').value);
             const serie = document.getElementById('editSerie').value.trim();
             const difficulty = document.getElementById('editDifficulty').value;
+            const proofUrl = document.getElementById('editProofUrl').value.trim();
 
             if (answers.filter(a => a !== '').length < 6) {
                 showStatus(editStatus, 'Les 6 réponses sont requises', 'error');
@@ -1570,7 +1640,8 @@
                         answers,
                         correctAnswer,
                         serie,
-                        difficulty
+                        difficulty,
+                        proof_url: proofUrl || null
                     })
                 });
 
@@ -1588,6 +1659,7 @@
                             serie,
                             difficulty,
                             coanswer: correctAnswer,
+                            proof_url: proofUrl || null,
                             answer1: answers[0],
                             answer2: answers[1],
                             answer3: answers[2],

@@ -822,22 +822,32 @@
                     <div class="game-question-panel" id="gameQuestionPanel">
 
 
-                        <div class="panel-mini-actions">
+                        <!-- Badges gauche: Signaler + Info -->
+                        <div class="panel-mini-actions panel-mini-actions-left">
                             <button class="mini-action-btn report" title="Signaler">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
                                     <line x1="4" y1="22" x2="4" y2="15"></line>
                                 </svg>
                             </button>
+                            <button class="mini-action-btn info" id="infoBtn" title="Voir la preuve">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Badge Question X au centre -->
+                        <span class="question-tab-badge" id="questionTabBadge">Question 1</span>
+
+                        <!-- Badge droite: Auto/Manuel -->
+                        <div class="panel-mini-actions panel-mini-actions-right">
                             <button class="mini-action-btn auto-toggle" id="autoToggleBtn" title="Auto/Manuel">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polygon points="5 3 19 12 5 21 5 3"></polygon>
                                 </svg>
                             </button>
                         </div>
-
-                        <!-- Badge Question X sur le border-top -->
-                        <span class="question-tab-badge" id="questionTabBadge">Question 1</span>
 
                         <!-- 🆕 Bouton pour masquer/afficher les % -->
                         <button class="hide-percent-btn" id="hidePercentBtn" title="Masquer %">

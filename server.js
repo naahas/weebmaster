@@ -1595,7 +1595,8 @@ app.post('/admin/start-game', async (req, res) => {
                     answers: finalAnswers.map(a => a.text),
                     serie: question.serie,
                     difficulty: question.difficulty,
-                    timeLimit: gameState.questionTime
+                    timeLimit: gameState.questionTime,
+                    proof_url: question.proof_url || null
                 };
 
                 gameState.currentQuestion = {
@@ -1982,7 +1983,8 @@ app.post('/admin/trigger-auto-next', (req, res) => {
                 answers: finalAnswers.map(a => a.text),
                 serie: question.serie,
                 difficulty: question.difficulty,
-                timeLimit: gameState.questionTime
+                timeLimit: gameState.questionTime,
+                proof_url: question.proof_url || null
             };
 
             gameState.currentQuestion = {
@@ -2212,7 +2214,8 @@ app.post('/admin/next-question', async (req, res) => {
             answers: finalAnswers.map(a => a.text),
             serie: question.serie,
             difficulty: question.difficulty, // ✅ Important pour le calcul des points
-            timeLimit: gameState.questionTime
+            timeLimit: gameState.questionTime,
+            proof_url: question.proof_url || null
         };
 
         gameState.currentQuestion = {
@@ -2751,7 +2754,8 @@ function revealAnswers(correctAnswer) {
                     answers: finalAnswers.map(a => a.text),
                     serie: question.serie,
                     difficulty: question.difficulty,
-                    timeLimit: gameState.questionTime
+                    timeLimit: gameState.questionTime,
+                    proof_url: question.proof_url || null
                 };
 
                 gameState.currentQuestion = {
@@ -3058,7 +3062,8 @@ async function sendTiebreakerQuestion() {
             serie: question.serie,
             difficulty: 'TIEBREAKER - EXTREME',
             timeLimit: gameState.questionTime,
-            isTiebreaker: true
+            isTiebreaker: true,
+            proof_url: question.proof_url || null
         };
 
         gameState.currentQuestion = {
@@ -3284,7 +3289,8 @@ async function sendRivalryTiebreakerQuestion() {
             serie: question.serie,
             difficulty: `DÉPARTAGE - ${difficulty.toUpperCase()}`,
             timeLimit: gameState.questionTime,
-            isRivalryTiebreaker: true
+            isRivalryTiebreaker: true,
+            proof_url: question.proof_url || null
         };
 
         gameState.currentQuestion = {
@@ -4239,7 +4245,7 @@ app.get('/question', (req, res) => {
 
 // API ajout question - avec code spécifique
 app.post('/api/add-question', async (req, res) => {
-    const { adminCode, question, answers, correctAnswer, serie, difficulty } = req.body;
+    const { adminCode, question, answers, correctAnswer, serie, difficulty, proof_url } = req.body;
 
     // Vérifier le code (spécifique OU master)
     if (adminCode !== process.env.QUESTION_ADMIN_CODE || adminCode === process.env.MASTER_ADMIN_CODE) {
@@ -4259,7 +4265,8 @@ app.post('/api/add-question', async (req, res) => {
                 answer6: answers[5],
                 coanswer: correctAnswer,
                 serie,
-                difficulty
+                difficulty,
+                proof_url: proof_url || null
             }]);
 
         if (error) throw error;
@@ -4274,7 +4281,7 @@ app.post('/api/add-question', async (req, res) => {
 
 // 🆕 Modifier une question
 app.post('/api/update-question', async (req, res) => {
-    const { adminCode, id, question, answers, correctAnswer, serie, difficulty } = req.body;
+    const { adminCode, id, question, answers, correctAnswer, serie, difficulty, proof_url } = req.body;
 
     // Vérifier le code
     if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
@@ -4294,7 +4301,8 @@ app.post('/api/update-question', async (req, res) => {
                 answer6: answers[5],
                 coanswer: correctAnswer,
                 serie,
-                difficulty
+                difficulty,
+                proof_url: proof_url || null
             })
             .eq('id', id);
 
