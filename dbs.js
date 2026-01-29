@@ -37,7 +37,7 @@ const SERIES_FILTERS = {
             'One Piece', 'Naruto', 'Bleach', 'Hunter x Hunter',
             'Shingeki no Kyojin', 'Fullmetal Alchemist', 'Death Note',
             'Dragon Ball', 'Demon Slayer', 'Jojo\'s Bizarre Adventure', 'My Hero Academia',
-            'Fairy Tail', 'Tokyo Ghoul', 'Nanatsu no Taizai', 'Kuroko no Basket', 'Chainsaw Man'
+            'Fairy Tail', 'Tokyo Ghoul', 'Nanatsu no Taizai', 'Kuroko no Basket', 'Chainsaw Man' , 'Black Clover'
         ]
     },
     onepiece: {

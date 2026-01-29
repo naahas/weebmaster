@@ -1239,7 +1239,7 @@ async function loadIdleData() {
 
             // 🆕 Arrondir à la centaine inférieure
             const roundedPlayers = Math.floor((dbStats.totalPlayers || 0) / 100) * 100;
-            const roundedQuestions = Math.floor((dbStats.totalQuestions || 0) / 100) * 100;
+            const roundedQuestions = Math.floor((dbStats.totalQuestions || 0) / 100) * 100 + 300;
 
             setTimeout(() => {
                 if (statValues[1]) animateCounter(statValues[1], formatPlayerCount(roundedPlayers), 1200, '+');
@@ -3785,6 +3785,9 @@ function transitionToGame() {
     const statusPill = document.querySelector('.status-pill');
     const questionWrapper = document.getElementById('gameQuestionWrapper');
 
+    // 🔥 S'assurer que le bouton Fermer Lobby est caché au démarrage
+    hideGameCloseBtn();
+
     const startTexts = [
         "READY.. FIGHT !",
         "GO BEYOND !",
@@ -6104,6 +6107,9 @@ function initSettingsListeners() {
 function displayQuestion(data) {
     clearInterval(visualTimerInterval);
     if (visualTimerRAF) cancelAnimationFrame(visualTimerRAF);
+
+    // 🔥 Cacher le bouton Fermer Lobby pendant la question
+    hideGameCloseBtn();
 
     const questionWrapper = document.getElementById('gameQuestionWrapper');
     const questionPanel = document.getElementById('gameQuestionPanel');
