@@ -298,8 +298,19 @@ const db = {
         }
 
         if (availableQuestions.length === 0) {
-            console.log('⚠️ Toutes les questions de difficulté "' + difficulty + '" ont été utilisées, réinitialisation...');
-            return this.getRandomQuestions(difficulty, count, [], serieFilter);
+            console.log(`⚠️ Toutes les questions "${difficulty}" ont été utilisées, reset de cette difficulté...`);
+            await this.resetUsedQuestions(difficulty);
+            
+            // Retirer les IDs de cette difficulté du tableau excludeIds (mutation directe = met à jour gameState)
+            const resetIds = new Set(questions.map(q => q.id));
+            for (let i = excludeIds.length - 1; i >= 0; i--) {
+                if (resetIds.has(excludeIds[i])) {
+                    excludeIds.splice(i, 1);
+                }
+            }
+            console.log(`✅ ${resetIds.size} questions "${difficulty}" réactivées, ${excludeIds.length} autres difficultés toujours exclues`);
+            
+            availableQuestions = questions;
         }
 
         const shuffled = availableQuestions.sort(() => 0.5 - Math.random());
@@ -580,14 +591,14 @@ const db = {
     },
 
 
-    // ========== USED QUESTIONS (Historique persistant) ==========
-    async addUsedQuestion(questionId) {
+    // ========== USED QUESTIONS (Historique persistant par difficulté) ==========
+    async addUsedQuestion(questionId, difficulty = null) {
         const { error } = await supabase
             .from('used_questions')
-            .insert({ question_id: questionId });
+            .insert({ question_id: questionId, difficulty: difficulty });
 
         if (error) throw error;
-        console.log(`📌 Question ${questionId} ajoutée à l'historique`);
+        console.log(`📌 Question ${questionId} (${difficulty || '?'}) ajoutée à l'historique`);
     },
 
     async getUsedQuestionIds() {
@@ -599,14 +610,25 @@ const db = {
         return data ? data.map(row => row.question_id) : [];
     },
 
-    async resetUsedQuestions() {
-        const { error } = await supabase
+    async resetUsedQuestions(difficulty = null) {
+        let query = supabase
             .from('used_questions')
-            .delete()
-            .neq('id', 0); // Supprimer toutes les lignes
+            .delete();
 
+        if (difficulty) {
+            query = query.eq('difficulty', difficulty);
+        } else {
+            query = query.neq('id', 0); // Supprimer toutes les lignes
+        }
+
+        const { error } = await query;
         if (error) throw error;
-        console.log('🔄 Historique des questions réinitialisé');
+
+        if (difficulty) {
+            console.log(`🔄 Historique réinitialisé pour la difficulté "${difficulty}"`);
+        } else {
+            console.log('🔄 Historique des questions réinitialisé (toutes difficultés)');
+        }
     },
 
     // 🆕 Compter le nombre de parties terminées

@@ -522,22 +522,35 @@ function getAllNamesToBlock(name, availableNames, theme) {
     const normalizedName = name.toUpperCase().trim();
     const toBlock = new Set(getVariantsToBlock(normalizedName, theme));
     
-    // Ajouter les noms qui contiennent le nom cité ou sont contenus dans le nom cité
+    // Ajouter les noms qui contiennent le nom cité comme MOT COMPLET
+    // (ex: "MONKEY D LUFFY" contient "LUFFY" comme mot → OK)
+    // (ex: "GOTENKS" contient "GOTEN" mais PAS comme mot complet → IGNORÉ)
     for (const availableName of availableNames) {
         const upperAvailable = availableName.toUpperCase();
+        if (upperAvailable === normalizedName) continue;
         
-        // Si le nom disponible contient le nom cité (ex: "MONKEY D LUFFY" contient "LUFFY")
-        if (upperAvailable.includes(normalizedName) && upperAvailable !== normalizedName) {
+        // Vérifier si le nom cité est un mot complet dans le nom disponible
+        // Ex: "GOTEN" dans "SON GOTEN" → match (séparé par espace)
+        // Ex: "GOTEN" dans "GOTENKS" → pas match (pas de frontière de mot)
+        const regexCitedInAvailable = new RegExp(`\\b${escapeRegex(normalizedName)}\\b`);
+        if (regexCitedInAvailable.test(upperAvailable)) {
             toBlock.add(upperAvailable);
         }
         
-        // Si le nom cité contient le nom disponible (ex: "MONKEY D LUFFY" contient "LUFFY")
-        if (normalizedName.includes(upperAvailable) && upperAvailable !== normalizedName) {
+        // Vérifier si le nom disponible est un mot complet dans le nom cité
+        // Ex: "LUFFY" dans "MONKEY D LUFFY" → match
+        const regexAvailableInCited = new RegExp(`\\b${escapeRegex(upperAvailable)}\\b`);
+        if (regexAvailableInCited.test(normalizedName)) {
             toBlock.add(upperAvailable);
         }
     }
     
     return Array.from(toBlock);
+}
+
+// Échapper les caractères spéciaux regex
+function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 module.exports = {

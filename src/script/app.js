@@ -48,7 +48,7 @@ createApp({
             hasJoined: false,
             
             // Mode Rivalité
-            lobbyMode: sessionStorage.getItem('bombanimeInProgress') === 'true' ? 'bombanime' : 'classic', // 'classic' ou 'rivalry' ou 'fizzbuzz'
+            lobbyMode: sessionStorage.getItem('triadeInProgress') === 'true' ? 'triade' : (sessionStorage.getItem('bombanimeInProgress') === 'true' ? 'bombanime' : 'classic'), // 'classic' ou 'rivalry' ou 'fizzbuzz' ou 'triade'
             selectedTeam: null, // 1 ou 2
             teamNames: { 1: 'Team A', 2: 'Team B' },
             teamCounts: { 1: 0, 2: 0 },
@@ -61,6 +61,9 @@ createApp({
             isLobbyFull: false,
             maxPlayers: 13,
             lobbyFullError: false,
+            triadeShakeError: false,
+            joinCooldown: false,
+            triadeJoinPending: false,
 
             // Mode FizzBuzz
             fizzbuzzMaxLives: 1, // Nombre max de vies en FizzBuzz (1 ou 2)
@@ -141,7 +144,8 @@ createApp({
                 "Vous pourrez bientôt proposer vos propres questions qui seront évaluées",
                 "Trois défis sont disponibles chaque partie, complétez-les pour gagner des bonus",
                 "Les défis se renouvellent à chaque nouvelle partie",
-                "En mode points, la difficulté des questions détermine les points gagnés"
+                "En mode points, la difficulté des questions détermine les points gagnés",
+                "Aucune question ne porte sur des Manwas ou Mebtoons",
             ],
 
 
@@ -210,6 +214,26 @@ createApp({
                 challengeJustCompleted: null // Pour animation de défi complété
             },
 
+            // 🎴 État Triade
+            triade: {
+                active: sessionStorage.getItem('triadeInProgress') === 'true',
+                reconnecting: false,
+                playersData: [],        // Tous les joueurs
+                otherPlayers: [],       // Les autres joueurs (pas moi)
+                myCards: [],            // Mes 3 cartes
+                myData: {               // Mes données
+                    wins: 0
+                },
+                isMyTurn: false,
+                previewCard: null,       // Carte en preview au hover
+                previewCardDisplay: null, // Garde le contenu pendant l'animation de sortie
+                previewVisible: false,    // Contrôle la classe CSS visible
+                // 🆕 Round announcement
+                showCenterSlot: false,
+                currentRound: 0,
+                selectedStat: null
+            },
+
 
             // Liste des partenaires (ordre d'affichage)
             partnersList: [
@@ -242,6 +266,11 @@ createApp({
         await this.checkAuth();
         await this.restoreGameState();
         await this.loadLeaderboard();
+        
+        // 🎴 Restaurer l'état Triade instantanément depuis sessionStorage
+        if (sessionStorage.getItem('triadeInProgress') === 'true') {
+            this.restoreTriadeState();
+        }
 
         this.initParticles();
         this.initSocket();
@@ -271,6 +300,21 @@ createApp({
                         twitchId: this.twitchId,
                         username: this.username
                     });
+                }
+                
+                // 🎴 Triade : si la partie est active mais pas de cartes, redemander
+                if (this.lobbyMode === 'triade' && this.hasJoined && this.twitchId) {
+                    if (this.triade.active && (!this.triade.myCards || this.triade.myCards.length === 0) && !this._pendingTriadeCards) {
+                        console.log('🎴 Onglet visible + pas de cartes → redemande');
+                        this.socket.emit('triade-request-my-cards', { twitchId: this.twitchId });
+                    } else if (!this.triade.active) {
+                        // Peut-être raté triade-game-started pendant le background
+                        console.log('🎴 Onglet visible + triade pas active → vérification');
+                        this.socket.emit('triade-reconnect', {
+                            twitchId: this.twitchId,
+                            username: this.username
+                        });
+                    }
                 }
 
                 // Re-sync l'état du jeu
@@ -557,25 +601,10 @@ createApp({
             }
         },
 
-        // 🆕 Afficher une notification de kick discrète en bas
+        // Notification de kick désactivée
         showKickNotification() {
-            // Supprimer une notification existante si présente
-            const existing = document.querySelector('.kick-notification');
-            if (existing) existing.remove();
-            
-            const notif = document.createElement('div');
-            notif.className = 'kick-notification';
-            notif.innerHTML = `Tu as été exclus...`;
-            document.body.appendChild(notif);
-            
-            // Animation d'entrée
-            setTimeout(() => notif.classList.add('show'), 10);
-            
-            // Disparition après 4 secondes
-            setTimeout(() => {
-                notif.classList.remove('show');
-                setTimeout(() => notif.remove(), 300);
-            }, 4000);
+            // Ne rien afficher
+            return;
         },
 
 
@@ -1275,17 +1304,79 @@ createApp({
                     const savedTwitchId = localStorage.getItem('lobbyTwitchId');
 
                     if (savedLobbyState === 'true' && savedTwitchId === this.twitchId) {
-                        this.hasJoined = true;
-                        console.log('✅ État hasJoined restauré depuis localStorage');
+                        // Vérifier que le joueur est réellement dans la liste du serveur
+                        const isInPlayerList = state.players && state.players.some(p => p.twitchId === this.twitchId);
+                        
+                        if (isInPlayerList || state.inProgress) {
+                            this.hasJoined = true;
+                            console.log('✅ État hasJoined restauré (joueur confirmé côté serveur)');
+                        } else {
+                            // State périmé d'un ancien lobby - nettoyer
+                            console.log('🧹 hasJoined périmé - joueur absent du lobby serveur');
+                            localStorage.removeItem('hasJoinedLobby');
+                            localStorage.removeItem('lobbyTwitchId');
+                            localStorage.removeItem('selectedTeam');
+                            this.hasJoined = false;
+                        }
 
-                        if (this.isGameActive && !state.inProgress) {
+                        if (this.isGameActive && !state.inProgress && this.hasJoined) {
                             this.shouldRejoinLobby = true;
                         }
                     }
                 }
+                
+                // 🎴 Nettoyer Triade si le serveur n'est pas en mode Triade
+                if (state.lobbyMode !== 'triade') {
+                    sessionStorage.removeItem('triadeInProgress');
+                    sessionStorage.removeItem('triadeState');
+                    this.triade.active = false;
+                    if (this.lobbyMode === 'triade') {
+                        this.lobbyMode = state.lobbyMode || 'classic';
+                    }
+                }
+                
+                // 🎴 FIX: Valider hasJoined pour Triade lobby (sessionStorage peut survivre après game-deactivated)
+                if (this.isAuthenticated && state.lobbyMode === 'triade' && !state.inProgress) {
+                    const isInPlayerList = state.players && state.players.some(p => p.twitchId === this.twitchId);
+                    if (isInPlayerList) {
+                        // Le joueur est bien dans le lobby serveur → auto-rejoin après reconnexion socket
+                        this.hasJoined = true;
+                        this.shouldRejoinLobby = true;
+                        console.log('✅ Triade: joueur confirmé dans le lobby serveur → auto-rejoin');
+                    } else if (this.hasJoined) {
+                        // hasJoined périmé (sessionStorage stale) → nettoyer
+                        console.log('🧹 Triade: hasJoined périmé - joueur absent du lobby serveur');
+                        this.hasJoined = false;
+                        sessionStorage.removeItem('triadeInProgress');
+                        sessionStorage.removeItem('triadeState');
+                        localStorage.removeItem('hasJoinedLobby');
+                        localStorage.removeItem('lobbyTwitchId');
+                    }
+                }
+                
+                // 🔥 FIX GLOBAL: Catch-all - si hasJoined mais absent du serveur et pas en game
+                if (this.isAuthenticated && this.hasJoined && !state.inProgress && state.isActive) {
+                    const isInPlayerList = state.players && state.players.some(p => p.twitchId === this.twitchId);
+                    if (!isInPlayerList && !this.shouldRejoinLobby) {
+                        console.log('🧹 Catch-all: hasJoined=true mais absent du serveur → reset');
+                        this.hasJoined = false;
+                        localStorage.removeItem('hasJoinedLobby');
+                        localStorage.removeItem('lobbyTwitchId');
+                        sessionStorage.removeItem('triadeInProgress');
+                        sessionStorage.removeItem('triadeState');
+                    }
+                }
 
                 if (state.inProgress && this.hasJoined) {
-                    this.gameInProgress = true;
+                    // 🎴 En mode Triade, vérifier que le joueur est vraiment dans la partie
+                    // (hasJoined = lobby rejoint, mais il faut être dans playersData pour la game)
+                    if (state.lobbyMode === 'triade' && !this.triade.active) {
+                        // Triade en cours mais pas initialisé → attendre triade-reconnect
+                        // Ne pas mettre gameInProgress=true tant qu'on n'a pas confirmé être dans la partie
+                        this.gameInProgress = false;
+                    } else {
+                        this.gameInProgress = true;
+                    }
                 } else {
                     this.gameInProgress = false;
                 }
@@ -1458,6 +1549,48 @@ createApp({
                     this.socket.emit('bombanime-get-state');
                     console.log('💣 Demande état BombAnime après connexion');
                 }
+                
+                // 🎴 Demander la reconnexion Triade si une partie était en cours
+                const triadeWasInProgress = sessionStorage.getItem('triadeInProgress');
+                if (triadeWasInProgress === 'true' && !this.shouldRejoinLobby) {
+                    console.log('🎴 Tentative de reconnexion Triade...');
+                    this.gameInProgress = true; // Optimiste — évite le flash "Partie en cours"
+                    this.socket.emit('triade-reconnect', {
+                        twitchId: this.twitchId,
+                        username: this.username
+                    });
+                    
+                    // Timeout de sécurité: si pas de réponse en 3s, la partie est probablement terminée
+                    this._triadeReconnectTimeout = setTimeout(() => {
+                        if (!this.triade.myCards || this.triade.myCards.length === 0) {
+                            console.log('🎴 Reconnexion Triade expirée - partie probablement terminée');
+                            sessionStorage.removeItem('triadeInProgress');
+                            sessionStorage.removeItem('triadeState');
+                            this.triade.active = false;
+                            this.gameInProgress = false;
+                            this.lobbyMode = 'classic';
+                            this.hasJoined = false;
+                        }
+                    }, 3000);
+                }
+                // 🎴 FIX: Si joueur dans lobby triade mais a raté triade-game-started (race condition socket)
+                else if (this.hasJoined && this.lobbyMode === 'triade' && !this.triade.active) {
+                    console.log('🎴 Lobby triade détecté sans partie active → vérification auprès du serveur...');
+                    // Cacher le modal "partie en cours" immédiatement (optimiste)
+                    this.gameInProgress = true;
+                    this.socket.emit('triade-reconnect', {
+                        twitchId: this.twitchId,
+                        username: this.username
+                    });
+                    
+                    // Timeout: si le serveur ne répond pas, c'est que la game n'a pas encore commencé
+                    this._triadeReconnectTimeout = setTimeout(() => {
+                        if (!this.triade.active) {
+                            console.log('🎴 Pas de partie Triade en cours - lobby normal');
+                            this.gameInProgress = false;
+                        }
+                    }, 3000);
+                }
             });
 
             // Restauration du joueur
@@ -1509,6 +1642,13 @@ createApp({
             // Événements du serveur
             this.socket.on('game-activated', (data) => {
                 this.isGameActive = true;
+                // 🔧 Reset hasJoined — c'est un NOUVEAU lobby, personne n'a rejoint
+                this.hasJoined = false;
+                this.playerCount = 0;
+                sessionStorage.removeItem('triadeInProgress');
+                sessionStorage.removeItem('triadeState');
+                localStorage.removeItem('hasJoinedLobby');
+                localStorage.removeItem('lobbyTwitchId');
                 // 🆕 Mettre à jour les paramètres si fournis
                 if (data && data.lives) this.gameLives = data.lives;
                 if (data && data.questionTime) this.gameTime = data.questionTime;
@@ -1573,6 +1713,11 @@ createApp({
                 localStorage.removeItem('selectedTeam');
                 localStorage.removeItem('teamCooldownEnd');
                 sessionStorage.removeItem('wasKicked'); // 🆕 Clear kick flag pour prochaine partie
+                sessionStorage.removeItem('triadeInProgress');
+                sessionStorage.removeItem('triadeState');
+                
+                // 🎴 Reset Triade
+                this.triade.active = false;
 
                 this.showNotification('Le jeu a été désactivé', 'info');
             });
@@ -1641,10 +1786,10 @@ createApp({
                 if (data.teamNames) this.teamNames = data.teamNames;
                 if (data.teamCounts) this.teamCounts = data.teamCounts;
                 
-                // 💣 BombAnime - Lobby plein
-                if (data.lobbyMode === 'bombanime') {
+                // 💣 BombAnime / 🎴 Triade - Lobby plein
+                if (data.lobbyMode === 'bombanime' || data.lobbyMode === 'triade') {
                     this.isLobbyFull = data.isLobbyFull || false;
-                    this.maxPlayers = data.maxPlayers || 13;
+                    this.maxPlayers = data.maxPlayers || (data.lobbyMode === 'triade' ? 10 : 13);
                     // Reset l'erreur si le lobby n'est plus plein
                     if (!data.isLobbyFull && this.lobbyFullError) {
                         this.lobbyFullError = false;
@@ -1802,15 +1947,29 @@ createApp({
                     localStorage.removeItem('teamCooldownEnd');
                 }
                 
-                // 💣 Lobby BombAnime plein
+                // 💣🎴 Lobby BombAnime/Triade plein
                 if (data.message && data.message.includes('plein')) {
-                    this.lobbyFullError = true;
                     this.hasJoined = false; // Le joueur n'a PAS rejoint
+                    this.triadeJoinPending = false; // Annuler le pending
                     // Nettoyer localStorage car le join a échoué
                     localStorage.removeItem('hasJoinedLobby');
                     localStorage.removeItem('lobbyTwitchId');
-                    console.log('💣 Lobby plein - en attente d\'une place');
-                    return; // Ne pas afficher la notification, le bouton change déjà
+                    
+                    // 🎴💣 Animation shake + cooldown 3s (pour les deux modes)
+                    this.triadeShakeError = true;
+                    this.joinCooldown = true;
+                    
+                    setTimeout(() => {
+                        this.triadeShakeError = false;
+                    }, 1000);
+                    
+                    setTimeout(() => {
+                        this.joinCooldown = false;
+                        this.lobbyFullError = false;
+                    }, 3000);
+                    
+                    console.log('🚫 Lobby plein - animation shake + cooldown 3s');
+                    return; // Ne pas afficher la notification
                 }
                 
                 this.showNotification(data.message, 'error');
@@ -2621,6 +2780,260 @@ createApp({
                 }
                 this.showNotification(`❌ ${message}`, 'error');
             });
+            
+            // ============================================
+            // 🎴 TRIADE SOCKET EVENTS
+            // ============================================
+            
+            console.log('🎴 Registering triade socket handlers...');
+            
+            // Partie Triade démarrée
+            this.socket.on('triade-game-started', (data) => {
+                console.log('🎴 Triade game started:', data);
+                
+                this.lobbyMode = 'triade';
+                this.gameStartedOnServer = true;
+                this.gameEnded = false; // 🆕 Reset gameEnded pour afficher le template
+                
+                // Vérifier si je suis dans la partie
+                const allPlayers = data.playersData || [];
+                const isInGame = allPlayers.some(p => p.twitchId === this.twitchId);
+                
+                if (!isInGame) {
+                    console.log('🎴 Triade: je ne suis pas dans la partie → spectateur');
+                    this.gameInProgress = false;
+                    this.triade.active = false;
+                    sessionStorage.removeItem('triadeInProgress');
+                    return;
+                }
+                
+                this.gameInProgress = true;
+                this.initTriade(data);
+                
+                // Demander mes cartes au serveur avec retry automatique
+                this._triadeCardsReceived = false;
+                const requestCards = () => {
+                    if (this._triadeCardsReceived) return;
+                    console.log('🎴 Demande de cartes... twitchId:', this.twitchId);
+                    this.socket.emit('triade-request-my-cards', { twitchId: this.twitchId });
+                };
+                requestCards();
+                setTimeout(() => requestCards(), 500);
+                setTimeout(() => requestCards(), 1500);
+                setTimeout(() => {
+                    if (!this._triadeCardsReceived) {
+                        console.log('🎴 Cartes toujours pas reçues → reconnect fallback');
+                        this.socket.emit('triade-reconnect', { twitchId: this.twitchId, username: this.username });
+                    }
+                }, 3000);
+                
+                // 🛡️ FALLBACK ULTIME: si après 6s les cartes ne sont toujours pas affichées
+                setTimeout(() => {
+                    if (!this.triade.myCards || this.triade.myCards.length === 0) {
+                        console.log('🎴 FALLBACK: cartes toujours vides après 6s');
+                        // Essayer _pendingTriadeCards d'abord
+                        if (this._pendingTriadeCards && this._pendingTriadeCards.length > 0) {
+                            console.log('🎴 FALLBACK: injection depuis _pendingTriadeCards');
+                            this.triade.myCards = this._pendingTriadeCards.filter(c => c != null);
+                            this._pendingTriadeCards = null;
+                            this.saveTriadeState();
+                        } else {
+                            // Dernier recours: redemander au serveur sans animation
+                            console.log('🎴 FALLBACK: redemande directe au serveur');
+                            this.socket.emit('triade-request-my-cards', { twitchId: this.twitchId });
+                        }
+                    }
+                }, 6000);
+                
+                // Cacher immédiatement les cartes adverses + lancer l'intro
+                this.$nextTick(() => {
+                    document.querySelectorAll('.triade-player-card-small').forEach(c => {
+                        c.classList.add('pre-deal');
+                    });
+                    const container = document.querySelector('.triade-table-container');
+                    if (container) {
+                        container.classList.add('intro');
+                        setTimeout(() => container.classList.remove('intro'), 3000);
+                    }
+                    // Afficher le slot central après la distribution
+                    setTimeout(() => {
+                        this.triade.showCenterSlot = true;
+                    }, 4500);
+                });
+            });
+            
+            // 🆕 Gestion de l'annonce de round
+            this.socket.on('triade-round-start', (data) => {
+                console.log('🎲 Round start received:', data);
+                console.log('🎲 State check - triade.active:', this.triade.active, 
+                            'gameInProgress:', this.gameInProgress, 
+                            'lobbyMode:', this.lobbyMode,
+                            'gameEnded:', this.gameEnded);
+                
+                // S'assurer que l'état est correct pour afficher l'animation
+                if (!this.triade.active) {
+                    console.warn('🎲 triade.active is false, setting to true');
+                    this.triade.active = true;
+                }
+                
+                // Appeler l'animation
+                if (this.showTriadeRoundOverlay) {
+                    console.log('🎲 Calling showTriadeRoundOverlay...');
+                    this.showTriadeRoundOverlay(data.round, data.stat, data.statName);
+                } else {
+                    console.error('🎲 showTriadeRoundOverlay method not found!');
+                }
+            });
+            
+            // Reconnexion à une partie Triade en cours
+            this.socket.on('triade-reconnect', (data) => {
+                console.log('🎴 Triade reconnect - mise à jour depuis serveur:', data);
+                
+                // Annuler le timeout de sécurité
+                if (this._triadeReconnectTimeout) {
+                    clearTimeout(this._triadeReconnectTimeout);
+                    this._triadeReconnectTimeout = null;
+                }
+                
+                this.gameInProgress = true;
+                this.lobbyMode = 'triade';
+                this.hasJoined = true;
+                
+                // Mettre à jour avec les données fraîches du serveur
+                this.initTriade(data);
+                this.triade.showCenterSlot = true; // Slot visible immédiatement en reconnexion
+                
+                // Restaurer mes cartes si fournies
+                if (data.myCards && data.myCards.length > 0) {
+                    this.triade.myCards = (data.myCards || []).filter(c => c != null);
+                    this._triadeCardsReceived = true;
+                }
+                
+                // Sauvegarder l'état mis à jour
+                this.saveTriadeState();
+            });
+            
+            // Mise à jour de la partie
+            this.socket.on('triade-update', (data) => {
+                console.log('🎴 Triade update:', data);
+                
+                // Mettre à jour les données des joueurs
+                if (data.playersData) {
+                    this.triade.playersData = data.playersData;
+                    
+                    const myPlayer = data.playersData.find(p => p.twitchId === this.twitchId);
+                    if (myPlayer) {
+                        this.triade.myData = {
+                            wins: myPlayer.wins || 0
+                        };
+                    }
+                    
+                    this.triade.otherPlayers = this.getOrderedOtherPlayers(data.playersData, p => ({
+                            ...p,
+                            wins: p.wins || 0
+                        }));
+                }
+                
+                // Sauvegarder l'état mis à jour
+                this.saveTriadeState();
+            });
+            
+
+            
+            // Recevoir mes cartes (initial deal ou reconnexion)
+            this.socket.on('triade-your-cards', (data) => {
+                console.log('🎴 Mes cartes Triade:', data.cards, 'dealing:', data.dealing);
+                this._triadeCardsReceived = true;
+                const safeCards = (data.cards || []).filter(c => c != null);
+                
+                if (data.dealing && !this._triadeDealStarted) {
+                    // Première réception pendant l'intro → animation de deal
+                    this._triadeDealStarted = true;
+                    this._pendingTriadeCards = safeCards;
+                    setTimeout(() => {
+                        this.dealTriadeCards();
+                        // 🛡️ Safety net: si dealTriadeCards n'a pas injecté les cartes
+                        setTimeout(() => {
+                            if (!this.triade.myCards || this.triade.myCards.length === 0) {
+                                console.log('🎴 Safety: force injection cartes');
+                                this.triade.myCards = safeCards;
+                                this.saveTriadeState();
+                            }
+                        }, 2000);
+                    }, 3000);
+                } else if (data.dealing && this._triadeDealStarted) {
+                    // Deal déjà programmé → ignorer (évite d'afficher les cartes avant l'animation)
+                    console.log('🎴 Cartes dealing ignorées (deal déjà programmé)');
+                } else {
+                    // Reconnexion (dealing: false) → afficher directement
+                    this.triade.myCards = safeCards;
+                    this.saveTriadeState();
+                }
+            });
+            
+            // Résultat d'un round
+            this.socket.on('triade-round-result', (data) => {
+                console.log('🎴 Round result:', data);
+                
+                // Mettre à jour les données des joueurs (wins, etc.)
+                if (data.playersData) {
+                    this.triade.playersData = data.playersData;
+                    
+                    const myPlayer = data.playersData.find(p => p.twitchId === this.twitchId);
+                    if (myPlayer) {
+                        this.triade.myData.wins = myPlayer.wins || 0;
+                    }
+                    
+                    this.triade.otherPlayers = this.getOrderedOtherPlayers(data.playersData, p => ({ ...p }));
+                }
+                
+                // Afficher qui a gagné
+                this.triade.roundWinner = data.winner;
+                this.triade.isMyTurn = false;
+                
+                this.saveTriadeState();
+            });
+            
+            // Nouveau round (nouvelles cartes)
+            this.socket.on('triade-new-round', (data) => {
+                console.log('🎴 Nouveau round:', data);
+                
+                // Reset l'état du round
+                this.triade.myCards = [];
+                this.triade.roundWinner = null;
+                this.triade.isMyTurn = false;
+                
+                // Mettre à jour les joueurs
+                this.initTriade(data);
+                
+                // Animation de distribution
+                this.$nextTick(() => {
+                    document.querySelectorAll('.triade-player-card-small').forEach(c => {
+                        c.classList.add('pre-deal');
+                    });
+                });
+                
+                this.saveTriadeState();
+            });
+            
+            // Fin de partie Triade
+            this.socket.on('triade-game-ended', (data) => {
+                console.log('🏆 Triade terminé:', data);
+                
+                this.triade.active = false;
+                this.gameEnded = true;
+                this.gameInProgress = false;
+                
+                // Nettoyer le flag de reconnexion
+                sessionStorage.removeItem('triadeInProgress');
+                sessionStorage.removeItem('triadeState');
+                
+                this.gameEndData = {
+                    winner: data.winner,
+                    ranking: data.ranking,
+                    gameMode: 'triade'
+                };
+            });
         },
 
 
@@ -2653,6 +3066,11 @@ createApp({
                 return;
             }
             
+            // 🎴 Bloquer si en cooldown
+            if (this.joinCooldown) {
+                return;
+            }
+            
             // En mode rivalité, vérifier qu'une équipe est sélectionnée
             if (this.lobbyMode === 'rivalry' && !this.selectedTeam) {
                 this.showNotification('Choisissez une équipe !', 'error');
@@ -2668,16 +3086,30 @@ createApp({
                 team: this.lobbyMode === 'rivalry' ? this.selectedTeam : null
             });
 
-            this.hasJoined = true;
-
-            // 🆕 Sauvegarder l'état dans localStorage
-            localStorage.setItem('hasJoinedLobby', 'true');
-            localStorage.setItem('lobbyTwitchId', this.twitchId);
-            if (this.lobbyMode === 'rivalry' && this.selectedTeam) {
-                localStorage.setItem('selectedTeam', this.selectedTeam);
+            // 🎴💣 En mode Triade/BombAnime, attendre confirmation avant d'afficher "rejoint"
+            if (this.lobbyMode === 'triade' || this.lobbyMode === 'bombanime') {
+                this.triadeJoinPending = true;
+                // Confirmer après 400ms si pas d'erreur reçue
+                setTimeout(() => {
+                    if (this.triadeJoinPending && !this.triadeShakeError) {
+                        this.hasJoined = true;
+                        this.triadeJoinPending = false;
+                        // Sauvegarder dans localStorage seulement après confirmation
+                        localStorage.setItem('hasJoinedLobby', 'true');
+                        localStorage.setItem('lobbyTwitchId', this.twitchId);
+                        this.showNotification('Vous avez rejoint la partie !', 'success');
+                    }
+                }, 400);
+            } else {
+                this.hasJoined = true;
+                // 🆕 Sauvegarder l'état dans localStorage
+                localStorage.setItem('hasJoinedLobby', 'true');
+                localStorage.setItem('lobbyTwitchId', this.twitchId);
+                if (this.lobbyMode === 'rivalry' && this.selectedTeam) {
+                    localStorage.setItem('selectedTeam', this.selectedTeam);
+                }
+                this.showNotification('Vous avez rejoint le lobby !', 'success');
             }
-
-            this.showNotification('Vous avez rejoint le lobby !', 'success');
         },
         
         // Sélectionner une équipe (mode Rivalité)
@@ -3539,7 +3971,8 @@ createApp({
             
             // Cloner le son pour éviter le délai de reset si déjà en lecture
             const clone = sound.cloneNode();
-            clone.volume = (this.soundVolume / 100) * 0.7; // Max 70% pour pas être trop fort
+            const maxVol = this.lobbyMode === 'bombanime' ? 0.45 : 0.7;
+            clone.volume = (this.soundVolume / 100) * maxVol;
             clone.play().catch(e => console.log('Audio blocked:', e));
         },
         
@@ -3723,7 +4156,13 @@ createApp({
             // Desktop (actuel)
             const baseSize = 500;
             const perPlayer = 22;
-            return baseSize + (playerCount * perPlayer);
+            const size = baseSize + (playerCount * perPlayer);
+            
+            // 2K+ : agrandir proportionnellement
+            if (screenWidth >= 2560) {
+                return Math.round(size * 1.3);
+            }
+            return size;
         },
         
         // Calculer la taille de la bombe selon le nombre de joueurs
@@ -3740,7 +4179,12 @@ createApp({
                 return Math.min(55, Math.max(42, 36 + (total * 1.3)));
             }
             // Desktop
-            return Math.min(70, Math.max(58, 48 + (total * 1.7)));
+            const size = Math.min(70, Math.max(58, 48 + (total * 1.7)));
+            // 2K+
+            if (screenWidth >= 2560) {
+                return Math.round(size * 1.25);
+            }
+            return size;
         },
         
         // Calculer le style de position d'un joueur
@@ -3795,7 +4239,12 @@ createApp({
             // Desktop
             const baseSize = 105;
             const reduction = 3.5;
-            return Math.max(58, baseSize - (playerCount * reduction));
+            const size = Math.max(58, baseSize - (playerCount * reduction));
+            // 2K+
+            if (screenWidth >= 2560) {
+                return Math.round(size * 1.25);
+            }
+            return size;
         },
         
         // Calculer la taille de la police des réponses selon le nombre de joueurs
@@ -3812,7 +4261,12 @@ createApp({
                 return Math.max(0.65, 1.0 - (total * 0.03)) + 'rem';
             }
             // Desktop
-            return Math.max(0.75, 1.2 - (total * 0.035)) + 'rem';
+            const size = Math.max(0.75, 1.2 - (total * 0.035));
+            // 2K+
+            if (screenWidth >= 2560) {
+                return (size * 1.25) + 'rem';
+            }
+            return size + 'rem';
         },
         
         // Calculer l'angle de la mèche de la bombe
@@ -3866,7 +4320,7 @@ createApp({
             const serieNames = {
                 'Naruto': 'Naruto',
                 'OnePiece': 'One Piece',
-                'Dbz': 'Dragon Ball Z',
+                'Dbz': 'Dragon Ball',
                 'Mha': 'My Hero Academia',
                 'Bleach': 'Bleach',
                 'Jojo': 'Jojo',
@@ -3890,6 +4344,317 @@ createApp({
         // Calculer le pourcentage de remplissage du cœur alphabet
         getAlphabetHeartFill() {
             return (this.bombanime.myAlphabet.length / 26) * 100;
+        },
+
+        // ============================================
+        // TRIADE METHODS
+        // ============================================
+        
+        // Calculer la position d'un siège Triade
+        getTriadeSeatPosition(index, totalPlayers) {
+            const radiusX = 42;
+            const radiusY = 38;
+            const centerX = 50;
+            const centerY = 50;
+            const startAngle = 90; // Bottom position for "me"
+            
+            const angle = startAngle + (index * 360 / totalPlayers);
+            const angleRad = angle * Math.PI / 180;
+            
+            const x = centerX + radiusX * Math.cos(angleRad);
+            const y = centerY + radiusY * Math.sin(angleRad);
+            
+            const scaleByPlayers = {
+                2: 1.35, 3: 1.3, 4: 1.25, 5: 1.3, 6: 1.25, 7: 1.2, 8: 1.15, 9: 1.1, 10: 1.05
+            };
+            const scale = scaleByPlayers[totalPlayers] || 1;
+            
+            return {
+                left: `${x}%`,
+                top: `${y}%`,
+                transform: `translate(-50%, -50%) scale(${scale})`
+            };
+        },
+        
+        // Icônes des classes
+        getClassIcon(cardClass) {
+            const icons = {
+                assaut: '<svg viewBox="0 0 24 24"><path d="M6.92 5H5L14 14L15 13.06L6.92 5M19.06 3C18.44 3 17.82 3.24 17.35 3.71L13.71 7.35L16.65 10.29L20.29 6.65C21.24 5.7 21.24 4.14 20.29 3.19C19.82 2.72 19.44 3 19.06 3M7.06 18.34L9.06 16.34L7.66 14.94L5.66 16.94C5.16 17.44 5.16 18.25 5.66 18.75C6.16 19.25 6.97 19.25 7.47 18.75L7.06 18.34Z"/></svg>',
+                oracle: '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>',
+                mirage: '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>'
+            };
+            return icons[cardClass] || '';
+        },
+        
+        // Image de la carte (nom du personnage en minuscule + .png)
+        getCardImage(card) {
+            if (!card || !card.name) return '';
+            return `${card.name.toLowerCase().replace(/\s+/g, '')}.png`;
+        },
+        
+        // Formater un nom camelCase en ajoutant des espaces
+        // "AllMight" → "All Might", "MyHeroAcademia" → "My Hero Academia"
+        formatName(name) {
+            if (!name) return '';
+            // Exceptions à ne pas splitter
+            const exceptions = { 'JoJo': 'JoJo', 'Jojo': 'JoJo', 'DragonBallZ': 'Dragon Ball' };
+            if (exceptions[name]) return exceptions[name];
+            return name
+                .replace(/([a-z])([A-Z])/g, '$1 $2')   // camelCase → spaces
+                .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2'); // ABCDef → ABC Def
+        },
+
+        // Vérifier si une carte bénéficie du bonus même anime (2+ cartes du même anime en main)
+        hasSameAnimeBonus(card) {
+            if (!card || !card.anime || !this.triade.myCards) return false;
+            const count = this.triade.myCards.filter(c => c && c.anime === card.anime).length;
+            return count >= 2;
+        },
+        
+        // Afficher le preview d'une carte
+        showCardPreview(card, event) {
+            if (!card) return;
+            // Ne pas afficher si la carte est encore en pre-deal ou dealing
+            if (event && event.target) {
+                const cardEl = event.target.closest('.triade-card');
+                if (cardEl && (cardEl.classList.contains('pre-deal') || cardEl.classList.contains('dealing'))) return;
+            }
+            this.triade.previewCard = card;
+            this.triade.previewCardDisplay = card;
+            this.triade.previewVisible = true;
+        },
+        
+        // Masquer le preview avec animation
+        hideCardPreview() {
+            this.triade.previewCard = null;
+            this.triade.previewVisible = false;
+            // Garder le contenu visible pendant l'animation de sortie
+            setTimeout(() => {
+                if (!this.triade.previewVisible) {
+                    this.triade.previewCardDisplay = null;
+                }
+            }, 300);
+        },
+        
+        // Position d'un joueur sur la table Triade (POV toujours en bas)
+        // Réordonner les joueurs en cercle : commence par le joueur APRÈS le POV (sens horaire)
+        getOrderedOtherPlayers(playersData, mapFn) {
+            if (!playersData || !playersData.length) return [];
+            const myIndex = playersData.findIndex(p => p.twitchId === this.twitchId);
+            if (myIndex === -1) {
+                const filtered = playersData.filter(p => p.twitchId !== this.twitchId);
+                return mapFn ? filtered.map(mapFn) : filtered;
+            }
+            const total = playersData.length;
+            const ordered = [];
+            for (let i = 1; i < total; i++) {
+                const idx = (myIndex + i) % total;
+                const p = playersData[idx];
+                ordered.push(mapFn ? mapFn(p) : p);
+            }
+            return ordered;
+        },
+        
+        getTriadePlayerStyle(index, totalOthers) {
+            // Distribution circulaire complète comme le prototype V6
+            // POV est à 90° (bottom), les autres sont répartis sur le cercle complet
+            const totalPlayers = totalOthers + 1; // +1 pour le POV
+            const radiusX = 50;
+            const radiusY = 50;
+            const centerX = 50;
+            const centerY = 50;
+            
+            // POV = seat 0 à 90° (bottom), les autres suivent dans le sens horaire
+            // index 0 = seat 1, index 1 = seat 2, etc.
+            const startAngle = 90; // Bottom = POV
+            const seatIndex = index + 1; // Les autres joueurs commencent à seat 1
+            const angle = startAngle + (seatIndex * 360 / totalPlayers);
+            const angleRad = angle * Math.PI / 180;
+            
+            const x = centerX + radiusX * Math.cos(angleRad);
+            const y = centerY + radiusY * Math.sin(angleRad);
+            
+            // Scale identique au prototype V6
+            const scaleByCount = {
+                2: 1.35, 3: 1.3, 4: 1.25, 5: 1.3, 6: 1.25,
+                7: 1.2, 8: 1.15, 9: 1.1, 10: 1.05
+            };
+            const scale = scaleByCount[totalPlayers] || 1.0;
+            
+            return {
+                left: `${x}%`,
+                top: `${y}%`,
+                transform: `translate(-50%, -50%) scale(${scale})`
+            };
+        },
+        
+        // Animation de distribution des cartes
+        dealTriadeCards() {
+            const allSeats = document.querySelectorAll('.triade-player-seat:not(.hidden)');
+            
+            // Préparer les cartes adverses (cacher via DOM)
+            allSeats.forEach(seat => {
+                const isMe = seat.classList.contains('me');
+                if (isMe) return; // Les cartes POV ne sont pas encore rendues
+                
+                const cards = seat.querySelectorAll('.triade-player-card-small');
+                cards.forEach(card => {
+                    card.classList.remove('dealing', 'dealt');
+                    card.classList.add('pre-deal');
+                    
+                    const rect = card.getBoundingClientRect();
+                    const centerX = window.innerWidth / 2;
+                    const centerY = window.innerHeight / 2;
+                    const fromX = centerX - rect.left - rect.width / 2;
+                    const fromY = centerY - rect.top - rect.height / 2;
+                    card.style.setProperty('--deal-from-x', fromX + 'px');
+                    card.style.setProperty('--deal-from-y', fromY + 'px');
+                    const cardIndex = Array.from(card.parentElement.children).indexOf(card);
+                    const rotations = ['-10deg', '0deg', '10deg'];
+                    card.style.setProperty('--card-rotation', rotations[cardIndex] || '0deg');
+                });
+            });
+            
+            // Distribution joueur par joueur
+            setTimeout(() => {
+                let seatDelay = 0;
+                const delayPerSeat = 250;
+                const delayBetweenCards = 80;
+                
+                allSeats.forEach((seat) => {
+                    const isMe = seat.classList.contains('me');
+                    
+                    if (isMe) {
+                        // Cartes POV : injecter les données Vue à ce moment
+                        // puis immédiatement cacher + animer
+                        const myDelay = seatDelay;
+                        setTimeout(() => {
+                            if (this._pendingTriadeCards) {
+                                this.triade.myCards = this._pendingTriadeCards.filter(c => c != null);
+                                this._pendingTriadeCards = null;
+                                this.saveTriadeState();
+                            }
+                            // Attendre que Vue ait rendu les cartes
+                            this.$nextTick(() => {
+                                const myCards = seat.querySelectorAll('.triade-my-cards .triade-card');
+                                myCards.forEach(card => {
+                                    card.classList.add('pre-deal');
+                                });
+                                // Petit délai pour que pre-deal s'applique
+                                requestAnimationFrame(() => {
+                                    requestAnimationFrame(() => {
+                                        myCards.forEach((card, cardIndex) => {
+                                            setTimeout(() => {
+                                                card.classList.remove('pre-deal');
+                                                card.classList.add('dealing');
+                                                setTimeout(() => {
+                                                    card.classList.remove('dealing');
+                                                    card.classList.add('dealt');
+                                                }, 350);
+                                            }, cardIndex * 120);
+                                        });
+                                    });
+                                });
+                            });
+                        }, myDelay);
+                    } else {
+                        // Cartes adverses : animation DOM classique
+                        const cards = seat.querySelectorAll('.triade-player-card-small');
+                        cards.forEach((card, cardIndex) => {
+                            setTimeout(() => {
+                                card.classList.remove('pre-deal');
+                                card.classList.add('dealing');
+                                setTimeout(() => {
+                                    card.classList.remove('dealing');
+                                    card.classList.add('dealt');
+                                }, 350);
+                            }, seatDelay + (cardIndex * delayBetweenCards));
+                        });
+                    }
+                    
+                    seatDelay += delayPerSeat;
+                });
+            }, 100);
+        },
+        
+        // Initialiser Triade quand on reçoit les données
+        initTriade(data) {
+            console.log('🎴 Init Triade:', data);
+            
+            this.triade.active = true;
+            this.triade.reconnecting = false;
+            this.triade.showCenterSlot = false;
+            this.triade.myCards = [];  // Reset cartes POV (seront injectées par dealTriadeCards)
+            this._pendingTriadeCards = null;
+            this._triadeCardsReceived = false;
+            this._triadeDealStarted = false;
+            
+            // Séparer mes données des autres joueurs
+            const allPlayers = data.playersData || [];
+            this.triade.playersData = allPlayers;
+            
+            // Trouver mes données
+            const myPlayer = allPlayers.find(p => p.twitchId === this.twitchId);
+            if (myPlayer) {
+                this.triade.myData = {
+                    wins: myPlayer.wins || 0
+                };
+            }
+            
+            // Les autres joueurs - ordonnés en sens horaire à partir du joueur après moi
+            this.triade.otherPlayers = this.getOrderedOtherPlayers(allPlayers, p => ({
+                    ...p,
+                    wins: p.wins || 0,
+                    isCurrentPlayer: p.isCurrentPlayer || false
+                }));
+            
+            // Sauvegarder l'état complet dans sessionStorage
+            this.saveTriadeState();
+        },
+        
+        // Sauvegarder l'état Triade dans sessionStorage
+        saveTriadeState() {
+            try {
+                const state = {
+                    myCards: this.triade.myCards,
+                    myData: this.triade.myData,
+                    otherPlayers: this.triade.otherPlayers,
+                    playersData: this.triade.playersData
+                };
+                sessionStorage.setItem('triadeInProgress', 'true');
+                sessionStorage.setItem('triadeState', JSON.stringify(state));
+            } catch (e) {
+                console.warn('🎴 Erreur sauvegarde état Triade:', e);
+            }
+        },
+        
+        // Restaurer l'état Triade depuis sessionStorage (instantané)
+        restoreTriadeState() {
+            try {
+                const raw = sessionStorage.getItem('triadeState');
+                if (!raw) return false;
+                
+                const state = JSON.parse(raw);
+                
+                this.triade.myCards = (state.myCards || []).filter(c => c != null);
+                this.triade.myData = state.myData || { wins: 0 };
+                this.triade.otherPlayers = state.otherPlayers || [];
+                this.triade.playersData = state.playersData || [];
+                this.triade.reconnecting = false;
+                
+                console.log('🎴 État Triade restauré depuis sessionStorage');
+                return true;
+            } catch (e) {
+                console.warn('🎴 Erreur restauration état Triade:', e);
+                return false;
+            }
+        },
+        
+        // 🆕 Afficher l'overlay d'annonce de round avec roll des stats
+        showTriadeRoundOverlay(round, stat, statName) {
+            this.triade.currentRound = round;
+            this.triade.selectedStat = stat;
+            this.triade.showCenterSlot = true;
         },
 
 

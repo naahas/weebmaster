@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ShonenMaster Admin</title>
     <link
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Bebas+Neue&family=Inter:wght@300;400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Bebas+Neue&family=Inter:wght@300;400;500;600&family=Poppins:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap"
         rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
     <link rel="stylesheet" href="admin.css">
@@ -645,8 +645,8 @@
                                     <span class="bombanime-dropdown-item-name">One Piece</span>
                                     <span class="bombanime-dropdown-item-count">783</span>
                                 </div>
-                                <div class="bombanime-dropdown-item" data-series="Dbz" data-name="Dragon Ball Z" data-count="359">
-                                    <span class="bombanime-dropdown-item-name">Dragon Ball Z</span>
+                                <div class="bombanime-dropdown-item" data-series="Dbz" data-name="Dragon Ball" data-count="359">
+                                    <span class="bombanime-dropdown-item-name">Dragon Ball</span>
                                     <span class="bombanime-dropdown-item-count">359</span>
                                 </div>
                                 <div class="bombanime-dropdown-item" data-series="Mha" data-name="My Hero Academia" data-count="704">
@@ -759,11 +759,14 @@
                             </div>
                         </div> -->
 
-
+                        <!-- ============================================
+                             PARAMÈTRES TRIADE (visibles en mode Triade)
+                             ============================================ -->
+                        
+                        <!-- Jetons Triade -->
 
                     </div>
 
-                    <!-- Grille joueurs centre -->
                     <div class="lobby-center">
                         <div class="lobby-grid-header">
                             <div class="lobby-header-left">
@@ -772,6 +775,15 @@
                                 <span class="lobby-max-badge" id="lobbyMaxBadge" style="display: none;">MAX</span>
                             </div>
                             <div class="lobby-header-right">
+
+                                <button class="header-text-btn join-lobby-btn" id="adminJoinLobbyBtn" style="display: none;">
+                                    <span>Rejoindre</span>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                                        <polyline points="10 17 15 12 10 7" />
+                                        <line x1="15" y1="12" x2="3" y2="12" />
+                                    </svg>
+                                </button>
 
                                 <button class="header-text-btn refresh" id="refreshPlayersBtn">
                                     <span>Actualiser</span>
@@ -1168,7 +1180,7 @@
                 </div>
                 <div class="series-card-info">
                     <span class="series-card-name">Overall</span>
-                    <span class="series-card-count">60+ séries</span>
+                    <span class="series-card-count">40+ séries</span>
                 </div>
             </div>
 
@@ -1183,7 +1195,7 @@
                 </div>
                 <div class="series-card-info">
                     <span class="series-card-name">Mainstream</span>
-                    <span class="series-card-count">+15 séries</span>
+                    <span class="series-card-count">16 séries</span>
                 </div>
             </div>
 
@@ -1662,7 +1674,7 @@
                         <div class="mode-aura-particle"></div>
                     </div>
                     <img src="ai.png" alt="Team A" class="mode-card-character char-left">
-                    <img src="shinobu.png" alt="Team B" class="mode-card-character char-right">
+                    <img src="shinobu2.png" alt="Team B" class="mode-card-character char-right">
                 </div>
                 
                 <div class="mode-card-content">
@@ -1702,7 +1714,7 @@
                         <div class="mode-aura-particle"></div>
                         <div class="mode-aura-particle"></div>
                     </div>
-                    <img src="lambo.png" alt="BombAnime" class="mode-card-character">
+                    <img src="lambo2.png" alt="BombAnime" class="mode-card-character">
                 </div>
                 
                 <div class="mode-card-content">
@@ -1719,6 +1731,47 @@
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                     </svg>
                     <span class="mode-players-count">13</span>
+                </div>
+            </div>
+
+            <!-- Mode Triade -->
+            <div class="mode-card triade" id="modeTriadeCard">
+                <div class="mode-card-neon-line"></div>
+                <div class="mode-card-bg"></div>
+                <div class="mode-card-overlay"></div>
+                <div class="mode-character-glow"></div>
+                
+                <div class="mode-character-wrapper">
+                    <div class="mode-character-aura">
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                        <div class="mode-aura-particle"></div>
+                    </div>
+                    <img src="asta3.png" alt="Triade" class="mode-card-character">
+                </div>
+                
+                <div class="mode-card-content">
+                    <div class="mode-card-label">Mode Solo</div>
+                    <h3 class="mode-card-title">Triade</h3>
+                    <div class="mode-card-separator"></div>
+                    <p class="mode-card-desc">Bientôt disponible...</p>
+                </div>
+                <div class="mode-card-soon">SOON</div>
+                <div class="mode-card-players">
+                    <svg class="mode-players-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span class="mode-players-count">10</span>
                 </div>
             </div>
         </div>

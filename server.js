@@ -12,7 +12,6 @@ const { db, supabase, SERIES_FILTERS, getFilterSeries } = require('./dbs');
 const app = express();
 const PORT = process.env.PORT || 7000;
 
-const MAX_GAMES_BEFORE_RESET = 5;
 const MIN_PLAYERS_FOR_STATS = 15; // Minimum de joueurs pour comptabiliser les stats
 const MIN_PLAYERS_FOR_TEAM_STATS = 20; // Minimum de joueurs pour comptabiliser les stats en mode Rivalité
 
@@ -72,6 +71,13 @@ const BOMBANIME_CONFIG = {
     DEFAULT_LIVES: 2,
     DEFAULT_TIMER: 8,
     ALPHABET_BONUS_LIVES: 1
+};
+
+// 🎴 Configuration Triade
+const TRIADE_CONFIG = {
+    MIN_PLAYERS: 2,
+    MAX_PLAYERS: 10,
+    STARS_TO_WIN: 3
 };
 
 // 💣 Set pour réserver les places pendant le traitement async (évite les race conditions)
@@ -258,10 +264,11 @@ app.get('/game/state', (req, res) => {
         updateTeamScores(); // 🆕 Calculer les scores d'équipe
     }
     
-    // 💣 Vérifier si le lobby BombAnime est plein
+    // 💣🎴 Vérifier si le lobby BombAnime/Triade est plein
     const isBombanimeMode = gameState.lobbyMode === 'bombanime';
-    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : Infinity;
-    const isLobbyFull = isBombanimeMode && gameState.players.size >= maxPlayers;
+    const isTriadeMode = gameState.lobbyMode === 'triade';
+    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : (isTriadeMode ? TRIADE_CONFIG.MAX_PLAYERS : Infinity);
+    const isLobbyFull = (isBombanimeMode || isTriadeMode) && gameState.players.size >= maxPlayers;
 
     // 🔥 Construire les données des joueurs avec leurs réponses
     const playersData = Array.from(gameState.players.values()).map(player => {
@@ -370,6 +377,7 @@ app.use(express.static('src/style'));
 app.use(express.static('src/sound'));
 app.use(express.static('src/img'));
 app.use(express.static('src/img/questionpic'));
+app.use(express.static('src/img/triadepic'));
 app.use(express.static('src/img/avatar'));
 app.use(express.static('src/script'));
 
@@ -465,6 +473,20 @@ const gameState = {
         challenges: [],             // Les 2 défis [{id, letter, target, reward, name, description}]
         playerChallenges: new Map(), // Map<twitchId, {challenges: {id: {progress, target, completed}}, lettersGiven: Map}>
         playerBonuses: new Map()    // Map<twitchId, {freeCharacter: 0, extraLife: 0}>
+    },
+    
+    // ============================================
+    // 🎴 TRIADE - État du mode jeu de cartes anime
+    // ============================================
+    triade: {
+        active: false,              // Mode Triade actif
+        deck: [],                   // Deck de cartes
+        playersOrder: [],           // Ordre des joueurs (twitchIds)
+        playersData: new Map(),     // Map<twitchId, {cards, wins}>
+        currentRound: 0,            // Round actuel
+        roundStat: null,            // Stat du round actuel (atk, int, spd, pwr)
+        playedCards: new Map(),     // Map<twitchId, card> - cartes jouées ce round
+        roundTimer: null            // Timer du round
     }
 };
 
@@ -525,10 +547,11 @@ function broadcastLobbyUpdate() {
         updateTeamCounts();
     }
     
-    // Vérifier si le lobby BombAnime est plein
+    // 💣🎴 Vérifier si le lobby BombAnime/Triade est plein
     const isBombanimeMode = gameState.lobbyMode === 'bombanime';
-    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : Infinity;
-    const isLobbyFull = isBombanimeMode && gameState.players.size >= maxPlayers;
+    const isTriadeMode = gameState.lobbyMode === 'triade';
+    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : (isTriadeMode ? TRIADE_CONFIG.MAX_PLAYERS : Infinity);
+    const isLobbyFull = (isBombanimeMode || isTriadeMode) && gameState.players.size >= maxPlayers;
     
     io.emit('lobby-update', {
         playerCount: gameState.players.size,
@@ -539,7 +562,7 @@ function broadcastLobbyUpdate() {
         lobbyMode: gameState.lobbyMode,
         teamNames: gameState.teamNames,
         teamCounts: gameState.teamCounts,
-        // BombAnime - Lobby plein
+        // BombAnime/Triade - Lobby plein
         maxPlayers: maxPlayers,
         isLobbyFull: isLobbyFull,
         // Liste des joueurs
@@ -969,10 +992,11 @@ app.get('/admin/game-state', (req, res) => {
         return res.status(403).json({ error: 'Non autorisé' });
     }
 
-    // Vérifier si le lobby BombAnime est plein
+    // 💣🎴 Vérifier si le lobby BombAnime/Triade est plein
     const isBombanimeMode = gameState.lobbyMode === 'bombanime';
-    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : Infinity;
-    const isLobbyFull = isBombanimeMode && gameState.players.size >= maxPlayers;
+    const isTriadeMode = gameState.lobbyMode === 'triade';
+    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : (isTriadeMode ? TRIADE_CONFIG.MAX_PLAYERS : Infinity);
+    const isLobbyFull = (isBombanimeMode || isTriadeMode) && gameState.players.size >= maxPlayers;
 
     res.json({
         isActive: gameState.isActive,
@@ -1140,14 +1164,23 @@ app.post('/admin/bombanime/close-lobby', (req, res) => {
     // Reset BombAnime
     resetBombanimeState();
     
+    // Reset Triade
+    if (gameState.triade) {
+        resetTriadeState();
+    }
+    
     // Reset winnerScreenData
     winnerScreenData = null;
+    
+    // Vider les joueurs
+    gameState.players.clear();
     
     // Notifier les clients
     io.emit('game-deactivated');
     io.emit('bombanime-lobby-closed');
+    io.emit('triade-state', { active: false });
     
-    console.log('💣 Lobby BombAnime fermé');
+    console.log('🔒 Lobby fermé (BombAnime/Triade reset)');
     res.json({ success: true });
 });
 
@@ -1419,6 +1452,32 @@ app.post('/admin/start-game', async (req, res) => {
         }
     }
 
+    // 🎴 MODE TRIADE - Démarrage spécial
+    if (gameState.lobbyMode === 'triade') {
+        // Récupérer les paramètres envoyés
+        const { triadeAnimes } = req.body || {};
+        
+        // Vérifier les limites de joueurs (2-10)
+        if (totalPlayers > 10) {
+            return res.status(400).json({
+                success: false,
+                error: 'Maximum 10 joueurs en mode Triade'
+            });
+        }
+        
+        try {
+            const result = await startTriadeGame();
+            if (result.success) {
+                return res.json({ success: true, mode: 'triade' });
+            } else {
+                return res.status(400).json({ success: false, error: result.error });
+            }
+        } catch (error) {
+            console.error('❌ Erreur démarrage Triade:', error);
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
     // 🆕 Vérifier que les deux équipes ont des joueurs en mode Rivalité
     if (gameState.lobbyMode === 'rivalry') {
         let team1Count = 0;
@@ -1442,32 +1501,9 @@ app.post('/admin/start-game', async (req, res) => {
     }
 
     try {
-        // 🔥 NOUVEAU: Vérifier si on a assez de questions AVANT de démarrer
-        const questionsNeeded = gameState.mode === 'points' ? gameState.questionsCount : 50;
-
-        const usedQuestionIds = await db.getUsedQuestionIds();
-        const availableQuestionsCount = await db.getAvailableQuestionsCount(
-            gameState.serieFilter,
-            usedQuestionIds
-        );
-
-        console.log(`📊 Questions disponibles: ${availableQuestionsCount}, Besoin: ${questionsNeeded}`);
-
-        // 🔥 Si pas assez de questions, reset auto
-        if (availableQuestionsCount < questionsNeeded) {
-            console.log(`⚠️ Pas assez de questions (${availableQuestionsCount} < ${questionsNeeded}), reset automatique de l'historique...`);
-            await db.resetUsedQuestions();
-            gameState.usedQuestionIds = [];
-            console.log('✅ Historique réinitialisé - Toutes les questions sont à nouveau disponibles');
-        }
-
-        // Reset automatique tous les 5 jeux (système existant)
-        const completedGames = await db.getCompletedGamesCount();
-        if (completedGames > 0 && completedGames % MAX_GAMES_BEFORE_RESET === 0) {
-            console.log(`🔄 ${completedGames} parties terminées, reset automatique de l'historique...`);
-            await db.resetUsedQuestions();
-            gameState.usedQuestionIds = [];
-        }
+        // Charger l'historique des questions utilisées
+        gameState.usedQuestionIds = await db.getUsedQuestionIds();
+        console.log(`📊 ${gameState.usedQuestionIds.length} questions déjà utilisées (reset auto par difficulté quand un pool est épuisé)`);
 
         const game = await db.createGame(totalPlayers, gameState.mode);
 
@@ -1482,9 +1518,6 @@ app.post('/admin/start-game', async (req, res) => {
 
         const playerCount = gameState.players.size;
         addLog('game-start', { playerCount });
-
-        // 🔥 Recharger les IDs utilisés (peut être vide si reset)
-        gameState.usedQuestionIds = await db.getUsedQuestionIds();
 
         gameState.playerBonuses.clear();
         console.log('🔄 Bonus reset pour nouvelle partie');
@@ -1565,7 +1598,7 @@ app.post('/admin/start-game', async (req, res) => {
 
                 const question = questions[0];
                 addToRecentSeries(question.serie);
-                await db.addUsedQuestion(question.id);
+                await db.addUsedQuestion(question.id, question.difficulty);
                 gameState.usedQuestionIds.push(question.id);
 
                 console.log(`📌 Question 1 - Difficulté: ${difficulty}`);
@@ -1955,7 +1988,7 @@ app.post('/admin/trigger-auto-next', (req, res) => {
 
             const question = questions[0];
             addToRecentSeries(question.serie);
-            await db.addUsedQuestion(question.id);
+            await db.addUsedQuestion(question.id, question.difficulty);
             gameState.usedQuestionIds.push(question.id);
 
             const allAnswers = [
@@ -2101,6 +2134,7 @@ app.post('/admin/reset-questions-history', async (req, res) => {
 
     try {
         await db.resetUsedQuestions();
+        gameState.usedQuestionIds = [];
         console.log('🔄 Historique des questions réinitialisé manuellement');
         res.json({ success: true, message: 'Historique réinitialisé' });
     } catch (error) {
@@ -2181,7 +2215,7 @@ app.post('/admin/next-question', async (req, res) => {
         // 🔥 DEBUG: Afficher la série de la question retournée
         console.log(`📌 Question série: ${question.serie}, difficulté: ${difficulty}`);
 
-        await db.addUsedQuestion(question.id);
+        await db.addUsedQuestion(question.id, question.difficulty);
         gameState.usedQuestionIds.push(question.id);
 
         console.log(`📌 Question ${gameState.currentQuestionIndex}/${gameState.mode === 'points' ? gameState.questionsCount : '∞'} - Difficulté: ${difficulty}`);
@@ -2723,7 +2757,7 @@ function revealAnswers(correctAnswer) {
 
                 const question = questions[0];
                 addToRecentSeries(question.serie);
-                await db.addUsedQuestion(question.id);
+                await db.addUsedQuestion(question.id, question.difficulty);
                 gameState.usedQuestionIds.push(question.id);
 
                 console.log(`📌 Question ${gameState.currentQuestionIndex}/${gameState.mode === 'points' ? gameState.questionsCount : '∞'} - Difficulté: ${difficulty}`);
@@ -3030,7 +3064,7 @@ async function sendTiebreakerQuestion() {
 
         const question = questions[0];
         addToRecentSeries(question.serie);
-        await db.addUsedQuestion(question.id);
+        await db.addUsedQuestion(question.id, question.difficulty);
         gameState.usedQuestionIds.push(question.id);
 
         console.log(`⚔️ Question de départage ${gameState.currentQuestionIndex} - Difficulté: EXTREME`);
@@ -3257,7 +3291,7 @@ async function sendRivalryTiebreakerQuestion() {
 
         const question = questions[0];
         addToRecentSeries(question.serie);
-        await db.addUsedQuestion(question.id);
+        await db.addUsedQuestion(question.id, question.difficulty);
         gameState.usedQuestionIds.push(question.id);
 
         console.log(`⚔️ Question de départage Rivalry #${gameState.currentQuestionIndex} - Difficulté: ${difficulty.toUpperCase()}`);
@@ -4366,9 +4400,16 @@ app.post('/api/mark-question-used', async (req, res) => {
     }
 
     try {
-        await db.addUsedQuestion(questionId);
+        // Récupérer la difficulté de la question
+        const { data: questionData } = await supabase
+            .from('questions')
+            .select('difficulty')
+            .eq('id', questionId)
+            .single();
+        
+        await db.addUsedQuestion(questionId, questionData?.difficulty || null);
         gameState.usedQuestionIds.push(questionId);
-        console.log(`🚫 Question ${questionId} marquée comme utilisée (exclue)`);
+        console.log(`🚫 Question ${questionId} (${questionData?.difficulty || '?'}) marquée comme utilisée (exclue)`);
         res.json({ success: true, message: 'Question exclue' });
     } catch (error) {
         console.error('Erreur marquage question:', error);
@@ -5248,6 +5289,11 @@ async function endBombanimeGame(winner) {
         namesUsed: gameState.bombanime.usedNames.size
     });
     
+    // Désactiver le lobby silencieusement après fin de partie bombanime
+    // (pas d'émission game-deactivated pour ne pas interrompre le winner screen)
+    gameState.isActive = false;
+    console.log('🔒 Lobby désactivé automatiquement après fin BombAnime');
+    
     // Reset
     resetBombanimeState();
     resetGameState();
@@ -5273,6 +5319,521 @@ function resetBombanimeState() {
     gameState.bombanime.bombDirection = 1;
     gameState.bombanime.isPaused = false;
     gameState.bombanime.eliminatedPlayers = [];
+}
+
+// ============================================
+// 🎴 TRIADE - Fonctions du mode jeu de cartes anime
+// ============================================
+
+// Deck de cartes Triade
+const TRIADE_DECK = {
+    // Les 13 animes
+    animes: ['OnePiece', 'Naruto', 'Bleach', 'TokyoRevengers'  , 'Reborn' , 'Haikyuu' , 'NanatsuNoTaizai', 'SwordArtOnline' , 'FullmetalAlchemist' , 'VioletEvergarden' , 'Kakegurui' , 'FoodWars', 'MobPsycho' ,  'SpyFamily' , 'ReZero' , 'HunterXHunter', 'TokyoGhoul' , 'Frieren' , 'AttackOnTitan', 'DeathNote' , 'Fate' , 'Berserk' , 'DemonSlayer', 'JoJo', 'MyHeroAcademia', 'CodeGeass' , 'ChainsawMan' , 'FairyTail', 'JujutsuKaisen', 'DragonBallZ', 'VinlandSaga', 'OnePunchMan' , 'BlackClover' , 'KurokoNoBasket'],
+
+    // Les 3 classes (cycle: Assaut > Mirage > Oracle > Assaut)
+    classes: ['assaut', 'oracle', 'mirage'],
+    
+    // Personnages par anime — TABLEAUX par classe (1 aléatoire pioché par partie)
+    characters: {
+        'OnePiece': {
+            assaut: ['Luffy', 'Kid', 'Ace', 'Doflamingo', 'Zoro', 'Newgate', 'Akainu', 'Roger', 'Sanji', 'Kaido'],
+            oracle: ['Robin', 'Mihawk', 'Law', 'Jinbe', 'Nami', 'Chopper', 'Rayleigh'],
+            mirage: ['Kuma', 'Shanks', 'Franky', 'Vivi', 'Brook', 'Sabo', 'Crocodile', 'Usopp', 'Hancock', 'Teach'],
+            protagonist: 'Luffy'
+        },
+        'Naruto': {
+            assaut: ['Naruto', 'Sasuke', 'Madara', 'Tsunade', 'Lee', 'Pain', 'Gai'],
+            oracle: ['Hashirama', 'Orochimaru', 'Kakashi', 'Minato', 'Shikamaru', 'Itachi'],
+            mirage: ['Jiraya', 'Sakura', 'Hinata', 'Tobirama', 'Sasori', 'Gaara', 'Neji', 'Obito'],
+            protagonist: 'Naruto'
+        },
+        'Bleach': {
+            assaut: ['Ichigo', 'Yoruichi', 'Yamamoto', 'Chad', 'Zaraki', 'Byakuya', 'Hitsugaya'],
+            oracle: ['Ishida', 'Mayuri', 'Kyoraku', 'Aizen', 'Urahara'],
+            mirage: ['Rukia', 'Inoue', 'Halibel', 'Stark Coyotte', 'Nelliel', 'Gin', 'Ulquiorra', 'Yhwach', 'Hirako', 'Renji', 'Rangiku', 'Grimmjow'],
+            protagonist: 'Ichigo'
+        },
+        'HunterXHunter': {
+            assaut: ['Gon', 'Kite', 'Nobunaga', 'Netero', 'Silva', 'Feitan'],
+            oracle: ['Killua', 'Chrollo', 'Pariston', 'Meruem'],
+            mirage: ['Shizuku', 'Machi', 'Ging', 'Illumi', 'Pitou', 'Kurapika', 'Hisoka'],
+            protagonist: 'Gon'
+        },
+        'AttackOnTitan': {
+            assaut: ['Mikasa', 'Eren' , 'Annie' , 'Levi' , 'Reiner' , 'Porco' , 'Gabi'] ,
+            oracle: ['Erwin' , 'Hange' , 'Armin' , 'Zeke'],
+            mirage: ['Sasha' , 'Historia' , 'Jean' , 'Bertolt' , 'Pieck' , 'Falco' , 'Connie'],
+            protagonist: 'Eren'
+        },
+        'DemonSlayer': {
+            assaut: ['Rengoku' , 'Yoriichi' , 'Inosuke' , 'Tokito' , 'Akaza' , 'Sanemi' , 'Tengen' , 'Kokushibo' , 'Gyutaro'],
+            oracle: ['Tanjiro' , 'Muzan' , 'Shinobu' , 'Gyomei' ,  'Doma'],
+            mirage: ['Zenitsu' , 'Genya' , 'Tomioka' , 'Nezuko' , 'Mitsuri' , 'Kanao' , 'Daki' , 'Obanai'],
+            protagonist: 'Tanjiro'
+        },
+        'JoJo': {
+            assaut: ['Dio' , 'Risotto' , 'Polnareff' , 'Jotaro' , 'Diego' , 'FF' , 'Kars' , 'Diavolo' , 'Narancia' , 'Jonathan' , 'Jolyne'],
+            oracle: ['Rohan' , 'Avdol' , 'Yasuho' , 'Speedwagon' , 'Pucci' , 'Valentine' , 'Giorno' , 'Josuke'],
+            mirage: ['Kira' , 'Fugo' , 'Ermes' , 'Weather' , 'Koichi' , 'Okuyasu' , 'Doppio' , 'Trish' , 'Abbacchio' , 'Kakyoin' , 'Iggy' , 'Gyro' , 'Caesar' , 'Mista' , 'Lisa Lisa' , 'Joseph' , 'Johnny'],
+            protagonist: ['Jotaro', 'Jonathan', 'Joseph', 'Josuke', 'Giorno', 'Jolyne', 'Johnny']
+        },
+        'MyHeroAcademia': {
+            assaut: ['AllMight', 'Stain' , 'Mirio' , 'Deku' , 'Endeavor' , 'Shoto' , 'Kirishima' , 'Overhaul' , 'Shigaraki' , 'Bakugo' , 'Dabi' , 'Mirko'],
+            oracle: ['Hawks' , 'Lady Nagant' ,  'Aizawa' , 'Momo' , 'Midnight' , 'Iida'],
+            mirage: ['Ochaco' , 'Fumikage' , 'Mt Lady' , 'Shinsou' , 'Mina' ,  'Denki' , 'Nejire' , 'Kyouka' , 'Tsuyu' , 'Himiko'],
+            protagonist: 'Deku'
+        },
+        'FairyTail': {
+            assaut: ['Erza', 'Natsu' , 'Grey' , 'Makarov' , 'Gajeel' , 'Acnologia' , 'Sting' , 'Laxus' , 'Rogue' , 'Gildarts'],
+            oracle: ['Zeref'  , 'Jellal' , 'Mavis'],
+            mirage: ['Lucy' , 'Juvia' , 'Ultear' , 'Mirajane' , 'Wendy' , 'Revy' , 'Lisanna'],
+            protagonist: 'Natsu'
+        },
+        'JujutsuKaisen': {
+            assaut: ['Sukuna', 'Yuji' , 'Todo' , 'Maki' , 'Toji' , 'Nanami' , 'Yuta'],
+            oracle: ['Geto' , 'Gojo' , 'Yuki'],
+            mirage: ['Toge' , 'Hakari' , 'Jogo' , 'Choso' , 'Mei Mei' , 'Mahito' , 'Nobara' , 'Megumi'],
+            protagonist: 'Yuji'
+        },
+        'DragonBallZ': {
+            assaut: ['Goku' , 'Gotenks' , 'Buu' , 'C 17' , 'Gogeta' , 'Bardock' , 'Broly' , 'Goku Black' , 'Krillin' , 'Tenshinhan' , 'Dabra' , 'Piccolo' , 'Frieza' , 'Cell' , 'Goten' , 'Vegeta' , 'Future Gohan' , 'Future Trunks' , 'Trunks' , 'Beerus' , 'Raditz'],
+            oracle: ['Bulma' , 'Hit'  , 'Roshi'],
+            mirage: ['Gohan' , 'Videl' , 'Chichi' , 'Yamcha' , 'Ginyu' , 'C 18'],
+            protagonist: 'Goku'
+        },
+        'VinlandSaga': {
+            assaut: ['Thorkell' , 'Thors' , 'Snake'],
+            oracle: ['Askeladd' , 'Canute'],
+            mirage: ['Thorfinn' , 'Einar'],
+            protagonist: 'Thorfinn'
+        },
+        'BlackClover': {
+            assaut: ['Yami' , 'Mars' , 'Zenon'  , 'Nozel' , 'Magna' , 'Luck' , 'Asta' , 'Mereoleona' , 'Charlotte'],
+            oracle: ['Julius' , 'Fuegoleon' , 'Licht' , 'Nacht' , 'Yuno'],
+            mirage: ['Mimosa' , 'Gosh' , 'Finral' , 'Liebe' , 'Greyy' , 'Noelle' , 'Charmy' , 'Zora' , 'Vanessa' , 'Nero'],
+            protagonist: 'Asta'
+        },
+        'KurokoNoBasket': {
+            assaut: ['Aomine' , 'Kagami' , 'Murasakibara'],
+            oracle: ['Akashi' , 'Midorima' , 'Riko'],
+            mirage: ['Kuroko' , 'Kise' , 'Junpei' , 'Momoi'],
+            protagonist: 'Kuroko'
+        },
+        'CodeGeass': {
+            assaut: ['Suzaku', 'Kallen'],
+            oracle: ['Lelouch'],
+            mirage: ['CC'],
+            protagonist: 'Lelouch'
+        },
+        'OnePunchMan': {
+            assaut: ['Saitama', 'Garou', 'Genos', 'Metal Bat'],
+            oracle: ['Bang' , 'King'],
+            mirage: ['Tatsumaki', 'Sonic', 'Fubuki'],
+            protagonist: 'Saitama'
+        },
+        'ChainsawMan': {
+            assaut: ['Denji', 'Violence Devil' , 'Yoru' , 'Pochita' , 'Power', 'Beam' , 'Kishibe' , 'Quanxi'],
+            oracle: ['Makima', 'Aki' , 'Angel Devil'],
+            mirage: ['Reze', 'Yoshida' , 'Himeno', 'Kobeni' , 'Asa'],
+            protagonist: 'Denji'
+        }, 
+        'DeathNote': {
+            assaut: ['Mello'],
+            oracle: ['L' , 'Light' , 'Near'],
+            mirage: ['Misa' , 'Ryuk' , 'Remu'],
+            protagonist: 'Light'
+        },
+        'Berserk': {
+            assaut: ['Guts', 'Zodd'],
+            oracle: ['Griffith', 'Skull Knight'],
+            mirage: ['Casca'],
+            protagonist: 'Guts'
+
+        },
+        'Fate': {
+            assaut: ['Saber', 'Lancer', 'Archer', 'Rider', 'Caster' , 'Gilgamesh' , 'Mordred'],
+            oracle: ['Shirou', 'Rin', 'Enkidu' , 'Kirei' , 'Ruler' , 'Illya' , 'Kiritsugu'],
+            mirage: ['Astolfo', 'Ishtar' , 'Mash' , 'Sakura Matou'],
+            protagonist: 'Shirou'
+        },
+        'Frieren': {
+            assaut: ['Stark', 'Himmel'],
+            oracle: ['Frieren', 'Serie'],
+            mirage: ['Fern', 'Heiter', 'Ubel', 'Eisen'],
+            protagonist: 'Frieren'
+        },
+        'TokyoGhoul': {
+            assaut: ['Kaneki', 'Arima', 'Amon', 'Juzo', 'Ayato'],
+            oracle: ['Eto', 'Hide'],
+            mirage: ['Touka', 'Uta', 'Lize', 'Shuu'],
+            protagonist: 'Kaneki'
+        },
+        'ReZero': {
+            assaut: ['Subaru',  'Reinhard'],
+            oracle: ['Beatrice', 'Echidna'],
+            mirage: ['Rem' , 'Ram' ,  'Elsa' , 'Emilia'],
+            protagonist: 'Subaru'
+        },
+        'SpyFamily': {
+            assaut: ['Yor', 'Fiona'],
+            oracle: ['Loid', 'Yuri'],
+            mirage: ['Anya'],
+            protagonist: 'Loid'
+        },
+        'Kakegurui': {
+            assaut: ['Kirari'],
+            oracle: ['Yumeko'],
+            mirage: ['Mary'],
+            protagonist: 'Yumeko'
+        },
+        'MobPsycho': {
+            assaut: ['Mob', 'Teruki'],
+            oracle: ['Reigen'],
+            mirage: ['Ritsu'],
+            protagonist: 'Mob'
+        },
+        'FoodWars': {
+            assaut: ['Soma', 'Ikumi' , 'Takumi'],
+            oracle: ['Erina', 'Satoshi' , 'Eishi'],
+            mirage: ['Alice', 'Tadokoro', 'Akira' , 'Rindou'],
+            protagonist: 'Soma'
+        },
+        'VioletEvergarden': {
+            assaut: [],
+            oracle: [],
+            mirage: ['Violet'],
+            protagonist: 'Violet'
+        },
+        'TokyoRevengers': {
+            assaut: ['Mikey', 'Draken', 'Baji'],
+            oracle: ['Takemichi' , 'Mitsuya'],
+            mirage: ['Chifuyu', 'Kazutora'],
+            protagonist: 'Takemichi'
+        },
+        'FullmetalAlchemist': {
+            assaut: ['Edward', 'Scar', 'Envy' , 'Greed' , 'King Bradley'],
+            oracle: ['Winry', 'Mustang' , 'Hohenheim'],
+            mirage: ['Alphonse', 'Lust' ,  'Ling Yao', 'Hawkeye'],
+            protagonist: 'Edward'
+        },
+        'Haikyuu': {
+            assaut: ['Shoyo', 'Asahi' , 'Kageyama', 'Bokuto', 'Wakatoshi' , 'Oikawa' , 'Kuroo'],
+            oracle: ['Kenma', 'Tsukishima', 'Tendou' , 'Shimizu'],
+            mirage: ['Nishinoya', 'Tanaka', 'Daichi', 'Sugawara'],
+            protagonist: 'Hinata'
+        },
+        'NanatsuNoTaizai': {
+            assaut: ['Meliodas', 'Escanor', 'Zeldris', 'Ban' , 'Arthur'],
+            oracle: ['Gowther', 'Merlin'],
+            mirage: ['Elizabeth' , 'Diane' , 'Kings'],
+            protagonist: 'Meliodas'
+        },
+
+        'SwordArtOnline': {
+            assaut: ['Kirito', 'Eugeo', 'Sinon'],
+            oracle: ['Alice Synthesis'],
+            mirage: ['Leafa' , 'Asuna'],
+            protagonist: 'Kirito'
+        },
+        'Reborn': {
+            assaut: ['Sawada', 'Hibari', 'Dino' , 'Yamamotto' , 'Xanxus' , 'Ryohei'],
+            oracle: ['Reborn', 'Gokudera' , 'Byakuran'],
+            mirage: ['Chrome', 'Dino' , 'Mukuro' , 'Lambo'],
+            protagonist: 'Sawada'
+        }
+
+        
+
+
+    }
+};
+
+// Les 3 personnages du BIG 3
+const BIG3_NAMES = ['Luffy', 'Naruto', 'Ichigo'];
+
+// 🎮 TRIADE GAMEPLAY CONSTANTS
+const TRIADE_STATS = ['atk', 'int', 'spd', 'pwr'];
+const TRIADE_STAT_NAMES = {
+    atk: { name: 'Attaque', icon: '⚔️' },
+    int: { name: 'Intelligence', icon: '🧠' },
+    spd: { name: 'Vitesse', icon: '⚡' },
+    pwr: { name: 'Pouvoir', icon: '🔥' }
+};
+const TRIADE_TIMER = 15; // 15 secondes pour choisir sa carte
+const TRIADE_STARS_TO_WIN = 3; // 3 étoiles pour gagner la partie
+const TRIADE_ROUNDS_PER_MANCHE = 3; // 3 rounds par manche
+
+// 🔄 Cycle des classes : Assaut > Mirage > Oracle > Assaut
+// Retourne: 1 si class1 bat class2, -1 si class1 perd, 0 si égalité
+function getClassAdvantage(class1, class2) {
+    if (class1 === class2) return 0;
+    
+    const cycle = {
+        'assaut': 'mirage',  // Assaut bat Mirage
+        'mirage': 'oracle',  // Mirage bat Oracle
+        'oracle': 'assaut'   // Oracle bat Assaut
+    };
+    
+    if (cycle[class1] === class2) return 1;  // class1 bat class2
+    return -1; // class1 perd contre class2
+}
+
+// 🏆 Comparer deux cartes sur une stat donnée (avec avantage de classe en cas d'égalité)
+function compareCards(card1, card2, stat) {
+    const stat1 = card1.stats[stat];
+    const stat2 = card2.stats[stat];
+    
+    if (stat1 > stat2) return 1;  // card1 gagne
+    if (stat1 < stat2) return -1; // card2 gagne
+    
+    // Égalité → utiliser l'avantage de classe
+    return getClassAdvantage(card1.class, card2.class);
+}
+
+// 🎲 Choisir une stat aléatoire pour le round
+function getRandomStat() {
+    return TRIADE_STATS[Math.floor(Math.random() * TRIADE_STATS.length)];
+}
+
+// Générer le deck de cartes avec les 4 stats (ATK, INT, SPD, PWR)
+function generateTriadeDeck(minCards = 39) {
+    const deck = [];
+    
+    // Toujours utiliser tous les animes
+    const animesToUse = TRIADE_DECK.animes;
+    
+    // Générer des rounds jusqu'à avoir assez de cartes
+    // Chaque round pioche un personnage différent par classe par anime
+    let round = 0;
+    const usedChars = {}; // { 'OnePiece-assaut': ['Luffy', 'Zoro'] }
+    
+    while (deck.length < minCards) {
+        let addedThisRound = 0;
+        
+        animesToUse.forEach(anime => {
+            const characters = TRIADE_DECK.characters[anime];
+            if (!characters) return;
+            
+            TRIADE_DECK.classes.forEach(cardClass => {
+                const charArray = characters[cardClass];
+                if (!charArray || charArray.length === 0) return;
+                
+                const key = `${anime}-${cardClass}`;
+                if (!usedChars[key]) usedChars[key] = [];
+                
+                // Trouver un personnage pas encore utilisé
+                const available = charArray.filter(c => !usedChars[key].includes(c));
+                let charName;
+                
+                if (available.length > 0) {
+                    charName = available[Math.floor(Math.random() * available.length)];
+                } else {
+                    // Tous utilisés → recycler avec un power level différent
+                    charName = charArray[Math.floor(Math.random() * charArray.length)];
+                }
+                
+                usedChars[key].push(charName);
+                
+                const isProtagonist = Array.isArray(characters.protagonist) 
+                    ? characters.protagonist.includes(charName) 
+                    : charName === characters.protagonist;
+                deck.push({
+                    id: `${anime}-${cardClass}-${charName}-r${round}`,
+                    anime: anime,
+                    name: charName,
+                    class: cardClass,
+                    // 4 Stats pour le gameplay (1-10)
+                    stats: {
+                        atk: Math.floor(Math.random() * 10) + 1,  // ⚔️ Attaque
+                        int: Math.floor(Math.random() * 10) + 1,  // 🧠 Intelligence
+                        spd: Math.floor(Math.random() * 10) + 1,  // ⚡ Vitesse
+                        pwr: Math.floor(Math.random() * 10) + 1   // 🔥 Pouvoir
+                    },
+                    isProtagonist: isProtagonist,
+                    isBig3: isProtagonist && BIG3_NAMES.includes(charName)
+                });
+                addedThisRound++;
+            });
+        });
+        
+        round++;
+        // Sécurité anti-boucle infinie
+        if (addedThisRound === 0 || round > 10) break;
+    }
+    
+    // Mélanger le deck
+    for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+    
+    console.log(`🎴 Deck: ${deck.length} cartes (${animesToUse.length} animes, ${round} round(s))`);
+    return deck;
+}
+
+// 🎴 Distribuer 3 cartes avec garantie d'au moins 2 du même anime
+function drawCardsWithSameAnimeBonus(deck) {
+    // Regrouper les cartes du deck par anime
+    const cardsByAnime = {};
+    deck.forEach((card, index) => {
+        if (!cardsByAnime[card.anime]) cardsByAnime[card.anime] = [];
+        cardsByAnime[card.anime].push({ card, index });
+    });
+    
+    // Trouver un anime qui a au moins 2 cartes disponibles
+    const animesWithPairs = Object.entries(cardsByAnime)
+        .filter(([anime, cards]) => cards.length >= 2)
+        .sort(() => Math.random() - 0.5); // Mélanger pour varier
+    
+    if (animesWithPairs.length === 0) {
+        // Fallback : pas assez de paires, distribution normale
+        console.log('⚠️ Pas assez de paires anime, distribution normale');
+        return [deck.pop(), deck.pop(), deck.pop()].filter(c => c != null);
+    }
+    
+    // Choisir un anime au hasard parmi ceux avec des paires
+    const [chosenAnime, chosenCards] = animesWithPairs[0];
+    
+    // Prendre 2 cartes de cet anime
+    const pair = chosenCards.slice(0, 2);
+    const pairIndices = pair.map(p => p.index).sort((a, b) => b - a); // Trier desc pour supprimer sans décaler
+    
+    // Retirer les 2 cartes du deck
+    const drawnCards = [];
+    pairIndices.forEach(idx => {
+        drawnCards.push(deck.splice(idx, 1)[0]);
+    });
+    
+    // Prendre la 3ème carte au hasard dans le reste du deck
+    if (deck.length > 0) {
+        const randomIdx = Math.floor(Math.random() * deck.length);
+        drawnCards.push(deck.splice(randomIdx, 1)[0]);
+    }
+    
+    console.log(`🎴 Distribution: 2× ${chosenAnime} + 1 autre → bonus same-anime garanti!`);
+    return drawnCards;
+}
+
+function getTriadePlayersData() {
+    const playersData = [];
+    
+    gameState.triade.playersOrder.forEach((twitchId, index) => {
+        const playerData = gameState.triade.playersData.get(twitchId);
+        if (!playerData) return;
+        
+        // Chercher le joueur connecté d'abord, fallback sur les infos sauvegardées
+        const player = Array.from(gameState.players.values()).find(p => p.twitchId === twitchId);
+        
+        playersData.push({
+            twitchId: twitchId,
+            username: player ? player.username : (playerData.username || 'Joueur'),
+            avatar: player ? player.avatar : (playerData.avatar || null),
+            position: index,
+            wins: playerData.wins || 0
+        });
+    });
+    
+    return playersData;
+}
+
+// Démarrer une partie Triade
+async function startTriadeGame() {
+    console.log('🎴 Démarrage partie Triade...');
+    
+    // Récupérer les joueurs dans l'ordre où ils ont rejoint
+    const players = Array.from(gameState.players.values());
+    
+    if (players.length < 2) {
+        return { success: false, error: 'Minimum 2 joueurs requis' };
+    }
+    
+    if (players.length > 10) {
+        return { success: false, error: 'Maximum 10 joueurs en mode Triade' };
+    }
+    
+    // Initialiser l'état Triade
+    gameState.triade.active = true;
+    gameState.triade.playersOrder = players.map(p => p.twitchId);
+    gameState.triade.playersData = new Map();
+    
+    // Générer le deck (assez de cartes pour tous les joueurs)
+    const cardsNeeded = players.length * 3;
+    gameState.triade.deck = generateTriadeDeck(cardsNeeded);
+    console.log(`🎴 Deck généré: ${gameState.triade.deck.length} cartes (besoin: ${cardsNeeded})`);
+    
+    // Initialiser les données de chaque joueur et distribuer 3 cartes aléatoires
+    players.forEach((player) => {
+        const cards = [
+            gameState.triade.deck.pop(),
+            gameState.triade.deck.pop(),
+            gameState.triade.deck.pop()
+        ].filter(c => c != null);
+        
+        gameState.triade.playersData.set(player.twitchId, {
+            cards: cards,
+            username: player.username,
+            avatar: player.avatar,
+            wins: 0
+        });
+    });
+    
+    // Marquer la partie comme en cours
+    gameState.inProgress = true;
+    gameState.gameStartTime = Date.now();
+    gameState.initialPlayerCount = players.length;
+    
+    console.log(`🎴 Partie Triade démarrée avec ${players.length} joueurs`);
+    
+    // UN SEUL broadcast à tout le monde
+    io.emit('triade-game-started', {
+        playersData: getTriadePlayersData()
+    });
+    
+    // Les joueurs demanderont leurs cartes via 'triade-request-my-cards'
+    
+    // 🆕 Démarrer le premier round 1.5s APRÈS la fin de la distribution
+    // Distribution: intro 3s + deal ~1s = ~4s, donc round start à 5.5s
+    setTimeout(() => {
+        startTriadeRound();
+    }, 5500);
+    
+    return { success: true };
+}
+
+// 🆕 Démarrer un round Triade
+function startTriadeRound() {
+    const stats = ['atk', 'int', 'spd', 'pwr'];
+    const statNames = { atk: 'ATK', int: 'INT', spd: 'VIT', pwr: 'POW' };
+    
+    gameState.triade.currentRound++;
+    const selectedStat = stats[Math.floor(Math.random() * stats.length)];
+    gameState.triade.roundStat = selectedStat;
+    
+    console.log(`🎲 Round ${gameState.triade.currentRound} - Stat: ${statNames[selectedStat]}`);
+    console.log(`🎲 Emitting triade-round-start to all clients...`);
+    
+    io.emit('triade-round-start', {
+        round: gameState.triade.currentRound,
+        stat: selectedStat,
+        statName: statNames[selectedStat]
+    });
+    
+    console.log(`🎲 triade-round-start emitted!`);
+}
+
+// Reset l'état Triade
+function resetTriadeState() {
+    gameState.triade.active = false;
+    gameState.triade.deck = [];
+    gameState.triade.playersOrder = [];
+    gameState.triade.playersData = new Map();
+    gameState.triade.currentRound = 0;
+    gameState.triade.roundStat = null;
+    gameState.triade.playedCards = new Map();
+    if (gameState.triade.roundTimer) {
+        clearTimeout(gameState.triade.roundTimer);
+        gameState.triade.roundTimer = null;
+    }
 }
 
 const io = new Server(server, {
@@ -5338,12 +5899,13 @@ io.on('connection', (socket) => {
             }
         }
         
-        // 💣 En mode BombAnime, vérifier la limite avec les places réservées
-        if (gameState.lobbyMode === 'bombanime' && !isReconnection) {
+        // 💣🎴 En mode BombAnime/Triade, vérifier la limite avec les places réservées
+        if ((gameState.lobbyMode === 'bombanime' || gameState.lobbyMode === 'triade') && !isReconnection) {
+            const maxPlayers = gameState.lobbyMode === 'bombanime' ? BOMBANIME_CONFIG.MAX_PLAYERS : TRIADE_CONFIG.MAX_PLAYERS;
             const currentCount = gameState.players.size + pendingJoins.size;
-            if (currentCount >= BOMBANIME_CONFIG.MAX_PLAYERS) {
-                console.log(`🚫 Lobby plein: ${gameState.players.size} joueurs + ${pendingJoins.size} en attente >= ${BOMBANIME_CONFIG.MAX_PLAYERS}`);
-                return socket.emit('error', { message: `Le lobby est plein (maximum ${BOMBANIME_CONFIG.MAX_PLAYERS} joueurs)` });
+            if (currentCount >= maxPlayers) {
+                console.log(`🚫 Lobby plein: ${gameState.players.size} joueurs + ${pendingJoins.size} en attente >= ${maxPlayers}`);
+                return socket.emit('error', { message: `Le lobby est plein (maximum ${maxPlayers} joueurs)` });
             }
         }
         
@@ -5358,11 +5920,20 @@ io.on('connection', (socket) => {
         
         try {
             if (isReconnection) {
+                const existingPlayer = gameState.players.get(existingSocketId);
+                
+                // 🎴 Si l'entrée existante est l'admin-joueur et le nouveau join n'est PAS l'admin,
+                // bloquer la reconnexion pour ne pas écraser l'admin
+                if (existingPlayer && existingPlayer.isAdmin && !data.isAdmin) {
+                    console.log(`🚫 ${data.username} tente de remplacer l'admin-joueur - bloqué`);
+                    pendingJoins.delete(data.twitchId);
+                    return socket.emit('error', { message: 'Ce compte est déjà utilisé par le streamer' });
+                }
+                
                 // Remplacer l'ancienne connexion
                 console.log(`🔄 ${data.username} remplace sa connexion précédente`);
                 
                 // 🆕 Annuler le timeout de suppression si existant
-                const existingPlayer = gameState.players.get(existingSocketId);
                 if (existingPlayer && existingPlayer.pendingRemoval) {
                     clearTimeout(existingPlayer.pendingRemoval);
                     console.log(`⏱️ Timeout de suppression annulé pour ${data.username}`);
@@ -5398,7 +5969,8 @@ io.on('connection', (socket) => {
             lastPlacement: userInfo?.last_placement || null,
             title: playerTitle,
             avatarUrl: userInfo?.avatar_url || '/img/avatars/novice.png',
-            team: gameState.lobbyMode === 'rivalry' ? data.team : null  // 🆕 Équipe
+            team: gameState.lobbyMode === 'rivalry' ? data.team : null,
+            isAdmin: data.isAdmin || false
         });
 
         const playerColor = assignPlayerColor(data.username);
@@ -5647,6 +6219,107 @@ io.on('connection', (socket) => {
             });
         }
     });
+
+    // 🎴 Joueur demande ses cartes (après avoir reçu triade-game-started)
+    socket.on('triade-request-my-cards', (data) => {
+        const twitchId = data && data.twitchId;
+        console.log(`🎴 Demande cartes de ${twitchId} (active: ${gameState.triade.active}, socket: ${socket.id})`);
+        
+        if (!gameState.triade.active) {
+            console.log(`⚠️ Triade pas active pour demande de ${twitchId}`);
+            return;
+        }
+        if (!twitchId) {
+            console.log(`⚠️ Pas de twitchId dans la demande`);
+            return;
+        }
+        
+        const playerData = gameState.triade.playersData.get(twitchId);
+        if (playerData && playerData.cards && playerData.cards.length > 0) {
+            socket.emit('triade-your-cards', {
+                cards: playerData.cards,
+                dealing: true
+            });
+            console.log(`🎴 Cartes envoyées à ${twitchId} sur demande (${playerData.cards.length} cartes)`);
+        } else {
+            console.log(`⚠️ Pas de cartes trouvées pour ${twitchId} (playerData: ${!!playerData})`);
+        }
+    });
+
+    // 🎴 Reconnexion à une partie Triade en cours
+    socket.on('triade-reconnect', (data) => {
+        if (!gameState.triade.active) {
+            console.log(`🎴 Pas de partie Triade en cours pour ${data.username}`);
+            return;
+        }
+
+        const twitchId = data.twitchId;
+        
+        // Vérifier que le joueur fait partie de la partie Triade
+        if (!gameState.triade.playersOrder.includes(twitchId)) {
+            console.log(`🎴 ${data.username} n'est pas dans la partie Triade`);
+            return;
+        }
+
+        // Mettre à jour le socketId du joueur dans gameState.players
+        let oldSocketId = null;
+        for (const [socketId, player] of gameState.players.entries()) {
+            if (player.twitchId === twitchId && socketId !== socket.id) {
+                oldSocketId = socketId;
+                // Transférer le joueur vers le nouveau socket
+                gameState.players.delete(oldSocketId);
+                player.socketId = socket.id;
+                gameState.players.set(socket.id, player);
+                delete player.disconnectedAt;
+                delete player.disconnectedSocketId;
+                console.log(`🎴 Socket transféré: ${oldSocketId} → ${socket.id}`);
+                break;
+            }
+        }
+
+        // Récupérer les données du joueur
+        const playerData = gameState.triade.playersData.get(twitchId);
+        if (!playerData) {
+            console.log(`🎴 Pas de données Triade pour ${data.username}`);
+            return;
+        }
+
+        // Envoyer l'état complet de la partie
+        socket.emit('triade-reconnect', {
+            playersData: getTriadePlayersData(),
+            myCards: playerData.cards
+        });
+
+        console.log(`🎴 ${data.username} reconnecté à la partie Triade (cards: ${playerData.cards.length})`);
+    });
+
+    // Demander l'état Triade (pour reconnexion admin)
+    socket.on('triade-get-state', (data) => {
+        if (!gameState.triade.active) {
+            socket.emit('triade-state', { active: false });
+            return;
+        }
+        
+        socket.emit('triade-state', {
+            active: true,
+            playersData: getTriadePlayersData()
+        });
+        
+        // Renvoyer les cartes privées si un twitchId est fourni et qu'il est joueur Triade
+        const requestTwitchId = data && data.twitchId;
+        if (requestTwitchId) {
+            const playerData = gameState.triade.playersData.get(requestTwitchId);
+            if (playerData && playerData.cards && playerData.cards.length > 0) {
+                socket.emit('triade-your-cards', {
+                    cards: playerData.cards
+                });
+                console.log(`🎴 Cartes renvoyées à ${requestTwitchId} après reconnexion`);
+            }
+        }
+        
+        console.log(`🎴 État Triade envoyé (joueurs: ${gameState.triade.playersOrder.length})`);
+    });
+
 
     // Répondre à une question
     socket.on('submit-answer', (data) => {
@@ -6046,16 +6719,21 @@ io.on('connection', (socket) => {
                 // 🆕 On ne supprime plus automatiquement - l'admin peut kick manuellement si besoin
             } else {
                 // 🆕 En lobby, attendre 5 secondes avant de supprimer (permet le refresh)
-                player.pendingRemoval = setTimeout(() => {
-                    // Vérifier que le joueur n'a pas re-rejoint entre temps
-                    const stillExists = gameState.players.get(socket.id);
-                    if (stillExists && stillExists.pendingRemoval) {
-                        console.log(`🗑️ ${player.username} supprimé du lobby (timeout 5s)`);
-                        gameState.players.delete(socket.id);
-                        gameState.answers.delete(socket.id);
-                        broadcastLobbyUpdate();
-                    }
-                }, 5000);
+                // 🎴 Ne PAS supprimer l'admin-joueur sur disconnect (son socket admin reste actif)
+                if (player.isAdmin) {
+                    console.log(`🎴 ${player.username} (admin) déconnecté du lobby - conservé (admin-joueur)`);
+                } else {
+                    player.pendingRemoval = setTimeout(() => {
+                        // Vérifier que le joueur n'a pas re-rejoint entre temps
+                        const stillExists = gameState.players.get(socket.id);
+                        if (stillExists && stillExists.pendingRemoval) {
+                            console.log(`🗑️ ${player.username} supprimé du lobby (timeout 5s)`);
+                            gameState.players.delete(socket.id);
+                            gameState.answers.delete(socket.id);
+                            broadcastLobbyUpdate();
+                        }
+                    }, 5000);
+                }
             }
         }
     });

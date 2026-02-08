@@ -264,6 +264,13 @@ function initSocket() {
         // Mettre à jour les joueurs APRÈS l'icône
         if (data.players) {
             updateLobbyPlayers(data.players);
+            
+            // 🎴💣 Détecter si l'admin est dans le lobby
+            if (twitchUser && (currentGameMode === 'triade' || currentGameMode === 'bombanime')) {
+                const wasInLobby = adminInLobby;
+                adminInLobby = data.players.some(p => p.twitchId === twitchUser.id);
+                if (wasInLobby !== adminInLobby) updateAdminJoinButton();
+            }
         }
 
         // Mettre à jour le compteur
@@ -271,10 +278,10 @@ function initSocket() {
             document.getElementById('lobbyPlayerCount').textContent = data.playerCount;
         }
         
-        // 💣 BombAnime - Afficher/Cacher badge MAX
+        // 💣 BombAnime / 🎴 Triade - Afficher/Cacher badge MAX
         const maxBadge = document.getElementById('lobbyMaxBadge');
         if (maxBadge) {
-            if (data.isLobbyFull && data.lobbyMode === 'bombanime') {
+            if (data.isLobbyFull && (data.lobbyMode === 'bombanime' || data.lobbyMode === 'triade')) {
                 maxBadge.style.display = 'inline-block';
             } else {
                 maxBadge.style.display = 'none';
@@ -347,6 +354,8 @@ function initSocket() {
 
     socket.on('connect', () => {
         console.log('🔌 Socket connecté');
+        // Demander l'état Triade en cas de reconnexion, inclure le twitchId pour restaurer les cartes
+        socket.emit('triade-get-state', { twitchId: twitchUser ? twitchUser.id : null });
     });
 
     socket.on('disconnect', () => {
@@ -391,7 +400,8 @@ function initSocket() {
                 timer: data.timer,
                 playersData: data.playersData,
                 playersOrder: data.playersOrder,
-                currentPlayerTwitchId: data.currentPlayerTwitchId
+                currentPlayerTwitchId: data.currentPlayerTwitchId,
+                challenges: data.challenges || []
             });
             
             showSoundControl(true); // 🔊 Afficher contrôle son
@@ -404,6 +414,24 @@ function initSocket() {
             setTimeout(() => {
                 rotateBombToPlayer(data.currentPlayerTwitchId);
                 updateBombDangerState();
+                
+                // Admin-as-player: restore turn state on reconnect
+                if (bombanimeState.isAdminPlayer && twitchUser) {
+                    const isMyTurn = data.currentPlayerTwitchId === twitchUser.id;
+                    updateAdminBombanimeInput(isMyTurn);
+                    // Restore alphabet/challenges if available
+                    if (data.myAlphabet) {
+                        bombanimeState.myAlphabet = data.myAlphabet;
+                        renderAdminBombanimeAlphabet();
+                    }
+                    if (data.challenges) {
+                        bombanimeState.challenges = data.challenges;
+                        renderAdminBombanimeChalllenges();
+                    }
+                    if (data.bonuses) {
+                        bombanimeState.bonuses = data.bonuses;
+                    }
+                }
                 
                 // 🆕 Restaurer les dernières réponses des joueurs (sauf le joueur actuel)
                 data.playersData.forEach(player => {
@@ -452,6 +480,12 @@ function initSocket() {
     socket.on('bombanime-turn-start', (data) => {
         console.log('💣 Tour de:', data.currentPlayerUsername);
         updateBombanimeCircle(data);
+        
+        // Admin-as-player: update input state
+        if (bombanimeState.isAdminPlayer && twitchUser) {
+            const isMyTurn = data.currentPlayerTwitchId === twitchUser.id;
+            updateAdminBombanimeInput(isMyTurn);
+        }
     });
     
     socket.on('bombanime-name-accepted', (data) => {
@@ -459,6 +493,28 @@ function initSocket() {
         playAdminSound(adminSounds.bombanimePass); // 🔊
         addBombanimeLog('success', data);
         onBombanimeNameAccepted(data);
+        
+        // Admin-as-player: update state
+        if (bombanimeState.isAdminPlayer && twitchUser && data.playerTwitchId === twitchUser.id) {
+            // Clear input
+            const input = document.getElementById('bombanimeAdminInputField');
+            if (input) input.value = '';
+            
+            // Update alphabet
+            if (data.alphabet) {
+                bombanimeState.myAlphabet = data.alphabet;
+                renderAdminBombanimeAlphabet();
+            }
+            
+            // Update challenges & bonuses
+            if (data.challenges) {
+                bombanimeState.challenges = data.challenges;
+            }
+            if (data.bonuses) {
+                bombanimeState.bonuses = data.bonuses;
+            }
+            renderAdminBombanimeChalllenges();
+        }
     });
     
     socket.on('bombanime-name-rejected', (data) => {
@@ -470,6 +526,11 @@ function initSocket() {
             playAdminSound(adminSounds.bombanimeWrong);
         }
         onBombanimeNameRejected(data);
+        
+        // Admin-as-player: show error
+        if (bombanimeState.isAdminPlayer && twitchUser && data.playerTwitchId === twitchUser.id) {
+            showAdminBombanimeError(data.reason);
+        }
     });
     
     socket.on('bombanime-explosion', (data) => {
@@ -491,13 +552,151 @@ function initSocket() {
     socket.on('bombanime-player-lives-updated', (data) => {
         console.log('❤️ Vies mises à jour:', data.playerUsername, data.lives);
         onBombanimePlayerLivesUpdated(data);
+        
+        // Admin-as-player: update own lives
+        if (bombanimeState.isAdminPlayer && twitchUser && data.playerTwitchId === twitchUser.id) {
+            bombanimeState.playerLives = data.lives;
+        }
+    });
+    
+    // Admin-as-player: free character bonus
+    socket.on('bombanime-free-character', (data) => {
+        if (!bombanimeState.isAdminPlayer) return;
+        console.log('🎁 Perso gratuit reçu:', data.character);
+        const input = document.getElementById('bombanimeAdminInputField');
+        if (input) {
+            input.value = data.character;
+            input.focus();
+        }
+        if (data.bonusesRemaining) {
+            bombanimeState.bonuses = data.bonusesRemaining;
+            renderAdminBombanimeChalllenges();
+        }
+    });
+    
+    // Admin-as-player: extra life used
+    socket.on('bombanime-extra-life-used', (data) => {
+        if (!bombanimeState.isAdminPlayer) return;
+        console.log('❤️ Vie extra utilisée:', data);
+        bombanimeState.playerLives = data.newLives;
+        if (data.bonusesRemaining) {
+            bombanimeState.bonuses = data.bonusesRemaining;
+            renderAdminBombanimeChalllenges();
+        }
+    });
+    
+    // Admin-as-player: bonus error
+    socket.on('bombanime-bonus-error', (data) => {
+        if (!bombanimeState.isAdminPlayer) return;
+        console.log('❌ Erreur bonus:', data.error);
     });
     
     socket.on('bombanime-game-ended', (data) => {
         console.log('🏆 BombAnime terminé:', data);
         showSoundControl(false); // 🔊 Cacher contrôle son
         showSuggestionButton(false); // Cacher bouton suggestions
+        bombanimeState.isAdminPlayer = false; // Reset
+        sessionStorage.removeItem('adminBombanimePlayer');
         displayBombanimeWinner(data);
+    });
+    
+    // ============================================
+    // 🎴 TRIADE - Handlers
+    // ============================================
+    
+    socket.on('triade-game-started', (data) => {
+        console.log('🎴 Triade démarré:', data);
+        adminDealStarted = false;
+        showTriadeTable(data);
+        
+        // Si l'admin est joueur, demander ses cartes
+        if (twitchUser && data.playersData && data.playersData.some(p => p.twitchId === twitchUser.id)) {
+            console.log('🎴 Admin est joueur → demande de cartes');
+            socket.emit('triade-request-my-cards', { twitchId: twitchUser.id });
+        }
+        
+        // Synchrone: ajouter intro AVANT le premier paint
+        const container = document.querySelector('.triade-table-container');
+        if (container) {
+            container.classList.add('intro');
+            setTimeout(() => {
+                // Forcer l'opacité finale sur les éléments animés AVANT de retirer l'intro
+                // ⚠️ PAS les card-small : elles sont gérées par dealAdminSmallCards
+                container.querySelectorAll('.triade-player-seat, .triade-table').forEach(el => {
+                    el.style.opacity = '1';
+                });
+                container.classList.remove('intro');
+                // Nettoyer les inline styles après stabilisation
+                setTimeout(() => {
+                    container.querySelectorAll('.triade-player-seat, .triade-table').forEach(el => {
+                        el.style.removeProperty('opacity');
+                    });
+                }, 500);
+            }, 3000);
+        }
+        // Cacher les cartes adversaires pour l'animation de deal
+        document.querySelectorAll('.triade-player-seat:not(.me) .triade-player-card-small').forEach(c => {
+            c.classList.add('pre-deal');
+        });
+        // Lancer le deal des cartes adversaires après que les seats soient visibles (seatFadeUp finit à ~2.5s)
+        setTimeout(() => {
+            dealAdminSmallCards();
+        }, 2800);
+    });
+    
+    // 🆕 Gestion de l'annonce de round
+    socket.on('triade-round-start', (data) => {
+        console.log('🎲 Round start:', data);
+        showTriadeRoundOverlay(data.round, data.stat, data.statName);
+    });
+    
+    socket.on('triade-state', (data) => {
+        console.log('🎴 État Triade reçu:', data);
+        if (data.active) {
+            showTriadeTable(data);
+        } else if (currentGameMode === 'triade') {
+            returnToIdle();
+        }
+    });
+    
+    // 🎴 Recevoir mes cartes quand admin est joueur
+    socket.on('triade-your-cards', (data) => {
+        console.log('🎴 Admin cartes reçues:', data.cards, 'dealing:', data.dealing);
+        const isDealing = data.dealing === true;
+        
+        if (isDealing && adminDealStarted) {
+            console.log('🎴 Admin: deal déjà programmé, ignoré');
+            return;
+        }
+        if (isDealing) adminDealStarted = true;
+        
+        adminTriadeCards = data.cards || [];
+        renderAdminPOVCards(isDealing);
+    });
+    
+    socket.on('triade-update', (data) => {
+        console.log('🎴 Update Triade:', data);
+        updateTriadeTable(data);
+    });
+    
+
+    
+    socket.on('triade-round-result', (data) => {
+        console.log('🎴 Round result (admin):', data);
+        if (data.playersData) {
+            triadeState.playersData = data.playersData;
+        }
+        updateTriadeTable(data);
+    });
+    
+    socket.on('triade-new-round', (data) => {
+        console.log('🎴 Nouveau round (admin):', data);
+        showTriadeTable(data);
+    });
+    
+    socket.on('triade-game-ended', (data) => {
+        console.log('🏆 Triade terminé:', data);
+        displayTriadeWinner(data);
     });
     
     // 🆕 Handler pour le texte tapé en temps réel
@@ -549,6 +748,17 @@ function initSocket() {
     // 🆕 Demander l'état BombAnime à la connexion (pour la reconnexion)
     socket.on('connect', () => {
         console.log('🔌 Socket connecté - Demande état BombAnime');
+        
+        // Si l'admin était joueur bombanime, remap le socket d'abord
+        const wasAdminBombanimePlayer = sessionStorage.getItem('adminBombanimePlayer');
+        if (wasAdminBombanimePlayer === 'true' && twitchUser) {
+            socket.emit('reconnect-player', {
+                twitchId: twitchUser.id,
+                username: twitchUser.display_name
+            });
+            console.log('💣 Admin-player: reconnect-player émis pour remap socket');
+        }
+        
         socket.emit('bombanime-get-state');
     });
 }
@@ -556,6 +766,8 @@ function initSocket() {
 
 function closeLobbyUI() {
 
+    // Reset admin join state
+    resetAdminJoinState();
 
     // Vider la grille des joueurs
     const grid = document.getElementById('playersGridLobby');
@@ -1765,6 +1977,7 @@ const modeModalContent = document.getElementById('modeModalContent');
 const modeClassiqueCard = document.getElementById('modeClassiqueCard');
 const modeRivaliteCard = document.getElementById('modeRivaliteCard');
 const modeBombanimeCard = document.getElementById('modeBombanimeCard');
+const modeTriadeCard = document.getElementById('modeTriadeCard');
 const modeCards = document.querySelectorAll('.mode-card');
 const modeBadge = document.getElementById('modeBadge');
 
@@ -1788,12 +2001,15 @@ function setGameMode(mode) {
         sessionStorage.removeItem('bombanimeWinnerData');
     }
     
+    // 🎴 Mettre à jour le bouton Rejoindre
+    updateAdminJoinButton();
+    
     // Mettre à jour le badge
     const badgeText = modeBadge?.querySelector('.mode-badge-text');
-    modeBadge?.classList.remove('rivalry', 'bombanime');
+    modeBadge?.classList.remove('rivalry', 'bombanime', 'triade');
     
     // Mettre à jour le bouton Jouer et les particules
-    btnWrapper?.classList.remove('rivalry', 'bombanime');
+    btnWrapper?.classList.remove('rivalry', 'bombanime', 'triade');
     
     if (mode === 'rivalry') {
         if (badgeText) badgeText.textContent = 'Rivalry Mode';
@@ -1803,6 +2019,10 @@ function setGameMode(mode) {
         if (badgeText) badgeText.textContent = 'BombAnime Mode';
         if (modeBadge) modeBadge.classList.add('bombanime');
         if (btnWrapper) btnWrapper.classList.add('bombanime');
+    } else if (mode === 'triade') {
+        if (badgeText) badgeText.textContent = 'Triade Mode';
+        if (modeBadge) modeBadge.classList.add('triade');
+        if (btnWrapper) btnWrapper.classList.add('triade');
     } else {
         if (badgeText) badgeText.textContent = 'Classic Mode';
     }
@@ -2204,6 +2424,7 @@ async function checkTwitchAuth() {
             if (data.connected && data.user) {
                 twitchUser = data.user;
                 updateTwitchUI();
+                updateAdminJoinButton();
                 
                 // Vérifier si l'utilisateur voulait sélectionner Rivalité
                 if (sessionStorage.getItem('pendingRivalryMode') === 'true') {
@@ -2227,10 +2448,12 @@ function openModeModal() {
     anime.remove(modeClassiqueCard);
     anime.remove(modeRivaliteCard);
     anime.remove(modeBombanimeCard);
+    anime.remove(modeTriadeCard);
     modeModalOverlay.removeAttribute('style');
     modeClassiqueCard.removeAttribute('style');
     modeRivaliteCard.removeAttribute('style');
     modeBombanimeCard.removeAttribute('style');
+    modeTriadeCard.removeAttribute('style');
     
     modeModalOverlay.classList.add('active');
     modeModalContent.classList.add('active');
@@ -2251,6 +2474,7 @@ function closeModeModal() {
     anime.remove(modeClassiqueCard);
     anime.remove(modeRivaliteCard);
     anime.remove(modeBombanimeCard);
+    anime.remove(modeTriadeCard);
     
     modeModalOverlay.classList.remove('active');
     modeModalContent.classList.remove('active');
@@ -2261,6 +2485,7 @@ function closeModeModal() {
     modeClassiqueCard.removeAttribute('style');
     modeRivaliteCard.removeAttribute('style');
     modeBombanimeCard.removeAttribute('style');
+    modeTriadeCard.removeAttribute('style');
     
     // Cacher le toast Twitch si visible
     hideTwitchRequiredMessage();
@@ -2331,7 +2556,7 @@ modeClassiqueCard.addEventListener('click', async () => {
     
     // Cacher les autres cartes
     anime({
-        targets: [modeRivaliteCard, modeBombanimeCard],
+        targets: [modeRivaliteCard, modeBombanimeCard, modeTriadeCard],
         opacity: 0,
         scale: 0.9,
         duration: 150,
@@ -2445,12 +2670,6 @@ async function launchLobby() {
             // 🆕 Cacher le bouton déconnexion
             const logoutBtn = document.getElementById('headerLogoutBtn');
             if (logoutBtn) logoutBtn.style.display = 'none';
-            
-            // 🆕 Cacher le bouton Twitch si pas connecté
-            const twitchBtn = document.getElementById('twitchConnectBtn');
-            if (twitchBtn && !twitchUser) {
-                twitchBtn.style.display = 'none';
-            }
 
             // Afficher le lobby
             stateLobby.classList.add('active');
@@ -2470,13 +2689,16 @@ async function launchLobby() {
             const modeBadgeText = document.getElementById('modeBadgeText');
             if (modeBadgeHeader && modeBadgeText) {
                 modeBadgeHeader.style.display = 'block';
-                modeBadgeHeader.classList.remove('rivalry', 'bombanime');
+                modeBadgeHeader.classList.remove('rivalry', 'bombanime', 'triade');
                 if (currentGameMode === 'rivalry') {
                     modeBadgeText.textContent = 'Rivalité';
                     modeBadgeHeader.classList.add('rivalry');
                 } else if (currentGameMode === 'bombanime') {
                     modeBadgeText.textContent = 'BombAnime';
                     modeBadgeHeader.classList.add('bombanime');
+                } else if (currentGameMode === 'triade') {
+                    modeBadgeText.textContent = 'Triade';
+                    modeBadgeHeader.classList.add('triade');
                 } else {
                     modeBadgeText.textContent = 'Classic';
                 }
@@ -2503,6 +2725,10 @@ async function launchLobby() {
             const bombanimeTimerGroup = document.getElementById('bombanimeTimerGroup');
             const bombanimeBotsGroup = document.getElementById('bombanimeBotsGroup');
             
+            // Paramètres Triade
+            const triadeDeckGroup = document.getElementById('triadeDeckGroup');
+            
+            
             if (currentGameMode === 'bombanime') {
                 // Mode BombAnime
                 if (teamsGroup) teamsGroup.style.display = 'none';
@@ -2522,6 +2748,36 @@ async function launchLobby() {
                 // Bots réactivés temporairement
                 if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'block';
                 
+                // Cacher Triade
+                
+                if (triadeDeckGroup) triadeDeckGroup.style.display = 'none';
+                
+                const teamCounters = document.getElementById('teamCounters');
+                if (teamCounters) teamCounters.remove();
+                
+            } else if (currentGameMode === 'triade') {
+                // Mode Triade
+                if (teamsGroup) teamsGroup.style.display = 'none';
+                if (modeGroup) modeGroup.style.display = 'none';
+                if (livesGroup) livesGroup.style.display = 'none';
+                if (livesIconGroup) livesIconGroup.style.display = 'none';
+                if (questionsGroup) questionsGroup.style.display = 'none';
+                if (speedBonusGroup) speedBonusGroup.style.display = 'none';
+                if (timerGroup) timerGroup.style.display = 'none';
+                if (answersGroup) answersGroup.style.display = 'none';
+                if (difficultyGroup) difficultyGroup.style.display = 'none';
+                if (seriesTrigger) seriesTrigger.style.display = 'none';
+                
+                // Cacher BombAnime
+                if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
+                if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
+                if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
+                if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'none';
+                
+                // Afficher Triade
+                
+                if (triadeDeckGroup) triadeDeckGroup.style.display = 'block';
+                
                 const teamCounters = document.getElementById('teamCounters');
                 if (teamCounters) teamCounters.remove();
                 
@@ -2540,6 +2796,10 @@ async function launchLobby() {
                 if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
                 if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
                 if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'none';
+                
+                // Cacher Triade
+                
+                if (triadeDeckGroup) triadeDeckGroup.style.display = 'none';
                 
                 // Ajouter les compteurs d'équipe si pas déjà présents
                 if (lobbyHeaderLeft && !document.getElementById('teamCounters')) {
@@ -2573,6 +2833,10 @@ async function launchLobby() {
                 if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
                 if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'none';
                 
+                // Cacher Triade
+                
+                if (triadeDeckGroup) triadeDeckGroup.style.display = 'none';
+                
                 const teamCounters = document.getElementById('teamCounters');
                 if (teamCounters) teamCounters.remove();
             }
@@ -2597,6 +2861,9 @@ async function launchLobby() {
                 duration: 500,
                 easing: 'easeOutQuad'
             });
+
+            // Mettre à jour le bouton Rejoindre
+            updateAdminJoinButton();
 
             anime({
                 targets: '.lobby-stats',
@@ -2641,7 +2908,7 @@ modeRivaliteCard.addEventListener('click', async () => {
     
     // Cacher les autres cartes
     anime({
-        targets: [modeClassiqueCard, modeBombanimeCard],
+        targets: [modeClassiqueCard, modeBombanimeCard, modeTriadeCard],
         opacity: 0,
         scale: 0.9,
         duration: 150,
@@ -2696,7 +2963,7 @@ modeBombanimeCard.addEventListener('click', async () => {
     
     // Cacher les autres cartes
     anime({
-        targets: [modeClassiqueCard, modeRivaliteCard],
+        targets: [modeClassiqueCard, modeRivaliteCard, modeTriadeCard],
         opacity: 0,
         scale: 0.9,
         duration: 150,
@@ -2739,6 +3006,69 @@ modeBombanimeCard.addEventListener('click', async () => {
 
 // Empêcher propagation des clics sur BombAnime
 modeBombanimeCard.addEventListener('click', (e) => {
+    e.stopPropagation();
+});
+
+// ============================================
+// EVENT LISTENER TRIADE
+// ============================================
+modeTriadeCard.addEventListener('click', async () => {
+    // SOON - Mode pas encore disponible
+    return;
+    
+    setGameMode('triade');
+    
+    modeTriadeCard.classList.add('selecting');
+    
+    // Retirer immédiatement les classes active pour désactiver pointer-events
+    modeModalOverlay.classList.remove('active');
+    modeModalContent.classList.remove('active');
+    
+    // Cacher les autres cartes
+    anime({
+        targets: [modeClassiqueCard, modeRivaliteCard, modeBombanimeCard],
+        opacity: 0,
+        scale: 0.9,
+        duration: 150,
+        easing: 'easeOutQuad'
+    });
+    
+    // Fade le fond
+    anime({
+        targets: modeModalOverlay,
+        opacity: [1, 0],
+        duration: 300,
+        delay: 50,
+        easing: 'easeOutQuad'
+    });
+    
+    // Animation Pop & Vanish (bleu)
+    anime.timeline()
+        .add({
+            targets: modeTriadeCard,
+            scale: [1, 1.2],
+            boxShadow: ['0 0 0px rgba(59, 130, 246, 0)', '0 0 60px rgba(59, 130, 246, 1)'],
+            duration: 150,
+            easing: 'easeOutQuad'
+        })
+        .add({
+            targets: modeTriadeCard,
+            scale: [1.2, 0],
+            opacity: [1, 0],
+            boxShadow: ['0 0 60px rgba(59, 130, 246, 1)', '0 0 0px rgba(59, 130, 246, 0)'],
+            duration: 200,
+            easing: 'easeInQuad',
+            complete: () => {
+                closeModeModal();
+                modeTriadeCard.classList.remove('selecting');
+            }
+        });
+    
+    console.log('Mode Triade sélectionné');
+});
+
+// Empêcher propagation des clics sur Triade
+modeTriadeCard.addEventListener('click', (e) => {
     e.stopPropagation();
 });
 
@@ -2806,6 +3136,84 @@ document.getElementById('closeLobbyBtn').addEventListener('click', async () => {
         console.error('❌ Erreur fermeture lobby:', error);
     }
 });
+
+// ============================================
+// 🎴 ADMIN REJOINDRE LOBBY (Triade + BombAnime)
+// ============================================
+let adminInLobby = false;
+
+const adminJoinBtn = document.getElementById('adminJoinLobbyBtn');
+
+// Afficher/masquer le bouton selon le mode
+function updateAdminJoinButton() {
+    if (!adminJoinBtn) return;
+    
+    if (currentGameMode === 'triade' || currentGameMode === 'bombanime') {
+        adminJoinBtn.style.display = 'flex';
+        adminJoinBtn.disabled = !twitchUser || adminInLobby;
+        adminJoinBtn.querySelector('span').textContent = adminInLobby ? 'Rejoint ✓' : 'Rejoindre';
+    } else {
+        adminJoinBtn.style.display = 'none';
+    }
+}
+
+// Observer le lobby : dès qu'il devient visible, sync le bouton
+const lobbyObserver = new MutationObserver(() => {
+    if (stateLobby && stateLobby.classList.contains('active')) {
+        updateAdminJoinButton();
+    }
+});
+if (stateLobby) {
+    lobbyObserver.observe(stateLobby, { attributes: true, attributeFilter: ['class'] });
+}
+
+// Tooltip JS positionné sur body (contourne overflow:hidden)
+let joinTooltipEl = null;
+
+if (adminJoinBtn) {
+    adminJoinBtn.addEventListener('mouseenter', () => {
+        if (twitchUser || !adminJoinBtn.disabled) return;
+        
+        if (!joinTooltipEl) {
+            joinTooltipEl = document.createElement('div');
+            joinTooltipEl.className = 'join-tooltip-fixed';
+            joinTooltipEl.textContent = 'Se connecter pour rejoindre';
+            document.body.appendChild(joinTooltipEl);
+        }
+        
+        const rect = adminJoinBtn.getBoundingClientRect();
+        joinTooltipEl.style.left = (rect.left + rect.width / 2 - joinTooltipEl.offsetWidth / 2) + 'px';
+        joinTooltipEl.style.top = (rect.top - joinTooltipEl.offsetHeight - 14) + 'px';
+        joinTooltipEl.classList.add('visible');
+    });
+    
+    adminJoinBtn.addEventListener('mouseleave', () => {
+        if (joinTooltipEl) joinTooltipEl.classList.remove('visible');
+    });
+}
+
+if (adminJoinBtn) {
+    adminJoinBtn.addEventListener('click', () => {
+        if (!twitchUser || adminInLobby) return;
+        
+        // Rejoindre le lobby
+        socket.emit('join-lobby', {
+            twitchId: twitchUser.id,
+            username: twitchUser.display_name,
+            avatar: twitchUser.profile_image_url,
+            isAdmin: true
+        });
+        adminInLobby = true;
+        updateAdminJoinButton();
+    });
+}
+
+// Reset le state quand le lobby se ferme
+function resetAdminJoinState() {
+    adminInLobby = false;
+    sessionStorage.removeItem('adminBombanimePlayer');
+    updateAdminJoinButton();
+}
 
 // ============================================
 // ============================================
@@ -2896,6 +3304,94 @@ document.addEventListener('click', async (e) => {
 });
 
 // ============================================
+// TRIADE - Dropdown Deck avec Checkboxes
+// ============================================
+const triadeDeckDropdown = document.getElementById('triadeDeckGroup');
+const triadeDeckTrigger = document.getElementById('triadeDeckTrigger');
+let selectedTriadeAnimes = [
+    'OnePiece', 'Naruto', 'Bleach',
+    'HunterXHunter', 'AttackOnTitan', 'DemonSlayer', 'JoJo',
+    'MyHeroAcademia', 'FairyTail', 'JujutsuKaisen',
+    'DragonBallZ', 'VinlandSaga', 'BlackClover'
+];
+
+// Toggle dropdown
+if (triadeDeckTrigger) {
+    triadeDeckTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (triadeDeckDropdown) {
+            triadeDeckDropdown.classList.toggle('open');
+        }
+    });
+}
+
+// Fermer au clic extérieur
+document.addEventListener('click', (e) => {
+    if (triadeDeckDropdown && !triadeDeckDropdown.contains(e.target)) {
+        triadeDeckDropdown.classList.remove('open');
+    }
+});
+
+// Gestion des checkboxes Triade
+document.addEventListener('change', (e) => {
+    if (!e.target.matches('.triade-dropdown-item input[type="checkbox"]')) return;
+    
+    const item = e.target.closest('.triade-dropdown-item');
+    if (!item || item.classList.contains('locked')) return;
+    
+    const anime = item.dataset.anime;
+    
+    if (e.target.checked) {
+        if (!selectedTriadeAnimes.includes(anime)) {
+            selectedTriadeAnimes.push(anime);
+        }
+    } else {
+        selectedTriadeAnimes = selectedTriadeAnimes.filter(a => a !== anime);
+    }
+    
+    updateTriadeDeckCount();
+    updateTriadeStartButton();
+    
+    console.log(`🎴 Anime Triade: ${selectedTriadeAnimes.length} animes`, selectedTriadeAnimes);
+});
+
+// Mettre à jour le compteur d'animes
+function updateTriadeDeckCount() {
+    const countDisplay = document.getElementById('triadeDeckCount');
+    if (countDisplay) {
+        countDisplay.textContent = selectedTriadeAnimes.length;
+        
+        anime({
+            targets: countDisplay,
+            scale: [1.2, 1],
+            duration: 200,
+            easing: 'easeOutQuad'
+        });
+    }
+}
+
+// Valider le bouton Démarrer pour Triade
+function updateTriadeStartButton() {
+    if (currentGameMode !== 'triade') return;
+    
+    const startBtn = document.getElementById('startGameBtn');
+    const playerCount = document.querySelectorAll('#playersGridLobby .player-card-mini').length;
+    
+    // Besoin d'au moins 3 animes ET au moins 2 joueurs
+    const canStart = playerCount >= 2;
+    
+    if (startBtn) {
+        if (canStart) {
+            startBtn.classList.remove('disabled');
+            startBtn.disabled = false;
+        } else {
+            startBtn.classList.add('disabled');
+            startBtn.disabled = true;
+        }
+    }
+}
+
+// ============================================
 // BOMBANIME - Slider Timer
 // ============================================
 const bombanimeTimerSlider = document.getElementById('bombanimeTimerSlider');
@@ -2949,9 +3445,10 @@ document.querySelectorAll('.setting-group:not(.mode-group):not(.series-group) .s
         if (group.classList.contains('bombanime-lives-group')) {
             const lives = parseInt(btn.dataset.value) || 1;
             document.querySelectorAll('.player-card-mini-stat').forEach(stat => {
-                stat.innerHTML = getLivesIconsHTML(selectedLivesIcon, lives, lives);
+                stat.innerHTML = getBombIconsHTML(lives);
             });
         }
+        
     });
 });
 
@@ -3180,6 +3677,10 @@ document.addEventListener('keydown', (e) => {
     // BombAnime dropdown
     if (e.key === 'Escape' && bombanimeDropdown && bombanimeDropdown.classList.contains('open')) {
         bombanimeDropdown.classList.remove('open');
+    }
+    // Triade dropdown
+    if (e.key === 'Escape' && triadeDeckDropdown && triadeDeckDropdown.classList.contains('open')) {
+        triadeDeckDropdown.classList.remove('open');
     }
 });
 
@@ -3425,13 +3926,26 @@ function updateLobbyPlayers(players) {
             ? `<span class="team-badge-lobby team-${card.dataset.team}">${card.dataset.team === '1' ? 'A' : 'B'}</span>`
             : '<div class="player-card-mini-badge"></div>';
 
+        // Stats selon le mode
+        let statsHTML = '';
+        if (currentGameMode === 'triade') {
+            statsHTML = `<span class="player-stars">☆☆☆</span>`;
+        } else if (currentGameMode === 'bombanime') {
+            // Icônes bombes pour BombAnime
+            statsHTML = getBombIconsHTML(currentLives);
+        } else if (currentMode === 'vie') {
+            statsHTML = getLivesIconsHTML(selectedLivesIcon, currentLives, currentLives);
+        } else {
+            statsHTML = '<span class="player-points">0</span>';
+        }
+
         card.innerHTML = `
         ${teamBadgeHTML}
         <div class="player-card-mini-name">${player.username}</div>
         <div class="player-card-mini-title">${player.title || 'Novice'}</div>
         <div class="player-card-mini-separator"></div>
         <div class="player-card-mini-stat">
-            ${currentMode === 'vie' ? getLivesIconsHTML(selectedLivesIcon, currentLives, currentLives) : '<span class="player-points">0</span>'}
+            ${statsHTML}
         </div>
         <button class="player-card-mini-kick" title="Exclure ${player.username}">
             <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -3856,12 +4370,6 @@ function transitionToGame() {
     // 🆕 Cacher le bouton déconnexion
     const logoutBtn = document.getElementById('headerLogoutBtn');
     if (logoutBtn) logoutBtn.style.display = 'none';
-    
-    // 🆕 Cacher le bouton Twitch si pas connecté
-    const twitchBtn = document.getElementById('twitchConnectBtn');
-    if (twitchBtn && !twitchUser) {
-        twitchBtn.style.display = 'none';
-    }
 
     // 1. Afficher l'overlay GAME START
     overlay.classList.add('active');
@@ -3944,6 +4452,12 @@ document.getElementById('startGameBtn').addEventListener('click', async () => {
             startData.bombanimeTimer = parseInt(document.getElementById('bombanimeTimerSlider')?.value) || 8;
             startData.bombanimeSerie = selectedBombanimeSerie || 'Naruto';
             console.log('💣 Paramètres BombAnime envoyés:', startData);
+        }
+        
+        // 🎴 Paramètres Triade
+        if (currentGameMode === 'triade') {
+            // Récupérer les animes sélectionnés
+            console.log('🎴 Paramètres Triade envoyés:', startData);
         }
         
         const response = await fetch('/admin/start-game', {
@@ -5079,12 +5593,6 @@ async function restoreGameState() {
             // 🆕 Cacher le bouton déconnexion
             const logoutBtn = document.getElementById('headerLogoutBtn');
             if (logoutBtn) logoutBtn.style.display = 'none';
-            
-            // 🆕 Cacher le bouton Twitch si pas connecté
-            const twitchBtn = document.getElementById('twitchConnectBtn');
-            if (twitchBtn && !twitchUser) {
-                twitchBtn.style.display = 'none';
-            }
 
             // Configurer le mode stats
             setStatsMode(gameSettings.mode === 'point' ? 'points' : 'vie');
@@ -5147,10 +5655,10 @@ async function restoreGameState() {
             console.log('🚪 Restauration lobby');
             showLobbyUI(state.players || []);
             
-            // 💣 Restaurer le badge MAX si lobby BombAnime plein
+            // 💣 Restaurer le badge MAX si lobby BombAnime/Triade plein
             const maxBadge = document.getElementById('lobbyMaxBadge');
             if (maxBadge) {
-                if (state.isLobbyFull && state.lobbyMode === 'bombanime') {
+                if (state.isLobbyFull && (state.lobbyMode === 'bombanime' || state.lobbyMode === 'triade')) {
                     maxBadge.style.display = 'inline-block';
                     console.log('🔴 Badge MAX restauré');
                 } else {
@@ -5585,25 +6093,22 @@ function showLobbyUI(players = []) {
     // 🆕 Cacher le bouton déconnexion
     const logoutBtn = document.getElementById('headerLogoutBtn');
     if (logoutBtn) logoutBtn.style.display = 'none';
-    
-    // 🆕 Cacher le bouton Twitch si pas connecté
-    const twitchBtn = document.getElementById('twitchConnectBtn');
-    if (twitchBtn && !twitchUser) {
-        twitchBtn.style.display = 'none';
-    }
 
     // 🆕 Afficher le badge de mode dans le header
     const modeBadgeHeader = document.getElementById('modeBadgeHeader');
     const modeBadgeText = document.getElementById('modeBadgeText');
     if (modeBadgeHeader && modeBadgeText) {
         modeBadgeHeader.style.display = 'block';
-        modeBadgeHeader.classList.remove('rivalry', 'bombanime');
+        modeBadgeHeader.classList.remove('rivalry', 'bombanime', 'triade');
         if (currentGameMode === 'rivalry') {
             modeBadgeText.textContent = 'Rivalité';
             modeBadgeHeader.classList.add('rivalry');
         } else if (currentGameMode === 'bombanime') {
             modeBadgeText.textContent = 'BombAnime';
             modeBadgeHeader.classList.add('bombanime');
+        } else if (currentGameMode === 'triade') {
+            modeBadgeText.textContent = 'Triade';
+            modeBadgeHeader.classList.add('triade');
         } else {
             modeBadgeText.textContent = 'Classic';
         }
@@ -5611,12 +6116,21 @@ function showLobbyUI(players = []) {
 
     bgText.textContent = 'LOBBY';
     bgText.classList.add('lobby-active');
-    bgText.classList.remove('bombanime-mode');
+    bgText.classList.remove('bombanime-mode', 'triade-mode');
     if (currentGameMode === 'bombanime') {
         bgText.classList.add('bombanime-mode');
+    } else if (currentGameMode === 'triade') {
+        bgText.classList.add('triade-mode');
     }
     statusDot.classList.add('active');
     statusText.textContent = 'Lobby ouvert';
+    
+    // Mettre à jour le bouton Rejoindre
+    updateAdminJoinButton();
+    
+    // 🔴 Reset du badge MAX à l'ouverture du lobby
+    const maxBadge = document.getElementById('lobbyMaxBadge');
+    if (maxBadge) maxBadge.style.display = 'none';
 
     recentPanel.classList.add('hidden');
     lastgamePanel.classList.add('hidden');
@@ -5643,6 +6157,10 @@ function showLobbyUI(players = []) {
     const bombanimeTimerGroup = document.getElementById('bombanimeTimerGroup');
     const bombanimeBotsGroup = document.getElementById('bombanimeBotsGroup');
     
+    // Paramètres Triade
+    const triadeDeckGroup = document.getElementById('triadeDeckGroup');
+    
+    
     if (currentGameMode === 'bombanime') {
         // Mode BombAnime : cacher les paramètres classiques
         if (teamsGroup) teamsGroup.style.display = 'none';
@@ -5662,6 +6180,37 @@ function showLobbyUI(players = []) {
         if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'block';
         // Bots réactivés temporairement
         if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'block';
+        
+        // Cacher Triade
+        
+        if (triadeDeckGroup) triadeDeckGroup.style.display = 'none';
+        
+        // Retirer les compteurs d'équipe
+        const teamCounters = document.getElementById('teamCounters');
+        if (teamCounters) teamCounters.remove();
+        
+    } else if (currentGameMode === 'triade') {
+        // Mode Triade : cacher les paramètres classiques et BombAnime
+        if (teamsGroup) teamsGroup.style.display = 'none';
+        if (modeGroup) modeGroup.style.display = 'none';
+        if (livesGroup) livesGroup.style.display = 'none';
+        if (livesIconGroup) livesIconGroup.style.display = 'none';
+        if (questionsGroup) questionsGroup.style.display = 'none';
+        if (speedBonusGroup) speedBonusGroup.style.display = 'none';
+        if (timerGroup) timerGroup.style.display = 'none';
+        if (answersGroup) answersGroup.style.display = 'none';
+        if (difficultyGroup) difficultyGroup.style.display = 'none';
+        if (seriesTrigger) seriesTrigger.style.display = 'none';
+        
+        // Cacher les paramètres BombAnime
+        if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
+        if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
+        if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
+        if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'none';
+        
+        // Afficher les paramètres Triade
+        
+        if (triadeDeckGroup) triadeDeckGroup.style.display = 'block';
         
         // Retirer les compteurs d'équipe
         const teamCounters = document.getElementById('teamCounters');
@@ -5683,6 +6232,10 @@ function showLobbyUI(players = []) {
         if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
         if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
         if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'none';
+        
+        // Cacher Triade
+        
+        if (triadeDeckGroup) triadeDeckGroup.style.display = 'none';
         
         // Ajouter les compteurs d'équipe si pas déjà présents
         if (lobbyHeaderLeft && !document.getElementById('teamCounters')) {
@@ -5716,6 +6269,10 @@ function showLobbyUI(players = []) {
         if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
         if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
         if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'none';
+        
+        // Cacher Triade
+        
+        if (triadeDeckGroup) triadeDeckGroup.style.display = 'none';
         
         const teamCounters = document.getElementById('teamCounters');
         if (teamCounters) teamCounters.remove();
@@ -6979,6 +7536,12 @@ function initKickModal() {
 function kickPlayer(username, twitchId, cardElement) {
     if (!username) return;
     
+    // Si c'est l'admin qui est kické, reset le state
+    if (twitchUser && twitchId === twitchUser.id) {
+        adminInLobby = false;
+        updateAdminJoinButton();
+    }
+    
     const stateLobby = document.getElementById('stateLobby');
     const isInLobby = stateLobby && stateLobby.classList.contains('active');
     
@@ -7096,6 +7659,9 @@ function returnToIdle() {
     showSoundControl(false);
     showSuggestionButton(false); // Cacher bouton suggestions
     
+    // Reset admin join state
+    resetAdminJoinState();
+    
     const stateGame = document.getElementById('stateGame');
     const stateLobby = document.getElementById('stateLobby');
     const stateIdle = document.getElementById('stateIdle');
@@ -7148,6 +7714,27 @@ function returnToIdle() {
     const classicWinnerOverlay = document.getElementById('winnerOverlay');
     if (classicWinnerOverlay) classicWinnerOverlay.classList.remove('active');
     
+    // === Nettoyage Triade ===
+    const triadeContainer = document.getElementById('triadeAdminContainer');
+    if (triadeContainer) {
+        triadeContainer.style.display = 'none';
+        triadeContainer.remove();
+    }
+    const triadeCloseBtn = document.getElementById('triadeCloseLobbyBtn');
+    if (triadeCloseBtn) triadeCloseBtn.remove();
+    const triadePhaseEl = document.getElementById('triadePhaseIndicator');
+    if (triadePhaseEl) triadePhaseEl.remove();
+    
+    // Réafficher les éléments game layout cachés par Triade
+    const gameQuestionWrapper = document.getElementById('gameQuestionWrapper');
+    const gameMainPanel = document.getElementById('gameMainPanel');
+    const characterImageContainer = document.getElementById('characterImageContainer');
+    const gameLayout = document.getElementById('stateGame')?.querySelector('.game-layout');
+    if (gameQuestionWrapper) gameQuestionWrapper.style.display = '';
+    if (gameMainPanel) gameMainPanel.style.display = '';
+    if (characterImageContainer) characterImageContainer.style.display = '';
+    if (gameLayout) gameLayout.style.display = '';
+    
     // Nettoyer le sessionStorage BombAnime
     sessionStorage.removeItem('bombanimeWinnerData');
     
@@ -7164,6 +7751,10 @@ function returnToIdle() {
     if (gridLobby) gridLobby.innerHTML = '';
     const countEl = document.getElementById('lobbyPlayerCount');
     if (countEl) countEl.textContent = '0';
+    
+    // 🔴 Reset du badge MAX
+    const maxBadge = document.getElementById('lobbyMaxBadge');
+    if (maxBadge) maxBadge.style.display = 'none';
 
     // Vider la grille game
     const gridGame = document.getElementById('playersGridGame');
@@ -7457,6 +8048,22 @@ function getLivesIconsHTML(iconType, currentLives, maxLives) {
         html += `<span class="life-icon${isLost ? ' lost' : ''}">${iconSVG}</span>`;
     }
 
+    return html;
+}
+
+// Fonction pour générer les icônes bombes (BombAnime)
+function getBombIconsHTML(lives) {
+    const bombSVG = `<svg class="bomb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="14" r="8"/>
+        <path d="M12 6V3"/>
+        <path d="M10 3h4"/>
+        <path d="M15 7l2-2"/>
+    </svg>`;
+    
+    let html = '';
+    for (let i = 0; i < lives; i++) {
+        html += `<span class="bomb-life-icon">${bombSVG}</span>`;
+    }
     return html;
 }
 
@@ -7787,7 +8394,16 @@ let bombanimeState = {
     timeRemaining: 8,
     timerInterval: null,
     serie: 'Naruto',
-    lastValidName: null
+    lastValidName: null,
+    // Admin-as-player state
+    isAdminPlayer: false,
+    isMyTurn: false,
+    myAlphabet: [],
+    challenges: [],
+    bonuses: { freeCharacter: 0, extraLife: 0 },
+    inputValue: '',
+    lastError: null,
+    playerLives: 0
 };
 
 // Afficher le cercle BombAnime
@@ -7800,7 +8416,26 @@ function showBombanimeCircle(data) {
     bombanimeState.lastValidName = null;
     bombanimeState.currentPlayerTwitchId = null; // Reset pour que la bombe pointe vers le haut pendant l'intro
     
-    console.log('💣 showBombanimeCircle - currentPlayerTwitchId reset à null');
+    // Détecter si l'admin est joueur
+    const isAdminPlayer = twitchUser && 
+        data.playersData.some(p => p.twitchId === twitchUser.id);
+    bombanimeState.isAdminPlayer = isAdminPlayer;
+    if (isAdminPlayer) {
+        sessionStorage.setItem('adminBombanimePlayer', 'true');
+        adminInLobby = true;
+        bombanimeState.isMyTurn = false;
+        bombanimeState.myAlphabet = [];
+        bombanimeState.challenges = (data.challenges || []).map(c => ({
+            ...c, progress: 0, completed: false
+        }));
+        bombanimeState.bonuses = { freeCharacter: 0, extraLife: 0 };
+        bombanimeState.inputValue = '';
+        bombanimeState.lastError = null;
+        const myData = data.playersData.find(p => p.twitchId === twitchUser.id);
+        bombanimeState.playerLives = myData ? myData.lives : 0;
+    }
+    
+    console.log('💣 showBombanimeCircle - currentPlayerTwitchId reset à null, adminPlayer:', isAdminPlayer);
     
     // Clear l'interval précédent si existant
     if (bombanimeState.timerInterval) {
@@ -7863,7 +8498,101 @@ function showBombanimeCircle(data) {
             z-index: 200;
         `;
         
-        // Créer ou afficher le panneau de logs
+        // Créer ou afficher le panneau de logs (ou player POV)
+        if (isAdminPlayer) {
+            // === ADMIN IS PLAYER: Pas de logs, mais challenges + alphabet + input ===
+            
+            // Supprimer l'ancien logs panel s'il existe
+            let oldLogs = document.getElementById('bombanimeLogsPanel');
+            if (oldLogs) oldLogs.remove();
+            
+            // Challenges panel (gauche)
+            let challengesPanel = document.getElementById('bombanimeAdminChallenges');
+            if (!challengesPanel) {
+                challengesPanel = document.createElement('div');
+                challengesPanel.id = 'bombanimeAdminChallenges';
+                challengesPanel.className = 'bombanime-challenges-panel';
+                bombanimeContainer.appendChild(challengesPanel);
+            }
+            renderAdminBombanimeChalllenges();
+            
+            // Alphabet panel (droite)
+            let alphabetPanel = document.getElementById('bombanimeAdminAlphabet');
+            if (!alphabetPanel) {
+                alphabetPanel = document.createElement('div');
+                alphabetPanel.id = 'bombanimeAdminAlphabet';
+                alphabetPanel.className = 'alphabet-panel';
+                bombanimeContainer.appendChild(alphabetPanel);
+            }
+            renderAdminBombanimeAlphabet();
+            
+            // Input zone (bas)
+            let inputZone = document.getElementById('bombanimeAdminInput');
+            if (!inputZone) {
+                inputZone = document.createElement('div');
+                inputZone.id = 'bombanimeAdminInput';
+                inputZone.className = 'input-zone';
+                inputZone.innerHTML = `
+                    <div class="game-input-container">
+                        <input type="text" class="game-input disabled" id="bombanimeAdminInputField"
+                            placeholder="" autocomplete="off" disabled>
+                        <div class="input-underline disabled"></div>
+                        <div class="feedback-message" id="bombanimeAdminFeedback"></div>
+                    </div>
+                `;
+                bombanimeContainer.appendChild(inputZone);
+                
+                // Attach Enter handler
+                const inputField = inputZone.querySelector('#bombanimeAdminInputField');
+                inputField.addEventListener('keyup', (e) => {
+                    if (e.key === 'Enter' && bombanimeState.isMyTurn) {
+                        adminSubmitBombanime();
+                    }
+                });
+                // Emit typing + show locally under admin hex
+                inputField.addEventListener('input', () => {
+                    if (bombanimeState.isMyTurn && twitchUser) {
+                        const text = inputField.value;
+                        socket.emit('bombanime-typing', {
+                            twitchId: twitchUser.id,
+                            text: text
+                        });
+                        // Update locally (broadcast doesn't echo back)
+                        const mySlot = document.querySelector(`.player-slot[data-twitch-id="${twitchUser.id}"]`);
+                        if (mySlot) {
+                            let typingEl = mySlot.querySelector('.player-typing');
+                            if (!typingEl) {
+                                typingEl = document.createElement('div');
+                                typingEl.className = 'player-typing';
+                                mySlot.appendChild(typingEl);
+                            }
+                            typingEl.textContent = text.toUpperCase();
+                            typingEl.classList.remove('last-answer');
+                            typingEl.classList.toggle('has-text', !!text);
+                        }
+                    }
+                });
+            }
+            
+            // Fermer lobby button (bas gauche)
+            let closeBtn = document.getElementById('bombanimeAdminCloseBtn');
+            if (!closeBtn) {
+                closeBtn = document.createElement('button');
+                closeBtn.id = 'bombanimeAdminCloseBtn';
+                closeBtn.className = 'bombanime-close-lobby-btn';
+                closeBtn.textContent = 'Fermer lobby';
+                closeBtn.onclick = closeLobby;
+                bombanimeContainer.appendChild(closeBtn);
+            }
+            
+        } else {
+            // === ADMIN SPECTATEUR: Logs panel classique ===
+            // Supprimer les éléments joueur s'ils existent
+            ['bombanimeAdminChallenges', 'bombanimeAdminAlphabet', 'bombanimeAdminInput', 'bombanimeAdminCloseBtn'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.remove();
+            });
+            
         let logsPanel = document.getElementById('bombanimeLogsPanel');
         if (!logsPanel) {
             logsPanel = document.createElement('div');
@@ -7911,6 +8640,7 @@ function showBombanimeCircle(data) {
                 transparent 100%
             );
         `;
+        } // end admin spectateur
         
         // Créer la zone de jeu principale si elle n'existe pas
         let gameZone = document.getElementById('bombanimeGameZone');
@@ -8014,6 +8744,206 @@ function clearBombanimeLogs() {
     const logsList = document.getElementById('bombanimeLogsList');
     if (logsList) {
         logsList.innerHTML = '';
+    }
+}
+
+// ============================================
+// 💣 BOMBANIME - Admin as Player POV
+// ============================================
+
+const SERIE_NAMES = {
+    'Naruto': 'Naruto', 'OnePiece': 'One Piece', 'Dbz': 'Dragon Ball',
+    'Mha': 'My Hero Academia', 'Bleach': 'Bleach', 'Jojo': 'Jojo',
+    'Hxh': 'Hunter x Hunter', 'FairyTail': 'Fairy Tail', 'Pokemon': 'Pokémon',
+    'Snk': 'Attack on Titan', 'DemonSlayer': 'Demon Slayer', 'JujutsuKaisen': 'Jujutsu Kaisen',
+    'Reborn': 'Reborn', 'DeathNote': 'Death Note', 'Gintama': 'Gintama',
+    'SevenDeadlySins': 'Seven Deadly Sins', 'BlackClover': 'Black Clover',
+    'FullmetalAlchemist': 'FMA', 'SoulEater': 'Soul Eater', 'DrStone': 'Dr. Stone',
+    'Gash': 'Gash Bell', 'FireForce': 'Fire Force', 'Toriko': 'Toriko',
+    'YuYuHakusho': 'Yu Yu Hakusho', 'Eyeshield21': 'Eyeshield 21',
+    'ShokugekiNoSoma': 'Food Wars', 'ChainsawMan': 'Chainsaw Man',
+    'SpyFamily': 'Spy x Family', 'KaguyaSama': 'Kaguya-sama',
+    'TokyoRevengers': 'Tokyo Revengers', 'KingdomManga': 'Kingdom',
+    'OnePunchMan': 'One Punch Man', 'BlueExorcist': 'Blue Exorcist',
+    'AssassinationClassroom': 'Assassination Classroom', 'CaptainTsubasa': 'Captain Tsubasa',
+    'Beyblade': 'Beyblade', 'SaintSeiya': 'Saint Seiya', 'Inazuma': 'Inazuma Eleven',
+    'Gunnm': 'Gunnm', 'BakiSeries': 'Baki', 'KenichiMightiest': 'Kenichi',
+    'Ippo': 'Ippo', 'KurokosBasketball': 'Kuroko', 'Haikyuu': 'Haikyuu',
+    'SlamDunk': 'Slam Dunk', 'DiamondNoAce': 'Diamond no Ace',
+    'BlueLock': 'Blue Lock', 'SakamotoDesu': 'Sakamoto', 'Medaka': 'Medaka Box',
+    'PromisedNeverland': 'Promised Neverland', 'MashBurnedead': 'Mashle',
+    'YuGiOh': 'Yu-Gi-Oh', 'Digimon': 'Digimon', 'DragonQuest': 'Dragon Quest',
+    'Boruto': 'Boruto', 'MegamiNoShinzoku': 'Elusive Samurai', 'Dandadan': 'Dandadan',
+    'WindBreaker': 'Wind Breaker', 'Sakamoto': 'Sakamoto Days'
+};
+
+function renderAdminBombanimeChalllenges() {
+    const panel = document.getElementById('bombanimeAdminChallenges');
+    if (!panel) return;
+    
+    const challenges = bombanimeState.challenges;
+    if (!challenges.length) {
+        panel.innerHTML = '';
+        return;
+    }
+    
+    let html = '<div class="challenges-list">';
+    challenges.forEach(c => {
+        const pct = Math.min(100, (c.progress / c.target) * 100);
+        const completed = c.completed;
+        const bonusCount = c.reward === 'extraLife' ? bombanimeState.bonuses.extraLife : bombanimeState.bonuses.freeCharacter;
+        const hasBonus = completed && bonusCount > 0;
+        const used = completed && bonusCount <= 0;
+        const isGift = c.reward === 'freeCharacter';
+        const notMyTurn = isGift && !bombanimeState.isMyTurn;
+        const disabled = !completed || (isGift ? (!bonusCount || !bombanimeState.isMyTurn) : !bonusCount);
+        
+        html += `
+            <div class="challenge-item ${completed ? 'completed' : ''} ${!completed && c.progress > 0 ? 'in-progress' : ''} ${used ? 'used' : ''}">
+                <div class="challenge-content">
+                    <div class="challenge-title">
+                        ${c.target} perso${c.target > 1 ? 's' : ''} en <span class="challenge-letter">${c.letter}</span>
+                    </div>
+                    <div class="challenge-progress-bar">
+                        <div class="progress-fill" style="width: ${pct}%"></div>
+                    </div>
+                </div>
+                <button class="challenge-bonus-btn ${hasBonus ? 'available' : ''} ${isGift ? 'type-gift' : ''} ${notMyTurn ? 'not-my-turn' : ''}"
+                    ${disabled ? 'disabled' : ''}
+                    onclick="adminUseBombanimeBonus('${c.reward}')">
+                    ${c.reward === 'extraLife' 
+                        ? '<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'
+                        : '<svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2z"/></svg>'}
+                    ${hasBonus ? `<span class="bonus-count">${bonusCount}</span>` : ''}
+                </button>
+            </div>
+        `;
+    });
+    html += '</div>';
+    panel.innerHTML = html;
+}
+
+function renderAdminBombanimeAlphabet() {
+    const panel = document.getElementById('bombanimeAdminAlphabet');
+    if (!panel) return;
+    
+    const myAlphabet = new Set(bombanimeState.myAlphabet.map(l => l.toUpperCase()));
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    const fillPct = (myAlphabet.size / 26) * 100;
+    
+    let gridHTML = '';
+    // Main grid (A-X, 8 rows of 3)
+    for (let i = 0; i < 24; i++) {
+        const l = letters[i];
+        gridHTML += `<div class="alphabet-letter ${myAlphabet.has(l) ? 'used' : ''}">${l}</div>`;
+    }
+    // Last row Y-Z
+    const lastRowHTML = `
+        <div class="alphabet-last-row">
+            <div class="alphabet-letter ${myAlphabet.has('Y') ? 'used' : ''}">Y</div>
+            <div class="alphabet-letter ${myAlphabet.has('Z') ? 'used' : ''}">Z</div>
+        </div>
+    `;
+    
+    panel.innerHTML = `
+        <div class="alphabet-heart-main">
+            <svg class="heart-bg" viewBox="0 0 24 24">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            <svg class="heart-fill" viewBox="0 0 24 24" style="clip-path: inset(${100 - fillPct}% 0 0 0)">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+        </div>
+        <div class="alphabet-grid">
+            ${gridHTML}
+            ${lastRowHTML}
+        </div>
+    `;
+}
+
+function updateAdminBombanimeInput(isMyTurn) {
+    bombanimeState.isMyTurn = isMyTurn;
+    const input = document.getElementById('bombanimeAdminInputField');
+    const underline = document.querySelector('#bombanimeAdminInput .input-underline');
+    if (!input) return;
+    
+    input.disabled = !isMyTurn;
+    input.classList.toggle('disabled', !isMyTurn);
+    if (underline) underline.classList.toggle('disabled', !isMyTurn);
+    
+    const serieName = SERIE_NAMES[bombanimeState.serie] || bombanimeState.serie;
+    input.placeholder = `${serieName}...`;
+    
+    // Reset input when turn ends (bomb exploded or turn passed)
+    if (!isMyTurn) {
+        input.value = '';
+        // Clear local typing display
+        if (twitchUser) {
+            const mySlot = document.querySelector(`.player-slot[data-twitch-id="${twitchUser.id}"]`);
+            if (mySlot) {
+                const typingEl = mySlot.querySelector('.player-typing');
+                if (typingEl) {
+                    typingEl.textContent = '';
+                    typingEl.classList.remove('has-text');
+                }
+            }
+        }
+    }
+    
+    if (isMyTurn) {
+        input.focus();
+        // Clear error
+        bombanimeState.lastError = null;
+        const feedback = document.getElementById('bombanimeAdminFeedback');
+        if (feedback) {
+            feedback.classList.remove('show', 'error');
+            feedback.textContent = '';
+        }
+    }
+    
+    // Update challenges (bonus button state depends on isMyTurn)
+    renderAdminBombanimeChalllenges();
+}
+
+function adminSubmitBombanime() {
+    const input = document.getElementById('bombanimeAdminInputField');
+    if (!input || !input.value.trim() || !bombanimeState.isMyTurn || !twitchUser) return;
+    
+    socket.emit('bombanime-submit-name', {
+        name: input.value.trim()
+    });
+}
+
+function adminUseBombanimeBonus(reward) {
+    if (!twitchUser) return;
+    if (reward === 'freeCharacter') {
+        socket.emit('bombanime-use-free-character');
+    } else if (reward === 'extraLife') {
+        socket.emit('bombanime-use-extra-life');
+    }
+}
+
+function showAdminBombanimeError(reason) {
+    const input = document.getElementById('bombanimeAdminInputField');
+    if (!input) return;
+    
+    // Reset input instantly
+    input.value = '';
+    
+    // Shake animation (visual only)
+    input.classList.add('shake-error');
+    setTimeout(() => input.classList.remove('shake-error'), 400);
+    
+    // Clear local typing display
+    if (twitchUser) {
+        const mySlot = document.querySelector(`.player-slot[data-twitch-id="${twitchUser.id}"]`);
+        if (mySlot) {
+            const typingEl = mySlot.querySelector('.player-typing');
+            if (typingEl) {
+                typingEl.textContent = '';
+                typingEl.classList.remove('has-text');
+            }
+        }
     }
 }
 
@@ -8424,6 +9354,12 @@ function displayBombanimeWinner(data) {
         clearInterval(bombanimeState.timerInterval);
     }
     
+    // Clean up admin-player elements
+    ['bombanimeAdminChallenges', 'bombanimeAdminAlphabet', 'bombanimeAdminInput', 'bombanimeAdminCloseBtn'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    });
+    
     // 🆕 Sauvegarder les données du winner pour restauration au refresh
     sessionStorage.setItem('bombanimeWinnerData', JSON.stringify({
         winner: data.winner,
@@ -8510,21 +9446,9 @@ async function closeBombanimeWinner() {
     const bombanimeCloseBtn = document.getElementById('bombanimeCloseLobbyBtn');
     if (bombanimeCloseBtn) bombanimeCloseBtn.style.display = 'none';
     
-    try {
-        // Fermer le lobby via l'API
-        await fetch('/admin/toggle-game', {
-            method: 'POST',
-            credentials: 'same-origin'
-        });
-        
-        // Retour à l'état idle
-        returnToIdle();
-        
-    } catch (error) {
-        console.error('❌ Erreur fermeture lobby:', error);
-        // En cas d'erreur, retourner quand même à l'idle
-        returnToIdle();
-    }
+    // Le serveur a déjà désactivé le lobby à la fin de la partie bombanime,
+    // donc on retourne simplement à l'idle sans appeler toggle-game
+    returnToIdle();
 }
 
 // 🆕 Fonction pour fermer le lobby BombAnime et retourner à l'idle
@@ -8562,11 +9486,14 @@ async function closeLobby() {
         const logsPanel = document.getElementById('bombanimeLogsPanel');
         if (logsPanel) logsPanel.style.display = 'none';
         
+        // === Nettoyage Triade ===
+        hideTriadeTable();
+        
         // Retour à l'état idle
         returnToIdle();
         
     } catch (error) {
-        console.error('❌ Erreur fermeture lobby BombAnime:', error);
+        console.error('❌ Erreur fermeture lobby:', error);
     }
 }
 
@@ -8606,6 +9533,685 @@ document.addEventListener('keydown', (e) => {
     }
 });
 */
+
+// ============================================
+// 🎴 TRIADE - Fonctions Admin (Vue Spectateur)
+// ============================================
+
+let triadeState = {
+    playersData: [],
+    currentRound: 0
+};
+
+// Afficher la table Triade (admin = spectateur)
+// 🎴 État admin Triade
+let adminTriadeCards = [];
+let adminDealStarted = false;
+
+
+function showTriadeTable(data) {
+    triadeState = {
+        playersData: data.playersData || [],
+        currentRound: data.currentRound || 0
+    };
+    
+    // Détecter si l'admin est joueur (directement depuis les données, sans dépendre de adminInLobby)
+    const isAdminPlayer = twitchUser && 
+        triadeState.playersData.some(p => p.twitchId === twitchUser.id);
+    
+    // Mettre à jour adminInLobby pour cohérence
+    if (isAdminPlayer) adminInLobby = true;
+    
+    console.log('🎴 showTriadeTable appelé avec:', data, 'adminPlayer:', isAdminPlayer);
+    
+    // Cacher le lobby
+    const stateLobby = document.getElementById('stateLobby');
+    const stateGame = document.getElementById('stateGame');
+    
+    if (stateLobby) {
+        stateLobby.classList.remove('active');
+        stateLobby.style.display = 'none';
+    }
+    
+    if (stateGame) {
+        // Cacher tous les éléments du mode quiz classique
+        const gameQuestionWrapper = document.getElementById('gameQuestionWrapper');
+        const gameMainPanel = document.getElementById('gameMainPanel');
+        const characterImageContainer = document.getElementById('characterImageContainer');
+        const gameLayout = stateGame.querySelector('.game-layout');
+        
+        if (gameQuestionWrapper) gameQuestionWrapper.style.display = 'none';
+        if (gameMainPanel) gameMainPanel.style.display = 'none';
+        if (characterImageContainer) characterImageContainer.style.display = 'none';
+        if (gameLayout) gameLayout.style.display = 'none';
+        
+        // Créer ou afficher le conteneur Triade
+        let triadeContainer = document.getElementById('triadeAdminContainer');
+        if (!triadeContainer) {
+            triadeContainer = document.createElement('div');
+            triadeContainer.id = 'triadeAdminContainer';
+            triadeContainer.className = 'triade-admin-container';
+            document.body.appendChild(triadeContainer);
+        }
+        
+        triadeContainer.style.display = 'flex';
+        
+        // Créer le bouton Fermer lobby
+        let closeBtnEl = triadeContainer.querySelector('#triadeCloseLobbyBtn');
+        if (!closeBtnEl) {
+            closeBtnEl = document.createElement('button');
+            closeBtnEl.id = 'triadeCloseLobbyBtn';
+            closeBtnEl.className = 'triade-close-lobby-btn';
+            closeBtnEl.textContent = 'Fermer lobby';
+            triadeContainer.appendChild(closeBtnEl);
+        }
+        closeBtnEl.onclick = closeLobby;
+        
+        // Créer la table
+        let tableContainer = triadeContainer.querySelector('.triade-table-container');
+        if (tableContainer) tableContainer.remove();
+        
+        tableContainer = document.createElement('div');
+        tableContainer.className = 'triade-table-container';
+        tableContainer.innerHTML = isAdminPlayer ? generateTriadePOVHTML() : generateTriadeTableHTML();
+        triadeContainer.appendChild(tableContainer);
+        
+        // Mettre à jour les positions des joueurs
+        if (isAdminPlayer) {
+            updateTriadePOVPositions();
+            renderAdminPOVCards();
+        } else {
+            updateTriadePlayerPositions();
+        }
+        
+        // 🆕 Créer le slot carte central DANS la table
+        const triadeTable = triadeContainer.querySelector('.triade-table');
+        if (triadeTable) {
+            // Slot carte centrale (zone de jeu)
+            let centerSlot = triadeTable.querySelector('.triade-center-slot');
+            if (!centerSlot) {
+                centerSlot = document.createElement('div');
+                centerSlot.className = 'triade-center-slot';
+                centerSlot.id = 'triadeCenterSlot';
+                centerSlot.innerHTML = `<div class="center-slot-inner"></div>`;
+                triadeTable.appendChild(centerSlot);
+                // Afficher après la distribution
+                setTimeout(() => centerSlot.classList.add('visible'), 4500);
+            }
+        }
+        
+        // Preview carte (dans body, hors de tout conteneur transformé)
+        if (isAdminPlayer) {
+            let previewEl = document.getElementById('adminCardPreview');
+            if (!previewEl) {
+                previewEl = document.createElement('div');
+                previewEl.id = 'adminCardPreview';
+                previewEl.className = 'triade-card-preview';
+                previewEl.innerHTML = `
+                    <div class="preview-card" id="adminPreviewCard">
+                        <div class="preview-image">
+                            <img id="adminPreviewImg" src="" alt="">
+                        </div>
+                        <div class="preview-top-badges">
+                            <div class="class-badge-small" id="adminPreviewClassBadge">
+                                <span id="adminPreviewClassIcon"></span>
+                            </div>
+                            <div class="prota-badge" id="adminPreviewProtaBadge" style="display:none;">
+                                <svg viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"/></svg>
+                            </div>
+                        </div>
+                        <div class="preview-info">
+                            <div class="preview-name" id="adminPreviewName"></div>
+                            <div class="preview-anime" id="adminPreviewAnime"></div>
+                            <div class="preview-stats" id="adminPreviewStats">
+                                <div class="stat-item"><span class="stat-label">ATK</span><span class="stat-value" id="adminStatAtk">-</span></div>
+                                <div class="stat-item"><span class="stat-label">INT</span><span class="stat-value" id="adminStatInt">-</span></div>
+                                <div class="stat-item"><span class="stat-label">VIT</span><span class="stat-value" id="adminStatSpd">-</span></div>
+                                <div class="stat-item"><span class="stat-label">POW</span><span class="stat-value" id="adminStatPwr">-</span></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(previewEl);
+            }
+        }
+        
+        // Activer l'écran
+        stateGame.classList.add('active');
+        stateGame.style.display = 'flex';
+        stateGame.style.opacity = '1';
+        stateGame.style.pointerEvents = '';
+    }
+}
+
+// 🆕 Afficher le slot carte central au début du round
+
+function showTriadeRoundOverlay(round, stat, statName) {
+    const centerSlot = document.getElementById('triadeCenterSlot');
+    if (centerSlot) centerSlot.classList.add('visible');
+}
+
+// Générer le HTML de la table Triade
+function generateTriadeTableHTML() {
+    return `
+        <div class="triade-table">
+            <div class="triade-table-rail"></div>
+            <div class="triade-table-surface"></div>
+            
+            <div class="triade-table-logo">
+                <div class="logo-main">TRIADE</div>
+                <div class="logo-sub">ShonenMaster</div>
+            </div>
+            
+            <!-- Player Seats -->
+            ${[1,2,3,4,5,6,7,8,9,10].map(i => `
+                <div class="triade-player-seat hidden" id="triadeSeat${i}">
+                    <div class="triade-player-block">
+                        <div class="triade-player-cards">
+                            <div class="triade-player-card-small"></div>
+                            <div class="triade-player-card-small"></div>
+                            <div class="triade-player-card-small"></div>
+                        </div>
+                        <div class="triade-player-ribbon">
+                            <div class="triade-stars">
+                                <svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                                <svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                                <svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                            </div>
+                        </div>
+                        <div class="triade-player-name-tag">
+                            <div class="triade-player-name">Player ${i}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+// Calculer les positions des joueurs sur la table (cercle complet comme prototype V6)
+function calculateTriadePositions(numPlayers) {
+    const positions = [];
+    const radiusX = 50;
+    const radiusY = 50;
+    const centerX = 50;
+    const centerY = 50;
+    const startAngle = 270; // Admin: premier joueur en haut
+    
+    for (let i = 0; i < numPlayers; i++) {
+        const angle = startAngle + (i * 360 / numPlayers);
+        const angleRad = angle * Math.PI / 180;
+        
+        const x = centerX + radiusX * Math.cos(angleRad);
+        const y = centerY + radiusY * Math.sin(angleRad);
+        
+        positions.push({ left: `${x}%`, top: `${y}%` });
+    }
+    
+    return positions;
+}
+
+// Mettre à jour les positions des joueurs
+function updateTriadePlayerPositions() {
+    const numPlayers = triadeState.playersData.length;
+    const positions = calculateTriadePositions(numPlayers);
+    
+    // Mêmes scales que le prototype V6
+    const scaleByCount = {
+        2: 1.35, 3: 1.3, 4: 1.25, 5: 1.3, 6: 1.25,
+        7: 1.2, 8: 1.15, 9: 1.1, 10: 1.05
+    };
+    const scale = scaleByCount[numPlayers] || 1.0;
+    
+    // Cacher tous les sièges d'abord
+    for (let i = 1; i <= 10; i++) {
+        const seat = document.getElementById(`triadeSeat${i}`);
+        if (seat) {
+            seat.classList.add('hidden');
+            seat.style.cssText = '';
+        }
+    }
+    
+    // Afficher et positionner les joueurs
+    triadeState.playersData.forEach((player, index) => {
+        const seat = document.getElementById(`triadeSeat${index + 1}`);
+        if (seat && positions[index]) {
+            seat.classList.remove('hidden');
+            seat.dataset.twitchId = player.twitchId;
+            seat.style.left = positions[index].left;
+            seat.style.top = positions[index].top;
+            seat.style.transform = `translate(-50%, -50%) scale(${scale})`;
+            
+            // Mettre à jour le nom
+            const nameEl = seat.querySelector('.triade-player-name');
+            
+            if (nameEl) nameEl.textContent = player.username || 'Player';
+            
+            // État actif
+            seat.classList.toggle('active', player.isCurrentPlayer);
+
+        }
+    });
+}
+
+// Mettre à jour la table Triade
+function updateTriadeTable(data) {
+    if (data.playersData) triadeState.playersData = data.playersData;
+    
+    const isAdminPlayer = twitchUser && 
+        triadeState.playersData.some(p => p.twitchId === twitchUser.id);
+    
+    if (isAdminPlayer) {
+        updateTriadePOVPositions();
+    } else {
+        updateTriadePlayerPositions();
+    }
+}
+
+// Ajouter un log Triade
+function addTriadeLog(message, type = 'info') {
+    const logsList = document.getElementById('triadeLogsList');
+    if (!logsList) return;
+    
+    const entry = document.createElement('div');
+    entry.className = `triade-log-entry ${type}`;
+    entry.textContent = message;
+    
+    logsList.insertBefore(entry, logsList.firstChild);
+    
+    // Limiter à 50 entrées
+    while (logsList.children.length > 50) {
+        logsList.removeChild(logsList.lastChild);
+    }
+}
+
+// Afficher le gagnant Triade
+function displayTriadeWinner(data) {
+    console.log('🏆 Affichage gagnant Triade:', data);
+    // TODO: Implémenter l'écran de victoire
+    
+    // Pour l'instant, retour à l'idle
+    setTimeout(() => {
+        hideTriadeTable();
+        returnToIdle();
+    }, 5000);
+}
+
+// Cacher la table Triade
+function hideTriadeTable() {
+    const triadeContainer = document.getElementById('triadeAdminContainer');
+    if (triadeContainer) {
+        triadeContainer.style.display = 'none';
+    }
+    // Reset admin cards
+    adminTriadeCards = [];
+    adminDealStarted = false;
+    // Reset admin lobby state
+    adminInLobby = false;
+}
+
+// ============================================
+// 🎴 ADMIN POV MODE (quand admin est joueur)
+// ============================================
+
+function getAdminCardImage(card) {
+    if (!card || !card.name) return '';
+    return `${card.name.toLowerCase().replace(/\s+/g, '')}.png`;
+}
+
+function getAdminClassIcon(cardClass) {
+    const icons = {
+        assaut: '<svg viewBox="0 0 24 24"><path d="M6.92 5H5L14 14L15 13.06L6.92 5M19.06 3C18.44 3 17.82 3.24 17.35 3.71L13.71 7.35L16.65 10.29L20.29 6.65C21.24 5.7 21.24 4.14 20.29 3.19C19.82 2.72 19.44 3 19.06 3M7.06 18.34L9.06 16.34L7.66 14.94L5.66 16.94C5.16 17.44 5.16 18.25 5.66 18.75C6.16 19.25 6.97 19.25 7.47 18.75L7.06 18.34Z"/></svg>',
+        oracle: '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>',
+        mirage: '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>'
+    };
+    return icons[cardClass] || '';
+}
+
+function adminFormatName(name) {
+    if (!name) return '';
+    const exceptions = { 'JoJo': 'JoJo', 'Jojo': 'JoJo', 'DragonBallZ': 'Dragon Ball', 'Dbz': 'Dragon Ball' };
+    if (exceptions[name]) return exceptions[name];
+    return name.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2');
+}
+
+// Ordonner les autres joueurs circulairement à partir du POV (identique à app.js)
+function getOrderedOtherPlayersAdmin(playersData) {
+    if (!playersData || !playersData.length) return [];
+    if (!twitchUser) return playersData;
+    const myIndex = playersData.findIndex(p => p.twitchId === twitchUser.id);
+    if (myIndex === -1) return playersData.filter(p => p.twitchId !== twitchUser.id);
+    const total = playersData.length;
+    const ordered = [];
+    for (let i = 1; i < total; i++) {
+        const idx = (myIndex + i) % total;
+        ordered.push(playersData[idx]);
+    }
+    return ordered;
+}
+
+// Générer le HTML POV (admin en bas, autres autour)
+function generateTriadePOVHTML() {
+    const otherPlayers = getOrderedOtherPlayersAdmin(triadeState.playersData);
+    
+    return `
+        <div class="triade-table">
+            <div class="triade-table-rail"></div>
+            <div class="triade-table-surface"></div>
+            
+            <div class="triade-table-logo">
+                <div class="logo-main">TRIADE</div>
+                <div class="logo-sub">ShonenMaster</div>
+            </div>
+            
+            <!-- Autres joueurs (sièges autour) -->
+            ${otherPlayers.map((p, i) => `
+                <div class="triade-player-seat" id="triadePovSeat${i}" 
+                     data-twitch-id="${p.twitchId}">
+                    <div class="triade-player-block">
+                        <div class="triade-player-cards">
+                            <div class="triade-player-card-small"></div>
+                            <div class="triade-player-card-small"></div>
+                            <div class="triade-player-card-small"></div>
+                        </div>
+                        <div class="triade-player-ribbon">
+                            <div class="triade-stars">
+                                <svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                                <svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                                <svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                            </div>
+                        </div>
+                        <div class="triade-player-name-tag">
+                            <div class="triade-player-name">${p.username || 'Player'}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+            
+            <!-- Mon siège POV (en bas) -->
+            <div class="triade-player-seat me" 
+                 id="triadeAdminPovSeat">
+                <div class="triade-my-cards" id="adminPovCards">
+                    <!-- Rempli dynamiquement -->
+                </div>
+                <div class="triade-player-block">
+                    <div class="triade-player-ribbon">
+                        <div class="triade-stars">
+                            <svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                            <svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                            <svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        </div>
+                    </div>
+                    <div class="triade-player-name-tag">
+                        <div class="triade-player-name">Vous</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Positionner les autres joueurs en cercle (POV = bottom)
+function updateTriadePOVPositions() {
+    const otherPlayers = getOrderedOtherPlayersAdmin(triadeState.playersData);
+    const totalPlayers = otherPlayers.length + 1;
+    
+    // Scales identiques au joueur (app.js)
+    const scaleByCount = {
+        2: 1.35, 3: 1.3, 4: 1.25, 5: 1.3, 6: 1.25,
+        7: 1.2, 8: 1.15, 9: 1.1, 10: 1.05
+    };
+    const scale = scaleByCount[totalPlayers] || 1.0;
+    
+    const radiusX = 50;
+    const radiusY = 50;
+    const centerX = 50;
+    const centerY = 50;
+    const startAngle = 90; // POV en bas
+    
+    otherPlayers.forEach((player, index) => {
+        const seat = document.getElementById(`triadePovSeat${index}`);
+        if (!seat) return;
+        
+        const seatIndex = index + 1;
+        const angle = startAngle + (seatIndex * 360 / totalPlayers);
+        const angleRad = angle * Math.PI / 180;
+        
+        const x = centerX + radiusX * Math.cos(angleRad);
+        const y = centerY + radiusY * Math.sin(angleRad);
+        
+        seat.style.left = `${x}%`;
+        seat.style.top = `${y}%`;
+        seat.style.transform = `translate(-50%, -50%) scale(${scale})`;
+        
+        seat.classList.toggle('active', player.isCurrentPlayer);
+    });
+    
+    // Scale POV seat
+    const povSeat = document.getElementById('triadeAdminPovSeat');
+    if (povSeat) {
+        povSeat.style.setProperty('--pov-scale', scale);
+    }
+}
+
+// Rendre les cartes de l'admin dans le POV
+function renderAdminPOVCards(isDealing = false) {
+    const container = document.getElementById('adminPovCards');
+    if (!container) return;
+    
+    // Détecter les animes avec 2+ cartes (bonus same-anime)
+    const animeCounts = {};
+    adminTriadeCards.forEach(c => { if (c && c.anime) animeCounts[c.anime] = (animeCounts[c.anime] || 0) + 1; });
+    
+    const sameAnimeParticles = `
+        <div class="sa-glow-container">
+            <div class="sa-smoke s1"></div>
+            <div class="sa-smoke s2"></div>
+            <div class="sa-smoke s3"></div>
+            <div class="sa-smoke s4"></div>
+            <div class="sa-smoke s5"></div>
+            <div class="sa-corner-glow tl"></div>
+            <div class="sa-corner-glow tr"></div>
+            <div class="sa-corner-glow bl"></div>
+            <div class="sa-corner-glow br"></div>
+        </div>
+        <div class="sa-particles">
+            <div class="sa-particle md"></div>
+            <div class="sa-particle sm"></div>
+            <div class="sa-particle lg"></div>
+            <div class="sa-particle sm"></div>
+            <div class="sa-particle md"></div>
+            <div class="sa-particle lg"></div>
+            <div class="sa-particle sm"></div>
+            <div class="sa-particle md"></div>
+            <div class="sa-particle lg"></div>
+            <div class="sa-particle sm"></div>
+            <div class="sa-particle sm"></div>
+            <div class="sa-particle sm"></div>
+            <div class="sa-particle sm"></div>
+        </div>`;
+    
+    container.innerHTML = adminTriadeCards.map((card, i) => {
+        const hasBonus = card && card.anime && animeCounts[card.anime] >= 2;
+        // Calculer la stat moyenne ou utiliser powerLevel comme fallback
+        const avgStat = card.stats 
+            ? Math.round((card.stats.atk + card.stats.int + card.stats.spd + card.stats.pwr) / 4) 
+            : (card.powerLevel || '?');
+        return `
+        <div class="triade-card large ${isDealing ? 'pre-deal' : ''} ${hasBonus ? 'same-anime-bonus' : ''}"
+             data-card-index="${i}">
+            ${hasBonus ? sameAnimeParticles : ''}
+            <div class="card-image">
+                <img src="${getAdminCardImage(card)}" alt="${card.name}">
+            </div>
+            <div class="class-badge ${card.class}">
+                <span class="class-icon">${getAdminClassIcon(card.class)}</span>
+            </div>
+            <div class="power-badge">
+                <span class="pw-value">${avgStat}</span>
+            </div>
+            <div class="card-info">
+                <div class="card-name">${adminFormatName(card.name)}</div>
+                <div class="card-anime">${adminFormatName(card.anime)}</div>
+            </div>
+        </div>`;
+    }).join('');
+    container.querySelectorAll('.triade-card.large').forEach(cardEl => {
+        const idx = parseInt(cardEl.dataset.cardIndex);
+        const card = adminTriadeCards[idx];
+        if (!card) return;
+        cardEl.addEventListener('mouseenter', () => showAdminCardPreview(card));
+        cardEl.addEventListener('mouseleave', () => hideAdminCardPreview());
+    });
+    
+    // Animation de distribution
+    if (isDealing) {
+        setTimeout(() => {
+            dealAdminTriadeCards();
+        }, 3400);
+    }
+}
+
+// Preview carte - identique au joueur
+let adminPreviewTimeout = null;
+
+function showAdminCardPreview(card) {
+    if (!card) return;
+    if (adminPreviewTimeout) { clearTimeout(adminPreviewTimeout); adminPreviewTimeout = null; }
+    
+    const preview = document.getElementById('adminCardPreview');
+    const img = document.getElementById('adminPreviewImg');
+    const name = document.getElementById('adminPreviewName');
+    const anime = document.getElementById('adminPreviewAnime');
+    const classIcon = document.getElementById('adminPreviewClassIcon');
+    const classBadge = document.getElementById('adminPreviewClassBadge');
+    
+    if (!preview) return;
+    
+    img.src = getAdminCardImage(card);
+    img.alt = card.name;
+    name.textContent = adminFormatName(card.name);
+    anime.textContent = adminFormatName(card.anime);
+    
+    // Afficher les 4 stats
+    const statAtk = document.getElementById('adminStatAtk');
+    const statInt = document.getElementById('adminStatInt');
+    const statSpd = document.getElementById('adminStatSpd');
+    const statPwr = document.getElementById('adminStatPwr');
+    
+    if (card.stats) {
+        if (statAtk) statAtk.textContent = card.stats.atk;
+        if (statInt) statInt.textContent = card.stats.int;
+        if (statSpd) statSpd.textContent = card.stats.spd;
+        if (statPwr) statPwr.textContent = card.stats.pwr;
+    } else {
+        // Fallback pour anciennes cartes avec powerLevel
+        const pw = card.powerLevel || '?';
+        if (statAtk) statAtk.textContent = pw;
+        if (statInt) statInt.textContent = pw;
+        if (statSpd) statSpd.textContent = pw;
+        if (statPwr) statPwr.textContent = pw;
+    }
+    
+    // Badge classe en haut à droite
+    if (classBadge) {
+        classBadge.className = 'class-badge-small ' + card.class;
+    }
+    if (classIcon) {
+        classIcon.innerHTML = getAdminClassIcon(card.class);
+    }
+    
+    // Badge protagoniste
+    const protaBadge = document.getElementById('adminPreviewProtaBadge');
+    if (protaBadge) {
+        protaBadge.style.display = card.isProtagonist ? 'flex' : 'none';
+        protaBadge.className = 'prota-badge' + (card.isBig3 ? ' big3' : '');
+    }
+    
+    preview.classList.add('visible');
+}
+
+function hideAdminCardPreview() {
+    const preview = document.getElementById('adminCardPreview');
+    if (!preview) return;
+    preview.classList.remove('visible');
+    // Garder le contenu pendant l'animation de sortie
+    adminPreviewTimeout = setTimeout(() => {
+        // Ne pas vider le contenu pour éviter un flash
+    }, 300);
+}
+
+// Animation de distribution des cartes adversaires (dos de cartes)
+function dealAdminSmallCards() {
+    const allSeats = document.querySelectorAll('.triade-player-seat:not(.hidden):not(.me)');
+    
+    // Préparer les positions de départ (centre de la table)
+    allSeats.forEach(seat => {
+        const cards = seat.querySelectorAll('.triade-player-card-small');
+        cards.forEach(card => {
+            card.classList.remove('dealing', 'dealt');
+            card.classList.add('pre-deal');
+            
+            const rect = card.getBoundingClientRect();
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            const fromX = centerX - rect.left - rect.width / 2;
+            const fromY = centerY - rect.top - rect.height / 2;
+            card.style.setProperty('--deal-from-x', fromX + 'px');
+            card.style.setProperty('--deal-from-y', fromY + 'px');
+            const cardIndex = Array.from(card.parentElement.children).indexOf(card);
+            const rotations = ['-10deg', '0deg', '10deg'];
+            card.style.setProperty('--card-rotation', rotations[cardIndex] || '0deg');
+        });
+    });
+    
+    // Distribution siège par siège, carte par carte
+    let seatDelay = 0;
+    const delayPerSeat = 250;
+    const delayBetweenCards = 80;
+    
+    allSeats.forEach((seat) => {
+        const cards = seat.querySelectorAll('.triade-player-card-small');
+        cards.forEach((card, cardIndex) => {
+            setTimeout(() => {
+                card.classList.remove('pre-deal');
+                card.classList.add('dealing');
+                setTimeout(() => {
+                    card.classList.remove('dealing');
+                    card.classList.add('dealt');
+                }, 350);
+            }, seatDelay + (cardIndex * delayBetweenCards));
+        });
+        seatDelay += delayPerSeat;
+    });
+}
+
+// Animation de distribution des cartes POV (admin joueur)
+function dealAdminTriadeCards() {
+    const mySeat = document.querySelector('.triade-player-seat.me');
+    if (!mySeat) return;
+    
+    const myCards = mySeat.querySelectorAll('.triade-my-cards .triade-card');
+    myCards.forEach(card => {
+        card.classList.remove('dealing', 'dealt');
+        card.classList.add('pre-deal');
+    });
+    
+    setTimeout(() => {
+        const delayBetweenMyCards = 120;
+        myCards.forEach((card, cardIndex) => {
+            setTimeout(() => {
+                card.classList.remove('pre-deal');
+                card.classList.add('dealing');
+                setTimeout(() => {
+                    card.classList.remove('dealing');
+                    card.classList.add('dealt');
+                }, 350);
+            }, cardIndex * delayBetweenMyCards);
+        });
+    }, 100);
+}
+
 
 // ============================================
 // SUGGESTION SYSTEM - MINIMALISTE
@@ -8696,7 +10302,7 @@ function closeSuggestionModal() {
 const animeDisplayNames = {
     'Naruto': 'Naruto',
     'OnePiece': 'One Piece',
-    'Dbz': 'Dragon Ball Z',
+    'Dbz': 'Dragon Ball',
     'Mha': 'My Hero Academia',
     'Bleach': 'Bleach',
     'Jojo': 'JoJo\'s Bizarre Adventure',

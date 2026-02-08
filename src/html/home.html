@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="home.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap"
         rel="stylesheet">
 
     <link rel="icon" type="image/png" href="icon.png">
@@ -178,11 +178,41 @@
                     </div>
                     <button 
                         class="lobby-btn" 
-                        :class="{ joined: hasJoined, 'lobby-full-error': lobbyFullError }"
+                        :class="{ joined: hasJoined, 'shake-error': triadeShakeError }"
                         @click="joinLobby" 
-                        :disabled="hasJoined"
+                        :disabled="hasJoined || joinCooldown"
                     >
-                        {{ hasJoined ? 'Vous êtes dans la partie' : (lobbyFullError ? 'Session complète...' : 'Rejoindre') }}
+                        {{ hasJoined ? 'Vous êtes dans la partie' : 'Rejoindre' }}
+                    </button>
+                </div>
+
+                <!-- Mode Triade: Lobby card -->
+                <div class="lobby-card lobby-card-v3 lobby-triade" v-if="lobbyMode === 'triade'">
+                    <div class="lobby-glow-line"></div>
+                    <!-- Icône cartes Triade -->
+                    <div class="triade-cards-icon">
+                        <div class="triade-card triade-card-back"></div>
+                        <div class="triade-card triade-card-front">
+                            <span class="triade-card-symbol">♠</span>
+                        </div>
+                    </div>
+                    <h2 class="lobby-title">La partie va commencer</h2>
+                    <div class="lobby-subtitle">Mode Triade</div>
+                    <div class="lobby-players-line">
+                        <span class="lobby-line"></span>
+                        <span class="lobby-count">
+                            <span class="lobby-dot"></span>
+                            <strong>{{ playerCount }}</strong> à la table
+                        </span>
+                        <span class="lobby-line"></span>
+                    </div>
+                    <button 
+                        class="lobby-btn" 
+                        :class="{ joined: hasJoined, 'shake-error': triadeShakeError }"
+                        @click="joinLobby" 
+                        :disabled="hasJoined || joinCooldown"
+                    >
+                        {{ hasJoined ? 'Vous êtes à la table' : 'Rejoindre' }}
                     </button>
                 </div>
 
@@ -208,7 +238,7 @@
 
             <!-- État: Partie en cours -->
             <div class="content-section game-section" 
-                 :class="{ 'no-animation': lobbyMode === 'bombanime' }"
+                 :class="{ 'no-animation': lobbyMode === 'bombanime' || lobbyMode === 'triade' }"
                  v-if="gameInProgress && isAuthenticated && !gameEnded">
                 
                 <!-- ============================================
@@ -584,6 +614,182 @@
                             <div class="alphabet-last-row-mobile">
                                 <div class="alphabet-letter" :class="{ 'used': hasLetter('Y'), 'just-added': bombanime.justAddedLetters.includes('Y') }">Y</div>
                                 <div class="alphabet-letter" :class="{ 'used': hasLetter('Z'), 'just-added': bombanime.justAddedLetters.includes('Z') }">Z</div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- ============================================
+                     MODE TRIADE - Interface de jeu (Poker Anime)
+                     ============================================ -->
+                <template v-else-if="lobbyMode === 'triade' && triade.active && !gameEnded">
+                    <div class="triade-game-container">
+                        
+                        <!-- Menu Combinaisons -->
+                        
+                        <div class="triade-table-container">
+                            <div class="triade-table">
+                                <div class="triade-table-rail"></div>
+                                <div class="triade-table-surface"></div>
+                                
+                                <div class="triade-table-logo">
+                                    <div class="logo-main">TRIADE</div>
+                                    <div class="logo-sub">ShonenMaster</div>
+                                </div>
+                                
+                                <!-- Slot carte central -->
+                                <div class="triade-center-slot" :class="{ visible: triade.showCenterSlot }">
+                                    <div class="center-slot-inner"></div>
+                                </div>
+                                
+                                <!-- Player Seats (autres joueurs) -->
+                                <div v-for="(player, index) in triade.otherPlayers" 
+                                     :key="'seat-' + player.twitchId"
+                                     class="triade-player-seat"
+                                     :class="{ active: player.isCurrentPlayer }"
+                                     :style="getTriadePlayerStyle(index, triade.otherPlayers.length)">
+                                    <div class="triade-player-block">
+                                        <div class="triade-player-cards">
+                                            <div class="triade-player-card-small"></div>
+                                            <div class="triade-player-card-small"></div>
+                                            <div class="triade-player-card-small"></div>
+                                        </div>
+                                        <div class="triade-player-ribbon">
+                                            <div class="triade-stars">
+                                                <svg v-for="s in 3" :key="'star-' + player.twitchId + '-' + s" class="triade-star" :class="{ won: (player.wins || 0) >= s }" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                                            </div>
+                                        </div>
+                                        <div class="triade-player-name-tag">
+                                            <div class="triade-player-name">{{ player.username }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Mon siège (POV - toujours en bas) -->
+                                <div class="triade-player-seat me" 
+                                     :class="{ active: triade.isMyTurn }"
+                                     :style="{ '--pov-scale': {2:1.35,3:1.3,4:1.25,5:1.3,6:1.25,7:1.2,8:1.15,9:1.1,10:1.05}[triade.otherPlayers.length + 1] || 1.3 }">
+                                    <div class="triade-my-cards">
+                                        <div v-for="(card, cardIndex) in triade.myCards" 
+                                             :key="'mycard-' + cardIndex"
+                                             class="triade-card large"
+                                             :class="{ 'same-anime-bonus': hasSameAnimeBonus(card) }"
+                                             @mouseenter="showCardPreview(card, $event)"
+                                             @mouseleave="hideCardPreview">
+                                            <!-- Same-anime Neon Glow Effect -->
+                                            <template v-if="hasSameAnimeBonus(card)">
+                                                <div class="sa-glow-container">
+                                                    <div class="sa-smoke s1"></div>
+                                                    <div class="sa-smoke s2"></div>
+                                                    <div class="sa-smoke s3"></div>
+                                                    <div class="sa-smoke s4"></div>
+                                                    <div class="sa-smoke s5"></div>
+                                                    <div class="sa-corner-glow tl"></div>
+                                                    <div class="sa-corner-glow tr"></div>
+                                                    <div class="sa-corner-glow bl"></div>
+                                                    <div class="sa-corner-glow br"></div>
+                                                </div>
+                                                <div class="sa-particles">
+                                                    <div class="sa-particle md"></div>
+                                                    <div class="sa-particle sm"></div>
+                                                    <div class="sa-particle lg"></div>
+                                                    <div class="sa-particle sm"></div>
+                                                    <div class="sa-particle md"></div>
+                                                    <div class="sa-particle lg"></div>
+                                                    <div class="sa-particle sm"></div>
+                                                    <div class="sa-particle md"></div>
+                                                    <div class="sa-particle lg"></div>
+                                                    <div class="sa-particle sm"></div>
+                                                    <div class="sa-particle sm"></div>
+                                                    <div class="sa-particle sm"></div>
+                                                    <div class="sa-particle sm"></div>
+                                                </div>
+                                            </template>
+                                            <div class="card-image">
+                                                <img :src="getCardImage(card)" :alt="card.name">
+                                            </div>
+                                            <div class="class-badge" :class="card.class">
+                                                <span class="class-icon" v-html="getClassIcon(card.class)"></span>
+                                            </div>
+                                            <div class="power-badge">
+                                                <span class="pw-value">{{ card.powerLevel }}</span>
+                                            </div>
+                                            <div class="card-info">
+                                                <div class="card-name">{{ formatName(card.name) }}</div>
+                                                <div class="card-anime">{{ formatName(card.anime) }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="triade-player-block">
+                                        <div class="triade-player-ribbon">
+                                            <div class="triade-stars">
+                                                <svg v-for="s in 3" :key="'mystar-' + s" class="triade-star" :class="{ won: (triade.myData.wins || 0) >= s }" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                                            </div>
+                                        </div>
+                                        <div class="triade-player-name-tag">
+                                            <div class="triade-player-name">Vous</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        
+                        <!-- Card Preview - Style Prototype -->
+                        <div class="triade-card-preview" :class="{ visible: triade.previewVisible }">
+                            <div class="preview-card" v-if="triade.previewCardDisplay">
+                                <div class="preview-image">
+                                    <img :src="getCardImage(triade.previewCardDisplay)" :alt="triade.previewCardDisplay.name">
+                                </div>
+                                <!-- Badges en haut à droite: Classe + Protagoniste -->
+                                <div class="preview-top-badges">
+                                    <div class="class-badge-small" :class="triade.previewCardDisplay.class">
+                                        <span v-html="getClassIcon(triade.previewCardDisplay.class)"></span>
+                                    </div>
+                                    <div v-if="triade.previewCardDisplay.isProtagonist" class="prota-badge" :class="{ big3: triade.previewCardDisplay.isBig3 }">
+                                        <svg viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"/></svg>
+                                    </div>
+                                </div>
+                                <div class="preview-info">
+                                    <div class="preview-name">{{ formatName(triade.previewCardDisplay.name) }}</div>
+                                    <div class="preview-anime">{{ formatName(triade.previewCardDisplay.anime) }}</div>
+                                    <div class="preview-stats" v-if="triade.previewCardDisplay.stats">
+                                        <div class="stat-item">
+                                            <span class="stat-label">ATK</span>
+                                            <span class="stat-value">{{ triade.previewCardDisplay.stats.atk }}</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">INT</span>
+                                            <span class="stat-value">{{ triade.previewCardDisplay.stats.int }}</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">VIT</span>
+                                            <span class="stat-value">{{ triade.previewCardDisplay.stats.spd }}</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">POW</span>
+                                            <span class="stat-value">{{ triade.previewCardDisplay.stats.pwr }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="preview-stats" v-else>
+                                        <div class="stat-item">
+                                            <span class="stat-label">ATK</span>
+                                            <span class="stat-value">{{ triade.previewCardDisplay.powerLevel || '?' }}</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">INT</span>
+                                            <span class="stat-value">{{ triade.previewCardDisplay.powerLevel || '?' }}</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">VIT</span>
+                                            <span class="stat-value">{{ triade.previewCardDisplay.powerLevel || '?' }}</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">POW</span>
+                                            <span class="stat-value">{{ triade.previewCardDisplay.powerLevel || '?' }}</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1261,7 +1467,7 @@
         </div>
 
         <!-- Jauge de Combo (Desktop uniquement - côté droit) -->
-        <div class="combo-gauge-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime'">
+        <div class="combo-gauge-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && !triade.active">
             <!-- 🔥 Particules EN DEHORS de la jauge -->
             <div class="combo-particles-external"></div>
 
@@ -1284,7 +1490,7 @@
         </div>
 
         <!-- 🆕 NOUVEAU SYSTÈME BONUS - Icône + Hover Menu -->
-        <div class="bonus-icon-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime'">
+        <div class="bonus-icon-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && !triade.active">
             <div class="bonus-icon-wrapper" @mouseenter="showBonusMenu = true" @mouseleave="showBonusMenu = false"
                 @click="showBonusMenu = !showBonusMenu">
 

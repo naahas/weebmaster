@@ -381,7 +381,7 @@ body {
     height: 11.5625rem;
     border-radius: 50%;
     background: radial-gradient(circle at 30% 30%, var(--bg-card), var(--bg));
-    border: 2px solid var(--border);
+    border: 1.5px solid var(--border);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -577,6 +577,33 @@ body {
     box-shadow: 0 0 0.375rem rgba(74, 222, 128, 0.5);
 }
 
+/* ============================================
+   MODE TRIADE - Bouton et particules bleus
+   ============================================ */
+.btn-wrapper.triade .main-action-btn:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 0 3.75rem rgba(59, 130, 246, 0.25);
+}
+
+.btn-wrapper.triade .main-action-btn::before {
+    background: conic-gradient(from 0deg, transparent, #3b82f6, transparent);
+}
+
+.btn-wrapper.triade .main-action-btn:hover .btn-text {
+    color: #3b82f6;
+    text-shadow: 0 0 1.25rem rgba(59, 130, 246, 0.5);
+}
+
+.btn-wrapper.triade::before {
+    border-color: #3b82f6;
+}
+
+/* Particules mode Triade - Bleu */
+.btn-wrapper.triade .particle {
+    background: #3b82f6;
+    box-shadow: 0 0 0.375rem rgba(59, 130, 246, 0.5);
+}
+
 .particle:nth-child(1) { left: 50%; top: 50%; }
 .particle:nth-child(2) { left: 20%; top: 30%; }
 .particle:nth-child(3) { left: 80%; top: 20%; }
@@ -675,7 +702,7 @@ body {
     }
     50% { 
         opacity: 0.6; 
-        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0); 
+        box-shadow: 0 0 0 2px rgba(34, 197, 94, 0); 
     }
 }
 
@@ -1755,7 +1782,7 @@ body {
     align-items: center;
     justify-content: center;
     z-index: 5;
-    border: 2px solid;
+    border: 1.5px solid;
     background: #000;
     cursor: pointer;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -1988,7 +2015,7 @@ body {
     border-radius: 0.625rem;
     overflow: hidden;
     cursor: pointer;
-    border: 2px solid transparent;
+    border: 1.5px solid transparent;
     transition: all 0.3s ease;
 }
 
@@ -2588,7 +2615,7 @@ body {
     width: 4.375rem;
     height: 4.375rem;
     border-radius: 50%;
-    border: 2px solid rgba(240, 192, 64, 0.3);
+    border: 1.5px solid rgba(240, 192, 64, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -4385,6 +4412,71 @@ body {
     opacity: 0.6;
 }
 
+/* Admin Join Lobby Button */
+.header-text-btn.join-lobby-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.join-tooltip-fixed {
+    position: fixed;
+    z-index: 9999;
+    background: rgba(15, 18, 25, 0.95);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.6rem;
+    font-weight: 400;
+    letter-spacing: 0.3px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(240, 192, 64, 0.15);
+    white-space: nowrap;
+    pointer-events: none;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.join-tooltip-fixed.visible {
+    opacity: 0.85;
+    transform: translateY(0);
+}
+
+.join-tooltip-fixed::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: rgba(240, 192, 64, 0.15);
+}
+
+.header-text-btn.join-lobby-btn.joined span:not(.join-tooltip) {
+    color: #22c55e;
+    opacity: 1;
+}
+
+.header-text-btn.join-lobby-btn.joined svg {
+    stroke: #22c55e;
+    opacity: 1;
+}
+
+.header-text-btn.join-lobby-btn.joined:hover span {
+    color: #ef4444;
+    text-shadow: none;
+}
+
+.header-text-btn.join-lobby-btn.joined:hover svg {
+    stroke: #ef4444;
+}
+
+.header-text-btn.join-lobby-btn.joined::before,
+.header-text-btn.join-lobby-btn.joined::after {
+    background: #ef4444;
+}
+
 /* Copy button - icon only */
 .header-text-btn.copy {
     padding: 0.3125rem;
@@ -5373,7 +5465,7 @@ body {
 
 /* Effet TOP 10 - Néon glow */
 .player-card.top10-card {
-    border: 2px solid rgba(255, 215, 0, 0.8);
+    border: 1.5px solid rgba(255, 215, 0, 0.8);
     box-shadow:
         -1.25rem 1.25rem 3.75rem rgba(0, 0, 0, 0.5),
         0 0 0.9375rem rgba(255, 215, 0, 0.4),
@@ -5407,7 +5499,7 @@ body {
 
 /* Effet TOP 1 - Néon intense + reflets holographiques */
 .player-card.top1-card {
-    border: 2px solid rgba(255, 215, 0, 1);
+    border: 1.5px solid rgba(255, 215, 0, 1);
     box-shadow:
         -1.25rem 1.25rem 3.75rem rgba(0, 0, 0, 0.5),
         0 0 1.25rem rgba(255, 215, 0, 0.6),
@@ -5840,7 +5932,7 @@ body {
             var(--pie-color-2, #ff3b5c) var(--pie-angle-1, 0deg) var(--pie-angle-2, 0deg),
             var(--pie-color-3, #f0c040) var(--pie-angle-2, 0deg) 360deg);
     box-shadow:
-        0 0 0 3px rgba(255, 255, 255, 0.08),
+        0 0 0 2px rgba(255, 255, 255, 0.08),
         0 0.25rem 1.25rem rgba(0, 0, 0, 0.4);
     transform: rotate(-90deg) scale(0);
     animation: pieReveal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
@@ -6154,7 +6246,7 @@ body {
     background-clip: text;
     filter: blur(1.5625rem);
     opacity: 0.6;
-    z-index: -1;
+    z-index: 1;
 }
 
 /* Ligne décorative */
@@ -6690,7 +6782,7 @@ body {
     font-size: 0.75rem;
     font-weight: 700;
     z-index: 10;
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
 }
 
 .winner-player-team-badge.team-a {
@@ -7185,7 +7277,7 @@ body {
     height: 3.4375rem;
     opacity: 0;
     transform: translateY(-0.9375rem) rotate(-15deg);
-    z-index: -1;
+    z-index: 1;
 }
 
 .logo-text-container {
@@ -7447,6 +7539,39 @@ body {
     font-size: 0.875rem;
     font-weight: 600;
     color: var(--gold);
+}
+
+/* Jetons Triade */
+.player-card-mini-stat .player-jetons {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #3b82f6;
+}
+
+.player-card-mini-stat .player-jetons .jetons-icon {
+    width: 14px;
+    height: 14px;
+    stroke: #3b82f6;
+    flex-shrink: 0;
+}
+
+/* Icônes Bombes BombAnime */
+.player-card-mini-stat .bomb-life-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.player-card-mini-stat .bomb-life-icon .bomb-icon {
+    width: 18px;
+    height: 18px;
+    stroke: #d4af37;
+    fill: none;
+    filter: drop-shadow(0 0 3px rgba(212, 175, 55, 0.4));
 }
 
 /* Bouton Kick pour cartes mini (lobby) */
@@ -8496,6 +8621,14 @@ body {
     animation-delay: 0.25s;
 }
 
+.mode-modal-content.active .mode-card:nth-child(3) {
+    animation-delay: 0.35s;
+}
+
+.mode-modal-content.active .mode-card:nth-child(4) {
+    animation-delay: 0.45s;
+}
+
 @keyframes modeCardAppear {
     from {
         opacity: 0;
@@ -8536,7 +8669,7 @@ body {
     border-radius: 18px;
     opacity: 0;
     transition: all 0.5s ease;
-    z-index: -1;
+    z-index: 1;
 }
 
 .mode-card.classique::before {
@@ -8552,6 +8685,11 @@ body {
 .mode-card.bombanime::before {
     background: linear-gradient(135deg, #22c55e, transparent, #10b981);
     box-shadow: 0 0 40px rgba(34, 197, 94, 0.3), 0 0 80px rgba(34, 197, 94, 0.1);
+}
+
+.mode-card.triade::before {
+    background: linear-gradient(135deg, #3b82f6, transparent, #1e40af);
+    box-shadow: 0 0 40px rgba(59, 130, 246, 0.3), 0 0 80px rgba(59, 130, 246, 0.1);
 }
 
 .mode-card:hover::before {
@@ -8617,6 +8755,11 @@ body {
 .mode-card.bombanime .mode-aura-particle {
     background: linear-gradient(to top, transparent, #22c55e, transparent);
     box-shadow: 0 0 6px #22c55e, 0 0 12px #22c55e;
+}
+
+.mode-card.triade .mode-aura-particle {
+    background: linear-gradient(to top, transparent, #3b82f6, transparent);
+    box-shadow: 0 0 6px #3b82f6, 0 0 12px #3b82f6;
 }
 
 /* Positions des particules */
@@ -8721,6 +8864,10 @@ body {
 
 .mode-card.inter-commu .mode-card-neon-line::before {
     background: conic-gradient(transparent 0deg, transparent 340deg, #8b5cf6 360deg);
+}
+
+.mode-card.triade .mode-card-neon-line::before {
+    background: conic-gradient(transparent 0deg, transparent 340deg, #3b82f6 360deg);
 }
 
 .mode-card:hover .mode-card-neon-line::before {
@@ -8834,6 +8981,10 @@ body {
     background: #22c55e;
 }
 
+.mode-card.triade .mode-character-glow {
+    background: #3b82f6;
+}
+
 /* Card content */
 .mode-card-content {
     position: absolute;
@@ -8843,6 +8994,11 @@ body {
     padding: 0 1.5rem;
     text-align: center;
     z-index: 25;
+}
+
+/* Aligner le texte de Classique avec les autres */
+.mode-card.classique .mode-card-content {
+    bottom: 3.2rem;
 }
 
 /* Aligner le texte de Rivalité avec Classique */
@@ -8876,8 +9032,17 @@ body {
     color: #22c55e;
 }
 
+.mode-card.triade .mode-card-label {
+    color: #3b82f6;
+}
+
 /* Aligner le texte de BombAnime avec les autres */
 .mode-card.bombanime .mode-card-content {
+    bottom: 3.2rem;
+}
+
+/* Aligner le texte de Triade avec les autres */
+.mode-card.triade .mode-card-content {
     bottom: 3.2rem;
 }
 
@@ -8908,6 +9073,10 @@ body {
 
 .mode-card.bombanime .mode-card-separator {
     background: linear-gradient(90deg, transparent, #22c55e, transparent);
+}
+
+.mode-card.triade .mode-card-separator {
+    background: linear-gradient(90deg, transparent, #3b82f6, transparent);
 }
 
 .mode-card-desc {
@@ -9000,6 +9169,76 @@ body {
 
 .mode-card.bombanime .mode-players-icon {
     stroke: rgba(255, 255, 255, 0.5);
+}
+
+.mode-card.triade .mode-card-players {
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.mode-card.triade:hover .mode-card-players {
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);
+}
+
+.mode-card.triade .mode-players-count {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.mode-card.triade .mode-players-icon {
+    stroke: rgba(255, 255, 255, 0.5);
+}
+
+/* SOON banner strip */
+.mode-card-soon {
+    position: absolute;
+    top: 38%;
+    left: -5%;
+    right: -5%;
+    transform: translateY(-50%) rotate(-3deg);
+    padding: 0.5rem 0;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    text-align: center;
+    color: #fff;
+    background: rgba(59, 130, 246, 0.5);
+    border-top: 1px solid rgba(59, 130, 246, 0.5);
+    border-bottom: 1px solid rgba(59, 130, 246, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 10;
+    animation: soon-pulse 3s ease-in-out infinite;
+}
+
+@keyframes soon-pulse {
+    0%, 100% { border-color: rgba(59, 130, 246, 0.5); text-shadow: 0 0 0 transparent; }
+    50% { border-color: rgba(59, 130, 246, 0.8); text-shadow: 0 0 8px rgba(59, 130, 246, 0.5); }
+}
+
+/* Triade card dimmed + no interaction */
+.mode-card.triade {
+    cursor: default;
+    pointer-events: none;
+}
+
+.mode-modal-content.active .mode-card.triade {
+    animation: modeCardAppearDimmed 0.5s ease forwards;
+    animation-delay: 0.45s;
+}
+
+@keyframes modeCardAppearDimmed {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 0.65; transform: translateY(0); }
+}
+
+.mode-modal-content.active .mode-card.triade.animation-done {
+    animation: none !important;
+    opacity: 0.65 !important;
+    transform: translateY(0);
+}
+
+.mode-card.triade:hover {
+    transform: none !important;
 }
 
 /* Dual characters */
@@ -9900,6 +10139,281 @@ body {
     opacity: 0.4;
     cursor: not-allowed;
     transform: none;
+}
+
+/* ============================================
+   PARAMÈTRES TRIADE
+   ============================================ */
+
+/* Groupe Jetons Triade */
+.triade-jetons-group {
+    border-color: rgba(59, 130, 246, 0.15);
+}
+
+.triade-jetons-group .setting-group-label,
+.triade-deck-dropdown .setting-group-label {
+    color: rgba(59, 130, 246, 0.7);
+}
+
+.triade-jetons-group .setting-group-icon,
+.triade-deck-dropdown .setting-group-icon {
+    stroke: rgba(59, 130, 246, 0.6);
+}
+
+.triade-jetons-group .setting-group-value {
+    color: #3b82f6;
+    font-weight: 600;
+}
+
+.triade-jetons-options .setting-option-btn {
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    color: rgba(59, 130, 246, 0.7);
+}
+
+.triade-jetons-options .setting-option-btn:hover {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.4);
+    color: #3b82f6;
+}
+
+.triade-jetons-options .setting-option-btn.active {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: #3b82f6;
+    color: #3b82f6;
+    font-weight: 600;
+}
+
+/* Badge header pour Triade */
+.mode-badge-header.triade {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.25);
+    color: rgba(59, 130, 246, 0.8);
+}
+
+/* Badge mode selector pour Triade */
+.mode-badge.triade {
+    color: rgba(59, 130, 246, 0.6);
+}
+
+.mode-badge.triade::before {
+    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+}
+
+.mode-badge.triade .mode-badge-line {
+    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.4), rgba(59, 130, 246, 0.6));
+}
+
+/* ============================================
+   DROPDOWN DECK TRIADE
+   ============================================ */
+.triade-deck-dropdown {
+    border-color: rgba(59, 130, 246, 0.15);
+    position: relative;
+}
+
+.triade-deck-dropdown .triade-dropdown-trigger {
+    cursor: pointer;
+    padding: 0.5rem 0;
+    transition: all 0.3s ease;
+}
+
+.triade-dropdown-trigger:hover {
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.triade-dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.triade-dropdown-header .setting-group-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Compteur à côté de DECK */
+.triade-dropdown-value {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    margin-left: 0.5rem;
+}
+
+.triade-dropdown-count {
+    color: #3b82f6;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+/* Toujours bleu */
+.triade-dropdown-count.complete,
+.triade-dropdown-count.incomplete {
+    color: #3b82f6;
+}
+
+.triade-dropdown-separator {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.8rem;
+}
+
+.triade-dropdown-total {
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 500;
+    font-size: 0.8rem;
+    margin-right: 0.6rem;
+}
+
+.triade-dropdown-arrow {
+    width: 16px;
+    height: 16px;
+    stroke: rgba(59, 130, 246, 0.5);
+    transition: transform 0.3s ease;
+}
+
+.triade-deck-dropdown.open .triade-dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+/* Cacher le label "animes" */
+.triade-dropdown-label {
+    display: none;
+}
+
+/* Cacher les titres de section */
+.triade-dropdown-section {
+    display: none;
+}
+
+.triade-section-title {
+    display: none;
+}
+
+/* Menu dropdown */
+.triade-dropdown-menu {
+    display: none;
+    background: rgba(18, 20, 26, 0.98);
+    border-top: 1px solid rgba(59, 130, 246, 0.1);
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+}
+
+.triade-deck-dropdown.open .triade-dropdown-menu {
+    display: block;
+}
+
+/* Items */
+.triade-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.triade-dropdown-item:hover {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.triade-dropdown-item.locked {
+    cursor: default;
+    opacity: 0.8;
+}
+
+.triade-dropdown-item.locked:hover {
+    background: transparent;
+}
+
+.triade-dropdown-item input[type="checkbox"] {
+    display: none;
+}
+
+/* Custom checkbox */
+.triade-checkbox {
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid rgba(59, 130, 246, 0.4);
+    border-radius: 4px;
+    position: relative;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.triade-dropdown-item:hover .triade-checkbox:not(.locked) {
+    border-color: #3b82f6;
+}
+
+/* Checkbox checked state */
+.triade-dropdown-item input:checked + .triade-checkbox {
+    background: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.triade-dropdown-item input:checked + .triade-checkbox::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 2px;
+    width: 4px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* Locked checkbox (Big 3) - Gold color */
+.triade-checkbox.locked {
+    background: var(--gold);
+    border-color: var(--gold);
+}
+
+.triade-checkbox.locked::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 2px;
+    width: 4px;
+    height: 8px;
+    border: solid #12141a;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.triade-dropdown-item.locked .triade-dropdown-item-name {
+    color: var(--gold);
+    font-weight: 500;
+}
+
+.triade-dropdown-item-name {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.85rem;
+}
+
+.triade-dropdown-item input:checked ~ .triade-dropdown-item-name {
+    color: #3b82f6;
+    font-weight: 500;
+}
+
+/* Scrollbar */
+.triade-dropdown-menu::-webkit-scrollbar {
+    width: 4px;
+}
+
+.triade-dropdown-menu::-webkit-scrollbar-track {
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.triade-dropdown-menu::-webkit-scrollbar-thumb {
+    background: rgba(59, 130, 246, 0.3);
+    border-radius: 2px;
+}
+
+.triade-dropdown-menu::-webkit-scrollbar-thumb:hover {
+    background: rgba(59, 130, 246, 0.5);
 }
 
 /* Badge header pour BombAnime */
@@ -11764,4 +12278,2076 @@ body {
 
 .suggestion-toast.error {
     border-color: rgba(180, 60, 60, 0.3);
+}
+/* ============================================
+   🎴 TRIADE - Mode Poker Anime (Admin)
+   ============================================ */
+
+/* Container principal */
+/* ============================================
+   TRIADE ADMIN - SPECTATOR VIEW (matche prototype V6)
+   ============================================ */
+.triade-admin-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 200;
+    display: flex;
+    background: 
+        linear-gradient(rgba(0, 0, 0, 0.91), rgba(0, 0, 0, 0.94)),
+        url('city.jpg') center/cover no-repeat;
+}
+
+/* Table Container */
+.triade-table-container {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 1050px;
+    height: 580px;
+}
+
+/* Poker Table */
+.triade-table {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+}
+
+.triade-table-rail {
+    position: absolute;
+    inset: -18px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, 
+        #4a3020 0%, 
+        #3a2215 20%,
+        #2a1810 50%,
+        #1a0f08 80%,
+        #100a05 100%
+    );
+    z-index: 0;
+    box-shadow: 
+        inset 0 3px 6px rgba(255,255,255,0.08),
+        inset 0 -4px 12px rgba(0,0,0,0.6),
+        0 15px 50px rgba(0,0,0,0.6),
+        0 5px 15px rgba(0,0,0,0.4);
+}
+
+.triade-table-rail::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 15%;
+    right: 15%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.25), transparent);
+}
+
+.triade-table-rail::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    border: 1px solid rgba(212, 175, 55, 0.12);
+}
+
+.triade-table-surface {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: 
+        radial-gradient(ellipse at 30% 30%, rgba(40, 95, 70, 0.6) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 70%, rgba(25, 70, 50, 0.5) 0%, transparent 50%),
+        linear-gradient(180deg, #1f6b4a 0%, #155c3a 30%, #0f4a2d 60%, #0a3d24 100%);
+    box-shadow: 
+        inset 0 0 80px rgba(0,0,0,0.4),
+        inset 0 0 150px rgba(0,0,0,0.2);
+    overflow: hidden;
+}
+
+.triade-table-surface::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background-image: repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(0,0,0,0.02) 1px, rgba(0,0,0,0.02) 2px);
+    pointer-events: none;
+}
+
+.triade-table-surface::after {
+    content: '';
+    position: absolute;
+    inset: 45px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(212, 175, 55, 0.1);
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.03);
+}
+
+/* Logo au centre */
+.triade-table-logo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    opacity: 0.08;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.triade-table-logo .logo-main {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2.8rem;
+    font-weight: 700;
+    letter-spacing: 10px;
+    color: #d4af37;
+    text-shadow: 0 0 40px rgba(212, 175, 55, 0.2);
+}
+
+.triade-table-logo .logo-sub {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 6px;
+    color: rgba(212, 175, 55, 0.5);
+    margin-top: -5px;
+}
+
+/* Pot Display */
+
+
+/* Community Cards */
+
+
+/* Triade Card base - matcher le style joueur */
+.triade-card {
+    width: 80px;
+    height: 112px;
+    border-radius: 8px;
+    position: relative;
+    background: linear-gradient(145deg, #1a1a2e 0%, #0f0f1a 100%);
+    border: 1.5px solid rgba(180, 150, 80, 0.4);
+    box-shadow: 
+        0 4px 15px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+    overflow: visible;
+}
+
+.triade-card .card-image {
+    position: absolute;
+    inset: 0;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.triade-card .card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    filter: brightness(1.02) contrast(1.02);
+}
+
+/* Class badge spectateur (petites cartes communautaires seulement, pas les cartes POV large) */
+.triade-card:not(.large) .class-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+}
+
+.triade-card:not(.large) .class-badge.assaut { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+.triade-card:not(.large) .class-badge.oracle { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.triade-card:not(.large) .class-badge.mirage { background: linear-gradient(135deg, #22c55e, #15803d); }
+
+.triade-card:not(.large) .class-badge .class-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.triade-card:not(.large) .class-badge .class-icon svg {
+    width: 11px;
+    height: 11px;
+    fill: #fff;
+    display: block;
+}
+
+/* Player Seats */
+.triade-player-seat {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1), top 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+}
+
+.triade-player-seat.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.8);
+}
+
+.triade-player-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+/* Player Cards (dos) */
+.triade-player-cards {
+    display: flex;
+    justify-content: center;
+    margin-bottom: -14px;
+    z-index: 1;
+}
+
+.triade-player-card-small {
+    width: 56px;
+    height: 78px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #1e3a5f, #0f2847);
+    border: 1.5px solid rgba(59, 130, 246, 0.5);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+    opacity: 1;
+}
+
+.triade-player-card-small::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    background: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(59, 130, 246, 0.08) 4px, rgba(59, 130, 246, 0.08) 8px);
+    border-radius: 3px;
+}
+
+.triade-player-card-small::after {
+    content: 'SM';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: rgba(59, 130, 246, 0.4);
+    text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+    letter-spacing: 2px;
+}
+
+.triade-player-card-small:first-child {
+    transform: rotate(-10deg);
+    margin-right: -14px;
+    z-index: 1;
+}
+
+.triade-player-card-small:nth-child(2) {
+    transform: rotate(0deg);
+    z-index: 2;
+}
+
+.triade-player-card-small:last-child {
+    transform: rotate(10deg);
+    margin-left: -14px;
+    z-index: 1;
+}
+
+/* Player Ribbon */
+.triade-player-ribbon {
+    background: linear-gradient(180deg, #2563eb, #1d4ed8);
+    padding: 6px 14px;
+    border-radius: 6px;
+    position: relative;
+    box-shadow: 
+        0 4px 15px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.15);
+    min-width: 75px;
+    text-align: center;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Étoiles de victoire */
+.triade-stars {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    align-items: center;
+}
+
+.triade-star {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.35);
+    stroke-width: 1.5;
+    transition: all 0.4s ease;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+}
+
+.triade-star.won {
+    fill: #fbbf24;
+    stroke: #f59e0b;
+    filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.6));
+}
+
+
+.triade-player-name-tag {
+    background: linear-gradient(180deg, #374151, #1f2937);
+    padding: 3px 12px;
+    border-radius: 0 0 6px 6px;
+    margin-top: -2px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.triade-player-name {
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+}
+
+/* Active player - ribbon reste bleu, seul le name-tag passe en jaune */
+.triade-player-seat.active .triade-player-ribbon {
+    box-shadow: 
+        0 5px 18px rgba(0,0,0,0.5),
+        0 0 15px rgba(59, 130, 246, 0.2),
+        inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+.triade-player-seat.active .triade-player-name-tag {
+    background: linear-gradient(180deg, #374151, #1f2937);
+}
+
+.triade-player-seat.active .triade-player-name {
+    color: rgba(255,255,255,0.9);
+}
+
+/* Bouton Fermer lobby Triade - sobre, discret */
+.triade-close-lobby-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 28px;
+    z-index: 300;
+    padding: 8px 0;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: fixed;
+}
+
+.triade-close-lobby-btn::after {
+    content: '';
+    display: block;
+    width: 0;
+    height: 1.5px;
+    background: linear-gradient(90deg, #f59e0b, #d97706);
+    transition: width 0.3s ease;
+    margin-top: 3px;
+}
+
+.triade-close-lobby-btn:hover {
+    color: #f59e0b;
+}
+
+.triade-close-lobby-btn:hover::after {
+    width: 100%;
+}
+
+/* ============================================
+   🎴 ADMIN POV MODE - Styles
+   ============================================ */
+
+/* Mon siège (toujours en bas) */
+.triade-player-seat.me {
+    position: absolute !important;
+    bottom: -22% !important;
+    left: 50% !important;
+    transform: translateX(-50%) scale(1.35) !important;
+    transform-origin: bottom center;
+    top: auto !important;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    z-index: 20;
+}
+
+.triade-player-seat.me .triade-player-block {
+    order: 2;
+    z-index: 15;
+    overflow: visible;
+}
+
+/* Mini chips POV admin - positionnées à droite du ribbon */
+
+/* POV: Ribbon TOUJOURS bleu, même quand active (seul le name-tag est jaune) */
+.triade-player-seat.me.active .triade-player-ribbon {
+    background: linear-gradient(180deg, #2563eb, #1d4ed8);
+    box-shadow: 
+        0 5px 18px rgba(0,0,0,0.5),
+        0 0 15px rgba(59, 130, 246, 0.2),
+        inset 0 1px 0 rgba(255,255,255,0.15),
+        0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+
+
+/* Mes cartes visibles */
+.triade-my-cards {
+    display: flex;
+    gap: 2px;
+    order: 1;
+    margin-bottom: -25px;
+    position: relative;
+    z-index: 10;
+    overflow: visible;
+}
+
+.triade-my-cards .triade-card {
+    overflow: visible !important;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    will-change: transform;
+}
+
+
+/* Badge classe toujours au premier plan */
+.triade-my-cards .triade-card .class-badge {
+    z-index: 100 !important;
+}
+.triade-my-cards .triade-card:first-child {
+    transform: rotate(-4deg);
+    z-index: 1;
+}
+
+.triade-my-cards .triade-card:nth-child(2) {
+    transform: rotate(0deg);
+    z-index: 3;
+    
+}
+
+.triade-my-cards .triade-card:last-child {
+    transform: rotate(4deg);
+    z-index: 1;
+}
+
+.triade-my-cards .triade-card:first-child:hover {
+    transform: translateY(-5px) rotate(-4deg) !important;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 15px rgba(180,150,80,0.15);
+}
+
+.triade-my-cards .triade-card:nth-child(2):hover {
+    transform: translateY(-5px) rotate(0deg) !important;
+    z-index: 3;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 15px rgba(180,150,80,0.15);
+}
+
+.triade-my-cards .triade-card:last-child:hover {
+    transform: translateY(-5px) rotate(4deg) !important;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 15px rgba(180,150,80,0.15);
+}
+
+/* Ribbon POV avec bordure */
+.triade-player-seat.me .triade-player-ribbon {
+    border: 1.5px solid rgba(255, 255, 255, 0.25);
+    overflow: visible;
+    box-shadow: 
+        0 4px 15px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.15),
+        0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+
+/* Carte large (mes cartes POV) */
+.triade-card.large {
+    width: 100px;
+    height: 140px;
+    border-radius: 10px;
+    border: 2.5px solid rgba(180, 150, 80, 0.55);
+    overflow: visible !important;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+    will-change: transform;
+}
+
+.triade-card.large .card-image {
+    border-radius: 8px;
+}
+
+.triade-card.large .card-image img {
+    filter: brightness(0.92) contrast(1.02);
+}
+
+.triade-card.large .card-image::after {
+    display: none;
+}
+
+/* Cacher les infos sur les grandes cartes */
+.triade-card.large .power-badge,
+.triade-card.large .card-info {
+    display: none;
+}
+
+/* Badge classe */
+.triade-card .class-badge {
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(145deg, #1a1a1f, #0a0a0f);
+    border: 1.5px solid rgba(180, 150, 80, 0.35);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    z-index: 5;
+}
+
+.triade-card.large .class-badge {
+    top: -12px;
+    left: -12px;
+    width: 26px;
+    height: 26px;
+    z-index: 20;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.7);
+}
+
+.triade-card .class-badge.assaut { border-color: rgba(239, 68, 68, 0.6); }
+.triade-card .class-badge.oracle { border-color: rgba(59, 130, 246, 0.6); }
+.triade-card .class-badge.mirage { border-color: rgba(34, 197, 94, 0.6); }
+
+.triade-card .class-badge .class-icon svg {
+    width: 10px;
+    height: 10px;
+}
+
+.triade-card .class-badge .class-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    line-height: 0;
+}
+
+.triade-card.large .class-badge .class-icon svg {
+    width: 12px;
+    height: 12px;
+}
+
+.triade-card .class-badge.assaut .class-icon svg { fill: #ef4444; }
+.triade-card .class-badge.oracle .class-icon svg { fill: #3b82f6; }
+.triade-card .class-badge.mirage .class-icon svg { fill: #22c55e; }
+
+/* Badge Protagoniste (coin supérieur droit - dépasse) */
+.triade-card .prota-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(145deg, #1a1a1f, #0a0a0f);
+    border: 1.5px solid rgba(251, 191, 36, 0.5);
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.2), 0 2px 8px rgba(0,0,0,0.6);
+    z-index: 5;
+}
+
+.triade-card .prota-badge svg {
+    width: 12px;
+    height: 12px;
+    fill: #fbbf24;
+    transform: rotate(-12deg);
+}
+
+.triade-card.large .prota-badge {
+    top: -12px;
+    right: -12px;
+    width: 26px;
+    height: 26px;
+    z-index: 20;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.2), 0 4px 12px rgba(0,0,0,0.7);
+}
+
+.triade-card.large .prota-badge svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* BIG 3 — Effet spécial */
+.triade-card .prota-badge.big3 {
+    border-color: rgba(251, 191, 36, 0.7);
+    box-shadow: 
+        0 0 8px rgba(251, 191, 36, 0.3),
+        0 0 0 2px rgba(0,0,0,0.4),
+        0 0 0 5px rgba(251, 191, 36, 0.25),
+        0 2px 8px rgba(0,0,0,0.6);
+    animation: big3Pulse 2s ease-in-out infinite;
+}
+
+.triade-card .prota-badge.big3::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: conic-gradient(
+        transparent 0deg,
+        rgba(251, 191, 36, 0.4) 60deg,
+        transparent 120deg,
+        rgba(251, 191, 36, 0.3) 200deg,
+        transparent 260deg,
+        rgba(251, 191, 36, 0.35) 320deg,
+        transparent 360deg
+    );
+    animation: big3Rotate 3s linear infinite;
+    z-index: 1;
+    mask: radial-gradient(circle, transparent 55%, black 56%);
+    -webkit-mask: radial-gradient(circle, transparent 55%, black 56%);
+}
+
+.triade-card .prota-badge.big3::after {
+    content: '✦';
+    position: absolute;
+    top: -6px;
+    right: -4px;
+    font-size: 0.4rem;
+    color: #fbbf24;
+    animation: big3Sparkle 1.5s ease-in-out infinite;
+}
+
+.triade-card.large .prota-badge.big3 {
+    box-shadow: 
+        0 0 10px rgba(251, 191, 36, 0.3),
+        0 0 0 2px rgba(0,0,0,0.4),
+        0 0 0 5px rgba(251, 191, 36, 0.3),
+        0 4px 12px rgba(0,0,0,0.7);
+}
+
+.triade-card.large .prota-badge.big3::before {
+    inset: -5px;
+}
+
+.triade-card.large .prota-badge.big3::after {
+    top: -7px;
+    right: -5px;
+    font-size: 0.45rem;
+}
+
+@keyframes big3Pulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(251,191,36,0.3), 0 0 0 2px rgba(0,0,0,0.4), 0 0 0 5px rgba(251,191,36,0.25), 0 2px 8px rgba(0,0,0,0.6); }
+    50% { box-shadow: 0 0 12px rgba(251,191,36,0.45), 0 0 0 2px rgba(0,0,0,0.4), 0 0 0 5px rgba(251,191,36,0.35), 0 2px 8px rgba(0,0,0,0.6); }
+}
+
+@keyframes big3Rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes big3Sparkle {
+    0%, 100% { opacity: 0.3; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* Power badge & Card info (petites cartes seulement) */
+.triade-card .power-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid rgba(180, 150, 80, 0.4);
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.triade-card .power-badge .pw-value {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #fbbf24;
+}
+
+.triade-card .card-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 6px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.9));
+    z-index: 2;
+}
+
+.triade-card .card-name {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.2;
+}
+
+.triade-card .card-anime {
+    font-size: 0.55rem;
+    color: rgba(255,255,255,0.6);
+}
+
+/* Action Buttons */
+
+
+/* Fold */
+
+/* Check */
+
+/* Call */
+
+/* Raise */
+
+/* All-in */
+
+
+
+/* ============================================
+   CARD PREVIEW (identique au joueur)
+   ============================================ */
+.triade-card-preview {
+    position: fixed;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%) translateX(-20px);
+    opacity: 0;
+    z-index: 300;
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.triade-card-preview.visible {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+}
+
+.triade-card-preview .preview-card {
+    width: 280px;
+    height: 420px;
+    background: linear-gradient(170deg, #18181f 0%, #0e0e13 100%);
+    border: 1.5px solid rgba(180, 150, 80, 0.25);
+    border-radius: 18px;
+    overflow: visible;
+    box-shadow: 
+        0 30px 60px rgba(0,0,0,0.6),
+        inset 0 0 60px rgba(255,204,0,0.02);
+    position: relative;
+}
+
+/* Badge Protagoniste - Preview card */
+.triade-card-preview .prota-badge {
+    position: absolute;
+    top: -16px;
+    right: -16px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #1a1a1f, #0a0a0f);
+    border: 2.5px solid rgba(251, 191, 36, 0.5);
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 14px rgba(251, 191, 36, 0.25), 0 4px 12px rgba(0,0,0,0.7);
+}
+
+.triade-card-preview .prota-badge svg {
+    width: 19px;
+    height: 19px;
+    fill: #fbbf24;
+    transform: rotate(15deg);
+}
+
+/* BIG 3 — Preview : effet très visible */
+.triade-card-preview .prota-badge.big3 {
+    width: 40px;
+    height: 40px;
+    top: -18px;
+    right: -18px;
+    background: linear-gradient(145deg, #1f1a0a, #0f0a00);
+    border: 2.5px solid rgba(251, 191, 36, 0.85);
+    box-shadow: 
+        0 0 16px rgba(251, 191, 36, 0.5),
+        0 0 0 4px rgba(0,0,0,0.5),
+        0 0 0 6px rgba(251, 191, 36, 0.4),
+        0 0 30px rgba(251, 191, 36, 0.15),
+        0 4px 12px rgba(0,0,0,0.7);
+    animation: big3PulsePreview 2s ease-in-out infinite;
+}
+
+.triade-card-preview .prota-badge.big3 svg {
+    width: 21px;
+    height: 21px;
+    fill: #fbbf24;
+    filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.6));
+}
+
+.triade-card-preview .prota-badge.big3::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    background: conic-gradient(
+        transparent 0deg,
+        rgba(251, 191, 36, 0.5) 40deg,
+        transparent 80deg,
+        rgba(251, 191, 36, 0.4) 160deg,
+        transparent 200deg,
+        rgba(251, 191, 36, 0.45) 280deg,
+        transparent 320deg
+    );
+    animation: big3Rotate 2.5s linear infinite;
+    z-index: 1;
+    mask: radial-gradient(circle, transparent 52%, black 54%);
+    -webkit-mask: radial-gradient(circle, transparent 52%, black 54%);
+}
+
+.triade-card-preview .prota-badge.big3::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    border: 1.5px solid transparent;
+    border-top-color: rgba(251, 191, 36, 0.7);
+    border-right-color: rgba(251, 191, 36, 0.3);
+    animation: big3Rotate 1.8s linear infinite reverse;
+}
+
+@keyframes big3PulsePreview {
+    0%, 100% { 
+        box-shadow: 0 0 16px rgba(251,191,36,0.5), 0 0 0 4px rgba(0,0,0,0.5), 0 0 0 6px rgba(251,191,36,0.4), 0 0 30px rgba(251,191,36,0.15), 0 4px 12px rgba(0,0,0,0.7);
+    }
+    50% { 
+        box-shadow: 0 0 22px rgba(251,191,36,0.7), 0 0 0 4px rgba(0,0,0,0.5), 0 0 0 7px rgba(251,191,36,0.55), 0 0 40px rgba(251,191,36,0.25), 0 4px 12px rgba(0,0,0,0.7);
+    }
+}
+
+.triade-card-preview .preview-image::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,255,255,0.08),
+        rgba(255,255,255,0.15),
+        rgba(255,255,255,0.08),
+        transparent
+    );
+    transform: skewX(-20deg);
+    z-index: 2;
+    pointer-events: none;
+    animation: shineLoop 3s ease-in-out infinite;
+}
+
+@keyframes shineLoop {
+    0%, 100% { left: -100%; }
+    50% { left: 150%; }
+}
+
+.triade-card-preview .preview-image {
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+.triade-card-preview .preview-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+}
+
+.triade-card-preview .preview-image::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(to top, rgba(14,14,19,1) 15%, rgba(14,14,19,0.95) 40%, transparent);
+}
+
+.triade-card-preview .preview-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 20px;
+    z-index: 5;
+}
+
+.triade-card-preview .preview-name {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 2px;
+    text-shadow: 
+        0 2px 4px rgba(0,0,0,0.8),
+        0 4px 8px rgba(0,0,0,0.6);
+}
+
+.triade-card-preview .preview-anime {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #d4af37;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    margin-bottom: 55px;
+}
+
+.triade-card-preview .preview-separator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 12px 0;
+}
+
+.triade-card-preview .preview-separator .sep-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(180,150,80,0.4), rgba(180,150,80,0.05));
+}
+
+.triade-card-preview .preview-separator .sep-line:last-child {
+    background: linear-gradient(90deg, rgba(180,150,80,0.05), rgba(180,150,80,0.4));
+}
+
+.triade-card-preview .preview-separator .sep-diamond {
+    width: 6px;
+    height: 6px;
+    background: #8a7340;
+    transform: rotate(45deg);
+}
+
+.triade-card-preview .preview-badges {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.triade-card-preview .preview-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(180, 150, 80, 0.2);
+    border-radius: 10px;
+    padding: 5px 11px;
+}
+
+.triade-card-preview .preview-badge .badge-icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(145deg, #1a1a1f, #0a0a0f);
+    border: 1.5px solid rgba(180, 150, 80, 0.35);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.5);
+    flex-shrink: 0;
+    line-height: 0;
+}
+
+.triade-card-preview .preview-badge .badge-icon span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+}
+
+.triade-card-preview .preview-badge .badge-icon.assaut { border-color: rgba(239, 68, 68, 0.6); }
+.triade-card-preview .preview-badge .badge-icon.oracle { border-color: rgba(59, 130, 246, 0.6); }
+.triade-card-preview .preview-badge .badge-icon.mirage { border-color: rgba(34, 197, 94, 0.6); }
+
+.triade-card-preview .preview-badge .badge-icon svg {
+    width: 10px;
+    height: 10px;
+}
+
+.triade-card-preview .preview-badge .badge-icon.assaut svg { fill: #ef4444; }
+.triade-card-preview .preview-badge .badge-icon.oracle svg { fill: #3b82f6; }
+.triade-card-preview .preview-badge .badge-icon.mirage svg { fill: #22c55e; }
+
+.triade-card-preview .preview-badge .badge-text {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #e8dcc8;
+    line-height: 1;
+}
+
+.triade-card-preview .preview-badge.power-badge .badge-text {
+    font-size: 1.05rem;
+}
+
+/* Stats display in preview - V2 Style (extends below card) */
+.triade-card-preview .preview-stats {
+    position: absolute;
+    bottom: -30px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 8px;
+    background: linear-gradient(145deg, #252535 0%, #18181f 100%);
+    border-radius: 10px;
+    border: 2px solid rgba(180, 150, 80, 0.4);
+    box-shadow: 
+        0 8px 25px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    z-index: 15;
+}
+
+.triade-card-preview .stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.triade-card-preview .stat-label {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.triade-card-preview .stat-value {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #FFD700;
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+}
+
+/* Top badges container (class + protagonist) - dépasse en haut à droite */
+.triade-card-preview .preview-top-badges {
+    position: absolute;
+    top: -18px;
+    right: -14px;
+    display: flex;
+    flex-direction: row;
+    gap: 0;
+    z-index: 20;
+}
+
+/* Small class badge */
+.triade-card-preview .class-badge-small {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(145deg, #1a1a1f, #0a0a0f);
+    border: 2px solid rgba(180, 150, 80, 0.35);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.5);
+    margin-right: -12px;
+    z-index: 2;
+}
+
+.triade-card-preview .class-badge-small.assaut {
+    border-color: rgba(239, 68, 68, 0.7);
+    background: linear-gradient(145deg, #2a1a1a, #1a0a0a);
+}
+
+.triade-card-preview .class-badge-small.oracle {
+    border-color: rgba(59, 130, 246, 0.7);
+    background: linear-gradient(145deg, #1a1a2a, #0a0a1a);
+}
+
+.triade-card-preview .class-badge-small.mirage {
+    border-color: rgba(34, 197, 94, 0.7);
+    background: linear-gradient(145deg, #1a2a1a, #0a1a0a);
+}
+
+/* Centrage de l'icône SVG dans le badge */
+.triade-card-preview .class-badge-small span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    line-height: 0;
+}
+
+.triade-card-preview .class-badge-small svg {
+    width: 20px;
+    height: 20px;
+}
+
+.triade-card-preview .class-badge-small.assaut svg { fill: #ef4444; }
+.triade-card-preview .class-badge-small.oracle svg { fill: #3b82f6; }
+.triade-card-preview .class-badge-small.mirage svg { fill: #22c55e; }
+
+/* Protagonist badge in top badges container */
+.triade-card-preview .preview-top-badges .prota-badge {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: 42px;
+    height: 42px;
+}
+
+/* ============================================
+   CENTER CARD SLOT (zone de jeu centrale)
+   ============================================ */
+
+.triade-center-slot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    width: 88px;
+    height: 123px;
+    border-radius: 10px;
+    border: 2px dashed rgba(180, 150, 80, 0.3);
+    background: rgba(180, 150, 80, 0.04);
+    opacity: 0;
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 50;
+}
+
+.triade-center-slot.visible {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.center-slot-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at center, rgba(180, 150, 80, 0.06) 0%, transparent 70%);
+}
+
+/* ============================================
+   TABLE INTRO ANIMATIONS
+   ============================================ */
+
+@keyframes tableIntroFade {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+@keyframes fadeInSmooth {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+/* — Phase 1: Table (0 → 700ms) — */
+.triade-table-container.intro .triade-table {
+    animation: tableIntroFade 0.7s ease-out both;
+}
+
+
+
+/* — Phase 2: Tous les joueurs avec fade + montée (2.0s) — */
+@keyframes seatFadeUp {
+    0% { 
+        opacity: 0; 
+        margin-top: 18px;
+    }
+    100% { 
+        opacity: 1; 
+        margin-top: 0px;
+    }
+}
+
+.triade-table-container.intro .triade-player-seat {
+    animation: seatFadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 2.0s both;
+}
+
+/* ============================================
+   DEAL ANIMATIONS
+   ============================================ */
+
+
+@keyframes dealPlayerCard {
+    0% {
+        transform: translate(var(--deal-from-x), var(--deal-from-y)) rotate(0deg) scale(0.3);
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        transform: translate(0, 0) rotate(var(--card-rotation)) scale(1);
+        opacity: 1;
+    }
+}
+
+.triade-player-card-small.dealing {
+    animation: dealPlayerCard 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes dealMyCard {
+    0% {
+        transform: translate(0, -400px) rotate(0deg) scale(0.3);
+        opacity: 0;
+    }
+    60% {
+        opacity: 1;
+    }
+    80% {
+        transform: translate(0, 10px) rotate(var(--card-rotation)) scale(1.02);
+    }
+    100% {
+        transform: translate(0, 0) rotate(var(--card-rotation)) scale(1);
+        opacity: 1;
+    }
+}
+
+.triade-my-cards .triade-card.dealing {
+    animation: dealMyCard 0.38s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.triade-my-cards .triade-card:first-child.dealing {
+    --card-rotation: -4deg;
+}
+
+.triade-my-cards .triade-card:nth-child(2).dealing {
+    --card-rotation: 0deg;
+}
+
+.triade-my-cards .triade-card:last-child.dealing {
+    --card-rotation: 4deg;
+}
+
+.triade-card.pre-deal,
+.triade-player-card-small.pre-deal {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.triade-my-cards .triade-card.dealing {
+    pointer-events: none;
+}
+
+.triade-my-cards .triade-card.dealt,
+.triade-player-card-small.dealt {
+    opacity: 1;
+}
+
+.triade-my-cards .triade-card.dealt {
+    animation: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    pointer-events: auto;
+}
+/* ========================================================
+   SAME-ANIME BONUS — Neon Glow Effect (Final)
+   ======================================================== */
+
+/* Double bordure + glow néon - Après distribution OU refresh (pas de pre-deal/dealing) */
+.triade-my-cards .triade-card.same-anime-bonus.dealt,
+.triade-my-cards .triade-card.same-anime-bonus:not(.pre-deal):not(.dealing) {
+    overflow: visible !important;
+    position: relative;
+    border: 1.5px solid rgba(251, 191, 36, 0.9) !important;
+    box-shadow: 
+        /* Bordure externe dorée */
+        0 0 0 1.5px rgba(251, 191, 36, 0.7),
+        /* Glow interne */
+        inset 0 0 10px rgba(251, 191, 36, 0.2),
+        /* Glow proche */
+        0 0 10px rgba(251, 191, 36, 0.6),
+        0 0 20px rgba(251, 191, 36, 0.4),
+        /* Glow moyen */
+        0 0 35px rgba(251, 191, 36, 0.25),
+        0 0 55px rgba(251, 191, 36, 0.15),
+        /* Glow large */
+        0 0 75px rgba(251, 191, 36, 0.1) !important;
+    animation: sa-border-shimmer 3s ease-in-out infinite, sa-effect-appear 0.5s ease-out forwards;
+}
+
+/* Animation d'apparition progressive de l'effet */
+@keyframes sa-effect-appear {
+    0% {
+        border-color: rgba(180, 150, 80, 0.4);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+    100% {
+        border-color: rgba(251, 191, 36, 0.9);
+        box-shadow: 
+            0 0 0 1.5px rgba(251, 191, 36, 0.7),
+            inset 0 0 10px rgba(251, 191, 36, 0.2),
+            0 0 10px rgba(251, 191, 36, 0.6),
+            0 0 20px rgba(251, 191, 36, 0.4),
+            0 0 35px rgba(251, 191, 36, 0.25),
+            0 0 55px rgba(251, 191, 36, 0.15),
+            0 0 75px rgba(251, 191, 36, 0.1);
+    }
+}
+
+/* Pas d'effet pendant pre-deal et dealing */
+.triade-my-cards .triade-card.same-anime-bonus.pre-deal,
+.triade-my-cards .triade-card.same-anime-bonus.dealing {
+    animation: dealMyCard 0.38s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards !important;
+    border: 1.5px solid rgba(180, 150, 80, 0.4) !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important;
+}
+.triade-my-cards .triade-card.same-anime-bonus.pre-deal {
+    opacity: 0 !important;
+    animation: none !important;
+}
+
+/* Cacher les particules et fumée pendant pre-deal et dealing */
+.triade-my-cards .triade-card.same-anime-bonus.pre-deal .sa-glow-container,
+.triade-my-cards .triade-card.same-anime-bonus.pre-deal .sa-particles,
+.triade-my-cards .triade-card.same-anime-bonus.dealing .sa-glow-container,
+.triade-my-cards .triade-card.same-anime-bonus.dealing .sa-particles {
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+/* Afficher les particules et fumée après distribution OU refresh */
+.triade-my-cards .triade-card.same-anime-bonus.dealt .sa-glow-container,
+.triade-my-cards .triade-card.same-anime-bonus.dealt .sa-particles,
+.triade-my-cards .triade-card.same-anime-bonus:not(.pre-deal):not(.dealing) .sa-glow-container,
+.triade-my-cards .triade-card.same-anime-bonus:not(.pre-deal):not(.dealing) .sa-particles {
+    visibility: visible;
+    animation: sa-particles-appear 0.6s ease-out 0.2s forwards;
+    opacity: 0;
+}
+
+@keyframes sa-particles-appear {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+/* Animation de brillance discontinue sur la bordure + pulsation du glow */
+@keyframes sa-border-shimmer {
+    0%, 100% {
+        border-color: rgba(251, 191, 36, 0.7);
+        box-shadow: 
+            0 0 0 1.5px rgba(251, 191, 36, 0.5),
+            inset 0 0 8px rgba(251, 191, 36, 0.15),
+            0 0 8px rgba(251, 191, 36, 0.4),
+            0 0 15px rgba(251, 191, 36, 0.25),
+            0 0 25px rgba(251, 191, 36, 0.15),
+            0 0 40px rgba(251, 191, 36, 0.08),
+            0 0 55px rgba(251, 191, 36, 0.03);
+    }
+    25% {
+        border-color: rgba(255, 215, 100, 1);
+        box-shadow: 
+            0 0 0 2px rgba(255, 215, 100, 0.9),
+            inset 0 0 12px rgba(251, 191, 36, 0.3),
+            0 0 15px rgba(255, 215, 100, 0.7),
+            0 0 30px rgba(251, 191, 36, 0.5),
+            0 0 50px rgba(251, 191, 36, 0.3),
+            0 0 75px rgba(251, 191, 36, 0.18),
+            0 0 100px rgba(251, 191, 36, 0.1);
+    }
+    50% {
+        border-color: rgba(251, 191, 36, 0.8);
+        box-shadow: 
+            0 0 0 1.5px rgba(251, 191, 36, 0.6),
+            inset 0 0 10px rgba(251, 191, 36, 0.2),
+            0 0 10px rgba(251, 191, 36, 0.5),
+            0 0 20px rgba(251, 191, 36, 0.35),
+            0 0 35px rgba(251, 191, 36, 0.2),
+            0 0 55px rgba(251, 191, 36, 0.1),
+            0 0 70px rgba(251, 191, 36, 0.05);
+    }
+    75% {
+        border-color: rgba(255, 220, 120, 1);
+        box-shadow: 
+            0 0 0 2.5px rgba(255, 220, 120, 0.95),
+            inset 0 0 15px rgba(251, 191, 36, 0.35),
+            0 0 18px rgba(255, 220, 120, 0.8),
+            0 0 35px rgba(251, 191, 36, 0.55),
+            0 0 60px rgba(251, 191, 36, 0.35),
+            0 0 90px rgba(251, 191, 36, 0.2),
+            0 0 120px rgba(251, 191, 36, 0.12);
+    }
+}
+
+/* Halo doré intense sur l'image du personnage - Après distribution OU refresh */
+.triade-my-cards .triade-card.same-anime-bonus.dealt .card-image,
+.triade-my-cards .triade-card.same-anime-bonus:not(.pre-deal):not(.dealing) .card-image {
+    position: absolute !important;
+    inset: 0 !important;
+    overflow: hidden !important;
+    border-radius: 6px !important;
+}
+.triade-my-cards .triade-card.same-anime-bonus.dealt .card-image::after,
+.triade-my-cards .triade-card.same-anime-bonus:not(.pre-deal):not(.dealing) .card-image::after {
+    content: '';
+    display: block !important;
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, rgba(251, 191, 36, 0.35) 0%, rgba(251, 191, 36, 0.15) 40%, transparent 70%);
+    pointer-events: none;
+    border-radius: 6px;
+    z-index: 1;
+    animation: sa-image-glow 2.5s ease-in-out infinite alternate, sa-halo-appear 0.5s ease-out forwards;
+    opacity: 0;
+}
+.triade-my-cards .triade-card.same-anime-bonus.dealt .card-image img,
+.triade-my-cards .triade-card.same-anime-bonus:not(.pre-deal):not(.dealing) .card-image img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    filter: brightness(1.1) saturate(1.1) sepia(0.15);
+}
+
+@keyframes sa-halo-appear {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+@keyframes sa-image-glow {
+    0% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+/* Container pour les effets de fumée */
+.sa-glow-container {
+    position: absolute;
+    inset: -25px;
+    pointer-events: none;
+    overflow: visible;
+    z-index: -1;
+}
+
+/* Effet fumée/brume animée */
+.sa-smoke {
+    position: absolute;
+    border-radius: 16px;
+    filter: blur(18px);
+    opacity: 0.55;
+    animation: sa-smoke-float 4s ease-in-out infinite alternate;
+}
+.sa-smoke.s1 {
+    inset: 12px;
+    background: radial-gradient(ellipse at 20% 30%, rgba(251, 191, 36, 0.4) 0%, transparent 60%);
+    animation-delay: 0s;
+}
+.sa-smoke.s2 {
+    inset: 8px;
+    background: radial-gradient(ellipse at 80% 70%, rgba(251, 191, 36, 0.35) 0%, transparent 55%);
+    animation-delay: 1s;
+    animation-duration: 5s;
+}
+.sa-smoke.s3 {
+    inset: 15px;
+    background: radial-gradient(ellipse at 50% 90%, rgba(251, 191, 36, 0.4) 0%, transparent 50%);
+    animation-delay: 0.5s;
+    animation-duration: 4.5s;
+}
+.sa-smoke.s4 {
+    inset: 10px;
+    background: radial-gradient(ellipse at 10% 60%, rgba(251, 191, 36, 0.3) 0%, transparent 50%);
+    animation-delay: 1.5s;
+    animation-duration: 5.5s;
+}
+.sa-smoke.s5 {
+    inset: 14px;
+    background: radial-gradient(ellipse at 90% 40%, rgba(251, 191, 36, 0.35) 0%, transparent 55%);
+    animation-delay: 0.8s;
+    animation-duration: 4.2s;
+}
+
+@keyframes sa-smoke-float {
+    0% { transform: scale(0.95) translate(0, 0); opacity: 0.45; }
+    50% { opacity: 0.65; }
+    100% { transform: scale(1.05) translate(2px, -2px); opacity: 0.5; }
+}
+
+/* Points lumineux aux coins */
+.sa-corner-glow {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: radial-gradient(circle, rgba(255, 230, 150, 0.85) 0%, rgba(251, 191, 36, 0.55) 30%, transparent 70%);
+    filter: blur(2px);
+    animation: sa-corner-pulse 2s ease-in-out infinite alternate;
+    z-index: 5;
+}
+.sa-corner-glow.tl { top: 20px; left: 20px; animation-delay: 0s; }
+.sa-corner-glow.tr { top: 20px; right: 20px; animation-delay: 0.5s; }
+.sa-corner-glow.bl { bottom: 20px; left: 20px; animation-delay: 1s; }
+.sa-corner-glow.br { bottom: 20px; right: 20px; animation-delay: 1.5s; }
+
+@keyframes sa-corner-pulse {
+    0% { transform: scale(0.8); opacity: 0.55; }
+    100% { transform: scale(1.25); opacity: 0.95; }
+}
+
+/* Container particules */
+.sa-particles {
+    position: absolute;
+    inset: -12px;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 6;
+}
+
+/* Particules dorées */
+.sa-particle {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, 
+        #fffbeb 0%, 
+        #fcd34d 50%, 
+        #f59e0b 80%,
+        transparent 100%
+    );
+    box-shadow: 
+        0 0 3px rgba(251, 191, 36, 0.8),
+        0 0 6px rgba(251, 191, 36, 0.4);
+    opacity: 0;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+}
+.sa-particle.lg { width: 4px; height: 4px; }
+.sa-particle.md { width: 3px; height: 3px; }
+.sa-particle.sm { width: 2px; height: 2px; box-shadow: 0 0 2px rgba(251, 191, 36, 0.7); }
+
+/* Animations particules autour */
+@keyframes sa-float1 {
+    0%, 100% { transform: translate(0, 0); opacity: 0; }
+    10% { opacity: 0.9; }
+    50% { transform: translate(5px, -8px); opacity: 1; }
+    90% { opacity: 0.7; }
+}
+@keyframes sa-float2 {
+    0%, 100% { transform: translate(0, 0); opacity: 0; }
+    15% { opacity: 0.85; }
+    50% { transform: translate(-6px, -5px); opacity: 1; }
+    85% { opacity: 0.6; }
+}
+@keyframes sa-float3 {
+    0%, 100% { transform: translate(0, 0); opacity: 0; }
+    12% { opacity: 0.95; }
+    35% { transform: translate(4px, -10px); }
+    65% { transform: translate(-2px, -6px); opacity: 1; }
+    88% { opacity: 0.5; }
+}
+@keyframes sa-float4 {
+    0%, 100% { transform: translate(0, 0); opacity: 0; }
+    8% { opacity: 0.8; }
+    40% { transform: translate(-5px, -12px); }
+    70% { transform: translate(2px, -8px); opacity: 1; }
+    92% { opacity: 0.4; }
+}
+@keyframes sa-float5 {
+    0%, 100% { transform: translate(0, 0); opacity: 0; }
+    10% { opacity: 0.9; }
+    30% { transform: translate(8px, -3px); }
+    60% { transform: translate(-4px, -14px); opacity: 1; }
+    90% { opacity: 0.6; }
+}
+@keyframes sa-float6 {
+    0%, 100% { transform: translate(0, 0); opacity: 0; }
+    5% { opacity: 0.85; }
+    45% { transform: translate(-8px, -6px); opacity: 1; }
+    75% { transform: translate(-5px, -15px); }
+    95% { opacity: 0.4; }
+}
+
+/* Animations particules qui traversent */
+@keyframes sa-across1 {
+    0%, 100% { transform: translate(0, 0); opacity: 0; }
+    10% { opacity: 0.7; }
+    50% { transform: translate(30px, -22px); opacity: 0.9; }
+    90% { opacity: 0.5; }
+}
+@keyframes sa-across2 {
+    0%, 100% { transform: translate(0, 0); opacity: 0; }
+    15% { opacity: 0.6; }
+    50% { transform: translate(-25px, -18px); opacity: 0.85; }
+    85% { opacity: 0.4; }
+}
+@keyframes sa-across3 {
+    0%, 100% { transform: translate(0, 0); opacity: 0; }
+    12% { opacity: 0.65; }
+    50% { transform: translate(22px, -30px); opacity: 0.8; }
+    88% { opacity: 0.35; }
+}
+
+/* Positionnement particules autour (10) */
+.sa-particle:nth-child(1) { left: -3px; top: 30%; animation: sa-float1 3.5s infinite; animation-delay: 0s; }
+.sa-particle:nth-child(2) { left: -4px; top: 70%; animation: sa-float3 4s infinite; animation-delay: 0.6s; }
+.sa-particle:nth-child(3) { right: -3px; top: 25%; animation: sa-float2 4s infinite; animation-delay: 0.2s; }
+.sa-particle:nth-child(4) { right: -4px; top: 65%; animation: sa-float4 3.7s infinite; animation-delay: 0.8s; }
+.sa-particle:nth-child(5) { bottom: -4px; left: 25%; animation: sa-float3 3.8s infinite; animation-delay: 0.1s; }
+.sa-particle:nth-child(6) { bottom: -4px; left: 75%; animation: sa-float5 3.6s infinite; animation-delay: 1.2s; }
+.sa-particle:nth-child(7) { top: -4px; left: 22%; animation: sa-float4 4.1s infinite; animation-delay: 0.15s; }
+.sa-particle:nth-child(8) { top: -4px; left: 78%; animation: sa-float2 4.3s infinite; animation-delay: 1.3s; }
+.sa-particle:nth-child(9) { left: -3px; top: -3px; animation: sa-float5 4.2s infinite; animation-delay: 0.4s; }
+.sa-particle:nth-child(10) { right: -3px; bottom: -3px; animation: sa-float1 3.9s infinite; animation-delay: 1s; }
+
+/* Particules SUR la carte (3) - z-index élevé */
+.sa-particle:nth-child(11) { left: 20%; top: 60%; animation: sa-across1 5s infinite; animation-delay: 0.3s; z-index: 10; }
+.sa-particle:nth-child(12) { left: 60%; top: 40%; animation: sa-across2 5.5s infinite; animation-delay: 1.5s; z-index: 10; }
+.sa-particle:nth-child(13) { left: 40%; top: 75%; animation: sa-across3 6s infinite; animation-delay: 2.5s; z-index: 10; }
+/* ============================================
+   💣 BOMBANIME - Admin as Player POV
+   ============================================ */
+
+/* === INPUT ZONE === */
+.bombanime-admin-container .input-zone {
+    position: fixed;
+    bottom: 2.2%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 300;
+}
+
+.bombanime-admin-container .game-input-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.bombanime-admin-container .game-input {
+    width: 420px;
+    padding: 1rem 1.8rem;
+    background: transparent;
+    border: none;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: rgba(255, 250, 235, 0.95);
+    outline: none;
+    transition: all 0.3s ease;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.bombanime-admin-container .game-input::placeholder {
+    color: rgba(240, 192, 64, 0.3);
+    font-weight: 400;
+    font-size: 0.68rem;
+}
+
+.bombanime-admin-container .game-input.disabled {
+    color: rgba(255, 250, 235, 0.3);
+    cursor: not-allowed;
+}
+
+.bombanime-admin-container .game-input.disabled::placeholder {
+    color: rgba(255, 250, 235, 0.15);
+}
+
+.bombanime-admin-container .input-underline {
+    width: 60%;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 1px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.bombanime-admin-container .input-underline.disabled {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.bombanime-admin-container .input-underline::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0%;
+    height: 100%;
+    background: rgba(240, 192, 64, 0.6);
+    border-radius: 1px;
+    transition: width 0.3s ease;
+}
+
+.bombanime-admin-container .game-input:focus + .input-underline::after {
+    width: 100%;
+}
+
+.bombanime-admin-container .game-input.error + .input-underline {
+    background: rgba(239, 68, 68, 0.5);
+}
+
+.bombanime-admin-container .game-input.shake-error {
+    animation: admin-input-shake 0.4s ease;
+}
+
+@keyframes admin-input-shake {
+    0%, 100% { transform: translateX(0); }
+    15% { transform: translateX(-8px); }
+    30% { transform: translateX(8px); }
+    45% { transform: translateX(-6px); }
+    60% { transform: translateX(6px); }
+    75% { transform: translateX(-4px); }
+    90% { transform: translateX(4px); }
+}
+
+.bombanime-admin-container .feedback-message {
+    position: absolute;
+    bottom: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    opacity: 0;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.bombanime-admin-container .feedback-message.show {
+    opacity: 1;
+    animation: admin-feedback-pop 0.3s ease;
+}
+
+@keyframes admin-feedback-pop {
+    0% { transform: translateX(-50%) scale(0.9) translateY(-5px); opacity: 0; }
+    100% { transform: translateX(-50%) scale(1) translateY(0); opacity: 1; }
+}
+
+.bombanime-admin-container .feedback-message.error {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+}
+
+.bombanime-admin-container .feedback-message.success {
+    background: rgba(240, 192, 64, 0.15);
+    color: #f0c040;
+}
+
+/* === ALPHABET PANEL === */
+.bombanime-admin-container .alphabet-panel {
+    position: fixed;
+    right: 2.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.2rem 1rem;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    height: 70vh;
+    justify-content: space-between;
+    z-index: 300;
+}
+
+.bombanime-admin-container .alphabet-heart-main {
+    position: relative;
+    width: 60px;
+    height: 55px;
+    flex-shrink: 0;
+}
+
+.bombanime-admin-container .alphabet-heart-main .heart-bg {
+    position: absolute;
+    inset: 0;
+    fill: rgba(240, 192, 64, 0.15);
+}
+
+.bombanime-admin-container .alphabet-heart-main .heart-fill {
+    position: absolute;
+    inset: 0;
+    fill: #f0c040;
+    transition: clip-path 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    filter: drop-shadow(0 0 8px rgba(240, 192, 64, 0.5));
+}
+
+.bombanime-admin-container .alphabet-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem 0.4rem;
+    flex-grow: 1;
+    align-content: center;
+}
+
+.bombanime-admin-container .alphabet-letter {
+    width: 38px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.03);
+    clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+    transition: all 0.3s ease;
+}
+
+.bombanime-admin-container .alphabet-letter.used {
+    color: #f0c040;
+    background: rgba(240, 192, 64, 0.15);
+    text-shadow: 0 0 10px rgba(240, 192, 64, 0.5);
+}
+
+.bombanime-admin-container .alphabet-last-row {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* === CHALLENGES PANEL === */
+.bombanime-admin-container .bombanime-challenges-panel {
+    position: fixed;
+    left: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 250px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    z-index: 300;
+}
+
+.bombanime-admin-container .challenges-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.bombanime-admin-container .challenge-item {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    position: relative;
+    transition: all 0.3s ease;
+    gap: 0.8rem;
+    opacity: 0.7;
+}
+
+.bombanime-admin-container .challenge-item:last-child {
+    border-bottom: none;
+}
+
+.bombanime-admin-container .challenge-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    transition: background 0.3s ease;
+}
+
+.bombanime-admin-container .challenge-item.in-progress {
+    opacity: 1;
+}
+
+.bombanime-admin-container .challenge-item.in-progress::before {
+    background: linear-gradient(to bottom, #f0c040, #ff9800);
+}
+
+.bombanime-admin-container .challenge-item.completed::before {
+    background: #4caf50;
+}
+
+.bombanime-admin-container .challenge-item.completed:not(.used) {
+    opacity: 1;
+}
+
+.bombanime-admin-container .challenge-item.completed.used {
+    opacity: 0.4;
+}
+
+.bombanime-admin-container .challenge-item.completed.used::before {
+    background: rgba(76, 175, 80, 0.4);
+}
+
+.bombanime-admin-container .challenge-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.bombanime-admin-container .challenge-title {
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 0.4rem;
+    font-weight: 500;
+}
+
+.bombanime-admin-container .challenge-letter {
+    font-weight: 700;
+    color: #f0c040;
+}
+
+.bombanime-admin-container .challenge-item.completed .challenge-letter {
+    color: #81c784;
+}
+
+.bombanime-admin-container .challenge-progress-bar {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.bombanime-admin-container .challenge-progress-bar .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #f0c040, #ffd54f);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.bombanime-admin-container .challenge-item.completed .progress-fill {
+    background: linear-gradient(90deg, #4CAF50, #81C784);
+}
+
+/* === BONUS BUTTONS === */
+.bombanime-admin-container .challenge-bonus-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: not-allowed;
+    opacity: 0.35;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.bombanime-admin-container .challenge-bonus-btn svg {
+    width: 17px;
+    height: 17px;
+    fill: rgba(255, 255, 255, 0.4);
+}
+
+.bombanime-admin-container .challenge-bonus-btn.available {
+    background: rgba(255, 107, 107, 0.15);
+    border-color: rgba(255, 107, 107, 0.5);
+    cursor: pointer;
+    opacity: 1;
+    animation: admin-bonus-pulse 2s ease-in-out infinite;
+}
+
+.bombanime-admin-container .challenge-bonus-btn.available svg {
+    fill: #ff6b6b;
+}
+
+.bombanime-admin-container .challenge-bonus-btn.available:hover {
+    background: rgba(255, 107, 107, 0.25);
+    transform: scale(1.08);
+    box-shadow: 0 0 15px rgba(255, 107, 107, 0.4);
+}
+
+.bombanime-admin-container .challenge-bonus-btn.type-gift.available {
+    background: rgba(156, 39, 176, 0.15);
+    border-color: rgba(156, 39, 176, 0.5);
+}
+
+.bombanime-admin-container .challenge-bonus-btn.type-gift.available svg {
+    fill: #ce93d8;
+}
+
+.bombanime-admin-container .challenge-bonus-btn.type-gift.available:hover {
+    background: rgba(156, 39, 176, 0.25);
+    box-shadow: 0 0 15px rgba(156, 39, 176, 0.4);
+}
+
+@keyframes admin-bonus-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(255, 107, 107, 0); }
+}
+
+.bombanime-admin-container .challenge-bonus-btn.type-gift.available.not-my-turn {
+    background: rgba(156, 39, 176, 0.08);
+    border-color: rgba(156, 39, 176, 0.25);
+    opacity: 0.5;
+    cursor: not-allowed;
+    animation: none;
+}
+
+.bombanime-admin-container .challenge-bonus-btn.type-gift.available.not-my-turn svg {
+    fill: rgba(206, 147, 216, 0.5);
+}
+
+.bombanime-admin-container .challenge-bonus-btn.type-gift.available.not-my-turn:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.bombanime-admin-container .challenge-bonus-btn .bonus-count {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    background: #ff6b6b;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border: 1.5px solid rgba(10, 10, 18, 0.9);
+}
+
+.bombanime-admin-container .challenge-bonus-btn.type-gift .bonus-count {
+    background: #ba68c8;
+}
+
+/* === FERMER LOBBY BUTTON (admin player mode - position only, style from .bombanime-close-lobby-btn) === */
+#bombanimeAdminCloseBtn {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 1.5rem;
+    z-index: 300;
 }
