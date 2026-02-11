@@ -1558,6 +1558,24 @@ function startIdleAnimations() {
 // Vérifier l'auth au chargement
 document.addEventListener('DOMContentLoaded', checkAuth);
 
+// Chrome GPU Tip - copy link to clipboard
+const chromeGpuLink = document.getElementById('chromeGpuLink');
+if (chromeGpuLink) {
+    chromeGpuLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        navigator.clipboard.writeText('chrome://settings/system').then(() => {
+            const tip = chromeGpuLink.closest('.chrome-gpu-tip');
+            const originalText = tip.querySelector('span').innerHTML;
+            tip.querySelector('span').innerHTML = '✓ Lien copié — colle-le dans ta barre d\'adresse Chrome';
+            tip.classList.add('copied');
+            setTimeout(() => {
+                tip.classList.add('fade-out');
+                setTimeout(() => tip.remove(), 500);
+            }, 1500);
+        });
+    });
+}
+
 // ============================================
 // CHARGEMENT DONNÉES RÉELLES - IDLE
 // ============================================
