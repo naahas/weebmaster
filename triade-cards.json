@@ -1,0 +1,4049 @@
+{
+  "OnePiece": {
+    "protagonist": [
+      "Luffy"
+    ],
+    "assaut": [
+      {
+        "name": "Luffy",
+        "atk": 92,
+        "int": 35,
+        "spd": 88,
+        "pwr": 95
+      },
+      {
+        "name": "Kid",
+        "atk": 85,
+        "int": 45,
+        "spd": 65,
+        "pwr": 82
+      },
+      {
+        "name": "Ace",
+        "atk": 82,
+        "int": 50,
+        "spd": 78,
+        "pwr": 85
+      },
+      {
+        "name": "Doflamingo",
+        "atk": 80,
+        "int": 82,
+        "spd": 72,
+        "pwr": 84
+      },
+      {
+        "name": "Zoro",
+        "atk": 93,
+        "int": 30,
+        "spd": 82,
+        "pwr": 90
+      },
+      {
+        "name": "Newgate",
+        "atk": 96,
+        "int": 65,
+        "spd": 50,
+        "pwr": 99
+      },
+      {
+        "name": "Akainu",
+        "atk": 94,
+        "int": 68,
+        "spd": 70,
+        "pwr": 95
+      },
+      {
+        "name": "Roger",
+        "atk": 97,
+        "int": 72,
+        "spd": 85,
+        "pwr": 99
+      },
+      {
+        "name": "Sanji",
+        "atk": 84,
+        "int": 60,
+        "spd": 90,
+        "pwr": 82
+      },
+      {
+        "name": "Kaido",
+        "atk": 98,
+        "int": 55,
+        "spd": 60,
+        "pwr": 98
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Robin",
+        "atk": 55,
+        "int": 92,
+        "spd": 58,
+        "pwr": 60
+      },
+      {
+        "name": "Mihawk",
+        "atk": 95,
+        "int": 78,
+        "spd": 88,
+        "pwr": 94
+      },
+      {
+        "name": "Law",
+        "atk": 72,
+        "int": 88,
+        "spd": 75,
+        "pwr": 82
+      },
+      {
+        "name": "Jinbe",
+        "atk": 80,
+        "int": 75,
+        "spd": 55,
+        "pwr": 80
+      },
+      {
+        "name": "Nami",
+        "atk": 30,
+        "int": 88,
+        "spd": 55,
+        "pwr": 40
+      },
+      {
+        "name": "Chopper",
+        "atk": 50,
+        "int": 82,
+        "spd": 55,
+        "pwr": 55
+      },
+      {
+        "name": "Rayleigh",
+        "atk": 90,
+        "int": 90,
+        "spd": 85,
+        "pwr": 95
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Kuma",
+        "atk": 78,
+        "int": 70,
+        "spd": 85,
+        "pwr": 82
+      },
+      {
+        "name": "Shanks",
+        "atk": 92,
+        "int": 85,
+        "spd": 88,
+        "pwr": 97
+      },
+      {
+        "name": "Franky",
+        "atk": 70,
+        "int": 78,
+        "spd": 45,
+        "pwr": 68
+      },
+      {
+        "name": "Vivi",
+        "atk": 15,
+        "int": 72,
+        "spd": 40,
+        "pwr": 18
+      },
+      {
+        "name": "Brook",
+        "atk": 65,
+        "int": 65,
+        "spd": 82,
+        "pwr": 62
+      },
+      {
+        "name": "Sabo",
+        "atk": 88,
+        "int": 78,
+        "spd": 85,
+        "pwr": 88
+      },
+      {
+        "name": "Crocodile",
+        "atk": 78,
+        "int": 80,
+        "spd": 65,
+        "pwr": 78
+      },
+      {
+        "name": "Usopp",
+        "atk": 35,
+        "int": 75,
+        "spd": 60,
+        "pwr": 30
+      },
+      {
+        "name": "Hancock",
+        "atk": 82,
+        "int": 68,
+        "spd": 80,
+        "pwr": 85
+      },
+      {
+        "name": "Teach",
+        "atk": 88,
+        "int": 78,
+        "spd": 50,
+        "pwr": 95
+      }
+    ]
+  },
+  "Naruto": {
+    "protagonist": [
+      "Naruto"
+    ],
+    "assaut": [
+      {
+        "name": "Naruto",
+        "atk": 90,
+        "int": 40,
+        "spd": 88,
+        "pwr": 96
+      },
+      {
+        "name": "Sasuke",
+        "atk": 90,
+        "int": 82,
+        "spd": 92,
+        "pwr": 95
+      },
+      {
+        "name": "Madara",
+        "atk": 95,
+        "int": 85,
+        "spd": 85,
+        "pwr": 98
+      },
+      {
+        "name": "Tsunade",
+        "atk": 92,
+        "int": 78,
+        "spd": 60,
+        "pwr": 82
+      },
+      {
+        "name": "Lee",
+        "atk": 88,
+        "int": 25,
+        "spd": 95,
+        "pwr": 78
+      },
+      {
+        "name": "Pain",
+        "atk": 88,
+        "int": 90,
+        "spd": 75,
+        "pwr": 92
+      },
+      {
+        "name": "Gai",
+        "atk": 92,
+        "int": 35,
+        "spd": 95,
+        "pwr": 90
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Hashirama",
+        "atk": 90,
+        "int": 80,
+        "spd": 78,
+        "pwr": 96
+      },
+      {
+        "name": "Orochimaru",
+        "atk": 72,
+        "int": 95,
+        "spd": 70,
+        "pwr": 85
+      },
+      {
+        "name": "Kakashi",
+        "atk": 80,
+        "int": 90,
+        "spd": 85,
+        "pwr": 82
+      },
+      {
+        "name": "Minato",
+        "atk": 82,
+        "int": 88,
+        "spd": 99,
+        "pwr": 90
+      },
+      {
+        "name": "Shikamaru",
+        "atk": 25,
+        "int": 98,
+        "spd": 40,
+        "pwr": 30
+      },
+      {
+        "name": "Itachi",
+        "atk": 82,
+        "int": 95,
+        "spd": 88,
+        "pwr": 90
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Jiraya",
+        "atk": 82,
+        "int": 78,
+        "spd": 68,
+        "pwr": 85
+      },
+      {
+        "name": "Sakura",
+        "atk": 78,
+        "int": 70,
+        "spd": 60,
+        "pwr": 72
+      },
+      {
+        "name": "Hinata",
+        "atk": 55,
+        "int": 60,
+        "spd": 65,
+        "pwr": 55
+      },
+      {
+        "name": "Tobirama",
+        "atk": 82,
+        "int": 92,
+        "spd": 88,
+        "pwr": 88
+      },
+      {
+        "name": "Sasori",
+        "atk": 70,
+        "int": 85,
+        "spd": 65,
+        "pwr": 78
+      },
+      {
+        "name": "Kushina",
+        "atk": 64,
+        "int": 69,
+        "spd": 58,
+        "pwr": 83
+      },
+      {
+        "name": "Shisui",
+        "atk": 82,
+        "int": 86,
+        "spd": 91,
+        "pwr": 89
+      },
+      
+      {
+        "name": "Konan",
+        "atk": 75,
+        "int": 80,
+        "spd": 77,
+        "pwr": 79
+      },
+      {
+        "name": "Deidara",
+        "atk": 73,
+        "int": 66,
+        "spd": 66,
+        "pwr": 81
+      },
+      {
+        "name": "Gaara",
+        "atk": 72,
+        "int": 72,
+        "spd": 55,
+        "pwr": 82
+      },
+      {
+        "name": "Neji",
+        "atk": 75,
+        "int": 78,
+        "spd": 80,
+        "pwr": 72
+      },
+      {
+        "name": "Obito",
+        "atk": 85,
+        "int": 80,
+        "spd": 82,
+        "pwr": 92
+      }
+    ]
+  },
+  "Bleach": {
+    "protagonist": [
+      "Ichigo"
+    ],
+    "assaut": [
+      {
+        "name": "Ichigo",
+        "atk": 92,
+        "int": 45,
+        "spd": 90,
+        "pwr": 95
+      },
+      {
+        "name": "Yoruichi",
+        "atk": 85,
+        "int": 78,
+        "spd": 98,
+        "pwr": 85
+      },
+      {
+        "name": "Yamamoto",
+        "atk": 98,
+        "int": 82,
+        "spd": 60,
+        "pwr": 99
+      },
+      {
+        "name": "Chad",
+        "atk": 80,
+        "int": 40,
+        "spd": 45,
+        "pwr": 72
+      },
+      {
+        "name": "Zaraki",
+        "atk": 99,
+        "int": 20,
+        "spd": 70,
+        "pwr": 95
+      },
+      {
+        "name": "Byakuya",
+        "atk": 85,
+        "int": 82,
+        "spd": 88,
+        "pwr": 88
+      },
+      {
+        "name": "Hitsugaya",
+        "atk": 78,
+        "int": 80,
+        "spd": 82,
+        "pwr": 82
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Ishida",
+        "atk": 72,
+        "int": 90,
+        "spd": 80,
+        "pwr": 75
+      },
+      {
+        "name": "Mayuri",
+        "atk": 60,
+        "int": 97,
+        "spd": 55,
+        "pwr": 78
+      },
+      {
+        "name": "Kyoraku",
+        "atk": 85,
+        "int": 88,
+        "spd": 78,
+        "pwr": 90
+      },
+      {
+        "name": "Aizen",
+        "atk": 90,
+        "int": 98,
+        "spd": 85,
+        "pwr": 97
+      },
+      {
+        "name": "Urahara",
+        "atk": 80,
+        "int": 97,
+        "spd": 82,
+        "pwr": 90
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Rukia",
+        "atk": 65,
+        "int": 75,
+        "spd": 72,
+        "pwr": 70
+      },
+      {
+        "name": "Inoue",
+        "atk": 15,
+        "int": 65,
+        "spd": 40,
+        "pwr": 55
+      },
+      {
+        "name": "Halibel",
+        "atk": 80,
+        "int": 68,
+        "spd": 75,
+        "pwr": 82
+      },
+      {
+        "name": "Stark Coyotte",
+        "atk": 82,
+        "int": 72,
+        "spd": 85,
+        "pwr": 88
+      },
+      {
+        "name": "Nelliel",
+        "atk": 75,
+        "int": 60,
+        "spd": 72,
+        "pwr": 78
+      },
+      {
+        "name": "Gin",
+        "atk": 82,
+        "int": 88,
+        "spd": 90,
+        "pwr": 85
+      },
+      {
+        "name": "Ulquiorra",
+        "atk": 88,
+        "int": 80,
+        "spd": 85,
+        "pwr": 90
+      },
+      {
+        "name": "Yhwach",
+        "atk": 95,
+        "int": 92,
+        "spd": 80,
+        "pwr": 99
+      },
+      {
+        "name": "Hirako",
+        "atk": 75,
+        "int": 80,
+        "spd": 78,
+        "pwr": 78
+      },
+      {
+        "name": "Renji",
+        "atk": 78,
+        "int": 50,
+        "spd": 72,
+        "pwr": 75
+      },
+      {
+        "name": "Rangiku",
+        "atk": 60,
+        "int": 62,
+        "spd": 65,
+        "pwr": 60
+      },
+      {
+        "name": "Grimmjow",
+        "atk": 88,
+        "int": 45,
+        "spd": 85,
+        "pwr": 85
+      }
+    ]
+  },
+  "HunterXHunter": {
+    "protagonist": [
+      "Gon"
+    ],
+    "assaut": [
+      {
+        "name": "Gon",
+        "atk": 82,
+        "int": 35,
+        "spd": 78,
+        "pwr": 85
+      },
+      {
+        "name": "Kite",
+        "atk": 78,
+        "int": 75,
+        "spd": 80,
+        "pwr": 78
+      },
+      {
+        "name": "Nobunaga",
+        "atk": 80,
+        "int": 60,
+        "spd": 72,
+        "pwr": 75
+      },
+      {
+        "name": "Netero",
+        "atk": 92,
+        "int": 88,
+        "spd": 95,
+        "pwr": 97
+      },
+      {
+        "name": "Silva",
+        "atk": 88,
+        "int": 75,
+        "spd": 82,
+        "pwr": 90
+      },
+      {
+        "name": "Feitan",
+        "atk": 82,
+        "int": 65,
+        "spd": 92,
+        "pwr": 80
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Killua",
+        "atk": 80,
+        "int": 85,
+        "spd": 95,
+        "pwr": 82
+      },
+      {
+        "name": "Chrollo",
+        "atk": 82,
+        "int": 95,
+        "spd": 85,
+        "pwr": 90
+      },
+      {
+        "name": "Pariston",
+        "atk": 15,
+        "int": 97,
+        "spd": 40,
+        "pwr": 45
+      },
+      {
+        "name": "Meruem",
+        "atk": 99,
+        "int": 95,
+        "spd": 92,
+        "pwr": 99
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Shizuku",
+        "atk": 60,
+        "int": 50,
+        "spd": 65,
+        "pwr": 62
+      },
+      {
+        "name": "Machi",
+        "atk": 65,
+        "int": 72,
+        "spd": 75,
+        "pwr": 68
+      },
+      {
+        "name": "Ging",
+        "atk": 85,
+        "int": 92,
+        "spd": 82,
+        "pwr": 90
+      },
+      {
+        "name": "Illumi",
+        "atk": 82,
+        "int": 88,
+        "spd": 85,
+        "pwr": 85
+      },
+      {
+        "name": "Pitou",
+        "atk": 92,
+        "int": 70,
+        "spd": 97,
+        "pwr": 95
+      },
+      {
+        "name": "Kurapika",
+        "atk": 78,
+        "int": 90,
+        "spd": 80,
+        "pwr": 82
+      },
+      {
+        "name": "Hisoka",
+        "atk": 85,
+        "int": 88,
+        "spd": 88,
+        "pwr": 88
+      }
+    ]
+  },
+  "AttackOnTitan": {
+    "protagonist": [
+      "Eren"
+    ],
+    "assaut": [
+      {
+        "name": "Mikasa",
+        "atk": 92,
+        "int": 65,
+        "spd": 95,
+        "pwr": 88
+      },
+      {
+        "name": "Eren",
+        "atk": 85,
+        "int": 55,
+        "spd": 75,
+        "pwr": 95
+      },
+      {
+        "name": "Annie",
+        "atk": 82,
+        "int": 72,
+        "spd": 80,
+        "pwr": 80
+      },
+      {
+        "name": "Levi",
+        "atk": 95,
+        "int": 82,
+        "spd": 99,
+        "pwr": 90
+      },
+      {
+        "name": "Reiner",
+        "atk": 80,
+        "int": 62,
+        "spd": 55,
+        "pwr": 78
+      },
+      {
+        "name": "Porco",
+        "atk": 78,
+        "int": 55,
+        "spd": 82,
+        "pwr": 75
+      },
+      {
+        "name": "Gabi",
+        "atk": 60,
+        "int": 65,
+        "spd": 72,
+        "pwr": 45
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Erwin",
+        "atk": 65,
+        "int": 95,
+        "spd": 60,
+        "pwr": 70
+      },
+      {
+        "name": "Hange",
+        "atk": 62,
+        "int": 92,
+        "spd": 68,
+        "pwr": 65
+      },
+      {
+        "name": "Armin",
+        "atk": 30,
+        "int": 95,
+        "spd": 45,
+        "pwr": 72
+      },
+      {
+        "name": "Zeke",
+        "atk": 78,
+        "int": 90,
+        "spd": 62,
+        "pwr": 85
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Sasha",
+        "atk": 55,
+        "int": 50,
+        "spd": 72,
+        "pwr": 42
+      },
+      {
+        "name": "Historia",
+        "atk": 40,
+        "int": 65,
+        "spd": 55,
+        "pwr": 38
+      },
+      {
+        "name": "Jean",
+        "atk": 60,
+        "int": 72,
+        "spd": 65,
+        "pwr": 55
+      },
+      {
+        "name": "Bertolt",
+        "atk": 75,
+        "int": 58,
+        "spd": 60,
+        "pwr": 82
+      },
+      {
+        "name": "Pieck",
+        "atk": 55,
+        "int": 82,
+        "spd": 50,
+        "pwr": 65
+      },
+      {
+        "name": "Falco",
+        "atk": 50,
+        "int": 58,
+        "spd": 65,
+        "pwr": 55
+      },
+      {
+        "name": "Connie",
+        "atk": 50,
+        "int": 45,
+        "spd": 68,
+        "pwr": 40
+      }
+    ]
+  },
+  "DemonSlayer": {
+    "protagonist": [
+      "Tanjiro"
+    ],
+    "assaut": [
+      {
+        "name": "Rengoku",
+        "atk": 88,
+        "int": 72,
+        "spd": 85,
+        "pwr": 88
+      },
+      {
+        "name": "Yoriichi",
+        "atk": 99,
+        "int": 80,
+        "spd": 99,
+        "pwr": 99
+      },
+      {
+        "name": "Inosuke",
+        "atk": 78,
+        "int": 20,
+        "spd": 82,
+        "pwr": 72
+      },
+      {
+        "name": "Tokito",
+        "atk": 82,
+        "int": 65,
+        "spd": 92,
+        "pwr": 82
+      },
+      {
+        "name": "Akaza",
+        "atk": 92,
+        "int": 70,
+        "spd": 90,
+        "pwr": 92
+      },
+      {
+        "name": "Sanemi",
+        "atk": 88,
+        "int": 60,
+        "spd": 85,
+        "pwr": 85
+      },
+      {
+        "name": "Tengen",
+        "atk": 85,
+        "int": 65,
+        "spd": 90,
+        "pwr": 82
+      },
+      {
+        "name": "Kokushibo",
+        "atk": 95,
+        "int": 82,
+        "spd": 92,
+        "pwr": 96
+      },
+      {
+        "name": "Gyutaro",
+        "atk": 80,
+        "int": 55,
+        "spd": 78,
+        "pwr": 78
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Tanjiro",
+        "atk": 78,
+        "int": 72,
+        "spd": 78,
+        "pwr": 80
+      },
+      {
+        "name": "Muzan",
+        "atk": 90,
+        "int": 90,
+        "spd": 88,
+        "pwr": 97
+      },
+      {
+        "name": "Shinobu",
+        "atk": 55,
+        "int": 92,
+        "spd": 90,
+        "pwr": 65
+      },
+      {
+        "name": "Gyomei",
+        "atk": 92,
+        "int": 75,
+        "spd": 70,
+        "pwr": 90
+      },
+      {
+        "name": "Doma",
+        "atk": 85,
+        "int": 82,
+        "spd": 80,
+        "pwr": 90
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Zenitsu",
+        "atk": 72,
+        "int": 35,
+        "spd": 95,
+        "pwr": 70
+      },
+      {
+        "name": "Genya",
+        "atk": 68,
+        "int": 45,
+        "spd": 60,
+        "pwr": 72
+      },
+      {
+        "name": "Tomioka",
+        "atk": 85,
+        "int": 72,
+        "spd": 82,
+        "pwr": 85
+      },
+      {
+        "name": "Nezuko",
+        "atk": 75,
+        "int": 40,
+        "spd": 78,
+        "pwr": 80
+      },
+      {
+        "name": "Mitsuri",
+        "atk": 80,
+        "int": 55,
+        "spd": 82,
+        "pwr": 78
+      },
+      {
+        "name": "Kanao",
+        "atk": 72,
+        "int": 68,
+        "spd": 85,
+        "pwr": 72
+      },
+      {
+        "name": "Daki",
+        "atk": 72,
+        "int": 50,
+        "spd": 75,
+        "pwr": 74
+      },
+      {
+        "name": "Obanai",
+        "atk": 80,
+        "int": 70,
+        "spd": 80,
+        "pwr": 78
+      }
+    ]
+  },
+  "JoJo": {
+    "protagonist": [
+      "Jotaro",
+      "Jonathan",
+      "Joseph",
+      "Josuke",
+      "Giorno",
+      "Jolyne",
+      "Johnny"
+    ],
+    "assaut": [
+      {
+        "name": "Dio",
+        "atk": 90,
+        "int": 85,
+        "spd": 92,
+        "pwr": 95
+      },
+      {
+        "name": "Risotto",
+        "atk": 78,
+        "int": 80,
+        "spd": 70,
+        "pwr": 75
+      },
+      {
+        "name": "Polnareff",
+        "atk": 78,
+        "int": 50,
+        "spd": 82,
+        "pwr": 72
+      },
+      {
+        "name": "Jotaro",
+        "atk": 92,
+        "int": 82,
+        "spd": 90,
+        "pwr": 95
+      },
+      {
+        "name": "Diego",
+        "atk": 80,
+        "int": 78,
+        "spd": 88,
+        "pwr": 80
+      },
+      {
+        "name": "FF",
+        "atk": 65,
+        "int": 60,
+        "spd": 68,
+        "pwr": 65
+      },
+      {
+        "name": "Kars",
+        "atk": 96,
+        "int": 88,
+        "spd": 85,
+        "pwr": 95
+      },
+      {
+        "name": "Diavolo",
+        "atk": 85,
+        "int": 75,
+        "spd": 92,
+        "pwr": 88
+      },
+      {
+        "name": "Narancia",
+        "atk": 65,
+        "int": 35,
+        "spd": 72,
+        "pwr": 62
+      },
+      {
+        "name": "Jonathan",
+        "atk": 82,
+        "int": 60,
+        "spd": 65,
+        "pwr": 78
+      },
+      {
+        "name": "Jolyne",
+        "atk": 78,
+        "int": 72,
+        "spd": 80,
+        "pwr": 78
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Rohan",
+        "atk": 40,
+        "int": 90,
+        "spd": 55,
+        "pwr": 72
+      },
+      {
+        "name": "Avdol",
+        "atk": 72,
+        "int": 75,
+        "spd": 68,
+        "pwr": 70
+      },
+      {
+        "name": "Speedwagon",
+        "atk": 30,
+        "int": 72,
+        "spd": 40,
+        "pwr": 20
+      },
+      {
+        "name": "Pucci",
+        "atk": 75,
+        "int": 90,
+        "spd": 95,
+        "pwr": 92
+      },
+      {
+        "name": "Valentine",
+        "atk": 78,
+        "int": 92,
+        "spd": 70,
+        "pwr": 97
+      },
+      {
+        "name": "Giorno",
+        "atk": 80,
+        "int": 88,
+        "spd": 82,
+        "pwr": 98
+      },
+      {
+        "name": "Josuke",
+        "atk": 75,
+        "int": 68,
+        "spd": 72,
+        "pwr": 78
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Kira",
+        "atk": 72,
+        "int": 85,
+        "spd": 65,
+        "pwr": 80
+      },
+      {
+        "name": "Fugo",
+        "atk": 65,
+        "int": 82,
+        "spd": 68,
+        "pwr": 78
+      },
+      {
+        "name": "Ermes",
+        "atk": 68,
+        "int": 60,
+        "spd": 65,
+        "pwr": 65
+      },
+      {
+        "name": "Weather",
+        "atk": 75,
+        "int": 70,
+        "spd": 68,
+        "pwr": 82
+      },
+      {
+        "name": "Koichi",
+        "atk": 50,
+        "int": 72,
+        "spd": 55,
+        "pwr": 62
+      },
+      {
+        "name": "Okuyasu",
+        "atk": 70,
+        "int": 25,
+        "spd": 60,
+        "pwr": 75
+      },
+      {
+        "name": "Doppio",
+        "atk": 65,
+        "int": 50,
+        "spd": 72,
+        "pwr": 60
+      },
+      {
+        "name": "Trish",
+        "atk": 35,
+        "int": 62,
+        "spd": 55,
+        "pwr": 55
+      },
+      {
+        "name": "Abbacchio",
+        "atk": 40,
+        "int": 72,
+        "spd": 50,
+        "pwr": 45
+      },
+      {
+        "name": "Kakyoin",
+        "atk": 72,
+        "int": 82,
+        "spd": 75,
+        "pwr": 72
+      },
+      {
+        "name": "Iggy",
+        "atk": 55,
+        "int": 65,
+        "spd": 78,
+        "pwr": 60
+      },
+      {
+        "name": "Gyro",
+        "atk": 78,
+        "int": 82,
+        "spd": 78,
+        "pwr": 80
+      },
+      {
+        "name": "Caesar",
+        "atk": 72,
+        "int": 68,
+        "spd": 75,
+        "pwr": 70
+      },
+      {
+        "name": "Mista",
+        "atk": 68,
+        "int": 50,
+        "spd": 65,
+        "pwr": 62
+      },
+      {
+        "name": "Lisa Lisa",
+        "atk": 78,
+        "int": 80,
+        "spd": 78,
+        "pwr": 75
+      },
+      {
+        "name": "Joseph",
+        "atk": 72,
+        "int": 88,
+        "spd": 75,
+        "pwr": 72
+      },
+      {
+        "name": "Johnny",
+        "atk": 75,
+        "int": 78,
+        "spd": 55,
+        "pwr": 88
+      }
+    ]
+  },
+  "MyHeroAcademia": {
+    "protagonist": [
+      "Deku"
+    ],
+    "assaut": [
+      {
+        "name": "AllMight",
+        "atk": 95,
+        "int": 65,
+        "spd": 92,
+        "pwr": 94
+      },
+      {
+        "name": "Stain",
+        "atk": 82,
+        "int": 72,
+        "spd": 85,
+        "pwr": 75
+      },
+      {
+        "name": "Mirio",
+        "atk": 85,
+        "int": 75,
+        "spd": 88,
+        "pwr": 82
+      },
+      {
+        "name": "Deku",
+        "atk": 31,
+        "int": 78,
+        "spd": 85,
+        "pwr": 92
+      },
+      {
+        "name": "Endeavor",
+        "atk": 90,
+        "int": 72,
+        "spd": 75,
+        "pwr": 90
+      },
+      {
+        "name": "Shoto",
+        "atk": 82,
+        "int": 75,
+        "spd": 78,
+        "pwr": 85
+      },
+      {
+        "name": "Kirishima",
+        "atk": 78,
+        "int": 45,
+        "spd": 55,
+        "pwr": 72
+      },
+      {
+        "name": "Overhaul",
+        "atk": 85,
+        "int": 82,
+        "spd": 70,
+        "pwr": 88
+      },
+      {
+        "name": "Shigaraki",
+        "atk": 88,
+        "int": 65,
+        "spd": 72,
+        "pwr": 92
+      },
+      {
+        "name": "Bakugo",
+        "atk": 90,
+        "int": 72,
+        "spd": 88,
+        "pwr": 88
+      },
+      {
+        "name": "Dabi",
+        "atk": 82,
+        "int": 68,
+        "spd": 70,
+        "pwr": 80
+      },
+      {
+        "name": "Mirko",
+        "atk": 88,
+        "int": 55,
+        "spd": 92,
+        "pwr": 82
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Hawks",
+        "atk": 78,
+        "int": 88,
+        "spd": 95,
+        "pwr": 82
+      },
+      {
+        "name": "Lady Nagant",
+        "atk": 80,
+        "int": 82,
+        "spd": 78,
+        "pwr": 78
+      },
+      {
+        "name": "Aizawa",
+        "atk": 72,
+        "int": 90,
+        "spd": 78,
+        "pwr": 72
+      },
+      {
+        "name": "Momo",
+        "atk": 55,
+        "int": 92,
+        "spd": 55,
+        "pwr": 60
+      },
+      {
+        "name": "Midnight",
+        "atk": 50,
+        "int": 75,
+        "spd": 60,
+        "pwr": 55
+      },
+      {
+        "name": "Iida",
+        "atk": 65,
+        "int": 78,
+        "spd": 90,
+        "pwr": 65
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Ochaco",
+        "atk": 55,
+        "int": 68,
+        "spd": 65,
+        "pwr": 60
+      },
+      {
+        "name": "Fumikage",
+        "atk": 72,
+        "int": 70,
+        "spd": 68,
+        "pwr": 78
+      },
+      {
+        "name": "Mt Lady",
+        "atk": 70,
+        "int": 50,
+        "spd": 45,
+        "pwr": 72
+      },
+      {
+        "name": "Shinsou",
+        "atk": 40,
+        "int": 80,
+        "spd": 55,
+        "pwr": 65
+      },
+      {
+        "name": "Mina",
+        "atk": 55,
+        "int": 50,
+        "spd": 70,
+        "pwr": 55
+      },
+      {
+        "name": "Denki",
+        "atk": 55,
+        "int": 35,
+        "spd": 62,
+        "pwr": 58
+      },
+      {
+        "name": "Nejire",
+        "atk": 72,
+        "int": 70,
+        "spd": 75,
+        "pwr": 75
+      },
+      {
+        "name": "Kyouka",
+        "atk": 50,
+        "int": 65,
+        "spd": 60,
+        "pwr": 55
+      },
+      {
+        "name": "Tsuyu",
+        "atk": 50,
+        "int": 72,
+        "spd": 75,
+        "pwr": 55
+      },
+      {
+        "name": "Himiko",
+        "atk": 65,
+        "int": 72,
+        "spd": 80,
+        "pwr": 68
+      }
+    ]
+  },
+  "FairyTail": {
+    "protagonist": [
+      "Natsu"
+    ],
+    "assaut": [
+      {
+        "name": "Erza",
+        "atk": 90,
+        "int": 72,
+        "spd": 82,
+        "pwr": 88
+      },
+      {
+        "name": "Natsu",
+        "atk": 92,
+        "int": 35,
+        "spd": 82,
+        "pwr": 93
+      },
+      {
+        "name": "Grey",
+        "atk": 82,
+        "int": 65,
+        "spd": 75,
+        "pwr": 82
+      },
+      {
+        "name": "Makarov",
+        "atk": 85,
+        "int": 82,
+        "spd": 50,
+        "pwr": 90
+      },
+      {
+        "name": "Gajeel",
+        "atk": 85,
+        "int": 45,
+        "spd": 70,
+        "pwr": 80
+      },
+      {
+        "name": "Acnologia",
+        "atk": 99,
+        "int": 60,
+        "spd": 85,
+        "pwr": 99
+      },
+      {
+        "name": "Sting",
+        "atk": 78,
+        "int": 55,
+        "spd": 78,
+        "pwr": 75
+      },
+      {
+        "name": "Laxus",
+        "atk": 88,
+        "int": 65,
+        "spd": 85,
+        "pwr": 88
+      },
+      {
+        "name": "Rogue",
+        "atk": 75,
+        "int": 60,
+        "spd": 78,
+        "pwr": 72
+      },
+      {
+        "name": "Gildarts",
+        "atk": 95,
+        "int": 60,
+        "spd": 78,
+        "pwr": 95
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Zeref",
+        "atk": 80,
+        "int": 95,
+        "spd": 65,
+        "pwr": 98
+      },
+      {
+        "name": "Jellal",
+        "atk": 82,
+        "int": 80,
+        "spd": 88,
+        "pwr": 85
+      },
+      {
+        "name": "Mavis",
+        "atk": 30,
+        "int": 98,
+        "spd": 45,
+        "pwr": 82
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Lucy",
+        "atk": 55,
+        "int": 72,
+        "spd": 55,
+        "pwr": 65
+      },
+      {
+        "name": "Juvia",
+        "atk": 68,
+        "int": 55,
+        "spd": 60,
+        "pwr": 72
+      },
+      {
+        "name": "Ultear",
+        "atk": 72,
+        "int": 82,
+        "spd": 68,
+        "pwr": 78
+      },
+      {
+        "name": "Mirajane",
+        "atk": 80,
+        "int": 62,
+        "spd": 72,
+        "pwr": 82
+      },
+      {
+        "name": "Wendy",
+        "atk": 50,
+        "int": 65,
+        "spd": 72,
+        "pwr": 65
+      },
+      {
+        "name": "Revy",
+        "atk": 55,
+        "int": 50,
+        "spd": 58,
+        "pwr": 52
+      },
+      {
+        "name": "Lisanna",
+        "atk": 45,
+        "int": 55,
+        "spd": 55,
+        "pwr": 45
+      }
+    ]
+  },
+  "JujutsuKaisen": {
+    "protagonist": [
+      "Yuji"
+    ],
+    "assaut": [
+      {
+        "name": "Sukuna",
+        "atk": 90,
+        "int": 88,
+        "spd": 92,
+        "pwr": 97
+      },
+      {
+        "name": "Yuji",
+        "atk": 88,
+        "int": 50,
+        "spd": 85,
+        "pwr": 82
+      },
+      {
+        "name": "Todo",
+        "atk": 85,
+        "int": 72,
+        "spd": 78,
+        "pwr": 80
+      },
+      {
+        "name": "Maki",
+        "atk": 85,
+        "int": 68,
+        "spd": 88,
+        "pwr": 82
+      },
+      {
+        "name": "Toji",
+        "atk": 92,
+        "int": 75,
+        "spd": 95,
+        "pwr": 90
+      },
+      {
+        "name": "Nanami",
+        "atk": 80,
+        "int": 82,
+        "spd": 72,
+        "pwr": 78
+      },
+      {
+        "name": "Yuta",
+        "atk": 88,
+        "int": 78,
+        "spd": 85,
+        "pwr": 92
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Geto",
+        "atk": 78,
+        "int": 90,
+        "spd": 75,
+        "pwr": 85
+      },
+      {
+        "name": "Gojo",
+        "atk": 92,
+        "int": 92,
+        "spd": 92,
+        "pwr": 96
+      },
+      {
+        "name": "Yuki",
+        "atk": 82,
+        "int": 80,
+        "spd": 78,
+        "pwr": 85
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Toge",
+        "atk": 40,
+        "int": 68,
+        "spd": 65,
+        "pwr": 72
+      },
+      {
+        "name": "Hakari",
+        "atk": 82,
+        "int": 72,
+        "spd": 80,
+        "pwr": 85
+      },
+      {
+        "name": "Jogo",
+        "atk": 82,
+        "int": 60,
+        "spd": 72,
+        "pwr": 82
+      },
+      {
+        "name": "Choso",
+        "atk": 78,
+        "int": 65,
+        "spd": 72,
+        "pwr": 75
+      },
+      {
+        "name": "Mei Mei",
+        "atk": 75,
+        "int": 80,
+        "spd": 72,
+        "pwr": 75
+      },
+      {
+        "name": "Mahito",
+        "atk": 80,
+        "int": 78,
+        "spd": 75,
+        "pwr": 82
+      },
+      {
+        "name": "Nobara",
+        "atk": 72,
+        "int": 68,
+        "spd": 70,
+        "pwr": 70
+      },
+      {
+        "name": "Megumi",
+        "atk": 75,
+        "int": 82,
+        "spd": 78,
+        "pwr": 82
+      }
+    ]
+  },
+  "DragonBallZ": {
+    "protagonist": [
+      "Goku"
+    ],
+    "assaut": [
+      {
+        "name": "Goku",
+        "atk": 96,
+        "int": 30,
+        "spd": 95,
+        "pwr": 98
+      },
+      {
+        "name": "Gotenks",
+        "atk": 82,
+        "int": 20,
+        "spd": 85,
+        "pwr": 85
+      },
+      {
+        "name": "Buu",
+        "atk": 88,
+        "int": 15,
+        "spd": 70,
+        "pwr": 92
+      },
+      {
+        "name": "C 17",
+        "atk": 88,
+        "int": 65,
+        "spd": 82,
+        "pwr": 85
+      },
+      {
+        "name": "Bardock",
+        "atk": 78,
+        "int": 55,
+        "spd": 72,
+        "pwr": 75
+      },
+      {
+        "name": "Broly",
+        "atk": 99,
+        "int": 15,
+        "spd": 80,
+        "pwr": 98
+      },
+      {
+        "name": "Goku Black",
+        "atk": 90,
+        "int": 80,
+        "spd": 90,
+        "pwr": 92
+      },
+      {
+        "name": "Krillin",
+        "atk": 55,
+        "int": 60,
+        "spd": 65,
+        "pwr": 50
+      },
+      {
+        "name": "Tenshinhan",
+        "atk": 62,
+        "int": 58,
+        "spd": 68,
+        "pwr": 55
+      },
+      {
+        "name": "Dabra",
+        "atk": 75,
+        "int": 65,
+        "spd": 68,
+        "pwr": 75
+      },
+      {
+        "name": "Piccolo",
+        "atk": 78,
+        "int": 82,
+        "spd": 75,
+        "pwr": 80
+      },
+      {
+        "name": "Frieza",
+        "atk": 90,
+        "int": 82,
+        "spd": 85,
+        "pwr": 92
+      },
+      {
+        "name": "Cell",
+        "atk": 88,
+        "int": 85,
+        "spd": 82,
+        "pwr": 90
+      },
+      {
+        "name": "Goten",
+        "atk": 60,
+        "int": 30,
+        "spd": 65,
+        "pwr": 62
+      },
+      {
+        "name": "Vegeta",
+        "atk": 94,
+        "int": 68,
+        "spd": 92,
+        "pwr": 96
+      },
+      {
+        "name": "Future Gohan",
+        "atk": 82,
+        "int": 72,
+        "spd": 78,
+        "pwr": 82
+      },
+      {
+        "name": "Future Trunks",
+        "atk": 85,
+        "int": 72,
+        "spd": 85,
+        "pwr": 88
+      },
+      {
+        "name": "Trunks",
+        "atk": 62,
+        "int": 55,
+        "spd": 68,
+        "pwr": 65
+      },
+      {
+        "name": "Beerus",
+        "atk": 95,
+        "int": 78,
+        "spd": 92,
+        "pwr": 99
+      },
+      {
+        "name": "Raditz",
+        "atk": 55,
+        "int": 40,
+        "spd": 60,
+        "pwr": 45
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Bulma",
+        "atk": 5,
+        "int": 95,
+        "spd": 15,
+        "pwr": 5
+      },
+      {
+        "name": "Hit",
+        "atk": 88,
+        "int": 82,
+        "spd": 98,
+        "pwr": 90
+      },
+      {
+        "name": "Roshi",
+        "atk": 60,
+        "int": 85,
+        "spd": 50,
+        "pwr": 55
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Gohan",
+        "atk": 88,
+        "int": 78,
+        "spd": 82,
+        "pwr": 92
+      },
+      {
+        "name": "Videl",
+        "atk": 40,
+        "int": 55,
+        "spd": 55,
+        "pwr": 30
+      },
+      {
+        "name": "Chichi",
+        "atk": 35,
+        "int": 55,
+        "spd": 40,
+        "pwr": 25
+      },
+      {
+        "name": "Yamcha",
+        "atk": 40,
+        "int": 45,
+        "spd": 55,
+        "pwr": 35
+      },
+      {
+        "name": "Ginyu",
+        "atk": 72,
+        "int": 65,
+        "spd": 70,
+        "pwr": 70
+      },
+      {
+        "name": "C 18",
+        "atk": 75,
+        "int": 68,
+        "spd": 78,
+        "pwr": 78
+      }
+    ]
+  },
+  "VinlandSaga": {
+    "protagonist": [
+      "Thorfinn"
+    ],
+    "assaut": [
+      {
+        "name": "Thorkell",
+        "atk": 95,
+        "int": 30,
+        "spd": 65,
+        "pwr": 92
+      },
+      {
+        "name": "Thors",
+        "atk": 92,
+        "int": 75,
+        "spd": 82,
+        "pwr": 95
+      },
+      {
+        "name": "Snake",
+        "atk": 78,
+        "int": 60,
+        "spd": 75,
+        "pwr": 72
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Askeladd",
+        "atk": 82,
+        "int": 95,
+        "spd": 78,
+        "pwr": 80
+      },
+      {
+        "name": "Canute",
+        "atk": 30,
+        "int": 85,
+        "spd": 35,
+        "pwr": 55
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Thorfinn",
+        "atk": 85,
+        "int": 65,
+        "spd": 92,
+        "pwr": 82
+      },
+      {
+        "name": "Einar",
+        "atk": 35,
+        "int": 55,
+        "spd": 40,
+        "pwr": 30
+      }
+    ]
+  },
+  "BlackClover": {
+    "protagonist": [
+      "Asta"
+    ],
+    "assaut": [
+      {
+        "name": "Yami",
+        "atk": 92,
+        "int": 68,
+        "spd": 82,
+        "pwr": 90
+      },
+      {
+        "name": "Mars",
+        "atk": 78,
+        "int": 65,
+        "spd": 62,
+        "pwr": 75
+      },
+      {
+        "name": "Zenon",
+        "atk": 85,
+        "int": 72,
+        "spd": 72,
+        "pwr": 85
+      },
+      {
+        "name": "Nozel",
+        "atk": 80,
+        "int": 78,
+        "spd": 82,
+        "pwr": 82
+      },
+      {
+        "name": "Magna",
+        "atk": 68,
+        "int": 55,
+        "spd": 65,
+        "pwr": 62
+      },
+      {
+        "name": "Luck",
+        "atk": 78,
+        "int": 40,
+        "spd": 92,
+        "pwr": 72
+      },
+      {
+        "name": "Asta",
+        "atk": 88,
+        "int": 35,
+        "spd": 78,
+        "pwr": 85
+      },
+      {
+        "name": "Mereoleona",
+        "atk": 95,
+        "int": 60,
+        "spd": 88,
+        "pwr": 92
+      },
+      {
+        "name": "Charlotte",
+        "atk": 78,
+        "int": 72,
+        "spd": 75,
+        "pwr": 78
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Julius",
+        "atk": 80,
+        "int": 92,
+        "spd": 88,
+        "pwr": 95
+      },
+      {
+        "name": "Fuegoleon",
+        "atk": 85,
+        "int": 80,
+        "spd": 78,
+        "pwr": 85
+      },
+      {
+        "name": "Licht",
+        "atk": 88,
+        "int": 82,
+        "spd": 85,
+        "pwr": 90
+      },
+      {
+        "name": "Nacht",
+        "atk": 75,
+        "int": 88,
+        "spd": 82,
+        "pwr": 80
+      },
+      {
+        "name": "Yuno",
+        "atk": 85,
+        "int": 78,
+        "spd": 88,
+        "pwr": 88
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Mimosa",
+        "atk": 35,
+        "int": 72,
+        "spd": 50,
+        "pwr": 55
+      },
+      {
+        "name": "Gosh",
+        "atk": 62,
+        "int": 55,
+        "spd": 58,
+        "pwr": 60
+      },
+      {
+        "name": "Finral",
+        "atk": 20,
+        "int": 72,
+        "spd": 85,
+        "pwr": 45
+      },
+      {
+        "name": "Liebe",
+        "atk": 82,
+        "int": 55,
+        "spd": 78,
+        "pwr": 82
+      },
+      {
+        "name": "Greyy",
+        "atk": 25,
+        "int": 60,
+        "spd": 40,
+        "pwr": 55
+      },
+      {
+        "name": "Noelle",
+        "atk": 75,
+        "int": 68,
+        "spd": 72,
+        "pwr": 80
+      },
+      {
+        "name": "Charmy",
+        "atk": 55,
+        "int": 40,
+        "spd": 45,
+        "pwr": 72
+      },
+      {
+        "name": "Zora",
+        "atk": 65,
+        "int": 82,
+        "spd": 72,
+        "pwr": 68
+      },
+      {
+        "name": "Vanessa",
+        "atk": 35,
+        "int": 70,
+        "spd": 55,
+        "pwr": 65
+      },
+      {
+        "name": "Nero",
+        "atk": 30,
+        "int": 78,
+        "spd": 45,
+        "pwr": 60
+      }
+    ]
+  },
+  "KurokoNoBasket": {
+    "protagonist": [
+      "Kuroko"
+    ],
+    "assaut": [
+      {
+        "name": "Aomine",
+        "atk": 92,
+        "int": 55,
+        "spd": 95,
+        "pwr": 88
+      },
+      {
+        "name": "Kagami",
+        "atk": 90,
+        "int": 45,
+        "spd": 88,
+        "pwr": 85
+      },
+      {
+        "name": "Murasakibara",
+        "atk": 88,
+        "int": 35,
+        "spd": 50,
+        "pwr": 90
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Akashi",
+        "atk": 72,
+        "int": 98,
+        "spd": 82,
+        "pwr": 80
+      },
+      {
+        "name": "Midorima",
+        "atk": 78,
+        "int": 85,
+        "spd": 55,
+        "pwr": 82
+      },
+      {
+        "name": "Riko",
+        "atk": 15,
+        "int": 92,
+        "spd": 35,
+        "pwr": 15
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Kuroko",
+        "atk": 25,
+        "int": 88,
+        "spd": 72,
+        "pwr": 55
+      },
+      {
+        "name": "Kise",
+        "atk": 85,
+        "int": 70,
+        "spd": 85,
+        "pwr": 85
+      },
+      {
+        "name": "Junpei",
+        "atk": 65,
+        "int": 72,
+        "spd": 60,
+        "pwr": 60
+      },
+      {
+        "name": "Momoi",
+        "atk": 5,
+        "int": 95,
+        "spd": 30,
+        "pwr": 10
+      }
+    ]
+  },
+  "CodeGeass": {
+    "protagonist": [
+      "Lelouch"
+    ],
+    "assaut": [
+      {
+        "name": "Suzaku",
+        "atk": 90,
+        "int": 65,
+        "spd": 92,
+        "pwr": 85
+      },
+      {
+        "name": "Kallen",
+        "atk": 85,
+        "int": 62,
+        "spd": 82,
+        "pwr": 80
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Lelouch",
+        "atk": 25,
+        "int": 99,
+        "spd": 30,
+        "pwr": 88
+      }
+    ],
+    "mirage": [
+      {
+        "name": "CC",
+        "atk": 45,
+        "int": 82,
+        "spd": 55,
+        "pwr": 72
+      }
+    ]
+  },
+  "OnePunchMan": {
+    "protagonist": [
+      "Saitama"
+    ],
+    "assaut": [
+      {
+        "name": "Saitama",
+        "atk": 99,
+        "int": 30,
+        "spd": 99,
+        "pwr": 99
+      },
+      {
+        "name": "Garou",
+        "atk": 95,
+        "int": 72,
+        "spd": 92,
+        "pwr": 95
+      },
+      {
+        "name": "Genos",
+        "atk": 85,
+        "int": 72,
+        "spd": 88,
+        "pwr": 82
+      },
+      {
+        "name": "Metal Bat",
+        "atk": 82,
+        "int": 30,
+        "spd": 72,
+        "pwr": 78
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Bang",
+        "atk": 88,
+        "int": 82,
+        "spd": 82,
+        "pwr": 85
+      },
+      {
+        "name": "King",
+        "atk": 5,
+        "int": 55,
+        "spd": 15,
+        "pwr": 5
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Tatsumaki",
+        "atk": 65,
+        "int": 78,
+        "spd": 82,
+        "pwr": 95
+      },
+      {
+        "name": "Sonic",
+        "atk": 75,
+        "int": 62,
+        "spd": 95,
+        "pwr": 72
+      },
+      {
+        "name": "Fubuki",
+        "atk": 50,
+        "int": 75,
+        "spd": 60,
+        "pwr": 65
+      }
+    ]
+  },
+  "ChainsawMan": {
+    "protagonist": [
+      "Denji"
+    ],
+    "assaut": [
+      {
+        "name": "Denji",
+        "atk": 85,
+        "int": 20,
+        "spd": 78,
+        "pwr": 88
+      },
+      {
+        "name": "Violence Devil",
+        "atk": 82,
+        "int": 55,
+        "spd": 85,
+        "pwr": 78
+      },
+      {
+        "name": "Yoru",
+        "atk": 80,
+        "int": 55,
+        "spd": 78,
+        "pwr": 82
+      },
+      {
+        "name": "Pochita",
+        "atk": 92,
+        "int": 40,
+        "spd": 85,
+        "pwr": 98
+      },
+      {
+        "name": "Power",
+        "atk": 78,
+        "int": 25,
+        "spd": 75,
+        "pwr": 72
+      },
+      {
+        "name": "Beam",
+        "atk": 65,
+        "int": 20,
+        "spd": 80,
+        "pwr": 60
+      },
+      {
+        "name": "Kishibe",
+        "atk": 82,
+        "int": 82,
+        "spd": 78,
+        "pwr": 78
+      },
+      {
+        "name": "Quanxi",
+        "atk": 88,
+        "int": 65,
+        "spd": 90,
+        "pwr": 85
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Makima",
+        "atk": 75,
+        "int": 95,
+        "spd": 72,
+        "pwr": 96
+      },
+      {
+        "name": "Aki",
+        "atk": 72,
+        "int": 78,
+        "spd": 70,
+        "pwr": 72
+      },
+      {
+        "name": "Angel Devil",
+        "atk": 55,
+        "int": 72,
+        "spd": 60,
+        "pwr": 78
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Reze",
+        "atk": 80,
+        "int": 72,
+        "spd": 82,
+        "pwr": 80
+      },
+      {
+        "name": "Yoshida",
+        "atk": 72,
+        "int": 75,
+        "spd": 78,
+        "pwr": 70
+      },
+      {
+        "name": "Himeno",
+        "atk": 62,
+        "int": 70,
+        "spd": 65,
+        "pwr": 60
+      },
+      {
+        "name": "Kobeni",
+        "atk": 55,
+        "int": 60,
+        "spd": 85,
+        "pwr": 50
+      },
+      {
+        "name": "Asa",
+        "atk": 45,
+        "int": 65,
+        "spd": 55,
+        "pwr": 55
+      }
+    ]
+  },
+  "DeathNote": {
+    "protagonist": [
+      "Light"
+    ],
+    "assaut": [
+      {
+        "name": "Mello",
+        "atk": 55,
+        "int": 88,
+        "spd": 60,
+        "pwr": 50
+      }
+    ],
+    "oracle": [
+      {
+        "name": "L",
+        "atk": 35,
+        "int": 98,
+        "spd": 50,
+        "pwr": 72
+      },
+      {
+        "name": "Light",
+        "atk": 35,
+        "int": 97,
+        "spd": 50,
+        "pwr": 80
+      },
+      {
+        "name": "Near",
+        "atk": 10,
+        "int": 96,
+        "spd": 20,
+        "pwr": 60
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Misa",
+        "atk": 15,
+        "int": 40,
+        "spd": 45,
+        "pwr": 55
+      },
+      {
+        "name": "Ryuk",
+        "atk": 60,
+        "int": 72,
+        "spd": 70,
+        "pwr": 80
+      },
+      {
+        "name": "Remu",
+        "atk": 55,
+        "int": 65,
+        "spd": 60,
+        "pwr": 75
+      }
+    ]
+  },
+  "Berserk": {
+    "protagonist": [
+      "Guts"
+    ],
+    "assaut": [
+      {
+        "name": "Guts",
+        "atk": 90,
+        "int": 55,
+        "spd": 82,
+        "pwr": 92
+      },
+      {
+        "name": "Zodd",
+        "atk": 95,
+        "int": 50,
+        "spd": 78,
+        "pwr": 95
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Griffith",
+        "atk": 82,
+        "int": 95,
+        "spd": 85,
+        "pwr": 96
+      },
+      {
+        "name": "Skull Knight",
+        "atk": 90,
+        "int": 88,
+        "spd": 85,
+        "pwr": 92
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Casca",
+        "atk": 68,
+        "int": 65,
+        "spd": 72,
+        "pwr": 55
+      }
+    ]
+  },
+  "Fate": {
+    "protagonist": [
+      "Shirou"
+    ],
+    "assaut": [
+      {
+        "name": "Saber",
+        "atk": 90,
+        "int": 72,
+        "spd": 88,
+        "pwr": 95
+      },
+      {
+        "name": "Lancer",
+        "atk": 88,
+        "int": 60,
+        "spd": 95,
+        "pwr": 85
+      },
+      {
+        "name": "Archer",
+        "atk": 82,
+        "int": 82,
+        "spd": 80,
+        "pwr": 80
+      },
+      {
+        "name": "Rider",
+        "atk": 78,
+        "int": 65,
+        "spd": 88,
+        "pwr": 78
+      },
+      {
+        "name": "Caster",
+        "atk": 55,
+        "int": 92,
+        "spd": 60,
+        "pwr": 82
+      },
+      {
+        "name": "Gilgamesh",
+        "atk": 92,
+        "int": 82,
+        "spd": 80,
+        "pwr": 98
+      },
+      {
+        "name": "Mordred",
+        "atk": 88,
+        "int": 50,
+        "spd": 85,
+        "pwr": 85
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Shirou",
+        "atk": 60,
+        "int": 72,
+        "spd": 65,
+        "pwr": 65
+      },
+      {
+        "name": "Rin",
+        "atk": 55,
+        "int": 88,
+        "spd": 62,
+        "pwr": 68
+      },
+      {
+        "name": "Enkidu",
+        "atk": 88,
+        "int": 78,
+        "spd": 85,
+        "pwr": 92
+      },
+      {
+        "name": "Kirei",
+        "atk": 78,
+        "int": 82,
+        "spd": 75,
+        "pwr": 72
+      },
+      {
+        "name": "Ruler",
+        "atk": 82,
+        "int": 80,
+        "spd": 78,
+        "pwr": 85
+      },
+      {
+        "name": "Illya",
+        "atk": 35,
+        "int": 80,
+        "spd": 40,
+        "pwr": 78
+      },
+      {
+        "name": "Kiritsugu",
+        "atk": 75,
+        "int": 90,
+        "spd": 82,
+        "pwr": 72
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Astolfo",
+        "atk": 62,
+        "int": 40,
+        "spd": 82,
+        "pwr": 60
+      },
+      {
+        "name": "Ishtar",
+        "atk": 82,
+        "int": 72,
+        "spd": 78,
+        "pwr": 85
+      },
+      {
+        "name": "Mash",
+        "atk": 65,
+        "int": 68,
+        "spd": 60,
+        "pwr": 70
+      },
+      {
+        "name": "Sakura Matou",
+        "atk": 45,
+        "int": 62,
+        "spd": 45,
+        "pwr": 82
+      }
+    ]
+  },
+  "Frieren": {
+    "protagonist": [
+      "Frieren"
+    ],
+    "assaut": [
+      {
+        "name": "Stark",
+        "atk": 82,
+        "int": 42,
+        "spd": 72,
+        "pwr": 75
+      },
+      {
+        "name": "Himmel",
+        "atk": 80,
+        "int": 72,
+        "spd": 78,
+        "pwr": 78
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Frieren",
+        "atk": 75,
+        "int": 92,
+        "spd": 72,
+        "pwr": 95
+      },
+      {
+        "name": "Serie",
+        "atk": 80,
+        "int": 95,
+        "spd": 75,
+        "pwr": 98
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Fern",
+        "atk": 72,
+        "int": 78,
+        "spd": 80,
+        "pwr": 78
+      },
+      {
+        "name": "Heiter",
+        "atk": 55,
+        "int": 82,
+        "spd": 45,
+        "pwr": 68
+      },
+      {
+        "name": "Ubel",
+        "atk": 78,
+        "int": 60,
+        "spd": 75,
+        "pwr": 72
+      },
+      {
+        "name": "Eisen",
+        "atk": 85,
+        "int": 55,
+        "spd": 50,
+        "pwr": 82
+      }
+    ]
+  },
+  "TokyoGhoul": {
+    "protagonist": [
+      "Kaneki"
+    ],
+    "assaut": [
+      {
+        "name": "Kaneki",
+        "atk": 90,
+        "int": 78,
+        "spd": 88,
+        "pwr": 92
+      },
+      {
+        "name": "Arima",
+        "atk": 95,
+        "int": 85,
+        "spd": 92,
+        "pwr": 95
+      },
+      {
+        "name": "Amon",
+        "atk": 82,
+        "int": 65,
+        "spd": 72,
+        "pwr": 78
+      },
+      {
+        "name": "Juzo",
+        "atk": 85,
+        "int": 62,
+        "spd": 90,
+        "pwr": 78
+      },
+      {
+        "name": "Ayato",
+        "atk": 78,
+        "int": 60,
+        "spd": 82,
+        "pwr": 75
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Eto",
+        "atk": 82,
+        "int": 90,
+        "spd": 82,
+        "pwr": 90
+      },
+      {
+        "name": "Hide",
+        "atk": 20,
+        "int": 85,
+        "spd": 45,
+        "pwr": 15
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Touka",
+        "atk": 75,
+        "int": 65,
+        "spd": 82,
+        "pwr": 72
+      },
+      {
+        "name": "Uta",
+        "atk": 72,
+        "int": 78,
+        "spd": 75,
+        "pwr": 75
+      },
+      {
+        "name": "Lize",
+        "atk": 78,
+        "int": 72,
+        "spd": 78,
+        "pwr": 80
+      },
+      {
+        "name": "Shuu",
+        "atk": 75,
+        "int": 72,
+        "spd": 78,
+        "pwr": 75
+      }
+    ]
+  },
+  "ReZero": {
+    "protagonist": [
+      "Subaru"
+    ],
+    "assaut": [
+      {
+        "name": "Subaru",
+        "atk": 20,
+        "int": 72,
+        "spd": 30,
+        "pwr": 65
+      },
+      {
+        "name": "Reinhard",
+        "atk": 99,
+        "int": 82,
+        "spd": 98,
+        "pwr": 99
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Beatrice",
+        "atk": 55,
+        "int": 88,
+        "spd": 55,
+        "pwr": 78
+      },
+      {
+        "name": "Echidna",
+        "atk": 30,
+        "int": 98,
+        "spd": 40,
+        "pwr": 82
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Rem",
+        "atk": 72,
+        "int": 65,
+        "spd": 75,
+        "pwr": 72
+      },
+      {
+        "name": "Ram",
+        "atk": 65,
+        "int": 72,
+        "spd": 70,
+        "pwr": 65
+      },
+      {
+        "name": "Elsa",
+        "atk": 82,
+        "int": 68,
+        "spd": 88,
+        "pwr": 78
+      },
+      {
+        "name": "Emilia",
+        "atk": 60,
+        "int": 65,
+        "spd": 60,
+        "pwr": 80
+      }
+    ]
+  },
+  "SpyFamily": {
+    "protagonist": [
+      "Loid"
+    ],
+    "assaut": [
+      {
+        "name": "Yor",
+        "atk": 92,
+        "int": 35,
+        "spd": 88,
+        "pwr": 85
+      },
+      {
+        "name": "Fiona",
+        "atk": 78,
+        "int": 78,
+        "spd": 80,
+        "pwr": 72
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Loid",
+        "atk": 80,
+        "int": 89,
+        "spd": 85,
+        "pwr": 78
+      },
+      {
+        "name": "Yuri",
+        "atk": 68,
+        "int": 72,
+        "spd": 70,
+        "pwr": 62
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Anya",
+        "atk": 8,
+        "int": 25,
+        "spd": 30,
+        "pwr": 45
+      }
+    ]
+  },
+  "Kakegurui": {
+    "protagonist": [
+      "Yumeko"
+    ],
+    "assaut": [
+      {
+        "name": "Kirari",
+        "atk": 55,
+        "int": 90,
+        "spd": 50,
+        "pwr": 72
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Yumeko",
+        "atk": 40,
+        "int": 88,
+        "spd": 55,
+        "pwr": 65
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Mary",
+        "atk": 35,
+        "int": 82,
+        "spd": 50,
+        "pwr": 55
+      }
+    ]
+  },
+  "MobPsycho": {
+    "protagonist": [
+      "Mob"
+    ],
+    "assaut": [
+      {
+        "name": "Mob",
+        "atk": 88,
+        "int": 55,
+        "spd": 72,
+        "pwr": 98
+      },
+      {
+        "name": "Teruki",
+        "atk": 72,
+        "int": 65,
+        "spd": 75,
+        "pwr": 70
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Reigen",
+        "atk": 15,
+        "int": 82,
+        "spd": 40,
+        "pwr": 10
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Ritsu",
+        "atk": 55,
+        "int": 72,
+        "spd": 60,
+        "pwr": 62
+      }
+    ]
+  },
+  "FoodWars": {
+    "protagonist": [
+      "Soma"
+    ],
+    "assaut": [
+      {
+        "name": "Soma",
+        "atk": 82,
+        "int": 78,
+        "spd": 72,
+        "pwr": 80
+      },
+      {
+        "name": "Ikumi",
+        "atk": 72,
+        "int": 65,
+        "spd": 60,
+        "pwr": 65
+      },
+      {
+        "name": "Takumi",
+        "atk": 75,
+        "int": 72,
+        "spd": 68,
+        "pwr": 72
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Erina",
+        "atk": 70,
+        "int": 95,
+        "spd": 60,
+        "pwr": 82
+      },
+      {
+        "name": "Satoshi",
+        "atk": 72,
+        "int": 82,
+        "spd": 65,
+        "pwr": 75
+      },
+      {
+        "name": "Eishi",
+        "atk": 78,
+        "int": 88,
+        "spd": 62,
+        "pwr": 82
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Alice",
+        "atk": 65,
+        "int": 85,
+        "spd": 58,
+        "pwr": 72
+      },
+      {
+        "name": "Tadokoro",
+        "atk": 55,
+        "int": 72,
+        "spd": 55,
+        "pwr": 65
+      },
+      {
+        "name": "Akira",
+        "atk": 72,
+        "int": 78,
+        "spd": 60,
+        "pwr": 72
+      },
+      {
+        "name": "Rindou",
+        "atk": 75,
+        "int": 78,
+        "spd": 65,
+        "pwr": 78
+      }
+    ]
+  },
+  "VioletEvergarden": {
+    "protagonist": [
+      "Violet"
+    ],
+    "assaut": [],
+    "oracle": [],
+    "mirage": [
+      {
+        "name": "Violet",
+        "atk": 82,
+        "int": 60,
+        "spd": 78,
+        "pwr": 72
+      }
+    ]
+  },
+  "TokyoRevengers": {
+    "protagonist": [
+      "Takemichi"
+    ],
+    "assaut": [
+      {
+        "name": "Mikey",
+        "atk": 95,
+        "int": 55,
+        "spd": 92,
+        "pwr": 92
+      },
+      {
+        "name": "Draken",
+        "atk": 88,
+        "int": 60,
+        "spd": 75,
+        "pwr": 85
+      },
+      {
+        "name": "Baji",
+        "atk": 82,
+        "int": 45,
+        "spd": 78,
+        "pwr": 75
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Takemichi",
+        "atk": 30,
+        "int": 60,
+        "spd": 40,
+        "pwr": 55
+      },
+      {
+        "name": "Mitsuya",
+        "atk": 72,
+        "int": 75,
+        "spd": 68,
+        "pwr": 70
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Chifuyu",
+        "atk": 62,
+        "int": 65,
+        "spd": 62,
+        "pwr": 58
+      },
+      {
+        "name": "Kazutora",
+        "atk": 72,
+        "int": 45,
+        "spd": 70,
+        "pwr": 68
+      }
+    ]
+  },
+  "FullmetalAlchemist": {
+    "protagonist": [
+      "Edward"
+    ],
+    "assaut": [
+      {
+        "name": "Edward",
+        "atk": 82,
+        "int": 90,
+        "spd": 80,
+        "pwr": 82
+      },
+      {
+        "name": "Scar",
+        "atk": 85,
+        "int": 65,
+        "spd": 78,
+        "pwr": 80
+      },
+      {
+        "name": "Envy",
+        "atk": 72,
+        "int": 65,
+        "spd": 75,
+        "pwr": 75
+      },
+      {
+        "name": "Greed",
+        "atk": 82,
+        "int": 68,
+        "spd": 72,
+        "pwr": 82
+      },
+      {
+        "name": "King Bradley",
+        "atk": 95,
+        "int": 82,
+        "spd": 95,
+        "pwr": 90
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Winry",
+        "atk": 15,
+        "int": 88,
+        "spd": 35,
+        "pwr": 10
+      },
+      {
+        "name": "Mustang",
+        "atk": 82,
+        "int": 88,
+        "spd": 72,
+        "pwr": 88
+      },
+      {
+        "name": "Hohenheim",
+        "atk": 78,
+        "int": 92,
+        "spd": 60,
+        "pwr": 95
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Alphonse",
+        "atk": 72,
+        "int": 82,
+        "spd": 65,
+        "pwr": 75
+      },
+      {
+        "name": "Lust",
+        "atk": 75,
+        "int": 78,
+        "spd": 78,
+        "pwr": 72
+      },
+      {
+        "name": "Ling Yao",
+        "atk": 78,
+        "int": 75,
+        "spd": 82,
+        "pwr": 78
+      },
+      {
+        "name": "Hawkeye",
+        "atk": 72,
+        "int": 80,
+        "spd": 70,
+        "pwr": 55
+      }
+    ]
+  },
+  "Haikyuu": {
+    "protagonist": [
+      "Hinata"
+    ],
+    "assaut": [
+      {
+        "name": "Shoyo",
+        "atk": 78,
+        "int": 45,
+        "spd": 95,
+        "pwr": 72
+      },
+      {
+        "name": "Asahi",
+        "atk": 82,
+        "int": 50,
+        "spd": 55,
+        "pwr": 78
+      },
+      {
+        "name": "Kageyama",
+        "atk": 85,
+        "int": 78,
+        "spd": 82,
+        "pwr": 82
+      },
+      {
+        "name": "Bokuto",
+        "atk": 88,
+        "int": 45,
+        "spd": 82,
+        "pwr": 85
+      },
+      {
+        "name": "Wakatoshi",
+        "atk": 92,
+        "int": 55,
+        "spd": 72,
+        "pwr": 90
+      },
+      {
+        "name": "Oikawa",
+        "atk": 82,
+        "int": 88,
+        "spd": 78,
+        "pwr": 80
+      },
+      {
+        "name": "Kuroo",
+        "atk": 78,
+        "int": 80,
+        "spd": 75,
+        "pwr": 75
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Kenma",
+        "atk": 45,
+        "int": 95,
+        "spd": 55,
+        "pwr": 50
+      },
+      {
+        "name": "Tsukishima",
+        "atk": 68,
+        "int": 88,
+        "spd": 65,
+        "pwr": 68
+      },
+      {
+        "name": "Tendou",
+        "atk": 72,
+        "int": 82,
+        "spd": 72,
+        "pwr": 70
+      },
+      {
+        "name": "Shimizu",
+        "atk": 10,
+        "int": 78,
+        "spd": 30,
+        "pwr": 10
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Nishinoya",
+        "atk": 55,
+        "int": 72,
+        "spd": 90,
+        "pwr": 62
+      },
+      {
+        "name": "Tanaka",
+        "atk": 75,
+        "int": 45,
+        "spd": 72,
+        "pwr": 72
+      },
+      {
+        "name": "Daichi",
+        "atk": 72,
+        "int": 75,
+        "spd": 68,
+        "pwr": 72
+      },
+      {
+        "name": "Sugawara",
+        "atk": 55,
+        "int": 82,
+        "spd": 60,
+        "pwr": 55
+      }
+    ]
+  },
+  "NanatsuNoTaizai": {
+    "protagonist": [
+      "Meliodas"
+    ],
+    "assaut": [
+      {
+        "name": "Meliodas",
+        "atk": 95,
+        "int": 72,
+        "spd": 90,
+        "pwr": 97
+      },
+      {
+        "name": "Escanor",
+        "atk": 99,
+        "int": 62,
+        "spd": 65,
+        "pwr": 99
+      },
+      {
+        "name": "Zeldris",
+        "atk": 88,
+        "int": 72,
+        "spd": 85,
+        "pwr": 90
+      },
+      {
+        "name": "Ban",
+        "atk": 82,
+        "int": 55,
+        "spd": 78,
+        "pwr": 85
+      },
+      {
+        "name": "Arthur",
+        "atk": 75,
+        "int": 65,
+        "spd": 72,
+        "pwr": 92
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Gowther",
+        "atk": 45,
+        "int": 92,
+        "spd": 65,
+        "pwr": 78
+      },
+      {
+        "name": "Merlin",
+        "atk": 60,
+        "int": 98,
+        "spd": 68,
+        "pwr": 92
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Elizabeth",
+        "atk": 25,
+        "int": 62,
+        "spd": 40,
+        "pwr": 82
+      },
+      {
+        "name": "Diane",
+        "atk": 82,
+        "int": 45,
+        "spd": 55,
+        "pwr": 80
+      },
+      {
+        "name": "Kings",
+        "atk": 65,
+        "int": 72,
+        "spd": 78,
+        "pwr": 82
+      }
+    ]
+  },
+  "SwordArtOnline": {
+    "protagonist": [
+      "Kirito"
+    ],
+    "assaut": [
+      {
+        "name": "Kirito",
+        "atk": 88,
+        "int": 75,
+        "spd": 90,
+        "pwr": 88
+      },
+      {
+        "name": "Eugeo",
+        "atk": 78,
+        "int": 68,
+        "spd": 75,
+        "pwr": 75
+      },
+      {
+        "name": "Sinon",
+        "atk": 80,
+        "int": 72,
+        "spd": 78,
+        "pwr": 75
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Alice Synthesis",
+        "atk": 82,
+        "int": 78,
+        "spd": 80,
+        "pwr": 85
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Leafa",
+        "atk": 62,
+        "int": 58,
+        "spd": 72,
+        "pwr": 60
+      },
+      {
+        "name": "Asuna",
+        "atk": 78,
+        "int": 72,
+        "spd": 85,
+        "pwr": 78
+      }
+    ]
+  },
+  "Reborn": {
+    "protagonist": [
+      "Sawada"
+    ],
+    "assaut": [
+      {
+        "name": "Sawada",
+        "atk": 82,
+        "int": 55,
+        "spd": 82,
+        "pwr": 85
+      },
+      {
+        "name": "Hibari",
+        "atk": 90,
+        "int": 60,
+        "spd": 85,
+        "pwr": 88
+      },
+      {
+        "name": "Dino",
+        "atk": 75,
+        "int": 65,
+        "spd": 72,
+        "pwr": 72
+      },
+      {
+        "name": "Yamamotto",
+        "atk": 78,
+        "int": 55,
+        "spd": 78,
+        "pwr": 75
+      },
+      {
+        "name": "Xanxus",
+        "atk": 88,
+        "int": 62,
+        "spd": 72,
+        "pwr": 88
+      },
+      {
+        "name": "Ryohei",
+        "atk": 82,
+        "int": 30,
+        "spd": 72,
+        "pwr": 78
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Reborn",
+        "atk": 85,
+        "int": 92,
+        "spd": 88,
+        "pwr": 90
+      },
+      {
+        "name": "Gokudera",
+        "atk": 75,
+        "int": 82,
+        "spd": 72,
+        "pwr": 75
+      },
+      {
+        "name": "Byakuran",
+        "atk": 82,
+        "int": 90,
+        "spd": 78,
+        "pwr": 92
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Chrome",
+        "atk": 55,
+        "int": 68,
+        "spd": 60,
+        "pwr": 65
+      },
+      {
+        "name": "Mukuro",
+        "atk": 82,
+        "int": 88,
+        "spd": 78,
+        "pwr": 88
+      },
+      {
+        "name": "Lambo",
+        "atk": 35,
+        "int": 25,
+        "spd": 45,
+        "pwr": 45
+      }
+    ]
+  },
+  "Gintama": {
+    "protagonist": [
+      "Gintoki"
+    ],
+    "assaut": [
+      {
+        "name": "Gintoki",
+        "atk": 88,
+        "int": 75,
+        "spd": 82,
+        "pwr": 85
+      },
+      {
+        "name": "Takasugi",
+        "atk": 85,
+        "int": 82,
+        "spd": 80,
+        "pwr": 82
+      },
+      {
+        "name": "Hijikata",
+        "atk": 82,
+        "int": 72,
+        "spd": 78,
+        "pwr": 78
+      },
+      {
+        "name": "Sougo",
+        "atk": 80,
+        "int": 65,
+        "spd": 82,
+        "pwr": 75
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Shinpachi",
+        "atk": 35,
+        "int": 75,
+        "spd": 45,
+        "pwr": 30
+      },
+      {
+        "name": "Otae",
+        "atk": 55,
+        "int": 68,
+        "spd": 55,
+        "pwr": 50
+      },
+      {
+        "name": "Katsura",
+        "atk": 78,
+        "int": 72,
+        "spd": 75,
+        "pwr": 75
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Kagura",
+        "atk": 85,
+        "int": 45,
+        "spd": 82,
+        "pwr": 82
+      },
+      {
+        "name": "Ayame",
+        "atk": 72,
+        "int": 60,
+        "spd": 78,
+        "pwr": 65
+      },
+      {
+        "name": "Kondo",
+        "atk": 65,
+        "int": 50,
+        "spd": 55,
+        "pwr": 58
+      }
+    ]
+  },
+  "OshiNoKo": {
+    "protagonist": [
+      "Aqua",
+      "Ruby"
+    ],
+    "assaut": [
+      {
+        "name": "Aqua",
+        "atk": 40,
+        "int": 85,
+        "spd": 55,
+        "pwr": 50
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Ai",
+        "atk": 20,
+        "int": 72,
+        "spd": 50,
+        "pwr": 55
+      },
+      {
+        "name": "Kana",
+        "atk": 18,
+        "int": 75,
+        "spd": 48,
+        "pwr": 40
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Ruby",
+        "atk": 15,
+        "int": 55,
+        "spd": 50,
+        "pwr": 35
+      },
+      {
+        "name": "Akane",
+        "atk": 18,
+        "int": 80,
+        "spd": 45,
+        "pwr": 38
+      }
+    ]
+  },
+  "BlueLock": {
+    "protagonist": [
+      "Isagi"
+    ],
+    "assaut": [
+      {
+        "name": "Isagi",
+        "atk": 72,
+        "int": 88,
+        "spd": 75,
+        "pwr": 72
+      },
+      {
+        "name": "Barou",
+        "atk": 85,
+        "int": 55,
+        "spd": 78,
+        "pwr": 82
+      },
+      {
+        "name": "Kunigami",
+        "atk": 80,
+        "int": 55,
+        "spd": 72,
+        "pwr": 78
+      },
+      {
+        "name": "Itoshi Rin",
+        "atk": 88,
+        "int": 82,
+        "spd": 85,
+        "pwr": 88
+      },
+      {
+        "name": "Itoshi Sae",
+        "atk": 90,
+        "int": 88,
+        "spd": 90,
+        "pwr": 92
+      },
+      {
+        "name": "Shidou",
+        "atk": 88,
+        "int": 40,
+        "spd": 82,
+        "pwr": 85
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Reo",
+        "atk": 68,
+        "int": 82,
+        "spd": 72,
+        "pwr": 70
+      },
+      {
+        "name": "Ego",
+        "atk": 10,
+        "int": 95,
+        "spd": 15,
+        "pwr": 10
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Chigiri",
+        "atk": 72,
+        "int": 65,
+        "spd": 95,
+        "pwr": 70
+      },
+      {
+        "name": "Nagi",
+        "atk": 82,
+        "int": 60,
+        "spd": 68,
+        "pwr": 80
+      },
+      {
+        "name": "Bachira",
+        "atk": 78,
+        "int": 72,
+        "spd": 88,
+        "pwr": 75
+      }
+    ]
+  },
+  "DrStone": {
+    "protagonist": [
+      "Senku"
+    ],
+    "assaut": [
+      {
+        "name": "Taiju",
+        "atk": 78,
+        "int": 20,
+        "spd": 55,
+        "pwr": 72
+      },
+      {
+        "name": "Tsukasa",
+        "atk": 92,
+        "int": 65,
+        "spd": 85,
+        "pwr": 90
+      },
+      {
+        "name": "Kohaku",
+        "atk": 80,
+        "int": 50,
+        "spd": 88,
+        "pwr": 75
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Senku",
+        "atk": 15,
+        "int": 99,
+        "spd": 25,
+        "pwr": 55
+      },
+      {
+        "name": "Gen",
+        "atk": 10,
+        "int": 88,
+        "spd": 40,
+        "pwr": 25
+      },
+      {
+        "name": "Chrome",
+        "atk": 35,
+        "int": 78,
+        "spd": 50,
+        "pwr": 40
+      },
+      {
+        "name": "Ryusui",
+        "atk": 45,
+        "int": 82,
+        "spd": 55,
+        "pwr": 50
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Yuzuriha",
+        "atk": 15,
+        "int": 72,
+        "spd": 40,
+        "pwr": 18
+      }
+    ]
+  },
+  "FireForce": {
+    "protagonist": [
+      "Shinra"
+    ],
+    "assaut": [
+      {
+        "name": "Shinra",
+        "atk": 85,
+        "int": 55,
+        "spd": 95,
+        "pwr": 88
+      },
+      {
+        "name": "Benimaru",
+        "atk": 92,
+        "int": 65,
+        "spd": 88,
+        "pwr": 92
+      },
+      {
+        "name": "Arthur Boyle",
+        "atk": 82,
+        "int": 25,
+        "spd": 78,
+        "pwr": 80
+      }
+    ],
+    "oracle": [
+      {
+        "name": "Hibana",
+        "atk": 68,
+        "int": 88,
+        "spd": 62,
+        "pwr": 72
+      },
+      {
+        "name": "Iris",
+        "atk": 10,
+        "int": 65,
+        "spd": 30,
+        "pwr": 35
+      }
+    ],
+    "mirage": [
+      {
+        "name": "Tamaki",
+        "atk": 55,
+        "int": 45,
+        "spd": 65,
+        "pwr": 55
+      },
+      {
+        "name": "Maki Oze",
+        "atk": 78,
+        "int": 62,
+        "spd": 75,
+        "pwr": 72
+      }
+    ]
+  }
+}

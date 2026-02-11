@@ -609,8 +609,12 @@ function initSocket() {
         adminDealStarted = false;
         showTriadeTable(data);
         
+        // Stocker les données du round 1
+        const round1Data = data.round1 || null;
+        
         // Si l'admin est joueur, demander ses cartes
-        if (twitchUser && data.playersData && data.playersData.some(p => p.twitchId === twitchUser.id)) {
+        const isAdminPlayer = twitchUser && data.playersData && data.playersData.some(p => p.twitchId === twitchUser.id);
+        if (isAdminPlayer) {
             console.log('🎴 Admin est joueur → demande de cartes');
             socket.emit('triade-request-my-cards', { twitchId: twitchUser.id });
         }
@@ -620,13 +624,10 @@ function initSocket() {
         if (container) {
             container.classList.add('intro');
             setTimeout(() => {
-                // Forcer l'opacité finale sur les éléments animés AVANT de retirer l'intro
-                // ⚠️ PAS les card-small : elles sont gérées par dealAdminSmallCards
                 container.querySelectorAll('.triade-player-seat, .triade-table').forEach(el => {
                     el.style.opacity = '1';
                 });
                 container.classList.remove('intro');
-                // Nettoyer les inline styles après stabilisation
                 setTimeout(() => {
                     container.querySelectorAll('.triade-player-seat, .triade-table').forEach(el => {
                         el.style.removeProperty('opacity');
@@ -638,13 +639,65 @@ function initSocket() {
         document.querySelectorAll('.triade-player-seat:not(.me) .triade-player-card-small').forEach(c => {
             c.classList.add('pre-deal');
         });
-        // Lancer le deal des cartes adversaires après que les seats soient visibles (seatFadeUp finit à ~2.5s)
+        // Lancer le deal des cartes adversaires après que les seats soient visibles
         setTimeout(() => {
             dealAdminSmallCards();
         }, 2800);
+        
+        // 🎲 Calculer la fin exacte du deal et déclencher l'overlay round 1
+        if (round1Data) {
+            const numOtherSeats = document.querySelectorAll('.triade-player-seat:not(.hidden):not(.me)').length || (data.playersData.length - (isAdminPlayer ? 1 : 0));
+            // Fin des small cards: 2800 + numOtherSeats*250 + 510
+            const smallCardsEnd = 2800 + numOtherSeats * 250 + 510;
+            // Fin des POV cards (si admin joueur): 3400 + 690
+            const povCardsEnd = isAdminPlayer ? 3400 + 690 : 0;
+            const dealEndTime = Math.max(smallCardsEnd, povCardsEnd);
+            
+            setTimeout(() => {
+                showTriadeRoundOverlay(round1Data.round, round1Data.stat, round1Data.statName);
+            }, dealEndTime + 400);
+        }
     });
     
-    // 🆕 Gestion de l'annonce de round
+    // 🆕 Gestion de l'annonce de round (rounds 2+ uniquement, round 1 déclenché localement)
+    socket.on('triade-player-played', (data) => {
+        // Light up choose indicator for this player
+        const seats = document.querySelectorAll('.triade-player-seat');
+        seats.forEach(seat => {
+            if (seat.dataset.twitchId === data.twitchId) {
+                const ind = seat.querySelector('.triade-choose-indicator');
+                if (ind) ind.classList.add('active');
+            }
+        });
+    });
+
+    socket.on('triade-timer-start', (data) => {
+        // Show choose indicators when timer starts
+        document.querySelectorAll('.triade-choose-indicator').forEach(el => el.classList.add('visible'));
+        // Re-enable cards (clear any expired/disabled state)
+        adminTriadeTimerExpired = false;
+        sessionStorage.removeItem('adminTriadeTimerExpired');
+        document.querySelectorAll('#adminPovCards .triade-card.large.card-played-out').forEach(el => el.classList.remove('card-played-out'));
+        // Show slot + stat icon (needed after reconnect during deal)
+        const slot = document.getElementById('triadeCenterSlot');
+        if (slot) {
+            slot.classList.add('visible');
+            if (triadeState.selectedStat) {
+                const statImgs = { atk: 'attack.png', int: 'int.png', spd: 'speed.png', pwr: 'power3.png' };
+                let iconEl = slot.querySelector('.slot-stat-icon');
+                if (!iconEl) {
+                    iconEl = document.createElement('div');
+                    iconEl.className = 'slot-stat-icon';
+                    slot.appendChild(iconEl);
+                }
+                iconEl.innerHTML = `<img src="${statImgs[triadeState.selectedStat] || ''}" alt="${triadeState.selectedStat}">`;
+                iconEl.classList.add('show');
+                updateAdminPreviewHighlight(triadeState.selectedStat);
+            }
+        }
+        if (!adminTriadeCardPlayed) startAdminTriadeTimer(data.duration || 20);
+    });
+
     socket.on('triade-round-start', (data) => {
         console.log('🎲 Round start:', data);
         showTriadeRoundOverlay(data.round, data.stat, data.statName);
@@ -654,6 +707,87 @@ function initSocket() {
         console.log('🎴 État Triade reçu:', data);
         if (data.active) {
             showTriadeTable(data);
+            
+            // Restaurer slot + stat après reconnect
+            if (data.roundStat) {
+                triadeState.selectedStat = data.roundStat;
+                triadeState.currentRound = data.currentRound || 0;
+                setTimeout(() => {
+                    const slot = document.getElementById('triadeCenterSlot');
+                    if (slot) {
+                        // Only show slot if timer already started
+                        if (data.timerStarted) {
+                            slot.classList.add('visible');
+                            const statImgs = { atk: 'attack.png', int: 'int.png', spd: 'speed.png', pwr: 'power3.png' };
+                            let iconEl = slot.querySelector('.slot-stat-icon');
+                            if (!iconEl) {
+                                iconEl = document.createElement('div');
+                                iconEl.className = 'slot-stat-icon';
+                                slot.appendChild(iconEl);
+                            }
+                            iconEl.innerHTML = `<img src="${statImgs[data.roundStat] || ''}" alt="${data.roundStat}">`;
+                            iconEl.classList.add('show');
+                        } else {
+                            slot.classList.remove('visible');
+                        }
+                    }
+                    if (data.timerStarted) updateAdminPreviewHighlight(data.roundStat);
+                    // Restore choose indicators (always show when round active)
+                    if (data.timerStarted) document.querySelectorAll('.triade-choose-indicator').forEach(el => el.classList.add('visible'));
+                    if (data.playersWhoPlayed && data.playersWhoPlayed.length > 0) {
+                        data.playersWhoPlayed.forEach(tid => {
+                            document.querySelectorAll('.triade-player-seat').forEach(seat => {
+                                if (seat.dataset.twitchId === tid) {
+                                    const ind = seat.querySelector('.triade-choose-indicator');
+                                    if (ind) ind.classList.add('active');
+                                }
+                            });
+                        });
+                    }
+                    if (data.timerRemainingMs > 1000) {
+                        adminTriadeTimerExpired = false;
+                        sessionStorage.removeItem('adminTriadeTimerExpired');
+                        document.querySelectorAll('#adminPovCards .triade-card.large.card-played-out').forEach(el => el.classList.remove('card-played-out'));
+                        startAdminTriadeTimer(Math.ceil(data.timerRemainingMs / 1000));
+                    } else if (!data.playedCard && data.currentRound > 0 && data.timerStarted) {
+                        // Timer truly expired (was started and ran out) -> disable cards
+                        adminTriadeTimerExpired = true;
+                        sessionStorage.setItem('adminTriadeTimerExpired', 'true');
+                        document.querySelectorAll('#adminPovCards .triade-card.large').forEach(el => el.classList.add('card-played-out'));
+                    } else if (!data.timerStarted && data.currentRound > 0) {
+                        // Timer not started yet (still dealing/overlay) -> disable cards until timer starts
+                        adminTriadeTimerExpired = false;
+                        sessionStorage.removeItem('adminTriadeTimerExpired');
+                        document.querySelectorAll('#adminPovCards .triade-card.large').forEach(el => el.classList.add('card-played-out'));
+                    }
+                    
+                    // Restaurer carte jouée dans le slot si déjà placée
+                    if (data.playedCard) {
+                        adminTriadeCardPlayed = true;
+                        adminTriadePlayedCardData = data.playedCard;
+                        const slotEl = document.getElementById('triadeCenterSlot');
+                        if (slotEl) {
+                            slotEl.classList.add('has-card');
+                            const statIcon = slotEl.querySelector('.slot-stat-icon');
+                            if (statIcon) statIcon.classList.remove('show');
+                            const inner = slotEl.querySelector('.center-slot-inner');
+                            if (inner) {
+                                inner.innerHTML = buildCenterCardHTML(data.playedCard);
+                                const centerCard = inner.querySelector('.center-played-card');
+                                if (centerCard) {
+                                    centerCard.style.cursor = 'pointer';
+                                    centerCard.addEventListener('mouseenter', () => showAdminCardPreview(data.playedCard));
+                                    centerCard.addEventListener('mouseleave', () => hideAdminCardPreview());
+                                }
+                            }
+                            // Griser les cartes en main
+                            document.querySelectorAll('#adminPovCards .triade-card.large').forEach(el => {
+                                el.classList.add('card-played-out');
+                            });
+                        }
+                    }
+                }, 200);
+            }
         } else if (currentGameMode === 'triade') {
             returnToIdle();
         }
@@ -672,6 +806,15 @@ function initSocket() {
         
         adminTriadeCards = data.cards || [];
         renderAdminPOVCards(isDealing);
+        
+        // Si déjà joué ce round, griser les cartes après rendu
+        if (adminTriadeCardPlayed && !isDealing) {
+            setTimeout(() => {
+                document.querySelectorAll('#adminPovCards .triade-card.large').forEach(el => {
+                    el.classList.add('card-played-out');
+                });
+            }, 50);
+        }
     });
     
     socket.on('triade-update', (data) => {
@@ -3013,8 +3156,8 @@ modeBombanimeCard.addEventListener('click', (e) => {
 // EVENT LISTENER TRIADE
 // ============================================
 modeTriadeCard.addEventListener('click', async () => {
-    // SOON - Mode pas encore disponible
-    return;
+    if (modeTriadeCard.classList.contains('disabled')) return;
+    if (modeTriadeCard.classList.contains('selecting')) return;
     
     setGameMode('triade');
     
@@ -7655,6 +7798,8 @@ document.getElementById('gameCloseBtn')?.addEventListener('click', async () => {
 });
 
 function returnToIdle() {
+    sessionStorage.removeItem('adminTriadeTimerExpired');
+    adminTriadeTimerExpired = false;
     // 🔊 Cacher le contrôle de son
     showSoundControl(false);
     showSuggestionButton(false); // Cacher bouton suggestions
@@ -9540,13 +9685,18 @@ document.addEventListener('keydown', (e) => {
 
 let triadeState = {
     playersData: [],
-    currentRound: 0
+    currentRound: 0,
+    selectedStat: null
 };
 
 // Afficher la table Triade (admin = spectateur)
 // 🎴 État admin Triade
 let adminTriadeCards = [];
 let adminDealStarted = false;
+let adminTriadeCardPlayed = false;
+let adminTriadePlayedCardData = null;
+let adminTriadeDragGhost = null;
+let adminTriadeDragRect = null;
 
 
 function showTriadeTable(data) {
@@ -9615,6 +9765,55 @@ function showTriadeTable(data) {
         tableContainer.className = 'triade-table-container';
         tableContainer.innerHTML = isAdminPlayer ? generateTriadePOVHTML() : generateTriadeTableHTML();
         triadeContainer.appendChild(tableContainer);
+
+        // Triangle des classes widget
+        let triangleWidget = triadeContainer.querySelector('.class-triangle-widget');
+        if (!triangleWidget) {
+            triangleWidget = document.createElement('div');
+            triangleWidget.className = 'class-triangle-widget';
+            triangleWidget.innerHTML = `<svg viewBox="0 0 200 210" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <filter id="tw-gr"><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#e74c3c" flood-opacity="0.35"/></filter>
+                    <filter id="tw-gg"><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#f39c12" flood-opacity="0.35"/></filter>
+                    <filter id="tw-gb"><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#3498db" flood-opacity="0.35"/></filter>
+                    <marker id="tw-ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+                        <path d="M2,1 L8,5 L2,9" fill="none" stroke="#e74c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+                    </marker>
+                    <marker id="tw-ab" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+                        <path d="M2,1 L8,5 L2,9" fill="none" stroke="#3498db" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+                    </marker>
+                    <marker id="tw-ag" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+                        <path d="M2,1 L8,5 L2,9" fill="none" stroke="#f39c12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+                    </marker>
+                </defs>
+                <polygon points="100,30 30,152 170,152" fill="rgba(255,255,255,0.01)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+                <line x1="114" y1="42" x2="137" y2="86" stroke="#e74c3c" stroke-width="2" opacity="0.5" marker-end="url(#tw-ar)"/>
+                <line x1="148" y1="108" x2="160" y2="134" stroke="#e74c3c" stroke-width="1.5" opacity="0.15"/>
+                <line x1="156" y1="152" x2="110" y2="152" stroke="#3498db" stroke-width="2" opacity="0.5" marker-end="url(#tw-ab)"/>
+                <line x1="90" y1="152" x2="44" y2="152" stroke="#3498db" stroke-width="1.5" opacity="0.15"/>
+                <line x1="40" y1="134" x2="56" y2="102" stroke="#f39c12" stroke-width="2" opacity="0.5" marker-end="url(#tw-ag)"/>
+                <line x1="66" y1="82" x2="86" y2="42" stroke="#f39c12" stroke-width="1.5" opacity="0.15"/>
+                <circle cx="100" cy="30" r="20" fill="#0c0c18" stroke="#e74c3c" stroke-width="2" filter="url(#tw-gr)"/>
+                <circle cx="100" cy="30" r="14" fill="rgba(231,76,60,0.08)" stroke="#e74c3c" stroke-width="0.5" opacity="0.4"/>
+                <circle cx="30" cy="152" r="20" fill="#0c0c18" stroke="#f39c12" stroke-width="2" filter="url(#tw-gg)"/>
+                <circle cx="30" cy="152" r="14" fill="rgba(243,156,18,0.08)" stroke="#f39c12" stroke-width="0.5" opacity="0.4"/>
+                <circle cx="170" cy="152" r="20" fill="#0c0c18" stroke="#3498db" stroke-width="2" filter="url(#tw-gb)"/>
+                <circle cx="170" cy="152" r="14" fill="rgba(52,152,219,0.08)" stroke="#3498db" stroke-width="0.5" opacity="0.4"/>
+                <g transform="translate(88,18) scale(0.95)" fill="#e74c3c">
+                    <path d="M6.92 5H5L14 14L15 13.06L6.92 5M19.06 3C18.44 3 17.82 3.24 17.35 3.71L13.71 7.35L16.65 10.29L20.29 6.65C21.24 5.7 21.24 4.14 20.29 3.19C19.82 2.72 19.44 3 19.06 3M7.06 18.34L9.06 16.34L7.66 14.94L5.66 16.94C5.16 17.44 5.16 18.25 5.66 18.75C6.16 19.25 6.97 19.25 7.47 18.75L7.06 18.34Z"/>
+                </g>
+                <g transform="translate(18,140) scale(0.95)" fill="#f39c12">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </g>
+                <g transform="translate(158,140) scale(0.95)" fill="#3498db">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+                </g>
+                <text x="100" y="2" text-anchor="middle" fill="#e74c3c" font-family="Orbitron,sans-serif" font-size="9" font-weight="700" letter-spacing="2">ASSAUT</text>
+                <text x="30" y="186" text-anchor="middle" fill="#f39c12" font-family="Orbitron,sans-serif" font-size="9" font-weight="700" letter-spacing="2">ORACLE</text>
+                <text x="170" y="186" text-anchor="middle" fill="#3498db" font-family="Orbitron,sans-serif" font-size="9" font-weight="700" letter-spacing="2">MIRAGE</text>
+            </svg>`;
+            triadeContainer.appendChild(triangleWidget);
+        }
         
         // Mettre à jour les positions des joueurs
         if (isAdminPlayer) {
@@ -9635,8 +9834,14 @@ function showTriadeTable(data) {
                 centerSlot.id = 'triadeCenterSlot';
                 centerSlot.innerHTML = `<div class="center-slot-inner"></div>`;
                 triadeTable.appendChild(centerSlot);
-                // Afficher après la distribution
-                setTimeout(() => centerSlot.classList.add('visible'), 4500);
+                // Le slot sera affiché par showTriadeRoundOverlay après l'animation de round
+            }
+            let timerEl = triadeTable.querySelector(".triade-timer");
+            if (!timerEl) {
+                timerEl = document.createElement('div');
+                timerEl.className = 'triade-timer'; timerEl.id = 'triadeTimer'; timerEl.style.display = 'none';
+                timerEl.innerHTML = '<span class="triade-timer-number" id="triadeTimerNumber">20</span>';
+                triadeTable.appendChild(timerEl);
             }
         }
         
@@ -9649,8 +9854,13 @@ function showTriadeTable(data) {
                 previewEl.className = 'triade-card-preview';
                 previewEl.innerHTML = `
                     <div class="preview-card" id="adminPreviewCard">
-                        <div class="preview-image">
+                        <div class="preview-image" id="adminPreviewImage">
                             <img id="adminPreviewImg" src="" alt="">
+                        </div>
+                        <div class="preview-fusion-badge" id="adminPreviewFusionBadge" style="display:none;">
+                            <div class="fusion-badge-preview" id="adminFusionBadgeCircle">
+                                <svg viewBox="0 0 24 24"><path d="M12 1L8 9h3v6H8l4 8 4-8h-3V9h3L12 1z"/></svg>
+                            </div>
                         </div>
                         <div class="preview-top-badges">
                             <div class="class-badge-small" id="adminPreviewClassBadge">
@@ -9664,10 +9874,10 @@ function showTriadeTable(data) {
                             <div class="preview-name" id="adminPreviewName"></div>
                             <div class="preview-anime" id="adminPreviewAnime"></div>
                             <div class="preview-stats" id="adminPreviewStats">
-                                <div class="stat-item"><span class="stat-label">ATK</span><span class="stat-value" id="adminStatAtk">-</span></div>
-                                <div class="stat-item"><span class="stat-label">INT</span><span class="stat-value" id="adminStatInt">-</span></div>
-                                <div class="stat-item"><span class="stat-label">VIT</span><span class="stat-value" id="adminStatSpd">-</span></div>
-                                <div class="stat-item"><span class="stat-label">POW</span><span class="stat-value" id="adminStatPwr">-</span></div>
+                                <div class="stat-item"><img class="stat-icon-img" src="attack.png" alt="ATK"><span class="stat-value" id="adminStatAtk">-</span></div>
+                                <div class="stat-item"><img class="stat-icon-img" src="int.png" alt="INT"><span class="stat-value" id="adminStatInt">-</span></div>
+                                <div class="stat-item"><img class="stat-icon-img" src="speed.png" alt="VIT"><span class="stat-value" id="adminStatSpd">-</span></div>
+                                <div class="stat-item"><img class="stat-icon-img" src="power3.png" alt="POW"><span class="stat-value" id="adminStatPwr">-</span></div>
                             </div>
                         </div>
                     </div>
@@ -9684,11 +9894,138 @@ function showTriadeTable(data) {
     }
 }
 
-// 🆕 Afficher le slot carte central au début du round
+// 🆕 Afficher l'overlay d'annonce de round avec clash de cartes
+
+let _adminTriadeTimerInterval = null;
+let adminTriadeTimerExpired = sessionStorage.getItem('adminTriadeTimerExpired') === 'true';
+let _adminTriadeTimerEndMs = null;
+function startAdminTriadeTimer(s) {
+    stopAdminTriadeTimer(true);
+    s = s || 20;
+    const t = document.getElementById('triadeTimer'), n = document.getElementById('triadeTimerNumber');
+    if (!t || !n) return;
+    _adminTriadeTimerEndMs = Date.now() + s * 1000;
+    n.textContent = s; n.classList.remove('urgent'); t.style.display = ''; t.classList.remove('fade-out');
+    _adminTriadeTimerInterval = setInterval(() => {
+        const r = Math.max(0, Math.ceil((_adminTriadeTimerEndMs - Date.now()) / 1000));
+        n.textContent = r;
+        if (r <= 5) n.classList.add('urgent');
+        if (r <= 0) {
+            clearInterval(_adminTriadeTimerInterval); _adminTriadeTimerInterval = null; _adminTriadeTimerEndMs = null;
+            adminTriadeTimerExpired = true;
+            sessionStorage.setItem('adminTriadeTimerExpired', 'true');
+            const timerFade = document.getElementById('triadeTimer');
+            if (timerFade) { timerFade.classList.remove('visible'); timerFade.classList.add('fade-out'); }
+            // Cancel any active drag
+            const ghost = document.querySelector('.drag-ghost');
+            if (ghost) { ghost.remove(); }
+            if (window._adminBoundDragMove) { document.removeEventListener('pointermove', window._adminBoundDragMove); }
+            if (window._adminBoundDragEnd) { document.removeEventListener('pointerup', window._adminBoundDragEnd); }
+            // Gray out admin cards
+            document.querySelectorAll('#adminPovCards .triade-card.large').forEach(el => el.classList.add('card-played-out'));
+        }
+    }, 100);
+}
+function stopAdminTriadeTimer(hideDisplay) {
+    if (_adminTriadeTimerInterval) { clearInterval(_adminTriadeTimerInterval); _adminTriadeTimerInterval = null; }
+    _adminTriadeTimerEndMs = null;
+    if (hideDisplay) { const t = document.getElementById('triadeTimer'); if (t) { t.style.display = 'none'; t.classList.remove('visible','fade-out'); } }
+}
 
 function showTriadeRoundOverlay(round, stat, statName) {
     const centerSlot = document.getElementById('triadeCenterSlot');
-    if (centerSlot) centerSlot.classList.add('visible');
+    if (centerSlot) {
+        centerSlot.classList.remove('visible');
+        centerSlot.classList.remove('has-card');
+        const inner = centerSlot.querySelector('.center-slot-inner');
+        if (inner) inner.innerHTML = '';
+        const oldIcon = centerSlot.querySelector('.slot-stat-icon');
+        if (oldIcon) oldIcon.classList.remove('show');
+    }
+    
+    triadeState.currentRound = round;
+    triadeState.selectedStat = stat;
+    
+    // Reset choose indicators from previous round
+    document.querySelectorAll('.triade-choose-indicator').forEach(el => {
+        el.classList.remove('active', 'visible');
+    });
+    // Reset drag state
+    adminTriadeCardPlayed = false;
+    adminTriadeTimerExpired = false;
+    sessionStorage.removeItem('adminTriadeTimerExpired');
+    adminTriadePlayedCardData = null;
+    stopAdminTriadeTimer();
+    
+    // Retirer les classes dim des cartes
+    document.querySelectorAll('#adminPovCards .triade-card.card-played-out').forEach(el => {
+        el.classList.remove('card-played-out');
+    });
+    
+    const fullStatNames = { atk: 'Attaque', int: 'Intelligence', spd: 'Vitesse', pwr: 'Pouvoir' };
+    const statIcons = {
+        atk: '<img src="attack.png" alt="ATK">',
+        int: '<img src="int.png" alt="INT">',
+        spd: '<img src="speed.png" alt="VIT">',
+        pwr: '<img src="power3.png" alt="POW">'
+    };
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'triade-round-overlay';
+    overlay.innerHTML = `
+        <div class="tro-card tro-card-left"></div>
+        <div class="tro-card tro-card-right"></div>
+        <div class="tro-impact"></div>
+        <div class="tro-particles">
+            ${Array(12).fill(0).map(() => '<div class="tro-particle"></div>').join('')}
+        </div>
+        <div class="tro-text">
+            <div class="tro-round-label">ROUND ${round}</div>
+            <div class="tro-stat">
+                <div class="tro-stat-particles">
+                    ${Array(16).fill(0).map(() => '<div class="tro-stat-particle"></div>').join('')}
+                </div>
+                <div class="tro-stat-flash"></div>
+                <span class="tro-stat-icon">${statIcons[stat] || ''}</span>
+                <span class="tro-stat-name">${fullStatNames[stat] || statName}</span>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    
+    requestAnimationFrame(() => {
+        overlay.classList.add('active');
+        setTimeout(() => overlay.classList.add('cards-slide'), 300);
+        setTimeout(() => overlay.classList.add('clash'), 700);
+        setTimeout(() => overlay.classList.add('show-text'), 750);
+        setTimeout(() => overlay.classList.add('hide-text'), 2200);
+        setTimeout(() => overlay.classList.add('show-stat'), 2550);
+        setTimeout(() => overlay.classList.add('fade-out'), 3800);
+        setTimeout(() => {
+            overlay.remove();
+            const slot = document.getElementById('triadeCenterSlot');
+            if (slot) {
+                slot.classList.add('visible');
+                // Show choose indicators
+                document.querySelectorAll('.triade-choose-indicator').forEach(el => el.classList.add('visible'));
+                // Inject stat icon in slot
+                const statImgs = { atk: 'attack.png', int: 'int.png', spd: 'speed.png', pwr: 'power3.png' };
+                let iconEl = slot.querySelector('.slot-stat-icon');
+                if (!iconEl) {
+                    iconEl = document.createElement('div');
+                    iconEl.className = 'slot-stat-icon';
+                    slot.appendChild(iconEl);
+                }
+                iconEl.innerHTML = `<img src="${statImgs[stat] || ''}" alt="${stat}">`;
+                iconEl.classList.remove('show');
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => iconEl.classList.add('show'));
+                });
+            }
+            // Update admin preview highlight
+            updateAdminPreviewHighlight(stat);
+        }, 4300);
+    });
 }
 
 // Générer le HTML de la table Triade
@@ -9712,6 +10049,7 @@ function generateTriadeTableHTML() {
                             <div class="triade-player-card-small"></div>
                             <div class="triade-player-card-small"></div>
                         </div>
+                        <div class="triade-choose-indicator"><img src="choose.png" alt="choose"></div>
                         <div class="triade-player-ribbon">
                             <div class="triade-stars">
                                 <svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
@@ -9868,6 +10206,26 @@ function getAdminClassIcon(cardClass) {
     return icons[cardClass] || '';
 }
 
+function buildCenterCardHTML(card) {
+    if (card.isFused && card.fusedCards && card.fusedCards.length > 1) {
+        const count = card.fusedCards.length;
+        const imgsHtml = card.fusedCards.map(fc => 
+            `<img src="${getAdminCardImage(fc)}" alt="${fc.name}">`
+        ).join('');
+        return `<div class="center-played-card fused-card">
+            <div class="fused-img-wrap fused-x${count}">${imgsHtml}</div>
+        </div>`;
+    }
+    return `<div class="center-played-card">
+        <div class="card-image">
+            <img src="${getAdminCardImage(card)}" alt="${card.name}">
+        </div>
+        <div class="class-badge ${card.class}">
+            <span class="class-icon">${getAdminClassIcon(card.class)}</span>
+        </div>
+    </div>`;
+}
+
 function adminFormatName(name) {
     if (!name) return '';
     const exceptions = { 'JoJo': 'JoJo', 'Jojo': 'JoJo', 'DragonBallZ': 'Dragon Ball', 'Dbz': 'Dragon Ball' };
@@ -9914,6 +10272,7 @@ function generateTriadePOVHTML() {
                             <div class="triade-player-card-small"></div>
                             <div class="triade-player-card-small"></div>
                         </div>
+                        <div class="triade-choose-indicator"><img src="choose.png" alt="choose"></div>
                         <div class="triade-player-ribbon">
                             <div class="triade-stars">
                                 <svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
@@ -10032,11 +10391,36 @@ function renderAdminPOVCards(isDealing = false) {
         </div>`;
     
     container.innerHTML = adminTriadeCards.map((card, i) => {
-        const hasBonus = card && card.anime && animeCounts[card.anime] >= 2;
+        const hasBonus = card && card.anime && animeCounts[card.anime] >= 2 && !card.isFused;
         // Calculer la stat moyenne ou utiliser powerLevel comme fallback
         const avgStat = card.stats 
             ? Math.round((card.stats.atk + card.stats.int + card.stats.spd + card.stats.pwr) / 4) 
             : (card.powerLevel || '?');
+        
+        // Fused card rendering
+        if (card.isFused) {
+            const count = card.fusedCards.length;
+            const fusedImgs = card.fusedCards.map(fc => 
+                `<img src="${getAdminCardImage(fc)}" alt="${fc.name}">`
+            ).join('');
+            return `
+            <div class="triade-card large fused-card ${isDealing ? 'pre-deal' : ''}"
+                 data-card-index="${i}">
+                ${sameAnimeParticles}
+                <div class="fused-img-wrap fused-x${count}">
+                    ${fusedImgs}
+                </div>
+                <div class="card-shimmer"></div>
+                <div class="power-badge">
+                    <span class="pw-value">${avgStat}</span>
+                </div>
+                <div class="card-info">
+                    <div class="card-name">${card.fusedCards.map(c => adminFormatName(c.name)).join(' + ')}</div>
+                    <div class="card-anime">${adminFormatName(card.anime)}</div>
+                </div>
+            </div>`;
+        }
+        
         return `
         <div class="triade-card large ${isDealing ? 'pre-deal' : ''} ${hasBonus ? 'same-anime-bonus' : ''}"
              data-card-index="${i}">
@@ -10062,14 +10446,331 @@ function renderAdminPOVCards(isDealing = false) {
         if (!card) return;
         cardEl.addEventListener('mouseenter', () => showAdminCardPreview(card));
         cardEl.addEventListener('mouseleave', () => hideAdminCardPreview());
+        cardEl.addEventListener('pointerdown', (e) => startAdminCardDrag(idx, e));
     });
     
+    // Gray out if timer already expired
+    if (adminTriadeTimerExpired || adminTriadeCardPlayed) {
+        container.querySelectorAll('.triade-card.large').forEach(el => el.classList.add('card-played-out'));
+    }
+
     // Animation de distribution
     if (isDealing) {
         setTimeout(() => {
             dealAdminTriadeCards();
         }, 3400);
     }
+}
+
+// 🆕 DRAG & DROP ADMIN
+function startAdminCardDrag(cardIndex, e) {
+    if (adminTriadeCardPlayed) return;
+    if (adminTriadeTimerExpired) return;
+    if (!triadeState.selectedStat) return;
+    // Block drag if cards are visually disabled (e.g. timer not yet started)
+    if (e.currentTarget.classList.contains('card-played-out')) return;
+    e.preventDefault();
+    
+    hideAdminCardPreview();
+    
+    const cardEl = e.currentTarget;
+    const rect = cardEl.getBoundingClientRect();
+    
+    // Marquer la carte comme en cours de drag
+    cardEl.classList.add('dragging-origin');
+    
+    // Créer un ghost simplifié
+    const card = adminTriadeCards[cardIndex];
+    const ghost = document.createElement('div');
+    ghost.className = 'triade-card large drag-ghost';
+    if (card && card.isFused) {
+        ghost.classList.add('fused-card');
+        const count = card.fusedCards.length;
+        const imgsHtml = card.fusedCards.map(fc => 
+            `<img src="${getAdminCardImage(fc)}" alt="${fc.name}">`
+        ).join('');
+        ghost.innerHTML = `<div class="fused-img-wrap fused-x${count}">${imgsHtml}</div>`;
+    } else {
+        const imgEl = cardEl.querySelector('.card-image img');
+        ghost.innerHTML = `<div class="card-image"><img src="${imgEl ? imgEl.src : ''}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;"></div>`;
+    }
+    ghost.style.cssText = `
+        position: fixed;
+        width: ${rect.width}px;
+        height: ${rect.height}px;
+        left: ${e.clientX - rect.width / 2}px;
+        top: ${e.clientY - rect.height / 2}px;
+        z-index: 10000;
+        pointer-events: none;
+        transition: none;
+        transform: scale(1.08) rotate(2deg);
+        opacity: 0.95;
+        filter: brightness(1.2);
+    `;
+    document.body.appendChild(ghost);
+    adminTriadeDragGhost = ghost;
+    adminTriadeDragRect = rect;
+    
+    let mergeTargetIdx = null;
+    const onMove = (ev) => {
+        ghost.style.left = (ev.clientX - rect.width / 2) + 'px';
+        ghost.style.top = (ev.clientY - rect.height / 2) + 'px';
+        
+        const slotEl = document.getElementById('triadeCenterSlot');
+        if (slotEl) {
+            const slotRect = slotEl.getBoundingClientRect();
+            const overSlot = (
+                ev.clientX >= slotRect.left - 30 &&
+                ev.clientX <= slotRect.right + 30 &&
+                ev.clientY >= slotRect.top - 30 &&
+                ev.clientY <= slotRect.bottom + 30
+            );
+            slotEl.classList.toggle('drop-hover', overSlot);
+        }
+        
+        // 🔥 Detect merge target (same anime card)
+        mergeTargetIdx = null;
+        const sourceCard = adminTriadeCards[cardIndex];
+        if (!sourceCard) return;
+        const allCards = document.querySelectorAll('#adminPovCards .triade-card.large');
+        allCards.forEach((el, i) => {
+            el.classList.remove('merge-target');
+            if (i === cardIndex) return;
+            const tgt = adminTriadeCards[i];
+            if (!tgt || tgt.anime !== sourceCard.anime) return;
+            const srcCount = sourceCard.isFused ? sourceCard.fusedCards.length : 1;
+            const tgtCount = tgt.isFused ? tgt.fusedCards.length : 1;
+            if (srcCount + tgtCount > 3) return;
+            const r = el.getBoundingClientRect();
+            if (ev.clientX >= r.left - 10 && ev.clientX <= r.right + 10 &&
+                ev.clientY >= r.top - 10 && ev.clientY <= r.bottom + 10) {
+                el.classList.add('merge-target');
+                mergeTargetIdx = i;
+            }
+        });
+    };
+    
+    const onEnd = (ev) => {
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onEnd);
+        
+        // Clean up merge highlights
+        document.querySelectorAll('#adminPovCards .triade-card.large.merge-target').forEach(el => el.classList.remove('merge-target'));
+        
+        // 🔥 FUSION: dropped on merge target
+        if (mergeTargetIdx !== null) {
+            const targetEl = document.querySelectorAll('#adminPovCards .triade-card.large')[mergeTargetIdx];
+            if (targetEl) {
+                const tgtRect = targetEl.getBoundingClientRect();
+                ghost.style.transition = 'all 0.2s ease-in';
+                ghost.style.left = (tgtRect.left + tgtRect.width / 2 - rect.width / 2) + 'px';
+                ghost.style.top = (tgtRect.top + tgtRect.height / 2 - rect.height / 2) + 'px';
+                ghost.style.transform = 'scale(0.5)';
+                ghost.style.opacity = '0';
+            }
+            setTimeout(() => ghost.remove(), 250);
+            cardEl.classList.remove('dragging-origin');
+            adminTriadeDragGhost = null;
+            fuseAdminCards(cardIndex, mergeTargetIdx);
+            return;
+        }
+        
+        const slotEl = document.getElementById('triadeCenterSlot');
+        const isOverSlot = slotEl && slotEl.classList.contains('drop-hover');
+        
+        if (isOverSlot) {
+            // ✅ DROP → jouer la carte
+            const slotRect = slotEl.getBoundingClientRect();
+            ghost.style.transition = 'all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)';
+            ghost.style.left = (slotRect.left + slotRect.width / 2 - rect.width / 2) + 'px';
+            ghost.style.top = (slotRect.top + slotRect.height / 2 - rect.height / 2) + 'px';
+            ghost.style.transform = 'scale(0.55) rotate(0deg)';
+            ghost.style.opacity = '0';
+            setTimeout(() => ghost.remove(), 400);
+            
+            slotEl.classList.remove('drop-hover');
+            adminPlayTriadeCard(cardIndex);
+        } else {
+            // ❌ Retour en place
+            ghost.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            ghost.style.left = rect.left + 'px';
+            ghost.style.top = rect.top + 'px';
+            ghost.style.transform = 'scale(1) rotate(0deg)';
+            ghost.style.opacity = '1';
+            setTimeout(() => ghost.remove(), 300);
+            
+            if (slotEl) slotEl.classList.remove('drop-hover');
+        }
+        
+        cardEl.classList.remove('dragging-origin');
+        adminTriadeDragGhost = null;
+    };
+    
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onEnd);
+}
+
+// 🔥 FUSION — Combine two cards from same anime
+function fuseAdminCards(sourceIndex, targetIndex) {
+    const src = adminTriadeCards[sourceIndex];
+    const tgt = adminTriadeCards[targetIndex];
+    if (!src || !tgt || src.anime !== tgt.anime) return;
+    
+    const srcCards = src.isFused ? [...src.fusedCards] : [src];
+    const tgtCards = tgt.isFused ? [...tgt.fusedCards] : [tgt];
+    const allCards = [...tgtCards, ...srcCards];
+    if (allCards.length > 3) return;
+    
+    const fusedStats = {
+        atk: Math.max(...allCards.map(c => c.stats ? c.stats.atk : 0)),
+        int: Math.max(...allCards.map(c => c.stats ? c.stats.int : 0)),
+        spd: Math.max(...allCards.map(c => c.stats ? c.stats.spd : 0)),
+        pwr: Math.max(...allCards.map(c => c.stats ? c.stats.pwr : 0))
+    };
+    
+    const fusedCard = {
+        isFused: true,
+        fusedCards: allCards,
+        name: allCards.map(c => c.name).join('+'),
+        anime: src.anime,
+        class: tgt.class,
+        stats: fusedStats,
+        isProtagonist: allCards.some(c => c.isProtagonist),
+        isBig3: allCards.some(c => c.isBig3)
+    };
+    
+    console.log(`🔥 ADMIN FUSION: ${allCards.map(c => c.name).join(' + ')} → stats:`, fusedStats);
+    
+    // 🎆 ANIMATION
+    const cardEls = document.querySelectorAll('#adminPovCards .triade-card.large');
+    const srcEl = cardEls[sourceIndex];
+    const tgtEl = cardEls[targetIndex];
+    
+    if (tgtEl) {
+        // Phase 1: Impact shake (0.4s)
+        tgtEl.classList.add('fuse-impact');
+        
+        const tgtRect = tgtEl.getBoundingClientRect();
+        const cx = tgtRect.left + tgtRect.width / 2;
+        const cy = tgtRect.top + tgtRect.height / 2;
+        
+        // Phase 2: Screen flash (0.35s)
+        const flashOv = document.createElement('div');
+        flashOv.className = 'fusion-flash-overlay';
+        flashOv.style.setProperty('--fx', cx / window.innerWidth * 100 + '%');
+        flashOv.style.setProperty('--fy', cy / window.innerHeight * 100 + '%');
+        document.body.appendChild(flashOv);
+        setTimeout(() => flashOv.remove(), 400);
+        
+        // Phase 3: Source dissolve (0.2s)
+        if (srcEl) { srcEl.classList.add('dissolving'); srcEl.style.pointerEvents = 'none'; }
+        
+        // Phase 4: Burst — fixed on body (survives DOM re-render)
+        const burst = document.createElement('div');
+        burst.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;pointer-events:none;z-index:99998;`;
+        document.body.appendChild(burst);
+        // Flash circle + expanding ring
+        const fl = document.createElement('div'); fl.className = 'burst-flash-i'; burst.appendChild(fl);
+        const ri = document.createElement('div'); ri.className = 'burst-ring-i'; burst.appendChild(ri);
+        // Shockwave rings (0.5s + 0.6s)
+        const sw1 = document.createElement('div'); sw1.className = 'fusion-shockwave'; burst.appendChild(sw1);
+        const sw2 = document.createElement('div'); sw2.className = 'fusion-shockwave sw2'; burst.appendChild(sw2);
+        // Rays (0.4s)
+        const rays = document.createElement('div'); rays.className = 'fusion-rays'; burst.appendChild(rays);
+        for (let ri2 = 0; ri2 < 12; ri2++) {
+            const r = document.createElement('div'); r.className = 'fusion-ray';
+            r.style.transform = `rotate(${ri2 * 30}deg) translateY(-5px)`;
+            r.style.animationDelay = (ri2 * 0.02) + 's';
+            rays.appendChild(r);
+        }
+        // Exploding particles (0.5s)
+        const pc = ['#ffd700','#ff6b35','#fff','#ffaa00','#ff4500'];
+        const ps = [];
+        for (let i = 0; i < 20; i++) {
+            const p = document.createElement('div'); p.className = 'bp-i';
+            const a = (i / 20) * Math.PI * 2, d = 40 + Math.random() * 70;
+            p.style.cssText = `width:${3+Math.random()*5}px;height:${3+Math.random()*5}px;background:${pc[i%pc.length]};box-shadow:0 0 4px ${pc[i%pc.length]};`;
+            p.dataset.tx = Math.cos(a) * d;
+            p.dataset.ty = Math.sin(a) * d;
+            burst.appendChild(p); ps.push(p);
+        }
+        requestAnimationFrame(() => {
+            fl.classList.add('go'); ri.classList.add('go');
+            ps.forEach(p => {
+                p.style.transition = 'all 0.5s cubic-bezier(0.25,0.46,0.45,0.94)';
+                p.style.opacity = '1';
+                p.style.transform = `translate(calc(-50% + ${p.dataset.tx}px), calc(-50% + ${p.dataset.ty}px))`;
+                setTimeout(() => { p.style.opacity = '0'; }, 80);
+            });
+        });
+        setTimeout(() => burst.remove(), 800);
+    }
+    
+    // Morph — wait for animation to finish, THEN update cards
+    setTimeout(() => {
+        if (sourceIndex < targetIndex) {
+            adminTriadeCards.splice(targetIndex, 1, fusedCard);
+            adminTriadeCards.splice(sourceIndex, 1);
+        } else {
+            adminTriadeCards.splice(sourceIndex, 1);
+            adminTriadeCards.splice(targetIndex, 1, fusedCard);
+        }
+        renderAdminPOVCards(false);
+    }, 600);
+    
+    // Notify server
+    socket.emit('triade-fuse-cards', {
+        twitchId: twitchUser.id,
+        sourceIndex: sourceIndex,
+        targetIndex: targetIndex
+    });
+}
+
+function adminPlayTriadeCard(cardIndex) {
+    if (adminTriadeTimerExpired) return;
+    const card = adminTriadeCards[cardIndex];
+    if (!card) return;
+    
+    console.log('🎴 Admin joue carte:', card.name, 'index:', cardIndex);
+    
+    adminTriadeCardPlayed = true;
+    adminTriadePlayedCardData = card;
+    // Timer keeps running until end of round
+    
+    // Émettre au serveur
+    socket.emit('triade-play-card', {
+        twitchId: twitchUser.id,
+        cardIndex: cardIndex
+    });
+    
+    // Retirer la carte de la main
+    adminTriadeCards.splice(cardIndex, 1);
+    
+    // Afficher la carte au centre
+    const slotEl = document.getElementById('triadeCenterSlot');
+    if (slotEl) {
+        slotEl.classList.add('has-card');
+        // Hide stat icon
+        const statIcon = slotEl.querySelector('.slot-stat-icon');
+        if (statIcon) statIcon.classList.remove('show');
+        const inner = slotEl.querySelector('.center-slot-inner');
+        if (inner) {
+            inner.innerHTML = buildCenterCardHTML(card);
+            // Enable hover preview on center card
+            const centerCard = inner.querySelector('.center-played-card');
+            if (centerCard) {
+                centerCard.style.cursor = 'pointer';
+                centerCard.addEventListener('mouseenter', () => showAdminCardPreview(card));
+                centerCard.addEventListener('mouseleave', () => hideAdminCardPreview());
+            }
+        }
+    }
+    
+    // Re-render les cartes restantes (avec dim)
+    renderAdminPOVCards(false);
+    document.querySelectorAll('#adminPovCards .triade-card.large').forEach(el => {
+        el.classList.add('card-played-out');
+    });
 }
 
 // Preview carte - identique au joueur
@@ -10080,17 +10781,67 @@ function showAdminCardPreview(card) {
     if (adminPreviewTimeout) { clearTimeout(adminPreviewTimeout); adminPreviewTimeout = null; }
     
     const preview = document.getElementById('adminCardPreview');
-    const img = document.getElementById('adminPreviewImg');
+    const imgContainer = document.getElementById('adminPreviewImage');
     const name = document.getElementById('adminPreviewName');
     const anime = document.getElementById('adminPreviewAnime');
     const classIcon = document.getElementById('adminPreviewClassIcon');
     const classBadge = document.getElementById('adminPreviewClassBadge');
+    const fusionBadge = document.getElementById('adminPreviewFusionBadge');
     
     if (!preview) return;
     
-    img.src = getAdminCardImage(card);
-    img.alt = card.name;
-    name.textContent = adminFormatName(card.name);
+    // Handle fused cards
+    if (card.isFused && card.fusedCards && card.fusedCards.length > 1) {
+        const count = card.fusedCards.length;
+        // Build multiple images with vertical fade
+        imgContainer.innerHTML = card.fusedCards.map(fc => 
+            `<img src="${getAdminCardImage(fc)}" alt="${fc.name}">`
+        ).join('');
+        imgContainer.className = 'preview-image fused-preview fused-x' + count;
+        
+        // Fused names with + separator
+        name.innerHTML = card.fusedCards.map(fc => adminFormatName(fc.name)).join('<span class="fusion-plus"> + </span>');
+        name.className = 'preview-name fused-name';
+        
+        // Fusion badge
+        if (fusionBadge) {
+            fusionBadge.style.display = '';
+            const circle = document.getElementById('adminFusionBadgeCircle');
+            if (circle) circle.className = 'fusion-badge-preview' + (count >= 3 ? ' x3' : '');
+        }
+        
+        // Hide class/prota badges for fused cards
+        if (classBadge) classBadge.style.display = 'none';
+        const protaBadge = document.getElementById('adminPreviewProtaBadge');
+        if (protaBadge) protaBadge.style.display = 'none';
+    } else {
+        // Normal card — single image
+        imgContainer.innerHTML = `<img id="adminPreviewImg" src="${getAdminCardImage(card)}" alt="${card.name}">`;
+        imgContainer.className = 'preview-image';
+        
+        name.textContent = adminFormatName(card.name);
+        name.className = 'preview-name';
+        
+        // Hide fusion badge
+        if (fusionBadge) fusionBadge.style.display = 'none';
+        
+        // Show class/prota badges
+        if (classBadge) {
+            classBadge.style.display = '';
+            classBadge.className = 'class-badge-small ' + card.class;
+        }
+        if (classIcon) {
+            classIcon.innerHTML = getAdminClassIcon(card.class);
+        }
+        
+        // Badge protagoniste
+        const protaBadge = document.getElementById('adminPreviewProtaBadge');
+        if (protaBadge) {
+            protaBadge.style.display = card.isProtagonist ? 'flex' : 'none';
+            protaBadge.className = 'prota-badge' + (card.isBig3 ? ' big3' : '');
+        }
+    }
+    
     anime.textContent = adminFormatName(card.anime);
     
     // Afficher les 4 stats
@@ -10105,7 +10856,6 @@ function showAdminCardPreview(card) {
         if (statSpd) statSpd.textContent = card.stats.spd;
         if (statPwr) statPwr.textContent = card.stats.pwr;
     } else {
-        // Fallback pour anciennes cartes avec powerLevel
         const pw = card.powerLevel || '?';
         if (statAtk) statAtk.textContent = pw;
         if (statInt) statInt.textContent = pw;
@@ -10113,22 +10863,30 @@ function showAdminCardPreview(card) {
         if (statPwr) statPwr.textContent = pw;
     }
     
-    // Badge classe en haut à droite
-    if (classBadge) {
-        classBadge.className = 'class-badge-small ' + card.class;
-    }
-    if (classIcon) {
-        classIcon.innerHTML = getAdminClassIcon(card.class);
-    }
-    
-    // Badge protagoniste
-    const protaBadge = document.getElementById('adminPreviewProtaBadge');
-    if (protaBadge) {
-        protaBadge.style.display = card.isProtagonist ? 'flex' : 'none';
-        protaBadge.className = 'prota-badge' + (card.isBig3 ? ' big3' : '');
-    }
-    
     preview.classList.add('visible');
+    
+    // Highlight active stat
+    updateAdminPreviewHighlight(triadeState.selectedStat);
+}
+
+// Highlight the active stat on preview card
+function updateAdminPreviewHighlight(stat) {
+    const preview = document.getElementById('adminCardPreview');
+    const statsContainer = document.getElementById('adminPreviewStats');
+    if (!statsContainer) return;
+    if (preview) {
+        if (stat) preview.classList.add('has-active-stat');
+        else preview.classList.remove('has-active-stat');
+    }
+    const items = statsContainer.querySelectorAll('.stat-item');
+    const statOrder = ['atk', 'int', 'spd', 'pwr'];
+    items.forEach((item, i) => {
+        if (stat && statOrder[i] === stat) {
+            item.classList.add('active-stat');
+        } else {
+            item.classList.remove('active-stat');
+        }
+    });
 }
 
 function hideAdminCardPreview() {
