@@ -386,6 +386,8 @@
                                 v-model="bombanime.inputValue"
                                 @keyup.enter="submitBombanimeName"
                                 @input="emitTyping"
+                                @paste.prevent
+                                @drop.prevent
                                 :placeholder="getFormattedSerieName()"
                                 autocomplete="off"
                                 :class="{ 'error': bombanime.lastError, 'disabled': !bombanime.isMyTurn || bombanime.introPhase }"

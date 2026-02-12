@@ -329,11 +329,34 @@ createApp({
 
                 // Re-sync l'état du jeu
                 this.refreshGameState();
+                
+                // 💣 BombAnime: Re-focus l'input si c'est mon tour
+                if (this.lobbyMode === 'bombanime' && this.bombanime.isMyTurn && this.playerLives > 0) {
+                    setTimeout(() => {
+                        const input = document.getElementById('bombanimeInput');
+                        if (input && !input.disabled) input.focus();
+                    }, 300);
+                }
             }
         });
 
         this.loadTheme();
         this.initSounds();
+
+        // 💣 BombAnime: Click anywhere to refocus input (sauf contrôle son)
+        document.addEventListener('click', (e) => {
+            // Vérifier qu'on est en mode bombanime et que c'est mon tour
+            if (this.lobbyMode !== 'bombanime' || !this.bombanime.isMyTurn || this.bombanime.introPhase) return;
+            if (this.playerLives <= 0) return;
+            
+            // Exclure les clics sur le contrôle du son
+            if (e.target.closest('.sound-control')) return;
+            
+            const input = document.getElementById('bombanimeInput');
+            if (input && !input.disabled) {
+                input.focus();
+            }
+        });
 
         // 📱 Listener resize pour le responsive
         window.addEventListener('resize', this.handleResize);
@@ -2279,6 +2302,10 @@ createApp({
             
             this.socket.on('bombanime-turn-start', (data) => {
                 console.log('💣 Tour de:', data.currentPlayerUsername);
+                
+                // 🔥 Détecter si c'est le premier tour (bombe qui passe de haut → joueur)
+                const isFirstTurn = this.bombanime.bombPointingUp;
+                
                 this.bombanime.currentPlayerTwitchId = data.currentPlayerTwitchId;
                 this.bombanime.bombPointingUp = false; // La bombe tourne vers le joueur
                 this.bombanime.timeRemaining = data.timer;
@@ -2295,7 +2322,7 @@ createApp({
                 // Démarrer le timer visuel
                 this.startBombanimeTimer();
                 
-                // 🆕 Attendre que l'intro soit terminée avant d'activer isMyTurn
+                // 🆕 Attendre que l'intro soit terminée ET la bombe ait tourné avant d'activer isMyTurn
                 const activateTurn = () => {
                     this.bombanime.isMyTurn = data.currentPlayerTwitchId === this.twitchId;
                     
@@ -2313,10 +2340,13 @@ createApp({
                     const checkIntro = setInterval(() => {
                         if (!this.bombanime.introPhase) {
                             clearInterval(checkIntro);
-                            // Petit délai supplémentaire pour l'animation de la bombe
-                            setTimeout(activateTurn, 300);
+                            // Délai pour l'animation de la bombe (rotation vers le joueur)
+                            setTimeout(activateTurn, 800);
                         }
                     }, 50);
+                } else if (isFirstTurn) {
+                    // 🔥 Premier tour mais intro déjà finie : attendre la rotation de la bombe
+                    setTimeout(activateTurn, 800);
                 } else {
                     activateTurn();
                 }

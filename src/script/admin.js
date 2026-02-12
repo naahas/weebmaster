@@ -407,6 +407,9 @@ function initSocket() {
             showSoundControl(true); // 🔊 Afficher contrôle son
             showSuggestionButton(true); // Afficher bouton suggestions
             
+            // 💣 Reconnexion : pas un premier tour, la partie est déjà en cours
+            bombanimeState.isFirstTurn = false;
+            
             // Mettre à jour le timer restant
             bombanimeState.timeRemaining = data.timeRemaining || data.timer;
             
@@ -479,9 +482,12 @@ function initSocket() {
     
     socket.on('bombanime-turn-start', (data) => {
         console.log('💣 Tour de:', data.currentPlayerUsername);
+        
+        bombanimeState.isFirstTurn = false;
+        
         updateBombanimeCircle(data);
         
-        // Admin-as-player: update input state
+        // Admin-as-player: update input state (la bombe tourne via CSS transition 0.18s, pas besoin de délai)
         if (bombanimeState.isAdminPlayer && twitchUser) {
             const isMyTurn = data.currentPlayerTwitchId === twitchUser.id;
             updateAdminBombanimeInput(isMyTurn);
@@ -1388,6 +1394,14 @@ document.addEventListener('visibilitychange', () => {
             console.log('⏭️ Intro trop longue, skip vers le panel');
             skipIntro();
         }
+    }
+    
+    // 💣 BombAnime: Re-focus l'input admin si c'est mon tour
+    if (document.visibilityState === 'visible' && bombanimeState.isAdminPlayer && bombanimeState.isMyTurn) {
+        setTimeout(() => {
+            const input = document.getElementById('bombanimeAdminInputField');
+            if (input && !input.disabled) input.focus();
+        }, 300);
     }
 });
 
@@ -5639,7 +5653,7 @@ async function restoreGameState() {
                 winnerName = data.winner.teamName || 'Équipe gagnante';
                 winnerScore = data.winner.livesRemaining || data.winner.points || 0;
                 totalVictories = 1;
-                displayGameMode = data.gameMode === 'rivalry-points' ? 'points' : 'lives';
+                displayGameMode = data.gameMode; // 🔥 Garder le gameMode complet (rivalry-points/rivalry-lives)
             } else {
                 // Mode classique
                 winnerName = data.winner.username;
@@ -8558,6 +8572,7 @@ let bombanimeState = {
     timerInterval: null,
     serie: 'Naruto',
     lastValidName: null,
+    isFirstTurn: true, // 💣 Track premier tour pour délai input
     // Admin-as-player state
     isAdminPlayer: false,
     isMyTurn: false,
@@ -8569,6 +8584,23 @@ let bombanimeState = {
     playerLives: 0
 };
 
+// 💣 BombAnime: Click anywhere to refocus admin input (sauf fermer lobby, signaler, son)
+document.addEventListener('click', (e) => {
+    // Vérifier qu'on est en mode bombanime admin-as-player et que c'est mon tour
+    if (!bombanimeState.isAdminPlayer || !bombanimeState.isMyTurn) return;
+    
+    // Exclure : bouton fermer lobby, bouton signaler/suggestion, contrôle son
+    if (e.target.closest('.bombanime-close-lobby-btn')) return;
+    if (e.target.closest('#suggestionFlagBtn')) return;
+    if (e.target.closest('#adminSoundControl')) return;
+    if (e.target.closest('.suggestion-modal')) return;
+    
+    const input = document.getElementById('bombanimeAdminInputField');
+    if (input && !input.disabled) {
+        input.focus();
+    }
+});
+
 // Afficher le cercle BombAnime
 function showBombanimeCircle(data) {
     bombanimeState.playersOrder = data.playersOrder;
@@ -8578,6 +8610,7 @@ function showBombanimeCircle(data) {
     bombanimeState.serie = data.serie;
     bombanimeState.lastValidName = null;
     bombanimeState.currentPlayerTwitchId = null; // Reset pour que la bombe pointe vers le haut pendant l'intro
+    bombanimeState.isFirstTurn = true; // 💣 Premier tour pas encore joué
     
     // Détecter si l'admin est joueur
     const isAdminPlayer = twitchUser && 
@@ -8712,6 +8745,9 @@ function showBombanimeCircle(data) {
                         adminSubmitBombanime();
                     }
                 });
+                // 💣 Bloquer le copier-coller (anti-triche)
+                inputField.addEventListener('paste', (e) => e.preventDefault());
+                inputField.addEventListener('drop', (e) => e.preventDefault());
                 // Emit typing + show locally under admin hex
                 inputField.addEventListener('input', () => {
                     if (bombanimeState.isMyTurn && twitchUser) {
@@ -8735,6 +8771,16 @@ function showBombanimeCircle(data) {
                         }
                     }
                 });
+            }
+            
+            // 💣 Forcer le disable de l'input au démarrage (même si l'input existait déjà d'une partie précédente)
+            const existingInput = document.getElementById('bombanimeAdminInputField');
+            if (existingInput) {
+                existingInput.disabled = true;
+                existingInput.classList.add('disabled');
+                existingInput.value = '';
+                const underline = document.querySelector('#bombanimeAdminInput .input-underline');
+                if (underline) underline.classList.add('disabled');
             }
             
             // Fermer lobby button (bas gauche)
@@ -9040,12 +9086,12 @@ function updateAdminBombanimeInput(isMyTurn) {
     // Reset input when turn ends (bomb exploded or turn passed)
     if (!isMyTurn) {
         input.value = '';
-        // Clear local typing display
+        // Clear local typing display (sauf si c'est un last-answer = réponse acceptée)
         if (twitchUser) {
             const mySlot = document.querySelector(`.player-slot[data-twitch-id="${twitchUser.id}"]`);
             if (mySlot) {
                 const typingEl = mySlot.querySelector('.player-typing');
-                if (typingEl) {
+                if (typingEl && !typingEl.classList.contains('last-answer')) {
                     typingEl.textContent = '';
                     typingEl.classList.remove('has-text');
                 }

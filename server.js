@@ -793,18 +793,36 @@ function addToRecentSeries(serie) {
 
 function getDifficultyForQuestion(questionNumber) {
     if (gameState.difficultyMode === 'aleatoire') {
-        // 🆕 MODE ALÉATOIRE - Éviter 2 fois la même difficulté
-        const difficulties = ['veryeasy', 'easy', 'medium', 'hard', 'veryhard', 'extreme'];
-
+        // 🆕 MODE ALÉATOIRE PONDÉRÉ - sqrt des tailles de pool pour un entre-deux équilibré
+        // Poids approximatifs basés sur les pools (recalculés dynamiquement serait mieux mais ça suffit)
+        const difficultyWeights = {
+            veryeasy: Math.sqrt(98),   // ~9.9
+            easy: Math.sqrt(178),      // ~13.3
+            medium: Math.sqrt(208),    // ~14.4
+            hard: Math.sqrt(195),      // ~14.0
+            veryhard: Math.sqrt(115),  // ~10.7
+            extreme: Math.sqrt(10)     // ~3.2 → ~5%
+        };
+        // Résultat approx: veryeasy 15.1%, easy 20.3%, medium 22.0%, hard 21.4%, veryhard 16.3%, extreme ~5%
+        
+        const difficulties = Object.keys(difficultyWeights);
+        
         // Filtrer pour éviter la dernière difficulté utilisée
-        const availableDifficulties = gameState.lastDifficulty
+        const available = gameState.lastDifficulty
             ? difficulties.filter(d => d !== gameState.lastDifficulty)
             : difficulties;
-
-        // Piocher aléatoirement
-        const randomDifficulty = availableDifficulties[Math.floor(Math.random() * availableDifficulties.length)];
-        gameState.lastDifficulty = randomDifficulty;
-        return randomDifficulty;
+        
+        // Tirage pondéré
+        const totalWeight = available.reduce((sum, d) => sum + difficultyWeights[d], 0);
+        let roll = Math.random() * totalWeight;
+        let picked = available[0];
+        for (const d of available) {
+            roll -= difficultyWeights[d];
+            if (roll <= 0) { picked = d; break; }
+        }
+        
+        gameState.lastDifficulty = picked;
+        return picked;
     }
 
     // MODE CROISSANTE (logique actuelle)
@@ -2688,7 +2706,7 @@ function revealAnswers(correctAnswer) {
         if (gameState.lobbyMode === 'rivalry') {
             setTimeout(() => {
                 endGameRivalryPoints();
-            }, 100);
+            }, 5000); // 🔥 5s pour laisser les résultats s'afficher avant le winner
             return; // 🆕 IMPORTANT: Arrêter pour ne pas continuer avec le mode auto
         } else {
             // Terminer automatiquement après la dernière question
@@ -3475,17 +3493,7 @@ async function checkRivalryTiebreakerWinner() {
 
         addLog('game-end', { winner: teamData.teamName, mode: 'rivalry-points-tiebreaker' });
 
-        // 🆕 Mise à jour des stats équipe (si 20+ joueurs)
-        if (gameState.initialPlayerCount >= MIN_PLAYERS_FOR_TEAM_STATS) {
-            for (const player of gameState.players.values()) {
-                const isWinner = player.team === winningTeam;
-                await db.updateTeamStats(player.twitchId, isWinner);
-            }
-            console.log(`📊 Stats équipe mises à jour après tiebreaker (${gameState.initialPlayerCount} joueurs)`);
-        } else {
-            console.log(`⚠️ Stats équipe NON comptabilisées après tiebreaker (${gameState.initialPlayerCount} < ${MIN_PLAYERS_FOR_TEAM_STATS} joueurs)`);
-        }
-
+        // 🔥 Préparer les données AVANT les appels DB
         const playersData = Array.from(gameState.players.values()).map(p => ({
             twitchId: p.twitchId,
             username: p.username,
@@ -3501,32 +3509,49 @@ async function checkRivalryTiebreakerWinner() {
             { rank: 2, teamName: gameState.teamNames[2], points: team2Score, team: 2 }
         ].sort((a, b) => b.points - a.points);
 
-        const topPlayers = await db.getTopPlayers(10);
+        // 🔥 Sauvegarder avant reset (copie)
+        const savedTeamScores = { ...gameState.teamScores };
+        const savedTeamNames = { ...gameState.teamNames };
+        const savedInitialPlayerCount = gameState.initialPlayerCount;
 
-        winnerScreenData = {
+        // 🔥 ÉMETTRE game-ended IMMÉDIATEMENT
+        const gameEndedPayload = {
             winner: teamData,
-            teamScores: gameState.teamScores,
-            teamNames: gameState.teamNames,
+            teamScores: savedTeamScores,
+            teamNames: savedTeamNames,
             podium,
             duration,
             totalQuestions: gameState.currentQuestionIndex,
             gameMode: 'rivalry-points',
             playersData,
-            topPlayers,
+            topPlayers: []
+        };
+
+        winnerScreenData = {
+            ...gameEndedPayload,
             livesIcon: gameState.livesIcon
         };
 
-        io.emit('game-ended', {
-            winner: teamData,
-            teamScores: gameState.teamScores,
-            teamNames: gameState.teamNames,
-            podium,
-            duration,
-            totalQuestions: gameState.currentQuestionIndex,
-            gameMode: 'rivalry-points',
-            playersData,
-            topPlayers
-        });
+        io.emit('game-ended', gameEndedPayload);
+        console.log('📡 game-ended émis pour rivalry-points-tiebreaker');
+
+        // 🔥 Appels DB APRÈS l'émission
+        try {
+            const topPlayers = await db.getTopPlayers(10);
+            winnerScreenData.topPlayers = topPlayers;
+
+            if (savedInitialPlayerCount >= MIN_PLAYERS_FOR_TEAM_STATS) {
+                for (const p of playersData) {
+                    const isWinner = p.team === (team1Score > team2Score ? 1 : 2);
+                    await db.updateTeamStats(p.twitchId, isWinner);
+                }
+                console.log(`📊 Stats équipe mises à jour après tiebreaker (${savedInitialPlayerCount} joueurs)`);
+            } else {
+                console.log(`⚠️ Stats équipe NON comptabilisées après tiebreaker (${savedInitialPlayerCount} < ${MIN_PLAYERS_FOR_TEAM_STATS} joueurs)`);
+            }
+        } catch (dbError) {
+            console.error('⚠️ Erreur DB post-émission tiebreaker (non bloquante):', dbError.message);
+        }
 
         resetGameState();
 
@@ -3588,19 +3613,38 @@ async function endRivalryWithTie() {
         { rank: 1, teamName: gameState.teamNames[2], points: gameState.teamScores[2], team: 2 }
     ];
 
-    const topPlayers = await db.getTopPlayers(10);
+    // 🔥 Sauvegarder avant reset (copie)
+    const savedTeamScores = { ...gameState.teamScores };
+    const savedTeamNames = { ...gameState.teamNames };
 
-    io.emit('game-ended', {
+    // 🔥 ÉMETTRE game-ended IMMÉDIATEMENT (avant appel DB)
+    const gameEndedPayload = {
         winner: teamData,
-        teamScores: gameState.teamScores,
-        teamNames: gameState.teamNames,
+        teamScores: savedTeamScores,
+        teamNames: savedTeamNames,
         podium,
         duration,
         totalQuestions: gameState.currentQuestionIndex,
         gameMode: 'rivalry-points',
         playersData,
-        topPlayers
-    });
+        topPlayers: []
+    };
+
+    winnerScreenData = {
+        ...gameEndedPayload,
+        livesIcon: gameState.livesIcon
+    };
+
+    io.emit('game-ended', gameEndedPayload);
+    console.log('📡 game-ended émis pour rivalry-points (égalité)');
+
+    // 🔥 Appel DB APRÈS l'émission
+    try {
+        const topPlayers = await db.getTopPlayers(10);
+        winnerScreenData.topPlayers = topPlayers;
+    } catch (dbError) {
+        console.error('⚠️ Erreur DB post-émission (non bloquante):', dbError.message);
+    }
 
     resetGameState();
 }
@@ -3806,17 +3850,7 @@ async function endGameRivalry(winningTeam) {
         addLog('game-end', { winner: teamData.teamName, mode: 'rivalry' });
         console.log(`🏆 Mode Rivalité terminé - ${teamData.teamName} gagne avec ${teamData.livesRemaining} vies`);
         
-        // 🆕 Mise à jour des stats équipe (si 20+ joueurs)
-        if (gameState.initialPlayerCount >= MIN_PLAYERS_FOR_TEAM_STATS && winningTeam !== 'draw') {
-            for (const player of gameState.players.values()) {
-                const isWinner = player.team === winningTeam;
-                await db.updateTeamStats(player.twitchId, isWinner);
-            }
-            console.log(`📊 Stats équipe mises à jour (${gameState.initialPlayerCount} joueurs)`);
-        } else {
-            console.log(`⚠️ Stats équipe NON comptabilisées (${gameState.initialPlayerCount} < ${MIN_PLAYERS_FOR_TEAM_STATS} joueurs ou égalité)`);
-        }
-        
+        // 🔥 Préparer les données AVANT les appels DB
         const playersData = Array.from(gameState.players.values()).map(p => ({
             twitchId: p.twitchId,
             username: p.username,
@@ -3827,31 +3861,48 @@ async function endGameRivalry(winningTeam) {
             isLastGlobalWinner: false
         }));
         
-        const topPlayers = await db.getTopPlayers(10);
+        // 🔥 Sauvegarder avant reset (copie)
+        const savedTeamScores = { ...gameState.teamScores };
+        const savedTeamNames = { ...gameState.teamNames };
+        const savedInitialPlayerCount = gameState.initialPlayerCount;
         
-        // Stocker pour restauration
-        winnerScreenData = {
+        // 🔥 ÉMETTRE game-ended IMMÉDIATEMENT (avant les appels DB)
+        const gameEndedPayload = {
             winner: teamData,
-            teamScores: gameState.teamScores,
-            teamNames: gameState.teamNames,
+            teamScores: savedTeamScores,
+            teamNames: savedTeamNames,
             duration,
             totalQuestions: gameState.currentQuestionIndex,
             gameMode: 'rivalry-lives',
             playersData: playersData,
-            topPlayers,
+            topPlayers: []
+        };
+        
+        winnerScreenData = {
+            ...gameEndedPayload,
             livesIcon: gameState.livesIcon
         };
         
-        io.emit('game-ended', {
-            winner: teamData,
-            teamScores: gameState.teamScores,
-            teamNames: gameState.teamNames,
-            duration,
-            totalQuestions: gameState.currentQuestionIndex,
-            gameMode: 'rivalry-lives',
-            playersData: playersData,
-            topPlayers
-        });
+        io.emit('game-ended', gameEndedPayload);
+        console.log('📡 game-ended émis pour rivalry-lives');
+        
+        // 🔥 Appels DB APRÈS l'émission (ne bloquent plus l'affichage)
+        try {
+            const topPlayers = await db.getTopPlayers(10);
+            winnerScreenData.topPlayers = topPlayers;
+            
+            if (savedInitialPlayerCount >= MIN_PLAYERS_FOR_TEAM_STATS && winningTeam !== 'draw') {
+                for (const p of playersData) {
+                    const isWinner = p.team === winningTeam;
+                    await db.updateTeamStats(p.twitchId, isWinner);
+                }
+                console.log(`📊 Stats équipe mises à jour (${savedInitialPlayerCount} joueurs)`);
+            } else {
+                console.log(`⚠️ Stats équipe NON comptabilisées (${savedInitialPlayerCount} < ${MIN_PLAYERS_FOR_TEAM_STATS} joueurs ou égalité)`);
+            }
+        } catch (dbError) {
+            console.error('⚠️ Erreur DB post-émission (non bloquante):', dbError.message);
+        }
         
         resetGameState();
         
@@ -3923,17 +3974,7 @@ async function endGameRivalryPoints() {
         addLog('game-end', { winner: teamData.teamName, mode: 'rivalry-points' });
         console.log(`🏆 Mode Rivalité (points) terminé - ${teamData.teamName} gagne avec ${teamData.points} points`);
         
-        // 🆕 Mise à jour des stats équipe (si 20+ joueurs)
-        if (gameState.initialPlayerCount >= MIN_PLAYERS_FOR_TEAM_STATS) {
-            for (const player of gameState.players.values()) {
-                const isWinner = player.team === winningTeam;
-                await db.updateTeamStats(player.twitchId, isWinner);
-            }
-            console.log(`📊 Stats équipe mises à jour (${gameState.initialPlayerCount} joueurs)`);
-        } else {
-            console.log(`⚠️ Stats équipe NON comptabilisées (${gameState.initialPlayerCount} < ${MIN_PLAYERS_FOR_TEAM_STATS} joueurs)`);
-        }
-        
+        // 🔥 Préparer les données AVANT les appels DB (pas de dépendance DB)
         const playersData = Array.from(gameState.players.values()).map(p => ({
             twitchId: p.twitchId,
             username: p.username,
@@ -3950,33 +3991,52 @@ async function endGameRivalryPoints() {
             { rank: 2, teamName: gameState.teamNames[2], points: team2Points, team: 2 }
         ].sort((a, b) => b.points - a.points);
         
-        const topPlayers = await db.getTopPlayers(10);
+        // 🔥 Sauvegarder teamScores/teamNames avant reset (copie)
+        const savedTeamScores = { ...gameState.teamScores };
+        const savedTeamNames = { ...gameState.teamNames };
+        const savedInitialPlayerCount = gameState.initialPlayerCount;
         
-        // Stocker pour restauration
-        winnerScreenData = {
+        // 🔥 ÉMETTRE game-ended IMMÉDIATEMENT (avant les appels DB)
+        // Ainsi même si la DB échoue, les clients reçoivent le winner
+        const gameEndedPayload = {
             winner: teamData,
-            teamScores: gameState.teamScores,
-            teamNames: gameState.teamNames,
+            teamScores: savedTeamScores,
+            teamNames: savedTeamNames,
             podium,
             duration,
             totalQuestions: gameState.currentQuestionIndex,
             gameMode: 'rivalry-points',
             playersData: playersData,
-            topPlayers,
+            topPlayers: [] // Sera mis à jour dans winnerScreenData si la DB répond
+        };
+        
+        winnerScreenData = {
+            ...gameEndedPayload,
             livesIcon: gameState.livesIcon
         };
         
-        io.emit('game-ended', {
-            winner: teamData,
-            teamScores: gameState.teamScores,
-            teamNames: gameState.teamNames,
-            podium,
-            duration,
-            totalQuestions: gameState.currentQuestionIndex,
-            gameMode: 'rivalry-points',
-            playersData: playersData,
-            topPlayers
-        });
+        io.emit('game-ended', gameEndedPayload);
+        console.log('📡 game-ended émis pour rivalry-points');
+        
+        // 🔥 Appels DB APRÈS l'émission (ne bloquent plus l'affichage)
+        try {
+            const topPlayers = await db.getTopPlayers(10);
+            // Mettre à jour winnerScreenData avec le top players (pour restauration au refresh)
+            winnerScreenData.topPlayers = topPlayers;
+            
+            // Mise à jour des stats équipe (si 20+ joueurs)
+            if (savedInitialPlayerCount >= MIN_PLAYERS_FOR_TEAM_STATS) {
+                for (const p of playersData) {
+                    const isWinner = p.team === winningTeam;
+                    await db.updateTeamStats(p.twitchId, isWinner);
+                }
+                console.log(`📊 Stats équipe mises à jour (${savedInitialPlayerCount} joueurs)`);
+            } else {
+                console.log(`⚠️ Stats équipe NON comptabilisées (${savedInitialPlayerCount} < ${MIN_PLAYERS_FOR_TEAM_STATS} joueurs)`);
+            }
+        } catch (dbError) {
+            console.error('⚠️ Erreur DB post-émission (non bloquante):', dbError.message);
+        }
         
         resetGameState();
         
