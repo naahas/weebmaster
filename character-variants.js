@@ -165,10 +165,11 @@ const CHARACTER_VARIANTS = {
         ["ZZIGG ZOLDIK", "ZZIGG ZOLDYCK"],
         ["UVOGIN", "UVOGUINE"],
         ["PEGGY", "PEGUI"],
+        ["TOMPA", "TONPA"],
         ["LEORIO", "LEOLIO", "LEOLIO PARADINAITO"],
         ["MELEOLON", "MELEORON"],
         ["BUROVUTA", "BLOSTER"],
-        ["POUF", "SHAIAPOUF"],
+        ["POUF", "SHAIAPOUF" , "PUFU"],
         ["YUPI", "YOUPI", "MONTUTYUPI"],
         ["KURORO", "KURORO LUCIFER", "CHROLLO", "CHROLLO LUCILFER"],
         ["CANARY", "KANARIA"],
@@ -255,8 +256,33 @@ const CHARACTER_VARIANTS = {
     "DemonSlayer": [
         ["KAMADO TANJIRO", "TANJIRO KAMADO"],
         ["KAMADO NEZUKO", "NEZUKO KAMADO"],
+        ["UBUYASHIKI", "KAGAYA UBUYASHIKI" , "KAGAYA"],
         ["AGATSUMA ZENITSU", "ZENITSU AGATSUMA"],
         ["HASHIBIRA INOSUKE", "INOSUKE HASHIBIRA"],
+    ],
+
+    // ============================================
+    // BLACK CLOVER
+    // ============================================
+    "BlackClover": [
+        ["RYUDO", "RYUYA", "RYUDO RYUYA"],
+        ["LOLOPECHKA", "LOROPECHIKA"],
+        ["BELL", "SYLPHE" , "SYLPH"],
+        ["VET", "VETTO"],
+        ["RIYAH", "RHYA" , "RIYA"],
+        ["REVE", "REV"],
+        ["SOEUR LILY", "SISTER LILY" , "LILY AQUARIA"],
+        ["GOSH ADLEY", "GOSH" , "GAUCHE"],
+        ["GREY", "GRAY"],
+        ["SECRE SWALLOWTAIL", "NERO" , "SECRE"],
+        ["REINE DES SORCIERES", "WITCH QUEEN"],
+        ["NAHAMA", "NAHAMAH"],
+        ["BELZEBUTH", "BEELZEBUB"],
+        ["SALAMANDER", "SALAMANDRE"],
+        ["JACK THE RIPPER", "JACK" , "JACK L'EVENTREUR"],
+        ["MORIS" , "MORRIS"],
+        ["DEMITRI", "DIMITRI" , "DEMITRI BRINT"],
+        ["UNDINE", "ONDINE"]
     ],
 
     // ============================================
@@ -264,7 +290,7 @@ const CHARACTER_VARIANTS = {
     // ============================================
     "DeathNote": [
         ["KIRA", "LIGHT", "LIGHT YAGAMI"],
-        ["MISA MISA", "AMANE MISA", "MISA"],
+        ["MISA MISA", "MISA AMANE", "MISA"],
         ["L", "L LAWLIET", "RYUSAKI"],
         ["NEAR", "NATE RIVER", "NATE", "N"],
         ["MELLO", "MIHAEL KEEHL", "MIHAEL", "M"],
@@ -286,16 +312,20 @@ const CHARACTER_VARIANTS = {
         ["SHERRIA", "SHERRIA BLENDY", "CHERRYA", "CHERRYA BLENDY", "SHERIA"],
         ["BIXROW", "BIXLOW"],
         ["CHARLES", "CARLA"],
+        ["LEO" , "LOKI"],
         ["ERIK", "COBRA"],
         ["DORANBOLT", "MEST", "MEST GRYDER"],
         ["HISUI", "JADE", "JADE FIORE"],
         ["PRECHT", "HADES"],
         ["SAWYER", "RACER"],
         ["ANGEL", "SORANO"],
+        ["MYSTOGAN" , "MISTGUN"],
         ["MAKAROV", "MAKAROV DREYAR", "MAKAROF"],
         ["LISANNA", "LISANNA STRAUSS", "LISANA", "LISANA STRAUSS"],
         ["EILEEN", "EILEEN BELSERION", "IRENE", "IRENE BELSERION"],
         ["LARCADE", "LARCADE DRAGNEEL", "RAHKEID"],
+        ["ZEREF", "ZELEPH"],
+        ["FREED", "FREED JUSTINE" , "FRIED"],
         ["NATSU", "NATSU DRAGNEEL", "E.N.D", "END"],
     ],
 
@@ -464,6 +494,7 @@ const THEME_MAPPING = {
     "AttaqueDesTitans": "Snk",
     "Pokemon": "Pokemon",
     "Bleach": "Bleach",
+    "BlackClover": "BlackClover",
     "DemonSlayer": "DemonSlayer",
     "KimetsuNoYaiba": "DemonSlayer",
     "DeathNote": "DeathNote",

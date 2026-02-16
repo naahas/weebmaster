@@ -426,6 +426,7 @@ const gameState = {
     isRivalryTiebreaker: false, // 🆕 Tiebreaker en mode Rivalité
     rivalryTiebreakerTimeout: null, // 🆕 Timeout pour le tiebreaker rivalry
     rivalryRevealTimeout: null, // 🆕 Timeout pour révéler les réponses du tiebreaker
+    rivalryEndGameTimeout: null, // 🔥 Timeout pour endGameRivalryPoints (5s delay)
 
     difficultyMode: 'croissante',
     lastDifficulty: null,
@@ -1023,6 +1024,7 @@ app.get('/admin/game-state', (req, res) => {
         players: Array.from(gameState.players.values()).map(p => ({
             username: p.username,
             twitch_id: p.twitchId,
+            twitchId: p.twitchId,
             title: p.title || 'Novice',
             isChampion: p.twitchId === lastGlobalWinner
         })),
@@ -1043,6 +1045,10 @@ app.post('/admin/toggle-game', async (req, res) => {
 
     if (gameState.isActive) {
         console.log('✅ Jeu activé - Lobby ouvert');
+        
+        // 🔥 FIX: Clear le winnerScreenData pour éviter les données stale
+        // (ex: après BombAnime le winner screen data persiste car closeBombanimeWinner n'appelle pas le serveur)
+        winnerScreenData = null;
         
         // 🆕 Récupérer le mode et les noms d'équipe depuis la requête
         const { lobbyMode, teamNames, bombanimeSerie, bombanimeTimer, bombanimeLives } = req.body || {};
@@ -1083,6 +1089,21 @@ app.post('/admin/toggle-game', async (req, res) => {
         // 🔥 NOUVEAU: Reset tiebreaker
         gameState.isTiebreaker = false;
         gameState.tiebreakerPlayers = [];
+        gameState.isRivalryTiebreaker = false; // 🔥 FIX: Reset rivalry tiebreaker aussi
+        
+        // 🔥 FIX: Annuler les timeouts stale d'une partie précédente
+        if (gameState.rivalryTiebreakerTimeout) {
+            clearTimeout(gameState.rivalryTiebreakerTimeout);
+            gameState.rivalryTiebreakerTimeout = null;
+        }
+        if (gameState.rivalryRevealTimeout) {
+            clearTimeout(gameState.rivalryRevealTimeout);
+            gameState.rivalryRevealTimeout = null;
+        }
+        if (gameState.rivalryEndGameTimeout) {
+            clearTimeout(gameState.rivalryEndGameTimeout);
+            gameState.rivalryEndGameTimeout = null;
+        }
 
         io.emit('game-activated', {
             lives: gameState.lives,
@@ -1131,6 +1152,29 @@ app.post('/admin/toggle-game', async (req, res) => {
         gameState.lobbyMode = 'classic';
         gameState.teamNames = { 1: 'Team A', 2: 'Team B' };
         gameState.teamCounts = { 1: 0, 2: 0 };
+        
+        // 🔥 FIX: Reset tiebreaker flags
+        gameState.isTiebreaker = false;
+        gameState.tiebreakerPlayers = [];
+        gameState.isRivalryTiebreaker = false;
+        
+        // 🔥 FIX: Annuler les timeouts stale
+        if (gameState.autoModeTimeout) {
+            clearTimeout(gameState.autoModeTimeout);
+            gameState.autoModeTimeout = null;
+        }
+        if (gameState.rivalryTiebreakerTimeout) {
+            clearTimeout(gameState.rivalryTiebreakerTimeout);
+            gameState.rivalryTiebreakerTimeout = null;
+        }
+        if (gameState.rivalryRevealTimeout) {
+            clearTimeout(gameState.rivalryRevealTimeout);
+            gameState.rivalryRevealTimeout = null;
+        }
+        if (gameState.rivalryEndGameTimeout) {
+            clearTimeout(gameState.rivalryEndGameTimeout);
+            gameState.rivalryEndGameTimeout = null;
+        }
         
         // 💣 Reset BombAnime
         resetBombanimeState();
@@ -1474,7 +1518,14 @@ app.post('/admin/start-game', async (req, res) => {
     // 🎴 MODE TRIADE - Démarrage spécial
     if (gameState.lobbyMode === 'triade') {
         // Récupérer les paramètres envoyés
-        const { triadeAnimes } = req.body || {};
+        const { triadeAnimes, triadeHandSize } = req.body || {};
+        
+        // Stocker la taille de main
+        gameState.triade.handSize = parseInt(triadeHandSize) || 3;
+        if (gameState.triade.handSize !== 3 && gameState.triade.handSize !== 5) {
+            gameState.triade.handSize = 3;
+        }
+        console.log(`🎴 Cartes en main: ${gameState.triade.handSize}`);
         
         // Vérifier les limites de joueurs (2-10)
         if (totalPlayers > 10) {
@@ -1534,6 +1585,29 @@ app.post('/admin/start-game', async (req, res) => {
         gameState.showResults = false;
         gameState.lastQuestionResults = null;
         gameState.recentSeries = [];
+        
+        // 🔥 FIX: Reset des flags tiebreaker (pouvaient rester à true si l'admin a fermé le lobby pendant un tiebreaker)
+        gameState.isTiebreaker = false;
+        gameState.tiebreakerPlayers = [];
+        gameState.isRivalryTiebreaker = false;
+        
+        // 🔥 FIX: Annuler les timeouts stale de la partie précédente
+        if (gameState.autoModeTimeout) {
+            clearTimeout(gameState.autoModeTimeout);
+            gameState.autoModeTimeout = null;
+        }
+        if (gameState.rivalryTiebreakerTimeout) {
+            clearTimeout(gameState.rivalryTiebreakerTimeout);
+            gameState.rivalryTiebreakerTimeout = null;
+        }
+        if (gameState.rivalryRevealTimeout) {
+            clearTimeout(gameState.rivalryRevealTimeout);
+            gameState.rivalryRevealTimeout = null;
+        }
+        if (gameState.rivalryEndGameTimeout) {
+            clearTimeout(gameState.rivalryEndGameTimeout);
+            gameState.rivalryEndGameTimeout = null;
+        }
 
         const playerCount = gameState.players.size;
         addLog('game-start', { playerCount });
@@ -2704,9 +2778,9 @@ function revealAnswers(correctAnswer) {
     } else if (gameState.mode === 'points' && gameState.currentQuestionIndex >= gameState.questionsCount) {
         // 🆕 MODE RIVALITÉ : Fin par points
         if (gameState.lobbyMode === 'rivalry') {
-            setTimeout(() => {
+            gameState.rivalryEndGameTimeout = setTimeout(() => {
                 endGameRivalryPoints();
-            }, 5000); // 🔥 5s pour laisser les résultats s'afficher avant le winner
+            }, 100); // 🔥 FIX: Afficher le winner directement (comme en classique)
             return; // 🆕 IMPORTANT: Arrêter pour ne pas continuer avec le mode auto
         } else {
             // Terminer automatiquement après la dernière question
@@ -3003,6 +3077,9 @@ async function endGameByPoints() {
                 }));
 
                 const { playersData, topPlayers } = await generateGameEndedData();
+                
+                // 🔥 Sauvegarder les données de la dernière question AVANT le reset
+                const lastQuestionPlayers = getLastQuestionPlayersData();
 
                 winnerScreenData = {
                     winner: winnerData,
@@ -3012,7 +3089,8 @@ async function endGameByPoints() {
                     gameMode: 'points',
                     playersData,
                     topPlayers,
-                    livesIcon: gameState.livesIcon
+                    livesIcon: gameState.livesIcon,
+                    lastQuestionPlayers
                 };
 
                 io.emit('game-ended', {
@@ -3022,7 +3100,8 @@ async function endGameByPoints() {
                     totalQuestions: gameState.currentQuestionIndex,
                     gameMode: 'points',
                     playersData,
-                    topPlayers
+                    topPlayers,
+                    lastQuestionPlayers
                 });
 
                 // Reset complet
@@ -3229,6 +3308,9 @@ async function checkTiebreakerWinner() {
             }));
 
             const { playersData, topPlayers } = await generateGameEndedData();
+            
+            // 🔥 Sauvegarder les données de la dernière question AVANT le reset
+            const lastQuestionPlayers = getLastQuestionPlayersData();
 
             winnerScreenData = {
                 winner: winnerData,
@@ -3238,7 +3320,8 @@ async function checkTiebreakerWinner() {
                 gameMode: 'points',
                 playersData,
                 topPlayers,
-                livesIcon: gameState.livesIcon
+                livesIcon: gameState.livesIcon,
+                lastQuestionPlayers
             };
 
 
@@ -3249,7 +3332,8 @@ async function checkTiebreakerWinner() {
                 totalQuestions: gameState.currentQuestionIndex,
                 gameMode: 'points',
                 playersData,
-                topPlayers
+                topPlayers,
+                lastQuestionPlayers
             });
 
             // Reset complet
@@ -3514,6 +3598,17 @@ async function checkRivalryTiebreakerWinner() {
         const savedTeamNames = { ...gameState.teamNames };
         const savedInitialPlayerCount = gameState.initialPlayerCount;
 
+        // 🔥 FIX: Récupérer topPlayers AVANT l'émission
+        let topPlayers = [];
+        try {
+            topPlayers = await db.getTopPlayers(10);
+        } catch (dbError) {
+            console.error('⚠️ Erreur récup topPlayers:', dbError.message);
+        }
+        
+        // 🔥 Sauvegarder les données de la dernière question AVANT le reset
+        const lastQuestionPlayers = getLastQuestionPlayersData();
+
         // 🔥 ÉMETTRE game-ended IMMÉDIATEMENT
         const gameEndedPayload = {
             winner: teamData,
@@ -3524,7 +3619,8 @@ async function checkRivalryTiebreakerWinner() {
             totalQuestions: gameState.currentQuestionIndex,
             gameMode: 'rivalry-points',
             playersData,
-            topPlayers: []
+            topPlayers,
+            lastQuestionPlayers
         };
 
         winnerScreenData = {
@@ -3535,11 +3631,8 @@ async function checkRivalryTiebreakerWinner() {
         io.emit('game-ended', gameEndedPayload);
         console.log('📡 game-ended émis pour rivalry-points-tiebreaker');
 
-        // 🔥 Appels DB APRÈS l'émission
+        // 🔥 Appels DB APRÈS l'émission (stats équipe uniquement)
         try {
-            const topPlayers = await db.getTopPlayers(10);
-            winnerScreenData.topPlayers = topPlayers;
-
             if (savedInitialPlayerCount >= MIN_PLAYERS_FOR_TEAM_STATS) {
                 for (const p of playersData) {
                     const isWinner = p.team === (team1Score > team2Score ? 1 : 2);
@@ -3617,7 +3710,17 @@ async function endRivalryWithTie() {
     const savedTeamScores = { ...gameState.teamScores };
     const savedTeamNames = { ...gameState.teamNames };
 
-    // 🔥 ÉMETTRE game-ended IMMÉDIATEMENT (avant appel DB)
+    // 🔥 FIX: Récupérer topPlayers AVANT l'émission
+    let topPlayers = [];
+    try {
+        topPlayers = await db.getTopPlayers(10);
+    } catch (dbError) {
+        console.error('⚠️ Erreur récup topPlayers:', dbError.message);
+    }
+
+    // 🔥 Sauvegarder les données de la dernière question AVANT le reset
+    const lastQuestionPlayers = getLastQuestionPlayersData();
+
     const gameEndedPayload = {
         winner: teamData,
         teamScores: savedTeamScores,
@@ -3627,7 +3730,8 @@ async function endRivalryWithTie() {
         totalQuestions: gameState.currentQuestionIndex,
         gameMode: 'rivalry-points',
         playersData,
-        topPlayers: []
+        topPlayers,
+        lastQuestionPlayers
     };
 
     winnerScreenData = {
@@ -3637,14 +3741,6 @@ async function endRivalryWithTie() {
 
     io.emit('game-ended', gameEndedPayload);
     console.log('📡 game-ended émis pour rivalry-points (égalité)');
-
-    // 🔥 Appel DB APRÈS l'émission
-    try {
-        const topPlayers = await db.getTopPlayers(10);
-        winnerScreenData.topPlayers = topPlayers;
-    } catch (dbError) {
-        console.error('⚠️ Erreur DB post-émission (non bloquante):', dbError.message);
-    }
 
     resetGameState();
 }
@@ -3699,6 +3795,9 @@ async function endGameWithTie() {
     }));
 
     const { playersData, topPlayers } = await generateGameEndedData();
+    
+    // 🔥 Sauvegarder les données de la dernière question AVANT le reset
+    const lastQuestionPlayers = getLastQuestionPlayersData();
 
     winnerScreenData = {
         winner: winnerData,
@@ -3708,7 +3807,8 @@ async function endGameWithTie() {
         gameMode: 'points',
         playersData,
         topPlayers,
-        livesIcon: gameState.livesIcon
+        livesIcon: gameState.livesIcon,
+        lastQuestionPlayers
     };
 
 
@@ -3719,10 +3819,23 @@ async function endGameWithTie() {
         totalQuestions: gameState.currentQuestionIndex,
         gameMode: 'points',
         playersData,
-        topPlayers
+        topPlayers,
+        lastQuestionPlayers
     });
 
     resetGameState();
+}
+
+// 🔥 Helper: Extraire les données de la dernière question pour l'écran winner (hover)
+function getLastQuestionPlayersData() {
+    if (!gameState.lastQuestionResults || !gameState.lastQuestionResults.players) return null;
+    return gameState.lastQuestionResults.players.map(p => ({
+        username: p.username,
+        status: p.status,
+        isCorrect: p.isCorrect,
+        selectedAnswer: p.selectedAnswer || null,
+        responseTime: p.responseTime || null
+    }));
 }
 
 // Terminer la partie
@@ -3791,6 +3904,9 @@ async function endGame(winner) {
         const topPlayers = await db.getTopPlayers(10);
 
 
+        // 🔥 Sauvegarder les données de la dernière question AVANT le reset
+        const lastQuestionPlayers = getLastQuestionPlayersData();
+
         // 🔥 Stocker pour restauration
         winnerScreenData = {
             winner: winnerData,
@@ -3799,7 +3915,8 @@ async function endGame(winner) {
             gameMode: 'lives',
             playersData: playersData,
             topPlayers,
-            livesIcon: gameState.livesIcon
+            livesIcon: gameState.livesIcon,
+            lastQuestionPlayers
         };
 
 
@@ -3811,7 +3928,8 @@ async function endGame(winner) {
                 totalQuestions: gameState.currentQuestionIndex,
                 gameMode: 'lives',
                 playersData: playersData,
-                topPlayers
+                topPlayers,
+                lastQuestionPlayers
             });
         }
 
@@ -3866,7 +3984,17 @@ async function endGameRivalry(winningTeam) {
         const savedTeamNames = { ...gameState.teamNames };
         const savedInitialPlayerCount = gameState.initialPlayerCount;
         
-        // 🔥 ÉMETTRE game-ended IMMÉDIATEMENT (avant les appels DB)
+        // 🔥 FIX: Récupérer topPlayers AVANT l'émission (comme en mode classique)
+        let topPlayers = [];
+        try {
+            topPlayers = await db.getTopPlayers(10);
+        } catch (dbError) {
+            console.error('⚠️ Erreur récup topPlayers:', dbError.message);
+        }
+        
+        // 🔥 Sauvegarder les données de la dernière question AVANT le reset
+        const lastQuestionPlayers = getLastQuestionPlayersData();
+        
         const gameEndedPayload = {
             winner: teamData,
             teamScores: savedTeamScores,
@@ -3875,7 +4003,8 @@ async function endGameRivalry(winningTeam) {
             totalQuestions: gameState.currentQuestionIndex,
             gameMode: 'rivalry-lives',
             playersData: playersData,
-            topPlayers: []
+            topPlayers,
+            lastQuestionPlayers
         };
         
         winnerScreenData = {
@@ -3886,11 +4015,8 @@ async function endGameRivalry(winningTeam) {
         io.emit('game-ended', gameEndedPayload);
         console.log('📡 game-ended émis pour rivalry-lives');
         
-        // 🔥 Appels DB APRÈS l'émission (ne bloquent plus l'affichage)
+        // Appels DB post-émission (stats équipe)
         try {
-            const topPlayers = await db.getTopPlayers(10);
-            winnerScreenData.topPlayers = topPlayers;
-            
             if (savedInitialPlayerCount >= MIN_PLAYERS_FOR_TEAM_STATS && winningTeam !== 'draw') {
                 for (const p of playersData) {
                     const isWinner = p.team === winningTeam;
@@ -3996,8 +4122,17 @@ async function endGameRivalryPoints() {
         const savedTeamNames = { ...gameState.teamNames };
         const savedInitialPlayerCount = gameState.initialPlayerCount;
         
-        // 🔥 ÉMETTRE game-ended IMMÉDIATEMENT (avant les appels DB)
-        // Ainsi même si la DB échoue, les clients reçoivent le winner
+        // 🔥 FIX: Récupérer topPlayers AVANT l'émission (comme en mode classique)
+        let topPlayers = [];
+        try {
+            topPlayers = await db.getTopPlayers(10);
+        } catch (dbError) {
+            console.error('⚠️ Erreur récup topPlayers:', dbError.message);
+        }
+        
+        // 🔥 Sauvegarder les données de la dernière question AVANT le reset
+        const lastQuestionPlayers = getLastQuestionPlayersData();
+        
         const gameEndedPayload = {
             winner: teamData,
             teamScores: savedTeamScores,
@@ -4007,7 +4142,8 @@ async function endGameRivalryPoints() {
             totalQuestions: gameState.currentQuestionIndex,
             gameMode: 'rivalry-points',
             playersData: playersData,
-            topPlayers: [] // Sera mis à jour dans winnerScreenData si la DB répond
+            topPlayers,
+            lastQuestionPlayers
         };
         
         winnerScreenData = {
@@ -4018,13 +4154,8 @@ async function endGameRivalryPoints() {
         io.emit('game-ended', gameEndedPayload);
         console.log('📡 game-ended émis pour rivalry-points');
         
-        // 🔥 Appels DB APRÈS l'émission (ne bloquent plus l'affichage)
+        // Appels DB post-émission (stats équipe)
         try {
-            const topPlayers = await db.getTopPlayers(10);
-            // Mettre à jour winnerScreenData avec le top players (pour restauration au refresh)
-            winnerScreenData.topPlayers = topPlayers;
-            
-            // Mise à jour des stats équipe (si 20+ joueurs)
             if (savedInitialPlayerCount >= MIN_PLAYERS_FOR_TEAM_STATS) {
                 for (const p of playersData) {
                     const isWinner = p.team === winningTeam;
@@ -4937,6 +5068,43 @@ function startBombanimeTurn(twitchId) {
         clearTimeout(gameState.bombanime.turnTimeout);
     }
     
+    // Trouver le joueur AVANT de modifier l'état
+    let player = Array.from(gameState.players.values()).find(p => p.twitchId === twitchId);
+    
+    // 🔥 FIX: Si le joueur n'est pas trouvé, chercher le prochain joueur vivant
+    if (!player) {
+        console.log(`⚠️ Joueur ${twitchId} introuvable - recherche du prochain joueur...`);
+        
+        // Temporairement setter le currentPlayerTwitchId pour que getNextBombanimePlayer fonctionne
+        gameState.bombanime.currentPlayerTwitchId = twitchId;
+        
+        const alivePlayers = getAliveBombanimePlayers();
+        if (alivePlayers.length <= 1) {
+            // Fin de partie ou aucun joueur
+            if (alivePlayers.length === 1) {
+                endBombanimeGame(alivePlayers[0]);
+            } else {
+                endBombanimeGame(null);
+            }
+            return;
+        }
+        
+        // Essayer de trouver le prochain joueur vivant
+        const nextTwitchId = getNextBombanimePlayer();
+        if (nextTwitchId) {
+            console.log(`🔄 Joueur de remplacement trouvé: ${nextTwitchId}`);
+            player = Array.from(gameState.players.values()).find(p => p.twitchId === nextTwitchId);
+            twitchId = nextTwitchId;
+        }
+        
+        // Si toujours pas de joueur trouvé, fallback sur le premier joueur vivant
+        if (!player) {
+            player = alivePlayers[0];
+            twitchId = player.twitchId;
+            console.log(`🔄 Fallback sur premier joueur vivant: ${player.username}`);
+        }
+    }
+    
     // Incrémenter l'identifiant de tour (protection contre race conditions)
     gameState.bombanime.turnId++;
     const currentTurnId = gameState.bombanime.turnId;
@@ -4944,10 +5112,6 @@ function startBombanimeTurn(twitchId) {
     gameState.bombanime.currentPlayerTwitchId = twitchId;
     gameState.bombanime.turnStartTime = Date.now();
     gameState.bombanime.isPaused = false;
-    
-    // Trouver le joueur
-    const player = Array.from(gameState.players.values()).find(p => p.twitchId === twitchId);
-    if (!player) return;
     
     console.log(`💣 Tour de ${player.username} (${gameState.bombanime.timer}s) [turnId=${currentTurnId}]`);
     
@@ -5028,6 +5192,19 @@ function bombExplode(twitchId) {
         const nextPlayerTwitchId = getNextBombanimePlayer();
         if (nextPlayerTwitchId) {
             startBombanimeTurn(nextPlayerTwitchId);
+        } else {
+            // 🔥 FIX: Safety net - si getNextBombanimePlayer retourne null mais il reste des joueurs
+            const remainingPlayers = getAliveBombanimePlayers();
+            if (remainingPlayers.length > 1) {
+                // Prendre un joueur vivant différent du joueur qui vient d'exploser
+                const fallback = remainingPlayers.find(p => p.twitchId !== twitchId) || remainingPlayers[0];
+                console.log(`⚠️ getNextBombanimePlayer null mais ${remainingPlayers.length} joueurs vivants - fallback sur ${fallback.username}`);
+                startBombanimeTurn(fallback.twitchId);
+            } else if (remainingPlayers.length === 1) {
+                endBombanimeGame(remainingPlayers[0]);
+            } else {
+                endBombanimeGame(null);
+            }
         }
     }, 100); // Passage de tour pendant le shake
 }
@@ -5254,6 +5431,15 @@ async function startBombanimeGame() {
     gameState.gameStartTime = Date.now();
     gameState.initialPlayerCount = players.length;
     
+    // 🔥 FIX: Annuler TOUS les pendingRemoval pour éviter la suppression de joueurs pendant la partie
+    players.forEach(player => {
+        if (player.pendingRemoval) {
+            clearTimeout(player.pendingRemoval);
+            delete player.pendingRemoval;
+            console.log(`⚠️ pendingRemoval annulé pour ${player.username} (BombAnime démarré)`);
+        }
+    });
+    
     // Envoyer l'événement de démarrage
     io.emit('bombanime-game-started', {
         serie: gameState.bombanime.serie,
@@ -5278,7 +5464,28 @@ async function startBombanimeGame() {
     
     // Commencer avec le joueur aléatoire après un délai
     setTimeout(() => {
-        const firstPlayer = gameState.bombanime.playersOrder[randomStartIndex];
+        // 🔥 FIX: Vérifier que la partie est toujours active avant de démarrer le premier tour
+        if (!gameState.bombanime.active) {
+            console.log('⚠️ BombAnime annulé pendant l\'intro - premier tour ignoré');
+            return;
+        }
+        
+        const alivePlayers = getAliveBombanimePlayers();
+        if (alivePlayers.length < BOMBANIME_CONFIG.MIN_PLAYERS) {
+            console.log('⚠️ Plus assez de joueurs vivants pour démarrer le premier tour');
+            endBombanimeGame(alivePlayers[0] || null);
+            return;
+        }
+        
+        let firstPlayer = gameState.bombanime.playersOrder[randomStartIndex];
+        
+        // 🔥 FIX: Vérifier que le joueur choisi existe encore, sinon prendre le premier vivant
+        const firstPlayerExists = Array.from(gameState.players.values()).find(p => p.twitchId === firstPlayer && p.lives > 0);
+        if (!firstPlayerExists) {
+            console.log(`⚠️ Premier joueur ${firstPlayer} introuvable/mort - fallback sur premier joueur vivant`);
+            firstPlayer = alivePlayers[0].twitchId;
+        }
+        
         startBombanimeTurn(firstPlayer);
     }, 3000); // 3s avant le premier tour
     
@@ -5539,57 +5746,13 @@ function generateTriadeDeck(minCards = 39) {
 }
 
 // 🎴 Distribuer 3 cartes avec garantie d'au moins 2 du même anime
-function drawCardsWithSameAnimeBonus(deck) {
-    // 🔧 TEMP: Force 2 ou 3 cartes du même anime pour tester fusion
-    console.log('🔴🔴🔴 drawCardsWithSameAnimeBonus APPELÉ - deck size:', deck.length);
-    const cardsByAnime = {};
-    deck.forEach((card, index) => {
-        if (!cardsByAnime[card.anime]) cardsByAnime[card.anime] = [];
-        cardsByAnime[card.anime].push({ card, index });
-    });
-    
-    console.log('🔴 Animes dispo:', Object.entries(cardsByAnime).map(([a, c]) => `${a}(${c.length})`).join(', '));
-    
-    // 50% chance d'avoir 3 cartes same-anime, sinon 2
-    const wantThree = Math.random() < 0.5;
-    
-    // Chercher un anime avec assez de cartes
-    const minNeeded = wantThree ? 3 : 2;
-    const candidates = Object.entries(cardsByAnime)
-        .filter(([anime, cards]) => cards.length >= minNeeded)
-        .sort(() => Math.random() - 0.5);
-    
-    if (candidates.length === 0) {
-        // Fallback: prendre ce qu'on peut
-        const fallback = Object.entries(cardsByAnime)
-            .filter(([anime, cards]) => cards.length >= 2)
-            .sort(() => Math.random() - 0.5);
-        if (fallback.length === 0) {
-            return [deck.pop(), deck.pop(), deck.pop()].filter(c => c != null);
-        }
-        const [chosenAnime, chosenCards] = fallback[0];
-        const pair = chosenCards.slice(0, 2);
-        const indices = pair.map(p => p.index).sort((a, b) => b - a);
-        const drawn = [];
-        indices.forEach(idx => drawn.push(deck.splice(idx, 1)[0]));
-        if (deck.length > 0) drawn.push(deck.splice(Math.floor(Math.random() * deck.length), 1)[0]);
-        console.log(`🎴 TEMP Distribution: 2× ${chosenAnime} + 1 autre`);
-        return drawn;
-    }
-    
-    const [chosenAnime, chosenCards] = candidates[0];
-    const count = wantThree ? 3 : 2;
-    const picked = chosenCards.slice(0, count);
-    const indices = picked.map(p => p.index).sort((a, b) => b - a);
+function drawCardsFromDeck(deck, handSize = 3) {
     const drawn = [];
-    indices.forEach(idx => drawn.push(deck.splice(idx, 1)[0]));
-    
-    // Si 2, ajouter 1 carte random
-    if (count === 2 && deck.length > 0) {
-        drawn.push(deck.splice(Math.floor(Math.random() * deck.length), 1)[0]);
+    for (let i = 0; i < handSize && deck.length > 0; i++) {
+        const idx = Math.floor(Math.random() * deck.length);
+        drawn.push(deck.splice(idx, 1)[0]);
     }
-    
-    console.log(`🎴 TEMP Distribution: ${count}× ${chosenAnime}${count === 2 ? ' + 1 autre' : ' (full same-anime!)'}`);
+    console.log(`🎴 Distribution aléatoire: ${drawn.map(c => `${c.name}(${c.anime})`).join(', ')}`);
     return drawn;
 }
 
@@ -5636,13 +5799,14 @@ async function startTriadeGame() {
     gameState.triade.playersData = new Map();
     
     // Générer le deck (assez de cartes pour tous les joueurs)
-    const cardsNeeded = players.length * 3;
+    const handSize = gameState.triade.handSize || 3;
+    const cardsNeeded = players.length * handSize;
     gameState.triade.deck = generateTriadeDeck(cardsNeeded);
-    console.log(`🎴 Deck généré: ${gameState.triade.deck.length} cartes (besoin: ${cardsNeeded})`);
+    console.log(`🎴 Deck généré: ${gameState.triade.deck.length} cartes (besoin: ${cardsNeeded}, main: ${handSize})`);
     
-    // Initialiser les données de chaque joueur et distribuer 3 cartes aléatoires
+    // Initialiser les données de chaque joueur et distribuer les cartes
     players.forEach((player) => {
-        const cards = drawCardsWithSameAnimeBonus(gameState.triade.deck);
+        const cards = drawCardsFromDeck(gameState.triade.deck, handSize);
         console.log(`🔴 ${player.username} reçoit:`, cards.map(c => `${c.name}(${c.anime})`).join(', '));
         
         gameState.triade.playersData.set(player.twitchId, {
@@ -5673,6 +5837,7 @@ async function startTriadeGame() {
     // Chaque client déclenchera l'overlay localement à la fin de son animation de deal
     io.emit('triade-game-started', {
         playersData: getTriadePlayersData(),
+        handSize: gameState.triade.handSize || 3,
         round1: {
             round: 1,
             stat: selectedStat,
@@ -5867,6 +6032,14 @@ io.on('connection', (socket) => {
             if (titleData) {
                 playerTitle = titleData.title_name;
             }
+        }
+
+        // 🔥 FIX: Re-vérifier après les awaits que la partie n'a pas démarré entre-temps
+        // (race condition: admin clique Démarrer pendant que le DB call était en cours)
+        if (gameState.inProgress) {
+            console.log(`⚠️ ${data.username} - join annulé: partie démarrée pendant le traitement`);
+            pendingJoins.delete(data.twitchId);
+            return socket.emit('error', { message: 'La partie vient de démarrer' });
         }
 
         gameState.players.set(socket.id, {
@@ -6261,7 +6434,30 @@ io.on('connection', (socket) => {
         console.log(`ð´ Cartes jouÃ©es: ${gameState.triade.playedCards.size}/${gameState.triade.playersOrder.length}`);
     });
 
-    // 🎴 Reconnexion à une partie Triade en cours
+    // 🎴 Piocher une carte depuis le deck
+    socket.on('triade-draw-card', (data) => {
+        const twitchId = data.twitchId;
+        if (!gameState.triade.active || !twitchId) return;
+
+        const playerData = gameState.triade.playersData.get(twitchId);
+        if (!playerData) return;
+
+        if (!gameState.triade.deck || gameState.triade.deck.length === 0) {
+            console.log(`⚠️ Deck vide, impossible de piocher`);
+            return;
+        }
+
+        const drawnCard = gameState.triade.deck.splice(
+            Math.floor(Math.random() * gameState.triade.deck.length), 1
+        )[0];
+        if (!drawnCard) return;
+
+        playerData.cards.push(drawnCard);
+        console.log(`🎴 ${playerData.username} pioche: ${drawnCard.name} (${drawnCard.anime}) — main: ${playerData.cards.length}, deck: ${gameState.triade.deck.length}`);
+
+        socket.emit('triade-drawn-card', { card: drawnCard });
+    });
+
     socket.on('triade-reconnect', (data) => {
         if (!gameState.triade.active) {
             console.log(`🎴 Pas de partie Triade en cours pour ${data.username}`);
@@ -6309,6 +6505,7 @@ io.on('connection', (socket) => {
         socket.emit('triade-reconnect', {
             playersData: getTriadePlayersData(),
             myCards: playerData.cards,
+            handSize: gameState.triade.handSize || 3,
             currentRound: gameState.triade.currentRound || 0,
             roundStat: gameState.triade.roundStat || null,
             playedCard: playedCard,
@@ -6334,6 +6531,7 @@ io.on('connection', (socket) => {
         socket.emit('triade-state', {
             active: true,
             playersData: getTriadePlayersData(),
+            handSize: gameState.triade.handSize || 3,
             currentRound: gameState.triade.currentRound || 0,
             roundStat: gameState.triade.roundStat || null,
             playedCard: adminPlayedCard,
@@ -6595,7 +6793,51 @@ io.on('connection', (socket) => {
             return;
         }
         
-        const player = gameState.players.get(socket.id);
+        let player = gameState.players.get(socket.id);
+        
+        // 🔥 FIX: Si le joueur n'est pas trouvé par socketId, chercher par twitchId
+        // (cas d'un refresh pendant la partie : le socketId a changé)
+        if (!player) {
+            const authUser = authenticatedUsers.get(socket.id);
+            if (authUser) {
+                let oldSocketId = null;
+                for (const [sid, p] of gameState.players.entries()) {
+                    if (p.twitchId === authUser.twitchId) {
+                        player = p;
+                        oldSocketId = sid;
+                        break;
+                    }
+                }
+                
+                if (player && oldSocketId && oldSocketId !== socket.id) {
+                    console.log(`🔄 BombAnime resync: ${player.username} transféré ${oldSocketId} → ${socket.id}`);
+                    
+                    // Transférer les bonus et défis
+                    const oldBonusData = gameState.playerBonuses.get(oldSocketId);
+                    if (oldBonusData) {
+                        gameState.playerBonuses.set(socket.id, oldBonusData);
+                        gameState.playerBonuses.delete(oldSocketId);
+                    }
+                    const oldChallengesData = gameState.playerChallenges?.get(oldSocketId);
+                    if (oldChallengesData) {
+                        gameState.playerChallenges.set(socket.id, oldChallengesData);
+                        gameState.playerChallenges.delete(oldSocketId);
+                    }
+                    
+                    // Transférer l'entrée joueur
+                    gameState.players.delete(oldSocketId);
+                    gameState.answers.delete(oldSocketId);
+                    player.socketId = socket.id;
+                    gameState.players.set(socket.id, player);
+                    
+                    // Nettoyer les flags de déconnexion
+                    delete player.disconnectedAt;
+                    delete player.disconnectedSocketId;
+                    delete player.pendingRemoval;
+                }
+            }
+        }
+        
         const myAlphabet = player ? 
             Array.from(gameState.bombanime.playerAlphabets.get(player.twitchId) || []) : 
             [];
@@ -6760,6 +7002,16 @@ io.on('connection', (socket) => {
                     console.log(`🎴 ${player.username} (admin) déconnecté du lobby - conservé (admin-joueur)`);
                 } else {
                     player.pendingRemoval = setTimeout(() => {
+                        // 🔥 FIX: Si une partie a démarré entre-temps, NE PAS supprimer le joueur
+                        if (gameState.inProgress) {
+                            console.log(`⚠️ ${player.username} - pendingRemoval annulé (partie en cours)`);
+                            delete player.pendingRemoval;
+                            // Marquer comme déconnecté à la place
+                            player.disconnectedAt = Date.now();
+                            player.disconnectedSocketId = socket.id;
+                            return;
+                        }
+                        
                         // Vérifier que le joueur n'a pas re-rejoint entre temps
                         const stillExists = gameState.players.get(socket.id);
                         if (stillExists && stillExists.pendingRemoval) {
@@ -6926,6 +7178,10 @@ function resetGameState() {
     if (gameState.rivalryRevealTimeout) {
         clearTimeout(gameState.rivalryRevealTimeout);
         gameState.rivalryRevealTimeout = null;
+    }
+    if (gameState.rivalryEndGameTimeout) {
+        clearTimeout(gameState.rivalryEndGameTimeout);
+        gameState.rivalryEndGameTimeout = null;
     }
 
     gameState.players.forEach(player => {

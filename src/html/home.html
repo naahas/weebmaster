@@ -384,7 +384,7 @@
                                 class="game-input"
                                 id="bombanimeInput"
                                 v-model="bombanime.inputValue"
-                                @keyup.enter="submitBombanimeName"
+                                @keydown.enter.prevent="submitBombanimeName"
                                 @input="emitTyping"
                                 @paste.prevent
                                 @drop.prevent
@@ -710,8 +710,13 @@
                                              @mouseleave="hideCardPreview">
                                             <!-- Fused card in slot -->
                                             <template v-if="triade.playedCardData.isFused || (triade.playedCardData.fusedCards && triade.playedCardData.fusedCards.length > 1)">
+                                                <div class="center-fused-glow"></div>
                                                 <div class="fused-img-wrap" :class="'fused-x' + triade.playedCardData.fusedCards.length">
                                                     <img v-for="fc in triade.playedCardData.fusedCards" :key="fc.name" :src="getCardImage(fc)" :alt="fc.name">
+                                                </div>
+                                                <div class="fusion-badge-slot" :class="{ 'x3': triade.playedCardData.fusedCards.length >= 3 }">
+                                                    <div class="fusion-badge-particles"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l7.07 17.32M20 4l-7.07 17.32M3.5 9h17M7 16.5h10"/></svg>
                                                 </div>
                                             </template>
                                             <!-- Normal card in slot -->
@@ -734,10 +739,8 @@
                                      :class="{ active: player.isCurrentPlayer }"
                                      :style="getTriadePlayerStyle(index, triade.otherPlayers.length)">
                                     <div class="triade-player-block">
-                                        <div class="triade-player-cards">
-                                            <div class="triade-player-card-small"></div>
-                                            <div class="triade-player-card-small"></div>
-                                            <div class="triade-player-card-small"></div>
+                                        <div class="triade-player-cards" :class="{ 'hand-5': triade.handSize === 5 }">
+                                            <div v-for="n in (triade.handSize || 3)" :key="'sc-' + player.twitchId + '-' + n" class="triade-player-card-small"></div>
                                         </div>
                                         <div class="triade-choose-indicator" :class="{ active: triade.playersWhoPlayed.includes(player.twitchId), visible: triade.showCenterSlot }">
                                             <img src="choose.png" alt="choose">
@@ -757,7 +760,7 @@
                                 <div class="triade-player-seat me" 
                                      :class="{ active: triade.isMyTurn }"
                                      :style="{ '--pov-scale': {2:1.35,3:1.3,4:1.25,5:1.3,6:1.25,7:1.2,8:1.15,9:1.1,10:1.05}[triade.otherPlayers.length + 1] || 1.3 }">
-                                    <div class="triade-my-cards">
+                                    <div class="triade-my-cards" :class="{ 'hand-5': triade.handSize === 5 }">
                                         <div v-for="(card, cardIndex) in triade.myCards" 
                                              :key="'mycard-' + cardIndex + '-' + card.name"
                                              class="triade-card large"
@@ -802,6 +805,11 @@
                                                     <img v-for="fc in card.fusedCards" :key="fc.name" :src="getCardImage(fc)" :alt="fc.name">
                                                 </div>
                                                 <div class="card-shimmer"></div>
+                                                <!-- Fusion badge -->
+                                                <div class="fusion-badge-hand" :class="{ 'x3': card.fusedCards && card.fusedCards.length >= 3 }">
+                                                    <div class="fusion-badge-particles"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l7.07 17.32M20 4l-7.07 17.32M3.5 9h17M7 16.5h10"/></svg>
+                                                </div>
                                             </template>
                                             <!-- Same-anime Neon Glow Effect -->
                                             <template v-if="hasSameAnimeBonus(card) && !card.isFused">
@@ -842,7 +850,14 @@
                                                 <span class="pw-value">{{ card.powerLevel }}</span>
                                             </div>
                                             <div class="card-info">
-                                                <div class="card-name">{{ formatName(card.name) }}</div>
+                                                <template v-if="card.isFused && card.fusedCards">
+                                                    <div class="card-name fused-stacked">
+                                                        <span v-for="fc in card.fusedCards" :key="fc.name">{{ formatName(fc.name) }}</span>
+                                                    </div>
+                                                </template>
+                                                <template v-else>
+                                                    <div class="card-name">{{ formatName(card.name) }}</div>
+                                                </template>
                                                 <div class="card-anime">{{ formatName(card.anime) }}</div>
                                             </div>
                                         </div>
@@ -862,6 +877,28 @@
                         </div>
                         
                         
+                        <!-- 🎴 Deck de pioche (droite) -->
+                        <div class="triade-deck-zone" 
+                             :class="{ 'can-draw': triade.canDraw, 'deck-visible': triade.showCenterSlot }"
+                             @pointerdown="drawFromDeck">
+                            <div class="triade-deck-card"><span class="triade-deck-sm">SM</span></div>
+                            <div class="triade-deck-card"></div>
+                            <div class="triade-deck-card"></div>
+                            <div class="triade-deck-card"></div>
+                            <div class="triade-deck-card"></div>
+                            <div class="triade-deck-card"></div>
+                            <div class="triade-deck-glow"></div>
+                            <div class="triade-deck-wave"></div>
+                            <div class="triade-deck-wave"></div>
+                            <div class="triade-deck-wave"></div>
+                            <div class="deck-hover-ripple"></div>
+                            <div class="deck-hover-ripple delay"></div>
+                        </div>
+                        <!-- Ghost card for draw animation -->
+                        <div class="triade-draw-ghost" ref="triadeDrawGhost">
+                            <span class="triade-deck-sm">SM</span>
+                        </div>
+
                         <!-- Card Preview - Style Prototype -->
                         <div class="triade-card-preview" :class="{ visible: triade.previewVisible, 'has-active-stat': triade.selectedStat }">
                             <div class="preview-card" v-if="triade.previewCardDisplay">
@@ -885,11 +922,16 @@
                                 <!-- Fusion badge (fused cards) -->
                                 <div class="preview-top-badges" v-if="triade.previewCardDisplay.isFused">
                                     <div class="fusion-badge-preview" :class="{ 'x3': triade.previewCardDisplay.fusedCards.length >= 3 }">
-                                        <svg viewBox="0 0 24 24"><path d="M12 1L8 9h3v6H8l4 8 4-8h-3V9h3L12 1z"/></svg>
+                                        <div class="fusion-badge-particles">
+                                            <span></span><span></span><span></span><span></span><span></span><span></span>
+                                        </div>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l7.07 17.32M20 4l-7.07 17.32M3.5 9h17M7 16.5h10"/></svg>
                                     </div>
                                 </div>
                                 <div class="preview-info">
-                                    <div v-if="triade.previewCardDisplay.isFused" class="preview-name fused-name" v-html="triade.previewCardDisplay.fusedCards.map(c => formatName(c.name)).join('<span class=\'fusion-plus\'>+</span>')"></div>
+                                    <div v-if="triade.previewCardDisplay.isFused" class="preview-name fused-name fused-stacked-preview">
+                                        <span v-for="fc in triade.previewCardDisplay.fusedCards" :key="fc.name">{{ formatName(fc.name) }}</span>
+                                    </div>
                                     <div v-else class="preview-name">{{ formatName(triade.previewCardDisplay.name) }}</div>
                                     <div class="preview-anime">{{ formatName(triade.previewCardDisplay.anime) }}</div>
                                     <div class="preview-stats" v-if="triade.previewCardDisplay.stats">
@@ -937,7 +979,7 @@
                 <!-- ============================================
                      MODE CLASSIQUE/RIVALRY - Interface de jeu
                      ============================================ -->
-                <template v-else>
+                <template v-else-if="!triade.reconnecting">
                 <!-- HUD du joueur -->
                 <div class="player-hud">
                     <div class="hud-item hud-username-item">

@@ -39,7 +39,7 @@ createApp({
 
             // État du jeu
             isGameActive: false,
-            gameInProgress: sessionStorage.getItem('bombanimeInProgress') === 'true',
+            gameInProgress: sessionStorage.getItem('bombanimeInProgress') === 'true' || sessionStorage.getItem('triadeInProgress') === 'true',
             gameStartedOnServer: false,
             gameEnded: false,
 
@@ -240,7 +240,9 @@ createApp({
                 playedCardData: (() => { try { return JSON.parse(sessionStorage.getItem('triadeState') || '{}').playedCardData || null; } catch(e) { return null; } })(),
                 timer: 0,
                 playersWhoPlayed: [],
-                timerExpired: (() => { try { return !!JSON.parse(sessionStorage.getItem('triadeState') || '{}').timerExpired; } catch(e) { return false; } })()
+                timerExpired: (() => { try { return !!JSON.parse(sessionStorage.getItem('triadeState') || '{}').timerExpired; } catch(e) { return false; } })(),
+                canDraw: false,  // 🎴 Deck: le joueur peut piocher
+                handSize: (() => { try { return JSON.parse(sessionStorage.getItem('triadeState') || '{}').handSize || 3; } catch(e) { return 3; } })()     // 🎴 Nombre de cartes en main (3 ou 5)
             },
 
 
@@ -304,6 +306,9 @@ createApp({
                 if (!this.socket.connected) {
                     this.socket.connect();
                 }
+                
+                // 🔒 Re-sync état serveur immédiatement au retour d'onglet
+                this._resyncServerState();
 
                 if (this.gameInProgress && this.hasJoined && this.isAuthenticated) {
                     this.socket.emit('reconnect-player', {
@@ -1281,6 +1286,40 @@ createApp({
         },
 
         // ========== Restauration d'état ==========
+        async _resyncServerState() {
+            try {
+                const response = await fetch('/game/state');
+                const state = await response.json();
+                
+                // Resync lobbyMode — source of truth = serveur
+                if (state.isActive && state.lobbyMode) {
+                    if (this.lobbyMode !== state.lobbyMode) {
+                        console.log(`🔄 Resync lobbyMode: ${this.lobbyMode} → ${state.lobbyMode}`);
+                        this.lobbyMode = state.lobbyMode;
+                    }
+                    // Protéger contre game-deactivated stale pendant 2s après resync
+                    if (state.lobbyMode !== 'classic') {
+                        this._lastActivationTime = Date.now();
+                    }
+                } else if (!state.isActive) {
+                    this.lobbyMode = 'classic';
+                }
+                
+                // Resync hasJoined pour triade lobby
+                if (state.isActive && !state.inProgress && state.lobbyMode === 'triade' && this.isAuthenticated) {
+                    const isInPlayerList = state.players && state.players.some(p => p.twitchId === this.twitchId);
+                    if (isInPlayerList && !this.hasJoined) {
+                        console.log('🔄 Resync: joueur trouvé dans lobby serveur → hasJoined=true');
+                        this.hasJoined = true;
+                    }
+                }
+                
+                this.playerCount = state.playerCount;
+            } catch (e) {
+                console.warn('⚠️ Resync échoué:', e);
+            }
+        },
+
         async restoreGameState() {
             try {
                 const response = await fetch('/game/state');
@@ -1297,6 +1336,10 @@ createApp({
                 // 🆕 Restaurer le mode Rivalité
                 if (state.lobbyMode) {
                     this.lobbyMode = state.lobbyMode;
+                    // 🔒 Protéger contre game-deactivated stale lors de reconnexion
+                    if (state.lobbyMode !== 'classic' && state.isActive) {
+                        this._lastActivationTime = Date.now();
+                    }
                 }
                 if (state.teamNames) {
                     this.teamNames = state.teamNames;
@@ -1546,6 +1589,10 @@ createApp({
                     });
                     console.log('✅ Authentification enregistrée auprès du serveur');
                 }
+                
+                // 🔒 Re-sync état serveur sur chaque (re)connexion socket
+                // Protège contre les events manqués pendant la déconnexion
+                this._resyncServerState();
 
                 if (this.needsReconnect && this.gameInProgress) {
                     this.socket.emit('reconnect-player', {
@@ -1609,7 +1656,8 @@ createApp({
                     }, 1500);
                 }
                 // 🎴 FIX: Si joueur dans lobby triade mais a raté triade-game-started (race condition socket)
-                else if (this.hasJoined && this.lobbyMode === 'triade' && !this.triade.active) {
+                // Seulement si une partie était en cours côté serveur (pas en lobby)
+                else if (this.hasJoined && this.lobbyMode === 'triade' && !this.triade.active && this.gameStartedOnServer) {
                     console.log('🎴 Lobby triade détecté sans partie active → vérification auprès du serveur...');
                     // Cacher le modal "partie en cours" immédiatement (optimiste)
                     this.gameInProgress = true;
@@ -1706,6 +1754,22 @@ createApp({
                     }
                 }
                 if (data && data.teamNames) this.teamNames = data.teamNames;
+                
+                // 🔒 Timestamp pour éviter race condition avec game-deactivated
+                this._lastActivationTime = Date.now();
+                
+                // 🔒 Re-sync safety: re-confirmer le mode après un court délai
+                // (protège contre game-deactivated qui arriverait après game-activated)
+                if (data && data.lobbyMode && data.lobbyMode !== 'classic') {
+                    const expectedMode = data.lobbyMode;
+                    setTimeout(() => {
+                        if (this.isGameActive && this.lobbyMode !== expectedMode) {
+                            console.log(`⚠️ Race condition détectée: lobbyMode=${this.lobbyMode}, expected=${expectedMode} → correction`);
+                            this.lobbyMode = expectedMode;
+                        }
+                    }, 500);
+                }
+                
                 this.showNotification('Le jeu est maintenant actif ! 🎮', 'success');
             });
 
@@ -1717,6 +1781,12 @@ createApp({
             });
 
             this.socket.on('game-deactivated', () => {
+                // 🔒 Protection race condition: ignorer si game-activated ou resync récent
+                if (this._lastActivationTime && (Date.now() - this._lastActivationTime < 2000)) {
+                    console.log('⚠️ game-deactivated ignoré (game-activated récent, race condition)');
+                    return;
+                }
+                
                 // Reset COMPLET de l'état du jeu
                 this.isGameActive = false;
                 this.gameInProgress = false;
@@ -2952,7 +3022,7 @@ createApp({
                 
                 // Server says no game active → clean up stale state
                 if (data.active === false) {
-                    console.log('🎴 Serveur: pas de partie Triade → nettoyage état');
+                    console.log('🎴 Serveur: pas de partie Triade → nettoyage état game');
                     sessionStorage.removeItem('triadeInProgress');
                     sessionStorage.removeItem('triadeState');
                     this.triade.active = false;
@@ -2965,9 +3035,12 @@ createApp({
                     this.triade.timerExpired = false;
                     this.triade.timer = 0;
                     this.gameInProgress = false;
-                    this.hasJoined = false;
-                    this.lobbyMode = 'classic';
                     this.stopTriadeTimer();
+                    // Ne reset hasJoined/lobbyMode que si on n'est PAS dans un lobby triade actif
+                    if (!this.isGameActive || this.lobbyMode !== 'triade') {
+                        this.hasJoined = false;
+                        this.lobbyMode = 'classic';
+                    }
                     return;
                 }
                 
@@ -3009,7 +3082,7 @@ createApp({
                 // Restaurer carte jouée si déjà placée ce round
                 if (data.playedCard) {
                     this.triade.cardPlayed = true;
-                    this.$set(this.triade, 'playedCardData', data.playedCard);
+                    this.triade.playedCardData = data.playedCard;
                     // Timer keeps running - don't stop it
                 }
                 
@@ -3120,6 +3193,23 @@ createApp({
                 this.saveTriadeState();
             });
             
+            // 🎴 Serveur indique que le joueur peut piocher
+            this.socket.on('triade-can-draw', (data) => {
+                console.log('🎴 Pioche disponible:', data);
+                this.triade.canDraw = true;
+                this.saveTriadeState();
+            });
+
+            // 🎴 Carte piochée reçue du serveur
+            this.socket.on('triade-drawn-card', (data) => {
+                console.log('🎴 Carte piochée:', data.card);
+                if (data.card) {
+                    this.triade.myCards.push(data.card);
+                    this.triade.canDraw = false;
+                    this.saveTriadeState();
+                }
+            });
+
             // Fin de partie Triade
             this.socket.on('triade-game-ended', (data) => {
                 console.log('🏆 Triade terminé:', data);
@@ -4271,8 +4361,8 @@ createApp({
                 return baseSize + (playerCount * perPlayer);
             }
             // Desktop (actuel)
-            const baseSize = 500;
-            const perPlayer = 22;
+            const baseSize = 470;
+            const perPlayer = 18;
             const size = baseSize + (playerCount * perPlayer);
             
             // 2K+ : agrandir proportionnellement
@@ -4440,6 +4530,7 @@ createApp({
                 'Dbz': 'Dragon Ball',
                 'Mha': 'My Hero Academia',
                 'Bleach': 'Bleach',
+                'BlackClover' : 'Black Clover',
                 'Jojo': 'Jojo',
                 'Hxh': 'Hunter x Hunter',
                 'FairyTail': 'Fairy Tail',
@@ -4734,6 +4825,7 @@ createApp({
             console.log('🎴 Init Triade:', data);
             
             this.triade.active = true;
+            this.triade.handSize = data.handSize || 3;
             this.triade.reconnecting = false;
             this.triade.showCenterSlot = false;
             this.triade.cardPlayed = false;
@@ -4744,6 +4836,7 @@ createApp({
             this.triade.draggingCardIndex = null;
             this.triade.dropZoneActive = false;
             this.triade.playersWhoPlayed = [];
+            this.triade.canDraw = false;
             this.stopTriadeTimer();
             this.triade.myCards = [];  // Reset cartes POV (seront injectées par dealTriadeCards)
             this._pendingTriadeCards = null;
@@ -4784,7 +4877,9 @@ createApp({
                     selectedStat: this.triade.selectedStat,
                     cardPlayed: this.triade.cardPlayed || false,
                     playedCardData: this.triade.playedCardData || null,
-                    timerExpired: this.triade.timerExpired || false
+                    timerExpired: this.triade.timerExpired || false,
+                    canDraw: this.triade.canDraw || false,
+                    handSize: this.triade.handSize || 3
                 };
                 sessionStorage.setItem('triadeInProgress', 'true');
                 sessionStorage.setItem('triadeState', JSON.stringify(state));
@@ -4816,8 +4911,12 @@ createApp({
                 // Restaurer carte jouée
                 if (state.cardPlayed && state.playedCardData) {
                     this.triade.cardPlayed = true;
-                    this.$set(this.triade, 'playedCardData', state.playedCardData);
+                    this.triade.playedCardData = state.playedCardData;
                 }
+                
+                // Restaurer état pioche
+                this.triade.canDraw = state.canDraw || false;
+                this.triade.handSize = state.handSize || 3;
                 
                 console.log('🎴 État Triade restauré depuis sessionStorage');
                 return true;
@@ -4875,34 +4974,50 @@ createApp({
             `;
             document.body.appendChild(overlay);
             
-            // Séquence d'animation
-            requestAnimationFrame(() => {
-                overlay.classList.add('active');
-                
-                // 300ms: cartes commencent à glisser
-                setTimeout(() => overlay.classList.add('cards-slide'), 300);
-                
-                // 700ms: clash
-                setTimeout(() => overlay.classList.add('clash'), 700);
-                
-                // 900ms: ROUND apparaît juste après l'impact
-                setTimeout(() => overlay.classList.add('show-text'), 750);
-                
-                // 2200ms: ROUND disparaît
-                setTimeout(() => overlay.classList.add('hide-text'), 2200);
-                
-                // 2500ms: stat apparaît au même endroit
-                setTimeout(() => overlay.classList.add('show-stat'), 2550);
-                
-                // 3800ms: fade out
-                setTimeout(() => overlay.classList.add('fade-out'), 3800);
-                
-                // 4300ms: supprimer + montrer le slot
-                setTimeout(() => {
-                    overlay.remove();
-                    this.triade.showCenterSlot = true;
-                }, 4300);
-            });
+            const overlayStartTime = Date.now();
+            const overlaySteps = [
+                { ms: 0, fn: () => overlay.classList.add('active') },
+                { ms: 300, fn: () => overlay.classList.add('cards-slide') },
+                { ms: 700, fn: () => overlay.classList.add('clash') },
+                { ms: 750, fn: () => overlay.classList.add('show-text') },
+                { ms: 2200, fn: () => overlay.classList.add('hide-text') },
+                { ms: 2550, fn: () => overlay.classList.add('show-stat') },
+                { ms: 3800, fn: () => overlay.classList.add('fade-out') },
+            ];
+            let overlayStepIndex = 0;
+            let overlayFinished = false;
+            const vm = this;
+            
+            function finishRoundOverlay() {
+                if (overlayFinished) return;
+                overlayFinished = true;
+                overlay.remove();
+                vm.triade.showCenterSlot = true;
+                document.removeEventListener('visibilitychange', onOverlayVisibility);
+            }
+            
+            function applyOverlaySteps() {
+                const elapsed = Date.now() - overlayStartTime;
+                if (elapsed >= 4300) { finishRoundOverlay(); return; }
+                while (overlayStepIndex < overlaySteps.length && elapsed >= overlaySteps[overlayStepIndex].ms) {
+                    overlaySteps[overlayStepIndex].fn();
+                    overlayStepIndex++;
+                }
+                if (overlayStepIndex < overlaySteps.length) {
+                    setTimeout(applyOverlaySteps, overlaySteps[overlayStepIndex].ms - elapsed);
+                } else {
+                    setTimeout(finishRoundOverlay, 4300 - elapsed);
+                }
+            }
+            
+            function onOverlayVisibility() {
+                if (document.visibilityState === 'visible' && !overlayFinished) {
+                    applyOverlaySteps();
+                }
+            }
+            document.addEventListener('visibilitychange', onOverlayVisibility);
+            
+            requestAnimationFrame(() => applyOverlaySteps());
         },
 
         // 🆕 DRAG & DROP - Début du drag
@@ -4914,6 +5029,8 @@ createApp({
             
             this.hideCardPreview(); // Cacher le preview
             this.triade.draggingCardIndex = cardIndex;
+            this._dragStartX = e.clientX;
+            this._dragStartY = e.clientY;
             
             const cardEl = e.currentTarget;
             const rect = cardEl.getBoundingClientRect();
@@ -4969,12 +5086,26 @@ createApp({
             const slotEl = document.querySelector('.triade-center-slot');
             if (slotEl) {
                 const slotRect = slotEl.getBoundingClientRect();
-                const overSlot = (
-                    e.clientX >= slotRect.left - 30 &&
-                    e.clientX <= slotRect.right + 30 &&
-                    e.clientY >= slotRect.top - 30 &&
-                    e.clientY <= slotRect.bottom + 30
+                let overSlot = (
+                    e.clientX >= slotRect.left - 60 &&
+                    e.clientX <= slotRect.right + 60 &&
+                    e.clientY >= slotRect.top - 60 &&
+                    e.clientY <= slotRect.bottom + 60
                 );
+                // Fallback: upper part of table
+                if (!overSlot) {
+                    const tableEl = document.querySelector('.triade-table-surface');
+                    if (tableEl) {
+                        const tableRect = tableEl.getBoundingClientRect();
+                        const tableCenterY = tableRect.top + tableRect.height * 0.65;
+                        overSlot = (
+                            e.clientX >= tableRect.left &&
+                            e.clientX <= tableRect.right &&
+                            e.clientY >= tableRect.top &&
+                            e.clientY <= tableCenterY
+                        );
+                    }
+                }
                 this.triade.dropZoneActive = overSlot;
             }
             
@@ -5011,6 +5142,16 @@ createApp({
             
             const cardIndex = this.triade.draggingCardIndex;
             
+            // 🔥 Si le joueur n'a presque pas bougé, c'est un click - ignorer (drag only)
+            const dragDistance = Math.hypot(e.clientX - this._dragStartX, e.clientY - this._dragStartY);
+            if (dragDistance < 15) {
+                ghost.remove();
+                this.triade.draggingCardIndex = null;
+                this.triade.dropZoneActive = false;
+                this._dragGhost = null;
+                return;
+            }
+            
             // Clean up merge target highlights
             document.querySelectorAll('.triade-my-cards .triade-card.large.merge-target').forEach(el => el.classList.remove('merge-target'));
             
@@ -5023,12 +5164,32 @@ createApp({
             const slotEl = document.querySelector('.triade-center-slot');
             if (slotEl) {
                 const slotRect = slotEl.getBoundingClientRect();
+                // 🔥 FIX: Use generous detection zone (slot + 60px margin)
                 overSlot = (
-                    dropX >= slotRect.left - 30 &&
-                    dropX <= slotRect.right + 30 &&
-                    dropY >= slotRect.top - 30 &&
-                    dropY <= slotRect.bottom + 30
+                    dropX >= slotRect.left - 60 &&
+                    dropX <= slotRect.right + 60 &&
+                    dropY >= slotRect.top - 60 &&
+                    dropY <= slotRect.bottom + 60
                 );
+                
+                // 🔥 FALLBACK: Si pas détecté sur le slot, vérifier si on est sur la moitié supérieure de la table
+                if (!overSlot) {
+                    const tableEl = document.querySelector('.triade-table-surface');
+                    if (tableEl) {
+                        const tableRect = tableEl.getBoundingClientRect();
+                        const tableCenterY = tableRect.top + tableRect.height * 0.65; // upper 65% of table
+                        overSlot = (
+                            dropX >= tableRect.left &&
+                            dropX <= tableRect.right &&
+                            dropY >= tableRect.top &&
+                            dropY <= tableCenterY
+                        );
+                    }
+                }
+                
+                if (!overSlot) {
+                    console.log('❌ DROP zone miss debug - slotRect:', JSON.stringify({l: slotRect.left, r: slotRect.right, t: slotRect.top, b: slotRect.bottom}), 'drop:', dropX, dropY);
+                }
             }
             
             // Check merge target at drop time
@@ -5189,7 +5350,7 @@ createApp({
             const tgtEl = cardEls[targetIndex];
             
             if (tgtEl) {
-                // Phase 1: Impact shake (0.4s)
+                // Phase 1: Impact glow (0.4s)
                 tgtEl.classList.add('fuse-impact');
                 
                 // Get target center in screen coords
@@ -5205,8 +5366,8 @@ createApp({
                 document.body.appendChild(flashOv);
                 setTimeout(() => flashOv.remove(), 400);
                 
-                // Phase 3: Source dissolve (0.2s)
-                if (srcEl) { srcEl.classList.add('dissolving'); srcEl.style.pointerEvents = 'none'; }
+                // Phase 3: Source disappears immediately at start (like admin ghost covers it)
+                if (srcEl) { srcEl.style.opacity = '0'; srcEl.style.transform = 'scale(0.6)'; srcEl.style.pointerEvents = 'none'; }
                 
                 // Phase 4: Burst — fixed on body (survives Vue re-render)
                 const burst = document.createElement('div');
@@ -5251,7 +5412,8 @@ createApp({
             
             // Phase 5: Morph — wait for animation to finish, THEN update cards
             setTimeout(() => {
-                if (tgtEl) tgtEl.classList.remove('fuse-impact');
+                // Cacher la target AVANT de retirer fuse-impact (évite le snap-back visible)
+                if (tgtEl) { tgtEl.style.opacity = '0'; tgtEl.classList.remove('fuse-impact'); }
                 // Adjust indices: remove source first if before target
                 if (sourceIndex < targetIndex) {
                     this.triade.myCards.splice(targetIndex, 1, fusedCard);
@@ -5289,7 +5451,7 @@ createApp({
             
             this.triade.cardPlayed = true;
             // Deep clone to ensure Vue reactivity detects all properties
-            this.$set(this.triade, 'playedCardData', JSON.parse(JSON.stringify(card)));
+            this.triade.playedCardData = JSON.parse(JSON.stringify(card));
             // Timer keeps running until end of round
             
             // Émettre au serveur
@@ -5301,6 +5463,38 @@ createApp({
             // Retirer la carte de la main
             this.triade.myCards.splice(cardIndex, 1);
             this.saveTriadeState();
+        },
+
+        // 🎴 Piocher une carte depuis le deck
+        drawFromDeck() {
+            if (!this.triade.canDraw || this._drawAnimBusy) return;
+            this._drawAnimBusy = true;
+
+            // Animation ghost
+            const ghost = this.$refs.triadeDrawGhost;
+            if (ghost) {
+                const deckEl = document.querySelector('.triade-deck-zone');
+                if (deckEl) {
+                    const rect = deckEl.getBoundingClientRect();
+                    ghost.style.left = rect.left + 'px';
+                    ghost.style.top = rect.top + 'px';
+                }
+                ghost.classList.remove('animating');
+                ghost.offsetHeight; // sync reflow
+                ghost.classList.add('animating');
+                setTimeout(() => {
+                    ghost.classList.remove('animating');
+                }, 280);
+            }
+
+            // Émettre au serveur
+            this.socket.emit('triade-draw-card', { twitchId: this.twitchId });
+            
+            // Désactiver la pioche après le clic
+            this.triade.canDraw = false;
+            this.saveTriadeState();
+
+            setTimeout(() => { this._drawAnimBusy = false; }, 300);
         },
 
 

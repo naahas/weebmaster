@@ -19,6 +19,13 @@
         "pwr": 82
       },
       {
+        "name": "Uta",
+        "atk": 85,
+        "int": 45,
+        "spd": 65,
+        "pwr": 82
+      },
+      {
         "name": "Ace",
         "atk": 82,
         "int": 50,
@@ -252,6 +259,20 @@
         "int": 35,
         "spd": 95,
         "pwr": 90
+      },
+      {
+        "name" : "Boruto",
+        "atk": 82,
+        "int": 62,
+        "spd": 87,
+        "pwr": 94
+      },
+      {
+        "name" : "Kawaki",
+        "atk": 83,
+        "int": 68,
+        "spd": 88,
+        "pwr": 89
       }
     ],
     "oracle": [
@@ -261,6 +282,13 @@
         "int": 80,
         "spd": 78,
         "pwr": 96
+      },
+      {
+        "name": "Mitsuki",
+        "atk": 75,
+        "int": 83,
+        "spd": 80,
+        "pwr": 88
       },
       {
         "name": "Orochimaru",
@@ -305,6 +333,13 @@
         "int": 78,
         "spd": 68,
         "pwr": 85
+      },
+      {
+        "name" : "Sarada",
+        "atk": 70, 
+        "int": 78,
+        "spd": 80,
+        "pwr": 86
       },
       {
         "name": "Sakura",
@@ -565,6 +600,88 @@
       }
     ]
   },
+  "SoulEater" : {
+    "protagonist": [
+      "Soul"
+    ],
+    "assaut": [
+      {
+        "name": "Soul",
+        "atk": 78,
+        "int": 31,
+        "spd": 77,
+        "pwr": 80
+      },
+      {
+        "name": "Death The Kid",
+        "atk": 78,
+        "int": 49,
+        "spd": 55,
+        "pwr": 71
+      },
+      {
+        "name": "Black Star",
+        "atk": 83,
+        "int": 12,
+        "spd": 66,
+        "pwr": 76
+      }
+    ],
+    "oracle": [
+      
+    ],
+    "mirage": [
+
+    ]
+  },
+  "SteinsGate" : {
+    "protagonist": [
+      "Okabe"
+    ],
+    "assaut": [],
+    "oracle": [
+      {
+        "name": "Makise",
+        "atk": 80,
+        "int": 91,
+        "spd": 11,
+        "pwr": 11
+      },
+      {
+        "name": "Okabe",
+        "atk": 80,
+        "int": 88,
+        "spd": 17,
+        "pwr": 16
+      }
+    ],
+    "mirage": []
+  },
+  "AkameGaKill": {
+    "protagonist": [
+      "Akame"
+    ],
+    "assaut": [
+      {
+        "name": "Akame",
+        "atk": 87,
+        "int": 71,
+        "spd": 66,
+        "pwr": 84
+      },
+      {
+        "name": "Esdeath",
+        "atk": 85,
+        "int": 77,
+        "spd": 54,
+        "pwr": 82
+      }
+    ],
+    "oracle": [
+    ],
+    "mirage": []
+  }
+  ,
   "HunterXHunter": {
     "protagonist": [
       "Gon"
@@ -2273,13 +2390,6 @@
         "pwr": 85
       },
       {
-        "name": "Junpei",
-        "atk": 65,
-        "int": 72,
-        "spd": 60,
-        "pwr": 60
-      },
-      {
         "name": "Momoi",
         "atk": 5,
         "int": 95,
@@ -2752,13 +2862,6 @@
         "pwr": 85
       },
       {
-        "name": "Mash",
-        "atk": 65,
-        "int": 68,
-        "spd": 60,
-        "pwr": 70
-      },
-      {
         "name": "Sakura Matou",
         "atk": 45,
         "int": 62,
@@ -2866,13 +2969,6 @@
         "int": 62,
         "spd": 90,
         "pwr": 78
-      },
-      {
-        "name": "Ayato",
-        "atk": 78,
-        "int": 60,
-        "spd": 82,
-        "pwr": 75
       }
     ],
     "oracle": [
@@ -2900,13 +2996,6 @@
         "pwr": 72
       },
       {
-        "name": "Uta",
-        "atk": 72,
-        "int": 78,
-        "spd": 75,
-        "pwr": 75
-      },
-      {
         "name": "Lize",
         "atk": 78,
         "int": 72,
@@ -2922,6 +3011,22 @@
       }
     ]
   },
+  "SaikiKusuo": {
+    "protagonist": [
+      "Saiki"
+    ],
+    "assaut": [],
+    "oracle": [
+      {
+        "name": "Saiki",
+        "atk": 85,
+        "int": 90,
+        "spd": 95,
+        "pwr": 98
+      }
+    ],
+    "mirage": []
+  },
   "ReZero": {
     "protagonist": [
       "Subaru"
@@ -2933,13 +3038,6 @@
         "int": 72,
         "spd": 30,
         "pwr": 65
-      },
-      {
-        "name": "Reinhard",
-        "atk": 99,
-        "int": 82,
-        "spd": 98,
-        "pwr": 99
       }
     ],
     "oracle": [
@@ -2972,13 +3070,6 @@
         "int": 72,
         "spd": 70,
         "pwr": 65
-      },
-      {
-        "name": "Elsa",
-        "atk": 82,
-        "int": 68,
-        "spd": 88,
-        "pwr": 78
       },
       {
         "name": "Emilia",
@@ -3057,15 +3148,7 @@
         "pwr": 65
       }
     ],
-    "mirage": [
-      {
-        "name": "Mary",
-        "atk": 35,
-        "int": 82,
-        "spd": 50,
-        "pwr": 55
-      }
-    ]
+    "mirage": []
   },
   "MobPsycho": {
     "protagonist": [
@@ -3078,13 +3161,6 @@
         "int": 55,
         "spd": 72,
         "pwr": 98
-      },
-      {
-        "name": "Teruki",
-        "atk": 72,
-        "int": 65,
-        "spd": 75,
-        "pwr": 70
       }
     ],
     "oracle": [
@@ -3187,6 +3263,62 @@
       }
     ]
   },
+  "Mashle": {
+    "protagonist": [
+      "Mash"
+    ],
+    "assaut": [
+      {
+        "name": "Mash",
+        "atk": 93,
+        "int": 30,
+        "spd": 85,
+        "pwr": 6
+      }
+    ],
+    "oracle": [],
+    "mirage": []
+  },
+  "Noragami": {
+    "protagonist": [
+      "Yato"
+    ],
+    "assaut": [
+      {
+        "name": "Yato",
+        "atk": 86,
+        "int": 65,
+        "spd": 78,
+        "pwr": 85
+      }
+    ],
+    "oracle": [],
+    "mirage": [
+      {
+        "name": "Bishamon",
+        "atk": 88,
+        "int": 78,
+        "spd": 82,
+        "pwr": 90
+      }
+    ]
+  },
+  "SoloLeveling": {
+    "protagonist": [
+      "Sung Jin Woo"
+    ],
+    "assaut": [
+      {
+        "name": "Sung Jin Woo",
+        "atk": 95,
+        "int": 72,
+        "spd": 88,
+        "pwr": 98
+      }
+    ],
+    "oracle": [],
+    "mirage": []
+  },
   "VioletEvergarden": {
     "protagonist": [
       "Violet"
@@ -3200,6 +3332,22 @@
         "int": 60,
         "spd": 78,
         "pwr": 72
+      }
+    ]
+  },
+  "Kaguya-sama": {
+    "protagonist": [
+      "Kaguya"
+    ],
+    "assaut": [],
+    "oracle": [],
+    "mirage": [
+      {
+        "name": "Kaguya",
+        "atk": 17,
+        "int": 84,
+        "spd": 12,
+        "pwr": 83
       }
     ]
   },
@@ -3427,13 +3575,6 @@
         "int": 88,
         "spd": 65,
         "pwr": 68
-      },
-      {
-        "name": "Tendou",
-        "atk": 72,
-        "int": 82,
-        "spd": 72,
-        "pwr": 70
       },
       {
         "name": "Shimizu",
@@ -3681,7 +3822,7 @@
     ],
     "mirage": [
       {
-        "name": "Chrome",
+        "name": "Chrome Dokuro",
         "atk": 55,
         "int": 68,
         "spd": 60,
@@ -3746,13 +3887,6 @@
         "pwr": 30
       },
       {
-        "name": "Otae",
-        "atk": 55,
-        "int": 68,
-        "spd": 55,
-        "pwr": 50
-      },
-      {
         "name": "Katsura",
         "atk": 78,
         "int": 72,
@@ -3767,13 +3901,6 @@
         "int": 45,
         "spd": 82,
         "pwr": 82
-      },
-      {
-        "name": "Ayame",
-        "atk": 72,
-        "int": 60,
-        "spd": 78,
-        "pwr": 65
       },
       {
         "name": "Kondo",
@@ -3851,13 +3978,6 @@
         "pwr": 82
       },
       {
-        "name": "Kunigami",
-        "atk": 80,
-        "int": 55,
-        "spd": 72,
-        "pwr": 78
-      },
-      {
         "name": "Itoshi Rin",
         "atk": 88,
         "int": 82,
@@ -3919,6 +4039,29 @@
       }
     ]
   },
+  "Baki" : {
+    "protagonist": [
+      "Baki"
+    ],
+    "assaut": [
+      {
+        "name": "Baki",
+        "atk": 84,
+        "int": 33,
+        "spd": 63,
+        "pwr": 27
+      },
+      {
+        "name": "Yujiro",
+        "atk": 89,
+        "int": 63,
+        "spd": 67,
+        "pwr": 23
+      }
+    ],
+    "oracle": [],
+    "mirage": []
+  },
   "DrStone": {
     "protagonist": [
       "Senku"
@@ -3976,15 +4119,7 @@
         "pwr": 50
       }
     ],
-    "mirage": [
-      {
-        "name": "Yuzuriha",
-        "atk": 15,
-        "int": 72,
-        "spd": 40,
-        "pwr": 18
-      }
-    ]
+    "mirage": []
   },
   "FireForce": {
     "protagonist": [
