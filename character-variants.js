@@ -262,6 +262,25 @@ const CHARACTER_VARIANTS = {
     ],
 
     // ============================================
+    // CHAINSAW MAN
+    // ============================================
+    "ChainsawMan": [
+        ["ANGEL DEVIL", "DEMON ANGE"],
+        ["DEMON VIOLENCE", "GALGALI"],
+        ["PRINCI", "DEMON ARAIGNEE"],
+        ["REZE", "DEMON BOMBE"],
+        ["POWER", "DEMON SANG"],
+        ["HIROFUMI", "YOSHIDA"],
+        ["PERE NOEL", "SANTA CLAUS"],
+        ["HOMME KATANA", "SAMURAI SWORD", "SAMOURAI SWORD" , "KATANA MAN"],
+        ["MAKIMA", "DEMON DOMINATION"],
+        ["FOX DEVIL", "DEMON RENARD"],
+        ["FAMI", "DEMON FAMINE" , "KIGA"],
+        ["DEMON TRONCONNEUSE", "POCHITA"],
+        ["DEMON COSMOS" , "COSMO"]
+    ],
+
+    // ============================================
     // BLACK CLOVER
     // ============================================
     "BlackClover": [
@@ -491,12 +510,11 @@ const THEME_MAPPING = {
     "HunterXHunter": "HunterXHunter",
     "Hxh": "HunterXHunter",
     "Snk": "Snk",
-    "AttaqueDesTitans": "Snk",
     "Pokemon": "Pokemon",
     "Bleach": "Bleach",
     "BlackClover": "BlackClover",
     "DemonSlayer": "DemonSlayer",
-    "KimetsuNoYaiba": "DemonSlayer",
+    "ChainsawMan" : "ChainsawMan",
     "DeathNote": "DeathNote",
     "FairyTail": "FairyTail",
     "JujutsuKaisen": "JujutsuKaisen",
@@ -507,7 +525,6 @@ const THEME_MAPPING = {
     "Jojo": "Jojo",
     "JojosBizarreAdventure": "Jojo",
     "Reborn": "Reborn",
-    "Kpop": "Kpop",
 };
 
 /**
