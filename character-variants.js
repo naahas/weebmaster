@@ -262,6 +262,67 @@ const CHARACTER_VARIANTS = {
     ],
 
     // ============================================
+    // PROTAGONIST
+    // ============================================
+    "Protagonist": [
+        ["GOKU", "SON GOKU" , "KAKAROT" , "SONGOKU"],
+        ["SAILOR MOON", "USAGI"],
+        ["YUJI" , "ITADORI"],
+        ["SHOYO"  , "HINATA"],
+        ["LIGHT", "KIRA"],
+        ["KAZUTO", "KIRITO"],
+        ["SHIRO",  "SHIROU"],
+        ["RIMURU" , "LIMULE"],
+        ["SHIDOU" , "SHIDO"],
+        ["SHIGEO" , "MOB"],
+        ["TWILIGHT","LOID"],
+        ["SOUMA" , "SOMA"],
+        ["JADEN" , "JUDAI"],
+        ["MIDORIYA" , "IZUKU" , "DEKU"],
+        ["TAKEZO" , "MUSASHI"],
+        ["KURONO", "KEI"],
+        ["SAWADA", "TSUNAYOSHI" , "TSUNA"],
+        ["EZAEAZE", "MUSTANG" , "EKEKEK"],
+        ["SAKURAGI", "HANAMICHI"],
+        ["ALITA", "GALLY" , "YOKO"],
+        ["ASTRO BOY", "ATOM" , "EKEKEK"],
+        ["TSUBASA", "OLIVIER"],
+        ["BLACK JACK", "KURO"],
+        ["SHINTARO", "JAGASAKI"],
+        ["LEGOSI", "LEGOSHI"],
+        ["NANAHARA", "SHUYA"],
+        ["OKAZAKI", "TOMOYA"],
+        ["JINTA", "JINTA"],
+        ["PHOSPHOPHYLLITE", "PHOS"],
+        ["TOKITA", "ASHURA"], 
+        ["MARK EVANS", "MARK" ,"ENDOU" , "ENDO"],
+        ["JIN MORI", "MORI JIN"],
+        ["RYO", "NICKY LARSON" , "NICKY"],
+        ["HIROTAKA", "NIFUJI"],
+        ["IMM", "FUSHI"],
+        ["YAMORI", "KOU"]
+    ],
+
+    // ============================================
+    // FULLMETAL ALCHEMIST
+    // ============================================
+    "FullmetalAlchemist": [
+        ["AL" , "ALPHONSE ELRIC" , "ALPHONSE"],
+        ["ED" , "EDWARD ELRIC" , "EDWARD"],
+        ["ROY", "MUSTANG"],
+        ["MAES", "HUGUES"],
+        ["HAWKEYE", "RIZA"],
+        ["HAVOC", "JEAN"],
+        ["KING BRADLEY", "WRATH"],
+        ["SELIM BRADLEY", "SELIM" , "PRIDE"],
+        ["FATHER", "PERE"],
+        ["LIN YAO", "LING YAO" , "LING" , "LIN"],
+        ["HIROFUMI", "YOSHIDA"],
+        ["HIROFUMI", "YOSHIDA"],
+        ["HIROFUMI", "YOSHIDA"]
+    ],
+
+    // ============================================
     // CHAINSAW MAN
     // ============================================
     "ChainsawMan": [
@@ -521,6 +582,8 @@ const THEME_MAPPING = {
     "Jjk": "JujutsuKaisen",
     "MyHeroAcademia": "MyHeroAcademia",
     "Mha": "MyHeroAcademia",
+    "Fma": "FullmetalAlchemist",
+    "Prota" : "Protagonist",
     "BokuNoHeroAcademia": "MyHeroAcademia",
     "Jojo": "Jojo",
     "JojosBizarreAdventure": "Jojo",

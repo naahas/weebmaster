@@ -9218,29 +9218,24 @@ function clearBombanimeLogs() {
 // ============================================
 
 const SERIE_NAMES = {
-    'Naruto': 'Naruto', 'OnePiece': 'One Piece', 'Dbz': 'Dragon Ball',
-    'Mha': 'My Hero Academia', 'Bleach': 'Bleach', 'Jojo': 'Jojo',
-    'Hxh': 'Hunter x Hunter', 'FairyTail': 'Fairy Tail', 'Pokemon': 'Pokémon',
-    'Snk': 'Shingeki no Kyojin', 'DemonSlayer': 'Demon Slayer', 'JujutsuKaisen': 'Jujutsu Kaisen',
-    'Reborn': 'Reborn', 'DeathNote': 'Death Note', 'Gintama': 'Gintama',
-    'SevenDeadlySins': 'Seven Deadly Sins', 'BlackClover': 'Black Clover',
-    'FullmetalAlchemist': 'FMA', 'SoulEater': 'Soul Eater', 'DrStone': 'Dr. Stone',
-    'Gash': 'Gash Bell', 'FireForce': 'Fire Force', 'Toriko': 'Toriko',
-    'YuYuHakusho': 'Yu Yu Hakusho', 'Eyeshield21': 'Eyeshield 21',
-    'ShokugekiNoSoma': 'Food Wars', 'ChainsawMan': 'Chainsaw Man',
-    'SpyFamily': 'Spy x Family', 'KaguyaSama': 'Kaguya-sama',
-    'TokyoRevengers': 'Tokyo Revengers', 'KingdomManga': 'Kingdom',
-    'OnePunchMan': 'One Punch Man', 'BlueExorcist': 'Blue Exorcist',
-    'AssassinationClassroom': 'Assassination Classroom', 'CaptainTsubasa': 'Captain Tsubasa',
-    'Beyblade': 'Beyblade', 'SaintSeiya': 'Saint Seiya', 'Inazuma': 'Inazuma Eleven',
-    'Gunnm': 'Gunnm', 'BakiSeries': 'Baki', 'KenichiMightiest': 'Kenichi',
-    'Ippo': 'Ippo', 'KurokosBasketball': 'Kuroko', 'Haikyuu': 'Haikyuu',
-    'SlamDunk': 'Slam Dunk', 'DiamondNoAce': 'Diamond no Ace',
-    'BlueLock': 'Blue Lock', 'SakamotoDesu': 'Sakamoto', 'Medaka': 'Medaka Box',
-    'PromisedNeverland': 'Promised Neverland', 'MashBurnedead': 'Mashle',
-    'YuGiOh': 'Yu-Gi-Oh', 'Digimon': 'Digimon', 'DragonQuest': 'Dragon Quest',
-    'Boruto': 'Boruto', 'MegamiNoShinzoku': 'Elusive Samurai', 'Dandadan': 'Dandadan',
-    'WindBreaker': 'Wind Breaker', 'Sakamoto': 'Sakamoto Days'
+    'Naruto': 'Naruto', 
+    'OnePiece': 'One Piece', 
+    'Dbz': 'Dragon Ball',
+    'Mha': 'My Hero Academia', 
+    'Bleach': 'Bleach', 
+    'Jojo': 'Jojo',
+    'Hxh': 'Hunter x Hunter', 
+    'FairyTail': 'Fairy Tail', 
+    'Pokemon': 'Pokemon',
+    'Snk': 'Shingeki no Kyojin', 
+    'DemonSlayer': 'Demon Slayer', 
+    'JujutsuKaisen': 'Jujutsu Kaisen',
+    'Reborn': 'Reborn', 
+    'DeathNote': 'Death Note', 
+    'BlackClover': 'Black Clover',
+    'Fma': 'Fullmetal Alchemist',
+    'ChainsawMan': 'Chainsaw Man',
+    'Prota' : 'Protagonist'
 };
 
 function renderAdminBombanimeChalllenges() {
@@ -11633,6 +11628,8 @@ const animeDisplayNames = {
     'OnePiece': 'One Piece',
     'Dbz': 'Dragon Ball',
     'Mha': 'My Hero Academia',
+    'Fma' : 'Fullmetal Alchemist',
+    'Prota' : 'Protagonist',
     'Bleach': 'Bleach',
     'Jojo': 'JoJo\'s Bizarre Adventure',
     'Hxh': 'Hunter x Hunter',
@@ -11641,16 +11638,14 @@ const animeDisplayNames = {
     'JujutsuKaisen': 'Jujutsu Kaisen',
     'DeathNote': 'Death Note',
     'FairyTail': 'Fairy Tail',
-    'Pokemon': 'Pokémon',
-    'Reborn': 'Reborn!',
+    'Pokemon': 'Pokemon',
+    'Reborn': 'Reborn',
     'Aot': 'Shingeki no Kyojin',
     'Ds': 'Demon Slayer',
     'Jjk': 'Jujutsu Kaisen',
-    'Dn': 'Death Note',
     'Ft': 'Fairy Tail',
     'Op': 'One Piece',
     'Db': 'Dragon Ball',
-    'Dbs': 'Dragon Ball Super'
 };
 
 function getAnimeDisplayName(key) {

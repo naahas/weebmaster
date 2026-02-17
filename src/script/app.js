@@ -4535,6 +4535,8 @@ createApp({
                 'Hxh': 'Hunter x Hunter',
                 'FairyTail': 'Fairy Tail',
                 'Pokemon': 'Pokémon',
+                'Fma' : 'Fullmetal Alchemist',
+                'ChainsawMan' : 'Chainsaw Man',
                 'Snk': 'Attack on Titan',
                 'DemonSlayer': 'Demon Slayer',
                 'JujutsuKaisen': 'Jujutsu Kaisen',
