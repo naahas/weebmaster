@@ -279,7 +279,7 @@ const CHARACTER_VARIANTS = {
         ["SOUMA" , "SOMA"],
         ["JADEN" , "JUDAI"],
         ["MIDORIYA" , "IZUKU" , "DEKU"],
-        ["TAKEZO" , "MUSASHI"],
+        ["TAKEZO" , "MUSASHI" , "MIYAMOTO"],
         ["KURONO", "KEI"],
         ["SAWADA", "TSUNAYOSHI" , "TSUNA"],
         ["EZAEAZE", "MUSTANG" , "EKEKEK"],
