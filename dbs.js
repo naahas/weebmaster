@@ -228,7 +228,7 @@ const db = {
     },
 
     // 🆕 MODIFIÉ: Éviter les questions en double + Filtre série + Fallback
-    async getRandomQuestions(difficulty, count = 1, excludeIds = [], serieFilter = 'tout', excludeSeries = []) {
+    async getRandomQuestions(difficulty, count = 1, excludeIds = [], serieFilter = 'tout', excludeSeries = [], noSpoil = false) {
         let query = supabase
             .from('questions')
             .select('*')
@@ -251,6 +251,12 @@ const db = {
             console.log('🔍 [DBS] Aucun filtre (tout)');
         }
 
+        // 🚫 Filtre anti-spoil
+        if (noSpoil) {
+            query = query.eq('is_spoil', false);
+            console.log('🚫 [DBS] Filtre anti-spoil activé');
+        }
+
         const { data: questions, error } = await query;
 
         if (error) throw error;
@@ -269,7 +275,9 @@ const db = {
                     fallbackDiff,
                     count,
                     excludeIds,
-                    serieFilter
+                    serieFilter,
+                    excludeSeries,
+                    noSpoil  // 🚫 Propager le filtre anti-spoil
                 );
 
                 if (fallbackQuestions.length > 0) {

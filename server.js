@@ -332,6 +332,7 @@ app.get('/game/state', (req, res) => {
         questionsCount: gameState.questionsCount,
         difficultyMode: gameState.difficultyMode,
         serieFilter: gameState.serieFilter,
+        noSpoil: gameState.noSpoil, // 🚫 Filtre anti-spoil
         isTiebreaker: gameState.isTiebreaker,
         liveAnswerCounts: answerCounts,
         showingWinner: !!winnerScreenData,
@@ -437,6 +438,7 @@ const gameState = {
     initialPlayerCount: 0, // Nombre de joueurs au début de la partie
 
     serieFilter: 'tout',
+    noSpoil: false, // 🚫 Filtre anti-spoil (exclure les questions spoil)
 
     playerBonuses: new Map(),
     
@@ -1110,6 +1112,7 @@ app.post('/admin/toggle-game', async (req, res) => {
             questionTime: gameState.questionTime,
             lobbyMode: gameState.lobbyMode,
             teamNames: gameState.teamNames,
+            noSpoil: gameState.noSpoil, // 🚫 Filtre anti-spoil
             // 💣 Données BombAnime
             bombanimeSerie: gameState.bombanime.serie,
             bombanimeTimer: gameState.bombanime.timer
@@ -1152,6 +1155,9 @@ app.post('/admin/toggle-game', async (req, res) => {
         gameState.lobbyMode = 'classic';
         gameState.teamNames = { 1: 'Team A', 2: 'Team B' };
         gameState.teamCounts = { 1: 0, 2: 0 };
+        
+        // 🚫 Reset anti-spoil
+        gameState.noSpoil = false;
         
         // 🔥 FIX: Reset tiebreaker flags
         gameState.isTiebreaker = false;
@@ -1681,7 +1687,8 @@ app.post('/admin/start-game', async (req, res) => {
                     1,
                     gameState.usedQuestionIds,
                     gameState.serieFilter,
-                    shouldApplySerieCooldown() ? gameState.recentSeries : []
+                    shouldApplySerieCooldown() ? gameState.recentSeries : [],
+                    gameState.noSpoil  // 🚫 Filtre anti-spoil
                 );
 
                 if (questions.length === 0) {
@@ -1898,6 +1905,38 @@ app.post('/admin/set-difficulty-mode', (req, res) => {
 });
 
 
+// 🚫 Route pour activer/désactiver le filtre anti-spoil
+app.post('/admin/set-no-spoil', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    if (gameState.inProgress) {
+        return res.status(400).json({
+            error: 'Impossible de changer le filtre pendant une partie',
+            blocked: true
+        });
+    }
+
+    const { enabled } = req.body;
+    gameState.noSpoil = enabled === true;
+    console.log(`🚫 Filtre anti-spoil: ${gameState.noSpoil ? 'Activé (masqué)' : 'Désactivé (autorisé)'}`);
+
+    io.emit('game-config-updated', {
+        mode: gameState.mode,
+        lives: gameState.lives,
+        questionTime: gameState.questionTime,
+        answersCount: gameState.answersCount,
+        questionsCount: gameState.questionsCount,
+        difficultyMode: gameState.difficultyMode,
+        serieFilter: gameState.serieFilter,
+        noSpoil: gameState.noSpoil
+    });
+
+    res.json({ success: true, noSpoil: gameState.noSpoil });
+});
+
+
 // Route pour obtenir les statistiques des séries (nombre de questions)
 app.get('/admin/serie-stats', async (req, res) => {
     if (!req.session.isAdmin) {
@@ -2070,7 +2109,8 @@ app.post('/admin/trigger-auto-next', (req, res) => {
                 1,
                 gameState.usedQuestionIds,
                 gameState.serieFilter,
-                shouldApplySerieCooldown() ? gameState.recentSeries : []  // 🆕
+                shouldApplySerieCooldown() ? gameState.recentSeries : [],  // 🆕
+                gameState.noSpoil  // 🚫 Filtre anti-spoil
             );
 
 
@@ -2294,7 +2334,8 @@ app.post('/admin/next-question', async (req, res) => {
             1,
             gameState.usedQuestionIds,
             gameState.serieFilter,
-            shouldApplySerieCooldown() ? gameState.recentSeries : []  // 🆕
+            shouldApplySerieCooldown() ? gameState.recentSeries : [],  // 🆕
+            gameState.noSpoil  // 🚫 Filtre anti-spoil
         );
 
 
@@ -2840,7 +2881,8 @@ function revealAnswers(correctAnswer) {
                     1,
                     gameState.usedQuestionIds,
                     gameState.serieFilter,
-                    shouldApplySerieCooldown() ? gameState.recentSeries : []  // 🆕
+                    shouldApplySerieCooldown() ? gameState.recentSeries : [],  // 🆕
+                    gameState.noSpoil  // 🚫 Filtre anti-spoil
                 );
 
                 if (questions.length === 0) {
@@ -3149,7 +3191,8 @@ async function sendTiebreakerQuestion() {
             1,
             gameState.usedQuestionIds,
             gameState.serieFilter,
-            shouldApplySerieCooldown() ? gameState.recentSeries : []  // 🆕
+            shouldApplySerieCooldown() ? gameState.recentSeries : [],  // 🆕
+            gameState.noSpoil  // 🚫 Filtre anti-spoil
         );
 
 
@@ -3382,7 +3425,8 @@ async function sendRivalryTiebreakerQuestion() {
             1,
             gameState.usedQuestionIds,
             gameState.serieFilter,
-            shouldApplySerieCooldown() ? gameState.recentSeries : []
+            shouldApplySerieCooldown() ? gameState.recentSeries : [],
+            gameState.noSpoil  // 🚫 Filtre anti-spoil
         );
 
         if (questions.length === 0) {
@@ -4471,7 +4515,7 @@ app.get('/question', (req, res) => {
 
 // API ajout question - avec code spécifique
 app.post('/api/add-question', async (req, res) => {
-    const { adminCode, question, answers, correctAnswer, serie, difficulty, proof_url } = req.body;
+    const { adminCode, question, answers, correctAnswer, serie, difficulty, proof_url, is_spoil } = req.body;
 
     // Vérifier le code (spécifique OU master)
     if (adminCode !== process.env.QUESTION_ADMIN_CODE || adminCode === process.env.MASTER_ADMIN_CODE) {
@@ -4492,7 +4536,8 @@ app.post('/api/add-question', async (req, res) => {
                 coanswer: correctAnswer,
                 serie,
                 difficulty,
-                proof_url: proof_url || null
+                proof_url: proof_url || null,
+                is_spoil: is_spoil === true
             }]);
 
         if (error) throw error;
@@ -4507,7 +4552,7 @@ app.post('/api/add-question', async (req, res) => {
 
 // 🆕 Modifier une question
 app.post('/api/update-question', async (req, res) => {
-    const { adminCode, id, question, answers, correctAnswer, serie, difficulty, proof_url } = req.body;
+    const { adminCode, id, question, answers, correctAnswer, serie, difficulty, proof_url, is_spoil } = req.body;
 
     // Vérifier le code
     if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
@@ -4528,7 +4573,8 @@ app.post('/api/update-question', async (req, res) => {
                 coanswer: correctAnswer,
                 serie,
                 difficulty,
-                proof_url: proof_url || null
+                proof_url: proof_url || null,
+                is_spoil: is_spoil === true
             })
             .eq('id', id);
 
@@ -4538,6 +4584,31 @@ app.post('/api/update-question', async (req, res) => {
     } catch (error) {
         console.error('Erreur modification question:', error);
         res.status(500).json({ error: 'Erreur lors de la modification' });
+    }
+});
+
+
+// 🚫 Toggle le statut spoil d'une question
+app.post('/api/toggle-spoil', async (req, res) => {
+    const { adminCode, id, is_spoil } = req.body;
+
+    if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
+        return res.status(401).json({ error: 'Code invalide' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('questions')
+            .update({ is_spoil: is_spoil === true })
+            .eq('id', id);
+
+        if (error) throw error;
+
+        console.log(`🚫 Question ${id} → spoil: ${is_spoil}`);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Erreur toggle spoil:', error);
+        res.status(500).json({ error: 'Erreur lors du toggle spoil' });
     }
 });
 

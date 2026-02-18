@@ -2991,6 +2991,9 @@ async function launchLobby() {
             const triadeDeckGroup = document.getElementById('triadeDeckGroup');
             const triadeHandGroup = document.getElementById('triadeHandGroup');
             
+            // Paramètre Anti-spoil
+            const noSpoilGroup = document.querySelector('.no-spoil-group');
+            
             
             if (currentGameMode === 'bombanime') {
                 // Mode BombAnime
@@ -3004,6 +3007,7 @@ async function launchLobby() {
                 if (answersGroup) answersGroup.style.display = 'none';
                 if (difficultyGroup) difficultyGroup.style.display = 'none';
                 if (seriesTrigger) seriesTrigger.style.display = 'none';
+                if (noSpoilGroup) noSpoilGroup.style.display = 'none';
                 
                 if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'block';
                 if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'block';
@@ -3031,6 +3035,7 @@ async function launchLobby() {
                 if (answersGroup) answersGroup.style.display = 'none';
                 if (difficultyGroup) difficultyGroup.style.display = 'none';
                 if (seriesTrigger) seriesTrigger.style.display = 'none';
+                if (noSpoilGroup) noSpoilGroup.style.display = 'none';
                 
                 // Cacher BombAnime
                 if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
@@ -3056,6 +3061,7 @@ async function launchLobby() {
                 if (answersGroup) answersGroup.style.display = 'block';
                 if (difficultyGroup) difficultyGroup.style.display = 'block';
                 if (seriesTrigger) seriesTrigger.style.display = 'block';
+                if (noSpoilGroup) noSpoilGroup.style.display = 'block';
                 
                 if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
                 if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
@@ -3099,6 +3105,7 @@ async function launchLobby() {
                 if (answersGroup) answersGroup.style.display = 'block';
                 if (difficultyGroup) difficultyGroup.style.display = 'block';
                 if (seriesTrigger) seriesTrigger.style.display = 'block';
+                if (noSpoilGroup) noSpoilGroup.style.display = 'block';
                 
                 if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
                 if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
@@ -5833,6 +5840,7 @@ async function restoreGameState() {
         if (state.answersCount) updateAnswersUI(state.answersCount);
         if (state.difficultyMode) updateDifficultyUI(state.difficultyMode);
         if (state.serieFilter) updateSerieFilterUI(state.serieFilter);
+        if (state.noSpoil !== undefined) updateNoSpoilUI(state.noSpoil);
         
         // 🆕 Gestion du mode Rivalité
         if (state.isActive && state.lobbyMode) {
@@ -6871,6 +6879,20 @@ function updateDifficultyUI(mode) {
     }
 }
 
+// 🚫 Mise à jour UI du filtre anti-spoil
+function updateNoSpoilUI(noSpoil) {
+    const targetValue = noSpoil ? 'Sans' : 'Avec';
+    const buttons = document.querySelectorAll('.no-spoil-options .setting-option-btn');
+    buttons.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.value === targetValue);
+    });
+
+    const noSpoilValue = document.getElementById('noSpoilValue');
+    if (noSpoilValue) {
+        noSpoilValue.textContent = targetValue;
+    }
+}
+
 function updateSerieFilterUI(filter) {
     // Cartes séries dans le modal
     document.querySelectorAll('.series-card').forEach(card => {
@@ -6999,6 +7021,31 @@ function initSettingsListeners() {
                 console.log('📥 Réponse:', response.status, data);
             } catch (err) {
                 console.error('❌ Erreur:', err);
+            }
+        });
+    });
+
+    // === 🚫 FILTRE ANTI-SPOIL ===
+    document.querySelectorAll('.no-spoil-options .setting-option-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const enabled = btn.dataset.value === 'Sans';
+
+            try {
+                const response = await fetch('/admin/set-no-spoil', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ enabled })
+                });
+
+                const data = await response.json();
+                if (data.blocked) {
+                    showToast('Impossible de changer pendant une partie', 'error');
+                    return;
+                }
+                console.log('🚫 Anti-spoil:', data);
+            } catch (err) {
+                console.error('❌ Erreur set-no-spoil:', err);
             }
         });
     });

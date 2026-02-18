@@ -626,6 +626,26 @@
             background: rgba(0, 255, 136, 0.1);
         }
 
+        .btn-action.spoil-active {
+            border-color: rgba(239, 68, 68, 0.4);
+            color: #ef4444;
+        }
+
+        .btn-action.spoil-active:hover {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .btn-action.spoil-inactive {
+            border-color: rgba(160, 168, 192, 0.2);
+            color: var(--text-secondary);
+        }
+
+        .btn-action.spoil-inactive:hover {
+            border-color: rgba(239, 68, 68, 0.4);
+            color: #ef4444;
+        }
+
         /* Question exclue */
         .question-item.excluded {
             opacity: 0.5;
@@ -634,6 +654,100 @@
 
         .question-item.excluded:hover {
             opacity: 0.8;
+        }
+
+        /* 🚫 Badge Spoil */
+        .badge-spoil {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .spoil-dot {
+            color: #ef4444;
+            font-size: 0.5rem;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        /* Toggle Spoil style */
+        .spoil-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 2px;
+        }
+
+        .spoil-toggle label {
+            margin: 0;
+            text-transform: uppercase;
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 38px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            position: absolute;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--border);
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: rgba(239, 68, 68, 0.4);
+            border: 1px solid rgba(239, 68, 68, 0.6);
+        }
+
+        .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(18px);
+            background: #ef4444;
+        }
+
+        .spoil-label-text {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            transition: color 0.3s ease;
+        }
+
+        .toggle-switch input:checked ~ .spoil-label-text,
+        .spoil-toggle:has(input:checked) .spoil-label-text {
+            color: #ef4444;
         }
 
         .excluded-badge {
@@ -1037,6 +1151,14 @@
                                         </select>
                                     </div>
                                 </div>
+                                <div class="spoil-toggle">
+                                    <label>Spoil</label>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="isSpoil">
+                                        <label class="toggle-slider" for="isSpoil"></label>
+                                    </div>
+                                    <span class="spoil-label-text" id="spoilLabelAdd">Non</span>
+                                </div>
                             </div>
 
                             <div class="form-col">
@@ -1096,6 +1218,8 @@
                     <div class="list-header-top">
                         <div class="used-questions-info">
                             🚫 Questions exclues : <span id="usedCount">0</span>
+                            &nbsp;&nbsp;·&nbsp;&nbsp;
+                            ⚠️ Spoils : <span id="spoilCount" style="color: #ef4444; font-weight: 600;">0</span>
                         </div>
                         <button class="btn-reset-history" id="resetHistoryBtn" onclick="resetUsedQuestions()">
                             🔄 Reset historique
@@ -1114,6 +1238,16 @@
                             <option value="hard">Hard</option>
                             <option value="veryhard">Very Hard</option>
                             <option value="extreme">Extreme</option>
+                        </select>
+                        <select id="filterSpoil" onchange="filterQuestions()">
+                            <option value="">Tous</option>
+                            <option value="spoil">Spoil</option>
+                            <option value="safe">Non-spoil</option>
+                        </select>
+                        <select id="filterExcluded" onchange="filterQuestions()">
+                            <option value="">Toutes</option>
+                            <option value="excluded">Exclues</option>
+                            <option value="active">Actives</option>
                         </select>
                         <input type="text" class="search-input" id="searchInput" placeholder="🔍 Rechercher..." oninput="filterQuestions()">
                         <div class="question-count">
@@ -1182,6 +1316,14 @@
                                     <option value="6">6</option>
                                 </select>
                             </div>
+                        </div>
+                        <div class="spoil-toggle">
+                            <label>Spoil</label>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="editIsSpoil">
+                                <label class="toggle-slider" for="editIsSpoil"></label>
+                            </div>
+                            <span class="spoil-label-text" id="spoilLabelEdit">Non</span>
                         </div>
                     </div>
                     <div class="form-col">
@@ -1340,6 +1482,7 @@
                 if (questionsData.success) {
                     allQuestions = questionsData.questions;
                     document.getElementById('totalCount').textContent = allQuestions.length;
+                    document.getElementById('spoilCount').textContent = allQuestions.filter(q => q.is_spoil === true).length;
                 }
 
                 if (seriesData.success) {
@@ -1379,19 +1522,29 @@
         function filterQuestions() {
             const serieFilter = document.getElementById('filterSerie').value.toLowerCase();
             const difficultyFilter = document.getElementById('filterDifficulty').value.toLowerCase();
+            const spoilFilter = document.getElementById('filterSpoil').value;
+            const excludedFilter = document.getElementById('filterExcluded').value;
             const searchFilter = document.getElementById('searchInput').value.toLowerCase();
 
             const filtered = allQuestions.filter(q => {
                 const matchSerie = !serieFilter || (q.serie && q.serie.toLowerCase() === serieFilter);
                 const matchDifficulty = !difficultyFilter || q.difficulty === difficultyFilter;
+                const matchSpoil = !spoilFilter || 
+                    (spoilFilter === 'spoil' && q.is_spoil === true) ||
+                    (spoilFilter === 'safe' && !q.is_spoil);
+                const isExcluded = usedQuestionIds.includes(q.id);
+                const matchExcluded = !excludedFilter ||
+                    (excludedFilter === 'excluded' && isExcluded) ||
+                    (excludedFilter === 'active' && !isExcluded);
                 const matchSearch = !searchFilter || 
                     q.question.toLowerCase().includes(searchFilter) ||
                     (q.serie && q.serie.toLowerCase().includes(searchFilter));
                 
-                return matchSerie && matchDifficulty && matchSearch;
+                return matchSerie && matchDifficulty && matchSpoil && matchExcluded && matchSearch;
             });
 
             document.getElementById('filteredCount').textContent = filtered.length;
+            document.getElementById('spoilCount').textContent = allQuestions.filter(q => q.is_spoil === true).length;
             renderQuestions(filtered);
         }
 
@@ -1419,12 +1572,13 @@
                 <div class="question-item ${isExcluded ? 'excluded' : ''}" data-id="${q.id}">
                     <div class="question-item-header">
                         <div class="question-text">
-                            ${escapeHtml(q.question)}
+                            ${q.is_spoil ? '<span class="spoil-dot" title="Question spoil">●</span>' : ''}${escapeHtml(q.question)}
                             ${isExcluded ? '<span class="excluded-badge">EXCLUE</span>' : ''}
                         </div>
                         <div class="question-meta">
                             <span class="badge badge-serie">${escapeHtml(q.serie || 'N/A')}</span>
                             <span class="badge badge-difficulty ${q.difficulty}">${q.difficulty}</span>
+                            ${q.is_spoil ? '<span class="badge badge-spoil">SPOIL</span>' : ''}
                             ${hasProof 
                                 ? `<a href="${escapeHtml(q.proof_url)}" target="_blank" class="proof-indicator" title="Voir la preuve">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1458,6 +1612,9 @@
                             ? `<button class="btn-action reactivate" onclick="unmarkQuestionUsed(${q.id})">✅ Réactiver</button>`
                             : `<button class="btn-action exclude" onclick="markQuestionUsed(${q.id})">🚫 Exclure</button>`
                         }
+                        <button class="btn-action ${q.is_spoil ? 'spoil-active' : 'spoil-inactive'}" onclick="toggleSpoil(${q.id})">
+                            ${q.is_spoil ? '⚠️ Spoil' : '🔓 Non-spoil'}
+                        </button>
                     </div>
                 </div>
             `}).join('');
@@ -1491,6 +1648,7 @@
             const serie = document.getElementById('serie').value.trim();
             const difficulty = document.getElementById('difficulty').value;
             const proofUrl = document.getElementById('proofUrl').value.trim();
+            const isSpoil = document.getElementById('isSpoil').checked;
 
             if (answers.filter(a => a !== '').length < 6) {
                 showStatus(formStatus, 'Les 6 réponses sont requises', 'error');
@@ -1511,7 +1669,8 @@
                         correctAnswer,
                         serie,
                         difficulty,
-                        proof_url: proofUrl || null
+                        proof_url: proofUrl || null,
+                        is_spoil: isSpoil
                     })
                 });
 
@@ -1521,6 +1680,9 @@
                     showStatus(formStatus, '✓ Question ajoutée !', 'success');
                     document.getElementById('questionForm').reset();
                     document.getElementById('difficulty').value = 'medium';
+                    document.getElementById('isSpoil').checked = false;
+                    document.getElementById('spoilLabelAdd').textContent = 'Non';
+                    document.getElementById('spoilLabelAdd').style.color = '';
                     
                     // Reset la liste pour forcer un rechargement
                     allQuestions = [];
@@ -1549,6 +1711,16 @@
         // Enter key handlers
         document.getElementById('adminCode').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') verifyAdmin();
+        });
+
+        // 🚫 Toggle spoil label text
+        document.getElementById('isSpoil').addEventListener('change', (e) => {
+            document.getElementById('spoilLabelAdd').textContent = e.target.checked ? 'Oui' : 'Non';
+            document.getElementById('spoilLabelAdd').style.color = e.target.checked ? '#ef4444' : '';
+        });
+        document.getElementById('editIsSpoil').addEventListener('change', (e) => {
+            document.getElementById('spoilLabelEdit').textContent = e.target.checked ? 'Oui' : 'Non';
+            document.getElementById('spoilLabelEdit').style.color = e.target.checked ? '#ef4444' : '';
         });
 
         const inputOrder = ['questionText', 'answer1', 'answer2', 'answer3', 'answer4', 'answer5', 'answer6', 'serie'];
@@ -1584,6 +1756,9 @@
             document.getElementById('editAnswer4').value = question.answer4 || '';
             document.getElementById('editAnswer5').value = question.answer5 || '';
             document.getElementById('editAnswer6').value = question.answer6 || '';
+            document.getElementById('editIsSpoil').checked = question.is_spoil === true;
+            document.getElementById('spoilLabelEdit').textContent = question.is_spoil ? 'Oui' : 'Non';
+            document.getElementById('spoilLabelEdit').style.color = question.is_spoil ? '#ef4444' : '';
 
             document.getElementById('editModal').classList.add('visible');
             document.getElementById('editStatus').className = 'status';
@@ -1620,6 +1795,7 @@
             const serie = document.getElementById('editSerie').value.trim();
             const difficulty = document.getElementById('editDifficulty').value;
             const proofUrl = document.getElementById('editProofUrl').value.trim();
+            const isSpoil = document.getElementById('editIsSpoil').checked;
 
             if (answers.filter(a => a !== '').length < 6) {
                 showStatus(editStatus, 'Les 6 réponses sont requises', 'error');
@@ -1641,7 +1817,8 @@
                         correctAnswer,
                         serie,
                         difficulty,
-                        proof_url: proofUrl || null
+                        proof_url: proofUrl || null,
+                        is_spoil: isSpoil
                     })
                 });
 
@@ -1660,6 +1837,7 @@
                             difficulty,
                             coanswer: correctAnswer,
                             proof_url: proofUrl || null,
+                            is_spoil: isSpoil,
                             answer1: answers[0],
                             answer2: answers[1],
                             answer3: answers[2],
@@ -1749,6 +1927,33 @@
                 if (data.success) {
                     usedQuestionIds = usedQuestionIds.filter(id => id !== questionId);
                     document.getElementById('usedCount').textContent = usedQuestionIds.length;
+                    filterQuestions();
+                } else {
+                    alert(data.error || 'Erreur');
+                }
+            } catch (error) {
+                alert('Erreur de connexion');
+            }
+        }
+
+        // 🚫 Toggle le statut spoil d'une question
+        async function toggleSpoil(questionId) {
+            const question = allQuestions.find(q => q.id === questionId);
+            if (!question) return;
+
+            const newSpoil = !question.is_spoil;
+
+            try {
+                const response = await fetch('/api/toggle-spoil', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminCode, id: questionId, is_spoil: newSpoil })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    question.is_spoil = newSpoil;
                     filterQuestions();
                 } else {
                     alert(data.error || 'Erreur');
