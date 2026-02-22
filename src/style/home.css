@@ -14936,6 +14936,13 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     text-overflow: ellipsis;
     white-space: nowrap;
     text-align: center;
+    transition: color 0.3s ease;
+}
+
+/* 🎴 Tour actif — pseudo en jaune */
+.triade-player-name.turn-active {
+    color: #fbbf24;
+    text-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
 }
 
 /* Active player - ribbon reste bleu, seul le name-tag passe en jaune */
@@ -14952,6 +14959,12 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 
 .triade-player-seat.active .triade-player-name {
     color: rgba(255,255,255,0.9);
+}
+
+/* Turn-active override avec spécificité plus haute */
+.triade-player-seat .triade-player-name.turn-active {
+    color: #fbbf24 !important;
+    text-shadow: 0 0 8px rgba(251, 191, 36, 0.4) !important;
 }
 
 /* ============================================
@@ -14987,6 +15000,15 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     overflow: visible;
 }
 
+.triade-my-cards.cards-locked .triade-card {
+    filter: brightness(0.6);
+    cursor: default;
+}
+.triade-my-cards .triade-card.card-inactive {
+    filter: brightness(0.6);
+    cursor: default;
+}
+
 
 .triade-my-cards .triade-card {
     overflow: visible !important;
@@ -15016,7 +15038,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 /* Hover sans déplacer la bordure */
 .triade-my-cards .triade-card {
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.4s ease, filter 0.4s ease;
     will-change: transform;
     touch-action: none;
     user-select: none;
@@ -15148,12 +15170,65 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     pointer-events: none;
     transform: translateY(20px);
     transition: opacity 0.6s ease, transform 0.6s ease;
+    overflow: visible;
 }
 
 .triade-deck-zone.deck-visible {
     opacity: 1;
     transform: translateY(0);
     pointer-events: auto;
+}
+
+/* Timer above deck */
+.triade-deck-timer {
+    position: fixed;
+    top: 50%;
+    right: 94px;
+    transform: translateY(-50%);
+    width: 62px;
+    height: 62px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 210;
+    animation: timer-appear 0.4s ease-out forwards;
+}
+.triade-deck-timer.fade-out {
+    animation: timer-disappear 0.8s ease-out forwards;
+}
+
+.timer-ring {
+    position: absolute;
+    width: 62px;
+    height: 62px;
+    transform: rotate(-90deg);
+}
+.timer-ring-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 2.5;
+}
+.timer-ring-progress {
+    fill: none;
+    stroke: rgba(59, 130, 246, 0.8);
+    stroke-width: 2.5;
+    stroke-dasharray: 144.51;
+    stroke-dashoffset: 0;
+    stroke-linecap: round;
+}
+
+.timer-number {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Orbitron', 'Rajdhani', monospace;
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+    z-index: 2;
+    line-height: 1;
 }
 
 .triade-deck-card {
@@ -15216,12 +15291,18 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     z-index: 0;
 }
 
-/* Hover — smooth slide up + ripple wave */
-.triade-deck-zone:hover .triade-deck-card:nth-child(1) {
+/* Hover — smooth slide up + ripple wave (only on player's turn) */
+.triade-deck-zone.my-turn:not(.draw-flying):hover .triade-deck-card:nth-child(1) {
     transform: translateY(-24px);
     box-shadow: 0 8px 25px rgba(100, 180, 255, 0.2);
     border-color: rgba(80, 160, 240, 0.45);
     animation: none !important;
+}
+
+/* Deck disabled when not player's turn */
+.triade-deck-zone.deck-visible:not(.my-turn) {
+    pointer-events: none;
+    opacity: 0.45;
 }
 
 /* Hover ripple — onde calme autour de la carte du dessus */
@@ -15238,12 +15319,12 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     opacity: 0;
 }
 
-.triade-deck-zone:hover .deck-hover-ripple {
+.triade-deck-zone.my-turn:hover .deck-hover-ripple {
     animation: deck-hover-ripple 2s ease-out infinite;
     animation-delay: 0.5s;
 }
 
-.triade-deck-zone:hover .deck-hover-ripple.delay {
+.triade-deck-zone.my-turn:hover .deck-hover-ripple.delay {
     animation-delay: 1.5s;
 }
 
@@ -15355,53 +15436,475 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     100% { background-position: -200% 0; }
 }
 
-/* === DRAW GHOST ANIMATION === */
-.triade-draw-ghost {
-    position: fixed;
-    width: 160px;
-    height: 224px;
-    border-radius: 10px;
-    background: linear-gradient(148deg, #14202e, #0c1520, #080e18);
-    border: 2px solid #2a5a8a;
-    z-index: 250;
-    opacity: 0;
-    pointer-events: none;
-    box-shadow: 0 4px 16px rgba(100, 180, 255, 0.2);
-    will-change: transform, opacity;
+/* ============================================
+   DRAW SYSTEM — Main pleine + Pioche + Choix
+   ============================================ */
+
+/* === MAIN PLEINE: Shake + Rouge === */
+.triade-deck-zone.deck-full-shake {
+    animation: deck-shake 0.4s ease-in-out;
 }
 
-.triade-draw-ghost::before {
-    content: '';
+.triade-deck-zone.deck-full-shake .triade-deck-card {
+    border-color: rgba(239, 68, 68, 0.6) !important;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.25), inset 0 0 8px rgba(239, 68, 68, 0.1) !important;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.triade-deck-zone.deck-full-shake .triade-deck-card .triade-deck-sm,
+.triade-deck-zone.deck-full-shake .triade-deck-sm {
+    color: rgba(239, 68, 68, 0.9) !important;
+    text-shadow: 0 0 12px rgba(239, 68, 68, 0.4) !important;
+}
+
+@keyframes deck-shake {
+    0%, 100% { transform: translateX(0); }
+    15% { transform: translateX(-5px) rotate(-1deg); }
+    30% { transform: translateX(4px) rotate(0.8deg); }
+    45% { transform: translateX(-3px) rotate(-0.5deg); }
+    60% { transform: translateX(2px) rotate(0.3deg); }
+    75% { transform: translateX(-1px); }
+}
+
+/* === DRAW: Carte volante deck → main === */
+.draw-card-flyer {
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+    perspective: 900px;
+}
+
+.draw-card-flyer-inner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+}
+
+.draw-card-flyer-back {
+    position: absolute;
+    inset: 0;
+    border-radius: 10px;
+    background: linear-gradient(148deg, #14202e, #0c1520, #080e18);
+    border: 2px solid #1a3555;
+    backface-visibility: hidden;
+    overflow: hidden;
+}
+
+.flyer-back-pattern {
     position: absolute;
     inset: 6px;
     border-radius: 5px;
     border: 1.5px solid rgba(100, 180, 255, 0.1);
     background: repeating-linear-gradient(
         -45deg, transparent, transparent 4px,
-        rgba(100, 180, 255, 0.015) 4px, rgba(100, 180, 255, 0.015) 6px
+        rgba(100, 180, 255, 0.015) 4px, rgba(100, 180, 255, 0.015) 8px
     );
 }
 
-.triade-draw-ghost .triade-deck-sm {
+.flyer-back-sm {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
     font-size: 26px;
+    background: linear-gradient(180deg, #70b8ff, #4088cc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    opacity: 0.8;
+    z-index: 1;
 }
 
-.triade-draw-ghost.animating {
-    animation: triade-draw-up 0.25s cubic-bezier(0.3, 0, 0.7, 0.3) forwards;
+.draw-card-flyer-front {
+    position: absolute;
+    inset: 0;
+    border-radius: 10px;
+    overflow: visible;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    backface-visibility: hidden;
+    transform: rotateY(180deg);
+    background: #0e0e13;
 }
 
-@keyframes triade-draw-up {
-    0% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    40% {
-        opacity: 0.35;
-    }
-    100% {
-        opacity: 0;
-        transform: translateY(-160px);
-    }
+.draw-card-flyer-front .card-image {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.draw-card-flyer-front .card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.flyer-class-badge {
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid;
+    z-index: 2;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+.flyer-class-badge svg { width: 14px; height: 14px; }
+.flyer-class-badge.assaut { background: rgba(10,10,15,0.9); border-color: #ef4444; }
+.flyer-class-badge.assaut svg { fill: #ef4444; }
+.flyer-class-badge.oracle { background: rgba(10,10,15,0.9); border-color: #3b82f6; }
+.flyer-class-badge.oracle svg { fill: #3b82f6; }
+.flyer-class-badge.mirage { background: rgba(10,10,15,0.9); border-color: #a855f7; }
+.flyer-class-badge.mirage svg { fill: #a855f7; }
+
+/* NEW CARD POP-IN */
+.triade-card.draw-new-card {
+    animation: draw-card-pop-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+}
+
+@keyframes draw-card-pop-in {
+    0% { transform: scale(0.85); opacity: 0; }
+    60% { transform: scale(1.04); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* === DRAW PARTICLES === */
+.draw-particle {
+    position: fixed;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(100, 180, 255, 0.9), rgba(59, 130, 246, 0.6));
+    box-shadow: 0 0 6px rgba(100, 180, 255, 0.5);
+    pointer-events: none;
+    z-index: 300;
+    opacity: 0;
+}
+
+@keyframes draw-particle-fly {
+    0% { opacity: 1; transform: translate(0, 0) scale(1); }
+    60% { opacity: 0.7; }
+    100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0.2); }
+}
+
+/* ============================================
+   DRAW CHOICE OVERLAY
+   ============================================ */
+.triade-draw-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    transition: background 0.5s ease;
+}
+
+.triade-draw-overlay.visible {
+    pointer-events: all;
+    background: rgba(0, 0, 0, 0.82);
+}
+
+.triade-draw-choice-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+    transform: scale(0.85);
+    opacity: 0;
+    transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.triade-draw-choice-container.visible {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.draw-choice-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.5);
+    text-shadow: 0 0 20px rgba(100, 180, 255, 0.2);
+}
+
+.draw-choice-cards {
+    display: flex;
+    gap: 40px;
+}
+
+/* === Card container === */
+.draw-choice-card {
+    position: relative;
+    cursor: pointer;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: draw-card-entrance 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.draw-choice-card:nth-child(2) {
+    animation-delay: 0.12s;
+}
+
+@keyframes draw-card-entrance {
+    0% { transform: scale(0) rotateY(20deg); opacity: 0; filter: blur(6px); }
+    50% { transform: scale(1.06) rotateY(0); opacity: 1; filter: blur(0); }
+    100% { transform: scale(1) rotateY(0); opacity: 1; filter: blur(0); }
+}
+
+.draw-choice-card:hover {
+    transform: translateY(-10px) scale(1.03);
+}
+
+/* Glow border on hover */
+.draw-choice-card::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 20px;
+    background: linear-gradient(145deg, rgba(100, 180, 255, 0.4), rgba(59, 130, 246, 0.2), transparent, rgba(100, 180, 255, 0.15));
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: -1;
+    filter: blur(1px);
+}
+
+.draw-choice-card:hover::before {
+    opacity: 1;
+}
+
+/* === Card inner — matches preview-card style === */
+.draw-choice-card-inner {
+    width: 240px;
+    height: 370px;
+    background: linear-gradient(170deg, #18181f 0%, #0e0e13 100%);
+    border: 1.5px solid rgba(180, 150, 80, 0.2);
+    border-radius: 18px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 
+        0 25px 50px rgba(0,0,0,0.6),
+        inset 0 0 40px rgba(255,204,0,0.015);
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.draw-choice-card:hover .draw-choice-card-inner {
+    border-color: rgba(100, 180, 255, 0.35);
+    box-shadow: 
+        0 30px 60px rgba(0,0,0,0.7),
+        0 0 30px rgba(100, 180, 255, 0.1),
+        inset 0 0 40px rgba(255,204,0,0.015);
+}
+
+/* === Image zone === */
+.draw-choice-image {
+    width: 100%;
+    height: 72%;
+    overflow: hidden;
+    position: relative;
+}
+
+.draw-choice-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Vignette en bas de l'image */
+.draw-choice-image::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(to top, #0e0e13, transparent);
+    pointer-events: none;
+}
+
+/* === Top badges (classe + protagoniste) === */
+.draw-choice-top-badges {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 5;
+}
+
+.draw-choice-class-badge {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(6px);
+    border: 1.5px solid rgba(255,255,255,0.15);
+}
+
+.draw-choice-class-badge svg {
+    width: 16px;
+    height: 16px;
+}
+
+.draw-choice-class-badge.assaut {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: rgba(239, 68, 68, 0.5);
+}
+.draw-choice-class-badge.assaut svg { fill: #ef4444; }
+
+.draw-choice-class-badge.oracle {
+    background: rgba(59, 130, 246, 0.25);
+    border-color: rgba(59, 130, 246, 0.5);
+}
+.draw-choice-class-badge.oracle svg { fill: #3b82f6; }
+
+.draw-choice-class-badge.mirage {
+    background: rgba(168, 85, 247, 0.25);
+    border-color: rgba(168, 85, 247, 0.5);
+}
+.draw-choice-class-badge.mirage svg { fill: #a855f7; }
+
+.draw-choice-prota-badge {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1.5px solid rgba(251, 191, 36, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(6px);
+}
+
+.draw-choice-prota-badge svg {
+    width: 14px;
+    height: 14px;
+    fill: rgba(251, 191, 36, 0.7);
+}
+
+.draw-choice-prota-badge.big3 {
+    border-color: rgba(251, 191, 36, 0.7);
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.2);
+}
+
+.draw-choice-prota-badge.big3 svg {
+    fill: #fbbf24;
+}
+
+/* === Info zone (nom, anime, separator) === */
+.draw-choice-info {
+    padding: 8px 16px 14px;
+    text-align: center;
+    position: relative;
+}
+
+.draw-choice-name {
+    font-size: 1rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.95);
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    line-height: 1.2;
+}
+
+.draw-choice-anime {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: rgba(255, 204, 0, 0.5);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-top: 4px;
+}
+
+.draw-choice-separator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 8px;
+    gap: 8px;
+}
+
+.draw-choice-separator::before,
+.draw-choice-separator::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(180, 150, 80, 0.2), transparent);
+}
+
+.draw-choice-separator .sep-diamond {
+    width: 5px;
+    height: 5px;
+    background: rgba(180, 150, 80, 0.3);
+    transform: rotate(45deg);
+    flex-shrink: 0;
+}
+
+/* === PICK / REJECT ANIMATIONS === */
+.draw-choice-card.picked {
+    animation: draw-card-picked 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    z-index: 2;
+}
+
+.draw-choice-card.picked .draw-choice-card-inner {
+    border-color: rgba(52, 211, 153, 0.5);
+    box-shadow: 0 0 35px rgba(52, 211, 153, 0.2), 0 25px 50px rgba(0, 0, 0, 0.5);
+}
+
+.draw-choice-card.rejected {
+    animation: draw-card-rejected 0.5s cubic-bezier(0.4, 0, 1, 1) forwards;
+    z-index: 1;
+}
+
+@keyframes draw-card-picked {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.08); filter: brightness(1.15); }
+    100% { transform: scale(1.04); filter: brightness(1.1); opacity: 1; }
+}
+
+@keyframes draw-card-rejected {
+    0% { transform: translateY(0) scale(1); opacity: 1; filter: brightness(1); }
+    20% { transform: translateY(0) scale(0.95); opacity: 0.8; filter: brightness(0.6); }
+    100% { transform: translateY(30px) scaleY(0.1) scaleX(0.6); opacity: 0; filter: brightness(0.2) blur(4px); }
+}
+
+/* ============================================
+   SHATTER — Animation de défausse
+   ============================================ */
+@keyframes shatter-piece {
+    0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+    100% { transform: translate(var(--sx), var(--sy)) rotate(var(--sr)) scale(0); opacity: 0; }
+}
+
+@keyframes shatter-flash {
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(3.5); opacity: 0; }
+}
+
+.shatter-fragment {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    border-radius: 2px;
+}
+
+.shatter-flash {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    background: radial-gradient(circle, rgba(255,255,255,0.9), rgba(200,220,255,0.5), transparent);
 }
 
 
@@ -15585,7 +16088,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 20px;
+    padding: 20px 20px 50px 25px;
     z-index: 5;
 }
 
@@ -15608,7 +16111,31 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     text-transform: uppercase;
     letter-spacing: 2px;
     text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-    margin-bottom: 60px;
+    margin-bottom: 0;
+}
+
+.triade-card-preview .preview-separator-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    margin-bottom: 12px;
+}
+
+.triade-card-preview .preview-separator-line::before,
+.triade-card-preview .preview-separator-line::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.4), transparent);
+}
+
+.triade-card-preview .preview-separator-line .sep-diamond {
+    width: 6px;
+    height: 6px;
+    background: rgba(212, 175, 55, 0.5);
+    transform: rotate(45deg);
+    flex-shrink: 0;
 }
 
 /* Séparateur décoratif */
@@ -15753,6 +16280,22 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
 }
 
+/* Icons-only preview stats (sans chiffres) */
+.triade-card-preview .preview-stats-icons-only {
+    bottom: -30px;
+    padding: 14px 24px;
+}
+
+.triade-card-preview .preview-stats-icons-only .stat-item {
+    flex-direction: row;
+    gap: 0;
+}
+
+.triade-card-preview .preview-stats-icons-only .stat-icon-img {
+    width: 28px;
+    height: 28px;
+}
+
 /* Top badges container (class + protagonist) - dépasse en haut à droite */
 .triade-card-preview .preview-top-badges {
     position: absolute;
@@ -15826,62 +16369,244 @@ body:has(.triade-game-container)::-webkit-scrollbar {
    ============================================ */
 
 /* Timer countdown */
-.triade-timer { position: absolute; top: 22%; left: 50%; transform: translateX(-50%); z-index: 50; pointer-events: none; animation: timer-appear 0.4s ease-out forwards; }
-.triade-timer.fade-out { animation: timer-disappear 0.8s ease-out forwards; }
-@keyframes timer-appear { from { opacity: 0; transform: translateX(-50%) scale(0.7); } to { opacity: 1; transform: translateX(-50%) scale(1); } }
+.triade-timer { display: none !important; }
+.triade-timer.fade-out { display: none !important; }
+@keyframes timer-appear { from { opacity: 0; transform: translateY(-50%) scale(0.7); } to { opacity: 1; transform: translateY(-50%) scale(1); } }
 /* Choose indicator */
 .triade-choose-indicator {
     position: absolute;
-    top: -4px;
-    right: -28px;
-    width: 22px;
-    height: 22px;
+    top: -8px;
+    right: -40px;
+    width: 36px;
+    height: 36px;
     opacity: 0;
     transition: opacity 0.4s ease;
     pointer-events: none;
     z-index: 10;
 }
 .triade-choose-indicator img {
-    width: 100%;
-    height: 100%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
     filter: grayscale(0.6) brightness(0.5);
     transition: filter 0.4s ease, transform 0.3s ease;
+}
+.triade-choose-indicator .choose-ring {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+.triade-choose-indicator .choose-ring-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 1.8;
+}
+.triade-choose-indicator .choose-ring-progress {
+    fill: none;
+    stroke: rgba(59, 130, 246, 0.8);
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-dasharray: 91.1;
+    stroke-dashoffset: 0;
+    transform: rotate(-90deg);
+    transform-origin: center;
+    filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.5));
 }
 .triade-choose-indicator.visible {
     animation: choose-appear 0.5s ease-out 0.3s forwards;
 }
 .triade-choose-indicator.active img {
     filter: grayscale(0) brightness(1) drop-shadow(0 0 4px rgba(59,130,246,0.6));
-    transform: scale(1.1);
+    transform: translate(-50%, -50%) scale(1.05);
 }
 @keyframes choose-appear {
     from { opacity: 0; transform: translateY(4px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes timer-disappear { from { opacity: 1; transform: translateX(-50%) scale(1); } to { opacity: 0; transform: translateX(-50%) scale(0.8); } }
+@keyframes timer-disappear { from { opacity: 1; transform: translateY(-50%) scale(1); } to { opacity: 0; transform: translateY(-50%) scale(0.8); } }
 .triade-timer-number { font-family: 'Orbitron','Rajdhani',monospace; font-size: 1.7rem; font-weight: 900; color: rgba(255,255,255,0.9); text-shadow: 0 0 15px rgba(59,130,246,0.5), 0 2px 6px rgba(0,0,0,0.5); letter-spacing: 1px; transition: color 0.3s ease, text-shadow 0.3s ease; }
-.triade-timer-number.urgent { color: #ef4444; text-shadow: 0 0 20px rgba(239,68,68,0.8), 0 0 40px rgba(239,68,68,0.4); animation: timer-pulse 0.5s ease-in-out infinite alternate; }
-@keyframes timer-pulse { 0% { transform: scale(1); opacity: 0.9; } 100% { transform: scale(1.12); opacity: 1; } }
+.triade-timer-number { font-family: 'Orbitron','Rajdhani',monospace; font-size: 1.05rem; font-weight: 900; color: rgba(255,255,255,0.9); text-shadow: 0 0 15px rgba(59,130,246,0.5), 0 2px 6px rgba(0,0,0,0.5); letter-spacing: 1px; }
+@keyframes timer-pulse { 0% { transform: translate(-50%, -50%) scale(1); opacity: 0.9; } 100% { transform: translate(-50%, -50%) scale(1.12); opacity: 1; } }
 
-.triade-center-slot {
+/* ==========================================
+   CENTER ZONE (Market + Slot wrapper)
+   ========================================== */
+.triade-center-zone {
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) scale(0.8);
-    width: 120px;
-    height: 168px;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 40;
+    pointer-events: auto;
+}
+
+/* ==========================================
+   MARKET CARDS
+   ========================================== */
+.triade-market {
+    display: flex;
+    gap: 8px;
+    margin-right: 14px;
+}
+
+.market-card {
+    width: 78px;
+    height: 109px;
+    border-radius: 7px;
+    overflow: visible;
+    position: relative;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,175,55,0.2);
+    animation: marketSlideIn 0.45s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+    transition: transform 0.3s ease;
+}
+
+.market-card:nth-child(1) { animation-delay: 0s; }
+.market-card:nth-child(2) { animation-delay: 0.15s; }
+.market-card:nth-child(3) { animation-delay: 0.3s; }
+.market-card:nth-child(4) { animation-delay: 0.45s; }
+
+.market-card::before,
+.market-card::after,
+.market-card *::before,
+.market-card *::after {
+    content: none !important;
+}
+
+@keyframes marketSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-35px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+.market-card:hover {
+    transform: translateY(-6px) scale(1.05);
+    z-index: 45;
+}
+
+.market-card > img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 7px;
+    display: block;
+}
+
+.market-card .class-badge {
+    position: absolute;
+    top: -7px;
+    left: -7px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.6);
+    background: linear-gradient(145deg, #1a1a1f, #0a0a0f);
+    border: 1.5px solid rgba(180, 150, 80, 0.35);
+}
+
+.market-card .class-badge.assaut { border-color: rgba(239, 68, 68, 0.6); }
+.market-card .class-badge.oracle { border-color: rgba(59, 130, 246, 0.6); }
+.market-card .class-badge.mirage { border-color: rgba(34, 197, 94, 0.6); }
+
+.market-card .class-badge svg {
+    width: 11px;
+    height: 11px;
+    display: block;
+}
+
+.market-card .class-badge.assaut svg { fill: #ef4444; }
+.market-card .class-badge.oracle svg { fill: #3b82f6; }
+.market-card .class-badge.mirage svg { fill: #22c55e; }
+
+.market-card .class-badge .class-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.market-card .market-prota {
+    position: absolute;
+    top: 13px;
+    left: -7px;
+    width: 22px;
+    height: 22px;
+    background: linear-gradient(145deg, #1a1a1f, #0a0a0f);
+    border: 1.5px solid rgba(251, 191, 36, 0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.2), 0 3px 8px rgba(0,0,0,0.6);
+}
+
+.market-card .market-prota svg {
+    width: 11px;
+    height: 11px;
+    fill: #fbbf24;
+}
+
+/* Market card matching anime in hand — golden glow */
+.market-card.same-anime-match {
+    overflow: visible !important;
+    border: 1.5px solid rgba(251, 191, 36, 0.9);
+    box-shadow: 
+        0 0 0 1px rgba(251, 191, 36, 0.6),
+        inset 0 0 8px rgba(251, 191, 36, 0.15),
+        0 0 8px rgba(251, 191, 36, 0.5),
+        0 0 16px rgba(251, 191, 36, 0.3),
+        0 0 30px rgba(251, 191, 36, 0.15);
+    animation: sa-border-shimmer 3s ease-in-out infinite;
+}
+
+.market-card.same-anime-match .sa-glow-container {
+    inset: -15px;
+    opacity: 1;
+    visibility: visible;
+}
+
+.market-card.same-anime-match .sa-particles {
+    opacity: 1;
+    visibility: visible;
+}
+
+.triade-center-slot {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: scale(0.8);
+    width: 96px;
+    height: 132px;
     border-radius: 10px;
     border: 2px dashed rgba(180, 150, 80, 0.35);
     background: rgba(180, 150, 80, 0.08);
     opacity: 0;
     transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     z-index: 50;
+    flex-shrink: 0;
 }
 
 .triade-center-slot.visible {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: scale(1);
 }
 
 .center-slot-inner {
@@ -15950,15 +16675,15 @@ body:has(.triade-game-container)::-webkit-scrollbar {
         0 0 25px rgba(240, 200, 80, 0.3),
         0 0 50px rgba(240, 200, 80, 0.1),
         inset 0 0 20px rgba(240, 200, 80, 0.08);
-    transform: translate(-50%, -50%) scale(1.08) !important;
+    transform: scale(1.08) !important;
     animation: none !important;
     transition: all 0.2s ease !important;
 }
 
 /* Carte jouee au centre */
 .center-played-card {
-    width: 115px;
-    height: 161px;
+    width: 92px;
+    height: 128px;
     border-radius: 8px;
     overflow: visible;
     position: relative;
@@ -16214,7 +16939,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     opacity: 0.65;
     filter: brightness(0.8);
     cursor: default;
-    transition: opacity 0.4s ease, filter 0.4s ease;
+    transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.4s ease, opacity 0.4s ease, filter 0.4s ease;
 }
 
 /* Curseur grab */
@@ -16589,19 +17314,22 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) scale(0);
-    width: 52px;
-    height: 52px;
+    width: 36px;
+    height: 36px;
     opacity: 0;
     z-index: 51;
-    filter: drop-shadow(0 0 12px rgba(240, 200, 80, 0.6));
+    filter: drop-shadow(0 0 8px rgba(240, 200, 80, 0.4));
     transition: none;
     pointer-events: none;
 }
 
-.slot-stat-icon img {
+.slot-stat-icon img,
+.slot-stat-icon svg {
     width: 100%;
     height: 100%;
     object-fit: contain;
+    stroke: rgba(240, 200, 80, 0.8);
+    color: rgba(240, 200, 80, 0.8);
 }
 
 .slot-stat-icon.show {
@@ -16774,7 +17502,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 /* Restaurer la transition hover après l'animation de distribution */
 .triade-my-cards .triade-card.dealt {
     animation: none;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.4s ease, filter 0.4s ease;
     pointer-events: auto;
 }
 

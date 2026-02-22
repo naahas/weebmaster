@@ -246,6 +246,12 @@ function initSocket() {
     
     // 🔊 Initialiser les sons
     initAdminSounds();
+    
+    // 🎴 Charger la liste des animes Triade
+    socket.emit('triade-get-animes');
+    socket.on('triade-animes-list', (data) => {
+        initAnimeFilter(data.animes, data.big3);
+    });
 
     // ===== ÉVÉNEMENTS LOBBY =====
 
@@ -652,6 +658,7 @@ function initSocket() {
         adminDealStarted = false;
         adminTriadeCards = [];
         adminTriadeCardPlayed = false;
+        sessionStorage.removeItem('adminTriadeWasDiscard');
         const oldPov = document.getElementById('adminPovCards');
         if (oldPov) oldPov.innerHTML = '';
         showTriadeTable(data);
@@ -691,31 +698,173 @@ function initSocket() {
             dealAdminSmallCards();
         }, 2800);
         
-        // 🎲 Calculer la fin exacte du deal et déclencher l'overlay round 1
+        // 🏪 Market reveal — server event + local fallback
         if (round1Data) {
-            const numOtherSeats = document.querySelectorAll('.triade-player-seat:not(.hidden):not(.me)').length || (data.playersData.length - (isAdminPlayer ? 1 : 0));
-            // Fin des small cards: 2800 + numOtherSeats*250 + 510
-            const smallCardsEnd = 2800 + numOtherSeats * 250 + 510;
-            // Fin des POV cards (si admin joueur): 3400 + 690
-            const povCardsEnd = isAdminPlayer ? 3400 + 690 : 0;
-            const dealEndTime = Math.max(smallCardsEnd, povCardsEnd);
+            window._triadeRound1Data = round1Data;
+            window._marketRevealed = false;
             
+            // Local fallback: si le server event n'arrive pas après 5.5s
+            const localMarketCards = data.marketCards || [];
             setTimeout(() => {
-                showTriadeRoundOverlay(round1Data.round, round1Data.stat, round1Data.statName);
-            }, dealEndTime + 400);
+                if (!window._marketRevealed && localMarketCards.length > 0) {
+                    console.log('🏪 Admin: fallback local market reveal');
+                    triadeState.marketCards = localMarketCards;
+                    renderMarketCards(localMarketCards, true);
+                    
+                    if (window._triadeRound1Data) {
+                        setTimeout(() => {
+                            showTriadeRoundOverlay(window._triadeRound1Data.round, window._triadeRound1Data.stat, window._triadeRound1Data.statName);
+                            window._triadeRound1Data = null;
+                        }, 1000);
+                    }
+                    window._marketRevealed = true;
+                }
+            }, 5500);
+        }
+    });
+    
+    // 🏪 Market reveal synchronisé par le serveur
+    socket.on('triade-market-reveal', (data) => {
+        console.log('🏪 Admin: market reveal reçu');
+        if (window._marketRevealed) return;
+        window._marketRevealed = true;
+        if (data.marketCards && data.marketCards.length > 0) {
+            triadeState.marketCards = data.marketCards;
+            renderMarketCards(data.marketCards, true);
+            
+            const round1Data = window._triadeRound1Data;
+            if (round1Data) {
+                setTimeout(() => {
+                    showTriadeRoundOverlay(round1Data.round, round1Data.stat, round1Data.statName);
+                    window._triadeRound1Data = null;
+                }, 1000);
+            }
         }
     });
     
     // 🆕 Gestion de l'annonce de round (rounds 2+ uniquement, round 1 déclenché localement)
     socket.on('triade-player-played', (data) => {
-        // Light up choose indicator for this player
-        const seats = document.querySelectorAll('.triade-player-seat');
-        seats.forEach(seat => {
+        // Le joueur a joué — l'indicateur reste actif car c'était son tour
+        // L'indicateur sera désactivé quand le tour suivant commencera
+    });
+
+    // 🎴 Tour par tour : un joueur commence son tour
+    socket.on('triade-turn-start', (data) => {
+        console.log(`🎴 Tour de ${data.username} (${data.duration}s)`);
+        _adminCurrentTurnId = data.twitchId;
+        
+        // 🎴 Ring progress tracking global
+        if (window._adminTurnRingInterval) clearInterval(window._adminTurnRingInterval);
+        const turnEndMs = Date.now() + (data.duration || 15) * 1000;
+        const turnDuration = data.duration || 15;
+        window._adminTurnRingInterval = setInterval(() => {
+            const elapsed = turnDuration - ((turnEndMs - Date.now()) / 1000);
+            const progress = Math.min(1, Math.max(0, elapsed / turnDuration));
+            // Update ring on active player's choose indicator
+            document.querySelectorAll('.triade-player-seat').forEach(seat => {
+                const ring = seat.querySelector('.choose-ring-progress');
+                if (ring) {
+                    if (seat.dataset.twitchId === _adminCurrentTurnId) {
+                        ring.style.strokeDashoffset = (progress * 91.1).toString();
+                    } else {
+                        ring.style.strokeDashoffset = '91.1';
+                    }
+                }
+            });
+            if (progress >= 1) {
+                clearInterval(window._adminTurnRingInterval);
+                window._adminTurnRingInterval = null;
+            }
+        }, 100);
+        
+        // Activer l'indicateur choose du joueur actif
+        document.querySelectorAll('.triade-choose-indicator').forEach(el => {
+            el.classList.add('visible');
+            el.classList.remove('active');
+        });
+        document.querySelectorAll('.triade-player-seat').forEach(seat => {
             if (seat.dataset.twitchId === data.twitchId) {
                 const ind = seat.querySelector('.triade-choose-indicator');
                 if (ind) ind.classList.add('active');
             }
         });
+        // Aussi check si c'est le POV admin
+        if (twitchUser && data.twitchId === twitchUser.id) {
+            // POV admin indicator (pas de choose indicator visible mais on l'a dans la structure)
+        }
+        
+        // Pseudo en jaune pour le joueur actif
+        document.querySelectorAll('.triade-player-name').forEach(el => el.classList.remove('turn-active'));
+        document.querySelectorAll('.triade-player-seat').forEach(seat => {
+            if (seat.dataset.twitchId === data.twitchId) {
+                const nameEl = seat.querySelector('.triade-player-name');
+                if (nameEl) nameEl.classList.add('turn-active');
+            }
+        });
+        // POV admin name
+        if (twitchUser && data.twitchId === twitchUser.id) {
+            const povName = document.querySelector('.triade-player-seat.me .triade-player-name');
+            if (povName) povName.classList.add('turn-active');
+        }
+        
+        // Show slot + deck
+        const slot = document.getElementById('triadeCenterSlot');
+        if (slot) {
+            slot.classList.add('visible');
+            const deckEl = document.getElementById('adminTriadeDeck');
+            if (deckEl) deckEl.classList.add('deck-visible');
+        }
+        document.querySelectorAll('.triade-choose-indicator').forEach(el => el.classList.add('visible'));
+        
+        // Gérer cartes admin selon si c'est son tour
+        const isAdminTurn = twitchUser && data.twitchId === twitchUser.id;
+        const myCards = document.getElementById('adminPovCards');
+        
+        if (isAdminTurn) {
+            // Mon tour → reset état du tour précédent + unlock cartes + timer + deck
+            adminTriadeCardPlayed = false;
+            adminTriadePlayedCardData = null;
+            adminTriadeTimerExpired = false;
+            sessionStorage.removeItem('adminTriadeTimerExpired');
+            // Vider le slot visuellement
+            const slotEl2 = document.getElementById('triadeCenterSlot');
+            if (slotEl2) {
+                slotEl2.classList.remove('has-card');
+                const inner = slotEl2.querySelector('.center-slot-inner');
+                if (inner) inner.innerHTML = '';
+                const statIcon = slotEl2.querySelector('.slot-stat-icon');
+                if (statIcon) statIcon.classList.add('show');
+            }
+            document.querySelectorAll('#adminPovCards .triade-card.large.card-played-out').forEach(el => el.classList.remove('card-played-out'));
+            if (myCards) myCards.classList.remove('cards-locked');
+            const deckEl2 = document.getElementById('adminTriadeDeck');
+            if (deckEl2) {
+                deckEl2.classList.add('my-turn');
+                deckEl2.classList.add('can-draw');
+            }
+            adminTriadeCardPlayed = false;
+            startAdminTriadeTimer(data.duration || 15);
+        } else {
+            // Pas mon tour → lock cartes + cacher timer POV + disable deck
+            if (myCards) myCards.classList.add('cards-locked');
+            const deckEl2 = document.getElementById('adminTriadeDeck');
+            if (deckEl2) deckEl2.classList.remove('my-turn');
+            stopAdminTriadeTimer(true);
+        }
+    });
+    
+    socket.on('triade-turn-end', () => {
+        console.log('🎴 Tous les joueurs ont joué');
+        _adminCurrentTurnId = null;
+        if (window._adminTurnRingInterval) { clearInterval(window._adminTurnRingInterval); window._adminTurnRingInterval = null; }
+        document.querySelectorAll('.triade-choose-indicator').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.triade-player-name').forEach(el => el.classList.remove('turn-active'));
+        document.querySelectorAll('.choose-ring-progress').forEach(r => r.style.strokeDashoffset = '91.1');
+        const myCards = document.getElementById('adminPovCards');
+        if (myCards) myCards.classList.add('cards-locked');
+        const deckEl = document.getElementById('adminTriadeDeck');
+        if (deckEl) deckEl.classList.remove('my-turn');
+        stopAdminTriadeTimer(true);
     });
 
     socket.on('triade-timer-start', (data) => {
@@ -725,6 +874,8 @@ function initSocket() {
         adminTriadeTimerExpired = false;
         sessionStorage.removeItem('adminTriadeTimerExpired');
         document.querySelectorAll('#adminPovCards .triade-card.large.card-played-out').forEach(el => el.classList.remove('card-played-out'));
+        const myCards = document.getElementById('adminPovCards');
+        if (myCards) myCards.classList.remove('cards-locked'); // 🔓 Unlock cards
         // Show slot + stat icon (needed after reconnect during deal)
         const slot = document.getElementById('triadeCenterSlot');
         if (slot) {
@@ -733,19 +884,17 @@ function initSocket() {
             const deckEl = document.getElementById('adminTriadeDeck');
             if (deckEl) deckEl.classList.add('deck-visible');
             if (triadeState.selectedStat) {
-                const statImgs = { atk: 'attack.png', int: 'int.png', spd: 'speed.png', pwr: 'power3.png' };
                 let iconEl = slot.querySelector('.slot-stat-icon');
                 if (!iconEl) {
                     iconEl = document.createElement('div');
                     iconEl.className = 'slot-stat-icon';
                     slot.appendChild(iconEl);
                 }
-                iconEl.innerHTML = `<img src="${statImgs[triadeState.selectedStat] || ''}" alt="${triadeState.selectedStat}">`;
+                iconEl.innerHTML = `<svg viewBox="0 0 24 32" fill="none" width="24" height="32"><rect x="2" y="2" width="20" height="28" rx="3" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><path d="M12 9l1.76 3.57 3.94.57-2.85 2.78.67 3.93L12 17.77l-3.52 1.85.67-3.93-2.85-2.78 3.94-.57L12 9z" fill="currentColor" fill-opacity="0.5"/></svg>`;
                 iconEl.classList.add('show');
-                updateAdminPreviewHighlight(triadeState.selectedStat);
             }
         }
-        if (!adminTriadeCardPlayed) startAdminTriadeTimer(data.duration || 20);
+        if (!adminTriadeCardPlayed) startAdminTriadeTimer(data.duration || 15);
     });
 
     socket.on('triade-round-start', (data) => {
@@ -756,7 +905,19 @@ function initSocket() {
     socket.on('triade-state', (data) => {
         console.log('🎴 État Triade reçu:', data);
         if (data.active) {
+            // Nettoyer session timer avant le render pour éviter le flash
+            const isAdminTurnEarly = twitchUser && data.currentTurnId === twitchUser.id;
+            if (!isAdminTurnEarly) {
+                sessionStorage.removeItem('adminTriadeTimerEndMs');
+                sessionStorage.removeItem('adminTriadeTimerDuration');
+                adminTriadeCardPlayed = true;
+            }
             showTriadeTable(data);
+            
+            // Restaurer les cartes marché (sans animation)
+            if (data.marketCards && data.marketCards.length > 0) {
+                setTimeout(() => renderMarketCards(data.marketCards, false), 100);
+            }
             
             // Restaurer slot + stat après reconnect
             if (data.roundStat) {
@@ -764,54 +925,106 @@ function initSocket() {
                 triadeState.currentRound = data.currentRound || 0;
                 setTimeout(() => {
                     const slot = document.getElementById('triadeCenterSlot');
-                    if (slot) {
-                        // Only show slot if timer already started
-                        if (data.timerStarted) {
-                            slot.classList.add('visible');
-                            // Show deck alongside slot
-                            const deckEl = document.getElementById('adminTriadeDeck');
-                            if (deckEl) deckEl.classList.add('deck-visible');
-                            const statImgs = { atk: 'attack.png', int: 'int.png', spd: 'speed.png', pwr: 'power3.png' };
-                            let iconEl = slot.querySelector('.slot-stat-icon');
-                            if (!iconEl) {
-                                iconEl = document.createElement('div');
-                                iconEl.className = 'slot-stat-icon';
-                                slot.appendChild(iconEl);
-                            }
-                            iconEl.innerHTML = `<img src="${statImgs[data.roundStat] || ''}" alt="${data.roundStat}">`;
-                            iconEl.classList.add('show');
-                        } else {
-                            slot.classList.remove('visible');
+                    if (slot && data.currentRound > 0) {
+                        slot.classList.add('visible');
+                        const deckEl = document.getElementById('adminTriadeDeck');
+                        if (deckEl) deckEl.classList.add('deck-visible');
+                        let iconEl = slot.querySelector('.slot-stat-icon');
+                        if (!iconEl) {
+                            iconEl = document.createElement('div');
+                            iconEl.className = 'slot-stat-icon';
+                            slot.appendChild(iconEl);
                         }
+                        iconEl.innerHTML = `<svg viewBox="0 0 24 32" fill="none" width="24" height="32"><rect x="2" y="2" width="20" height="28" rx="3" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><path d="M12 9l1.76 3.57 3.94.57-2.85 2.78.67 3.93L12 17.77l-3.52 1.85.67-3.93-2.85-2.78 3.94-.57L12 9z" fill="currentColor" fill-opacity="0.5"/></svg>`;
+                        iconEl.classList.add('show');
                     }
-                    if (data.timerStarted) updateAdminPreviewHighlight(data.roundStat);
-                    // Restore choose indicators (always show when round active)
-                    if (data.timerStarted) document.querySelectorAll('.triade-choose-indicator').forEach(el => el.classList.add('visible'));
-                    if (data.playersWhoPlayed && data.playersWhoPlayed.length > 0) {
-                        data.playersWhoPlayed.forEach(tid => {
+                    document.querySelectorAll('.triade-choose-indicator').forEach(el => el.classList.add('visible'));
+                    
+                    // 🎴 Restaurer le tour en cours
+                    if (data.currentTurnId) {
+                        _adminCurrentTurnId = data.currentTurnId;
+                        // Choose indicator actif sur le joueur en cours
+                        document.querySelectorAll('.triade-player-seat').forEach(seat => {
+                            if (seat.dataset.twitchId === data.currentTurnId) {
+                                const ind = seat.querySelector('.triade-choose-indicator');
+                                if (ind) ind.classList.add('active');
+                            }
+                        });
+                        // Pseudo en jaune
+                        document.querySelectorAll('.triade-player-seat').forEach(seat => {
+                            if (seat.dataset.twitchId === data.currentTurnId) {
+                                const nameEl = seat.querySelector('.triade-player-name');
+                                if (nameEl) nameEl.classList.add('turn-active');
+                            }
+                        });
+                        if (twitchUser && data.currentTurnId === twitchUser.id) {
+                            const povName = document.querySelector('.triade-player-seat.me .triade-player-name');
+                            if (povName) povName.classList.add('turn-active');
+                        }
+                        
+                        // 🎴 Restaurer le ring progress
+                        if (data.timerRemainingMs > 500) {
+                            const totalDuration = 15;
+                            const elapsed = totalDuration - (data.timerRemainingMs / 1000);
+                            const initProgress = Math.min(1, Math.max(0, elapsed / totalDuration));
+                            // Set initial ring offset
                             document.querySelectorAll('.triade-player-seat').forEach(seat => {
-                                if (seat.dataset.twitchId === tid) {
-                                    const ind = seat.querySelector('.triade-choose-indicator');
-                                    if (ind) ind.classList.add('active');
+                                const ring = seat.querySelector('.choose-ring-progress');
+                                if (ring) {
+                                    if (seat.dataset.twitchId === data.currentTurnId) {
+                                        ring.style.strokeDashoffset = (initProgress * 91.1).toString();
+                                    } else {
+                                        ring.style.strokeDashoffset = '91.1';
+                                    }
                                 }
                             });
-                        });
+                            // Start interval
+                            if (window._adminTurnRingInterval) clearInterval(window._adminTurnRingInterval);
+                            const turnEndMs = Date.now() + data.timerRemainingMs;
+                            window._adminTurnRingInterval = setInterval(() => {
+                                const e = totalDuration - ((turnEndMs - Date.now()) / 1000);
+                                const progress = Math.min(1, Math.max(0, e / totalDuration));
+                                document.querySelectorAll('.triade-player-seat').forEach(seat => {
+                                    const ring = seat.querySelector('.choose-ring-progress');
+                                    if (ring) {
+                                        if (seat.dataset.twitchId === _adminCurrentTurnId) {
+                                            ring.style.strokeDashoffset = (progress * 91.1).toString();
+                                        } else {
+                                            ring.style.strokeDashoffset = '91.1';
+                                        }
+                                    }
+                                });
+                                if (progress >= 1) {
+                                    clearInterval(window._adminTurnRingInterval);
+                                    window._adminTurnRingInterval = null;
+                                }
+                            }, 100);
+                        }
                     }
-                    if (data.timerRemainingMs > 1000) {
+                    
+                    const isAdminTurn = twitchUser && data.currentTurnId === twitchUser.id;
+                    const adminHasPlayed = twitchUser && (data.playersWhoPlayed || []).includes(twitchUser.id);
+                    
+                    // Bloquer par défaut, débloquer seulement si c'est le tour
+                    adminTriadeCardPlayed = true;
+                    const myCards = document.getElementById('adminPovCards');
+                    if (myCards) myCards.classList.add('cards-locked');
+                    stopAdminTriadeTimer(true);
+                    sessionStorage.removeItem('adminTriadeTimerEndMs');
+                    sessionStorage.removeItem('adminTriadeTimerDuration');
+                    
+                    if (data.timerRemainingMs > 1000 && isAdminTurn && !data.playedCard && !adminHasPlayed) {
+                        adminTriadeCardPlayed = false;
                         adminTriadeTimerExpired = false;
                         sessionStorage.removeItem('adminTriadeTimerExpired');
                         document.querySelectorAll('#adminPovCards .triade-card.large.card-played-out').forEach(el => el.classList.remove('card-played-out'));
+                        if (myCards) myCards.classList.remove('cards-locked');
+                        const deckEl2 = document.getElementById('adminTriadeDeck');
+                        if (deckEl2) deckEl2.classList.add('my-turn');
                         startAdminTriadeTimer(Math.ceil(data.timerRemainingMs / 1000));
-                    } else if (!data.playedCard && data.currentRound > 0 && data.timerStarted) {
-                        // Timer truly expired (was started and ran out) -> disable cards
-                        adminTriadeTimerExpired = true;
-                        sessionStorage.setItem('adminTriadeTimerExpired', 'true');
-                        document.querySelectorAll('#adminPovCards .triade-card.large').forEach(el => el.classList.add('card-played-out'));
-                    } else if (!data.timerStarted && data.currentRound > 0) {
-                        // Timer not started yet (still dealing/overlay) -> disable cards until timer starts
-                        adminTriadeTimerExpired = false;
-                        sessionStorage.removeItem('adminTriadeTimerExpired');
-                        document.querySelectorAll('#adminPovCards .triade-card.large').forEach(el => el.classList.add('card-played-out'));
+                    } else {
+                        const deckEl2 = document.getElementById('adminTriadeDeck');
+                        if (deckEl2) deckEl2.classList.remove('my-turn');
                     }
                     
                     // Restaurer carte jouée dans le slot si déjà placée
@@ -838,6 +1051,13 @@ function initSocket() {
                                 el.classList.add('card-played-out');
                             });
                         }
+                    } else if (adminHasPlayed) {
+                        // Défausse — pas de carte dans le slot, juste griser les cartes
+                        adminTriadeCardPlayed = true;
+                        adminTriadePlayedCardData = null;
+                        document.querySelectorAll('#adminPovCards .triade-card.large').forEach(el => {
+                            el.classList.add('card-played-out');
+                        });
                     }
                 }, 200);
             }
@@ -892,20 +1112,37 @@ function initSocket() {
 
     // 🎴 Serveur indique pioche disponible
     socket.on('triade-can-draw', (data) => {
-        console.log('🎴 Admin: pioche disponible');
+        console.log('🎴 Admin: pioche disponible, cardPlayed:', adminTriadeCardPlayed);
+        if (adminTriadeCardPlayed) return; // Déjà joué/défaussé
         const deckEl = document.getElementById('adminTriadeDeck');
         if (deckEl) deckEl.classList.add('can-draw');
     });
 
-    // 🎴 Carte piochée reçue
-    socket.on('triade-drawn-card', (data) => {
-        console.log('🎴 Admin: carte piochée:', data.card);
-        if (data.card) {
-            adminTriadeCards.push(data.card);
-            renderAdminPOVCards(false);
-            const deckEl = document.getElementById('adminTriadeDeck');
-            if (deckEl) deckEl.classList.remove('can-draw');
+    // 🎴 Main pleine
+    socket.on('triade-draw-full', () => {
+        console.log('🎴 Admin: main pleine');
+        const deckEl = document.getElementById('adminTriadeDeck');
+        if (deckEl) {
+            deckEl.classList.add('deck-full-shake');
+            setTimeout(() => deckEl.classList.remove('deck-full-shake'), 1200);
         }
+    });
+
+    // 🎴 Options de pioche (2 cartes)
+    // 🎴 Résultat de pioche (1 carte)
+    socket.on('triade-draw-result', (data) => {
+        console.log('🎴 Admin: carte piochée:', data.card.name);
+        const deckEl = document.getElementById('adminTriadeDeck');
+        if (deckEl) deckEl.classList.remove('can-draw');
+        
+        // Verrouiller immédiatement (la pioche = action du tour)
+        adminTriadeCardPlayed = true;
+        const myCards = document.getElementById('adminPovCards');
+        if (myCards) myCards.classList.add('cards-locked');
+        if (deckEl) deckEl.classList.remove('my-turn');
+        
+        // Lancer l'animation de vol vers la main
+        animateCardToHand(data.card, deckEl);
     });
     
     socket.on('triade-game-ended', (data) => {
@@ -990,6 +1227,17 @@ function closeLobbyUI() {
     document.querySelectorAll('#triadeHandGroup .setting-option-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.value === '3');
     });
+
+    // Reset anime filter (tous cochés par défaut)
+    triadeSelectedAnimes = new Set(TRIADE_ALL_ANIMES.map(a => a.id));
+    document.querySelectorAll('.anime-filter-item').forEach(item => {
+        item.classList.add('checked');
+    });
+    updateAnimeCount();
+    const animePanel = document.getElementById('animeFilterPanel');
+    if (animePanel) animePanel.style.display = 'none';
+    const animeChevron = document.getElementById('animeFilterChevron');
+    if (animeChevron) animeChevron.classList.remove('open');
 
     // Vider la grille des joueurs
     const grid = document.getElementById('playersGridLobby');
@@ -2254,9 +2502,112 @@ if (currentGameMode === 'rivalry') {
 }
 
 // Fonction pour changer le mode avec persistance
+// 🎯 Applique la visibilité des paramètres selon le mode de jeu
+function applySettingsVisibility(mode) {
+    const teamsGroup = document.getElementById('teamsGroup');
+    const modeGroup = document.getElementById('modeGroup');
+    const livesGroup = document.getElementById('livesGroup');
+    const livesIconGroup = document.getElementById('livesIconGroup');
+    const questionsGroup = document.getElementById('questionsGroup');
+    const speedBonusGroup = document.getElementById('speedBonusGroup');
+    const timerGroup = document.querySelector('.timer-group');
+    const answersGroup = document.querySelector('.setting-group:has(.answers-options)');
+    const difficultyGroup = document.querySelector('.setting-group:has(.difficulty-options)');
+    const seriesTrigger = document.getElementById('seriesTrigger');
+    const noSpoilGroup = document.querySelector('.no-spoil-group');
+    const bombanimeSerieGroup = document.getElementById('bombanimeSerieGroup');
+    const bombanimeLivesGroup = document.getElementById('bombanimeLivesGroup');
+    const bombanimeTimerGroup = document.getElementById('bombanimeTimerGroup');
+    const bombanimeBotsGroup = document.getElementById('bombanimeBotsGroup');
+    const triadeDeckGroup = document.getElementById('triadeDeckGroup');
+    const triadeHandGroup = document.getElementById('triadeHandGroup');
+
+    if (mode === 'bombanime') {
+        if (teamsGroup) teamsGroup.style.display = 'none';
+        if (modeGroup) modeGroup.style.display = 'none';
+        if (livesGroup) livesGroup.style.display = 'none';
+        if (livesIconGroup) livesIconGroup.style.display = 'none';
+        if (questionsGroup) questionsGroup.style.display = 'none';
+        if (speedBonusGroup) speedBonusGroup.style.display = 'none';
+        if (timerGroup) timerGroup.style.display = 'none';
+        if (answersGroup) answersGroup.style.display = 'none';
+        if (difficultyGroup) difficultyGroup.style.display = 'none';
+        if (seriesTrigger) seriesTrigger.style.display = 'none';
+        if (noSpoilGroup) noSpoilGroup.style.display = 'none';
+        if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'block';
+        if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'block';
+        if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'block';
+        if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'block';
+        if (triadeDeckGroup) triadeDeckGroup.style.display = 'none';
+        if (triadeHandGroup) triadeHandGroup.style.display = 'none';
+        const triadeAnimeGrp = document.getElementById('triadeAnimeFilterGroup');
+        if (triadeAnimeGrp) triadeAnimeGrp.style.display = 'none';
+    } else if (mode === 'triade') {
+        if (teamsGroup) teamsGroup.style.display = 'none';
+        if (modeGroup) modeGroup.style.display = 'none';
+        if (livesGroup) livesGroup.style.display = 'none';
+        if (livesIconGroup) livesIconGroup.style.display = 'none';
+        if (questionsGroup) questionsGroup.style.display = 'none';
+        if (speedBonusGroup) speedBonusGroup.style.display = 'none';
+        if (timerGroup) timerGroup.style.display = 'none';
+        if (answersGroup) answersGroup.style.display = 'none';
+        if (difficultyGroup) difficultyGroup.style.display = 'none';
+        if (seriesTrigger) seriesTrigger.style.display = 'none';
+        if (noSpoilGroup) noSpoilGroup.style.display = 'none';
+        if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
+        if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
+        if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
+        if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'none';
+        if (triadeDeckGroup) triadeDeckGroup.style.display = 'block';
+        if (triadeHandGroup) triadeHandGroup.style.display = 'block';
+        const triadeAnimeGrp = document.getElementById('triadeAnimeFilterGroup');
+        if (triadeAnimeGrp) triadeAnimeGrp.style.display = 'block';
+    } else if (mode === 'rivalry') {
+        if (teamsGroup) teamsGroup.style.display = 'block';
+        if (modeGroup) modeGroup.style.display = 'block';
+        if (livesGroup) livesGroup.style.display = 'block';
+        if (livesIconGroup) livesIconGroup.style.display = 'block';
+        if (timerGroup) timerGroup.style.display = 'block';
+        if (answersGroup) answersGroup.style.display = 'block';
+        if (difficultyGroup) difficultyGroup.style.display = 'block';
+        if (seriesTrigger) seriesTrigger.style.display = 'block';
+        if (noSpoilGroup) noSpoilGroup.style.display = 'block';
+        if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
+        if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
+        if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
+        if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'none';
+        if (triadeDeckGroup) triadeDeckGroup.style.display = 'none';
+        if (triadeHandGroup) triadeHandGroup.style.display = 'none';
+        const triadeAnimeGrp = document.getElementById('triadeAnimeFilterGroup');
+        if (triadeAnimeGrp) triadeAnimeGrp.style.display = 'none';
+    } else {
+        // Classic
+        if (teamsGroup) teamsGroup.style.display = 'none';
+        if (modeGroup) modeGroup.style.display = 'block';
+        if (livesGroup) livesGroup.style.display = 'block';
+        if (livesIconGroup) livesIconGroup.style.display = 'block';
+        if (timerGroup) timerGroup.style.display = 'block';
+        if (answersGroup) answersGroup.style.display = 'block';
+        if (difficultyGroup) difficultyGroup.style.display = 'block';
+        if (seriesTrigger) seriesTrigger.style.display = 'block';
+        if (noSpoilGroup) noSpoilGroup.style.display = 'block';
+        if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
+        if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
+        if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
+        if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'none';
+        if (triadeDeckGroup) triadeDeckGroup.style.display = 'none';
+        if (triadeHandGroup) triadeHandGroup.style.display = 'none';
+        const triadeAnimeGrp = document.getElementById('triadeAnimeFilterGroup');
+        if (triadeAnimeGrp) triadeAnimeGrp.style.display = 'none';
+    }
+}
+
 function setGameMode(mode) {
     currentGameMode = mode;
     sessionStorage.setItem('adminGameMode', mode);
+    
+    // 🎯 Appliquer la visibilité des paramètres selon le mode
+    applySettingsVisibility(mode);
     
     // 🆕 Supprimer les données du winner BombAnime si on change de mode
     if (mode !== 'bombanime') {
@@ -3019,6 +3370,8 @@ async function launchLobby() {
                 
                 if (triadeDeckGroup) triadeDeckGroup.style.display = 'none';
                 if (triadeHandGroup) triadeHandGroup.style.display = 'none';
+        const triadeAnimeGrp = document.getElementById('triadeAnimeFilterGroup');
+        if (triadeAnimeGrp) triadeAnimeGrp.style.display = 'none';
                 
                 const teamCounters = document.getElementById('teamCounters');
                 if (teamCounters) teamCounters.remove();
@@ -3047,6 +3400,8 @@ async function launchLobby() {
                 
                 if (triadeDeckGroup) triadeDeckGroup.style.display = 'block';
                 if (triadeHandGroup) triadeHandGroup.style.display = 'block';
+        const triadeAnimeGrp = document.getElementById('triadeAnimeFilterGroup');
+        if (triadeAnimeGrp) triadeAnimeGrp.style.display = 'block';
                 
                 const teamCounters = document.getElementById('teamCounters');
                 if (teamCounters) teamCounters.remove();
@@ -3072,6 +3427,8 @@ async function launchLobby() {
                 
                 if (triadeDeckGroup) triadeDeckGroup.style.display = 'none';
                 if (triadeHandGroup) triadeHandGroup.style.display = 'none';
+        const triadeAnimeGrp = document.getElementById('triadeAnimeFilterGroup');
+        if (triadeAnimeGrp) triadeAnimeGrp.style.display = 'none';
                 
                 // Ajouter les compteurs d'équipe si pas déjà présents
                 if (lobbyHeaderLeft && !document.getElementById('teamCounters')) {
@@ -3116,6 +3473,8 @@ async function launchLobby() {
                 
                 if (triadeDeckGroup) triadeDeckGroup.style.display = 'none';
                 if (triadeHandGroup) triadeHandGroup.style.display = 'none';
+        const triadeAnimeGrp = document.getElementById('triadeAnimeFilterGroup');
+        if (triadeAnimeGrp) triadeAnimeGrp.style.display = 'none';
                 
                 const teamCounters = document.getElementById('teamCounters');
                 if (teamCounters) teamCounters.remove();
@@ -3595,9 +3954,176 @@ document.querySelectorAll('#triadeHandGroup .setting-option-btn').forEach(btn =>
         triadeHandSize = parseInt(btn.dataset.value);
         const valueEl = document.getElementById('triadeHandValue');
         if (valueEl) valueEl.textContent = triadeHandSize;
+        // Mettre à jour les étoiles sur les cartes joueurs dans le lobby
+        document.querySelectorAll('.player-stars').forEach(el => {
+            el.textContent = '☆'.repeat(triadeHandSize);
+        });
         console.log('🎴 Cartes en main:', triadeHandSize);
     });
 });
+
+// ============================================
+// TRIADE - Filtre Animes (dynamique depuis serveur)
+// ============================================
+const ANIME_DISPLAY_NAMES = {
+    'OnePiece': 'One Piece', 'Naruto': 'Naruto', 'Bleach': 'Bleach',
+    'DragonBallZ': 'Dragon Ball', 'DragonBall': 'Dragon Ball', 'MyHeroAcademia': 'My Hero Academia',
+    'BlackClover': 'Black Clover', 'DemonSlayer': 'Demon Slayer',
+    'FairyTail': 'Fairy Tail', 'JujutsuKaisen': 'Jujutsu Kaisen',
+    'AttackOnTitan': 'Attack on Titan', 'HunterXHunter': 'Hunter × Hunter',
+    'Fate': 'Fate', 'ChainsawMan': 'Chainsaw Man', 'Haikyuu': 'Haikyu!!',
+    'FullmetalAlchemist': 'Fullmetal Alchemist', 'Reborn': 'Reborn!',
+    'JoJo': "JoJo's Bizarre Adventure", 'BlueLock': 'Blue Lock',
+    'FoodWars': 'Food Wars', 'NanatsuNoTaizai': 'Seven Deadly Sins',
+    'KurokoNoBasket': "Kuroko's Basket", 'OnePunchMan': 'One Punch Man',
+    'TokyoGhoul': 'Tokyo Ghoul', 'Gintama': 'Gintama', 'Frieren': 'Frieren',
+    'DeathNote': 'Death Note', 'DrStone': 'Dr. Stone', 'FireForce': 'Fire Force',
+    'TokyoRevengers': 'Tokyo Revengers', 'VinlandSaga': 'Vinland Saga',
+    'OshiNoKo': 'Oshi no Ko', 'ReZero': 'Re:Zero',
+    'SwordArtOnline': 'Sword Art Online', 'SpyFamily': 'Spy × Family',
+    'Berserk': 'Berserk', 'CodeGeass': 'Code Geass', 'SoulEater': 'Soul Eater',
+    'MobPsycho': 'Mob Psycho 100', 'AkameGaKill': 'Akame ga Kill!',
+    'Baki': 'Baki', 'Kakegurui': 'Kakegurui', 'Noragami': 'Noragami',
+    'SteinsGate': 'Steins;Gate', 'Kaguya-sama': 'Kaguya-sama',
+    'Mashle': 'Mashle', 'SaikiKusuo': 'Saiki K.',
+    'SoloLeveling': 'Solo Leveling', 'VioletEvergarden': 'Violet Evergarden',
+    'Boruto': 'Boruto', 'YuYuHakusho': 'Yu Yu Hakusho',
+    'KingdomS': 'Kingdom', 'WorldTrigger': 'World Trigger'
+};
+
+// Animes cochés par défaut (affichés en haut de la liste)
+const DEFAULT_SELECTED_ANIME_IDS = [
+    'Naruto', 'OnePiece', 'Bleach', 'DragonBall',
+    'MyHeroAcademia', 'HunterXHunter', 'JoJo',
+    'BlackClover', 'DemonSlayer', 'JujutsuKaisen',
+    'AttackOnTitan', 'FairyTail'
+];
+
+let TRIADE_ALL_ANIMES = [];
+let BIG3_ANIME_IDS = ['OnePiece', 'Naruto', 'Bleach'];
+let LOCKED_ANIME_IDS = DEFAULT_SELECTED_ANIME_IDS; // Les 9 ne peuvent pas être décochés
+let triadeSelectedAnimes = new Set();
+
+function initAnimeFilter(animeList, big3) {
+    BIG3_ANIME_IDS = big3 || ['OnePiece', 'Naruto', 'Bleach'];
+    
+    console.log('🎴 Anime IDs reçus:', animeList.map(a => a.id));
+    console.log('🎴 LOCKED_ANIME_IDS:', LOCKED_ANIME_IDS);
+    console.log('🎴 DragonBall in locked?', LOCKED_ANIME_IDS.includes('DragonBall'));
+    
+    // Sort: locked first (in their defined order), then rest by count desc
+    const defaults = [];
+    const rest = [];
+    for (const anime of animeList) {
+        if (LOCKED_ANIME_IDS.includes(anime.id)) {
+            defaults.push(anime);
+        } else {
+            rest.push(anime);
+        }
+    }
+    console.log('🎴 Defaults trouvés:', defaults.map(a => a.id));
+    console.log('🎴 Rest:', rest.length);
+    defaults.sort((a, b) => LOCKED_ANIME_IDS.indexOf(a.id) - LOCKED_ANIME_IDS.indexOf(b.id));
+    rest.sort((a, b) => b.count - a.count);
+    
+    TRIADE_ALL_ANIMES = [...defaults, ...rest];
+    // Tous cochés par défaut
+    triadeSelectedAnimes = new Set(TRIADE_ALL_ANIMES.map(a => a.id));
+    buildAnimeFilterGrid();
+    console.log(`🎴 Filtre séries chargé: ${TRIADE_ALL_ANIMES.length} séries, ${LOCKED_ANIME_IDS.length} verrouillées`);
+}
+
+function buildAnimeFilterGrid() {
+    const grid = document.getElementById('animeFilterGrid');
+    if (!grid) return;
+    
+    grid.innerHTML = TRIADE_ALL_ANIMES.map(anime => {
+        const isLocked = LOCKED_ANIME_IDS.includes(anime.id);
+        const isBig3 = BIG3_ANIME_IDS.includes(anime.id);
+        const isChecked = triadeSelectedAnimes.has(anime.id);
+        const displayName = ANIME_DISPLAY_NAMES[anime.id] || anime.id.replace(/([A-Z])/g, ' $1').trim();
+        return `
+            <div class="anime-filter-item ${isChecked ? 'checked' : ''} ${isLocked ? 'locked' : ''} ${isBig3 ? 'big3' : ''}" data-anime-id="${anime.id}">
+                <div class="anime-cb">
+                    <svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg>
+                </div>
+                <span class="anime-filter-name">${displayName}</span>
+                <span class="anime-filter-count">${anime.count}</span>
+            </div>
+        `;
+    }).join('');
+    
+    // Click handlers
+    grid.querySelectorAll('.anime-filter-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const animeId = item.dataset.animeId;
+            if (LOCKED_ANIME_IDS.includes(animeId)) return;
+            
+            const isChecked = item.classList.contains('checked');
+            if (isChecked) {
+                item.classList.remove('checked');
+                triadeSelectedAnimes.delete(animeId);
+            } else {
+                item.classList.add('checked');
+                triadeSelectedAnimes.add(animeId);
+            }
+            updateAnimeCount();
+        });
+    });
+    
+    updateAnimeCount();
+}
+
+function updateAnimeCount() {
+    const countEl = document.getElementById('triadeAnimeCount');
+    if (countEl) countEl.textContent = `${triadeSelectedAnimes.size}/${TRIADE_ALL_ANIMES.length}`;
+}
+
+// Toggle panel
+document.getElementById('triadeAnimeFilterToggle')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const panel = document.getElementById('animeFilterPanel');
+    const chevron = document.getElementById('animeFilterChevron');
+    if (!panel) return;
+    const isOpen = panel.style.display !== 'none';
+    panel.style.display = isOpen ? 'none' : 'block';
+    if (chevron) chevron.classList.toggle('open', !isOpen);
+});
+
+// Click outside to close
+document.addEventListener('click', (e) => {
+    const panel = document.getElementById('animeFilterPanel');
+    if (!panel || panel.style.display === 'none') return;
+    const group = document.getElementById('triadeAnimeFilterGroup');
+    if (group && !group.contains(e.target)) {
+        panel.style.display = 'none';
+        const chevron = document.getElementById('animeFilterChevron');
+        if (chevron) chevron.classList.remove('open');
+    }
+});
+
+// Toggle all button
+document.getElementById('animeToggleAll')?.addEventListener('click', () => {
+    const allChecked = triadeSelectedAnimes.size === TRIADE_ALL_ANIMES.length;
+    if (allChecked) {
+        // Décocher tout sauf les 9 locked
+        triadeSelectedAnimes = new Set(LOCKED_ANIME_IDS);
+        document.querySelectorAll('.anime-filter-item').forEach(item => {
+            if (LOCKED_ANIME_IDS.includes(item.dataset.animeId)) {
+                item.classList.add('checked');
+            } else {
+                item.classList.remove('checked');
+            }
+        });
+    } else {
+        // Tout cocher
+        triadeSelectedAnimes = new Set(TRIADE_ALL_ANIMES.map(a => a.id));
+        document.querySelectorAll('.anime-filter-item').forEach(item => item.classList.add('checked'));
+    }
+    updateAnimeCount();
+});
+
+// Anime filter is initialized via socket event in initSocket()
 
 // ============================================
 // TRIADE - Dropdown Deck avec Checkboxes
@@ -3608,7 +4134,7 @@ let selectedTriadeAnimes = [
     'OnePiece', 'Naruto', 'Bleach',
     'HunterXHunter', 'AttackOnTitan', 'DemonSlayer', 'JoJo',
     'MyHeroAcademia', 'FairyTail', 'JujutsuKaisen',
-    'DragonBallZ', 'VinlandSaga', 'BlackClover'
+    'DragonBall', 'VinlandSaga', 'BlackClover'
 ];
 
 // Toggle dropdown
@@ -4225,7 +4751,7 @@ function updateLobbyPlayers(players) {
         // Stats selon le mode
         let statsHTML = '';
         if (currentGameMode === 'triade') {
-            statsHTML = `<span class="player-stars">☆☆☆</span>`;
+            statsHTML = `<span class="player-stars">${'☆'.repeat(triadeHandSize || 3)}</span>`;
         } else if (currentGameMode === 'bombanime') {
             // Icônes bombes pour BombAnime
             statsHTML = getBombIconsHTML(currentLives);
@@ -4762,7 +5288,7 @@ document.getElementById('startGameBtn').addEventListener('click', async () => {
         // 🎴 Paramètres Triade
         if (currentGameMode === 'triade') {
             startData.triadeHandSize = triadeHandSize || 3;
-            // Récupérer les animes sélectionnés
+            startData.triadeAnimes = Array.from(triadeSelectedAnimes);
             console.log('🎴 Paramètres Triade envoyés:', startData);
         }
         
@@ -6543,6 +7069,8 @@ function showLobbyUI(players = []) {
         
         if (triadeDeckGroup) triadeDeckGroup.style.display = 'none';
                 if (triadeHandGroup) triadeHandGroup.style.display = 'none';
+        const triadeAnimeGrp = document.getElementById('triadeAnimeFilterGroup');
+        if (triadeAnimeGrp) triadeAnimeGrp.style.display = 'none';
         
         // Retirer les compteurs d'équipe
         const teamCounters = document.getElementById('teamCounters');
@@ -6571,6 +7099,8 @@ function showLobbyUI(players = []) {
         
         if (triadeDeckGroup) triadeDeckGroup.style.display = 'block';
                 if (triadeHandGroup) triadeHandGroup.style.display = 'block';
+        const triadeAnimeGrp = document.getElementById('triadeAnimeFilterGroup');
+        if (triadeAnimeGrp) triadeAnimeGrp.style.display = 'block';
         
         // Retirer les compteurs d'équipe
         const teamCounters = document.getElementById('teamCounters');
@@ -6597,6 +7127,8 @@ function showLobbyUI(players = []) {
         
         if (triadeDeckGroup) triadeDeckGroup.style.display = 'none';
                 if (triadeHandGroup) triadeHandGroup.style.display = 'none';
+        const triadeAnimeGrp = document.getElementById('triadeAnimeFilterGroup');
+        if (triadeAnimeGrp) triadeAnimeGrp.style.display = 'none';
         
         // Ajouter les compteurs d'équipe si pas déjà présents
         if (lobbyHeaderLeft && !document.getElementById('teamCounters')) {
@@ -6641,6 +7173,8 @@ function showLobbyUI(players = []) {
         
         if (triadeDeckGroup) triadeDeckGroup.style.display = 'none';
                 if (triadeHandGroup) triadeHandGroup.style.display = 'none';
+        const triadeAnimeGrp = document.getElementById('triadeAnimeFilterGroup');
+        if (triadeAnimeGrp) triadeAnimeGrp.style.display = 'none';
         
         const teamCounters = document.getElementById('teamCounters');
         if (teamCounters) teamCounters.remove();
@@ -8064,6 +8598,8 @@ document.getElementById('gameCloseBtn')?.addEventListener('click', async () => {
 
 function returnToIdle() {
     sessionStorage.removeItem('adminTriadeTimerExpired');
+    sessionStorage.removeItem('adminTriadeTimerEndMs');
+    sessionStorage.removeItem('adminTriadeTimerDuration');
     adminTriadeTimerExpired = false;
     // 🔊 Cacher le contrôle de son
     showSoundControl(false);
@@ -10154,7 +10690,8 @@ document.addEventListener('keydown', (e) => {
 let triadeState = {
     playersData: [],
     currentRound: 0,
-    selectedStat: null
+    selectedStat: null,
+    marketCards: []
 };
 
 // Afficher la table Triade (admin = spectateur)
@@ -10162,6 +10699,7 @@ let triadeState = {
 let adminTriadeCards = [];
 let adminDealStarted = false;
 let adminTriadeCardPlayed = false;
+let _adminCurrentTurnId = null;
 let adminTriadePlayedCardData = null;
 let adminTriadeDragGhost = null;
 let adminTriadeDragRect = null;
@@ -10174,7 +10712,8 @@ function showTriadeTable(data) {
     triadeState = {
         playersData: data.playersData || [],
         currentRound: data.currentRound || 0,
-        handSize: data.handSize || triadeHandSize || 3
+        handSize: data.handSize || triadeHandSize || 3,
+        marketCards: data.marketCards || []
     };
     
     // Détecter si l'admin est joueur (directement depuis les données, sans dépendre de adminInLobby)
@@ -10296,26 +10835,22 @@ function showTriadeTable(data) {
             updateTriadePlayerPositions();
         }
         
-        // 🆕 Créer le slot carte central DANS la table
+        // 🆕 Créer le slot carte central DANS le center-zone
         const triadeTable = triadeContainer.querySelector('.triade-table');
         if (triadeTable) {
-            // Slot carte centrale (zone de jeu)
-            let centerSlot = triadeTable.querySelector('.triade-center-slot');
-            if (!centerSlot) {
-                centerSlot = document.createElement('div');
-                centerSlot.className = 'triade-center-slot';
-                centerSlot.id = 'triadeCenterSlot';
-                centerSlot.innerHTML = `<div class="center-slot-inner"></div>`;
-                triadeTable.appendChild(centerSlot);
-                // Le slot sera affiché par showTriadeRoundOverlay après l'animation de round
+            const centerZone = triadeTable.querySelector('.triade-center-zone');
+            if (centerZone) {
+                let centerSlot = centerZone.querySelector('.triade-center-slot');
+                if (!centerSlot) {
+                    centerSlot = document.createElement('div');
+                    centerSlot.className = 'triade-center-slot';
+                    centerSlot.id = 'triadeCenterSlot';
+                    centerSlot.innerHTML = `<div class="center-slot-inner"></div>`;
+                    centerZone.appendChild(centerSlot);
+                }
             }
             let timerEl = triadeTable.querySelector(".triade-timer");
-            if (!timerEl) {
-                timerEl = document.createElement('div');
-                timerEl.className = 'triade-timer'; timerEl.id = 'triadeTimer'; timerEl.style.display = 'none';
-                timerEl.innerHTML = '<span class="triade-timer-number" id="triadeTimerNumber">20</span>';
-                triadeTable.appendChild(timerEl);
-            }
+            if (timerEl) timerEl.remove(); // Old timer cleaned up
         }
         
         // 🎴 Deck de pioche (droite) — seulement si admin est joueur
@@ -10340,41 +10875,54 @@ function showTriadeTable(data) {
                     <div class="deck-hover-ripple delay"></div>
                 `;
                 triadeContainer.appendChild(deckZone);
-
-                // Ghost card pour animation
-                let ghost = document.getElementById('adminDrawGhost');
-                if (!ghost) {
-                    ghost = document.createElement('div');
-                    ghost.id = 'adminDrawGhost';
-                    ghost.className = 'triade-draw-ghost';
-                    ghost.innerHTML = '<span class="triade-deck-sm">SM</span>';
-                    document.body.appendChild(ghost);
+                
+                // Timer du tour (séparé du deck pour que position:fixed fonctionne)
+                let timerDiv = document.getElementById('triadeTimer');
+                if (!timerDiv) {
+                    timerDiv = document.createElement('div');
+                    timerDiv.id = 'triadeTimer';
+                    timerDiv.className = 'triade-deck-timer';
+                    timerDiv.style.display = 'none';
+                    timerDiv.innerHTML = `
+                        <svg class="timer-ring" viewBox="0 0 54 54">
+                            <circle class="timer-ring-bg" cx="27" cy="27" r="23" />
+                            <circle class="timer-ring-progress" id="triadeTimerRing" cx="27" cy="27" r="23" />
+                        </svg>
+                        <span class="timer-number" id="triadeTimerNumber">15</span>
+                    `;
+                    triadeContainer.appendChild(timerDiv);
                 }
 
                 // Click handler
                 deckZone.addEventListener('pointerdown', () => {
-                    if (!deckZone.classList.contains('can-draw') || deckZone._drawBusy) return;
+                    if (deckZone._drawBusy) return;
+                    
+                    // Déjà joué/défaussé ce tour ?
+                    if (adminTriadeCardPlayed) return;
+                    
+                    // Main pleine ?
+                    const handSize = triadeHandSize || 3;
+                    if (adminTriadeCards.length >= handSize) {
+                        if (deckZone._fullBusy) return;
+                        deckZone._fullBusy = true;
+                        deckZone.classList.add('deck-full-shake');
+                        setTimeout(() => {
+                            deckZone.classList.remove('deck-full-shake');
+                            deckZone._fullBusy = false;
+                        }, 1200);
+                        return;
+                    }
+                    
+                    if (!deckZone.classList.contains('can-draw')) return;
                     deckZone._drawBusy = true;
 
-                    // Animation ghost
-                    const ghost = document.getElementById('adminDrawGhost');
-                    if (ghost) {
-                        const rect = deckZone.getBoundingClientRect();
-                        ghost.style.left = rect.left + 'px';
-                        ghost.style.top = rect.top + 'px';
-                        ghost.classList.remove('animating');
-                        ghost.offsetHeight;
-                        ghost.classList.add('animating');
-                        setTimeout(() => ghost.classList.remove('animating'), 280);
-                    }
-
-                    // Emit au serveur
+                    // Emit au serveur (l'animation est gérée par animateCardToHand au retour)
                     if (twitchUser) {
                         socket.emit('triade-draw-card', { twitchId: twitchUser.id });
                     }
                     deckZone.classList.remove('can-draw');
 
-                    setTimeout(() => { deckZone._drawBusy = false; }, 300);
+                    setTimeout(() => { deckZone._drawBusy = false; }, 1200);
                 });
             }
         }
@@ -10410,12 +10958,7 @@ function showTriadeTable(data) {
                         <div class="preview-info">
                             <div class="preview-name" id="adminPreviewName"></div>
                             <div class="preview-anime" id="adminPreviewAnime"></div>
-                            <div class="preview-stats" id="adminPreviewStats">
-                                <div class="stat-item"><img class="stat-icon-img" src="attack.png" alt="ATK"><span class="stat-value" id="adminStatAtk">-</span></div>
-                                <div class="stat-item"><img class="stat-icon-img" src="int.png" alt="INT"><span class="stat-value" id="adminStatInt">-</span></div>
-                                <div class="stat-item"><img class="stat-icon-img" src="speed.png" alt="VIT"><span class="stat-value" id="adminStatSpd">-</span></div>
-                                <div class="stat-item"><img class="stat-icon-img" src="power3.png" alt="POW"><span class="stat-value" id="adminStatPwr">-</span></div>
-                            </div>
+                            <div class="preview-separator-line"><span class="sep-diamond"></span></div>
                         </div>
                     </div>
                 `;
@@ -10428,21 +10971,35 @@ function showTriadeTable(data) {
         stateGame.style.display = 'flex';
         stateGame.style.opacity = '1';
         stateGame.style.pointerEvents = '';
+        
+        // 💾 Restaurer le timer depuis sessionStorage immédiatement après création du DOM
+        setTimeout(() => _restoreAdminTimerFromSession(), 50);
     }
 }
 
 // 🆕 Afficher l'overlay d'annonce de round avec clash de cartes
 
 let _adminTriadeTimerInterval = null;
+let _adminTriadeTimerDuration = null;
 let adminTriadeTimerExpired = sessionStorage.getItem('adminTriadeTimerExpired') === 'true';
 let _adminTriadeTimerEndMs = null;
 function startAdminTriadeTimer(s) {
     stopAdminTriadeTimer(true);
-    s = s || 20;
-    const t = document.getElementById('triadeTimer'), n = document.getElementById('triadeTimerNumber');
+    s = s || 15;
+    const t = document.getElementById('triadeTimer'), n = document.getElementById('triadeTimerNumber'), ring = document.getElementById('triadeTimerRing');
     if (!t || !n) return;
     _adminTriadeTimerEndMs = Date.now() + s * 1000;
-    n.textContent = s; n.classList.remove('urgent'); t.style.display = ''; t.classList.remove('fade-out');
+    _adminTriadeTimerDuration = s;
+    // 💾 Sauvegarder pour restore après refresh
+    sessionStorage.setItem('adminTriadeTimerEndMs', _adminTriadeTimerEndMs.toString());
+    sessionStorage.setItem('adminTriadeTimerDuration', _adminTriadeTimerDuration.toString());
+    sessionStorage.removeItem('adminTriadeTimerExpired');
+    adminTriadeTimerExpired = false;
+    n.textContent = s; t.style.display = ''; t.classList.remove('fade-out');
+    if (ring) { ring.style.strokeDashoffset = '0'; }
+    // 🔓 Unlock cards
+    const myCards = document.getElementById('adminPovCards');
+    if (myCards) myCards.classList.remove('cards-locked');
     _adminTriadeTimerInterval = setInterval(() => {
         _checkAdminTriadeTimerTick();
     }, 100);
@@ -10452,9 +11009,12 @@ function startAdminTriadeTimer(s) {
 function _checkAdminTriadeTimerTick() {
     if (!_adminTriadeTimerEndMs) return;
     const n = document.getElementById('triadeTimerNumber');
+    const ring = document.getElementById('triadeTimerRing');
     const r = Math.max(0, Math.ceil((_adminTriadeTimerEndMs - Date.now()) / 1000));
+    const elapsed = (_adminTriadeTimerDuration || 15) - ((_adminTriadeTimerEndMs - Date.now()) / 1000);
+    const progress = Math.min(1, elapsed / (_adminTriadeTimerDuration || 15));
     if (n) n.textContent = r;
-    if (r <= 5 && n) n.classList.add('urgent');
+    if (ring) ring.style.strokeDashoffset = (progress * 144.51).toString();
     if (r <= 0) {
         clearInterval(_adminTriadeTimerInterval); _adminTriadeTimerInterval = null; _adminTriadeTimerEndMs = null;
         _applyAdminTimerExpired();
@@ -10465,20 +11025,51 @@ function _applyAdminTimerExpired() {
     if (adminTriadeTimerExpired) return; // Already applied
     adminTriadeTimerExpired = true;
     sessionStorage.setItem('adminTriadeTimerExpired', 'true');
+    sessionStorage.removeItem('adminTriadeTimerEndMs');
+    sessionStorage.removeItem('adminTriadeTimerDuration');
     const timerFade = document.getElementById('triadeTimer');
-    if (timerFade) { timerFade.classList.remove('visible'); timerFade.classList.add('fade-out'); }
+    if (timerFade) { timerFade.classList.add('fade-out'); }
     // Cancel any active drag
     const ghost = document.querySelector('.drag-ghost');
     if (ghost) { ghost.remove(); }
     if (window._adminBoundDragMove) { document.removeEventListener('pointermove', window._adminBoundDragMove); }
     if (window._adminBoundDragEnd) { document.removeEventListener('pointerup', window._adminBoundDragEnd); }
-    // Gray out admin cards
+    // Gray out admin cards + lock
     document.querySelectorAll('#adminPovCards .triade-card.large').forEach(el => el.classList.add('card-played-out'));
+    const myCards = document.getElementById('adminPovCards');
+    if (myCards) myCards.classList.add('cards-locked');
 }
 function stopAdminTriadeTimer(hideDisplay) {
     if (_adminTriadeTimerInterval) { clearInterval(_adminTriadeTimerInterval); _adminTriadeTimerInterval = null; }
     _adminTriadeTimerEndMs = null;
     if (hideDisplay) { const t = document.getElementById('triadeTimer'); if (t) { t.style.display = 'none'; t.classList.remove('visible','fade-out'); } }
+}
+
+// 💾 Restaurer timer admin depuis sessionStorage après refresh
+function _restoreAdminTimerFromSession() {
+    if (_adminTriadeTimerInterval) return; // Timer déjà actif
+    const savedEndMs = parseInt(sessionStorage.getItem('adminTriadeTimerEndMs') || '0');
+    const savedDuration = parseInt(sessionStorage.getItem('adminTriadeTimerDuration') || '15');
+    const expired = sessionStorage.getItem('adminTriadeTimerExpired') === 'true';
+    
+    if (savedEndMs && savedEndMs > Date.now() + 500) {
+        const remainingSec = Math.ceil((savedEndMs - Date.now()) / 1000);
+        console.log('⏱️ Admin: timer restauré depuis session:', remainingSec, 's');
+        _adminTriadeTimerDuration = savedDuration;
+        // Afficher slot + deck si pas déjà visible
+        const slot = document.getElementById('triadeCenterSlot');
+        if (slot) slot.classList.add('visible');
+        const deckEl = document.getElementById('adminTriadeDeck');
+        if (deckEl) {
+            deckEl.classList.add('deck-visible');
+            deckEl.classList.add('my-turn');
+        }
+        startAdminTriadeTimer(remainingSec);
+    } else if (expired) {
+        // Timer expiré → garder cartes lockées
+        const myCards = document.getElementById('adminPovCards');
+        if (myCards) myCards.classList.add('cards-locked');
+    }
 }
 
 function showTriadeRoundOverlay(round, stat, statName) {
@@ -10489,7 +11080,7 @@ function showTriadeRoundOverlay(round, stat, statName) {
         const inner = centerSlot.querySelector('.center-slot-inner');
         if (inner) inner.innerHTML = '';
         const oldIcon = centerSlot.querySelector('.slot-stat-icon');
-        if (oldIcon) oldIcon.classList.remove('show');
+        if (oldIcon) oldIcon.remove();
     }
     
     triadeState.currentRound = round;
@@ -10499,112 +11090,54 @@ function showTriadeRoundOverlay(round, stat, statName) {
     document.querySelectorAll('.triade-choose-indicator').forEach(el => {
         el.classList.remove('active', 'visible');
     });
+    document.querySelectorAll('.choose-ring-progress').forEach(r => r.style.strokeDashoffset = '91.1');
+    _adminCurrentTurnId = null;
+    if (window._adminTurnRingInterval) { clearInterval(window._adminTurnRingInterval); window._adminTurnRingInterval = null; }
     // Reset drag state
     adminTriadeCardPlayed = false;
     adminTriadeTimerExpired = false;
     sessionStorage.removeItem('adminTriadeTimerExpired');
+    sessionStorage.removeItem('adminTriadeWasDiscard');
     adminTriadePlayedCardData = null;
     stopAdminTriadeTimer();
     
-    // Retirer les classes dim des cartes
+    // Retirer les classes dim des cartes + lock them initially
     document.querySelectorAll('#adminPovCards .triade-card.card-played-out').forEach(el => {
         el.classList.remove('card-played-out');
     });
+    // 🔒 Lock cards until timer starts
+    const myCardsContainer = document.getElementById('adminPovCards');
+    if (myCardsContainer) myCardsContainer.classList.add('cards-locked');
     
-    const fullStatNames = { atk: 'Attaque', int: 'Intelligence', spd: 'Vitesse', pwr: 'Pouvoir' };
-    const statIcons = {
-        atk: '<img src="attack.png" alt="ATK">',
-        int: '<img src="int.png" alt="INT">',
-        spd: '<img src="speed.png" alt="VIT">',
-        pwr: '<img src="power3.png" alt="POW">'
-    };
-    
-    const overlay = document.createElement('div');
-    overlay.className = 'triade-round-overlay';
-    overlay.innerHTML = `
-        <div class="tro-card tro-card-left"></div>
-        <div class="tro-card tro-card-right"></div>
-        <div class="tro-impact"></div>
-        <div class="tro-particles">
-            ${Array(12).fill(0).map(() => '<div class="tro-particle"></div>').join('')}
-        </div>
-        <div class="tro-text">
-            <div class="tro-round-label">ROUND ${round}</div>
-            <div class="tro-stat">
-                <div class="tro-stat-particles">
-                    ${Array(16).fill(0).map(() => '<div class="tro-stat-particle"></div>').join('')}
-                </div>
-                <div class="tro-stat-flash"></div>
-                <span class="tro-stat-icon">${statIcons[stat] || ''}</span>
-                <span class="tro-stat-name">${fullStatNames[stat] || statName}</span>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-    
-    const overlayStartTime = Date.now();
-    const overlaySteps = [
-        { ms: 0, fn: () => overlay.classList.add('active') },
-        { ms: 300, fn: () => overlay.classList.add('cards-slide') },
-        { ms: 700, fn: () => overlay.classList.add('clash') },
-        { ms: 750, fn: () => overlay.classList.add('show-text') },
-        { ms: 2200, fn: () => overlay.classList.add('hide-text') },
-        { ms: 2550, fn: () => overlay.classList.add('show-stat') },
-        { ms: 3800, fn: () => overlay.classList.add('fade-out') },
-    ];
-    let overlayStepIndex = 0;
-    let overlayFinished = false;
-    
-    function finishRoundOverlay() {
-        if (overlayFinished) return;
-        overlayFinished = true;
-        overlay.remove();
+    // Afficher le slot directement (pas d'overlay) + icône stat
+    setTimeout(() => {
         const slot = document.getElementById('triadeCenterSlot');
         if (slot) {
             slot.classList.add('visible');
-            // Show deck alongside slot
             const deckEl = document.getElementById('adminTriadeDeck');
             if (deckEl) deckEl.classList.add('deck-visible');
-            document.querySelectorAll('.triade-choose-indicator').forEach(el => el.classList.add('visible'));
-            const statImgs = { atk: 'attack.png', int: 'int.png', spd: 'speed.png', pwr: 'power3.png' };
+            
+            // Ajouter l'icône carte au slot
             let iconEl = slot.querySelector('.slot-stat-icon');
             if (!iconEl) {
                 iconEl = document.createElement('div');
                 iconEl.className = 'slot-stat-icon';
                 slot.appendChild(iconEl);
             }
-            iconEl.innerHTML = `<img src="${statImgs[stat] || ''}" alt="${stat}">`;
+            iconEl.innerHTML = `<svg viewBox="0 0 24 32" fill="none" width="24" height="32"><rect x="2" y="2" width="20" height="28" rx="3" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><path d="M12 9l1.76 3.57 3.94.57-2.85 2.78.67 3.93L12 17.77l-3.52 1.85.67-3.93-2.85-2.78 3.94-.57L12 9z" fill="currentColor" fill-opacity="0.5"/></svg>`;
             iconEl.classList.remove('show');
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => iconEl.classList.add('show'));
             });
+            
+            // 🔒 Cartes restent lockées, le serveur enverra triade-turn-start
+            setTimeout(() => {
+                document.querySelectorAll('.triade-choose-indicator').forEach(el => el.classList.add('visible'));
+                // Timer + unlock géré par triade-turn-start du serveur
+                console.log('🎴 En attente du tour (triade-turn-start)...');
+            }, 1000);
         }
-        updateAdminPreviewHighlight(stat);
-        document.removeEventListener('visibilitychange', onOverlayVisibility);
-    }
-    
-    function applyOverlaySteps() {
-        const elapsed = Date.now() - overlayStartTime;
-        if (elapsed >= 4300) { finishRoundOverlay(); return; }
-        while (overlayStepIndex < overlaySteps.length && elapsed >= overlaySteps[overlayStepIndex].ms) {
-            overlaySteps[overlayStepIndex].fn();
-            overlayStepIndex++;
-        }
-        if (overlayStepIndex < overlaySteps.length) {
-            setTimeout(applyOverlaySteps, overlaySteps[overlayStepIndex].ms - elapsed);
-        } else {
-            setTimeout(finishRoundOverlay, 4300 - elapsed);
-        }
-    }
-    
-    function onOverlayVisibility() {
-        if (document.visibilityState === 'visible' && !overlayFinished) {
-            applyOverlaySteps();
-        }
-    }
-    document.addEventListener('visibilitychange', onOverlayVisibility);
-    
-    requestAnimationFrame(() => applyOverlaySteps());
+    }, 1000);
 }
 
 // Générer le HTML de la table Triade
@@ -10619,6 +11152,11 @@ function generateTriadeTableHTML() {
                 <div class="logo-sub">ShonenMaster</div>
             </div>
             
+            <!-- Center Zone: Market + Slot -->
+            <div class="triade-center-zone" id="triadeCenterZone">
+                <div class="triade-market" id="triadeMarket"></div>
+            </div>
+            
             <!-- Player Seats -->
             ${[1,2,3,4,5,6,7,8,9,10].map(i => `
                 <div class="triade-player-seat hidden" id="triadeSeat${i}">
@@ -10626,12 +11164,10 @@ function generateTriadeTableHTML() {
                         <div class="triade-player-cards${triadeHandSize === 5 ? ' hand-5' : ''}">
                             ${"<div class=\"triade-player-card-small\"></div>".repeat(triadeHandSize || 3)}
                         </div>
-                        <div class="triade-choose-indicator"><img src="choose.png" alt="choose"></div>
+                        <div class="triade-choose-indicator"><svg class="choose-ring" viewBox="0 0 34 34"><circle class="choose-ring-bg" cx="17" cy="17" r="14.5" /><circle class="choose-ring-progress" cx="17" cy="17" r="14.5" /></svg><img src="choose.png" alt="choose"></div>
                         <div class="triade-player-ribbon">
                             <div class="triade-stars">
-                                <svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                                <svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                                <svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                                ${'<svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>'.repeat(triadeHandSize || 3)}
                             </div>
                         </div>
                         <div class="triade-player-name-tag">
@@ -10764,8 +11300,6 @@ function hideTriadeTable() {
         deckEl.classList.remove('can-draw');
         deckEl.classList.remove('deck-visible');
     }
-    const ghost = document.getElementById('adminDrawGhost');
-    if (ghost) ghost.classList.remove('animating');
     // Reset admin cards
     adminTriadeCards = [];
     adminDealStarted = false;
@@ -10818,9 +11352,89 @@ function buildCenterCardHTML(card) {
 
 function adminFormatName(name) {
     if (!name) return '';
-    const exceptions = { 'JoJo': 'JoJo', 'Jojo': 'JoJo', 'DragonBallZ': 'Dragon Ball', 'Dbz': 'Dragon Ball' };
+    const exceptions = { 'JoJo': 'JoJo', 'Jojo': 'JoJo', 'DragonBallZ': 'Dragon Ball', 'DragonBall': 'Dragon Ball', 'Dbz': 'Dragon Ball' };
     if (exceptions[name]) return exceptions[name];
     return name.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2');
+}
+
+// 🏪 Afficher les cartes du marché
+function renderMarketCards(cards, animated = true) {
+    const market = document.getElementById('triadeMarket');
+    if (!market || !cards || cards.length === 0) return;
+    
+    market.innerHTML = cards.map((card, i) => `
+        <div class="market-card ${animated ? 'market-hidden' : 'revealed'}" data-market-index="${i}" data-anime="${card.anime || ''}">
+            <img src="${getAdminCardImage(card)}" alt="${card.name}">
+            <div class="class-badge ${card.class}">
+                <span class="class-icon">${getAdminClassIcon(card.class)}</span>
+            </div>
+            ${card.isProtagonist ? '<div class="prota-badge market-prota"><svg viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"/></svg></div>' : ''}
+        </div>
+    `).join('');
+    
+    market.querySelectorAll('.market-card').forEach(cardEl => {
+        const idx = parseInt(cardEl.dataset.marketIndex);
+        const card = cards[idx];
+        if (!card) return;
+        cardEl.addEventListener('mouseenter', () => showAdminCardPreview(card));
+        cardEl.addEventListener('mouseleave', () => hideAdminCardPreview());
+    });
+    
+    if (animated) {
+        market.querySelectorAll('.market-card').forEach((cardEl, i) => {
+            setTimeout(() => {
+                cardEl.classList.remove('market-hidden');
+                cardEl.classList.add('revealed');
+            }, 150 + i * 180);
+        });
+    }
+    
+    // Appliquer l'effet doré sur les cartes qui matchent la main
+    setTimeout(() => updateMarketMatchGlow(), animated ? 800 : 100);
+}
+
+// 🎴 Met à jour l'effet doré des cartes marché qui matchent la main admin
+function updateMarketMatchGlow() {
+    const market = document.getElementById('triadeMarket');
+    if (!market) return;
+    
+    // Récupérer les animes en main depuis le tableau (pas le DOM qui peut être désynchronisé)
+    const myAnimes = new Set();
+    adminTriadeCards.forEach(card => {
+        if (card && card.anime) myAnimes.add(card.anime);
+    });
+    
+    market.querySelectorAll('.market-card').forEach(cardEl => {
+        const anime = cardEl.dataset.anime;
+        const matches = anime && myAnimes.has(anime);
+        
+        if (matches && !cardEl.classList.contains('same-anime-match')) {
+            cardEl.classList.add('same-anime-match');
+            if (!cardEl.querySelector('.sa-glow-container')) {
+                cardEl.insertAdjacentHTML('beforeend', `
+                    <div class="sa-glow-container">
+                        <div class="sa-smoke s1"></div>
+                        <div class="sa-smoke s2"></div>
+                        <div class="sa-smoke s3"></div>
+                    </div>
+                    <div class="sa-particles">
+                        <div class="sa-particle sm"></div>
+                        <div class="sa-particle md"></div>
+                        <div class="sa-particle sm"></div>
+                        <div class="sa-particle lg"></div>
+                        <div class="sa-particle sm"></div>
+                        <div class="sa-particle md"></div>
+                    </div>
+                `);
+            }
+        } else if (!matches && cardEl.classList.contains('same-anime-match')) {
+            cardEl.classList.remove('same-anime-match');
+            const glow = cardEl.querySelector('.sa-glow-container');
+            const particles = cardEl.querySelector('.sa-particles');
+            if (glow) glow.remove();
+            if (particles) particles.remove();
+        }
+    });
 }
 
 // Ordonner les autres joueurs circulairement à partir du POV (identique à app.js)
@@ -10852,6 +11466,11 @@ function generateTriadePOVHTML() {
                 <div class="logo-sub">ShonenMaster</div>
             </div>
             
+            <!-- Center Zone: Market + Slot -->
+            <div class="triade-center-zone" id="triadeCenterZone">
+                <div class="triade-market" id="triadeMarket"></div>
+            </div>
+            
             <!-- Autres joueurs (sièges autour) -->
             ${otherPlayers.map((p, i) => `
                 <div class="triade-player-seat" id="triadePovSeat${i}" 
@@ -10860,12 +11479,10 @@ function generateTriadePOVHTML() {
                         <div class="triade-player-cards${triadeHandSize === 5 ? ' hand-5' : ''}">
                             ${"<div class=\"triade-player-card-small\"></div>".repeat(triadeHandSize || 3)}
                         </div>
-                        <div class="triade-choose-indicator"><img src="choose.png" alt="choose"></div>
+                        <div class="triade-choose-indicator"><svg class="choose-ring" viewBox="0 0 34 34"><circle class="choose-ring-bg" cx="17" cy="17" r="14.5" /><circle class="choose-ring-progress" cx="17" cy="17" r="14.5" /></svg><img src="choose.png" alt="choose"></div>
                         <div class="triade-player-ribbon">
                             <div class="triade-stars">
-                                <svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                                <svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                                <svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                                ${'<svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>'.repeat(triadeHandSize || 3)}
                             </div>
                         </div>
                         <div class="triade-player-name-tag">
@@ -10878,15 +11495,13 @@ function generateTriadePOVHTML() {
             <!-- Mon siège POV (en bas) -->
             <div class="triade-player-seat me" 
                  id="triadeAdminPovSeat">
-                <div class="triade-my-cards${triadeHandSize === 5 ? ' hand-5' : ''}" id="adminPovCards">
+                <div class="triade-my-cards cards-locked${triadeHandSize === 5 ? ' hand-5' : ''}" id="adminPovCards">
                     <!-- Rempli dynamiquement -->
                 </div>
                 <div class="triade-player-block">
                     <div class="triade-player-ribbon">
                         <div class="triade-stars">
-                            <svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                            <svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                            <svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                            ${'<svg class="triade-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>'.repeat(triadeHandSize || 3)}
                         </div>
                     </div>
                     <div class="triade-player-name-tag">
@@ -10993,7 +11608,7 @@ function renderAdminPOVCards(isDealing = false) {
             ).join('');
             return `
             <div class="triade-card large fused-card ${isDealing ? 'pre-deal' : ''}"
-                 data-card-index="${i}">
+                 data-card-index="${i}" data-anime="${card.anime || ''}">
                 ${sameAnimeParticles}
                 <div class="fused-img-wrap fused-x${count}">
                     ${fusedImgs}
@@ -11013,9 +11628,11 @@ function renderAdminPOVCards(isDealing = false) {
             </div>`;
         }
         
+        const isNewDrawCard = window._adminDrawNewCard && i === adminTriadeCards.length - 1;
+        
         return `
-        <div class="triade-card large ${isDealing ? 'pre-deal' : 'dealt'} ${hasBonus ? 'same-anime-bonus' : ''}"
-             data-card-index="${i}">
+        <div class="triade-card large ${isDealing ? 'pre-deal' : 'dealt'} ${hasBonus ? 'same-anime-bonus' : ''} ${isNewDrawCard ? 'draw-new-card' : ''}"
+             data-card-index="${i}" data-anime="${card.anime || ''}">
             ${hasBonus ? sameAnimeParticles : ''}
             <div class="card-image">
                 <img src="${getAdminCardImage(card)}" alt="${card.name}">
@@ -11032,6 +11649,12 @@ function renderAdminPOVCards(isDealing = false) {
             </div>
         </div>`;
     }).join('');
+    
+    window._adminDrawNewCard = false;
+    // Retirer draw-new-card après l'animation pour ne pas interférer avec hover
+    container.querySelectorAll('.triade-card.large.draw-new-card').forEach(el => {
+        el.addEventListener('animationend', () => el.classList.remove('draw-new-card'), { once: true });
+    });
     container.querySelectorAll('.triade-card.large').forEach(cardEl => {
         const idx = parseInt(cardEl.dataset.cardIndex);
         const card = adminTriadeCards[idx];
@@ -11055,6 +11678,9 @@ function renderAdminPOVCards(isDealing = false) {
             dealAdminTriadeCards();
         }, 3400);
     }
+    
+    // Mettre à jour le glow du marché selon la main actuelle
+    updateMarketMatchGlow();
 }
 
 // 🆕 DRAG & DROP ADMIN
@@ -11062,6 +11688,9 @@ function startAdminCardDrag(cardIndex, e) {
     if (adminTriadeCardPlayed) return;
     if (adminTriadeTimerExpired) return;
     if (!triadeState.selectedStat) return;
+    // Block drag if cards are locked (timer not started yet)
+    const myCards = document.getElementById('adminPovCards');
+    if (myCards && myCards.classList.contains('cards-locked')) return;
     // Block drag if cards are visually disabled (e.g. timer not yet started)
     if (e.currentTarget.classList.contains('card-played-out')) return;
     // Block drag until slot is visible (round overlay still playing)
@@ -11118,10 +11747,10 @@ function startAdminCardDrag(cardIndex, e) {
         if (slotEl) {
             const slotRect = slotEl.getBoundingClientRect();
             const overSlot = (
-                ev.clientX >= slotRect.left - 30 &&
-                ev.clientX <= slotRect.right + 30 &&
-                ev.clientY >= slotRect.top - 30 &&
-                ev.clientY <= slotRect.bottom + 30
+                ev.clientX >= slotRect.left - 2 &&
+                ev.clientX <= slotRect.right + 2 &&
+                ev.clientY >= slotRect.top - 2 &&
+                ev.clientY <= slotRect.bottom + 2
             );
             slotEl.classList.toggle('drop-hover', overSlot);
         }
@@ -11179,15 +11808,39 @@ function startAdminCardDrag(cardIndex, e) {
         if (isOverSlot) {
             // ✅ DROP → jouer la carte
             const slotRect = slotEl.getBoundingClientRect();
-            ghost.style.transition = 'all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)';
-            ghost.style.left = (slotRect.left + slotRect.width / 2 - rect.width / 2) + 'px';
-            ghost.style.top = (slotRect.top + slotRect.height / 2 - rect.height / 2) + 'px';
-            ghost.style.transform = 'scale(0.55) rotate(0deg)';
-            ghost.style.opacity = '0';
-            setTimeout(() => ghost.remove(), 400);
+            const droppedCard = adminTriadeCards[cardIndex];
+            const isDiscard = droppedCard && !droppedCard.isFused;
             
-            slotEl.classList.remove('drop-hover');
-            adminPlayTriadeCard(cardIndex);
+            if (isDiscard) {
+                // 💥 DÉFAUSSE — ghost snap puis shatter
+                const cx = slotRect.left + slotRect.width / 2;
+                const cy = slotRect.top + slotRect.height / 2;
+                ghost.style.transition = 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
+                ghost.style.left = (cx - rect.width / 2) + 'px';
+                ghost.style.top = (cy - rect.height / 2) + 'px';
+                ghost.style.transform = 'scale(0.5) rotate(0deg)';
+                ghost.style.opacity = '1';
+                
+                setTimeout(() => {
+                    ghost.style.display = 'none';
+                    ghost.remove();
+                    playAdminShatterEffect(cx, cy);
+                }, 200);
+                
+                slotEl.classList.remove('drop-hover');
+                adminDiscardTriadeCard(cardIndex);
+            } else {
+                // ⭐ FUSION VALIDATION
+                ghost.style.transition = 'all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                ghost.style.left = (slotRect.left + slotRect.width / 2 - rect.width / 2) + 'px';
+                ghost.style.top = (slotRect.top + slotRect.height / 2 - rect.height / 2) + 'px';
+                ghost.style.transform = 'scale(0.55) rotate(0deg)';
+                ghost.style.opacity = '0';
+                setTimeout(() => ghost.remove(), 400);
+                
+                slotEl.classList.remove('drop-hover');
+                adminPlayTriadeCard(cardIndex);
+            }
         } else {
             // ❌ Retour en place
             ghost.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
@@ -11324,6 +11977,53 @@ function fuseAdminCards(sourceIndex, targetIndex) {
     });
 }
 
+// 💥 Effet Shatter — défausse de carte (admin)
+function playAdminShatterEffect(cx, cy) {
+    const colors = ['#93c5fd', '#60a5fa', '#3b82f6', '#1d4ed8', '#c4d5f0', '#fff', '#a5b4fc', '#818cf8'];
+    
+    // Flash blanc
+    const flash = document.createElement('div');
+    flash.className = 'shatter-flash';
+    flash.style.cssText = `
+        left: ${cx}px; top: ${cy}px;
+        width: 70px; height: 70px;
+        animation: shatter-flash 0.5s ease-out forwards;
+    `;
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 550);
+    
+    // Fragments
+    for (let i = 0; i < 16; i++) {
+        const frag = document.createElement('div');
+        frag.className = 'shatter-fragment';
+        const w = 8 + Math.random() * 20;
+        const h = 8 + Math.random() * 20;
+        const sx = (Math.random() - 0.5) * 220;
+        const sy = (Math.random() - 0.5) * 200;
+        const sr = (Math.random() - 0.5) * 720;
+        const dur = 0.45 + Math.random() * 0.35;
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const points = [
+            `${Math.random()*30}% 0%`,
+            `100% ${Math.random()*30}%`,
+            `${70+Math.random()*30}% 100%`,
+            `0% ${70+Math.random()*30}%`
+        ].join(', ');
+        frag.style.cssText = `
+            left: ${cx + (Math.random()-0.5)*30}px;
+            top: ${cy + (Math.random()-0.5)*40}px;
+            width: ${w}px; height: ${h}px;
+            background: ${color};
+            clip-path: polygon(${points});
+            --sx: ${sx}px; --sy: ${sy}px; --sr: ${sr}deg;
+            animation: shatter-piece ${dur}s ease-out forwards;
+            opacity: 0.9;
+        `;
+        document.body.appendChild(frag);
+        setTimeout(() => frag.remove(), dur * 1000 + 50);
+    }
+}
+
 function adminPlayTriadeCard(cardIndex) {
     if (adminTriadeTimerExpired) return;
     const card = adminTriadeCards[cardIndex];
@@ -11334,6 +12034,13 @@ function adminPlayTriadeCard(cardIndex) {
     adminTriadeCardPlayed = true;
     adminTriadePlayedCardData = card;
     // Timer keeps running until end of round
+    
+    // Disable le deck
+    const deckEl = document.getElementById('adminTriadeDeck');
+    if (deckEl) {
+        deckEl.classList.remove('can-draw');
+        deckEl.classList.remove('my-turn');
+    }
     
     // Émettre au serveur
     socket.emit('triade-play-card', {
@@ -11364,6 +12071,10 @@ function adminPlayTriadeCard(cardIndex) {
         }
     }
     
+    // Recalculer le bonus same-anime sur les cartes restantes
+    const animeCountsPlay = {};
+    adminTriadeCards.forEach(c => { if (c && c.anime) animeCountsPlay[c.anime] = (animeCountsPlay[c.anime] || 0) + 1; });
+    
     // 🔥 FIX: Ne pas re-render — juste cacher la carte jouée et griser les restantes (transition smooth)
     const allCards = document.querySelectorAll('#adminPovCards .triade-card.large');
     allCards.forEach((el, i) => {
@@ -11374,8 +12085,239 @@ function adminPlayTriadeCard(cardIndex) {
             setTimeout(() => el.remove(), 300);
         } else {
             el.classList.add('card-played-out');
+            // Retirer le glow same-anime si plus de paire
+            const anime = el.dataset.anime;
+            if (anime && (!animeCountsPlay[anime] || animeCountsPlay[anime] < 2)) {
+                el.classList.remove('same-anime-bonus');
+                const glow = el.querySelector('.sa-glow-container');
+                const particles = el.querySelector('.sa-particles');
+                if (glow) glow.remove();
+                if (particles) particles.remove();
+            }
         }
     });
+    
+    // Mettre à jour le glow marché après placement
+    updateMarketMatchGlow();
+}
+
+// 🗑️ Défausser une carte (admin) — pas de carte visible dans le slot
+// 🎴 Animation de la carte volant du deck vers la main
+function animateCardToHand(card, deckEl) {
+    if (!deckEl) {
+        adminTriadeCards.push(card);
+        renderAdminPOVCards(false);
+        return;
+    }
+    
+    // Trouver la carte du dessus du deck
+    const topCard = deckEl.querySelector('.triade-deck-card:nth-child(1)');
+    if (!topCard) {
+        adminTriadeCards.push(card);
+        renderAdminPOVCards(false);
+        return;
+    }
+    
+    // Position et taille exacte de la carte du dessus
+    const topRect = topCard.getBoundingClientRect();
+    
+    // Cacher la vraie carte du dessus
+    topCard.style.visibility = 'hidden';
+    
+    // Calculer la stat moyenne
+    const avgStat = card.stats 
+        ? Math.round((card.stats.atk + card.stats.int + card.stats.spd + card.stats.pwr) / 4) 
+        : (card.powerLevel || '?');
+    
+    // Créer le clone volant — taille exacte de la carte du deck
+    const flyer = document.createElement('div');
+    flyer.className = 'draw-card-flyer';
+    
+    flyer.innerHTML = `
+        <div class="draw-card-flyer-inner">
+            <div class="draw-card-flyer-back">
+                <div class="flyer-back-pattern"></div>
+                <span class="flyer-back-sm">SM</span>
+            </div>
+            <div class="draw-card-flyer-front">
+                <div class="card-image">
+                    <img src="${getAdminCardImage(card)}" alt="${card.name}">
+                </div>
+                <div class="flyer-class-badge ${card.class}">
+                    <span class="class-icon">${getAdminClassIcon(card.class)}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(flyer);
+    
+    // Positionner exactement sur la carte du deck
+    flyer.style.left = topRect.left + 'px';
+    flyer.style.top = topRect.top + 'px';
+    flyer.style.width = topRect.width + 'px';
+    flyer.style.height = topRect.height + 'px';
+    
+    // Calculer la destination (dernière carte dans la main, ou centre main)
+    const handContainer = document.getElementById('adminPovCards');
+    let endX, endY, endW, endH;
+    if (handContainer) {
+        const handCards = handContainer.querySelectorAll('.triade-card.large');
+        if (handCards.length > 0) {
+            // Estimer la position de la NOUVELLE carte (après re-layout)
+            // Prendre le centre de la main comme cible
+            const firstCard = handCards[0];
+            const lastCard = handCards[handCards.length - 1];
+            const firstRect = firstCard.getBoundingClientRect();
+            const lastRect = lastCard.getBoundingClientRect();
+            endW = firstRect.width;
+            endH = firstRect.height;
+            // Nouvelle carte sera à droite de la dernière
+            endX = lastRect.right + 8;
+            endY = lastRect.top;
+        } else {
+            const handRect = handContainer.getBoundingClientRect();
+            endW = 130;
+            endH = 185;
+            endX = handRect.left + handRect.width / 2 - endW / 2;
+            endY = handRect.top + handRect.height / 2 - endH / 2;
+        }
+    } else {
+        endW = 130;
+        endH = 185;
+        endX = window.innerWidth / 2 - endW / 2;
+        endY = window.innerHeight - 280;
+    }
+    
+    // Force layout avant animation
+    flyer.getBoundingClientRect();
+    
+    const flyDuration = 600;
+    
+    // Animation du conteneur (position + taille)
+    flyer.animate([
+        { 
+            left: topRect.left + 'px', 
+            top: topRect.top + 'px', 
+            width: topRect.width + 'px', 
+            height: topRect.height + 'px' 
+        },
+        { 
+            left: endX + 'px', 
+            top: endY + 'px', 
+            width: endW + 'px', 
+            height: endH + 'px' 
+        }
+    ], { duration: flyDuration, easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)', fill: 'forwards' });
+    
+    // Animation du flip (inner)
+    const inner = flyer.querySelector('.draw-card-flyer-inner');
+    inner.animate([
+        { transform: 'rotateY(0deg)' },
+        { transform: 'rotateY(180deg)' }
+    ], { duration: flyDuration, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', fill: 'forwards' });
+    
+    // FLIP: décaler les cartes existantes vers leur position finale PENDANT le vol
+    setTimeout(() => {
+        // 1. Sauvegarder les positions actuelles des cartes existantes
+        const oldPositions = new Map();
+        if (handContainer) {
+            handContainer.querySelectorAll('.triade-card.large').forEach(el => {
+                oldPositions.set(el.dataset.cardIndex, el.getBoundingClientRect());
+            });
+        }
+        
+        // 2. Ajouter la carte et render le vrai layout final
+        adminTriadeCards.push(card);
+        window._adminDrawNewCard = false; // pas de pop-in ici
+        renderAdminPOVCards(false);
+        
+        // 3. Cacher la nouvelle carte (la dernière) — le flyer est encore visible
+        if (handContainer) {
+            const newCards = handContainer.querySelectorAll('.triade-card.large');
+            const newCard = newCards[newCards.length - 1];
+            if (newCard) newCard.style.opacity = '0';
+            
+            // 4. FLIP: animer chaque carte existante de son ancienne position vers la nouvelle
+            newCards.forEach(el => {
+                const idx = el.dataset.cardIndex;
+                const oldRect = oldPositions.get(idx);
+                if (!oldRect) return;
+                const newRect = el.getBoundingClientRect();
+                const dx = oldRect.left - newRect.left;
+                if (Math.abs(dx) > 1) {
+                    el.animate([
+                        { transform: `translateX(${dx}px)` },
+                        { transform: 'translateX(0)' }
+                    ], { duration: 350, easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)', composite: 'add' });
+                }
+            });
+        }
+    }, 200);
+    
+    // A la fin du vol, re-render complet (listeners frais)
+    setTimeout(() => {
+        flyer.remove();
+        topCard.style.visibility = '';
+        window._adminDrawNewCard = true;
+        renderAdminPOVCards(false);
+    }, flyDuration + 30);
+}
+
+function adminDiscardTriadeCard(cardIndex) {
+    if (adminTriadeTimerExpired) return;
+    const card = adminTriadeCards[cardIndex];
+    if (!card) return;
+    
+    console.log('🗑️ Admin défausse carte:', card.name, 'index:', cardIndex);
+    
+    adminTriadeCardPlayed = true;
+    adminTriadePlayedCardData = null; // PAS de carte dans le slot
+    sessionStorage.setItem('adminTriadeWasDiscard', 'true');
+    
+    // Disable le deck
+    const deckEl = document.getElementById('adminTriadeDeck');
+    if (deckEl) {
+        deckEl.classList.remove('can-draw');
+        deckEl.classList.remove('my-turn');
+    }
+    socket.emit('triade-play-card', {
+        twitchId: twitchUser.id,
+        cardIndex: cardIndex,
+        discard: true
+    });
+    
+    // Retirer la carte de la main
+    adminTriadeCards.splice(cardIndex, 1);
+    
+    // Recalculer le bonus same-anime sur les cartes restantes
+    const animeCountsAfter = {};
+    adminTriadeCards.forEach(c => { if (c && c.anime) animeCountsAfter[c.anime] = (animeCountsAfter[c.anime] || 0) + 1; });
+    
+    // Griser les cartes restantes (pas d'affichage dans le slot)
+    const allCards = document.querySelectorAll('#adminPovCards .triade-card.large');
+    allCards.forEach((el, i) => {
+        if (i === cardIndex) {
+            el.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            el.style.opacity = '0';
+            el.style.transform = 'scale(0.8)';
+            setTimeout(() => el.remove(), 300);
+        } else {
+            el.classList.add('card-played-out');
+            // Retirer le glow same-anime si plus de paire
+            const anime = el.dataset.anime;
+            if (anime && (!animeCountsAfter[anime] || animeCountsAfter[anime] < 2)) {
+                el.classList.remove('same-anime-bonus');
+                const glow = el.querySelector('.sa-glow-container');
+                const particles = el.querySelector('.sa-particles');
+                if (glow) glow.remove();
+                if (particles) particles.remove();
+            }
+        }
+    });
+    
+    // Mettre à jour le glow marché après défausse
+    updateMarketMatchGlow();
 }
 
 // Preview carte - identique au joueur
@@ -11448,25 +12390,6 @@ function showAdminCardPreview(card) {
     }
     
     anime.textContent = adminFormatName(card.anime);
-    
-    // Afficher les 4 stats
-    const statAtk = document.getElementById('adminStatAtk');
-    const statInt = document.getElementById('adminStatInt');
-    const statSpd = document.getElementById('adminStatSpd');
-    const statPwr = document.getElementById('adminStatPwr');
-    
-    if (card.stats) {
-        if (statAtk) statAtk.textContent = card.stats.atk;
-        if (statInt) statInt.textContent = card.stats.int;
-        if (statSpd) statSpd.textContent = card.stats.spd;
-        if (statPwr) statPwr.textContent = card.stats.pwr;
-    } else {
-        const pw = card.powerLevel || '?';
-        if (statAtk) statAtk.textContent = pw;
-        if (statInt) statInt.textContent = pw;
-        if (statSpd) statSpd.textContent = pw;
-        if (statPwr) statPwr.textContent = pw;
-    }
     
     preview.classList.add('visible');
     

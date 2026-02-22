@@ -240,9 +240,19 @@ createApp({
                 playedCardData: (() => { try { return JSON.parse(sessionStorage.getItem('triadeState') || '{}').playedCardData || null; } catch(e) { return null; } })(),
                 timer: 0,
                 playersWhoPlayed: [],
+                currentTurnId: null, // 🎴 Tour par tour: ID du joueur actif
+                turnTimerProgress: 0, // 🎴 0 to 1, progress ring on choose indicator
                 timerExpired: (() => { try { return !!JSON.parse(sessionStorage.getItem('triadeState') || '{}').timerExpired; } catch(e) { return false; } })(),
                 canDraw: false,  // 🎴 Deck: le joueur peut piocher
-                handSize: (() => { try { return JSON.parse(sessionStorage.getItem('triadeState') || '{}').handSize || 3; } catch(e) { return 3; } })()     // 🎴 Nombre de cartes en main (3 ou 5)
+                cardsActive: false, // 🔒 Cartes draggables seulement quand timer actif
+                timerProgress: 0, // 0 to 1, smooth progress for ring
+                handSize: (() => { try { return JSON.parse(sessionStorage.getItem('triadeState') || '{}').handSize || 3; } catch(e) { return 3; } })(),     // 🎴 Nombre de cartes en main (3 ou 5)
+                marketCards: [],     // 🏪 Cartes du marché (4 cartes face visible)
+                deckFullFlash: false,  // 🎴 Flash rouge quand main pleine
+                drawChoiceVisible: false, // 🎴 Overlay de choix pioche visible
+                drawCardsRevealed: false, // 🎴 Cartes de choix révélées (animation)
+                drawOptions: [],   // 🎴 2 cartes proposées
+                drawPicked: null,  // 🎴 Index de la carte choisie (0 ou 1)
             },
 
 
@@ -1895,7 +1905,7 @@ createApp({
                 // 💣 BombAnime / 🎴 Triade - Lobby plein
                 if (data.lobbyMode === 'bombanime' || data.lobbyMode === 'triade') {
                     this.isLobbyFull = data.isLobbyFull || false;
-                    this.maxPlayers = data.maxPlayers || (data.lobbyMode === 'triade' ? 10 : 13);
+                    this.maxPlayers = data.maxPlayers || (data.lobbyMode === 'triade' ? 5 : 13);
                     // Reset l'erreur si le lobby n'est plus plein
                     if (!data.isLobbyFull && this.lobbyFullError) {
                         this.lobbyFullError = false;
@@ -2973,8 +2983,32 @@ createApp({
                         container.classList.add('intro');
                         setTimeout(() => container.classList.remove('intro'), 3000);
                     }
-                    // Le slot central sera affiché par showTriadeRoundOverlay après l'animation de round
                 });
+                
+                // 🏪 Local fallback: si triade-market-reveal du serveur n'arrive pas
+                this._marketRevealed = false;
+                this._timerStarted = false;
+                const localMarketCards = data.marketCards || [];
+                const vm = this;
+                setTimeout(() => {
+                    if (!vm._marketRevealed && localMarketCards.length > 0 && vm.triade.active) {
+                        console.log('🏪 Player: fallback local market reveal');
+                        vm.triade.marketCards = localMarketCards;
+                        vm._marketRevealed = true;
+                        vm._startTriadeAfterMarket();
+                    }
+                }, 5500);
+            });
+            
+            // 🏪 Market reveal synchronisé par le serveur
+            this.socket.on('triade-market-reveal', (data) => {
+                console.log('🏪 Market reveal reçu:', data.marketCards?.length, 'cartes');
+                if (this._marketRevealed) return;
+                this._marketRevealed = true;
+                if (data.marketCards && data.marketCards.length > 0 && this.triade.active) {
+                    this.triade.marketCards = data.marketCards;
+                    this._startTriadeAfterMarket();
+                }
             });
             
             // 🆕 Gestion de l'annonce de round (rounds 2+ uniquement, round 1 déclenché localement)
@@ -2982,6 +3016,59 @@ createApp({
                 if (data.twitchId && !this.triade.playersWhoPlayed.includes(data.twitchId)) {
                     this.triade.playersWhoPlayed.push(data.twitchId);
                 }
+            });
+
+            // 🎴 Tour par tour : un joueur commence son tour
+            this.socket.on('triade-turn-start', (data) => {
+                console.log(`🎴 Tour de ${data.username} (${data.duration}s)`);
+                this.triade.currentTurnId = data.twitchId;
+                this.triade.showCenterSlot = true;
+                this.triade.turnTimerProgress = 0;
+                
+                const isMe = data.twitchId === this.twitchId;
+                this.triade.isMyTurn = isMe;
+                
+                // 🎴 Tracking global du ring (pour tous les joueurs)
+                if (this._turnRingInterval) clearInterval(this._turnRingInterval);
+                this._turnRingEndMs = Date.now() + (data.duration || 15) * 1000;
+                this._turnRingDuration = data.duration || 15;
+                this._turnRingInterval = setInterval(() => {
+                    const elapsed = this._turnRingDuration - ((this._turnRingEndMs - Date.now()) / 1000);
+                    this.triade.turnTimerProgress = Math.min(1, Math.max(0, elapsed / this._turnRingDuration));
+                    if (this.triade.turnTimerProgress >= 1) {
+                        clearInterval(this._turnRingInterval);
+                        this._turnRingInterval = null;
+                    }
+                }, 100);
+                
+                if (isMe) {
+                    // C'est mon tour → reset état du tour précédent + activer
+                    this.triade.cardPlayed = false;
+                    this.triade.playedCardData = null;
+                    this.triade.cardsActive = true;
+                    this.triade.timerExpired = false;
+                    this.triade.canDraw = true; // Pioche disponible
+                    this.startTriadeTimer(data.duration || 15);
+                } else {
+                    // Pas mon tour → désactiver les cartes, cacher timer POV
+                    this.triade.cardsActive = false;
+                    this.stopTriadeTimer(true);
+                    this.triade.timer = 0; // Cacher le timer POV
+                    this.triade.timerExpired = false;
+                }
+                
+                this.saveTriadeState();
+            });
+            
+            // 🎴 Fin de tous les tours (tous ont joué)
+            this.socket.on('triade-turn-end', () => {
+                console.log('🎴 Tous les joueurs ont joué');
+                this.triade.currentTurnId = null;
+                this.triade.isMyTurn = false;
+                this.triade.cardsActive = false;
+                this.triade.turnTimerProgress = 1;
+                if (this._turnRingInterval) { clearInterval(this._turnRingInterval); this._turnRingInterval = null; }
+                this.stopTriadeTimer(true);
             });
 
             this.socket.on('triade-timer-start', (data) => {
@@ -2992,8 +3079,9 @@ createApp({
                 this._pendingRoundStat = null;
                 // Enable cards and show slot
                 this.triade.timerExpired = false;
+                this.triade.cardsActive = true; // 🔓 Activer les cartes
                 this.triade.showCenterSlot = true;
-                if (!this.triade.cardPlayed) this.startTriadeTimer(data.duration || 20);
+                if (!this.triade.cardPlayed) this.startTriadeTimer(data.duration || 15);
             });
 
             this.socket.on('triade-round-start', (data) => {
@@ -3025,6 +3113,9 @@ createApp({
                     console.log('🎴 Serveur: pas de partie Triade → nettoyage état game');
                     sessionStorage.removeItem('triadeInProgress');
                     sessionStorage.removeItem('triadeState');
+                    sessionStorage.removeItem('triadeTimerEndMs');
+                    sessionStorage.removeItem('triadeTimerDuration');
+                    sessionStorage.removeItem('triadeTimerExpired');
                     this.triade.active = false;
                     this.triade.reconnecting = false;
                     this.triade.myCards = [];
@@ -3050,27 +3141,71 @@ createApp({
                 
                 // Mettre à jour avec les données fraîches du serveur
                 this.initTriade(data);
-                this.triade.showCenterSlot = !!data.timerStarted; // Only show if timer already running
+                this.triade.showCenterSlot = data.currentRound > 0; // Show slot if round active
+                
+                // Révéler les cartes marché immédiatement (reconnect)
+                if (data.marketCards && data.marketCards.length > 0) {
+                    this.triade.marketCards = data.marketCards;
+                }
                 
                 // Restaurer la stat du round actuel
                 if (data.roundStat) {
-                    this.triade.selectedStat = data.timerStarted ? data.roundStat : null;
-                    this._pendingRoundStat = data.roundStat; // Store for when timer starts
+                    this.triade.selectedStat = data.roundStat;
+                    this._pendingRoundStat = data.roundStat;
                 }
                 this.triade.playersWhoPlayed = data.playersWhoPlayed || [];
-                // Timer restore (before card restore so condition works)
-                if (data.timerRemainingMs > 1000) {
-                    // Keeps running even if card already played
+                
+                // 🎴 Restaurer le tour en cours
+                this.triade.currentTurnId = data.currentTurnId || null;
+                const isMyTurn = data.currentTurnId === this.twitchId;
+                this.triade.isMyTurn = isMyTurn;
+                
+                // Timer restore — seulement si c'est mon tour
+                if (data.timerRemainingMs > 1000 && data.currentTurnId) {
                     this.triade.selectedStat = data.roundStat;
-                    this.startTriadeTimer(Math.ceil(data.timerRemainingMs / 1000));
-                } else if (!data.playedCard && data.currentRound > 0 && data.timerStarted) {
-                    // Timer truly expired and no card was played
-                    this.triade.timerExpired = true;
-                    this.triade.timer = 0;
-                } else if (!data.timerStarted && data.currentRound > 0) {
-                    // Timer not started yet (deal/overlay) -> disable cards temporarily
-                    this.triade.timerExpired = true;
-                    this.triade.showCenterSlot = false;
+                    
+                    // 🎴 Restaurer le ring pour tous les joueurs
+                    const remainingSec = Math.ceil(data.timerRemainingMs / 1000);
+                    const totalDuration = 15; // durée standard du tour
+                    const elapsed = totalDuration - (data.timerRemainingMs / 1000);
+                    this.triade.turnTimerProgress = Math.min(1, Math.max(0, elapsed / totalDuration));
+                    
+                    if (this._turnRingInterval) clearInterval(this._turnRingInterval);
+                    this._turnRingEndMs = Date.now() + data.timerRemainingMs;
+                    this._turnRingDuration = totalDuration;
+                    this._turnRingInterval = setInterval(() => {
+                        const e = this._turnRingDuration - ((this._turnRingEndMs - Date.now()) / 1000);
+                        this.triade.turnTimerProgress = Math.min(1, Math.max(0, e / this._turnRingDuration));
+                        if (this.triade.turnTimerProgress >= 1) {
+                            clearInterval(this._turnRingInterval);
+                            this._turnRingInterval = null;
+                        }
+                    }, 100);
+                    
+                    const hasAlreadyPlayed = (data.playersWhoPlayed || []).includes(this.twitchId);
+                    
+                    if (isMyTurn && !data.playedCard && !hasAlreadyPlayed) {
+                        this.triade.cardsActive = true;
+                        this.startTriadeTimer(remainingSec);
+                    } else {
+                        this.triade.cardsActive = false;
+                        if (hasAlreadyPlayed) {
+                            this.triade.cardPlayed = true;
+                        }
+                    }
+                } else {
+                    // Fallback sessionStorage
+                    const savedEndMs = parseInt(sessionStorage.getItem('triadeTimerEndMs') || '0');
+                    const savedDuration = parseInt(sessionStorage.getItem('triadeTimerDuration') || '15');
+                    const hasAlreadyPlayedSS = (data.playersWhoPlayed || []).includes(this.twitchId);
+                    if (savedEndMs && savedEndMs > Date.now() + 500 && isMyTurn && !hasAlreadyPlayedSS) {
+                        const remainingSec = Math.ceil((savedEndMs - Date.now()) / 1000);
+                        this.triade.cardsActive = true;
+                        this._triadeTimerDuration = savedDuration;
+                        this.startTriadeTimer(remainingSec);
+                    } else {
+                        this.triade.cardsActive = false;
+                    }
                 }
                 
                 // Restaurer mes cartes si fournies
@@ -3084,6 +3219,10 @@ createApp({
                     this.triade.cardPlayed = true;
                     this.triade.playedCardData = data.playedCard;
                     // Timer keeps running - don't stop it
+                } else if ((data.playersWhoPlayed || []).includes(this.twitchId)) {
+                    // Défausse: joueur a joué mais pas de carte à afficher
+                    this.triade.cardPlayed = true;
+                    this.triade.playedCardData = null;
                 }
                 
                 // Sauvegarder l'état mis à jour
@@ -3196,16 +3335,32 @@ createApp({
             // 🎴 Serveur indique que le joueur peut piocher
             this.socket.on('triade-can-draw', (data) => {
                 console.log('🎴 Pioche disponible:', data);
+                if (this.triade.cardPlayed) return; // Déjà joué/défaussé
                 this.triade.canDraw = true;
                 this.saveTriadeState();
             });
 
             // 🎴 Carte piochée reçue du serveur
-            this.socket.on('triade-drawn-card', (data) => {
-                console.log('🎴 Carte piochée:', data.card);
-                if (data.card) {
+            // 🎴 Main pleine
+            this.socket.on('triade-draw-full', () => {
+                if (this.triade.deckFullFlash) return;
+                this.triade.deckFullFlash = true;
+                setTimeout(() => { this.triade.deckFullFlash = false; }, 1200);
+            });
+
+            // 🎴 Options de pioche (2 cartes)
+            // 🎴 Résultat de pioche (1 carte)
+            this.socket.on('triade-draw-result', (data) => {
+                console.log('🎴 Carte piochée:', data.card.name);
+                this.triade.canDraw = false;
+                this.triade.cardPlayed = true;
+                this.triade.cardsActive = false;
+                
+                const deckEl = document.querySelector('.triade-deck-zone');
+                if (deckEl) {
+                    this.animateDrawToHand(data.card, deckEl);
+                } else {
                     this.triade.myCards.push(data.card);
-                    this.triade.canDraw = false;
                     this.saveTriadeState();
                 }
             });
@@ -3223,6 +3378,8 @@ createApp({
                 this.triade.timer = 0;
                 this.triade.playersWhoPlayed = [];
                 this.triade.selectedStat = null;
+                this.triade.currentTurnId = null;
+                this.triade.isMyTurn = false;
                 this.triade.showCenterSlot = false;
                 this._pendingTriadeCards = null;
                 this._triadeCardsReceived = false;
@@ -3234,6 +3391,9 @@ createApp({
                 // Nettoyer le flag de reconnexion
                 sessionStorage.removeItem('triadeInProgress');
                 sessionStorage.removeItem('triadeState');
+                sessionStorage.removeItem('triadeTimerEndMs');
+                sessionStorage.removeItem('triadeTimerDuration');
+                sessionStorage.removeItem('triadeTimerExpired');
                 
                 this.gameEndData = {
                     winner: data.winner,
@@ -4361,8 +4521,8 @@ createApp({
                 return baseSize + (playerCount * perPlayer);
             }
             // Desktop (actuel)
-            const baseSize = 470;
-            const perPlayer = 18;
+            const baseSize = 540;
+            const perPlayer = 25;
             const size = baseSize + (playerCount * perPlayer);
             
             // 2K+ : agrandir proportionnellement
@@ -4626,7 +4786,7 @@ createApp({
         formatName(name) {
             if (!name) return '';
             // Exceptions à ne pas splitter
-            const exceptions = { 'JoJo': 'JoJo', 'Jojo': 'JoJo', 'DragonBallZ': 'Dragon Ball' };
+            const exceptions = { 'JoJo': 'JoJo', 'Jojo': 'JoJo', 'DragonBallZ': 'Dragon Ball', 'DragonBall': 'Dragon Ball' };
             if (exceptions[name]) return exceptions[name];
             return name
                 .replace(/([a-z])([A-Z])/g, '$1 $2')   // camelCase → spaces
@@ -4638,6 +4798,11 @@ createApp({
             if (!card || !card.anime || !this.triade.myCards) return false;
             const count = this.triade.myCards.filter(c => c && c.anime === card.anime).length;
             return count >= 2;
+        },
+        
+        marketMatchesHand(card) {
+            if (!card || !card.anime || !this.triade.myCards) return false;
+            return this.triade.myCards.some(c => c && c.anime === card.anime);
         },
         
         // Afficher le preview d'une carte
@@ -4809,16 +4974,7 @@ createApp({
                     seatDelay += delayPerSeat;
                 });
                 
-                // 🎲 Déclencher l'overlay round PILE à la fin du deal + 400ms de respiration
-                if (this._triadeRound1) {
-                    const r = this._triadeRound1;
-                    setTimeout(() => {
-                        if (this.showTriadeRoundOverlay) {
-                            this.showTriadeRoundOverlay(r.round, r.stat, r.statName);
-                        }
-                        this._triadeRound1 = null;
-                    }, totalDealEnd + 400);
-                }
+                // Le slot sera affiché après le market-reveal (géré par le listener triade-market-reveal)
             }, 100);
         },
         
@@ -4833,14 +4989,18 @@ createApp({
             this.triade.cardPlayed = false;
             this.triade.playedCardData = null;
             this.triade.timerExpired = false;
+            this.triade.cardsActive = false; // 🔒 Reset, sera réactivé par timer
             this.triade.timer = 0;
             this.triade.selectedStat = null;
+            this.triade.currentTurnId = null;
+            this.triade.isMyTurn = false;
             this.triade.draggingCardIndex = null;
             this.triade.dropZoneActive = false;
             this.triade.playersWhoPlayed = [];
             this.triade.canDraw = false;
             this.stopTriadeTimer();
             this.triade.myCards = [];  // Reset cartes POV (seront injectées par dealTriadeCards)
+            this.triade.marketCards = [];  // Vide au départ, injectées par triade-market-reveal
             this._pendingTriadeCards = null;
             this._triadeCardsReceived = false;
             this._triadeDealStarted = false;
@@ -4881,7 +5041,11 @@ createApp({
                     playedCardData: this.triade.playedCardData || null,
                     timerExpired: this.triade.timerExpired || false,
                     canDraw: this.triade.canDraw || false,
-                    handSize: this.triade.handSize || 3
+                    isMyTurn: this.triade.isMyTurn || false,
+                    handSize: this.triade.handSize || 3,
+                    cardsActive: this.triade.cardsActive || false,
+                    timerEndMs: this._triadeTimerEndMs || null,
+                    timerDuration: this._triadeTimerDuration || null
                 };
                 sessionStorage.setItem('triadeInProgress', 'true');
                 sessionStorage.setItem('triadeState', JSON.stringify(state));
@@ -4911,14 +5075,34 @@ createApp({
                 }
                 
                 // Restaurer carte jouée
-                if (state.cardPlayed && state.playedCardData) {
+                if (state.cardPlayed) {
                     this.triade.cardPlayed = true;
-                    this.triade.playedCardData = state.playedCardData;
+                    this.triade.playedCardData = state.playedCardData || null;
                 }
                 
-                // Restaurer état pioche
+                // Restaurer état pioche + tour
                 this.triade.canDraw = state.canDraw || false;
+                this.triade.isMyTurn = state.isMyTurn || false;
                 this.triade.handSize = state.handSize || 3;
+                
+                // Restaurer timer + cardsActive depuis clés standalone
+                const savedEndMs = parseInt(sessionStorage.getItem('triadeTimerEndMs') || '0');
+                const savedDuration = parseInt(sessionStorage.getItem('triadeTimerDuration') || '15');
+                const timerExpiredSS = sessionStorage.getItem('triadeTimerExpired') === 'true';
+                
+                if (savedEndMs && savedEndMs > Date.now() + 500) {
+                    const remainingMs = savedEndMs - Date.now();
+                    const remainingSec = Math.ceil(remainingMs / 1000);
+                    this.triade.cardsActive = true;
+                    this._triadeTimerDuration = savedDuration;
+                    this.startTriadeTimer(remainingSec);
+                    console.log('⏱️ Timer restauré:', remainingSec, 's restantes');
+                } else if (timerExpiredSS || state.timerExpired) {
+                    this.triade.timerExpired = true;
+                    this.triade.cardsActive = false;
+                } else {
+                    this.triade.cardsActive = state.cardsActive || false;
+                }
                 
                 console.log('🎴 État Triade restauré depuis sessionStorage');
                 return true;
@@ -4929,6 +5113,25 @@ createApp({
         },
         
         // 🆕 Afficher l'overlay d'annonce de round avec clash de cartes
+        // 🎴 Séquence après market reveal: slot+deck → 1s → timer + cartes actives
+        _startTriadeAfterMarket() {
+            if (this._timerStarted) return;
+            this._timerStarted = true;
+            
+            // Reset état
+            this.triade.cardPlayed = false;
+            this.triade.timerExpired = false;
+            this.triade.cardsActive = false; // 🔒 Cartes inactives, le serveur enverra triade-turn-start
+            
+            const vm = this;
+            // 1s après market → afficher slot + deck
+            setTimeout(() => {
+                vm.triade.showCenterSlot = true;
+                console.log('🎴 Slot + deck visibles, en attente du tour...');
+                // Le serveur enverra triade-turn-start ~1s plus tard
+            }, 1000);
+        },
+
         showTriadeRoundOverlay(round, stat, statName) {
             this.triade.currentRound = round;
             this.triade.selectedStat = stat;
@@ -4938,94 +5141,29 @@ createApp({
             this.triade.draggingCardIndex = null;
             this.triade.dropZoneActive = false;
             this.triade.timerExpired = false;
+            this.triade.cardsActive = false; // 🔒 Cartes inactives jusqu'au tour
             this.triade.playersWhoPlayed = [];
+            this.triade.currentTurnId = null;
+            this.triade.isMyTurn = false;
+            this.triade.turnTimerProgress = 0;
             this.stopTriadeTimer();
             
-            // NE PAS montrer le slot tout de suite — il apparaîtra après l'animation
+            // NE PAS montrer le slot tout de suite
             this.triade.showCenterSlot = false;
             
-            const fullStatNames = { atk: 'Attaque', int: 'Intelligence', spd: 'Vitesse', pwr: 'Pouvoir' };
-            const statIcons = {
-                atk: '<img src="attack.png" alt="ATK">',
-                int: '<img src="int.png" alt="INT">',
-                spd: '<img src="speed.png" alt="VIT">',
-                pwr: '<img src="power3.png" alt="POW">'
-            };
-            
-            // Créer l'overlay
-            const overlay = document.createElement('div');
-            overlay.className = 'triade-round-overlay';
-            overlay.innerHTML = `
-                <div class="tro-card tro-card-left"></div>
-                <div class="tro-card tro-card-right"></div>
-                <div class="tro-impact"></div>
-                <div class="tro-particles">
-                    ${Array(12).fill(0).map(() => '<div class="tro-particle"></div>').join('')}
-                </div>
-                <div class="tro-text">
-                    <div class="tro-round-label">ROUND ${round}</div>
-                    <div class="tro-stat">
-                        <div class="tro-stat-particles">
-                            ${Array(16).fill(0).map(() => '<div class="tro-stat-particle"></div>').join('')}
-                        </div>
-                        <div class="tro-stat-flash"></div>
-                        <span class="tro-stat-icon">${statIcons[stat] || ''}</span>
-                        <span class="tro-stat-name">${fullStatNames[stat] || statName}</span>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(overlay);
-            
-            const overlayStartTime = Date.now();
-            const overlaySteps = [
-                { ms: 0, fn: () => overlay.classList.add('active') },
-                { ms: 300, fn: () => overlay.classList.add('cards-slide') },
-                { ms: 700, fn: () => overlay.classList.add('clash') },
-                { ms: 750, fn: () => overlay.classList.add('show-text') },
-                { ms: 2200, fn: () => overlay.classList.add('hide-text') },
-                { ms: 2550, fn: () => overlay.classList.add('show-stat') },
-                { ms: 3800, fn: () => overlay.classList.add('fade-out') },
-            ];
-            let overlayStepIndex = 0;
-            let overlayFinished = false;
             const vm = this;
-            
-            function finishRoundOverlay() {
-                if (overlayFinished) return;
-                overlayFinished = true;
-                overlay.remove();
+            // Afficher le slot après 1s — le serveur enverra triade-turn-start
+            setTimeout(() => {
                 vm.triade.showCenterSlot = true;
-                document.removeEventListener('visibilitychange', onOverlayVisibility);
-            }
-            
-            function applyOverlaySteps() {
-                const elapsed = Date.now() - overlayStartTime;
-                if (elapsed >= 4300) { finishRoundOverlay(); return; }
-                while (overlayStepIndex < overlaySteps.length && elapsed >= overlaySteps[overlayStepIndex].ms) {
-                    overlaySteps[overlayStepIndex].fn();
-                    overlayStepIndex++;
-                }
-                if (overlayStepIndex < overlaySteps.length) {
-                    setTimeout(applyOverlaySteps, overlaySteps[overlayStepIndex].ms - elapsed);
-                } else {
-                    setTimeout(finishRoundOverlay, 4300 - elapsed);
-                }
-            }
-            
-            function onOverlayVisibility() {
-                if (document.visibilityState === 'visible' && !overlayFinished) {
-                    applyOverlaySteps();
-                }
-            }
-            document.addEventListener('visibilitychange', onOverlayVisibility);
-            
-            requestAnimationFrame(() => applyOverlaySteps());
+                console.log('🎲 Round', round, '- en attente du tour...');
+            }, 1000);
         },
 
         // 🆕 DRAG & DROP - Début du drag
         startCardDrag(cardIndex, e) {
             if (this.triade.cardPlayed) return;
             if (this.triade.timerExpired) return;
+            if (!this.triade.cardsActive) return; // 🔒 Timer pas encore démarré
             if (!this.triade.showCenterSlot) return; // Pas encore de round actif
             if (this._fusionInProgress) return; // Fusion en cours
             
@@ -5089,25 +5227,11 @@ createApp({
             if (slotEl) {
                 const slotRect = slotEl.getBoundingClientRect();
                 let overSlot = (
-                    e.clientX >= slotRect.left - 60 &&
-                    e.clientX <= slotRect.right + 60 &&
-                    e.clientY >= slotRect.top - 60 &&
-                    e.clientY <= slotRect.bottom + 60
+                    e.clientX >= slotRect.left - 2 &&
+                    e.clientX <= slotRect.right + 2 &&
+                    e.clientY >= slotRect.top - 2 &&
+                    e.clientY <= slotRect.bottom + 2
                 );
-                // Fallback: upper part of table
-                if (!overSlot) {
-                    const tableEl = document.querySelector('.triade-table-surface');
-                    if (tableEl) {
-                        const tableRect = tableEl.getBoundingClientRect();
-                        const tableCenterY = tableRect.top + tableRect.height * 0.65;
-                        overSlot = (
-                            e.clientX >= tableRect.left &&
-                            e.clientX <= tableRect.right &&
-                            e.clientY >= tableRect.top &&
-                            e.clientY <= tableCenterY
-                        );
-                    }
-                }
                 this.triade.dropZoneActive = overSlot;
             }
             
@@ -5166,28 +5290,13 @@ createApp({
             const slotEl = document.querySelector('.triade-center-slot');
             if (slotEl) {
                 const slotRect = slotEl.getBoundingClientRect();
-                // 🔥 FIX: Use generous detection zone (slot + 60px margin)
+                // Zone de drop = slot + 2px de marge
                 overSlot = (
-                    dropX >= slotRect.left - 60 &&
-                    dropX <= slotRect.right + 60 &&
-                    dropY >= slotRect.top - 60 &&
-                    dropY <= slotRect.bottom + 60
+                    dropX >= slotRect.left - 2 &&
+                    dropX <= slotRect.right + 2 &&
+                    dropY >= slotRect.top - 2 &&
+                    dropY <= slotRect.bottom + 2
                 );
-                
-                // 🔥 FALLBACK: Si pas détecté sur le slot, vérifier si on est sur la moitié supérieure de la table
-                if (!overSlot) {
-                    const tableEl = document.querySelector('.triade-table-surface');
-                    if (tableEl) {
-                        const tableRect = tableEl.getBoundingClientRect();
-                        const tableCenterY = tableRect.top + tableRect.height * 0.65; // upper 65% of table
-                        overSlot = (
-                            dropX >= tableRect.left &&
-                            dropX <= tableRect.right &&
-                            dropY >= tableRect.top &&
-                            dropY <= tableCenterY
-                        );
-                    }
-                }
                 
                 if (!overSlot) {
                     console.log('❌ DROP zone miss debug - slotRect:', JSON.stringify({l: slotRect.left, r: slotRect.right, t: slotRect.top, b: slotRect.bottom}), 'drop:', dropX, dropY);
@@ -5242,20 +5351,37 @@ createApp({
                 // ✅ DROP SUR LE SLOT → jouer la carte
                 console.log('✅ DROP on slot - cardIndex:', cardIndex, 'overSlot:', overSlot);
                 const slotRect = slotEl.getBoundingClientRect();
+                const card = this.triade.myCards[cardIndex];
+                const isDiscard = card && !card.isFused;
                 
-                // Animer le ghost vers le centre du slot
-                ghost.style.transition = 'all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)';
-                ghost.style.left = (slotRect.left + slotRect.width / 2 - this._dragCardRect.width / 2) + 'px';
-                ghost.style.top = (slotRect.top + slotRect.height / 2 - this._dragCardRect.height / 2) + 'px';
-                ghost.style.transform = 'scale(0.55) rotate(0deg)';
-                ghost.style.opacity = '0';
-                
-                setTimeout(() => {
-                    ghost.remove();
-                }, 400);
-                
-                // Jouer la carte
-                this.playTriadeCard(cardIndex);
+                if (isDiscard) {
+                    // 💥 DÉFAUSSE — ghost snap au centre du slot puis shatter
+                    const cx = slotRect.left + slotRect.width / 2;
+                    const cy = slotRect.top + slotRect.height / 2;
+                    ghost.style.transition = 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
+                    ghost.style.left = (cx - this._dragCardRect.width / 2) + 'px';
+                    ghost.style.top = (cy - this._dragCardRect.height / 2) + 'px';
+                    ghost.style.transform = 'scale(0.5) rotate(0deg)';
+                    ghost.style.opacity = '1';
+                    
+                    setTimeout(() => {
+                        ghost.style.display = 'none';
+                        ghost.remove();
+                        this.playShatterEffect(cx, cy);
+                    }, 200);
+                    
+                    this.discardTriadeCard(cardIndex);
+                } else {
+                    // ⭐ FUSION VALIDATION — comportement existant
+                    ghost.style.transition = 'all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                    ghost.style.left = (slotRect.left + slotRect.width / 2 - this._dragCardRect.width / 2) + 'px';
+                    ghost.style.top = (slotRect.top + slotRect.height / 2 - this._dragCardRect.height / 2) + 'px';
+                    ghost.style.transform = 'scale(0.55) rotate(0deg)';
+                    ghost.style.opacity = '0';
+                    setTimeout(() => { ghost.remove(); }, 400);
+                    
+                    this.playTriadeCard(cardIndex);
+                }
             } else {
                 // ❌ PAS SUR LE SLOT → retour en place
                 console.log('❌ DROP missed - overSlot:', overSlot, 'cardIndex:', cardIndex, 'timerExpired:', this.triade.timerExpired, 'cardPlayed:', this.triade.cardPlayed, 'dropXY:', dropX, dropY);
@@ -5277,19 +5403,35 @@ createApp({
         
         // 🆕 Jouer une carte Triade
         // Server-synced timer (100ms precision)
-        startTriadeTimer(seconds = 20) {
+        startTriadeTimer(seconds = 15) {
             this.stopTriadeTimer(true);
             this._triadeTimerEndMs = Date.now() + seconds * 1000;
+            this._triadeTimerDuration = seconds;
             this.triade.timer = seconds;
+            this.triade.timerProgress = 0;
             this.triade.timerExpired = false;
+            // 💾 Sauvegarder pour restore après refresh
+            sessionStorage.setItem('triadeTimerEndMs', this._triadeTimerEndMs.toString());
+            sessionStorage.setItem('triadeTimerDuration', this._triadeTimerDuration.toString());
+            sessionStorage.removeItem('triadeTimerExpired');
             this._triadeTimerInterval = setInterval(() => {
-                const remaining = Math.ceil((this._triadeTimerEndMs - Date.now()) / 1000);
+                const now = Date.now();
+                const remaining = Math.ceil((this._triadeTimerEndMs - now) / 1000);
+                const elapsed = this._triadeTimerDuration - ((this._triadeTimerEndMs - now) / 1000);
                 this.triade.timer = Math.max(0, remaining);
+                this.triade.timerProgress = Math.min(1, elapsed / this._triadeTimerDuration);
                 if (remaining <= 0) {
                     clearInterval(this._triadeTimerInterval);
                     this._triadeTimerInterval = null;
                     this._triadeTimerEndMs = null;
+                    this._triadeTimerDuration = null;
                     this.triade.timerExpired = true;
+                    this.triade.cardsActive = false; // 🔒 Désactiver les cartes
+                    this.triade.timerProgress = 1;
+                    // 💾 Marquer expiré
+                    sessionStorage.setItem('triadeTimerExpired', 'true');
+                    sessionStorage.removeItem('triadeTimerEndMs');
+                    sessionStorage.removeItem('triadeTimerDuration');
                     // Cancel any active drag immediately
                     if (this._dragGhost) {
                         this._dragGhost.remove();
@@ -5467,36 +5609,287 @@ createApp({
             this.saveTriadeState();
         },
 
+        // 🗑️ Défausser une carte (pas de carte visible dans le slot)
+        discardTriadeCard(cardIndex) {
+            if (this.triade.timerExpired) return;
+            const card = this.triade.myCards[cardIndex];
+            if (!card) return;
+            
+            console.log('🗑️ Carte défaussée:', card.name);
+            
+            this.triade.cardPlayed = true;
+            // PAS de playedCardData → le slot reste vide visuellement
+            this.triade.playedCardData = null;
+            this.triade.canDraw = false; // Défausse = fin du tour
+            
+            // Émettre au serveur avec flag discard
+            this.socket.emit('triade-play-card', {
+                twitchId: this.twitchId,
+                cardIndex: cardIndex,
+                discard: true
+            });
+            
+            // Retirer la carte de la main
+            this.triade.myCards.splice(cardIndex, 1);
+            this.saveTriadeState();
+        },
+
+        // 💥 Effet Shatter — défausse de carte
+        playShatterEffect(cx, cy) {
+            const colors = ['#93c5fd', '#60a5fa', '#3b82f6', '#1d4ed8', '#c4d5f0', '#fff', '#a5b4fc', '#818cf8'];
+            
+            // Flash blanc
+            const flash = document.createElement('div');
+            flash.className = 'shatter-flash';
+            flash.style.cssText = `
+                left: ${cx}px; top: ${cy}px;
+                width: 70px; height: 70px;
+                animation: shatter-flash 0.5s ease-out forwards;
+            `;
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 550);
+            
+            // Fragments
+            for (let i = 0; i < 16; i++) {
+                const frag = document.createElement('div');
+                frag.className = 'shatter-fragment';
+                const w = 8 + Math.random() * 20;
+                const h = 8 + Math.random() * 20;
+                const sx = (Math.random() - 0.5) * 220;
+                const sy = (Math.random() - 0.5) * 200;
+                const sr = (Math.random() - 0.5) * 720;
+                const dur = 0.45 + Math.random() * 0.35;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const points = [
+                    `${Math.random()*30}% 0%`,
+                    `100% ${Math.random()*30}%`,
+                    `${70+Math.random()*30}% 100%`,
+                    `0% ${70+Math.random()*30}%`
+                ].join(', ');
+                frag.style.cssText = `
+                    left: ${cx + (Math.random()-0.5)*30}px;
+                    top: ${cy + (Math.random()-0.5)*40}px;
+                    width: ${w}px; height: ${h}px;
+                    background: ${color};
+                    clip-path: polygon(${points});
+                    --sx: ${sx}px; --sy: ${sy}px; --sr: ${sr}deg;
+                    animation: shatter-piece ${dur}s ease-out forwards;
+                    opacity: 0.9;
+                `;
+                document.body.appendChild(frag);
+                setTimeout(() => frag.remove(), dur * 1000 + 50);
+            }
+        },
+
         // 🎴 Piocher une carte depuis le deck
         drawFromDeck() {
-            if (!this.triade.canDraw || this._drawAnimBusy) return;
+            if (this._drawAnimBusy) return;
+            
+            // Main pleine ?
+            if (this.triade.myCards.length >= this.triade.handSize) {
+                if (this.triade.deckFullFlash) return; // Anti-spam
+                this.triade.deckFullFlash = true;
+                setTimeout(() => { this.triade.deckFullFlash = false; }, 1200);
+                return;
+            }
+            
+            if (!this.triade.canDraw) return;
             this._drawAnimBusy = true;
 
-            // Animation ghost
-            const ghost = this.$refs.triadeDrawGhost;
-            if (ghost) {
-                const deckEl = document.querySelector('.triade-deck-zone');
-                if (deckEl) {
-                    const rect = deckEl.getBoundingClientRect();
-                    ghost.style.left = rect.left + 'px';
-                    ghost.style.top = rect.top + 'px';
-                }
-                ghost.classList.remove('animating');
-                ghost.offsetHeight; // sync reflow
-                ghost.classList.add('animating');
-                setTimeout(() => {
-                    ghost.classList.remove('animating');
-                }, 280);
-            }
-
-            // Émettre au serveur
+            // Émettre au serveur (l'animation est gérée au retour par draw-result)
             this.socket.emit('triade-draw-card', { twitchId: this.twitchId });
             
-            // Désactiver la pioche après le clic
             this.triade.canDraw = false;
             this.saveTriadeState();
 
-            setTimeout(() => { this._drawAnimBusy = false; }, 300);
+            setTimeout(() => { this._drawAnimBusy = false; }, 1200);
+        },
+
+        // 🎴 Animation carte volant du deck vers la main
+        animateDrawToHand(card, deckEl) {
+            const topCard = deckEl.querySelector('.triade-deck-card:nth-child(1)');
+            if (!topCard) {
+                this.triade.myCards.push(card);
+                this.saveTriadeState();
+                return;
+            }
+            
+            const topRect = topCard.getBoundingClientRect();
+            topCard.style.visibility = 'hidden';
+            
+            // Créer le clone volant
+            const flyer = document.createElement('div');
+            flyer.className = 'draw-card-flyer';
+            
+            flyer.innerHTML = `
+                <div class="draw-card-flyer-inner">
+                    <div class="draw-card-flyer-back">
+                        <div class="flyer-back-pattern"></div>
+                        <span class="flyer-back-sm">SM</span>
+                    </div>
+                    <div class="draw-card-flyer-front">
+                        <div class="card-image">
+                            <img src="${this.getCardImage(card)}" alt="${card.name}">
+                        </div>
+                        <div class="flyer-class-badge ${card.class}">
+                            <span class="class-icon">${this.getClassIcon(card.class)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(flyer);
+            
+            flyer.style.left = topRect.left + 'px';
+            flyer.style.top = topRect.top + 'px';
+            flyer.style.width = topRect.width + 'px';
+            flyer.style.height = topRect.height + 'px';
+            
+            // Calculer destination (main du joueur)
+            const handContainer = document.querySelector('.triade-my-cards');
+            let endX, endY, endW, endH;
+            if (handContainer) {
+                const handCards = handContainer.querySelectorAll('.triade-card');
+                if (handCards.length > 0) {
+                    const lastCard = handCards[handCards.length - 1];
+                    const lastRect = lastCard.getBoundingClientRect();
+                    endW = lastRect.width;
+                    endH = lastRect.height;
+                    endX = lastRect.right + 8;
+                    endY = lastRect.top;
+                } else {
+                    const handRect = handContainer.getBoundingClientRect();
+                    endW = 130;
+                    endH = 185;
+                    endX = handRect.left + handRect.width / 2 - endW / 2;
+                    endY = handRect.top + handRect.height / 2 - endH / 2;
+                }
+            } else {
+                endW = 130;
+                endH = 185;
+                endX = window.innerWidth / 2 - endW / 2;
+                endY = window.innerHeight - 280;
+            }
+            
+            flyer.getBoundingClientRect();
+            
+            const flyDuration = 600;
+            
+            // Vol
+            flyer.animate([
+                { left: topRect.left + 'px', top: topRect.top + 'px', width: topRect.width + 'px', height: topRect.height + 'px' },
+                { left: endX + 'px', top: endY + 'px', width: endW + 'px', height: endH + 'px' }
+            ], { duration: flyDuration, easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)', fill: 'forwards' });
+            
+            // Flip
+            const inner = flyer.querySelector('.draw-card-flyer-inner');
+            inner.animate([
+                { transform: 'rotateY(0deg)' },
+                { transform: 'rotateY(180deg)' }
+            ], { duration: flyDuration, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', fill: 'forwards' });
+            
+            // FLIP: décaler les cartes pendant le vol
+            setTimeout(() => {
+                const oldPositions = new Map();
+                if (handContainer) {
+                    handContainer.querySelectorAll('.triade-card').forEach((el, i) => {
+                        oldPositions.set(i, el.getBoundingClientRect());
+                    });
+                }
+                
+                // Ajouter la carte (Vue re-render)
+                this.triade.myCards.push(card);
+                this.saveTriadeState();
+                
+                // Après le re-render Vue
+                this.$nextTick(() => {
+                    if (handContainer) {
+                        const newCards = handContainer.querySelectorAll('.triade-card');
+                        const newCard = newCards[newCards.length - 1];
+                        if (newCard) newCard.style.opacity = '0';
+                        
+                        // FLIP existantes
+                        newCards.forEach((el, i) => {
+                            const oldRect = oldPositions.get(i);
+                            if (!oldRect) return;
+                            const newRect = el.getBoundingClientRect();
+                            const dx = oldRect.left - newRect.left;
+                            if (Math.abs(dx) > 1) {
+                                el.animate([
+                                    { transform: `translateX(${dx}px)` },
+                                    { transform: 'translateX(0)' }
+                                ], { duration: 350, easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)', composite: 'add' });
+                            }
+                        });
+                    }
+                });
+            }, 200);
+            
+            // Fin: révéler la nouvelle carte
+            setTimeout(() => {
+                flyer.remove();
+                topCard.style.visibility = '';
+                this.$nextTick(() => {
+                    if (handContainer) {
+                        const allCards = handContainer.querySelectorAll('.triade-card');
+                        const lastCard = allCards[allCards.length - 1];
+                        if (lastCard) {
+                            lastCard.style.opacity = '';
+                            lastCard.classList.add('draw-new-card');
+                            lastCard.addEventListener('animationend', () => lastCard.classList.remove('draw-new-card'), { once: true });
+                        }
+                    }
+                });
+            }, flyDuration + 30);
+        },
+
+        // 🎴 Particules bleues de pioche
+        spawnDrawParticles(deckEl) {
+            const rect = deckEl.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height * 0.3;
+            
+            for (let i = 0; i < 12; i++) {
+                const p = document.createElement('div');
+                p.className = 'draw-particle';
+                const angle = (Math.random() - 0.5) * 1.8;
+                const dist = 40 + Math.random() * 80;
+                const tx = Math.sin(angle) * dist;
+                const ty = -(30 + Math.random() * 60);
+                const size = 3 + Math.random() * 4;
+                const dur = 0.5 + Math.random() * 0.4;
+                const delay = Math.random() * 0.15;
+                p.style.cssText = `
+                    left: ${cx}px; top: ${cy}px;
+                    width: ${size}px; height: ${size}px;
+                    --tx: ${tx}px; --ty: ${ty}px;
+                    animation: draw-particle-fly ${dur}s ${delay}s ease-out forwards;
+                `;
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), (dur + delay) * 1000 + 50);
+            }
+        },
+
+        // 🎴 Choisir une carte parmi les 2 piochées
+        pickDrawCard(index) {
+            if (this.triade.drawPicked !== null) return; // Déjà choisi
+            this.triade.drawPicked = index;
+            
+            // Envoyer le choix au serveur
+            this.socket.emit('triade-draw-choice', { 
+                twitchId: this.twitchId, 
+                choiceIndex: index 
+            });
+            
+            // Fermer l'overlay après animation
+            setTimeout(() => {
+                this.triade.drawCardsRevealed = false;
+                setTimeout(() => {
+                    this.triade.drawChoiceVisible = false;
+                    this.triade.drawOptions = [];
+                    this.triade.drawPicked = null;
+                }, 400);
+            }, 600);
         },
 
 
