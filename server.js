@@ -73,8 +73,8 @@ const BOMBANIME_CONFIG = {
     ALPHABET_BONUS_LIVES: 1
 };
 
-// 🎴 Configuration Triade
-const TRIADE_CONFIG = {
+// 🎴 Configuration Collect
+const COLLECT_CONFIG = {
     MIN_PLAYERS: 2,
     MAX_PLAYERS: 5,
     STARS_TO_WIN: 3
@@ -264,11 +264,11 @@ app.get('/game/state', (req, res) => {
         updateTeamScores(); // 🆕 Calculer les scores d'équipe
     }
     
-    // 💣🎴 Vérifier si le lobby BombAnime/Triade est plein
+    // 💣🎴 Vérifier si le lobby BombAnime/Collect est plein
     const isBombanimeMode = gameState.lobbyMode === 'bombanime';
-    const isTriadeMode = gameState.lobbyMode === 'triade';
-    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : (isTriadeMode ? TRIADE_CONFIG.MAX_PLAYERS : Infinity);
-    const isLobbyFull = (isBombanimeMode || isTriadeMode) && gameState.players.size >= maxPlayers;
+    const isCollectMode = gameState.lobbyMode === 'collect';
+    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : (isCollectMode ? COLLECT_CONFIG.MAX_PLAYERS : Infinity);
+    const isLobbyFull = (isBombanimeMode || isCollectMode) && gameState.players.size >= maxPlayers;
 
     // 🔥 Construire les données des joueurs avec leurs réponses
     const playersData = Array.from(gameState.players.values()).map(player => {
@@ -378,7 +378,7 @@ app.use(express.static('src/style'));
 app.use(express.static('src/sound'));
 app.use(express.static('src/img'));
 app.use(express.static('src/img/questionpic'));
-app.use(express.static('src/img/triadepic'));
+app.use(express.static('src/img/collectpic'));
 app.use(express.static('src/img/avatar'));
 app.use(express.static('src/script'));
 
@@ -479,10 +479,10 @@ const gameState = {
     },
     
     // ============================================
-    // 🎴 TRIADE - État du mode jeu de cartes anime
+    // 🎴 COLLECT - État du mode jeu de cartes anime
     // ============================================
-    triade: {
-        active: false,              // Mode Triade actif
+    collect: {
+        active: false,              // Mode Collect actif
         deck: [],                   // Deck de cartes
         playersOrder: [],           // Ordre des joueurs (twitchIds)
         playersData: new Map(),     // Map<twitchId, {cards, wins}>
@@ -551,11 +551,11 @@ function broadcastLobbyUpdate() {
         updateTeamCounts();
     }
     
-    // 💣🎴 Vérifier si le lobby BombAnime/Triade est plein
+    // 💣🎴 Vérifier si le lobby BombAnime/Collect est plein
     const isBombanimeMode = gameState.lobbyMode === 'bombanime';
-    const isTriadeMode = gameState.lobbyMode === 'triade';
-    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : (isTriadeMode ? TRIADE_CONFIG.MAX_PLAYERS : Infinity);
-    const isLobbyFull = (isBombanimeMode || isTriadeMode) && gameState.players.size >= maxPlayers;
+    const isCollectMode = gameState.lobbyMode === 'collect';
+    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : (isCollectMode ? COLLECT_CONFIG.MAX_PLAYERS : Infinity);
+    const isLobbyFull = (isBombanimeMode || isCollectMode) && gameState.players.size >= maxPlayers;
     
     io.emit('lobby-update', {
         playerCount: gameState.players.size,
@@ -566,7 +566,7 @@ function broadcastLobbyUpdate() {
         lobbyMode: gameState.lobbyMode,
         teamNames: gameState.teamNames,
         teamCounts: gameState.teamCounts,
-        // BombAnime/Triade - Lobby plein
+        // BombAnime/Collect - Lobby plein
         maxPlayers: maxPlayers,
         isLobbyFull: isLobbyFull,
         // Liste des joueurs
@@ -1014,11 +1014,11 @@ app.get('/admin/game-state', (req, res) => {
         return res.status(403).json({ error: 'Non autorisé' });
     }
 
-    // 💣🎴 Vérifier si le lobby BombAnime/Triade est plein
+    // 💣🎴 Vérifier si le lobby BombAnime/Collect est plein
     const isBombanimeMode = gameState.lobbyMode === 'bombanime';
-    const isTriadeMode = gameState.lobbyMode === 'triade';
-    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : (isTriadeMode ? TRIADE_CONFIG.MAX_PLAYERS : Infinity);
-    const isLobbyFull = (isBombanimeMode || isTriadeMode) && gameState.players.size >= maxPlayers;
+    const isCollectMode = gameState.lobbyMode === 'collect';
+    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : (isCollectMode ? COLLECT_CONFIG.MAX_PLAYERS : Infinity);
+    const isLobbyFull = (isBombanimeMode || isCollectMode) && gameState.players.size >= maxPlayers;
 
     res.json({
         isActive: gameState.isActive,
@@ -1233,9 +1233,9 @@ app.post('/admin/bombanime/close-lobby', (req, res) => {
     // Reset BombAnime
     resetBombanimeState();
     
-    // Reset Triade
-    if (gameState.triade) {
-        resetTriadeState();
+    // Reset Collect
+    if (gameState.collect) {
+        resetCollectState();
     }
     
     // Reset winnerScreenData
@@ -1247,9 +1247,9 @@ app.post('/admin/bombanime/close-lobby', (req, res) => {
     // Notifier les clients
     io.emit('game-deactivated');
     io.emit('bombanime-lobby-closed');
-    io.emit('triade-state', { active: false });
+    io.emit('collect-state', { active: false });
     
-    console.log('🔒 Lobby fermé (BombAnime/Triade reset)');
+    console.log('🔒 Lobby fermé (BombAnime/Collect reset)');
     res.json({ success: true });
 });
 
@@ -1521,44 +1521,44 @@ app.post('/admin/start-game', async (req, res) => {
         }
     }
 
-    // 🎴 MODE TRIADE - Démarrage spécial
-    if (gameState.lobbyMode === 'triade') {
+    // 🎴 MODE COLLECT - Démarrage spécial
+    if (gameState.lobbyMode === 'collect') {
         // Récupérer les paramètres envoyés
-        const { triadeAnimes, triadeHandSize } = req.body || {};
+        const { collectAnimes, collectHandSize } = req.body || {};
         
         // Stocker la taille de main
-        gameState.triade.handSize = parseInt(triadeHandSize) || 3;
-        if (gameState.triade.handSize !== 3 && gameState.triade.handSize !== 5) {
-            gameState.triade.handSize = 3;
+        gameState.collect.handSize = parseInt(collectHandSize) || 3;
+        if (gameState.collect.handSize !== 3 && gameState.collect.handSize !== 5) {
+            gameState.collect.handSize = 3;
         }
         
         // Stocker les animes sélectionnés
-        if (triadeAnimes && Array.isArray(triadeAnimes) && triadeAnimes.length > 0) {
-            gameState.triade.selectedAnimes = triadeAnimes;
-            console.log(`🎴 Animes sélectionnés: ${triadeAnimes.length}/${Object.keys(TRIADE_CARDS_DATA).length}`);
+        if (collectAnimes && Array.isArray(collectAnimes) && collectAnimes.length > 0) {
+            gameState.collect.selectedAnimes = collectAnimes;
+            console.log(`🎴 Animes sélectionnés: ${collectAnimes.length}/${Object.keys(COLLECT_CARDS_DATA).length}`);
         } else {
-            gameState.triade.selectedAnimes = Object.keys(TRIADE_CARDS_DATA);
+            gameState.collect.selectedAnimes = Object.keys(COLLECT_CARDS_DATA);
             console.log('🎴 Tous les animes sélectionnés');
         }
-        console.log(`🎴 Cartes en main: ${gameState.triade.handSize}`);
+        console.log(`🎴 Cartes en main: ${gameState.collect.handSize}`);
         
         // Vérifier les limites de joueurs (2-10)
         if (totalPlayers > 10) {
             return res.status(400).json({
                 success: false,
-                error: 'Maximum 5 joueurs en mode Triade'
+                error: 'Maximum 5 joueurs en mode Collect'
             });
         }
         
         try {
-            const result = await startTriadeGame();
+            const result = await startCollectGame();
             if (result.success) {
-                return res.json({ success: true, mode: 'triade' });
+                return res.json({ success: true, mode: 'collect' });
             } else {
                 return res.status(400).json({ success: false, error: result.error });
             }
         } catch (error) {
-            console.error('❌ Erreur démarrage Triade:', error);
+            console.error('❌ Erreur démarrage Collect:', error);
             return res.status(500).json({ success: false, error: error.message });
         }
     }
@@ -5670,24 +5670,24 @@ function resetBombanimeState() {
 }
 
 // ============================================
-// 🎴 TRIADE - Fonctions du mode jeu de cartes anime
+// 🎴 COLLECT - Fonctions du mode jeu de cartes anime
 // ============================================
 
-// Charger les cartes Triade depuis le fichier JSON
-const TRIADE_CARDS_DATA = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'triade-cards.json'), 'utf8'));
+// Charger les cartes Collect depuis le fichier JSON
+const COLLECT_CARDS_DATA = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'collect-cards.json'), 'utf8'));
 
-// Deck de cartes Triade (construit depuis triade-cards.json)
-const TRIADE_DECK = {
+// Deck de cartes Collect (construit depuis collect-cards.json)
+const COLLECT_DECK = {
     // Les 13 animes
-    animes: Object.keys(TRIADE_CARDS_DATA),
+    animes: Object.keys(COLLECT_CARDS_DATA),
 
     // Les 3 classes (cycle: Assaut > Mirage > Oracle > Assaut)
     classes: ['assaut', 'oracle', 'mirage'],
     
-    // Personnages par anime (chargés depuis triade-cards.json)
+    // Personnages par anime (chargés depuis collect-cards.json)
     characters: (() => {
         const chars = {};
-        for (const [anime, data] of Object.entries(TRIADE_CARDS_DATA)) {
+        for (const [anime, data] of Object.entries(COLLECT_CARDS_DATA)) {
             chars[anime] = {
                 assaut: data.assaut.map(c => c.name),
                 oracle: data.oracle.map(c => c.name),
@@ -5702,18 +5702,18 @@ const TRIADE_DECK = {
 // Les 3 personnages du BIG 3
 const BIG3_NAMES = ['Luffy', 'Naruto', 'Ichigo'];
 
-// 🎮 TRIADE GAMEPLAY CONSTANTS
-const TRIADE_STATS = ['atk', 'int', 'spd', 'pwr'];
-const TRIADE_STAT_NAMES = {
+// 🎮 COLLECT GAMEPLAY CONSTANTS
+const COLLECT_STATS = ['atk', 'int', 'spd', 'pwr'];
+const COLLECT_STAT_NAMES = {
     atk: { name: 'Attaque', icon: '⚔️' },
     int: { name: 'Intelligence', icon: '🧠' },
     spd: { name: 'Vitesse', icon: '⚡' },
     pwr: { name: 'Pouvoir', icon: '🔥' }
 };
-const TRIADE_TIMER = 15; // 15 secondes pour choisir sa carte
-// TRIADE_STARS_TO_WIN: dynamique selon handSize (3 cartes = 3⭐, 5 cartes = 5⭐)
-// Utilisé via: gameState.triade.handSize || 3
-const TRIADE_ROUNDS_PER_MANCHE = 3; // 3 rounds par manche
+const COLLECT_TIMER = 15; // 15 secondes pour choisir sa carte
+// COLLECT_STARS_TO_WIN: dynamique selon handSize (3 cartes = 3⭐, 5 cartes = 5⭐)
+// Utilisé via: gameState.collect.handSize || 3
+const COLLECT_ROUNDS_PER_MANCHE = 3; // 3 rounds par manche
 
 // 🔄 Cycle des classes : Assaut > Mirage > Oracle > Assaut
 // Retourne: 1 si class1 bat class2, -1 si class1 perd, 0 si égalité
@@ -5744,17 +5744,17 @@ function compareCards(card1, card2, stat) {
 
 // 🎲 Choisir une stat aléatoire pour le round
 function getRandomStat() {
-    return TRIADE_STATS[Math.floor(Math.random() * TRIADE_STATS.length)];
+    return COLLECT_STATS[Math.floor(Math.random() * COLLECT_STATS.length)];
 }
 
 // Générer le deck de cartes avec les 4 stats (ATK, INT, SPD, PWR)
-function generateTriadeDeck(minCards = 39) {
+function generateCollectDeck(minCards = 39) {
     const deck = [];
     
     // Utiliser les animes sélectionnés par l'admin
-    const selectedAnimes = gameState.triade.selectedAnimes || TRIADE_DECK.animes;
-    const animesToUse = TRIADE_DECK.animes.filter(a => selectedAnimes.includes(a));
-    console.log(`🎴 Deck: animes utilisés: ${animesToUse.length}/${TRIADE_DECK.animes.length}`);
+    const selectedAnimes = gameState.collect.selectedAnimes || COLLECT_DECK.animes;
+    const animesToUse = COLLECT_DECK.animes.filter(a => selectedAnimes.includes(a));
+    console.log(`🎴 Deck: animes utilisés: ${animesToUse.length}/${COLLECT_DECK.animes.length}`);
     
     // Générer des rounds jusqu'à avoir assez de cartes
     // Chaque round pioche un personnage différent par classe par anime
@@ -5765,10 +5765,10 @@ function generateTriadeDeck(minCards = 39) {
         let addedThisRound = 0;
         
         animesToUse.forEach(anime => {
-            const characters = TRIADE_DECK.characters[anime];
+            const characters = COLLECT_DECK.characters[anime];
             if (!characters) return;
             
-            TRIADE_DECK.classes.forEach(cardClass => {
+            COLLECT_DECK.classes.forEach(cardClass => {
                 const charArray = characters[cardClass];
                 if (!charArray || charArray.length === 0) return;
                 
@@ -5792,9 +5792,9 @@ function generateTriadeDeck(minCards = 39) {
                     ? characters.protagonist.includes(charName) 
                     : charName === characters.protagonist;
                 
-                // Charger les stats depuis triade-cards.json
-                const cardData = TRIADE_CARDS_DATA[anime] && TRIADE_CARDS_DATA[anime][cardClass] 
-                    ? TRIADE_CARDS_DATA[anime][cardClass].find(c => c.name === charName)
+                // Charger les stats depuis collect-cards.json
+                const cardData = COLLECT_CARDS_DATA[anime] && COLLECT_CARDS_DATA[anime][cardClass] 
+                    ? COLLECT_CARDS_DATA[anime][cardClass].find(c => c.name === charName)
                     : null;
                 const stats = cardData 
                     ? { atk: cardData.atk, int: cardData.int, spd: cardData.spd, pwr: cardData.pwr }
@@ -5839,11 +5839,11 @@ function drawCardsFromDeck(deck, handSize = 3) {
     return drawn;
 }
 
-function getTriadePlayersData() {
+function getCollectPlayersData() {
     const playersData = [];
     
-    gameState.triade.playersOrder.forEach((twitchId, index) => {
-        const playerData = gameState.triade.playersData.get(twitchId);
+    gameState.collect.playersOrder.forEach((twitchId, index) => {
+        const playerData = gameState.collect.playersData.get(twitchId);
         if (!playerData) return;
         
         // Chercher le joueur connecté d'abord, fallback sur les infos sauvegardées
@@ -5854,16 +5854,28 @@ function getTriadePlayersData() {
             username: player ? player.username : (playerData.username || 'Joueur'),
             avatar: player ? player.avatar : (playerData.avatar || null),
             position: index,
-            wins: playerData.wins || 0
+            wins: playerData.wins || 0,
+            cardCount: playerData.cards ? playerData.cards.length : 0
         });
     });
     
     return playersData;
 }
 
-// Démarrer une partie Triade
-async function startTriadeGame() {
-    console.log('🎴 Démarrage partie Triade...');
+// Broadcast card counts to all clients
+function broadcastCollectCardCounts() {
+    if (!gameState.collect.active) return;
+    const counts = {};
+    gameState.collect.playersOrder.forEach(twitchId => {
+        const pd = gameState.collect.playersData.get(twitchId);
+        counts[twitchId] = pd && pd.cards ? pd.cards.length : 0;
+    });
+    io.emit('collect-card-counts', counts);
+}
+
+// Démarrer une partie Collect
+async function startCollectGame() {
+    console.log('🎴 Démarrage partie Collect...');
     
     // Récupérer les joueurs dans l'ordre où ils ont rejoint
     const players = Array.from(gameState.players.values());
@@ -5873,26 +5885,26 @@ async function startTriadeGame() {
     }
     
     if (players.length > 10) {
-        return { success: false, error: 'Maximum 5 joueurs en mode Triade' };
+        return { success: false, error: 'Maximum 5 joueurs en mode Collect' };
     }
     
-    // Initialiser l'état Triade
-    gameState.triade.active = true;
-    gameState.triade.playersOrder = players.map(p => p.twitchId);
-    gameState.triade.playersData = new Map();
+    // Initialiser l'état Collect
+    gameState.collect.active = true;
+    gameState.collect.playersOrder = players.map(p => p.twitchId);
+    gameState.collect.playersData = new Map();
     
     // Générer le deck (assez de cartes pour tous les joueurs)
-    const handSize = gameState.triade.handSize || 3;
+    const handSize = gameState.collect.handSize || 3;
     const cardsNeeded = players.length * handSize;
-    gameState.triade.deck = generateTriadeDeck(cardsNeeded);
-    console.log(`🎴 Deck généré: ${gameState.triade.deck.length} cartes (besoin: ${cardsNeeded}, main: ${handSize})`);
+    gameState.collect.deck = generateCollectDeck(cardsNeeded);
+    console.log(`🎴 Deck généré: ${gameState.collect.deck.length} cartes (besoin: ${cardsNeeded}, main: ${handSize})`);
     
     // Initialiser les données de chaque joueur et distribuer les cartes
     players.forEach((player) => {
-        const cards = drawCardsFromDeck(gameState.triade.deck, handSize);
+        const cards = drawCardsFromDeck(gameState.collect.deck, handSize);
         console.log(`🔴 ${player.username} reçoit:`, cards.map(c => `${c.name}(${c.anime})`).join(', '));
         
-        gameState.triade.playersData.set(player.twitchId, {
+        gameState.collect.playersData.set(player.twitchId, {
             cards: cards,
             username: player.username,
             avatar: player.avatar,
@@ -5906,40 +5918,40 @@ async function startTriadeGame() {
     gameState.initialPlayerCount = players.length;
     
     // 🎴 Piocher 4 cartes pour le marché
-    const marketCards = drawCardsFromDeck(gameState.triade.deck, 4);
-    gameState.triade.marketCards = marketCards;
+    const marketCards = drawCardsFromDeck(gameState.collect.deck, 4);
+    gameState.collect.marketCards = marketCards;
     console.log(`🏪 Marché:`, marketCards.map(c => `${c.name}(${c.anime})`).join(', '));
     
-    console.log(`🎴 Partie Triade démarrée avec ${players.length} joueurs`);
+    console.log(`🎴 Partie Collect démarrée avec ${players.length} joueurs`);
     
     // Préparer le round 1 AVANT l'emit (pour l'inclure dans game-started)
     const stats = ['atk', 'int', 'spd', 'pwr'];
     const statNames = { atk: 'ATK', int: 'INT', spd: 'VIT', pwr: 'POW' };
-    gameState.triade.currentRound = 1;
+    gameState.collect.currentRound = 1;
     const selectedStat = stats[Math.floor(Math.random() * stats.length)];
-    gameState.triade.roundStat = selectedStat;
+    gameState.collect.roundStat = selectedStat;
     
     console.log(`🎲 Round 1 préparé - Stat: ${statNames[selectedStat]}`);
     
     // 🎴 Tour par tour : 1er joueur aléatoire, puis sens horaire (ordre des sièges)
-    const startIdx = Math.floor(Math.random() * gameState.triade.playersOrder.length);
+    const startIdx = Math.floor(Math.random() * gameState.collect.playersOrder.length);
     const clockwiseOrder = [];
-    for (let i = 0; i < gameState.triade.playersOrder.length; i++) {
-        clockwiseOrder.push(gameState.triade.playersOrder[(startIdx + i) % gameState.triade.playersOrder.length]);
+    for (let i = 0; i < gameState.collect.playersOrder.length; i++) {
+        clockwiseOrder.push(gameState.collect.playersOrder[(startIdx + i) % gameState.collect.playersOrder.length]);
     }
-    gameState.triade.turnOrder = clockwiseOrder;
-    gameState.triade.currentTurnIndex = 0;
-    gameState.triade.currentTurnId = null; // Sera activé après le market reveal
+    gameState.collect.turnOrder = clockwiseOrder;
+    gameState.collect.currentTurnIndex = 0;
+    gameState.collect.currentTurnId = null; // Sera activé après le market reveal
     
     console.log(`🎴 Ordre de jeu:`, clockwiseOrder.map(id => {
-        const pd = gameState.triade.playersData.get(id);
+        const pd = gameState.collect.playersData.get(id);
         return pd ? pd.username : id;
     }).join(' → '));
     
     // UN SEUL broadcast à tout le monde — inclut les données du round 1
-    io.emit('triade-game-started', {
-        playersData: getTriadePlayersData(),
-        handSize: gameState.triade.handSize || 3,
+    io.emit('collect-game-started', {
+        playersData: getCollectPlayersData(),
+        handSize: gameState.collect.handSize || 3,
         marketCards: marketCards,
         round1: {
             round: 1,
@@ -5950,115 +5962,115 @@ async function startTriadeGame() {
     
     // 🏪 Market reveal synchronisé — 5s après game start (~1s après fin du deal)
     setTimeout(() => {
-        io.emit('triade-market-reveal', { marketCards: marketCards });
+        io.emit('collect-market-reveal', { marketCards: marketCards });
         console.log('🏪 Market reveal envoyé');
         
         // 🎴 2s après market reveal → démarrer le premier tour
         setTimeout(() => {
-            startTriadeTurn();
+            startCollectTurn();
         }, 2000);
     }, 5000);
     
     // 🎴 Timer temporairement désactivé
     // const timerDelay = 9000;
     // const timerDuration = 20;
-    // gameState.triade.roundTimer = setTimeout(() => {
-    //     gameState.triade.timerEndTime = Date.now() + timerDuration * 1000;
-    //     io.emit('triade-timer-start', { duration: timerDuration });
+    // gameState.collect.roundTimer = setTimeout(() => {
+    //     gameState.collect.timerEndTime = Date.now() + timerDuration * 1000;
+    //     io.emit('collect-timer-start', { duration: timerDuration });
     //     console.log(`⏱️ Timer round 1 démarré (${timerDuration}s)`);
     // }, timerDelay);
     
-    // Les joueurs demanderont leurs cartes via 'triade-request-my-cards'
+    // Les joueurs demanderont leurs cartes via 'collect-request-my-cards'
     
     return { success: true };
 }
 
-// 🆕 Démarrer un round Triade (rounds 2+)
-function startTriadeRound() {
+// 🆕 Démarrer un round Collect (rounds 2+)
+function startCollectRound() {
     const stats = ['atk', 'int', 'spd', 'pwr'];
     const statNames = { atk: 'ATK', int: 'INT', spd: 'VIT', pwr: 'POW' };
     
-    gameState.triade.currentRound++;
+    gameState.collect.currentRound++;
     const selectedStat = stats[Math.floor(Math.random() * stats.length)];
-    gameState.triade.roundStat = selectedStat;
+    gameState.collect.roundStat = selectedStat;
     
     // Clear timer du round précédent
-    if (gameState.triade.roundTimer) clearTimeout(gameState.triade.roundTimer);
-    if (gameState.triade.turnTimer) clearTimeout(gameState.triade.turnTimer);
-    gameState.triade.timerEndTime = null;
-    gameState.triade.playedCards = new Map();
-    gameState.triade.discardedPlayers = new Set();
+    if (gameState.collect.roundTimer) clearTimeout(gameState.collect.roundTimer);
+    if (gameState.collect.turnTimer) clearTimeout(gameState.collect.turnTimer);
+    gameState.collect.timerEndTime = null;
+    gameState.collect.playedCards = new Map();
+    gameState.collect.discardedPlayers = new Set();
     
     // 🎴 Sens horaire : le prochain round commence par le joueur suivant dans l'ordre des sièges
-    const prevStartId = gameState.triade.turnOrder[0];
-    const prevStartIdx = gameState.triade.playersOrder.indexOf(prevStartId);
-    const nextStartIdx = (prevStartIdx + 1) % gameState.triade.playersOrder.length;
+    const prevStartId = gameState.collect.turnOrder[0];
+    const prevStartIdx = gameState.collect.playersOrder.indexOf(prevStartId);
+    const nextStartIdx = (prevStartIdx + 1) % gameState.collect.playersOrder.length;
     const clockwiseOrder = [];
-    for (let i = 0; i < gameState.triade.playersOrder.length; i++) {
-        clockwiseOrder.push(gameState.triade.playersOrder[(nextStartIdx + i) % gameState.triade.playersOrder.length]);
+    for (let i = 0; i < gameState.collect.playersOrder.length; i++) {
+        clockwiseOrder.push(gameState.collect.playersOrder[(nextStartIdx + i) % gameState.collect.playersOrder.length]);
     }
-    gameState.triade.turnOrder = clockwiseOrder;
-    gameState.triade.currentTurnIndex = 0;
-    gameState.triade.currentTurnId = null;
+    gameState.collect.turnOrder = clockwiseOrder;
+    gameState.collect.currentTurnIndex = 0;
+    gameState.collect.currentTurnId = null;
     
-    console.log(`🎲 Round ${gameState.triade.currentRound} - Stat: ${statNames[selectedStat]}`);
+    console.log(`🎲 Round ${gameState.collect.currentRound} - Stat: ${statNames[selectedStat]}`);
     console.log(`🎴 Ordre de jeu:`, clockwiseOrder.map(id => {
-        const pd = gameState.triade.playersData.get(id);
+        const pd = gameState.collect.playersData.get(id);
         return pd ? pd.username : id;
     }).join(' → '));
     
     // Pas de showAt pour les rounds 2+ : les clients affichent immédiatement
-    io.emit('triade-round-start', {
-        round: gameState.triade.currentRound,
+    io.emit('collect-round-start', {
+        round: gameState.collect.currentRound,
         stat: selectedStat,
         statName: statNames[selectedStat]
     });
     
     // 🎴 Démarrer le premier tour 2s après l'overlay du round
     setTimeout(() => {
-        startTriadeTurn();
+        startCollectTurn();
     }, 2000);
     
-    console.log(`🎲 triade-round-start emitted!`);
+    console.log(`🎲 collect-round-start emitted!`);
 }
 
 // 🎴 Démarrer le tour d'un joueur
-function startTriadeTurn() {
-    if (!gameState.triade.active) return;
+function startCollectTurn() {
+    if (!gameState.collect.active) return;
     
-    const turnOrder = gameState.triade.turnOrder;
-    const turnIndex = gameState.triade.currentTurnIndex;
+    const turnOrder = gameState.collect.turnOrder;
+    const turnIndex = gameState.collect.currentTurnIndex;
     
     // Tous les joueurs ont joué → reboucler au premier joueur
     if (turnIndex >= turnOrder.length) {
         console.log('🎴 Tour complet — on reboucle');
-        gameState.triade.currentTurnIndex = 0;
-        startTriadeTurn();
+        gameState.collect.currentTurnIndex = 0;
+        startCollectTurn();
         return;
     }
     
     const currentPlayerId = turnOrder[turnIndex];
-    const playerData = gameState.triade.playersData.get(currentPlayerId);
+    const playerData = gameState.collect.playersData.get(currentPlayerId);
     
     if (!playerData) {
         // Joueur déconnecté → skip
         console.log(`⚠️ Joueur ${currentPlayerId} introuvable, skip`);
-        gameState.triade.currentTurnIndex++;
-        startTriadeTurn();
+        gameState.collect.currentTurnIndex++;
+        startCollectTurn();
         return;
     }
     
-    gameState.triade.currentTurnId = currentPlayerId;
+    gameState.collect.currentTurnId = currentPlayerId;
     const timerDuration = 15;
-    gameState.triade.timerEndTime = Date.now() + timerDuration * 1000;
+    gameState.collect.timerEndTime = Date.now() + timerDuration * 1000;
     
     // Reset les cartes jouées du tour précédent
-    gameState.triade.playedCards = new Map();
-    gameState.triade.discardedPlayers = new Set();
+    gameState.collect.playedCards = new Map();
+    gameState.collect.discardedPlayers = new Set();
     
     console.log(`🎴 Tour de ${playerData.username} (${timerDuration}s)`);
     
-    io.emit('triade-turn-start', {
+    io.emit('collect-turn-start', {
         twitchId: currentPlayerId,
         username: playerData.username,
         duration: timerDuration,
@@ -6067,41 +6079,41 @@ function startTriadeTurn() {
     });
     
     // Auto-skip si le joueur ne joue pas à temps
-    if (gameState.triade.turnTimer) clearTimeout(gameState.triade.turnTimer);
-    gameState.triade.turnTimer = setTimeout(() => {
-        if (gameState.triade.currentTurnId === currentPlayerId) {
+    if (gameState.collect.turnTimer) clearTimeout(gameState.collect.turnTimer);
+    gameState.collect.turnTimer = setTimeout(() => {
+        if (gameState.collect.currentTurnId === currentPlayerId) {
             console.log(`⏱️ ${playerData.username} n'a pas joué à temps, tour suivant`);
-            gameState.triade.currentTurnIndex++;
-            startTriadeTurn();
+            gameState.collect.currentTurnIndex++;
+            startCollectTurn();
         }
     }, (timerDuration + 1) * 1000); // +1s de grâce
 }
 
-// Reset l'état Triade
-function resetTriadeState() {
-    gameState.triade.active = false;
-    gameState.triade.deck = [];
-    gameState.triade.playersOrder = [];
-    gameState.triade.playersData = new Map();
-    gameState.triade.currentRound = 0;
-    gameState.triade.roundStat = null;
-    gameState.triade.playedCards = new Map();
-    gameState.triade.discardedPlayers = new Set();
-    gameState.triade.handSize = 3;
-    gameState.triade.selectedAnimes = null;
-    gameState.triade.pendingDraws = new Map();
-    if (gameState.triade.roundTimer) {
-        clearTimeout(gameState.triade.roundTimer);
-        gameState.triade.roundTimer = null;
+// Reset l'état Collect
+function resetCollectState() {
+    gameState.collect.active = false;
+    gameState.collect.deck = [];
+    gameState.collect.playersOrder = [];
+    gameState.collect.playersData = new Map();
+    gameState.collect.currentRound = 0;
+    gameState.collect.roundStat = null;
+    gameState.collect.playedCards = new Map();
+    gameState.collect.discardedPlayers = new Set();
+    gameState.collect.handSize = 3;
+    gameState.collect.selectedAnimes = null;
+    gameState.collect.pendingDraws = new Map();
+    if (gameState.collect.roundTimer) {
+        clearTimeout(gameState.collect.roundTimer);
+        gameState.collect.roundTimer = null;
     }
-    if (gameState.triade.turnTimer) {
-        clearTimeout(gameState.triade.turnTimer);
-        gameState.triade.turnTimer = null;
+    if (gameState.collect.turnTimer) {
+        clearTimeout(gameState.collect.turnTimer);
+        gameState.collect.turnTimer = null;
     }
-    gameState.triade.timerEndTime = null;
-    gameState.triade.turnOrder = [];
-    gameState.triade.currentTurnIndex = 0;
-    gameState.triade.currentTurnId = null;
+    gameState.collect.timerEndTime = null;
+    gameState.collect.turnOrder = [];
+    gameState.collect.currentTurnIndex = 0;
+    gameState.collect.currentTurnId = null;
 }
 
 const io = new Server(server, {
@@ -6167,9 +6179,9 @@ io.on('connection', (socket) => {
             }
         }
         
-        // 💣🎴 En mode BombAnime/Triade, vérifier la limite avec les places réservées
-        if ((gameState.lobbyMode === 'bombanime' || gameState.lobbyMode === 'triade') && !isReconnection) {
-            const maxPlayers = gameState.lobbyMode === 'bombanime' ? BOMBANIME_CONFIG.MAX_PLAYERS : TRIADE_CONFIG.MAX_PLAYERS;
+        // 💣🎴 En mode BombAnime/Collect, vérifier la limite avec les places réservées
+        if ((gameState.lobbyMode === 'bombanime' || gameState.lobbyMode === 'collect') && !isReconnection) {
+            const maxPlayers = gameState.lobbyMode === 'bombanime' ? BOMBANIME_CONFIG.MAX_PLAYERS : COLLECT_CONFIG.MAX_PLAYERS;
             const currentCount = gameState.players.size + pendingJoins.size;
             if (currentCount >= maxPlayers) {
                 console.log(`🚫 Lobby plein: ${gameState.players.size} joueurs + ${pendingJoins.size} en attente >= ${maxPlayers}`);
@@ -6496,10 +6508,10 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 🎴 Joueur demande ses cartes (après avoir reçu triade-game-started)
-    socket.on('triade-get-animes', () => {
-        // Build anime list dynamically from triade-cards.json
-        const animeList = Object.entries(TRIADE_CARDS_DATA).map(([id, data]) => {
+    // 🎴 Joueur demande ses cartes (après avoir reçu collect-game-started)
+    socket.on('collect-get-animes', () => {
+        // Build anime list dynamically from collect-cards.json
+        const animeList = Object.entries(COLLECT_CARDS_DATA).map(([id, data]) => {
             // protagonist is already included in the class lists, don't double-count
             const count = (data.assaut ? data.assaut.length : 0)
                         + (data.oracle ? data.oracle.length : 0)
@@ -6508,15 +6520,15 @@ io.on('connection', (socket) => {
         });
         // Sort by count descending
         animeList.sort((a, b) => b.count - a.count);
-        socket.emit('triade-animes-list', { animes: animeList, big3: ['OnePiece', 'Naruto', 'Bleach'] });
+        socket.emit('collect-animes-list', { animes: animeList, big3: ['OnePiece', 'Naruto', 'Bleach'] });
     });
 
-    socket.on('triade-request-my-cards', (data) => {
+    socket.on('collect-request-my-cards', (data) => {
         const twitchId = data && data.twitchId;
-        console.log(`🎴 Demande cartes de ${twitchId} (active: ${gameState.triade.active}, socket: ${socket.id})`);
+        console.log(`🎴 Demande cartes de ${twitchId} (active: ${gameState.collect.active}, socket: ${socket.id})`);
         
-        if (!gameState.triade.active) {
-            console.log(`⚠️ Triade pas active pour demande de ${twitchId}`);
+        if (!gameState.collect.active) {
+            console.log(`⚠️ Collect pas active pour demande de ${twitchId}`);
             return;
         }
         if (!twitchId) {
@@ -6524,9 +6536,9 @@ io.on('connection', (socket) => {
             return;
         }
         
-        const playerData = gameState.triade.playersData.get(twitchId);
+        const playerData = gameState.collect.playersData.get(twitchId);
         if (playerData && playerData.cards && playerData.cards.length > 0) {
-            socket.emit('triade-your-cards', {
+            socket.emit('collect-your-cards', {
                 cards: playerData.cards,
                 dealing: true
             });
@@ -6537,15 +6549,15 @@ io.on('connection', (socket) => {
     });
 
     // ð´ Joueur joue une carte
-    // 🔥 Fusion de cartes Triade
-    socket.on('triade-fuse-cards', (data) => {
+    // 🔥 Fusion de cartes Collect
+    socket.on('collect-fuse-cards', (data) => {
         const twitchId = data && data.twitchId;
         const sourceIndex = data && data.sourceIndex;
         const targetIndex = data && data.targetIndex;
         
-        if (!gameState.triade.active || !twitchId || sourceIndex === undefined || targetIndex === undefined) return;
+        if (!gameState.collect.active || !twitchId || sourceIndex === undefined || targetIndex === undefined) return;
         
-        const playerData = gameState.triade.playersData.get(twitchId);
+        const playerData = gameState.collect.playersData.get(twitchId);
         if (!playerData || !playerData.cards) return;
         
         const src = playerData.cards[sourceIndex];
@@ -6589,126 +6601,240 @@ io.on('connection', (socket) => {
         }
         
         console.log(`🔥 FUSION: ${playerData.username} fusionne ${allCards.map(c => c.name).join(' + ')} → ${fusedCard.name} (${allCards.length} cartes)`);
+        broadcastCollectCardCounts();
     });
     
-    socket.on('triade-play-card', (data) => {
+    socket.on('collect-play-card', (data) => {
         const twitchId = data && data.twitchId;
         const cardIndex = data && data.cardIndex;
         
-        if (!gameState.triade.active || !twitchId || cardIndex === undefined) {
-            console.log('⚠️ triade-play-card: conditions invalides');
+        if (!gameState.collect.active || !twitchId || cardIndex === undefined) {
+            console.log('⚠️ collect-play-card: conditions invalides');
             return;
         }
         
         // 🎴 Vérifier que c'est bien le tour de ce joueur
-        if (gameState.triade.currentTurnId !== twitchId) {
-            console.log(`⚠️ ${twitchId} essaie de jouer mais c'est le tour de ${gameState.triade.currentTurnId}`);
-            socket.emit('triade-card-confirmed', { success: false, reason: 'not_your_turn' });
+        if (gameState.collect.currentTurnId !== twitchId) {
+            console.log(`⚠️ ${twitchId} essaie de jouer mais c'est le tour de ${gameState.collect.currentTurnId}`);
+            socket.emit('collect-card-confirmed', { success: false, reason: 'not_your_turn' });
             return;
         }
         
-        const playerData = gameState.triade.playersData.get(twitchId);
+        const playerData = gameState.collect.playersData.get(twitchId);
         if (!playerData || !playerData.cards || !playerData.cards[cardIndex]) {
-            console.log(`⚠️ triade-play-card: carte invalide pour ${twitchId}`);
+            console.log(`⚠️ collect-play-card: carte invalide pour ${twitchId}`);
             return;
         }
         
         // Vérifier que le joueur n'a pas déjà joué ce round
-        if (gameState.triade.playedCards.has(twitchId)) {
+        if (gameState.collect.playedCards.has(twitchId)) {
             console.log(`⚠️ ${twitchId} a déjà joué ce round`);
             return;
         }
         
         // ⏱️ Vérifier que le timer n'a pas expiré (+1s de grâce réseau)
-        if (gameState.triade.timerEndTime && Date.now() > gameState.triade.timerEndTime + 1000) {
+        if (gameState.collect.timerEndTime && Date.now() > gameState.collect.timerEndTime + 1000) {
             console.log(`⏱️ ${twitchId} trop tard, timer expiré`);
-            socket.emit('triade-card-confirmed', { success: false, reason: 'timer_expired' });
+            socket.emit('collect-card-confirmed', { success: false, reason: 'timer_expired' });
             return;
         }
         
         // Stocker la carte jouée
         const playedCard = playerData.cards[cardIndex];
-        gameState.triade.playedCards.set(twitchId, playedCard);
+        gameState.collect.playedCards.set(twitchId, playedCard);
         
         // Stocker si c'est une défausse
         if (data.discard) {
-            if (!gameState.triade.discardedPlayers) gameState.triade.discardedPlayers = new Set();
-            gameState.triade.discardedPlayers.add(twitchId);
+            if (!gameState.collect.discardedPlayers) gameState.collect.discardedPlayers = new Set();
+            gameState.collect.discardedPlayers.add(twitchId);
         }
         
         // Retirer la carte de la main du joueur
         playerData.cards.splice(cardIndex, 1);
         
-        console.log(`🎴 ${playerData.username} joue: ${playedCard.name} (round ${gameState.triade.currentRound})`);
+        console.log(`🎴 ${playerData.username} joue: ${playedCard.name} (round ${gameState.collect.currentRound})`);
         
         // Confirmer au joueur
-        socket.emit('triade-card-confirmed', { success: true });
+        socket.emit('collect-card-confirmed', { success: true });
+        broadcastCollectCardCounts();
         
-        // Notifier tous les clients qu'un joueur a joué (sans révéler la carte)
-        io.emit('triade-player-played', {
+        // Notifier tous les clients qu'un joueur a joué (sans révéler la carte sauf discard)
+        io.emit('collect-player-played', {
             twitchId: twitchId,
             username: playerData.username,
-            totalPlayed: gameState.triade.playedCards.size,
-            totalPlayers: gameState.triade.playersOrder.length
+            totalPlayed: gameState.collect.playedCards.size,
+            totalPlayers: gameState.collect.playersOrder.length,
+            isDiscard: !!data.discard,
+            playedCard: data.discard ? null : (playedCard.isFused ? playedCard : null)
         });
         
-        console.log(`🎴 Cartes jouées: ${gameState.triade.playedCards.size}/${gameState.triade.playersOrder.length}`);
+        console.log(`🎴 Cartes jouées: ${gameState.collect.playedCards.size}/${gameState.collect.playersOrder.length}`);
+        
+        // ⭐ Détection Lien/Collect — carte fusionnée jouée (pas défaussée)
+        if (!data.discard && playedCard.isFused && playedCard.fusedCards && playedCard.fusedCards.length >= 2) {
+            const fusionCount = playedCard.fusedCards.length;
+            const starsGained = fusionCount >= 3 ? 2 : 1;
+            const fusionType = fusionCount >= 3 ? 'collect' : 'lien';
+            
+            playerData.wins = (playerData.wins || 0) + starsGained;
+            
+            console.log(`⭐ ${playerData.username} valide ${fusionType.toUpperCase()} → +${starsGained} étoile(s) (total: ${playerData.wins}/${gameState.collect.handSize || 3})`);
+            
+            // Émettre quasi-immédiatement
+            setTimeout(() => {
+                io.emit('collect-star-gain', {
+                    twitchId: twitchId,
+                    username: playerData.username,
+                    starsGained: starsGained,
+                    totalStars: playerData.wins,
+                    fusionType: fusionType,
+                    playedCard: playedCard
+                });
+            }, 50);
+        }
         
         // Tour suivant immédiatement après l'action
-        if (gameState.triade.turnTimer) clearTimeout(gameState.triade.turnTimer);
-        gameState.triade.currentTurnIndex++;
-        setTimeout(() => startTriadeTurn(), 500);
+        if (gameState.collect.turnTimer) clearTimeout(gameState.collect.turnTimer);
+        gameState.collect.currentTurnIndex++;
+        setTimeout(() => startCollectTurn(), 500);
     });
 
     // 🎴 Piocher une carte depuis le deck
-    socket.on('triade-draw-card', (data) => {
+    socket.on('collect-draw-card', (data) => {
         const twitchId = data.twitchId;
-        if (!gameState.triade.active || !twitchId) return;
+        if (!gameState.collect.active || !twitchId) return;
 
-        const playerData = gameState.triade.playersData.get(twitchId);
+        const playerData = gameState.collect.playersData.get(twitchId);
         if (!playerData) return;
 
         // Vérifier main pleine
-        const handSize = gameState.triade.handSize || 3;
+        const handSize = gameState.collect.handSize || 3;
         if (playerData.cards.length >= handSize) {
-            socket.emit('triade-draw-full', { message: 'Main pleine' });
+            socket.emit('collect-draw-full', { message: 'Main pleine' });
             return;
         }
 
-        if (!gameState.triade.deck || gameState.triade.deck.length === 0) {
+        if (!gameState.collect.deck || gameState.collect.deck.length === 0) {
             console.log(`⚠️ Deck vide, impossible de piocher`);
             return;
         }
 
         // Piocher 1 carte aléatoire
-        const idx = Math.floor(Math.random() * gameState.triade.deck.length);
-        const drawnCard = gameState.triade.deck.splice(idx, 1)[0];
+        const idx = Math.floor(Math.random() * gameState.collect.deck.length);
+        const drawnCard = gameState.collect.deck.splice(idx, 1)[0];
         
         // Ajouter à la main
         playerData.cards.push(drawnCard);
         console.log(`🎴 ${playerData.username} pioche: ${drawnCard.name} (${drawnCard.anime})`);
-        socket.emit('triade-draw-result', { card: drawnCard });
+        socket.emit('collect-draw-result', { card: drawnCard });
+        broadcastCollectCardCounts();
         
         // Tour suivant immédiatement après la pioche
-        if (gameState.triade.turnTimer) clearTimeout(gameState.triade.turnTimer);
-        gameState.triade.currentTurnIndex++;
-        setTimeout(() => startTriadeTurn(), 1000);
+        if (gameState.collect.turnTimer) clearTimeout(gameState.collect.turnTimer);
+        gameState.collect.currentTurnIndex++;
+        setTimeout(() => startCollectTurn(), 1000);
+    });
+
+    // 🔄 Échanger une carte avec le marché
+    socket.on('collect-swap-market', (data) => {
+        const twitchId = data && data.twitchId;
+        const cardIndex = data && data.cardIndex;
+        const marketIndex = data && data.marketIndex;
+        
+        if (!gameState.collect.active || !twitchId || cardIndex === undefined || marketIndex === undefined) {
+            console.log('⚠️ collect-swap-market: conditions invalides');
+            return;
+        }
+        
+        // Vérifier que c'est le tour du joueur
+        if (gameState.collect.currentTurnId !== twitchId) {
+            console.log(`⚠️ ${twitchId} essaie d'échanger mais c'est pas son tour`);
+            socket.emit('collect-swap-confirmed', { success: false, reason: 'not_your_turn' });
+            return;
+        }
+        
+        const playerData = gameState.collect.playersData.get(twitchId);
+        if (!playerData || !playerData.cards || !playerData.cards[cardIndex]) {
+            console.log(`⚠️ collect-swap-market: carte main invalide pour ${twitchId}`);
+            return;
+        }
+        
+        // Vérifier que le joueur n'a pas déjà joué
+        if (gameState.collect.playedCards.has(twitchId)) {
+            console.log(`⚠️ ${twitchId} a déjà joué ce round`);
+            return;
+        }
+        
+        // Vérifier timer
+        if (gameState.collect.timerEndTime && Date.now() > gameState.collect.timerEndTime + 1000) {
+            socket.emit('collect-swap-confirmed', { success: false, reason: 'timer_expired' });
+            return;
+        }
+        
+        // Vérifier le marché
+        if (!gameState.collect.marketCards || !gameState.collect.marketCards[marketIndex]) {
+            console.log(`⚠️ collect-swap-market: carte marché invalide index ${marketIndex}`);
+            return;
+        }
+        
+        // Échanger les cartes
+        const playerCard = playerData.cards[cardIndex];
+        const marketCard = gameState.collect.marketCards[marketIndex];
+        
+        // La carte du joueur va au marché, la carte du marché va en main
+        playerData.cards[cardIndex] = marketCard;
+        gameState.collect.marketCards[marketIndex] = playerCard;
+        
+        // Marquer comme ayant joué (compte comme action)
+        gameState.collect.playedCards.set(twitchId, { swapped: true, given: playerCard, received: marketCard });
+        
+        console.log(`🔄 ${playerData.username} échange: ${playerCard.name} ↔ ${marketCard.name} (marché)`);
+        
+        // Confirmer au joueur
+        socket.emit('collect-swap-confirmed', { 
+            success: true, 
+            newCard: marketCard,
+            cardIndex: cardIndex
+        });
+        
+        // Notifier tout le monde du nouveau marché + que le joueur a joué
+        io.emit('collect-market-update', { 
+            marketCards: gameState.collect.marketCards,
+            twitchId: twitchId,
+            username: playerData.username,
+            marketIndex: marketIndex,
+            givenCard: playerCard
+        });
+        
+        io.emit('collect-player-played', {
+            twitchId: twitchId,
+            username: playerData.username,
+            totalPlayed: gameState.collect.playedCards.size,
+            totalPlayers: gameState.collect.playersOrder.length,
+            isDiscard: true, // Visuellement traité comme une défausse (pas de star)
+            isSwap: true
+        });
+        
+        // Tour suivant
+        if (gameState.collect.turnTimer) clearTimeout(gameState.collect.turnTimer);
+        gameState.collect.currentTurnIndex++;
+        setTimeout(() => startCollectTurn(), 500);
     });
 
 
-    socket.on('triade-reconnect', (data) => {
-        if (!gameState.triade.active) {
-            console.log(`🎴 Pas de partie Triade en cours pour ${data.username}`);
-            socket.emit('triade-reconnect', { active: false });
+    socket.on('collect-reconnect', (data) => {
+        if (!gameState.collect.active) {
+            console.log(`🎴 Pas de partie Collect en cours pour ${data.username}`);
+            socket.emit('collect-reconnect', { active: false });
             return;
         }
 
         const twitchId = data.twitchId;
         
-        // Vérifier que le joueur fait partie de la partie Triade
-        if (!gameState.triade.playersOrder.includes(twitchId)) {
-            console.log(`🎴 ${data.username} n'est pas dans la partie Triade`);
-            socket.emit('triade-reconnect', { active: false });
+        // Vérifier que le joueur fait partie de la partie Collect
+        if (!gameState.collect.playersOrder.includes(twitchId)) {
+            console.log(`🎴 ${data.username} n'est pas dans la partie Collect`);
+            socket.emit('collect-reconnect', { active: false });
             return;
         }
 
@@ -6729,74 +6855,74 @@ io.on('connection', (socket) => {
         }
 
         // Récupérer les données du joueur
-        const playerData = gameState.triade.playersData.get(twitchId);
+        const playerData = gameState.collect.playersData.get(twitchId);
         if (!playerData) {
-            console.log(`🎴 Pas de données Triade pour ${data.username}`);
-            socket.emit('triade-reconnect', { active: false });
+            console.log(`🎴 Pas de données Collect pour ${data.username}`);
+            socket.emit('collect-reconnect', { active: false });
             return;
         }
 
         // Envoyer l'état complet de la partie
         // Vérifier si le joueur a déjà joué ce round
-        const isDiscard = gameState.triade.discardedPlayers && gameState.triade.discardedPlayers.has(twitchId);
-        const playedCard = isDiscard ? null : (gameState.triade.playedCards.get(twitchId) || null);
+        const isDiscard = gameState.collect.discardedPlayers && gameState.collect.discardedPlayers.has(twitchId);
+        const playedCard = isDiscard ? null : (gameState.collect.playedCards.get(twitchId) || null);
         
-        socket.emit('triade-reconnect', {
-            playersData: getTriadePlayersData(),
+        socket.emit('collect-reconnect', {
+            playersData: getCollectPlayersData(),
             myCards: playerData.cards,
-            handSize: gameState.triade.handSize || 3,
-            marketCards: gameState.triade.marketCards || [],
-            currentRound: gameState.triade.currentRound || 0,
-            roundStat: gameState.triade.roundStat || null,
+            handSize: gameState.collect.handSize || 3,
+            marketCards: gameState.collect.marketCards || [],
+            currentRound: gameState.collect.currentRound || 0,
+            roundStat: gameState.collect.roundStat || null,
             playedCard: playedCard,
-            playersWhoPlayed: Array.from(gameState.triade.playedCards.keys()),
-            timerRemainingMs: gameState.triade.timerEndTime ? Math.max(0, gameState.triade.timerEndTime - Date.now()) : 0,
-            timerStarted: !!gameState.triade.timerEndTime,
-            currentTurnId: gameState.triade.currentTurnId || null,
-            hasPlayed: gameState.triade.currentTurnId !== twitchId
+            playersWhoPlayed: Array.from(gameState.collect.playedCards.keys()),
+            timerRemainingMs: gameState.collect.timerEndTime ? Math.max(0, gameState.collect.timerEndTime - Date.now()) : 0,
+            timerStarted: !!gameState.collect.timerEndTime,
+            currentTurnId: gameState.collect.currentTurnId || null,
+            hasPlayed: gameState.collect.currentTurnId !== twitchId
         });
 
-        console.log(`🎴 ${data.username} reconnecté à la partie Triade (cards: ${playerData.cards.length})`);
+        console.log(`🎴 ${data.username} reconnecté à la partie Collect (cards: ${playerData.cards.length})`);
     });
 
-    // Demander l'état Triade (pour reconnexion admin)
-    socket.on('triade-get-state', (data) => {
-        if (!gameState.triade.active) {
-            socket.emit('triade-state', { active: false });
+    // Demander l'état Collect (pour reconnexion admin)
+    socket.on('collect-get-state', (data) => {
+        if (!gameState.collect.active) {
+            socket.emit('collect-state', { active: false });
             return;
         }
         
         // Vérifier si admin a joué ce round
         const requestTwitchId = data && data.twitchId;
-        const adminIsDiscard = requestTwitchId && gameState.triade.discardedPlayers && gameState.triade.discardedPlayers.has(requestTwitchId);
-        const adminPlayedCard = adminIsDiscard ? null : (requestTwitchId ? (gameState.triade.playedCards.get(requestTwitchId) || null) : null);
+        const adminIsDiscard = requestTwitchId && gameState.collect.discardedPlayers && gameState.collect.discardedPlayers.has(requestTwitchId);
+        const adminPlayedCard = adminIsDiscard ? null : (requestTwitchId ? (gameState.collect.playedCards.get(requestTwitchId) || null) : null);
         
-        socket.emit('triade-state', {
+        socket.emit('collect-state', {
             active: true,
-            playersData: getTriadePlayersData(),
-            handSize: gameState.triade.handSize || 3,
-            marketCards: gameState.triade.marketCards || [],
-            currentRound: gameState.triade.currentRound || 0,
-            roundStat: gameState.triade.roundStat || null,
+            playersData: getCollectPlayersData(),
+            handSize: gameState.collect.handSize || 3,
+            marketCards: gameState.collect.marketCards || [],
+            currentRound: gameState.collect.currentRound || 0,
+            roundStat: gameState.collect.roundStat || null,
             playedCard: adminPlayedCard,
-            playersWhoPlayed: Array.from(gameState.triade.playedCards.keys()),
-            timerRemainingMs: gameState.triade.timerEndTime ? Math.max(0, gameState.triade.timerEndTime - Date.now()) : 0,
-            timerStarted: !!gameState.triade.timerEndTime,
-            currentTurnId: gameState.triade.currentTurnId || null
+            playersWhoPlayed: Array.from(gameState.collect.playedCards.keys()),
+            timerRemainingMs: gameState.collect.timerEndTime ? Math.max(0, gameState.collect.timerEndTime - Date.now()) : 0,
+            timerStarted: !!gameState.collect.timerEndTime,
+            currentTurnId: gameState.collect.currentTurnId || null
         });
         
-        // Renvoyer les cartes privées si un twitchId est fourni et qu'il est joueur Triade
+        // Renvoyer les cartes privées si un twitchId est fourni et qu'il est joueur Collect
         if (requestTwitchId) {
-            const playerData = gameState.triade.playersData.get(requestTwitchId);
+            const playerData = gameState.collect.playersData.get(requestTwitchId);
             if (playerData && playerData.cards && playerData.cards.length > 0) {
-                socket.emit('triade-your-cards', {
+                socket.emit('collect-your-cards', {
                     cards: playerData.cards
                 });
                 console.log(`🎴 Cartes renvoyées à ${requestTwitchId} après reconnexion`);
             }
         }
         
-        console.log(`🎴 État Triade envoyé (joueurs: ${gameState.triade.playersOrder.length})`);
+        console.log(`🎴 État Collect envoyé (joueurs: ${gameState.collect.playersOrder.length})`);
     });
 
 

@@ -578,28 +578,28 @@ body {
 }
 
 /* ============================================
-   MODE TRIADE - Bouton et particules bleus
+   MODE COLLECT - Bouton et particules bleus
    ============================================ */
-.btn-wrapper.triade .main-action-btn:hover {
+.btn-wrapper.collect .main-action-btn:hover {
     border-color: #3b82f6;
     box-shadow: 0 0 3.75rem rgba(59, 130, 246, 0.25);
 }
 
-.btn-wrapper.triade .main-action-btn::before {
+.btn-wrapper.collect .main-action-btn::before {
     background: conic-gradient(from 0deg, transparent, #3b82f6, transparent);
 }
 
-.btn-wrapper.triade .main-action-btn:hover .btn-text {
+.btn-wrapper.collect .main-action-btn:hover .btn-text {
     color: #3b82f6;
     text-shadow: 0 0 1.25rem rgba(59, 130, 246, 0.5);
 }
 
-.btn-wrapper.triade::before {
+.btn-wrapper.collect::before {
     border-color: #3b82f6;
 }
 
-/* Particules mode Triade - Bleu */
-.btn-wrapper.triade .particle {
+/* Particules mode Collect - Bleu */
+.btn-wrapper.collect .particle {
     background: #3b82f6;
     box-shadow: 0 0 0.375rem rgba(59, 130, 246, 0.5);
 }
@@ -1433,7 +1433,7 @@ body {
 
 /* Options à 2 choix - pleine largeur */
 .setting-group-options.two-options,
-.setting-group-options.triade-hand-options {
+.setting-group-options.collect-hand-options {
     grid-template-columns: 1fr 1fr;
 }
 
@@ -7841,7 +7841,7 @@ body {
     color: var(--gold);
 }
 
-/* Jetons Triade */
+/* Jetons Collect */
 .player-card-mini-stat .player-jetons {
     display: flex;
     align-items: center;
@@ -9024,7 +9024,7 @@ body {
     box-shadow: 0 0 40px rgba(34, 197, 94, 0.3), 0 0 80px rgba(34, 197, 94, 0.1);
 }
 
-.mode-card.triade::before {
+.mode-card.collect::before {
     background: linear-gradient(135deg, #3b82f6, transparent, #1e40af);
     box-shadow: 0 0 40px rgba(59, 130, 246, 0.3), 0 0 80px rgba(59, 130, 246, 0.1);
 }
@@ -9094,7 +9094,7 @@ body {
     box-shadow: 0 0 6px #22c55e, 0 0 12px #22c55e;
 }
 
-.mode-card.triade .mode-aura-particle {
+.mode-card.collect .mode-aura-particle {
     background: linear-gradient(to top, transparent, #3b82f6, transparent);
     box-shadow: 0 0 6px #3b82f6, 0 0 12px #3b82f6;
 }
@@ -9203,7 +9203,7 @@ body {
     background: conic-gradient(transparent 0deg, transparent 340deg, #8b5cf6 360deg);
 }
 
-.mode-card.triade .mode-card-neon-line::before {
+.mode-card.collect .mode-card-neon-line::before {
     background: conic-gradient(transparent 0deg, transparent 340deg, #3b82f6 360deg);
 }
 
@@ -9318,7 +9318,7 @@ body {
     background: #22c55e;
 }
 
-.mode-card.triade .mode-character-glow {
+.mode-card.collect .mode-character-glow {
     background: #3b82f6;
 }
 
@@ -9369,7 +9369,7 @@ body {
     color: #22c55e;
 }
 
-.mode-card.triade .mode-card-label {
+.mode-card.collect .mode-card-label {
     color: #3b82f6;
 }
 
@@ -9378,8 +9378,8 @@ body {
     bottom: 3.2rem;
 }
 
-/* Aligner le texte de Triade avec les autres */
-.mode-card.triade .mode-card-content {
+/* Aligner le texte de Collect avec les autres */
+.mode-card.collect .mode-card-content {
     bottom: 4rem;
 }
 
@@ -9412,7 +9412,7 @@ body {
     background: linear-gradient(90deg, transparent, #22c55e, transparent);
 }
 
-.mode-card.triade .mode-card-separator {
+.mode-card.collect .mode-card-separator {
     background: linear-gradient(90deg, transparent, #3b82f6, transparent);
 }
 
@@ -9508,20 +9508,20 @@ body {
     stroke: rgba(255, 255, 255, 0.5);
 }
 
-.mode-card.triade .mode-card-players {
+.mode-card.collect .mode-card-players {
     border-color: rgba(255, 255, 255, 0.2);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.mode-card.triade:hover .mode-card-players {
+.mode-card.collect:hover .mode-card-players {
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);
 }
 
-.mode-card.triade .mode-players-count {
+.mode-card.collect .mode-players-count {
     color: rgba(255, 255, 255, 0.6);
 }
 
-.mode-card.triade .mode-players-icon {
+.mode-card.collect .mode-players-icon {
     stroke: rgba(255, 255, 255, 0.5);
 }
 
@@ -10426,157 +10426,157 @@ body {
 }
 
 /* ============================================
-   PARAMÈTRES TRIADE
+   PARAMÈTRES COLLECT
    ============================================ */
 
-/* Groupe Jetons Triade */
-.triade-jetons-group {
+/* Groupe Jetons Collect */
+.collect-jetons-group {
     border-color: rgba(59, 130, 246, 0.15);
 }
 
-.triade-jetons-group .setting-group-label,
-.triade-deck-dropdown .setting-group-label {
+.collect-jetons-group .setting-group-label,
+.collect-deck-dropdown .setting-group-label {
     color: rgba(59, 130, 246, 0.7);
 }
 
-.triade-jetons-group .setting-group-icon,
-.triade-deck-dropdown .setting-group-icon {
+.collect-jetons-group .setting-group-icon,
+.collect-deck-dropdown .setting-group-icon {
     stroke: rgba(59, 130, 246, 0.6);
 }
 
-.triade-jetons-group .setting-group-value {
+.collect-jetons-group .setting-group-value {
     color: #3b82f6;
     font-weight: 600;
 }
 
-.triade-jetons-options .setting-option-btn {
+.collect-jetons-options .setting-option-btn {
     background: rgba(59, 130, 246, 0.08);
     border: 1px solid rgba(59, 130, 246, 0.2);
     color: rgba(59, 130, 246, 0.7);
 }
 
-.triade-jetons-options .setting-option-btn:hover {
+.collect-jetons-options .setting-option-btn:hover {
     background: rgba(59, 130, 246, 0.15);
     border-color: rgba(59, 130, 246, 0.4);
     color: #3b82f6;
 }
 
-.triade-jetons-options .setting-option-btn.active {
+.collect-jetons-options .setting-option-btn.active {
     background: rgba(59, 130, 246, 0.2);
     border-color: #3b82f6;
     color: #3b82f6;
     font-weight: 600;
 }
 
-/* Badge header pour Triade */
-.mode-badge-header.triade {
+/* Badge header pour Collect */
+.mode-badge-header.collect {
     background: rgba(59, 130, 246, 0.1);
     border-color: rgba(59, 130, 246, 0.25);
     color: rgba(59, 130, 246, 0.8);
 }
 
-/* Badge mode selector pour Triade */
-.mode-badge.triade {
+/* Badge mode selector pour Collect */
+.mode-badge.collect {
     color: rgba(59, 130, 246, 0.6);
 }
 
-.mode-badge.triade::before {
+.mode-badge.collect::before {
     background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
 }
 
-.mode-badge.triade .mode-badge-line {
+.mode-badge.collect .mode-badge-line {
     background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.4), rgba(59, 130, 246, 0.6));
 }
 
 /* ============================================
-   DROPDOWN DECK TRIADE
+   DROPDOWN DECK COLLECT
    ============================================ */
-.triade-deck-dropdown {
+.collect-deck-dropdown {
     border-color: rgba(59, 130, 246, 0.15);
     position: relative;
 }
 
-.triade-deck-dropdown .triade-dropdown-trigger {
+.collect-deck-dropdown .collect-dropdown-trigger {
     cursor: pointer;
     padding: 0.5rem 0;
     transition: all 0.3s ease;
 }
 
-.triade-dropdown-trigger:hover {
+.collect-dropdown-trigger:hover {
     background: rgba(59, 130, 246, 0.05);
 }
 
-.triade-dropdown-header {
+.collect-dropdown-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.triade-dropdown-header .setting-group-left {
+.collect-dropdown-header .setting-group-left {
     display: flex;
     align-items: center;
     gap: 0.75rem;
 }
 
 /* Compteur à côté de DECK */
-.triade-dropdown-value {
+.collect-dropdown-value {
     display: flex;
     align-items: center;
     gap: 0.2rem;
     margin-left: 0.5rem;
 }
 
-.triade-dropdown-count {
+.collect-dropdown-count {
     color: #3b82f6;
     font-weight: 700;
     font-size: 0.85rem;
 }
 
 /* Toujours bleu */
-.triade-dropdown-count.complete,
-.triade-dropdown-count.incomplete {
+.collect-dropdown-count.complete,
+.collect-dropdown-count.incomplete {
     color: #3b82f6;
 }
 
-.triade-dropdown-separator {
+.collect-dropdown-separator {
     color: rgba(255, 255, 255, 0.3);
     font-size: 0.8rem;
 }
 
-.triade-dropdown-total {
+.collect-dropdown-total {
     color: rgba(255, 255, 255, 0.5);
     font-weight: 500;
     font-size: 0.8rem;
     margin-right: 0.6rem;
 }
 
-.triade-dropdown-arrow {
+.collect-dropdown-arrow {
     width: 16px;
     height: 16px;
     stroke: rgba(59, 130, 246, 0.5);
     transition: transform 0.3s ease;
 }
 
-.triade-deck-dropdown.open .triade-dropdown-arrow {
+.collect-deck-dropdown.open .collect-dropdown-arrow {
     transform: rotate(180deg);
 }
 
 /* Cacher le label "animes" */
-.triade-dropdown-label {
+.collect-dropdown-label {
     display: none;
 }
 
 /* Cacher les titres de section */
-.triade-dropdown-section {
+.collect-dropdown-section {
     display: none;
 }
 
-.triade-section-title {
+.collect-section-title {
     display: none;
 }
 
 /* Menu dropdown */
-.triade-dropdown-menu {
+.collect-dropdown-menu {
     display: none;
     background: rgba(18, 20, 26, 0.98);
     border-top: 1px solid rgba(59, 130, 246, 0.1);
@@ -10585,12 +10585,12 @@ body {
     padding: 0.5rem 0;
 }
 
-.triade-deck-dropdown.open .triade-dropdown-menu {
+.collect-deck-dropdown.open .collect-dropdown-menu {
     display: block;
 }
 
 /* Items */
-.triade-dropdown-item {
+.collect-dropdown-item {
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -10599,25 +10599,25 @@ body {
     transition: all 0.2s ease;
 }
 
-.triade-dropdown-item:hover {
+.collect-dropdown-item:hover {
     background: rgba(59, 130, 246, 0.1);
 }
 
-.triade-dropdown-item.locked {
+.collect-dropdown-item.locked {
     cursor: default;
     opacity: 0.8;
 }
 
-.triade-dropdown-item.locked:hover {
+.collect-dropdown-item.locked:hover {
     background: transparent;
 }
 
-.triade-dropdown-item input[type="checkbox"] {
+.collect-dropdown-item input[type="checkbox"] {
     display: none;
 }
 
 /* Custom checkbox */
-.triade-checkbox {
+.collect-checkbox {
     width: 18px;
     height: 18px;
     border: 1.5px solid rgba(59, 130, 246, 0.4);
@@ -10627,17 +10627,17 @@ body {
     flex-shrink: 0;
 }
 
-.triade-dropdown-item:hover .triade-checkbox:not(.locked) {
+.collect-dropdown-item:hover .collect-checkbox:not(.locked) {
     border-color: #3b82f6;
 }
 
 /* Checkbox checked state */
-.triade-dropdown-item input:checked + .triade-checkbox {
+.collect-dropdown-item input:checked + .collect-checkbox {
     background: #3b82f6;
     border-color: #3b82f6;
 }
 
-.triade-dropdown-item input:checked + .triade-checkbox::after {
+.collect-dropdown-item input:checked + .collect-checkbox::after {
     content: '';
     position: absolute;
     left: 5px;
@@ -10650,12 +10650,12 @@ body {
 }
 
 /* Locked checkbox (Big 3) - Gold color */
-.triade-checkbox.locked {
+.collect-checkbox.locked {
     background: var(--gold);
     border-color: var(--gold);
 }
 
-.triade-checkbox.locked::after {
+.collect-checkbox.locked::after {
     content: '';
     position: absolute;
     left: 5px;
@@ -10667,36 +10667,36 @@ body {
     transform: rotate(45deg);
 }
 
-.triade-dropdown-item.locked .triade-dropdown-item-name {
+.collect-dropdown-item.locked .collect-dropdown-item-name {
     color: var(--gold);
     font-weight: 500;
 }
 
-.triade-dropdown-item-name {
+.collect-dropdown-item-name {
     color: rgba(255, 255, 255, 0.8);
     font-size: 0.85rem;
 }
 
-.triade-dropdown-item input:checked ~ .triade-dropdown-item-name {
+.collect-dropdown-item input:checked ~ .collect-dropdown-item-name {
     color: #3b82f6;
     font-weight: 500;
 }
 
 /* Scrollbar */
-.triade-dropdown-menu::-webkit-scrollbar {
+.collect-dropdown-menu::-webkit-scrollbar {
     width: 4px;
 }
 
-.triade-dropdown-menu::-webkit-scrollbar-track {
+.collect-dropdown-menu::-webkit-scrollbar-track {
     background: rgba(59, 130, 246, 0.05);
 }
 
-.triade-dropdown-menu::-webkit-scrollbar-thumb {
+.collect-dropdown-menu::-webkit-scrollbar-thumb {
     background: rgba(59, 130, 246, 0.3);
     border-radius: 2px;
 }
 
-.triade-dropdown-menu::-webkit-scrollbar-thumb:hover {
+.collect-dropdown-menu::-webkit-scrollbar-thumb:hover {
     background: rgba(59, 130, 246, 0.5);
 }
 
@@ -12564,14 +12564,14 @@ body {
     border-color: rgba(180, 60, 60, 0.3);
 }
 /* ============================================
-   🎴 TRIADE - Mode Poker Anime (Admin)
+   🎴 COLLECT - Mode Poker Anime (Admin)
    ============================================ */
 
 /* Container principal */
 /* ============================================
-   TRIADE ADMIN - SPECTATOR VIEW (matche prototype V6)
+   COLLECT ADMIN - SPECTATOR VIEW (matche prototype V6)
    ============================================ */
-.triade-admin-container {
+.collect-admin-container {
     position: fixed;
     top: 0;
     left: 0;
@@ -12585,7 +12585,7 @@ body {
 }
 
 /* Table Container */
-.triade-table-container {
+.collect-table-container {
     position: absolute;
     left: 50%;
     top: 50%;
@@ -12595,14 +12595,14 @@ body {
 }
 
 /* Poker Table */
-.triade-table {
+.collect-table {
     position: relative;
     width: 100%;
     height: 100%;
     border-radius: 50%;
 }
 
-.triade-table-rail {
+.collect-table-rail {
     position: absolute;
     inset: -18px;
     border-radius: 50%;
@@ -12621,7 +12621,7 @@ body {
         0 5px 15px rgba(0,0,0,0.4);
 }
 
-.triade-table-rail::before {
+.collect-table-rail::before {
     content: '';
     position: absolute;
     top: 2px;
@@ -12631,7 +12631,7 @@ body {
     background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.25), transparent);
 }
 
-.triade-table-rail::after {
+.collect-table-rail::after {
     content: '';
     position: absolute;
     inset: -2px;
@@ -12639,7 +12639,7 @@ body {
     border: 1px solid rgba(212, 175, 55, 0.12);
 }
 
-.triade-table-surface {
+.collect-table-surface {
     position: absolute;
     inset: 0;
     border-radius: 50%;
@@ -12653,7 +12653,7 @@ body {
     overflow: hidden;
 }
 
-.triade-table-surface::before {
+.collect-table-surface::before {
     content: '';
     position: absolute;
     inset: 0;
@@ -12662,7 +12662,7 @@ body {
     pointer-events: none;
 }
 
-.triade-table-surface::after {
+.collect-table-surface::after {
     content: '';
     position: absolute;
     inset: 45px;
@@ -12672,7 +12672,7 @@ body {
 }
 
 /* Logo au centre */
-.triade-table-logo {
+.collect-table-logo {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -12683,7 +12683,7 @@ body {
     z-index: 1;
 }
 
-.triade-table-logo .logo-main {
+.collect-table-logo .logo-main {
     font-family: 'Orbitron', sans-serif;
     font-size: 1.6rem;
     font-weight: 700;
@@ -12692,7 +12692,7 @@ body {
     text-shadow: 0 0 40px rgba(212, 175, 55, 0.2);
 }
 
-.triade-table-logo .logo-sub {
+.collect-table-logo .logo-sub {
     font-family: 'Rajdhani', sans-serif;
     font-size: 0.55rem;
     letter-spacing: 5px;
@@ -12706,8 +12706,8 @@ body {
 /* Community Cards */
 
 
-/* Triade Card base - matcher le style joueur */
-.triade-card {
+/* Collect Card base - matcher le style joueur */
+.collect-card {
     width: 80px;
     height: 112px;
     border-radius: 8px;
@@ -12720,14 +12720,14 @@ body {
     overflow: visible;
 }
 
-.triade-card .card-image {
+.collect-card .card-image {
     position: absolute;
     inset: 0;
     border-radius: 6px;
     overflow: hidden;
 }
 
-.triade-card .card-image img {
+.collect-card .card-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -12736,7 +12736,7 @@ body {
 }
 
 /* Class badge spectateur (petites cartes communautaires seulement, pas les cartes POV large) */
-.triade-card:not(.large) .class-badge {
+.collect-card:not(.large) .class-badge {
     position: absolute;
     top: 5px;
     right: 5px;
@@ -12750,11 +12750,11 @@ body {
     box-shadow: 0 2px 5px rgba(0,0,0,0.4);
 }
 
-.triade-card:not(.large) .class-badge.assaut { background: linear-gradient(135deg, #ef4444, #b91c1c); }
-.triade-card:not(.large) .class-badge.oracle { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
-.triade-card:not(.large) .class-badge.mirage { background: linear-gradient(135deg, #22c55e, #15803d); }
+.collect-card:not(.large) .class-badge.assaut { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+.collect-card:not(.large) .class-badge.oracle { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.collect-card:not(.large) .class-badge.mirage { background: linear-gradient(135deg, #22c55e, #15803d); }
 
-.triade-card:not(.large) .class-badge .class-icon {
+.collect-card:not(.large) .class-badge .class-icon {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -12762,7 +12762,7 @@ body {
     height: 100%;
 }
 
-.triade-card:not(.large) .class-badge .class-icon svg {
+.collect-card:not(.large) .class-badge .class-icon svg {
     width: 11px;
     height: 11px;
     fill: #fff;
@@ -12770,7 +12770,7 @@ body {
 }
 
 /* Player Seats */
-.triade-player-seat {
+.collect-player-seat {
     position: absolute;
     display: flex;
     flex-direction: column;
@@ -12780,13 +12780,13 @@ body {
     opacity: 1;
 }
 
-.triade-player-seat.hidden {
+.collect-player-seat.hidden {
     opacity: 0;
     pointer-events: none;
     transform: scale(0.8);
 }
 
-.triade-player-block {
+.collect-player-block {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -12794,14 +12794,14 @@ body {
 }
 
 /* Player Cards (dos) */
-.triade-player-cards {
+.collect-player-cards {
     display: flex;
     justify-content: center;
     margin-bottom: -14px;
     z-index: 1;
 }
 
-.triade-player-card-small {
+.collect-player-card-small {
     width: 56px;
     height: 78px;
     border-radius: 6px;
@@ -12813,7 +12813,7 @@ body {
     opacity: 1;
 }
 
-.triade-player-card-small::before {
+.collect-player-card-small::before {
     content: '';
     position: absolute;
     inset: 3px;
@@ -12821,7 +12821,7 @@ body {
     border-radius: 3px;
 }
 
-.triade-player-card-small::after {
+.collect-player-card-small::after {
     content: 'SM';
     position: absolute;
     top: 50%;
@@ -12835,57 +12835,57 @@ body {
     letter-spacing: 2px;
 }
 
-.triade-player-card-small:first-child {
+.collect-player-card-small:first-child {
     transform: rotate(-10deg);
     margin-right: -14px;
     z-index: 1;
 }
 
-.triade-player-card-small:nth-child(2) {
+.collect-player-card-small:nth-child(2) {
     transform: rotate(0deg);
     z-index: 2;
 }
 
-.triade-player-card-small:last-child {
+.collect-player-card-small:last-child {
     transform: rotate(10deg);
     margin-left: -14px;
     z-index: 1;
 }
 
 /* === 5 cartes adverses — arc léger + plus serrées === */
-.triade-player-cards.hand-5 {
+.collect-player-cards.hand-5 {
     margin-bottom: -12px;
 }
 
-.triade-player-cards.hand-5 .triade-player-card-small {
+.collect-player-cards.hand-5 .collect-player-card-small {
     width: 48px;
     height: 67px;
     margin: 0 -10px;
 }
 
-.triade-player-cards.hand-5 .triade-player-card-small:first-child {
+.collect-player-cards.hand-5 .collect-player-card-small:first-child {
     transform: rotate(-8deg);
     margin-left: 0;
     margin-right: -10px;
     z-index: 1;
 }
 
-.triade-player-cards.hand-5 .triade-player-card-small:nth-child(2) {
+.collect-player-cards.hand-5 .collect-player-card-small:nth-child(2) {
     transform: rotate(-4deg);
     z-index: 2;
 }
 
-.triade-player-cards.hand-5 .triade-player-card-small:nth-child(3) {
+.collect-player-cards.hand-5 .collect-player-card-small:nth-child(3) {
     transform: rotate(0deg);
     z-index: 3;
 }
 
-.triade-player-cards.hand-5 .triade-player-card-small:nth-child(4) {
+.collect-player-cards.hand-5 .collect-player-card-small:nth-child(4) {
     transform: rotate(4deg);
     z-index: 2;
 }
 
-.triade-player-cards.hand-5 .triade-player-card-small:nth-child(5) {
+.collect-player-cards.hand-5 .collect-player-card-small:nth-child(5) {
     transform: rotate(8deg);
     margin-right: 0;
     margin-left: -10px;
@@ -12893,7 +12893,7 @@ body {
 }
 
 /* Player Ribbon */
-.triade-player-ribbon {
+.collect-player-ribbon {
     background: linear-gradient(180deg, #2563eb, #1d4ed8);
     padding: 6px 14px;
     border-radius: 6px;
@@ -12910,14 +12910,14 @@ body {
 }
 
 /* Étoiles de victoire */
-.triade-stars {
+.collect-stars {
     display: flex;
     gap: 4px;
     justify-content: center;
     align-items: center;
 }
 
-.triade-star {
+.collect-star {
     width: 16px;
     height: 16px;
     fill: none;
@@ -12927,14 +12927,14 @@ body {
     filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
 }
 
-.triade-star.won {
+.collect-star.won {
     fill: #fbbf24;
     stroke: #f59e0b;
     filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.6));
 }
 
 
-.triade-player-name-tag {
+.collect-player-name-tag {
     background: linear-gradient(180deg, #374151, #1f2937);
     padding: 3px 12px;
     border-radius: 0 0 6px 6px;
@@ -12942,7 +12942,7 @@ body {
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
-.triade-player-name {
+.collect-player-name {
     font-size: 0.6rem;
     font-weight: 600;
     color: rgba(255,255,255,0.9);
@@ -12955,35 +12955,35 @@ body {
 }
 
 /* 🎴 Tour actif — pseudo en jaune */
-.triade-player-name.turn-active {
+.collect-player-name.turn-active {
     color: #fbbf24;
     text-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
 }
 
 /* Active player - ribbon reste bleu, seul le name-tag passe en jaune */
-.triade-player-seat.active .triade-player-ribbon {
+.collect-player-seat.active .collect-player-ribbon {
     box-shadow: 
         0 5px 18px rgba(0,0,0,0.5),
         0 0 15px rgba(59, 130, 246, 0.2),
         inset 0 1px 0 rgba(255,255,255,0.15);
 }
 
-.triade-player-seat.active .triade-player-name-tag {
+.collect-player-seat.active .collect-player-name-tag {
     background: linear-gradient(180deg, #374151, #1f2937);
 }
 
-.triade-player-seat.active .triade-player-name {
+.collect-player-seat.active .collect-player-name {
     color: rgba(255,255,255,0.9);
 }
 
 /* Turn-active override avec spécificité plus haute */
-.triade-player-seat .triade-player-name.turn-active {
+.collect-player-seat .collect-player-name.turn-active {
     color: #fbbf24 !important;
     text-shadow: 0 0 8px rgba(251, 191, 36, 0.4) !important;
 }
 
-/* Bouton Fermer lobby Triade - sobre, discret */
-.triade-close-lobby-btn {
+/* Bouton Fermer lobby Collect - sobre, discret */
+.collect-close-lobby-btn {
     position: fixed;
     bottom: 20px;
     left: 28px;
@@ -13001,7 +13001,7 @@ body {
     position: fixed;
 }
 
-.triade-close-lobby-btn::after {
+.collect-close-lobby-btn::after {
     content: '';
     display: block;
     width: 0;
@@ -13011,11 +13011,11 @@ body {
     margin-top: 3px;
 }
 
-.triade-close-lobby-btn:hover {
+.collect-close-lobby-btn:hover {
     color: #f59e0b;
 }
 
-.triade-close-lobby-btn:hover::after {
+.collect-close-lobby-btn:hover::after {
     width: 100%;
 }
 
@@ -13024,7 +13024,7 @@ body {
    ============================================ */
 
 /* Mon siège (toujours en bas) */
-.triade-player-seat.me {
+.collect-player-seat.me {
     position: absolute !important;
     bottom: -22% !important;
     left: 50% !important;
@@ -13037,7 +13037,7 @@ body {
     z-index: 20;
 }
 
-.triade-player-seat.me .triade-player-block {
+.collect-player-seat.me .collect-player-block {
     order: 2;
     z-index: 15;
     overflow: visible;
@@ -13046,7 +13046,7 @@ body {
 /* Mini chips POV admin - positionnées à droite du ribbon */
 
 /* POV: Ribbon TOUJOURS bleu, même quand active (seul le name-tag est jaune) */
-.triade-player-seat.me.active .triade-player-ribbon {
+.collect-player-seat.me.active .collect-player-ribbon {
     background: linear-gradient(180deg, #2563eb, #1d4ed8);
     box-shadow: 
         0 5px 18px rgba(0,0,0,0.5),
@@ -13057,7 +13057,7 @@ body {
 
 
 /* Mes cartes visibles */
-.triade-my-cards {
+.collect-my-cards {
     display: flex;
     gap: 2px;
     order: 1;
@@ -13067,17 +13067,17 @@ body {
     overflow: visible;
 }
 
-.cards-locked .triade-card {
+.cards-locked .collect-card {
     filter: brightness(0.6);
     cursor: default !important;
     transition: filter 0.4s ease;
 }
-.triade-card.card-inactive {
+.collect-card.card-inactive {
     filter: brightness(0.6);
     cursor: default !important;
 }
 
-.triade-my-cards .triade-card {
+.collect-my-cards .collect-card {
     overflow: visible !important;
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -13089,98 +13089,98 @@ body {
 
 
 /* Badge classe toujours au premier plan */
-.triade-my-cards .triade-card .class-badge {
+.collect-my-cards .collect-card .class-badge {
     z-index: 100 !important;
 }
-.triade-my-cards .triade-card:first-child {
+.collect-my-cards .collect-card:first-child {
     transform: rotate(-4deg);
     z-index: 1;
 }
 
-.triade-my-cards .triade-card:nth-child(2) {
+.collect-my-cards .collect-card:nth-child(2) {
     transform: rotate(0deg);
     z-index: 3;
     
 }
 
-.triade-my-cards .triade-card:last-child {
+.collect-my-cards .collect-card:last-child {
     transform: rotate(4deg);
     z-index: 1;
 }
 
-.triade-my-cards .triade-card:first-child:hover {
+.collect-my-cards .collect-card:first-child:hover {
     transform: translateY(-5px) rotate(-4deg) !important;
     box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 15px rgba(180,150,80,0.15);
 }
 
-.triade-my-cards .triade-card:nth-child(2):hover {
+.collect-my-cards .collect-card:nth-child(2):hover {
     transform: translateY(-5px) rotate(0deg) !important;
     z-index: 3;
     box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 15px rgba(180,150,80,0.15);
 }
 
-.triade-my-cards .triade-card:last-child:hover {
+.collect-my-cards .collect-card:last-child:hover {
     transform: translateY(-5px) rotate(4deg) !important;
     box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 15px rgba(180,150,80,0.15);
 }
 
 /* === 5 cartes POV — arc plus doux === */
-.triade-my-cards.hand-5 {
+.collect-my-cards.hand-5 {
     gap: 0px;
 }
 
-.triade-my-cards.hand-5 .triade-card:nth-child(1) {
+.collect-my-cards.hand-5 .collect-card:nth-child(1) {
     transform: rotate(-5deg);
     z-index: 1;
 }
 
-.triade-my-cards.hand-5 .triade-card:nth-child(2) {
+.collect-my-cards.hand-5 .collect-card:nth-child(2) {
     transform: rotate(-2.5deg);
     z-index: 2;
 }
 
-.triade-my-cards.hand-5 .triade-card:nth-child(3) {
+.collect-my-cards.hand-5 .collect-card:nth-child(3) {
     transform: rotate(0deg);
     z-index: 3;
 }
 
-.triade-my-cards.hand-5 .triade-card:nth-child(4) {
+.collect-my-cards.hand-5 .collect-card:nth-child(4) {
     transform: rotate(2.5deg);
     z-index: 2;
 }
 
-.triade-my-cards.hand-5 .triade-card:nth-child(5) {
+.collect-my-cards.hand-5 .collect-card:nth-child(5) {
     transform: rotate(5deg);
     z-index: 1;
 }
 
-.triade-my-cards.hand-5 .triade-card:nth-child(1):hover {
+.collect-my-cards.hand-5 .collect-card:nth-child(1):hover {
     transform: translateY(-5px) rotate(-5deg) !important;
     box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 15px rgba(180,150,80,0.15);
 }
 
-.triade-my-cards.hand-5 .triade-card:nth-child(2):hover {
+.collect-my-cards.hand-5 .collect-card:nth-child(2):hover {
     transform: translateY(-5px) rotate(-2.5deg) !important;
     box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 15px rgba(180,150,80,0.15);
 }
 
-.triade-my-cards.hand-5 .triade-card:nth-child(3):hover {
+.collect-my-cards.hand-5 .collect-card:nth-child(3):hover {
     transform: translateY(-5px) rotate(0deg) !important;
     box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 15px rgba(180,150,80,0.15);
 }
 
-.triade-my-cards.hand-5 .triade-card:nth-child(4):hover {
+.collect-my-cards.hand-5 .collect-card:nth-child(4):hover {
     transform: translateY(-5px) rotate(2.5deg) !important;
     box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 15px rgba(180,150,80,0.15);
 }
 
-.triade-my-cards.hand-5 .triade-card:nth-child(5):hover {
+.collect-my-cards.hand-5 .collect-card:nth-child(5):hover {
     transform: translateY(-5px) rotate(5deg) !important;
     box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 15px rgba(180,150,80,0.15);
 }
 
 /* Ribbon POV avec bordure */
-.triade-player-seat.me .triade-player-ribbon {
+.collect-player-seat.me .collect-player-ribbon {
     border: 1.5px solid rgba(255, 255, 255, 0.25);
     overflow: visible;
     box-shadow: 
@@ -13190,7 +13190,7 @@ body {
 }
 
 /* Carte large (mes cartes POV) */
-.triade-card.large {
+.collect-card.large {
     width: 100px;
     height: 140px;
     border-radius: 10px;
@@ -13200,26 +13200,26 @@ body {
     will-change: transform;
 }
 
-.triade-card.large .card-image {
+.collect-card.large .card-image {
     border-radius: 8px;
 }
 
-.triade-card.large .card-image img {
+.collect-card.large .card-image img {
     filter: brightness(0.92) contrast(1.02);
 }
 
-.triade-card.large .card-image::after {
+.collect-card.large .card-image::after {
     display: none;
 }
 
 /* Cacher les infos sur les grandes cartes */
-.triade-card.large .power-badge,
-.triade-card.large .card-info {
+.collect-card.large .power-badge,
+.collect-card.large .card-info {
     display: none;
 }
 
 /* Badge classe */
-.triade-card .class-badge {
+.collect-card .class-badge {
     position: absolute;
     top: -8px;
     left: -8px;
@@ -13235,7 +13235,7 @@ body {
     z-index: 5;
 }
 
-.triade-card.large .class-badge {
+.collect-card.large .class-badge {
     top: -12px;
     left: -12px;
     width: 26px;
@@ -13244,16 +13244,16 @@ body {
     box-shadow: 0 4px 12px rgba(0,0,0,0.7);
 }
 
-.triade-card .class-badge.assaut { border-color: rgba(239, 68, 68, 0.6); }
-.triade-card .class-badge.oracle { border-color: rgba(59, 130, 246, 0.6); }
-.triade-card .class-badge.mirage { border-color: rgba(34, 197, 94, 0.6); }
+.collect-card .class-badge.assaut { border-color: rgba(239, 68, 68, 0.6); }
+.collect-card .class-badge.oracle { border-color: rgba(59, 130, 246, 0.6); }
+.collect-card .class-badge.mirage { border-color: rgba(34, 197, 94, 0.6); }
 
-.triade-card .class-badge .class-icon svg {
+.collect-card .class-badge .class-icon svg {
     width: 10px;
     height: 10px;
 }
 
-.triade-card .class-badge .class-icon {
+.collect-card .class-badge .class-icon {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -13262,17 +13262,17 @@ body {
     line-height: 0;
 }
 
-.triade-card.large .class-badge .class-icon svg {
+.collect-card.large .class-badge .class-icon svg {
     width: 12px;
     height: 12px;
 }
 
-.triade-card .class-badge.assaut .class-icon svg { fill: #ef4444; }
-.triade-card .class-badge.oracle .class-icon svg { fill: #3b82f6; }
-.triade-card .class-badge.mirage .class-icon svg { fill: #22c55e; }
+.collect-card .class-badge.assaut .class-icon svg { fill: #ef4444; }
+.collect-card .class-badge.oracle .class-icon svg { fill: #3b82f6; }
+.collect-card .class-badge.mirage .class-icon svg { fill: #22c55e; }
 
 /* Badge Protagoniste (coin supérieur droit - dépasse) */
-.triade-card .prota-badge {
+.collect-card .prota-badge {
     position: absolute;
     top: -8px;
     right: -8px;
@@ -13288,14 +13288,14 @@ body {
     z-index: 5;
 }
 
-.triade-card .prota-badge svg {
+.collect-card .prota-badge svg {
     width: 12px;
     height: 12px;
     fill: #fbbf24;
     transform: rotate(-12deg);
 }
 
-.triade-card.large .prota-badge {
+.collect-card.large .prota-badge {
     top: -12px;
     right: -12px;
     width: 26px;
@@ -13304,13 +13304,13 @@ body {
     box-shadow: 0 0 10px rgba(251, 191, 36, 0.2), 0 4px 12px rgba(0,0,0,0.7);
 }
 
-.triade-card.large .prota-badge svg {
+.collect-card.large .prota-badge svg {
     width: 14px;
     height: 14px;
 }
 
 /* BIG 3 — Effet spécial */
-.triade-card .prota-badge.big3 {
+.collect-card .prota-badge.big3 {
     border-color: rgba(251, 191, 36, 0.7);
     box-shadow: 
         0 0 8px rgba(251, 191, 36, 0.3),
@@ -13320,7 +13320,7 @@ body {
     animation: big3Pulse 2s ease-in-out infinite;
 }
 
-.triade-card .prota-badge.big3::before {
+.collect-card .prota-badge.big3::before {
     content: '';
     position: absolute;
     inset: -4px;
@@ -13340,7 +13340,7 @@ body {
     -webkit-mask: radial-gradient(circle, transparent 55%, black 56%);
 }
 
-.triade-card .prota-badge.big3::after {
+.collect-card .prota-badge.big3::after {
     content: '✦';
     position: absolute;
     top: -6px;
@@ -13350,7 +13350,7 @@ body {
     animation: big3Sparkle 1.5s ease-in-out infinite;
 }
 
-.triade-card.large .prota-badge.big3 {
+.collect-card.large .prota-badge.big3 {
     box-shadow: 
         0 0 10px rgba(251, 191, 36, 0.3),
         0 0 0 2px rgba(0,0,0,0.4),
@@ -13358,11 +13358,11 @@ body {
         0 4px 12px rgba(0,0,0,0.7);
 }
 
-.triade-card.large .prota-badge.big3::before {
+.collect-card.large .prota-badge.big3::before {
     inset: -5px;
 }
 
-.triade-card.large .prota-badge.big3::after {
+.collect-card.large .prota-badge.big3::after {
     top: -7px;
     right: -5px;
     font-size: 0.45rem;
@@ -13384,7 +13384,7 @@ body {
 }
 
 /* Power badge & Card info (petites cartes seulement) */
-.triade-card .power-badge {
+.collect-card .power-badge {
     position: absolute;
     top: 4px;
     right: 4px;
@@ -13399,14 +13399,14 @@ body {
     z-index: 2;
 }
 
-.triade-card .power-badge .pw-value {
+.collect-card .power-badge .pw-value {
     font-family: 'Rajdhani', sans-serif;
     font-size: 0.75rem;
     font-weight: 700;
     color: #fbbf24;
 }
 
-.triade-card .card-info {
+.collect-card .card-info {
     position: absolute;
     bottom: 0;
     left: 0;
@@ -13416,7 +13416,7 @@ body {
     z-index: 2;
 }
 
-.triade-card .card-name {
+.collect-card .card-name {
     font-size: 0.65rem;
     font-weight: 600;
     color: #fff;
@@ -13424,20 +13424,20 @@ body {
 }
 
 /* Fused card names stacked vertically */
-.triade-card .card-name.fused-stacked {
+.collect-card .card-name.fused-stacked {
     display: flex;
     flex-direction: column-reverse;
     gap: 0px;
     line-height: 1.1;
 }
-.triade-card .card-name.fused-stacked span {
+.collect-card .card-name.fused-stacked span {
     display: block;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.triade-card .card-anime {
+.collect-card .card-anime {
     font-size: 0.55rem;
     color: rgba(255,255,255,0.6);
 }
@@ -13460,7 +13460,7 @@ body {
 /* ============================================
    DECK DE PIOCHE (droite) — Admin
    ============================================ */
-.triade-deck-zone {
+.collect-deck-zone {
     position: fixed;
     right: 45px;
     bottom: 45px;
@@ -13476,14 +13476,14 @@ body {
     overflow: visible;
 }
 
-.triade-deck-zone.deck-visible {
+.collect-deck-zone.deck-visible {
     opacity: 1;
     transform: translateY(0);
     pointer-events: auto;
 }
 
 /* Timer above deck */
-.triade-deck-timer {
+.collect-deck-timer {
     position: fixed;
     top: 50%;
     right: 94px;
@@ -13496,7 +13496,7 @@ body {
     z-index: 210;
     animation: timer-appear 0.4s ease-out forwards;
 }
-.triade-deck-timer.fade-out {
+.collect-deck-timer.fade-out {
     animation: timer-disappear 0.8s ease-out forwards;
 }
 
@@ -13534,7 +13534,7 @@ body {
     line-height: 1;
 }
 
-.triade-deck-card {
+.collect-deck-card {
     position: absolute;
     width: 100%;
     height: 100%;
@@ -13546,7 +13546,7 @@ body {
                 border-color 0.45s ease;
 }
 
-.triade-deck-card::before {
+.collect-deck-card::before {
     content: '';
     position: absolute;
     inset: 6px;
@@ -13559,7 +13559,7 @@ body {
     pointer-events: none;
 }
 
-.triade-deck-sm {
+.collect-deck-sm {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -13574,14 +13574,14 @@ body {
     pointer-events: none;
 }
 
-.triade-deck-card:nth-child(1) { z-index: 10; }
-.triade-deck-card:nth-child(2) { top: 4px; left: 1.5px; z-index: 9; opacity: 0.88; }
-.triade-deck-card:nth-child(3) { top: 8px; left: 3px; z-index: 8; opacity: 0.74; }
-.triade-deck-card:nth-child(4) { top: 12px; left: 4.5px; z-index: 7; opacity: 0.58; }
-.triade-deck-card:nth-child(5) { top: 16px; left: 6px; z-index: 6; opacity: 0.42; }
-.triade-deck-card:nth-child(6) { top: 20px; left: 7.5px; z-index: 5; opacity: 0.28; }
+.collect-deck-card:nth-child(1) { z-index: 10; }
+.collect-deck-card:nth-child(2) { top: 4px; left: 1.5px; z-index: 9; opacity: 0.88; }
+.collect-deck-card:nth-child(3) { top: 8px; left: 3px; z-index: 8; opacity: 0.74; }
+.collect-deck-card:nth-child(4) { top: 12px; left: 4.5px; z-index: 7; opacity: 0.58; }
+.collect-deck-card:nth-child(5) { top: 16px; left: 6px; z-index: 6; opacity: 0.42; }
+.collect-deck-card:nth-child(6) { top: 20px; left: 7.5px; z-index: 5; opacity: 0.28; }
 
-.triade-deck-glow {
+.collect-deck-glow {
     position: absolute;
     bottom: -4px;
     left: 12%;
@@ -13592,7 +13592,7 @@ body {
     z-index: 0;
 }
 
-.triade-deck-zone.my-turn:not(.draw-flying):hover .triade-deck-card:nth-child(1) {
+.collect-deck-zone.my-turn:not(.draw-flying):hover .collect-deck-card:nth-child(1) {
     transform: translateY(-24px);
     box-shadow: 0 8px 25px rgba(100, 180, 255, 0.2);
     border-color: rgba(80, 160, 240, 0.45);
@@ -13600,12 +13600,12 @@ body {
 }
 
 /* Deck disabled when not player's turn */
-.triade-deck-zone.deck-visible:not(.my-turn) {
+.collect-deck-zone.deck-visible:not(.my-turn) {
     pointer-events: none;
     opacity: 0.45;
 }
 
-.triade-deck-zone .deck-hover-ripple {
+.collect-deck-zone .deck-hover-ripple {
     position: absolute;
     top: 0;
     left: 0;
@@ -13618,12 +13618,12 @@ body {
     opacity: 0;
 }
 
-.triade-deck-zone.my-turn:hover .deck-hover-ripple {
+.collect-deck-zone.my-turn:hover .deck-hover-ripple {
     animation: deck-hover-ripple 2s ease-out infinite;
     animation-delay: 0.5s;
 }
 
-.triade-deck-zone.my-turn:hover .deck-hover-ripple.delay {
+.collect-deck-zone.my-turn:hover .deck-hover-ripple.delay {
     animation-delay: 1.5s;
 }
 
@@ -13644,7 +13644,7 @@ body {
     }
 }
 
-.triade-deck-wave {
+.collect-deck-wave {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -13658,30 +13658,30 @@ body {
     opacity: 0;
 }
 
-.triade-deck-zone.can-draw .triade-deck-wave {
-    animation: triade-deck-wave 2.8s ease-out infinite;
+.collect-deck-zone.can-draw .collect-deck-wave {
+    animation: collect-deck-wave 2.8s ease-out infinite;
 }
 
-.triade-deck-zone.can-draw .triade-deck-wave:nth-child(8) { animation-delay: 0s; }
-.triade-deck-zone.can-draw .triade-deck-wave:nth-child(9) { animation-delay: 0.9s; }
-.triade-deck-zone.can-draw .triade-deck-wave:nth-child(10) { animation-delay: 1.8s; }
+.collect-deck-zone.can-draw .collect-deck-wave:nth-child(8) { animation-delay: 0s; }
+.collect-deck-zone.can-draw .collect-deck-wave:nth-child(9) { animation-delay: 0.9s; }
+.collect-deck-zone.can-draw .collect-deck-wave:nth-child(10) { animation-delay: 1.8s; }
 
-@keyframes triade-deck-wave {
+@keyframes collect-deck-wave {
     0% { opacity: 0.5; width: 100%; height: 100%; border-color: rgba(100, 180, 255, 0.35); }
     70% { opacity: 0; width: 140%; height: 135%; border-color: rgba(100, 180, 255, 0); }
     100% { opacity: 0; width: 140%; height: 135%; }
 }
 
-.triade-deck-zone.can-draw .triade-deck-card:nth-child(1) {
-    animation: triade-deck-pulse 2.4s ease-in-out infinite;
+.collect-deck-zone.can-draw .collect-deck-card:nth-child(1) {
+    animation: collect-deck-pulse 2.4s ease-in-out infinite;
 }
 
-@keyframes triade-deck-pulse {
+@keyframes collect-deck-pulse {
     0%, 100% { box-shadow: 0 2px 8px rgba(100, 180, 255, 0.06); border-color: #1a3555; }
     50% { box-shadow: 0 4px 20px rgba(100, 180, 255, 0.22), 0 0 8px rgba(130, 200, 255, 0.08); border-color: #2a5a8a; }
 }
 
-.triade-deck-card:nth-child(1)::after {
+.collect-deck-card:nth-child(1)::after {
     content: '';
     position: absolute;
     inset: 0;
@@ -13693,28 +13693,28 @@ body {
     transition: opacity 0.3s;
 }
 
-.triade-deck-zone.can-draw .triade-deck-card:nth-child(1)::after {
+.collect-deck-zone.can-draw .collect-deck-card:nth-child(1)::after {
     opacity: 1;
-    animation: triade-deck-shimmer 3.5s ease-in-out infinite;
+    animation: collect-deck-shimmer 3.5s ease-in-out infinite;
 }
 
-@keyframes triade-deck-shimmer {
+@keyframes collect-deck-shimmer {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
 }
 
 /* === MAIN PLEINE: Shake + Rouge === */
-.triade-deck-zone.deck-full-shake {
+.collect-deck-zone.deck-full-shake {
     animation: deck-shake 0.4s ease-in-out;
 }
 
-.triade-deck-zone.deck-full-shake .triade-deck-card {
+.collect-deck-zone.deck-full-shake .collect-deck-card {
     border-color: rgba(239, 68, 68, 0.6) !important;
     box-shadow: 0 0 15px rgba(239, 68, 68, 0.25), inset 0 0 8px rgba(239, 68, 68, 0.1) !important;
 }
 
-.triade-deck-zone.deck-full-shake .triade-deck-card .triade-deck-sm,
-.triade-deck-zone.deck-full-shake .triade-deck-sm {
+.collect-deck-zone.deck-full-shake .collect-deck-card .collect-deck-sm,
+.collect-deck-zone.deck-full-shake .collect-deck-sm {
     color: rgba(239, 68, 68, 0.9) !important;
     text-shadow: 0 0 12px rgba(239, 68, 68, 0.4) !important;
 }
@@ -13830,7 +13830,7 @@ body {
 .flyer-class-badge.mirage svg { fill: #a855f7; }
 
 /* NEW CARD POP-IN */
-.triade-card.large.draw-new-card {
+.collect-card.large.draw-new-card {
     animation: draw-card-pop-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both !important;
 }
 
@@ -13860,7 +13860,7 @@ body {
 /* ============================================
    DRAW CHOICE OVERLAY (admin)
    ============================================ */
-.triade-draw-overlay {
+.collect-draw-overlay {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0);
@@ -13871,11 +13871,11 @@ body {
     pointer-events: none;
     transition: background 0.5s ease;
 }
-.triade-draw-overlay.visible {
+.collect-draw-overlay.visible {
     pointer-events: all;
     background: rgba(0, 0, 0, 0.82);
 }
-.triade-draw-choice-container {
+.collect-draw-choice-container {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -13884,7 +13884,7 @@ body {
     opacity: 0;
     transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.triade-draw-choice-container.visible {
+.collect-draw-choice-container.visible {
     transform: scale(1);
     opacity: 1;
 }
@@ -14033,7 +14033,7 @@ body {
 /* ============================================
    CARD PREVIEW (identique au joueur)
    ============================================ */
-.triade-card-preview {
+.collect-card-preview {
     position: fixed;
     left: 15px;
     top: 50%;
@@ -14044,12 +14044,12 @@ body {
     transition: opacity 0.18s ease, transform 0.18s ease;
 }
 
-.triade-card-preview.visible {
+.collect-card-preview.visible {
     opacity: 1;
     transform: translateY(-50%) translateX(0);
 }
 
-.triade-card-preview .preview-card {
+.collect-card-preview .preview-card {
     width: 280px;
     height: 420px;
     background: linear-gradient(170deg, #18181f 0%, #0e0e13 100%);
@@ -14063,7 +14063,7 @@ body {
 }
 
 /* Badge Protagoniste - Preview card */
-.triade-card-preview .prota-badge {
+.collect-card-preview .prota-badge {
     position: absolute;
     top: -16px;
     right: -16px;
@@ -14079,7 +14079,7 @@ body {
     box-shadow: 0 0 14px rgba(251, 191, 36, 0.25), 0 4px 12px rgba(0,0,0,0.7);
 }
 
-.triade-card-preview .prota-badge svg {
+.collect-card-preview .prota-badge svg {
     width: 19px;
     height: 19px;
     fill: #fbbf24;
@@ -14087,7 +14087,7 @@ body {
 }
 
 /* BIG 3 — Preview : effet très visible */
-.triade-card-preview .prota-badge.big3 {
+.collect-card-preview .prota-badge.big3 {
     width: 40px;
     height: 40px;
     top: -18px;
@@ -14103,14 +14103,14 @@ body {
     animation: big3PulsePreview 2s ease-in-out infinite;
 }
 
-.triade-card-preview .prota-badge.big3 svg {
+.collect-card-preview .prota-badge.big3 svg {
     width: 21px;
     height: 21px;
     fill: #fbbf24;
     filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.6));
 }
 
-.triade-card-preview .prota-badge.big3::before {
+.collect-card-preview .prota-badge.big3::before {
     content: '';
     position: absolute;
     inset: -8px;
@@ -14130,7 +14130,7 @@ body {
     -webkit-mask: radial-gradient(circle, transparent 52%, black 54%);
 }
 
-.triade-card-preview .prota-badge.big3::after {
+.collect-card-preview .prota-badge.big3::after {
     content: '';
     position: absolute;
     inset: -3px;
@@ -14150,7 +14150,7 @@ body {
     }
 }
 
-.triade-card-preview .preview-image::before {
+.collect-card-preview .preview-image::before {
     content: '';
     position: absolute;
     top: 0;
@@ -14176,21 +14176,21 @@ body {
     50% { left: 150%; }
 }
 
-.triade-card-preview .preview-image {
+.collect-card-preview .preview-image {
     position: absolute;
     inset: 0;
     border-radius: 18px;
     overflow: hidden;
 }
 
-.triade-card-preview .preview-image img {
+.collect-card-preview .preview-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     object-position: top center;
 }
 
-.triade-card-preview .preview-image::after {
+.collect-card-preview .preview-image::after {
     content: '';
     position: absolute;
     bottom: 0;
@@ -14200,7 +14200,7 @@ body {
     background: linear-gradient(to top, rgba(14,14,19,1) 15%, rgba(14,14,19,0.95) 40%, transparent);
 }
 
-.triade-card-preview .preview-info {
+.collect-card-preview .preview-info {
     position: absolute;
     bottom: 0;
     left: 0;
@@ -14209,7 +14209,7 @@ body {
     z-index: 5;
 }
 
-.triade-card-preview .preview-name {
+.collect-card-preview .preview-name {
     font-family: 'Poppins', sans-serif;
     font-size: 1.15rem;
     font-weight: 800;
@@ -14220,7 +14220,7 @@ body {
         0 4px 8px rgba(0,0,0,0.6);
 }
 
-.triade-card-preview .preview-anime {
+.collect-card-preview .preview-anime {
     font-family: 'Rajdhani', sans-serif;
     font-size: 0.65rem;
     font-weight: 600;
@@ -14231,7 +14231,7 @@ body {
     margin-bottom: 0;
 }
 
-.triade-card-preview .preview-separator-line {
+.collect-card-preview .preview-separator-line {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -14239,15 +14239,15 @@ body {
     margin-bottom: 12px;
 }
 
-.triade-card-preview .preview-separator-line::before,
-.triade-card-preview .preview-separator-line::after {
+.collect-card-preview .preview-separator-line::before,
+.collect-card-preview .preview-separator-line::after {
     content: '';
     flex: 1;
     height: 1px;
     background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.4), transparent);
 }
 
-.triade-card-preview .preview-separator-line .sep-diamond {
+.collect-card-preview .preview-separator-line .sep-diamond {
     width: 6px;
     height: 6px;
     background: rgba(212, 175, 55, 0.5);
@@ -14255,38 +14255,38 @@ body {
     flex-shrink: 0;
 }
 
-.triade-card-preview .preview-separator {
+.collect-card-preview .preview-separator {
     display: flex;
     align-items: center;
     gap: 10px;
     margin: 12px 0;
 }
 
-.triade-card-preview .preview-separator .sep-line {
+.collect-card-preview .preview-separator .sep-line {
     flex: 1;
     height: 1px;
     background: linear-gradient(90deg, rgba(180,150,80,0.4), rgba(180,150,80,0.05));
 }
 
-.triade-card-preview .preview-separator .sep-line:last-child {
+.collect-card-preview .preview-separator .sep-line:last-child {
     background: linear-gradient(90deg, rgba(180,150,80,0.05), rgba(180,150,80,0.4));
 }
 
-.triade-card-preview .preview-separator .sep-diamond {
+.collect-card-preview .preview-separator .sep-diamond {
     width: 6px;
     height: 6px;
     background: #8a7340;
     transform: rotate(45deg);
 }
 
-.triade-card-preview .preview-badges {
+.collect-card-preview .preview-badges {
     display: flex;
     justify-content: center;
     gap: 12px;
     margin-top: 8px;
 }
 
-.triade-card-preview .preview-badge {
+.collect-card-preview .preview-badge {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -14296,7 +14296,7 @@ body {
     padding: 5px 11px;
 }
 
-.triade-card-preview .preview-badge .badge-icon {
+.collect-card-preview .preview-badge .badge-icon {
     width: 18px;
     height: 18px;
     border-radius: 50%;
@@ -14310,27 +14310,27 @@ body {
     line-height: 0;
 }
 
-.triade-card-preview .preview-badge .badge-icon span {
+.collect-card-preview .preview-badge .badge-icon span {
     display: flex;
     align-items: center;
     justify-content: center;
     line-height: 0;
 }
 
-.triade-card-preview .preview-badge .badge-icon.assaut { border-color: rgba(239, 68, 68, 0.6); }
-.triade-card-preview .preview-badge .badge-icon.oracle { border-color: rgba(59, 130, 246, 0.6); }
-.triade-card-preview .preview-badge .badge-icon.mirage { border-color: rgba(34, 197, 94, 0.6); }
+.collect-card-preview .preview-badge .badge-icon.assaut { border-color: rgba(239, 68, 68, 0.6); }
+.collect-card-preview .preview-badge .badge-icon.oracle { border-color: rgba(59, 130, 246, 0.6); }
+.collect-card-preview .preview-badge .badge-icon.mirage { border-color: rgba(34, 197, 94, 0.6); }
 
-.triade-card-preview .preview-badge .badge-icon svg {
+.collect-card-preview .preview-badge .badge-icon svg {
     width: 10px;
     height: 10px;
 }
 
-.triade-card-preview .preview-badge .badge-icon.assaut svg { fill: #ef4444; }
-.triade-card-preview .preview-badge .badge-icon.oracle svg { fill: #3b82f6; }
-.triade-card-preview .preview-badge .badge-icon.mirage svg { fill: #22c55e; }
+.collect-card-preview .preview-badge .badge-icon.assaut svg { fill: #ef4444; }
+.collect-card-preview .preview-badge .badge-icon.oracle svg { fill: #3b82f6; }
+.collect-card-preview .preview-badge .badge-icon.mirage svg { fill: #22c55e; }
 
-.triade-card-preview .preview-badge .badge-text {
+.collect-card-preview .preview-badge .badge-text {
     font-family: 'Rajdhani', sans-serif;
     font-size: 0.95rem;
     font-weight: 700;
@@ -14338,12 +14338,12 @@ body {
     line-height: 1;
 }
 
-.triade-card-preview .preview-badge.power-badge .badge-text {
+.collect-card-preview .preview-badge.power-badge .badge-text {
     font-size: 1.05rem;
 }
 
 /* Stats display in preview - V2 Style (extends below card) */
-.triade-card-preview .preview-stats {
+.collect-card-preview .preview-stats {
     position: absolute;
     bottom: -38px;
     left: 10px;
@@ -14360,14 +14360,14 @@ body {
     z-index: 15;
 }
 
-.triade-card-preview .stat-item {
+.collect-card-preview .stat-item {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 10px;
 }
 
-.triade-card-preview .stat-label {
+.collect-card-preview .stat-label {
     font-family: 'Rajdhani', sans-serif;
     font-size: 0.65rem;
     font-weight: 600;
@@ -14376,7 +14376,7 @@ body {
     letter-spacing: 0.5px;
 }
 
-.triade-card-preview .stat-icon-img {
+.collect-card-preview .stat-icon-img {
     width: 22px;
     height: 22px;
     object-fit: contain;
@@ -14384,7 +14384,7 @@ body {
 }
 
 
-.triade-card-preview .stat-value {
+.collect-card-preview .stat-value {
     font-family: 'Rajdhani', sans-serif;
     font-size: 1.1rem;
     font-weight: 700;
@@ -14393,23 +14393,23 @@ body {
 }
 
 /* Icons-only preview stats (sans chiffres) */
-.triade-card-preview .preview-stats-icons-only {
+.collect-card-preview .preview-stats-icons-only {
     bottom: -30px;
     padding: 14px 24px;
 }
 
-.triade-card-preview .preview-stats-icons-only .stat-item {
+.collect-card-preview .preview-stats-icons-only .stat-item {
     flex-direction: row;
     gap: 0;
 }
 
-.triade-card-preview .preview-stats-icons-only .stat-icon-img {
+.collect-card-preview .preview-stats-icons-only .stat-icon-img {
     width: 28px;
     height: 28px;
 }
 
 /* Top badges container (class + protagonist) - dépasse en haut à droite */
-.triade-card-preview .preview-top-badges {
+.collect-card-preview .preview-top-badges {
     position: absolute;
     top: -18px;
     right: -8px;
@@ -14418,7 +14418,7 @@ body {
     gap: 0;
     z-index: 20;
 }
-.triade-card-preview .class-badge-small {
+.collect-card-preview .class-badge-small {
     width: 42px;
     height: 42px;
     border-radius: 50%;
@@ -14431,23 +14431,23 @@ body {
     z-index: 2;
 }
 
-.triade-card-preview .class-badge-small.assaut {
+.collect-card-preview .class-badge-small.assaut {
     border-color: rgba(239, 68, 68, 0.7);
     background: linear-gradient(145deg, #2a1a1a, #1a0a0a);
 }
 
-.triade-card-preview .class-badge-small.oracle {
+.collect-card-preview .class-badge-small.oracle {
     border-color: rgba(59, 130, 246, 0.7);
     background: linear-gradient(145deg, #1a1a2a, #0a0a1a);
 }
 
-.triade-card-preview .class-badge-small.mirage {
+.collect-card-preview .class-badge-small.mirage {
     border-color: rgba(34, 197, 94, 0.7);
     background: linear-gradient(145deg, #1a2a1a, #0a1a0a);
 }
 
 /* Centrage de l'icône SVG dans le badge */
-.triade-card-preview .class-badge-small span {
+.collect-card-preview .class-badge-small span {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -14456,17 +14456,17 @@ body {
     line-height: 0;
 }
 
-.triade-card-preview .class-badge-small svg {
+.collect-card-preview .class-badge-small svg {
     width: 20px;
     height: 20px;
 }
 
-.triade-card-preview .class-badge-small.assaut svg { fill: #ef4444; }
-.triade-card-preview .class-badge-small.oracle svg { fill: #3b82f6; }
-.triade-card-preview .class-badge-small.mirage svg { fill: #22c55e; }
+.collect-card-preview .class-badge-small.assaut svg { fill: #ef4444; }
+.collect-card-preview .class-badge-small.oracle svg { fill: #3b82f6; }
+.collect-card-preview .class-badge-small.mirage svg { fill: #22c55e; }
 
 /* Protagonist badge in top badges container */
-.triade-card-preview .preview-top-badges .prota-badge {
+.collect-card-preview .preview-top-badges .prota-badge {
     position: relative;
     top: auto;
     right: auto;
@@ -14481,11 +14481,11 @@ body {
    ============================================ */
 
 /* Timer countdown */
-.triade-timer { display: none !important; }
-.triade-timer.fade-out { display: none !important; }
+.collect-timer { display: none !important; }
+.collect-timer.fade-out { display: none !important; }
 @keyframes timer-appear { from { opacity: 0; transform: translateY(-50%) scale(0.7); } to { opacity: 1; transform: translateY(-50%) scale(1); } }
 /* Choose indicator */
-.triade-choose-indicator {
+.collect-choose-indicator {
     position: absolute;
     top: -7px;
     right: -40px;
@@ -14497,7 +14497,7 @@ body {
     pointer-events: none;
     z-index: 10;
 }
-.triade-choose-indicator img {
+.collect-choose-indicator img {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -14507,19 +14507,19 @@ body {
     filter: grayscale(0.6) brightness(0.5);
     transition: filter 0.4s ease, transform 0.3s ease;
 }
-.triade-choose-indicator .choose-ring {
+.collect-choose-indicator .choose-ring {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
 }
-.triade-choose-indicator .choose-ring-bg {
+.collect-choose-indicator .choose-ring-bg {
     fill: none;
     stroke: rgba(255, 255, 255, 0.08);
     stroke-width: 1.8;
 }
-.triade-choose-indicator .choose-ring-progress {
+.collect-choose-indicator .choose-ring-progress {
     fill: none;
     stroke: rgba(59, 130, 246, 0.8);
     stroke-width: 2.2;
@@ -14530,24 +14530,24 @@ body {
     transform-origin: center;
     filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.4));
 }
-.triade-choose-indicator.visible {
+.collect-choose-indicator.visible {
     opacity: 1;
     transform: translateY(0);
 }
-.triade-choose-indicator.active img {
+.collect-choose-indicator.active img {
     filter: grayscale(0) brightness(1) drop-shadow(0 0 3px rgba(59,130,246,0.5));
     transform: translate(-50%, -50%) scale(1.05);
 }
 
 @keyframes timer-disappear { from { opacity: 1; transform: translateY(-50%) scale(1); } to { opacity: 0; transform: translateY(-50%) scale(0.8); } }
-.triade-timer-number { font-family: 'Orbitron','Rajdhani',monospace; font-size: 1.05rem; font-weight: 700; color: rgba(255,255,255,0.85); text-shadow: 0 0 10px rgba(59,130,246,0.4), 0 1px 3px rgba(0,0,0,0.4); letter-spacing: 1px; transition: color 0.3s ease, text-shadow 0.3s ease; }
-.triade-timer-number { font-family: 'Orbitron','Rajdhani',monospace; font-size: 1.05rem; font-weight: 700; color: rgba(255,255,255,0.85); text-shadow: 0 0 10px rgba(59,130,246,0.4), 0 1px 3px rgba(0,0,0,0.4); letter-spacing: 1px; }
+.collect-timer-number { font-family: 'Orbitron','Rajdhani',monospace; font-size: 1.05rem; font-weight: 700; color: rgba(255,255,255,0.85); text-shadow: 0 0 10px rgba(59,130,246,0.4), 0 1px 3px rgba(0,0,0,0.4); letter-spacing: 1px; transition: color 0.3s ease, text-shadow 0.3s ease; }
+.collect-timer-number { font-family: 'Orbitron','Rajdhani',monospace; font-size: 1.05rem; font-weight: 700; color: rgba(255,255,255,0.85); text-shadow: 0 0 10px rgba(59,130,246,0.4), 0 1px 3px rgba(0,0,0,0.4); letter-spacing: 1px; }
 @keyframes admin-timer-pulse { 0% { transform: scale(1); opacity: 0.9; } 100% { transform: scale(1.1); opacity: 1; } }
 
 /* ==========================================
    CENTER ZONE (Market + Slot wrapper)
    ========================================== */
-.triade-center-zone {
+.collect-center-zone {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -14562,7 +14562,7 @@ body {
 /* ==========================================
    MARKET CARDS
    ========================================== */
-.triade-market {
+.collect-market {
     display: flex;
     gap: 10px;
     margin-right: 16px;
@@ -14575,7 +14575,7 @@ body {
     overflow: visible;
     position: relative;
     cursor: pointer;
-    transition: transform 0.3s ease, opacity 0.4s ease;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease, box-shadow 0.25s ease, outline 0.25s ease, outline-offset 0.25s ease;
     box-shadow: 0 4px 15px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,175,55,0.2);
 }
 
@@ -14603,12 +14603,29 @@ body {
     z-index: 45;
 }
 
+.market-card.swap-hover {
+    z-index: 50;
+    box-shadow: 0 0 18px rgba(76, 175, 80, 0.5), 0 0 0 2px rgba(76, 175, 80, 0.7);
+    transition: box-shadow 0.15s ease;
+}
+
+.market-card.swap-hover > img {
+    filter: brightness(1.1);
+    transition: filter 0.15s ease;
+}
+
+@keyframes swap-badge-pop {
+    from { opacity: 0; transform: scale(0.3); }
+    to { opacity: 1; transform: scale(1); }
+}
+
 .market-card > img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     border-radius: 8px;
     display: block;
+    transition: filter 0.2s ease;
 }
 
 .market-card .class-badge {
@@ -14693,7 +14710,7 @@ body {
     visibility: visible;
 }
 
-.triade-center-slot {
+.collect-center-slot {
     position: relative;
     top: auto;
     left: auto;
@@ -14709,7 +14726,7 @@ body {
     flex-shrink: 0;
 }
 
-.triade-center-slot.visible {
+.collect-center-slot.visible {
     opacity: 1;
     transform: scale(1);
 }
@@ -14729,13 +14746,13 @@ body {
    DRAG & DROP
    ============================================ */
 
-.triade-my-cards .triade-card.dragging-origin {
+.collect-my-cards .collect-card.dragging-origin {
     opacity: 0.25 !important;
     transform: scale(0.92) !important;
     transition: opacity 0.15s ease, transform 0.15s ease !important;
 }
 
-.triade-card.drag-ghost {
+.collect-card.drag-ghost {
     border: 2.5px solid rgba(240, 200, 80, 0.8);
     box-shadow: 
         0 20px 50px rgba(0, 0, 0, 0.7),
@@ -14745,22 +14762,22 @@ body {
     overflow: hidden;
     cursor: grabbing;
 }
-.triade-card.drag-ghost.fused-card {
+.collect-card.drag-ghost.fused-card {
     border: none;
     overflow: visible;
     padding: 2px;
 }
 
-.triade-card.drag-ghost .sa-glow-container,
-.triade-card.drag-ghost .sa-particles,
-.triade-card.drag-ghost .class-badge,
-.triade-card.drag-ghost .power-badge,
-.triade-card.drag-ghost .card-shimmer,
-.triade-card.drag-ghost .card-info {
+.collect-card.drag-ghost .sa-glow-container,
+.collect-card.drag-ghost .sa-particles,
+.collect-card.drag-ghost .class-badge,
+.collect-card.drag-ghost .power-badge,
+.collect-card.drag-ghost .card-shimmer,
+.collect-card.drag-ghost .card-info {
     display: none !important;
 }
 
-.triade-center-slot.visible:not(.has-card) {
+.collect-center-slot.visible:not(.has-card) {
     animation: slotPulse 2s ease-in-out infinite;
 }
 
@@ -14769,7 +14786,7 @@ body {
     50% { border-color: rgba(240, 200, 80, 0.6); }
 }
 
-.triade-center-slot.drop-hover {
+.collect-center-slot.drop-hover {
     border-color: rgba(240, 200, 80, 0.9) !important;
     background: rgba(240, 200, 80, 0.12) !important;
     box-shadow: 
@@ -14909,7 +14926,7 @@ body {
     100% { transform: scale(1); opacity: 1; }
 }
 
-.triade-center-slot.has-card {
+.collect-center-slot.has-card {
     border-color: transparent;
     background: transparent;
 }
@@ -15029,7 +15046,7 @@ body {
     100% { opacity: 1; transform: scale(1.08); }
 }
 
-.triade-my-cards .triade-card.card-played-out {
+.collect-my-cards .collect-card.card-played-out {
     opacity: 0.70 !important;
     filter: brightness(0.8) !important;
     cursor: default;
@@ -15037,11 +15054,11 @@ body {
     transition: opacity 0.5s ease, filter 0.5s ease, transform 0.2s ease, box-shadow 0.2s ease !important;
 }
 
-.triade-my-cards .triade-card:not(.card-played-out):not(.dragging-origin) {
+.collect-my-cards .collect-card:not(.card-played-out):not(.dragging-origin) {
     cursor: grab;
 }
 
-.triade-my-cards .triade-card:not(.card-played-out):not(.dragging-origin):active {
+.collect-my-cards .collect-card:not(.card-played-out):not(.dragging-origin):active {
     cursor: grabbing;
 }
 
@@ -15050,7 +15067,7 @@ body {
    ROUND ANNOUNCEMENT OVERLAY
    ============================================ */
 
-.triade-round-overlay {
+.collect-round-overlay {
     position: fixed;
     inset: 0;
     z-index: 99999;
@@ -15060,17 +15077,17 @@ body {
     pointer-events: none;
 }
 
-.triade-round-overlay.active {
+.collect-round-overlay.active {
     pointer-events: none;
 }
 
-.triade-round-overlay.fade-out {
+.collect-round-overlay.fade-out {
     /* no background to fade */
 }
 
-.triade-round-overlay.fade-out .tro-card,
-.triade-round-overlay.fade-out .tro-text,
-.triade-round-overlay.fade-out .tro-impact {
+.collect-round-overlay.fade-out .tro-card,
+.collect-round-overlay.fade-out .tro-text,
+.collect-round-overlay.fade-out .tro-impact {
     opacity: 0 !important;
     transition: opacity 0.5s ease !important;
 }
@@ -15130,23 +15147,23 @@ body {
 }
 
 /* Cartes glissent vers le centre */
-.triade-round-overlay.cards-slide .tro-card {
+.collect-round-overlay.cards-slide .tro-card {
     opacity: 1;
     transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.triade-round-overlay.cards-slide .tro-card-left {
+.collect-round-overlay.cards-slide .tro-card-left {
     left: calc(50% - 35px);
     transform: translateY(-50%) rotate(-8deg);
 }
 
-.triade-round-overlay.cards-slide .tro-card-right {
+.collect-round-overlay.cards-slide .tro-card-right {
     right: calc(50% - 35px);
     transform: translateY(-50%) rotate(8deg);
 }
 
 /* CLASH — cartes se percutent */
-.triade-round-overlay.clash .tro-card-left {
+.collect-round-overlay.clash .tro-card-left {
     left: calc(50% - 15px);
     transform: translateY(-50%) rotate(-3deg) scale(1.05);
     transition: all 0.12s cubic-bezier(0.4, 0, 1, 1);
@@ -15154,7 +15171,7 @@ body {
     border-color: rgba(255, 255, 255, 0.35);
 }
 
-.triade-round-overlay.clash .tro-card-right {
+.collect-round-overlay.clash .tro-card-right {
     right: calc(50% - 15px);
     transform: translateY(-50%) rotate(3deg) scale(1.05);
     transition: all 0.12s cubic-bezier(0.4, 0, 1, 1);
@@ -15175,7 +15192,7 @@ body {
     opacity: 0;
 }
 
-.triade-round-overlay.clash .tro-impact {
+.collect-round-overlay.clash .tro-impact {
     width: 300px;
     height: 300px;
     opacity: 1;
@@ -15202,7 +15219,7 @@ body {
     90% { transform: translate(-1px, -1px); }
 }
 
-.triade-round-overlay.clash {
+.collect-round-overlay.clash {
     animation: troScreenShake 0.4s ease-out;
 }
 
@@ -15226,7 +15243,7 @@ body {
     opacity: 0;
 }
 
-.triade-round-overlay.clash .tro-particle {
+.collect-round-overlay.clash .tro-particle {
     animation: troParticleBurst 0.8s ease-out forwards;
 }
 
@@ -15270,13 +15287,13 @@ body {
     text-shadow: 0 0 20px rgba(240, 200, 80, 0.5);
 }
 
-.triade-round-overlay.show-text .tro-round-label {
+.collect-round-overlay.show-text .tro-round-label {
     opacity: 1;
     transform: translateY(0) scale(1);
     transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.triade-round-overlay.hide-text .tro-round-label {
+.collect-round-overlay.hide-text .tro-round-label {
     opacity: 0;
     transform: translateY(0) scale(0.6);
     transition: all 0.4s ease-in;
@@ -15294,7 +15311,7 @@ body {
     position: relative;
 }
 
-.triade-round-overlay.show-stat .tro-stat {
+.collect-round-overlay.show-stat .tro-stat {
     opacity: 1;
     transform: translateY(0) scale(1);
     transition: all 0.9s cubic-bezier(0.22, 1, 0.36, 1);
@@ -15351,7 +15368,7 @@ body {
     opacity: 0;
 }
 
-.triade-round-overlay.show-stat .tro-stat-particle {
+.collect-round-overlay.show-stat .tro-stat-particle {
     animation: troStatParticle 1.3s ease-out forwards;
 }
 
@@ -15391,7 +15408,7 @@ body {
     border-radius: 2px;
 }
 
-.triade-round-overlay.show-stat .tro-stat-flash {
+.collect-round-overlay.show-stat .tro-stat-flash {
     animation: troStatFlash 0.9s ease-out forwards;
 }
 
@@ -15453,28 +15470,28 @@ body {
 }
 
 /* Active stat highlight on preview cards */
-.triade-card-preview .stat-item.active-stat .stat-value {
+.collect-card-preview .stat-item.active-stat .stat-value {
     color: #FFD700;
     text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
 }
 
-.triade-card-preview .stat-item.active-stat .stat-icon-img {
+.collect-card-preview .stat-item.active-stat .stat-icon-img {
     filter: drop-shadow(0 0 6px rgba(240, 200, 80, 0.7));
 }
 
 /* Dim non-active stats when a stat is selected */
-.triade-card-preview.has-active-stat .stat-item:not(.active-stat) .stat-value {
+.collect-card-preview.has-active-stat .stat-item:not(.active-stat) .stat-value {
     opacity: 0.45;
 }
 
-.triade-card-preview.has-active-stat .stat-item:not(.active-stat) .stat-icon-img {
+.collect-card-preview.has-active-stat .stat-item:not(.active-stat) .stat-icon-img {
     opacity: 0.4;
 }
 
 /* Fade out */
-.triade-round-overlay.fade-out .tro-card,
-.triade-round-overlay.fade-out .tro-text,
-.triade-round-overlay.fade-out .tro-impact {
+.collect-round-overlay.fade-out .tro-card,
+.collect-round-overlay.fade-out .tro-text,
+.collect-round-overlay.fade-out .tro-impact {
     opacity: 0 !important;
     transition: opacity 0.4s ease;
 }
@@ -15495,7 +15512,7 @@ body {
 }
 
 /* — Phase 1: Table (0 → 700ms) — */
-.triade-table-container.intro .triade-table {
+.collect-table-container.intro .collect-table {
     animation: tableIntroFade 0.7s ease-out both;
 }
 
@@ -15513,7 +15530,7 @@ body {
     }
 }
 
-.triade-table-container.intro .triade-player-seat {
+.collect-table-container.intro .collect-player-seat {
     animation: seatFadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 2.0s both;
 }
 
@@ -15536,7 +15553,7 @@ body {
     }
 }
 
-.triade-player-card-small.dealing {
+.collect-player-card-small.dealing {
     animation: dealPlayerCard 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
@@ -15557,38 +15574,38 @@ body {
     }
 }
 
-.triade-my-cards .triade-card.dealing {
+.collect-my-cards .collect-card.dealing {
     animation: dealMyCard 0.38s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
-.triade-my-cards .triade-card:first-child.dealing {
+.collect-my-cards .collect-card:first-child.dealing {
     --card-rotation: -4deg;
 }
 
-.triade-my-cards .triade-card:nth-child(2).dealing {
+.collect-my-cards .collect-card:nth-child(2).dealing {
     --card-rotation: 0deg;
 }
 
-.triade-my-cards .triade-card:last-child.dealing {
+.collect-my-cards .collect-card:last-child.dealing {
     --card-rotation: 4deg;
 }
 
-.triade-card.pre-deal,
-.triade-player-card-small.pre-deal {
+.collect-card.pre-deal,
+.collect-player-card-small.pre-deal {
     opacity: 0;
     pointer-events: none;
 }
 
-.triade-my-cards .triade-card.dealing {
+.collect-my-cards .collect-card.dealing {
     pointer-events: none;
 }
 
-.triade-my-cards .triade-card.dealt,
-.triade-player-card-small.dealt {
+.collect-my-cards .collect-card.dealt,
+.collect-player-card-small.dealt {
     opacity: 1;
 }
 
-.triade-my-cards .triade-card.dealt {
+.collect-my-cards .collect-card.dealt {
     animation: none;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     pointer-events: auto;
@@ -15598,8 +15615,8 @@ body {
    ======================================================== */
 
 /* Double bordure + glow néon - Après distribution OU refresh (pas de pre-deal/dealing) */
-.triade-my-cards .triade-card.same-anime-bonus.dealt,
-.triade-my-cards .triade-card.same-anime-bonus:not(.pre-deal):not(.dealing) {
+.collect-my-cards .collect-card.same-anime-bonus.dealt,
+.collect-my-cards .collect-card.same-anime-bonus:not(.pre-deal):not(.dealing) {
     overflow: visible !important;
     position: relative;
     border: 1.5px solid rgba(251, 191, 36, 0.9) !important;
@@ -15639,33 +15656,33 @@ body {
 }
 
 /* Pas d'effet pendant pre-deal et dealing */
-.triade-my-cards .triade-card.same-anime-bonus.pre-deal,
-.triade-my-cards .triade-card.same-anime-bonus.dealing {
+.collect-my-cards .collect-card.same-anime-bonus.pre-deal,
+.collect-my-cards .collect-card.same-anime-bonus.dealing {
     animation: dealMyCard 0.38s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards !important;
     border: 1.5px solid rgba(180, 150, 80, 0.4) !important;
     box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important;
 }
-.triade-my-cards .triade-card.same-anime-bonus.pre-deal {
+.collect-my-cards .collect-card.same-anime-bonus.pre-deal {
     opacity: 0 !important;
     animation: none !important;
 }
 
 /* Cacher les particules et fumée pendant pre-deal et dealing */
-.triade-my-cards .triade-card.same-anime-bonus.pre-deal .sa-glow-container,
-.triade-my-cards .triade-card.same-anime-bonus.pre-deal .sa-particles,
-.triade-my-cards .triade-card.same-anime-bonus.dealing .sa-glow-container,
-.triade-my-cards .triade-card.same-anime-bonus.dealing .sa-particles {
+.collect-my-cards .collect-card.same-anime-bonus.pre-deal .sa-glow-container,
+.collect-my-cards .collect-card.same-anime-bonus.pre-deal .sa-particles,
+.collect-my-cards .collect-card.same-anime-bonus.dealing .sa-glow-container,
+.collect-my-cards .collect-card.same-anime-bonus.dealing .sa-particles {
     opacity: 0 !important;
     visibility: hidden !important;
 }
 
 /* Afficher les particules et fumée après distribution OU refresh */
-.triade-my-cards .triade-card.same-anime-bonus.dealt .sa-glow-container,
-.triade-my-cards .triade-card.same-anime-bonus.dealt .sa-particles,
-.triade-my-cards .triade-card.same-anime-bonus:not(.pre-deal):not(.dealing) .sa-glow-container,
-.triade-my-cards .triade-card.same-anime-bonus:not(.pre-deal):not(.dealing) .sa-particles,
-.triade-my-cards .triade-card.fused-card .sa-glow-container,
-.triade-my-cards .triade-card.fused-card .sa-particles {
+.collect-my-cards .collect-card.same-anime-bonus.dealt .sa-glow-container,
+.collect-my-cards .collect-card.same-anime-bonus.dealt .sa-particles,
+.collect-my-cards .collect-card.same-anime-bonus:not(.pre-deal):not(.dealing) .sa-glow-container,
+.collect-my-cards .collect-card.same-anime-bonus:not(.pre-deal):not(.dealing) .sa-particles,
+.collect-my-cards .collect-card.fused-card .sa-glow-container,
+.collect-my-cards .collect-card.fused-card .sa-particles {
     visibility: visible;
     animation: sa-particles-appear 0.6s ease-out 0.2s forwards;
     opacity: 0;
@@ -15725,15 +15742,15 @@ body {
 }
 
 /* Halo doré intense sur l'image du personnage - Après distribution OU refresh */
-.triade-my-cards .triade-card.same-anime-bonus.dealt .card-image,
-.triade-my-cards .triade-card.same-anime-bonus:not(.pre-deal):not(.dealing) .card-image {
+.collect-my-cards .collect-card.same-anime-bonus.dealt .card-image,
+.collect-my-cards .collect-card.same-anime-bonus:not(.pre-deal):not(.dealing) .card-image {
     position: absolute !important;
     inset: 0 !important;
     overflow: hidden !important;
     border-radius: 6px !important;
 }
-.triade-my-cards .triade-card.same-anime-bonus.dealt .card-image::after,
-.triade-my-cards .triade-card.same-anime-bonus:not(.pre-deal):not(.dealing) .card-image::after {
+.collect-my-cards .collect-card.same-anime-bonus.dealt .card-image::after,
+.collect-my-cards .collect-card.same-anime-bonus:not(.pre-deal):not(.dealing) .card-image::after {
     content: '';
     display: block !important;
     position: absolute;
@@ -15745,8 +15762,8 @@ body {
     animation: sa-image-glow 2.5s ease-in-out infinite alternate, sa-halo-appear 0.5s ease-out forwards;
     opacity: 0;
 }
-.triade-my-cards .triade-card.same-anime-bonus.dealt .card-image img,
-.triade-my-cards .triade-card.same-anime-bonus:not(.pre-deal):not(.dealing) .card-image img {
+.collect-my-cards .collect-card.same-anime-bonus.dealt .card-image img,
+.collect-my-cards .collect-card.same-anime-bonus:not(.pre-deal):not(.dealing) .card-image img {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
@@ -16383,10 +16400,10 @@ body {
 /* ============================================
    FUSED CARD PREVIEW — Vertical fade images (Admin)
    ============================================ */
-.triade-card-preview .preview-image.fused-preview {
+.collect-card-preview .preview-image.fused-preview {
     background: #0a0a12;
 }
-.triade-card-preview .preview-image.fused-preview img {
+.collect-card-preview .preview-image.fused-preview img {
     position: absolute;
     inset: -10%;
     width: 120%;
@@ -16394,40 +16411,40 @@ body {
     object-fit: cover;
     object-position: center 15%;
 }
-.triade-card-preview .preview-image.fused-preview.fused-x2 img:nth-child(1) {
+.collect-card-preview .preview-image.fused-preview.fused-x2 img:nth-child(1) {
     z-index: 1;
     mask-image: linear-gradient(to bottom, black 30%, transparent 65%);
     -webkit-mask-image: linear-gradient(to bottom, black 30%, transparent 65%);
 }
-.triade-card-preview .preview-image.fused-preview.fused-x2 img:nth-child(2) {
+.collect-card-preview .preview-image.fused-preview.fused-x2 img:nth-child(2) {
     z-index: 1;
     mask-image: linear-gradient(to top, black 30%, transparent 65%);
     -webkit-mask-image: linear-gradient(to top, black 30%, transparent 65%);
 }
-.triade-card-preview .preview-image.fused-preview.fused-x3 img:nth-child(1) {
+.collect-card-preview .preview-image.fused-preview.fused-x3 img:nth-child(1) {
     z-index: 1;
     mask-image: linear-gradient(to bottom, black 15%, transparent 50%);
     -webkit-mask-image: linear-gradient(to bottom, black 15%, transparent 50%);
 }
-.triade-card-preview .preview-image.fused-preview.fused-x3 img:nth-child(2) {
+.collect-card-preview .preview-image.fused-preview.fused-x3 img:nth-child(2) {
     z-index: 2;
     mask-image: linear-gradient(to bottom, transparent 22%, black 40%, black 60%, transparent 78%);
     -webkit-mask-image: linear-gradient(to bottom, transparent 22%, black 40%, black 60%, transparent 78%);
 }
-.triade-card-preview .preview-image.fused-preview.fused-x3 img:nth-child(3) {
+.collect-card-preview .preview-image.fused-preview.fused-x3 img:nth-child(3) {
     z-index: 1;
     mask-image: linear-gradient(to top, black 15%, transparent 50%);
     -webkit-mask-image: linear-gradient(to top, black 15%, transparent 50%);
 }
 /* Fusion badge container (admin) */
-.triade-card-preview .preview-fusion-badge {
+.collect-card-preview .preview-fusion-badge {
     position: absolute;
     top: -18px;
     right: -14px;
     z-index: 20;
 }
 
-.triade-card-preview .fusion-badge-preview {
+.collect-card-preview .fusion-badge-preview {
     width: 42px;
     height: 42px;
     border-radius: 50%;
@@ -16446,7 +16463,7 @@ body {
     0% { box-shadow: 0 3px 10px rgba(0,0,0,0.5), 0 0 12px rgba(251,191,36,0.3), 0 0 25px rgba(251,191,36,0.1); }
     100% { box-shadow: 0 3px 10px rgba(0,0,0,0.5), 0 0 18px rgba(251,191,36,0.45), 0 0 35px rgba(251,191,36,0.2); }
 }
-.triade-card-preview .fusion-badge-preview.x3 {
+.collect-card-preview .fusion-badge-preview.x3 {
     border-color: rgba(255, 140, 0, 0.8);
     animation: fusion-badge-glow-x3 2s ease-in-out infinite alternate;
 }
@@ -16454,7 +16471,7 @@ body {
     0% { box-shadow: 0 3px 10px rgba(0,0,0,0.5), 0 0 14px rgba(255,140,0,0.35), 0 0 28px rgba(255,140,0,0.12); }
     100% { box-shadow: 0 3px 10px rgba(0,0,0,0.5), 0 0 22px rgba(255,140,0,0.5), 0 0 40px rgba(255,140,0,0.25); }
 }
-.triade-card-preview .fusion-badge-preview svg {
+.collect-card-preview .fusion-badge-preview svg {
     width: 18px;
     height: 18px;
     fill: none;
@@ -16463,7 +16480,7 @@ body {
     position: relative;
     z-index: 2;
 }
-.triade-card-preview .fusion-badge-preview.x3 svg {
+.collect-card-preview .fusion-badge-preview.x3 svg {
     stroke: #ff8c00;
     filter: drop-shadow(0 0 4px rgba(255,140,0,0.5));
 }
@@ -16503,7 +16520,7 @@ body {
 }
 
 /* Bottom fade on fused preview */
-.triade-card-preview .preview-image.fused-preview::after {
+.collect-card-preview .preview-image.fused-preview::after {
     content: '';
     position: absolute;
     bottom: 0;
@@ -16515,11 +16532,11 @@ body {
 }
 
 /* Fused names — stacked vertically */
-.triade-card-preview .preview-name.fused-name {
+.collect-card-preview .preview-name.fused-name {
     font-size: 0.95rem;
     max-width: 100%;
 }
-.triade-card-preview .preview-name.fused-stacked-preview {
+.collect-card-preview .preview-name.fused-stacked-preview {
     display: flex;
     flex-direction: column-reverse;
     align-items: flex-start;
@@ -16528,7 +16545,7 @@ body {
     font-size: 1.0rem;
     margin-bottom: 20px;
 }
-.triade-card-preview .preview-name.fused-stacked-preview span {
+.collect-card-preview .preview-name.fused-stacked-preview span {
     display: block;
     line-height: 1.25;
 }
@@ -16536,19 +16553,19 @@ body {
 /* ============================================
    FUSION — Admin merge target + fused card
    ============================================ */
-.triade-card.large.merge-target {
+.collect-card.large.merge-target {
     filter: brightness(1.2) !important;
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), 0 0 40px rgba(255, 165, 0, 0.3) !important;
     transition: filter 0.15s, box-shadow 0.15s !important;
 }
-.triade-card.large.fused-card {
+.collect-card.large.fused-card {
     position: relative;
     border: none !important;
     overflow: visible !important;
     padding: 2px;
 }
-.triade-card.large.fused-card .card-image { display: none; }
-.triade-card.large.fused-card .fused-img-wrap {
+.collect-card.large.fused-card .card-image { display: none; }
+.collect-card.large.fused-card .fused-img-wrap {
     position: absolute;
     inset: 0;
     overflow: hidden;
@@ -16556,7 +16573,7 @@ body {
     border-radius: 8px;
     z-index: 2;
 }
-.triade-card.large.fused-card .fused-img-wrap img {
+.collect-card.large.fused-card .fused-img-wrap img {
     position: absolute;
     inset: -10%;
     width: 120%;
@@ -16564,30 +16581,30 @@ body {
     object-fit: cover;
     object-position: center 15%;
 }
-.triade-card.large.fused-card .fused-img-wrap.fused-x2 img:nth-child(1) {
+.collect-card.large.fused-card .fused-img-wrap.fused-x2 img:nth-child(1) {
     mask-image: linear-gradient(to bottom, black 30%, transparent 65%);
     -webkit-mask-image: linear-gradient(to bottom, black 30%, transparent 65%);
 }
-.triade-card.large.fused-card .fused-img-wrap.fused-x2 img:nth-child(2) {
+.collect-card.large.fused-card .fused-img-wrap.fused-x2 img:nth-child(2) {
     mask-image: linear-gradient(to top, black 30%, transparent 65%);
     -webkit-mask-image: linear-gradient(to top, black 30%, transparent 65%);
 }
-.triade-card.large.fused-card .fused-img-wrap.fused-x3 img:nth-child(1) {
+.collect-card.large.fused-card .fused-img-wrap.fused-x3 img:nth-child(1) {
     mask-image: linear-gradient(to bottom, black 15%, transparent 50%);
     -webkit-mask-image: linear-gradient(to bottom, black 15%, transparent 50%);
 }
-.triade-card.large.fused-card .fused-img-wrap.fused-x3 img:nth-child(2) {
+.collect-card.large.fused-card .fused-img-wrap.fused-x3 img:nth-child(2) {
     z-index: 2;
     mask-image: linear-gradient(to bottom, transparent 22%, black 40%, black 60%, transparent 78%);
     -webkit-mask-image: linear-gradient(to bottom, transparent 22%, black 40%, black 60%, transparent 78%);
 }
-.triade-card.large.fused-card .fused-img-wrap.fused-x3 img:nth-child(3) {
+.collect-card.large.fused-card .fused-img-wrap.fused-x3 img:nth-child(3) {
     mask-image: linear-gradient(to top, black 15%, transparent 50%);
     -webkit-mask-image: linear-gradient(to top, black 15%, transparent 50%);
 }
 @property --fuse-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
 @property --fuse-hue { syntax: '<number>'; initial-value: 45; inherits: false; }
-.triade-card.large.fused-card::before {
+.collect-card.large.fused-card::before {
     content: '';
     position: absolute;
     inset: -2.5px;
@@ -16610,7 +16627,7 @@ body {
 @keyframes fuse-spin { to { --fuse-angle: 360deg; } }
 @keyframes fuse-hue { from { --fuse-hue: 45; } to { --fuse-hue: 25; } }
 /* Fusion impact animations */
-.triade-card.large.fuse-impact {
+.collect-card.large.fuse-impact {
     animation: fuse-shake 0.4s ease-out !important;
     transition: none !important;
     z-index: 50 !important;
@@ -16625,7 +16642,7 @@ body {
     70%  { transform: translate(1px, -1px) scale(1); filter: brightness(1.1); }
     100% { transform: translate(0,0) scale(1); filter: brightness(1); }
 }
-.triade-card.large.dissolving {
+.collect-card.large.dissolving {
     animation: card-dissolve 0.2s ease-out forwards !important;
     pointer-events: none !important;
 }
@@ -16695,7 +16712,7 @@ body {
     position: absolute; top: 50%; left: 50%; border-radius: 50%;
     opacity: 0; pointer-events: none;
 }
-.triade-card.large.fused-card {
+.collect-card.large.fused-card {
     box-shadow: 0 0 0 2px rgba(251,191,36,0.8), inset 0 0 12px rgba(251,191,36,0.25),
         0 0 14px rgba(251,191,36,0.7), 0 0 28px rgba(251,191,36,0.5),
         0 0 45px rgba(251,191,36,0.3), 0 0 70px rgba(251,191,36,0.18),
@@ -16714,7 +16731,7 @@ body {
             0 0 70px rgba(251,191,36,0.4), 0 0 110px rgba(251,191,36,0.25);
     }
 }
-.triade-card.large.fused-card .card-shimmer {
+.collect-card.large.fused-card .card-shimmer {
     position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 5;
     background: linear-gradient(105deg, transparent 30%, rgba(255,215,0,0.08) 45%,
         rgba(255,255,255,0.12) 50%, rgba(255,215,0,0.08) 55%, transparent 70%);
@@ -16722,7 +16739,7 @@ body {
     animation: shimmer-slide 2.5s ease-in-out infinite;
 }
 @keyframes shimmer-slide { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-.triade-card.large.fused-card .fused-img-wrap::after {
+.collect-card.large.fused-card .fused-img-wrap::after {
     content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 4;
     background: linear-gradient(180deg, rgba(251,191,36,0.12) 0%, rgba(251,191,36,0.06) 30%,
         transparent 50%, rgba(251,191,36,0.06) 70%, rgba(251,191,36,0.12) 100%);
@@ -16942,7 +16959,7 @@ body {
         bottom: 4.2rem;
     }
 
-    .mode-card.triade .mode-card-content {
+    .mode-card.collect .mode-card-content {
         bottom: 5.2rem;
     }
 
@@ -17065,4 +17082,80 @@ body {
         font-size: 0.65rem;
         color: rgba(255, 255, 255, 0.35);
     }
+}
+/* ===== COLLECT VALIDATION EFFECTS ===== */
+.collect-star-flyer {
+    position: fixed; pointer-events: none; z-index: 9000;
+    width: 24px; height: 24px;
+}
+.collect-star-flyer svg {
+    width: 100%; height: 100%; fill: #fbbf24; stroke: #f59e0b; stroke-width: 1;
+    filter: drop-shadow(0 0 10px rgba(251,191,36,0.9));
+}
+@keyframes collect-star-land-pop {
+    0% { transform: scale(0.3); opacity: 0; }
+    45% { transform: scale(1.7); }
+    65% { transform: scale(0.85); }
+    80% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+}
+@keyframes collect-star-glow-after {
+    0% { filter: drop-shadow(0 0 4px rgba(251,191,36,0.3)); }
+    40% { filter: drop-shadow(0 0 18px rgba(251,191,36,1)) drop-shadow(0 0 35px rgba(245,158,11,0.5)); }
+    100% { filter: drop-shadow(0 0 6px rgba(251,191,36,0.6)); }
+}
+.collect-star.star-landing {
+    animation: collect-star-land-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+               collect-star-glow-after 0.7s ease-in-out 0.25s !important;
+}
+.collect-star-burst-wrap { position: absolute; inset: -18px; pointer-events: none; }
+.collect-sbr {
+    position: absolute; left: 50%; top: 50%; width: 2px;
+    background: linear-gradient(to top, transparent, #fbbf24);
+    transform-origin: bottom center; opacity: 0;
+    animation: collect-sbr-go 0.5s ease-out forwards;
+}
+@keyframes collect-sbr-go {
+    0% { opacity: 0; height: 0; }
+    25% { opacity: 1; height: 18px; }
+    100% { opacity: 0; height: 24px; }
+}
+@keyframes collect-sparkle-twinkle {
+    0% { transform: scale(0) rotate(0deg); opacity: 0; }
+    30% { transform: scale(1.5) rotate(90deg); opacity: 1; }
+    60% { transform: scale(0.8) rotate(180deg); opacity: 0.8; }
+    100% { transform: scale(0) rotate(270deg); opacity: 0; }
+}
+.collect-validation-flash {
+    position: fixed; inset: 0; z-index: 8000; pointer-events: none; opacity: 0;
+}
+.collect-validation-flash.lien-flash { animation: collect-lien-flash 0.55s ease-out forwards; }
+.collect-validation-flash.collect-flash { animation: collect-collect-flash 0.8s ease-out forwards; }
+@keyframes collect-lien-flash {
+    0% { opacity: 0; background: radial-gradient(circle at var(--cx) var(--cy), rgba(251,191,36,0.5) 0%, transparent 35%); }
+    12% { opacity: 1; background: radial-gradient(circle at var(--cx) var(--cy), rgba(255,255,255,0.5) 0%, rgba(251,191,36,0.25) 18%, transparent 45%); }
+    100% { opacity: 0; }
+}
+@keyframes collect-collect-flash {
+    0% { opacity: 0; background: radial-gradient(circle at var(--cx) var(--cy), rgba(255,80,0,0.3) 0%, transparent 25%); }
+    8% { opacity: 1; background: radial-gradient(circle at var(--cx) var(--cy), rgba(255,255,255,0.65) 0%, rgba(255,120,0,0.35) 16%, rgba(255,50,0,0.12) 38%, transparent 55%); }
+    20% { opacity: 0.5; }
+    100% { opacity: 0; }
+}
+@keyframes collect-shake-a {
+    0%, 100% { transform: translate(0,0); }
+    20% { transform: translate(-1.5px, 1px); }
+    40% { transform: translate(1.5px, -1px); }
+    60% { transform: translate(-1px, 1.5px); }
+    80% { transform: translate(1px, -0.5px); }
+}
+@keyframes collect-shake-b {
+    0%, 100% { transform: translate(0,0); }
+    12% { transform: translate(-2.5px, 1.5px); }
+    25% { transform: translate(2px, -2px); }
+    37% { transform: translate(-1.5px, 2.5px); }
+    50% { transform: translate(2.5px, -1px); }
+    62% { transform: translate(-2px, -1.5px); }
+    75% { transform: translate(1.5px, 1.5px); }
+    87% { transform: translate(-1px, -1px); }
 }

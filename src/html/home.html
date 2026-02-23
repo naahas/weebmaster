@@ -178,7 +178,7 @@
                     </div>
                     <button 
                         class="lobby-btn" 
-                        :class="{ joined: hasJoined, 'shake-error': triadeShakeError }"
+                        :class="{ joined: hasJoined, 'shake-error': collectShakeError }"
                         @click="joinLobby" 
                         :disabled="hasJoined || joinCooldown"
                     >
@@ -186,18 +186,18 @@
                     </button>
                 </div>
 
-                <!-- Mode Triade: Lobby card -->
-                <div class="lobby-card lobby-card-v3 lobby-triade" v-if="lobbyMode === 'triade'">
+                <!-- Mode Collect: Lobby card -->
+                <div class="lobby-card lobby-card-v3 lobby-collect" v-if="lobbyMode === 'collect'">
                     <div class="lobby-glow-line"></div>
-                    <!-- Icône cartes Triade -->
-                    <div class="triade-cards-icon">
-                        <div class="triade-card triade-card-back"></div>
-                        <div class="triade-card triade-card-front">
-                            <span class="triade-card-symbol">♠</span>
+                    <!-- Icône cartes Collect -->
+                    <div class="collect-cards-icon">
+                        <div class="collect-card collect-card-back"></div>
+                        <div class="collect-card collect-card-front">
+                            <span class="collect-card-symbol">♠</span>
                         </div>
                     </div>
                     <h2 class="lobby-title">La partie va commencer</h2>
-                    <div class="lobby-subtitle">Mode Triade</div>
+                    <div class="lobby-subtitle">Mode Collect</div>
                     <div class="lobby-players-line">
                         <span class="lobby-line"></span>
                         <span class="lobby-count">
@@ -208,7 +208,7 @@
                     </div>
                     <button 
                         class="lobby-btn" 
-                        :class="{ joined: hasJoined, 'shake-error': triadeShakeError }"
+                        :class="{ joined: hasJoined, 'shake-error': collectShakeError }"
                         @click="joinLobby" 
                         :disabled="hasJoined || joinCooldown"
                     >
@@ -238,7 +238,7 @@
 
             <!-- État: Partie en cours -->
             <div class="content-section game-section" 
-                 :class="{ 'no-animation': lobbyMode === 'bombanime' || lobbyMode === 'triade' }"
+                 :class="{ 'no-animation': lobbyMode === 'bombanime' || lobbyMode === 'collect' }"
                  v-if="gameInProgress && isAuthenticated && !gameEnded">
                 
                 <!-- ============================================
@@ -622,10 +622,10 @@
                 </template>
 
                 <!-- ============================================
-                     MODE TRIADE - Interface de jeu (Poker Anime)
+                     MODE COLLECT - Interface de jeu (Poker Anime)
                      ============================================ -->
-                <template v-else-if="lobbyMode === 'triade' && triade.active && !gameEnded && !triade.reconnecting">
-                    <div class="triade-game-container">
+                <template v-else-if="lobbyMode === 'collect' && collect.active && !gameEnded && !collect.reconnecting">
+                    <div class="collect-game-container">
 
                         <!-- Triangle des classes -->
                         <div class="class-triangle-widget">
@@ -679,21 +679,21 @@
                         
                         <!-- Menu Combinaisons -->
                         
-                        <div class="triade-table-container">
-                            <div class="triade-table">
-                                <div class="triade-table-rail"></div>
-                                <div class="triade-table-surface"></div>
+                        <div class="collect-table-container">
+                            <div class="collect-table">
+                                <div class="collect-table-rail"></div>
+                                <div class="collect-table-surface"></div>
                                 
-                                <div class="triade-table-logo">
-                                    <div class="logo-main">TRIADE</div>
+                                <div class="collect-table-logo">
+                                    <div class="logo-main">COLLECT</div>
                                     <div class="logo-sub">ShonenMaster</div>
                                 </div>
                                 
                                 <!-- Center Zone: Market + Slot -->
-                                <div class="triade-center-zone">
+                                <div class="collect-center-zone">
                                     <!-- Market Cards -->
-                                    <div class="triade-market" v-if="triade.marketCards && triade.marketCards.length > 0">
-                                        <div v-for="(card, idx) in triade.marketCards" :key="'market-'+idx"
+                                    <div class="collect-market" v-if="collect.marketCards && collect.marketCards.length > 0">
+                                        <div v-for="(card, idx) in collect.marketCards" :key="'market-'+idx"
                                              class="market-card"
                                              :class="{ 'same-anime-match': marketMatchesHand(card) }"
                                              :style="{ animationDelay: (idx * 0.18) + 's' }"
@@ -726,24 +726,24 @@
                                     </div>
                                     
                                     <!-- Slot carte central -->
-                                    <div class="triade-center-slot" 
-                                         :class="{ visible: triade.showCenterSlot, 'drop-hover': triade.dropZoneActive, 'has-card': triade.cardPlayed && triade.playedCardData }">
-                                        <div class="slot-stat-icon" :class="{ show: triade.showCenterSlot && !triade.playedCardData }" v-if="triade.showCenterSlot">
+                                    <div class="collect-center-slot" 
+                                         :class="{ visible: collect.showCenterSlot, 'drop-hover': collect.dropZoneActive, 'has-card': collect.cardPlayed && collect.playedCardData }">
+                                        <div class="slot-stat-icon" :class="{ show: collect.showCenterSlot && !collect.playedCardData }" v-if="collect.showCenterSlot">
                                             <svg viewBox="0 0 24 32" fill="none" width="24" height="32"><rect x="2" y="2" width="20" height="28" rx="3" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><path d="M12 9l1.76 3.57 3.94.57-2.85 2.78.67 3.93L12 17.77l-3.52 1.85.67-3.93-2.85-2.78 3.94-.57L12 9z" fill="currentColor" fill-opacity="0.5"/></svg>
                                         </div>
                                         <div class="center-slot-inner">
                                             <!-- Carte jouée affichée au centre -->
-                                            <div v-if="triade.playedCardData" class="center-played-card"
-                                                 :class="{ 'fused-card': triade.playedCardData.isFused || (triade.playedCardData.fusedCards && triade.playedCardData.fusedCards.length > 1) }"
-                                                 @mouseenter="showCardPreview(triade.playedCardData, $event)"
+                                            <div v-if="collect.playedCardData" class="center-played-card"
+                                                 :class="{ 'fused-card': collect.playedCardData.isFused || (collect.playedCardData.fusedCards && collect.playedCardData.fusedCards.length > 1) }"
+                                                 @mouseenter="showCardPreview(collect.playedCardData, $event)"
                                                  @mouseleave="hideCardPreview">
                                                 <!-- Fused card in slot -->
-                                                <template v-if="triade.playedCardData.isFused || (triade.playedCardData.fusedCards && triade.playedCardData.fusedCards.length > 1)">
+                                                <template v-if="collect.playedCardData.isFused || (collect.playedCardData.fusedCards && collect.playedCardData.fusedCards.length > 1)">
                                                     <div class="center-fused-glow"></div>
-                                                    <div class="fused-img-wrap" :class="'fused-x' + triade.playedCardData.fusedCards.length">
-                                                        <img v-for="fc in triade.playedCardData.fusedCards" :key="fc.name" :src="getCardImage(fc)" :alt="fc.name">
+                                                    <div class="fused-img-wrap" :class="'fused-x' + collect.playedCardData.fusedCards.length">
+                                                        <img v-for="fc in collect.playedCardData.fusedCards" :key="fc.name" :src="getCardImage(fc)" :alt="fc.name">
                                                     </div>
-                                                    <div class="fusion-badge-slot" :class="{ 'x3': triade.playedCardData.fusedCards.length >= 3 }">
+                                                    <div class="fusion-badge-slot" :class="{ 'x3': collect.playedCardData.fusedCards.length >= 3 }">
                                                         <div class="fusion-badge-particles"><span></span><span></span><span></span><span></span><span></span><span></span></div>
                                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l7.07 17.32M20 4l-7.07 17.32M3.5 9h17M7 16.5h10"/></svg>
                                                     </div>
@@ -751,10 +751,10 @@
                                                 <!-- Normal card in slot -->
                                                 <template v-else>
                                                     <div class="card-image">
-                                                        <img :src="getCardImage(triade.playedCardData)" :alt="triade.playedCardData.name">
+                                                        <img :src="getCardImage(collect.playedCardData)" :alt="collect.playedCardData.name">
                                                     </div>
-                                                    <div class="class-badge" :class="triade.playedCardData.class">
-                                                        <span class="class-icon" v-html="getClassIcon(triade.playedCardData.class)"></span>
+                                                    <div class="class-badge" :class="collect.playedCardData.class">
+                                                        <span class="class-icon" v-html="getClassIcon(collect.playedCardData.class)"></span>
                                                     </div>
                                                 </template>
                                             </div>
@@ -764,48 +764,48 @@
                                 
                                 
                                 <!-- Player Seats (autres joueurs) -->
-                                <div v-for="(player, index) in triade.otherPlayers" 
+                                <div v-for="(player, index) in collect.otherPlayers" 
                                      :key="'seat-' + player.twitchId"
-                                     class="triade-player-seat"
+                                     class="collect-player-seat"
                                      :class="{ active: player.isCurrentPlayer }"
-                                     :style="getTriadePlayerStyle(index, triade.otherPlayers.length)">
-                                    <div class="triade-player-block">
-                                        <div class="triade-player-cards" :class="{ 'hand-5': triade.handSize === 5 }">
-                                            <div v-for="n in (triade.handSize || 3)" :key="'sc-' + player.twitchId + '-' + n" class="triade-player-card-small"></div>
+                                     :style="getCollectPlayerStyle(index, collect.otherPlayers.length)">
+                                    <div class="collect-player-block">
+                                        <div class="collect-player-cards" :class="{ 'hand-5': collect.handSize === 5 }">
+                                            <div v-for="n in (player.cardCount !== undefined ? player.cardCount : (collect.handSize || 3))" :key="'sc-' + player.twitchId + '-' + n" class="collect-player-card-small"></div>
                                         </div>
-                                        <div class="triade-choose-indicator" :class="{ active: triade.currentTurnId === player.twitchId, visible: triade.showCenterSlot }">
+                                        <div class="collect-choose-indicator" :class="{ active: collect.currentTurnId === player.twitchId, visible: collect.showCenterSlot }">
                                             <svg class="choose-ring" viewBox="0 0 34 34">
                                                 <circle class="choose-ring-bg" cx="17" cy="17" r="14.5" />
                                                 <circle class="choose-ring-progress" cx="17" cy="17" r="14.5"
-                                                    :style="{ strokeDashoffset: (triade.currentTurnId === player.twitchId ? triade.turnTimerProgress : 1) * 91.1 }" />
+                                                    :style="{ strokeDashoffset: (collect.currentTurnId === player.twitchId ? collect.turnTimerProgress : 1) * 91.1 }" />
                                             </svg>
                                             <img src="choose.png" alt="choose">
                                         </div>
-                                        <div class="triade-player-ribbon">
-                                            <div class="triade-stars">
-                                                <svg v-for="s in (triade.handSize || 3)" :key="'star-' + player.twitchId + '-' + s" class="triade-star" :class="{ won: (player.wins || 0) >= s }" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                                        <div class="collect-player-ribbon">
+                                            <div class="collect-stars">
+                                                <svg v-for="s in (collect.handSize || 3)" :key="'star-' + player.twitchId + '-' + s" class="collect-star" :class="{ won: (player.wins || 0) >= s }" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                                             </div>
                                         </div>
-                                        <div class="triade-player-name-tag">
-                                            <div class="triade-player-name" :class="{ 'turn-active': triade.currentTurnId === player.twitchId }">{{ player.username }}</div>
+                                        <div class="collect-player-name-tag">
+                                            <div class="collect-player-name" :class="{ 'turn-active': collect.currentTurnId === player.twitchId }">{{ player.username }}</div>
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <!-- Mon siège (POV - toujours en bas) -->
-                                <div class="triade-player-seat me" 
-                                     :class="{ active: triade.isMyTurn }"
-                                     :style="{ '--pov-scale': {2:1.35,3:1.3,4:1.25,5:1.3,6:1.25,7:1.2,8:1.15,9:1.1,10:1.05}[triade.otherPlayers.length + 1] || 1.3 }">
-                                    <div class="triade-my-cards" :class="{ 'hand-5': triade.handSize === 5, 'cards-locked': !triade.cardsActive && !triade.timerExpired && !triade.cardPlayed }">
-                                        <div v-for="(card, cardIndex) in triade.myCards" 
+                                <div class="collect-player-seat me" 
+                                     :class="{ active: collect.isMyTurn }"
+                                     :style="{ '--pov-scale': {2:1.35,3:1.3,4:1.25,5:1.3,6:1.25,7:1.2,8:1.15,9:1.1,10:1.05}[collect.otherPlayers.length + 1] || 1.3 }">
+                                    <div class="collect-my-cards" :class="{ 'hand-5': collect.handSize === 5, 'cards-locked': !collect.cardsActive && !collect.timerExpired && !collect.cardPlayed }">
+                                        <div v-for="(card, cardIndex) in collect.myCards" 
                                              :key="'mycard-' + cardIndex + '-' + card.name"
-                                             class="triade-card large"
+                                             class="collect-card large"
                                              :class="{ 
                                                  'same-anime-bonus': hasSameAnimeBonus(card) && !card.isFused,
                                                  'fused-card': card.isFused,
-                                                 'dragging-origin': triade.draggingCardIndex === cardIndex,
-                                                 'card-played-out': triade.cardPlayed || triade.timerExpired,
-                                                 'card-inactive': !triade.cardsActive && !triade.timerExpired && !triade.cardPlayed
+                                                 'dragging-origin': collect.draggingCardIndex === cardIndex,
+                                                 'card-played-out': collect.cardPlayed || collect.timerExpired,
+                                                 'card-inactive': !collect.cardsActive && !collect.timerExpired && !collect.cardPlayed
                                              }"
                                              @mouseenter="showCardPreview(card, $event)"
                                              @mouseleave="hideCardPreview"
@@ -899,14 +899,14 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="triade-player-block">
-                                        <div class="triade-player-ribbon">
-                                            <div class="triade-stars">
-                                                <svg v-for="s in (triade.handSize || 3)" :key="'mystar-' + s" class="triade-star" :class="{ won: (triade.myData.wins || 0) >= s }" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                                    <div class="collect-player-block">
+                                        <div class="collect-player-ribbon">
+                                            <div class="collect-stars">
+                                                <svg v-for="s in (collect.handSize || 3)" :key="'mystar-' + s" class="collect-star" :class="{ won: (collect.myData.wins || 0) >= s }" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                                             </div>
                                         </div>
-                                        <div class="triade-player-name-tag">
-                                            <div class="triade-player-name" :class="{ 'turn-active': triade.isMyTurn }">Vous</div>
+                                        <div class="collect-player-name-tag">
+                                            <div class="collect-player-name" :class="{ 'turn-active': collect.isMyTurn }">Vous</div>
                                         </div>
                                     </div>
                                 </div>
@@ -915,56 +915,56 @@
                         
                         
                         <!-- 🎴 Timer du tour (centré verticalement à droite) -->
-                        <div class="triade-deck-timer" v-if="triade.isMyTurn && (triade.timer > 0 || triade.timerExpired)" :class="{ 'fade-out': triade.timerExpired && triade.timer <= 0 }">
+                        <div class="collect-deck-timer" v-if="collect.isMyTurn && (collect.timer > 0 || collect.timerExpired)" :class="{ 'fade-out': collect.timerExpired && collect.timer <= 0 }">
                             <svg class="timer-ring" viewBox="0 0 54 54">
                                 <circle class="timer-ring-bg" cx="27" cy="27" r="23" />
                                 <circle class="timer-ring-progress" cx="27" cy="27" r="23" 
-                                        :style="{ strokeDashoffset: triade.timerProgress * 144.51 }" />
+                                        :style="{ strokeDashoffset: collect.timerProgress * 144.51 }" />
                             </svg>
-                            <span class="timer-number">{{ triade.timer }}</span>
+                            <span class="timer-number">{{ collect.timer }}</span>
                         </div>
                         
                         <!-- 🎴 Deck de pioche (droite) -->
-                        <div class="triade-deck-zone" 
-                             :class="{ 'can-draw': triade.canDraw, 'deck-visible': triade.showCenterSlot, 'my-turn': triade.isMyTurn && !triade.cardPlayed && !triade.timerExpired, 'deck-full-shake': triade.deckFullFlash }"
+                        <div class="collect-deck-zone" 
+                             :class="{ 'can-draw': collect.canDraw, 'deck-visible': collect.showCenterSlot, 'my-turn': collect.isMyTurn && !collect.cardPlayed && !collect.timerExpired, 'deck-full-shake': collect.deckFullFlash }"
                              @pointerdown="drawFromDeck">
-                            <div class="triade-deck-card"><span class="triade-deck-sm">SM</span></div>
-                            <div class="triade-deck-card"></div>
-                            <div class="triade-deck-card"></div>
-                            <div class="triade-deck-card"></div>
-                            <div class="triade-deck-card"></div>
-                            <div class="triade-deck-card"></div>
-                            <div class="triade-deck-glow"></div>
-                            <div class="triade-deck-wave"></div>
-                            <div class="triade-deck-wave"></div>
-                            <div class="triade-deck-wave"></div>
+                            <div class="collect-deck-card"><span class="collect-deck-sm">SM</span></div>
+                            <div class="collect-deck-card"></div>
+                            <div class="collect-deck-card"></div>
+                            <div class="collect-deck-card"></div>
+                            <div class="collect-deck-card"></div>
+                            <div class="collect-deck-card"></div>
+                            <div class="collect-deck-glow"></div>
+                            <div class="collect-deck-wave"></div>
+                            <div class="collect-deck-wave"></div>
+                            <div class="collect-deck-wave"></div>
                             <div class="deck-hover-ripple"></div>
                             <div class="deck-hover-ripple delay"></div>
                         </div>
 
                         <!-- Card Preview - Style Prototype -->
-                        <div class="triade-card-preview" :class="{ visible: triade.previewVisible, 'has-active-stat': triade.selectedStat }">
-                            <div class="preview-card" v-if="triade.previewCardDisplay">
+                        <div class="collect-card-preview" :class="{ visible: collect.previewVisible, 'has-active-stat': collect.selectedStat }">
+                            <div class="preview-card" v-if="collect.previewCardDisplay">
                                 <!-- Fused card preview: multiple images with vertical fade -->
-                                <div v-if="triade.previewCardDisplay.isFused" class="preview-image fused-preview" :class="'fused-x' + triade.previewCardDisplay.fusedCards.length">
-                                    <img v-for="fc in triade.previewCardDisplay.fusedCards" :key="fc.name" :src="getCardImage(fc)" :alt="fc.name">
+                                <div v-if="collect.previewCardDisplay.isFused" class="preview-image fused-preview" :class="'fused-x' + collect.previewCardDisplay.fusedCards.length">
+                                    <img v-for="fc in collect.previewCardDisplay.fusedCards" :key="fc.name" :src="getCardImage(fc)" :alt="fc.name">
                                 </div>
                                 <!-- Normal card preview: single image -->
                                 <div v-else class="preview-image">
-                                    <img :src="getCardImage(triade.previewCardDisplay)" :alt="triade.previewCardDisplay.name">
+                                    <img :src="getCardImage(collect.previewCardDisplay)" :alt="collect.previewCardDisplay.name">
                                 </div>
                                 <!-- Badges en haut à droite: Classe + Protagoniste (normal cards) -->
-                                <div class="preview-top-badges" v-if="!triade.previewCardDisplay.isFused">
-                                    <div class="class-badge-small" :class="triade.previewCardDisplay.class">
-                                        <span v-html="getClassIcon(triade.previewCardDisplay.class)"></span>
+                                <div class="preview-top-badges" v-if="!collect.previewCardDisplay.isFused">
+                                    <div class="class-badge-small" :class="collect.previewCardDisplay.class">
+                                        <span v-html="getClassIcon(collect.previewCardDisplay.class)"></span>
                                     </div>
-                                    <div v-if="triade.previewCardDisplay.isProtagonist" class="prota-badge" :class="{ big3: triade.previewCardDisplay.isBig3 }">
+                                    <div v-if="collect.previewCardDisplay.isProtagonist" class="prota-badge" :class="{ big3: collect.previewCardDisplay.isBig3 }">
                                         <svg viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"/></svg>
                                     </div>
                                 </div>
                                 <!-- Fusion badge (fused cards) -->
-                                <div class="preview-top-badges" v-if="triade.previewCardDisplay.isFused">
-                                    <div class="fusion-badge-preview" :class="{ 'x3': triade.previewCardDisplay.fusedCards.length >= 3 }">
+                                <div class="preview-top-badges" v-if="collect.previewCardDisplay.isFused">
+                                    <div class="fusion-badge-preview" :class="{ 'x3': collect.previewCardDisplay.fusedCards.length >= 3 }">
                                         <div class="fusion-badge-particles">
                                             <span></span><span></span><span></span><span></span><span></span><span></span>
                                         </div>
@@ -972,11 +972,11 @@
                                     </div>
                                 </div>
                                 <div class="preview-info">
-                                    <div v-if="triade.previewCardDisplay.isFused" class="preview-name fused-name fused-stacked-preview">
-                                        <span v-for="fc in triade.previewCardDisplay.fusedCards" :key="fc.name">{{ formatName(fc.name) }}</span>
+                                    <div v-if="collect.previewCardDisplay.isFused" class="preview-name fused-name fused-stacked-preview">
+                                        <span v-for="fc in collect.previewCardDisplay.fusedCards" :key="fc.name">{{ formatName(fc.name) }}</span>
                                     </div>
-                                    <div v-else class="preview-name">{{ formatName(triade.previewCardDisplay.name) }}</div>
-                                    <div class="preview-anime">{{ formatName(triade.previewCardDisplay.anime) }}</div>
+                                    <div v-else class="preview-name">{{ formatName(collect.previewCardDisplay.name) }}</div>
+                                    <div class="preview-anime">{{ formatName(collect.previewCardDisplay.anime) }}</div>
                                     <div class="preview-separator-line"><span class="sep-diamond"></span></div>
                                 </div>
                             </div>
@@ -987,7 +987,7 @@
                 <!-- ============================================
                      MODE CLASSIQUE/RIVALRY - Interface de jeu
                      ============================================ -->
-                <template v-else-if="!triade.reconnecting">
+                <template v-else-if="!collect.reconnecting">
                 <!-- HUD du joueur -->
                 <div class="player-hud">
                     <div class="hud-item hud-username-item">
@@ -1656,7 +1656,7 @@
         </div>
 
         <!-- Jauge de Combo (Desktop uniquement - côté droit) -->
-        <div class="combo-gauge-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && !triade.active">
+        <div class="combo-gauge-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && !collect.active">
             <!-- 🔥 Particules EN DEHORS de la jauge -->
             <div class="combo-particles-external"></div>
 
@@ -1679,7 +1679,7 @@
         </div>
 
         <!-- 🆕 NOUVEAU SYSTÈME BONUS - Icône + Hover Menu -->
-        <div class="bonus-icon-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && !triade.active">
+        <div class="bonus-icon-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && !collect.active">
             <div class="bonus-icon-wrapper" @mouseenter="showBonusMenu = true" @mouseleave="showBonusMenu = false"
                 @click="showBonusMenu = !showBonusMenu">
 
@@ -1731,7 +1731,7 @@
 
 
         <!-- 🆕 SYSTÈME DE DÉFIS - Bandelettes à gauche -->
-        <div class="challenges-container" v-if="gameInProgress && !gameEnded && challenges.length > 0 && lobbyMode !== 'bombanime' && lobbyMode !== 'triade'">
+        <div class="challenges-container" v-if="gameInProgress && !gameEnded && challenges.length > 0 && lobbyMode !== 'bombanime' && lobbyMode !== 'collect'">
             <div class="challenge-strip" 
                  v-for="challenge in challenges" 
                  :key="challenge.id"
@@ -1853,7 +1853,7 @@
 
 
         <!-- 🆕 DÉFIS MOBILE - Icône en bas gauche (pas en FizzBuzz) -->
-        <div class="challenges-mobile-icon" v-if="gameInProgress && !gameEnded && challenges.length > 0 && lobbyMode !== 'bombanime' && lobbyMode !== 'triade'" 
+        <div class="challenges-mobile-icon" v-if="gameInProgress && !gameEnded && challenges.length > 0 && lobbyMode !== 'bombanime' && lobbyMode !== 'collect'" 
              @click="showChallengesMobile = !showChallengesMobile">
             <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>

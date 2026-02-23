@@ -39,7 +39,7 @@ createApp({
 
             // État du jeu
             isGameActive: false,
-            gameInProgress: sessionStorage.getItem('bombanimeInProgress') === 'true' || sessionStorage.getItem('triadeInProgress') === 'true',
+            gameInProgress: sessionStorage.getItem('bombanimeInProgress') === 'true' || sessionStorage.getItem('collectInProgress') === 'true',
             gameStartedOnServer: false,
             gameEnded: false,
 
@@ -48,7 +48,7 @@ createApp({
             hasJoined: false,
             
             // Mode Rivalité
-            lobbyMode: sessionStorage.getItem('triadeInProgress') === 'true' ? 'triade' : (sessionStorage.getItem('bombanimeInProgress') === 'true' ? 'bombanime' : 'classic'), // 'classic' ou 'rivalry' ou 'fizzbuzz' ou 'triade'
+            lobbyMode: sessionStorage.getItem('collectInProgress') === 'true' ? 'collect' : (sessionStorage.getItem('bombanimeInProgress') === 'true' ? 'bombanime' : 'classic'), // 'classic' ou 'rivalry' ou 'fizzbuzz' ou 'collect'
             selectedTeam: null, // 1 ou 2
             teamNames: { 1: 'Team A', 2: 'Team B' },
             teamCounts: { 1: 0, 2: 0 },
@@ -61,9 +61,9 @@ createApp({
             isLobbyFull: false,
             maxPlayers: 13,
             lobbyFullError: false,
-            triadeShakeError: false,
+            collectShakeError: false,
             joinCooldown: false,
-            triadeJoinPending: false,
+            collectJoinPending: false,
 
             // Mode FizzBuzz
             fizzbuzzMaxLives: 1, // Nombre max de vies en FizzBuzz (1 ou 2)
@@ -215,10 +215,10 @@ createApp({
                 challengeJustCompleted: null // Pour animation de défi complété
             },
 
-            // 🎴 État Triade
-            triade: {
-                active: sessionStorage.getItem('triadeInProgress') === 'true',
-                reconnecting: sessionStorage.getItem('triadeInProgress') === 'true', // Waiting for server confirmation
+            // 🎴 État Collect
+            collect: {
+                active: sessionStorage.getItem('collectInProgress') === 'true',
+                reconnecting: sessionStorage.getItem('collectInProgress') === 'true', // Waiting for server confirmation
                 playersData: [],        // Tous les joueurs
                 otherPlayers: [],       // Les autres joueurs (pas moi)
                 myCards: [],            // Mes 3 cartes
@@ -230,23 +230,23 @@ createApp({
                 previewCardDisplay: null, // Garde le contenu pendant l'animation de sortie
                 previewVisible: false,    // Contrôle la classe CSS visible
                 // 🆕 Round announcement
-                showCenterSlot: (() => { try { return !!JSON.parse(sessionStorage.getItem('triadeState') || '{}').selectedStat; } catch(e) { return false; } })(),
+                showCenterSlot: (() => { try { return !!JSON.parse(sessionStorage.getItem('collectState') || '{}').selectedStat; } catch(e) { return false; } })(),
                 currentRound: 0,
-                selectedStat: (() => { try { return JSON.parse(sessionStorage.getItem('triadeState') || '{}').selectedStat || null; } catch(e) { return null; } })(),
+                selectedStat: (() => { try { return JSON.parse(sessionStorage.getItem('collectState') || '{}').selectedStat || null; } catch(e) { return null; } })(),
                 // 🆕 Drag & Drop
                 draggingCardIndex: null,
                 dropZoneActive: false,
-                cardPlayed: (() => { try { return !!JSON.parse(sessionStorage.getItem('triadeState') || '{}').cardPlayed; } catch(e) { return false; } })(),
-                playedCardData: (() => { try { return JSON.parse(sessionStorage.getItem('triadeState') || '{}').playedCardData || null; } catch(e) { return null; } })(),
+                cardPlayed: (() => { try { return !!JSON.parse(sessionStorage.getItem('collectState') || '{}').cardPlayed; } catch(e) { return false; } })(),
+                playedCardData: (() => { try { return JSON.parse(sessionStorage.getItem('collectState') || '{}').playedCardData || null; } catch(e) { return null; } })(),
                 timer: 0,
                 playersWhoPlayed: [],
                 currentTurnId: null, // 🎴 Tour par tour: ID du joueur actif
                 turnTimerProgress: 0, // 🎴 0 to 1, progress ring on choose indicator
-                timerExpired: (() => { try { return !!JSON.parse(sessionStorage.getItem('triadeState') || '{}').timerExpired; } catch(e) { return false; } })(),
+                timerExpired: (() => { try { return !!JSON.parse(sessionStorage.getItem('collectState') || '{}').timerExpired; } catch(e) { return false; } })(),
                 canDraw: false,  // 🎴 Deck: le joueur peut piocher
                 cardsActive: false, // 🔒 Cartes draggables seulement quand timer actif
                 timerProgress: 0, // 0 to 1, smooth progress for ring
-                handSize: (() => { try { return JSON.parse(sessionStorage.getItem('triadeState') || '{}').handSize || 3; } catch(e) { return 3; } })(),     // 🎴 Nombre de cartes en main (3 ou 5)
+                handSize: (() => { try { return JSON.parse(sessionStorage.getItem('collectState') || '{}').handSize || 3; } catch(e) { return 3; } })(),     // 🎴 Nombre de cartes en main (3 ou 5)
                 marketCards: [],     // 🏪 Cartes du marché (4 cartes face visible)
                 deckFullFlash: false,  // 🎴 Flash rouge quand main pleine
                 drawChoiceVisible: false, // 🎴 Overlay de choix pioche visible
@@ -289,9 +289,9 @@ createApp({
         await this.restoreGameState();
         await this.loadLeaderboard();
         
-        // 🎴 Restaurer l'état Triade instantanément depuis sessionStorage
-        if (sessionStorage.getItem('triadeInProgress') === 'true') {
-            this.restoreTriadeState();
+        // 🎴 Restaurer l'état Collect instantanément depuis sessionStorage
+        if (sessionStorage.getItem('collectInProgress') === 'true') {
+            this.restoreCollectState();
         }
 
         this.initParticles();
@@ -327,15 +327,15 @@ createApp({
                     });
                 }
                 
-                // 🎴 Triade : si la partie est active mais pas de cartes, redemander
-                if (this.lobbyMode === 'triade' && this.hasJoined && this.twitchId) {
-                    if (this.triade.active && (!this.triade.myCards || this.triade.myCards.length === 0) && !this._pendingTriadeCards) {
+                // 🎴 Collect : si la partie est active mais pas de cartes, redemander
+                if (this.lobbyMode === 'collect' && this.hasJoined && this.twitchId) {
+                    if (this.collect.active && (!this.collect.myCards || this.collect.myCards.length === 0) && !this._pendingCollectCards) {
                         console.log('🎴 Onglet visible + pas de cartes → redemande');
-                        this.socket.emit('triade-request-my-cards', { twitchId: this.twitchId });
-                    } else if (!this.triade.active) {
-                        // Peut-être raté triade-game-started pendant le background
-                        console.log('🎴 Onglet visible + triade pas active → vérification');
-                        this.socket.emit('triade-reconnect', {
+                        this.socket.emit('collect-request-my-cards', { twitchId: this.twitchId });
+                    } else if (!this.collect.active) {
+                        // Peut-être raté collect-game-started pendant le background
+                        console.log('🎴 Onglet visible + collect pas active → vérification');
+                        this.socket.emit('collect-reconnect', {
                             twitchId: this.twitchId,
                             username: this.username
                         });
@@ -1315,8 +1315,8 @@ createApp({
                     this.lobbyMode = 'classic';
                 }
                 
-                // Resync hasJoined pour triade lobby
-                if (state.isActive && !state.inProgress && state.lobbyMode === 'triade' && this.isAuthenticated) {
+                // Resync hasJoined pour collect lobby
+                if (state.isActive && !state.inProgress && state.lobbyMode === 'collect' && this.isAuthenticated) {
                     const isInPlayerList = state.players && state.players.some(p => p.twitchId === this.twitchId);
                     if (isInPlayerList && !this.hasJoined) {
                         console.log('🔄 Resync: joueur trouvé dans lobby serveur → hasJoined=true');
@@ -1411,31 +1411,31 @@ createApp({
                     }
                 }
                 
-                // 🎴 Nettoyer Triade si le serveur n'est pas en mode Triade
-                if (state.lobbyMode !== 'triade') {
-                    sessionStorage.removeItem('triadeInProgress');
-                    sessionStorage.removeItem('triadeState');
-                    this.triade.active = false;
-                    this.triade.reconnecting = false;
-                    if (this.lobbyMode === 'triade') {
+                // 🎴 Nettoyer Collect si le serveur n'est pas en mode Collect
+                if (state.lobbyMode !== 'collect') {
+                    sessionStorage.removeItem('collectInProgress');
+                    sessionStorage.removeItem('collectState');
+                    this.collect.active = false;
+                    this.collect.reconnecting = false;
+                    if (this.lobbyMode === 'collect') {
                         this.lobbyMode = state.lobbyMode || 'classic';
                     }
                 }
                 
-                // 🎴 FIX: Valider hasJoined pour Triade lobby (sessionStorage peut survivre après game-deactivated)
-                if (this.isAuthenticated && state.lobbyMode === 'triade' && !state.inProgress) {
+                // 🎴 FIX: Valider hasJoined pour Collect lobby (sessionStorage peut survivre après game-deactivated)
+                if (this.isAuthenticated && state.lobbyMode === 'collect' && !state.inProgress) {
                     const isInPlayerList = state.players && state.players.some(p => p.twitchId === this.twitchId);
                     if (isInPlayerList) {
                         // Le joueur est bien dans le lobby serveur → auto-rejoin après reconnexion socket
                         this.hasJoined = true;
                         this.shouldRejoinLobby = true;
-                        console.log('✅ Triade: joueur confirmé dans le lobby serveur → auto-rejoin');
+                        console.log('✅ Collect: joueur confirmé dans le lobby serveur → auto-rejoin');
                     } else if (this.hasJoined) {
                         // hasJoined périmé (sessionStorage stale) → nettoyer
-                        console.log('🧹 Triade: hasJoined périmé - joueur absent du lobby serveur');
+                        console.log('🧹 Collect: hasJoined périmé - joueur absent du lobby serveur');
                         this.hasJoined = false;
-                        sessionStorage.removeItem('triadeInProgress');
-                        sessionStorage.removeItem('triadeState');
+                        sessionStorage.removeItem('collectInProgress');
+                        sessionStorage.removeItem('collectState');
                         localStorage.removeItem('hasJoinedLobby');
                         localStorage.removeItem('lobbyTwitchId');
                     }
@@ -1449,16 +1449,16 @@ createApp({
                         this.hasJoined = false;
                         localStorage.removeItem('hasJoinedLobby');
                         localStorage.removeItem('lobbyTwitchId');
-                        sessionStorage.removeItem('triadeInProgress');
-                        sessionStorage.removeItem('triadeState');
+                        sessionStorage.removeItem('collectInProgress');
+                        sessionStorage.removeItem('collectState');
                     }
                 }
 
                 if (state.inProgress && this.hasJoined) {
-                    // 🎴 En mode Triade, vérifier que le joueur est vraiment dans la partie
+                    // 🎴 En mode Collect, vérifier que le joueur est vraiment dans la partie
                     // (hasJoined = lobby rejoint, mais il faut être dans playersData pour la game)
-                    if (state.lobbyMode === 'triade' && !this.triade.active) {
-                        // Triade en cours mais pas initialisé → attendre triade-reconnect
+                    if (state.lobbyMode === 'collect' && !this.collect.active) {
+                        // Collect en cours mais pas initialisé → attendre collect-reconnect
                         // Ne pas mettre gameInProgress=true tant qu'on n'a pas confirmé être dans la partie
                         this.gameInProgress = false;
                     } else {
@@ -1641,47 +1641,47 @@ createApp({
                     console.log('💣 Demande état BombAnime après connexion');
                 }
                 
-                // 🎴 Demander la reconnexion Triade si une partie était en cours
-                const triadeWasInProgress = sessionStorage.getItem('triadeInProgress');
-                if (triadeWasInProgress === 'true' && !this.shouldRejoinLobby) {
-                    console.log('🎴 Tentative de reconnexion Triade...');
+                // 🎴 Demander la reconnexion Collect si une partie était en cours
+                const collectWasInProgress = sessionStorage.getItem('collectInProgress');
+                if (collectWasInProgress === 'true' && !this.shouldRejoinLobby) {
+                    console.log('🎴 Tentative de reconnexion Collect...');
                     this.gameInProgress = true; // Optimiste — évite le flash "Partie en cours"
-                    this.socket.emit('triade-reconnect', {
+                    this.socket.emit('collect-reconnect', {
                         twitchId: this.twitchId,
                         username: this.username
                     });
                     
                     // Timeout de sécurité: si pas de réponse en 1.5s, la partie est probablement terminée
-                    this._triadeReconnectTimeout = setTimeout(() => {
-                        if (!this.triade.myCards || this.triade.myCards.length === 0) {
-                            console.log('🎴 Reconnexion Triade expirée - partie probablement terminée');
-                            sessionStorage.removeItem('triadeInProgress');
-                            sessionStorage.removeItem('triadeState');
-                            this.triade.active = false;
-                            this.triade.reconnecting = false;
+                    this._collectReconnectTimeout = setTimeout(() => {
+                        if (!this.collect.myCards || this.collect.myCards.length === 0) {
+                            console.log('🎴 Reconnexion Collect expirée - partie probablement terminée');
+                            sessionStorage.removeItem('collectInProgress');
+                            sessionStorage.removeItem('collectState');
+                            this.collect.active = false;
+                            this.collect.reconnecting = false;
                             this.gameInProgress = false;
                             this.lobbyMode = 'classic';
                             this.hasJoined = false;
                         }
                     }, 1500);
                 }
-                // 🎴 FIX: Si joueur dans lobby triade mais a raté triade-game-started (race condition socket)
+                // 🎴 FIX: Si joueur dans lobby collect mais a raté collect-game-started (race condition socket)
                 // Seulement si une partie était en cours côté serveur (pas en lobby)
-                else if (this.hasJoined && this.lobbyMode === 'triade' && !this.triade.active && this.gameStartedOnServer) {
-                    console.log('🎴 Lobby triade détecté sans partie active → vérification auprès du serveur...');
+                else if (this.hasJoined && this.lobbyMode === 'collect' && !this.collect.active && this.gameStartedOnServer) {
+                    console.log('🎴 Lobby collect détecté sans partie active → vérification auprès du serveur...');
                     // Cacher le modal "partie en cours" immédiatement (optimiste)
                     this.gameInProgress = true;
-                    this.socket.emit('triade-reconnect', {
+                    this.socket.emit('collect-reconnect', {
                         twitchId: this.twitchId,
                         username: this.username
                     });
                     
                     // Timeout: si le serveur ne répond pas, c'est que la game n'a pas encore commencé
-                    this._triadeReconnectTimeout = setTimeout(() => {
-                        if (!this.triade.active) {
-                            console.log('🎴 Pas de partie Triade en cours - lobby normal');
+                    this._collectReconnectTimeout = setTimeout(() => {
+                        if (!this.collect.active) {
+                            console.log('🎴 Pas de partie Collect en cours - lobby normal');
                             this.gameInProgress = false;
-                            this.triade.reconnecting = false;
+                            this.collect.reconnecting = false;
                         }
                     }, 3000);
                 }
@@ -1739,8 +1739,8 @@ createApp({
                 // 🔧 Reset hasJoined — c'est un NOUVEAU lobby, personne n'a rejoint
                 this.hasJoined = false;
                 this.playerCount = 0;
-                sessionStorage.removeItem('triadeInProgress');
-                sessionStorage.removeItem('triadeState');
+                sessionStorage.removeItem('collectInProgress');
+                sessionStorage.removeItem('collectState');
                 localStorage.removeItem('hasJoinedLobby');
                 localStorage.removeItem('lobbyTwitchId');
                 // 🆕 Mettre à jour les paramètres si fournis
@@ -1829,11 +1829,11 @@ createApp({
                 localStorage.removeItem('selectedTeam');
                 localStorage.removeItem('teamCooldownEnd');
                 sessionStorage.removeItem('wasKicked'); // 🆕 Clear kick flag pour prochaine partie
-                sessionStorage.removeItem('triadeInProgress');
-                sessionStorage.removeItem('triadeState');
+                sessionStorage.removeItem('collectInProgress');
+                sessionStorage.removeItem('collectState');
                 
-                // 🎴 Reset Triade
-                this.triade.active = false;
+                // 🎴 Reset Collect
+                this.collect.active = false;
 
                 this.showNotification('Le jeu a été désactivé', 'info');
             });
@@ -1902,10 +1902,10 @@ createApp({
                 if (data.teamNames) this.teamNames = data.teamNames;
                 if (data.teamCounts) this.teamCounts = data.teamCounts;
                 
-                // 💣 BombAnime / 🎴 Triade - Lobby plein
-                if (data.lobbyMode === 'bombanime' || data.lobbyMode === 'triade') {
+                // 💣 BombAnime / 🎴 Collect - Lobby plein
+                if (data.lobbyMode === 'bombanime' || data.lobbyMode === 'collect') {
                     this.isLobbyFull = data.isLobbyFull || false;
-                    this.maxPlayers = data.maxPlayers || (data.lobbyMode === 'triade' ? 5 : 13);
+                    this.maxPlayers = data.maxPlayers || (data.lobbyMode === 'collect' ? 5 : 13);
                     // Reset l'erreur si le lobby n'est plus plein
                     if (!data.isLobbyFull && this.lobbyFullError) {
                         this.lobbyFullError = false;
@@ -2063,20 +2063,20 @@ createApp({
                     localStorage.removeItem('teamCooldownEnd');
                 }
                 
-                // 💣🎴 Lobby BombAnime/Triade plein
+                // 💣🎴 Lobby BombAnime/Collect plein
                 if (data.message && data.message.includes('plein')) {
                     this.hasJoined = false; // Le joueur n'a PAS rejoint
-                    this.triadeJoinPending = false; // Annuler le pending
+                    this.collectJoinPending = false; // Annuler le pending
                     // Nettoyer localStorage car le join a échoué
                     localStorage.removeItem('hasJoinedLobby');
                     localStorage.removeItem('lobbyTwitchId');
                     
                     // 🎴💣 Animation shake + cooldown 3s (pour les deux modes)
-                    this.triadeShakeError = true;
+                    this.collectShakeError = true;
                     this.joinCooldown = true;
                     
                     setTimeout(() => {
-                        this.triadeShakeError = false;
+                        this.collectShakeError = false;
                     }, 1000);
                     
                     setTimeout(() => {
@@ -2905,16 +2905,16 @@ createApp({
             });
             
             // ============================================
-            // 🎴 TRIADE SOCKET EVENTS
+            // 🎴 COLLECT SOCKET EVENTS
             // ============================================
             
-            console.log('🎴 Registering triade socket handlers...');
+            console.log('🎴 Registering collect socket handlers...');
             
-            // Partie Triade démarrée
-            this.socket.on('triade-game-started', (data) => {
-                console.log('🎴 Triade game started:', data);
+            // Partie Collect démarrée
+            this.socket.on('collect-game-started', (data) => {
+                console.log('🎴 Collect game started:', data);
                 
-                this.lobbyMode = 'triade';
+                this.lobbyMode = 'collect';
                 this.gameStartedOnServer = true;
                 this.gameEnded = false; // 🆕 Reset gameEnded pour afficher le template
                 
@@ -2923,110 +2923,148 @@ createApp({
                 const isInGame = allPlayers.some(p => p.twitchId === this.twitchId);
                 
                 if (!isInGame) {
-                    console.log('🎴 Triade: je ne suis pas dans la partie → spectateur');
+                    console.log('🎴 Collect: je ne suis pas dans la partie → spectateur');
                     this.gameInProgress = false;
-                    this.triade.active = false;
-                    sessionStorage.removeItem('triadeInProgress');
+                    this.collect.active = false;
+                    sessionStorage.removeItem('collectInProgress');
                     return;
                 }
                 
                 this.gameInProgress = true;
-                this.initTriade(data);
+                this.initCollect(data);
                 
                 // Stocker les données du round 1 (sera déclenché à la fin du deal)
                 if (data.round1) {
-                    this._triadeRound1 = data.round1;
+                    this._collectRound1 = data.round1;
                 }
                 
                 // Demander mes cartes au serveur avec retry automatique
-                this._triadeCardsReceived = false;
+                this._collectCardsReceived = false;
                 const requestCards = () => {
-                    if (this._triadeCardsReceived) return;
+                    if (this._collectCardsReceived) return;
                     console.log('🎴 Demande de cartes... twitchId:', this.twitchId);
-                    this.socket.emit('triade-request-my-cards', { twitchId: this.twitchId });
+                    this.socket.emit('collect-request-my-cards', { twitchId: this.twitchId });
                 };
                 requestCards();
                 setTimeout(() => requestCards(), 500);
                 setTimeout(() => requestCards(), 1500);
                 setTimeout(() => {
-                    if (!this._triadeCardsReceived) {
+                    if (!this._collectCardsReceived) {
                         console.log('🎴 Cartes toujours pas reçues → reconnect fallback');
-                        this.socket.emit('triade-reconnect', { twitchId: this.twitchId, username: this.username });
+                        this.socket.emit('collect-reconnect', { twitchId: this.twitchId, username: this.username });
                     }
                 }, 3000);
                 
                 // 🛡️ FALLBACK ULTIME: si après 6s les cartes ne sont toujours pas affichées
                 setTimeout(() => {
-                    if (!this.triade.myCards || this.triade.myCards.length === 0) {
+                    if (!this.collect.myCards || this.collect.myCards.length === 0) {
                         console.log('🎴 FALLBACK: cartes toujours vides après 6s');
-                        // Essayer _pendingTriadeCards d'abord
-                        if (this._pendingTriadeCards && this._pendingTriadeCards.length > 0) {
-                            console.log('🎴 FALLBACK: injection depuis _pendingTriadeCards');
-                            this.triade.myCards = this._pendingTriadeCards.filter(c => c != null);
-                            this._pendingTriadeCards = null;
-                            this.saveTriadeState();
+                        // Essayer _pendingCollectCards d'abord
+                        if (this._pendingCollectCards && this._pendingCollectCards.length > 0) {
+                            console.log('🎴 FALLBACK: injection depuis _pendingCollectCards');
+                            this.collect.myCards = this._pendingCollectCards.filter(c => c != null);
+                            this._pendingCollectCards = null;
+                            this.saveCollectState();
                         } else {
                             // Dernier recours: redemander au serveur sans animation
                             console.log('🎴 FALLBACK: redemande directe au serveur');
-                            this.socket.emit('triade-request-my-cards', { twitchId: this.twitchId });
+                            this.socket.emit('collect-request-my-cards', { twitchId: this.twitchId });
                         }
                     }
                 }, 6000);
                 
                 // Cacher immédiatement les cartes adverses + lancer l'intro
                 this.$nextTick(() => {
-                    document.querySelectorAll('.triade-player-card-small').forEach(c => {
+                    document.querySelectorAll('.collect-player-card-small').forEach(c => {
                         c.classList.add('pre-deal');
                     });
-                    const container = document.querySelector('.triade-table-container');
+                    const container = document.querySelector('.collect-table-container');
                     if (container) {
                         container.classList.add('intro');
                         setTimeout(() => container.classList.remove('intro'), 3000);
                     }
                 });
                 
-                // 🏪 Local fallback: si triade-market-reveal du serveur n'arrive pas
+                // 🏪 Local fallback: si collect-market-reveal du serveur n'arrive pas
                 this._marketRevealed = false;
                 this._timerStarted = false;
                 const localMarketCards = data.marketCards || [];
                 const vm = this;
                 setTimeout(() => {
-                    if (!vm._marketRevealed && localMarketCards.length > 0 && vm.triade.active) {
+                    if (!vm._marketRevealed && localMarketCards.length > 0 && vm.collect.active) {
                         console.log('🏪 Player: fallback local market reveal');
-                        vm.triade.marketCards = localMarketCards;
+                        vm.collect.marketCards = localMarketCards;
                         vm._marketRevealed = true;
-                        vm._startTriadeAfterMarket();
+                        vm._startCollectAfterMarket();
                     }
                 }, 5500);
             });
             
             // 🏪 Market reveal synchronisé par le serveur
-            this.socket.on('triade-market-reveal', (data) => {
+            this.socket.on('collect-market-reveal', (data) => {
                 console.log('🏪 Market reveal reçu:', data.marketCards?.length, 'cartes');
                 if (this._marketRevealed) return;
                 this._marketRevealed = true;
-                if (data.marketCards && data.marketCards.length > 0 && this.triade.active) {
-                    this.triade.marketCards = data.marketCards;
-                    this._startTriadeAfterMarket();
+                if (data.marketCards && data.marketCards.length > 0 && this.collect.active) {
+                    this.collect.marketCards = data.marketCards;
+                    this._startCollectAfterMarket();
                 }
             });
             
             // 🆕 Gestion de l'annonce de round (rounds 2+ uniquement, round 1 déclenché localement)
-            this.socket.on('triade-player-played', (data) => {
-                if (data.twitchId && !this.triade.playersWhoPlayed.includes(data.twitchId)) {
-                    this.triade.playersWhoPlayed.push(data.twitchId);
+            this.socket.on('collect-player-played', (data) => {
+                if (data.twitchId && !this.collect.playersWhoPlayed.includes(data.twitchId)) {
+                    this.collect.playersWhoPlayed.push(data.twitchId);
                 }
+                
+                // Animation pour les autres joueurs uniquement
+                if (data.twitchId === this.twitchId) return;
+                
+                // Pas d'animation de vol pour les échanges marché
+                if (data.isSwap) return;
+                
+                // Trouver le siège du joueur
+                const seats = document.querySelectorAll('.collect-player-seat:not(.me)');
+                const playerIdx = this.collect.otherPlayers.findIndex(p => p.twitchId === data.twitchId);
+                const seatEl = (playerIdx >= 0 && seats[playerIdx]) ? seats[playerIdx] : null;
+                
+                // Trouver le center slot
+                const slotEl = document.querySelector('.collect-center-slot');
+                if (!seatEl || !slotEl) return;
+                
+                // Lancer le vol de carte
+                const flightDur = 280;
+                this._cardFlightPending = data.twitchId;
+                animateCardToSlot(seatEl, slotEl, flightDur, (flyerEl) => {
+                    this._cardFlightPending = null;
+                    if (data.isDiscard) {
+                        // Défausse → retirer le flyer + shatter
+                        if (flyerEl) flyerEl.remove();
+                        const rect = slotEl.getBoundingClientRect();
+                        this.playShatterEffect(rect.left + rect.width / 2, rect.top + rect.height / 2);
+                    } else {
+                        // Fusion → garder le flyer, star-gain le retirera
+                        this._cardFlyer = flyerEl;
+                        setTimeout(() => { if (this._cardFlyer === flyerEl) { flyerEl.remove(); this._cardFlyer = null; } }, 2000);
+                    }
+                }, true); // keepAlive
             });
 
             // 🎴 Tour par tour : un joueur commence son tour
-            this.socket.on('triade-turn-start', (data) => {
+            this.socket.on('collect-turn-start', (data) => {
+                // 🧹 Nettoyage des éléments d'effet orphelins
+                document.querySelectorAll('.shatter-flash, .shatter-fragment, .collect-validation-flash, .collect-star-flyer, .collect-star-burst-wrap, .collect-card-flight-flyer, .draw-card-flyer, .drag-ghost, .fusion-flash-overlay, .collect-fusion-burst').forEach(el => el.remove());
+                document.querySelectorAll('.market-card.swap-hover').forEach(el => el.classList.remove('swap-hover'));
+                this._cardFlightPending = null;
+                if (this._cardFlyer) { this._cardFlyer.remove(); this._cardFlyer = null; }
+                
                 console.log(`🎴 Tour de ${data.username} (${data.duration}s)`);
-                this.triade.currentTurnId = data.twitchId;
-                this.triade.showCenterSlot = true;
-                this.triade.turnTimerProgress = 0;
+                this.collect.currentTurnId = data.twitchId;
+                this.collect.showCenterSlot = true;
+                this.collect.turnTimerProgress = 0;
                 
                 const isMe = data.twitchId === this.twitchId;
-                this.triade.isMyTurn = isMe;
+                this.collect.isMyTurn = isMe;
                 
                 // 🎴 Tracking global du ring (pour tous les joueurs)
                 if (this._turnRingInterval) clearInterval(this._turnRingInterval);
@@ -3034,8 +3072,8 @@ createApp({
                 this._turnRingDuration = data.duration || 15;
                 this._turnRingInterval = setInterval(() => {
                     const elapsed = this._turnRingDuration - ((this._turnRingEndMs - Date.now()) / 1000);
-                    this.triade.turnTimerProgress = Math.min(1, Math.max(0, elapsed / this._turnRingDuration));
-                    if (this.triade.turnTimerProgress >= 1) {
+                    this.collect.turnTimerProgress = Math.min(1, Math.max(0, elapsed / this._turnRingDuration));
+                    if (this.collect.turnTimerProgress >= 1) {
                         clearInterval(this._turnRingInterval);
                         this._turnRingInterval = null;
                     }
@@ -3043,92 +3081,92 @@ createApp({
                 
                 if (isMe) {
                     // C'est mon tour → reset état du tour précédent + activer
-                    this.triade.cardPlayed = false;
-                    this.triade.playedCardData = null;
-                    this.triade.cardsActive = true;
-                    this.triade.timerExpired = false;
-                    this.triade.canDraw = true; // Pioche disponible
-                    this.startTriadeTimer(data.duration || 15);
+                    this.collect.cardPlayed = false;
+                    this.collect.playedCardData = null;
+                    this.collect.cardsActive = true;
+                    this.collect.timerExpired = false;
+                    this.collect.canDraw = true; // Pioche disponible
+                    this.startCollectTimer(data.duration || 15);
                 } else {
                     // Pas mon tour → désactiver les cartes, cacher timer POV
-                    this.triade.cardsActive = false;
-                    this.stopTriadeTimer(true);
-                    this.triade.timer = 0; // Cacher le timer POV
-                    this.triade.timerExpired = false;
+                    this.collect.cardsActive = false;
+                    this.stopCollectTimer(true);
+                    this.collect.timer = 0; // Cacher le timer POV
+                    this.collect.timerExpired = false;
                 }
                 
-                this.saveTriadeState();
+                this.saveCollectState();
             });
             
             // 🎴 Fin de tous les tours (tous ont joué)
-            this.socket.on('triade-turn-end', () => {
+            this.socket.on('collect-turn-end', () => {
                 console.log('🎴 Tous les joueurs ont joué');
-                this.triade.currentTurnId = null;
-                this.triade.isMyTurn = false;
-                this.triade.cardsActive = false;
-                this.triade.turnTimerProgress = 1;
+                this.collect.currentTurnId = null;
+                this.collect.isMyTurn = false;
+                this.collect.cardsActive = false;
+                this.collect.turnTimerProgress = 1;
                 if (this._turnRingInterval) { clearInterval(this._turnRingInterval); this._turnRingInterval = null; }
-                this.stopTriadeTimer(true);
+                this.stopCollectTimer(true);
             });
 
-            this.socket.on('triade-timer-start', (data) => {
+            this.socket.on('collect-timer-start', (data) => {
                 // Restore stat if it was pending (reconnect during deal)
-                if (this._pendingRoundStat && !this.triade.selectedStat) {
-                    this.triade.selectedStat = this._pendingRoundStat;
+                if (this._pendingRoundStat && !this.collect.selectedStat) {
+                    this.collect.selectedStat = this._pendingRoundStat;
                 }
                 this._pendingRoundStat = null;
                 // Enable cards and show slot
-                this.triade.timerExpired = false;
-                this.triade.cardsActive = true; // 🔓 Activer les cartes
-                this.triade.showCenterSlot = true;
-                if (!this.triade.cardPlayed) this.startTriadeTimer(data.duration || 15);
+                this.collect.timerExpired = false;
+                this.collect.cardsActive = true; // 🔓 Activer les cartes
+                this.collect.showCenterSlot = true;
+                if (!this.collect.cardPlayed) this.startCollectTimer(data.duration || 15);
             });
 
-            this.socket.on('triade-round-start', (data) => {
+            this.socket.on('collect-round-start', (data) => {
                 console.log('🎲 Round start received:', data);
                 
-                if (!this.triade.active) {
-                    console.warn('🎲 triade.active is false, setting to true');
-                    this.triade.active = true;
+                if (!this.collect.active) {
+                    console.warn('🎲 collect.active is false, setting to true');
+                    this.collect.active = true;
                 }
                 
                 // Rounds 2+ : afficher immédiatement
-                if (this.showTriadeRoundOverlay) {
-                    this.showTriadeRoundOverlay(data.round, data.stat, data.statName);
+                if (this.showCollectRoundOverlay) {
+                    this.showCollectRoundOverlay(data.round, data.stat, data.statName);
                 }
             });
             
-            // Reconnexion à une partie Triade en cours
-            this.socket.on('triade-reconnect', (data) => {
-                console.log('🎴 Triade reconnect:', data);
+            // Reconnexion à une partie Collect en cours
+            this.socket.on('collect-reconnect', (data) => {
+                console.log('🎴 Collect reconnect:', data);
                 
                 // Annuler le timeout de sécurité
-                if (this._triadeReconnectTimeout) {
-                    clearTimeout(this._triadeReconnectTimeout);
-                    this._triadeReconnectTimeout = null;
+                if (this._collectReconnectTimeout) {
+                    clearTimeout(this._collectReconnectTimeout);
+                    this._collectReconnectTimeout = null;
                 }
                 
                 // Server says no game active → clean up stale state
                 if (data.active === false) {
-                    console.log('🎴 Serveur: pas de partie Triade → nettoyage état game');
-                    sessionStorage.removeItem('triadeInProgress');
-                    sessionStorage.removeItem('triadeState');
-                    sessionStorage.removeItem('triadeTimerEndMs');
-                    sessionStorage.removeItem('triadeTimerDuration');
-                    sessionStorage.removeItem('triadeTimerExpired');
-                    this.triade.active = false;
-                    this.triade.reconnecting = false;
-                    this.triade.myCards = [];
-                    this.triade.cardPlayed = false;
-                    this.triade.playedCardData = null;
-                    this.triade.showCenterSlot = false;
-                    this.triade.selectedStat = null;
-                    this.triade.timerExpired = false;
-                    this.triade.timer = 0;
+                    console.log('🎴 Serveur: pas de partie Collect → nettoyage état game');
+                    sessionStorage.removeItem('collectInProgress');
+                    sessionStorage.removeItem('collectState');
+                    sessionStorage.removeItem('collectTimerEndMs');
+                    sessionStorage.removeItem('collectTimerDuration');
+                    sessionStorage.removeItem('collectTimerExpired');
+                    this.collect.active = false;
+                    this.collect.reconnecting = false;
+                    this.collect.myCards = [];
+                    this.collect.cardPlayed = false;
+                    this.collect.playedCardData = null;
+                    this.collect.showCenterSlot = false;
+                    this.collect.selectedStat = null;
+                    this.collect.timerExpired = false;
+                    this.collect.timer = 0;
                     this.gameInProgress = false;
-                    this.stopTriadeTimer();
-                    // Ne reset hasJoined/lobbyMode que si on n'est PAS dans un lobby triade actif
-                    if (!this.isGameActive || this.lobbyMode !== 'triade') {
+                    this.stopCollectTimer();
+                    // Ne reset hasJoined/lobbyMode que si on n'est PAS dans un lobby collect actif
+                    if (!this.isGameActive || this.lobbyMode !== 'collect') {
                         this.hasJoined = false;
                         this.lobbyMode = 'classic';
                     }
@@ -3136,47 +3174,47 @@ createApp({
                 }
                 
                 this.gameInProgress = true;
-                this.lobbyMode = 'triade';
+                this.lobbyMode = 'collect';
                 this.hasJoined = true;
                 
                 // Mettre à jour avec les données fraîches du serveur
-                this.initTriade(data);
-                this.triade.showCenterSlot = data.currentRound > 0; // Show slot if round active
+                this.initCollect(data);
+                this.collect.showCenterSlot = data.currentRound > 0; // Show slot if round active
                 
                 // Révéler les cartes marché immédiatement (reconnect)
                 if (data.marketCards && data.marketCards.length > 0) {
-                    this.triade.marketCards = data.marketCards;
+                    this.collect.marketCards = data.marketCards;
                 }
                 
                 // Restaurer la stat du round actuel
                 if (data.roundStat) {
-                    this.triade.selectedStat = data.roundStat;
+                    this.collect.selectedStat = data.roundStat;
                     this._pendingRoundStat = data.roundStat;
                 }
-                this.triade.playersWhoPlayed = data.playersWhoPlayed || [];
+                this.collect.playersWhoPlayed = data.playersWhoPlayed || [];
                 
                 // 🎴 Restaurer le tour en cours
-                this.triade.currentTurnId = data.currentTurnId || null;
+                this.collect.currentTurnId = data.currentTurnId || null;
                 const isMyTurn = data.currentTurnId === this.twitchId;
-                this.triade.isMyTurn = isMyTurn;
+                this.collect.isMyTurn = isMyTurn;
                 
                 // Timer restore — seulement si c'est mon tour
                 if (data.timerRemainingMs > 1000 && data.currentTurnId) {
-                    this.triade.selectedStat = data.roundStat;
+                    this.collect.selectedStat = data.roundStat;
                     
                     // 🎴 Restaurer le ring pour tous les joueurs
                     const remainingSec = Math.ceil(data.timerRemainingMs / 1000);
                     const totalDuration = 15; // durée standard du tour
                     const elapsed = totalDuration - (data.timerRemainingMs / 1000);
-                    this.triade.turnTimerProgress = Math.min(1, Math.max(0, elapsed / totalDuration));
+                    this.collect.turnTimerProgress = Math.min(1, Math.max(0, elapsed / totalDuration));
                     
                     if (this._turnRingInterval) clearInterval(this._turnRingInterval);
                     this._turnRingEndMs = Date.now() + data.timerRemainingMs;
                     this._turnRingDuration = totalDuration;
                     this._turnRingInterval = setInterval(() => {
                         const e = this._turnRingDuration - ((this._turnRingEndMs - Date.now()) / 1000);
-                        this.triade.turnTimerProgress = Math.min(1, Math.max(0, e / this._turnRingDuration));
-                        if (this.triade.turnTimerProgress >= 1) {
+                        this.collect.turnTimerProgress = Math.min(1, Math.max(0, e / this._turnRingDuration));
+                        if (this.collect.turnTimerProgress >= 1) {
                             clearInterval(this._turnRingInterval);
                             this._turnRingInterval = null;
                         }
@@ -3185,220 +3223,341 @@ createApp({
                     const hasAlreadyPlayed = (data.playersWhoPlayed || []).includes(this.twitchId);
                     
                     if (isMyTurn && !data.playedCard && !hasAlreadyPlayed) {
-                        this.triade.cardsActive = true;
-                        this.startTriadeTimer(remainingSec);
+                        this.collect.cardsActive = true;
+                        this.collect.canDraw = true;
+                        this.collect.cardPlayed = false;
+                        this.startCollectTimer(remainingSec);
                     } else {
-                        this.triade.cardsActive = false;
+                        this.collect.cardsActive = false;
                         if (hasAlreadyPlayed) {
-                            this.triade.cardPlayed = true;
+                            this.collect.cardPlayed = true;
                         }
                     }
                 } else {
                     // Fallback sessionStorage
-                    const savedEndMs = parseInt(sessionStorage.getItem('triadeTimerEndMs') || '0');
-                    const savedDuration = parseInt(sessionStorage.getItem('triadeTimerDuration') || '15');
+                    const savedEndMs = parseInt(sessionStorage.getItem('collectTimerEndMs') || '0');
+                    const savedDuration = parseInt(sessionStorage.getItem('collectTimerDuration') || '15');
                     const hasAlreadyPlayedSS = (data.playersWhoPlayed || []).includes(this.twitchId);
                     if (savedEndMs && savedEndMs > Date.now() + 500 && isMyTurn && !hasAlreadyPlayedSS) {
                         const remainingSec = Math.ceil((savedEndMs - Date.now()) / 1000);
-                        this.triade.cardsActive = true;
-                        this._triadeTimerDuration = savedDuration;
-                        this.startTriadeTimer(remainingSec);
+                        this.collect.cardsActive = true;
+                        this.collect.canDraw = true;
+                        this.collect.cardPlayed = false;
+                        this._collectTimerDuration = savedDuration;
+                        this.startCollectTimer(remainingSec);
                     } else {
-                        this.triade.cardsActive = false;
+                        this.collect.cardsActive = false;
                     }
                 }
                 
                 // Restaurer mes cartes si fournies
                 if (data.myCards && data.myCards.length > 0) {
-                    this.triade.myCards = (data.myCards || []).filter(c => c != null);
-                    this._triadeCardsReceived = true;
+                    this.collect.myCards = (data.myCards || []).filter(c => c != null);
+                    this._collectCardsReceived = true;
                 }
                 
                 // Restaurer carte jouée si déjà placée ce round
                 if (data.playedCard) {
-                    this.triade.cardPlayed = true;
-                    this.triade.playedCardData = data.playedCard;
+                    this.collect.cardPlayed = true;
+                    this.collect.playedCardData = data.playedCard;
                     // Timer keeps running - don't stop it
                 } else if ((data.playersWhoPlayed || []).includes(this.twitchId)) {
                     // Défausse: joueur a joué mais pas de carte à afficher
-                    this.triade.cardPlayed = true;
-                    this.triade.playedCardData = null;
+                    this.collect.cardPlayed = true;
+                    this.collect.playedCardData = null;
                 }
                 
                 // Sauvegarder l'état mis à jour
-                this.saveTriadeState();
+                this.saveCollectState();
             });
             
             // Mise à jour de la partie
-            this.socket.on('triade-update', (data) => {
-                console.log('🎴 Triade update:', data);
+            this.socket.on('collect-update', (data) => {
+                console.log('🎴 Collect update:', data);
                 
                 // Mettre à jour les données des joueurs
                 if (data.playersData) {
-                    this.triade.playersData = data.playersData;
+                    this.collect.playersData = data.playersData;
                     
                     const myPlayer = data.playersData.find(p => p.twitchId === this.twitchId);
                     if (myPlayer) {
-                        this.triade.myData = {
+                        this.collect.myData = {
                             wins: myPlayer.wins || 0
                         };
                     }
                     
-                    this.triade.otherPlayers = this.getOrderedOtherPlayers(data.playersData, p => ({
+                    this.collect.otherPlayers = this.getOrderedOtherPlayers(data.playersData, p => ({
                             ...p,
                             wins: p.wins || 0
                         }));
                 }
                 
                 // Sauvegarder l'état mis à jour
-                this.saveTriadeState();
+                this.saveCollectState();
             });
             
+            // ⭐ Gain d'étoile (Lien/Collect validé)
+            this.socket.on('collect-star-gain', (data) => {
+                console.log(`⭐ ${data.username} gagne ${data.starsGained} étoile(s) (${data.fusionType})`);
+                const isCollect = data.fusionType === 'collect';
+                const isMe = data.twitchId === this.twitchId;
+                
+                // Guard: prevent running twice for same player
+                if (this._lastStarGainKey === data.twitchId && Date.now() - (this._lastStarGainTime || 0) < 500) return;
+                this._lastStarGainKey = data.twitchId;
+                this._lastStarGainTime = Date.now();
+                
+                // Find target star elements BEFORE updating data (so .won classes are still old)
+                const prevStars = isMe ? (this.collect.myData.wins || 0) : (() => {
+                    const other = this.collect.otherPlayers.find(p => p.twitchId === data.twitchId);
+                    return other ? (other.wins || 0) : 0;
+                })();
+                
+                // Find stars by index
+                let starEls = [];
+                if (isMe) {
+                    const allStars = document.querySelectorAll('.collect-player-seat.me .collect-star');
+                    for (let i = prevStars; i < prevStars + data.starsGained && i < allStars.length; i++) {
+                        starEls.push(allStars[i]);
+                    }
+                } else {
+                    const seats = document.querySelectorAll('.collect-player-seat:not(.me)');
+                    const playerIdx = this.collect.otherPlayers.findIndex(p => p.twitchId === data.twitchId);
+                    if (playerIdx >= 0 && seats[playerIdx]) {
+                        const allStars = seats[playerIdx].querySelectorAll('.collect-star');
+                        for (let i = prevStars; i < prevStars + data.starsGained && i < allStars.length; i++) {
+                            starEls.push(allStars[i]);
+                        }
+                    }
+                }
+                
+                // If card already visible (isMe), run effect directly
+                let cardEl = document.querySelector('.collect-center-slot .center-played-card');
+                if (cardEl) {
+                    collectValidationEffect(cardEl, starEls, isCollect);
+                    this.collect.playedCardData = null;
+                    const slot = document.querySelector('.collect-center-slot');
+                    if (slot) slot.classList.remove('has-card');
+                } else if (!isMe && data.playedCard) {
+                    // Other player's fusion — wait for card flight to finish, then render + shatter
+                    const doEffect = () => {
+                        // Remove flyer if still alive
+                        if (this._cardFlyer) { this._cardFlyer.remove(); this._cardFlyer = null; }
+                        
+                        this.collect.playedCardData = JSON.parse(JSON.stringify(data.playedCard));
+                        const slot = document.querySelector('.collect-center-slot');
+                        if (slot) slot.classList.add('has-card');
+                        
+                        this.$nextTick(() => {
+                            cardEl = document.querySelector('.collect-center-slot .center-played-card');
+                            if (cardEl) {
+                                setTimeout(() => {
+                                    collectValidationEffect(cardEl, starEls, isCollect);
+                                    this.collect.playedCardData = null;
+                                    if (slot) slot.classList.remove('has-card');
+                                }, 80);
+                            }
+                        });
+                    };
+                    
+                    // If card flight is still in progress, wait for it
+                    if (this._cardFlightPending === data.twitchId) {
+                        let effectRan = false;
+                        const runOnce = () => { if (effectRan) return; effectRan = true; doEffect(); };
+                        const waitForFlight = setInterval(() => {
+                            if (!this._cardFlightPending) {
+                                clearInterval(waitForFlight);
+                                runOnce();
+                            }
+                        }, 20);
+                        // Safety timeout
+                        setTimeout(() => { clearInterval(waitForFlight); runOnce(); }, 500);
+                    } else {
+                        doEffect();
+                    }
+                }
+                
+                // Update wins data after animation completes
+                setTimeout(() => {
+                    if (isMe) {
+                        this.collect.myData.wins = data.totalStars;
+                    } else {
+                        const other = this.collect.otherPlayers.find(p => p.twitchId === data.twitchId);
+                        if (other) other.wins = data.totalStars;
+                    }
+                }, 800);
+            });
 
             
             // Recevoir mes cartes (initial deal ou reconnexion)
-            this.socket.on('triade-your-cards', (data) => {
-                console.log('🎴 Mes cartes Triade:', data.cards, 'dealing:', data.dealing);
-                this._triadeCardsReceived = true;
+            this.socket.on('collect-your-cards', (data) => {
+                console.log('🎴 Mes cartes Collect:', data.cards, 'dealing:', data.dealing);
+                this._collectCardsReceived = true;
                 const safeCards = (data.cards || []).filter(c => c != null);
                 
-                if (data.dealing && !this._triadeDealStarted) {
+                if (data.dealing && !this._collectDealStarted) {
                     // Première réception pendant l'intro → animation de deal
-                    this._triadeDealStarted = true;
-                    this._pendingTriadeCards = safeCards;
+                    this._collectDealStarted = true;
+                    this._pendingCollectCards = safeCards;
                     setTimeout(() => {
-                        this.dealTriadeCards();
-                        // 🛡️ Safety net: si dealTriadeCards n'a pas injecté les cartes
+                        this.dealCollectCards();
+                        // 🛡️ Safety net: si dealCollectCards n'a pas injecté les cartes
                         setTimeout(() => {
-                            if (!this.triade.myCards || this.triade.myCards.length === 0) {
+                            if (!this.collect.myCards || this.collect.myCards.length === 0) {
                                 console.log('🎴 Safety: force injection cartes');
-                                this.triade.myCards = safeCards;
-                                this.saveTriadeState();
+                                this.collect.myCards = safeCards;
+                                this.saveCollectState();
                             }
                         }, 2000);
                     }, 3000);
-                } else if (data.dealing && this._triadeDealStarted) {
+                } else if (data.dealing && this._collectDealStarted) {
                     // Deal déjà programmé → ignorer (évite d'afficher les cartes avant l'animation)
                     console.log('🎴 Cartes dealing ignorées (deal déjà programmé)');
                 } else {
                     // Reconnexion (dealing: false) → afficher directement
-                    this.triade.myCards = safeCards;
-                    this.saveTriadeState();
+                    this.collect.myCards = safeCards;
+                    this.saveCollectState();
                 }
             });
             
             // Résultat d'un round
-            this.socket.on('triade-round-result', (data) => {
+            this.socket.on('collect-round-result', (data) => {
                 console.log('🎴 Round result:', data);
                 
                 // Mettre à jour les données des joueurs (wins, etc.)
                 if (data.playersData) {
-                    this.triade.playersData = data.playersData;
+                    this.collect.playersData = data.playersData;
                     
                     const myPlayer = data.playersData.find(p => p.twitchId === this.twitchId);
                     if (myPlayer) {
-                        this.triade.myData.wins = myPlayer.wins || 0;
+                        this.collect.myData.wins = myPlayer.wins || 0;
                     }
                     
-                    this.triade.otherPlayers = this.getOrderedOtherPlayers(data.playersData, p => ({ ...p }));
+                    this.collect.otherPlayers = this.getOrderedOtherPlayers(data.playersData, p => ({ ...p }));
                 }
                 
                 // Afficher qui a gagné
-                this.triade.roundWinner = data.winner;
-                this.triade.isMyTurn = false;
+                this.collect.roundWinner = data.winner;
+                this.collect.isMyTurn = false;
                 
-                this.saveTriadeState();
+                this.saveCollectState();
             });
             
             // Nouveau round (nouvelles cartes)
-            this.socket.on('triade-new-round', (data) => {
+            this.socket.on('collect-new-round', (data) => {
                 console.log('🎴 Nouveau round:', data);
                 
                 // Reset l'état du round
-                this.triade.myCards = [];
-                this.triade.roundWinner = null;
-                this.triade.isMyTurn = false;
+                this.collect.myCards = [];
+                this.collect.roundWinner = null;
+                this.collect.isMyTurn = false;
                 
                 // Mettre à jour les joueurs
-                this.initTriade(data);
+                this.initCollect(data);
                 
                 // Animation de distribution
                 this.$nextTick(() => {
-                    document.querySelectorAll('.triade-player-card-small').forEach(c => {
+                    document.querySelectorAll('.collect-player-card-small').forEach(c => {
                         c.classList.add('pre-deal');
                     });
                 });
                 
-                this.saveTriadeState();
+                this.saveCollectState();
             });
             
             // 🎴 Serveur indique que le joueur peut piocher
-            this.socket.on('triade-can-draw', (data) => {
+            this.socket.on('collect-can-draw', (data) => {
                 console.log('🎴 Pioche disponible:', data);
-                if (this.triade.cardPlayed) return; // Déjà joué/défaussé
-                this.triade.canDraw = true;
-                this.saveTriadeState();
+                if (this.collect.cardPlayed) return; // Déjà joué/défaussé
+                this.collect.canDraw = true;
+                this.saveCollectState();
             });
 
             // 🎴 Carte piochée reçue du serveur
             // 🎴 Main pleine
-            this.socket.on('triade-draw-full', () => {
-                if (this.triade.deckFullFlash) return;
-                this.triade.deckFullFlash = true;
-                setTimeout(() => { this.triade.deckFullFlash = false; }, 1200);
+            this.socket.on('collect-draw-full', () => {
+                if (this.collect.deckFullFlash) return;
+                this.collect.deckFullFlash = true;
+                setTimeout(() => { this.collect.deckFullFlash = false; }, 1200);
             });
 
             // 🎴 Options de pioche (2 cartes)
             // 🎴 Résultat de pioche (1 carte)
-            this.socket.on('triade-draw-result', (data) => {
+            this.socket.on('collect-draw-result', (data) => {
                 console.log('🎴 Carte piochée:', data.card.name);
-                this.triade.canDraw = false;
-                this.triade.cardPlayed = true;
-                this.triade.cardsActive = false;
+                this.collect.canDraw = false;
+                this.collect.cardPlayed = true;
+                this.collect.cardsActive = false;
                 
-                const deckEl = document.querySelector('.triade-deck-zone');
+                const deckEl = document.querySelector('.collect-deck-zone');
                 if (deckEl) {
                     this.animateDrawToHand(data.card, deckEl);
                 } else {
-                    this.triade.myCards.push(data.card);
-                    this.saveTriadeState();
+                    this.collect.myCards.push(data.card);
+                    this.saveCollectState();
                 }
             });
 
-            // Fin de partie Triade
-            this.socket.on('triade-game-ended', (data) => {
-                console.log('🏆 Triade terminé:', data);
+            // 🔄 Mise à jour du marché (après un échange par n'importe quel joueur)
+            this.socket.on('collect-market-update', (data) => {
+                console.log(`🔄 Marché mis à jour par ${data.username}`);
+                // Skip si c'est nous (déjà mis à jour en local)
+                if (data.twitchId === this.twitchId) return;
+                this.collect.marketCards = data.marketCards || [];
+            });
+
+            // 🔄 Confirmation d'échange (pour le joueur qui a échangé)
+            this.socket.on('collect-swap-confirmed', (data) => {
+                if (!data.success) {
+                    console.log('⚠️ Échange refusé:', data.reason);
+                    // Rollback si le serveur refuse — recharger depuis le serveur
+                    this.socket.emit('collect-request-my-cards', { twitchId: this.twitchId });
+                }
+            });
+
+            // 🃏 Mise à jour du nombre de cartes de chaque joueur
+            this.socket.on('collect-card-counts', (counts) => {
+                this.collect.otherPlayers.forEach(p => {
+                    if (counts[p.twitchId] !== undefined) {
+                        p.cardCount = counts[p.twitchId];
+                    }
+                });
+            });
+
+            // Fin de partie Collect
+            this.socket.on('collect-game-ended', (data) => {
+                console.log('🏆 Collect terminé:', data);
                 
                 // Full state reset
-                this.stopTriadeTimer();
-                this.triade.myCards = [];
-                this.triade.cardPlayed = false;
-                this.triade.playedCardData = null;
-                this.triade.timerExpired = false;
-                this.triade.timer = 0;
-                this.triade.playersWhoPlayed = [];
-                this.triade.selectedStat = null;
-                this.triade.currentTurnId = null;
-                this.triade.isMyTurn = false;
-                this.triade.showCenterSlot = false;
-                this._pendingTriadeCards = null;
-                this._triadeCardsReceived = false;
-                this._triadeDealStarted = false;
-                this.triade.active = false;
+                this.stopCollectTimer();
+                this.collect.myCards = [];
+                this.collect.cardPlayed = false;
+                this.collect.playedCardData = null;
+                this.collect.timerExpired = false;
+                this.collect.timer = 0;
+                this.collect.playersWhoPlayed = [];
+                this.collect.selectedStat = null;
+                this.collect.currentTurnId = null;
+                this.collect.isMyTurn = false;
+                this.collect.showCenterSlot = false;
+                this._pendingCollectCards = null;
+                this._collectCardsReceived = false;
+                this._collectDealStarted = false;
+                this.collect.active = false;
                 this.gameEnded = true;
                 this.gameInProgress = false;
                 
                 // Nettoyer le flag de reconnexion
-                sessionStorage.removeItem('triadeInProgress');
-                sessionStorage.removeItem('triadeState');
-                sessionStorage.removeItem('triadeTimerEndMs');
-                sessionStorage.removeItem('triadeTimerDuration');
-                sessionStorage.removeItem('triadeTimerExpired');
+                sessionStorage.removeItem('collectInProgress');
+                sessionStorage.removeItem('collectState');
+                sessionStorage.removeItem('collectTimerEndMs');
+                sessionStorage.removeItem('collectTimerDuration');
+                sessionStorage.removeItem('collectTimerExpired');
                 
                 this.gameEndData = {
                     winner: data.winner,
                     ranking: data.ranking,
-                    gameMode: 'triade'
+                    gameMode: 'collect'
                 };
             });
         },
@@ -3453,14 +3612,14 @@ createApp({
                 team: this.lobbyMode === 'rivalry' ? this.selectedTeam : null
             });
 
-            // 🎴💣 En mode Triade/BombAnime, attendre confirmation avant d'afficher "rejoint"
-            if (this.lobbyMode === 'triade' || this.lobbyMode === 'bombanime') {
-                this.triadeJoinPending = true;
+            // 🎴💣 En mode Collect/BombAnime, attendre confirmation avant d'afficher "rejoint"
+            if (this.lobbyMode === 'collect' || this.lobbyMode === 'bombanime') {
+                this.collectJoinPending = true;
                 // Confirmer après 400ms si pas d'erreur reçue
                 setTimeout(() => {
-                    if (this.triadeJoinPending && !this.triadeShakeError) {
+                    if (this.collectJoinPending && !this.collectShakeError) {
                         this.hasJoined = true;
-                        this.triadeJoinPending = false;
+                        this.collectJoinPending = false;
                         // Sauvegarder dans localStorage seulement après confirmation
                         localStorage.setItem('hasJoinedLobby', 'true');
                         localStorage.setItem('lobbyTwitchId', this.twitchId);
@@ -4717,11 +4876,11 @@ createApp({
         },
 
         // ============================================
-        // TRIADE METHODS
+        // COLLECT METHODS
         // ============================================
         
-        // Calculer la position d'un siège Triade
-        getTriadeSeatPosition(index, totalPlayers) {
+        // Calculer la position d'un siège Collect
+        getCollectSeatPosition(index, totalPlayers) {
             const radiusX = 42;
             const radiusY = 38;
             const centerX = 50;
@@ -4795,14 +4954,14 @@ createApp({
 
         // Vérifier si une carte bénéficie du bonus même anime (2+ cartes du même anime en main)
         hasSameAnimeBonus(card) {
-            if (!card || !card.anime || !this.triade.myCards) return false;
-            const count = this.triade.myCards.filter(c => c && c.anime === card.anime).length;
+            if (!card || !card.anime || !this.collect.myCards) return false;
+            const count = this.collect.myCards.filter(c => c && c.anime === card.anime).length;
             return count >= 2;
         },
         
         marketMatchesHand(card) {
-            if (!card || !card.anime || !this.triade.myCards) return false;
-            return this.triade.myCards.some(c => c && c.anime === card.anime);
+            if (!card || !card.anime || !this.collect.myCards) return false;
+            return this.collect.myCards.some(c => c && c.anime === card.anime);
         },
         
         // Afficher le preview d'une carte
@@ -4810,27 +4969,27 @@ createApp({
             if (!card) return;
             // Ne pas afficher si la carte est encore en pre-deal ou dealing
             if (event && event.target) {
-                const cardEl = event.target.closest('.triade-card');
+                const cardEl = event.target.closest('.collect-card');
                 if (cardEl && (cardEl.classList.contains('pre-deal') || cardEl.classList.contains('dealing'))) return;
             }
-            this.triade.previewCard = card;
-            this.triade.previewCardDisplay = card;
-            this.triade.previewVisible = true;
+            this.collect.previewCard = card;
+            this.collect.previewCardDisplay = card;
+            this.collect.previewVisible = true;
         },
         
         // Masquer le preview avec animation
         hideCardPreview() {
-            this.triade.previewCard = null;
-            this.triade.previewVisible = false;
+            this.collect.previewCard = null;
+            this.collect.previewVisible = false;
             // Garder le contenu visible pendant l'animation de sortie
             setTimeout(() => {
-                if (!this.triade.previewVisible) {
-                    this.triade.previewCardDisplay = null;
+                if (!this.collect.previewVisible) {
+                    this.collect.previewCardDisplay = null;
                 }
             }, 300);
         },
         
-        // Position d'un joueur sur la table Triade (POV toujours en bas)
+        // Position d'un joueur sur la table Collect (POV toujours en bas)
         // Réordonner les joueurs en cercle : commence par le joueur APRÈS le POV (sens horaire)
         getOrderedOtherPlayers(playersData, mapFn) {
             if (!playersData || !playersData.length) return [];
@@ -4849,7 +5008,7 @@ createApp({
             return ordered;
         },
         
-        getTriadePlayerStyle(index, totalOthers) {
+        getCollectPlayerStyle(index, totalOthers) {
             // Distribution circulaire complète comme le prototype V6
             // POV est à 90° (bottom), les autres sont répartis sur le cercle complet
             const totalPlayers = totalOthers + 1; // +1 pour le POV
@@ -4883,15 +5042,15 @@ createApp({
         },
         
         // Animation de distribution des cartes
-        dealTriadeCards() {
-            const allSeats = document.querySelectorAll('.triade-player-seat:not(.hidden)');
+        dealCollectCards() {
+            const allSeats = document.querySelectorAll('.collect-player-seat:not(.hidden)');
             
             // Préparer les cartes adverses (cacher via DOM)
             allSeats.forEach(seat => {
                 const isMe = seat.classList.contains('me');
                 if (isMe) return; // Les cartes POV ne sont pas encore rendues
                 
-                const cards = seat.querySelectorAll('.triade-player-card-small');
+                const cards = seat.querySelectorAll('.collect-player-card-small');
                 cards.forEach(card => {
                     card.classList.remove('dealing', 'dealt');
                     card.classList.add('pre-deal');
@@ -4926,14 +5085,14 @@ createApp({
                         const myDealEnd = myDelay + 2 * 120 + 350; // Dernière carte POV
                         if (myDealEnd > totalDealEnd) totalDealEnd = myDealEnd;
                         setTimeout(() => {
-                            if (this._pendingTriadeCards) {
-                                this.triade.myCards = this._pendingTriadeCards.filter(c => c != null);
-                                this._pendingTriadeCards = null;
-                                this.saveTriadeState();
+                            if (this._pendingCollectCards) {
+                                this.collect.myCards = this._pendingCollectCards.filter(c => c != null);
+                                this._pendingCollectCards = null;
+                                this.saveCollectState();
                             }
                             // Attendre que Vue ait rendu les cartes
                             this.$nextTick(() => {
-                                const myCards = seat.querySelectorAll('.triade-my-cards .triade-card');
+                                const myCards = seat.querySelectorAll('.collect-my-cards .collect-card');
                                 myCards.forEach(card => {
                                     card.classList.add('pre-deal');
                                 });
@@ -4956,7 +5115,7 @@ createApp({
                         }, myDelay);
                     } else {
                         // Cartes adverses : animation DOM classique
-                        const cards = seat.querySelectorAll('.triade-player-card-small');
+                        const cards = seat.querySelectorAll('.collect-player-card-small');
                         const seatEnd = seatDelay + Math.max(0, (cards.length - 1)) * delayBetweenCards + 350;
                         if (seatEnd > totalDealEnd) totalDealEnd = seatEnd;
                         cards.forEach((card, cardIndex) => {
@@ -4974,211 +5133,212 @@ createApp({
                     seatDelay += delayPerSeat;
                 });
                 
-                // Le slot sera affiché après le market-reveal (géré par le listener triade-market-reveal)
+                // Le slot sera affiché après le market-reveal (géré par le listener collect-market-reveal)
             }, 100);
         },
         
-        // Initialiser Triade quand on reçoit les données
-        initTriade(data) {
-            console.log('🎴 Init Triade:', data);
+        // Initialiser Collect quand on reçoit les données
+        initCollect(data) {
+            console.log('🎴 Init Collect:', data);
             
-            this.triade.active = true;
-            this.triade.handSize = data.handSize || 3;
-            this.triade.reconnecting = false;
-            this.triade.showCenterSlot = false;
-            this.triade.cardPlayed = false;
-            this.triade.playedCardData = null;
-            this.triade.timerExpired = false;
-            this.triade.cardsActive = false; // 🔒 Reset, sera réactivé par timer
-            this.triade.timer = 0;
-            this.triade.selectedStat = null;
-            this.triade.currentTurnId = null;
-            this.triade.isMyTurn = false;
-            this.triade.draggingCardIndex = null;
-            this.triade.dropZoneActive = false;
-            this.triade.playersWhoPlayed = [];
-            this.triade.canDraw = false;
-            this.stopTriadeTimer();
-            this.triade.myCards = [];  // Reset cartes POV (seront injectées par dealTriadeCards)
-            this.triade.marketCards = [];  // Vide au départ, injectées par triade-market-reveal
-            this._pendingTriadeCards = null;
-            this._triadeCardsReceived = false;
-            this._triadeDealStarted = false;
+            this.collect.active = true;
+            this.collect.handSize = data.handSize || 3;
+            this.collect.reconnecting = false;
+            this.collect.showCenterSlot = false;
+            this.collect.cardPlayed = false;
+            this.collect.playedCardData = null;
+            this.collect.timerExpired = false;
+            this.collect.cardsActive = false; // 🔒 Reset, sera réactivé par timer
+            this.collect.timer = 0;
+            this.collect.selectedStat = null;
+            this.collect.currentTurnId = null;
+            this.collect.isMyTurn = false;
+            this.collect.draggingCardIndex = null;
+            this.collect.dropZoneActive = false;
+            this.collect.playersWhoPlayed = [];
+            this.collect.canDraw = false;
+            this.stopCollectTimer();
+            this.collect.myCards = [];  // Reset cartes POV (seront injectées par dealCollectCards)
+            this.collect.marketCards = [];  // Vide au départ, injectées par collect-market-reveal
+            this._pendingCollectCards = null;
+            this._collectCardsReceived = false;
+            this._collectDealStarted = false;
             
             // Séparer mes données des autres joueurs
             const allPlayers = data.playersData || [];
-            this.triade.playersData = allPlayers;
+            this.collect.playersData = allPlayers;
             
             // Trouver mes données
             const myPlayer = allPlayers.find(p => p.twitchId === this.twitchId);
             if (myPlayer) {
-                this.triade.myData = {
+                this.collect.myData = {
                     wins: myPlayer.wins || 0
                 };
             }
             
             // Les autres joueurs - ordonnés en sens horaire à partir du joueur après moi
-            this.triade.otherPlayers = this.getOrderedOtherPlayers(allPlayers, p => ({
+            this.collect.otherPlayers = this.getOrderedOtherPlayers(allPlayers, p => ({
                     ...p,
                     wins: p.wins || 0,
+                    cardCount: p.cardCount !== undefined ? p.cardCount : (this.collect.handSize || 3),
                     isCurrentPlayer: p.isCurrentPlayer || false
                 }));
             
             // Sauvegarder l'état complet dans sessionStorage
-            this.saveTriadeState();
+            this.saveCollectState();
         },
         
-        // Sauvegarder l'état Triade dans sessionStorage
-        saveTriadeState() {
+        // Sauvegarder l'état Collect dans sessionStorage
+        saveCollectState() {
             try {
                 const state = {
-                    myCards: this.triade.myCards,
-                    myData: this.triade.myData,
-                    otherPlayers: this.triade.otherPlayers,
-                    playersData: this.triade.playersData,
-                    selectedStat: this.triade.selectedStat,
-                    cardPlayed: this.triade.cardPlayed || false,
-                    playedCardData: this.triade.playedCardData || null,
-                    timerExpired: this.triade.timerExpired || false,
-                    canDraw: this.triade.canDraw || false,
-                    isMyTurn: this.triade.isMyTurn || false,
-                    handSize: this.triade.handSize || 3,
-                    cardsActive: this.triade.cardsActive || false,
-                    timerEndMs: this._triadeTimerEndMs || null,
-                    timerDuration: this._triadeTimerDuration || null
+                    myCards: this.collect.myCards,
+                    myData: this.collect.myData,
+                    otherPlayers: this.collect.otherPlayers,
+                    playersData: this.collect.playersData,
+                    selectedStat: this.collect.selectedStat,
+                    cardPlayed: this.collect.cardPlayed || false,
+                    playedCardData: this.collect.playedCardData || null,
+                    timerExpired: this.collect.timerExpired || false,
+                    canDraw: this.collect.canDraw || false,
+                    isMyTurn: this.collect.isMyTurn || false,
+                    handSize: this.collect.handSize || 3,
+                    cardsActive: this.collect.cardsActive || false,
+                    timerEndMs: this._collectTimerEndMs || null,
+                    timerDuration: this._collectTimerDuration || null
                 };
-                sessionStorage.setItem('triadeInProgress', 'true');
-                sessionStorage.setItem('triadeState', JSON.stringify(state));
+                sessionStorage.setItem('collectInProgress', 'true');
+                sessionStorage.setItem('collectState', JSON.stringify(state));
             } catch (e) {
-                console.warn('🎴 Erreur sauvegarde état Triade:', e);
+                console.warn('🎴 Erreur sauvegarde état Collect:', e);
             }
         },
         
-        // Restaurer l'état Triade depuis sessionStorage (instantané)
-        restoreTriadeState() {
+        // Restaurer l'état Collect depuis sessionStorage (instantané)
+        restoreCollectState() {
             try {
-                const raw = sessionStorage.getItem('triadeState');
+                const raw = sessionStorage.getItem('collectState');
                 if (!raw) return false;
                 
                 const state = JSON.parse(raw);
                 
-                this.triade.myCards = (state.myCards || []).filter(c => c != null);
-                this.triade.myData = state.myData || { wins: 0 };
-                this.triade.otherPlayers = state.otherPlayers || [];
-                this.triade.playersData = state.playersData || [];
-                this.triade.reconnecting = false;
+                this.collect.myCards = (state.myCards || []).filter(c => c != null);
+                this.collect.myData = state.myData || { wins: 0 };
+                this.collect.otherPlayers = state.otherPlayers || [];
+                this.collect.playersData = state.playersData || [];
+                this.collect.reconnecting = false;
                 
                 // Restaurer stat + slot
                 if (state.selectedStat) {
-                    this.triade.selectedStat = state.selectedStat;
-                    this.triade.showCenterSlot = true;
+                    this.collect.selectedStat = state.selectedStat;
+                    this.collect.showCenterSlot = true;
                 }
                 
                 // Restaurer carte jouée
                 if (state.cardPlayed) {
-                    this.triade.cardPlayed = true;
-                    this.triade.playedCardData = state.playedCardData || null;
+                    this.collect.cardPlayed = true;
+                    this.collect.playedCardData = state.playedCardData || null;
                 }
                 
                 // Restaurer état pioche + tour
-                this.triade.canDraw = state.canDraw || false;
-                this.triade.isMyTurn = state.isMyTurn || false;
-                this.triade.handSize = state.handSize || 3;
+                this.collect.canDraw = state.canDraw || false;
+                this.collect.isMyTurn = state.isMyTurn || false;
+                this.collect.handSize = state.handSize || 3;
                 
                 // Restaurer timer + cardsActive depuis clés standalone
-                const savedEndMs = parseInt(sessionStorage.getItem('triadeTimerEndMs') || '0');
-                const savedDuration = parseInt(sessionStorage.getItem('triadeTimerDuration') || '15');
-                const timerExpiredSS = sessionStorage.getItem('triadeTimerExpired') === 'true';
+                const savedEndMs = parseInt(sessionStorage.getItem('collectTimerEndMs') || '0');
+                const savedDuration = parseInt(sessionStorage.getItem('collectTimerDuration') || '15');
+                const timerExpiredSS = sessionStorage.getItem('collectTimerExpired') === 'true';
                 
                 if (savedEndMs && savedEndMs > Date.now() + 500) {
                     const remainingMs = savedEndMs - Date.now();
                     const remainingSec = Math.ceil(remainingMs / 1000);
-                    this.triade.cardsActive = true;
-                    this._triadeTimerDuration = savedDuration;
-                    this.startTriadeTimer(remainingSec);
+                    this.collect.cardsActive = true;
+                    this._collectTimerDuration = savedDuration;
+                    this.startCollectTimer(remainingSec);
                     console.log('⏱️ Timer restauré:', remainingSec, 's restantes');
                 } else if (timerExpiredSS || state.timerExpired) {
-                    this.triade.timerExpired = true;
-                    this.triade.cardsActive = false;
+                    this.collect.timerExpired = true;
+                    this.collect.cardsActive = false;
                 } else {
-                    this.triade.cardsActive = state.cardsActive || false;
+                    this.collect.cardsActive = state.cardsActive || false;
                 }
                 
-                console.log('🎴 État Triade restauré depuis sessionStorage');
+                console.log('🎴 État Collect restauré depuis sessionStorage');
                 return true;
             } catch (e) {
-                console.warn('🎴 Erreur restauration état Triade:', e);
+                console.warn('🎴 Erreur restauration état Collect:', e);
                 return false;
             }
         },
         
         // 🆕 Afficher l'overlay d'annonce de round avec clash de cartes
         // 🎴 Séquence après market reveal: slot+deck → 1s → timer + cartes actives
-        _startTriadeAfterMarket() {
+        _startCollectAfterMarket() {
             if (this._timerStarted) return;
             this._timerStarted = true;
             
             // Reset état
-            this.triade.cardPlayed = false;
-            this.triade.timerExpired = false;
-            this.triade.cardsActive = false; // 🔒 Cartes inactives, le serveur enverra triade-turn-start
+            this.collect.cardPlayed = false;
+            this.collect.timerExpired = false;
+            this.collect.cardsActive = false; // 🔒 Cartes inactives, le serveur enverra collect-turn-start
             
             const vm = this;
             // 1s après market → afficher slot + deck
             setTimeout(() => {
-                vm.triade.showCenterSlot = true;
+                vm.collect.showCenterSlot = true;
                 console.log('🎴 Slot + deck visibles, en attente du tour...');
-                // Le serveur enverra triade-turn-start ~1s plus tard
+                // Le serveur enverra collect-turn-start ~1s plus tard
             }, 1000);
         },
 
-        showTriadeRoundOverlay(round, stat, statName) {
-            this.triade.currentRound = round;
-            this.triade.selectedStat = stat;
+        showCollectRoundOverlay(round, stat, statName) {
+            this.collect.currentRound = round;
+            this.collect.selectedStat = stat;
             // Reset du round
-            this.triade.cardPlayed = false;
-            this.triade.playedCardData = null;
-            this.triade.draggingCardIndex = null;
-            this.triade.dropZoneActive = false;
-            this.triade.timerExpired = false;
-            this.triade.cardsActive = false; // 🔒 Cartes inactives jusqu'au tour
-            this.triade.playersWhoPlayed = [];
-            this.triade.currentTurnId = null;
-            this.triade.isMyTurn = false;
-            this.triade.turnTimerProgress = 0;
-            this.stopTriadeTimer();
+            this.collect.cardPlayed = false;
+            this.collect.playedCardData = null;
+            this.collect.draggingCardIndex = null;
+            this.collect.dropZoneActive = false;
+            this.collect.timerExpired = false;
+            this.collect.cardsActive = false; // 🔒 Cartes inactives jusqu'au tour
+            this.collect.playersWhoPlayed = [];
+            this.collect.currentTurnId = null;
+            this.collect.isMyTurn = false;
+            this.collect.turnTimerProgress = 0;
+            this.stopCollectTimer();
             
             // NE PAS montrer le slot tout de suite
-            this.triade.showCenterSlot = false;
+            this.collect.showCenterSlot = false;
             
             const vm = this;
-            // Afficher le slot après 1s — le serveur enverra triade-turn-start
+            // Afficher le slot après 1s — le serveur enverra collect-turn-start
             setTimeout(() => {
-                vm.triade.showCenterSlot = true;
+                vm.collect.showCenterSlot = true;
                 console.log('🎲 Round', round, '- en attente du tour...');
             }, 1000);
         },
 
         // 🆕 DRAG & DROP - Début du drag
         startCardDrag(cardIndex, e) {
-            if (this.triade.cardPlayed) return;
-            if (this.triade.timerExpired) return;
-            if (!this.triade.cardsActive) return; // 🔒 Timer pas encore démarré
-            if (!this.triade.showCenterSlot) return; // Pas encore de round actif
+            if (this.collect.cardPlayed) return;
+            if (this.collect.timerExpired) return;
+            if (!this.collect.cardsActive) return; // 🔒 Timer pas encore démarré
+            if (!this.collect.showCenterSlot) return; // Pas encore de round actif
             if (this._fusionInProgress) return; // Fusion en cours
             
             this.hideCardPreview(); // Cacher le preview
-            this.triade.draggingCardIndex = cardIndex;
+            this.collect.draggingCardIndex = cardIndex;
             this._dragStartX = e.clientX;
             this._dragStartY = e.clientY;
             
             const cardEl = e.currentTarget;
             const rect = cardEl.getBoundingClientRect();
-            const card = this.triade.myCards[cardIndex];
+            const card = this.collect.myCards[cardIndex];
             
             // Créer un ghost simplifié
             const ghost = document.createElement('div');
-            ghost.className = 'triade-card large drag-ghost';
+            ghost.className = 'collect-card large drag-ghost';
             if (card && card.isFused) {
                 ghost.classList.add('fused-card');
                 const count = card.fusedCards.length;
@@ -5223,7 +5383,7 @@ createApp({
             ghost.style.top = (e.clientY - this._dragCardRect.height / 2) + 'px';
             
             // Détecter si on survole le slot central
-            const slotEl = document.querySelector('.triade-center-slot');
+            const slotEl = document.querySelector('.collect-center-slot');
             if (slotEl) {
                 const slotRect = slotEl.getBoundingClientRect();
                 let overSlot = (
@@ -5232,18 +5392,54 @@ createApp({
                     e.clientY >= slotRect.top - 2 &&
                     e.clientY <= slotRect.bottom + 2
                 );
-                this.triade.dropZoneActive = overSlot;
+                this.collect.dropZoneActive = overSlot;
             }
             
             // 🔥 Détecter si on survole une autre carte du même anime (fusion)
             this._mergeTargetIndex = null;
-            const sourceCard = this.triade.myCards[this.triade.draggingCardIndex];
+            const sourceCard = this.collect.myCards[this.collect.draggingCardIndex];
             if (!sourceCard) return;
-            const cardEls = document.querySelectorAll('.triade-my-cards .triade-card.large');
+            
+            // 🔄 Détecter survol carte marché
+            let wasOverMarket = this._marketSwapIndex !== null;
+            this._marketSwapIndex = null;
+            document.querySelectorAll('.collect-market .market-card').forEach((el, i) => {
+                el.classList.remove('swap-hover');
+                const r = el.getBoundingClientRect();
+                if (e.clientX >= r.left - 5 && e.clientX <= r.right + 5 &&
+                    e.clientY >= r.top - 5 && e.clientY <= r.bottom + 5) {
+                    el.classList.add('swap-hover');
+                    this._marketSwapIndex = i;
+                }
+            });
+            
+            // Ghost transform: shrink + darken + swap icon quand sur marché
+            if (this._marketSwapIndex !== null && ghost) {
+                if (!wasOverMarket) {
+                    ghost.style.transform = 'scale(0.55) rotate(0deg)';
+                    ghost.style.filter = 'brightness(0.4)';
+                    ghost.style.transition = 'transform 0.2s ease, filter 0.2s ease';
+                    // Add swap icon overlay
+                    if (!ghost.querySelector('.ghost-swap-icon')) {
+                        const icon = document.createElement('div');
+                        icon.className = 'ghost-swap-icon';
+                        icon.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:10;pointer-events:none;';
+                        icon.innerHTML = '<div style="width:36px;height:36px;background:rgba(76,175,80,0.95);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(76,175,80,0.6);animation:swap-badge-pop 0.2s cubic-bezier(0.34,1.56,0.64,1) forwards;"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3l4 4-4 4"/><path d="M20 7H4"/><path d="M8 21l-4-4 4-4"/><path d="M4 17h16"/></svg></div>';
+                        ghost.appendChild(icon);
+                    }
+                }
+            } else if (wasOverMarket && ghost) {
+                ghost.style.transform = 'scale(1.08) rotate(2deg)';
+                ghost.style.filter = 'brightness(1.2)';
+                const swapIcon = ghost.querySelector('.ghost-swap-icon');
+                if (swapIcon) swapIcon.remove();
+            }
+            
+            const cardEls = document.querySelectorAll('.collect-my-cards .collect-card.large');
             cardEls.forEach((el, i) => {
                 el.classList.remove('merge-target');
-                if (i === this.triade.draggingCardIndex) return;
-                const targetCard = this.triade.myCards[i];
+                if (i === this.collect.draggingCardIndex) return;
+                const targetCard = this.collect.myCards[i];
                 if (!targetCard || targetCard.anime !== sourceCard.anime) return;
                 // Max 3 cards per fusion
                 const srcCount = sourceCard.isFused ? sourceCard.fusedCards.length : 1;
@@ -5266,28 +5462,72 @@ createApp({
             const ghost = this._dragGhost;
             if (!ghost) return;
             
-            const cardIndex = this.triade.draggingCardIndex;
+            const cardIndex = this.collect.draggingCardIndex;
             
             // 🔥 Si le joueur n'a presque pas bougé, c'est un click - ignorer (drag only)
             const dragDistance = Math.hypot(e.clientX - this._dragStartX, e.clientY - this._dragStartY);
             if (dragDistance < 15) {
                 ghost.remove();
-                this.triade.draggingCardIndex = null;
-                this.triade.dropZoneActive = false;
+                this.collect.draggingCardIndex = null;
+                this.collect.dropZoneActive = false;
                 this._dragGhost = null;
                 return;
             }
             
             // Clean up merge target highlights
-            document.querySelectorAll('.triade-my-cards .triade-card.large.merge-target').forEach(el => el.classList.remove('merge-target'));
+            document.querySelectorAll('.collect-my-cards .collect-card.large.merge-target').forEach(el => el.classList.remove('merge-target'));
+            // Clean up market swap highlights
+            document.querySelectorAll('.collect-market .market-card.swap-hover').forEach(el => el.classList.remove('swap-hover'));
             
             // 🔥 FIX: Re-check positions at DROP time (not relying on last pointermove)
             const dropX = e.clientX;
             const dropY = e.clientY;
             
+            // 🔄 Check market card overlap at drop time
+            let marketSwapIdx = null;
+            document.querySelectorAll('.collect-market .market-card').forEach((el, i) => {
+                const r = el.getBoundingClientRect();
+                if (dropX >= r.left - 5 && dropX <= r.right + 5 &&
+                    dropY >= r.top - 5 && dropY <= r.bottom + 5) {
+                    marketSwapIdx = i;
+                }
+            });
+            
+            // 🔄 MARKET SWAP: dropped on a market card
+            if (marketSwapIdx !== null && cardIndex !== null && !this.collect.timerExpired && !this.collect.cardPlayed) {
+                const card = this.collect.myCards[cardIndex];
+                // Pas d'échange de cartes fusionnées
+                if (card && card.isFused) {
+                    // Retour en place
+                    ghost.style.transition = 'all 0.3s cubic-bezier(0.4,0,0.2,1)';
+                    ghost.style.left = this._dragCardRect.left + 'px';
+                    ghost.style.top = this._dragCardRect.top + 'px';
+                    ghost.style.transform = 'scale(1) rotate(0deg)';
+                    ghost.style.opacity = '1';
+                    setTimeout(() => ghost.remove(), 300);
+                } else {
+                    // Animation: ghost snap vers la carte marché
+                    const marketEl = document.querySelectorAll('.collect-market .market-card')[marketSwapIdx];
+                    if (marketEl) {
+                        const mr = marketEl.getBoundingClientRect();
+                        ghost.style.transition = 'all 0.25s cubic-bezier(0.4,0,0.2,1)';
+                        ghost.style.left = (mr.left + mr.width/2 - this._dragCardRect.width/2) + 'px';
+                        ghost.style.top = (mr.top + mr.height/2 - this._dragCardRect.height/2) + 'px';
+                        ghost.style.transform = 'scale(0.6) rotate(0deg)';
+                        ghost.style.opacity = '0.5';
+                    }
+                    setTimeout(() => ghost.remove(), 300);
+                    this.swapWithMarket(cardIndex, marketSwapIdx);
+                }
+                this.collect.draggingCardIndex = null;
+                this.collect.dropZoneActive = false;
+                this._dragGhost = null;
+                return;
+            }
+            
             // Check slot overlap at drop time
             let overSlot = false;
-            const slotEl = document.querySelector('.triade-center-slot');
+            const slotEl = document.querySelector('.collect-center-slot');
             if (slotEl) {
                 const slotRect = slotEl.getBoundingClientRect();
                 // Zone de drop = slot + 2px de marge
@@ -5306,12 +5546,12 @@ createApp({
             // Check merge target at drop time
             let mergeTarget = null;
             if (cardIndex !== null && !overSlot) {
-                const sourceCard = this.triade.myCards[cardIndex];
+                const sourceCard = this.collect.myCards[cardIndex];
                 if (sourceCard) {
-                    const cardEls = document.querySelectorAll('.triade-my-cards .triade-card.large');
+                    const cardEls = document.querySelectorAll('.collect-my-cards .collect-card.large');
                     cardEls.forEach((el, i) => {
                         if (i === cardIndex) return;
-                        const targetCard = this.triade.myCards[i];
+                        const targetCard = this.collect.myCards[i];
                         if (!targetCard || targetCard.anime !== sourceCard.anime) return;
                         const srcCount = sourceCard.isFused ? sourceCard.fusedCards.length : 1;
                         const tgtCount = targetCard.isFused ? targetCard.fusedCards.length : 1;
@@ -5328,7 +5568,7 @@ createApp({
             // 🔥 FUSION: dropped on a merge target (but NOT on the slot)
             if (mergeTarget !== null && cardIndex !== null) {
                 const targetIndex = mergeTarget;
-                const targetEl = document.querySelectorAll('.triade-my-cards .triade-card.large')[targetIndex];
+                const targetEl = document.querySelectorAll('.collect-my-cards .collect-card.large')[targetIndex];
                 if (targetEl) {
                     const tgtRect = targetEl.getBoundingClientRect();
                     ghost.style.transition = 'all 0.2s ease-in';
@@ -5338,20 +5578,20 @@ createApp({
                     ghost.style.opacity = '0';
                 }
                 setTimeout(() => ghost.remove(), 250);
-                this.fuseTriadeCards(cardIndex, targetIndex);
+                this.fuseCollectCards(cardIndex, targetIndex);
                 this._mergeTargetIndex = null;
-                this.triade.draggingCardIndex = null;
-                this.triade.dropZoneActive = false;
+                this.collect.draggingCardIndex = null;
+                this.collect.dropZoneActive = false;
                 this._dragGhost = null;
                 return;
             }
             this._mergeTargetIndex = null;
             
-            if (overSlot && cardIndex !== null && !this.triade.timerExpired && !this.triade.cardPlayed) {
+            if (overSlot && cardIndex !== null && !this.collect.timerExpired && !this.collect.cardPlayed) {
                 // ✅ DROP SUR LE SLOT → jouer la carte
                 console.log('✅ DROP on slot - cardIndex:', cardIndex, 'overSlot:', overSlot);
                 const slotRect = slotEl.getBoundingClientRect();
-                const card = this.triade.myCards[cardIndex];
+                const card = this.collect.myCards[cardIndex];
                 const isDiscard = card && !card.isFused;
                 
                 if (isDiscard) {
@@ -5370,7 +5610,7 @@ createApp({
                         this.playShatterEffect(cx, cy);
                     }, 200);
                     
-                    this.discardTriadeCard(cardIndex);
+                    this.discardCollectCard(cardIndex);
                 } else {
                     // ⭐ FUSION VALIDATION — comportement existant
                     ghost.style.transition = 'all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)';
@@ -5380,11 +5620,11 @@ createApp({
                     ghost.style.opacity = '0';
                     setTimeout(() => { ghost.remove(); }, 400);
                     
-                    this.playTriadeCard(cardIndex);
+                    this.playCollectCard(cardIndex);
                 }
             } else {
                 // ❌ PAS SUR LE SLOT → retour en place
-                console.log('❌ DROP missed - overSlot:', overSlot, 'cardIndex:', cardIndex, 'timerExpired:', this.triade.timerExpired, 'cardPlayed:', this.triade.cardPlayed, 'dropXY:', dropX, dropY);
+                console.log('❌ DROP missed - overSlot:', overSlot, 'cardIndex:', cardIndex, 'timerExpired:', this.collect.timerExpired, 'cardPlayed:', this.collect.cardPlayed, 'dropXY:', dropX, dropY);
                 ghost.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
                 ghost.style.left = this._dragCardRect.left + 'px';
                 ghost.style.top = this._dragCardRect.top + 'px';
@@ -5396,66 +5636,69 @@ createApp({
                 }, 300);
             }
             
-            this.triade.draggingCardIndex = null;
-            this.triade.dropZoneActive = false;
+            this.collect.draggingCardIndex = null;
+            this.collect.dropZoneActive = false;
             this._dragGhost = null;
         },
         
-        // 🆕 Jouer une carte Triade
+        // 🆕 Jouer une carte Collect
         // Server-synced timer (100ms precision)
-        startTriadeTimer(seconds = 15) {
-            this.stopTriadeTimer(true);
-            this._triadeTimerEndMs = Date.now() + seconds * 1000;
-            this._triadeTimerDuration = seconds;
-            this.triade.timer = seconds;
-            this.triade.timerProgress = 0;
-            this.triade.timerExpired = false;
+        startCollectTimer(seconds = 15) {
+            this.stopCollectTimer(true);
+            this._collectTimerEndMs = Date.now() + seconds * 1000;
+            this._collectTimerDuration = seconds;
+            this.collect.timer = seconds;
+            this.collect.timerProgress = 0;
+            this.collect.timerExpired = false;
             // 💾 Sauvegarder pour restore après refresh
-            sessionStorage.setItem('triadeTimerEndMs', this._triadeTimerEndMs.toString());
-            sessionStorage.setItem('triadeTimerDuration', this._triadeTimerDuration.toString());
-            sessionStorage.removeItem('triadeTimerExpired');
-            this._triadeTimerInterval = setInterval(() => {
+            sessionStorage.setItem('collectTimerEndMs', this._collectTimerEndMs.toString());
+            sessionStorage.setItem('collectTimerDuration', this._collectTimerDuration.toString());
+            sessionStorage.removeItem('collectTimerExpired');
+            this._collectTimerInterval = setInterval(() => {
                 const now = Date.now();
-                const remaining = Math.ceil((this._triadeTimerEndMs - now) / 1000);
-                const elapsed = this._triadeTimerDuration - ((this._triadeTimerEndMs - now) / 1000);
-                this.triade.timer = Math.max(0, remaining);
-                this.triade.timerProgress = Math.min(1, elapsed / this._triadeTimerDuration);
+                const remaining = Math.ceil((this._collectTimerEndMs - now) / 1000);
+                const elapsed = this._collectTimerDuration - ((this._collectTimerEndMs - now) / 1000);
+                this.collect.timer = Math.max(0, remaining);
+                this.collect.timerProgress = Math.min(1, elapsed / this._collectTimerDuration);
                 if (remaining <= 0) {
-                    clearInterval(this._triadeTimerInterval);
-                    this._triadeTimerInterval = null;
-                    this._triadeTimerEndMs = null;
-                    this._triadeTimerDuration = null;
-                    this.triade.timerExpired = true;
-                    this.triade.cardsActive = false; // 🔒 Désactiver les cartes
-                    this.triade.timerProgress = 1;
+                    clearInterval(this._collectTimerInterval);
+                    this._collectTimerInterval = null;
+                    this._collectTimerEndMs = null;
+                    this._collectTimerDuration = null;
+                    this.collect.timerExpired = true;
+                    this.collect.cardsActive = false; // 🔒 Désactiver les cartes
+                    this.collect.timerProgress = 1;
                     // 💾 Marquer expiré
-                    sessionStorage.setItem('triadeTimerExpired', 'true');
-                    sessionStorage.removeItem('triadeTimerEndMs');
-                    sessionStorage.removeItem('triadeTimerDuration');
+                    sessionStorage.setItem('collectTimerExpired', 'true');
+                    sessionStorage.removeItem('collectTimerEndMs');
+                    sessionStorage.removeItem('collectTimerDuration');
                     // Cancel any active drag immediately
                     if (this._dragGhost) {
                         this._dragGhost.remove();
                         this._dragGhost = null;
-                        this.triade.draggingCardIndex = null;
-                        this.triade.dropZoneActive = false;
+                        this.collect.draggingCardIndex = null;
+                        this.collect.dropZoneActive = false;
                         if (this._boundDragMove) document.removeEventListener('pointermove', this._boundDragMove);
                         if (this._boundDragEnd) document.removeEventListener('pointerup', this._boundDragEnd);
                     }
-                    this.saveTriadeState();
+                    // Clean up swap/merge highlights
+                    document.querySelectorAll('.market-card.swap-hover').forEach(el => el.classList.remove('swap-hover'));
+                    document.querySelectorAll('.collect-card.large.merge-target').forEach(el => el.classList.remove('merge-target'));
+                    this.saveCollectState();
                 }
             }, 100);
         },
-        stopTriadeTimer(silent) {
-            if (this._triadeTimerInterval) { clearInterval(this._triadeTimerInterval); this._triadeTimerInterval = null; }
-            this._triadeTimerEndMs = null;
-            if (!silent) this.triade.timer = 0;
+        stopCollectTimer(silent) {
+            if (this._collectTimerInterval) { clearInterval(this._collectTimerInterval); this._collectTimerInterval = null; }
+            this._collectTimerEndMs = null;
+            if (!silent) this.collect.timer = 0;
             // timerExpired is NOT reset here - only on new round
         },
 
         // 🔥 FUSION - Combiner deux cartes du même anime
-        fuseTriadeCards(sourceIndex, targetIndex) {
-            const src = this.triade.myCards[sourceIndex];
-            const tgt = this.triade.myCards[targetIndex];
+        fuseCollectCards(sourceIndex, targetIndex) {
+            const src = this.collect.myCards[sourceIndex];
+            const tgt = this.collect.myCards[targetIndex];
             if (!src || !tgt || src.anime !== tgt.anime) return;
             
             // Prevent drag during fusion animation
@@ -5489,7 +5732,7 @@ createApp({
             console.log(`🔥 FUSION: ${allCards.map(c => c.name).join(' + ')} → stats:`, fusedStats);
             
             // 🎆 ANIMATION PHASE
-            const cardEls = document.querySelectorAll('.triade-my-cards .triade-card.large');
+            const cardEls = document.querySelectorAll('.collect-my-cards .collect-card.large');
             const srcEl = cardEls[sourceIndex];
             const tgtEl = cardEls[targetIndex];
             
@@ -5515,6 +5758,7 @@ createApp({
                 
                 // Phase 4: Burst — fixed on body (survives Vue re-render)
                 const burst = document.createElement('div');
+                burst.className = 'collect-fusion-burst';
                 burst.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;pointer-events:none;z-index:99998;`;
                 document.body.appendChild(burst);
                 // Flash circle + expanding ring
@@ -5560,16 +5804,16 @@ createApp({
                 if (tgtEl) { tgtEl.style.opacity = '0'; tgtEl.classList.remove('fuse-impact'); }
                 // Adjust indices: remove source first if before target
                 if (sourceIndex < targetIndex) {
-                    this.triade.myCards.splice(targetIndex, 1, fusedCard);
-                    this.triade.myCards.splice(sourceIndex, 1);
+                    this.collect.myCards.splice(targetIndex, 1, fusedCard);
+                    this.collect.myCards.splice(sourceIndex, 1);
                 } else {
-                    this.triade.myCards.splice(sourceIndex, 1);
-                    this.triade.myCards.splice(targetIndex, 1, fusedCard);
+                    this.collect.myCards.splice(sourceIndex, 1);
+                    this.collect.myCards.splice(targetIndex, 1, fusedCard);
                 }
                 
                 // 🔥 FIX: Clean up stale DOM classes/styles after Vue re-render
                 this.$nextTick(() => {
-                    document.querySelectorAll('.triade-my-cards .triade-card.large').forEach(el => {
+                    document.querySelectorAll('.collect-my-cards .collect-card.large').forEach(el => {
                         el.classList.remove('dissolving', 'fuse-impact');
                         el.style.pointerEvents = '';
                         el.style.opacity = '';
@@ -5579,59 +5823,88 @@ createApp({
             }, 600);
             
             // Notify server
-            this.socket.emit('triade-fuse-cards', {
+            this.socket.emit('collect-fuse-cards', {
                 twitchId: this.twitchId,
                 sourceIndex: sourceIndex,
                 targetIndex: targetIndex
             });
         },
         
-        playTriadeCard(cardIndex) {
-            if (this.triade.timerExpired) return;
-            const card = this.triade.myCards[cardIndex];
+        playCollectCard(cardIndex) {
+            if (this.collect.timerExpired) return;
+            const card = this.collect.myCards[cardIndex];
             if (!card) return;
             
             console.log('🎴 Carte jouée:', card.name, 'isFused:', card.isFused, 'fusedCards:', card.fusedCards ? card.fusedCards.length : 0);
             
-            this.triade.cardPlayed = true;
+            this.collect.cardPlayed = true;
             // Deep clone to ensure Vue reactivity detects all properties
-            this.triade.playedCardData = JSON.parse(JSON.stringify(card));
+            this.collect.playedCardData = JSON.parse(JSON.stringify(card));
             // Timer keeps running until end of round
             
             // Émettre au serveur
-            this.socket.emit('triade-play-card', {
+            this.socket.emit('collect-play-card', {
                 twitchId: this.twitchId,
                 cardIndex: cardIndex
             });
             
             // Retirer la carte de la main
-            this.triade.myCards.splice(cardIndex, 1);
-            this.saveTriadeState();
+            this.collect.myCards.splice(cardIndex, 1);
+            this.saveCollectState();
         },
 
         // 🗑️ Défausser une carte (pas de carte visible dans le slot)
-        discardTriadeCard(cardIndex) {
-            if (this.triade.timerExpired) return;
-            const card = this.triade.myCards[cardIndex];
+        discardCollectCard(cardIndex) {
+            if (this.collect.timerExpired) return;
+            const card = this.collect.myCards[cardIndex];
             if (!card) return;
             
             console.log('🗑️ Carte défaussée:', card.name);
             
-            this.triade.cardPlayed = true;
+            this.collect.cardPlayed = true;
             // PAS de playedCardData → le slot reste vide visuellement
-            this.triade.playedCardData = null;
-            this.triade.canDraw = false; // Défausse = fin du tour
+            this.collect.playedCardData = null;
+            this.collect.canDraw = false; // Défausse = fin du tour
             
             // Émettre au serveur avec flag discard
-            this.socket.emit('triade-play-card', {
+            this.socket.emit('collect-play-card', {
                 twitchId: this.twitchId,
                 cardIndex: cardIndex,
                 discard: true
             });
             
             // Retirer la carte de la main
-            this.triade.myCards.splice(cardIndex, 1);
-            this.saveTriadeState();
+            this.collect.myCards.splice(cardIndex, 1);
+            this.saveCollectState();
+        },
+
+        // 🔄 Échanger une carte avec le marché
+        swapWithMarket(cardIndex, marketIndex) {
+            if (this.collect.timerExpired || this.collect.cardPlayed) return;
+            const card = this.collect.myCards[cardIndex];
+            if (!card || card.isFused) return;
+            
+            const marketCard = this.collect.marketCards[marketIndex];
+            if (!marketCard) return;
+            
+            console.log(`🔄 Échange: ${card.name} ↔ ${marketCard.name}`);
+            
+            this.collect.cardPlayed = true;
+            this.collect.canDraw = false;
+            
+            // Émettre au serveur
+            this.socket.emit('collect-swap-market', {
+                twitchId: this.twitchId,
+                cardIndex: cardIndex,
+                marketIndex: marketIndex
+            });
+            
+            // Swap local optimiste
+            const receivedCard = JSON.parse(JSON.stringify(marketCard));
+            this.collect.marketCards[marketIndex] = JSON.parse(JSON.stringify(card));
+            this.collect.myCards.splice(cardIndex, 1, receivedCard);
+            
+            this.saveCollectState();
         },
 
         // 💥 Effet Shatter — défausse de carte
@@ -5686,31 +5959,31 @@ createApp({
             if (this._drawAnimBusy) return;
             
             // Main pleine ?
-            if (this.triade.myCards.length >= this.triade.handSize) {
-                if (this.triade.deckFullFlash) return; // Anti-spam
-                this.triade.deckFullFlash = true;
-                setTimeout(() => { this.triade.deckFullFlash = false; }, 1200);
+            if (this.collect.myCards.length >= this.collect.handSize) {
+                if (this.collect.deckFullFlash) return; // Anti-spam
+                this.collect.deckFullFlash = true;
+                setTimeout(() => { this.collect.deckFullFlash = false; }, 1200);
                 return;
             }
             
-            if (!this.triade.canDraw) return;
+            if (!this.collect.canDraw) return;
             this._drawAnimBusy = true;
 
             // Émettre au serveur (l'animation est gérée au retour par draw-result)
-            this.socket.emit('triade-draw-card', { twitchId: this.twitchId });
+            this.socket.emit('collect-draw-card', { twitchId: this.twitchId });
             
-            this.triade.canDraw = false;
-            this.saveTriadeState();
+            this.collect.canDraw = false;
+            this.saveCollectState();
 
             setTimeout(() => { this._drawAnimBusy = false; }, 1200);
         },
 
         // 🎴 Animation carte volant du deck vers la main
         animateDrawToHand(card, deckEl) {
-            const topCard = deckEl.querySelector('.triade-deck-card:nth-child(1)');
+            const topCard = deckEl.querySelector('.collect-deck-card:nth-child(1)');
             if (!topCard) {
-                this.triade.myCards.push(card);
-                this.saveTriadeState();
+                this.collect.myCards.push(card);
+                this.saveCollectState();
                 return;
             }
             
@@ -5746,10 +6019,10 @@ createApp({
             flyer.style.height = topRect.height + 'px';
             
             // Calculer destination (main du joueur)
-            const handContainer = document.querySelector('.triade-my-cards');
+            const handContainer = document.querySelector('.collect-my-cards');
             let endX, endY, endW, endH;
             if (handContainer) {
-                const handCards = handContainer.querySelectorAll('.triade-card');
+                const handCards = handContainer.querySelectorAll('.collect-card');
                 if (handCards.length > 0) {
                     const lastCard = handCards[handCards.length - 1];
                     const lastRect = lastCard.getBoundingClientRect();
@@ -5792,19 +6065,19 @@ createApp({
             setTimeout(() => {
                 const oldPositions = new Map();
                 if (handContainer) {
-                    handContainer.querySelectorAll('.triade-card').forEach((el, i) => {
+                    handContainer.querySelectorAll('.collect-card').forEach((el, i) => {
                         oldPositions.set(i, el.getBoundingClientRect());
                     });
                 }
                 
                 // Ajouter la carte (Vue re-render)
-                this.triade.myCards.push(card);
-                this.saveTriadeState();
+                this.collect.myCards.push(card);
+                this.saveCollectState();
                 
                 // Après le re-render Vue
                 this.$nextTick(() => {
                     if (handContainer) {
-                        const newCards = handContainer.querySelectorAll('.triade-card');
+                        const newCards = handContainer.querySelectorAll('.collect-card');
                         const newCard = newCards[newCards.length - 1];
                         if (newCard) newCard.style.opacity = '0';
                         
@@ -5831,7 +6104,7 @@ createApp({
                 topCard.style.visibility = '';
                 this.$nextTick(() => {
                     if (handContainer) {
-                        const allCards = handContainer.querySelectorAll('.triade-card');
+                        const allCards = handContainer.querySelectorAll('.collect-card');
                         const lastCard = allCards[allCards.length - 1];
                         if (lastCard) {
                             lastCard.style.opacity = '';
@@ -5872,22 +6145,22 @@ createApp({
 
         // 🎴 Choisir une carte parmi les 2 piochées
         pickDrawCard(index) {
-            if (this.triade.drawPicked !== null) return; // Déjà choisi
-            this.triade.drawPicked = index;
+            if (this.collect.drawPicked !== null) return; // Déjà choisi
+            this.collect.drawPicked = index;
             
             // Envoyer le choix au serveur
-            this.socket.emit('triade-draw-choice', { 
+            this.socket.emit('collect-draw-choice', { 
                 twitchId: this.twitchId, 
                 choiceIndex: index 
             });
             
             // Fermer l'overlay après animation
             setTimeout(() => {
-                this.triade.drawCardsRevealed = false;
+                this.collect.drawCardsRevealed = false;
                 setTimeout(() => {
-                    this.triade.drawChoiceVisible = false;
-                    this.triade.drawOptions = [];
-                    this.triade.drawPicked = null;
+                    this.collect.drawChoiceVisible = false;
+                    this.collect.drawOptions = [];
+                    this.collect.drawPicked = null;
                 }, 400);
             }, 600);
         },
@@ -5897,3 +6170,339 @@ createApp({
 
 
 }).mount('#app');
+// =============================================
+// ⭐ COLLECT VALIDATION EFFECTS
+// =============================================
+
+const STAR_SVG_HTML = '<svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+
+function collectValidationFlash(cx, cy, isCollect) {
+    const el = document.createElement('div');
+    el.className = 'collect-validation-flash';
+    el.style.setProperty('--cx', cx + 'px');
+    el.style.setProperty('--cy', cy + 'px');
+    document.body.appendChild(el);
+    void el.offsetWidth;
+    el.classList.add(isCollect ? 'collect-flash' : 'lien-flash');
+    setTimeout(() => el.remove(), isCollect ? 800 : 550);
+    
+    if (isCollect) {
+        const el2 = document.createElement('div');
+        el2.className = 'collect-validation-flash';
+        el2.style.setProperty('--cx', cx + 'px');
+        el2.style.setProperty('--cy', cy + 'px');
+        document.body.appendChild(el2);
+        void el2.offsetWidth;
+        el2.classList.add('lien-flash');
+        setTimeout(() => el2.remove(), 550);
+    }
+}
+
+function collectShake(isCollect) {
+    const container = document.querySelector('.collect-table') || document.body;
+    container.style.animation = 'none';
+    void container.offsetWidth;
+    container.style.animation = isCollect ? 'collect-shake-b 0.4s ease-out' : 'collect-shake-a 0.3s ease-out';
+    setTimeout(() => { container.style.animation = ''; }, isCollect ? 400 : 300);
+}
+
+function collectShatterCard(cardEl, cx, cy, isCollect) {
+    if (!cardEl) return;
+    const rect = cardEl.getBoundingClientRect();
+    const cols = 4, rows = 5;
+    const fragW = rect.width / cols;
+    const fragH = rect.height / rows;
+    
+    // Get images from the card
+    const imgs = cardEl.querySelectorAll('img');
+    const imgSrcs = Array.from(imgs).map(i => i.src);
+    const imgCount = imgSrcs.length || 1;
+    
+    cardEl.style.display = 'none';
+    cardEl.style.visibility = 'hidden';
+    cardEl.style.pointerEvents = 'none';
+    
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            const frag = document.createElement('div');
+            const fragLeft = rect.left + c * fragW;
+            const fragTop = rect.top + r * fragH;
+            
+            const imgIdx = Math.min(Math.floor(c / (cols / imgCount)), imgCount - 1);
+            const imgLeft = rect.left + (imgIdx * rect.width / imgCount);
+            const imgWidth = rect.width / imgCount;
+            
+            frag.style.cssText = `position:fixed;left:${fragLeft}px;top:${fragTop}px;width:${fragW}px;height:${fragH}px;background-image:url(${imgSrcs[imgIdx] || ''});background-size:${imgWidth}px ${rect.height}px;background-position:${-(fragLeft-imgLeft)}px ${-(r*fragH)}px;pointer-events:none;z-index:9004;border-radius:2px;will-change:transform,opacity;`;
+            document.body.appendChild(frag);
+            
+            const fcx = fragLeft + fragW/2;
+            const fcy = fragTop + fragH/2;
+            const angle = Math.atan2(fcy - cy, fcx - cx);
+            const dist = (isCollect ? 55 : 40) + Math.random() * (isCollect ? 50 : 35);
+            const tx = Math.cos(angle) * dist + (Math.random()-0.5) * 25;
+            const ty = Math.sin(angle) * dist + (Math.random()-0.5) * 25;
+            const rot = (Math.random()-0.5) * 280;
+            const dur = 600 + Math.random() * 350;
+            const delay = Math.random() * 50;
+            
+            frag.animate([
+                { transform: 'translate(0,0) rotate(0deg) scale(1)', opacity: 1, filter: 'brightness(1)' },
+                { transform: 'translate(0,0) rotate(0deg) scale(1.02)', opacity: 1, filter: 'brightness(3)', offset: 0.1 },
+                { transform: `translate(${tx*0.5}px,${ty*0.5}px) rotate(${rot*0.4}deg) scale(0.7)`, opacity: 0.8, filter: 'brightness(1.8)', offset: 0.4 },
+                { transform: `translate(${tx}px,${ty}px) rotate(${rot}deg) scale(0.15)`, opacity: 0, filter: 'brightness(1.2)' }
+            ], { duration: dur, delay, easing: 'cubic-bezier(0.25, 0.6, 0.35, 1)', fill: 'forwards' });
+            
+            setTimeout(() => frag.remove(), dur + delay + 30);
+        }
+    }
+    
+    // Core flash
+    const core = document.createElement('div');
+    const coreSize = isCollect ? 90 : 65;
+    core.style.cssText = `position:fixed;left:${cx-coreSize/2}px;top:${cy-coreSize/2}px;width:${coreSize}px;height:${coreSize}px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.95) 0%,rgba(255,255,255,0.5) 25%,${isCollect?'rgba(255,100,0,0.25)':'rgba(251,191,36,0.25)'} 55%,transparent 100%);pointer-events:none;z-index:9005;will-change:transform,opacity;`;
+    document.body.appendChild(core);
+    core.animate([
+        { transform: 'scale(0.3)', opacity: 0 },
+        { transform: 'scale(1)', opacity: 1, offset: 0.2 },
+        { transform: 'scale(1.6)', opacity: 0 }
+    ], { duration: isCollect ? 350 : 300, easing: 'ease-out', fill: 'forwards' });
+    setTimeout(() => core.remove(), isCollect ? 380 : 330);
+}
+
+function collectBurstParticles(cx, cy, isCollect) {
+    const goldColors = ['#fbbf24','#f59e0b','#ffd700','#ffe066','#ffaa00'];
+    const fireColors = ['#ff6b35','#ff4500','#fbbf24','#ff8c00','#ffcc00','#ff3d00'];
+    const colors = isCollect ? fireColors : goldColors;
+
+    // Spiral particles
+    const count = isCollect ? 80 : 55;
+    for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        const startAngle = (i / count) * Math.PI * 2 + (Math.random()-0.5) * 0.5;
+        const dist = (isCollect ? 70 : 50) + Math.random() * (isCollect ? 90 : 65);
+        const size = 2 + Math.random() * (isCollect ? 5 : 4);
+        const dur = 500 + Math.random() * 400;
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        
+        const spin = (Math.random() > 0.5 ? 1 : -1) * (0.8 + Math.random() * 1.2);
+        const steps = 5;
+        const keyframes = [];
+        for (let s = 0; s <= steps; s++) {
+            const t = s / steps;
+            const r = dist * t;
+            const a = startAngle + spin * t;
+            keyframes.push({
+                transform: `translate(${Math.cos(a)*r}px,${Math.sin(a)*r}px) scale(${1 - t*0.8})`,
+                opacity: s === 0 ? 1 : (s < steps ? 0.85 : 0),
+                offset: t
+            });
+        }
+
+        p.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;width:${size}px;height:${size}px;background:${color};box-shadow:0 0 ${size*2}px ${color};border-radius:50%;pointer-events:none;z-index:9002;will-change:transform,opacity;`;
+        document.body.appendChild(p);
+        p.animate(keyframes, { duration: dur, easing: 'cubic-bezier(0.1, 0.6, 0.3, 1)', fill: 'forwards' });
+        setTimeout(() => p.remove(), dur + 30);
+    }
+
+    // Fast sparks
+    const sparkCount = isCollect ? 30 : 20;
+    for (let i = 0; i < sparkCount; i++) {
+        const p = document.createElement('div');
+        const startAngle = Math.random() * Math.PI * 2;
+        const dist = (isCollect ? 100 : 75) + Math.random() * 50;
+        const size = 1.5 + Math.random() * 2.5;
+        const dur = 350 + Math.random() * 250;
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const spin = (Math.random() > 0.5 ? 1 : -1) * (0.5 + Math.random() * 0.8);
+        
+        const mid = { r: dist * 0.5, a: startAngle + spin * 0.5 };
+        const end = { r: dist, a: startAngle + spin };
+
+        p.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;width:${size}px;height:${size}px;background:#fff;box-shadow:0 0 ${size*3}px ${color}, 0 0 ${size*5}px ${color};border-radius:50%;pointer-events:none;z-index:9003;will-change:transform,opacity;`;
+        document.body.appendChild(p);
+        p.animate([
+            { transform: 'translate(0,0)', opacity: 1 },
+            { transform: `translate(${Math.cos(mid.a)*mid.r}px,${Math.sin(mid.a)*mid.r}px)`, opacity: 0.8, offset: 0.4 },
+            { transform: `translate(${Math.cos(end.a)*end.r}px,${Math.sin(end.a)*end.r}px)`, opacity: 0 }
+        ], { duration: dur, easing: 'cubic-bezier(0.1, 0.7, 0.3, 1)', fill: 'forwards' });
+        setTimeout(() => p.remove(), dur + 30);
+    }
+
+    // Twinkles
+    const twinkleCount = isCollect ? 14 : 8;
+    for (let i = 0; i < twinkleCount; i++) {
+        const delay = 100 + Math.random() * 200;
+        setTimeout(() => {
+            const sp = document.createElement('div');
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 25 + Math.random() * (isCollect ? 90 : 65);
+            const size = 2 + Math.random() * 3;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            sp.style.cssText = `position:fixed;left:${cx + Math.cos(angle)*dist}px;top:${cy + Math.sin(angle)*dist}px;width:${size}px;height:${size}px;background:#fff;border-radius:50%;pointer-events:none;z-index:9003;box-shadow:0 0 ${size*2}px ${color}, 0 0 ${size*4}px ${color};animation:collect-sparkle-twinkle 0.35s ease-out forwards;will-change:transform,opacity;`;
+            document.body.appendChild(sp);
+            setTimeout(() => sp.remove(), 400);
+        }, delay);
+    }
+}
+
+function collectFlyStar(fromX, fromY, targetStarEl, delay) {
+    if (!targetStarEl) return;
+    setTimeout(() => {
+        const target = targetStarEl.getBoundingClientRect();
+        const tx = target.left + target.width/2;
+        const ty = target.top + target.height/2;
+        
+        const flyer = document.createElement('div');
+        flyer.className = 'collect-star-flyer';
+        flyer.innerHTML = STAR_SVG_HTML;
+        flyer.style.left = (fromX - 12) + 'px';
+        flyer.style.top = (fromY - 12) + 'px';
+        document.body.appendChild(flyer);
+
+        // Trail particles
+        const trail = setInterval(() => {
+            const fr = flyer.getBoundingClientRect();
+            const s = 2 + Math.random() * 4;
+            const tp = document.createElement('div');
+            tp.style.cssText = `position:fixed;left:${fr.left+fr.width/2+(Math.random()-0.5)*8}px;top:${fr.top+fr.height/2+(Math.random()-0.5)*8}px;width:${s}px;height:${s}px;background:#fbbf24;border-radius:50%;pointer-events:none;z-index:8999;box-shadow:0 0 5px #fbbf24;transition:all 0.3s ease-out;opacity:0.7;`;
+            document.body.appendChild(tp);
+            requestAnimationFrame(() => {
+                tp.style.opacity = '0';
+                tp.style.transform = `translate(${(Math.random()-0.5)*14}px,${6+Math.random()*10}px) scale(0.1)`;
+            });
+            setTimeout(() => tp.remove(), 350);
+        }, 25);
+
+        const dur = 420;
+        flyer.animate([
+            { left: (fromX-12)+'px', top: (fromY-12)+'px', transform: 'scale(1.2)', filter: 'drop-shadow(0 0 12px rgba(251,191,36,1))' },
+            { left: (tx-12)+'px', top: (ty-12)+'px', transform: 'scale(0.5)', filter: 'drop-shadow(0 0 5px rgba(251,191,36,0.4))' }
+        ], { duration: dur, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', fill: 'forwards' });
+
+        setTimeout(() => {
+            clearInterval(trail);
+            flyer.remove();
+            collectLandStar(targetStarEl);
+        }, dur);
+    }, delay);
+}
+
+function collectLandStar(starEl) {
+    if (!starEl) return;
+    starEl.classList.add('won', 'star-landing');
+
+    // Burst rays
+    const wrap = document.createElement('div');
+    wrap.className = 'collect-star-burst-wrap';
+    for (let i = 0; i < 10; i++) {
+        const ray = document.createElement('div');
+        ray.className = 'collect-sbr';
+        ray.style.cssText = `transform:translateX(-50%) rotate(${i*36}deg);animation-delay:${i*0.025}s;`;
+        wrap.appendChild(ray);
+    }
+    starEl.style.position = 'relative';
+    starEl.appendChild(wrap);
+
+    // Mini sparkles
+    const sr = starEl.getBoundingClientRect();
+    const scx = sr.left + sr.width/2, scy = sr.top + sr.height/2;
+    for (let i = 0; i < 8; i++) {
+        const a = (i/8) * Math.PI * 2, d = 8 + Math.random() * 12;
+        const sp = document.createElement('div');
+        sp.style.cssText = `position:fixed;left:${scx}px;top:${scy}px;width:3px;height:3px;background:#fbbf24;border-radius:50%;box-shadow:0 0 4px #fbbf24;pointer-events:none;z-index:9001;transition:all 0.3s ease-out;`;
+        document.body.appendChild(sp);
+        requestAnimationFrame(() => { sp.style.left = (scx+Math.cos(a)*d)+'px'; sp.style.top = (scy+Math.sin(a)*d)+'px'; sp.style.opacity = '0'; });
+        setTimeout(() => sp.remove(), 350);
+    }
+
+    setTimeout(() => { starEl.classList.remove('star-landing'); wrap.remove(); }, 800);
+}
+
+/**
+ * Main orchestrator: runs the full validation effect sequence
+ * @param {Element} cardEl - The center card element to shatter
+ * @param {Element[]} targetStarEls - Array of star elements to fly to (1 for Lien, 2 for Collect)
+ * @param {boolean} isCollect - true for Collect (3-card fusion), false for Lien (2-card)
+ */
+function collectValidationEffect(cardEl, targetStarEls, isCollect) {
+    if (!cardEl) return;
+    const rect = cardEl.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+
+    // Immediate: flash + shake + shatter + particles
+    collectValidationFlash(cx, cy, isCollect);
+    collectShake(isCollect);
+    collectShatterCard(cardEl, cx, cy, isCollect);
+    collectBurstParticles(cx, cy, isCollect);
+
+    // Delayed: star flight(s)
+    const starDelay = 300;
+    if (targetStarEls && targetStarEls.length > 0) {
+        collectFlyStar(cx, cy, targetStarEls[0], starDelay);
+        if (targetStarEls.length > 1) {
+            collectFlyStar(cx, cy, targetStarEls[1], starDelay + 250);
+        }
+    }
+}
+
+/**
+ * Animate a card-back flying from a player's seat to the center slot
+ */
+function animateCardToSlot(seatEl, slotEl, duration, onComplete, keepAlive) {
+    // Source: center of player's hand
+    const smallCards = seatEl.querySelectorAll('.collect-player-card-small');
+    if (!smallCards.length) { if (onComplete) onComplete(); return; }
+    
+    // Calculate center of all small cards
+    const firstRect = smallCards[0].getBoundingClientRect();
+    const lastRect = smallCards[smallCards.length - 1].getBoundingClientRect();
+    const fromCx = (firstRect.left + lastRect.right) / 2;
+    const fromCy = (firstRect.top + lastRect.bottom) / 2;
+    const fromW = firstRect.width;
+    const fromH = firstRect.height;
+    const toRect = slotEl.getBoundingClientRect();
+    
+    // Create card-back flyer
+    const flyer = document.createElement('div');
+    flyer.className = 'collect-card-flight-flyer';
+    flyer.style.cssText = `
+        position:fixed; z-index:8500; pointer-events:none;
+        width:${fromW}px; height:${fromH}px;
+        left:${fromCx - fromW / 2}px; top:${fromCy - fromH / 2}px;
+        background: linear-gradient(135deg, #1a1a3e 0%, #0d0d2b 100%);
+        border: 1.5px solid rgba(255,255,255,0.15);
+        border-radius: 4px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+        will-change: transform, left, top, width, height;
+    `;
+    // SM text on back
+    const label = document.createElement('span');
+    label.textContent = 'SM';
+    label.style.cssText = `
+        position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+        font-family:Orbitron,sans-serif; font-size:9px; font-weight:700;
+        color:rgba(255,255,255,0.2); letter-spacing:2px;
+    `;
+    flyer.appendChild(label);
+    document.body.appendChild(flyer);
+    
+    // Target: center of slot
+    const endW = Math.min(fromW * 1.2, toRect.width * 0.6);
+    const endH = endW * (fromH / fromW);
+    const endX = toRect.left + toRect.width / 2 - endW / 2;
+    const endY = toRect.top + toRect.height / 2 - endH / 2;
+    
+    const startX = fromCx - fromW / 2;
+    const startY = fromCy - fromH / 2;
+    
+    flyer.animate([
+        { left: startX + 'px', top: startY + 'px', width: fromW + 'px', height: fromH + 'px', opacity: 1 },
+        { left: endX + 'px', top: endY + 'px', width: endW + 'px', height: endH + 'px', opacity: 0.7 }
+    ], { duration: duration, easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)', fill: 'forwards' });
+    
+    setTimeout(() => {
+        if (!keepAlive) flyer.remove();
+        if (onComplete) onComplete(flyer);
+    }, duration);
+}

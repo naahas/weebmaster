@@ -7319,29 +7319,29 @@ body {
     }
 }
 
-/* ==================== LOBBY CARD TRIADE ==================== */
-.lobby-triade {
+/* ==================== LOBBY CARD COLLECT ==================== */
+.lobby-collect {
     border-color: rgba(59, 130, 246, 0.15);
 }
 
-.lobby-triade:hover {
+.lobby-collect:hover {
     border-color: rgba(59, 130, 246, 0.3);
 }
 
 /* Ligne bleue en haut */
-.lobby-triade .lobby-glow-line {
+.lobby-collect .lobby-glow-line {
     background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.5), transparent);
 }
 
-/* Icône cartes Triade */
-.lobby-triade .triade-cards-icon {
+/* Icône cartes Collect */
+.lobby-collect .collect-cards-icon {
     position: relative;
     width: 70px;
     height: 55px;
     margin: 0 auto 1.25rem;
 }
 
-.lobby-triade .triade-card {
+.lobby-collect .collect-card {
     position: absolute;
     width: 38px;
     height: 52px;
@@ -7350,7 +7350,7 @@ body {
 }
 
 /* Carte arrière (gauche) */
-.lobby-triade .triade-card-back {
+.lobby-collect .collect-card-back {
     left: 2px;
     top: 2px;
     background: linear-gradient(135deg, #1e3a5f 0%, #0f2847 100%);
@@ -7359,7 +7359,7 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.lobby-triade .triade-card-back::before {
+.lobby-collect .collect-card-back::before {
     content: '';
     position: absolute;
     inset: 4px;
@@ -7375,7 +7375,7 @@ body {
 }
 
 /* Carte avant (droite) */
-.lobby-triade .triade-card-front {
+.lobby-collect .collect-card-front {
     right: 2px;
     top: 0;
     background: linear-gradient(135deg, #ffffff 0%, #e8f0fe 100%);
@@ -7387,7 +7387,7 @@ body {
     justify-content: center;
 }
 
-.lobby-triade .triade-card-symbol {
+.lobby-collect .collect-card-symbol {
     font-size: 1.4rem;
     color: #3b82f6;
     font-weight: bold;
@@ -7395,116 +7395,116 @@ body {
 }
 
 /* Hover effects */
-.lobby-triade:hover .triade-card-back {
+.lobby-collect:hover .collect-card-back {
     transform: rotate(-22deg) translateX(-4px);
 }
 
-.lobby-triade:hover .triade-card-front {
+.lobby-collect:hover .collect-card-front {
     transform: rotate(18deg) translateX(4px) translateY(-2px);
     box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
 }
 
 /* Ligne compteur joueurs */
-.lobby-triade:hover .lobby-players-line .lobby-line {
+.lobby-collect:hover .lobby-players-line .lobby-line {
     background: rgba(59, 130, 246, 0.3);
 }
 
-.lobby-triade .lobby-players-line .lobby-count strong {
+.lobby-collect .lobby-players-line .lobby-count strong {
     color: #3b82f6;
 }
 
 /* Dot animé bleu */
-.lobby-triade .lobby-dot {
+.lobby-collect .lobby-dot {
     background: #3b82f6;
     box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
 }
 
 /* Bouton bleu */
-.lobby-triade .lobby-btn {
+.lobby-collect .lobby-btn {
     background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     color: #ffffff;
 }
 
-.lobby-triade .lobby-btn::after {
+.lobby-collect .lobby-btn::after {
     box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5);
 }
 
-.lobby-triade .lobby-btn:hover::after {
-    animation: lobby-btn-pulse-triade 1s ease-out infinite;
+.lobby-collect .lobby-btn:hover::after {
+    animation: lobby-btn-pulse-collect 1s ease-out infinite;
 }
 
-@keyframes lobby-btn-pulse-triade {
+@keyframes lobby-btn-pulse-collect {
     0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
     100% { box-shadow: 0 0 0 12px rgba(59, 130, 246, 0); }
 }
 
-/* État joined Triade */
-.lobby-triade .lobby-btn.joined {
+/* État joined Collect */
+.lobby-collect .lobby-btn.joined {
     background: rgba(59, 130, 246, 0.12);
     color: #3b82f6;
     border: 1px solid rgba(59, 130, 246, 0.25);
 }
 
-/* Animation shake-error pour Triade (lobby plein) */
-.lobby-triade .lobby-btn.shake-error {
-    animation: triade-shake 0.5s ease;
+/* Animation shake-error pour Collect (lobby plein) */
+.lobby-collect .lobby-btn.shake-error {
+    animation: collect-shake 0.5s ease;
     background: rgba(180, 100, 100, 0.4) !important;
     border: 1px solid rgba(200, 120, 120, 0.5) !important;
     color: rgba(255, 200, 200, 0.9) !important;
 }
 
-.lobby-triade .lobby-btn.shake-error::after {
+.lobby-collect .lobby-btn.shake-error::after {
     display: none;
 }
 
-@keyframes triade-shake {
+@keyframes collect-shake {
     0%, 100% { transform: translateX(0); }
     10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
     20%, 40%, 60%, 80% { transform: translateX(4px); }
 }
 
 /* État cooldown (grisé) */
-.lobby-triade .lobby-btn[disabled]:not(.joined) {
+.lobby-collect .lobby-btn[disabled]:not(.joined) {
     background: rgba(100, 100, 120, 0.3) !important;
     color: rgba(255, 255, 255, 0.4) !important;
     border: 1px solid rgba(150, 150, 170, 0.2) !important;
     cursor: pointer;
 }
 
-.lobby-triade .lobby-btn[disabled]:not(.joined)::after {
+.lobby-collect .lobby-btn[disabled]:not(.joined)::after {
     display: none;
 }
 
-/* ==================== RESPONSIVE LOBBY TRIADE ==================== */
+/* ==================== RESPONSIVE LOBBY COLLECT ==================== */
 @media (max-width: 38.375rem) {
-    .lobby-triade .triade-cards-icon {
+    .lobby-collect .collect-cards-icon {
         width: 60px;
         height: 48px;
     }
     
-    .lobby-triade .triade-card {
+    .lobby-collect .collect-card {
         width: 32px;
         height: 44px;
     }
     
-    .lobby-triade .triade-card-symbol {
+    .lobby-collect .collect-card-symbol {
         font-size: 1.2rem;
     }
 }
 
 @media (max-width: 24rem) {
-    .lobby-triade .triade-cards-icon {
+    .lobby-collect .collect-cards-icon {
         width: 52px;
         height: 42px;
     }
     
-    .lobby-triade .triade-card {
+    .lobby-collect .collect-card {
         width: 28px;
         height: 38px;
         border-radius: 4px;
     }
     
-    .lobby-triade .triade-card-symbol {
+    .lobby-collect .collect-card-symbol {
         font-size: 1rem;
     }
 }
@@ -14227,11 +14227,11 @@ body.modal-open {
 }
 
 /* ============================================
-   TRIADE GAME - Player View (Prototype V6)
+   COLLECT GAME - Player View (Prototype V6)
    ============================================ */
 
-/* Overlay de reconnexion Triade */
-.triade-reconnecting-overlay {
+/* Overlay de reconnexion Collect */
+.collect-reconnecting-overlay {
     position: fixed;
     inset: 0;
     background: 
@@ -14243,20 +14243,20 @@ body.modal-open {
     justify-content: center;
 }
 
-.triade-reconnecting-spinner {
+.collect-reconnecting-spinner {
     width: 40px;
     height: 40px;
     border: 3px solid rgba(255,255,255,0.1);
     border-top-color: rgba(59, 130, 246, 0.6);
     border-radius: 50%;
-    animation: triade-spin 0.8s linear infinite;
+    animation: collect-spin 0.8s linear infinite;
 }
 
-@keyframes triade-spin {
+@keyframes collect-spin {
     to { transform: rotate(360deg); }
 }
 
-.triade-game-container {
+.collect-game-container {
     position: fixed;
     inset: 0;
     background: 
@@ -14270,36 +14270,36 @@ body.modal-open {
     overflow: hidden;
 }
 
-/* Cacher la scrollbar en mode Triade */
-.triade-game-container::-webkit-scrollbar {
+/* Cacher la scrollbar en mode Collect */
+.collect-game-container::-webkit-scrollbar {
     display: none;
 }
 
-body:has(.triade-game-container) {
+body:has(.collect-game-container) {
     overflow: hidden;
 }
 
-body:has(.triade-game-container)::-webkit-scrollbar {
+body:has(.collect-game-container)::-webkit-scrollbar {
     display: none;
 }
 
 /* ============================================
    TABLE CONTAINER
    ============================================ */
-.triade-table-container {
+.collect-table-container {
     position: relative;
     width: 1050px;
     height: 580px;
 }
 
-.triade-table {
+.collect-table {
     position: relative;
     width: 100%;
     height: 100%;
 }
 
 /* Rail en bois - Comme prototype */
-.triade-table-rail {
+.collect-table-rail {
     position: absolute;
     inset: -18px;
     border-radius: 50%;
@@ -14318,7 +14318,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
         0 5px 15px rgba(0,0,0,0.4);
 }
 
-.triade-table-rail::before {
+.collect-table-rail::before {
     content: '';
     position: absolute;
     top: 2px;
@@ -14332,7 +14332,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     );
 }
 
-.triade-table-rail::after {
+.collect-table-rail::after {
     content: '';
     position: absolute;
     inset: -2px;
@@ -14341,7 +14341,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Surface verte */
-.triade-table-surface {
+.collect-table-surface {
     position: absolute;
     inset: 0;
     border-radius: 50%;
@@ -14356,7 +14356,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Trait doré fin autour de la surface */
-.triade-table-surface::after {
+.collect-table-surface::after {
     content: '';
     position: absolute;
     inset: 45px;
@@ -14366,7 +14366,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Logo filigrane */
-.triade-table-logo {
+.collect-table-logo {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -14377,7 +14377,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     z-index: 1;
 }
 
-.triade-table-logo .logo-main {
+.collect-table-logo .logo-main {
     font-family: 'Orbitron', sans-serif;
     font-size: 1.8rem;
     font-weight: 700;
@@ -14386,7 +14386,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     text-shadow: 0 0 40px rgba(212, 175, 55, 0.2);
 }
 
-.triade-table-logo .logo-sub {
+.collect-table-logo .logo-sub {
     font-family: 'Rajdhani', sans-serif;
     font-size: 0.55rem;
     letter-spacing: 5px;
@@ -14395,9 +14395,9 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* ============================================
-   TRIADE CARDS
+   COLLECT CARDS
    ============================================ */
-.triade-card {
+.collect-card {
     width: 80px;
     height: 112px;
     border-radius: 8px;
@@ -14410,14 +14410,14 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     overflow: visible;
 }
 
-.triade-card .card-image {
+.collect-card .card-image {
     position: absolute;
     inset: 0;
     border-radius: 6px;
     overflow: hidden;
 }
 
-.triade-card .card-image img {
+.collect-card .card-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -14426,12 +14426,12 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Images des grandes cartes encore plus lumineuses */
-.triade-card.large .card-image img {
+.collect-card.large .card-image img {
     filter: brightness(0.92) contrast(1.02);
 }
 
 /* Badge classe (coin supérieur gauche - dépasse) */
-.triade-card .class-badge {
+.collect-card .class-badge {
     position: absolute;
     top: -8px;
     left: -8px;
@@ -14447,21 +14447,21 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     z-index: 5;
 }
 
-.triade-card .class-badge.assaut { border-color: rgba(239, 68, 68, 0.6); }
-.triade-card .class-badge.oracle { border-color: rgba(59, 130, 246, 0.6); }
-.triade-card .class-badge.mirage { border-color: rgba(34, 197, 94, 0.6); }
+.collect-card .class-badge.assaut { border-color: rgba(239, 68, 68, 0.6); }
+.collect-card .class-badge.oracle { border-color: rgba(59, 130, 246, 0.6); }
+.collect-card .class-badge.mirage { border-color: rgba(34, 197, 94, 0.6); }
 
-.triade-card .class-badge .class-icon svg {
+.collect-card .class-badge .class-icon svg {
     width: 10px;
     height: 10px;
 }
 
-.triade-card .class-badge.assaut .class-icon svg { fill: #ef4444; }
-.triade-card .class-badge.oracle .class-icon svg { fill: #3b82f6; }
-.triade-card .class-badge.mirage .class-icon svg { fill: #22c55e; }
+.collect-card .class-badge.assaut .class-icon svg { fill: #ef4444; }
+.collect-card .class-badge.oracle .class-icon svg { fill: #3b82f6; }
+.collect-card .class-badge.mirage .class-icon svg { fill: #22c55e; }
 
 /* Badge Protagoniste (coin supérieur droit - dépasse) */
-.triade-card .prota-badge {
+.collect-card .prota-badge {
     position: absolute;
     top: -8px;
     right: -8px;
@@ -14477,7 +14477,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     z-index: 5;
 }
 
-.triade-card .prota-badge svg {
+.collect-card .prota-badge svg {
     width: 12px;
     height: 12px;
     fill: #fbbf24;
@@ -14485,7 +14485,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* BIG 3 — Effet spécial */
-.triade-card .prota-badge.big3 {
+.collect-card .prota-badge.big3 {
     border-color: rgba(251, 191, 36, 0.7);
     box-shadow: 
         0 0 8px rgba(251, 191, 36, 0.3),
@@ -14495,7 +14495,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     animation: big3Pulse 2s ease-in-out infinite;
 }
 
-.triade-card .prota-badge.big3::before {
+.collect-card .prota-badge.big3::before {
     content: '';
     position: absolute;
     inset: -4px;
@@ -14515,7 +14515,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     -webkit-mask: radial-gradient(circle, transparent 55%, black 56%);
 }
 
-.triade-card .prota-badge.big3::after {
+.collect-card .prota-badge.big3::after {
     content: '✦';
     position: absolute;
     top: -6px;
@@ -14541,7 +14541,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Badge Power Level (coin supérieur droit) */
-.triade-card .power-badge {
+.collect-card .power-badge {
     position: absolute;
     top: 4px;
     right: 4px;
@@ -14556,7 +14556,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     z-index: 2;
 }
 
-.triade-card .power-badge .pw-value {
+.collect-card .power-badge .pw-value {
     font-family: 'Rajdhani', sans-serif;
     font-size: 0.75rem;
     font-weight: 700;
@@ -14564,7 +14564,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Info carte (nom + anime) */
-.triade-card .card-info {
+.collect-card .card-info {
     position: absolute;
     bottom: 0;
     left: 0;
@@ -14574,7 +14574,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     z-index: 2;
 }
 
-.triade-card .card-name {
+.collect-card .card-name {
     font-size: 0.65rem;
     font-weight: 600;
     color: #fff;
@@ -14582,20 +14582,20 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Fused card names stacked vertically */
-.triade-card .card-name.fused-stacked {
+.collect-card .card-name.fused-stacked {
     display: flex;
     flex-direction: column-reverse;
     gap: 0px;
     line-height: 1.1;
 }
-.triade-card .card-name.fused-stacked span {
+.collect-card .card-name.fused-stacked span {
     display: block;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.triade-card .card-anime {
+.collect-card .card-anime {
     font-size: 0.55rem;
     color: rgba(255,255,255,0.6);
 }
@@ -14603,7 +14603,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 /* ============================================
    LARGE CARDS (POV - Mes cartes) - Comme prototype
    ============================================ */
-.triade-card.large {
+.collect-card.large {
     width: 100px;
     height: 140px;
     border-radius: 10px;
@@ -14615,22 +14615,22 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     -webkit-backface-visibility: hidden;
 }
 
-.triade-card.large .card-image {
+.collect-card.large .card-image {
     border-radius: 8px;
 }
 
 /* Cacher les infos sur les grandes cartes */
-.triade-card.large .power-badge,
-.triade-card.large .card-info {
+.collect-card.large .power-badge,
+.collect-card.large .card-info {
     display: none;
 }
 
-.triade-card.large .card-image::after {
+.collect-card.large .card-image::after {
     display: none;
 }
 
 /* Badge classe - fond noir avec bordure colorée comme prototype */
-.triade-card.large .class-badge {
+.collect-card.large .class-badge {
     position: absolute;
     top: -12px;
     left: -12px;
@@ -14646,21 +14646,21 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     box-shadow: 0 4px 12px rgba(0,0,0,0.7);
 }
 
-.triade-card.large .class-badge.assaut { border-color: rgba(239, 68, 68, 0.6); }
-.triade-card.large .class-badge.oracle { border-color: rgba(59, 130, 246, 0.6); }
-.triade-card.large .class-badge.mirage { border-color: rgba(34, 197, 94, 0.6); }
+.collect-card.large .class-badge.assaut { border-color: rgba(239, 68, 68, 0.6); }
+.collect-card.large .class-badge.oracle { border-color: rgba(59, 130, 246, 0.6); }
+.collect-card.large .class-badge.mirage { border-color: rgba(34, 197, 94, 0.6); }
 
-.triade-card.large .class-badge .class-icon svg {
+.collect-card.large .class-badge .class-icon svg {
     width: 12px;
     height: 12px;
 }
 
-.triade-card.large .class-badge.assaut .class-icon svg { fill: #ef4444; }
-.triade-card.large .class-badge.oracle .class-icon svg { fill: #3b82f6; }
-.triade-card.large .class-badge.mirage .class-icon svg { fill: #22c55e; }
+.collect-card.large .class-badge.assaut .class-icon svg { fill: #ef4444; }
+.collect-card.large .class-badge.oracle .class-icon svg { fill: #3b82f6; }
+.collect-card.large .class-badge.mirage .class-icon svg { fill: #22c55e; }
 
 /* Badge Protagoniste - Large cards */
-.triade-card.large .prota-badge {
+.collect-card.large .prota-badge {
     position: absolute;
     top: -12px;
     right: -12px;
@@ -14676,7 +14676,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     box-shadow: 0 0 10px rgba(251, 191, 36, 0.2), 0 4px 12px rgba(0,0,0,0.7);
 }
 
-.triade-card.large .prota-badge svg {
+.collect-card.large .prota-badge svg {
     width: 14px;
     height: 14px;
     fill: #fbbf24;
@@ -14684,7 +14684,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* BIG 3 — Large */
-.triade-card.large .prota-badge.big3 {
+.collect-card.large .prota-badge.big3 {
     border-color: rgba(251, 191, 36, 0.7);
     box-shadow: 
         0 0 10px rgba(251, 191, 36, 0.3),
@@ -14694,7 +14694,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     animation: big3Pulse 2s ease-in-out infinite;
 }
 
-.triade-card.large .prota-badge.big3::before {
+.collect-card.large .prota-badge.big3::before {
     content: '';
     position: absolute;
     inset: -5px;
@@ -14714,7 +14714,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     -webkit-mask: radial-gradient(circle, transparent 55%, black 56%);
 }
 
-.triade-card.large .prota-badge.big3::after {
+.collect-card.large .prota-badge.big3::after {
     content: '✦';
     position: absolute;
     top: -7px;
@@ -14727,7 +14727,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 /* ============================================
    PLAYER SEATS
    ============================================ */
-.triade-player-seat {
+.collect-player-seat {
     position: absolute;
     display: flex;
     flex-direction: column;
@@ -14736,12 +14736,12 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     transition: all 0.3s ease;
 }
 
-.triade-player-seat.hidden {
+.collect-player-seat.hidden {
     display: none !important;
 }
 
 
-.triade-player-block {
+.collect-player-block {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -14749,14 +14749,14 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Cartes des autres joueurs (dos) - Comme prototype */
-.triade-player-cards {
+.collect-player-cards {
     display: flex;
     justify-content: center;
     margin-bottom: -14px;
     z-index: 1;
 }
 
-.triade-player-card-small {
+.collect-player-card-small {
     width: 56px;
     height: 78px;
     border-radius: 6px;
@@ -14768,7 +14768,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Rayures diagonales */
-.triade-player-card-small::before {
+.collect-player-card-small::before {
     content: '';
     position: absolute;
     inset: 3px;
@@ -14783,7 +14783,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Logo SM centré */
-.triade-player-card-small::after {
+.collect-player-card-small::after {
     content: 'SM';
     position: absolute;
     top: 50%;
@@ -14798,57 +14798,57 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     z-index: 2;
 }
 
-.triade-player-card-small:first-child {
+.collect-player-card-small:first-child {
     transform: rotate(-10deg);
     margin-right: -14px;
     z-index: 1;
 }
 
-.triade-player-card-small:nth-child(2) {
+.collect-player-card-small:nth-child(2) {
     transform: rotate(0deg);
     z-index: 2;
 }
 
-.triade-player-card-small:last-child {
+.collect-player-card-small:last-child {
     transform: rotate(10deg);
     margin-left: -14px;
     z-index: 1;
 }
 
 /* === 5 cartes adverses — arc léger + plus serrées === */
-.triade-player-cards.hand-5 {
+.collect-player-cards.hand-5 {
     margin-bottom: -12px;
 }
 
-.triade-player-cards.hand-5 .triade-player-card-small {
+.collect-player-cards.hand-5 .collect-player-card-small {
     width: 48px;
     height: 67px;
     margin: 0 -10px;
 }
 
-.triade-player-cards.hand-5 .triade-player-card-small:first-child {
+.collect-player-cards.hand-5 .collect-player-card-small:first-child {
     transform: rotate(-8deg);
     margin-left: 0;
     margin-right: -10px;
     z-index: 1;
 }
 
-.triade-player-cards.hand-5 .triade-player-card-small:nth-child(2) {
+.collect-player-cards.hand-5 .collect-player-card-small:nth-child(2) {
     transform: rotate(-4deg);
     z-index: 2;
 }
 
-.triade-player-cards.hand-5 .triade-player-card-small:nth-child(3) {
+.collect-player-cards.hand-5 .collect-player-card-small:nth-child(3) {
     transform: rotate(0deg);
     z-index: 3;
 }
 
-.triade-player-cards.hand-5 .triade-player-card-small:nth-child(4) {
+.collect-player-cards.hand-5 .collect-player-card-small:nth-child(4) {
     transform: rotate(4deg);
     z-index: 2;
 }
 
-.triade-player-cards.hand-5 .triade-player-card-small:nth-child(5) {
+.collect-player-cards.hand-5 .collect-player-card-small:nth-child(5) {
     transform: rotate(8deg);
     margin-right: 0;
     margin-left: -10px;
@@ -14856,7 +14856,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Ribbon bleu */
-.triade-player-ribbon {
+.collect-player-ribbon {
     background: linear-gradient(180deg, #2563eb, #1d4ed8);
     padding: 6px 14px;
     border-radius: 6px;
@@ -14871,15 +14871,15 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 
-.triade-player-ribbon::before,
-.triade-player-ribbon::after {
+.collect-player-ribbon::before,
+.collect-player-ribbon::after {
     display: none;
 }
 
 
 /* Mini chips du POV - déplacées à droite pour ne pas être cachées par les cartes */
 
-.triade-mini-chip {
+.collect-mini-chip {
     width: 14px;
     height: 14px;
     border-radius: 50%;
@@ -14888,21 +14888,21 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     margin-left: -6px;
 }
 
-.triade-mini-chip:first-child { margin-left: 0; }
-.triade-mini-chip.gold { background: linear-gradient(145deg, #d4af37, #a67c00); }
-.triade-mini-chip.blue { background: linear-gradient(145deg, #3b82f6, #1d4ed8); }
-.triade-mini-chip.red { background: linear-gradient(145deg, #ef4444, #b91c1c); }
-.triade-mini-chip.green { background: linear-gradient(145deg, #22c55e, #15803d); }
+.collect-mini-chip:first-child { margin-left: 0; }
+.collect-mini-chip.gold { background: linear-gradient(145deg, #d4af37, #a67c00); }
+.collect-mini-chip.blue { background: linear-gradient(145deg, #3b82f6, #1d4ed8); }
+.collect-mini-chip.red { background: linear-gradient(145deg, #ef4444, #b91c1c); }
+.collect-mini-chip.green { background: linear-gradient(145deg, #22c55e, #15803d); }
 
 /* Étoiles de victoire */
-.triade-stars {
+.collect-stars {
     display: flex;
     gap: 4px;
     justify-content: center;
     align-items: center;
 }
 
-.triade-star {
+.collect-star {
     width: 18px;
     height: 18px;
     fill: none;
@@ -14912,14 +14912,14 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
 }
 
-.triade-star.won {
+.collect-star.won {
     fill: #fbbf24;
     stroke: #f59e0b;
     filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.6));
 }
 
 /* Name tag */
-.triade-player-name-tag {
+.collect-player-name-tag {
     background: linear-gradient(180deg, #374151, #1f2937);
     padding: 4px 16px;
     border-radius: 0 0 6px 6px;
@@ -14927,7 +14927,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
-.triade-player-name {
+.collect-player-name {
     font-size: 0.68rem;
     font-weight: 600;
     color: rgba(255,255,255,0.9);
@@ -14940,29 +14940,29 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* 🎴 Tour actif — pseudo en jaune */
-.triade-player-name.turn-active {
+.collect-player-name.turn-active {
     color: #fbbf24;
     text-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
 }
 
 /* Active player - ribbon reste bleu, seul le name-tag passe en jaune */
-.triade-player-seat.active .triade-player-ribbon {
+.collect-player-seat.active .collect-player-ribbon {
     box-shadow: 
         0 5px 18px rgba(0,0,0,0.5),
         0 0 15px rgba(59, 130, 246, 0.2),
         inset 0 1px 0 rgba(255,255,255,0.15);
 }
 
-.triade-player-seat.active .triade-player-name-tag {
+.collect-player-seat.active .collect-player-name-tag {
     background: linear-gradient(180deg, #374151, #1f2937);
 }
 
-.triade-player-seat.active .triade-player-name {
+.collect-player-seat.active .collect-player-name {
     color: rgba(255,255,255,0.9);
 }
 
 /* Turn-active override avec spécificité plus haute */
-.triade-player-seat .triade-player-name.turn-active {
+.collect-player-seat .collect-player-name.turn-active {
     color: #fbbf24 !important;
     text-shadow: 0 0 8px rgba(251, 191, 36, 0.4) !important;
 }
@@ -14970,7 +14970,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 /* ============================================
    MY SEAT (POV - toujours en bas, dépasse la table)
    ============================================ */
-.triade-player-seat.me {
+.collect-player-seat.me {
     position: absolute !important;
     bottom: -20% !important;
     left: 50% !important;
@@ -14983,14 +14983,14 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     z-index: 20;
 }
 
-.triade-player-seat.me .triade-player-block {
+.collect-player-seat.me .collect-player-block {
     order: 2;
     z-index: 15;
     overflow: visible;
 }
 
 /* Mes cartes visibles - Comme prototype */
-.triade-my-cards {
+.collect-my-cards {
     display: flex;
     gap: 2px;
     order: 1;
@@ -15000,43 +15000,43 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     overflow: visible;
 }
 
-.triade-my-cards.cards-locked .triade-card {
+.collect-my-cards.cards-locked .collect-card {
     filter: brightness(0.6);
     cursor: default;
 }
-.triade-my-cards .triade-card.card-inactive {
+.collect-my-cards .collect-card.card-inactive {
     filter: brightness(0.6);
     cursor: default;
 }
 
 
-.triade-my-cards .triade-card {
+.collect-my-cards .collect-card {
     overflow: visible !important;
 }
 
 
 /* Badge classe toujours au premier plan */
-.triade-my-cards .triade-card .class-badge {
+.collect-my-cards .collect-card .class-badge {
     z-index: 100 !important;
 }
-.triade-my-cards .triade-card:first-child {
+.collect-my-cards .collect-card:first-child {
     transform: rotate(-4deg);
     z-index: 1;
 }
 
-.triade-my-cards .triade-card:nth-child(2) {
+.collect-my-cards .collect-card:nth-child(2) {
     transform: rotate(0deg);
     z-index: 3;
     
 }
 
-.triade-my-cards .triade-card:last-child {
+.collect-my-cards .collect-card:last-child {
     transform: rotate(4deg);
     z-index: 1;
 }
 
 /* Hover sans déplacer la bordure */
-.triade-my-cards .triade-card {
+.collect-my-cards .collect-card {
     cursor: pointer;
     transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.4s ease, filter 0.4s ease;
     will-change: transform;
@@ -15045,14 +15045,14 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     -webkit-user-select: none;
 }
 
-.triade-my-cards .triade-card:first-child:hover {
+.collect-my-cards .collect-card:first-child:hover {
     transform: translateY(-5px) rotate(-4deg);
     box-shadow: 
         0 15px 30px rgba(0,0,0,0.6),
         0 0 15px rgba(180,150,80,0.15);
 }
 
-.triade-my-cards .triade-card:nth-child(2):hover {
+.collect-my-cards .collect-card:nth-child(2):hover {
     transform: translateY(-5px) rotate(0deg);
     z-index: 3;
     box-shadow: 
@@ -15060,7 +15060,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
         0 0 15px rgba(180,150,80,0.15);
 }
 
-.triade-my-cards .triade-card:last-child:hover {
+.collect-my-cards .collect-card:last-child:hover {
     transform: translateY(-5px) rotate(4deg);
     box-shadow: 
         0 15px 30px rgba(0,0,0,0.6),
@@ -15068,63 +15068,63 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* === 5 cartes POV — arc plus doux === */
-.triade-my-cards.hand-5 {
+.collect-my-cards.hand-5 {
     gap: 0px;
 }
 
-.triade-my-cards.hand-5 .triade-card:nth-child(1) {
+.collect-my-cards.hand-5 .collect-card:nth-child(1) {
     transform: rotate(-5deg);
     z-index: 1;
 }
 
-.triade-my-cards.hand-5 .triade-card:nth-child(2) {
+.collect-my-cards.hand-5 .collect-card:nth-child(2) {
     transform: rotate(-2.5deg);
     z-index: 2;
 }
 
-.triade-my-cards.hand-5 .triade-card:nth-child(3) {
+.collect-my-cards.hand-5 .collect-card:nth-child(3) {
     transform: rotate(0deg);
     z-index: 3;
 }
 
-.triade-my-cards.hand-5 .triade-card:nth-child(4) {
+.collect-my-cards.hand-5 .collect-card:nth-child(4) {
     transform: rotate(2.5deg);
     z-index: 2;
 }
 
-.triade-my-cards.hand-5 .triade-card:nth-child(5) {
+.collect-my-cards.hand-5 .collect-card:nth-child(5) {
     transform: rotate(5deg);
     z-index: 1;
 }
 
 /* Hover 5 cartes */
-.triade-my-cards.hand-5 .triade-card:nth-child(1):hover {
+.collect-my-cards.hand-5 .collect-card:nth-child(1):hover {
     transform: translateY(-5px) rotate(-5deg);
     box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 15px rgba(180,150,80,0.15);
 }
 
-.triade-my-cards.hand-5 .triade-card:nth-child(2):hover {
+.collect-my-cards.hand-5 .collect-card:nth-child(2):hover {
     transform: translateY(-5px) rotate(-2.5deg);
     box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 15px rgba(180,150,80,0.15);
 }
 
-.triade-my-cards.hand-5 .triade-card:nth-child(3):hover {
+.collect-my-cards.hand-5 .collect-card:nth-child(3):hover {
     transform: translateY(-5px) rotate(0deg);
     box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 15px rgba(180,150,80,0.15);
 }
 
-.triade-my-cards.hand-5 .triade-card:nth-child(4):hover {
+.collect-my-cards.hand-5 .collect-card:nth-child(4):hover {
     transform: translateY(-5px) rotate(2.5deg);
     box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 15px rgba(180,150,80,0.15);
 }
 
-.triade-my-cards.hand-5 .triade-card:nth-child(5):hover {
+.collect-my-cards.hand-5 .collect-card:nth-child(5):hover {
     transform: translateY(-5px) rotate(5deg);
     box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 15px rgba(180,150,80,0.15);
 }
 
 /* Ribbon POV avec bordure */
-.triade-player-seat.me .triade-player-ribbon {
+.collect-player-seat.me .collect-player-ribbon {
     border: 1.5px solid rgba(255, 255, 255, 0.25);
     overflow: visible;
     box-shadow: 
@@ -15157,7 +15157,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 /* ============================================
    DECK DE PIOCHE (droite)
    ============================================ */
-.triade-deck-zone {
+.collect-deck-zone {
     position: fixed;
     right: 45px;
     bottom: 45px;
@@ -15173,14 +15173,14 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     overflow: visible;
 }
 
-.triade-deck-zone.deck-visible {
+.collect-deck-zone.deck-visible {
     opacity: 1;
     transform: translateY(0);
     pointer-events: auto;
 }
 
 /* Timer above deck */
-.triade-deck-timer {
+.collect-deck-timer {
     position: fixed;
     top: 50%;
     right: 94px;
@@ -15193,7 +15193,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     z-index: 210;
     animation: timer-appear 0.4s ease-out forwards;
 }
-.triade-deck-timer.fade-out {
+.collect-deck-timer.fade-out {
     animation: timer-disappear 0.8s ease-out forwards;
 }
 
@@ -15231,7 +15231,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     line-height: 1;
 }
 
-.triade-deck-card {
+.collect-deck-card {
     position: absolute;
     width: 100%;
     height: 100%;
@@ -15243,7 +15243,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
                 border-color 0.45s ease;
 }
 
-.triade-deck-card::before {
+.collect-deck-card::before {
     content: '';
     position: absolute;
     inset: 6px;
@@ -15256,7 +15256,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     pointer-events: none;
 }
 
-.triade-deck-sm {
+.collect-deck-sm {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -15272,15 +15272,15 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Stack layers */
-.triade-deck-card:nth-child(1) { z-index: 10; }
-.triade-deck-card:nth-child(2) { top: 4px; left: 1.5px; z-index: 9; opacity: 0.88; }
-.triade-deck-card:nth-child(3) { top: 8px; left: 3px; z-index: 8; opacity: 0.74; }
-.triade-deck-card:nth-child(4) { top: 12px; left: 4.5px; z-index: 7; opacity: 0.58; }
-.triade-deck-card:nth-child(5) { top: 16px; left: 6px; z-index: 6; opacity: 0.42; }
-.triade-deck-card:nth-child(6) { top: 20px; left: 7.5px; z-index: 5; opacity: 0.28; }
+.collect-deck-card:nth-child(1) { z-index: 10; }
+.collect-deck-card:nth-child(2) { top: 4px; left: 1.5px; z-index: 9; opacity: 0.88; }
+.collect-deck-card:nth-child(3) { top: 8px; left: 3px; z-index: 8; opacity: 0.74; }
+.collect-deck-card:nth-child(4) { top: 12px; left: 4.5px; z-index: 7; opacity: 0.58; }
+.collect-deck-card:nth-child(5) { top: 16px; left: 6px; z-index: 6; opacity: 0.42; }
+.collect-deck-card:nth-child(6) { top: 20px; left: 7.5px; z-index: 5; opacity: 0.28; }
 
 /* Glow sol */
-.triade-deck-glow {
+.collect-deck-glow {
     position: absolute;
     bottom: -4px;
     left: 12%;
@@ -15292,7 +15292,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Hover — smooth slide up + ripple wave (only on player's turn) */
-.triade-deck-zone.my-turn:not(.draw-flying):hover .triade-deck-card:nth-child(1) {
+.collect-deck-zone.my-turn:not(.draw-flying):hover .collect-deck-card:nth-child(1) {
     transform: translateY(-24px);
     box-shadow: 0 8px 25px rgba(100, 180, 255, 0.2);
     border-color: rgba(80, 160, 240, 0.45);
@@ -15300,13 +15300,13 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Deck disabled when not player's turn */
-.triade-deck-zone.deck-visible:not(.my-turn) {
+.collect-deck-zone.deck-visible:not(.my-turn) {
     pointer-events: none;
     opacity: 0.45;
 }
 
 /* Hover ripple — onde calme autour de la carte du dessus */
-.triade-deck-zone .deck-hover-ripple {
+.collect-deck-zone .deck-hover-ripple {
     position: absolute;
     top: 0;
     left: 0;
@@ -15319,12 +15319,12 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     opacity: 0;
 }
 
-.triade-deck-zone.my-turn:hover .deck-hover-ripple {
+.collect-deck-zone.my-turn:hover .deck-hover-ripple {
     animation: deck-hover-ripple 2s ease-out infinite;
     animation-delay: 0.5s;
 }
 
-.triade-deck-zone.my-turn:hover .deck-hover-ripple.delay {
+.collect-deck-zone.my-turn:hover .deck-hover-ripple.delay {
     animation-delay: 1.5s;
 }
 
@@ -15348,7 +15348,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 /* === CAN-DRAW — pulse + waves + shimmer === */
 
 /* Ripple waves */
-.triade-deck-wave {
+.collect-deck-wave {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -15362,15 +15362,15 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     opacity: 0;
 }
 
-.triade-deck-zone.can-draw .triade-deck-wave {
-    animation: triade-deck-wave 2.8s ease-out infinite;
+.collect-deck-zone.can-draw .collect-deck-wave {
+    animation: collect-deck-wave 2.8s ease-out infinite;
 }
 
-.triade-deck-zone.can-draw .triade-deck-wave:nth-child(8) { animation-delay: 0s; }
-.triade-deck-zone.can-draw .triade-deck-wave:nth-child(9) { animation-delay: 0.9s; }
-.triade-deck-zone.can-draw .triade-deck-wave:nth-child(10) { animation-delay: 1.8s; }
+.collect-deck-zone.can-draw .collect-deck-wave:nth-child(8) { animation-delay: 0s; }
+.collect-deck-zone.can-draw .collect-deck-wave:nth-child(9) { animation-delay: 0.9s; }
+.collect-deck-zone.can-draw .collect-deck-wave:nth-child(10) { animation-delay: 1.8s; }
 
-@keyframes triade-deck-wave {
+@keyframes collect-deck-wave {
     0% {
         opacity: 0.5;
         width: 100%;
@@ -15391,11 +15391,11 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Top card pulse */
-.triade-deck-zone.can-draw .triade-deck-card:nth-child(1) {
-    animation: triade-deck-pulse 2.4s ease-in-out infinite;
+.collect-deck-zone.can-draw .collect-deck-card:nth-child(1) {
+    animation: collect-deck-pulse 2.4s ease-in-out infinite;
 }
 
-@keyframes triade-deck-pulse {
+@keyframes collect-deck-pulse {
     0%, 100% { 
         box-shadow: 0 2px 8px rgba(100, 180, 255, 0.06);
         border-color: #1a3555;
@@ -15407,7 +15407,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Shimmer reflet */
-.triade-deck-card:nth-child(1)::after {
+.collect-deck-card:nth-child(1)::after {
     content: '';
     position: absolute;
     inset: 0;
@@ -15426,12 +15426,12 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     transition: opacity 0.3s;
 }
 
-.triade-deck-zone.can-draw .triade-deck-card:nth-child(1)::after {
+.collect-deck-zone.can-draw .collect-deck-card:nth-child(1)::after {
     opacity: 1;
-    animation: triade-deck-shimmer 3.5s ease-in-out infinite;
+    animation: collect-deck-shimmer 3.5s ease-in-out infinite;
 }
 
-@keyframes triade-deck-shimmer {
+@keyframes collect-deck-shimmer {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
 }
@@ -15441,18 +15441,18 @@ body:has(.triade-game-container)::-webkit-scrollbar {
    ============================================ */
 
 /* === MAIN PLEINE: Shake + Rouge === */
-.triade-deck-zone.deck-full-shake {
+.collect-deck-zone.deck-full-shake {
     animation: deck-shake 0.4s ease-in-out;
 }
 
-.triade-deck-zone.deck-full-shake .triade-deck-card {
+.collect-deck-zone.deck-full-shake .collect-deck-card {
     border-color: rgba(239, 68, 68, 0.6) !important;
     box-shadow: 0 0 15px rgba(239, 68, 68, 0.25), inset 0 0 8px rgba(239, 68, 68, 0.1) !important;
     transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.triade-deck-zone.deck-full-shake .triade-deck-card .triade-deck-sm,
-.triade-deck-zone.deck-full-shake .triade-deck-sm {
+.collect-deck-zone.deck-full-shake .collect-deck-card .collect-deck-sm,
+.collect-deck-zone.deck-full-shake .collect-deck-sm {
     color: rgba(239, 68, 68, 0.9) !important;
     text-shadow: 0 0 12px rgba(239, 68, 68, 0.4) !important;
 }
@@ -15565,7 +15565,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 .flyer-class-badge.mirage svg { fill: #a855f7; }
 
 /* NEW CARD POP-IN */
-.triade-card.draw-new-card {
+.collect-card.draw-new-card {
     animation: draw-card-pop-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both !important;
 }
 
@@ -15595,7 +15595,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 /* ============================================
    DRAW CHOICE OVERLAY
    ============================================ */
-.triade-draw-overlay {
+.collect-draw-overlay {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0);
@@ -15607,12 +15607,12 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     transition: background 0.5s ease;
 }
 
-.triade-draw-overlay.visible {
+.collect-draw-overlay.visible {
     pointer-events: all;
     background: rgba(0, 0, 0, 0.82);
 }
 
-.triade-draw-choice-container {
+.collect-draw-choice-container {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -15622,7 +15622,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.triade-draw-choice-container.visible {
+.collect-draw-choice-container.visible {
     transform: scale(1);
     opacity: 1;
 }
@@ -15911,7 +15911,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 /* ============================================
    CARD PREVIEW (hover) - Comme prototype
    ============================================ */
-.triade-card-preview {
+.collect-card-preview {
     position: fixed;
     left: 30px;
     top: 50%;
@@ -15923,12 +15923,12 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Animation d'apparition fluide depuis la gauche */
-.triade-card-preview.visible {
+.collect-card-preview.visible {
     opacity: 1;
     transform: translateY(-50%) translateX(0);
 }
 
-.triade-card-preview .preview-card {
+.collect-card-preview .preview-card {
     width: 280px;
     height: 420px;
     background: linear-gradient(170deg, #18181f 0%, #0e0e13 100%);
@@ -15942,7 +15942,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Badge Protagoniste - Preview card */
-.triade-card-preview .prota-badge {
+.collect-card-preview .prota-badge {
     position: absolute;
     top: -16px;
     right: -16px;
@@ -15958,7 +15958,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     box-shadow: 0 0 14px rgba(251, 191, 36, 0.25), 0 4px 12px rgba(0,0,0,0.7);
 }
 
-.triade-card-preview .prota-badge svg {
+.collect-card-preview .prota-badge svg {
     width: 19px;
     height: 19px;
     fill: #fbbf24;
@@ -15966,7 +15966,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* BIG 3 — Preview : effet très visible */
-.triade-card-preview .prota-badge.big3 {
+.collect-card-preview .prota-badge.big3 {
     width: 40px;
     height: 40px;
     top: -18px;
@@ -15982,14 +15982,14 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     animation: big3PulsePreview 2s ease-in-out infinite;
 }
 
-.triade-card-preview .prota-badge.big3 svg {
+.collect-card-preview .prota-badge.big3 svg {
     width: 21px;
     height: 21px;
     fill: #fbbf24;
     filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.6));
 }
 
-.triade-card-preview .prota-badge.big3::before {
+.collect-card-preview .prota-badge.big3::before {
     content: '';
     position: absolute;
     inset: -8px;
@@ -16009,7 +16009,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     -webkit-mask: radial-gradient(circle, transparent 52%, black 54%);
 }
 
-.triade-card-preview .prota-badge.big3::after {
+.collect-card-preview .prota-badge.big3::after {
     content: '';
     position: absolute;
     inset: -3px;
@@ -16030,7 +16030,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Effet reflet - dans preview-image pour rester contenu */
-.triade-card-preview .preview-image::before {
+.collect-card-preview .preview-image::before {
     content: '';
     position: absolute;
     top: 0;
@@ -16057,14 +16057,14 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Image du personnage */
-.triade-card-preview .preview-image {
+.collect-card-preview .preview-image {
     position: absolute;
     inset: 0;
     border-radius: 18px;
     overflow: hidden;
 }
 
-.triade-card-preview .preview-image img {
+.collect-card-preview .preview-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -16072,7 +16072,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Ombre en bas réduite - comme prototype */
-.triade-card-preview .preview-image::after {
+.collect-card-preview .preview-image::after {
     content: '';
     position: absolute;
     bottom: 0;
@@ -16083,7 +16083,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Info du personnage - aligné à gauche */
-.triade-card-preview .preview-info {
+.collect-card-preview .preview-info {
     position: absolute;
     bottom: 0;
     left: 0;
@@ -16092,7 +16092,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     z-index: 5;
 }
 
-.triade-card-preview .preview-name {
+.collect-card-preview .preview-name {
     font-family: 'Poppins', sans-serif;
     font-size: 1.6rem;
     font-weight: 800;
@@ -16103,7 +16103,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
         0 4px 8px rgba(0,0,0,0.6);
 }
 
-.triade-card-preview .preview-anime {
+.collect-card-preview .preview-anime {
     font-family: 'Rajdhani', sans-serif;
     font-size: 0.9rem;
     font-weight: 600;
@@ -16114,7 +16114,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     margin-bottom: 0;
 }
 
-.triade-card-preview .preview-separator-line {
+.collect-card-preview .preview-separator-line {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -16122,15 +16122,15 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     margin-bottom: 12px;
 }
 
-.triade-card-preview .preview-separator-line::before,
-.triade-card-preview .preview-separator-line::after {
+.collect-card-preview .preview-separator-line::before,
+.collect-card-preview .preview-separator-line::after {
     content: '';
     flex: 1;
     height: 1px;
     background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.4), transparent);
 }
 
-.triade-card-preview .preview-separator-line .sep-diamond {
+.collect-card-preview .preview-separator-line .sep-diamond {
     width: 6px;
     height: 6px;
     background: rgba(212, 175, 55, 0.5);
@@ -16139,24 +16139,24 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Séparateur décoratif */
-.triade-card-preview .preview-separator {
+.collect-card-preview .preview-separator {
     display: flex;
     align-items: center;
     gap: 10px;
     margin: 12px 0;
 }
 
-.triade-card-preview .preview-separator .sep-line {
+.collect-card-preview .preview-separator .sep-line {
     flex: 1;
     height: 1px;
     background: linear-gradient(90deg, rgba(180,150,80,0.4), rgba(180,150,80,0.05));
 }
 
-.triade-card-preview .preview-separator .sep-line:last-child {
+.collect-card-preview .preview-separator .sep-line:last-child {
     background: linear-gradient(90deg, rgba(180,150,80,0.05), rgba(180,150,80,0.4));
 }
 
-.triade-card-preview .preview-separator .sep-diamond {
+.collect-card-preview .preview-separator .sep-diamond {
     width: 6px;
     height: 6px;
     background: #8a7340;
@@ -16164,14 +16164,14 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Badges classe + power - style cohérent */
-.triade-card-preview .preview-badges {
+.collect-card-preview .preview-badges {
     display: flex;
     justify-content: center;
     gap: 16px;
     margin-top: 10px;
 }
 
-.triade-card-preview .preview-badge {
+.collect-card-preview .preview-badge {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -16182,7 +16182,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Badge icône avec fond NOIR et bordure colorée comme les cartes */
-.triade-card-preview .preview-badge .badge-icon {
+.collect-card-preview .preview-badge .badge-icon {
     width: 22px;
     height: 22px;
     border-radius: 50%;
@@ -16196,7 +16196,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     line-height: 0;
 }
 
-.triade-card-preview .preview-badge .badge-icon span {
+.collect-card-preview .preview-badge .badge-icon span {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -16204,21 +16204,21 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Bordures colorées selon la classe */
-.triade-card-preview .preview-badge .badge-icon.assaut { border-color: rgba(239, 68, 68, 0.6); }
-.triade-card-preview .preview-badge .badge-icon.oracle { border-color: rgba(59, 130, 246, 0.6); }
-.triade-card-preview .preview-badge .badge-icon.mirage { border-color: rgba(34, 197, 94, 0.6); }
+.collect-card-preview .preview-badge .badge-icon.assaut { border-color: rgba(239, 68, 68, 0.6); }
+.collect-card-preview .preview-badge .badge-icon.oracle { border-color: rgba(59, 130, 246, 0.6); }
+.collect-card-preview .preview-badge .badge-icon.mirage { border-color: rgba(34, 197, 94, 0.6); }
 
-.triade-card-preview .preview-badge .badge-icon svg {
+.collect-card-preview .preview-badge .badge-icon svg {
     width: 12px;
     height: 12px;
 }
 
 /* Icônes SVG colorées comme les cartes */
-.triade-card-preview .preview-badge .badge-icon.assaut svg { fill: #ef4444; }
-.triade-card-preview .preview-badge .badge-icon.oracle svg { fill: #3b82f6; }
-.triade-card-preview .preview-badge .badge-icon.mirage svg { fill: #22c55e; }
+.collect-card-preview .preview-badge .badge-icon.assaut svg { fill: #ef4444; }
+.collect-card-preview .preview-badge .badge-icon.oracle svg { fill: #3b82f6; }
+.collect-card-preview .preview-badge .badge-icon.mirage svg { fill: #22c55e; }
 
-.triade-card-preview .preview-badge .badge-text {
+.collect-card-preview .preview-badge .badge-text {
     font-family: 'Rajdhani', sans-serif;
     font-size: 1.15rem;
     font-weight: 700;
@@ -16226,12 +16226,12 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     line-height: 1;
 }
 
-.triade-card-preview .preview-badge.power-badge .badge-text {
+.collect-card-preview .preview-badge.power-badge .badge-text {
     font-size: 1.25rem;
 }
 
 /* Stats display in preview - V2 Style (extends below card) */
-.triade-card-preview .preview-stats {
+.collect-card-preview .preview-stats {
     position: absolute;
     bottom: -38px;
     left: 10px;
@@ -16248,14 +16248,14 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     z-index: 15;
 }
 
-.triade-card-preview .stat-item {
+.collect-card-preview .stat-item {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 10px;
 }
 
-.triade-card-preview .stat-label {
+.collect-card-preview .stat-label {
     font-family: 'Rajdhani', sans-serif;
     font-size: 0.8rem;
     font-weight: 600;
@@ -16264,7 +16264,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     letter-spacing: 0.5px;
 }
 
-.triade-card-preview .stat-icon-img {
+.collect-card-preview .stat-icon-img {
     width: 22px;
     height: 22px;
     object-fit: contain;
@@ -16272,7 +16272,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 
-.triade-card-preview .stat-value {
+.collect-card-preview .stat-value {
     font-family: 'Rajdhani', sans-serif;
     font-size: 1.45rem;
     font-weight: 700;
@@ -16281,23 +16281,23 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Icons-only preview stats (sans chiffres) */
-.triade-card-preview .preview-stats-icons-only {
+.collect-card-preview .preview-stats-icons-only {
     bottom: -30px;
     padding: 14px 24px;
 }
 
-.triade-card-preview .preview-stats-icons-only .stat-item {
+.collect-card-preview .preview-stats-icons-only .stat-item {
     flex-direction: row;
     gap: 0;
 }
 
-.triade-card-preview .preview-stats-icons-only .stat-icon-img {
+.collect-card-preview .preview-stats-icons-only .stat-icon-img {
     width: 28px;
     height: 28px;
 }
 
 /* Top badges container (class + protagonist) - dépasse en haut à droite */
-.triade-card-preview .preview-top-badges {
+.collect-card-preview .preview-top-badges {
     position: absolute;
     top: -18px;
     right: -8px;
@@ -16306,7 +16306,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     gap: 0;
     z-index: 20;
 }
-.triade-card-preview .class-badge-small {
+.collect-card-preview .class-badge-small {
     width: 42px;
     height: 42px;
     border-radius: 50%;
@@ -16319,23 +16319,23 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     z-index: 2;
 }
 
-.triade-card-preview .class-badge-small.assaut {
+.collect-card-preview .class-badge-small.assaut {
     border-color: rgba(239, 68, 68, 0.7);
     background: linear-gradient(145deg, #2a1a1a, #1a0a0a);
 }
 
-.triade-card-preview .class-badge-small.oracle {
+.collect-card-preview .class-badge-small.oracle {
     border-color: rgba(59, 130, 246, 0.7);
     background: linear-gradient(145deg, #1a1a2a, #0a0a1a);
 }
 
-.triade-card-preview .class-badge-small.mirage {
+.collect-card-preview .class-badge-small.mirage {
     border-color: rgba(34, 197, 94, 0.7);
     background: linear-gradient(145deg, #1a2a1a, #0a1a0a);
 }
 
 /* Centrage de l'icône SVG dans le badge */
-.triade-card-preview .class-badge-small span {
+.collect-card-preview .class-badge-small span {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -16344,17 +16344,17 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     line-height: 0;
 }
 
-.triade-card-preview .class-badge-small svg {
+.collect-card-preview .class-badge-small svg {
     width: 20px;
     height: 20px;
 }
 
-.triade-card-preview .class-badge-small.assaut svg { fill: #ef4444; }
-.triade-card-preview .class-badge-small.oracle svg { fill: #3b82f6; }
-.triade-card-preview .class-badge-small.mirage svg { fill: #22c55e; }
+.collect-card-preview .class-badge-small.assaut svg { fill: #ef4444; }
+.collect-card-preview .class-badge-small.oracle svg { fill: #3b82f6; }
+.collect-card-preview .class-badge-small.mirage svg { fill: #22c55e; }
 
 /* Protagonist badge - repositioned in top badges */
-.triade-card-preview .preview-top-badges .prota-badge {
+.collect-card-preview .preview-top-badges .prota-badge {
     position: relative;
     top: auto;
     right: auto;
@@ -16369,11 +16369,11 @@ body:has(.triade-game-container)::-webkit-scrollbar {
    ============================================ */
 
 /* Timer countdown */
-.triade-timer { display: none !important; }
-.triade-timer.fade-out { display: none !important; }
+.collect-timer { display: none !important; }
+.collect-timer.fade-out { display: none !important; }
 @keyframes timer-appear { from { opacity: 0; transform: translateY(-50%) scale(0.7); } to { opacity: 1; transform: translateY(-50%) scale(1); } }
 /* Choose indicator */
-.triade-choose-indicator {
+.collect-choose-indicator {
     position: absolute;
     top: -8px;
     right: -40px;
@@ -16384,7 +16384,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     pointer-events: none;
     z-index: 10;
 }
-.triade-choose-indicator img {
+.collect-choose-indicator img {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -16394,19 +16394,19 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     filter: grayscale(0.6) brightness(0.5);
     transition: filter 0.4s ease, transform 0.3s ease;
 }
-.triade-choose-indicator .choose-ring {
+.collect-choose-indicator .choose-ring {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
 }
-.triade-choose-indicator .choose-ring-bg {
+.collect-choose-indicator .choose-ring-bg {
     fill: none;
     stroke: rgba(255, 255, 255, 0.08);
     stroke-width: 1.8;
 }
-.triade-choose-indicator .choose-ring-progress {
+.collect-choose-indicator .choose-ring-progress {
     fill: none;
     stroke: rgba(59, 130, 246, 0.8);
     stroke-width: 2.2;
@@ -16417,10 +16417,10 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     transform-origin: center;
     filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.5));
 }
-.triade-choose-indicator.visible {
+.collect-choose-indicator.visible {
     animation: choose-appear 0.5s ease-out 0.3s forwards;
 }
-.triade-choose-indicator.active img {
+.collect-choose-indicator.active img {
     filter: grayscale(0) brightness(1) drop-shadow(0 0 4px rgba(59,130,246,0.6));
     transform: translate(-50%, -50%) scale(1.05);
 }
@@ -16430,14 +16430,14 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 @keyframes timer-disappear { from { opacity: 1; transform: translateY(-50%) scale(1); } to { opacity: 0; transform: translateY(-50%) scale(0.8); } }
-.triade-timer-number { font-family: 'Orbitron','Rajdhani',monospace; font-size: 1.7rem; font-weight: 900; color: rgba(255,255,255,0.9); text-shadow: 0 0 15px rgba(59,130,246,0.5), 0 2px 6px rgba(0,0,0,0.5); letter-spacing: 1px; transition: color 0.3s ease, text-shadow 0.3s ease; }
-.triade-timer-number { font-family: 'Orbitron','Rajdhani',monospace; font-size: 1.05rem; font-weight: 900; color: rgba(255,255,255,0.9); text-shadow: 0 0 15px rgba(59,130,246,0.5), 0 2px 6px rgba(0,0,0,0.5); letter-spacing: 1px; }
+.collect-timer-number { font-family: 'Orbitron','Rajdhani',monospace; font-size: 1.7rem; font-weight: 900; color: rgba(255,255,255,0.9); text-shadow: 0 0 15px rgba(59,130,246,0.5), 0 2px 6px rgba(0,0,0,0.5); letter-spacing: 1px; transition: color 0.3s ease, text-shadow 0.3s ease; }
+.collect-timer-number { font-family: 'Orbitron','Rajdhani',monospace; font-size: 1.05rem; font-weight: 900; color: rgba(255,255,255,0.9); text-shadow: 0 0 15px rgba(59,130,246,0.5), 0 2px 6px rgba(0,0,0,0.5); letter-spacing: 1px; }
 @keyframes timer-pulse { 0% { transform: translate(-50%, -50%) scale(1); opacity: 0.9; } 100% { transform: translate(-50%, -50%) scale(1.12); opacity: 1; } }
 
 /* ==========================================
    CENTER ZONE (Market + Slot wrapper)
    ========================================== */
-.triade-center-zone {
+.collect-center-zone {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -16452,7 +16452,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 /* ==========================================
    MARKET CARDS
    ========================================== */
-.triade-market {
+.collect-market {
     display: flex;
     gap: 8px;
     margin-right: 14px;
@@ -16467,7 +16467,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     cursor: pointer;
     box-shadow: 0 4px 15px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,175,55,0.2);
     animation: marketSlideIn 0.45s cubic-bezier(0.2, 0.8, 0.3, 1) both;
-    transition: transform 0.3s ease;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, outline 0.25s ease, outline-offset 0.25s ease;
 }
 
 .market-card:nth-child(1) { animation-delay: 0s; }
@@ -16498,12 +16498,29 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     z-index: 45;
 }
 
+.market-card.swap-hover {
+    z-index: 50;
+    box-shadow: 0 0 18px rgba(76, 175, 80, 0.5), 0 0 0 2px rgba(76, 175, 80, 0.7);
+    transition: box-shadow 0.15s ease;
+}
+
+.market-card.swap-hover > img {
+    filter: brightness(1.1);
+    transition: filter 0.15s ease;
+}
+
+@keyframes swap-badge-pop {
+    from { opacity: 0; transform: scale(0.3); }
+    to { opacity: 1; transform: scale(1); }
+}
+
 .market-card > img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     border-radius: 7px;
     display: block;
+    transition: filter 0.2s ease;
 }
 
 .market-card .class-badge {
@@ -16588,7 +16605,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     visibility: visible;
 }
 
-.triade-center-slot {
+.collect-center-slot {
     position: relative;
     top: auto;
     left: auto;
@@ -16604,7 +16621,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     flex-shrink: 0;
 }
 
-.triade-center-slot.visible {
+.collect-center-slot.visible {
     opacity: 1;
     transform: scale(1);
 }
@@ -16625,14 +16642,14 @@ body:has(.triade-game-container)::-webkit-scrollbar {
    ============================================ */
 
 /* Carte en cours de drag */
-.triade-my-cards .triade-card.dragging-origin {
+.collect-my-cards .collect-card.dragging-origin {
     opacity: 0.25 !important;
     transform: scale(0.92) !important;
     transition: opacity 0.15s ease, transform 0.15s ease !important;
 }
 
 /* Ghost flottant */
-.triade-card.drag-ghost {
+.collect-card.drag-ghost {
     border: 2.5px solid rgba(240, 200, 80, 0.8);
     box-shadow: 
         0 20px 50px rgba(0, 0, 0, 0.7),
@@ -16642,23 +16659,23 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     overflow: hidden;
     cursor: grabbing;
 }
-.triade-card.drag-ghost.fused-card {
+.collect-card.drag-ghost.fused-card {
     border: none;
     overflow: visible;
     padding: 2px;
 }
 
-.triade-card.drag-ghost .sa-glow-container,
-.triade-card.drag-ghost .sa-particles,
-.triade-card.drag-ghost .class-badge,
-.triade-card.drag-ghost .power-badge,
-.triade-card.drag-ghost .card-shimmer,
-.triade-card.drag-ghost .card-info {
+.collect-card.drag-ghost .sa-glow-container,
+.collect-card.drag-ghost .sa-particles,
+.collect-card.drag-ghost .class-badge,
+.collect-card.drag-ghost .power-badge,
+.collect-card.drag-ghost .card-shimmer,
+.collect-card.drag-ghost .card-info {
     display: none !important;
 }
 
 /* Slot pulse quand round actif */
-.triade-center-slot.visible:not(.has-card) {
+.collect-center-slot.visible:not(.has-card) {
     animation: slotPulse 2s ease-in-out infinite;
 }
 
@@ -16668,7 +16685,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Slot survol pendant drag */
-.triade-center-slot.drop-hover {
+.collect-center-slot.drop-hover {
     border-color: rgba(240, 200, 80, 0.9) !important;
     background: rgba(240, 200, 80, 0.12) !important;
     box-shadow: 
@@ -16811,7 +16828,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Slot avec carte */
-.triade-center-slot.has-card {
+.collect-center-slot.has-card {
     border-color: transparent;
     background: transparent;
 }
@@ -16935,7 +16952,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Cartes restantes apres avoir joue */
-.triade-my-cards .triade-card.card-played-out {
+.collect-my-cards .collect-card.card-played-out {
     opacity: 0.65;
     filter: brightness(0.8);
     cursor: default;
@@ -16943,11 +16960,11 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Curseur grab */
-.triade-my-cards .triade-card:not(.card-played-out):not(.dragging-origin) {
+.collect-my-cards .collect-card:not(.card-played-out):not(.dragging-origin) {
     cursor: grab;
 }
 
-.triade-my-cards .triade-card:not(.card-played-out):not(.dragging-origin):active {
+.collect-my-cards .collect-card:not(.card-played-out):not(.dragging-origin):active {
     cursor: grabbing;
 }
 
@@ -16956,7 +16973,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
    ROUND ANNOUNCEMENT OVERLAY
    ============================================ */
 
-.triade-round-overlay {
+.collect-round-overlay {
     position: fixed;
     inset: 0;
     z-index: 99999;
@@ -16966,17 +16983,17 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     pointer-events: none;
 }
 
-.triade-round-overlay.active {
+.collect-round-overlay.active {
     pointer-events: none;
 }
 
-.triade-round-overlay.fade-out {
+.collect-round-overlay.fade-out {
     /* no background to fade */
 }
 
-.triade-round-overlay.fade-out .tro-card,
-.triade-round-overlay.fade-out .tro-text,
-.triade-round-overlay.fade-out .tro-impact {
+.collect-round-overlay.fade-out .tro-card,
+.collect-round-overlay.fade-out .tro-text,
+.collect-round-overlay.fade-out .tro-impact {
     opacity: 0 !important;
     transition: opacity 0.5s ease !important;
 }
@@ -17036,23 +17053,23 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Cartes glissent vers le centre */
-.triade-round-overlay.cards-slide .tro-card {
+.collect-round-overlay.cards-slide .tro-card {
     opacity: 1;
     transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.triade-round-overlay.cards-slide .tro-card-left {
+.collect-round-overlay.cards-slide .tro-card-left {
     left: calc(50% - 35px);
     transform: translateY(-50%) rotate(-8deg);
 }
 
-.triade-round-overlay.cards-slide .tro-card-right {
+.collect-round-overlay.cards-slide .tro-card-right {
     right: calc(50% - 35px);
     transform: translateY(-50%) rotate(8deg);
 }
 
 /* CLASH — cartes se percutent */
-.triade-round-overlay.clash .tro-card-left {
+.collect-round-overlay.clash .tro-card-left {
     left: calc(50% - 15px);
     transform: translateY(-50%) rotate(-3deg) scale(1.05);
     transition: all 0.12s cubic-bezier(0.4, 0, 1, 1);
@@ -17060,7 +17077,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     border-color: rgba(255, 255, 255, 0.35);
 }
 
-.triade-round-overlay.clash .tro-card-right {
+.collect-round-overlay.clash .tro-card-right {
     right: calc(50% - 15px);
     transform: translateY(-50%) rotate(3deg) scale(1.05);
     transition: all 0.12s cubic-bezier(0.4, 0, 1, 1);
@@ -17081,7 +17098,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     opacity: 0;
 }
 
-.triade-round-overlay.clash .tro-impact {
+.collect-round-overlay.clash .tro-impact {
     width: 300px;
     height: 300px;
     opacity: 1;
@@ -17108,7 +17125,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     90% { transform: translate(-1px, -1px); }
 }
 
-.triade-round-overlay.clash {
+.collect-round-overlay.clash {
     animation: troScreenShake 0.4s ease-out;
 }
 
@@ -17132,7 +17149,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     opacity: 0;
 }
 
-.triade-round-overlay.clash .tro-particle {
+.collect-round-overlay.clash .tro-particle {
     animation: troParticleBurst 0.8s ease-out forwards;
 }
 
@@ -17176,13 +17193,13 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     text-shadow: 0 0 20px rgba(240, 200, 80, 0.5);
 }
 
-.triade-round-overlay.show-text .tro-round-label {
+.collect-round-overlay.show-text .tro-round-label {
     opacity: 1;
     transform: translateY(0) scale(1);
     transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.triade-round-overlay.hide-text .tro-round-label {
+.collect-round-overlay.hide-text .tro-round-label {
     opacity: 0;
     transform: translateY(0) scale(0.6);
     transition: all 0.4s ease-in;
@@ -17200,7 +17217,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     position: relative;
 }
 
-.triade-round-overlay.show-stat .tro-stat {
+.collect-round-overlay.show-stat .tro-stat {
     opacity: 1;
     transform: translateY(0) scale(1);
     transition: all 0.9s cubic-bezier(0.22, 1, 0.36, 1);
@@ -17257,7 +17274,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     opacity: 0;
 }
 
-.triade-round-overlay.show-stat .tro-stat-particle {
+.collect-round-overlay.show-stat .tro-stat-particle {
     animation: troStatParticle 1.3s ease-out forwards;
 }
 
@@ -17297,7 +17314,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     border-radius: 2px;
 }
 
-.triade-round-overlay.show-stat .tro-stat-flash {
+.collect-round-overlay.show-stat .tro-stat-flash {
     animation: troStatFlash 0.9s ease-out forwards;
 }
 
@@ -17359,28 +17376,28 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Active stat highlight on preview cards */
-.triade-card-preview .stat-item.active-stat .stat-value {
+.collect-card-preview .stat-item.active-stat .stat-value {
     color: #FFD700;
     text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
 }
 
-.triade-card-preview .stat-item.active-stat .stat-icon-img {
+.collect-card-preview .stat-item.active-stat .stat-icon-img {
     filter: drop-shadow(0 0 6px rgba(240, 200, 80, 0.7));
 }
 
 /* Dim non-active stats when a stat is selected */
-.triade-card-preview.has-active-stat .stat-item:not(.active-stat) .stat-value {
+.collect-card-preview.has-active-stat .stat-item:not(.active-stat) .stat-value {
     opacity: 0.45;
 }
 
-.triade-card-preview.has-active-stat .stat-item:not(.active-stat) .stat-icon-img {
+.collect-card-preview.has-active-stat .stat-item:not(.active-stat) .stat-icon-img {
     opacity: 0.4;
 }
 
 /* Fade out */
-.triade-round-overlay.fade-out .tro-card,
-.triade-round-overlay.fade-out .tro-text,
-.triade-round-overlay.fade-out .tro-impact {
+.collect-round-overlay.fade-out .tro-card,
+.collect-round-overlay.fade-out .tro-text,
+.collect-round-overlay.fade-out .tro-impact {
     opacity: 0 !important;
     transition: opacity 0.4s ease;
 }
@@ -17401,7 +17418,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* — Phase 1: Table (0 → 700ms) — */
-.triade-table-container.intro .triade-table {
+.collect-table-container.intro .collect-table {
     animation: tableIntroFade 0.7s ease-out both;
 }
 
@@ -17420,7 +17437,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     }
 }
 
-.triade-table-container.intro .triade-player-seat {
+.collect-table-container.intro .collect-player-seat {
     animation: seatFadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 2.0s both;
 }
 
@@ -17444,7 +17461,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     }
 }
 
-.triade-player-card-small.dealing {
+.collect-player-card-small.dealing {
     animation: dealPlayerCard 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
@@ -17466,41 +17483,41 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     }
 }
 
-.triade-my-cards .triade-card.dealing {
+.collect-my-cards .collect-card.dealing {
     animation: dealMyCard 0.38s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
-.triade-my-cards .triade-card:first-child.dealing {
+.collect-my-cards .collect-card:first-child.dealing {
     --card-rotation: -4deg;
 }
 
-.triade-my-cards .triade-card:nth-child(2).dealing {
+.collect-my-cards .collect-card:nth-child(2).dealing {
     --card-rotation: 0deg;
 }
 
-.triade-my-cards .triade-card:last-child.dealing {
+.collect-my-cards .collect-card:last-child.dealing {
     --card-rotation: 4deg;
 }
 
 /* État initial avant animation */
-.triade-card.pre-deal,
-.triade-player-card-small.pre-deal {
+.collect-card.pre-deal,
+.collect-player-card-small.pre-deal {
     opacity: 0;
     pointer-events: none;
 }
 
-.triade-my-cards .triade-card.dealing {
+.collect-my-cards .collect-card.dealing {
     pointer-events: none;
 }
 
 /* Visible après animation */
-.triade-my-cards .triade-card.dealt,
-.triade-player-card-small.dealt {
+.collect-my-cards .collect-card.dealt,
+.collect-player-card-small.dealt {
     opacity: 1;
 }
 
 /* Restaurer la transition hover après l'animation de distribution */
-.triade-my-cards .triade-card.dealt {
+.collect-my-cards .collect-card.dealt {
     animation: none;
     transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.4s ease, filter 0.4s ease;
     pointer-events: auto;
@@ -17510,11 +17527,11 @@ body:has(.triade-game-container)::-webkit-scrollbar {
    RESPONSIVE
    ============================================ */
 @media (max-width: 1024px) {
-    .triade-table-container {
+    .collect-table-container {
         width: 95vw;
     }
     
-    .triade-card.large {
+    .collect-card.large {
         width: 85px;
         height: 119px;
     }
@@ -17524,24 +17541,24 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 @media (max-width: 768px) {
-    .triade-table-container {
+    .collect-table-container {
         width: 100vw;
         height: 60vh;
         aspect-ratio: unset;
     }
     
-    .triade-card.large {
+    .collect-card.large {
         width: 70px;
         height: 98px;
     }
     
     
-    .triade-card {
+    .collect-card {
         width: 55px;
         height: 77px;
     }
     
-    .triade-player-card-small {
+    .collect-player-card-small {
         width: 28px;
         height: 39px;
     }
@@ -17549,7 +17566,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     
     
     
-    .triade-card-preview {
+    .collect-card-preview {
         display: none;
     }
 }
@@ -17558,8 +17575,8 @@ body:has(.triade-game-container)::-webkit-scrollbar {
    ======================================================== */
 
 /* Double bordure + glow néon - Après distribution OU refresh (pas de pre-deal/dealing) */
-.triade-my-cards .triade-card.same-anime-bonus.dealt,
-.triade-my-cards .triade-card.same-anime-bonus:not(.pre-deal):not(.dealing) {
+.collect-my-cards .collect-card.same-anime-bonus.dealt,
+.collect-my-cards .collect-card.same-anime-bonus:not(.pre-deal):not(.dealing) {
     overflow: visible !important;
     position: relative;
     border: 1.5px solid rgba(251, 191, 36, 0.9) !important;
@@ -17599,33 +17616,33 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Pas d'effet pendant pre-deal et dealing */
-.triade-my-cards .triade-card.same-anime-bonus.pre-deal,
-.triade-my-cards .triade-card.same-anime-bonus.dealing {
+.collect-my-cards .collect-card.same-anime-bonus.pre-deal,
+.collect-my-cards .collect-card.same-anime-bonus.dealing {
     animation: dealMyCard 0.38s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards !important;
     border: 1.5px solid rgba(180, 150, 80, 0.4) !important;
     box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important;
 }
-.triade-my-cards .triade-card.same-anime-bonus.pre-deal {
+.collect-my-cards .collect-card.same-anime-bonus.pre-deal {
     opacity: 0 !important;
     animation: none !important;
 }
 
 /* Cacher les particules et fumée pendant pre-deal et dealing */
-.triade-my-cards .triade-card.same-anime-bonus.pre-deal .sa-glow-container,
-.triade-my-cards .triade-card.same-anime-bonus.pre-deal .sa-particles,
-.triade-my-cards .triade-card.same-anime-bonus.dealing .sa-glow-container,
-.triade-my-cards .triade-card.same-anime-bonus.dealing .sa-particles {
+.collect-my-cards .collect-card.same-anime-bonus.pre-deal .sa-glow-container,
+.collect-my-cards .collect-card.same-anime-bonus.pre-deal .sa-particles,
+.collect-my-cards .collect-card.same-anime-bonus.dealing .sa-glow-container,
+.collect-my-cards .collect-card.same-anime-bonus.dealing .sa-particles {
     opacity: 0 !important;
     visibility: hidden !important;
 }
 
 /* Afficher les particules et fumée après distribution OU refresh */
-.triade-my-cards .triade-card.same-anime-bonus.dealt .sa-glow-container,
-.triade-my-cards .triade-card.same-anime-bonus.dealt .sa-particles,
-.triade-my-cards .triade-card.same-anime-bonus:not(.pre-deal):not(.dealing) .sa-glow-container,
-.triade-my-cards .triade-card.same-anime-bonus:not(.pre-deal):not(.dealing) .sa-particles,
-.triade-my-cards .triade-card.fused-card .sa-glow-container,
-.triade-my-cards .triade-card.fused-card .sa-particles {
+.collect-my-cards .collect-card.same-anime-bonus.dealt .sa-glow-container,
+.collect-my-cards .collect-card.same-anime-bonus.dealt .sa-particles,
+.collect-my-cards .collect-card.same-anime-bonus:not(.pre-deal):not(.dealing) .sa-glow-container,
+.collect-my-cards .collect-card.same-anime-bonus:not(.pre-deal):not(.dealing) .sa-particles,
+.collect-my-cards .collect-card.fused-card .sa-glow-container,
+.collect-my-cards .collect-card.fused-card .sa-particles {
     visibility: visible;
     animation: sa-particles-appear 0.6s ease-out 0.2s forwards;
     opacity: 0;
@@ -17685,15 +17702,15 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Halo doré intense sur l'image du personnage - Après distribution OU refresh */
-.triade-my-cards .triade-card.same-anime-bonus.dealt .card-image,
-.triade-my-cards .triade-card.same-anime-bonus:not(.pre-deal):not(.dealing) .card-image {
+.collect-my-cards .collect-card.same-anime-bonus.dealt .card-image,
+.collect-my-cards .collect-card.same-anime-bonus:not(.pre-deal):not(.dealing) .card-image {
     position: absolute !important;
     inset: 0 !important;
     overflow: hidden !important;
     border-radius: 6px !important;
 }
-.triade-my-cards .triade-card.same-anime-bonus.dealt .card-image::after,
-.triade-my-cards .triade-card.same-anime-bonus:not(.pre-deal):not(.dealing) .card-image::after {
+.collect-my-cards .collect-card.same-anime-bonus.dealt .card-image::after,
+.collect-my-cards .collect-card.same-anime-bonus:not(.pre-deal):not(.dealing) .card-image::after {
     content: '';
     display: block !important;
     position: absolute;
@@ -17705,8 +17722,8 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     animation: sa-image-glow 2.5s ease-in-out infinite alternate, sa-halo-appear 0.5s ease-out forwards;
     opacity: 0;
 }
-.triade-my-cards .triade-card.same-anime-bonus.dealt .card-image img,
-.triade-my-cards .triade-card.same-anime-bonus:not(.pre-deal):not(.dealing) .card-image img {
+.collect-my-cards .collect-card.same-anime-bonus.dealt .card-image img,
+.collect-my-cards .collect-card.same-anime-bonus:not(.pre-deal):not(.dealing) .card-image img {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
@@ -17927,10 +17944,10 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 /* ============================================
    FUSED CARD PREVIEW — Vertical fade images
    ============================================ */
-.triade-card-preview .preview-image.fused-preview {
+.collect-card-preview .preview-image.fused-preview {
     background: #0a0a12;
 }
-.triade-card-preview .preview-image.fused-preview img {
+.collect-card-preview .preview-image.fused-preview img {
     position: absolute;
     inset: -10%;
     width: 120%;
@@ -17939,28 +17956,28 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     object-position: center 15%;
 }
 /* x2 — vertical fade top/bottom */
-.triade-card-preview .preview-image.fused-preview.fused-x2 img:nth-child(1) {
+.collect-card-preview .preview-image.fused-preview.fused-x2 img:nth-child(1) {
     z-index: 1;
     mask-image: linear-gradient(to bottom, black 30%, transparent 65%);
     -webkit-mask-image: linear-gradient(to bottom, black 30%, transparent 65%);
 }
-.triade-card-preview .preview-image.fused-preview.fused-x2 img:nth-child(2) {
+.collect-card-preview .preview-image.fused-preview.fused-x2 img:nth-child(2) {
     z-index: 1;
     mask-image: linear-gradient(to top, black 30%, transparent 65%);
     -webkit-mask-image: linear-gradient(to top, black 30%, transparent 65%);
 }
 /* x3 — vertical fade top/center/bottom */
-.triade-card-preview .preview-image.fused-preview.fused-x3 img:nth-child(1) {
+.collect-card-preview .preview-image.fused-preview.fused-x3 img:nth-child(1) {
     z-index: 1;
     mask-image: linear-gradient(to bottom, black 15%, transparent 50%);
     -webkit-mask-image: linear-gradient(to bottom, black 15%, transparent 50%);
 }
-.triade-card-preview .preview-image.fused-preview.fused-x3 img:nth-child(2) {
+.collect-card-preview .preview-image.fused-preview.fused-x3 img:nth-child(2) {
     z-index: 2;
     mask-image: linear-gradient(to bottom, transparent 22%, black 40%, black 60%, transparent 78%);
     -webkit-mask-image: linear-gradient(to bottom, transparent 22%, black 40%, black 60%, transparent 78%);
 }
-.triade-card-preview .preview-image.fused-preview.fused-x3 img:nth-child(3) {
+.collect-card-preview .preview-image.fused-preview.fused-x3 img:nth-child(3) {
     z-index: 1;
     mask-image: linear-gradient(to top, black 15%, transparent 50%);
     -webkit-mask-image: linear-gradient(to top, black 15%, transparent 50%);
@@ -17968,7 +17985,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 
 /* Fusion badge on preview */
 /* Fusion badge container (admin) */
-.triade-card-preview .preview-fusion-badge {
+.collect-card-preview .preview-fusion-badge {
     position: absolute;
     top: -18px;
     right: -14px;
@@ -17976,7 +17993,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Fusion badge — circular like class badge, top-right */
-.triade-card-preview .fusion-badge-preview {
+.collect-card-preview .fusion-badge-preview {
     width: 42px;
     height: 42px;
     border-radius: 50%;
@@ -17995,7 +18012,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     0% { box-shadow: 0 3px 10px rgba(0,0,0,0.5), 0 0 12px rgba(251,191,36,0.3), 0 0 25px rgba(251,191,36,0.1); }
     100% { box-shadow: 0 3px 10px rgba(0,0,0,0.5), 0 0 18px rgba(251,191,36,0.45), 0 0 35px rgba(251,191,36,0.2); }
 }
-.triade-card-preview .fusion-badge-preview.x3 {
+.collect-card-preview .fusion-badge-preview.x3 {
     border-color: rgba(255, 140, 0, 0.8);
     animation: fusion-badge-glow-x3 2s ease-in-out infinite alternate;
 }
@@ -18003,7 +18020,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     0% { box-shadow: 0 3px 10px rgba(0,0,0,0.5), 0 0 14px rgba(255,140,0,0.35), 0 0 28px rgba(255,140,0,0.12); }
     100% { box-shadow: 0 3px 10px rgba(0,0,0,0.5), 0 0 22px rgba(255,140,0,0.5), 0 0 40px rgba(255,140,0,0.25); }
 }
-.triade-card-preview .fusion-badge-preview svg {
+.collect-card-preview .fusion-badge-preview svg {
     width: 18px;
     height: 18px;
     fill: none;
@@ -18012,7 +18029,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     position: relative;
     z-index: 2;
 }
-.triade-card-preview .fusion-badge-preview.x3 svg {
+.collect-card-preview .fusion-badge-preview.x3 svg {
     stroke: #ff8c00;
     filter: drop-shadow(0 0 4px rgba(255,140,0,0.5));
 }
@@ -18052,7 +18069,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Bottom fade on fused preview — darken for name readability */
-.triade-card-preview .preview-image.fused-preview::after {
+.collect-card-preview .preview-image.fused-preview::after {
     content: '';
     position: absolute;
     bottom: 0;
@@ -18064,11 +18081,11 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 
 /* Fused names — stacked vertically */
-.triade-card-preview .preview-name.fused-name {
+.collect-card-preview .preview-name.fused-name {
     font-size: 0.95rem;
     max-width: 100%;
 }
-.triade-card-preview .preview-name.fused-stacked-preview {
+.collect-card-preview .preview-name.fused-stacked-preview {
     display: flex;
     flex-direction: column-reverse;
     align-items: flex-start;
@@ -18077,7 +18094,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     font-size: 1.2rem;
     margin-bottom: 20px;
 }
-.triade-card-preview .preview-name.fused-stacked-preview span {
+.collect-card-preview .preview-name.fused-stacked-preview span {
     display: block;
     line-height: 1.25;
 }
@@ -18085,7 +18102,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 /* ============================================
    FUSION — Merge target highlight
    ============================================ */
-.triade-card.large.merge-target {
+.collect-card.large.merge-target {
     filter: brightness(1.2) !important;
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), 0 0 40px rgba(255, 165, 0, 0.3) !important;
     transition: filter 0.15s, box-shadow 0.15s !important;
@@ -18094,16 +18111,16 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 /* ============================================
    FUSED CARD — In-hand visual
    ============================================ */
-.triade-card.large.fused-card {
+.collect-card.large.fused-card {
     position: relative;
     border: none !important;
     overflow: visible !important;
     padding: 2px;
 }
-.triade-card.large.fused-card .card-image {
+.collect-card.large.fused-card .card-image {
     display: none;
 }
-.triade-card.large.fused-card .fused-img-wrap {
+.collect-card.large.fused-card .fused-img-wrap {
     position: absolute;
     inset: 0;
     overflow: hidden;
@@ -18111,7 +18128,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     border-radius: 8px;
     z-index: 2;
 }
-.triade-card.large.fused-card .fused-img-wrap img {
+.collect-card.large.fused-card .fused-img-wrap img {
     position: absolute;
     inset: -10%;
     width: 120%;
@@ -18121,25 +18138,25 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     display: block !important;
 }
 /* x2 vertical fade */
-.triade-card.large.fused-card .fused-img-wrap.fused-x2 img:nth-child(1) {
+.collect-card.large.fused-card .fused-img-wrap.fused-x2 img:nth-child(1) {
     mask-image: linear-gradient(to bottom, black 30%, transparent 65%);
     -webkit-mask-image: linear-gradient(to bottom, black 30%, transparent 65%);
 }
-.triade-card.large.fused-card .fused-img-wrap.fused-x2 img:nth-child(2) {
+.collect-card.large.fused-card .fused-img-wrap.fused-x2 img:nth-child(2) {
     mask-image: linear-gradient(to top, black 30%, transparent 65%);
     -webkit-mask-image: linear-gradient(to top, black 30%, transparent 65%);
 }
 /* x3 vertical fade */
-.triade-card.large.fused-card .fused-img-wrap.fused-x3 img:nth-child(1) {
+.collect-card.large.fused-card .fused-img-wrap.fused-x3 img:nth-child(1) {
     mask-image: linear-gradient(to bottom, black 15%, transparent 50%);
     -webkit-mask-image: linear-gradient(to bottom, black 15%, transparent 50%);
 }
-.triade-card.large.fused-card .fused-img-wrap.fused-x3 img:nth-child(2) {
+.collect-card.large.fused-card .fused-img-wrap.fused-x3 img:nth-child(2) {
     z-index: 2;
     mask-image: linear-gradient(to bottom, transparent 22%, black 40%, black 60%, transparent 78%);
     -webkit-mask-image: linear-gradient(to bottom, transparent 22%, black 40%, black 60%, transparent 78%);
 }
-.triade-card.large.fused-card .fused-img-wrap.fused-x3 img:nth-child(3) {
+.collect-card.large.fused-card .fused-img-wrap.fused-x3 img:nth-child(3) {
     mask-image: linear-gradient(to top, black 15%, transparent 50%);
     -webkit-mask-image: linear-gradient(to top, black 15%, transparent 50%);
 }
@@ -18147,7 +18164,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 /* Breathing hue border for fused cards */
 @property --fuse-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
 @property --fuse-hue { syntax: '<number>'; initial-value: 45; inherits: false; }
-.triade-card.large.fused-card::before {
+.collect-card.large.fused-card::before {
     content: '';
     position: absolute;
     inset: -2.5px;
@@ -18171,7 +18188,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 @keyframes fuse-hue { from { --fuse-hue: 45; } to { --fuse-hue: 25; } }
 
 /* Fusion impact animations */
-.triade-card.large.fuse-impact {
+.collect-card.large.fuse-impact {
     animation: fuse-impact-glow 0.4s ease-out !important;
     transition: none !important;
     z-index: 50 !important;
@@ -18186,7 +18203,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     70%  { transform: scale(1); filter: brightness(1.1); }
     100% { transform: scale(1); filter: brightness(1); }
 }
-.triade-card.large.dissolving {
+.collect-card.large.dissolving {
     animation: card-dissolve 0.2s ease-out forwards !important;
     pointer-events: none !important;
 }
@@ -18266,7 +18283,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 /* ============================================
    FUSED CARD — Golden glow + shimmer + sparks
    ============================================ */
-.triade-card.large.fused-card {
+.collect-card.large.fused-card {
     box-shadow: 0 0 0 2px rgba(251,191,36,0.8), inset 0 0 12px rgba(251,191,36,0.25),
         0 0 14px rgba(251,191,36,0.7), 0 0 28px rgba(251,191,36,0.5),
         0 0 45px rgba(251,191,36,0.3), 0 0 70px rgba(251,191,36,0.18),
@@ -18286,7 +18303,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     }
 }
 /* Shimmer slide */
-.triade-card.large.fused-card .card-shimmer {
+.collect-card.large.fused-card .card-shimmer {
     position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 5;
     background: linear-gradient(105deg, transparent 30%, rgba(255,215,0,0.08) 45%,
         rgba(255,255,255,0.12) 50%, rgba(255,215,0,0.08) 55%, transparent 70%);
@@ -18295,7 +18312,7 @@ body:has(.triade-game-container)::-webkit-scrollbar {
 }
 @keyframes shimmer-slide { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 /* Golden halo on fused image wrap */
-.triade-card.large.fused-card .fused-img-wrap::after {
+.collect-card.large.fused-card .fused-img-wrap::after {
     content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 4;
     background: linear-gradient(180deg, rgba(251,191,36,0.12) 0%, rgba(251,191,36,0.06) 30%,
         transparent 50%, rgba(251,191,36,0.06) 70%, rgba(251,191,36,0.12) 100%);
@@ -18315,3 +18332,114 @@ body:has(.triade-game-container)::-webkit-scrollbar {
     100% { opacity: 0; transform: translate(var(--ex,10px),var(--ey,-25px)) scale(0.2); }
 }
 /* Fused cards keep sa-particles visible */
+/* ===== COLLECT VALIDATION EFFECTS ===== */
+
+/* Star flight element */
+.collect-star-flyer {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9000;
+    width: 24px;
+    height: 24px;
+}
+.collect-star-flyer svg {
+    width: 100%;
+    height: 100%;
+    fill: #fbbf24;
+    stroke: #f59e0b;
+    stroke-width: 1;
+    filter: drop-shadow(0 0 10px rgba(251,191,36,0.9));
+}
+
+/* Star landing pop */
+@keyframes collect-star-land-pop {
+    0% { transform: scale(0.3); opacity: 0; }
+    45% { transform: scale(1.7); }
+    65% { transform: scale(0.85); }
+    80% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+}
+@keyframes collect-star-glow-after {
+    0% { filter: drop-shadow(0 0 4px rgba(251,191,36,0.3)); }
+    40% { filter: drop-shadow(0 0 18px rgba(251,191,36,1)) drop-shadow(0 0 35px rgba(245,158,11,0.5)); }
+    100% { filter: drop-shadow(0 0 6px rgba(251,191,36,0.6)); }
+}
+.collect-star.star-landing {
+    animation: collect-star-land-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+               collect-star-glow-after 0.7s ease-in-out 0.25s !important;
+}
+
+/* Star burst rays */
+.collect-star-burst-wrap {
+    position: absolute;
+    inset: -18px;
+    pointer-events: none;
+}
+.collect-sbr {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 2px;
+    background: linear-gradient(to top, transparent, #fbbf24);
+    transform-origin: bottom center;
+    opacity: 0;
+    animation: collect-sbr-go 0.5s ease-out forwards;
+}
+@keyframes collect-sbr-go {
+    0% { opacity: 0; height: 0; }
+    25% { opacity: 1; height: 18px; }
+    100% { opacity: 0; height: 24px; }
+}
+
+/* Sparkle twinkle */
+@keyframes collect-sparkle-twinkle {
+    0% { transform: scale(0) rotate(0deg); opacity: 0; }
+    30% { transform: scale(1.5) rotate(90deg); opacity: 1; }
+    60% { transform: scale(0.8) rotate(180deg); opacity: 0.8; }
+    100% { transform: scale(0) rotate(270deg); opacity: 0; }
+}
+
+/* Screen flash for validation */
+.collect-validation-flash {
+    position: fixed;
+    inset: 0;
+    z-index: 8000;
+    pointer-events: none;
+    opacity: 0;
+}
+.collect-validation-flash.lien-flash {
+    animation: collect-lien-flash 0.55s ease-out forwards;
+}
+.collect-validation-flash.collect-flash {
+    animation: collect-collect-flash 0.8s ease-out forwards;
+}
+@keyframes collect-lien-flash {
+    0% { opacity: 0; background: radial-gradient(circle at var(--cx) var(--cy), rgba(251,191,36,0.5) 0%, transparent 35%); }
+    12% { opacity: 1; background: radial-gradient(circle at var(--cx) var(--cy), rgba(255,255,255,0.5) 0%, rgba(251,191,36,0.25) 18%, transparent 45%); }
+    100% { opacity: 0; }
+}
+@keyframes collect-collect-flash {
+    0% { opacity: 0; background: radial-gradient(circle at var(--cx) var(--cy), rgba(255,80,0,0.3) 0%, transparent 25%); }
+    8% { opacity: 1; background: radial-gradient(circle at var(--cx) var(--cy), rgba(255,255,255,0.65) 0%, rgba(255,120,0,0.35) 16%, rgba(255,50,0,0.12) 38%, transparent 55%); }
+    20% { opacity: 0.5; }
+    100% { opacity: 0; }
+}
+
+/* Shake */
+@keyframes collect-shake-a {
+    0%, 100% { transform: translate(0,0); }
+    20% { transform: translate(-1.5px, 1px); }
+    40% { transform: translate(1.5px, -1px); }
+    60% { transform: translate(-1px, 1.5px); }
+    80% { transform: translate(1px, -0.5px); }
+}
+@keyframes collect-shake-b {
+    0%, 100% { transform: translate(0,0); }
+    12% { transform: translate(-2.5px, 1.5px); }
+    25% { transform: translate(2px, -2px); }
+    37% { transform: translate(-1.5px, 2.5px); }
+    50% { transform: translate(2.5px, -1px); }
+    62% { transform: translate(-2px, -1.5px); }
+    75% { transform: translate(1.5px, 1.5px); }
+    87% { transform: translate(-1px, -1px); }
+}
