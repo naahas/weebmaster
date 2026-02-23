@@ -3148,15 +3148,45 @@ function disconnectTwitch() {
 
 // Mise à jour de l'UI
 function updateTwitchUI() {
+    const tipIcon = document.getElementById('lobbyTipIcon');
     if (twitchUser) {
         twitchDisconnectedState.style.display = 'none';
         twitchConnectedState.style.display = 'flex';
         twitchUsername.textContent = twitchUser.display_name;
+        if (tipIcon) tipIcon.style.display = 'none';
     } else {
         twitchDisconnectedState.style.display = 'flex';
         twitchConnectedState.style.display = 'none';
+        if (tipIcon) tipIcon.style.display = '';
     }
 }
+
+// 💡 Tooltip flottant pour l'icône tip (échappe overflow:hidden)
+(function() {
+    let floatingTip = null;
+    const tipIcon = document.getElementById('lobbyTipIcon');
+    if (!tipIcon) return;
+
+    tipIcon.addEventListener('mouseenter', () => {
+        if (!floatingTip) {
+            floatingTip = document.createElement('div');
+            floatingTip.className = 'lobby-tip-floating';
+            floatingTip.textContent = 'Connectez-vous à Twitch pour jouer selon votre propre historique de questions';
+            document.body.appendChild(floatingTip);
+        }
+        const rect = tipIcon.getBoundingClientRect();
+        const tipWidth = 340;
+        const left = rect.left + rect.width / 2 - tipWidth + 30;
+        floatingTip.style.left = Math.max(8, left) + 'px';
+        floatingTip.style.right = 'auto';
+        floatingTip.style.top = (rect.top - floatingTip.offsetHeight - 10) + 'px';
+        requestAnimationFrame(() => floatingTip.classList.add('visible'));
+    });
+
+    tipIcon.addEventListener('mouseleave', () => {
+        if (floatingTip) floatingTip.classList.remove('visible');
+    });
+})();
 
 // Message quand Twitch requis pour Rivalité
 function showTwitchRequiredMessage() {
@@ -4850,6 +4880,12 @@ document.addEventListener('keydown', (e) => {
 // ÉTAT GAME - SYSTÈME COMPLET
 // ============================================
 let gameStarted = false;
+
+// 🎙️ Masquer le bouton Twitch en partie (empêcher connexion mid-game)
+function updateTwitchBtnVisibility() {
+    const btn = document.getElementById('twitchConnectBtn');
+    if (btn) btn.style.display = gameStarted ? 'none' : '';
+}
 let currentQuestion = 0;
 let timerInterval = null;
 let timerValue = 10;
@@ -5513,6 +5549,7 @@ document.getElementById('startGameBtn').addEventListener('click', async () => {
 
         console.log('✅ Partie démarrée:', data);
         gameStarted = true;
+        updateTwitchBtnVisibility();
 
         // Changer le texte du bouton
         startBtn.querySelector('.action-full-label').textContent = 'En cours...';
@@ -6594,6 +6631,8 @@ async function restoreGameState() {
         // === CAS 1: PARTIE EN COURS ===
         if (state.inProgress) {
             console.log('🎮 Restauration partie en cours');
+            gameStarted = true;
+            updateTwitchBtnVisibility();
 
             // Récupérer les éléments DOM
             const stateIdleEl = document.getElementById('stateIdle');
@@ -8466,6 +8505,7 @@ function updateLiveStats(data) {
 
 function displayWinner(data) {
     gameStarted = false;
+    updateTwitchBtnVisibility();
 
     if (data.winner) {
         // 🆕 Gérer le mode Rivalité
@@ -8811,6 +8851,7 @@ function returnToIdle() {
 
     // Reset des états
     gameStarted = false;
+    updateTwitchBtnVisibility();
 
     // Reset bouton démarrer
     const startBtn = document.getElementById('startGameBtn');

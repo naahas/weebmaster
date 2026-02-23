@@ -417,6 +417,7 @@ const gameState = {
     answersCount: 4,
     questionsCount: 20,
     usedQuestionIds: [],
+    streamerId: null, // 🎙️ ID Twitch du streamer admin (null = pas d'historique)
     speedBonus: true, // 🆕 Bonus rapidité (500 pts au plus rapide en mode points)
 
     liveAnswers: new Map(),
@@ -1586,9 +1587,18 @@ app.post('/admin/start-game', async (req, res) => {
     }
 
     try {
-        // Charger l'historique des questions utilisées
-        gameState.usedQuestionIds = await db.getUsedQuestionIds();
-        console.log(`📊 ${gameState.usedQuestionIds.length} questions déjà utilisées (reset auto par difficulté quand un pool est épuisé)`);
+        // 🎙️ Identifier le streamer admin (pour historique questions séparé)
+        gameState.streamerId = req.session.twitchId || null;
+        
+        if (gameState.streamerId) {
+            console.log(`🎙️ Streamer ID: ${gameState.streamerId} — historique personnalisé activé`);
+            // Charger l'historique des questions utilisées (par streamer)
+            gameState.usedQuestionIds = await db.getUsedQuestionIds(gameState.streamerId);
+            console.log(`📊 ${gameState.usedQuestionIds.length} questions déjà utilisées pour ce streamer`);
+        } else {
+            console.log(`🎙️ Aucun streamer Twitch connecté — pas d'historique de questions`);
+            gameState.usedQuestionIds = [];
+        }
 
         const game = await db.createGame(totalPlayers, gameState.mode);
 
@@ -1697,7 +1707,8 @@ app.post('/admin/start-game', async (req, res) => {
                     gameState.usedQuestionIds,
                     gameState.serieFilter,
                     shouldApplySerieCooldown() ? gameState.recentSeries : [],
-                    gameState.noSpoil  // 🚫 Filtre anti-spoil
+                    gameState.noSpoil,  // 🚫 Filtre anti-spoil
+                    gameState.streamerId
                 );
 
                 if (questions.length === 0) {
@@ -1707,7 +1718,7 @@ app.post('/admin/start-game', async (req, res) => {
 
                 const question = questions[0];
                 addToRecentSeries(question.serie);
-                await db.addUsedQuestion(question.id, question.difficulty);
+                if (gameState.streamerId) await db.addUsedQuestion(question.id, question.difficulty, gameState.streamerId);
                 gameState.usedQuestionIds.push(question.id);
 
                 console.log(`📌 Question 1 - Difficulté: ${difficulty}`);
@@ -2119,7 +2130,8 @@ app.post('/admin/trigger-auto-next', (req, res) => {
                 gameState.usedQuestionIds,
                 gameState.serieFilter,
                 shouldApplySerieCooldown() ? gameState.recentSeries : [],  // 🆕
-                gameState.noSpoil  // 🚫 Filtre anti-spoil
+                gameState.noSpoil,  // 🚫 Filtre anti-spoil
+                    gameState.streamerId
             );
 
 
@@ -2130,7 +2142,7 @@ app.post('/admin/trigger-auto-next', (req, res) => {
 
             const question = questions[0];
             addToRecentSeries(question.serie);
-            await db.addUsedQuestion(question.id, question.difficulty);
+            if (gameState.streamerId) await db.addUsedQuestion(question.id, question.difficulty, gameState.streamerId);
             gameState.usedQuestionIds.push(question.id);
 
             const allAnswers = [
@@ -2275,9 +2287,13 @@ app.post('/admin/reset-questions-history', async (req, res) => {
     }
 
     try {
-        await db.resetUsedQuestions();
+        const streamerId = req.session.twitchId || gameState.streamerId;
+        if (!streamerId) {
+            return res.json({ success: true, message: 'Pas de streamer connecté — rien à réinitialiser' });
+        }
+        await db.resetUsedQuestions(null, streamerId);
         gameState.usedQuestionIds = [];
-        console.log('🔄 Historique des questions réinitialisé manuellement');
+        console.log(`🔄 Historique des questions réinitialisé manuellement [streamer: ${streamerId}]`);
         res.json({ success: true, message: 'Historique réinitialisé' });
     } catch (error) {
         console.error('❌ Erreur reset questions:', error);
@@ -2344,7 +2360,8 @@ app.post('/admin/next-question', async (req, res) => {
             gameState.usedQuestionIds,
             gameState.serieFilter,
             shouldApplySerieCooldown() ? gameState.recentSeries : [],  // 🆕
-            gameState.noSpoil  // 🚫 Filtre anti-spoil
+            gameState.noSpoil,  // 🚫 Filtre anti-spoil
+                    gameState.streamerId
         );
 
 
@@ -2358,7 +2375,7 @@ app.post('/admin/next-question', async (req, res) => {
         // 🔥 DEBUG: Afficher la série de la question retournée
         console.log(`📌 Question série: ${question.serie}, difficulté: ${difficulty}`);
 
-        await db.addUsedQuestion(question.id, question.difficulty);
+        if (gameState.streamerId) await db.addUsedQuestion(question.id, question.difficulty, gameState.streamerId);
         gameState.usedQuestionIds.push(question.id);
 
         console.log(`📌 Question ${gameState.currentQuestionIndex}/${gameState.mode === 'points' ? gameState.questionsCount : '∞'} - Difficulté: ${difficulty}`);
@@ -2891,7 +2908,8 @@ function revealAnswers(correctAnswer) {
                     gameState.usedQuestionIds,
                     gameState.serieFilter,
                     shouldApplySerieCooldown() ? gameState.recentSeries : [],  // 🆕
-                    gameState.noSpoil  // 🚫 Filtre anti-spoil
+                    gameState.noSpoil,  // 🚫 Filtre anti-spoil
+                    gameState.streamerId
                 );
 
                 if (questions.length === 0) {
@@ -2901,7 +2919,7 @@ function revealAnswers(correctAnswer) {
 
                 const question = questions[0];
                 addToRecentSeries(question.serie);
-                await db.addUsedQuestion(question.id, question.difficulty);
+                if (gameState.streamerId) await db.addUsedQuestion(question.id, question.difficulty, gameState.streamerId);
                 gameState.usedQuestionIds.push(question.id);
 
                 console.log(`📌 Question ${gameState.currentQuestionIndex}/${gameState.mode === 'points' ? gameState.questionsCount : '∞'} - Difficulté: ${difficulty}`);
@@ -3201,7 +3219,8 @@ async function sendTiebreakerQuestion() {
             gameState.usedQuestionIds,
             gameState.serieFilter,
             shouldApplySerieCooldown() ? gameState.recentSeries : [],  // 🆕
-            gameState.noSpoil  // 🚫 Filtre anti-spoil
+            gameState.noSpoil,  // 🚫 Filtre anti-spoil
+                    gameState.streamerId
         );
 
 
@@ -3214,7 +3233,7 @@ async function sendTiebreakerQuestion() {
 
         const question = questions[0];
         addToRecentSeries(question.serie);
-        await db.addUsedQuestion(question.id, question.difficulty);
+        if (gameState.streamerId) await db.addUsedQuestion(question.id, question.difficulty, gameState.streamerId);
         gameState.usedQuestionIds.push(question.id);
 
         console.log(`⚔️ Question de départage ${gameState.currentQuestionIndex} - Difficulté: EXTREME`);
@@ -3435,7 +3454,8 @@ async function sendRivalryTiebreakerQuestion() {
             gameState.usedQuestionIds,
             gameState.serieFilter,
             shouldApplySerieCooldown() ? gameState.recentSeries : [],
-            gameState.noSpoil  // 🚫 Filtre anti-spoil
+            gameState.noSpoil,  // 🚫 Filtre anti-spoil
+                    gameState.streamerId
         );
 
         if (questions.length === 0) {
@@ -3447,7 +3467,7 @@ async function sendRivalryTiebreakerQuestion() {
 
         const question = questions[0];
         addToRecentSeries(question.serie);
-        await db.addUsedQuestion(question.id, question.difficulty);
+        if (gameState.streamerId) await db.addUsedQuestion(question.id, question.difficulty, gameState.streamerId);
         gameState.usedQuestionIds.push(question.id);
 
         console.log(`⚔️ Question de départage Rivalry #${gameState.currentQuestionIndex} - Difficulté: ${difficulty.toUpperCase()}`);
@@ -4679,7 +4699,7 @@ app.post('/api/mark-question-used', async (req, res) => {
             .eq('id', questionId)
             .single();
         
-        await db.addUsedQuestion(questionId, questionData?.difficulty || null);
+        if (gameState.streamerId) await db.addUsedQuestion(questionId, questionData?.difficulty || null, gameState.streamerId);
         gameState.usedQuestionIds.push(questionId);
         console.log(`🚫 Question ${questionId} (${questionData?.difficulty || '?'}) marquée comme utilisée (exclue)`);
         res.json({ success: true, message: 'Question exclue' });
@@ -4724,9 +4744,13 @@ app.post('/api/reset-used-questions', async (req, res) => {
     }
 
     try {
-        await db.resetUsedQuestions();
+        const streamerId = req.session.twitchId || gameState.streamerId;
+        if (!streamerId) {
+            return res.json({ success: true, message: 'Pas de streamer connecté — rien à réinitialiser' });
+        }
+        await db.resetUsedQuestions(null, streamerId);
         gameState.usedQuestionIds = [];
-        console.log('🔄 Historique des questions réinitialisé (via page questions)');
+        console.log(`🔄 Historique des questions réinitialisé (via page questions) [streamer: ${streamerId}]`);
         res.json({ success: true, message: 'Historique réinitialisé' });
     } catch (error) {
         console.error('Erreur reset questions:', error);

@@ -4582,6 +4582,74 @@ body {
     gap: 1.25rem;
 }
 
+/* 💡 Icône tip dans le header lobby */
+.lobby-tip-icon {
+    position: relative;
+    width: 18px;
+    height: 18px;
+    cursor: default;
+    margin-bottom: 2px;
+    animation: tip-pulse 3s ease-in-out infinite;
+}
+
+.lobby-tip-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke: rgba(251, 191, 36, 0.7);
+    fill: none;
+}
+
+@keyframes tip-pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+.lobby-tip-icon:hover svg {
+    stroke: rgba(251, 191, 36, 1);
+}
+
+.lobby-tip-icon:hover {
+    animation: none;
+    opacity: 1;
+}
+
+/* Tooltip fixe (ajouté au body via JS) */
+.lobby-tip-floating {
+    position: fixed;
+    width: 340px;
+    padding: 10px 14px;
+    background: rgba(15, 15, 25, 0.95);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+    border-radius: 8px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.7rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.8);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 99999;
+}
+
+.lobby-tip-floating.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.lobby-tip-floating::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    right: 22px;
+    width: 8px;
+    height: 8px;
+    background: rgba(15, 15, 25, 0.95);
+    border-right: 1px solid rgba(251, 191, 36, 0.2);
+    border-bottom: 1px solid rgba(251, 191, 36, 0.2);
+    transform: rotate(45deg);
+}
+
 /* Boutons texte dans le header (Actualiser, Fermer) */
 .header-text-btn {
     padding: 0;

@@ -228,13 +228,13 @@ const db = {
     },
 
     // 🆕 MODIFIÉ: Éviter les questions en double + Filtre série + Fallback
-    async getRandomQuestions(difficulty, count = 1, excludeIds = [], serieFilter = 'tout', excludeSeries = [], noSpoil = false) {
+    async getRandomQuestions(difficulty, count = 1, excludeIds = [], serieFilter = 'tout', excludeSeries = [], noSpoil = false, streamerId = 'default') {
         let query = supabase
             .from('questions')
             .select('*')
             .eq('difficulty', difficulty);
 
-        console.log(`🔍 [DBS] Filtre série reçu: "${serieFilter}"`);
+        console.log(`🔍 [DBS] Filtre série reçu: "${serieFilter}" [streamer: ${streamerId}]`);
 
         // 🔥 Utiliser SERIES_FILTERS centralisé
         const series = getFilterSeries(serieFilter);
@@ -277,7 +277,8 @@ const db = {
                     excludeIds,
                     serieFilter,
                     excludeSeries,
-                    noSpoil  // 🚫 Propager le filtre anti-spoil
+                    noSpoil,
+                    streamerId
                 );
 
                 if (fallbackQuestions.length > 0) {
@@ -307,7 +308,7 @@ const db = {
 
         if (availableQuestions.length === 0) {
             console.log(`⚠️ Toutes les questions "${difficulty}" ont été utilisées, reset de cette difficulté...`);
-            await this.resetUsedQuestions(difficulty);
+            await this.resetUsedQuestions(difficulty, streamerId);
             
             // Retirer les IDs de cette difficulté du tableau excludeIds (mutation directe = met à jour gameState)
             const resetIds = new Set(questions.map(q => q.id));
@@ -600,42 +601,46 @@ const db = {
 
 
     // ========== USED QUESTIONS (Historique persistant par difficulté) ==========
-    async addUsedQuestion(questionId, difficulty = null) {
+    async addUsedQuestion(questionId, difficulty = null, streamerId = 'default') {
         const { error } = await supabase
             .from('used_questions')
-            .insert({ question_id: questionId, difficulty: difficulty });
+            .insert({ question_id: questionId, difficulty: difficulty, streamer_id: streamerId });
 
         if (error) throw error;
-        console.log(`📌 Question ${questionId} (${difficulty || '?'}) ajoutée à l'historique`);
+        console.log(`📌 Question ${questionId} (${difficulty || '?'}) ajoutée à l'historique [streamer: ${streamerId}]`);
     },
 
-    async getUsedQuestionIds() {
-        const { data, error } = await supabase
+    async getUsedQuestionIds(streamerId = 'default') {
+        let query = supabase
             .from('used_questions')
-            .select('question_id');
+            .select('question_id')
+            .eq('streamer_id', streamerId);
+
+        const { data, error } = await query;
 
         if (error) throw error;
         return data ? data.map(row => row.question_id) : [];
     },
 
-    async resetUsedQuestions(difficulty = null) {
+    async resetUsedQuestions(difficulty = null, streamerId = 'default') {
         let query = supabase
             .from('used_questions')
-            .delete();
+            .delete()
+            .eq('streamer_id', streamerId);
 
         if (difficulty) {
             query = query.eq('difficulty', difficulty);
         } else {
-            query = query.neq('id', 0); // Supprimer toutes les lignes
+            query = query.neq('id', 0); // Supprimer toutes les lignes de ce streamer
         }
 
         const { error } = await query;
         if (error) throw error;
 
         if (difficulty) {
-            console.log(`🔄 Historique réinitialisé pour la difficulté "${difficulty}"`);
+            console.log(`🔄 Historique réinitialisé pour la difficulté "${difficulty}" [streamer: ${streamerId}]`);
         } else {
-            console.log('🔄 Historique des questions réinitialisé (toutes difficultés)');
+            console.log(`🔄 Historique des questions réinitialisé (toutes difficultés) [streamer: ${streamerId}]`);
         }
     },
 
