@@ -414,6 +414,7 @@ function initSocket() {
         const classicWinnerOverlay = document.getElementById('winnerOverlay');
         if (classicWinnerOverlay) {
             classicWinnerOverlay.classList.remove('active');
+            classicWinnerOverlay.style.display = ''; // 🔥 FIX: Reset le display:none
         }
         
         if (data.active) {
@@ -979,7 +980,9 @@ function initSocket() {
         const myCards = document.getElementById('adminPovCards');
         
         if (isAdminTurn) {
-            // Mon tour → reset état du tour précédent + unlock cartes + timer + deck
+            // Mon tour → enable scanner hover on opponent cards
+            document.querySelectorAll('.collect-player-seat:not(.me) .collect-player-cards-wrapper').forEach(w => w.classList.add('scannable'));
+            // Mon tour → reset état du tour + unlock cartes + timer + deck
             adminCollectCardPlayed = false;
             adminCollectPlayedCardData = null;
             adminCollectTimerExpired = false;
@@ -1001,19 +1004,25 @@ function initSocket() {
                 deckEl2.classList.add('can-draw');
             }
             adminCollectCardPlayed = false;
+            _adminLastAction = null; // 🎬 Reset actions bar
             startAdminCollectTimer(data.duration || 15);
+            updateAdminActionsBar(null);
         } else {
+            // Pas mon tour → disable scanner hover
+            document.querySelectorAll('.collect-player-cards-wrapper').forEach(w => w.classList.remove('scannable'));
             // Pas mon tour → lock cartes + cacher timer POV + disable deck
             if (myCards) myCards.classList.add('cards-locked');
             const deckEl2 = document.getElementById('adminCollectDeck');
             if (deckEl2) deckEl2.classList.remove('my-turn');
             stopAdminCollectTimer(true);
+            updateAdminActionsBar(null);
         }
     });
     
     socket.on('collect-turn-end', () => {
         console.log('🎴 Tous les joueurs ont joué');
         _adminCurrentTurnId = null;
+        _adminLastAction = null; // 🎬 Reset
         if (window._adminTurnRingInterval) { clearInterval(window._adminTurnRingInterval); window._adminTurnRingInterval = null; }
         document.querySelectorAll('.collect-choose-indicator').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.collect-player-name').forEach(el => el.classList.remove('turn-active'));
@@ -1023,6 +1032,7 @@ function initSocket() {
         const deckEl = document.getElementById('adminCollectDeck');
         if (deckEl) deckEl.classList.remove('my-turn');
         stopAdminCollectTimer(true);
+        updateAdminActionsBar(null);
     });
 
     socket.on('collect-timer-start', (data) => {
@@ -1053,6 +1063,133 @@ function initSocket() {
             }
         }
         if (!adminCollectCardPlayed) startAdminCollectTimer(data.duration || 15);
+    });
+
+    // 🔍 Scanner result — cartes de l'adversaire reçues (privé admin)
+    socket.on('collect-scan-result', (data) => {
+        if (!data.success) {
+            console.log('⚠️ Scan échoué:', data.reason);
+            return;
+        }
+        
+        console.log(`🔍 Admin scan: ${data.targetUsername} (${data.cards.length} cartes)`);
+        
+        adminCollectScanActive = true;
+        adminCollectScanTargetId = data.targetId;
+        adminCollectCardPlayed = true;
+        triggerAdminActionBar('scan');
+        
+        // Lock admin cards + stop timer
+        const myCards = document.getElementById('adminPovCards');
+        if (myCards) myCards.classList.add('cards-locked');
+        stopAdminCollectTimer(true);
+        const deckEl = document.getElementById('adminCollectDeck');
+        if (deckEl) deckEl.classList.remove('my-turn');
+        
+        // Find target seat and reveal cards
+        const targetSeat = document.querySelector(`.collect-player-seat[data-twitch-id="${data.targetId}"]`);
+        if (targetSeat) {
+            targetSeat.classList.add('scan-target');
+            const cardsContainer = targetSeat.querySelector('.collect-player-cards');
+            if (cardsContainer) {
+                cardsContainer.innerHTML = data.cards.map(card => {
+                    const classIcon = getAdminClassIcon(card.class);
+                    let imgHtml;
+                    if (card.isFused && card.fusedCards && card.fusedCards.length > 1) {
+                        const count = card.fusedCards.length;
+                        imgHtml = `<div class="scan-fused-wrap fused-x${count}">` +
+                            card.fusedCards.map(fc => `<img class="scan-card-img" src="${getAdminCardImage(fc)}" alt="${fc.name}">`).join('') +
+                            `</div>`;
+                    } else {
+                        imgHtml = `<img class="scan-card-img" src="${getAdminCardImage(card)}" alt="${card.name}">`;
+                    }
+                    return `<div class="collect-player-card-small scan-revealed ${card.class}${card.isFused ? ' scan-fused' : ''}">
+                        ${imgHtml}
+                        <div class="scan-card-class ${card.class}"><span class="class-icon">${classIcon}</span></div>
+                        <div class="scan-card-info"><div class="scan-card-name">${adminFormatName(card.name)}</div></div>
+                    </div>`;
+                }).join('');
+                
+                // Attach preview hover on each revealed card
+                const revealedCards = cardsContainer.querySelectorAll('.scan-revealed');
+                revealedCards.forEach((el, idx) => {
+                    const card = data.cards[idx];
+                    if (!card) return;
+                    el.addEventListener('mouseenter', () => showAdminCardPreview(card));
+                    el.addEventListener('mouseleave', () => hideAdminCardPreview());
+                });
+            }
+            
+            // Add timer ring on the LEFT at block level (sibling of choose-indicator)
+            const block = targetSeat.querySelector('.collect-player-block');
+            if (block) {
+                const existing = block.querySelector('.scan-timer-ring');
+                if (existing) existing.remove();
+                const timerRing = document.createElement('div');
+                timerRing.className = 'scan-timer-ring';
+                timerRing.innerHTML = `<svg viewBox="0 0 34 34"><circle class="ring-bg" cx="17" cy="17" r="14.5"/><circle class="ring-progress" cx="17" cy="17" r="14.5"/></svg><div class="scan-timer-text"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(0,200,255,0.9)" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>`;
+                block.appendChild(timerRing);
+            }
+        }
+        
+        // Timer 7s indépendant
+        if (adminCollectScanInterval) clearInterval(adminCollectScanInterval);
+        const scanStartMs = Date.now();
+        const scanDurationMs = (data.duration || 7) * 1000;
+        const circumference = 91.1; // 2π × 14.5
+        
+        adminCollectScanInterval = setInterval(() => {
+            const elapsed = Date.now() - scanStartMs;
+            const progress = Math.min(1, elapsed / scanDurationMs);
+            
+            // Update ring
+            if (targetSeat) {
+                const ring = targetSeat.querySelector('.ring-progress');
+                if (ring) ring.style.strokeDashoffset = (circumference * progress).toFixed(1);
+            }
+            
+            if (progress >= 1) {
+                clearInterval(adminCollectScanInterval);
+                adminCollectScanInterval = null;
+                adminCollectScanActive = false;
+                adminCollectScanTargetId = null;
+                
+                // Restore card backs
+                if (targetSeat) {
+                    targetSeat.classList.remove('scan-target');
+                    const cardsContainer = targetSeat.querySelector('.collect-player-cards');
+                    const cardCount = data.cards.length;
+                    if (cardsContainer) {
+                        cardsContainer.innerHTML = '<div class="collect-player-card-small"></div>'.repeat(cardCount);
+                    }
+                    const timerEl = targetSeat.querySelector('.scan-timer-ring');
+                    if (timerEl) timerEl.remove();
+                }
+            }
+        }, 100);
+    });
+
+    // 🔍 Scanner click delegation (admin-side)
+    document.addEventListener('click', (e) => {
+        const wrapper = e.target.closest('.collect-player-cards-wrapper');
+        if (!wrapper) return;
+        
+        // Only if admin is the current turn player and hasn't played
+        if (!twitchUser || _adminCurrentTurnId !== twitchUser.id) return;
+        if (adminCollectCardPlayed || adminCollectTimerExpired || adminCollectScanActive) return;
+        
+        // Get target ID from seat
+        const seat = wrapper.closest('.collect-player-seat');
+        if (!seat || seat.classList.contains('me')) return;
+        
+        const targetId = seat.dataset.twitchId || wrapper.dataset.targetId;
+        if (!targetId || targetId === twitchUser.id) return;
+        
+        console.log(`🔍 Admin scan: ${targetId}`);
+        socket.emit('collect-scan-player', {
+            twitchId: twitchUser.id,
+            targetId: targetId
+        });
     });
 
     socket.on('collect-round-start', (data) => {
@@ -1182,10 +1319,14 @@ function initSocket() {
                             deckEl2.classList.add('my-turn');
                             deckEl2.classList.add('can-draw');
                         }
+                        // Enable scanner hover on opponent cards
+                        document.querySelectorAll('.collect-player-seat:not(.me) .collect-player-cards-wrapper').forEach(w => w.classList.add('scannable'));
                         startAdminCollectTimer(Math.ceil(data.timerRemainingMs / 1000));
                     } else {
                         const deckEl2 = document.getElementById('adminCollectDeck');
                         if (deckEl2) deckEl2.classList.remove('my-turn');
+                        // Disable scanner hover
+                        document.querySelectorAll('.collect-player-cards-wrapper').forEach(w => w.classList.remove('scannable'));
                     }
                     
                     // Restaurer carte jouée dans le slot si déjà placée
@@ -1298,6 +1439,7 @@ function initSocket() {
         
         // Verrouiller immédiatement (la pioche = action du tour)
         adminCollectCardPlayed = true;
+        triggerAdminActionBar('draw');
         const myCards = document.getElementById('adminPovCards');
         if (myCards) myCards.classList.add('cards-locked');
         if (deckEl) deckEl.classList.remove('my-turn');
@@ -1329,8 +1471,12 @@ function initSocket() {
         document.querySelectorAll('.collect-player-seat:not(.me)').forEach(seat => {
             const tid = seat.dataset.twitchId;
             if (!tid || counts[tid] === undefined) return;
+            // Don't overwrite scan-revealed cards
+            if (seat.classList.contains('scan-target')) return;
             const cardsContainer = seat.querySelector('.collect-player-cards');
             if (!cardsContainer) return;
+            // Skip if cards are currently scan-revealed
+            if (cardsContainer.querySelector('.scan-revealed')) return;
             const currentCount = cardsContainer.querySelectorAll('.collect-player-card-small').length;
             const newCount = counts[tid];
             if (currentCount === newCount) return;
@@ -3157,7 +3303,8 @@ function updateTwitchUI() {
     } else {
         twitchDisconnectedState.style.display = 'flex';
         twitchConnectedState.style.display = 'none';
-        if (tipIcon) tipIcon.style.display = '';
+        // 🔥 FIX: Ne pas afficher l'icône tip en mode BombAnime/Collect (pas d'historique de questions)
+        if (tipIcon) tipIcon.style.display = (currentGameMode === 'bombanime' || currentGameMode === 'collect') ? 'none' : '';
     }
 }
 
@@ -3584,6 +3731,10 @@ async function launchLobby() {
                 if (seriesTrigger) seriesTrigger.style.display = 'none';
                 if (noSpoilGroup) noSpoilGroup.style.display = 'none';
                 
+                // 🔥 FIX: Cacher l'icône tip (pas d'historique de questions en BombAnime)
+                const tipIcon = document.getElementById('lobbyTipIcon');
+                if (tipIcon) tipIcon.style.display = 'none';
+                
                 if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'block';
                 if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'block';
                 if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'block';
@@ -3614,6 +3765,10 @@ async function launchLobby() {
                 if (seriesTrigger) seriesTrigger.style.display = 'none';
                 if (noSpoilGroup) noSpoilGroup.style.display = 'none';
                 
+                // 🔥 FIX: Cacher l'icône tip (pas d'historique de questions en Collect)
+                const tipIcon = document.getElementById('lobbyTipIcon');
+                if (tipIcon) tipIcon.style.display = 'none';
+                
                 // Cacher BombAnime
                 if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
                 if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
@@ -3641,6 +3796,10 @@ async function launchLobby() {
                 if (difficultyGroup) difficultyGroup.style.display = 'block';
                 if (seriesTrigger) seriesTrigger.style.display = 'block';
                 if (noSpoilGroup) noSpoilGroup.style.display = 'block';
+                
+                // 🔥 FIX: Restaurer l'icône tip en mode Rivalry
+                const tipIconRiv = document.getElementById('lobbyTipIcon');
+                if (tipIconRiv && !twitchUser) tipIconRiv.style.display = '';
                 
                 if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
                 if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
@@ -3687,6 +3846,10 @@ async function launchLobby() {
                 if (difficultyGroup) difficultyGroup.style.display = 'block';
                 if (seriesTrigger) seriesTrigger.style.display = 'block';
                 if (noSpoilGroup) noSpoilGroup.style.display = 'block';
+                
+                // 🔥 FIX: Restaurer l'icône tip (historique de questions pertinent en Classic/Rivalry)
+                const tipIcon = document.getElementById('lobbyTipIcon');
+                if (tipIcon && !twitchUser) tipIcon.style.display = '';
                 
                 if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
                 if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
@@ -5354,6 +5517,12 @@ function transitionToGame() {
     // 🔥 S'assurer que le bouton Fermer Lobby est caché au démarrage
     hideGameCloseBtn();
 
+    // 🔥 FIX: Restaurer les éléments potentiellement cachés par BombAnime
+    const gameLogsContainer = document.getElementById('gameLogsContainer');
+    const gameLogsToggle = document.getElementById('gameLogsToggle');
+    if (gameLogsContainer) gameLogsContainer.style.display = '';
+    if (gameLogsToggle) gameLogsToggle.style.display = '';
+
     const startTexts = [
         "READY.. FIGHT !",
         "GO BEYOND !",
@@ -5467,6 +5636,10 @@ function transitionToGame() {
             stateGame.classList.add('active');
             stateGame.style.opacity = '1';
             stateGame.style.pointerEvents = '';
+            
+            // 🔥 FIX: S'assurer que le game-layout est visible (caché par BombAnime)
+            const gameLayout = stateGame.querySelector('.game-layout');
+            if (gameLayout) gameLayout.style.display = '';
 
             bgText.classList.remove('lobby-active');
             bgText.classList.add('game-active');
@@ -6152,7 +6325,19 @@ function generateWinnerPlayersGrid(players, winnerName, gameMode = 'lives', live
 
 function showWinner(name, livesOrPoints, totalWins, questions, duration, playersData, topPlayers = [], gameMode = 'lives', lastQuestionPlayers = null) {
     const overlay = document.getElementById('winnerOverlay');
-    if (!overlay) return;
+    if (!overlay) {
+        console.error('❌ winnerOverlay introuvable !');
+        return;
+    }
+
+    console.log('🔥 showWinner: overlay trouvé, nettoyage...');
+    
+    // 🔥 FIX: Forcer le nettoyage des styles inline potentiellement laissés
+    overlay.removeAttribute('style');
+    
+    // 🔥 FIX: S'assurer que le container BombAnime ne bloque pas
+    const bombanimeContainer = document.getElementById('bombanimeAdminContainer');
+    if (bombanimeContainer) bombanimeContainer.style.display = 'none';
 
     // 🆕 Détecter si mode rivalité
     const isRivalryMode = gameMode === 'rivalry-lives' || gameMode === 'rivalry-points';
@@ -7291,6 +7476,10 @@ function showLobbyUI(players = []) {
         if (difficultyGroup) difficultyGroup.style.display = 'none';
         if (seriesTrigger) seriesTrigger.style.display = 'none';
         
+        // 🔥 FIX: Cacher l'icône tip en BombAnime
+        const tipIcon = document.getElementById('lobbyTipIcon');
+        if (tipIcon) tipIcon.style.display = 'none';
+        
         // Afficher les paramètres BombAnime
         if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'block';
         if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'block';
@@ -7321,6 +7510,10 @@ function showLobbyUI(players = []) {
         if (answersGroup) answersGroup.style.display = 'none';
         if (difficultyGroup) difficultyGroup.style.display = 'none';
         if (seriesTrigger) seriesTrigger.style.display = 'none';
+        
+        // 🔥 FIX: Cacher l'icône tip en Collect
+        const tipIcon = document.getElementById('lobbyTipIcon');
+        if (tipIcon) tipIcon.style.display = 'none';
         
         // Cacher les paramètres BombAnime
         if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
@@ -8504,6 +8697,7 @@ function updateLiveStats(data) {
 
 
 function displayWinner(data) {
+    console.log('🔥 displayWinner appelé, data.winner:', data.winner ? data.winner.username : 'NULL');
     gameStarted = false;
     updateTwitchBtnVisibility();
 
@@ -8525,6 +8719,8 @@ function displayWinner(data) {
             totalVictories = data.winner.totalVictories || 1;
         }
         
+        console.log('🔥 Appel showWinner:', winnerName, winnerScore, data.gameMode);
+        
         // 🆕 Passer le gameMode complet pour détecter le mode rivalité
         showWinner(
             winnerName,
@@ -8537,6 +8733,8 @@ function displayWinner(data) {
             data.gameMode, // Passer le gameMode complet au lieu de le convertir
             data.lastQuestionPlayers || null
         );
+    } else {
+        console.log('⚠️ displayWinner: pas de winner dans data');
     }
 
     // Reset pour prochaine partie
@@ -8893,7 +9091,10 @@ function returnToIdle() {
     
     // Cacher l'overlay winner classique
     const classicWinnerOverlay = document.getElementById('winnerOverlay');
-    if (classicWinnerOverlay) classicWinnerOverlay.classList.remove('active');
+    if (classicWinnerOverlay) {
+        classicWinnerOverlay.classList.remove('active');
+        classicWinnerOverlay.style.display = ''; // 🔥 FIX: Reset le display:none ajouté par displayBombanimeWinner
+    }
     
     // === Nettoyage Collect ===
     const collectContainer = document.getElementById('collectAdminContainer');
@@ -8906,7 +9107,7 @@ function returnToIdle() {
     const collectPhaseEl = document.getElementById('collectPhaseIndicator');
     if (collectPhaseEl) collectPhaseEl.remove();
     
-    // Réafficher les éléments game layout cachés par Collect
+    // Réafficher les éléments game layout cachés par Collect ou BombAnime
     const gameQuestionWrapper = document.getElementById('gameQuestionWrapper');
     const gameMainPanel = document.getElementById('gameMainPanel');
     const characterImageContainer = document.getElementById('characterImageContainer');
@@ -8915,6 +9116,14 @@ function returnToIdle() {
     if (gameMainPanel) gameMainPanel.style.display = '';
     if (characterImageContainer) characterImageContainer.style.display = '';
     if (gameLayout) gameLayout.style.display = '';
+    
+    // 🔥 FIX: Restaurer les éléments cachés par BombAnime (logs, toggle, close btn)
+    const gameLogsContainer = document.getElementById('gameLogsContainer');
+    const gameLogsToggle = document.getElementById('gameLogsToggle');
+    const gameCloseBtnEl = document.getElementById('gameCloseBtn');
+    if (gameLogsContainer) gameLogsContainer.style.display = '';
+    if (gameLogsToggle) gameLogsToggle.style.display = '';
+    if (gameCloseBtnEl) gameCloseBtnEl.style.display = '';
     
     // Nettoyer le sessionStorage BombAnime
     sessionStorage.removeItem('bombanimeWinnerData');
@@ -10936,6 +11145,10 @@ let adminDealStarted = false;
 let adminCollectCardPlayed = false;
 let _adminCurrentTurnId = null;
 let adminCollectPlayedCardData = null;
+let adminCollectScanActive = false;
+let _adminLastAction = null; // 🎬 Actions bar: dernière action réalisée
+let adminCollectScanTargetId = null;
+let adminCollectScanInterval = null;
 let adminCollectDragGhost = null;
 let adminCollectDragRect = null;
 
@@ -11060,6 +11273,31 @@ function showCollectTable(data) {
             </svg>`;
             collectContainer.appendChild(triangleWidget);
         }
+        
+        // 🎬 Actions Bar
+        let actionsBar = collectContainer.querySelector('.collect-actions-bar');
+        if (!actionsBar) {
+            actionsBar = document.createElement('div');
+            actionsBar.className = 'collect-actions-bar';
+            actionsBar.innerHTML = [
+                { action: 'draw', icon: '<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 12h6M12 9v6"/>', name: 'Draw', desc: 'Piocher une carte' },
+                { action: 'swap', icon: '<path d="M7 16l-4-4 4-4"/><path d="M3 12h14"/><path d="M17 8l4 4-4 4"/><path d="M21 12H7"/>', name: 'Swap', desc: 'Échanger au marché' },
+                { action: 'scan', icon: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>', name: 'Scan', desc: 'Voir les cartes adverses' },
+                { action: 'throw', icon: '<path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7"/><path d="M10 11v6M14 11v6M3 7h18M8 7V4a1 1 0 011-1h6a1 1 0 011 1v3"/>', name: 'Throw', desc: 'Défausser une carte' },
+                { action: 'duel', icon: '<path d="M12 3L4 7v5c0 5.25 3.4 10.15 8 11.25C16.6 22.15 20 17.25 20 12V7l-8-4z" fill="none"/><path d="M12 8v5M10 15l2-2 2 2"/>', name: 'Duel', desc: 'Défier un adversaire' },
+                { action: 'thief', icon: '<path d="M9 5l1-1h4l1 1"/><path d="M6 9a3 3 0 013-3h6a3 3 0 013 3v2"/><path d="M5 14l1-3h12l1 3"/><path d="M7 21v-4a2 2 0 012-2h6a2 2 0 012 2v4"/><path d="M12 11v4"/>', name: 'Thief', desc: 'Voler une carte', crowns: 2 }
+            ].map(a => {
+                const crownsHtml = a.crowns ? `<div class="actbar-req">${'<div class="actbar-crown"><svg viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"/></svg></div>'.repeat(a.crowns)}</div>` : '';
+                return `<div class="act-bar-item act-${a.action} idle" data-action="${a.action}">
+                    <div class="actbar-icon"><svg viewBox="0 0 24 24">${a.icon}</svg></div>
+                    <div class="actbar-text"><span class="actbar-name">${a.name}</span><span class="actbar-desc">${a.desc}</span></div>
+                    ${crownsHtml}
+                </div>`;
+            }).join('');
+            collectContainer.appendChild(actionsBar);
+        }
+        // Show bar once slot is visible
+        actionsBar.classList.add('visible');
         
         // Mettre à jour les positions des joueurs
         if (isAdminPlayer) {
@@ -11399,8 +11637,11 @@ function generateCollectTableHTML() {
             ${[1,2,3,4,5,6,7,8,9,10].map(i => `
                 <div class="collect-player-seat hidden" id="collectSeat${i}">
                     <div class="collect-player-block">
-                        <div class="collect-player-cards${collectHandSize === 5 ? ' hand-5' : ''}">
-                            ${"<div class=\"collect-player-card-small\"></div>".repeat(collectHandSize || 3)}
+                        <div class="collect-player-cards-wrapper">
+                            <div class="scan-hover-overlay"><svg class="scan-hover-icon" viewBox="0 0 24 24" fill="none" stroke="rgba(0,200,255,0.55)" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg></div>
+                            <div class="collect-player-cards${collectHandSize === 5 ? ' hand-5' : ''}">
+                                ${"<div class=\"collect-player-card-small\"></div>".repeat(collectHandSize || 3)}
+                            </div>
                         </div>
                         <div class="collect-choose-indicator"><svg class="choose-ring" viewBox="0 0 34 34"><circle class="choose-ring-bg" cx="17" cy="17" r="14.5" /><circle class="choose-ring-progress" cx="17" cy="17" r="14.5" /></svg><img src="choose.png" alt="choose"></div>
                         <div class="collect-player-ribbon">
@@ -11479,7 +11720,7 @@ function updateCollectPlayerPositions() {
             // Mettre à jour le nombre de cartes si disponible
             if (player.cardCount !== undefined) {
                 const cardsContainer = seat.querySelector('.collect-player-cards');
-                if (cardsContainer) {
+                if (cardsContainer && !cardsContainer.querySelector('.scan-revealed')) {
                     const currentCount = cardsContainer.querySelectorAll('.collect-player-card-small').length;
                     if (currentCount !== player.cardCount) {
                         cardsContainer.innerHTML = '<div class="collect-player-card-small"></div>'.repeat(player.cardCount);
@@ -11753,8 +11994,11 @@ function generateCollectPOVHTML() {
                 <div class="collect-player-seat" id="collectPovSeat${i}" 
                      data-twitch-id="${p.twitchId}">
                     <div class="collect-player-block">
-                        <div class="collect-player-cards${collectHandSize === 5 ? ' hand-5' : ''}">
-                            ${"<div class=\"collect-player-card-small\"></div>".repeat(p.cardCount !== undefined ? p.cardCount : (collectHandSize || 3))}
+                        <div class="collect-player-cards-wrapper" data-target-id="${p.twitchId}">
+                            <div class="scan-hover-overlay"><svg class="scan-hover-icon" viewBox="0 0 24 24" fill="none" stroke="rgba(0,200,255,0.55)" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg></div>
+                            <div class="collect-player-cards${collectHandSize === 5 ? ' hand-5' : ''}">
+                                ${"<div class=\"collect-player-card-small\"></div>".repeat(p.cardCount !== undefined ? p.cardCount : (collectHandSize || 3))}
+                            </div>
                         </div>
                         <div class="collect-choose-indicator"><svg class="choose-ring" viewBox="0 0 34 34"><circle class="choose-ring-bg" cx="17" cy="17" r="14.5" /><circle class="choose-ring-progress" cx="17" cy="17" r="14.5" /></svg><img src="choose.png" alt="choose"></div>
                         <div class="collect-player-ribbon">
@@ -12692,6 +12936,7 @@ function adminDiscardCollectCard(cardIndex) {
     adminCollectCardPlayed = true;
     adminCollectPlayedCardData = null; // PAS de carte dans le slot
     sessionStorage.setItem('adminCollectWasDiscard', 'true');
+    triggerAdminActionBar('throw');
     
     // Disable le deck
     const deckEl = document.getElementById('adminCollectDeck');
@@ -12750,6 +12995,7 @@ function adminSwapWithMarket(cardIndex, marketIndex) {
     
     adminCollectCardPlayed = true;
     sessionStorage.setItem('adminCollectWasDiscard', 'false');
+    triggerAdminActionBar('swap');
     
     // Disable deck
     const deckEl = document.getElementById('adminCollectDeck');
@@ -13471,4 +13717,119 @@ function collectValidationEffect(cardEl, targetStarEls, isCollect) {
             collectFlyStar(cx, cy, targetStarEls[1], starDelay + 250);
         }
     }
+}
+
+// ==============================================
+// 🎬 ADMIN ACTIONS BAR
+// ==============================================
+const ACTBAR_COLORS = {
+    draw:  { r: 59, g: 130, b: 246 },
+    swap:  { r: 168, g: 85, b: 247 },
+    scan:  { r: 0, g: 200, b: 255 },
+    throw: { r: 249, g: 115, b: 22 },
+    duel:  { r: 234, g: 179, b: 8 },
+    thief: { r: 239, g: 68, b: 68 }
+};
+
+function updateAdminActionsBar(triggeredAction) {
+    const isMyTurn = twitchUser && _adminCurrentTurnId === twitchUser.id;
+    const actions = ['draw', 'swap', 'scan', 'throw', 'duel', 'thief'];
+    
+    actions.forEach(action => {
+        const el = document.querySelector(`.act-bar-item[data-action="${action}"]`);
+        if (!el) return;
+        
+        // Remove all states
+        el.classList.remove('idle', 'available', 'active', 'triggered', 'used', 'locked');
+        
+        if (!isMyTurn) {
+            el.classList.add('idle');
+            return;
+        }
+        
+        // Triggered action
+        if (_adminLastAction === action) {
+            if (triggeredAction === action) {
+                el.classList.add('active', 'triggered');
+            } else {
+                el.classList.add('used');
+            }
+            return;
+        }
+        
+        // Another action was used or card played
+        if (_adminLastAction || adminCollectCardPlayed) {
+            el.classList.add('locked');
+            return;
+        }
+        
+        el.classList.add('available');
+    });
+}
+
+function triggerAdminActionBar(action) {
+    _adminLastAction = action;
+    updateAdminActionsBar(action);
+    
+    // Spawn JS effects
+    const el = document.querySelector(`.act-bar-item[data-action="${action}"]`);
+    if (el) spawnAdminActionBarEffects(el, action);
+    
+    // Remove triggered after animation
+    setTimeout(() => {
+        updateAdminActionsBar(null);
+    }, 1000);
+}
+
+function spawnAdminActionBarEffects(el, action) {
+    const color = ACTBAR_COLORS[action];
+    if (!color) return;
+    const c = `rgba(${color.r},${color.g},${color.b}`;
+    
+    // Shockwave rings
+    for (let i = 0; i < 2; i++) {
+        setTimeout(() => {
+            const ring = document.createElement('div');
+            ring.className = 'actbar-trigger-ring';
+            ring.style.color = c + `,${i === 0 ? 0.6 : 0.3})`;
+            if (i === 1) ring.style.animationDuration = '0.85s';
+            el.appendChild(ring);
+            setTimeout(() => ring.remove(), 900);
+        }, i * 100);
+    }
+    
+    // Particles
+    const iconEl = el.querySelector('.actbar-icon');
+    if (iconEl) {
+        const rect = iconEl.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        const ox = rect.left - elRect.left + rect.width / 2;
+        const oy = rect.top - elRect.top + rect.height / 2;
+        
+        for (let i = 0; i < 8; i++) {
+            const p = document.createElement('div');
+            p.className = 'actbar-particle';
+            const angle = (Math.PI * 2 / 8) * i + (Math.random() - 0.5) * 0.6;
+            const dist = 25 + Math.random() * 40;
+            const size = 2.5 + Math.random() * 2.5;
+            p.style.left = ox + 'px';
+            p.style.top = oy + 'px';
+            p.style.width = size + 'px';
+            p.style.height = size + 'px';
+            p.style.setProperty('--px', (Math.cos(angle) * dist) + 'px');
+            p.style.setProperty('--py', (Math.sin(angle) * dist) + 'px');
+            p.style.setProperty('--dur', (0.4 + Math.random() * 0.3) + 's');
+            p.style.background = c + ',0.9)';
+            p.style.boxShadow = `0 0 6px ${c},0.6)`;
+            el.appendChild(p);
+            setTimeout(() => p.remove(), 800);
+        }
+    }
+    
+    // Screen flash
+    const flash = document.createElement('div');
+    flash.className = 'actbar-screen-flash';
+    flash.style.background = `radial-gradient(ellipse at 90% 5%, ${c},0.15) 0%, transparent 50%)`;
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 500);
 }

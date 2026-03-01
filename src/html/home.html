@@ -767,11 +767,61 @@
                                 <div v-for="(player, index) in collect.otherPlayers" 
                                      :key="'seat-' + player.twitchId"
                                      class="collect-player-seat"
-                                     :class="{ active: player.isCurrentPlayer }"
+                                     :class="{ active: player.isCurrentPlayer, 'scan-target': collect.scanActive && collect.scanTargetId === player.twitchId }"
                                      :style="getCollectPlayerStyle(index, collect.otherPlayers.length)">
                                     <div class="collect-player-block">
-                                        <div class="collect-player-cards" :class="{ 'hand-5': collect.handSize === 5 }">
-                                            <div v-for="n in (player.cardCount !== undefined ? player.cardCount : (collect.handSize || 3))" :key="'sc-' + player.twitchId + '-' + n" class="collect-player-card-small"></div>
+                                        <div class="collect-player-cards-wrapper"
+                                             :class="{ 'scannable': collect.isMyTurn && !collect.cardPlayed && !collect.timerExpired && !collect.scanActive }"
+                                             @click="scanPlayer(player)">
+                                            <!-- 🔍 Scanner hover overlay -->
+                                            <div class="scan-hover-overlay" v-if="collect.isMyTurn && !collect.cardPlayed && !collect.timerExpired && !collect.scanActive">
+                                                <svg class="scan-hover-icon" viewBox="0 0 24 24" fill="none" stroke="rgba(0,200,255,0.55)" stroke-width="2" stroke-linecap="round">
+                                                    <circle cx="11" cy="11" r="7"/>
+                                                    <path d="M21 21l-4.35-4.35"/>
+                                                </svg>
+                                            </div>
+                                            
+                                            <div class="collect-player-cards" :class="{ 'hand-5': collect.handSize === 5 }">
+                                                <!-- 🔍 Cartes révélées par scan -->
+                                                <template v-if="collect.scanActive && collect.scanTargetId === player.twitchId">
+                                                    <div v-for="(card, ci) in collect.scanCards" :key="'scan-' + ci" 
+                                                         class="collect-player-card-small scan-revealed"
+                                                         :class="[card.class, { 'scan-fused': card.isFused && card.fusedCards && card.fusedCards.length > 1 }]"
+                                                         @mouseenter="showCardPreview(card, $event)"
+                                                         @mouseleave="hideCardPreview">
+                                                        <div v-if="card.isFused && card.fusedCards && card.fusedCards.length > 1" 
+                                                             :class="'scan-fused-wrap fused-x' + card.fusedCards.length">
+                                                            <img v-for="(fc, fi) in card.fusedCards" :key="'sf-'+fi" class="scan-card-img" :src="getCardImage(fc)" :alt="fc.name">
+                                                        </div>
+                                                        <img v-else class="scan-card-img" :src="getCardImage(card)" :alt="card.name">
+                                                        <div class="scan-card-class" :class="card.class">
+                                                            <span class="class-icon" v-html="getClassIcon(card.class)"></span>
+                                                        </div>
+                                                        <div class="scan-card-info">
+                                                            <div class="scan-card-name">{{ formatName(card.name) }}</div>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                                <!-- Cartes normales (dos) -->
+                                                <template v-else>
+                                                    <div v-for="n in (player.cardCount !== undefined ? player.cardCount : (collect.handSize || 3))" :key="'sc-' + player.twitchId + '-' + n" class="collect-player-card-small"></div>
+                                                </template>
+                                            </div>
+                                            
+                                        </div>
+                                        <!-- 🔍 Scan timer ring (LEFT, mirroring choose-indicator) -->
+                                        <div class="scan-timer-ring" v-if="collect.scanActive && collect.scanTargetId === player.twitchId">
+                                            <svg viewBox="0 0 34 34">
+                                                <circle class="ring-bg" cx="17" cy="17" r="14.5"/>
+                                                <circle class="ring-progress" cx="17" cy="17" r="14.5"
+                                                        :style="{ strokeDashoffset: collect.scanTimerProgress * 91.1 }"/>
+                                            </svg>
+                                            <div class="scan-timer-text">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="rgba(0,200,255,0.9)" stroke-width="2">
+                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                                    <circle cx="12" cy="12" r="3"/>
+                                                </svg>
+                                            </div>
                                         </div>
                                         <div class="collect-choose-indicator" :class="{ active: collect.currentTurnId === player.twitchId, visible: collect.showCenterSlot }">
                                             <svg class="choose-ring" viewBox="0 0 34 34">
@@ -981,6 +1031,7 @@
                                 </div>
                             </div>
                         </div>
+
                     </div>
                 </template>
 

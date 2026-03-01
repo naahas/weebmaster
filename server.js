@@ -5383,11 +5383,17 @@ function submitBombanimeName(socketId, name) {
         
         // Vérifier si l'alphabet est complet
         if (checkAlphabetComplete(player.twitchId)) {
-            console.log(`🎉 ${player.username} a complété l'alphabet! +1 vie`);
-            player.lives += BOMBANIME_CONFIG.ALPHABET_BONUS_LIVES;
-            
-            // Reset l'alphabet du joueur
+            // Reset l'alphabet du joueur (toujours, même si au max de vies)
             gameState.bombanime.playerAlphabets.set(player.twitchId, new Set());
+            
+            // 🔥 FIX: Plafonner les vies au max configuré (évite vies invisibles)
+            const maxLives = gameState.bombanime.lives || BOMBANIME_CONFIG.DEFAULT_LIVES;
+            if (player.lives < maxLives) {
+                player.lives += BOMBANIME_CONFIG.ALPHABET_BONUS_LIVES;
+                console.log(`🎉 ${player.username} a complété l'alphabet! +1 vie (${player.lives}/${maxLives})`);
+            } else {
+                console.log(`🎉 ${player.username} a complété l'alphabet mais déjà au max (${player.lives}/${maxLives})`);
+            }
             
             io.emit('bombanime-alphabet-complete', {
                 playerTwitchId: player.twitchId,
@@ -6845,6 +6851,78 @@ io.on('connection', (socket) => {
         setTimeout(() => startCollectTurn(), 500);
     });
 
+    // 🔍 SCANNER — Voir les cartes d'un adversaire pendant 7s
+    socket.on('collect-scan-player', (data) => {
+        const twitchId = data && data.twitchId;
+        const targetId = data && data.targetId;
+        
+        if (!gameState.collect.active || !twitchId || !targetId) {
+            console.log('⚠️ collect-scan-player: conditions invalides');
+            return;
+        }
+        
+        // Vérifier que c'est bien le tour de ce joueur
+        if (gameState.collect.currentTurnId !== twitchId) {
+            console.log(`⚠️ ${twitchId} essaie de scanner mais c'est pas son tour`);
+            socket.emit('collect-scan-result', { success: false, reason: 'not_your_turn' });
+            return;
+        }
+        
+        // Vérifier que le joueur n'a pas déjà joué
+        if (gameState.collect.playedCards.has(twitchId)) {
+            console.log(`⚠️ ${twitchId} a déjà joué ce round`);
+            return;
+        }
+        
+        // Vérifier timer
+        if (gameState.collect.timerEndTime && Date.now() > gameState.collect.timerEndTime + 1000) {
+            socket.emit('collect-scan-result', { success: false, reason: 'timer_expired' });
+            return;
+        }
+        
+        // Vérifier que la cible est un joueur valide (pas soi-même)
+        if (twitchId === targetId) {
+            console.log(`⚠️ ${twitchId} essaie de se scanner lui-même`);
+            return;
+        }
+        
+        const targetData = gameState.collect.playersData.get(targetId);
+        if (!targetData || !targetData.cards) {
+            console.log(`⚠️ collect-scan-player: cible ${targetId} invalide`);
+            return;
+        }
+        
+        // Marquer comme ayant joué (le scanner coûte le tour)
+        gameState.collect.playedCards.set(twitchId, { scanned: true, target: targetId });
+        
+        const scannerData = gameState.collect.playersData.get(twitchId);
+        console.log(`🔍 ${scannerData ? scannerData.username : twitchId} scanne ${targetData.username} (${targetData.cards.length} cartes)`);
+        
+        // Envoyer les cartes de la cible au scanner (privé — lui seul voit)
+        socket.emit('collect-scan-result', {
+            success: true,
+            targetId: targetId,
+            targetUsername: targetData.username,
+            cards: targetData.cards,
+            duration: 7
+        });
+        
+        // Notifier tout le monde qu'un scan a eu lieu (sans révéler les cartes)
+        io.emit('collect-player-played', {
+            twitchId: twitchId,
+            username: scannerData ? scannerData.username : 'Joueur',
+            totalPlayed: gameState.collect.playedCards.size,
+            totalPlayers: gameState.collect.playersOrder.length,
+            isDiscard: false,
+            isScan: true,
+            scanTargetUsername: targetData.username
+        });
+        
+        // Tour suivant
+        if (gameState.collect.turnTimer) clearTimeout(gameState.collect.turnTimer);
+        gameState.collect.currentTurnIndex++;
+        setTimeout(() => startCollectTurn(), 500);
+    });
 
     socket.on('collect-reconnect', (data) => {
         if (!gameState.collect.active) {

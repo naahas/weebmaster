@@ -241,6 +241,14 @@ createApp({
                 timer: 0,
                 playersWhoPlayed: [],
                 currentTurnId: null, // 🎴 Tour par tour: ID du joueur actif
+                scanActive: false,      // 🔍 Scanner actif
+                scanTargetId: null,     // 🔍 ID du joueur scanné
+                scanCards: [],          // 🔍 Cartes révélées par le scan
+                scanTimer: 0,           // 🔍 Timer restant du scan
+                scanTimerProgress: 0,   // 🔍 Progress continu 0→1
+                // 🎬 Actions Bar
+                lastAction: null,           // Dernière action réalisée ('draw','swap','scan','throw')
+                actionTriggered: false,      // Animation triggered en cours
                 turnTimerProgress: 0, // 🎴 0 to 1, progress ring on choose indicator
                 timerExpired: (() => { try { return !!JSON.parse(sessionStorage.getItem('collectState') || '{}').timerExpired; } catch(e) { return false; } })(),
                 canDraw: false,  // 🎴 Deck: le joueur peut piocher
@@ -606,7 +614,19 @@ createApp({
                     this.startTipsRotation();
                 }
             }
-        }
+        },
+        // 🎬 Actions bar — mount/update/destroy
+        'collect.showCenterSlot'(val) {
+            if (val) this.mountActionsBar();
+            this.updateActionsBar();
+        },
+        'collect.active'(val) {
+            if (!val) this.destroyActionsBar();
+        },
+        'collect.isMyTurn'() { this.updateActionsBar(); },
+        'collect.lastAction'() { this.updateActionsBar(); },
+        'collect.cardPlayed'() { this.updateActionsBar(); },
+        'collect.actionTriggered'() { this.updateActionsBar(); }
     },
 
     methods: {
@@ -3023,6 +3043,9 @@ createApp({
                 // Pas d'animation de vol pour les échanges marché
                 if (data.isSwap) return;
                 
+                // Pas d'animation de vol pour les scans
+                if (data.isScan) return;
+                
                 // Trouver le siège du joueur
                 const seats = document.querySelectorAll('.collect-player-seat:not(.me)');
                 const playerIdx = this.collect.otherPlayers.findIndex(p => p.twitchId === data.twitchId);
@@ -3048,6 +3071,50 @@ createApp({
                         setTimeout(() => { if (this._cardFlyer === flyerEl) { flyerEl.remove(); this._cardFlyer = null; } }, 2000);
                     }
                 }, true); // keepAlive
+            });
+
+            // 🔍 Résultat du scanner — cartes de l'adversaire reçues (privé)
+            this.socket.on('collect-scan-result', (data) => {
+                if (!data.success) {
+                    console.log('⚠️ Scan échoué:', data.reason);
+                    return;
+                }
+                
+                console.log(`🔍 Scan réussi: ${data.targetUsername} (${data.cards.length} cartes)`);
+                
+                this.collect.scanActive = true;
+                this.collect.scanTargetId = data.targetId;
+                this.collect.scanCards = data.cards;
+                this.collect.scanTimer = data.duration || 7;
+                
+                // Le scan consomme le tour — reset l'état du tour pour ce joueur
+                this.collect.cardPlayed = true;
+                this.collect.cardsActive = false;
+                this.collect.canDraw = false;
+                this.triggerActionBar('scan');
+                this.stopCollectTimer(true);
+                
+                // Timer indépendant de 7s (continue même si le tour passe)
+                if (this._scanInterval) clearInterval(this._scanInterval);
+                const scanStartMs = Date.now();
+                const scanDurationMs = (data.duration || 7) * 1000;
+                this._scanInterval = setInterval(() => {
+                    const elapsed = Date.now() - scanStartMs;
+                    const progress = Math.min(1, elapsed / scanDurationMs);
+                    const remaining = Math.max(0, Math.ceil((scanDurationMs - elapsed) / 1000));
+                    this.collect.scanTimer = remaining;
+                    this.collect.scanTimerProgress = progress;
+                    if (progress >= 1) {
+                        clearInterval(this._scanInterval);
+                        this._scanInterval = null;
+                        this.collect.scanActive = false;
+                        this.collect.scanTargetId = null;
+                        this.collect.scanCards = [];
+                        this.collect.scanTimerProgress = 0;
+                    }
+                }, 50);
+                
+                this.saveCollectState();
             });
 
             // 🎴 Tour par tour : un joueur commence son tour
@@ -3085,7 +3152,9 @@ createApp({
                     this.collect.playedCardData = null;
                     this.collect.cardsActive = true;
                     this.collect.timerExpired = false;
-                    this.collect.canDraw = true; // Pioche disponible
+                    this.collect.canDraw = true;
+                    this.collect.lastAction = null;       // 🎬 Reset actions bar
+                    this.collect.actionTriggered = false;
                     this.startCollectTimer(data.duration || 15);
                 } else {
                     // Pas mon tour → désactiver les cartes, cacher timer POV
@@ -3104,6 +3173,8 @@ createApp({
                 this.collect.currentTurnId = null;
                 this.collect.isMyTurn = false;
                 this.collect.cardsActive = false;
+                this.collect.lastAction = null;          // 🎬 Reset
+                this.collect.actionTriggered = false;
                 this.collect.turnTimerProgress = 1;
                 if (this._turnRingInterval) { clearInterval(this._turnRingInterval); this._turnRingInterval = null; }
                 this.stopCollectTimer(true);
@@ -3530,6 +3601,11 @@ createApp({
                 
                 // Full state reset
                 this.stopCollectTimer();
+                if (this._scanInterval) { clearInterval(this._scanInterval); this._scanInterval = null; }
+                this.collect.scanActive = false;
+                this.collect.scanTargetId = null;
+                this.collect.scanCards = [];
+                this.collect.scanTimer = 0;
                 this.collect.myCards = [];
                 this.collect.cardPlayed = false;
                 this.collect.playedCardData = null;
@@ -3802,6 +3878,11 @@ createApp({
                 this.gameMode = state.mode || 'lives';
                 this.gameLives = state.lives || 3;
                 this.gameTime = state.questionTime || 10;
+                
+                // 🔥 FIX: Synchroniser le lobbyMode depuis le serveur
+                if (state.isActive && state.lobbyMode) {
+                    this.lobbyMode = state.lobbyMode;
+                }
 
                 console.log(`🔄 État rafraîchi: ${this.playerCount} joueurs dans le lobby`);
             } catch (error) {
@@ -3845,6 +3926,9 @@ createApp({
             // Supprimer du localStorage et sessionStorage
             localStorage.removeItem('hasJoinedLobby');
             sessionStorage.removeItem('bombanimeInProgress');
+            
+            // 🔥 FIX: Rafraîchir l'état serveur (le lobby est peut-être fermé)
+            this.refreshGameState();
             
             console.log('🔙 Retour au menu principal');
         },
@@ -5865,6 +5949,7 @@ createApp({
             // PAS de playedCardData → le slot reste vide visuellement
             this.collect.playedCardData = null;
             this.collect.canDraw = false; // Défausse = fin du tour
+            this.triggerActionBar('throw');
             
             // Émettre au serveur avec flag discard
             this.socket.emit('collect-play-card', {
@@ -5891,6 +5976,7 @@ createApp({
             
             this.collect.cardPlayed = true;
             this.collect.canDraw = false;
+            this.triggerActionBar('swap');
             
             // Émettre au serveur
             this.socket.emit('collect-swap-market', {
@@ -5955,6 +6041,168 @@ createApp({
         },
 
         // 🎴 Piocher une carte depuis le deck
+        // 🔍 Scanner un adversaire
+        // 🎬 Actions Bar — état d'une action
+        getActionState(action) {
+            const c = this.collect;
+            if (!c.showCenterSlot) return '';
+            // Pas mon tour → tout en default dimmed
+            if (!c.isMyTurn) return 'idle';
+            // Action réalisée
+            if (c.lastAction === action) {
+                return c.actionTriggered ? 'active triggered' : 'used';
+            }
+            // Une autre action a été réalisée (ou carte jouée/validée)
+            if (c.lastAction || c.cardPlayed) return 'locked';
+            // Disponible
+            return 'available';
+        },
+
+        // 🎬 Monte la barre d'actions sur document.body (hors stacking context)
+        mountActionsBar() {
+            if (document.getElementById('collectActionsBarBody')) return;
+            const ACTIONS = [
+                { action: 'draw', icon: '<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 12h6M12 9v6"/>', name: 'Draw', desc: 'Piocher une carte' },
+                { action: 'swap', icon: '<path d="M7 16l-4-4 4-4"/><path d="M3 12h14"/><path d="M17 8l4 4-4 4"/><path d="M21 12H7"/>', name: 'Swap', desc: 'Échanger au marché' },
+                { action: 'scan', icon: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>', name: 'Scan', desc: 'Voir les cartes adverses' },
+                { action: 'throw', icon: '<path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7"/><path d="M10 11v6M14 11v6M3 7h18M8 7V4a1 1 0 011-1h6a1 1 0 011 1v3"/>', name: 'Throw', desc: 'Défausser une carte' },
+                { action: 'duel', icon: '<path d="M12 3L4 7v5c0 5.25 3.4 10.15 8 11.25C16.6 22.15 20 17.25 20 12V7l-8-4z" fill="none"/><path d="M12 8v5M10 15l2-2 2 2"/>', name: 'Duel', desc: 'Défier un adversaire' },
+                { action: 'thief', icon: '<path d="M9 5l1-1h4l1 1"/><path d="M6 9a3 3 0 013-3h6a3 3 0 013 3v2"/><path d="M5 14l1-3h12l1 3"/><path d="M7 21v-4a2 2 0 012-2h6a2 2 0 012 2v4"/><path d="M12 11v4"/>', name: 'Thief', desc: 'Voler une carte', crowns: 2 }
+            ];
+            const bar = document.createElement('div');
+            bar.id = 'collectActionsBarBody';
+            bar.className = 'collect-actions-bar';
+            bar.innerHTML = ACTIONS.map(a => {
+                const crowns = a.crowns ? `<div class="actbar-req">${'<div class="actbar-crown"><svg viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"/></svg></div>'.repeat(a.crowns)}</div>` : '';
+                return `<div class="act-bar-item act-${a.action}" data-action="${a.action}">
+                    <div class="actbar-icon"><svg viewBox="0 0 24 24">${a.icon}</svg></div>
+                    <div class="actbar-text"><span class="actbar-name">${a.name}</span><span class="actbar-desc">${a.desc}</span></div>
+                    ${crowns}
+                </div>`;
+            }).join('');
+            document.body.appendChild(bar);
+            this.updateActionsBar();
+        },
+
+        // 🎬 Update les classes de chaque item
+        updateActionsBar() {
+            const bar = document.getElementById('collectActionsBarBody');
+            if (!bar) return;
+            // Visible?
+            if (this.collect.showCenterSlot) {
+                bar.classList.add('visible');
+            } else {
+                bar.classList.remove('visible');
+            }
+            ['draw','swap','scan','throw','duel','thief'].forEach(action => {
+                const el = bar.querySelector(`[data-action="${action}"]`);
+                if (!el) return;
+                el.classList.remove('idle','available','active','triggered','used','locked');
+                const state = this.getActionState(action);
+                if (state) state.split(' ').forEach(s => el.classList.add(s));
+            });
+        },
+
+        // 🎬 Détruire la barre
+        destroyActionsBar() {
+            const bar = document.getElementById('collectActionsBarBody');
+            if (bar) bar.remove();
+        },
+
+        // 🎬 Trigger l'effet premium sur la barre
+        triggerActionBar(action) {
+            this.collect.lastAction = action;
+            this.collect.actionTriggered = true;
+            this.updateActionsBar();
+            
+            // Spawn JS effects
+            this.$nextTick(() => {
+                const el = document.querySelector(`.act-bar-item[data-action="${action}"]`);
+                if (el) this.spawnActionBarEffects(el, action);
+            });
+            
+            // Remove triggered after animation
+            setTimeout(() => {
+                this.collect.actionTriggered = false;
+                this.updateActionsBar();
+            }, 1000);
+        },
+
+        // 🎬 Effets JS — particules + shockwave + screen flash
+        spawnActionBarEffects(el, action) {
+            const COLORS = {
+                draw:  { r: 59, g: 130, b: 246 },
+                swap:  { r: 168, g: 85, b: 247 },
+                scan:  { r: 0, g: 200, b: 255 },
+                throw: { r: 249, g: 115, b: 22 },
+                duel:  { r: 234, g: 179, b: 8 },
+                thief: { r: 239, g: 68, b: 68 }
+            };
+            const color = COLORS[action] || COLORS.draw;
+            const c = `rgba(${color.r},${color.g},${color.b}`;
+            
+            // Shockwave rings
+            for (let i = 0; i < 2; i++) {
+                setTimeout(() => {
+                    const ring = document.createElement('div');
+                    ring.className = 'actbar-trigger-ring';
+                    ring.style.color = c + `,${i === 0 ? 0.6 : 0.3})`;
+                    if (i === 1) ring.style.animationDuration = '0.85s';
+                    el.appendChild(ring);
+                    setTimeout(() => ring.remove(), 900);
+                }, i * 100);
+            }
+            
+            // Particles
+            const iconEl = el.querySelector('.actbar-icon');
+            if (iconEl) {
+                const rect = iconEl.getBoundingClientRect();
+                const elRect = el.getBoundingClientRect();
+                const ox = rect.left - elRect.left + rect.width / 2;
+                const oy = rect.top - elRect.top + rect.height / 2;
+                
+                for (let i = 0; i < 8; i++) {
+                    const p = document.createElement('div');
+                    p.className = 'actbar-particle';
+                    const angle = (Math.PI * 2 / 8) * i + (Math.random() - 0.5) * 0.6;
+                    const dist = 25 + Math.random() * 40;
+                    const size = 2.5 + Math.random() * 2.5;
+                    p.style.left = ox + 'px';
+                    p.style.top = oy + 'px';
+                    p.style.width = size + 'px';
+                    p.style.height = size + 'px';
+                    p.style.setProperty('--px', (Math.cos(angle) * dist) + 'px');
+                    p.style.setProperty('--py', (Math.sin(angle) * dist) + 'px');
+                    p.style.setProperty('--dur', (0.4 + Math.random() * 0.3) + 's');
+                    p.style.background = c + ',0.9)';
+                    p.style.boxShadow = `0 0 6px ${c},0.6)`;
+                    el.appendChild(p);
+                    setTimeout(() => p.remove(), 800);
+                }
+            }
+            
+            // Screen flash
+            const flash = document.createElement('div');
+            flash.className = 'actbar-screen-flash';
+            flash.style.background = `radial-gradient(ellipse at 90% 5%, ${c},0.15) 0%, transparent 50%)`;
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 500);
+        },
+
+        scanPlayer(player) {
+            // Vérifier que c'est mon tour et que je n'ai pas déjà joué
+            if (!this.collect.isMyTurn || this.collect.cardPlayed || this.collect.timerExpired) return;
+            if (!player || !player.twitchId || player.twitchId === this.twitchId) return;
+            // Pas de scan pendant un scan actif
+            if (this.collect.scanActive) return;
+            
+            console.log(`🔍 Scan de ${player.username}`);
+            this.socket.emit('collect-scan-player', {
+                twitchId: this.twitchId,
+                targetId: player.twitchId
+            });
+        },
+
         drawFromDeck() {
             if (this._drawAnimBusy) return;
             
@@ -5973,6 +6221,7 @@ createApp({
             this.socket.emit('collect-draw-card', { twitchId: this.twitchId });
             
             this.collect.canDraw = false;
+            this.triggerActionBar('draw');
             this.saveCollectState();
 
             setTimeout(() => { this._drawAnimBusy = false; }, 1200);
