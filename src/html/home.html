@@ -1707,7 +1707,7 @@
         </div>
 
         <!-- Jauge de Combo (Desktop uniquement - côté droit) -->
-        <div class="combo-gauge-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && !collect.active">
+        <div class="combo-gauge-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && !collect.active && bonusEnabled">
             <!-- 🔥 Particules EN DEHORS de la jauge -->
             <div class="combo-particles-external"></div>
 
@@ -1730,7 +1730,7 @@
         </div>
 
         <!-- 🆕 NOUVEAU SYSTÈME BONUS - Icône + Hover Menu -->
-        <div class="bonus-icon-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && !collect.active">
+        <div class="bonus-icon-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && !collect.active && bonusEnabled">
             <div class="bonus-icon-wrapper" @mouseenter="showBonusMenu = true" @mouseleave="showBonusMenu = false"
                 @click="showBonusMenu = !showBonusMenu">
 
@@ -1782,7 +1782,7 @@
 
 
         <!-- 🆕 SYSTÈME DE DÉFIS - Bandelettes à gauche -->
-        <div class="challenges-container" v-if="gameInProgress && !gameEnded && challenges.length > 0 && lobbyMode !== 'bombanime' && lobbyMode !== 'collect'">
+        <div class="challenges-container" v-if="gameInProgress && !gameEnded && challenges.length > 0 && lobbyMode !== 'bombanime' && lobbyMode !== 'collect' && bonusEnabled">
             <div class="challenge-strip" 
                  v-for="challenge in challenges" 
                  :key="challenge.id"
@@ -1848,7 +1848,7 @@
 
 
         <!-- 🆕 BONUS MOBILE - Icône avec jauge circulaire (mobile uniquement, pas en FizzBuzz) -->
-        <div class="bonus-gauge-mobile" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime'" @click="toggleBonusArcMobile">
+        <div class="bonus-gauge-mobile" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && bonusEnabled" @click="toggleBonusArcMobile">
 
             <!-- SVG Gauge -->
             <svg class="gauge-svg" viewBox="0 0 68 68">
@@ -1874,7 +1874,7 @@
         </div>
 
         <!-- 🆕 Menu Arc de Cercle (pas en FizzBuzz) -->
-        <div class="bonus-arc-menu" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime'">
+        <div class="bonus-arc-menu" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && bonusEnabled">
             <!-- Overlay en premier (nth-child(1)) -->
             <div class="bonus-arc-overlay" :class="{ active: showBonusArcMobile }" @click="closeBonusArcMobile"></div>
 
@@ -1904,7 +1904,7 @@
 
 
         <!-- 🆕 DÉFIS MOBILE - Icône en bas gauche (pas en FizzBuzz) -->
-        <div class="challenges-mobile-icon" v-if="gameInProgress && !gameEnded && challenges.length > 0 && lobbyMode !== 'bombanime' && lobbyMode !== 'collect'" 
+        <div class="challenges-mobile-icon" v-if="gameInProgress && !gameEnded && challenges.length > 0 && lobbyMode !== 'bombanime' && lobbyMode !== 'collect' && bonusEnabled" 
              @click="showChallengesMobile = !showChallengesMobile">
             <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>

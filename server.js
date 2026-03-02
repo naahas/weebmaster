@@ -333,6 +333,7 @@ app.get('/game/state', (req, res) => {
         difficultyMode: gameState.difficultyMode,
         serieFilter: gameState.serieFilter,
         noSpoil: gameState.noSpoil, // 🚫 Filtre anti-spoil
+        bonusEnabled: gameState.bonusEnabled, // 🎮 Bonus activés
         isTiebreaker: gameState.isTiebreaker,
         liveAnswerCounts: answerCounts,
         showingWinner: !!winnerScreenData,
@@ -419,6 +420,7 @@ const gameState = {
     usedQuestionIds: [],
     streamerId: null, // 🎙️ ID Twitch du streamer admin (null = pas d'historique)
     speedBonus: true, // 🆕 Bonus rapidité (500 pts au plus rapide en mode points)
+    bonusEnabled: true, // 🎮 Bonus activés (jauge combo, bonus, défis)
 
     liveAnswers: new Map(),
 
@@ -1114,6 +1116,7 @@ app.post('/admin/toggle-game', async (req, res) => {
             lobbyMode: gameState.lobbyMode,
             teamNames: gameState.teamNames,
             noSpoil: gameState.noSpoil, // 🚫 Filtre anti-spoil
+            bonusEnabled: gameState.bonusEnabled, // 🎮 Bonus activés
             // 💣 Données BombAnime
             bombanimeSerie: gameState.bombanime.serie,
             bombanimeTimer: gameState.bombanime.timer
@@ -1640,10 +1643,16 @@ app.post('/admin/start-game', async (req, res) => {
         gameState.playerBonuses.clear();
         console.log('🔄 Bonus reset pour nouvelle partie');
 
-        // 🆕 Générer les défis pour cette partie
-        gameState.activeChallenges = generateChallenges();
-        gameState.playerChallenges.clear();
-        console.log('🎯 Défis initialisés pour la partie');
+        // 🆕 Générer les défis pour cette partie (seulement si bonus activés)
+        if (gameState.bonusEnabled) {
+            gameState.activeChallenges = generateChallenges();
+            gameState.playerChallenges.clear();
+            console.log('🎯 Défis initialisés pour la partie');
+        } else {
+            gameState.activeChallenges = [];
+            gameState.playerChallenges.clear();
+            console.log('🎮 Bonus désactivés — pas de défis ni de jauge combo');
+        }
 
         // Initialiser les joueurs selon le mode
         gameState.players.forEach((player, socketId) => {
@@ -1654,15 +1663,17 @@ app.post('/admin/start-game', async (req, res) => {
                 player.points = 0;
             }
 
-            // 🆕 Initialiser les bonus du joueur avec inventaire
-            gameState.playerBonuses.set(socketId, {
-                comboLevel: 0,
-                comboProgress: 0,
-                bonusInventory: { '5050': 0, 'reveal': 0, 'shield': 0, 'doublex2': 0 }
-            });
+            // 🆕 Initialiser les bonus du joueur avec inventaire (seulement si bonus activés)
+            if (gameState.bonusEnabled) {
+                gameState.playerBonuses.set(socketId, {
+                    comboLevel: 0,
+                    comboProgress: 0,
+                    bonusInventory: { '5050': 0, 'reveal': 0, 'shield': 0, 'doublex2': 0 }
+                });
 
-            // 🆕 Initialiser les défis du joueur
-            initPlayerChallenges(socketId);
+                // 🆕 Initialiser les défis du joueur
+                initPlayerChallenges(socketId);
+            }
         });
 
         console.log(`🎮 Partie démarrée (Mode: ${gameState.mode.toUpperCase()}) - ${totalPlayers} joueurs - Filtre: ${gameState.serieFilter}`);
@@ -1681,7 +1692,8 @@ app.post('/admin/start-game', async (req, res) => {
                     // 🆕 Mode Rivalité
                     lobbyMode: gameState.lobbyMode,
                     teamNames: gameState.teamNames,
-                    playerTeam: player.team || null
+                    playerTeam: player.team || null,
+                    bonusEnabled: gameState.bonusEnabled // 🎮 Bonus activés
                 });
             } else {
                 socket.emit('game-started', {
@@ -1690,7 +1702,8 @@ app.post('/admin/start-game', async (req, res) => {
                     gameMode: gameState.mode,
                     // 🆕 Mode Rivalité
                     lobbyMode: gameState.lobbyMode,
-                    teamNames: gameState.teamNames
+                    teamNames: gameState.teamNames,
+                    bonusEnabled: gameState.bonusEnabled // 🎮 Bonus activés
                 });
             }
         });
@@ -1885,6 +1898,19 @@ app.post('/admin/set-speed-bonus', (req, res) => {
     console.log(`⚡ Bonus rapidité: ${gameState.speedBonus ? 'Activé' : 'Désactivé'}`);
 
     res.json({ success: true, speedBonus: gameState.speedBonus });
+});
+
+// 🎮 Route pour activer/désactiver les bonus (jauge combo, bonus, défis)
+app.post('/admin/set-bonus-enabled', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    const { enabled } = req.body;
+    gameState.bonusEnabled = enabled === true;
+    console.log(`🎮 Bonus (jauge/défis): ${gameState.bonusEnabled ? 'Activé' : 'Désactivé'}`);
+
+    res.json({ success: true, bonusEnabled: gameState.bonusEnabled });
 });
 
 
@@ -4866,7 +4892,7 @@ const server = app.listen(PORT, () => {
 // ============================================
 // STREAMERS PARTENAIRES - LIVE STATUS
 // ============================================
-const PARTNER_STREAMERS = ['MinoStreaming', 'pikinemadd', 'Mikyatc'];
+const PARTNER_STREAMERS = ['MinoStreaming', 'pikinemadd', 'Mikyatc' , 'Zogaa_'];
 let partnersLiveStatus = {}; // Cache du statut
 
 
@@ -6509,7 +6535,8 @@ io.on('connection', (socket) => {
                     comboProgress: gameState.playerBonuses.get(socket.id).comboProgress,
                     bonusInventory: gameState.playerBonuses.get(socket.id).bonusInventory
                 } : null,
-                challenges: getPlayerChallengesState(socket.id) // 🆕 Envoyer les défis
+                challenges: getPlayerChallengesState(socket.id), // 🆕 Envoyer les défis
+                bonusEnabled: gameState.bonusEnabled // 🎮 Bonus activés
             };
 
             if (gameState.mode === 'lives') {

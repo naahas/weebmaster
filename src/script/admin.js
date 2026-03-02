@@ -2855,6 +2855,7 @@ function applySettingsVisibility(mode) {
     const difficultyGroup = document.querySelector('.setting-group:has(.difficulty-options)');
     const seriesTrigger = document.getElementById('seriesTrigger');
     const noSpoilGroup = document.querySelector('.no-spoil-group');
+    const bonusEnabledGroup = document.getElementById('bonusEnabledGroup');
     const bombanimeSerieGroup = document.getElementById('bombanimeSerieGroup');
     const bombanimeLivesGroup = document.getElementById('bombanimeLivesGroup');
     const bombanimeTimerGroup = document.getElementById('bombanimeTimerGroup');
@@ -2874,6 +2875,7 @@ function applySettingsVisibility(mode) {
         if (difficultyGroup) difficultyGroup.style.display = 'none';
         if (seriesTrigger) seriesTrigger.style.display = 'none';
         if (noSpoilGroup) noSpoilGroup.style.display = 'none';
+        if (bonusEnabledGroup) bonusEnabledGroup.style.display = 'none';
         if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'block';
         if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'block';
         if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'block';
@@ -2894,6 +2896,7 @@ function applySettingsVisibility(mode) {
         if (difficultyGroup) difficultyGroup.style.display = 'none';
         if (seriesTrigger) seriesTrigger.style.display = 'none';
         if (noSpoilGroup) noSpoilGroup.style.display = 'none';
+        if (bonusEnabledGroup) bonusEnabledGroup.style.display = 'none';
         if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
         if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
         if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
@@ -2912,6 +2915,7 @@ function applySettingsVisibility(mode) {
         if (difficultyGroup) difficultyGroup.style.display = 'block';
         if (seriesTrigger) seriesTrigger.style.display = 'block';
         if (noSpoilGroup) noSpoilGroup.style.display = 'block';
+        if (bonusEnabledGroup) bonusEnabledGroup.style.display = 'block';
         if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
         if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
         if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
@@ -2931,6 +2935,7 @@ function applySettingsVisibility(mode) {
         if (difficultyGroup) difficultyGroup.style.display = 'block';
         if (seriesTrigger) seriesTrigger.style.display = 'block';
         if (noSpoilGroup) noSpoilGroup.style.display = 'block';
+        if (bonusEnabledGroup) bonusEnabledGroup.style.display = 'block';
         if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
         if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
         if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
@@ -2968,6 +2973,15 @@ function setGameMode(mode) {
         if (badgeText) badgeText.textContent = 'Rivalry Mode';
         if (modeBadge) modeBadge.classList.add('rivalry');
         if (btnWrapper) btnWrapper.classList.add('rivalry');
+        // 🆕 Par défaut : tri par équipe en rivalité
+        gridSortMode = 'team';
+        const sortToggle = document.getElementById('gridSortToggle');
+        if (sortToggle) {
+            const scoreBtn = sortToggle.querySelector('[data-sort="score"]');
+            const teamBtn = sortToggle.querySelector('[data-sort="team"]');
+            if (scoreBtn) scoreBtn.classList.remove('active');
+            if (teamBtn) teamBtn.classList.add('active');
+        }
     } else if (mode === 'bombanime') {
         if (badgeText) badgeText.textContent = 'BombAnime Mode';
         if (modeBadge) modeBadge.classList.add('bombanime');
@@ -3333,6 +3347,37 @@ function updateTwitchUI() {
     tipIcon.addEventListener('mouseleave', () => {
         if (floatingTip) floatingTip.classList.remove('visible');
     });
+})();
+
+// 🔥 Tooltip flottant pour les badges info (échappe overflow:hidden)
+(function() {
+    let floatingTip = null;
+    
+    document.addEventListener('mouseenter', (e) => {
+        const badge = e.target.closest('.setting-info-badge');
+        if (!badge) return;
+        
+        const tipText = badge.getAttribute('data-tip');
+        if (!tipText) return;
+        
+        if (!floatingTip) {
+            floatingTip = document.createElement('div');
+            floatingTip.className = 'setting-info-floating-tip';
+            document.body.appendChild(floatingTip);
+        }
+        
+        floatingTip.textContent = tipText;
+        const rect = badge.getBoundingClientRect();
+        floatingTip.style.left = rect.left + 'px';
+        floatingTip.style.top = (rect.top - floatingTip.offsetHeight - 8) + 'px';
+        requestAnimationFrame(() => floatingTip.classList.add('visible'));
+    }, true);
+    
+    document.addEventListener('mouseleave', (e) => {
+        const badge = e.target.closest('.setting-info-badge');
+        if (!badge) return;
+        if (floatingTip) floatingTip.classList.remove('visible');
+    }, true);
 })();
 
 // Message quand Twitch requis pour Rivalité
@@ -3715,6 +3760,7 @@ async function launchLobby() {
             
             // Paramètre Anti-spoil
             const noSpoilGroup = document.querySelector('.no-spoil-group');
+            const bonusEnabledGroup = document.getElementById('bonusEnabledGroup');
             
             
             if (currentGameMode === 'bombanime') {
@@ -3730,6 +3776,7 @@ async function launchLobby() {
                 if (difficultyGroup) difficultyGroup.style.display = 'none';
                 if (seriesTrigger) seriesTrigger.style.display = 'none';
                 if (noSpoilGroup) noSpoilGroup.style.display = 'none';
+        if (bonusEnabledGroup) bonusEnabledGroup.style.display = 'none';
                 
                 // 🔥 FIX: Cacher l'icône tip (pas d'historique de questions en BombAnime)
                 const tipIcon = document.getElementById('lobbyTipIcon');
@@ -3764,6 +3811,7 @@ async function launchLobby() {
                 if (difficultyGroup) difficultyGroup.style.display = 'none';
                 if (seriesTrigger) seriesTrigger.style.display = 'none';
                 if (noSpoilGroup) noSpoilGroup.style.display = 'none';
+        if (bonusEnabledGroup) bonusEnabledGroup.style.display = 'none';
                 
                 // 🔥 FIX: Cacher l'icône tip (pas d'historique de questions en Collect)
                 const tipIcon = document.getElementById('lobbyTipIcon');
@@ -3796,6 +3844,7 @@ async function launchLobby() {
                 if (difficultyGroup) difficultyGroup.style.display = 'block';
                 if (seriesTrigger) seriesTrigger.style.display = 'block';
                 if (noSpoilGroup) noSpoilGroup.style.display = 'block';
+        if (bonusEnabledGroup) bonusEnabledGroup.style.display = 'block';
                 
                 // 🔥 FIX: Restaurer l'icône tip en mode Rivalry
                 const tipIconRiv = document.getElementById('lobbyTipIcon');
@@ -3846,6 +3895,7 @@ async function launchLobby() {
                 if (difficultyGroup) difficultyGroup.style.display = 'block';
                 if (seriesTrigger) seriesTrigger.style.display = 'block';
                 if (noSpoilGroup) noSpoilGroup.style.display = 'block';
+        if (bonusEnabledGroup) bonusEnabledGroup.style.display = 'block';
                 
                 // 🔥 FIX: Restaurer l'icône tip (historique de questions pertinent en Classic/Rivalry)
                 const tipIcon = document.getElementById('lobbyTipIcon');
@@ -4797,6 +4847,33 @@ document.querySelectorAll('.speed-bonus-options .setting-option-btn').forEach(bt
             console.log(`⚡ Bonus rapidité: ${isEnabled ? 'Activé' : 'Désactivé'}`);
         } catch (error) {
             console.error('Erreur set-speed-bonus:', error);
+        }
+    });
+});
+
+// 🎮 Bonus activé/désactivé (jauge, bonus, défis)
+document.querySelectorAll('.bonus-enabled-options .setting-option-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const group = btn.closest('.setting-group');
+        const valueDisplay = document.getElementById('bonusEnabledValue');
+        
+        group.querySelectorAll('.setting-option-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        const isEnabled = btn.dataset.value === 'true';
+        valueDisplay.textContent = isEnabled ? 'Oui' : 'Non';
+        
+        // Envoyer au serveur
+        try {
+            await fetch('/admin/set-bonus-enabled', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ enabled: isEnabled })
+            });
+            console.log(`🎮 Bonus (jauge/défis): ${isEnabled ? 'Activé' : 'Désactivé'}`);
+        } catch (error) {
+            console.error('Erreur set-bonus-enabled:', error);
         }
     });
 });
@@ -6323,7 +6400,7 @@ function generateWinnerPlayersGrid(players, winnerName, gameMode = 'lives', live
 }
 
 
-function showWinner(name, livesOrPoints, totalWins, questions, duration, playersData, topPlayers = [], gameMode = 'lives', lastQuestionPlayers = null) {
+function showWinner(name, livesOrPoints, totalWins, questions, duration, playersData, topPlayers = [], gameMode = 'lives', lastQuestionPlayers = null, winnerTeam = null) {
     const overlay = document.getElementById('winnerOverlay');
     if (!overlay) {
         console.error('❌ winnerOverlay introuvable !');
@@ -6376,16 +6453,46 @@ function showWinner(name, livesOrPoints, totalWins, questions, duration, players
     // 🔥 ADAPTER SELON LE MODE
     const winnerLivesEl = document.getElementById('winnerLives');
     const livesLabelEl = winnerLivesEl?.closest('.winner-stat')?.querySelector('.winner-stat-label');
+    const winnerTotalWinsEl = document.getElementById('winnerTotalWins');
+    const totalWinsLabelEl = winnerTotalWinsEl?.closest('.winner-stat')?.querySelector('.winner-stat-label');
 
-    if (effectiveGameMode === 'points') {
+    if (isRivalryMode && effectiveGameMode === 'lives' && winnerTeam) {
+        // 🆕 Mode Rivalité Vies : "Joueurs restants" + "Vies restantes"
+        const teamPlayers = players.filter(p => p.team === winnerTeam);
+        const survivingPlayers = teamPlayers.filter(p => p.lives > 0);
+        const survivingCount = survivingPlayers.length;
+        const totalLives = survivingPlayers.reduce((sum, p) => sum + p.lives, 0);
+
+        winnerLivesEl.innerHTML = `<span class="players-icon">👥</span> ${survivingCount}`;
+        if (livesLabelEl) livesLabelEl.textContent = 'Joueurs restants';
+
+        winnerTotalWinsEl.innerHTML = `<span class="heart">❤</span> ${totalLives}`;
+        if (totalWinsLabelEl) totalWinsLabelEl.textContent = 'Vies restantes';
+        winnerTotalWinsEl.classList.remove('gold');
+    } else if (isRivalryMode && effectiveGameMode === 'points' && winnerTeam) {
+        // 🆕 Mode Rivalité Points : "Points" + "Joueurs"
+        const teamPlayers = players.filter(p => p.team === winnerTeam);
+
         winnerLivesEl.innerHTML = `<span class="points-icon">★</span> ${livesOrPoints.toLocaleString()}`;
         if (livesLabelEl) livesLabelEl.textContent = 'Points';
+
+        winnerTotalWinsEl.innerHTML = `<span class="players-icon">👥</span> ${teamPlayers.length}`;
+        if (totalWinsLabelEl) totalWinsLabelEl.textContent = 'Joueurs';
+        winnerTotalWinsEl.classList.remove('gold');
+    } else if (effectiveGameMode === 'points') {
+        winnerLivesEl.innerHTML = `<span class="points-icon">★</span> ${livesOrPoints.toLocaleString()}`;
+        if (livesLabelEl) livesLabelEl.textContent = 'Points';
+        winnerTotalWinsEl.textContent = totalWins;
+        if (totalWinsLabelEl) totalWinsLabelEl.textContent = 'Victoires totales';
+        winnerTotalWinsEl.classList.add('gold');
     } else {
         winnerLivesEl.innerHTML = `<span class="heart">❤</span> ${livesOrPoints}`;
         if (livesLabelEl) livesLabelEl.textContent = 'Vies restantes';
+        winnerTotalWinsEl.textContent = totalWins;
+        if (totalWinsLabelEl) totalWinsLabelEl.textContent = 'Victoires totales';
+        winnerTotalWinsEl.classList.add('gold');
     }
 
-    document.getElementById('winnerTotalWins').textContent = totalWins;
     document.getElementById('infoQuestions').textContent = questions;
     document.getElementById('infoDuration').textContent = duration;
     document.getElementById('infoPlayers').textContent = playerCount;
@@ -6768,7 +6875,8 @@ async function restoreGameState() {
                 data.playersData || [],
                 data.topPlayers || [],
                 displayGameMode,
-                data.lastQuestionPlayers || null
+                data.lastQuestionPlayers || null,
+                isRivalryMode ? (data.winner.team || null) : null // 🆕 Équipe gagnante
             );
 
             return true;
@@ -8153,6 +8261,40 @@ function displayQuestion(data) {
 
     currentQuestionData = data;
     
+    // 🎮 Reset fake play admin
+    adminFakeAnswer = null;
+    // Clean leftover embers
+    document.querySelectorAll('.admin-ember, .admin-fx-flash').forEach(el => el.remove());
+    
+    // 🎮 Ajouter les click handlers pour le fake play admin
+    document.querySelectorAll('.answer-option').forEach(option => {
+        option.addEventListener('click', () => {
+            // Ignorer si déjà répondu ou si résultats affichés
+            if (adminFakeAnswer !== null) return;
+            if (option.classList.contains('revealed')) return;
+            
+            const answerIndex = parseInt(option.dataset.answer);
+            adminFakeAnswer = answerIndex;
+            
+            // Effet Pop + Glow (via CSS animation)
+            option.classList.add('admin-selected');
+            
+            // Flash radial inside button
+            const flash = document.createElement('div');
+            flash.className = 'admin-fx-flash';
+            option.appendChild(flash);
+            setTimeout(() => flash.remove(), 250);
+            
+            // Ember particles dans le parent (answers-grid)
+            const grid = document.getElementById('answersGrid');
+            if (grid) {
+                spawnAdminEmbers(grid, option);
+            }
+            
+            console.log(`🎮 Admin fake play: réponse ${answerIndex}`);
+        });
+    });
+    
     // Mettre à jour le badge info
     updateInfoBadge();
     
@@ -8221,6 +8363,67 @@ function updateTimerChakraColor(difficulty) {
 }
 
 let currentQuestionData = null;
+let adminFakeAnswer = null; // 🎮 Fake play admin
+
+// 🎮 Spawn ember particles autour du bouton (dans le parent grid)
+function spawnAdminEmbers(grid, option) {
+    const gr = grid.getBoundingClientRect();
+    const br = option.getBoundingClientRect();
+    const r = {
+        top: br.top - gr.top,
+        left: br.left - gr.left,
+        width: br.width,
+        height: br.height
+    };
+
+    for (let i = 0; i < 24; i++) {
+        const edge = Math.floor(Math.random() * 4);
+        let x, y, tx, ty;
+
+        if (edge === 0) { // Top
+            x = r.left + Math.random() * r.width;
+            y = r.top;
+            tx = (Math.random() - 0.5) * 60;
+            ty = -(15 + Math.random() * 35);
+        } else if (edge === 1) { // Bottom
+            x = r.left + Math.random() * r.width;
+            y = r.top + r.height;
+            tx = (Math.random() - 0.5) * 60;
+            ty = 15 + Math.random() * 35;
+        } else if (edge === 2) { // Left
+            x = r.left;
+            y = r.top + Math.random() * r.height;
+            tx = -(15 + Math.random() * 35);
+            ty = (Math.random() - 0.5) * 50;
+        } else { // Right
+            x = r.left + r.width;
+            y = r.top + Math.random() * r.height;
+            tx = 15 + Math.random() * 35;
+            ty = (Math.random() - 0.5) * 50;
+        }
+
+        const size = 2 + Math.random() * 2.5;
+        const dur = 0.45 + Math.random() * 0.2;
+        const delay = Math.random() * 0.08;
+        const isWhite = Math.random() > 0.7;
+        const color = isWhite ? '#fff' : '#f0c040';
+
+        const p = document.createElement('div');
+        p.className = 'admin-ember';
+        p.style.left = x + 'px';
+        p.style.top = y + 'px';
+        p.style.width = size + 'px';
+        p.style.height = size + 'px';
+        p.style.background = color;
+        p.style.setProperty('--tx', tx + 'px');
+        p.style.setProperty('--ty', ty + 'px');
+        p.style.setProperty('--dur', dur + 's');
+        p.style.setProperty('--delay', delay + 's');
+        p.style.setProperty('--color', color);
+        grid.appendChild(p);
+        setTimeout(() => p.remove(), (dur + delay) * 1000 + 100);
+    }
+}
 
 
 // ============================================
@@ -8408,6 +8611,15 @@ function displayResults(data) {
                 option.classList.add('correct');
             } else {
                 option.classList.add('wrong');
+            }
+            
+            // 🎮 Fake play admin — marquer le résultat
+            if (adminFakeAnswer === answerIndex) {
+                if (answerIndex === correctAnswer) {
+                    option.classList.add('admin-correct');
+                } else {
+                    option.classList.add('admin-wrong');
+                }
             }
         }, 100 + i * 50);
     });
@@ -8598,6 +8810,80 @@ function sortPlayersGrid(animate = false) {
             card.style.transform = '';
         });
     }
+
+    // 🏆 Mettre à jour les badges podium top 5
+    updatePodiumBadges();
+}
+
+// 🏆 Badges podium top 5
+function updatePodiumBadges() {
+    const grid = document.getElementById('playersGridGame');
+    if (!grid) return;
+
+    // Supprimer tous les badges existants
+    grid.querySelectorAll('.podium-badge').forEach(b => b.remove());
+
+    // Pas de badges podium en mode rivalité
+    if (currentGameMode === 'rivalry') return;
+
+    // Récupérer les cartes dans l'ordre actuel du DOM (déjà triées)
+    const cards = Array.from(grid.querySelectorAll('.player-card-game'));
+    
+    // En mode rivalité trié par équipe, on badge par classement global (score)
+    // On retrie une copie par score pour déterminer le vrai classement
+    let ranked;
+    if (currentGameMode === 'rivalry' && gridSortMode === 'team') {
+        ranked = [...cards].sort((a, b) => {
+            if (gameSettings.mode === 'point') {
+                const pa = parseInt(a.querySelector('.player-card-game-points')?.textContent) || 0;
+                const pb = parseInt(b.querySelector('.player-card-game-points')?.textContent) || 0;
+                return pb - pa;
+            } else {
+                return (parseInt(b.dataset.lives) || 0) - (parseInt(a.dataset.lives) || 0);
+            }
+        });
+    } else {
+        ranked = cards;
+    }
+
+    // Ajouter les badges aux 5 premiers
+    const count = Math.min(5, ranked.length);
+    for (let i = 0; i < count; i++) {
+        const card = ranked[i];
+        // Ne pas badger les éliminés (0 vies en mode vie)
+        if (gameSettings.mode === 'vie' && (parseInt(card.dataset.lives) || 0) <= 0) continue;
+        
+        const badge = document.createElement('div');
+        badge.className = `podium-badge rank-${i + 1}`;
+        badge.textContent = i + 1;
+
+        // Rank 1 : Pulse rings + sparkles
+        if (i === 0) {
+            for (let r = 0; r < 2; r++) {
+                const ring = document.createElement('div');
+                ring.className = 'podium-pulse-ring';
+                badge.appendChild(ring);
+            }
+            const sparks = [
+                { mx: '18px', my: '-5px', ex: '22px', ey: '-12px', dur: '2.5s', delay: '0s' },
+                { mx: '-16px', my: '-8px', ex: '-20px', ey: '-15px', dur: '3s', delay: '0.8s' },
+                { mx: '5px', my: '18px', ex: '10px', ey: '22px', dur: '2.8s', delay: '1.5s' }
+            ];
+            sparks.forEach(c => {
+                const s = document.createElement('div');
+                s.className = 'podium-spark';
+                s.style.setProperty('--mx', c.mx);
+                s.style.setProperty('--my', c.my);
+                s.style.setProperty('--ex', c.ex);
+                s.style.setProperty('--ey', c.ey);
+                s.style.setProperty('--dur', c.dur);
+                s.style.setProperty('--delay', c.delay);
+                badge.appendChild(s);
+            });
+        }
+
+        card.appendChild(badge);
+    }
 }
 
 function updatePlayerCard(playerResult, correctAnswer) {
@@ -8731,7 +9017,8 @@ function displayWinner(data) {
             data.playersData || [],
             data.topPlayers || [],
             data.gameMode, // Passer le gameMode complet au lieu de le convertir
-            data.lastQuestionPlayers || null
+            data.lastQuestionPlayers || null,
+            isRivalryMode ? (data.winner.team || null) : null // 🆕 Équipe gagnante
         );
     } else {
         console.log('⚠️ displayWinner: pas de winner dans data');
@@ -10319,17 +10606,24 @@ function renderAdminBombanimeAlphabet() {
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
     const fillPct = (myAlphabet.size / 26) * 100;
     
+    // 🔥 Détecter les nouvelles lettres pour animation
+    const prevAlphabet = renderAdminBombanimeAlphabet._prev || new Set();
+    const newLetters = new Set([...myAlphabet].filter(l => !prevAlphabet.has(l)));
+    renderAdminBombanimeAlphabet._prev = new Set(myAlphabet);
+    
     let gridHTML = '';
     // Main grid (A-X, 8 rows of 3)
     for (let i = 0; i < 24; i++) {
         const l = letters[i];
-        gridHTML += `<div class="alphabet-letter ${myAlphabet.has(l) ? 'used' : ''}">${l}</div>`;
+        const isUsed = myAlphabet.has(l);
+        const isNew = newLetters.has(l);
+        gridHTML += `<div class="alphabet-letter ${isUsed ? 'used' : ''}${isNew ? ' just-added' : ''}">${l}</div>`;
     }
     // Last row Y-Z
     const lastRowHTML = `
         <div class="alphabet-last-row">
-            <div class="alphabet-letter ${myAlphabet.has('Y') ? 'used' : ''}">Y</div>
-            <div class="alphabet-letter ${myAlphabet.has('Z') ? 'used' : ''}">Z</div>
+            <div class="alphabet-letter ${myAlphabet.has('Y') ? 'used' : ''}${newLetters.has('Y') ? ' just-added' : ''}">Y</div>
+            <div class="alphabet-letter ${myAlphabet.has('Z') ? 'used' : ''}${newLetters.has('Z') ? ' just-added' : ''}">Z</div>
         </div>
     `;
     

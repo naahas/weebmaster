@@ -155,6 +155,7 @@ createApp({
             bonusInventory: { '5050': 0, 'reveal': 0, 'shield': 0, 'doublex2': 0 }, // 🔥 REFONTE: Inventaire avec compteurs
             showBonusModal: false,      // Afficher/masquer le modal
             activeBonusEffect: 'null',
+            bonusEnabled: true,         // 🎮 Bonus activés (jauge combo, bonus, défis)
 
             // 🆕 Système de défis
             challenges: [],             // Les 3 défis de la partie [{id, name, description, reward, progress, target, completed}]
@@ -265,10 +266,11 @@ createApp({
 
 
             // Liste des partenaires (ordre d'affichage)
-            partnersList: [
-                { id: 'MinoStreaming', name: 'mino', avatar: 'mino.png' },
-                { id: 'pikinemadd', name: 'pikinemadd', avatar: 'pikine.png' },
-                { id: 'Mikyatc', name: 'Mikyatc', avatar: 'mikyatc.png' }
+            partnersList: [ 
+                { id: 'Mikyatc', name: 'Mikyatc', avatar: 'mikyatc.png' },
+                { id: 'MinoStreaming', name: 'Mino', avatar: 'mino.png' },
+                { id: 'Zogaa_', name: 'Zogaa', avatar: 'zogaa.png' },
+                { id: 'pikinemadd', name: 'Pikinemad', avatar: 'pikine.png' },
             ],
 
 
@@ -1345,6 +1347,11 @@ createApp({
                 }
                 
                 this.playerCount = state.playerCount;
+                
+                // 🎮 Resync bonusEnabled
+                if (state.bonusEnabled !== undefined) {
+                    this.bonusEnabled = state.bonusEnabled;
+                }
             } catch (e) {
                 console.warn('⚠️ Resync échoué:', e);
             }
@@ -1379,6 +1386,10 @@ createApp({
                 }
                 if (state.teamScores) {
                     this.teamScores = state.teamScores;
+                }
+                // 🎮 Restaurer bonusEnabled
+                if (state.bonusEnabled !== undefined) {
+                    this.bonusEnabled = state.bonusEnabled;
                 }
 
                 if (state.lives) this.gameLives = state.lives;
@@ -1733,6 +1744,11 @@ createApp({
                     console.log(`✅ Défis restaurés: ${this.challenges.map(c => c.name).join(', ')}`);
                 }
 
+                // 🎮 Restaurer bonusEnabled
+                if (data.bonusEnabled !== undefined) {
+                    this.bonusEnabled = data.bonusEnabled;
+                }
+
                 this.currentQuestionNumber = data.currentQuestionIndex;
                 this.hasJoined = true;
 
@@ -1784,6 +1800,11 @@ createApp({
                     }
                 }
                 if (data && data.teamNames) this.teamNames = data.teamNames;
+                
+                // 🎮 Bonus activés
+                if (data && data.bonusEnabled !== undefined) {
+                    this.bonusEnabled = data.bonusEnabled;
+                }
                 
                 // 🔒 Timestamp pour éviter race condition avec game-deactivated
                 this._lastActivationTime = Date.now();
@@ -1867,6 +1888,11 @@ createApp({
                 
                 this.gameStartedOnServer = true;
                 this.gameMode = data.gameMode || 'lives';
+                
+                // 🎮 Bonus activés
+                if (data.bonusEnabled !== undefined) {
+                    this.bonusEnabled = data.bonusEnabled;
+                }
                 
                 // 🆕 Mode Rivalité
                 if (data.lobbyMode) {
@@ -2161,10 +2187,10 @@ createApp({
 
             // 🆕 Écouter quand un joueur répond
             this.socket.on('player-answered', (data) => {
-                if (data.username !== this.username) {
-                    this.showAnswerNotification(data.username);
-                }
-
+                // 🔥 TEMPORAIRE: Notifs "joueur a répondu" masquées
+                // if (data.username !== this.username) {
+                //     this.showAnswerNotification(data.username);
+                // }
             });
 
 
@@ -3882,6 +3908,10 @@ createApp({
                 // 🔥 FIX: Synchroniser le lobbyMode depuis le serveur
                 if (state.isActive && state.lobbyMode) {
                     this.lobbyMode = state.lobbyMode;
+                }
+                // 🎮 Synchroniser bonusEnabled
+                if (state.bonusEnabled !== undefined) {
+                    this.bonusEnabled = state.bonusEnabled;
                 }
 
                 console.log(`🔄 État rafraîchi: ${this.playerCount} joueurs dans le lobby`);

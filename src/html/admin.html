@@ -514,6 +514,7 @@
                                     <span class="setting-group-label">Bonus rapidité</span>
                                 </div>
                                 <span class="setting-group-value" id="speedBonusValue">Oui</span>
+                                <span class="setting-info-badge" data-tip="+500 pour le joueur le plus rapide a chaque question">i</span>
                             </div>
                             <div class="setting-group-options speed-bonus-options">
                                 <button class="setting-option-btn active" data-value="true">Oui</button>
@@ -540,6 +541,24 @@
                                     <span>5s</span>
                                     <span>15s</span>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- 🎮 Bonus (jauge, bonus, défis) -->
+                        <div class="setting-group bonus-enabled-group" id="bonusEnabledGroup">
+                            <div class="setting-group-header">
+                                <div class="setting-group-left">
+                                    <svg class="setting-group-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                        <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                                    </svg>
+                                    <span class="setting-group-label">Bonus</span>
+                                </div>
+                                <span class="setting-group-value" id="bonusEnabledValue">Oui</span>
+                                <span class="setting-info-badge" data-tip="Permets aux joueurs de pouvoir gagner des bonus. Recommandé !">i</span>
+                            </div>
+                            <div class="setting-group-options bonus-enabled-options two-options">
+                                <button class="setting-option-btn active" data-value="true">Oui</button>
+                                <button class="setting-option-btn" data-value="false">Non</button>
                             </div>
                         </div>
 
@@ -594,6 +613,7 @@
                                     <span class="setting-group-label">Spoil</span>
                                 </div>
                                 <span class="setting-group-value" id="noSpoilValue">Avec</span>
+                                <span class="setting-info-badge" data-tip="Exclure les questions contenant du spoil manga">i</span>
                             </div>
                             <div class="setting-group-options no-spoil-options two-options">
                                 <button class="setting-option-btn active" data-value="Avec">Avec</button>
@@ -1099,11 +1119,12 @@
                         </button>
                     </div>
 
-                    <!-- Boutons navigation équipes -->
+                    <!-- 🔥 TEMPORAIRE: Boutons navigation équipes masqués
                     <div class="team-nav-buttons" id="teamNavButtons">
                         <button class="team-nav-btn team-1" data-team="1" title="Aller à l'équipe A">A</button>
                         <button class="team-nav-btn team-2" data-team="2" title="Aller à l'équipe B">B</button>
                     </div>
+                    -->
 
                     <div class="panel-tabs">
                         <button class="panel-tab active" data-tab="stats">Stats</button>

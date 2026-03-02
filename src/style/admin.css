@@ -1244,7 +1244,7 @@ body {
     justify-content: flex-start;
     gap: 0.2rem;
     overflow-y: auto;
-    padding-right: 0.625rem;
+    padding-right: 1.2rem;
     padding-top: 0;
     max-height: 100%;
 }
@@ -1280,6 +1280,7 @@ body {
     border-radius: 0.625rem;
     overflow: visible;
     transition: all 0.3s ease;
+    position: relative;
 }
 
 .setting-group.timer-group {
@@ -1312,8 +1313,10 @@ body {
 .setting-group-icon {
     width: 0.875rem;
     height: 0.875rem;
+    min-width: 0.875rem;
     opacity: 0.4;
     stroke: currentColor;
+    flex-shrink: 0;
 }
 
 .setting-group-label {
@@ -1321,6 +1324,63 @@ body {
     color: var(--text-dim);
     text-transform: uppercase;
     letter-spacing: 1px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* 🔥 Badge info (i) en haut à droite du paramètre */
+.setting-info-badge {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    width: 15px;
+    height: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.38rem;
+    font-weight: 700;
+    font-style: normal;
+    font-family: Georgia, serif;
+    color: rgba(240, 192, 64, 0.7);
+    background: rgba(30, 28, 22, 1);
+    border: 1px solid rgba(240, 192, 64, 0.35);
+    border-radius: 50%;
+    cursor: help;
+    z-index: 2;
+    transition: all 0.2s ease;
+    line-height: 1;
+    text-indent: 0.5px;
+    padding: 0 0 0.5px 0;
+}
+
+.setting-info-badge:hover {
+    color: #f0c040;
+    background: rgba(240, 192, 64, 0.2);
+    border-color: rgba(240, 192, 64, 0.5);
+}
+
+/* Tooltip flottant pour les badges info */
+.setting-info-floating-tip {
+    position: fixed;
+    max-width: 180px;
+    padding: 6px 10px;
+    font-size: 0.6rem;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(20, 20, 20, 0.95);
+    border: 1px solid rgba(240, 192, 64, 0.2);
+    border-radius: 6px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    white-space: normal;
+    line-height: 1.4;
+    z-index: 9999;
+}
+
+.setting-info-floating-tip.visible {
+    opacity: 1;
 }
 
 /* Tooltip icon for settings */
@@ -1379,7 +1439,7 @@ body {
     font-weight: 600;
     color: var(--gold);
     transition: all 0.3s;
-    flex-shrink: 0;
+    flex-shrink: 1;
     white-space: nowrap;
 }
 
@@ -1678,6 +1738,10 @@ body {
 /* Difficulté - 2 colonnes */
 .setting-group .difficulty-options {
     grid-template-columns: 1fr 1fr;
+}
+
+#difficultyValue {
+    font-size: 0.68rem;
 }
 
 /* Réponses - 2 colonnes */
@@ -3539,6 +3603,8 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.875rem;
+    position: relative;
+    overflow: visible;
 }
 
 .answer-option {
@@ -3558,7 +3624,6 @@ body {
 .answer-option:hover:not(.revealed) {
     background: rgba(255, 255, 255, 0.06);
     border-color: rgba(240, 192, 64, 0.3);
-    transform: translateX(0.3125rem);
     box-shadow: 0 0.25rem 1.25rem rgba(0, 0, 0, 0.2);
 }
 
@@ -3624,6 +3689,90 @@ body {
 
 .answer-option.wrong {
     opacity: 0.4;
+}
+
+/* 🎮 Fake play admin - Sélection (Pop + Glow) */
+.answer-option.admin-selected {
+    border-color: rgba(240, 192, 64, 0.7);
+    background: rgba(240, 192, 64, 0.08);
+    cursor: default;
+    animation: admin-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), admin-glow-in 0.45s ease-out forwards;
+}
+
+.answer-option.admin-selected .answer-text {
+    color: #ffd666;
+    text-shadow: 0 0 8px rgba(240, 192, 64, 0.4);
+}
+
+@keyframes admin-pop {
+    0% { transform: scale(0.97); }
+    30% { transform: scale(1.045); }
+    55% { transform: scale(0.985); }
+    75% { transform: scale(1.01); }
+    100% { transform: scale(1); }
+}
+
+@keyframes admin-glow-in {
+    0% { box-shadow: 0 0 0 rgba(240, 192, 64, 0); border-color: rgba(255, 255, 255, 0.08); }
+    25% { box-shadow: 0 0 25px rgba(240, 192, 64, 0.4), 0 0 50px rgba(240, 192, 64, 0.15), inset 0 0 20px rgba(240, 192, 64, 0.08); border-color: rgba(240, 192, 64, 0.8); }
+    100% { box-shadow: 0 0 12px rgba(240, 192, 64, 0.15), inset 0 0 10px rgba(240, 192, 64, 0.03); border-color: rgba(240, 192, 64, 0.6); }
+}
+
+/* 🎮 Flash radial inside button */
+.admin-fx-flash {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, rgba(240, 192, 64, 0.3), transparent 70%);
+    animation: admin-flash-out 0.2s ease-out forwards;
+}
+@keyframes admin-flash-out { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+/* 🎮 Ember particles (in .answers-grid parent) */
+.admin-ember {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10;
+    animation: admin-ember-move var(--dur) ease-out var(--delay) forwards;
+}
+@keyframes admin-ember-move {
+    0% { opacity: 1; transform: translate(0,0) scale(1); box-shadow: 0 0 4px var(--color), 0 0 8px var(--color); }
+    30% { opacity: 0.8; }
+    100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0.1); box-shadow: 0 0 1px var(--color); }
+}
+
+/* 🎮 Fake play admin - Mauvaise réponse */
+.answer-option.admin-wrong {
+    opacity: 1;
+    border-color: rgba(255, 60, 60, 0.6);
+    background: rgba(255, 60, 60, 0.12);
+    box-shadow: 0 0 1rem rgba(255, 60, 60, 0.2), inset 0 0 0.5rem rgba(255, 60, 60, 0.05);
+}
+
+.answer-option.admin-wrong .answer-text {
+    color: #ff4444;
+    font-weight: 600;
+    text-shadow: none;
+}
+
+.answer-option.admin-wrong .answer-percent {
+    color: #ff4444;
+    opacity: 1;
+}
+
+/* 🎮 Fake play admin - Bonne réponse (force le vert par-dessus le doré) */
+.answer-option.admin-correct {
+    border-color: rgba(0, 255, 136, 0.7);
+    background: rgba(0, 255, 136, 0.1);
+    box-shadow: 0 0 1.25rem rgba(0, 255, 136, 0.25), inset 0 0 0.5rem rgba(0, 255, 136, 0.05);
+    animation: none;
+}
+
+.answer-option.admin-correct .answer-text {
+    color: #00ff88;
+    text-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
 }
 
 .answer-option.revealed .answer-percent {
@@ -8211,6 +8360,11 @@ body {
     margin-right: 0.25rem;
 }
 
+.players-icon {
+    font-size: 1.2rem;
+    margin-right: 0.15rem;
+}
+
 /* Bouton suivante désactivé en mode auto */
 .question-action-btn.next.auto-disabled {
     opacity: 0.4;
@@ -9755,6 +9909,94 @@ body {
     z-index: 5;
     border: 3px solid;
     background: #000;
+}
+
+/* 🏆 Podium badges top 5 — Hexagon Medal */
+.podium-badge {
+    position: absolute;
+    top: -13px;
+    left: -11px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 6;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    animation: podiumBadgeIn 0.3s ease-out;
+}
+
+.podium-badge::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    z-index: -1;
+}
+
+@keyframes podiumBadgeIn {
+    0% { transform: scale(0); opacity: 0; }
+    60% { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.podium-badge.rank-1::before {
+    background: linear-gradient(180deg, #ffd866, #e6a800);
+}
+.podium-badge.rank-1 {
+    color: #0a0a0f;
+    filter: drop-shadow(0 0 8px rgba(240, 192, 64, 0.6));
+}
+
+.podium-badge.rank-2::before { background: linear-gradient(180deg, #e0e0e0, #909090); }
+.podium-badge.rank-2 { color: #1a1a2e; filter: drop-shadow(0 0 5px rgba(192, 192, 192, 0.3)); }
+
+.podium-badge.rank-3::before { background: linear-gradient(180deg, #d4883a, #8b4513); }
+.podium-badge.rank-3 { color: #1a1a2e; filter: drop-shadow(0 0 5px rgba(205, 127, 50, 0.3)); }
+
+.podium-badge.rank-4::before, .podium-badge.rank-5::before {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04));
+}
+.podium-badge.rank-4, .podium-badge.rank-5 { color: rgba(255, 255, 255, 0.4); }
+
+/* 🏆 Rank 1 — Pulse Ring */
+.podium-pulse-ring {
+    position: absolute;
+    inset: -4px;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    border: 2px solid rgba(240, 192, 64, 0.4);
+    animation: podiumHexPulse 2s ease-out infinite;
+    pointer-events: none;
+}
+
+.podium-pulse-ring:nth-child(2) {
+    animation-delay: 1s;
+}
+
+@keyframes podiumHexPulse {
+    0% { transform: scale(1); opacity: 0.6; }
+    100% { transform: scale(1.7); opacity: 0; }
+}
+
+/* 🏆 Rank 1 — Mini sparkles */
+.podium-spark {
+    position: absolute;
+    width: 2.5px;
+    height: 2.5px;
+    border-radius: 50%;
+    background: #ffd866;
+    box-shadow: 0 0 4px #f0c040;
+    animation: podiumSparkLoop var(--dur) ease-in-out infinite;
+    animation-delay: var(--delay);
+    pointer-events: none;
+}
+
+@keyframes podiumSparkLoop {
+    0%, 100% { opacity: 0; transform: translate(0, 0) scale(0); }
+    20% { opacity: 1; transform: translate(var(--mx), var(--my)) scale(1); }
+    80% { opacity: 0.5; transform: translate(var(--ex), var(--ey)) scale(0.5); }
 }
 
 .team-badge-game.team-1 {
@@ -16418,9 +16660,10 @@ body {
 
 .bombanime-admin-container .alphabet-heart-main {
     position: relative;
-    width: 60px;
-    height: 55px;
+    width: 68px;
+    height: 60px;
     flex-shrink: 0;
+    margin-bottom: 0.4rem;
 }
 
 .bombanime-admin-container .alphabet-heart-main .heart-bg {
@@ -16440,28 +16683,42 @@ body {
 .bombanime-admin-container .alphabet-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.6rem 0.4rem;
+    gap: 0.7rem 0.45rem;
     align-content: center;
 }
 
 .bombanime-admin-container .alphabet-letter {
-    width: 38px;
-    height: 34px;
+    width: 44px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.72rem;
+    font-size: 0.82rem;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.18);
-    background: rgba(255, 255, 255, 0.03);
+    /* 🔥 Inversé: lettres à trouver = dorées */
+    color: #f0c040;
+    background: rgba(240, 192, 64, 0.10);
+    text-shadow: 0 0 6px rgba(240, 192, 64, 0.3);
     clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
     transition: all 0.3s ease;
 }
 
 .bombanime-admin-container .alphabet-letter.used {
-    color: #f0c040;
-    background: rgba(240, 192, 64, 0.15);
-    text-shadow: 0 0 10px rgba(240, 192, 64, 0.5);
+    /* 🔥 Inversé: lettres trouvées = grisées */
+    color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.03);
+    text-shadow: none;
+}
+
+/* 🔥 Animation glow sur nouvelle lettre trouvée */
+.bombanime-admin-container .alphabet-letter.just-added {
+    animation: admin-letter-pop 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes admin-letter-pop {
+    0% { transform: scale(1); color: #f0c040; background: rgba(240, 192, 64, 0.15); }
+    40% { transform: scale(1.25); color: #f0c040; background: rgba(240, 192, 64, 0.35); text-shadow: 0 0 12px rgba(240, 192, 64, 0.6); }
+    100% { transform: scale(1); }
 }
 
 .bombanime-admin-container .alphabet-last-row {
@@ -17070,6 +17327,11 @@ body {
    2K RESOLUTION (2560x1440) - Lobby Scaling
    ============================================ */
 @media (min-width: 2400px) {
+    /* Layout - colonnes plus larges en 2K */
+    .lobby-content {
+        grid-template-columns: 14rem 1fr 14rem;
+    }
+
     /* Settings panel */
     .settings-panel-title {
         font-size: 0.7rem;
@@ -17084,6 +17346,7 @@ body {
     .setting-group-icon {
         width: 1.05rem;
         height: 1.05rem;
+        min-width: 1.05rem;
     }
 
     .setting-group-label {
@@ -17093,6 +17356,10 @@ body {
 
     .setting-group-value {
         font-size: 0.9rem;
+    }
+
+    #difficultyValue {
+        font-size: 0.78rem;
     }
 
     .setting-option-btn {
