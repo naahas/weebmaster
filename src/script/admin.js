@@ -6303,7 +6303,7 @@ function animateWinnerParticles() {
 /**
  * Générer la grille de joueurs
  */
-function generateWinnerPlayersGrid(players, winnerName, gameMode = 'lives', livesIcon = 'heart', lastQuestionPlayers = null) {
+function generateWinnerPlayersGrid(players, winnerName, gameMode = 'lives', livesIcon = 'heart', lastQuestionPlayers = null, winnerTeam = null) {
     const grid = document.getElementById('winnerGridInner');
     if (!grid) return;
     grid.innerHTML = '';
@@ -6337,6 +6337,12 @@ function generateWinnerPlayersGrid(players, winnerName, gameMode = 'lives', live
     const medals = ['🥇', '🥈', '🥉'];
     const medalClasses = ['gold', 'silver', 'bronze'];
 
+    // 🏆 MVP : joueur avec le plus de points (toutes équipes confondues)
+    let mvpPlayer = null;
+    if (isRivalryMode && effectiveGameMode === 'points' && sorted.length > 0) {
+        mvpPlayer = sorted.reduce((best, p) => (p.points || 0) > (best.points || 0) ? p : best, sorted[0]);
+    }
+
     sorted.forEach((player, index) => {
         const card = document.createElement('div');
         const playerName = player.username || player.name || 'Joueur';
@@ -6352,18 +6358,51 @@ function generateWinnerPlayersGrid(players, winnerName, gameMode = 'lives', live
             card.classList.add('eliminated');
         }
 
+        // 🏆 Équipe gagnante/perdante en mode rivalité
+        if (isRivalryMode && winnerTeam && playerTeam) {
+            if (playerTeam == winnerTeam) {
+                card.classList.add('winning-team');
+            } else {
+                card.classList.add('losing-team');
+            }
+        }
+
         // 🆕 Badge différent selon le mode
         let badgeHtml = '';
+        const isMVP = isRivalryMode && mvpPlayer && (player.twitchId === mvpPlayer.twitchId || player.username === mvpPlayer.username);
+
         if (isRivalryMode && playerTeam) {
-            // Mode Rivalité : afficher le badge d'équipe
+            // Mode Rivalité : badge d'équipe + MVP côte à côte
             const teamClass = playerTeam === 1 ? 'team-a' : 'team-b';
             const teamLetter = playerTeam === 1 ? 'A' : 'B';
-            badgeHtml = `<span class="winner-player-team-badge ${teamClass}">${teamLetter}</span>`;
+            const mvpBadge = isMVP ? '<span class="winner-mvp-circle"><span class="winner-mvp-ring"></span><span class="winner-mvp-text">MVP</span></span>' : '';
+            badgeHtml = `<div class="winner-badges-row"><span class="winner-player-team-badge ${teamClass}">${teamLetter}</span>${mvpBadge}</div>`;
             card.classList.add('has-team-badge');
+            if (isMVP) card.classList.add('has-mvp');
         } else if (!isRivalryMode && index < 3) {
             // Mode Classique : afficher les médailles
             card.classList.add('has-medal');
             badgeHtml = `<span class="winner-player-medal ${medalClasses[index]}">${medals[index]}</span>`;
+        }
+
+        // MVP flag (used above, kept for compat)
+        let mvpHtml = '';
+
+        // 🌟 Particules pour les cartes de l'équipe gagnante
+        let particlesHtml = '';
+        if (isRivalryMode && winnerTeam && playerTeam == winnerTeam) {
+            particlesHtml = `
+                <div class="winner-card-particles">
+                    <div class="winner-card-particle"></div>
+                    <div class="winner-card-particle"></div>
+                    <div class="winner-card-particle"></div>
+                    <div class="winner-card-particle"></div>
+                    <div class="winner-card-particle"></div>
+                    <div class="winner-card-particle"></div>
+                    <div class="winner-card-particle"></div>
+                    <div class="winner-card-particle"></div>
+                </div>
+            `;
         }
 
         // 🔥 AFFICHAGE SELON LE MODE
@@ -6390,6 +6429,7 @@ function generateWinnerPlayersGrid(players, winnerName, gameMode = 'lives', live
 
         card.innerHTML = `
             ${badgeHtml}
+            ${particlesHtml}
             <div class="winner-player-name">${playerName}</div>
             ${statsHtml}
             ${overlayHtml}
@@ -6498,7 +6538,7 @@ function showWinner(name, livesOrPoints, totalWins, questions, duration, players
     document.getElementById('infoPlayers').textContent = playerCount;
 
     // 🔥 PASSER LE MODE COMPLET à la grille (pour détecter rivalité)
-    generateWinnerPlayersGrid(players, name, gameMode, selectedLivesIcon, lastQuestionPlayers);
+    generateWinnerPlayersGrid(players, name, gameMode, selectedLivesIcon, lastQuestionPlayers, winnerTeam);
 
 
     // Générer le Top 10
