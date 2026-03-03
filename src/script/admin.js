@@ -164,6 +164,15 @@ function initAdminSounds() {
     adminSounds.bombanimeWrong = createPreloadedSound('wrong.mp3');
     adminSounds.bombanimeUsed = createPreloadedSound('lock1.mp3');
     adminSounds.bombanimeExplosion = createPreloadedSound('explode.mp3');
+    adminSounds.bombanimePlayerTurn = createPreloadedSound('playerturn.mp3');
+    
+    // Son tictac en boucle (instance unique)
+    adminSounds.tictac = new Audio('tictac.mp3');
+    adminSounds.tictac.loop = true;
+    adminSounds.tictac.volume = 0.18;
+    adminSounds.tictac.preload = 'auto';
+    adminSounds.tictac.load();
+    
     console.log('🔊 Sons admin initialisés');
     
     // Initialiser le contrôle visuel
@@ -176,6 +185,35 @@ function createPreloadedSound(src, volume = 0.5) {
     sound.preload = 'auto';
     sound.load();
     return sound;
+}
+
+// Tictac bomb - admin
+function startAdminTicking() {
+    if (!adminSounds.tictac || adminSoundMuted || !bombanimeState.active) return;
+    adminSounds.tictac.volume = (adminSoundVolume / 100) * 0.3;
+    adminSounds.tictac.playbackRate = 1.0;
+    adminSounds.tictac.currentTime = 0;
+    adminSounds.tictac.play().catch(function(e) { console.log('Tictac blocked:', e); });
+}
+
+function stopAdminTicking() {
+    if (!adminSounds.tictac) return;
+    adminSounds.tictac.pause();
+    adminSounds.tictac.currentTime = 0;
+}
+
+function updateAdminTictacSpeed(timeRemaining) {
+    if (!adminSounds.tictac || adminSounds.tictac.paused) return;
+    if (timeRemaining <= 2) {
+        adminSounds.tictac.playbackRate = 1.5;
+    } else if (timeRemaining <= 5) {
+        adminSounds.tictac.playbackRate = 1.2;
+    } else {
+        adminSounds.tictac.playbackRate = 1.0;
+    }
+    if (!adminSoundMuted) {
+        adminSounds.tictac.volume = (adminSoundVolume / 100) * 0.3;
+    }
 }
 
 function playAdminSound(sound) {
@@ -201,6 +239,8 @@ function initSoundControl() {
     // Toggle mute
     btn.addEventListener('click', () => {
         adminSoundMuted = !adminSoundMuted;
+        // Muter/demuter le tictac
+        if (adminSoundMuted) { stopAdminTicking(); }
         localStorage.setItem('adminSoundMuted', adminSoundMuted);
         updateSoundControlUI();
     });
@@ -515,6 +555,11 @@ function initSocket() {
         if (bombanimeState.isAdminPlayer && twitchUser) {
             const isMyTurn = data.currentPlayerTwitchId === twitchUser.id;
             
+            // Son 'c'est ton tour' pour admin-joueur
+            if (isMyTurn) {
+                playAdminSound(adminSounds.bombanimePlayerTurn);
+            }
+            
             // 🔥 FIX: Stocker le tour en cours pour retry si l'input n'est pas prêt
             bombanimeState._pendingTurn = isMyTurn;
             
@@ -535,6 +580,7 @@ function initSocket() {
     
     socket.on('bombanime-name-accepted', (data) => {
         console.log('✅ Nom accepté:', data.name, 'par', data.playerUsername);
+        stopAdminTicking();
         playAdminSound(adminSounds.bombanimePass); // 🔊
         addBombanimeLog('success', data);
         onBombanimeNameAccepted(data);
@@ -580,6 +626,7 @@ function initSocket() {
     
     socket.on('bombanime-explosion', (data) => {
         console.log('💥 Explosion sur:', data.playerUsername);
+        stopAdminTicking();
         playAdminSound(adminSounds.bombanimeExplosion); // 🔊
         addBombanimeLog('explosion', data);
         if (data.eliminated) {
@@ -637,6 +684,7 @@ function initSocket() {
     });
     
     socket.on('bombanime-game-ended', (data) => {
+        stopAdminTicking();
         console.log('🏆 BombAnime terminé:', data);
         showSoundControl(false); // 🔊 Cacher contrôle son
         showSuggestionButton(false); // Cacher bouton suggestions
@@ -1556,6 +1604,14 @@ function initSocket() {
 
 
 function closeLobbyUI() {
+
+    // 🔊 Couper le tictac + timer
+    stopAdminTicking();
+    if (bombanimeState.timerInterval) {
+        clearInterval(bombanimeState.timerInterval);
+        bombanimeState.timerInterval = null;
+    }
+    bombanimeState.active = false;
 
     // Reset admin join state
     resetAdminJoinState();
@@ -10104,6 +10160,7 @@ function updateTeamNavVisibility(show) {
 // ============================================
 
 let bombanimeState = {
+    active: false,
     playersOrder: [],
     playersData: [],
     currentPlayerTwitchId: null,
@@ -10174,6 +10231,7 @@ document.addEventListener('keydown', (e) => {
 
 // Afficher le cercle BombAnime
 function showBombanimeCircle(data) {
+    bombanimeState.active = true;
     bombanimeState.playersOrder = data.playersOrder;
     bombanimeState.playersData = data.playersData;
     bombanimeState.timer = data.timer;
@@ -10971,18 +11029,31 @@ function renderBombanimeCircle() {
         fuseAngle = (angle * 180 / Math.PI) + 90;
     }
     
-    // Bombe chibi au centre (sans texte)
-    const dangerClass = bombanimeState.timeRemaining <= 5 ? (bombanimeState.timeRemaining <= 2 ? 'critical' : 'danger') : '';
+    // Bombe redesign au centre
+    const stateClass = bombanimeState.timeRemaining <= 2 ? 'state-critical' : bombanimeState.timeRemaining <= 5 ? 'state-warning' : 'state-normal';
     const bombHTML = `
         <div class="bomb-container">
-            <div class="bomb ${dangerClass}" style="width: ${bombSize}px; height: ${bombSize}px; --bomb-size: ${bombSize}px;">
-                <div class="bomb-fuse-container" id="bombFuseContainer">
-                    <div class="bomb-cap"></div>
-                    <div class="bomb-fuse"></div>
-                    <div class="bomb-spark"></div>
+            <div class="bomb-wrapper ${stateClass}" id="bombWrapper" style="--bomb-size: ${bombSize}px;">
+                <div class="bomb-body-wrap">
+                    <div class="bomb-body"><div class="bomb-cracks"></div></div>
+                    <div class="bomb-pulse"></div>
                 </div>
-                <div class="bomb-body">
-                    <div class="bomb-highlight"></div>
+                <div class="fuse-pivot" id="bombFuseContainer">
+                    <div class="fuse-inner">
+                        <div class="fuse-socle"></div>
+                        <div class="fuse-wave-wrap">
+                            <svg class="fuse-wave-svg" viewBox="0 0 52 12">
+                                <path d="M0,6 Q13,2.5 26,6 Q39,9.5 52,6"/>
+                            </svg>
+                        </div>
+                        <div class="fuse-spark-wrap">
+                            <div class="fuse-spark"></div>
+                            <div class="mini-sparks">
+                                <div class="mini-s"></div><div class="mini-s"></div>
+                                <div class="mini-s"></div><div class="mini-s"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -11002,8 +11073,10 @@ function renderBombanimeCircle() {
         const fuseContainer = document.getElementById('bombFuseContainer');
         if (fuseContainer) {
             console.log('🔄 Rotation mèche vers:', fuseAngle, '° (currentTwitchId:', currentTwitchId, ')');
-            fuseContainer.style.transform = `rotate(${fuseAngle}deg)`;
+            fuseContainer.style.transform = `rotate(${fuseAngle - 90}deg)`;
         }
+        // 💥 Appliquer effets crack/shatter
+        updateAdminBombanimeEffects();
     });
 }
 
@@ -11011,6 +11084,9 @@ function renderBombanimeCircle() {
 function updateBombanimeCircle(data) {
     bombanimeState.currentPlayerTwitchId = data.currentPlayerTwitchId;
     bombanimeState.timeRemaining = data.timer;
+    
+    // Demarrer le tictac
+    startAdminTicking();
     
     console.log('🔄 updateBombanimeCircle - Tour de:', data.currentPlayerUsername);
     
@@ -11050,14 +11126,18 @@ function updateBombanimeCircle(data) {
 
 // Mise à jour légère des classes danger
 function updateBombDangerState() {
-    const bomb = document.querySelector('.bomb');
-    if (!bomb) return;
+    const wrapper = document.getElementById('bombWrapper');
+    if (!wrapper) return;
     
-    bomb.classList.remove('danger', 'critical');
+    updateAdminTictacSpeed(bombanimeState.timeRemaining);
+    
+    wrapper.classList.remove('state-normal', 'state-warning', 'state-critical');
     if (bombanimeState.timeRemaining <= 2) {
-        bomb.classList.add('critical');
+        wrapper.classList.add('state-critical');
     } else if (bombanimeState.timeRemaining <= 5) {
-        bomb.classList.add('danger');
+        wrapper.classList.add('state-warning');
+    } else {
+        wrapper.classList.add('state-normal');
     }
 }
 
@@ -11086,7 +11166,7 @@ function rotateBombToPlayer(twitchId) {
     
     const fuseContainer = document.getElementById('bombFuseContainer');
     if (fuseContainer) {
-        fuseContainer.style.transform = `rotate(${fuseAngle}deg)`;
+        fuseContainer.style.transform = `rotate(${fuseAngle - 90}deg)`;
     }
 }
 
@@ -11096,9 +11176,10 @@ function onBombanimeNameAccepted(data) {
     bombanimeState.lastValidName = data.name;
     
     // 🆕 Reset immédiat de la couleur de la bombe (gris)
-    const bomb = document.querySelector('.bomb');
-    if (bomb) {
-        bomb.classList.remove('danger', 'critical');
+    const wrapper = document.getElementById('bombWrapper');
+    if (wrapper) {
+        wrapper.classList.remove('state-warning', 'state-critical');
+        wrapper.classList.add('state-normal');
     }
     
     // 🆕 Animation de succès sur le joueur qui a répondu
@@ -11156,6 +11237,76 @@ function onBombanimeNameRejected(data) {
     console.log('❌ BombAnime: Nom rejeté -', data.name, '-', data.reason);
 }
 
+// 💥 CRACK - Injection des fissures
+function injectCrackOverlay(hex) {
+    if (hex.querySelector('.crack-overlay')) return;
+    const o = document.createElement('div'); o.className = 'crack-overlay';
+    o.innerHTML = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <polyline class="crack-line" points="17,18 28,28 38,40 50,50 60,62 68,74 76,86" stroke-width="1.6"/>
+        <polyline class="crack-line" points="83,18 70,26 58,34 46,40 30,46 3,50" stroke-width="1.5"/>
+        <polyline class="crack-line" points="97,45 82,48 68,54 56,62 44,74 31,88" stroke-width="1.4"/>
+        <polyline class="crack-line" points="38,40 46,36 58,34" stroke-width="1"/>
+    </svg>`;
+    const v = document.createElement('div'); v.className = 'crack-vignette';
+    const f = document.createElement('div'); f.className = 'crack-flash';
+    hex.appendChild(v); hex.appendChild(o); hex.appendChild(f);
+    [{l:'38%',t:'40%',tx:'-5px',ty:'-12px',d:'0.3s'},{l:'58%',t:'34%',tx:'4px',ty:'-13px',d:'0.8s'},
+     {l:'68%',t:'54%',tx:'5px',ty:'-11px',d:'1.1s'},{l:'30%',t:'46%',tx:'-4px',ty:'-14px',d:'0.5s'}
+    ].forEach(e => { const el = document.createElement('div'); el.className = 'crack-ember';
+        el.style.cssText = `left:${e.l};top:${e.t};--tx:${e.tx};--ty:${e.ty};--d:${e.d}`; hex.appendChild(el); });
+}
+
+// 💀 SHATTER - Injection des fragments
+function injectShatterEffect(hex) {
+    if (hex.querySelector('.shatter-container')) return;
+    const c = document.createElement('div'); c.className = 'shatter-container';
+    for (let i = 0; i < 14; i++) {
+        const s = document.createElement('div'); s.className = 'shatter-shard';
+        const a = (Math.PI*2*i)/14+(Math.random()-0.5)*0.4, d = 10+Math.random()*20;
+        const fd = 40+Math.random()*60, sx = Math.cos(a)*fd, sy = Math.sin(a)*fd;
+        s.style.cssText = `left:${35+Math.cos(a)*d-8}px;top:${35+Math.sin(a)*d-5}px;width:${8+Math.random()*12}px;height:${5+Math.random()*10}px;`+
+            `clip-path:polygon(${Math.random()*30}% ${Math.random()*20}%,${60+Math.random()*40}% ${Math.random()*30}%,${70+Math.random()*30}% ${60+Math.random()*40}%,${Math.random()*40}% ${70+Math.random()*30}%);`+
+            `--sx:${sx}px;--sy:${sy}px;--sr:${(Math.random()-0.5)*180}deg;--sd:${(i*0.02).toFixed(2)}s;--dur:${(0.8+Math.random()*0.6).toFixed(2)}s;`+
+            `background:linear-gradient(${Math.random()*360}deg,rgba(${~~(30+Math.random()*20)},${~~(20+Math.random()*15)},${~~(40+Math.random()*20)},0.9),rgba(${~~(50+Math.random()*30)},${~~(25+Math.random()*15)},${~~(30+Math.random()*20)},0.7));`;
+        c.appendChild(s);
+    }
+    const f = document.createElement('div'); f.className = 'shatter-flash';
+    const r1 = document.createElement('div'); r1.className = 'shatter-ring'; r1.style.cssText = '--rd:0s';
+    const r2 = document.createElement('div'); r2.className = 'shatter-ring'; r2.style.cssText = '--rd:0.15s';
+    hex.appendChild(c); hex.appendChild(f); hex.appendChild(r1); hex.appendChild(r2);
+    [{l:'25%',t:'35%',dx:'-20px',dy:'-30px',dd:'0.3s'},{l:'50%',t:'15%',dx:'8px',dy:'-40px',dd:'0.4s'},
+     {l:'70%',t:'45%',dx:'25px',dy:'-20px',dd:'0.2s'},{l:'35%',t:'65%',dx:'-15px',dy:'20px',dd:'0.5s'},
+     {l:'60%',t:'55%',dx:'-6px',dy:'-35px',dd:'0.45s'}
+    ].forEach(d => { const el = document.createElement('div'); el.className = 'shatter-debris';
+        el.style.cssText = `left:${d.l};top:${d.t};--dx:${d.dx};--dy:${d.dy};--dd:${d.dd}`; hex.appendChild(el); });
+}
+
+// 🔄 Mise à jour effets crack/shatter admin - vérifie le DOM
+function updateAdminBombanimeEffects() {
+    if (!bombanimeState.playersData) return;
+    bombanimeState.playersData.forEach(p => {
+        const slot = document.getElementById(`player-slot-${p.twitchId}`);
+        if (!slot) return;
+        const hex = slot.querySelector('.player-hex');
+        if (!hex) return;
+        if (p.lives === 1) {
+            const isNew = !hex.querySelector('.crack-overlay');
+            injectCrackOverlay(hex);
+            slot.classList.add('cracked');
+            if (isNew) { slot.classList.add('crack-flash-active'); setTimeout(() => slot.classList.remove('crack-flash-active'), 400); }
+        } else if (p.lives > 1) {
+            slot.classList.remove('cracked', 'crack-flash-active');
+            hex.querySelectorAll('.crack-overlay,.crack-vignette,.crack-flash,.crack-ember').forEach(e => e.remove());
+        }
+        if (p.lives === 0) {
+            slot.classList.remove('cracked', 'crack-flash-active');
+            hex.querySelectorAll('.crack-overlay,.crack-vignette,.crack-flash,.crack-ember').forEach(e => e.remove());
+            injectShatterEffect(hex);
+            slot.classList.add('shattering');
+        }
+    });
+}
+
 // Explosion sur un joueur
 function onBombanimeExplosion(data) {
     bombanimeState.playersData = data.playersData;
@@ -11200,14 +11351,17 @@ function onBombanimeExplosion(data) {
         }
         
         // Animation de la bombe (shake)
-        const bomb = document.querySelector('.bomb');
-        if (bomb) {
-            bomb.classList.add('exploding');
-            setTimeout(() => bomb.classList.remove('exploding'), 250);
+        const bombWrapper = document.getElementById('bombWrapper');
+        if (bombWrapper) {
+            bombWrapper.classList.add('exploding');
+            setTimeout(() => bombWrapper.classList.remove('exploding'), 250);
         }
     }, 50); // Délai minimal
     
     console.log('💥 BombAnime: Explosion sur', data.playerUsername, '- Vies restantes:', data.livesRemaining);
+    
+    // 💥 Crack/shatter effects (immédiat après le shake)
+    setTimeout(() => updateAdminBombanimeEffects(), 100);
 }
 
 // Alphabet complet
@@ -11241,6 +11395,9 @@ function onBombanimeAlphabetComplete(data) {
     }
     
     console.log('🎉 BombAnime: Alphabet complet -', data.playerUsername, '+1 vie');
+    
+    // 💥 Retirer crack si regain de vie
+    setTimeout(() => updateAdminBombanimeEffects(), 400);
 }
 
 // 🎯 Mise à jour des vies après bonus vie extra
@@ -11273,6 +11430,9 @@ function onBombanimePlayerLivesUpdated(data) {
     }
     
     console.log('❤️ BombAnime: Vie bonus utilisée -', data.playerUsername, 'a maintenant', data.lives, 'vies');
+    
+    // 💥 Crack/shatter effects
+    updateAdminBombanimeEffects();
 }
 
 // Afficher le gagnant BombAnime
@@ -11382,6 +11542,14 @@ async function closeBombanimeWinner() {
 async function closeLobby() {
     const confirmed = await showConfirmModal();
     if (!confirmed) return;
+    
+    // 🔊 Couper le tictac + timer immédiatement
+    stopAdminTicking();
+    if (bombanimeState.timerInterval) {
+        clearInterval(bombanimeState.timerInterval);
+        bombanimeState.timerInterval = null;
+    }
+    bombanimeState.active = false; // Empêche les events socket de relancer le son
     
     try {
         // Fermer le lobby BombAnime (endpoint spécifique)

@@ -358,16 +358,30 @@
                             
                             <!-- Bombe au centre -->
                             <div class="bomb-container">
-                                <div class="bomb" 
-                                     :class="{ 'danger': bombanime.timeRemaining <= 5, 'critical': bombanime.timeRemaining <= 2 }"
-                                     :style="{ width: getBombSize() + 'px', height: getBombSize() + 'px', '--bomb-size': getBombSize() + 'px' }">
-                                    <div class="bomb-fuse-container" :style="{ transform: 'rotate(' + getBombFuseAngle() + 'deg)' }">
-                                        <div class="bomb-cap"></div>
-                                        <div class="bomb-fuse"></div>
-                                        <div class="bomb-spark"></div>
+                                <div class="bomb-wrapper"
+                                     :class="{ 'state-normal': bombanime.timeRemaining > 5, 'state-warning': bombanime.timeRemaining <= 5 && bombanime.timeRemaining > 2, 'state-critical': bombanime.timeRemaining <= 2 }"
+                                     :style="{ '--bomb-size': getBombSize() + 'px' }"
+                                     id="bombWrapper">
+                                    <div class="bomb-body-wrap">
+                                        <div class="bomb-body"><div class="bomb-cracks"></div></div>
+                                        <div class="bomb-pulse"></div>
                                     </div>
-                                    <div class="bomb-body">
-                                        <div class="bomb-highlight"></div>
+                                    <div class="fuse-pivot" :style="{ transform: 'rotate(' + (getBombFuseAngle() - 90) + 'deg)' }">
+                                        <div class="fuse-inner">
+                                            <div class="fuse-socle"></div>
+                                            <div class="fuse-wave-wrap">
+                                                <svg class="fuse-wave-svg" viewBox="0 0 52 12">
+                                                    <path d="M0,6 Q13,2.5 26,6 Q39,9.5 52,6"/>
+                                                </svg>
+                                            </div>
+                                            <div class="fuse-spark-wrap">
+                                                <div class="fuse-spark"></div>
+                                                <div class="mini-sparks">
+                                                    <div class="mini-s"></div><div class="mini-s"></div>
+                                                    <div class="mini-s"></div><div class="mini-s"></div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

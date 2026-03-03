@@ -11438,7 +11438,7 @@ body {
 }
 
 /* ============================================
-   BOMBE CHIBI
+   BOMBE BOMBANIME - REDESIGN
    ============================================ */
 .bomb-container {
     position: absolute;
@@ -11451,133 +11451,281 @@ body {
     align-items: center;
 }
 
-.bomb {
-    width: 90px;
-    height: 70px;
+.bomb-wrapper {
     position: relative;
+}
+
+.bomb-body-wrap {
+    position: relative;
+    width: var(--bomb-size, 60px);
+    height: var(--bomb-size, 60px);
 }
 
 .bomb-body {
     width: 100%;
     height: 100%;
-    background: linear-gradient(160deg, #4a4a5a 0%, #2a2a35 40%, #15151d 100%);
     border-radius: 50%;
-    border: 4px solid #3a3a45;
     position: relative;
-    box-shadow: 8px 8px 0 rgba(0,0,0,0.5);
-    animation: bomb-pulse 0.35s ease-in-out infinite;
-}
-
-@keyframes bomb-pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.035); }
-}
-
-.bomb-body::before {
-    content: '';
-    position: absolute;
-    top: 6%;
-    left: 10%;
-    width: 45%;
-    height: 40%;
-    background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 40%, transparent 60%);
-    border-radius: 50%;
+    z-index: 2;
+    transition: background 0.5s, box-shadow 0.5s;
 }
 
 .bomb-body::after {
     content: '';
     position: absolute;
-    top: 15%;
-    right: 15%;
-    width: 10px;
-    height: 10px;
-    background: rgba(255,255,255,0.6);
+    top: 14%;
+    left: 22%;
+    width: 28%;
+    height: 16%;
+    background: radial-gradient(ellipse, rgba(255,255,255,0.15), transparent);
     border-radius: 50%;
+    transform: rotate(-15deg);
 }
 
-.bomb.danger .bomb-body {
-    background: linear-gradient(160deg, #7a5a2a 0%, #5a3a15 40%, #2d1a08 100%);
-    border-color: #885500;
-    animation: bomb-pulse-danger 0.28s ease-in-out infinite;
-}
-
-@keyframes bomb-pulse-danger {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.045); }
-}
-
-.bomb.critical .bomb-body {
-    background: linear-gradient(160deg, #8a2a2a 0%, #5a1010 40%, #2d0505 100%);
-    border-color: #881212;
-    animation: bomb-pulse-critical 0.12s ease-in-out infinite;
-}
-
-@keyframes bomb-pulse-critical {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.06); }
-}
-
-/* Mèche */
-.bomb-fuse-container {
+.bomb-cracks {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    inset: 0;
+    border-radius: 50%;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.4s;
 }
 
-.bomb-cap {
+.bomb-pulse {
     position: absolute;
-    bottom: calc(var(--bomb-size, 70px) * 0.4);
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(var(--bomb-size, 70px) * 0.27);
-    height: calc(var(--bomb-size, 70px) * 0.16);
-    background: linear-gradient(180deg, #6a6a7a 0%, #4a4a5a 100%);
-    border-radius: 5px 5px 0 0;
+    inset: -6px;
+    border-radius: 50%;
+    border: 1.5px solid transparent;
+    pointer-events: none;
     z-index: 1;
 }
 
-.bomb-fuse {
+/* Fuse pivot - rotates around bomb center */
+.fuse-pivot {
     position: absolute;
-    bottom: calc(var(--bomb-size, 70px) * 0.54);
+    top: 50%;
     left: 50%;
-    transform: translateX(-50%);
-    width: calc(var(--bomb-size, 70px) * 0.07);
-    height: calc(var(--bomb-size, 70px) * 0.67);
-    background: repeating-linear-gradient(180deg, #c4956a 0px, #c4956a 6px, #8B5A2B 6px, #8B5A2B 12px);
-    border-radius: 4px;
+    transform-origin: 0 0;
+    transform: rotate(-90deg);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 3;
 }
 
-.bomb-spark {
-    position: absolute;
-    bottom: calc(var(--bomb-size, 70px) * 1.2);
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(var(--bomb-size, 70px) * 0.13);
-    height: calc(var(--bomb-size, 70px) * 0.13);
-    background: radial-gradient(circle at 50% 50%, #fff 0%, #fffae0 30%, #ffc800 60%, rgba(255, 150, 0, 0) 100%);
+.fuse-inner {
+    display: flex;
+    align-items: center;
+    margin-left: calc(var(--bomb-size, 60px) * 0.47);
+    transform: translateY(-50%);
+}
+
+.fuse-socle {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background: linear-gradient(to bottom, #888, #555, #888);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    flex-shrink: 0;
+    transition: background 0.4s, border-color 0.4s;
+}
+
+.fuse-wave-wrap {
+    width: 52px;
+    height: 12px;
+}
+
+.fuse-wave-svg {
+    width: 52px;
+    height: 12px;
+    overflow: visible;
+    display: block;
+}
+
+.fuse-wave-svg path {
+    stroke: #aaa;
+    stroke-width: 2.5;
+    fill: none;
+    stroke-linecap: round;
+    transition: stroke 0.4s;
+}
+
+.fuse-spark-wrap {
+    position: relative;
+    flex-shrink: 0;
+    margin-left: -2px;
+}
+
+.fuse-spark {
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
-    animation: spark-pulse 0.3s ease-in-out infinite;
-    box-shadow: 0 0 8px rgba(255, 200, 50, 0.9), 0 0 15px rgba(255, 150, 0, 0.6);
+    transition: width 0.3s, height 0.3s, background 0.3s, box-shadow 0.3s;
 }
 
-@keyframes spark-pulse {
-    0%, 100% { transform: translateX(-50%) scale(1); }
-    50% { transform: translateX(-50%) scale(1.2); }
+.mini-sparks {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    pointer-events: none;
 }
 
-.bomb.danger .bomb-spark {
-    width: 11px;
-    height: 11px;
-    background: radial-gradient(circle at 50% 50%, #fff 0%, #ffee80 25%, #ff9500 55%, rgba(255, 100, 0, 0) 100%);
+.mini-s {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    opacity: 0;
 }
 
-.bomb.critical .bomb-spark {
-    width: 13px;
-    height: 13px;
-    background: radial-gradient(circle at 50% 50%, #fff 0%, #ffaaaa 20%, #ff3300 50%, rgba(255, 0, 0, 0) 100%);
+.mini-s:nth-child(1) { --mx: -8px; --my: -12px; animation-delay: 0s; }
+.mini-s:nth-child(2) { --mx: 6px; --my: -14px; animation-delay: 0.15s; }
+.mini-s:nth-child(3) { --mx: -5px; --my: 10px; animation-delay: 0.3s; }
+.mini-s:nth-child(4) { --mx: 10px; --my: 8px; animation-delay: 0.45s; }
+
+/* ===== NORMAL STATE ===== */
+.state-normal .bomb-body {
+    background: radial-gradient(circle at 35% 30%, #4a4a4a, #222 55%, #111);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5), inset 0 0 15px rgba(255,255,255,0.04);
+}
+
+.state-normal .fuse-wave-svg path { stroke: #aaa; }
+
+.state-normal .fuse-spark {
+    background: radial-gradient(circle, #ffd700, #ff8c00 50%, transparent 70%);
+    box-shadow: 0 0 10px rgba(255,200,0,0.6);
+    animation: bombSparkPulse 1s ease-in-out infinite;
+}
+
+.state-normal .mini-s { display: none; }
+.state-normal .bomb-cracks { opacity: 0; }
+.state-normal .bomb-pulse { border-color: transparent; }
+
+/* ===== WARNING STATE ===== */
+.state-warning .bomb-body {
+    background: radial-gradient(circle at 35% 30%, #5a4020, #2d1a08 55%, #1a0f00);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5), 0 0 20px rgba(255,150,0,0.15);
+    animation: bombShakeWarn 0.35s ease-in-out infinite;
+}
+
+.state-warning .fuse-wave-svg path { stroke: #cc9944; }
+
+.state-warning .fuse-socle {
+    background: linear-gradient(to bottom, #996633, #664422, #996633);
+    border-color: rgba(255,150,0,0.1);
+    animation: bombSocleShakeWarn 0.4s ease-in-out infinite;
+}
+
+.state-warning .fuse-spark {
+    width: 15px;
+    height: 15px;
+    background: radial-gradient(circle, #ffaa00, #ff6600 50%, transparent 70%);
+    box-shadow: 0 0 14px rgba(255,150,0,0.7);
+    animation: bombSparkPulse 0.6s ease-in-out infinite;
+}
+
+.state-warning .mini-s {
+    background: #ffcc00;
+    box-shadow: 0 0 4px rgba(255,200,0,0.6);
+    animation: bombMiniSpark 0.7s ease-out infinite;
+    display: block;
+}
+
+.state-warning .bomb-cracks {
+    opacity: 0.5;
+    background: linear-gradient(45deg, transparent 46%, rgba(255,180,0,0.3) 47%, rgba(255,180,0,0.3) 53%, transparent 54%);
+}
+
+.state-warning .bomb-pulse {
+    border-color: rgba(255,150,0,0.25);
+    animation: bombPulseRing 1.5s ease-in-out infinite;
+}
+
+/* ===== CRITICAL STATE ===== */
+.state-critical .bomb-body {
+    background: radial-gradient(circle at 35% 30%, #5a1515, #2d0808 55%, #1a0000);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5), 0 0 25px rgba(255,50,0,0.25), 0 0 50px rgba(255,0,0,0.1);
+    animation: bombShakeCrit 0.12s ease-in-out infinite, bombBodyPulseCrit 0.8s ease-in-out infinite;
+}
+
+.state-critical .fuse-wave-svg path { stroke: #cc4444; }
+
+.state-critical .fuse-socle {
+    background: linear-gradient(to bottom, #993333, #662222, #993333);
+    border-color: rgba(255,50,0,0.15);
+    animation: bombSocleShakeCrit 0.18s ease-in-out infinite;
+}
+
+.state-critical .fuse-spark {
+    width: 20px;
+    height: 20px;
+    background: radial-gradient(circle, #ff4444, #ff0000 40%, transparent 70%);
+    box-shadow: 0 0 20px rgba(255,50,0,0.8);
+    animation: bombSparkPulse 0.25s ease-in-out infinite;
+}
+
+.state-critical .mini-s {
+    background: #ff5555;
+    width: 4px;
+    height: 4px;
+    box-shadow: 0 0 6px rgba(255,60,0,0.7);
+    animation: bombMiniSpark 0.4s ease-out infinite;
+    display: block;
+}
+
+.state-critical .bomb-cracks {
+    opacity: 1;
+    background:
+        linear-gradient(45deg, transparent 45%, rgba(255,80,20,0.5) 46%, rgba(255,80,20,0.5) 54%, transparent 55%),
+        linear-gradient(-30deg, transparent 42%, rgba(255,60,10,0.4) 43%, rgba(255,60,10,0.4) 48%, transparent 49%),
+        linear-gradient(80deg, transparent 39%, rgba(255,50,0,0.3) 40%, rgba(255,50,0,0.3) 44%, transparent 45%);
+}
+
+.state-critical .bomb-pulse {
+    border-color: rgba(255,50,0,0.35);
+    animation: bombPulseRing 0.8s ease-in-out infinite;
+}
+
+/* ===== BOMB ANIMATIONS ===== */
+@keyframes bombSparkPulse {
+    0%, 100% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.35); }
+}
+
+@keyframes bombMiniSpark {
+    0% { opacity: 1; transform: translate(0) scale(1.2); }
+    100% { opacity: 0; transform: translate(var(--mx), var(--my)) scale(0.4); }
+}
+
+@keyframes bombShakeWarn {
+    0%, 100% { transform: translate(0); }
+    50% { transform: translate(-1.5px, 1px); }
+}
+
+@keyframes bombShakeCrit {
+    0%, 100% { transform: translate(0); }
+    25% { transform: translate(-2.5px, 1.5px); }
+    75% { transform: translate(2.5px, -1.5px); }
+}
+
+@keyframes bombSocleShakeWarn {
+    0%, 100% { transform: translate(0); }
+    50% { transform: translate(-0.4px, 0.3px); }
+}
+
+@keyframes bombSocleShakeCrit {
+    0%, 100% { transform: translate(0); }
+    25% { transform: translate(-0.6px, 0.4px); }
+    75% { transform: translate(0.6px, -0.4px); }
+}
+
+@keyframes bombBodyPulseCrit {
+    0%, 100% { box-shadow: 0 4px 15px rgba(0,0,0,0.5), 0 0 25px rgba(255,50,0,0.25); }
+    50% { box-shadow: 0 4px 15px rgba(0,0,0,0.5), 0 0 40px rgba(255,50,0,0.4), 0 0 70px rgba(255,0,0,0.15); }
+}
+
+@keyframes bombPulseRing {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.2); }
 }
 
 /* Timer */
@@ -11606,6 +11754,29 @@ body {
     font-size: 0.85rem;
     color: rgba(255, 255, 255, 0.5);
     margin-top: 0.3rem;
+}
+
+/* Mobile: mèche plus courte */
+@media (max-width: 768px) {
+    .fuse-wave-wrap {
+        width: 36px;
+    }
+    .fuse-wave-svg {
+        width: 36px;
+    }
+}
+
+@media (max-width: 480px) {
+    .fuse-wave-wrap {
+        width: 28px;
+    }
+    .fuse-wave-svg {
+        width: 28px;
+    }
+    .fuse-socle {
+        width: 8px;
+        height: 8px;
+    }
 }
 
 /* Dernier nom */
@@ -11652,7 +11823,7 @@ body {
 }
 
 /* Bomb explosion animation */
-.bomb.exploding {
+.bomb-wrapper.exploding {
     animation: bomb-explode-shake 0.5s ease;
 }
 
@@ -11668,6 +11839,96 @@ body {
     80% { transform: scale(0.95); }
     90% { transform: scale(1.05); }
 }
+
+/* ============================================
+   💥 ADMIN - CRACK EFFECT (dernière vie)
+   ============================================ */
+.crack-overlay {
+    position: absolute; inset: 0; z-index: 10; pointer-events: none;
+    clip-path: polygon(50% 3%, 97% 25%, 97% 75%, 50% 97%, 3% 75%, 3% 25%);
+    opacity: 0; transition: opacity 0.12s ease-out;
+}
+.player-slot.cracked .crack-overlay { opacity: 1; }
+.crack-overlay svg { width: 100%; height: 100%; position: absolute; inset: 0; filter: none !important; }
+.crack-overlay .crack-line {
+    stroke: rgba(255,255,255,0.25); stroke-linecap: round; stroke-linejoin: round;
+    fill: none; filter: drop-shadow(0 0 2px rgba(255,255,255,0.15));
+}
+.crack-vignette {
+    position: absolute; inset: 0; pointer-events: none; z-index: 5;
+    clip-path: polygon(50% 3%, 97% 25%, 97% 75%, 50% 97%, 3% 75%, 3% 25%);
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(180,180,200,0.1) 100%);
+    opacity: 0; transition: opacity 0.5s ease;
+}
+.player-slot.cracked .crack-vignette { opacity: 1; }
+.player-slot.cracked:not(.active) .player-avatar { animation: a-crack-dim 2s ease-in-out infinite; }
+@keyframes a-crack-dim {
+    0%, 100% { filter: grayscale(30%) brightness(0.7); opacity: 0.65; }
+    50% { filter: grayscale(40%) brightness(0.55); opacity: 0.55; }
+}
+.player-slot.cracked.active .player-avatar { animation: a-crack-active 2s ease-in-out infinite; }
+@keyframes a-crack-active {
+    0%, 100% { filter: brightness(1.05) saturate(0.95); opacity: 1; }
+    50% { filter: brightness(0.85) saturate(0.8); opacity: 0.9; }
+}
+.crack-flash {
+    position: absolute; inset: 0; z-index: 15; pointer-events: none;
+    clip-path: polygon(50% 3%, 97% 25%, 97% 75%, 50% 97%, 3% 75%, 3% 25%);
+    background: rgba(220,220,230,0.25); opacity: 0;
+}
+.player-slot.crack-flash-active .crack-flash { animation: a-crack-flash 0.35s ease-out forwards; }
+@keyframes a-crack-flash { 0% { opacity: 1; } 100% { opacity: 0; } }
+.crack-ember {
+    position: absolute; width: 2px; height: 2px; border-radius: 50%; opacity: 0;
+    background: rgba(200,200,220,0.6); filter: blur(0.5px);
+    box-shadow: 0 0 4px rgba(200,200,220,0.4); pointer-events: none; z-index: 12;
+}
+.player-slot.cracked .crack-ember { animation: a-ember-float 1.5s ease-out infinite; animation-delay: var(--d, 0s); }
+@keyframes a-ember-float {
+    0% { opacity: 0; transform: translate(0,0) scale(1); } 20% { opacity: 0.8; }
+    100% { opacity: 0; transform: translate(var(--tx,5px), var(--ty,-15px)) scale(0); }
+}
+
+/* ============================================
+   💀 ADMIN - SHATTER EFFECT (élimination)
+   ============================================ */
+.shatter-container { position: absolute; inset: -10px; z-index: 30; pointer-events: none; perspective: 600px; overflow: visible; }
+.shatter-shard {
+    position: absolute; opacity: 0; transform-origin: center; will-change: transform, opacity;
+    background: linear-gradient(135deg, #2a2a3a, #1a1a28);
+    border: 0.5px solid rgba(255,60,40,0.15); box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
+}
+.player-slot.shattering .shatter-shard { animation: a-shard-fly var(--dur,1.2s) cubic-bezier(0.22,0.61,0.36,1) forwards; animation-delay: var(--sd,0s); }
+@keyframes a-shard-fly {
+    0% { opacity: 1; transform: translate(0,0) rotate(0) scale(1); }
+    15% { opacity: 1; transform: translate(calc(var(--sx,0)*0.2), calc(var(--sy,0)*0.2)) rotate(calc(var(--sr,0)*0.15)) scale(1.05); }
+    100% { opacity: 0; transform: translate(var(--sx,30px), var(--sy,30px)) rotate(var(--sr,45deg)) scale(0.3); }
+}
+.shatter-flash {
+    position: absolute; inset: -20px; border-radius: 50%; opacity: 0; z-index: 35; pointer-events: none;
+    background: radial-gradient(circle, rgba(255,120,60,0.6) 0%, transparent 70%);
+}
+.player-slot.shattering .shatter-flash { animation: a-shatter-flash 0.5s ease-out forwards; }
+@keyframes a-shatter-flash { 0% { opacity: 1; transform: scale(0.5); } 100% { opacity: 0; transform: scale(2.2); } }
+.shatter-ring {
+    position: absolute; inset: -4px; border: 2px solid rgba(255,80,40,0.5);
+    border-radius: 50%; opacity: 0; z-index: 32; pointer-events: none;
+}
+.player-slot.shattering .shatter-ring { animation: a-shatter-ring 0.7s ease-out forwards; animation-delay: var(--rd,0s); }
+@keyframes a-shatter-ring { 0% { opacity: 0.8; transform: scale(0.4); } 100% { opacity: 0; transform: scale(1.6); } }
+.shatter-debris {
+    position: absolute; width: 3px; height: 3px; border-radius: 50%; opacity: 0;
+    background: rgba(255,100,50,0.8); pointer-events: none;
+    box-shadow: 0 0 4px rgba(255,80,40,0.5); z-index: 33;
+}
+.player-slot.shattering .shatter-debris { animation: a-debris-rise 2s ease-out forwards; animation-delay: var(--dd,0.3s); }
+@keyframes a-debris-rise {
+    0% { opacity: 0; transform: translate(0,0) scale(1); } 15% { opacity: 0.8; }
+    100% { opacity: 0; transform: translate(var(--dx,10px), var(--dy,-40px)) scale(0); }
+}
+.player-slot.shattering { z-index: 50; overflow: visible; }
+.player-slot.shattering .player-hex-container { overflow: visible; }
+.player-slot.shattering .player-hex { overflow: visible; }
 
 /* ============================================
    ANIMATION SUCCÈS - Bonne réponse
@@ -12091,210 +12352,6 @@ body {
 .player-typing.last-answer {
     color: rgba(255, 255, 255, 0.25);
     text-shadow: none;
-}
-
-/* Bomb container */
-.bomb-container {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 5;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.bomb {
-    width: 90px;
-    height: 70px;
-    position: relative;
-}
-
-.bomb-body {
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(160deg, #4a4a5a 0%, #2a2a35 40%, #15151d 100%);
-    border-radius: 50%;
-    border: 4px solid #3a3a45;
-    position: relative;
-    box-shadow: 8px 8px 0 rgba(0,0,0,0.5);
-    transition: all 0.3s ease;
-    animation: bomb-pulse 0.35s ease-in-out infinite;
-}
-
-@keyframes bomb-pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.035); }
-}
-
-.bomb-body::before {
-    content: '';
-    position: absolute;
-    top: 6%;
-    left: 10%;
-    width: 45%;
-    height: 40%;
-    background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 40%, transparent 60%);
-    border-radius: 50%;
-}
-
-.bomb-body::after {
-    content: '';
-    position: absolute;
-    top: 15%;
-    right: 15%;
-    width: 10px;
-    height: 10px;
-    background: rgba(255,255,255,0.6);
-    border-radius: 50%;
-}
-
-.bomb-highlight {
-    position: absolute;
-    top: 25%;
-    right: 22%;
-    width: 5px;
-    height: 5px;
-    background: rgba(255,255,255,0.4);
-    border-radius: 50%;
-}
-
-/* Bomb danger states */
-.bomb.danger .bomb-body {
-    background: linear-gradient(160deg, #7a5a2a 0%, #5a3a15 40%, #2d1a08 100%);
-    border-color: #885500;
-    box-shadow: 8px 8px 0 rgba(0,0,0,0.5), 0 0 15px rgba(255, 150, 0, 0.15);
-    animation: bomb-pulse-danger 0.28s ease-in-out infinite;
-}
-
-@keyframes bomb-pulse-danger {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.045); }
-}
-
-.bomb.critical .bomb-body {
-    background: linear-gradient(160deg, #8a2a2a 0%, #5a1010 40%, #2d0505 100%);
-    border-color: #881212;
-    box-shadow: 8px 8px 0 rgba(0,0,0,0.5), 0 0 18px rgba(255, 50, 50, 0.2);
-    animation: bomb-pulse-critical 0.12s ease-in-out infinite;
-}
-
-@keyframes bomb-pulse-critical {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.06); }
-}
-
-/* Bomb fuse */
-.bomb-fuse-container {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.bomb-cap {
-    position: absolute;
-    bottom: calc(var(--bomb-size, 70px) * 0.4);
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(var(--bomb-size, 70px) * 0.27);
-    height: calc(var(--bomb-size, 70px) * 0.16);
-    background: linear-gradient(180deg, #6a6a7a 0%, #4a4a5a 100%);
-    border-radius: 4px 4px 0 0;
-    box-shadow: 2px 2px 0 rgba(0,0,0,0.4);
-    z-index: 1;
-}
-
-.bomb-fuse {
-    position: absolute;
-    bottom: calc(var(--bomb-size, 70px) * 0.54);
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(var(--bomb-size, 70px) * 0.07);
-    height: calc(var(--bomb-size, 70px) * 0.67);
-    background: repeating-linear-gradient(
-        180deg,
-        #c4956a 0px,
-        #c4956a 5px,
-        #8B5A2B 5px,
-        #8B5A2B 10px
-    );
-    border-radius: 3px;
-    box-shadow: 2px 2px 0 rgba(0,0,0,0.4);
-    transform-origin: bottom center;
-}
-
-.bomb-spark {
-    position: absolute;
-    bottom: calc(var(--bomb-size, 70px) * 1.2);
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(var(--bomb-size, 70px) * 0.13);
-    height: calc(var(--bomb-size, 70px) * 0.13);
-    background: radial-gradient(circle at 50% 50%, 
-        #fff 0%, 
-        #fffae0 30%,
-        #ffc800 60%, 
-        rgba(255, 150, 0, 0) 100%
-    );
-    border-radius: 50%;
-    animation: spark-pulse 0.3s ease-in-out infinite;
-    box-shadow: 0 0 6px rgba(255, 200, 50, 0.9), 0 0 12px rgba(255, 150, 0, 0.6);
-}
-
-@keyframes spark-pulse {
-    0%, 100% { transform: translateX(-50%) scale(1); opacity: 1; }
-    50% { transform: translateX(-50%) scale(1.2); opacity: 0.85; }
-}
-
-.bomb.danger .bomb-spark {
-    width: 11px;
-    height: 11px;
-    box-shadow: 0 0 12px rgba(255, 180, 50, 1), 0 0 25px rgba(255, 130, 0, 0.7);
-}
-
-.bomb.critical .bomb-spark {
-    width: 13px;
-    height: 13px;
-    background: radial-gradient(circle at 50% 50%, 
-        #fff 0%, 
-        #ffcccc 30%,
-        #ff4444 60%, 
-        rgba(255, 0, 0, 0) 100%
-    );
-    box-shadow: 0 0 15px rgba(255, 100, 100, 1), 0 0 30px rgba(255, 50, 50, 0.8);
-    animation: spark-pulse-critical 0.15s ease-in-out infinite;
-}
-
-@keyframes spark-pulse-critical {
-    0%, 100% { transform: translateX(-50%) scale(1); opacity: 1; }
-    50% { transform: translateX(-50%) scale(1.4); opacity: 0.9; }
-}
-
-/* Bomb serie label */
-.bomb-serie {
-    margin-top: 10px;
-    font-size: 0.9rem;
-    color: rgba(240, 192, 64, 0.7);
-    font-weight: 500;
-}
-
-/* Last name display */
-.last-name-display {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.5);
-}
-
-.last-name-display span {
-    color: #4ade80;
-    font-weight: 500;
 }
 
 /* Bouton Fermer Lobby BombAnime - Subtil */

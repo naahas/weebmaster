@@ -112,7 +112,7 @@ const CHARACTER_VARIANTS = {
         ["AKAINU", "SAKAZUKI"],
         ["CORAZON", "DONQUIXOTE ROSINANTE", "ROSINANTE"],
         ["GOLD ROGER", "GOL D ROGER", "GOL D. ROGER"],
-        ["JAGUAR D SAUL", "JAGUAR D. SAUL"],
+        ["JAGUAR D SAUL", "JAGUAR D. SAUL" , "SAURO" , "JAGUAR D SAURO"],
         ["MORGE", "MOHJI"],
         ["NYON", "GLORIOSA"],
         ["SHAKKY", "SHAKUYAKU"],

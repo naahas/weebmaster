@@ -631,6 +631,14 @@ createApp({
         'collect.actionTriggered'() { this.updateActionsBar(); }
     },
 
+    // 💥 Re-injecter les effets crack/shatter après chaque re-render Vue
+    updated() {
+        if (this.bombanime.active && this.bombanime.playersData.some(p => p.lives <= 1)) {
+            clearTimeout(this._crackTimer);
+            this._crackTimer = setTimeout(() => this.updateBombanimeEffects(), 15);
+        }
+    },
+
     methods: {
 
         // ============================================
@@ -1832,6 +1840,13 @@ createApp({
             });
 
             this.socket.on('game-deactivated', () => {
+                // 🔊 Toujours couper le tictac, même si le reste est ignoré
+                this.stopBombTicking();
+                if (this.bombanime.timerInterval) {
+                    clearInterval(this.bombanime.timerInterval);
+                    this.bombanime.timerInterval = null;
+                }
+                
                 // 🔒 Protection race condition: ignorer si game-activated ou resync récent
                 if (this._lastActivationTime && (Date.now() - this._lastActivationTime < 2000)) {
                     console.log('⚠️ game-deactivated ignoré (game-activated récent, race condition)');
@@ -1875,6 +1890,11 @@ createApp({
                 
                 // 🎴 Reset Collect
                 this.collect.active = false;
+
+                // 💣 Reset BombAnime
+                this.cleanupBombanimeEffects();
+                this.bombanime.active = false;
+                sessionStorage.removeItem('bombanimeInProgress');
 
                 this.showNotification('Le jeu a été désactivé', 'info');
             });
@@ -2445,12 +2465,20 @@ createApp({
                 // Forcer le re-render pour mettre à jour l'angle de la mèche
                 this.$forceUpdate();
                 
+                // 💥 Re-injecter effets (forceUpdate détruit le DOM injecté)
+                this.updateBombanimeEffects();
+                
                 // Démarrer le timer visuel
                 this.startBombanimeTimer();
                 
                 // 🆕 Attendre que l'intro soit terminée ET la bombe ait tourné avant d'activer isMyTurn
                 const activateTurn = () => {
                     this.bombanime.isMyTurn = data.currentPlayerTwitchId === this.twitchId;
+                    
+                    // 🔊 Son "c'est ton tour" uniquement pour le joueur POV
+                    if (this.bombanime.isMyTurn) {
+                        this.playSound(this.sounds.bombanimePlayerTurn);
+                    }
                     
                     // Focus sur l'input si c'est mon tour
                     if (this.bombanime.isMyTurn) {
@@ -2481,7 +2509,8 @@ createApp({
             this.socket.on('bombanime-name-accepted', (data) => {
                 console.log('✅ Nom accepté:', data.name);
                 
-                // 🔊 Son de passage de tour
+                // 🔊 Stopper le tictac + son de passage de tour
+                this.stopBombTicking();
                 this.playSound(this.sounds.bombanimePass);
                 
                 // DEBUG: Afficher le temps restant
@@ -2507,6 +2536,9 @@ createApp({
                 this.bombanime.lastValidName = data.name;
                 this.bombanime.usedNamesCount++;
                 this.bombanime.inputValue = '';
+                
+                // 💥 Re-injecter effets (Vue re-render détruit le DOM injecté)
+                this.updateBombanimeEffects();
                 
                 // Tourner la bombe IMMÉDIATEMENT vers le prochain joueur
                 if (data.nextPlayerTwitchId) {
@@ -2644,6 +2676,7 @@ createApp({
                 console.log('💥 Explosion sur:', data.playerUsername);
                 
                 // 🔊 Son d'explosion
+                this.stopBombTicking();
                 this.playSound(this.sounds.bombanimeExplosion);
                 
                 // 🆕 Garder la tentative de réponse du joueur qui explose
@@ -2713,6 +2746,9 @@ createApp({
                     }
                     
                     this.$forceUpdate();
+                    
+                    // 💥 Crack/shatter (après forceUpdate)
+                    this.updateBombanimeEffects();
                 }, 50); // Synchronisé avec le shake
             });
             
@@ -2746,6 +2782,7 @@ createApp({
                     setTimeout(() => {
                         player.lives = data.newLives;
                         this.$forceUpdate();
+                        this.updateBombanimeEffects();
                     }, 400);
                 }
                 
@@ -2770,6 +2807,7 @@ createApp({
             });
             
             this.socket.on('bombanime-game-ended', (data) => {
+                this.stopBombTicking();
                 console.log('🏆 BombAnime terminé:', data);
                 this.bombanime.active = false;
                 this.gameEnded = true;
@@ -2847,6 +2885,9 @@ createApp({
                     // Forcer le re-render
                     this.$forceUpdate();
                     
+                    // 💥 Restaurer effets visuels
+                    this.updateBombanimeEffects();
+                    
                     // Auto-focus sur l'input si c'est mon tour (après refresh)
                     if (this.bombanime.isMyTurn) {
                         this.$nextTick(() => {
@@ -2923,6 +2964,9 @@ createApp({
                 if (data.playerTwitchId === this.twitchId) {
                     this.playerLives = data.lives;
                 }
+                
+                // 💥 Crack/shatter effects
+                this.updateBombanimeEffects();
                 
                 // 🎯 Déclencher l'animation via Vue (réactive)
                 this.bombanime.lifeGainedPlayerTwitchId = data.playerTwitchId;
@@ -3926,8 +3970,99 @@ createApp({
             return `${mins}:${secs.toString().padStart(2, '0')}`;
         },
         
+        // 💥 CRACK - Injection des fissures bord-à-bord
+        injectCrackOverlay(hex) {
+            if (hex.querySelector('.crack-overlay')) return;
+            const o = document.createElement('div'); o.className = 'crack-overlay';
+            o.innerHTML = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <polyline class="crack-line" points="17,18 28,28 38,40 50,50 60,62 68,74 76,86" stroke-width="1.6"/>
+                <polyline class="crack-line" points="83,18 70,26 58,34 46,40 30,46 3,50" stroke-width="1.5"/>
+                <polyline class="crack-line" points="97,45 82,48 68,54 56,62 44,74 31,88" stroke-width="1.4"/>
+                <polyline class="crack-line" points="38,40 46,36 58,34" stroke-width="1"/>
+            </svg>`;
+            const v = document.createElement('div'); v.className = 'crack-vignette';
+            const f = document.createElement('div'); f.className = 'crack-flash';
+            hex.appendChild(v); hex.appendChild(o); hex.appendChild(f);
+            [{l:'38%',t:'40%',tx:'-5px',ty:'-12px',d:'0.3s'},{l:'58%',t:'34%',tx:'4px',ty:'-13px',d:'0.8s'},
+             {l:'68%',t:'54%',tx:'5px',ty:'-11px',d:'1.1s'},{l:'30%',t:'46%',tx:'-4px',ty:'-14px',d:'0.5s'}
+            ].forEach(e => { const el = document.createElement('div'); el.className = 'crack-ember';
+                el.style.cssText = `left:${e.l};top:${e.t};--tx:${e.tx};--ty:${e.ty};--d:${e.d}`; hex.appendChild(el); });
+        },
+        // 💀 SHATTER - Injection des fragments
+        injectShatterEffect(hex) {
+            if (hex.querySelector('.shatter-container')) return;
+            const c = document.createElement('div'); c.className = 'shatter-container';
+            for (let i = 0; i < 14; i++) {
+                const s = document.createElement('div'); s.className = 'shatter-shard';
+                const a = (Math.PI*2*i)/14+(Math.random()-0.5)*0.4, d = 10+Math.random()*20;
+                const fd = 40+Math.random()*60, sx = Math.cos(a)*fd, sy = Math.sin(a)*fd;
+                s.style.cssText = `left:${35+Math.cos(a)*d-8}px;top:${35+Math.sin(a)*d-5}px;width:${8+Math.random()*12}px;height:${5+Math.random()*10}px;`+
+                    `clip-path:polygon(${Math.random()*30}% ${Math.random()*20}%,${60+Math.random()*40}% ${Math.random()*30}%,${70+Math.random()*30}% ${60+Math.random()*40}%,${Math.random()*40}% ${70+Math.random()*30}%);`+
+                    `--sx:${sx}px;--sy:${sy}px;--sr:${(Math.random()-0.5)*180}deg;--sd:${(i*0.02).toFixed(2)}s;--dur:${(0.8+Math.random()*0.6).toFixed(2)}s;`+
+                    `background:linear-gradient(${Math.random()*360}deg,rgba(${~~(30+Math.random()*20)},${~~(20+Math.random()*15)},${~~(40+Math.random()*20)},0.9),rgba(${~~(50+Math.random()*30)},${~~(25+Math.random()*15)},${~~(30+Math.random()*20)},0.7));`;
+                c.appendChild(s);
+            }
+            const f = document.createElement('div'); f.className = 'shatter-flash';
+            const r1 = document.createElement('div'); r1.className = 'shatter-ring'; r1.style.cssText = '--rd:0s';
+            const r2 = document.createElement('div'); r2.className = 'shatter-ring'; r2.style.cssText = '--rd:0.15s';
+            hex.appendChild(c); hex.appendChild(f); hex.appendChild(r1); hex.appendChild(r2);
+            [{l:'25%',t:'35%',dx:'-20px',dy:'-30px',dd:'0.3s'},{l:'50%',t:'15%',dx:'8px',dy:'-40px',dd:'0.4s'},
+             {l:'70%',t:'45%',dx:'25px',dy:'-20px',dd:'0.2s'},{l:'35%',t:'65%',dx:'-15px',dy:'20px',dd:'0.5s'},
+             {l:'60%',t:'55%',dx:'-6px',dy:'-35px',dd:'0.45s'}
+            ].forEach(d => { const el = document.createElement('div'); el.className = 'shatter-debris';
+                el.style.cssText = `left:${d.l};top:${d.t};--dx:${d.dx};--dy:${d.dy};--dd:${d.dd}`; hex.appendChild(el); });
+        },
+        // 🔄 Mise à jour effets crack/shatter - vérifie le DOM, pas les classes
+        updateBombanimeEffects() {
+            if (!this.bombanime.active) return;
+            this.$nextTick(() => {
+                this.bombanime.playersData.forEach(p => {
+                    const slot = document.querySelector(`.bombanime-player-slot[data-twitch-id="${p.twitchId}"]`);
+                    if (!slot) return;
+                    const hex = slot.querySelector('.player-hex');
+                    if (!hex) return;
+                    
+                    if (p.lives === 1) {
+                        // Toujours vérifier si le DOM existe (Vue peut le détruire au re-render)
+                        const isNew = !hex.querySelector('.crack-overlay');
+                        this.injectCrackOverlay(hex); // No-op si déjà présent
+                        slot.classList.add('cracked');
+                        if (isNew) {
+                            slot.classList.add('crack-flash-active');
+                            setTimeout(() => slot.classList.remove('crack-flash-active'), 400);
+                        }
+                    } else if (p.lives > 1) {
+                        slot.classList.remove('cracked', 'crack-flash-active');
+                        hex.querySelectorAll('.crack-overlay,.crack-vignette,.crack-flash,.crack-ember').forEach(e => e.remove());
+                    }
+                    
+                    if (p.lives === 0) {
+                        slot.classList.remove('cracked', 'crack-flash-active');
+                        hex.querySelectorAll('.crack-overlay,.crack-vignette,.crack-flash,.crack-ember').forEach(e => e.remove());
+                        const isNewShatter = !hex.querySelector('.shatter-container');
+                        this.injectShatterEffect(hex); // No-op si déjà présent
+                        slot.classList.add('shattering');
+                        if (isNewShatter) {
+                            slot.dataset.shattered = 'true';
+                        }
+                    }
+                });
+            });
+        },
+        // 🧹 Nettoyage effets
+        cleanupBombanimeEffects() {
+            document.querySelectorAll('.bombanime-player-slot').forEach(slot => {
+                slot.classList.remove('cracked', 'shattering', 'crack-flash-active');
+                delete slot.dataset.shattered;
+                const hex = slot.querySelector('.player-hex');
+                if (hex) hex.querySelectorAll('.crack-overlay,.crack-vignette,.crack-flash,.crack-ember,.shatter-container,.shatter-flash,.shatter-ring,.shatter-debris').forEach(e => e.remove());
+            });
+        },
+        
         // Retour au menu principal après fin de partie BombAnime
         returnToLobby() {
+            this.cleanupBombanimeEffects();
+            this._lastValidFuseAngle = 0;
             // Reset l'état BombAnime
             this.bombanime.active = false;
             this.bombanime.playersData = [];
@@ -4593,7 +4728,15 @@ createApp({
                 bombanimeWrong: this.createPreloadedSound('wrong.mp3'),
                 bombanimeUsed: this.createPreloadedSound('lock1.mp3'),
                 bombanimeExplosion: this.createPreloadedSound('explode.mp3'),
+                bombanimePlayerTurn: this.createPreloadedSound('playerturn.mp3'),
             };
+            
+            // 💣 Son tictac en boucle (instance unique, pas cloné)
+            this.tictacSound = new Audio('tictac.mp3');
+            this.tictacSound.loop = true;
+            this.tictacSound.volume = 0.3;
+            this.tictacSound.preload = 'auto';
+            this.tictacSound.load();
         },
         
         // Créer un son préchargé pour réduire la latence
@@ -4619,6 +4762,14 @@ createApp({
         toggleSound() {
             this.soundMuted = !this.soundMuted;
             localStorage.setItem('soundMuted', this.soundMuted);
+            // 🔊 Muter/démuter le tictac en cours
+            if (this.tictacSound) {
+                if (this.soundMuted) {
+                    this.tictacSound.pause();
+                } else if (this.bombanime.active && this.bombanime.timeRemaining > 0) {
+                    this.startBombTicking();
+                }
+            }
         },
         
         setSoundVolume(value) {
@@ -4654,6 +4805,9 @@ createApp({
                 clearInterval(this.bombanime.debugMsInterval);
             }
             
+            // 🔊 Démarrer le tictac
+            this.startBombTicking();
+            
             // 🆕 Timer en millisecondes PRÉCIS avec Date.now()
             const startTime = Date.now();
             const totalMs = this.bombanime.timeRemaining * 1000;
@@ -4666,10 +4820,15 @@ createApp({
             
             this.bombanime.timerInterval = setInterval(() => {
                 this.bombanime.timeRemaining--;
+                
+                // 🔊 Mettre à jour la vitesse du tictac
+                this.updateTictacSpeed();
+                
                 if (this.bombanime.timeRemaining <= 0) {
                     clearInterval(this.bombanime.timerInterval);
                     clearInterval(this.bombanime.debugMsInterval);
                     this.bombanime.debugMs = 0;
+                    this.stopBombTicking();
                     
                     // 🆕 Désactiver immédiatement l'input quand le timer atteint 0
                     if (this.bombanime.isMyTurn) {
@@ -4681,6 +4840,44 @@ createApp({
                     }
                 }
             }, 1000);
+        },
+        
+        // 🔊 Démarrer le son tictac de la bombe
+        startBombTicking() {
+            if (!this.tictacSound || this.soundMuted || !this.bombanime.active) return;
+            
+            const maxVol = 0.18;
+            this.tictacSound.volume = (this.soundVolume / 100) * maxVol;
+            this.tictacSound.playbackRate = 1.0;
+            this.tictacSound.currentTime = 0;
+            this.tictacSound.play().catch(e => console.log('Tictac blocked:', e));
+        },
+        
+        // 🔊 Arrêter le tictac
+        stopBombTicking() {
+            if (!this.tictacSound) return;
+            this.tictacSound.pause();
+            this.tictacSound.currentTime = 0;
+        },
+        
+        // 🔊 Mettre à jour la vitesse du tictac selon l'état
+        updateTictacSpeed() {
+            if (!this.tictacSound || this.tictacSound.paused) return;
+            
+            const t = this.bombanime.timeRemaining;
+            if (t <= 2) {
+                this.tictacSound.playbackRate = 1.5;
+            } else if (t <= 5) {
+                this.tictacSound.playbackRate = 1.2;
+            } else {
+                this.tictacSound.playbackRate = 1.0;
+            }
+            
+            // Mettre à jour le volume (respecter le slider)
+            if (!this.soundMuted) {
+                const maxVol = 0.18;
+                this.tictacSound.volume = (this.soundVolume / 100) * maxVol;
+            }
         },
         
         // Émettre ce que le joueur tape en temps réel
@@ -4793,9 +4990,9 @@ createApp({
                 const perPlayer = 18;
                 return baseSize + (playerCount * perPlayer);
             }
-            // Desktop (actuel)
-            const baseSize = 540;
-            const perPlayer = 25;
+            // Desktop (aligné avec admin)
+            const baseSize = 500;
+            const perPlayer = 22;
             const size = baseSize + (playerCount * perPlayer);
             
             // 2K+ : agrandir proportionnellement
@@ -4810,13 +5007,13 @@ createApp({
             const total = this.bombanime.playersData.length;
             const screenWidth = window.innerWidth;
             
-            // Mobile - plus petit
+            // Mobile - plus gros qu'avant
             if (screenWidth <= 480) {
-                return Math.min(42, Math.max(32, 28 + (total * 1)));
+                return Math.min(52, Math.max(40, 34 + (total * 1.2)));
             }
             // Tablette
             if (screenWidth <= 768) {
-                return Math.min(55, Math.max(42, 36 + (total * 1.3)));
+                return Math.min(58, Math.max(46, 38 + (total * 1.3)));
             }
             // Desktop
             const size = Math.min(70, Math.max(58, 48 + (total * 1.7)));
@@ -4834,9 +5031,11 @@ createApp({
             const centerX = circleSize / 2;
             const centerY = circleSize / 2;
             
-            // Radius = rayon du cercle moins la moitié de l'hexagone pour que les joueurs soient à l'intérieur
-            // On utilise un pourcentage fixe du cercle pour garantir un vrai cercle
-            const radius = (circleSize / 2) - (hexSize / 2) - 10;
+            // Radius aligné avec admin.js
+            const bombSize = this.getBombSize();
+            const minDistanceFromBomb = 60 + (13 - total) * 5;
+            const baseRadius = (circleSize / 2) - hexSize - 20;
+            const radius = Math.max(baseRadius, (bombSize / 2) + hexSize + minDistanceFromBomb);
             
             // Vrai cercle complet avec décalage pour éviter joueur pile en bas
             // Offset d'un demi-segment pour décaler tous les joueurs
@@ -4920,7 +5119,8 @@ createApp({
                 p => p.twitchId === this.bombanime.currentPlayerTwitchId
             );
             if (currentIndex === -1) {
-                return 0;
+                // 🔥 FIX: Retourner le dernier angle valide au lieu de 0
+                return this._lastValidFuseAngle || 0;
             }
             
             const total = this.bombanime.playersData.length;
@@ -4930,7 +5130,9 @@ createApp({
             const angle = ((currentIndex / total) * 2 * Math.PI) - (Math.PI / 2) + offsetAngle;
             
             // Convertir en degrés pour CSS (0° = haut en CSS)
-            return (angle * 180 / Math.PI) + 90;
+            const result = (angle * 180 / Math.PI) + 90;
+            this._lastValidFuseAngle = result;
+            return result;
         },
         
         // Calculer la position d'un joueur dans le cercle (en degrés)
