@@ -13373,6 +13373,164 @@ body.modal-open {
 }
 
 /* ============================================
+   🎌 BOMBANIME - SUGGESTION JOUEUR
+   ============================================ */
+
+/* Desktop: bouton bas gauche */
+.player-suggestion-btn {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(220, 60, 50, 0.1);
+    border: 1px solid rgba(220, 60, 50, 0.25);
+    cursor: pointer;
+    z-index: 100;
+    transition: all 0.2s ease;
+}
+.player-suggestion-btn:hover {
+    background: rgba(220, 60, 50, 0.2);
+    border-color: rgba(220, 60, 50, 0.5);
+}
+.player-suggestion-btn svg {
+    width: 18px;
+    height: 18px;
+    stroke: rgba(220, 60, 50, 0.7);
+}
+.player-suggestion-btn:hover svg {
+    stroke: #e53935;
+}
+
+/* Mobile: dans la toolbar */
+.mobile-toolbar-btn.suggestion {
+    background: linear-gradient(135deg, rgba(220, 60, 50, 0.15), rgba(200, 50, 40, 0.08));
+    border-color: rgba(220, 60, 50, 0.25);
+}
+.mobile-toolbar-btn.suggestion svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: rgba(220, 60, 50, 0.7);
+    stroke-width: 2;
+}
+
+/* Overlay */
+.player-suggestion-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Modal */
+.player-suggestion-modal {
+    background: #111118;
+    border: 1px solid rgba(212, 168, 67, 0.15);
+    border-radius: 16px;
+    width: 320px;
+    max-width: 90vw;
+    overflow: hidden;
+    animation: suggestion-modal-in 0.2s ease-out;
+}
+@keyframes suggestion-modal-in {
+    from { opacity: 0; transform: scale(0.95) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.player-suggestion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+}
+.player-suggestion-close {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.player-suggestion-close svg {
+    width: 16px;
+    height: 16px;
+    stroke: rgba(255, 255, 255, 0.4);
+}
+.player-suggestion-body {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.player-suggestion-serie {
+    padding: 10px 14px;
+    background: rgba(212, 168, 67, 0.08);
+    border: 1px solid rgba(212, 168, 67, 0.15);
+    border-radius: 8px;
+    color: #d4a843;
+    font-size: 13px;
+    font-weight: 600;
+}
+.player-suggestion-input {
+    width: 100%;
+    padding: 11px 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    color: white;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+}
+.player-suggestion-input:focus {
+    border-color: rgba(212, 168, 67, 0.3);
+}
+.player-suggestion-input::placeholder {
+    color: rgba(255, 255, 255, 0.2);
+}
+.player-suggestion-submit {
+    width: 100%;
+    padding: 11px;
+    background: linear-gradient(135deg, rgba(212, 168, 67, 0.2), rgba(200, 150, 50, 0.1));
+    border: 1px solid rgba(212, 168, 67, 0.3);
+    border-radius: 8px;
+    color: #d4a843;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.player-suggestion-submit:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(212, 168, 67, 0.3), rgba(200, 150, 50, 0.15));
+}
+.player-suggestion-submit:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+.player-suggestion-note {
+    text-align: center;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.2);
+}
+
+/* ============================================
    🎯 BOMBANIME - MODALS MOBILE (Améliorées)
    ============================================ */
 .bombanime-modal-overlay {

@@ -272,6 +272,18 @@
                             >
                         </div>
                         
+                        <!-- 🎌 Bouton Suggestion (Desktop - bas gauche) -->
+                        <button class="player-suggestion-btn" 
+                            v-if="!isMobile && bombanime.active && !bombanime.suggestionUsed && !bombanime.isMyTurn"
+                            @click="openPlayerSuggestion"
+                            title="Suggérer un personnage manquant"
+                            :class="{ 'intro-hidden': bombanime.introPhase === 'players' }">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+                                <line x1="4" y1="22" x2="4" y2="15"/>
+                            </svg>
+                        </button>
+
                         <!-- Zone du cercle de joueurs -->
                         <div class="bombanime-circle" :style="{ '--circle-size': getBombanimeCircleSize() + 'px' }">
                             <!-- Joueurs en cercle -->
@@ -515,6 +527,18 @@
                     
                     <!-- 📱 Mobile : Boutons intégrés (2 icônes) -->
                     <div class="bombanime-mobile-toolbar" v-if="bombanime.playersData.length > 0 && isMobile" :class="{ 'intro-hidden': bombanime.introPhase === 'players' }">
+                        <!-- Bouton Suggestion (1x par partie) -->
+                        <button 
+                            class="mobile-toolbar-btn suggestion"
+                            v-if="!bombanime.suggestionUsed && !bombanime.isMyTurn"
+                            @click="openPlayerSuggestion"
+                        >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+                                <line x1="4" y1="22" x2="4" y2="15"/>
+                            </svg>
+                        </button>
+                        
                         <!-- Bouton Alphabet -->
                         <button 
                             class="mobile-toolbar-btn alphabet"
@@ -633,6 +657,36 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- 🎌 Modal Suggestion Joueur -->
+                    <div class="player-suggestion-overlay" v-if="bombanime.showSuggestionModal" @click.self="closePlayerSuggestion">
+                        <div class="player-suggestion-modal">
+                            <div class="player-suggestion-header">
+                                <span>Personnage manquant ?</span>
+                                <button class="player-suggestion-close" @click="closePlayerSuggestion">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="player-suggestion-body">
+                                <div class="player-suggestion-serie">{{ getFormattedSerieName() }}</div>
+                                <input 
+                                    type="text" 
+                                    class="player-suggestion-input"
+                                    v-model="bombanime.suggestionName"
+                                    placeholder="Nom du personnage..."
+                                    maxlength="20"
+                                    @keydown.enter.prevent="submitPlayerSuggestion"
+                                >
+                                <button class="player-suggestion-submit" @click="submitPlayerSuggestion" :disabled="!bombanime.suggestionName.trim()">
+                                    Envoyer
+                                </button>
+                                <div class="player-suggestion-note">Tu ne peux proposer qu'1 suggestion par partie</div>
+                            </div>
+                        </div>
+                    </div>
+
                 </template>
 
                 <!-- ============================================

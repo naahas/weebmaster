@@ -212,6 +212,9 @@ createApp({
                 challenges: [],              // [{id, name, description, reward, letter, progress, target, completed}]
                 bonuses: { freeCharacter: 0, extraLife: 0 },
                 showChallengesModal: false,  // Modal défis sur mobile
+                showSuggestionModal: false,  // Modal suggestion joueur
+                suggestionUsed: false,       // 1x par partie
+                suggestionName: '',          // Nom du personnage suggéré
                 showBonusesModal: false,     // Modal bonus sur mobile
                 challengeJustCompleted: null // Pour animation de défi complété
             },
@@ -1895,6 +1898,7 @@ createApp({
                 this.cleanupBombanimeEffects();
                 this.bombanime.active = false;
                 sessionStorage.removeItem('bombanimeInProgress');
+                sessionStorage.removeItem('bombanimeSuggestionUsed');
 
                 this.showNotification('Le jeu a été désactivé', 'info');
             });
@@ -2365,6 +2369,10 @@ createApp({
                 // Maintenant mettre à jour les données
                 this.bombanime.active = true;
                 this.bombanime.serie = data.serie;
+                
+                // 🎌 Reset suggestion pour nouvelle partie
+                this.bombanime.suggestionUsed = false;
+                sessionStorage.removeItem('bombanimeSuggestionUsed');
                 this.bombanime.timer = data.timer;
                 this.bombanime.timeRemaining = data.timer; // 🆕 Reset timeRemaining pour éviter la bombe rouge
                 this.bombanime.inputValue = ''; // 🆕 Reset input à chaque nouvelle partie
@@ -2474,6 +2482,11 @@ createApp({
                 // 🆕 Attendre que l'intro soit terminée ET la bombe ait tourné avant d'activer isMyTurn
                 const activateTurn = () => {
                     this.bombanime.isMyTurn = data.currentPlayerTwitchId === this.twitchId;
+                    
+                    // 🎌 Fermer le modal suggestion si c'est mon tour
+                    if (this.bombanime.isMyTurn && this.bombanime.showSuggestionModal) {
+                        this.bombanime.showSuggestionModal = false;
+                    }
                     
                     // 🔊 Son "c'est ton tour" uniquement pour le joueur POV
                     if (this.bombanime.isMyTurn) {
@@ -2815,6 +2828,7 @@ createApp({
                 
                 // Supprimer l'état de sessionStorage
                 sessionStorage.removeItem('bombanimeInProgress');
+                sessionStorage.removeItem('bombanimeSuggestionUsed');
                 
                 // Arrêter le timer
                 if (this.bombanime.timerInterval) {
@@ -2852,6 +2866,7 @@ createApp({
                     // Mettre à jour l'état BombAnime
                     this.bombanime.active = true;
                     this.bombanime.serie = data.serie;
+                    this.bombanime.suggestionUsed = sessionStorage.getItem('bombanimeSuggestionUsed') === 'true';
                     this.bombanime.timer = data.timer;
                     this.bombanime.timeRemaining = data.timeRemaining || data.timer;
                     this.bombanime.currentPlayerTwitchId = data.currentPlayerTwitchId;
@@ -4080,6 +4095,10 @@ createApp({
             this.bombanime.introPhase = null;
             this.bombanime.introPlayersRevealed = 0;
             this.bombanime.bombPointingUp = true; // 🆕 Reset pour la prochaine partie
+            this.bombanime.suggestionUsed = false;
+            this.bombanime.showSuggestionModal = false;
+            this.bombanime.suggestionName = '';
+            sessionStorage.removeItem('bombanimeSuggestionUsed');
             
             // Reset l'état global
             this.gameInProgress = false;
@@ -4961,6 +4980,51 @@ createApp({
             return (this.bombanime.bonuses.freeCharacter || 0) + (this.bombanime.bonuses.extraLife || 0);
         },
         
+        // 🎌 Ouvrir la suggestion joueur
+        openPlayerSuggestion() {
+            if (this.bombanime.suggestionUsed) return;
+            this.bombanime.showSuggestionModal = true;
+            this.bombanime.suggestionName = '';
+        },
+        
+        // 🎌 Fermer la suggestion joueur
+        closePlayerSuggestion() {
+            this.bombanime.showSuggestionModal = false;
+            this.bombanime.suggestionName = '';
+        },
+        
+        // 🎌 Envoyer la suggestion joueur
+        async submitPlayerSuggestion() {
+            const name = this.bombanime.suggestionName.trim();
+            if (!name || this.bombanime.suggestionUsed) return;
+            
+            try {
+                const response = await fetch('/bombanime/player-suggestion', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        anime: this.bombanime.serie || 'Unknown',
+                        characterName: name,
+                        submittedBy: this.twitchUsername || this.twitchId || 'Joueur'
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    this.bombanime.suggestionUsed = true;
+                    this.bombanime.showSuggestionModal = false;
+                    this.bombanime.suggestionName = '';
+                    sessionStorage.setItem('bombanimeSuggestionUsed', 'true');
+                    this.showNotification('Suggestion envoyée !', 'success');
+                } else {
+                    this.showNotification('Erreur: ' + (data.error || 'Réessaie'), 'error');
+                }
+            } catch (error) {
+                console.error('Erreur suggestion:', error);
+                this.showNotification('Erreur réseau', 'error');
+            }
+        },
+        
         // Obtenir ma position dans le cercle
         getBombanimeMyPosition() {
             return this.bombanime.playersOrder.indexOf(this.twitchId);
@@ -4974,13 +5038,13 @@ createApp({
             
             // Mobile portrait - cercle plus grand pour espacer les joueurs
             if (screenWidth <= 480) {
-                const baseSize = 280;
+                const baseSize = playerCount <= 2 ? 190 : 280;
                 const perPlayer = 18;
                 return Math.min(screenWidth - 40, baseSize + (playerCount * perPlayer));
             }
             // Mobile paysage / petite tablette
             if (screenWidth <= 768 || screenHeight <= 500) {
-                const baseSize = 320;
+                const baseSize = playerCount <= 2 ? 230 : 320;
                 const perPlayer = 20;
                 return Math.min(screenWidth - 60, baseSize + (playerCount * perPlayer));
             }
@@ -5033,7 +5097,11 @@ createApp({
             
             // Radius aligné avec admin.js
             const bombSize = this.getBombSize();
-            const minDistanceFromBomb = 60 + (13 - total) * 5;
+            const screenWidth = window.innerWidth;
+            let minDistanceFromBomb = 60 + (13 - total) * 5;
+            // Mobile + peu de joueurs: rapprocher de la bombe
+            if (screenWidth <= 480 && total <= 2) minDistanceFromBomb = 65;
+            else if (screenWidth <= 768 && total <= 2) minDistanceFromBomb = 65;
             const baseRadius = (circleSize / 2) - hexSize - 20;
             const radius = Math.max(baseRadius, (bombSize / 2) + hexSize + minDistanceFromBomb);
             

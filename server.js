@@ -1290,6 +1290,31 @@ app.post('/admin/bombanime/suggestion', async (req, res) => {
     }
 });
 
+// 🎌 Suggestion joueur (1x par partie, pas de variante)
+app.post('/bombanime/player-suggestion', async (req, res) => {
+    try {
+        const { anime, characterName, submittedBy } = req.body;
+        
+        if (!anime || !characterName || !submittedBy) {
+            return res.status(400).json({ error: 'Champs requis manquants' });
+        }
+        
+        const suggestion = await db.createSuggestion({
+            type: 'add',
+            anime,
+            characterName: characterName.toUpperCase().trim(),
+            variantOf: null,
+            details: null,
+            submittedBy: `[Player] ${submittedBy}`
+        });
+        
+        res.json({ success: true, suggestion });
+    } catch (error) {
+        console.error('Erreur suggestion joueur:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
 // Récupérer les suggestions
 app.get('/admin/bombanime/suggestions', async (req, res) => {
     if (!req.session.isAdmin) {

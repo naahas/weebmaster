@@ -13783,10 +13783,12 @@ function openSuggestionModal() {
         overlay.classList.add('active');
         modal.classList.add('active');
         
-        // Charger les animes si pas déjà fait
-        if (!suggestionAnimeListLoaded) {
-            loadSuggestionAnimes();
-        }
+        // Auto-remplir avec la série en cours
+        const currentSerie = bombanimeState.serie || '';
+        const display = document.getElementById('suggestionAnimeDisplay');
+        const hidden = document.getElementById('suggestionAnime');
+        if (display) display.textContent = getAnimeDisplayName(currentSerie);
+        if (hidden) hidden.value = currentSerie;
     }
 }
 
@@ -13814,7 +13816,7 @@ const animeDisplayNames = {
     'Snk': 'Shingeki no Kyojin',
     'DemonSlayer': 'Demon Slayer',
     'JujutsuKaisen': 'Jujutsu Kaisen',
-    'DeathNote': 'Death Note',
+    'Gintama': 'Gintama',
     'FairyTail': 'Fairy Tail',
     'Pokemon': 'Pokemon',
     'Reborn': 'Reborn',
