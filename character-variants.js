@@ -332,6 +332,7 @@ const CHARACTER_VARIANTS = {
         ["TWILIGHT","LOID"],
         ["VLADILENA","LENA"],
         ["SOUMA" , "SOMA"],
+        ["TOORU" , "TOHRU"],
         ["TOUMA" , "TOMA"],
         ["PHOSPHOPHYLLITE" , "PHOS"],
         ["JADEN" , "JUDAI"],
