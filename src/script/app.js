@@ -216,7 +216,8 @@ createApp({
                 suggestionUsed: false,       // 1x par partie
                 suggestionName: '',          // Nom du personnage suggéré
                 showBonusesModal: false,     // Modal bonus sur mobile
-                challengeJustCompleted: null // Pour animation de défi complété
+                challengeJustCompleted: null, // Pour animation de défi complété
+                showCharacterImages: true    // 🖼️ Afficher les images de personnages
             },
 
             // 🎴 État Collect
@@ -293,6 +294,14 @@ createApp({
     },
 
     async mounted() {
+
+        // 🔊 Raccourci clavier: Ctrl+M pour mute/unmute le son
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && (e.key === 'm' || e.key === 'M')) {
+                e.preventDefault();
+                this.toggleSound();
+            }
+        });
 
         setTimeout(() => {
             this.animateLogo();
@@ -2521,6 +2530,11 @@ createApp({
             
             this.socket.on('bombanime-name-accepted', (data) => {
                 console.log('✅ Nom accepté:', data.name);
+                
+                // 🖼️ Afficher l'image du personnage
+                if (data.characterImage && this.bombanime.showCharacterImages !== false) {
+                    this.showBombanimeCharacterFlash(data.characterImage, data.name);
+                }
                 
                 // 🔊 Stopper le tictac + son de passage de tour
                 this.stopBombTicking();
@@ -5028,6 +5042,33 @@ createApp({
         // Obtenir ma position dans le cercle
         getBombanimeMyPosition() {
             return this.bombanime.playersOrder.indexOf(this.twitchId);
+        },
+        
+        // 🖼️ Flash image personnage sur la bombe
+        showBombanimeCharacterFlash(imageUrl, characterName) {
+            const existing = document.getElementById('playerCharFlash');
+            if (existing) existing.remove();
+            
+            const flash = document.createElement('div');
+            flash.id = 'playerCharFlash';
+            flash.className = 'character-flash';
+            flash.innerHTML = `<img src="${imageUrl}" alt="${characterName}" draggable="false" onerror="this.parentElement.remove()"/>`;
+            
+            const bombWrapper = document.querySelector('.bomb-wrapper');
+            if (bombWrapper) {
+                bombWrapper.appendChild(flash);
+            } else {
+                const gameZone = document.querySelector('.bombanime-game-zone');
+                if (gameZone) gameZone.appendChild(flash);
+            }
+            
+            requestAnimationFrame(() => flash.classList.add('active'));
+            setTimeout(() => flash.remove(), 850);
+        },
+        
+        // 🖼️ Toggle images personnages
+        toggleCharacterImages() {
+            this.bombanime.showCharacterImages = !this.bombanime.showCharacterImages;
         },
         
         // Calculer la taille du cercle selon le nombre de joueurs

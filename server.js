@@ -64,6 +64,50 @@ try {
     console.error('❌ Erreur chargement bombdata.json:', error.message);
 }
 
+// 🖼️ Charger les images des personnages BombAnime
+let BOMBANIME_IMAGES = {};
+try {
+    const bombImagesPath = path.join(__dirname, 'bombimages.json');
+    if (fs.existsSync(bombImagesPath)) {
+        BOMBANIME_IMAGES = JSON.parse(fs.readFileSync(bombImagesPath, 'utf8'));
+        const totalImages = Object.values(BOMBANIME_IMAGES).reduce((sum, serie) => sum + Object.keys(serie).length, 0);
+        console.log('✅ BombImages: Données chargées -', totalImages, 'images');
+    } else {
+        console.log('⚠️ bombimages.json non trouvé - Images désactivées');
+    }
+} catch (error) {
+    console.error('❌ Erreur chargement bombimages.json:', error.message);
+}
+
+// 🖼️ Trouver l'image d'un personnage par son nom (gère les variantes)
+function getCharacterImage(name, serie) {
+    const serieImages = BOMBANIME_IMAGES[serie];
+    if (!serieImages) return null;
+    
+    const upperName = name.toUpperCase();
+    
+    // 1. Match exact dans bombimages
+    if (serieImages[upperName]) return serieImages[upperName];
+    
+    // 2. Chercher parmi les clés (case-insensitive)
+    for (const [mainName, imgUrl] of Object.entries(serieImages)) {
+        if (upperName === mainName.toUpperCase()) return imgUrl;
+    }
+    
+    // 3. Chercher via les variantes de bombdata
+    // Si le nom soumis est une variante, trouver le nom principal qui a une image
+    const characters = BOMBANIME_CHARACTERS[serie] || [];
+    const allVariants = getAllNamesToBlock(upperName, characters, serie);
+    for (const variant of allVariants) {
+        const variantUpper = variant.toUpperCase();
+        for (const [mainName, imgUrl] of Object.entries(serieImages)) {
+            if (variantUpper === mainName.toUpperCase()) return imgUrl;
+        }
+    }
+    
+    return null;
+}
+
 // Configuration BombAnime
 const BOMBANIME_CONFIG = {
     MIN_PLAYERS: 2,
@@ -5484,11 +5528,15 @@ function submitBombanimeName(socketId, name) {
     
     console.log(`⏱️ Réponse validée avec ${timeRemainingMs}ms restants (turnId=${gameState.bombanime.turnId})`);
     
+    // 🖼️ Chercher l'image du personnage (DÉSACTIVÉ temporairement)
+    // const characterImage = getCharacterImage(normalizedName, gameState.bombanime.serie);
+    
     // Envoyer la confirmation avec le prochain joueur
     io.emit('bombanime-name-accepted', {
         playerTwitchId: player.twitchId,
         playerUsername: player.username,
         name: normalizedName,
+        // characterImage: characterImage, // 🖼️ DÉSACTIVÉ temporairement
         newLetters: getAllLetters(normalizedName),
         alphabet: Array.from(gameState.bombanime.playerAlphabets.get(player.twitchId) || []),
         playersData: getBombanimePlayersData(),

@@ -6,10 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ShonenMaster Admin</title>
     <link
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Bebas+Neue&family=Inter:wght@300;400;500;600&family=Poppins:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Bebas+Neue&family=Inter:wght@300;400;500;600&family=Poppins:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Teko:wght@500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap"
         rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
     <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="admin-bombanime.css">
+    <link rel="stylesheet" href="admin-collect.css">
 
 
 
@@ -778,7 +780,7 @@
                                 <span class="setting-group-value" id="bombanimeTimerValue">8s</span>
                             </div>
                             <div class="setting-group-options bombanime-timer-slider-container">
-                                <input type="range" class="bombanime-timer-slider" id="bombanimeTimerSlider" min="5" max="10" value="8">
+                                <input type="range" class="bombanime-timer-slider" id="bombanimeTimerSlider" min="5" max="600" value="8">
                                 <div class="timer-slider-labels bombanime">
                                     <span>5s</span>
                                     <span>10s</span>
@@ -1718,170 +1720,41 @@
     <!-- ============================================
          MODAL SÉLECTION MODE DE JEU
          ============================================ -->
+    <!-- ============================================
+         MODAL SÉLECTION MODE DE JEU (Carousel v2)
+         ============================================ -->
     <div class="mode-modal-overlay" id="modeModalOverlay"></div>
     <div class="mode-modal-content" id="modeModalContent">
-        <div class="mode-cards-container">
-            <!-- Mode Classique -->
-            <div class="mode-card classique" id="modeClassiqueCard">
-                <div class="mode-card-neon-line"></div>
-                <div class="mode-card-bg"></div>
-                <div class="mode-card-overlay"></div>
-                <div class="mode-character-glow"></div>
-                
-                <div class="mode-character-wrapper">
-                    <div class="mode-character-aura">
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                    </div>
-                    <img src="saber2.png" alt="Character" class="mode-card-character">
-                </div>
-                
-                <div class="mode-card-content">
-                    <div class="mode-card-label">Mode Solo</div>
-                    <h3 class="mode-card-title">Classique</h3>
-                    <div class="mode-card-separator"></div>
-                    <p class="mode-card-desc">Ta communauté s'affronte dans un quiz</p>
-                </div>
-                <div class="mode-card-players">
-                    <svg class="mode-players-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                    <span class="mode-players-count">∞</span>
-                </div>
-            </div>
 
-            <!-- Mode Rivalité -->
-            <div class="mode-card inter-commu" id="modeRivaliteCard">
-                <div class="mode-card-neon-line"></div>
-                <div class="mode-card-bg"></div>
-                <div class="mode-card-overlay"></div>
-                <div class="mode-character-glow"></div>
-                
-                <div class="mode-character-wrapper dual">
-                    <div class="mode-character-aura">
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                    </div>
-                    <img src="ai2.png" alt="Team A" class="mode-card-character char-left">
-                    <img src="shinobu2.png" alt="Team B" class="mode-card-character char-right">
-                </div>
-                
-                <div class="mode-card-content">
-                    <div class="mode-card-label">Mode Équipe</div>
-                    <h3 class="mode-card-title">Rivalité</h3>
-                    <div class="mode-card-separator"></div>
-                    <p class="mode-card-desc">2 équipes s'affrontent dans un quiz</p>
-                </div>
-                <div class="mode-card-players">
-                    <svg class="mode-players-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                    <span class="mode-players-count">∞</span>
-                </div>
+        <div class="mode-controls">
+            <input class="mode-search-input" type="text" id="modeSearchInput" placeholder="Rechercher un mode..." oninput="filterModes()">
+            <div class="mode-chips">
+                <button class="mode-chip on" data-g="t" data-v="all" onclick="setModeFilter(this)">Tout</button>
+                <button class="mode-chip" data-g="t" data-v="solo" onclick="setModeFilter(this)">Solo</button>
+                <button class="mode-chip" data-g="t" data-v="equipe" onclick="setModeFilter(this)">Équipe</button>
+                <div class="mode-chip-sep"></div>
+                <button class="mode-chip on" data-g="p" data-v="all" onclick="setModeFilter(this)">Tous</button>
+                <button class="mode-chip" data-g="p" data-v="limited" onclick="setModeFilter(this)">Limité</button>
+                <button class="mode-chip" data-g="p" data-v="unlimited" onclick="setModeFilter(this)">Illimité</button>
             </div>
+        </div>
 
-            <!-- Mode BombAnime -->
-            <div class="mode-card bombanime" id="modeBombanimeCard">
-                <div class="mode-card-neon-line"></div>
-                <div class="mode-card-bg"></div>
-                <div class="mode-card-overlay"></div>
-                <div class="mode-character-glow"></div>
-                
-                <div class="mode-character-wrapper">
-                    <div class="mode-character-aura">
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                    </div>
-                    <img src="lambo2.png" alt="BombAnime" class="mode-card-character">
-                </div>
-                
-                <div class="mode-card-content">
-                    <div class="mode-card-label">Mode Solo</div>
-                    <h3 class="mode-card-title">BombAnime</h3>
-                    <div class="mode-card-separator"></div>
-                    <p class="mode-card-desc">Les joueurs citent des personnages à tour de rôle</p>
-                </div>
-                <div class="mode-card-players">
-                    <svg class="mode-players-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                    <span class="mode-players-count">13</span>
-                </div>
+        <div class="mode-carousel" id="modeCarousel">
+            <div class="mode-fade mode-fade-l" id="modeFadeL"></div>
+            <div class="mode-fade mode-fade-r" id="modeFadeR"></div>
+            <div class="mode-nav-arrow mode-nav-arrow-l" id="modeArrowL" onclick="modeScrollLeft()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
             </div>
+            <div class="mode-nav-arrow mode-nav-arrow-r vis" id="modeArrowR" onclick="modeScrollRight()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 6 15 12 9 18"/></svg>
+            </div>
+            <div class="mode-track" id="modeTrack"></div>
+        </div>
 
-            <!-- Mode Collect -->
-            <div class="mode-card collect coming-soon disabled" id="modeCollectCard">
-                <div class="mode-card-neon-line"></div>
-                <div class="mode-card-bg"></div>
-                <div class="mode-card-overlay"></div>
-                <div class="mode-character-glow"></div>
-                <div class="mode-soon-band">SOON</div>
-                
-                <div class="mode-character-wrapper">
-                    <div class="mode-character-aura">
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                        <div class="mode-aura-particle"></div>
-                    </div>
-                    <img src="aventurine3.png" alt="Collect" class="mode-card-character">
-                </div>
-                
-                <div class="mode-card-content">
-                    <div class="mode-card-label">Mode Solo</div>
-                    <h3 class="mode-card-title">Collect</h3>
-                    <div class="mode-card-separator"></div>
-                    <p class="mode-card-desc">Jeu de cartes stratégique</p>
-                </div>
-                <div class="mode-card-players">
-                    <svg class="mode-players-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                    <span class="mode-players-count">5</span>
-                </div>
-            </div>
+        <div class="mode-scroll-ind"><div class="mode-scroll-thumb" id="modeScrollThumb"></div></div>
+
+        <div class="mode-desc-bottom">
+            <div class="mode-desc-text" id="modeDescText"></div>
         </div>
     </div>
 
@@ -1953,6 +1826,8 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="admin.js"></script>
+    <script src="admin-bombanime.js"></script>
+    <script src="admin-collect.js"></script>
 
 </body>
 
