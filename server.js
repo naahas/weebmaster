@@ -4961,7 +4961,7 @@ const server = app.listen(PORT, () => {
 // ============================================
 // STREAMERS PARTENAIRES - LIVE STATUS
 // ============================================
-const PARTNER_STREAMERS = ['MinoStreaming', 'pikinemadd', 'Mikyatc' , 'Zogaa_'];
+const PARTNER_STREAMERS = ['MinoStreaming', 'pikinemadd', 'Mikyatc' , 'Zogaa_', 'luidjy_skyblex'];
 let partnersLiveStatus = {}; // Cache du statut
 
 

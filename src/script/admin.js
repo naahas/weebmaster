@@ -2781,10 +2781,10 @@ async function launchLobby() {
 // ============================================
 
 const MODES_DATA = [
-    { id: 'classic', n: 'CLASSIQUE', l: 'Mode Solo', c: 'gold', p: '∞', t: 'solo', d: "Le mode historique. Questions anime avec difficulté croissante, bonus combo et défis à débloquer.", img: 'saber2.png', imgStyle: 'transform:scale(1.3) translate(-3%, 13%)' },
+    { id: 'classic', n: 'CLASSIQUE', l: 'Mode Solo', c: 'gold', p: '∞', t: 'solo', d: "Le mode historique. Questions anime avec difficulté croissante, bonus combo et défis à débloquer.", img: 'saber2.png', imgStyle: 'transform:scale(1.4) translate(-3%, 13%)' },
     { id: 'rivalry', n: 'RIVALITÉ', l: 'Mode Équipe', c: 'purple', p: '∞', t: 'equipe', d: "Divise ta communauté en deux camps pour un quiz épique.", img: 'shark.png' },
     { id: 'bombanime', n: 'BOMBANIME', l: 'Mode Solo', c: 'green', p: '13', t: 'solo', d: "La bombe tourne de joueur en joueur. Cite un personnage avant l'explosion.", img: 'lambo2.png', imgStyle: 'transform:scale(1.2) translateY(5%)' },
-    { id: 'trace', n: 'TRACE', l: 'Mode Solo', c: 'cyan', p: '∞', t: 'solo', d: "Dessine un élément anime et ta communauté devine. Hilarant en stream.", img: 'sinon.png', soon: true, imgScale: 2, imgStyle: 'transform:scale(2) translate(-3%, 7%)' },
+    { id: 'trace', n: 'TRACE', l: 'Mode Solo', c: 'cyan', p: '∞', t: 'solo', d: "Dessine un élément anime et ta communauté devine. Hilarant en stream.", img: 'roxy.png', soon: true, imgScale: 2, imgStyle: 'transform:scale(2) translate(16%, 20%)' },
     { id: 'collect', n: 'COLLECT', l: 'Mode Solo', c: 'blue', p: '5', t: 'solo', d: "Jeu de cartes stratégique anime.", img: 'aventurine3.png', soon: true, imgStyle: 'transform:scale(1.15)' },
 ];
 
@@ -4630,7 +4630,7 @@ function transitionToGame() {
     const teamsChartBlock = document.getElementById('teamsChartBlock');
     if (teamsChartBlock) {
         if (currentGameMode === 'rivalry') {
-            teamsChartBlock.style.display = 'block';
+            teamsChartBlock.style.display = 'flex';
             // 🔥 FIX: Reset les valeurs du graphique d'équipes (éviter affichage stale de la partie précédente)
             const team1Value = document.getElementById('team1Value');
             const team2Value = document.getElementById('team2Value');
@@ -5128,7 +5128,7 @@ function updateTeamsChart(teamScores, teamNames, gameMode) {
     if (!teamsBlock) return;
     
     // Afficher le bloc
-    teamsBlock.style.display = 'block';
+    teamsBlock.style.display = 'flex';
     
     const team1Score = teamScores[1] || 0;
     const team2Score = teamScores[2] || 0;
@@ -7861,7 +7861,9 @@ function updatePodiumBadges() {
     if (!grid) return;
 
     // Supprimer tous les badges existants
-    grid.querySelectorAll('.podium-badge').forEach(b => b.remove());
+    grid.querySelectorAll('.podium-badge-wrapper').forEach(b => b.remove());
+    // Compat: supprimer aussi les anciens badges sans wrapper
+    grid.querySelectorAll('.podium-badge').forEach(b => { if (!b.parentElement.classList.contains('podium-badge-wrapper')) b.remove(); });
 
     // Pas de badges podium en mode rivalité
     if (currentGameMode === 'rivalry') return;
@@ -7893,16 +7895,21 @@ function updatePodiumBadges() {
         // Ne pas badger les éliminés (0 vies en mode vie)
         if (gameSettings.mode === 'vie' && (parseInt(card.dataset.lives) || 0) <= 0) continue;
         
+        // Wrapper pour contenir badge + effets sans clip
+        const wrapper = document.createElement('div');
+        wrapper.className = `podium-badge-wrapper rank-${i + 1}`;
+        
         const badge = document.createElement('div');
         badge.className = `podium-badge rank-${i + 1}`;
         badge.textContent = i + 1;
+        wrapper.appendChild(badge);
 
-        // Rank 1 : Pulse rings + sparkles
+        // Rank 1 : Pulse rings + sparkles (dans le wrapper, pas le badge)
         if (i === 0) {
             for (let r = 0; r < 2; r++) {
                 const ring = document.createElement('div');
                 ring.className = 'podium-pulse-ring';
-                badge.appendChild(ring);
+                wrapper.appendChild(ring);
             }
             const sparks = [
                 { mx: '18px', my: '-5px', ex: '22px', ey: '-12px', dur: '2.5s', delay: '0s' },
@@ -7918,11 +7925,11 @@ function updatePodiumBadges() {
                 s.style.setProperty('--ey', c.ey);
                 s.style.setProperty('--dur', c.dur);
                 s.style.setProperty('--delay', c.delay);
-                badge.appendChild(s);
+                wrapper.appendChild(s);
             });
         }
 
-        card.appendChild(badge);
+        card.appendChild(wrapper);
     }
 }
 

@@ -6430,6 +6430,27 @@ body {
     box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
 }
 
+/* Pulse quand au moins 1 streamer est live */
+.streamers-panel.has-live .streamers-trigger {
+    animation: triggerPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes triggerPulse {
+    0%, 100% {
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+        width: 6px;
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(255, 215, 0, 1), 0 0 60px rgba(255, 215, 0, 0.5), 0 0 90px rgba(255, 215, 0, 0.2);
+        width: 10px;
+    }
+}
+
+.streamers-panel.has-live:hover .streamers-trigger {
+    animation: none;
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
+}
+
 .streamers-content {
     position: absolute;
     right: 100%;
@@ -11120,70 +11141,5 @@ body.modal-open {
 
     .fizzbuzz-timer-text {
         font-size: 1.2rem;
-    }
-}
-
-
-/* ============================================
-   🖼️ FLASH IMAGE PERSONNAGE - Joueur
-   ============================================ */
-
-.character-flash {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 100;
-    pointer-events: none;
-    opacity: 0;
-}
-
-.character-flash.active {
-    animation: charFlashPop 0.8s ease-out forwards;
-}
-
-.character-flash img {
-    width: 140px;
-    height: 140px;
-    object-fit: cover;
-    border: none;
-    border-radius: 0;
-    background: transparent;
-    -webkit-mask-image: radial-gradient(circle at center, black 42%, transparent 72%);
-    mask-image: radial-gradient(circle at center, black 42%, transparent 72%);
-}
-
-@keyframes charFlashPop {
-    0% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.6);
-    }
-    15% {
-        opacity: 0.75;
-        transform: translate(-50%, -50%) scale(1);
-    }
-    55% {
-        opacity: 0.7;
-        transform: translate(-50%, -50%) scale(1.06);
-    }
-    100% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(1.15);
-    }
-}
-
-/* Mobile */
-@media (max-width: 768px) {
-    .character-flash img {
-        width: 70px;
-        height: 70px;
-    }
-}
-
-/* 2K+ */
-@media (min-width: 2560px) {
-    .character-flash img {
-        width: 150px;
-        height: 150px;
     }
 }

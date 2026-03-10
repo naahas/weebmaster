@@ -168,6 +168,7 @@ createApp({
                 MinoStreaming: false,
                 pikinemadd: false,
                 Mikyatc: false,
+                luidjy_skyblex: false,
             },
 
             // ============================================
@@ -275,6 +276,7 @@ createApp({
                 { id: 'MinoStreaming', name: 'Mino', avatar: 'mino.png' },
                 { id: 'Zogaa_', name: 'Zogaa', avatar: 'zogaa.png' },
                 { id: 'pikinemadd', name: 'Pikinemad', avatar: 'pikine.png' },
+                { id: 'luidjy_skyblex', name: 'Luidjy', avatar: 'luidjy.png' },
             ],
 
 
@@ -406,6 +408,11 @@ createApp({
     },
 
     computed: {
+
+        // Au moins 1 streamer est en live
+        anyStreamerLive() {
+            return Object.values(this.streamersLive).some(v => v === true);
+        },
 
         // 5 premiers streamers à afficher (live en priorité)
         visibleStreamers() {
