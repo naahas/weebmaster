@@ -810,7 +810,8 @@ const SERIE_NAMES = {
     'BlackClover': 'Black Clover',
     'Fma': 'Fullmetal Alchemist',
     'ChainsawMan': 'Chainsaw Man',
-    'Prota' : 'Protagonist'
+    'Prota' : 'Protagonist',
+    'Manganime': 'Manganime'
 };
 
 function renderAdminBombanimeChalllenges() {

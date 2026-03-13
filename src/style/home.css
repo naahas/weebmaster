@@ -7237,6 +7237,70 @@ body {
     20%, 40%, 60%, 80% { transform: translateX(4px); }
 }
 
+/* ============================================
+   MODE SURVIE - Lobby card cyan
+   ============================================ */
+.lobby-card-v3.lobby-survie {
+    border-color: rgba(230, 126, 34, 0.15);
+}
+
+.lobby-card-v3.lobby-survie:hover {
+    border-color: rgba(230, 126, 34, 0.3);
+}
+
+.lobby-card-v3.lobby-survie .lobby-glow-line {
+    background: linear-gradient(90deg, transparent, rgba(230, 126, 34, 0.5), transparent);
+}
+
+.lobby-card-v3.lobby-survie .lobby-icon {
+    stroke: rgba(230, 126, 34, 0.7);
+}
+
+.lobby-card-v3.lobby-survie:hover .lobby-icon {
+    stroke: rgba(230, 126, 34, 0.9);
+}
+
+.lobby-card-v3.lobby-survie .lobby-dot {
+    background: #e67e22;
+    box-shadow: 0 0 6px rgba(230, 126, 34, 0.6);
+}
+
+.lobby-card-v3.lobby-survie .lobby-players-line .lobby-line {
+    background: linear-gradient(90deg, transparent, rgba(230, 126, 34, 0.15));
+}
+
+.lobby-card-v3.lobby-survie:hover .lobby-players-line .lobby-line {
+    background: linear-gradient(90deg, transparent, rgba(230, 126, 34, 0.25));
+}
+
+.lobby-card-v3.lobby-survie .lobby-players-line .lobby-count strong {
+    color: #e67e22;
+}
+
+.lobby-card-v3.lobby-survie .lobby-btn {
+    background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+    color: #0a0a0f;
+}
+
+.lobby-card-v3.lobby-survie .lobby-btn::after {
+    box-shadow: 0 0 0 0 rgba(230, 126, 34, 0.5);
+}
+
+@keyframes lobby-btn-pulse-survie {
+    0% { box-shadow: 0 0 0 0 rgba(230, 126, 34, 0.5); }
+    100% { box-shadow: 0 0 0 12px rgba(230, 126, 34, 0); }
+}
+
+.lobby-card-v3.lobby-survie .lobby-btn:hover::after {
+    animation: lobby-btn-pulse-survie 1s ease-out infinite;
+}
+
+.lobby-card-v3.lobby-survie .lobby-btn.joined {
+    background: rgba(230, 126, 34, 0.12);
+    color: #e67e22;
+    border: 1px solid rgba(230, 126, 34, 0.25);
+}
+
 /* État cooldown (grisé) pour BombAnime */
 .lobby-card-v3 .lobby-btn[disabled]:not(.joined) {
     background: rgba(100, 100, 120, 0.3) !important;

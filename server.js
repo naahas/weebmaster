@@ -124,6 +124,20 @@ const COLLECT_CONFIG = {
     STARS_TO_WIN: 3
 };
 
+// 🎮 Configuration Survie
+const SURVIE_CONFIG = {
+    MIN_PLAYERS: 2,
+    MAX_PLAYERS: 50,
+    DEFAULT_TIMER: 30
+};
+
+// 🎮 Types d'épreuves Survie
+const SURVIE_EPREUVE_TYPES = [
+    'vrai-faux', 'intrus', 'anagramme', 'nomme', 'flou',
+    'pendu', 'qui-suis-je', 'tri-anime', 'reflexe', 'paires',
+    'association', 'comptage', 'timeline', 'chronologie'
+];
+
 // 💣 Set pour réserver les places pendant le traitement async (évite les race conditions)
 const pendingJoins = new Set();
 
@@ -411,6 +425,24 @@ app.get('/game/state', (req, res) => {
             timeRemaining: gameState.bombanime.turnStartTime ? 
                 Math.max(0, gameState.bombanime.timer - Math.floor((Date.now() - gameState.bombanime.turnStartTime) / 1000)) : 
                 gameState.bombanime.timer
+        } : null,
+        // 🎮 Mode Survie
+        survie: gameState.lobbyMode === 'survie' && gameState.survie.active ? {
+            active: true,
+            currentRound: gameState.survie.currentRound,
+            roundInProgress: gameState.survie.roundInProgress,
+            currentEpreuve: gameState.survie.currentEpreuve,
+            timer: gameState.survie.timer,
+            alivePlayers: gameState.survie.alivePlayers.map(p => ({
+                twitchId: p.twitchId, username: p.username, avatarUrl: p.avatarUrl, colorIndex: p.colorIndex
+            })),
+            eliminatedPlayers: gameState.survie.eliminatedPlayers,
+            completedCount: gameState.survie.completedPlayers.length,
+            qualifiedCount: gameState.survie.qualifiedCount,
+            toEliminateCount: gameState.survie.toEliminateCount,
+            timeRemaining: gameState.survie.roundTimerEndTime 
+                ? Math.max(0, Math.ceil((gameState.survie.roundTimerEndTime - Date.now()) / 1000))
+                : gameState.survie.timer
         } : null
     });
 });
@@ -538,6 +570,25 @@ const gameState = {
         playedCards: new Map(),     // Map<twitchId, card> - cartes jouées ce round
         roundTimer: null,           // Timer du round
         timerEndTime: null          // Timestamp fin du timer (pour sync)
+    },
+    
+    // ============================================
+    // 🎮 SURVIE - État du mode
+    // ============================================
+    survie: {
+        active: false,
+        currentRound: 0,
+        roundTimer: null,
+        roundTimerEndTime: null,
+        roundInProgress: false,
+        alivePlayers: [],           // [{twitchId, username, socketId, avatarUrl}]
+        eliminatedPlayers: [],      // [{twitchId, username, eliminatedRound, position}]
+        currentEpreuve: null,       // {type, data}
+        usedEpreuves: [],           // Types déjà utilisés
+        completedPlayers: [],       // [{twitchId, username, completionTime}]
+        qualifiedCount: 0,
+        toEliminateCount: 0,
+        timer: 30                   // Réglable par le streamer
     }
 };
 
@@ -1632,6 +1683,28 @@ app.post('/admin/start-game', async (req, res) => {
             }
         } catch (error) {
             console.error('❌ Erreur démarrage Collect:', error);
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    // 🎮 MODE SURVIE - Démarrage spécial
+    if (gameState.lobbyMode === 'survie') {
+        if (totalPlayers > SURVIE_CONFIG.MAX_PLAYERS) {
+            return res.status(400).json({
+                success: false,
+                error: `Maximum ${SURVIE_CONFIG.MAX_PLAYERS} joueurs en mode Survie`
+            });
+        }
+        
+        try {
+            const result = await startSurvieGame();
+            if (result.success) {
+                return res.json({ success: true, mode: 'survie' });
+            } else {
+                return res.status(400).json({ success: false, error: result.error });
+            }
+        } catch (error) {
+            console.error('❌ Erreur démarrage Survie:', error);
             return res.status(500).json({ success: false, error: error.message });
         }
     }
@@ -6576,6 +6649,12 @@ io.on('connection', (socket) => {
             existingPlayer.socketId = socket.id;
             gameState.players.set(socket.id, existingPlayer);
 
+            // Update socketId in survie alivePlayers too
+            if (gameState.survie?.alivePlayers) {
+                const surviePlayer = gameState.survie.alivePlayers.find(p => p.twitchId === data.twitchId);
+                if (surviePlayer) surviePlayer.socketId = socket.id;
+            }
+
             if (previousAnswer) {
                 gameState.answers.set(socket.id, previousAnswer);
             }
@@ -7529,6 +7608,43 @@ io.on('connection', (socket) => {
         io.emit('player-count', gameState.players.size);
     });
 
+    // ============================================
+    // 🎮 SURVIE - Socket Handlers
+    // ============================================
+    
+    socket.on('survie-completed', (data) => {
+        if (!gameState.survie?.active || !gameState.survie?.roundInProgress) return;
+        const player = gameState.players.get(socket.id);
+        if (!player) return;
+        surviePlayerCompleted(socket.id, player.twitchId);
+    });
+    
+    socket.on('survie-next-round', () => {
+        if (!gameState.survie?.active) return;
+        // Vérifier que c'est un admin
+        startSurvieNextRound();
+    });
+    
+    socket.on('survie-reconnect', () => {
+        if (gameState.survie?.active) {
+            socket.emit('survie-state', getSurvieStateForClient());
+        }
+    });
+    
+    // Position du joueur sur le plateau
+    socket.on('survie-position', (data) => {
+        if (!gameState.survie?.active) return;
+        const player = gameState.players.get(socket.id);
+        if (!player) return;
+        socket.broadcast.emit('survie-player-moved', {
+            twitchId: player.twitchId,
+            x: data.x,
+            y: data.y,
+            vx: data.vx,
+            vy: data.vy
+        });
+    });
+
     // Déconnexion
     socket.on('disconnect', () => {
         const ip = socket.handshake.headers['x-forwarded-for']?.split(',')[0] || socket.handshake.address;
@@ -7763,6 +7879,17 @@ function resetGameState() {
 
     resetAllBonuses();
 
+    // 🎮 Reset Survie
+    if (gameState.survie.roundTimer) {
+        clearTimeout(gameState.survie.roundTimer);
+    }
+    gameState.survie = {
+        active: false, currentRound: 0, roundTimer: null, roundTimerEndTime: null,
+        roundInProgress: false, alivePlayers: [], eliminatedPlayers: [],
+        currentEpreuve: null, usedEpreuves: [], completedPlayers: [],
+        qualifiedCount: 0, toEliminateCount: 0, timer: gameState.survie.timer || 30
+    };
+
     // 🔥 COMMENTER CES LIGNES
     // gameState.isActive = false;
     // io.emit('game-deactivated');
@@ -7874,6 +8001,344 @@ async function loadLastGlobalWinner() {
     }
 }
 
+
+
+// ============================================
+// 🎮 MODE SURVIE - Fonctions
+// ============================================
+
+function calculateSurvieEliminations(aliveCount) {
+    if (aliveCount <= 3) return 1;
+    if (aliveCount <= 6) return 2;
+    if (aliveCount <= 10) return 3;
+    if (aliveCount <= 15) return 4;
+    if (aliveCount <= 20) return 5;
+    if (aliveCount <= 30) return Math.ceil(aliveCount * 0.25);
+    return Math.ceil(aliveCount * 0.2);
+}
+
+function getSurvieEpreuveInstruction(type) {
+    const instructions = {
+        'vrai-faux': 'Vrai ou Faux — Répondez le plus vite possible',
+        'intrus': 'Trouvez l\'intrus dans chaque ligne',
+        'anagramme': 'Retrouvez le nom mélangé',
+        'nomme': 'Tapez le nom des personnages',
+        'flou': 'Devinez le personnage flou',
+        'pendu': 'Trouvez le mot caché',
+        'qui-suis-je': 'Devinez le personnage à partir des indices',
+        'tri-anime': 'Cliquez sur tous les personnages de l\'anime indiqué',
+        'reflexe': 'Cliquez sur les personnages dans l\'ordre indiqué',
+        'paires': 'Retrouvez les paires de personnages',
+        'association': 'Associez les armes aux personnages',
+        'comptage': 'Comptez les personnages selon le critère',
+        'timeline': 'Remettez les scènes dans l\'ordre',
+        'chronologie': 'Classez les animes par date de parution',
+        'duel-final': '⚔️ DUEL FINAL — Le plus rapide remporte la victoire!'
+    };
+    return instructions[type] || 'Complétez l\'épreuve le plus vite possible';
+}
+
+function generateSurvieEpreuveData(type) {
+    // Placeholder pour le Bloc 1 — sera remplacé par les vrais mini-jeux
+    return {
+        type: type,
+        placeholder: true,
+        instruction: getSurvieEpreuveInstruction(type)
+    };
+}
+
+async function startSurvieGame() {
+    const totalPlayers = gameState.players.size;
+    
+    if (totalPlayers < SURVIE_CONFIG.MIN_PLAYERS) {
+        return { success: false, error: `Minimum ${SURVIE_CONFIG.MIN_PLAYERS} joueurs requis` };
+    }
+    
+    // Initialiser l'état
+    const survie = gameState.survie;
+    survie.active = true;
+    survie.currentRound = 0;
+    survie.roundInProgress = false;
+    survie.alivePlayers = [];
+    survie.eliminatedPlayers = [];
+    survie.usedEpreuves = [];
+    survie.completedPlayers = [];
+    
+    // Collecter les joueurs
+    let colorIdx = 0;
+    gameState.players.forEach((player, socketId) => {
+        survie.alivePlayers.push({
+            twitchId: player.twitchId,
+            username: player.username,
+            socketId: socketId,
+            avatarUrl: player.avatarUrl || null,
+            colorIndex: colorIdx++
+        });
+    });
+    
+    gameState.inProgress = true;
+    
+    console.log(`🎮 Survie démarrée: ${totalPlayers} joueurs`);
+    
+    // Envoyer à tous
+    io.emit('survie-game-started', {
+        totalPlayers: totalPlayers,
+        players: survie.alivePlayers.map(p => ({
+            twitchId: p.twitchId,
+            username: p.username,
+            avatarUrl: p.avatarUrl,
+            colorIndex: p.colorIndex
+        })),
+        timer: survie.timer
+    });
+    
+    // Lancer la première manche après l'animation d'intro (3s)
+    setTimeout(() => {
+        startSurvieNextRound();
+    }, 3000);
+    
+    return { success: true };
+}
+
+function startSurvieNextRound() {
+    const survie = gameState.survie;
+    if (!survie || !survie.active) return;
+    
+    const aliveCount = survie.alivePlayers.length;
+    
+    // 1v1 final
+    if (aliveCount === 2) {
+        startSurvieFinalDuel();
+        return;
+    }
+    
+    // Winner direct
+    if (aliveCount <= 1) {
+        endSurvieGame();
+        return;
+    }
+    
+    survie.currentRound++;
+    survie.roundInProgress = true;
+    survie.completedPlayers = [];
+    
+    // Calcul éliminations
+    survie.toEliminateCount = calculateSurvieEliminations(aliveCount);
+    survie.qualifiedCount = aliveCount - survie.toEliminateCount;
+    
+    // Choisir une épreuve aléatoire
+    let available = SURVIE_EPREUVE_TYPES.filter(t => !survie.usedEpreuves.includes(t));
+    if (available.length === 0) {
+        survie.usedEpreuves = [];
+        available = [...SURVIE_EPREUVE_TYPES];
+    }
+    const epreuveType = available[Math.floor(Math.random() * available.length)];
+    survie.usedEpreuves.push(epreuveType);
+    
+    const epreuveData = generateSurvieEpreuveData(epreuveType);
+    survie.currentEpreuve = { type: epreuveType, data: epreuveData };
+    
+    console.log(`🎮 Survie Manche ${survie.currentRound}: ${epreuveType} | ${aliveCount} joueurs | éliminés: ${survie.toEliminateCount} | qualifiés: ${survie.qualifiedCount}`);
+    
+    // Timer
+    const timerMs = survie.timer * 1000;
+    survie.roundTimerEndTime = Date.now() + timerMs;
+    
+    survie.roundTimer = setTimeout(() => {
+        endSurvieRound();
+    }, timerMs);
+    
+    // Broadcast
+    io.emit('survie-round-start', {
+        round: survie.currentRound,
+        epreuveType: epreuveType,
+        epreuveData: epreuveData,
+        timer: survie.timer,
+        aliveCount: aliveCount,
+        qualifiedCount: survie.qualifiedCount,
+        toEliminateCount: survie.toEliminateCount,
+        alivePlayers: survie.alivePlayers.map(p => ({
+            twitchId: p.twitchId, username: p.username, avatarUrl: p.avatarUrl, colorIndex: p.colorIndex
+        }))
+    });
+    
+    addLog('survie-round', { round: survie.currentRound, epreuve: epreuveType, alive: aliveCount });
+}
+
+function surviePlayerCompleted(socketId, twitchId) {
+    const survie = gameState.survie;
+    if (!survie || !survie.active || !survie.roundInProgress) return;
+    
+    // Vérifier joueur en vie
+    const isAlive = survie.alivePlayers.some(p => p.twitchId === twitchId);
+    if (!isAlive) return;
+    
+    // Vérifier pas déjà complété
+    if (survie.completedPlayers.some(p => p.twitchId === twitchId)) return;
+    
+    const player = survie.alivePlayers.find(p => p.twitchId === twitchId);
+    survie.completedPlayers.push({
+        twitchId: twitchId,
+        username: player?.username || 'Unknown',
+        completionTime: Date.now()
+    });
+    
+    const completedCount = survie.completedPlayers.length;
+    console.log(`✅ Survie: ${player?.username} terminé (${completedCount}/${survie.qualifiedCount})`);
+    
+    // Broadcast le compteur en live
+    io.emit('survie-qualified-update', {
+        completedCount: completedCount,
+        qualifiedCount: survie.qualifiedCount,
+        playerTwitchId: twitchId,
+        playerUsername: player?.username
+    });
+    
+    // Quota atteint → STOP NET
+    if (completedCount >= survie.qualifiedCount) {
+        console.log(`🛑 Survie: Quota atteint! ${completedCount}/${survie.qualifiedCount} → Manche terminée!`);
+        endSurvieRound();
+    }
+}
+
+function endSurvieRound() {
+    const survie = gameState.survie;
+    if (!survie || !survie.active || !survie.roundInProgress) return;
+    
+    survie.roundInProgress = false;
+    
+    if (survie.roundTimer) {
+        clearTimeout(survie.roundTimer);
+        survie.roundTimer = null;
+    }
+    
+    // Qualifiés = ceux qui ont complété dans le quota
+    const qualifiedIds = new Set(
+        survie.completedPlayers.slice(0, survie.qualifiedCount).map(p => p.twitchId)
+    );
+    
+    const eliminated = [];
+    const qualified = [];
+    
+    survie.alivePlayers.forEach(player => {
+        if (qualifiedIds.has(player.twitchId)) {
+            qualified.push(player);
+        } else {
+            eliminated.push(player);
+        }
+    });
+    
+    // Positions des éliminés
+    const currentPos = survie.alivePlayers.length;
+    eliminated.forEach((player, idx) => {
+        survie.eliminatedPlayers.push({
+            twitchId: player.twitchId,
+            username: player.username,
+            eliminatedRound: survie.currentRound,
+            position: currentPos - idx
+        });
+    });
+    
+    survie.alivePlayers = qualified;
+    
+    console.log(`🎮 Survie Manche ${survie.currentRound}: ${qualified.length} qualifiés, ${eliminated.length} éliminés`);
+    
+    io.emit('survie-round-results', {
+        round: survie.currentRound,
+        qualified: qualified.map(p => ({ twitchId: p.twitchId, username: p.username, avatarUrl: p.avatarUrl })),
+        eliminated: eliminated.map(p => ({ twitchId: p.twitchId, username: p.username, avatarUrl: p.avatarUrl })),
+        remainingCount: qualified.length,
+        completionOrder: survie.completedPlayers.map(p => ({ twitchId: p.twitchId, username: p.username }))
+    });
+    
+    addLog('survie-elim', { round: survie.currentRound, eliminated: eliminated.map(p => p.username), remaining: qualified.length });
+    
+    // Si 1 ou 0 restant → fin
+    if (qualified.length <= 1) {
+        setTimeout(() => endSurvieGame(), 4000);
+    }
+}
+
+function startSurvieFinalDuel() {
+    const survie = gameState.survie;
+    if (!survie || !survie.active) return;
+    
+    survie.currentRound++;
+    survie.roundInProgress = true;
+    survie.completedPlayers = [];
+    survie.qualifiedCount = 1;
+    survie.toEliminateCount = 1;
+    
+    const epreuveType = 'duel-final';
+    const epreuveData = generateSurvieEpreuveData(epreuveType);
+    survie.currentEpreuve = { type: epreuveType, data: epreuveData };
+    
+    const timerMs = survie.timer * 1000;
+    survie.roundTimerEndTime = Date.now() + timerMs;
+    survie.roundTimer = setTimeout(() => endSurvieRound(), timerMs);
+    
+    console.log(`⚔️ Survie DUEL FINAL: ${survie.alivePlayers.map(p => p.username).join(' vs ')}`);
+    
+    io.emit('survie-duel-start', {
+        round: survie.currentRound,
+        players: survie.alivePlayers.map(p => ({
+            twitchId: p.twitchId, username: p.username, avatarUrl: p.avatarUrl
+        })),
+        epreuveType: epreuveType,
+        epreuveData: epreuveData,
+        timer: survie.timer
+    });
+}
+
+function endSurvieGame() {
+    const survie = gameState.survie;
+    if (!survie) return;
+    
+    if (survie.roundTimer) {
+        clearTimeout(survie.roundTimer);
+        survie.roundTimer = null;
+    }
+    
+    const winner = survie.alivePlayers.length > 0 ? survie.alivePlayers[0] : null;
+    
+    console.log(`🏆 Survie terminée! Winner: ${winner?.username || 'Aucun'} | ${survie.currentRound} manches`);
+    
+    io.emit('survie-game-ended', {
+        winner: winner ? {
+            twitchId: winner.twitchId, username: winner.username, avatarUrl: winner.avatarUrl
+        } : null,
+        totalRounds: survie.currentRound,
+        eliminatedPlayers: survie.eliminatedPlayers
+    });
+    
+    // Keep active=true so players can still move on the board
+    // Lobby closing (game-deactivated) will fully reset everything
+    survie.roundInProgress = false;
+    addLog('survie-end', { winner: winner?.username, rounds: survie.currentRound });
+}
+
+function getSurvieStateForClient() {
+    const survie = gameState.survie;
+    if (!survie || !survie.active) return null;
+    
+    return {
+        active: true,
+        currentRound: survie.currentRound,
+        roundInProgress: survie.roundInProgress,
+        currentEpreuve: survie.currentEpreuve,
+        timer: survie.timer,
+        alivePlayers: survie.alivePlayers.map(p => ({
+            twitchId: p.twitchId, username: p.username, avatarUrl: p.avatarUrl, colorIndex: p.colorIndex
+        })),
+        eliminatedPlayers: survie.eliminatedPlayers,
+        completedCount: survie.completedPlayers.length,
+        qualifiedCount: survie.qualifiedCount,
+        toEliminateCount: survie.toEliminateCount,
+        timeRemaining: survie.roundTimerEndTime 
+            ? Math.max(0, Math.ceil((survie.roundTimerEndTime - Date.now()) / 1000))
+            : survie.timer
+    };
+}
 
 
 // ============================================

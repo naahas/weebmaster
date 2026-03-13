@@ -334,8 +334,8 @@ function initSocket() {
         if (data.players) {
             updateLobbyPlayers(data.players);
             
-            // 🎴💣 Détecter si l'admin est dans le lobby
-            if (twitchUser && (currentGameMode === 'collect' || currentGameMode === 'bombanime')) {
+            // 🎴💣🎮 Détecter si l'admin est dans le lobby
+            if (twitchUser && (currentGameMode === 'collect' || currentGameMode === 'bombanime' || currentGameMode === 'survie')) {
                 const wasInLobby = adminInLobby;
                 adminInLobby = data.players.some(p => p.twitchId === twitchUser.id);
                 if (wasInLobby !== adminInLobby) updateAdminJoinButton();
@@ -372,6 +372,11 @@ function initSocket() {
         // Ignorer en mode BombAnime (géré par bombanime-game-started)
         if (currentGameMode === 'bombanime') {
             console.log('🎮 game-started ignoré en mode BombAnime');
+            return;
+        }
+        // Ignorer en mode Survie (géré par survie-game-started)
+        if (currentGameMode === 'survie') {
+            console.log('🎮 game-started ignoré en mode Survie');
             return;
         }
         console.log('🎮 Partie démarrée:', data);
@@ -454,6 +459,9 @@ function initSocket() {
 
     // 🎴 COLLECT - Socket Handlers (module séparé)
     initCollectSocketHandlers(socket);
+
+    // 🎮 SURVIE - Socket Handlers (module séparé)
+    initSurvieSocketHandlers(socket);
 
     socket.on('prepare-next-question', () => {
         console.log('🔄 Préparation question suivante (mode auto)');
@@ -561,9 +569,24 @@ function closeLobbyUI() {
 
             // Reset background text
             bgText.textContent = 'MASTER';
-            bgText.classList.remove('lobby-active');
+            bgText.classList.remove('lobby-active', 'bombanime-mode', 'survie-mode');
             statusDot.classList.remove('active');
             statusText.textContent = 'Inactif';
+
+            // 🎮 Cleanup Survie container
+            const survieContainer = document.getElementById('survieContainer');
+            if (survieContainer) survieContainer.remove();
+            survieState.active = false;
+            
+            // 🎮 Restaurer les éléments quiz cachés par survie
+            const gameLogsContainer = document.getElementById('gameLogsContainer');
+            const gameLogsToggle = document.getElementById('gameLogsToggle');
+            const gameCloseBtn = document.getElementById('gameCloseBtn');
+            const gameMainPanel = document.getElementById('gameMainPanel');
+            if (gameLogsContainer) gameLogsContainer.style.display = '';
+            if (gameLogsToggle) gameLogsToggle.style.display = '';
+            if (gameCloseBtn) gameCloseBtn.style.display = '';
+            if (gameMainPanel) gameMainPanel.style.display = '';
 
             // Réactiver le pulse du bouton
             btnWrapper.classList.add('pulse-active');
@@ -1846,6 +1869,28 @@ function applySettingsVisibility(mode) {
         if (collectHandGroup) collectHandGroup.style.display = 'block';
         const collectAnimeGrp = document.getElementById('collectAnimeFilterGroup');
         if (collectAnimeGrp) collectAnimeGrp.style.display = 'block';
+    } else if (mode === 'survie') {
+        // 🎮 Mode Survie — cacher tous les paramètres (lobby vierge pour l'instant)
+        if (teamsGroup) teamsGroup.style.display = 'none';
+        if (modeGroup) modeGroup.style.display = 'none';
+        if (livesGroup) livesGroup.style.display = 'none';
+        if (livesIconGroup) livesIconGroup.style.display = 'none';
+        if (questionsGroup) questionsGroup.style.display = 'none';
+        if (speedBonusGroup) speedBonusGroup.style.display = 'none';
+        if (timerGroup) timerGroup.style.display = 'none';
+        if (answersGroup) answersGroup.style.display = 'none';
+        if (difficultyGroup) difficultyGroup.style.display = 'none';
+        if (seriesTrigger) seriesTrigger.style.display = 'none';
+        if (noSpoilGroup) noSpoilGroup.style.display = 'none';
+        if (bonusEnabledGroup) bonusEnabledGroup.style.display = 'none';
+        if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
+        if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
+        if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
+        if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'none';
+        if (collectDeckGroup) collectDeckGroup.style.display = 'none';
+        if (collectHandGroup) collectHandGroup.style.display = 'none';
+        const collectAnimeGrpSurvie = document.getElementById('collectAnimeFilterGroup');
+        if (collectAnimeGrpSurvie) collectAnimeGrpSurvie.style.display = 'none';
     } else if (mode === 'rivalry') {
         if (teamsGroup) teamsGroup.style.display = 'block';
         if (modeGroup) modeGroup.style.display = 'block';
@@ -1905,10 +1950,10 @@ function setGameMode(mode) {
     
     // Mettre à jour le badge
     const badgeText = modeBadge?.querySelector('.mode-badge-text');
-    modeBadge?.classList.remove('rivalry', 'bombanime', 'collect');
+    modeBadge?.classList.remove('rivalry', 'bombanime', 'collect', 'survie');
     
     // Mettre à jour le bouton Jouer et les particules
-    btnWrapper?.classList.remove('rivalry', 'bombanime', 'collect');
+    btnWrapper?.classList.remove('rivalry', 'bombanime', 'collect', 'survie');
     
     if (mode === 'rivalry') {
         if (badgeText) badgeText.textContent = 'Rivalry Mode';
@@ -1931,6 +1976,10 @@ function setGameMode(mode) {
         if (badgeText) badgeText.textContent = 'Collect Mode';
         if (modeBadge) modeBadge.classList.add('collect');
         if (btnWrapper) btnWrapper.classList.add('collect');
+    } else if (mode === 'survie') {
+        if (badgeText) badgeText.textContent = 'Survie Mode';
+        if (modeBadge) modeBadge.classList.add('survie');
+        if (btnWrapper) btnWrapper.classList.add('survie');
     } else {
         if (badgeText) badgeText.textContent = 'Classic Mode';
     }
@@ -2512,9 +2561,11 @@ async function launchLobby() {
 
             bgText.textContent = 'LOBBY';
             bgText.classList.add('lobby-active');
-            bgText.classList.remove('bombanime-mode');
+            bgText.classList.remove('bombanime-mode', 'survie-mode');
             if (currentGameMode === 'bombanime') {
                 bgText.classList.add('bombanime-mode');
+            } else if (currentGameMode === 'survie') {
+                bgText.classList.add('survie-mode');
             }
             statusDot.classList.add('active');
             statusText.textContent = 'Lobby ouvert';
@@ -2524,7 +2575,7 @@ async function launchLobby() {
             const modeBadgeText = document.getElementById('modeBadgeText');
             if (modeBadgeHeader && modeBadgeText) {
                 modeBadgeHeader.style.display = 'block';
-                modeBadgeHeader.classList.remove('rivalry', 'bombanime', 'collect');
+                modeBadgeHeader.classList.remove('rivalry', 'bombanime', 'collect', 'survie');
                 if (currentGameMode === 'rivalry') {
                     modeBadgeText.textContent = 'Rivalité';
                     modeBadgeHeader.classList.add('rivalry');
@@ -2534,6 +2585,9 @@ async function launchLobby() {
                 } else if (currentGameMode === 'collect') {
                     modeBadgeText.textContent = 'Collect';
                     modeBadgeHeader.classList.add('collect');
+                } else if (currentGameMode === 'survie') {
+                    modeBadgeText.textContent = 'Survie';
+                    modeBadgeHeader.classList.add('survie');
                 } else {
                     modeBadgeText.textContent = 'Classic';
                 }
@@ -2638,6 +2692,36 @@ async function launchLobby() {
                 
                 const teamCounters = document.getElementById('teamCounters');
                 if (teamCounters) teamCounters.remove();
+                
+            } else if (currentGameMode === 'survie') {
+                // 🎮 Mode Survie — lobby vierge
+                if (teamsGroup) teamsGroup.style.display = 'none';
+                if (modeGroup) modeGroup.style.display = 'none';
+                if (livesGroup) livesGroup.style.display = 'none';
+                if (livesIconGroup) livesIconGroup.style.display = 'none';
+                if (questionsGroup) questionsGroup.style.display = 'none';
+                if (speedBonusGroup) speedBonusGroup.style.display = 'none';
+                if (timerGroup) timerGroup.style.display = 'none';
+                if (answersGroup) answersGroup.style.display = 'none';
+                if (difficultyGroup) difficultyGroup.style.display = 'none';
+                if (seriesTrigger) seriesTrigger.style.display = 'none';
+                if (noSpoilGroup) noSpoilGroup.style.display = 'none';
+                if (bonusEnabledGroup) bonusEnabledGroup.style.display = 'none';
+                
+                const tipIconSurvie = document.getElementById('lobbyTipIcon');
+                if (tipIconSurvie) tipIconSurvie.style.display = 'none';
+                
+                if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
+                if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
+                if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
+                if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'none';
+                if (collectDeckGroup) collectDeckGroup.style.display = 'none';
+                if (collectHandGroup) collectHandGroup.style.display = 'none';
+                const collectAnimeGrpSurvie = document.getElementById('collectAnimeFilterGroup');
+                if (collectAnimeGrpSurvie) collectAnimeGrpSurvie.style.display = 'none';
+                
+                const teamCountersSurvie = document.getElementById('teamCounters');
+                if (teamCountersSurvie) teamCountersSurvie.remove();
                 
             } else if (currentGameMode === 'rivalry') {
                 // Mode Rivalité
@@ -2781,17 +2865,17 @@ async function launchLobby() {
 // ============================================
 
 const MODES_DATA = [
-    { id: 'classic', n: 'CLASSIQUE', l: 'Mode Solo', c: 'gold', p: '∞', t: 'solo', d: "Le mode historique. Questions anime avec difficulté croissante, bonus combo et défis à débloquer.", img: 'saber2.png', imgStyle: 'transform:scale(1.4) translate(-3%, 13%)' },
+    { id: 'classic', n: 'CLASSIQUE', l: 'Mode Solo', c: 'gold', p: '∞', t: 'solo', d: "Le mode historique. Questions anime avec difficulté croissante, bonus combo et défis à débloquer.", img: 'gilga.png', imgStyle: 'transform:scale(1.04) translate(-2%, 3%)' },
     { id: 'rivalry', n: 'RIVALITÉ', l: 'Mode Équipe', c: 'purple', p: '∞', t: 'equipe', d: "Divise ta communauté en deux camps pour un quiz épique.", img: 'shark.png' },
-    { id: 'bombanime', n: 'BOMBANIME', l: 'Mode Solo', c: 'green', p: '13', t: 'solo', d: "La bombe tourne de joueur en joueur. Cite un personnage avant l'explosion.", img: 'lambo2.png', imgStyle: 'transform:scale(1.2) translateY(5%)' },
-    { id: 'trace', n: 'TRACE', l: 'Mode Solo', c: 'cyan', p: '∞', t: 'solo', d: "Dessine un élément anime et ta communauté devine. Hilarant en stream.", img: 'roxy.png', soon: true, imgScale: 2, imgStyle: 'transform:scale(2) translate(16%, 20%)' },
-    { id: 'collect', n: 'COLLECT', l: 'Mode Solo', c: 'blue', p: '5', t: 'solo', d: "Jeu de cartes stratégique anime.", img: 'aventurine3.png', soon: true, imgStyle: 'transform:scale(1.15)' },
+    { id: 'bombanime', n: 'BOMBANIME', l: 'Mode Solo', c: 'green', p: '13', t: 'solo', playable: true, d: "La bombe tourne de joueur en joueur. Cite un personnage avant l'explosion.", img: 'lambo2.png', imgStyle: 'transform:scale(1.2) translateY(5%)' },
+    { id: 'survie', n: 'SURVIE', l: 'Mode Solo', c: 'orange', p: '50', t: 'solo', playable: true, d: "Épreuves éliminatoires façon Fall Guys. Les derniers sont éliminés à chaque manche jusqu'au 1v1 final.", img: 'kenshin.png', imgStyle: 'transform:scale(1.32) translate(-2%, 12%)' },
+    { id: 'collect', n: 'COLLECT', l: 'Mode Solo', c: 'blue', p: '5', t: 'solo', playable: true, d: "Jeu de cartes stratégique anime.", img: 'aventurine3.png', soon: true, imgStyle: 'transform:scale(1.2) translate(3%, 12%)' },
 ];
 
 const MODE_COLORS = { gold:'#d4a017', purple:'#8b5cf6', green:'#22c55e', cyan:'#00d4ff', blue:'#3b82f6', red:'#e74c3c', orange:'#e67e22', pink:'#e91e8b', teal:'#1abc9c', indigo:'#6366f1', amber:'#f59e0b', lime:'#84cc16', rose:'#f43f5e' };
 const MODE_PLAYER_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>';
 
-let modeFilterType = 'all', modeFilterPlayers = 'all';
+let modeFilterType = 'all', modeFilterPlayers = 'all', modeFilterPlayable = 'all';
 const MCARD_GAP = 22.4;
 
 function getActualCardWidth() {
@@ -2841,6 +2925,7 @@ function renderModeCards(list) {
             <div class="mode-card-line"></div>
             <div class="mode-card-badge">${MODE_PLAYER_SVG}<span>${x.p}</span></div>
             ${x.soon ? '<div class="mode-soon-label">SOON</div>' : ''}
+            ${x.playable ? '<div class="mode-playable-badge"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>' : ''}
             <div class="mode-card-img"><img src="${x.img}" alt="${x.n}" draggable="false" style="${x.imgStyle ? '--img-transform:'+x.imgStyle.replace('transform:','') : ''}"></div>
             <div class="mode-card-body">
                 <div class="mode-card-label">${x.l}</div>
@@ -2972,6 +3057,8 @@ function getFilteredModes() {
         if (modeFilterType !== 'all' && m.t !== modeFilterType) return false;
         if (modeFilterPlayers === 'limited' && m.p === '∞') return false;
         if (modeFilterPlayers === 'unlimited' && m.p !== '∞') return false;
+        if (modeFilterPlayable === 'playable' && !m.playable) return false;
+        if (modeFilterPlayable === 'spectator' && m.playable) return false;
         return true;
     });
 }
@@ -2980,7 +3067,9 @@ function filterModes() { renderModeCards(getFilteredModes()); }
 
 function setModeFilter(el) {
     const g = el.dataset.g, v = el.dataset.v;
-    if (g === 't') modeFilterType = v; else modeFilterPlayers = v;
+    if (g === 't') modeFilterType = v; 
+    else if (g === 'j') modeFilterPlayable = v;
+    else modeFilterPlayers = v;
     document.querySelectorAll(`.mode-chip[data-g="${g}"]`).forEach(c => c.classList.toggle('on', c.dataset.v === v));
     filterModes();
 }
@@ -3063,6 +3152,7 @@ function openModeModal() {
     // Reset filters
     modeFilterType = 'all';
     modeFilterPlayers = 'all';
+    modeFilterPlayable = 'all';
     const searchEl = document.getElementById('modeSearchInput');
     if (searchEl) searchEl.value = '';
     document.querySelectorAll('.mode-chip').forEach(c => c.classList.toggle('on', c.dataset.v === 'all'));
@@ -3218,7 +3308,7 @@ const adminJoinBtn = document.getElementById('adminJoinLobbyBtn');
 function updateAdminJoinButton() {
     if (!adminJoinBtn) return;
     
-    if (currentGameMode === 'collect' || currentGameMode === 'bombanime') {
+    if (currentGameMode === 'collect' || currentGameMode === 'bombanime' || currentGameMode === 'survie') {
         adminJoinBtn.style.display = 'flex';
         adminJoinBtn.disabled = !twitchUser || adminInLobby;
         adminJoinBtn.querySelector('span').textContent = adminInLobby ? 'Rejoint ✓' : 'Rejoindre';
@@ -4225,6 +4315,9 @@ function updateLobbyPlayers(players) {
         } else if (currentGameMode === 'bombanime') {
             // Icônes bombes pour BombAnime
             statsHTML = getBombIconsHTML(currentLives);
+        } else if (currentGameMode === 'survie') {
+            // Icône bouclier cyan pour Survie
+            statsHTML = '<svg class="survie-shield-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#e67e22" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>';
         } else if (currentMode === 'vie') {
             statsHTML = getLivesIconsHTML(selectedLivesIcon, currentLives, currentLives);
         } else {
@@ -6002,9 +6095,36 @@ async function restoreGameState() {
             }
 
             if (bgTextEl) {
-                bgTextEl.textContent = 'GAME';
-                bgTextEl.classList.remove('lobby-active');
-                bgTextEl.classList.add('game-active');
+                if (currentGameMode === 'survie') {
+                    bgTextEl.textContent = 'SURVIE';
+                    bgTextEl.classList.remove('lobby-active', 'game-active');
+                    bgTextEl.classList.add('survie-mode');
+                    
+                    // Cacher les panneaux
+                    if (recentPanelEl) recentPanelEl.classList.add('hidden');
+                    if (lastgamePanelEl) lastgamePanelEl.classList.add('hidden');
+                    if (btnWrapperEl) btnWrapperEl.classList.remove('pulse-active');
+                    
+                    // Cacher le bouton déconnexion
+                    const logoutBtn = document.getElementById('headerLogoutBtn');
+                    if (logoutBtn) logoutBtn.style.display = 'none';
+                    
+                    // Cacher le badge SURVIE dans le header
+                    const modeBadgeHeader = document.getElementById('modeBadgeHeader');
+                    if (modeBadgeHeader) modeBadgeHeader.style.display = 'none';
+                    
+                    // 🎮 Initialiser l'UI Survie (cache les éléments quiz, injecte le container)
+                    showSurvieGameUI();
+                    
+                    // Demander l'état survie au serveur
+                    socket.emit('survie-reconnect');
+                    
+                    return true; // Ne pas continuer avec la restauration quiz classique
+                } else {
+                    bgTextEl.textContent = 'GAME';
+                    bgTextEl.classList.remove('lobby-active');
+                    bgTextEl.classList.add('game-active');
+                }
             }
             if (statusDotEl) statusDotEl.classList.add('active');
             if (statusTextEl) statusTextEl.textContent = 'En partie';
@@ -6548,7 +6668,7 @@ function showLobbyUI(players = []) {
     const modeBadgeText = document.getElementById('modeBadgeText');
     if (modeBadgeHeader && modeBadgeText) {
         modeBadgeHeader.style.display = 'block';
-        modeBadgeHeader.classList.remove('rivalry', 'bombanime', 'collect');
+        modeBadgeHeader.classList.remove('rivalry', 'bombanime', 'collect', 'survie');
         if (currentGameMode === 'rivalry') {
             modeBadgeText.textContent = 'Rivalité';
             modeBadgeHeader.classList.add('rivalry');
@@ -6558,6 +6678,9 @@ function showLobbyUI(players = []) {
         } else if (currentGameMode === 'collect') {
             modeBadgeText.textContent = 'Collect';
             modeBadgeHeader.classList.add('collect');
+        } else if (currentGameMode === 'survie') {
+            modeBadgeText.textContent = 'Survie';
+            modeBadgeHeader.classList.add('survie');
         } else {
             modeBadgeText.textContent = 'Classic';
         }
@@ -6565,11 +6688,13 @@ function showLobbyUI(players = []) {
 
     bgText.textContent = 'LOBBY';
     bgText.classList.add('lobby-active');
-    bgText.classList.remove('bombanime-mode', 'collect-mode');
+    bgText.classList.remove('bombanime-mode', 'collect-mode', 'survie-mode');
     if (currentGameMode === 'bombanime') {
         bgText.classList.add('bombanime-mode');
     } else if (currentGameMode === 'collect') {
         bgText.classList.add('collect-mode');
+    } else if (currentGameMode === 'survie') {
+        bgText.classList.add('survie-mode');
     }
     statusDot.classList.add('active');
     statusText.textContent = 'Lobby ouvert';
@@ -6679,6 +6804,34 @@ function showLobbyUI(players = []) {
         // Retirer les compteurs d'équipe
         const teamCounters = document.getElementById('teamCounters');
         if (teamCounters) teamCounters.remove();
+        
+    } else if (currentGameMode === 'survie') {
+        // 🎮 Mode Survie : lobby vierge
+        if (teamsGroup) teamsGroup.style.display = 'none';
+        if (modeGroup) modeGroup.style.display = 'none';
+        if (livesGroup) livesGroup.style.display = 'none';
+        if (livesIconGroup) livesIconGroup.style.display = 'none';
+        if (questionsGroup) questionsGroup.style.display = 'none';
+        if (speedBonusGroup) speedBonusGroup.style.display = 'none';
+        if (timerGroup) timerGroup.style.display = 'none';
+        if (answersGroup) answersGroup.style.display = 'none';
+        if (difficultyGroup) difficultyGroup.style.display = 'none';
+        if (seriesTrigger) seriesTrigger.style.display = 'none';
+        
+        const tipIconSurvie = document.getElementById('lobbyTipIcon');
+        if (tipIconSurvie) tipIconSurvie.style.display = 'none';
+        
+        if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
+        if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
+        if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
+        if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'none';
+        if (collectDeckGroup) collectDeckGroup.style.display = 'none';
+        if (collectHandGroup) collectHandGroup.style.display = 'none';
+        const collectAnimeGrpSurvie = document.getElementById('collectAnimeFilterGroup');
+        if (collectAnimeGrpSurvie) collectAnimeGrpSurvie.style.display = 'none';
+        
+        const teamCountersSurvie = document.getElementById('teamCounters');
+        if (teamCountersSurvie) teamCountersSurvie.remove();
         
     } else if (currentGameMode === 'rivalry') {
         // Mode Rivalité
@@ -8554,10 +8707,15 @@ function returnToIdle() {
 
     // Reset header
     bgText.textContent = 'MASTER';
-    bgText.classList.remove('lobby-active', 'game-active', 'bombanime-mode');
+    bgText.classList.remove('lobby-active', 'game-active', 'bombanime-mode', 'survie-mode');
     statusDot.classList.remove('active');
     document.querySelector('.status-pill')?.classList.remove('game-mode');
     statusText.textContent = 'Inactif';
+
+    // 🎮 Cleanup Survie
+    const survieContainer = document.getElementById('survieContainer');
+    if (survieContainer) survieContainer.remove();
+    if (typeof survieState !== 'undefined') survieState.active = false;
 
     // Réafficher les panneaux
     recentPanel.classList.remove('hidden');

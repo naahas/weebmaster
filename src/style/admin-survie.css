@@ -1,0 +1,121 @@
+/* ============================================
+   MODE SURVIE - Admin Styles
+   ============================================ */
+
+#survieContainer {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    background: #0a0a0f;
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 60px 60px;
+}
+
+/* Bouton fermer lobby */
+.survie-close-lobby-btn {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    z-index: 100;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.survie-close-lobby-btn:hover {
+    color: rgba(255, 58, 58, 0.6);
+}
+
+/* Modal confirmation */
+.survie-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+}
+
+.survie-confirm-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.survie-confirm-modal {
+    background: rgba(16, 16, 26, 0.98);
+    border: 1px solid rgba(255, 58, 58, 0.15);
+    border-radius: 12px;
+    padding: 28px 36px;
+    text-align: center;
+    max-width: 340px;
+}
+
+.survie-confirm-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 6px;
+}
+
+.survie-confirm-sub {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.35);
+    margin-bottom: 20px;
+}
+
+.survie-confirm-btns {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.survie-confirm-btn {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.survie-confirm-btn.cancel {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.survie-confirm-btn.cancel:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.survie-confirm-btn.confirm {
+    background: rgba(255, 58, 58, 0.15);
+    border: 1px solid rgba(255, 58, 58, 0.3);
+    color: rgba(255, 58, 58, 0.8);
+}
+
+.survie-confirm-btn.confirm:hover {
+    background: rgba(255, 58, 58, 0.25);
+    border-color: rgba(255, 58, 58, 0.5);
+    color: #ff3a3a;
+}

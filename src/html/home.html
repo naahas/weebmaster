@@ -8,6 +8,7 @@
     <meta name="description"
         content="Le meilleur quiz d'Anime/Manga en temps réel ! Affronte d'autres utilisateurs, grimpe le classement et deviens le ShonenMaster ultime.">
     <link rel="stylesheet" href="home.css">
+    <link rel="stylesheet" href="home-survie.css">
     <link rel="stylesheet" href="home-bombanime.css">
     <link rel="stylesheet" href="home-collect.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -218,6 +219,33 @@
                     </button>
                 </div>
 
+                <!-- Mode Survie: Lobby card -->
+                <div class="lobby-card lobby-card-v3 lobby-survie" v-if="lobbyMode === 'survie'">
+                    <div class="lobby-glow-line"></div>
+                    <svg class="lobby-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <path d="M9 12l2 2 4-4"/>
+                    </svg>
+                    <h2 class="lobby-title">La partie va commencer</h2>
+                    <div class="lobby-subtitle">Mode Survie</div>
+                    <div class="lobby-players-line">
+                        <span class="lobby-line"></span>
+                        <span class="lobby-count">
+                            <span class="lobby-dot"></span>
+                            <strong>{{ playerCount }}</strong> en attente
+                        </span>
+                        <span class="lobby-line"></span>
+                    </div>
+                    <button 
+                        class="lobby-btn" 
+                        :class="{ joined: hasJoined }"
+                        @click="joinLobby" 
+                        :disabled="hasJoined"
+                    >
+                        {{ hasJoined ? 'Vous êtes dans la partie' : 'Rejoindre' }}
+                    </button>
+                </div>
+
                 <button class="btn-secondary" @click="logout">
                     Déconnexion
                 </button>
@@ -240,7 +268,7 @@
 
             <!-- État: Partie en cours -->
             <div class="content-section game-section" 
-                 :class="{ 'no-animation': lobbyMode === 'bombanime' || lobbyMode === 'collect' }"
+                 :class="{ 'no-animation': lobbyMode === 'bombanime' || lobbyMode === 'collect' || lobbyMode === 'survie' }"
                  v-if="gameInProgress && isAuthenticated && !gameEnded">
                 
                 <!-- ============================================
@@ -1106,6 +1134,15 @@
                 </template>
 
                 <!-- ============================================
+                     MODE SURVIE - Interface de jeu
+                     ============================================ -->
+                <template v-if="lobbyMode === 'survie' && survie.active && !gameEnded">
+                    <div class="survie-game-container">
+                        <canvas id="surviePlayerCanvas"></canvas>
+                    </div>
+                </template>
+
+                <!-- ============================================
                      MODE CLASSIQUE/RIVALRY - Interface de jeu
                      ============================================ -->
                 <template v-else-if="!collect.reconnecting">
@@ -1777,7 +1814,7 @@
         </div>
 
         <!-- Jauge de Combo (Desktop uniquement - côté droit) -->
-        <div class="combo-gauge-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && !collect.active && bonusEnabled">
+        <div class="combo-gauge-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'survie' && !collect.active && bonusEnabled">
             <!-- 🔥 Particules EN DEHORS de la jauge -->
             <div class="combo-particles-external"></div>
 
@@ -1800,7 +1837,7 @@
         </div>
 
         <!-- 🆕 NOUVEAU SYSTÈME BONUS - Icône + Hover Menu -->
-        <div class="bonus-icon-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && !collect.active && bonusEnabled">
+        <div class="bonus-icon-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'survie' && !collect.active && bonusEnabled">
             <div class="bonus-icon-wrapper" @mouseenter="showBonusMenu = true" @mouseleave="showBonusMenu = false"
                 @click="showBonusMenu = !showBonusMenu">
 
@@ -1918,7 +1955,7 @@
 
 
         <!-- 🆕 BONUS MOBILE - Icône avec jauge circulaire (mobile uniquement, pas en FizzBuzz) -->
-        <div class="bonus-gauge-mobile" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && bonusEnabled" @click="toggleBonusArcMobile">
+        <div class="bonus-gauge-mobile" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'survie' && bonusEnabled" @click="toggleBonusArcMobile">
 
             <!-- SVG Gauge -->
             <svg class="gauge-svg" viewBox="0 0 68 68">
@@ -1944,7 +1981,7 @@
         </div>
 
         <!-- 🆕 Menu Arc de Cercle (pas en FizzBuzz) -->
-        <div class="bonus-arc-menu" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && bonusEnabled">
+        <div class="bonus-arc-menu" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'survie' && bonusEnabled">
             <!-- Overlay en premier (nth-child(1)) -->
             <div class="bonus-arc-overlay" :class="{ active: showBonusArcMobile }" @click="closeBonusArcMobile"></div>
 
@@ -2053,6 +2090,7 @@
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="survie-canvas.js"></script>
     <script src="app.js"></script>
 </body>
 

@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="admin.css">
     <link rel="stylesheet" href="admin-bombanime.css">
     <link rel="stylesheet" href="admin-collect.css">
+    <link rel="stylesheet" href="admin-survie.css">
 
 
 
@@ -672,6 +673,10 @@
                                 <div class="bombanime-dropdown-item" data-series="Prota" data-name="Protagonist" data-count="350">
                                     <span class="bombanime-dropdown-item-name">Protagonist</span>
                                     <span class="bombanime-dropdown-item-count">+350</span>
+                                </div>
+                                <div class="bombanime-dropdown-item" data-series="Manganime" data-name="Manganime" data-count="569">
+                                    <span class="bombanime-dropdown-item-name">Manganime</span>
+                                    <span class="bombanime-dropdown-item-count">+569</span>
                                 </div>
                                 <div class="bombanime-dropdown-item selected" data-series="Naruto" data-name="Naruto" data-count="200">
                                     <span class="bombanime-dropdown-item-name">Naruto</span>
@@ -1736,6 +1741,10 @@
                 <button class="mode-chip on" data-g="p" data-v="all" onclick="setModeFilter(this)">Tous</button>
                 <button class="mode-chip" data-g="p" data-v="limited" onclick="setModeFilter(this)">Limité</button>
                 <button class="mode-chip" data-g="p" data-v="unlimited" onclick="setModeFilter(this)">Illimité</button>
+                <div class="mode-chip-sep"></div>
+                <button class="mode-chip on" data-g="j" data-v="all" onclick="setModeFilter(this)">Tous</button>
+                <button class="mode-chip" data-g="j" data-v="playable" onclick="setModeFilter(this)">Jouable</button>
+                <button class="mode-chip" data-g="j" data-v="spectator" onclick="setModeFilter(this)">Spectateur</button>
             </div>
         </div>
 
@@ -1828,6 +1837,8 @@
     <script src="admin.js"></script>
     <script src="admin-bombanime.js"></script>
     <script src="admin-collect.js"></script>
+    <script src="survie-canvas.js"></script>
+    <script src="admin-survie.js"></script>
 
 </body>
 

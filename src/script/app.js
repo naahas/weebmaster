@@ -269,6 +269,27 @@ createApp({
                 drawPicked: null,  // 🎴 Index de la carte choisie (0 ou 1)
             },
 
+            // 🎮 SURVIE
+            survie: {
+                active: false,
+                currentRound: 0,
+                roundInProgress: false,
+                alivePlayers: [],
+                eliminatedPlayers: [],
+                completedCount: 0,
+                qualifiedCount: 0,
+                toEliminateCount: 0,
+                timer: 30,
+                timeRemaining: 30,
+                timerInterval: null,
+                currentEpreuve: null,
+                isEliminated: false,
+                myPosition: null,
+                showElimOverlay: false,
+                elimPlayers: [],
+                isQualified: false,
+            },
+
 
             // Liste des partenaires (ordre d'affichage)
             partnersList: [ 
@@ -1514,11 +1535,40 @@ createApp({
 
                 if (state.inProgress && this.hasJoined) {
                     // 🎴 En mode Collect, vérifier que le joueur est vraiment dans la partie
-                    // (hasJoined = lobby rejoint, mais il faut être dans playersData pour la game)
                     if (state.lobbyMode === 'collect' && !this.collect.active) {
-                        // Collect en cours mais pas initialisé → attendre collect-reconnect
-                        // Ne pas mettre gameInProgress=true tant qu'on n'a pas confirmé être dans la partie
                         this.gameInProgress = false;
+                    // 🎮 En mode Survie, restaurer l'état survie
+                    } else if (state.lobbyMode === 'survie') {
+                        if (state.survie && state.survie.active) {
+                            this.survie.active = true;
+                            this.survie.currentRound = state.survie.currentRound;
+                            this.survie.roundInProgress = state.survie.roundInProgress;
+                            this.survie.alivePlayers = state.survie.alivePlayers || [];
+                            this.survie.eliminatedPlayers = state.survie.eliminatedPlayers || [];
+                            this.survie.completedCount = state.survie.completedCount || 0;
+                            this.survie.qualifiedCount = state.survie.qualifiedCount || 0;
+                            this.survie.toEliminateCount = state.survie.toEliminateCount || 0;
+                            this.survie.timer = state.survie.timer || 30;
+                            this.survie.currentEpreuve = state.survie.currentEpreuve;
+                            
+                            this.survie.isEliminated = false;
+                            
+                            this.gameInProgress = true;
+                            document.body.classList.add('game-active');
+                            
+                            if (state.survie.roundInProgress && state.survie.timeRemaining > 0) {
+                                this.startSurvieTimer(state.survie.timeRemaining);
+                            }
+                            
+                            // Init canvas after Vue renders
+                            this.$nextTick(() => this.initSurvieCanvas());
+                        } else {
+                            // Survie terminée mais lobby encore ouvert
+                            this.survie.active = true;
+                            this.gameInProgress = true;
+                            document.body.classList.add('game-active');
+                            this.$nextTick(() => this.initSurvieCanvas());
+                        }
                     } else {
                         this.gameInProgress = true;
                     }
@@ -1892,6 +1942,16 @@ createApp({
                 this.selectedTeam = null;
                 this.teamCounts = { 1: 0, 2: 0 };
                 this.endTeamCooldown();
+                
+                // 🎮 Reset Survie
+                this.survie.active = false;
+                this.survie.roundInProgress = false;
+                this.survie.isEliminated = false;
+                this.survie.isQualified = false;
+                this.survie.currentEpreuve = null;
+                this.survie.showElimOverlay = false;
+                this.stopSurvieTimer();
+                this.destroySurvieCanvas();
 
                 // Arrêter le timer si actif
                 this.stopTimer();
@@ -1923,6 +1983,11 @@ createApp({
                 // Ignorer en mode BombAnime (géré par bombanime-game-started)
                 if (this.lobbyMode === 'bombanime') {
                     console.log('🎮 game-started ignoré en mode BombAnime');
+                    return;
+                }
+                // Ignorer en mode Survie (géré par survie-game-started)
+                if (this.lobbyMode === 'survie') {
+                    console.log('🎮 game-started ignoré en mode Survie');
                     return;
                 }
                 
@@ -2089,6 +2154,12 @@ createApp({
             });
 
             this.socket.on('game-ended', (data) => {
+                // Ignorer en mode Survie (géré par survie-game-ended)
+                if (this.lobbyMode === 'survie') {
+                    console.log('🎮 game-ended ignoré en mode Survie');
+                    return;
+                }
+                
                 // 🆕 Ne pas afficher le podium si le joueur a été kick
                 const wasKicked = sessionStorage.getItem('wasKicked');
                 if (wasKicked) {
@@ -3742,10 +3813,186 @@ createApp({
                     gameMode: 'collect'
                 };
             });
+
+            // ============================================
+            // 🎮 SURVIE - Socket Handlers
+            // ============================================
+            
+            this.socket.on('survie-game-started', (data) => {
+                console.log('Survie demarree:', data);
+                this.gameStartedOnServer = true;
+                
+                if (!this.hasJoined) {
+                    this.gameInProgress = false;
+                    return;
+                }
+                
+                this.survie.active = true;
+                this.survie.currentRound = 0;
+                this.survie.alivePlayers = data.players || [];
+                this.survie.eliminatedPlayers = [];
+                this.survie.timer = data.timer || 30;
+                this.survie.isEliminated = false;
+                this.survie.isQualified = false;
+                this.gameInProgress = true;
+                this.gameEnded = false;
+                
+                document.body.classList.add('game-active');
+                
+                // Init canvas after Vue renders the template
+                this.$nextTick(() => {
+                    this.initSurvieCanvas();
+                });
+            });
+            
+            // Receive other players' positions
+            this.socket.on('survie-player-moved', (data) => {
+                if (this._survieCanvas) {
+                    this._survieCanvas.updateRemotePlayer(data.twitchId, data.x, data.y, data.vx, data.vy);
+                }
+            });
+            
+            this.socket.on('survie-round-start', (data) => {
+                if (!this.survie.active) return;
+                console.log('🎮 Survie Manche:', data.round, data.epreuveType);
+                
+                this.survie.currentRound = data.round;
+                this.survie.roundInProgress = true;
+                this.survie.completedCount = 0;
+                this.survie.qualifiedCount = data.qualifiedCount;
+                this.survie.toEliminateCount = data.toEliminateCount;
+                this.survie.alivePlayers = data.alivePlayers;
+                this.survie.currentEpreuve = { type: data.epreuveType, data: data.epreuveData };
+                this.survie.isQualified = false;
+                this.survie.showElimOverlay = false;
+                
+                this.startSurvieTimer(data.timer);
+            });
+            
+            this.socket.on('survie-qualified-update', (data) => {
+                if (!this.survie.active) return;
+                this.survie.completedCount = data.completedCount;
+                
+                // Vérifier si c'est moi qui viens de qualifier
+                if (data.playerTwitchId === this.twitchId) {
+                    this.survie.isQualified = true;
+                }
+            });
+            
+            this.socket.on('survie-round-results', (data) => {
+                if (!this.survie.active) return;
+                console.log('🎮 Survie résultats:', data);
+                
+                this.survie.roundInProgress = false;
+                this.stopSurvieTimer();
+                
+                this.survie.elimPlayers = data.eliminated;
+                this.survie.showElimOverlay = true;
+                
+                // Élimination désactivée pour le moment
+                // const amIEliminated = data.eliminated.some(p => p.twitchId === this.twitchId);
+                // if (amIEliminated) {
+                //     this.survie.isEliminated = true;
+                // }
+                
+                this.survie.alivePlayers = data.qualified;
+            });
+            
+            this.socket.on('survie-duel-start', (data) => {
+                if (!this.survie.active) return;
+                console.log('🎮 Survie Duel Final:', data);
+                
+                this.survie.currentRound = data.round;
+                this.survie.roundInProgress = true;
+                this.survie.completedCount = 0;
+                this.survie.qualifiedCount = 1;
+                this.survie.toEliminateCount = 1;
+                this.survie.currentEpreuve = { type: data.epreuveType, data: data.epreuveData };
+                this.survie.isQualified = false;
+                
+                this.startSurvieTimer(data.timer);
+            });
+            
+            this.socket.on('survie-game-ended', (data) => {
+                if (!this.survie.active) return;
+                console.log('🏆 Survie terminée:', data);
+                
+                this.survie.roundInProgress = false;
+                this.stopSurvieTimer();
+                this.survie.showElimOverlay = false;
+                this.survie.currentEpreuve = null;
+                
+                // Garder survie.active = true et gameInProgress = true
+                // pour que le container survie reste affiché
+                // Le lobby fermera tout via game-deactivated
+                
+                this.gameEndData = {
+                    winner: data.winner,
+                    totalRounds: data.totalRounds,
+                    gameMode: 'survie'
+                };
+            });
         },
-
-
-        // 🆕 Afficher la notification quand un joueur répond
+        
+        // ============================================
+        // 🎮 SURVIE - Méthodes
+        // ============================================
+        
+        startSurvieTimer(seconds) {
+            this.stopSurvieTimer();
+            this.survie.timeRemaining = seconds;
+            this.survie.timerInterval = setInterval(() => {
+                this.survie.timeRemaining--;
+                if (this.survie.timeRemaining <= 0) {
+                    this.stopSurvieTimer();
+                }
+            }, 1000);
+        },
+        
+        stopSurvieTimer() {
+            if (this.survie.timerInterval) {
+                clearInterval(this.survie.timerInterval);
+                this.survie.timerInterval = null;
+            }
+        },
+        
+        survieComplete() {
+            if (!this.survie.active || !this.survie.roundInProgress || this.survie.isQualified || this.survie.isEliminated) return;
+            this.socket.emit('survie-completed', {});
+        },
+        
+        initSurvieCanvas() {
+            this.destroySurvieCanvas();
+            
+            const canvasEl = document.getElementById('surviePlayerCanvas');
+            if (!canvasEl || !window.SurvieCanvas) return;
+            
+            const self = this;
+            this._survieCanvas = new SurvieCanvas(canvasEl, {
+                localTwitchId: this.twitchId,
+                isAdmin: false,
+                onPosition(x, y, vx, vy) {
+                    if (self.socket) {
+                        self.socket.emit('survie-position', { x, y, vx, vy });
+                    }
+                }
+            });
+            
+            // Add all players
+            this.survie.alivePlayers.forEach(p => {
+                this._survieCanvas.addPlayer(p.twitchId, p.username, p.colorIndex || 0);
+            });
+            
+            this._survieCanvas.start();
+        },
+        
+        destroySurvieCanvas() {
+            if (this._survieCanvas) {
+                this._survieCanvas.stop();
+                this._survieCanvas = null;
+            }
+        },
+        
         showAnswerNotification(username) {
             const notification = document.createElement('div');
             notification.className = 'answer-notification';
@@ -5292,7 +5539,9 @@ createApp({
                 'DemonSlayer': 'Demon Slayer',
                 'JujutsuKaisen': 'Jujutsu Kaisen',
                 'Reborn': 'Reborn',
-                'DeathNote': 'Death Note'
+                'DeathNote': 'Death Note',
+                'Prota': 'Protagonist',
+                'Manganime': 'Manganime'
             };
             return serieNames[this.bombanime.serie] || this.bombanime.serie;
         },
