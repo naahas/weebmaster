@@ -17,8 +17,8 @@ const AURA_COLORS = [
 ];
 
 // Map dimensions (world space)
-const MAP_WIDTH = 5000;
-const MAP_HEIGHT = 3500;
+const MAP_WIDTH = 8000;
+const MAP_HEIGHT = 5500;
 
 class SurvieAura {
     constructor(twitchId, username, colorIndex, x, y) {
@@ -202,6 +202,12 @@ class SurvieCanvas {
         // Camera (centered on local player)
         this.camX = 0;
         this.camY = 0;
+        
+        // Mobile / responsive detection
+        this.isMobile = ('ontouchstart' in window) || window.innerWidth < 900;
+        this.isLandscape = window.innerWidth > window.innerHeight;
+        this.zoom = this.isMobile ? 0.7 : 0.82;
+        this.npcScale = this.isMobile ? 0.7 : 1.0; // NPCs smaller on mobile
 
         // Click-to-move
         this.mouseDown = false;
@@ -244,6 +250,29 @@ class SurvieCanvas {
         };
         this._onContextMenu = (e) => e.preventDefault();
 
+        // Touch handlers (mobile)
+        this._onTouchStart = (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            this._handleMouseDown({ clientX: touch.clientX, clientY: touch.clientY });
+        };
+        this._onTouchMove = (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            this._handleMouseMove({ clientX: touch.clientX, clientY: touch.clientY });
+        };
+        this._onTouchEnd = (e) => {
+            e.preventDefault();
+            this.mouseDown = false;
+            const local = this.auras.get(this.localTwitchId);
+            if (local) {
+                local.targetX = null;
+                local.targetY = null;
+                local.vx = 0;
+                local.vy = 0;
+            }
+        };
+
         // Keyboard movement (ZQSD + arrows)
         this.keysDown = new Set();
         this._onKeyDown = (e) => {
@@ -267,6 +296,10 @@ class SurvieCanvas {
             this.canvas.addEventListener('mouseup', this._onMouseUp);
             this.canvas.addEventListener('mouseleave', this._onMouseUp);
             this.canvas.addEventListener('contextmenu', this._onContextMenu);
+            this.canvas.addEventListener('touchstart', this._onTouchStart, { passive: false });
+            this.canvas.addEventListener('touchmove', this._onTouchMove, { passive: false });
+            this.canvas.addEventListener('touchend', this._onTouchEnd, { passive: false });
+            this.canvas.addEventListener('touchcancel', this._onTouchEnd, { passive: false });
             window.addEventListener('keydown', this._onKeyDown);
             window.addEventListener('keyup', this._onKeyUp);
         }
@@ -283,6 +316,10 @@ class SurvieCanvas {
         this.canvas.removeEventListener('mouseup', this._onMouseUp);
         this.canvas.removeEventListener('mouseleave', this._onMouseUp);
         this.canvas.removeEventListener('contextmenu', this._onContextMenu);
+        this.canvas.removeEventListener('touchstart', this._onTouchStart);
+        this.canvas.removeEventListener('touchmove', this._onTouchMove);
+        this.canvas.removeEventListener('touchend', this._onTouchEnd);
+        this.canvas.removeEventListener('touchcancel', this._onTouchEnd);
         window.removeEventListener('keydown', this._onKeyDown);
         window.removeEventListener('keyup', this._onKeyUp);
         this.keysDown.clear();
@@ -301,8 +338,8 @@ class SurvieCanvas {
 
     _updateMouseTarget(e) {
         const rect = this.canvas.getBoundingClientRect();
-        this.mouseScreenX = e.clientX - rect.left;
-        this.mouseScreenY = e.clientY - rect.top;
+        this.mouseScreenX = (e.clientX - rect.left) / this.zoom;
+        this.mouseScreenY = (e.clientY - rect.top) / this.zoom;
         this.mouseWorldX = this.mouseScreenX + this.camX;
         this.mouseWorldY = this.mouseScreenY + this.camY;
 
@@ -325,6 +362,12 @@ class SurvieCanvas {
         this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         this.w = rect.width;
         this.h = rect.height;
+        
+        // Recalculate mobile state on resize/orientation change
+        this.isMobile = ('ontouchstart' in window) || window.innerWidth < 900;
+        this.isLandscape = window.innerWidth > window.innerHeight;
+        this.zoom = this.isMobile ? 0.7 : 0.82;
+        this.npcScale = this.isMobile ? 0.7 : 1.0;
     }
 
     addPlayer(twitchId, username, colorIndex, posX, posY) {
@@ -385,12 +428,34 @@ class SurvieCanvas {
     _drawNPCs(ctx, dt) {
         const local = this.auras.get(this.localTwitchId);
         
+        // Visibility range — NPCs only visible within this distance from local player
+        // Visibility range — adapts to viewport size (covers slightly beyond screen edges)
+        const viewDiag = Math.sqrt(this.w * this.w + this.h * this.h) / this.zoom;
+        const VISIBLE_RANGE = viewDiag * 0.55;
+        const FADE_RANGE = 300; // fade in/out zone
+        
         this.npcs.forEach(npc => {
             npc.pulsePhase += dt * 1.2;
             const pulse = Math.sin(npc.pulsePhase) * 0.015 + 1;
             const sx = npc.x;
             const sy = npc.y;
-            const baseSize = npc.size * pulse;
+            const baseSize = npc.size * pulse * this.npcScale;
+
+            // Distance-based visibility (only for players, not admin spectator)
+            let npcAlpha = 1;
+            if (local) {
+                const dx = local.x - sx;
+                const dy = local.y - sy;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist > VISIBLE_RANGE) {
+                    npcAlpha = 0;
+                } else if (dist > VISIBLE_RANGE - FADE_RANGE) {
+                    npcAlpha = 1 - (dist - (VISIBLE_RANGE - FADE_RANGE)) / FADE_RANGE;
+                }
+            }
+            
+            // Skip drawing if invisible
+            if (npcAlpha <= 0) return;
 
             // Check proximity with local player
             const interactDist = baseSize * 1.6;
@@ -411,6 +476,10 @@ class SurvieCanvas {
 
             // Mini scale boost on proximity (max +6%)
             const size = baseSize * (1 + p * 0.06);
+
+            // Apply visibility alpha
+            ctx.save();
+            ctx.globalAlpha = npcAlpha;
 
             // Pedestal (lowered further from sprite)
             const pedestalW = size * 0.55;
@@ -501,6 +570,9 @@ class SurvieCanvas {
                 
                 ctx.restore();
             }
+            
+            // End visibility alpha
+            ctx.restore();
         });
     }
 
@@ -512,6 +584,8 @@ class SurvieCanvas {
 
     _updateCamera() {
         const local = this.auras.get(this.localTwitchId);
+        const vw = this.w / this.zoom;
+        const vh = this.h / this.zoom;
         if (!local) {
             // Admin: smooth follow average of all players
             if (this.auras.size > 0) {
@@ -519,40 +593,42 @@ class SurvieCanvas {
                 this.auras.forEach(a => { ax += a.x; ay += a.y; });
                 ax /= this.auras.size;
                 ay /= this.auras.size;
-                const targetCamX = ax - this.w / 2;
-                const targetCamY = ay - this.h / 2;
+                const targetCamX = ax - vw / 2;
+                const targetCamY = ay - vh / 2;
                 this.camX += (targetCamX - this.camX) * 0.05;
                 this.camY += (targetCamY - this.camY) * 0.05;
             }
         } else {
             // Player: always exactly centered
-            this.camX = local.x - this.w / 2;
-            this.camY = local.y - this.h / 2;
+            this.camX = local.x - vw / 2;
+            this.camY = local.y - vh / 2;
         }
 
         // Clamp camera to map bounds
-        this.camX = Math.max(0, Math.min(MAP_WIDTH - this.w, this.camX));
-        this.camY = Math.max(0, Math.min(MAP_HEIGHT - this.h, this.camY));
+        this.camX = Math.max(0, Math.min(MAP_WIDTH - vw, this.camX));
+        this.camY = Math.max(0, Math.min(MAP_HEIGHT - vh, this.camY));
     }
 
     _drawGrid() {
         const ctx = this.ctx;
+        const vw = this.w / this.zoom;
+        const vh = this.h / this.zoom;
         const startX = Math.floor(this.camX / this.gridSize) * this.gridSize - this.camX;
         const startY = Math.floor(this.camY / this.gridSize) * this.gridSize - this.camY;
 
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
         ctx.lineWidth = 1;
 
-        for (let x = startX; x < this.w; x += this.gridSize) {
+        for (let x = startX; x < vw; x += this.gridSize) {
             ctx.beginPath();
             ctx.moveTo(x, 0);
-            ctx.lineTo(x, this.h);
+            ctx.lineTo(x, vh);
             ctx.stroke();
         }
-        for (let y = startY; y < this.h; y += this.gridSize) {
+        for (let y = startY; y < vh; y += this.gridSize) {
             ctx.beginPath();
             ctx.moveTo(0, y);
-            ctx.lineTo(this.w, y);
+            ctx.lineTo(vw, y);
             ctx.stroke();
         }
 
@@ -568,16 +644,12 @@ class SurvieCanvas {
 
         // Fog outside map bounds (dark overlay)
         ctx.fillStyle = 'rgba(5, 5, 10, 0.8)';
-        // Left
-        if (bx > 0) ctx.fillRect(0, 0, bx, this.h);
-        // Right
+        if (bx > 0) ctx.fillRect(0, 0, bx, vh);
         const rightEdge = bx + bw;
-        if (rightEdge < this.w) ctx.fillRect(rightEdge, 0, this.w - rightEdge, this.h);
-        // Top
+        if (rightEdge < vw) ctx.fillRect(rightEdge, 0, vw - rightEdge, vh);
         if (by > 0) ctx.fillRect(bx, 0, bw, by);
-        // Bottom
         const bottomEdge = by + bh;
-        if (bottomEdge < this.h) ctx.fillRect(bx, bottomEdge, bw, this.h - bottomEdge);
+        if (bottomEdge < vh) ctx.fillRect(bx, bottomEdge, bw, vh - bottomEdge);
     }
 
     _drawClickIndicator(dt) {
@@ -826,6 +898,9 @@ class SurvieCanvas {
         ctx.save();
         ctx.translate(this.shakeOffsetX, this.shakeOffsetY);
 
+        // Apply zoom
+        ctx.scale(this.zoom, this.zoom);
+
         // Draw grid (with camera offset)
         this._drawGrid();
 
@@ -852,11 +927,19 @@ class SurvieCanvas {
         ctx.save();
         ctx.textAlign = 'center';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-        ctx.font = '600 20px "Rajdhani", "Segoe UI", sans-serif';
-        ctx.fillText('VOUS ÊTES EN MODE TEST', this.w / 2, this.h - 62);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.50)';
-        ctx.font = '400 14px "Rajdhani", "Segoe UI", sans-serif';
-        ctx.fillText('Déplacez-vous avec la souris, ZQSD ou les flèches', this.w / 2, this.h - 40);
+        if (this.isMobile) {
+            ctx.font = '600 13px "Rajdhani", "Segoe UI", sans-serif';
+            ctx.fillText('VOUS ÊTES EN MODE TEST', this.w / 2, this.h - 36);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.50)';
+            ctx.font = '400 10px "Rajdhani", "Segoe UI", sans-serif';
+            ctx.fillText('Déplacez-vous en touchant l\'écran', this.w / 2, this.h - 20);
+        } else {
+            ctx.font = '600 20px "Rajdhani", "Segoe UI", sans-serif';
+            ctx.fillText('VOUS ÊTES EN MODE TEST', this.w / 2, this.h - 62);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.50)';
+            ctx.font = '400 14px "Rajdhani", "Segoe UI", sans-serif';
+            ctx.fillText('Déplacez-vous avec la souris, ZQSD ou les flèches', this.w / 2, this.h - 40);
+        }
         ctx.restore();
 
         requestAnimationFrame((t) => this._loop(t));

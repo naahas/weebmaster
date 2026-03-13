@@ -157,6 +157,19 @@ const SURVIE_NPCS = [
     { id: 'thorfinn', name: 'Thorfinn', imageUrl: 'thorfinn_trace.png', size: 120 },
     { id: 'itachi', name: 'Itachi', imageUrl: 'itachi_trace.png', size: 120 },
     { id: 'yor', name: 'Yor', imageUrl: 'yor_trace.png', size: 120 },
+    { id: 'gojo', name: 'Gojo', imageUrl: 'gojo_trace.png', size: 120 },
+    { id: 'jotaro', name: 'Jotaro', imageUrl: 'jotaro_trace.png', size: 120 },
+    { id: 'saitama', name: 'Saitama', imageUrl: 'saitama_trace.png', size: 120 },
+    { id: 'seiya', name: 'Seiya', imageUrl: 'seiya_trace.png', size: 120 },
+    { id: 'saber', name: 'Saber', imageUrl: 'saber_trace.png', size: 120 },
+    { id: 'eren', name: 'Eren', imageUrl: 'eren_trace.png', size: 120 },
+    { id: 'madara', name: 'Madara', imageUrl: 'madara_trace.png', size: 120 },
+    { id: 'vegeta', name: 'Vegeta', imageUrl: 'vegeta_trace.png', size: 120 },
+    { id: 'makima', name: 'Makima', imageUrl: 'makima_trace.png', size: 120 },
+    { id: 'cc', name: 'CC', imageUrl: 'cc_trace.png', size: 120 },
+    { id: 'light', name: 'Light', imageUrl: 'light_trace.png', size: 120 },
+    { id: 'gintoki', name: 'Gintoki', imageUrl: 'gintoki_trace.png', size: 120 },
+    { id: 'boruto', name: 'Boruto', imageUrl: 'boruto_trace.png', size: 120 },
 ];
 
 // 🎮 Types d'épreuves Survie
@@ -8134,7 +8147,7 @@ async function startSurvieGame() {
     const SPAWN_CENTER_X = 0.5;
     const SPAWN_CENTER_Y = 0.5;
     const EXCLUSION_RADIUS = 0.18; // ~540px sur 3000px de large
-    const NPC_MIN_DIST = 0.12; // distance min entre NPCs
+    const NPC_MIN_DIST = 0.25; // distance min entre NPCs
     
     const placedNpcs = [];
     survie.npcs = SURVIE_NPCS.map(npc => {
@@ -8158,7 +8171,7 @@ async function startSurvieGame() {
             }
             valid = distCenter > EXCLUSION_RADIUS && !tooCloseToOther;
             attempts++;
-        } while (!valid && attempts < 50);
+        } while (!valid && attempts < 200);
         
         const placed = { ...npc, x, y };
         placedNpcs.push(placed);
