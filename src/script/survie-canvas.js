@@ -17,8 +17,8 @@ const AURA_COLORS = [
 ];
 
 // Map dimensions (world space)
-const MAP_WIDTH = 8000;
-const MAP_HEIGHT = 5500;
+const MAP_WIDTH = 10000;
+const MAP_HEIGHT = 7000;
 
 class SurvieAura {
     constructor(twitchId, username, colorIndex, x, y) {
@@ -429,9 +429,8 @@ class SurvieCanvas {
         const local = this.auras.get(this.localTwitchId);
         
         // Visibility range — NPCs only visible within this distance from local player
-        // Visibility range — adapts to viewport size (covers slightly beyond screen edges)
-        const viewDiag = Math.sqrt(this.w * this.w + this.h * this.h) / this.zoom;
-        const VISIBLE_RANGE = viewDiag * 0.55;
+        // Visibility range — fixed world distance (not affected by browser zoom)
+        const VISIBLE_RANGE = 1400;
         const FADE_RANGE = 300; // fade in/out zone
         
         this.npcs.forEach(npc => {

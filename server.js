@@ -131,8 +131,8 @@ const SURVIE_CONFIG = {
     DEFAULT_TIMER: 30
 };
 
-// 🎮 NPCs du mode Survie (positions randomisées à chaque partie)
-const SURVIE_NPCS = [
+// 🎮 Personnages du mode Survie
+const SURVIE_CHARACTERS = [
     { id: 'erza', name: 'Erza', imageUrl: 'erza_trace.png', size: 120 },
     { id: 'denji', name: 'Denji', imageUrl: 'denji_trace.png', size: 120 },
     { id: 'ban', name: 'Ban', imageUrl: 'ban_trace.png', size: 120 },
@@ -171,6 +171,15 @@ const SURVIE_NPCS = [
     { id: 'gintoki', name: 'Gintoki', imageUrl: 'gintoki_trace.png', size: 120 },
     { id: 'boruto', name: 'Boruto', imageUrl: 'boruto_trace.png', size: 120 },
 ];
+
+// 🏠 Structures du mode Survie
+const SURVIE_STRUCTURES = [
+    { id: 'kame', name: 'Kame House', imageUrl: 'kame_trace.png', size: 220 },
+    { id: 'yuei', name: 'Yuei', imageUrl: 'yuei_trace.png', size: 220 },
+];
+
+// Combined list for backward compat
+const SURVIE_NPCS = [...SURVIE_STRUCTURES, ...SURVIE_CHARACTERS];
 
 // 🎮 Types d'épreuves Survie
 const SURVIE_EPREUVE_TYPES = [
@@ -8143,40 +8152,72 @@ async function startSurvieGame() {
     gameState.inProgress = true;
     
     // Générer des positions aléatoires pour les NPCs (différentes à chaque partie)
-    // Zone d'exclusion autour du centre (spawn joueurs) — NPCs ne peuvent pas pop trop près
+    // Zone d'exclusion autour du centre (spawn joueurs)
     const SPAWN_CENTER_X = 0.5;
     const SPAWN_CENTER_Y = 0.5;
-    const EXCLUSION_RADIUS = 0.18; // ~540px sur 3000px de large
-    const NPC_MIN_DIST = 0.25; // distance min entre NPCs
+    const EXCLUSION_RADIUS = 0.18;
     
-    const placedNpcs = [];
-    survie.npcs = SURVIE_NPCS.map(npc => {
+    // Distances en pixels (MAP = 10000x7000)
+    const MAP_W = 12000;
+    const MAP_H = 8500;
+    const CHAR_MIN_PX = 3000; // distance min entre personnages en pixels
+    const STRUCT_CHAR_PX = 4000; // distance min entre structure et personnage en pixels
+    
+    const placedAll = [];
+    
+    // Helper: distance en pixels entre deux positions normalisées
+    function pixelDist(x1, y1, x2, y2) {
+        const dx = (x1 - x2) * MAP_W;
+        const dy = (y1 - y2) * MAP_H;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+    
+    // 1. Placer les structures d'abord
+    SURVIE_STRUCTURES.forEach(npc => {
         let x, y, valid, attempts = 0;
         do {
             x = 0.08 + Math.random() * 0.84;
             y = 0.08 + Math.random() * 0.84;
-            // Vérifier distance au centre (zone de spawn joueurs)
-            const dxCenter = x - SPAWN_CENTER_X;
-            const dyCenter = y - SPAWN_CENTER_Y;
-            const distCenter = Math.sqrt(dxCenter * dxCenter + dyCenter * dyCenter);
-            // Vérifier distance aux autres NPCs déjà placés
-            let tooCloseToOther = false;
-            for (const placed of placedNpcs) {
-                const dxN = x - placed.x;
-                const dyN = y - placed.y;
-                if (Math.sqrt(dxN * dxN + dyN * dyN) < NPC_MIN_DIST) {
-                    tooCloseToOther = true;
+            const dxC = x - SPAWN_CENTER_X;
+            const dyC = y - SPAWN_CENTER_Y;
+            const distCenter = Math.sqrt(dxC * dxC + dyC * dyC);
+            let tooClose = false;
+            for (const placed of placedAll) {
+                if (pixelDist(x, y, placed.x, placed.y) < STRUCT_CHAR_PX) {
+                    tooClose = true;
                     break;
                 }
             }
-            valid = distCenter > EXCLUSION_RADIUS && !tooCloseToOther;
+            valid = distCenter > EXCLUSION_RADIUS && !tooClose;
             attempts++;
         } while (!valid && attempts < 200);
-        
-        const placed = { ...npc, x, y };
-        placedNpcs.push(placed);
-        return placed;
+        placedAll.push({ ...npc, x, y, isStructure: true });
     });
+    
+    // 2. Placer les personnages (éloignés des structures ET entre eux)
+    SURVIE_CHARACTERS.forEach(npc => {
+        let x, y, valid, attempts = 0;
+        do {
+            x = 0.08 + Math.random() * 0.84;
+            y = 0.08 + Math.random() * 0.84;
+            const dxC = x - SPAWN_CENTER_X;
+            const dyC = y - SPAWN_CENTER_Y;
+            const distCenter = Math.sqrt(dxC * dxC + dyC * dyC);
+            let tooClose = false;
+            for (const placed of placedAll) {
+                const minPx = placed.isStructure ? STRUCT_CHAR_PX : CHAR_MIN_PX;
+                if (pixelDist(x, y, placed.x, placed.y) < minPx) {
+                    tooClose = true;
+                    break;
+                }
+            }
+            valid = distCenter > EXCLUSION_RADIUS && !tooClose;
+            attempts++;
+        } while (!valid && attempts < 200);
+        placedAll.push({ ...npc, x, y });
+    });
+    
+    survie.npcs = placedAll;
     
     console.log(`🎮 Survie démarrée: ${totalPlayers} joueurs, ${survie.npcs.length} NPCs`);
     
