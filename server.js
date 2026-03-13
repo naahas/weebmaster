@@ -131,6 +131,34 @@ const SURVIE_CONFIG = {
     DEFAULT_TIMER: 30
 };
 
+// 🎮 NPCs du mode Survie (positions randomisées à chaque partie)
+const SURVIE_NPCS = [
+    { id: 'erza', name: 'Erza', imageUrl: 'erza_trace.png', size: 120 },
+    { id: 'denji', name: 'Denji', imageUrl: 'denji_trace.png', size: 120 },
+    { id: 'ban', name: 'Ban', imageUrl: 'ban_trace.png', size: 120 },
+    { id: 'toji', name: 'Toji', imageUrl: 'toji_trace.png', size: 120 },
+    { id: 'minato', name: 'Minato', imageUrl: 'minato_trace.png', size: 120 },
+    { id: 'ulquiorra', name: 'Ulquiorra', imageUrl: 'ulquiorra_trace.png', size: 120 },
+    { id: 'tsunade', name: 'Tsunade', imageUrl: 'tsunade_trace.png', size: 120 },
+    { id: 'naruto', name: 'Naruto', imageUrl: 'naruto_trace.png', size: 120 },
+    { id: 'luffy', name: 'Luffy', imageUrl: 'luffy_trace.png', size: 120 },
+    { id: 'ichigo', name: 'Ichigo', imageUrl: 'ichigo_trace.png', size: 120 },
+    { id: 'mikasa', name: 'Mikasa', imageUrl: 'mikasa_trace.png', size: 120 },
+    { id: 'rengoku', name: 'Rengoku', imageUrl: 'rengoku_trace.png', size: 120 },
+    { id: 'killua', name: 'Killua', imageUrl: 'killua_trace.png', size: 120 },
+    { id: 'shoto', name: 'Shoto', imageUrl: 'shoto_trace.png', size: 120 },
+    { id: 'frieren', name: 'Frieren', imageUrl: 'frieren_trace.png', size: 120 },
+    { id: 'tsuna', name: 'Tsuna', imageUrl: 'tsuna_trace.png', size: 120 },
+    { id: 'zoro', name: 'Zoro', imageUrl: 'zoro_trace.png', size: 120 },
+    { id: 'goku', name: 'Goku', imageUrl: 'goku_trace.png', size: 120 },
+    { id: 'gohan', name: 'Gohan', imageUrl: 'gohan_trace.png', size: 120 },
+    { id: 'rem', name: 'Rem', imageUrl: 'rem_trace.png', size: 120 },
+    { id: 'robin', name: 'Robin', imageUrl: 'robin_trace.png', size: 120 },
+    { id: 'thorfinn', name: 'Thorfinn', imageUrl: 'thorfinn_trace.png', size: 120 },
+    { id: 'itachi', name: 'Itachi', imageUrl: 'itachi_trace.png', size: 120 },
+    { id: 'yor', name: 'Yor', imageUrl: 'yor_trace.png', size: 120 },
+];
+
 // 🎮 Types d'épreuves Survie
 const SURVIE_EPREUVE_TYPES = [
     'vrai-faux', 'intrus', 'anagramme', 'nomme', 'flou',
@@ -434,7 +462,8 @@ app.get('/game/state', (req, res) => {
             currentEpreuve: gameState.survie.currentEpreuve,
             timer: gameState.survie.timer,
             alivePlayers: gameState.survie.alivePlayers.map(p => ({
-                twitchId: p.twitchId, username: p.username, avatarUrl: p.avatarUrl, colorIndex: p.colorIndex
+                twitchId: p.twitchId, username: p.username, avatarUrl: p.avatarUrl, colorIndex: p.colorIndex,
+                posX: p.posX, posY: p.posY
             })),
             eliminatedPlayers: gameState.survie.eliminatedPlayers,
             completedCount: gameState.survie.completedPlayers.length,
@@ -442,7 +471,8 @@ app.get('/game/state', (req, res) => {
             toEliminateCount: gameState.survie.toEliminateCount,
             timeRemaining: gameState.survie.roundTimerEndTime 
                 ? Math.max(0, Math.ceil((gameState.survie.roundTimerEndTime - Date.now()) / 1000))
-                : gameState.survie.timer
+                : gameState.survie.timer,
+            npcs: gameState.survie.npcs || SURVIE_NPCS
         } : null
     });
 });
@@ -456,6 +486,7 @@ app.use(express.static('src/sound'));
 app.use(express.static('src/img'));
 app.use(express.static('src/img/questionpic'));
 app.use(express.static('src/img/collectpic'));
+app.use(express.static('src/img/tracepic'));
 app.use(express.static('src/img/avatar'));
 app.use(express.static('src/script'));
 
@@ -588,7 +619,8 @@ const gameState = {
         completedPlayers: [],       // [{twitchId, username, completionTime}]
         qualifiedCount: 0,
         toEliminateCount: 0,
-        timer: 30                   // Réglable par le streamer
+        timer: 30,                  // Réglable par le streamer
+        npcs: []                    // Positions randomisées à chaque partie
     }
 };
 
@@ -7636,7 +7668,25 @@ io.on('connection', (socket) => {
         if (!gameState.survie?.active) return;
         const player = gameState.players.get(socket.id);
         if (!player) return;
+        
+        // Store position
+        const surviePlayer = gameState.survie.alivePlayers.find(p => p.twitchId === player.twitchId);
+        if (surviePlayer) {
+            surviePlayer.posX = data.x;
+            surviePlayer.posY = data.y;
+        }
+        
+        // Broadcast to ALL (including admin who is just watching)
         socket.broadcast.emit('survie-player-moved', {
+            twitchId: player.twitchId,
+            x: data.x,
+            y: data.y,
+            vx: data.vx,
+            vy: data.vy
+        });
+        
+        // Also emit to admin sockets specifically (they might not be in players map)
+        io.emit('survie-player-pos', {
             twitchId: player.twitchId,
             x: data.x,
             y: data.y,
@@ -7887,7 +7937,8 @@ function resetGameState() {
         active: false, currentRound: 0, roundTimer: null, roundTimerEndTime: null,
         roundInProgress: false, alivePlayers: [], eliminatedPlayers: [],
         currentEpreuve: null, usedEpreuves: [], completedPlayers: [],
-        qualifiedCount: 0, toEliminateCount: 0, timer: gameState.survie.timer || 30
+        qualifiedCount: 0, toEliminateCount: 0, timer: gameState.survie.timer || 30,
+        npcs: []
     };
 
     // 🔥 COMMENTER CES LIGNES
@@ -8078,7 +8129,43 @@ async function startSurvieGame() {
     
     gameState.inProgress = true;
     
-    console.log(`🎮 Survie démarrée: ${totalPlayers} joueurs`);
+    // Générer des positions aléatoires pour les NPCs (différentes à chaque partie)
+    // Zone d'exclusion autour du centre (spawn joueurs) — NPCs ne peuvent pas pop trop près
+    const SPAWN_CENTER_X = 0.5;
+    const SPAWN_CENTER_Y = 0.5;
+    const EXCLUSION_RADIUS = 0.18; // ~540px sur 3000px de large
+    const NPC_MIN_DIST = 0.12; // distance min entre NPCs
+    
+    const placedNpcs = [];
+    survie.npcs = SURVIE_NPCS.map(npc => {
+        let x, y, valid, attempts = 0;
+        do {
+            x = 0.08 + Math.random() * 0.84;
+            y = 0.08 + Math.random() * 0.84;
+            // Vérifier distance au centre (zone de spawn joueurs)
+            const dxCenter = x - SPAWN_CENTER_X;
+            const dyCenter = y - SPAWN_CENTER_Y;
+            const distCenter = Math.sqrt(dxCenter * dxCenter + dyCenter * dyCenter);
+            // Vérifier distance aux autres NPCs déjà placés
+            let tooCloseToOther = false;
+            for (const placed of placedNpcs) {
+                const dxN = x - placed.x;
+                const dyN = y - placed.y;
+                if (Math.sqrt(dxN * dxN + dyN * dyN) < NPC_MIN_DIST) {
+                    tooCloseToOther = true;
+                    break;
+                }
+            }
+            valid = distCenter > EXCLUSION_RADIUS && !tooCloseToOther;
+            attempts++;
+        } while (!valid && attempts < 50);
+        
+        const placed = { ...npc, x, y };
+        placedNpcs.push(placed);
+        return placed;
+    });
+    
+    console.log(`🎮 Survie démarrée: ${totalPlayers} joueurs, ${survie.npcs.length} NPCs`);
     
     // Envoyer à tous
     io.emit('survie-game-started', {
@@ -8089,13 +8176,14 @@ async function startSurvieGame() {
             avatarUrl: p.avatarUrl,
             colorIndex: p.colorIndex
         })),
-        timer: survie.timer
+        timer: survie.timer,
+        npcs: survie.npcs
     });
     
-    // Lancer la première manche après l'animation d'intro (3s)
-    setTimeout(() => {
-        startSurvieNextRound();
-    }, 3000);
+    // Rounds/épreuves désactivés pour le moment — juste le plateau
+    // setTimeout(() => {
+    //     startSurvieNextRound();
+    // }, 3000);
     
     return { success: true };
 }
@@ -8328,7 +8416,8 @@ function getSurvieStateForClient() {
         currentEpreuve: survie.currentEpreuve,
         timer: survie.timer,
         alivePlayers: survie.alivePlayers.map(p => ({
-            twitchId: p.twitchId, username: p.username, avatarUrl: p.avatarUrl, colorIndex: p.colorIndex
+            twitchId: p.twitchId, username: p.username, avatarUrl: p.avatarUrl, colorIndex: p.colorIndex,
+            posX: p.posX, posY: p.posY
         })),
         eliminatedPlayers: survie.eliminatedPlayers,
         completedCount: survie.completedPlayers.length,
@@ -8336,7 +8425,8 @@ function getSurvieStateForClient() {
         toEliminateCount: survie.toEliminateCount,
         timeRemaining: survie.roundTimerEndTime 
             ? Math.max(0, Math.ceil((survie.roundTimerEndTime - Date.now()) / 1000))
-            : survie.timer
+            : survie.timer,
+        npcs: survie.npcs || SURVIE_NPCS
     };
 }
 

@@ -573,12 +573,33 @@ function closeLobbyUI() {
             statusDot.classList.remove('active');
             statusText.textContent = 'Inactif';
 
-            // 🎮 Cleanup Survie container
+            // Cleanup Survie container
             const survieContainer = document.getElementById('survieContainer');
             if (survieContainer) survieContainer.remove();
             survieState.active = false;
+            survieState.currentRound = 0;
+            survieState.roundInProgress = false;
+            survieState.alivePlayers = [];
+            survieState.eliminatedPlayers = [];
+            survieState.completedCount = 0;
+            survieState.qualifiedCount = 0;
+            survieState.toEliminateCount = 0;
+            survieState.npcs = [];
+            if (survieAdminCanvas) {
+                survieAdminCanvas.stop();
+                survieAdminCanvas = null;
+            }
             
             // 🎮 Restaurer les éléments quiz cachés par survie
+            const mainHeaderRestore = document.getElementById('mainHeader');
+            if (mainHeaderRestore) {
+                mainHeaderRestore.style.display = '';
+                mainHeaderRestore.style.background = '';
+                mainHeaderRestore.style.borderBottom = '';
+                mainHeaderRestore.style.boxShadow = '';
+            }
+            const statusPillRestore = document.querySelector('.status-pill');
+            if (statusPillRestore) statusPillRestore.style.display = '';
             const gameLogsContainer = document.getElementById('gameLogsContainer');
             const gameLogsToggle = document.getElementById('gameLogsToggle');
             const gameCloseBtn = document.getElementById('gameCloseBtn');
@@ -1977,7 +1998,7 @@ function setGameMode(mode) {
         if (modeBadge) modeBadge.classList.add('collect');
         if (btnWrapper) btnWrapper.classList.add('collect');
     } else if (mode === 'survie') {
-        if (badgeText) badgeText.textContent = 'Survie Mode';
+        if (badgeText) badgeText.textContent = 'Trace Mode';
         if (modeBadge) modeBadge.classList.add('survie');
         if (btnWrapper) btnWrapper.classList.add('survie');
     } else {
@@ -2586,7 +2607,7 @@ async function launchLobby() {
                     modeBadgeText.textContent = 'Collect';
                     modeBadgeHeader.classList.add('collect');
                 } else if (currentGameMode === 'survie') {
-                    modeBadgeText.textContent = 'Survie';
+                    modeBadgeText.textContent = 'Trace';
                     modeBadgeHeader.classList.add('survie');
                 } else {
                     modeBadgeText.textContent = 'Classic';
@@ -2865,11 +2886,11 @@ async function launchLobby() {
 // ============================================
 
 const MODES_DATA = [
-    { id: 'classic', n: 'CLASSIQUE', l: 'Mode Solo', c: 'gold', p: '∞', t: 'solo', d: "Le mode historique. Questions anime avec difficulté croissante, bonus combo et défis à débloquer.", img: 'gilga.png', imgStyle: 'transform:scale(1.04) translate(-2%, 3%)' },
-    { id: 'rivalry', n: 'RIVALITÉ', l: 'Mode Équipe', c: 'purple', p: '∞', t: 'equipe', d: "Divise ta communauté en deux camps pour un quiz épique.", img: 'shark.png' },
-    { id: 'bombanime', n: 'BOMBANIME', l: 'Mode Solo', c: 'green', p: '13', t: 'solo', playable: true, d: "La bombe tourne de joueur en joueur. Cite un personnage avant l'explosion.", img: 'lambo2.png', imgStyle: 'transform:scale(1.2) translateY(5%)' },
-    { id: 'survie', n: 'SURVIE', l: 'Mode Solo', c: 'orange', p: '50', t: 'solo', playable: true, d: "Épreuves éliminatoires façon Fall Guys. Les derniers sont éliminés à chaque manche jusqu'au 1v1 final.", img: 'kenshin.png', imgStyle: 'transform:scale(1.32) translate(-2%, 12%)' },
-    { id: 'collect', n: 'COLLECT', l: 'Mode Solo', c: 'blue', p: '5', t: 'solo', playable: true, d: "Jeu de cartes stratégique anime.", img: 'aventurine3.png', soon: true, imgStyle: 'transform:scale(1.2) translate(3%, 12%)' },
+    { id: 'classic', n: 'CLASSIQUE', l: 'Mode Solo', c: 'gold', p: '∞', t: 'solo', d: "Quiz anime en solo. Questions au format QCM , en mode Vies ou Points. Paramètres de difficultés et de séries variables. Chaque joueur peut utiliser des bonus en répondant juste ou en complétant des défis.", img: 'gilga.png', imgStyle: 'transform:scale(1.04) translate(-2%, 3%)' },
+    { id: 'rivalry', n: 'RIVALITÉ', l: 'Mode Équipe', c: 'purple', p: '∞', t: 'equipe', d: "Deux équipes s'affrontent sur un Quiz anime. Similaire au mode Classique , chaque équipe cumule les vies ou les points de ses joueurs. L'équipe avec le plus de points ou de joueurs en vies à la fin remporte la partie.", img: 'shark.png' },
+    { id: 'bombanime', n: 'BOMBANIME', l: 'Mode Solo', c: 'green', p: '13', t: 'solo', playable: true, d: "Une bombe tourne de joueur en joueur. Citez un personnage d'une série spécifique avant que le timer explose. Le dernier survivant remporte la partie.", img: 'lambo2.png', imgStyle: 'transform:scale(1.2) translateY(5%)' },
+    { id: 'survie', n: 'TRACE', l: 'Mode Solo', c: 'orange', p: '50', t: 'solo', playable: true, d: "Déplacez vous sur un plateau 2D sous forme d'aura. Accomplissez vos objectifs avant les autres joueurs pour remporter la partie.", img: 'kenshin.png', imgStyle: 'transform:scale(1.32) translate(-2%, 12%)' },
+    { id: 'collect', n: 'COLLECT', l: 'Mode Solo', c: 'blue', p: '5', t: 'solo', playable: true, d: "Jeu de cartes stratégique anime. Collectionnez des personnages, utilisez leurs capacités et affrontez les autres joueurs.", img: 'aventurine3.png', soon: true, imgStyle: 'transform:scale(1.2) translate(3%, 12%)' },
 ];
 
 const MODE_COLORS = { gold:'#d4a017', purple:'#8b5cf6', green:'#22c55e', cyan:'#00d4ff', blue:'#3b82f6', red:'#e74c3c', orange:'#e67e22', pink:'#e91e8b', teal:'#1abc9c', indigo:'#6366f1', amber:'#f59e0b', lime:'#84cc16', rose:'#f43f5e' };
@@ -6096,7 +6117,7 @@ async function restoreGameState() {
 
             if (bgTextEl) {
                 if (currentGameMode === 'survie') {
-                    bgTextEl.textContent = 'SURVIE';
+                    bgTextEl.textContent = 'TRACE';
                     bgTextEl.classList.remove('lobby-active', 'game-active');
                     bgTextEl.classList.add('survie-mode');
                     
@@ -6679,7 +6700,7 @@ function showLobbyUI(players = []) {
             modeBadgeText.textContent = 'Collect';
             modeBadgeHeader.classList.add('collect');
         } else if (currentGameMode === 'survie') {
-            modeBadgeText.textContent = 'Survie';
+            modeBadgeText.textContent = 'Trace';
             modeBadgeHeader.classList.add('survie');
         } else {
             modeBadgeText.textContent = 'Classic';
@@ -8712,10 +8733,34 @@ function returnToIdle() {
     document.querySelector('.status-pill')?.classList.remove('game-mode');
     statusText.textContent = 'Inactif';
 
-    // 🎮 Cleanup Survie
+    // Cleanup Survie
     const survieContainer = document.getElementById('survieContainer');
     if (survieContainer) survieContainer.remove();
-    if (typeof survieState !== 'undefined') survieState.active = false;
+    if (typeof survieState !== 'undefined') {
+        survieState.active = false;
+        survieState.currentRound = 0;
+        survieState.roundInProgress = false;
+        survieState.alivePlayers = [];
+        survieState.eliminatedPlayers = [];
+        survieState.completedCount = 0;
+        survieState.qualifiedCount = 0;
+        survieState.toEliminateCount = 0;
+        survieState.npcs = [];
+    }
+    if (typeof survieAdminCanvas !== 'undefined' && survieAdminCanvas) {
+        survieAdminCanvas.stop();
+        survieAdminCanvas = null;
+    }
+    // Restore header hidden by survie
+    const mainHeaderRestore = document.getElementById('mainHeader');
+    if (mainHeaderRestore) {
+        mainHeaderRestore.style.display = '';
+        mainHeaderRestore.style.background = '';
+        mainHeaderRestore.style.borderBottom = '';
+        mainHeaderRestore.style.boxShadow = '';
+    }
+    const statusPillRestore = document.querySelector('.status-pill');
+    if (statusPillRestore) statusPillRestore.style.display = '';
 
     // Réafficher les panneaux
     recentPanel.classList.remove('hidden');

@@ -9657,8 +9657,12 @@ body {
     box-shadow: 0 0 6px var(--accent); opacity: 0.6;
 }
 .mode-card-title {
-    font-family: var(--title-font); font-size: clamp(1rem, 1.2vw, 1.3rem);
+    font-family: var(--title-font); font-size: clamp(1.18rem, 1.2vw, 1.18rem);
     letter-spacing: 2px; color: #fff; line-height: 0.95; font-weight: 600;
+}
+@media (min-width: 2000px) {
+    .mode-card { width: 280px; }
+    .mode-card-title { font-size: 1.6rem !important; }
 }
 
 /* Premium hover glow */
@@ -9729,23 +9733,23 @@ body {
 .mode-playable-badge {
     position: absolute;
     top: -10px;
-    right: 32px;
+    right: 43px;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     background: rgba(16, 16, 26, 0.93);
     backdrop-filter: blur(12px);
     border-radius: 50%;
     z-index: 8;
-    border: 1px solid rgba(0, 212, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
 }
 
 .mode-playable-badge svg {
-    stroke: #00d4ff;
-    filter: drop-shadow(0 0 3px rgba(0, 212, 255, 0.4));
+    stroke: rgba(255, 255, 255, 0.7);
+    filter: none;
 }
 
 /* Card animation */
@@ -9772,7 +9776,7 @@ body {
     padding-top: 0.8rem;
 }
 .mode-desc-text {
-    font-size: 0.78rem; color: rgba(255,255,255,0.5);
+    font-size: 0.78rem; color: rgba(255,255,255,0.65);
     line-height: 1.6; font-weight: 300; max-width: 500px;
     opacity: 0; transform: translateY(12px); transition: none;
 }

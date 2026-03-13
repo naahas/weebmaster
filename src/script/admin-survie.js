@@ -14,6 +14,7 @@ const survieState = {
     timer: 30,
     timerInterval: null,
     timeRemaining: 30,
+    npcs: [],
 };
 
 // ============================================
@@ -28,6 +29,7 @@ function initSurvieSocketHandlers(socket) {
         survieState.timer = data.timer || 30;
         survieState.alivePlayers = data.players || [];
         survieState.eliminatedPlayers = [];
+        survieState.npcs = data.npcs || [];
         showSurvieGameUI();
     });
     
@@ -71,6 +73,7 @@ function initSurvieSocketHandlers(socket) {
             survieState.completedCount = data.completedCount;
             survieState.qualifiedCount = data.qualifiedCount;
             survieState.toEliminateCount = data.toEliminateCount;
+            survieState.npcs = data.npcs || [];
             showSurvieGameUI();
         }
     });
@@ -107,7 +110,7 @@ function showSurvieGameUI() {
         bgText.style.transition = 'opacity 0.5s';
         bgText.style.opacity = '0';
         setTimeout(() => {
-            bgText.textContent = 'SURVIE';
+            bgText.textContent = 'TRACE';
             bgText.style.opacity = '';
             bgText.style.transition = '';
         }, 500);
@@ -115,6 +118,17 @@ function showSurvieGameUI() {
     
     if (statusDot) statusDot.classList.add('active');
     if (statusText) statusText.textContent = 'En partie';
+    
+    // Hide header background but keep logo visible
+    const mainHeader = document.getElementById('mainHeader');
+    if (mainHeader) {
+        mainHeader.style.background = 'transparent';
+        mainHeader.style.borderBottom = 'none';
+        mainHeader.style.boxShadow = 'none';
+    }
+    // Hide status pill (En partie badge)
+    const statusPill = document.querySelector('.status-pill');
+    if (statusPill) statusPill.style.display = 'none';
     
     const logoutBtn = document.getElementById('headerLogoutBtn');
     if (logoutBtn) logoutBtn.style.display = 'none';
@@ -189,6 +203,17 @@ function showSurvieGameUI() {
     // Always (re)init canvas when players data is available
     if (survieState.alivePlayers.length > 0) {
         initSurvieAdminCanvas();
+        
+        // If admin is a player, emit reconnect-player so server updates socket.id
+        if (twitchUser) {
+            const adminIsPlayer = survieState.alivePlayers.some(p => p.twitchId === twitchUser.id);
+            if (adminIsPlayer) {
+                socket.emit('reconnect-player', {
+                    twitchId: twitchUser.id,
+                    username: twitchUser.display_name
+                });
+            }
+        }
     }
 }
 
@@ -218,21 +243,36 @@ function initSurvieAdminCanvas() {
         }
     });
     
+    // Resize first so dimensions are available for position calculation
+    survieAdminCanvas.resize();
+    
     // Add all players
     survieState.alivePlayers.forEach(p => {
-        survieAdminCanvas.addPlayer(p.twitchId, p.username, p.colorIndex || 0);
+        survieAdminCanvas.addPlayer(p.twitchId, p.username, p.colorIndex || 0, p.posX, p.posY);
     });
     
     survieAdminCanvas.start();
     
+    // Add NPCs from server data
+    (survieState.npcs || []).forEach(npc => {
+        survieAdminCanvas.addNPC(npc.id, npc.name, npc.imageUrl, npc.x * MAP_WIDTH, npc.y * MAP_HEIGHT, npc.size);
+    });
+    
     // Listen for player movements (only once)
     if (!survieAdminMovedListenerSet) {
         survieAdminMovedListenerSet = true;
-        socket.on('survie-player-moved', (data) => {
+        
+        const handleMove = (data) => {
             if (survieAdminCanvas) {
+                // Don't update local player from remote events
+                const adminTwitchId = twitchUser ? twitchUser.id : null;
+                if (data.twitchId === adminTwitchId) return;
                 survieAdminCanvas.updateRemotePlayer(data.twitchId, data.x, data.y, data.vx, data.vy);
             }
-        });
+        };
+        
+        socket.on('survie-player-moved', handleMove);
+        socket.on('survie-player-pos', handleMove);
     }
 }
 

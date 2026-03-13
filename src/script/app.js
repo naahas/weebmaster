@@ -288,6 +288,7 @@ createApp({
                 showElimOverlay: false,
                 elimPlayers: [],
                 isQualified: false,
+                npcs: [],
             },
 
 
@@ -1550,6 +1551,7 @@ createApp({
                             this.survie.toEliminateCount = state.survie.toEliminateCount || 0;
                             this.survie.timer = state.survie.timer || 30;
                             this.survie.currentEpreuve = state.survie.currentEpreuve;
+                            this.survie.npcs = state.survie.npcs || [];
                             
                             this.survie.isEliminated = false;
                             
@@ -1565,6 +1567,7 @@ createApp({
                         } else {
                             // Survie terminée mais lobby encore ouvert
                             this.survie.active = true;
+                            this.survie.npcs = state.survie?.npcs || [];
                             this.gameInProgress = true;
                             document.body.classList.add('game-active');
                             this.$nextTick(() => this.initSurvieCanvas());
@@ -1945,7 +1948,14 @@ createApp({
                 
                 // 🎮 Reset Survie
                 this.survie.active = false;
+                this.survie.currentRound = 0;
                 this.survie.roundInProgress = false;
+                this.survie.alivePlayers = [];
+                this.survie.eliminatedPlayers = [];
+                this.survie.completedCount = 0;
+                this.survie.qualifiedCount = 0;
+                this.survie.toEliminateCount = 0;
+                this.survie.npcs = [];
                 this.survie.isEliminated = false;
                 this.survie.isQualified = false;
                 this.survie.currentEpreuve = null;
@@ -3834,6 +3844,7 @@ createApp({
                 this.survie.timer = data.timer || 30;
                 this.survie.isEliminated = false;
                 this.survie.isQualified = false;
+                this.survie.npcs = data.npcs || [];
                 this.gameInProgress = true;
                 this.gameEnded = false;
                 
@@ -3846,11 +3857,13 @@ createApp({
             });
             
             // Receive other players' positions
-            this.socket.on('survie-player-moved', (data) => {
-                if (this._survieCanvas) {
+            const handleSurvieMove = (data) => {
+                if (this._survieCanvas && data.twitchId !== this.twitchId) {
                     this._survieCanvas.updateRemotePlayer(data.twitchId, data.x, data.y, data.vx, data.vy);
                 }
-            });
+            };
+            this.socket.on('survie-player-moved', handleSurvieMove);
+            this.socket.on('survie-player-pos', handleSurvieMove);
             
             this.socket.on('survie-round-start', (data) => {
                 if (!this.survie.active) return;
@@ -3978,12 +3991,20 @@ createApp({
                 }
             });
             
+            // Resize first so dimensions are available
+            this._survieCanvas.resize();
+            
             // Add all players
             this.survie.alivePlayers.forEach(p => {
-                this._survieCanvas.addPlayer(p.twitchId, p.username, p.colorIndex || 0);
+                this._survieCanvas.addPlayer(p.twitchId, p.username, p.colorIndex || 0, p.posX, p.posY);
             });
             
             this._survieCanvas.start();
+            
+            // Add NPCs from server data
+            (this.survie.npcs || []).forEach(npc => {
+                this._survieCanvas.addNPC(npc.id, npc.name, npc.imageUrl, npc.x * MAP_WIDTH, npc.y * MAP_HEIGHT, npc.size);
+            });
         },
         
         destroySurvieCanvas() {
