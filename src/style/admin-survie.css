@@ -119,3 +119,149 @@
     border-color: rgba(255, 58, 58, 0.5);
     color: #ff3a3a;
 }
+
+/* ============================================
+   DIALOGUE BOX - RPG Style (Admin)
+   ============================================ */
+
+.survie-dialogue-overlay {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    display: flex;
+    justify-content: center;
+    padding: 0 24px 28px;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.survie-dialogue-overlay.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: all;
+}
+
+.survie-dialogue-box {
+    display: flex;
+    align-items: flex-end;
+    gap: 0;
+    max-width: 720px;
+    width: 100%;
+    position: relative;
+}
+
+.survie-dialogue-portrait {
+    width: 100px;
+    height: 100px;
+    flex-shrink: 0;
+    border-radius: 12px 0 0 12px;
+    background: rgba(10, 10, 18, 0.95);
+    border: 1px solid rgba(255, 200, 80, 0.2);
+    border-right: none;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.survie-dialogue-portrait img {
+    width: 85%;
+    height: 85%;
+    object-fit: contain;
+    filter: drop-shadow(0 0 6px rgba(255, 200, 80, 0.15));
+}
+
+.survie-dialogue-portrait::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 200, 80, 0.06) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.survie-dialogue-content {
+    flex: 1;
+    background: rgba(10, 10, 18, 0.95);
+    border: 1px solid rgba(255, 200, 80, 0.15);
+    border-left: none;
+    border-radius: 0 12px 12px 0;
+    padding: 16px 20px 14px;
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    backdrop-filter: blur(12px);
+    position: relative;
+}
+
+.survie-dialogue-name {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffcc00;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.survie-dialogue-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.55;
+    flex: 1;
+}
+
+.survie-dialogue-text .typing-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 14px;
+    background: rgba(255, 200, 80, 0.6);
+    margin-left: 2px;
+    animation: dialogueBlink 0.6s steps(2) infinite;
+    vertical-align: text-bottom;
+}
+
+@keyframes dialogueBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+.survie-dialogue-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(to right, rgba(255, 200, 80, 0.3), rgba(255, 200, 80, 0.05));
+}
+
+.survie-dialogue-box::before,
+.survie-dialogue-box::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-color: rgba(255, 200, 80, 0.2);
+    border-style: solid;
+    pointer-events: none;
+}
+.survie-dialogue-box::before {
+    top: -1px;
+    left: -1px;
+    border-width: 1px 0 0 1px;
+    border-radius: 4px 0 0 0;
+}
+.survie-dialogue-box::after {
+    bottom: -1px;
+    right: -1px;
+    border-width: 0 1px 1px 0;
+    border-radius: 0 0 4px 0;
+}

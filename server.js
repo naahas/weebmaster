@@ -170,12 +170,25 @@ const SURVIE_CHARACTERS = [
     { id: 'light', name: 'Light', imageUrl: 'light_trace.png', size: 120 },
     { id: 'gintoki', name: 'Gintoki', imageUrl: 'gintoki_trace.png', size: 120 },
     { id: 'boruto', name: 'Boruto', imageUrl: 'boruto_trace.png', size: 120 },
+    { id: 'sasuke', name: 'Sasuke', imageUrl: 'sasuke_trace.png', size: 120 },
+    { id: 'usopp', name: 'Usopp', imageUrl: 'usopp_trace.png', size: 120 },
+    { id: 'nami', name: 'Nami', imageUrl: 'nami_trace.png', size: 120 },
 ];
 
 // 🏠 Structures du mode Survie
 const SURVIE_STRUCTURES = [
     { id: 'kame', name: 'Kame House', imageUrl: 'kame_trace.png', size: 220 },
     { id: 'yuei', name: 'Yuei', imageUrl: 'yuei_trace.png', size: 220 },
+    { id: 'konoha', name: 'Konoha', imageUrl: 'konoha_trace.png', size: 220 },
+    { id: 'marineford', name: 'Marineford', imageUrl: 'marineford_trace.png', size: 220 },
+    { id: 'sunny', name: 'Sunny', imageUrl: 'sunny_trace.png', size: 220 },
+    { id: 'snk', name: 'SNK', imageUrl: 'snk_trace.png', size: 220 },
+    { id: 'guild', name: 'Guild', imageUrl: 'guild_trace.png', size: 220 },
+    { id: 'gracefield', name: 'Gracefield', imageUrl: 'gracefield_trace.png', size: 220 },
+    { id: 'infinitecastle', name: 'Infinite Castle', imageUrl: 'infinitecastle_trace.png', size: 220 },
+    { id: 'haikyuu', name: 'Haikyuu', imageUrl: 'haikyuu_trace.png', size: 220 },
+    { id: 'waterseven', name: 'Water Seven', imageUrl: 'waterseven_trace.png', size: 220 },
+    { id: 'valleyend', name: 'Valley of the End', imageUrl: 'valleyend_trace.png', size: 220 },
 ];
 
 // Combined list for backward compat
@@ -8158,8 +8171,8 @@ async function startSurvieGame() {
     const EXCLUSION_RADIUS = 0.18;
     
     // Distances en pixels (MAP = 10000x7000)
-    const MAP_W = 12000;
-    const MAP_H = 8500;
+    const MAP_W = 18000;
+    const MAP_H = 12000;
     const CHAR_MIN_PX = 3000; // distance min entre personnages en pixels
     const STRUCT_CHAR_PX = 4000; // distance min entre structure et personnage en pixels
     

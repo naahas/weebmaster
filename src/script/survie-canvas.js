@@ -17,8 +17,8 @@ const AURA_COLORS = [
 ];
 
 // Map dimensions (world space)
-const MAP_WIDTH = 10000;
-const MAP_HEIGHT = 7000;
+const MAP_WIDTH = 18000;
+const MAP_HEIGHT = 12000;
 
 class SurvieAura {
     constructor(twitchId, username, colorIndex, x, y) {
@@ -34,7 +34,7 @@ class SurvieAura {
         this.trail = [];
         this.pulsePhase = Math.random() * Math.PI * 2;
         this.size = 18;
-        this.speed = 105;
+        this.speed = 350; // TEMP - remettre à 105
         // Remote interpolation
         this.remoteTargetX = null;
         this.remoteTargetY = null;
@@ -233,6 +233,10 @@ class SurvieCanvas {
         // NPCs
         this.npcs = [];
         this.npcImages = new Map(); // url -> Image
+        this.nearestNPC = null; // NPC currently in range
+        this.dialogueOpen = false; // Whether dialogue is showing
+        this.onNPCInteract = options.onNPCInteract || null; // Callback when player interacts
+        this.onDialogueClose = options.onDialogueClose || null; // Callback when dialogue closes
 
         this._onResize = () => this.resize();
         this._onMouseDown = (e) => this._handleMouseDown(e);
@@ -253,6 +257,20 @@ class SurvieCanvas {
         // Touch handlers (mobile)
         this._onTouchStart = (e) => {
             e.preventDefault();
+            // Check if touch is on a nearby NPC (tap to interact on mobile)
+            if (this.nearestNPC && !this.dialogueOpen) {
+                const touch = e.touches[0];
+                const rect = this.canvas.getBoundingClientRect();
+                const tx = (touch.clientX - rect.left) / this.zoom + this.camX;
+                const ty = (touch.clientY - rect.top) / this.zoom + this.camY;
+                const dx = tx - this.nearestNPC.x;
+                const dy = ty - this.nearestNPC.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < this.nearestNPC.size * 2) {
+                    this._triggerInteraction();
+                    return;
+                }
+            }
             const touch = e.touches[0];
             this._handleMouseDown({ clientX: touch.clientX, clientY: touch.clientY });
         };
@@ -273,7 +291,7 @@ class SurvieCanvas {
             }
         };
 
-        // Keyboard movement (ZQSD + arrows)
+        // Keyboard movement (ZQSD + arrows + E for interact)
         this.keysDown = new Set();
         this._onKeyDown = (e) => {
             const key = e.key.toLowerCase();
@@ -281,10 +299,35 @@ class SurvieCanvas {
                 this.keysDown.add(key);
                 e.preventDefault();
             }
+            // E key = interact with nearest NPC or close dialogue
+            if (key === 'e') {
+                if (this.dialogueOpen) {
+                    // Close dialogue
+                    if (this.onDialogueClose) {
+                        this.onDialogueClose();
+                    }
+                    this.dialogueOpen = false;
+                } else if (this.nearestNPC) {
+                    this._triggerInteraction();
+                }
+            }
         };
         this._onKeyUp = (e) => {
             this.keysDown.delete(e.key.toLowerCase());
         };
+    }
+
+    _triggerInteraction() {
+        if (!this.nearestNPC || this.dialogueOpen) return;
+        this.dialogueOpen = true;
+        this._dialogueNPC = this.nearestNPC;
+        if (this.onNPCInteract) {
+            this.onNPCInteract(this.nearestNPC);
+        }
+    }
+    
+    closeDialogue() {
+        this.dialogueOpen = false;
     }
 
     start() {
@@ -428,10 +471,13 @@ class SurvieCanvas {
     _drawNPCs(ctx, dt) {
         const local = this.auras.get(this.localTwitchId);
         
-        // Visibility range — NPCs only visible within this distance from local player
         // Visibility range — fixed world distance (not affected by browser zoom)
         const VISIBLE_RANGE = 1400;
-        const FADE_RANGE = 300; // fade in/out zone
+        const FADE_RANGE = 300;
+        
+        // Track nearest interactable NPC
+        let closestNPC = null;
+        let closestDist = Infinity;
         
         this.npcs.forEach(npc => {
             npc.pulsePhase += dt * 1.2;
@@ -567,12 +613,50 @@ class SurvieCanvas {
                 ctx.fillStyle = '#fff';
                 ctx.fillText('!', iconX - 0.5, iconY - 0.5);
                 
+                // "E" key hint below "!" (or "TAP" on mobile)
+                ctx.globalAlpha = iconAlpha * 0.6;
+                ctx.font = `600 ${9 * popScale}px "Rajdhani", "Segoe UI", sans-serif`;
+                ctx.fillStyle = '#ffcc00';
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.lineWidth = 2.5 * popScale;
+                const hintText = this.isMobile ? 'TAP' : 'E';
+                ctx.strokeText(hintText, iconX, iconY + fontSize * 0.8);
+                ctx.fillText(hintText, iconX, iconY + fontSize * 0.8);
+                
                 ctx.restore();
+            }
+            
+            // Track nearest interactable NPC
+            if (local && p > 0.15) {
+                const dx = local.x - sx;
+                const dy = local.y - sy;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closestNPC = npc;
+                }
             }
             
             // End visibility alpha
             ctx.restore();
         });
+        
+        // Update nearest NPC reference
+        this.nearestNPC = closestNPC;
+        
+        // Auto-close dialogue if player walked away from NPC (use raw distance, not smooth)
+        if (this.dialogueOpen && local && this._dialogueNPC) {
+            const dx = local.x - this._dialogueNPC.x;
+            const dy = local.y - this._dialogueNPC.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > this._dialogueNPC.size * 1.8) {
+                this.dialogueOpen = false;
+                this._dialogueNPC = null;
+                if (this.onDialogueClose) {
+                    this.onDialogueClose();
+                }
+            }
+        }
     }
 
     updateRemotePlayer(twitchId, x, y, vx, vy) {

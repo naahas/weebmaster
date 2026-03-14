@@ -3988,6 +3988,12 @@ createApp({
                     if (self.socket) {
                         self.socket.emit('survie-position', { x, y, vx, vy });
                     }
+                },
+                onNPCInteract(npc) {
+                    self.openSurvieDialogue(npc);
+                },
+                onDialogueClose() {
+                    self.closeSurvieDialogue();
                 }
             });
             
@@ -4005,6 +4011,81 @@ createApp({
             (this.survie.npcs || []).forEach(npc => {
                 this._survieCanvas.addNPC(npc.id, npc.name, npc.imageUrl, npc.x * MAP_WIDTH, npc.y * MAP_HEIGHT, npc.size);
             });
+            
+            // Create dialogue overlay if not exists
+            if (!document.getElementById('survieDialogueOverlay')) {
+                const dialogueHTML = `
+                    <div class="survie-dialogue-overlay" id="survieDialogueOverlay">
+                        <div class="survie-dialogue-box">
+                            <div class="survie-dialogue-portrait">
+                                <img id="survieDialoguePortrait" src="" alt="">
+                            </div>
+                            <div class="survie-dialogue-content">
+                                <div class="survie-dialogue-name" id="survieDialogueName"></div>
+                                <div class="survie-dialogue-text" id="survieDialogueText"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', dialogueHTML);
+                
+                // Close on click
+                document.getElementById('survieDialogueOverlay').addEventListener('click', () => {
+                    this.closeSurvieDialogue();
+                    if (this._survieCanvas) this._survieCanvas.dialogueOpen = false;
+                });
+            }
+        },
+        
+        openSurvieDialogue(npc) {
+            const overlay = document.getElementById('survieDialogueOverlay');
+            const portrait = document.getElementById('survieDialoguePortrait');
+            const name = document.getElementById('survieDialogueName');
+            const text = document.getElementById('survieDialogueText');
+            
+            if (!overlay) return;
+            
+            // Set portrait
+            portrait.src = npc.imageUrl;
+            name.textContent = npc.name;
+            
+            // Placeholder dialogue (will be replaced by quest system later)
+            const dialogues = [
+                `Hé, tu me cherchais ? Je suis ${npc.name}...`,
+                `Tu es arrivé jusqu'ici... Impressionnant.`,
+                `${npc.name} te regarde avec intensité...`,
+                `Bienvenue, voyageur. Je suis ${npc.name}.`,
+                `Tu n'es pas le premier à me trouver ici...`,
+            ];
+            const dialogue = dialogues[Math.floor(Math.random() * dialogues.length)];
+            
+            // Typewriter effect
+            text.innerHTML = '';
+            let charIndex = 0;
+            if (this._typewriterInterval) clearInterval(this._typewriterInterval);
+            
+            this._typewriterInterval = setInterval(() => {
+                if (charIndex < dialogue.length) {
+                    text.innerHTML = dialogue.substring(0, charIndex + 1) + '<span class="typing-cursor"></span>';
+                    charIndex++;
+                } else {
+                    text.innerHTML = dialogue;
+                    clearInterval(this._typewriterInterval);
+                    this._typewriterInterval = null;
+                }
+            }, 30);
+            
+            // Show
+            overlay.classList.add('active');
+        },
+        
+        closeSurvieDialogue() {
+            const overlay = document.getElementById('survieDialogueOverlay');
+            if (overlay) overlay.classList.remove('active');
+            if (this._typewriterInterval) {
+                clearInterval(this._typewriterInterval);
+                this._typewriterInterval = null;
+            }
         },
         
         destroySurvieCanvas() {
@@ -4012,6 +4093,10 @@ createApp({
                 this._survieCanvas.stop();
                 this._survieCanvas = null;
             }
+            // Cleanup dialogue
+            this.closeSurvieDialogue();
+            const overlay = document.getElementById('survieDialogueOverlay');
+            if (overlay) overlay.remove();
         },
         
         showAnswerNotification(username) {

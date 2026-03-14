@@ -240,6 +240,12 @@ function initSurvieAdminCanvas() {
             if (socket) {
                 socket.emit('survie-position', { x, y, vx, vy });
             }
+        },
+        onNPCInteract(npc) {
+            openAdminSurvieDialogue(npc);
+        },
+        onDialogueClose() {
+            closeAdminSurvieDialogue();
         }
     });
     
@@ -278,4 +284,80 @@ function initSurvieAdminCanvas() {
 
 function survieNextRound() {
     socket.emit('survie-next-round');
+}
+
+// ============================================
+// DIALOGUE SYSTEM (Admin as player)
+// ============================================
+let _adminTypewriterInterval = null;
+
+function openAdminSurvieDialogue(npc) {
+    // Create overlay if not exists
+    if (!document.getElementById('survieDialogueOverlay')) {
+        const dialogueHTML = `
+            <div class="survie-dialogue-overlay" id="survieDialogueOverlay">
+                <div class="survie-dialogue-box">
+                    <div class="survie-dialogue-portrait">
+                        <img id="survieDialoguePortrait" src="" alt="">
+                    </div>
+                    <div class="survie-dialogue-content">
+                        <div class="survie-dialogue-name" id="survieDialogueName"></div>
+                        <div class="survie-dialogue-text" id="survieDialogueText"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', dialogueHTML);
+        
+        // Close on click
+        document.getElementById('survieDialogueOverlay').addEventListener('click', () => {
+            closeAdminSurvieDialogue();
+            if (survieAdminCanvas) survieAdminCanvas.dialogueOpen = false;
+        });
+    }
+    
+    const overlay = document.getElementById('survieDialogueOverlay');
+    const portrait = document.getElementById('survieDialoguePortrait');
+    const name = document.getElementById('survieDialogueName');
+    const text = document.getElementById('survieDialogueText');
+    
+    portrait.src = npc.imageUrl;
+    name.textContent = npc.name;
+    
+    // Placeholder dialogues
+    const dialogues = [
+        `Hé, tu me cherchais ? Je suis ${npc.name}...`,
+        `Tu es arrivé jusqu'ici... Impressionnant.`,
+        `${npc.name} te regarde avec intensité...`,
+        `Bienvenue, voyageur. Je suis ${npc.name}.`,
+        `Tu n'es pas le premier à me trouver ici...`,
+    ];
+    const dialogue = dialogues[Math.floor(Math.random() * dialogues.length)];
+    
+    // Typewriter effect
+    text.innerHTML = '';
+    let charIndex = 0;
+    if (_adminTypewriterInterval) clearInterval(_adminTypewriterInterval);
+    
+    _adminTypewriterInterval = setInterval(() => {
+        if (charIndex < dialogue.length) {
+            text.innerHTML = dialogue.substring(0, charIndex + 1) + '<span class="typing-cursor"></span>';
+            charIndex++;
+        } else {
+            text.innerHTML = dialogue;
+            clearInterval(_adminTypewriterInterval);
+            _adminTypewriterInterval = null;
+        }
+    }, 30);
+    
+    overlay.classList.add('active');
+}
+
+function closeAdminSurvieDialogue() {
+    const overlay = document.getElementById('survieDialogueOverlay');
+    if (overlay) overlay.classList.remove('active');
+    if (_adminTypewriterInterval) {
+        clearInterval(_adminTypewriterInterval);
+        _adminTypewriterInterval = null;
+    }
 }
