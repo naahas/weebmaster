@@ -17,8 +17,8 @@ const AURA_COLORS = [
 ];
 
 // Map dimensions (world space)
-const MAP_WIDTH = 18000;
-const MAP_HEIGHT = 12000;
+const MAP_WIDTH = 22000;
+const MAP_HEIGHT = 15000;
 
 class SurvieAura {
     constructor(twitchId, username, colorIndex, x, y) {
@@ -39,6 +39,8 @@ class SurvieAura {
         this.remoteTargetX = null;
         this.remoteTargetY = null;
         this.isRemote = false;
+        // Spawn animation
+        this.spawnedAt = performance.now();
     }
 
     updatePosition(x, y, vx, vy) {
@@ -117,6 +119,20 @@ class SurvieAura {
     }
 
     draw(ctx) {
+        // Spawn animation (fade-in + scale over 0.8s)
+        const spawnElapsed = (performance.now() - this.spawnedAt) / 1000;
+        const spawnDuration = 0.8;
+        if (spawnElapsed < spawnDuration) {
+            const t = spawnElapsed / spawnDuration;
+            // Ease out cubic
+            const ease = 1 - Math.pow(1 - t, 3);
+            ctx.save();
+            ctx.globalAlpha = ease;
+            ctx.translate(this.x, this.y);
+            ctx.scale(0.3 + ease * 0.7, 0.3 + ease * 0.7);
+            ctx.translate(-this.x, -this.y);
+        }
+
         const pulse = Math.sin(this.pulsePhase) * 0.15 + 1;
         const g = this.color.glow;
 
@@ -179,10 +195,16 @@ class SurvieAura {
         }
 
         // Name
-        ctx.font = '600 10px "Segoe UI", sans-serif';
+        ctx.font = '600 13px "Segoe UI", sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.fillText(this.username, this.x, this.y + this.size * 2.5 + 8);
+        ctx.fillStyle = this.isRemote ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.6)';
+        ctx.fillText(this.isRemote ? this.username : 'Vous', this.x, this.y + this.size * 2.5 + 8);
+        
+        // End spawn animation
+        const spawnElapsedEnd = (performance.now() - this.spawnedAt) / 1000;
+        if (spawnElapsedEnd < 0.8) {
+            ctx.restore();
+        }
     }
 }
 
@@ -348,6 +370,7 @@ class SurvieCanvas {
         }
         this.running = true;
         this.lastTime = performance.now();
+        this.spawnTime = performance.now(); // For spawn animations
         this._loop(this.lastTime);
     }
 
@@ -445,6 +468,7 @@ class SurvieCanvas {
             questDialogues: questDialogues || {},
             isStructure: isStructure || false,
             pulsePhase: Math.random() * Math.PI * 2,
+            spawnIndex: this.npcs.length, // For staggered spawn animation
             image: null,
             loaded: false
         };
@@ -475,7 +499,7 @@ class SurvieCanvas {
         const local = this.auras.get(this.localTwitchId);
         
         // Visibility range — fixed world distance (not affected by browser zoom)
-        const VISIBLE_RANGE = 1400;
+        const VISIBLE_RANGE = 1100;
         const FADE_RANGE = 300;
         
         // Track nearest interactable NPC
@@ -488,6 +512,24 @@ class SurvieCanvas {
             const sx = npc.x;
             const sy = npc.y;
             const baseSize = npc.size * pulse * this.npcScale;
+
+            // Spawn animation (staggered fade-in + scale)
+            let spawnAlpha = 1;
+            let spawnScale = 1;
+            if (this.spawnTime) {
+                const spawnDelay = 0.5 + npc.spawnIndex * 0.06; // Stagger: 60ms per NPC
+                const spawnElapsed = (performance.now() - this.spawnTime) / 1000 - spawnDelay;
+                const spawnDuration = 0.7;
+                if (spawnElapsed < 0) {
+                    spawnAlpha = 0;
+                    spawnScale = 0.3;
+                } else if (spawnElapsed < spawnDuration) {
+                    const t = spawnElapsed / spawnDuration;
+                    const ease = 1 - Math.pow(1 - t, 3); // ease out cubic
+                    spawnAlpha = ease;
+                    spawnScale = 0.3 + ease * 0.7;
+                }
+            }
 
             // Distance-based visibility (only for players, not admin spectator)
             let npcAlpha = 1;
@@ -503,7 +545,7 @@ class SurvieCanvas {
             }
             
             // Skip drawing if invisible
-            if (npcAlpha <= 0) return;
+            if (npcAlpha <= 0 || spawnAlpha <= 0) return;
 
             // Check proximity with local player
             const interactDist = baseSize * 1.6;
@@ -525,9 +567,16 @@ class SurvieCanvas {
             // Mini scale boost on proximity (max +6%)
             const size = baseSize * (1 + p * 0.06);
 
-            // Apply visibility alpha
+            // Apply visibility alpha + spawn alpha
             ctx.save();
-            ctx.globalAlpha = npcAlpha;
+            ctx.globalAlpha = npcAlpha * spawnAlpha;
+            
+            // Apply spawn scale (centered on NPC position)
+            if (spawnScale < 1) {
+                ctx.translate(sx, sy);
+                ctx.scale(spawnScale, spawnScale);
+                ctx.translate(-sx, -sy);
+            }
 
             // Pedestal (lowered further from sprite)
             const pedestalW = size * 0.55;
@@ -581,8 +630,8 @@ class SurvieCanvas {
                 const iconAlpha = Math.min(1, t * 1.5);
                 
                 const iconX = sx;
-                const iconY = sy - size * 1.3 - floatOffset;
-                const fontSize = 22 * popScale;
+                const iconY = sy - size * 1.6 - floatOffset;
+                const fontSize = 28 * popScale;
                 
                 ctx.save();
                 ctx.globalAlpha = iconAlpha;
@@ -616,15 +665,16 @@ class SurvieCanvas {
                 ctx.fillStyle = '#fff';
                 ctx.fillText('!', iconX - 0.5, iconY - 0.5);
                 
-                // "E" key hint below "!" (or "TAP" on mobile)
-                ctx.globalAlpha = iconAlpha * 0.6;
-                ctx.font = `600 ${9 * popScale}px "Rajdhani", "Segoe UI", sans-serif`;
+                // "E pour interagir" hint below "!" (or "TAP" on mobile)
+                ctx.globalAlpha = iconAlpha * 0.8;
+                const hintSize = 14 * popScale;
+                ctx.font = `600 ${hintSize}px "Rajdhani", "Segoe UI", sans-serif`;
                 ctx.fillStyle = '#ffcc00';
-                ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
-                ctx.lineWidth = 2.5 * popScale;
-                const hintText = this.isMobile ? 'TAP' : 'E';
-                ctx.strokeText(hintText, iconX, iconY + fontSize * 0.8);
-                ctx.fillText(hintText, iconX, iconY + fontSize * 0.8);
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
+                ctx.lineWidth = 3 * popScale;
+                const hintText = this.isMobile ? 'TAP' : 'E pour interagir';
+                ctx.strokeText(hintText, iconX, iconY + fontSize * 1.05);
+                ctx.fillText(hintText, iconX, iconY + fontSize * 1.05);
                 
                 ctx.restore();
             }
@@ -1018,13 +1068,13 @@ class SurvieCanvas {
             ctx.fillText('VOUS ÊTES EN MODE TEST', this.w / 2, this.h - 36);
             ctx.fillStyle = 'rgba(255, 255, 255, 0.50)';
             ctx.font = '400 10px "Rajdhani", "Segoe UI", sans-serif';
-            ctx.fillText('Déplacez-vous en touchant l\'écran · Tap pour interagir', this.w / 2, this.h - 20);
+            ctx.fillText('Déplacez-vous en touchant l\'écran', this.w / 2, this.h - 20);
         } else {
             ctx.font = '600 20px "Rajdhani", "Segoe UI", sans-serif';
             ctx.fillText('VOUS ÊTES EN MODE TEST', this.w / 2, this.h - 62);
             ctx.fillStyle = 'rgba(255, 255, 255, 0.50)';
             ctx.font = '400 14px "Rajdhani", "Segoe UI", sans-serif';
-            ctx.fillText('Déplacez-vous avec la souris, ZQSD ou les flèches · E pour interagir', this.w / 2, this.h - 40);
+            ctx.fillText('Déplacez-vous avec la souris, ZQSD ou les flèches', this.w / 2, this.h - 40);
         }
         ctx.restore();
 

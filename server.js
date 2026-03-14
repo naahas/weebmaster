@@ -213,6 +213,26 @@ const SURVIE_CHARACTERS = [
         defaultDialogues: ["Misère , pourquoi il n'y a que des brutes par ici ?", "Hé toi fais gaffe hein , j'ai une armée derrière moi !", "Olala j'ai le cafard..."], questDialogues: {} },
     { id: 'nami', name: 'Nami', imageUrl: 'nami_trace.png', size: 120,
         defaultDialogues: ["Salut toi ! Tu n'aurais pas un peu d'argent à me prêter ? Je te les rendrai, promis, hihi.", "Je sais que je suis belle mais c'est pas une raison pour me regarder comme ça !", "Dis , tu penses quoi de ma nouvelle tenue ? Elle est mignonne hein ? Avoue !"], questDialogues: {} },
+    { id: 'kakashi', name: 'Kakashi', imageUrl: 'kakashi_trace.png', size: 120,
+        defaultDialogues: ["...", "...", "..."], questDialogues: {} },
+    { id: 'dio', name: 'Dio', imageUrl: 'dio_trace.png', size: 120,
+        defaultDialogues: ["...", "...", "..."], questDialogues: {} },
+    { id: 'ram', name: 'Ram', imageUrl: 'ram_trace.png', size: 120,
+        defaultDialogues: ["...", "...", "..."], questDialogues: {} },
+    { id: 'edward', name: 'Edward', imageUrl: 'edward_trace.png', size: 120,
+        defaultDialogues: ["...", "...", "..."], questDialogues: {} },
+    { id: 'lelouch', name: 'Lelouch', imageUrl: 'lelouch_trace.png', size: 120,
+        defaultDialogues: ["...", "...", "..."], questDialogues: {} },
+    { id: 'levi', name: 'Levi', imageUrl: 'levi_trace.png', size: 120,
+        defaultDialogues: ["...", "...", "..."], questDialogues: {} },
+    { id: 'kaneki', name: 'Kaneki', imageUrl: 'kaneki_trace.png', size: 120,
+        defaultDialogues: ["...", "...", "..."], questDialogues: {} },
+    { id: 'asta', name: 'Asta', imageUrl: 'asta_trace.png', size: 120,
+        defaultDialogues: ["...", "...", "..."], questDialogues: {} },
+    { id: 'tanjiro', name: 'Tanjiro', imageUrl: 'tanjiro_trace.png', size: 120,
+        defaultDialogues: ["...", "...", "..."], questDialogues: {} },
+    { id: 'sanji', name: 'Sanji', imageUrl: 'sanji_trace.png', size: 120,
+        defaultDialogues: ["...", "...", "..."], questDialogues: {} },
 ];
 
 // 🏠 Structures du mode Survie
@@ -8223,9 +8243,9 @@ async function startSurvieGame() {
     const EXCLUSION_RADIUS = 0.18;
     
     // Distances en pixels (MAP = 10000x7000)
-    const MAP_W = 18000;
-    const MAP_H = 12000;
-    const CHAR_MIN_PX = 3000; // distance min entre personnages en pixels
+    const MAP_W = 22000;
+    const MAP_H = 15000;
+    const CHAR_MIN_PX = 6000; // distance min entre personnages en pixels
     const STRUCT_CHAR_PX = 7000; // distance min entre structure et personnage en pixels
     const STRUCT_STRUCT_PX = 8500; // distance min entre structures en pixels
     
