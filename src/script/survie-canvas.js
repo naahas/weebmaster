@@ -433,7 +433,7 @@ class SurvieCanvas {
         this.auras.delete(twitchId);
     }
 
-    addNPC(id, name, imageUrl, x, y, size) {
+    addNPC(id, name, imageUrl, x, y, size, defaultDialogues, questDialogues) {
         const npc = {
             id: id,
             name: name,
@@ -441,6 +441,8 @@ class SurvieCanvas {
             x: x !== undefined ? x : (0.1 + Math.random() * 0.8) * MAP_WIDTH,
             y: y !== undefined ? y : (0.1 + Math.random() * 0.8) * MAP_HEIGHT,
             size: size || 120,
+            defaultDialogues: defaultDialogues || ["..."],
+            questDialogues: questDialogues || {},
             pulsePhase: Math.random() * Math.PI * 2,
             image: null,
             loaded: false

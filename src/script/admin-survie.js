@@ -261,7 +261,7 @@ function initSurvieAdminCanvas() {
     
     // Add NPCs from server data
     (survieState.npcs || []).forEach(npc => {
-        survieAdminCanvas.addNPC(npc.id, npc.name, npc.imageUrl, npc.x * MAP_WIDTH, npc.y * MAP_HEIGHT, npc.size);
+        survieAdminCanvas.addNPC(npc.id, npc.name, npc.imageUrl, npc.x * MAP_WIDTH, npc.y * MAP_HEIGHT, npc.size, npc.defaultDialogues, npc.questDialogues);
     });
     
     // Listen for player movements (only once)
@@ -297,9 +297,6 @@ function openAdminSurvieDialogue(npc) {
         const dialogueHTML = `
             <div class="survie-dialogue-overlay" id="survieDialogueOverlay">
                 <div class="survie-dialogue-box">
-                    <div class="survie-dialogue-portrait">
-                        <img id="survieDialoguePortrait" src="" alt="">
-                    </div>
                     <div class="survie-dialogue-content">
                         <div class="survie-dialogue-name" id="survieDialogueName"></div>
                         <div class="survie-dialogue-text" id="survieDialogueText"></div>
@@ -317,21 +314,13 @@ function openAdminSurvieDialogue(npc) {
     }
     
     const overlay = document.getElementById('survieDialogueOverlay');
-    const portrait = document.getElementById('survieDialoguePortrait');
     const name = document.getElementById('survieDialogueName');
     const text = document.getElementById('survieDialogueText');
     
-    portrait.src = npc.imageUrl;
     name.textContent = npc.name;
     
-    // Placeholder dialogues
-    const dialogues = [
-        `Hé, tu me cherchais ? Je suis ${npc.name}...`,
-        `Tu es arrivé jusqu'ici... Impressionnant.`,
-        `${npc.name} te regarde avec intensité...`,
-        `Bienvenue, voyageur. Je suis ${npc.name}.`,
-        `Tu n'es pas le premier à me trouver ici...`,
-    ];
+    // Pick dialogue: quest dialogue if active, otherwise random default
+    const dialogues = npc.defaultDialogues || ["..."];
     const dialogue = dialogues[Math.floor(Math.random() * dialogues.length)];
     
     // Typewriter effect
@@ -348,7 +337,7 @@ function openAdminSurvieDialogue(npc) {
             clearInterval(_adminTypewriterInterval);
             _adminTypewriterInterval = null;
         }
-    }, 30);
+    }, 15);
     
     overlay.classList.add('active');
 }

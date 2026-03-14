@@ -4009,7 +4009,7 @@ createApp({
             
             // Add NPCs from server data
             (this.survie.npcs || []).forEach(npc => {
-                this._survieCanvas.addNPC(npc.id, npc.name, npc.imageUrl, npc.x * MAP_WIDTH, npc.y * MAP_HEIGHT, npc.size);
+                this._survieCanvas.addNPC(npc.id, npc.name, npc.imageUrl, npc.x * MAP_WIDTH, npc.y * MAP_HEIGHT, npc.size, npc.defaultDialogues, npc.questDialogues);
             });
             
             // Create dialogue overlay if not exists
@@ -4017,9 +4017,6 @@ createApp({
                 const dialogueHTML = `
                     <div class="survie-dialogue-overlay" id="survieDialogueOverlay">
                         <div class="survie-dialogue-box">
-                            <div class="survie-dialogue-portrait">
-                                <img id="survieDialoguePortrait" src="" alt="">
-                            </div>
                             <div class="survie-dialogue-content">
                                 <div class="survie-dialogue-name" id="survieDialogueName"></div>
                                 <div class="survie-dialogue-text" id="survieDialogueText"></div>
@@ -4039,24 +4036,16 @@ createApp({
         
         openSurvieDialogue(npc) {
             const overlay = document.getElementById('survieDialogueOverlay');
-            const portrait = document.getElementById('survieDialoguePortrait');
             const name = document.getElementById('survieDialogueName');
             const text = document.getElementById('survieDialogueText');
             
             if (!overlay) return;
             
-            // Set portrait
-            portrait.src = npc.imageUrl;
+            // Set name
             name.textContent = npc.name;
             
-            // Placeholder dialogue (will be replaced by quest system later)
-            const dialogues = [
-                `Hé, tu me cherchais ? Je suis ${npc.name}...`,
-                `Tu es arrivé jusqu'ici... Impressionnant.`,
-                `${npc.name} te regarde avec intensité...`,
-                `Bienvenue, voyageur. Je suis ${npc.name}.`,
-                `Tu n'es pas le premier à me trouver ici...`,
-            ];
+            // Pick dialogue: quest dialogue if active, otherwise random default
+            const dialogues = npc.defaultDialogues || ["..."];
             const dialogue = dialogues[Math.floor(Math.random() * dialogues.length)];
             
             // Typewriter effect
@@ -4073,7 +4062,7 @@ createApp({
                     clearInterval(this._typewriterInterval);
                     this._typewriterInterval = null;
                 }
-            }, 30);
+            }, 15);
             
             // Show
             overlay.classList.add('active');

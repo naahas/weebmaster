@@ -32,7 +32,8 @@
     z-index: 200;
     display: flex;
     justify-content: center;
-    padding: 0 24px 28px;
+    align-items: flex-end;
+    padding: 0;
     pointer-events: none;
     opacity: 0;
     transform: translateY(30px);
@@ -48,85 +49,88 @@
 .survie-dialogue-box {
     display: flex;
     align-items: flex-end;
-    gap: 0;
-    max-width: 720px;
-    width: 100%;
+    max-width: 900px;
+    width: 80%;
     position: relative;
-}
-
-/* Portrait */
-.survie-dialogue-portrait {
-    width: 100px;
-    height: 100px;
-    flex-shrink: 0;
-    border-radius: 12px 0 0 12px;
-    background: rgba(10, 10, 18, 0.95);
-    border: 1px solid rgba(255, 200, 80, 0.2);
-    border-right: none;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
     justify-content: center;
-    position: relative;
 }
 
-.survie-dialogue-portrait img {
-    width: 85%;
-    height: 85%;
-    object-fit: contain;
-    filter: drop-shadow(0 0 6px rgba(255, 200, 80, 0.15));
-}
-
-.survie-dialogue-portrait::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(255, 200, 80, 0.06) 0%, transparent 50%);
-    pointer-events: none;
-}
-
-/* Text panel */
 .survie-dialogue-content {
     flex: 1;
-    background: rgba(10, 10, 18, 0.95);
-    border: 1px solid rgba(255, 200, 80, 0.15);
-    border-left: none;
-    border-radius: 0 12px 12px 0;
-    padding: 16px 20px 14px;
-    min-height: 100px;
+    position: relative;
+    padding: 22px 28px 20px;
+    min-height: 80px;
+    background: linear-gradient(
+        135deg,
+        rgba(12, 12, 22, 0.28) 0%,
+        rgba(18, 18, 30, 0.23) 50%,
+        rgba(12, 12, 22, 0.18) 100%
+    );
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 14px;
+    margin-bottom: 28px;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 200, 80, 0.08),
+        inset 0 0 30px rgba(0, 0, 0, 0.3),
+        0 8px 32px rgba(0, 0, 0, 0.4);
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    backdrop-filter: blur(12px);
-    position: relative;
+    justify-content: center;
+}
+
+.survie-dialogue-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(
+        to right,
+        transparent 0%,
+        rgba(255, 200, 80, 0.4) 20%,
+        rgba(255, 180, 50, 0.15) 80%,
+        transparent 100%
+    );
+    border-radius: 14px 14px 0 0;
 }
 
 .survie-dialogue-name {
     font-family: 'Rajdhani', sans-serif;
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 700;
     color: #ffcc00;
-    letter-spacing: 1.5px;
+    letter-spacing: 2.5px;
     text-transform: uppercase;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
+    text-shadow: 0 0 20px rgba(255, 200, 0, 0.15);
+}
+
+.survie-dialogue-name::after {
+    content: '◆';
+    margin-left: 8px;
+    font-size: 6px;
+    color: rgba(255, 200, 80, 0.3);
+    vertical-align: middle;
 }
 
 .survie-dialogue-text {
     font-family: 'Inter', sans-serif;
-    font-size: 13px;
+    font-size: 16px;
     font-weight: 400;
-    color: rgba(255, 255, 255, 0.85);
-    line-height: 1.55;
-    flex: 1;
+    color: rgba(255, 255, 255, 0.88);
+    line-height: 1.65;
+    letter-spacing: 0.2px;
 }
 
 .survie-dialogue-text .typing-cursor {
     display: inline-block;
     width: 2px;
-    height: 14px;
-    background: rgba(255, 200, 80, 0.6);
+    height: 16px;
+    background: rgba(255, 200, 80, 0.7);
     margin-left: 2px;
-    animation: dialogueBlink 0.6s steps(2) infinite;
+    animation: dialogueBlink 0.55s steps(2) infinite;
     vertical-align: text-bottom;
 }
 
@@ -135,58 +139,33 @@
     50% { opacity: 0; }
 }
 
-/* Gold line accent on top */
-.survie-dialogue-content::before {
+/* Bottom fade */
+.survie-dialogue-overlay::before {
     content: '';
-    position: absolute;
-    top: 0;
+    position: fixed;
+    bottom: 0;
     left: 0;
     right: 0;
-    height: 1px;
-    background: linear-gradient(to right, rgba(255, 200, 80, 0.3), rgba(255, 200, 80, 0.05));
-}
-
-/* Subtle corner decorations */
-.survie-dialogue-box::before,
-.survie-dialogue-box::after {
-    content: '';
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    border-color: rgba(255, 200, 80, 0.2);
-    border-style: solid;
+    height: 200px;
+    background: linear-gradient(to top, rgba(24, 24, 32, 0.5) 0%, transparent 100%);
     pointer-events: none;
-}
-.survie-dialogue-box::before {
-    top: -1px;
-    left: -1px;
-    border-width: 1px 0 0 1px;
-    border-radius: 4px 0 0 0;
-}
-.survie-dialogue-box::after {
-    bottom: -1px;
-    right: -1px;
-    border-width: 0 1px 1px 0;
-    border-radius: 0 0 4px 0;
+    z-index: -1;
 }
 
 /* Mobile */
 @media (max-width: 600px) {
-    .survie-dialogue-overlay {
-        padding: 0 12px 16px;
-    }
-    .survie-dialogue-portrait {
-        width: 70px;
-        height: 70px;
+    .survie-dialogue-box {
+        width: 92%;
     }
     .survie-dialogue-content {
-        min-height: 70px;
-        padding: 10px 14px 10px;
+        padding: 16px 18px 14px;
+        min-height: 60px;
+        margin-bottom: 16px;
     }
     .survie-dialogue-name {
-        font-size: 11px;
+        font-size: 12px;
     }
     .survie-dialogue-text {
-        font-size: 11px;
+        font-size: 13px;
     }
 }
