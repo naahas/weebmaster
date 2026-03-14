@@ -154,6 +154,18 @@ function showSurvieGameUI() {
         container.innerHTML = `
             <canvas id="survieAdminCanvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
             <button class="survie-close-lobby-btn" id="survieCloseLobbyBtn">Fermer lobby</button>
+            <div class="survie-inventory" id="survieInventory">
+                <div class="survie-inventory-slot" data-slot="1" id="survieSlot1"></div>
+                <div class="survie-inventory-slot" data-slot="2" id="survieSlot2"></div>
+                <div class="survie-inventory-slot" data-slot="3" id="survieSlot3"></div>
+                <div class="survie-inventory-slot" data-slot="4" id="survieSlot4"></div>
+                <div class="survie-inventory-slot" data-slot="5" id="survieSlot5"></div>
+                <div class="survie-inventory-slot" data-slot="6" id="survieSlot6"></div>
+                <div class="survie-inventory-slot" data-slot="7" id="survieSlot7"></div>
+                <div class="survie-inventory-slot" data-slot="8" id="survieSlot8"></div>
+                <div class="survie-inventory-slot" data-slot="9" id="survieSlot9"></div>
+                <div class="survie-inventory-slot" data-slot="10" id="survieSlot10"></div>
+            </div>
             <div class="survie-confirm-overlay" id="survieConfirmOverlay">
                 <div class="survie-confirm-modal">
                     <div class="survie-confirm-title">Fermer le lobby ?</div>
@@ -261,7 +273,7 @@ function initSurvieAdminCanvas() {
     
     // Add NPCs from server data
     (survieState.npcs || []).forEach(npc => {
-        survieAdminCanvas.addNPC(npc.id, npc.name, npc.imageUrl, npc.x * MAP_WIDTH, npc.y * MAP_HEIGHT, npc.size, npc.defaultDialogues, npc.questDialogues);
+        survieAdminCanvas.addNPC(npc.id, npc.name, npc.imageUrl, npc.x * MAP_WIDTH, npc.y * MAP_HEIGHT, npc.size, npc.defaultDialogues, npc.questDialogues, npc.isStructure);
     });
     
     // Listen for player movements (only once)
@@ -318,6 +330,7 @@ function openAdminSurvieDialogue(npc) {
     const text = document.getElementById('survieDialogueText');
     
     name.textContent = npc.name;
+    name.classList.toggle('structure', !!npc.isStructure);
     
     // Pick dialogue: quest dialogue if active, otherwise random default
     const dialogues = npc.defaultDialogues || ["..."];

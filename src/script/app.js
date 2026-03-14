@@ -4009,7 +4009,7 @@ createApp({
             
             // Add NPCs from server data
             (this.survie.npcs || []).forEach(npc => {
-                this._survieCanvas.addNPC(npc.id, npc.name, npc.imageUrl, npc.x * MAP_WIDTH, npc.y * MAP_HEIGHT, npc.size, npc.defaultDialogues, npc.questDialogues);
+                this._survieCanvas.addNPC(npc.id, npc.name, npc.imageUrl, npc.x * MAP_WIDTH, npc.y * MAP_HEIGHT, npc.size, npc.defaultDialogues, npc.questDialogues, npc.isStructure);
             });
             
             // Create dialogue overlay if not exists
@@ -4032,6 +4032,17 @@ createApp({
                     if (this._survieCanvas) this._survieCanvas.dialogueOpen = false;
                 });
             }
+            
+            // Create inventory if not exists
+            if (!document.getElementById('survieInventory')) {
+                let slotsHTML = '';
+                for (let i = 1; i <= 10; i++) {
+                    slotsHTML += `<div class="survie-inventory-slot" data-slot="${i}" id="survieSlot${i}"></div>`;
+                }
+                document.body.insertAdjacentHTML('beforeend', `
+                    <div class="survie-inventory" id="survieInventory">${slotsHTML}</div>
+                `);
+            }
         },
         
         openSurvieDialogue(npc) {
@@ -4043,6 +4054,7 @@ createApp({
             
             // Set name
             name.textContent = npc.name;
+            name.classList.toggle('structure', !!npc.isStructure);
             
             // Pick dialogue: quest dialogue if active, otherwise random default
             const dialogues = npc.defaultDialogues || ["..."];
@@ -4086,6 +4098,9 @@ createApp({
             this.closeSurvieDialogue();
             const overlay = document.getElementById('survieDialogueOverlay');
             if (overlay) overlay.remove();
+            // Cleanup inventory
+            const inventory = document.getElementById('survieInventory');
+            if (inventory) inventory.remove();
         },
         
         showAnswerNotification(username) {

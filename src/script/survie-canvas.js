@@ -433,7 +433,7 @@ class SurvieCanvas {
         this.auras.delete(twitchId);
     }
 
-    addNPC(id, name, imageUrl, x, y, size, defaultDialogues, questDialogues) {
+    addNPC(id, name, imageUrl, x, y, size, defaultDialogues, questDialogues, isStructure) {
         const npc = {
             id: id,
             name: name,
@@ -443,6 +443,7 @@ class SurvieCanvas {
             size: size || 120,
             defaultDialogues: defaultDialogues || ["..."],
             questDialogues: questDialogues || {},
+            isStructure: isStructure || false,
             pulsePhase: Math.random() * Math.PI * 2,
             image: null,
             loaded: false
@@ -1017,13 +1018,13 @@ class SurvieCanvas {
             ctx.fillText('VOUS ÊTES EN MODE TEST', this.w / 2, this.h - 36);
             ctx.fillStyle = 'rgba(255, 255, 255, 0.50)';
             ctx.font = '400 10px "Rajdhani", "Segoe UI", sans-serif';
-            ctx.fillText('Déplacez-vous en touchant l\'écran', this.w / 2, this.h - 20);
+            ctx.fillText('Déplacez-vous en touchant l\'écran · Tap pour interagir', this.w / 2, this.h - 20);
         } else {
             ctx.font = '600 20px "Rajdhani", "Segoe UI", sans-serif';
             ctx.fillText('VOUS ÊTES EN MODE TEST', this.w / 2, this.h - 62);
             ctx.fillStyle = 'rgba(255, 255, 255, 0.50)';
             ctx.font = '400 14px "Rajdhani", "Segoe UI", sans-serif';
-            ctx.fillText('Déplacez-vous avec la souris, ZQSD ou les flèches', this.w / 2, this.h - 40);
+            ctx.fillText('Déplacez-vous avec la souris, ZQSD ou les flèches · E pour interagir', this.w / 2, this.h - 40);
         }
         ctx.restore();
 
