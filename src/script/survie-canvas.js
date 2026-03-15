@@ -17,8 +17,8 @@ const AURA_COLORS = [
 ];
 
 // Map dimensions (world space)
-const MAP_WIDTH = 22000;
-const MAP_HEIGHT = 15000;
+const MAP_WIDTH = 32000;
+const MAP_HEIGHT = 20000;
 
 class SurvieAura {
     constructor(twitchId, username, colorIndex, x, y) {
@@ -44,14 +44,17 @@ class SurvieAura {
     }
 
     updatePosition(x, y, vx, vy) {
+        // Clamp to map bounds
+        const cx = Math.max(30, Math.min(MAP_WIDTH - 30, x));
+        const cy = Math.max(30, Math.min(MAP_HEIGHT - 30, y));
         if (this.isRemote) {
-            this.remoteTargetX = x;
-            this.remoteTargetY = y;
+            this.remoteTargetX = cx;
+            this.remoteTargetY = cy;
             this.vx = vx || 0;
             this.vy = vy || 0;
         } else {
-            this.x = x;
-            this.y = y;
+            this.x = cx;
+            this.y = cy;
             this.vx = vx || 0;
             this.vy = vy || 0;
         }
@@ -90,9 +93,24 @@ class SurvieAura {
 
         // Remote player interpolation
         if (this.isRemote && this.remoteTargetX !== null) {
-            const lerpSpeed = 0.18;
-            this.x += (this.remoteTargetX - this.x) * lerpSpeed;
-            this.y += (this.remoteTargetY - this.y) * lerpSpeed;
+            const dx = this.remoteTargetX - this.x;
+            const dy = this.remoteTargetY - this.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            // Teleport if too far (avoid long trails)
+            if (dist > 800) {
+                this.x = this.remoteTargetX;
+                this.y = this.remoteTargetY;
+                this.trail = [];
+            } else {
+                const lerpSpeed = 0.18;
+                this.x += dx * lerpSpeed;
+                this.y += dy * lerpSpeed;
+            }
+            
+            // Calculate actual velocity for trail
+            this.vx = dx * 0.18;
+            this.vy = dy * 0.18;
         } else {
             // Apply velocity (local player)
             this.x += this.vx * dt * 60;
@@ -104,10 +122,12 @@ class SurvieAura {
         this.x = Math.max(m, Math.min(MAP_WIDTH - m, this.x));
         this.y = Math.max(m, Math.min(MAP_HEIGHT - m, this.y));
 
-        // Trail
+        // Trail (shorter for remote players)
         const vel = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+        const maxTrail = this.isRemote ? 12 : 30;
         if (vel > 0.3) {
             this.trail.push({ x: this.x, y: this.y, age: 0, vel: Math.min(vel, 8) });
+            if (this.trail.length > maxTrail) this.trail.shift();
         }
 
         for (let i = this.trail.length - 1; i >= 0; i--) {

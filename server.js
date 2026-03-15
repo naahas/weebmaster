@@ -136,7 +136,7 @@ const SURVIE_CHARACTERS = [
     { id: 'erza', name: 'Erza', imageUrl: 'erza_trace.png', size: 120,
         defaultDialogues: ["Si tu veux me tenir compagnie n'hésite pas , j'ai besoin d'un partenaire d'entraînement.", "Tu veux un morceau de fraisier ? ...Non ? Tant mieux, je n'avais pas l'intention de partager.", "Dis , tu pourrais me dire comment tu trouves ma nouvelle armure ? Je ne la trouve pas très efficace..."], questDialogues: {} },
     { id: 'denji', name: 'Denji', imageUrl: 'denji_trace.png', size: 120,
-        defaultDialogues: ["Hé, t'aurais pas une copine à me présenter ?", "Pourquoi j'ai jamais de chance avec les filles...", "MAKIMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA !!! Ah Salut mec , j'tavais pas vu désolé."], questDialogues: {} },
+        defaultDialogues: ["Hé, t'aurais pas une copine à me présenter ?", "Pourquoi j'ai jamais de chance avec les filles...", "ELLE EST OÙ ?! ...Ah Salut mec , j'tavais pas vu désolé."], questDialogues: {} },
     { id: 'ban', name: 'Ban', imageUrl: 'ban_trace.png', size: 120,
         defaultDialogues: ["Ahhh je cherche quelqu'un d'intéressant. Dis , t'es intéressant toi ?", "Salut , tu veux me tenir compagnie ? J'espère que tu tiens bien la bière.", "Laisse moi dormir mon pote !"], questDialogues: {} },
     { id: 'toji', name: 'Toji', imageUrl: 'toji_trace.png', size: 120,
@@ -154,7 +154,7 @@ const SURVIE_CHARACTERS = [
     { id: 'ichigo', name: 'Ichigo', imageUrl: 'ichigo_trace.png', size: 120,
         defaultDialogues: ["Salut , tu cherches quelque chose ?", "Désole , je suis un peu occupé , on se parle plus tard.", "Si t'as besoin de quelque chose , n'hésite pas !"], questDialogues: {} },
     { id: 'mikasa', name: 'Mikasa', imageUrl: 'mikasa_trace.png', size: 120,
-        defaultDialogues: ["Dis , tu l'as vu ? Où est-il ? Je sens son oeur sur toi , tu l'as renconté ?", "Eren...", "Toi , va te mettre à 'abri , on ne sait jamais."], questDialogues: {} },
+        defaultDialogues: ["Dis , tu l'as vu ? Où est-il ? Je sens son odeur sur toi , tu l'as rencontré ?", "Je dois le retrouver...", "Toi , va te mettre à l'abri , on ne sait jamais."], questDialogues: {} },
     { id: 'rengoku', name: 'Rengoku', imageUrl: 'rengoku_trace.png', size: 120,
         defaultDialogues: ["DÉLICIEUX !! .. Pardon , je ne t'avais pas vu , que puis-je faire pour toi hahaha ?", "Efforce toi d'être toujours dynamique et la vie sera plus belle hahaha.", "Enflamme ton coeur ! Si tu avances avec détermination, rien ne pourra t'arrêter !"], questDialogues: {} },
     { id: 'killua', name: 'Killua', imageUrl: 'killua_trace.png', size: 120,
@@ -168,7 +168,7 @@ const SURVIE_CHARACTERS = [
     { id: 'zoro', name: 'Zoro', imageUrl: 'zoro_trace.png', size: 120,
         defaultDialogues: ["Purée je suis où là... Dis toi , tu sais où on est ?" , "Hé touche pas a mon sabre , tu vas le regretter." , "Si t'as de la bière , je prends."], questDialogues: {} },
     { id: 'goku', name: 'Goku', imageUrl: 'goku_trace.png', size: 120,
-        defaultDialogues: ["Hé toi , ca te dit de me servir de partenaire ? T'as l'air costaud. ", "Chichi va encore me tuer si je rentre encore en retard... Bon, je me dépêche !", "La Terre est enfin paisible... Ou presque , j'entends des missiles..."], questDialogues: {} },
+        defaultDialogues: ["Hé toi , ca te dit de me servir de partenaire ? T'as l'air costaud. ", "Ma femme va encore me tuer si je rentre en retard... Bon, je me dépêche !", "La Terre est enfin paisible... Ou presque , j'entends des missiles..."], questDialogues: {} },
     { id: 'gohan', name: 'Gohan', imageUrl: 'gohan_trace.png', size: 120,
         defaultDialogues: ["Oh salut , tu as besoin de quelque chose ?", "Plus tard je veux être un grand scientifique et toi , c'est quoi ton rêve ?", "Quelques fois j'ai peur de moi-même..."], questDialogues: {} },
     { id: 'rem', name: 'Rem', imageUrl: 'rem_trace.png', size: 120,
@@ -214,25 +214,47 @@ const SURVIE_CHARACTERS = [
     { id: 'nami', name: 'Nami', imageUrl: 'nami_trace.png', size: 120,
         defaultDialogues: ["Salut toi ! Tu n'aurais pas un peu d'argent à me prêter ? Je te les rendrai, promis, hihi.", "Je sais que je suis belle mais c'est pas une raison pour me regarder comme ça !", "Dis , tu penses quoi de ma nouvelle tenue ? Elle est mignonne hein ? Avoue !"], questDialogues: {} },
     { id: 'kakashi', name: 'Kakashi', imageUrl: 'kakashi_trace.png', size: 120,
-        defaultDialogues: ["...", "...", "..."], questDialogues: {} },
+        defaultDialogues: ["Yo. Désolé du retard , un chat noir m'a barré la route et j'ai dû faire un détour.", "Tu veux un conseil ? Ceux qui abandonnent leurs amis sont pires que des ordures.", "Hmm ? Mon masque ? Ah , c'est une longue histoire... que je ne te raconterai pas."], questDialogues: {} },
     { id: 'dio', name: 'Dio', imageUrl: 'dio_trace.png', size: 120,
-        defaultDialogues: ["...", "...", "..."], questDialogues: {} },
+        defaultDialogues: ["KONO DIO DA !! Tu ne t'attendais pas à me voir , n'est-ce pas ?", "Tu croyais que ton premier interlocuteur serait un PNJ lambda ? Mais c'était moi , DIO !", "Le monde m'appartient. Toi aussi d'ailleurs. Approche."], questDialogues: {} },
     { id: 'ram', name: 'Ram', imageUrl: 'ram_trace.png', size: 120,
-        defaultDialogues: ["...", "...", "..."], questDialogues: {} },
+        defaultDialogues: ["Qu'est-ce que tu veux ? Ram est occupée.", "Si tu cherches ma sœur , elle est quelque part par là. Ne me dérange pas pour ça.", "Cet idiot ferait mieux de ne pas traîner dans le coin... Toi non plus d'ailleurs."], questDialogues: {} },
     { id: 'edward', name: 'Edward', imageUrl: 'edward_trace.png', size: 120,
-        defaultDialogues: ["...", "...", "..."], questDialogues: {} },
+        defaultDialogues: ["QUI EST-CE QUE TU TRAITES DE MINUS ?! ...Ah , t'as rien dit ? Pardon.", "L'alchimie c'est la science de la compréhension , de la décomposition et de la reconstruction.", "Un conseil : ne tente jamais de transmutation humaine. Crois-moi."], questDialogues: {} },
     { id: 'lelouch', name: 'Lelouch', imageUrl: 'lelouch_trace.png', size: 120,
-        defaultDialogues: ["...", "...", "..."], questDialogues: {} },
+        defaultDialogues: ["Si le roi ne bouge pas , ses sujets ne le suivront pas.", "Tu veux changer le monde ? Moi aussi. Mais es-tu prêt à en payer le prix ?", "Les échecs m'ont appris une chose : il faut toujours sacrifier des pièces pour gagner."], questDialogues: {} },
     { id: 'levi', name: 'Levi', imageUrl: 'levi_trace.png', size: 120,
-        defaultDialogues: ["...", "...", "..."], questDialogues: {} },
+        defaultDialogues: ["Tch. C'est sale ici. Tu pourrais au moins nettoyer avant de me parler.", "Choisis. Pas de regrets. Quel que soit ton choix , avance.", "Je suis le soldat le plus fort de l'humanité. Pas le plus aimable."], questDialogues: {} },
     { id: 'kaneki', name: 'Kaneki', imageUrl: 'kaneki_trace.png', size: 120,
-        defaultDialogues: ["...", "...", "..."], questDialogues: {} },
+        defaultDialogues: ["Je ne suis ni humain ni goule... Je suis les deux à la fois.", "Tu sais ce qui fait le plus mal ? C'est d'être seul.", "1000 moins 7... 993... 986... Pardon , une mauvaise habitude."], questDialogues: {} },
     { id: 'asta', name: 'Asta', imageUrl: 'asta_trace.png', size: 120,
-        defaultDialogues: ["...", "...", "..."], questDialogues: {} },
+        defaultDialogues: ["JE VAIS DEVENIR LE ROI DES SORCIERS !!! ...Pourquoi tu recules ?", "J'ai pas de magie mais j'ai mes bras , mes jambes et ma détermination !", "Abandonne ? Ce mot n'existe pas dans mon vocabulaire ! AAAAAAH !"], questDialogues: {} },
     { id: 'tanjiro', name: 'Tanjiro', imageUrl: 'tanjiro_trace.png', size: 120,
-        defaultDialogues: ["...", "...", "..."], questDialogues: {} },
+        defaultDialogues: ["Bonjour ! Tu as l'air d'être quelqu'un de bien , je le sens.", "Ma famille... je ferai tout pour protéger ceux qui me sont chers.", "Tu sens cette odeur ? C'est l'odeur de la gentillesse. Elle vient de toi."], questDialogues: {} },
     { id: 'sanji', name: 'Sanji', imageUrl: 'sanji_trace.png', size: 120,
-        defaultDialogues: ["...", "...", "..."], questDialogues: {} },
+        defaultDialogues: ["MELLORINE !! ...Ah pardon , je croyais que t'étais une fille. Dégage.", "La cuisine c'est de l'amour. Tu veux goûter mon plat du jour ?", "Un vrai homme ne frappe jamais une femme. Même si elle essaie de le tuer."], questDialogues: {} },
+    { id: 'yugi', name: 'Yugi', imageUrl: 'yugi_trace.png', size: 120,
+        defaultDialogues: ["Tu veux faire un duel ? J'ai toujours mon deck sur moi !", "Le cœur des cartes ne ment jamais... Fais confiance à ton deck !", "Hé , tu connais la carte Exodia ? Non ? Alors ne me cherche pas."], questDialogues: {} },
+    { id: 'franky', name: 'Franky', imageUrl: 'franky_trace.png', size: 120,
+        defaultDialogues: ["SUUUUPEEEEER !! Tu veux voir mon nouveau gadget ?", "Le Sunny est le plus beau navire du monde et c'est MOI qui l'ai construit !", "Cola ! J'ai besoin de cola ! Tu en aurais pas sur toi ?"], questDialogues: {} },
+    { id: 'sukuna', name: 'Sukuna', imageUrl: 'sukuna_trace.png', size: 120,
+        defaultDialogues: ["Tu oses m'adresser la parole , vermisseau ?", "Je m'ennuie... Divertis-moi ou disparais.", "Connais ta place. Tu n'es rien face au Roi des Fléaux."], questDialogues: {} },
+    { id: 'akaza', name: 'Akaza', imageUrl: 'akaza_trace.png', size: 120,
+        defaultDialogues: ["Deviens un démon ! Avec ta force , tu serais magnifique !", "Je déteste les faibles... Mais toi , tu as quelque chose dans le regard.", "Montre-moi ta technique de combat ! Allez , bats-toi !"], questDialogues: {} },
+    { id: 'pain', name: 'Pain', imageUrl: 'pain_trace.png', size: 120,
+        defaultDialogues: ["Connais-tu la douleur ? Le monde ne peut connaître la paix sans elle.", "Je suis Dieu. Et Dieu ne se trompe jamais.", "Ce monde est rempli de haine... Toi aussi tu la ressens , n'est-ce pas ?"], questDialogues: {} },
+    { id: 'hisoka', name: 'Hisoka', imageUrl: 'hisoka_trace.png', size: 120,
+        defaultDialogues: ["Hmm... Tu as du potentiel. Reviens me voir quand tu seras plus fort ♠", "Mon sang bouillonne... J'adore quand je croise quelqu'un d'intéressant ♣", "Tu veux jouer ? Attention , mes jeux finissent rarement bien pour l'adversaire ♥"], questDialogues: {} },
+    { id: 'brook', name: 'Brook', imageUrl: 'brook_trace.png', size: 120,
+        defaultDialogues: ["Yohohoho ! Pourrais-je voir tes sous-vêtements ? ...C'est une blague ! Enfin...", "La musique adoucit les mœurs ! Tu veux entendre Binks' Sake ?", "Je suis mort de rire ! Ah mais je suis déjà mort... YOHOHOHO !"], questDialogues: {} },
+    { id: 'aizen', name: 'Aizen', imageUrl: 'aizen_trace.png', size: 120,
+        defaultDialogues: ["Depuis quand crois-tu que je ne t'observais pas ?", "L'admiration est le sentiment le plus éloigné de la compréhension.", "Tout se passe selon mon plan. Même cette conversation."], questDialogues: {} },
+    { id: 'gaara', name: 'Gaara', imageUrl: 'gaara_trace.png', size: 120,
+        defaultDialogues: ["Les liens que j'ai forgés... Ce sont eux qui m'ont sauvé.", "Tu veux être mon ami ? ...Pardon , je ne suis pas encore habitué à demander ça.", "Le sable protège ceux que j'aime. Ne l'oublie pas."], questDialogues: {} },
+    { id: 'koro', name: 'Koro-sensei', imageUrl: 'koro_trace.png', size: 120,
+        defaultDialogues: ["Nurufufufu ! Un élève de plus ? Bienvenue dans ma classe !", "La vitesse Mach 20 c'est pratique pour faire les courses du monde entier !", "Un bon professeur ne renonce jamais sur ses élèves. Jamais."], questDialogues: {} },
+    { id: 'law', name: 'Law', imageUrl: 'law_trace.png', size: 120,
+        defaultDialogues: ["Room... Ah pardon , réflexe. Tu voulais quelque chose ?", "Je ne suis l'allié de personne. Mais on peut coopérer... temporairement.", "Mon allié au chapeau m'a encore entraîné dans ses plans foireux..."], questDialogues: {} },
 ];
 
 // 🏠 Structures du mode Survie
@@ -265,6 +287,476 @@ const SURVIE_STRUCTURES = [
 
 // Combined list for backward compat
 const SURVIE_NPCS = [...SURVIE_STRUCTURES, ...SURVIE_CHARACTERS];
+
+// ═══════════════════════════════════════════════════════════════
+// 🗺️ SYSTÈME DE QUÊTES — DONNÉES
+// ═══════════════════════════════════════════════════════════════
+
+// --- Groupes de NPCs (relations entre personnages) ---
+const QUEST_GROUPS = {
+    // ═══ Duos / Relations ═══
+    duos: [
+        { name: 'CC & Lelouch', members: ['cc', 'lelouch'] },
+        { name: 'Denji & Makima', members: ['denji', 'makima'] },
+        { name: 'Gojo & Toji', members: ['gojo', 'toji'] },
+        { name: 'Gojo & Sukuna', members: ['gojo', 'sukuna'] },
+        { name: 'Itachi & Sasuke', members: ['itachi', 'sasuke'] },
+        { name: 'Rem & Ram', members: ['rem', 'ram'] },
+        { name: 'Goku & Vegeta', members: ['goku', 'vegeta'] },
+        { name: 'Naruto & Sasuke', members: ['naruto', 'sasuke'] },
+        { name: 'Naruto & Pain', members: ['naruto', 'pain'] },
+        { name: 'Naruto & Gaara', members: ['naruto', 'gaara'] },
+        { name: 'Eren & Mikasa', members: ['eren', 'mikasa'] },
+        { name: 'Jotaro & Dio', members: ['jotaro', 'dio'] },
+        { name: 'Ichigo & Aizen', members: ['ichigo', 'aizen'] },
+        { name: 'Ichigo & Ulquiorra', members: ['ichigo', 'ulquiorra'] },
+        { name: 'Light & Lelouch', members: ['light', 'lelouch'] },
+        { name: 'Killua & Hisoka', members: ['killua', 'hisoka'] },
+        { name: 'Rengoku & Akaza', members: ['rengoku', 'akaza'] },
+        { name: 'Luffy & Law', members: ['luffy', 'law'] },
+    ],
+
+    // ═══ Familles ═══
+    naruto_family: { name: 'Famille de Naruto', members: ['naruto', 'boruto', 'minato'] },
+    saiyans: { name: 'Saiyans', members: ['goku', 'gohan', 'vegeta'] },
+
+    // ═══ Fratries ═══
+    uchiha_brothers: { name: 'Frères Uchiha', members: ['itachi', 'sasuke'] },
+    rem_ram: { name: 'Rem & Ram', members: ['rem', 'ram'] },
+
+    // ═══ Équipages / Teams ═══
+    straw_hats: { name: 'Chapeau de Paille', members: ['luffy', 'zoro', 'nami', 'usopp', 'robin', 'sanji', 'franky', 'brook', 'law'] },
+    fairy_tail: { name: 'Fairy Tail', members: ['erza', 'tsuna'] },
+
+    // ═══ Rivaux / Ennemis ═══
+    rivals: [
+        { name: 'Naruto & Pain', members: ['naruto', 'pain'] },
+        { name: 'Gojo & Sukuna', members: ['gojo', 'sukuna'] },
+        { name: 'Rengoku & Akaza', members: ['rengoku', 'akaza'] },
+        { name: 'Ichigo & Aizen', members: ['ichigo', 'aizen'] },
+        { name: 'Jotaro & Dio', members: ['jotaro', 'dio'] },
+    ],
+
+    // ═══ Par anime ═══
+    naruto_series: { name: 'Ninjas', members: ['naruto', 'sasuke', 'kakashi', 'itachi', 'minato', 'boruto', 'madara', 'tsunade', 'pain', 'gaara'] },
+    one_piece: { name: 'One Piece', members: ['luffy', 'zoro', 'nami', 'usopp', 'robin', 'sanji', 'franky', 'brook', 'law'] },
+    dbz: { name: 'Dragon Ball', members: ['goku', 'gohan', 'vegeta'] },
+    snk_series: { name: 'Bataillon d\'Exploration', members: ['eren', 'mikasa', 'levi'] },
+    jjk: { name: 'Jujutsu Kaisen', members: ['gojo', 'toji', 'sukuna'] },
+    demon_slayer: { name: 'Demon Slayer', members: ['tanjiro', 'rengoku', 'akaza'] },
+    chainsaw_man: { name: 'Chainsaw Man', members: ['denji', 'makima'] },
+    bleach: { name: 'Bleach', members: ['ichigo', 'ulquiorra', 'aizen'] },
+    code_geass: { name: 'Code Geass', members: ['lelouch', 'cc'] },
+    rezero: { name: 'Re:Zero', members: ['rem', 'ram'] },
+    jojo: { name: 'JoJo', members: ['jotaro', 'dio'] },
+    fairy_tail_series: { name: 'Fairy Tail', members: ['erza', 'tsuna'] },
+    black_clover: { name: 'Black Clover', members: ['asta'] },
+    hxh: { name: 'Hunter x Hunter', members: ['killua', 'hisoka'] },
+    mha: { name: 'My Hero Academia', members: ['shoto'] },
+    frieren_series: { name: 'Frieren', members: ['frieren'] },
+    vinland_saga: { name: 'Vinland Saga', members: ['thorfinn'] },
+    tokyo_ghoul: { name: 'Tokyo Ghoul', members: ['kaneki'] },
+    fma: { name: 'Fullmetal Alchemist', members: ['edward'] },
+    gintama: { name: 'Gintama', members: ['gintoki'] },
+    spy_family: { name: 'SPY×FAMILY', members: ['yor'] },
+    fate: { name: 'Fate', members: ['saber'] },
+    saint_seiya: { name: 'Saint Seiya', members: ['seiya'] },
+    opm: { name: 'One Punch Man', members: ['saitama'] },
+    death_note: { name: 'Death Note', members: ['light'] },
+    yugioh: { name: 'Yu-Gi-Oh!', members: ['yugi'] },
+    assassination_classroom: { name: 'Assassination Classroom', members: ['koro'] },
+
+    // ═══ Personnages féminins ═══
+    female: ['erza', 'nami', 'mikasa', 'tsunade', 'rem', 'robin', 'yor', 'makima', 'cc', 'saber', 'frieren', 'ram'],
+};
+
+// --- Associations NPC ↔ Structure (qui "appartient" à quel lieu) ---
+const NPC_STRUCTURE_LINKS = {
+    // Naruto
+    naruto: 'konoha', sasuke: 'konoha', kakashi: 'konoha', minato: 'konoha', boruto: 'konoha', tsunade: 'konoha',
+    pain: 'konoha', gaara: 'konoha',
+    madara: 'valleyend',
+    // One Piece
+    luffy: 'sunny', zoro: 'sunny', nami: 'sunny', usopp: 'sunny', robin: 'sunny', sanji: 'sunny',
+    franky: 'sunny', brook: 'sunny', law: 'sunny',
+    // DBZ
+    goku: 'kame', gohan: 'kame', vegeta: 'kame',
+    // Fairy Tail
+    erza: 'guild', tsuna: 'guild',
+    // SNK
+    eren: 'snk', mikasa: 'snk', levi: 'snk',
+    // MHA
+    shoto: 'yuei',
+    // Demon Slayer
+    rengoku: 'infinitecastle', tanjiro: 'infinitecastle', akaza: 'infinitecastle',
+    // JJK
+    sukuna: 'infinitecastle',
+    // Bleach
+    aizen: 'marineford', // pas de structure Bleach, Marineford = lieu de bataille
+    // Assassination Classroom
+    koro: 'yuei', // pas de structure AC, Yuei = école
+};
+
+// --- Items (objets transportables) ---
+const QUEST_ITEMS = {
+    armor:      { id: 'armor', name: 'Armure', icon: '🛡️', imageUrl: 'item_armor.png' },
+    bento:      { id: 'bento', name: 'Bento', icon: '🍱', imageUrl: 'item_bento.png' },
+    scroll:     { id: 'scroll', name: 'Parchemin', icon: '📜', imageUrl: 'item_scroll.png' },
+    death_note: { id: 'death_note', name: 'Death Note', icon: '📓', imageUrl: 'item_deathnote.png' },
+    magazine:   { id: 'magazine', name: 'Magazine', icon: '📖', imageUrl: 'item_magazine.png' },
+    grimoire:   { id: 'grimoire', name: 'Grimoire', icon: '📕', imageUrl: 'item_grimoire.png' },
+    katana:     { id: 'katana', name: 'Katana', icon: '⚔️', imageUrl: 'item_katana.png' },
+    berries:    { id: 'berries', name: 'Berries', icon: '💰', imageUrl: 'item_berries.png' },
+    letter:     { id: 'letter', name: 'Lettre', icon: '✉️', imageUrl: 'item_letter.png' },
+    hat:        { id: 'hat', name: 'Chapeau de paille', icon: '👒', imageUrl: 'item_hat.png' },
+    headband:   { id: 'headband', name: 'Bandeau', icon: '🎗️', imageUrl: 'item_headband.png' },
+    book:       { id: 'book', name: 'Livre', icon: '📘', imageUrl: 'item_book.png' },
+    photo:      { id: 'photo', name: 'Photo', icon: '📷', imageUrl: 'item_photo.png' },
+    mask:       { id: 'mask', name: 'Masque', icon: '🎭', imageUrl: 'item_mask.png' },
+};
+
+// --- Templates de quêtes ---
+const QUEST_TEMPLATES = [
+
+    // ══════════ DELIVER ══════════
+    { type: 'DELIVER', id: 'deliver_armor_erza',
+        steps: [
+            { action: 'talk', npc: 'gintoki', dialogue: "Hé toi ! J'ai trouvé cette armure par terre... C'est pas à moi. Tu peux la ramener à Erza ? Elle doit la chercher partout.", giveItem: 'armor' },
+            { action: 'deliver', npc: 'erza', item: 'armor', dialogue: "Mon armure ! Où l'as-tu trouvée ? Merci, je la cherchais depuis des heures !" },
+        ],
+        desc: "Rapporter l'armure à Erza", lockedNPCs: ['gintoki', 'erza'] },
+
+    { type: 'DELIVER', id: 'deliver_scroll_kakashi',
+        steps: [
+            { action: 'talk', npc: 'tsunade', dialogue: "Toi ! J'ai un parchemin urgent pour Kakashi. Il traîne quelque part, retrouve-le et donne-lui ça.", giveItem: 'scroll' },
+            { action: 'deliver', npc: 'kakashi', item: 'scroll', dialogue: "Un parchemin de Tsunade ? Merci... J'espère que ce n'est pas encore une mission suicide." },
+        ],
+        desc: "Apporter le parchemin à Kakashi", lockedNPCs: ['tsunade', 'kakashi'] },
+
+    { type: 'DELIVER', id: 'deliver_letter_mikasa',
+        steps: [
+            { action: 'talk', npc: 'eren', dialogue: "Écoute... J'ai écrit une lettre pour Mikasa mais je n'arrive pas à la lui donner en face. Tu peux le faire pour moi ?", giveItem: 'letter' },
+            { action: 'deliver', npc: 'mikasa', item: 'letter', dialogue: "Une lettre d'Eren... Merci. Vraiment." },
+        ],
+        desc: "Apporter la lettre d'Eren à Mikasa", lockedNPCs: ['eren', 'mikasa'] },
+
+    { type: 'DELIVER', id: 'deliver_death_note_light',
+        steps: [
+            { action: 'talk', npc: 'rem', dialogue: "Ce carnet noir... Il ne m'appartient pas. Un humain le cherche. Il s'appelle Light. Retrouve-le.", giveItem: 'death_note' },
+            { action: 'deliver', npc: 'light', item: 'death_note', dialogue: "Mon carnet ! Haha... Merci. Tu n'as pas regardé à l'intérieur, j'espère ?" },
+        ],
+        desc: "Apporter le Death Note à Light", lockedNPCs: ['rem', 'light'] },
+
+    // ══════════ VISIT_DELIVER ══════════
+    { type: 'VISIT_DELIVER', id: 'visit_kame_magazine',
+        steps: [
+            { action: 'talk', npc: 'goku', dialogue: "Hé ! Tu vas vers Kame House ? Maître Roshi a oublié son magazine là-bas. Tu peux aller le chercher ?" },
+            { action: 'visit', structure: 'kame', dialogue: "Vous trouvez un magazine suspect sous un coussin...", giveItem: 'magazine' },
+            { action: 'deliver', npc: 'goku', item: 'magazine', dialogue: "Haha merci ! Enfin... c'est pour Maître Roshi hein, pas pour moi !" },
+        ],
+        desc: "Récupérer le magazine à Kame House", lockedNPCs: ['goku'], lockedStructures: ['kame'] },
+
+    { type: 'VISIT_DELIVER', id: 'visit_konoha_headband',
+        steps: [
+            { action: 'talk', npc: 'naruto', dialogue: "Mon bandeau ! Je l'ai oublié à Konoha en partant ! Tu peux aller me le chercher ? S'te plaiiiit !" },
+            { action: 'visit', structure: 'konoha', dialogue: "Un bandeau de Konoha traîne près de l'entrée du village...", giveItem: 'headband' },
+            { action: 'deliver', npc: 'naruto', item: 'headband', dialogue: "Mon bandeau ! Merci ! Sans lui je ne suis pas un vrai ninja, tu comprends ?" },
+        ],
+        desc: "Récupérer le bandeau à Konoha", lockedNPCs: ['naruto'], lockedStructures: ['konoha'] },
+
+    { type: 'VISIT_DELIVER', id: 'visit_guild_katana',
+        steps: [
+            { action: 'talk', npc: 'erza', dialogue: "J'ai laissé un katana spécial à la guilde. Je ne peux pas y retourner maintenant. Tu irais le chercher pour moi ?" },
+            { action: 'visit', structure: 'guild', dialogue: "Un katana orné repose sur le comptoir de la guilde...", giveItem: 'katana' },
+            { action: 'deliver', npc: 'erza', item: 'katana', dialogue: "Parfait ! Ce katana est irremplaçable. Tu as bien mérité ma gratitude." },
+        ],
+        desc: "Récupérer le katana à la Guilde", lockedNPCs: ['erza'], lockedStructures: ['guild'] },
+
+    // ══════════ CHAIN ══════════
+    { type: 'CHAIN', id: 'chain_uchiha',
+        steps: [
+            { action: 'talk', npc: 'itachi', dialogue: "Mon petit frère... je dois lui parler. Retrouve Sasuke et dis-lui que je l'attends." },
+            { action: 'talk', npc: 'sasuke', dialogue: "Itachi veut me voir ? Tch... Dis-lui de me retrouver à la Vallée de la Fin. Il saura pourquoi." },
+            { action: 'visit', structure: 'valleyend', dialogue: "L'écho des cascades résonne... Vous sentez une présence." },
+            { action: 'talk', npc: 'itachi', dialogue: "La Vallée de la Fin... C'est là que tout s'est joué. Merci." },
+        ],
+        desc: "Réconcilier les frères Uchiha", lockedNPCs: ['itachi', 'sasuke'], lockedStructures: ['valleyend'] },
+
+    { type: 'CHAIN', id: 'chain_zoro_lost',
+        steps: [
+            { action: 'talk', npc: 'zoro', dialogue: "Hé toi. Je cherche le Sunny. C'est par où ? ... Non ne me dis pas que je suis perdu." },
+            { action: 'visit', structure: 'sunny', dialogue: "Le Thousand Sunny est ancré ici. Zoro devrait venir par là..." },
+            { action: 'talk', npc: 'nami', dialogue: "Zoro est encore perdu ?! Retourne le chercher et amène-le ici, je te paierai ! ...Peut-être." },
+            { action: 'talk', npc: 'zoro', dialogue: "Ok ok, je te suis. Mais je n'étais PAS perdu, c'est la mer qui a bougé." },
+        ],
+        desc: "Guider Zoro vers le Sunny", lockedNPCs: ['zoro', 'nami'], lockedStructures: ['sunny'] },
+
+    { type: 'CHAIN', id: 'chain_naruto_boruto',
+        steps: [
+            { action: 'talk', npc: 'boruto', dialogue: "Mon père est jamais là... Tu pourrais lui dire que j'aimerais qu'on s'entraîne ensemble ?" },
+            { action: 'talk', npc: 'naruto', dialogue: "Boruto veut s'entraîner ? Dis-lui de me rejoindre à Konoha, j'ai une surprise pour lui !" },
+            { action: 'visit', structure: 'konoha', dialogue: "Le terrain d'entraînement de Konoha... L'endroit parfait pour un père et son fils." },
+            { action: 'talk', npc: 'boruto', dialogue: "Papa veut s'entraîner avec moi ? ...Cool. Enfin je veux dire, c'est pas si cool que ça." },
+        ],
+        desc: "Réunir Naruto et Boruto", lockedNPCs: ['boruto', 'naruto'], lockedStructures: ['konoha'] },
+
+    // ══════════ TRADE_CHAIN ══════════
+    { type: 'TRADE_CHAIN', id: 'trade_frieren_grimoire',
+        steps: [
+            { action: 'talk', npc: 'frieren', dialogue: "Je cherche un grimoire ancien. Robin en avait un, mais elle voulait quelque chose en échange..." },
+            { action: 'talk', npc: 'robin', dialogue: "Le grimoire ? Je l'échangerai contre un livre rare. Sanji en avait un, je crois.", giveItem: 'book' },
+            { action: 'trade', npc: 'sanji', item: 'book', dialogue: "Un livre ? Moi ? Ah oui ! Mais je l'échange seulement contre une photo de Nami !", giveItem: 'photo' },
+            { action: 'trade', npc: 'nami', item: 'photo', dialogue: "Tu veux une photo de moi ?! Ça coûte cher... Bon, donne-moi le livre et on est quittes.", giveItem: 'grimoire' },
+            { action: 'deliver', npc: 'frieren', item: 'grimoire', dialogue: "Le grimoire ! Après mille ans de recherche... Merci, humain." },
+        ],
+        desc: "Trouver le grimoire de Frieren", lockedNPCs: ['frieren', 'robin', 'sanji', 'nami'] },
+
+    { type: 'TRADE_CHAIN', id: 'trade_denji_girl',
+        steps: [
+            { action: 'talk', npc: 'denji', dialogue: "Mec... Je veux juste parler à une fille. N'importe laquelle ! Tu peux m'aider ?" },
+            { action: 'talk', npc: 'makima', dialogue: "Denji me cherche ? Dis-lui que je veux un cadeau d'abord. Rapporte-moi un masque.", giveItem: null },
+            { action: 'talk', npc: 'kaneki', dialogue: "Un masque ? J'en ai un mais... c'est personnel. Donne-moi quelque chose en échange. Un katana ferait l'affaire.", giveItem: null },
+            { action: 'talk', npc: 'zoro', dialogue: "Mon katana ?! ... Bon, prends celui-là. J'en ai trois de toute façon.", giveItem: 'katana' },
+            { action: 'trade', npc: 'kaneki', item: 'katana', dialogue: "Merci... Tiens, voici le masque. Prends-en soin.", giveItem: 'mask' },
+            { action: 'trade', npc: 'makima', item: 'mask', dialogue: "Oh, joli masque. Bon, dis à Denji qu'il peut venir me voir... si il ose." },
+            { action: 'talk', npc: 'denji', dialogue: "SÉRIEUX ?! Makima veut bien me parler ?! T'es le meilleur !!!" },
+        ],
+        desc: "Aider Denji à impressionner Makima", lockedNPCs: ['denji', 'makima', 'kaneki', 'zoro'] },
+
+    // ══════════ REUNION ══════════
+    { type: 'REUNION', id: 'reunion_straw_hats',
+        group: 'straw_hats', count: 4,
+        dialogue_found: "Tu m'as trouvé ! L'équipage sera bientôt réuni !",
+        desc: "Réunir 4 membres du Chapeau de Paille",
+    },
+
+    { type: 'REUNION', id: 'reunion_naruto_series',
+        group: 'naruto_series', count: 4,
+        dialogue_found: "Un ninja ne refuse jamais l'appel ! Retrouve les autres !",
+        desc: "Réunir 4 ninjas de Konoha",
+    },
+
+    { type: 'REUNION', id: 'reunion_snk',
+        group: 'snk_series', count: 3,
+        dialogue_found: "Le bataillon se rassemble. Continue !",
+        desc: "Réunir le Bataillon d'Exploration",
+    },
+
+    { type: 'REUNION', id: 'reunion_dbz',
+        group: 'dbz', count: 3,
+        dialogue_found: "Tu m'as trouvé ! On sera bientôt au complet pour le tournoi !",
+        desc: "Réunir les guerriers Saiyans",
+    },
+
+    // ══════════ COLLECT_ITEMS ══════════
+    { type: 'COLLECT_ITEMS', id: 'collect_bentos_rengoku',
+        item: 'bento', count: 5, deliverTo: 'rengoku',
+        spawnNearStructures: true,
+        desc: "Trouver 5 bentos et les apporter à Rengoku",
+        lockedNPCs: ['rengoku'],
+        finalDialogue: "DÉLICIEUX ! Cinq bentos ! Tu es un vrai héros !! UMAI !!",
+    },
+
+    { type: 'COLLECT_ITEMS', id: 'collect_berries_nami',
+        item: 'berries', count: 4, deliverTo: 'nami',
+        spawnNearStructures: true,
+        desc: "Trouver 4 sacs de berries pour Nami",
+        lockedNPCs: ['nami'],
+        finalDialogue: "Tout cet argent ! Tu es mon nouveau meilleur ami ! ...Non je ne partage pas.",
+    },
+
+    // ══════════ RIDDLE ══════════
+    { type: 'RIDDLE', id: 'riddle_kakashi',
+        riddle: "Un œil couvert, toujours en retard, il lit des livres douteux près d'un village caché dans les feuilles...",
+        answer_npc: 'kakashi',
+        answer_structure: null,
+        dialogue_correct: "Tu m'as trouvé. Je suis impressionné... ou pas. Comment savais-tu ?",
+        desc: "Résoudre l'énigme de l'homme masqué",
+        lockedNPCs: ['kakashi'],
+    },
+
+    { type: 'RIDDLE', id: 'riddle_saitama',
+        riddle: "Le plus fort de tous, chauve et blasé, il cherche un adversaire digne de ce nom mais ne le trouve jamais...",
+        answer_npc: 'saitama',
+        answer_structure: null,
+        dialogue_correct: "Oh, tu me cherchais ? ...C'est déjà fini ? Comme d'habitude.",
+        desc: "Trouver le héros le plus puissant",
+        lockedNPCs: ['saitama'],
+    },
+
+    { type: 'RIDDLE', id: 'riddle_infinitecastle',
+        riddle: "Un château dont les murs se déplacent, les escaliers ne mènent nulle part, et la lune ne se couche jamais...",
+        answer_npc: null,
+        answer_structure: 'infinitecastle',
+        dialogue_correct: "Vous avez trouvé la Forteresse Infinie. Les murs tremblent à votre arrivée...",
+        desc: "Trouver le château impossible",
+        lockedStructures: ['infinitecastle'],
+    },
+
+    { type: 'RIDDLE', id: 'riddle_levi',
+        riddle: "Petit de taille mais grand par la lame, il nettoie tout sur son passage — des titans comme de la poussière...",
+        answer_npc: 'levi',
+        answer_structure: null,
+        dialogue_correct: "Tch. Tu m'as trouvé. Maintenant dégage avant que je te fasse récurer le sol.",
+        desc: "Trouver le soldat le plus fort de l'humanité",
+        lockedNPCs: ['levi'],
+    },
+
+    // ══════════ ESCORT ══════════
+    { type: 'ESCORT', id: 'escort_zoro_sunny',
+        npc: 'zoro', destination_structure: 'sunny',
+        dialogue_start: "Le Sunny ? Ouais je le cherche depuis 3 jours. Guide-moi, mais je te préviens, c'est TOI qui te perds, pas moi.",
+        dialogue_arrive: "Ah, le Sunny ! Je savais qu'il était par là. ...Ne dis à personne que tu m'as guidé.",
+        desc: "Escorter Zoro jusqu'au Sunny",
+        lockedNPCs: ['zoro'], lockedStructures: ['sunny'],
+    },
+
+    { type: 'ESCORT', id: 'escort_boruto_konoha',
+        npc: 'boruto', destination_structure: 'konoha',
+        dialogue_start: "Je veux rentrer à Konoha mais j'ai la flemme d'y aller seul. Tu m'accompagnes ?",
+        dialogue_arrive: "On est arrivés ! Merci... T'es pas si nul en fait.",
+        desc: "Accompagner Boruto à Konoha",
+        lockedNPCs: ['boruto'], lockedStructures: ['konoha'],
+    },
+
+    // ══════════ MYSTERY ══════════
+    { type: 'MYSTERY', id: 'mystery_hat_luffy',
+        stolen_item: 'hat', victim: 'luffy',
+        suspects: ['nami', 'usopp', 'robin'],
+        culprit: null, // Généré aléatoirement à chaque partie
+        victim_dialogue: "MON CHAPEAU !! Quelqu'un m'a volé mon chapeau !! C'est forcément quelqu'un de l'équipage !! Trouve qui c'est !!!",
+        innocent_dialogues: [
+            "Moi ? Voler le chapeau de Luffy ? Jamais ! ...Enfin, sauf s'il valait beaucoup d'argent. Mais non !",
+            "Ce n'est pas moi ! J'étais occupé(e) à... euh... faire autre chose. Demande aux autres !",
+            "Innocent(e) ! Regarde, je n'ai rien dans les mains !",
+        ],
+        culprit_dialogues: [
+            "Moi ? Non non ! ...Bon ok c'est moi. Tiens, reprends-le. C'était juste une blague !",
+        ],
+        desc: "Retrouver le chapeau de Luffy",
+        lockedNPCs: ['luffy', 'nami', 'usopp', 'robin'],
+    },
+
+    { type: 'MYSTERY', id: 'mystery_deathnote',
+        stolen_item: 'death_note', victim: 'light',
+        suspects: ['makima', 'gintoki', 'lelouch'],
+        culprit: null,
+        victim_dialogue: "Mon carnet a disparu ! Quelqu'un l'a pris ! Retrouve-le avant qu'il ne soit trop tard !",
+        innocent_dialogues: [
+            "Un carnet ? Ça ne m'intéresse pas. J'ai d'autres moyens de contrôler les gens...",
+            "Moi ? Voler un carnet ? J'ai autre chose à faire, tu sais.",
+            "Je ne vois pas de quoi tu parles. Demande à quelqu'un d'autre.",
+        ],
+        culprit_dialogues: [
+            "...Tu m'as percé à jour. Tiens, reprends ce carnet maudit. Il me donnait des frissons.",
+        ],
+        desc: "Retrouver le Death Note volé",
+        lockedNPCs: ['light', 'makima', 'gintoki', 'lelouch'],
+    },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// 🎲 GÉNÉRATEUR DE QUÊTES
+// ═══════════════════════════════════════════════════════════════
+
+function generateQuestsForGame(questCount = 6) {
+    const available = [...QUEST_TEMPLATES];
+    const selected = [];
+    const usedNPCs = new Set();
+    const usedStructures = new Set();
+    const usedTypes = {};
+
+    // Mélanger
+    for (let i = available.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [available[i], available[j]] = [available[j], available[i]];
+    }
+
+    for (const template of available) {
+        if (selected.length >= questCount) break;
+
+        // Limiter 2 quêtes max du même type
+        if ((usedTypes[template.type] || 0) >= 2) continue;
+
+        // Vérifier que les NPCs/structures nécessaires ne sont pas déjà utilisés
+        const neededNPCs = template.lockedNPCs || [];
+        const neededStructures = template.lockedStructures || [];
+        
+        // Pour REUNION, récupérer les membres du groupe
+        let reunionMembers = [];
+        if (template.type === 'REUNION') {
+            const groupData = QUEST_GROUPS[template.group];
+            if (groupData && groupData.members) {
+                reunionMembers = groupData.members;
+            }
+        }
+
+        const allNeededNPCs = [...neededNPCs, ...reunionMembers];
+        
+        const npcConflict = allNeededNPCs.some(id => usedNPCs.has(id));
+        const structConflict = neededStructures.some(id => usedStructures.has(id));
+
+        if (npcConflict || structConflict) continue;
+
+        // Sélectionner cette quête
+        const quest = JSON.parse(JSON.stringify(template)); // Deep copy
+
+        // Pour MYSTERY, choisir le coupable aléatoirement
+        if (quest.type === 'MYSTERY' && !quest.culprit) {
+            quest.culprit = quest.suspects[Math.floor(Math.random() * quest.suspects.length)];
+        }
+
+        selected.push(quest);
+        allNeededNPCs.forEach(id => usedNPCs.add(id));
+        neededStructures.forEach(id => usedStructures.add(id));
+        usedTypes[template.type] = (usedTypes[template.type] || 0) + 1;
+    }
+
+    // Retourner les IDs des NPCs/structures nécessaires
+    const lockedNPCIds = new Set();
+    const lockedStructureIds = new Set();
+    selected.forEach(q => {
+        (q.lockedNPCs || []).forEach(id => lockedNPCIds.add(id));
+        (q.lockedStructures || []).forEach(id => lockedStructureIds.add(id));
+        if (q.type === 'REUNION') {
+            const groupData = QUEST_GROUPS[q.group];
+            if (groupData && groupData.members) {
+                groupData.members.forEach(id => lockedNPCIds.add(id));
+            }
+        }
+    });
+
+    return {
+        quests: selected,
+        lockedNPCs: [...lockedNPCIds],
+        lockedStructures: [...lockedStructureIds],
+    };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 👤 STATE JOUEUR (créé par joueur au début de partie)
+// ═══════════════════════════════════════════════════════════════
+
+function createPlayerQuestState(quests) {
+    return {
+        quests: quests.map(q => ({
+            id: q.id,
+            type: q.type,
+            desc: q.desc,
+            currentStep: 0,
+            totalSteps: q.steps ? q.steps.length : (q.type === 'REUNION' ? q.count : (q.type === 'COLLECT_ITEMS' ? q.count + 1 : (q.type === 'RIDDLE' ? 1 : 2))),
+            completed: false,
+            // Type-specific data
+            ...(q.type === 'REUNION' && { found: [], count: q.count, group: q.group }),
+            ...(q.type === 'COLLECT_ITEMS' && { collected: 0, count: q.count, delivered: false }),
+            ...(q.type === 'RIDDLE' && { solved: false }),
+            ...(q.type === 'ESCORT' && { escorting: false, arrived: false }),
+            ...(q.type === 'MYSTERY' && { interrogated: [], culprit: q.culprit, accused: false }),
+        })),
+        inventory: [], // Max 10 items
+        completedCount: 0,
+    };
+}
 
 // 🎮 Types d'épreuves Survie
 const SURVIE_EPREUVE_TYPES = [
@@ -8240,14 +8732,15 @@ async function startSurvieGame() {
     // Zone d'exclusion autour du centre (spawn joueurs)
     const SPAWN_CENTER_X = 0.5;
     const SPAWN_CENTER_Y = 0.5;
-    const EXCLUSION_RADIUS = 0.18;
+    const EXCLUSION_RADIUS = 0.12; // Zone spawn joueurs (personnages)
+    const STRUCT_EXCLUSION_RADIUS = 0.22; // Zone spawn joueurs (structures — plus large car elles sont grandes)
     
     // Distances en pixels (MAP = 10000x7000)
-    const MAP_W = 22000;
-    const MAP_H = 15000;
-    const CHAR_MIN_PX = 6000; // distance min entre personnages en pixels
-    const STRUCT_CHAR_PX = 7000; // distance min entre structure et personnage en pixels
-    const STRUCT_STRUCT_PX = 8500; // distance min entre structures en pixels
+    const MAP_W = 32000;
+    const MAP_H = 20000;
+    const CHAR_MIN_PX = 1500; // distance min entre personnages en pixels
+    const STRUCT_CHAR_PX = 2500; // distance min entre structure et personnage en pixels
+    const STRUCT_STRUCT_PX = 4000; // distance min entre structures en pixels
     
     const placedAll = [];
     
@@ -8262,8 +8755,8 @@ async function startSurvieGame() {
     SURVIE_STRUCTURES.forEach(npc => {
         let x, y, valid, attempts = 0;
         do {
-            x = 0.08 + Math.random() * 0.84;
-            y = 0.08 + Math.random() * 0.84;
+            x = 0.05 + Math.random() * 0.90;
+            y = 0.05 + Math.random() * 0.90;
             const dxC = x - SPAWN_CENTER_X;
             const dyC = y - SPAWN_CENTER_Y;
             const distCenter = Math.sqrt(dxC * dxC + dyC * dyC);
@@ -8274,9 +8767,10 @@ async function startSurvieGame() {
                     break;
                 }
             }
-            valid = distCenter > EXCLUSION_RADIUS && !tooClose;
+            valid = distCenter > STRUCT_EXCLUSION_RADIUS && !tooClose;
             attempts++;
-        } while (!valid && attempts < 200);
+        } while (!valid && attempts < 500);
+        if (!valid) console.warn(`⚠️ Structure ${npc.id} placée après ${attempts} tentatives (peut être trop proche)`);
         placedAll.push({ ...npc, x, y, isStructure: true });
     });
     
@@ -8284,8 +8778,8 @@ async function startSurvieGame() {
     SURVIE_CHARACTERS.forEach(npc => {
         let x, y, valid, attempts = 0;
         do {
-            x = 0.08 + Math.random() * 0.84;
-            y = 0.08 + Math.random() * 0.84;
+            x = 0.05 + Math.random() * 0.90;
+            y = 0.05 + Math.random() * 0.90;
             const dxC = x - SPAWN_CENTER_X;
             const dyC = y - SPAWN_CENTER_Y;
             const distCenter = Math.sqrt(dxC * dxC + dyC * dyC);
@@ -8299,7 +8793,8 @@ async function startSurvieGame() {
             }
             valid = distCenter > EXCLUSION_RADIUS && !tooClose;
             attempts++;
-        } while (!valid && attempts < 200);
+        } while (!valid && attempts < 500);
+        if (!valid) console.warn(`⚠️ Perso ${npc.id} placé après ${attempts} tentatives (peut être trop proche)`);
         placedAll.push({ ...npc, x, y });
     });
     

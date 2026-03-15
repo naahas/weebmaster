@@ -3,7 +3,7 @@
    ============================================ */
 
 #survieContainer {
-    position: absolute;
+    position: fixed;
     inset: 0;
     z-index: 10;
     background: #181820;
@@ -114,7 +114,7 @@
     left: 16px;
     z-index: 100;
     font-family: 'Rajdhani', sans-serif;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 500;
     padding: 6px 12px;
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -352,4 +352,314 @@
     background: linear-gradient(to top, rgba(24, 24, 32, 0.5) 0%, transparent 100%);
     pointer-events: none;
     z-index: -1;
+}
+
+/* ============================================
+   QUEST LIST - Néon Timeline V1 (Admin)
+   ============================================ */
+
+.survie-quest-list {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 300px;
+    z-index: 55;
+    pointer-events: auto;
+    opacity: 0.45;
+    transition: opacity 0.3s;
+}
+
+.survie-quest-list:hover {
+    opacity: 1;
+}
+
+.survie-quest-list::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #ffcc00, transparent);
+    opacity: 0.5;
+}
+
+.survie-quest-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0 10px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.survie-quest-title {
+    font-family: 'Orbitron', 'Rajdhani', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    color: #ffcc00;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-shadow: 0 0 20px rgba(255, 200, 80, 0.3);
+}
+
+.survie-quest-counter {
+    font-family: 'Orbitron', 'Rajdhani', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffcc00;
+    text-shadow: 0 0 15px rgba(255, 200, 80, 0.4);
+}
+
+.survie-quest-counter span { font-size: 13px; color: rgba(255, 255, 255, 0.25); }
+
+.survie-quest-toggle {
+    font-size: 8px;
+    color: rgba(255, 255, 255, 0.2);
+    margin-left: 8px;
+    transition: transform 0.3s;
+}
+
+.survie-quest-list.collapsed {
+    opacity: 0.7;
+}
+
+.survie-quest-list.collapsed .survie-quest-toggle { transform: rotate(-90deg); }
+
+.survie-quest-items {
+    max-height: 500px;
+    overflow: hidden;
+    transition: max-height 0.4s ease, opacity 0.3s;
+    opacity: 1;
+}
+
+.survie-quest-list.collapsed .survie-quest-items { max-height: 0; opacity: 0; }
+
+.survie-quest-item {
+    position: relative;
+    padding: 8px 28px 8px 24px;
+    border-left: 1px solid rgba(255, 255, 255, 0.06);
+    margin-left: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.survie-quest-item:hover {
+    background: rgba(255, 200, 80, 0.03);
+}
+
+.survie-quest-info-icon {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 200, 80, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    color: rgba(255, 200, 80, 0.3);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.survie-quest-item:hover .survie-quest-info-icon {
+    opacity: 1;
+}
+
+.survie-quest-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(6px);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+}
+
+.survie-quest-modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.survie-quest-modal {
+    background: rgba(16, 16, 28, 0.95);
+    border: 1px solid rgba(255, 200, 80, 0.12);
+    border-radius: 14px;
+    padding: 28px 32px;
+    max-width: 420px;
+    width: 85%;
+    position: relative;
+    transform: scale(0.95) translateY(10px);
+    transition: transform 0.25s ease;
+}
+
+.survie-quest-modal-overlay.active .survie-quest-modal {
+    transform: scale(1) translateY(0);
+}
+
+.survie-quest-modal::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #ffcc00, transparent);
+    border-radius: 14px 14px 0 0;
+    opacity: 0.5;
+}
+
+.survie-quest-modal-type {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255, 200, 80, 0.5);
+    margin-bottom: 8px;
+}
+
+.survie-quest-modal-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 14px;
+}
+
+.survie-quest-modal-step {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.5;
+    margin-bottom: 16px;
+}
+
+.survie-quest-modal-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.survie-quest-modal-progress-bar {
+    flex: 1;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.survie-quest-modal-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ffcc00, #ff6600);
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(255, 200, 80, 0.3);
+}
+
+.survie-quest-modal-progress-text {
+    font-family: 'Orbitron', 'Rajdhani', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffcc00;
+    min-width: 40px;
+    text-align: right;
+}
+
+.survie-quest-modal-close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.survie-quest-modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.survie-quest-item::before {
+    content: '';
+    position: absolute;
+    left: -5px; top: 14px;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    background: #0c0c16;
+    transition: all 0.3s;
+}
+
+.survie-quest-item.active::before {
+    border-color: #ffcc00;
+    background: #ffcc00;
+    box-shadow: 0 0 8px rgba(255, 200, 80, 0.5);
+    animation: questGlow 2s ease-in-out infinite;
+}
+
+.survie-quest-item.active { border-left-color: rgba(255, 200, 80, 0.15); }
+
+.survie-quest-item.done::before {
+    border-color: #50c878;
+    background: #50c878;
+    box-shadow: 0 0 8px rgba(80, 200, 120, 0.5);
+}
+
+@keyframes questGlow {
+    0%, 100% { box-shadow: 0 0 6px rgba(255, 200, 80, 0.3); }
+    50% { box-shadow: 0 0 14px rgba(255, 200, 80, 0.6); }
+}
+
+.survie-quest-desc {
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.55);
+    line-height: 1.35;
+}
+
+.survie-quest-item.active .survie-quest-desc { color: #fff; }
+
+.survie-quest-item.done .survie-quest-desc {
+    color: rgba(255, 255, 255, 0.2);
+    text-decoration: line-through;
+    text-decoration-color: rgba(80, 200, 120, 0.3);
+}
+
+.survie-quest-step {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 10px;
+    color: rgba(255, 200, 80, 0.5);
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+}
+
+.survie-quest-bar {
+    height: 2px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 1px;
+    margin-top: 6px;
+    overflow: hidden;
+}
+
+.survie-quest-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ffcc00, #ff6600);
+    border-radius: 1px;
+    box-shadow: 0 0 6px rgba(255, 200, 80, 0.3);
+    transition: width 0.5s ease;
 }

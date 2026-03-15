@@ -1944,7 +1944,7 @@ createApp({
                 this.lobbyMode = 'classic';
                 this.selectedTeam = null;
                 this.teamCounts = { 1: 0, 2: 0 };
-                this.endTeamCooldown();
+                if (typeof this.endTeamCooldown === 'function') this.endTeamCooldown();
                 
                 // 🎮 Reset Survie
                 this.survie.active = false;
@@ -1962,6 +1962,18 @@ createApp({
                 this.survie.showElimOverlay = false;
                 this.stopSurvieTimer();
                 this.destroySurvieCanvas();
+                
+                // Force cleanup after Vue re-render
+                this.$nextTick(() => {
+                    const inv = document.getElementById('survieInventory');
+                    if (inv) inv.remove();
+                    const ql = document.getElementById('survieQuestList');
+                    if (ql) ql.remove();
+                    const qm = document.getElementById('survieQuestModal');
+                    if (qm) qm.remove();
+                    const dl = document.getElementById('survieDialogueOverlay');
+                    if (dl) dl.remove();
+                });
 
                 // Arrêter le timer si actif
                 this.stopTimer();
@@ -4043,6 +4055,39 @@ createApp({
                     <div class="survie-inventory" id="survieInventory">${slotsHTML}</div>
                 `);
             }
+            
+            // Create quest list if not exists
+            if (!document.getElementById('survieQuestList')) {
+                document.body.insertAdjacentHTML('beforeend', `
+                    <div class="survie-quest-list" id="survieQuestList">
+                        <div class="survie-quest-header" id="survieQuestHeader">
+                            <span class="survie-quest-title">Objectifs</span>
+                            <div style="display:flex;align-items:center;">
+                                <span class="survie-quest-counter" id="survieQuestCounter">0<span>/0</span></span>
+                                <span class="survie-quest-toggle" id="survieQuestToggle">▼</span>
+                            </div>
+                        </div>
+                        <div class="survie-quest-items" id="survieQuestItems"></div>
+                    </div>
+                `);
+                
+                // Toggle collapse
+                document.getElementById('survieQuestHeader').addEventListener('click', () => {
+                    document.getElementById('survieQuestList').classList.toggle('collapsed');
+                });
+            }
+            
+            // TEST — Mock quest data (remove when real quests are connected)
+            this.updateQuestListUI({
+                quests: [
+                    { id: 'deliver_armor_erza', type: 'DELIVER', desc: "Rapporter l'armure à Erza", currentStep: 2, totalSteps: 2, completed: true },
+                    { id: 'reunion_straw_hats', type: 'REUNION', desc: 'Réunir le Chapeau de Paille', found: ['luffy', 'zoro', 'nami', 'robin'], count: 4, completed: true },
+                    { id: 'collect_bentos', type: 'COLLECT_ITEMS', desc: 'Trouver les bentos pour Rengoku', collected: 3, count: 5, totalSteps: 6, completed: false },
+                    { id: 'riddle_kakashi', type: 'RIDDLE', desc: "L'énigme du masqué", completed: false },
+                    { id: 'escort_zoro', type: 'ESCORT', desc: 'Escorter Zoro jusqu\'au Sunny', currentStep: 0, totalSteps: 3, completed: false },
+                    { id: 'mystery_deathnote', type: 'MYSTERY', desc: 'Retrouver le Death Note volé', interrogated: ['makima'], completed: false },
+                ],
+            });
         },
         
         openSurvieDialogue(npc) {
@@ -4089,6 +4134,172 @@ createApp({
             }
         },
         
+        updateQuestListUI(questState) {
+            const container = document.getElementById('survieQuestItems');
+            const counter = document.getElementById('survieQuestCounter');
+            if (!container || !questState) return;
+            
+            // Store quest state for modal
+            this._questState = questState;
+            
+            const quests = questState.quests || [];
+            const completedCount = quests.filter(q => q.completed).length;
+            const total = quests.length;
+            
+            // Update counter
+            counter.innerHTML = `${completedCount}<span>/${total}</span>`;
+            
+            // Type labels
+            const typeLabels = {
+                'DELIVER': 'Livraison', 'VISIT_DELIVER': 'Exploration', 'CHAIN': 'Chaîne',
+                'TRADE_CHAIN': 'Troc', 'REUNION': 'Réunion', 'COLLECT_ITEMS': 'Collecte',
+                'RIDDLE': 'Énigme', 'ESCORT': 'Escorte', 'MYSTERY': 'Enquête'
+            };
+            
+            // Build items HTML
+            let html = '';
+            quests.forEach((q, idx) => {
+                const status = q.completed ? 'done' : 'active';
+                
+                // Build step text
+                let stepText = '';
+                let progressPercent = 0;
+                let showBar = false;
+                
+                if (!q.completed) {
+                    if (q.type === 'REUNION') {
+                        const found = (q.found || []).length;
+                        stepText = `► ${found}/${q.count} trouvés`;
+                        progressPercent = (found / q.count) * 100;
+                        showBar = true;
+                    } else if (q.type === 'COLLECT_ITEMS') {
+                        stepText = `► ${q.collected || 0}/${q.count} collectés`;
+                        progressPercent = ((q.collected || 0) / q.count) * 100;
+                        showBar = true;
+                    } else if (q.type === 'MYSTERY') {
+                        const interr = (q.interrogated || []).length;
+                        stepText = `► ${interr}/3 suspects interrogés`;
+                        progressPercent = (interr / 3) * 100;
+                        showBar = true;
+                    } else if (q.type === 'RIDDLE') {
+                        stepText = '► Résolvez l\'énigme...';
+                    } else if (q.totalSteps) {
+                        const current = q.currentStep || 0;
+                        stepText = `► Étape ${current + 1}/${q.totalSteps}`;
+                        progressPercent = (current / q.totalSteps) * 100;
+                        showBar = q.totalSteps > 1;
+                    }
+                }
+                
+                html += `<div class="survie-quest-item ${status}" data-quest-idx="${idx}">`;
+                html += `<div class="survie-quest-desc">${q.desc}</div>`;
+                if (stepText && !q.completed) {
+                    html += `<div class="survie-quest-step">${stepText}</div>`;
+                }
+                if (showBar && !q.completed) {
+                    html += `<div class="survie-quest-bar"><div class="survie-quest-bar-fill" style="width:${progressPercent}%"></div></div>`;
+                }
+                html += `<div class="survie-quest-info-icon">i</div>`;
+                html += '</div>';
+            });
+            
+            container.innerHTML = html;
+            
+            // Add click listeners for modal
+            container.querySelectorAll('.survie-quest-item').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(el.dataset.questIdx);
+                    this.openQuestDetailModal(idx);
+                });
+            });
+        },
+        
+        openQuestDetailModal(questIdx) {
+            if (!this._questState) return;
+            const q = this._questState.quests[questIdx];
+            if (!q) return;
+            
+            const typeLabels = {
+                'DELIVER': 'Livraison', 'VISIT_DELIVER': 'Exploration', 'CHAIN': 'Chaîne',
+                'TRADE_CHAIN': 'Troc', 'REUNION': 'Réunion', 'COLLECT_ITEMS': 'Collecte',
+                'RIDDLE': 'Énigme', 'ESCORT': 'Escorte', 'MYSTERY': 'Enquête'
+            };
+            
+            // Build step detail
+            let stepDetail = '';
+            let progressPercent = 0;
+            let progressText = '';
+            
+            if (q.completed) {
+                stepDetail = 'Quête terminée !';
+                progressPercent = 100;
+                progressText = '100%';
+            } else if (q.type === 'REUNION') {
+                const found = (q.found || []).length;
+                stepDetail = `Trouvez et parlez à ${q.count} membres du groupe. ${found} trouvé${found > 1 ? 's' : ''} pour l'instant.`;
+                progressPercent = (found / q.count) * 100;
+                progressText = `${found}/${q.count}`;
+            } else if (q.type === 'COLLECT_ITEMS') {
+                const collected = q.collected || 0;
+                stepDetail = `Récupérez ${q.count} objets dispersés sur la map, puis livrez-les.`;
+                progressPercent = (collected / q.count) * 100;
+                progressText = `${collected}/${q.count}`;
+            } else if (q.type === 'MYSTERY') {
+                const interr = (q.interrogated || []).length;
+                stepDetail = `Interrogez les suspects pour découvrir le coupable. ${interr} suspect${interr > 1 ? 's' : ''} interrogé${interr > 1 ? 's' : ''}.`;
+                progressPercent = (interr / 3) * 100;
+                progressText = `${interr}/3`;
+            } else if (q.type === 'RIDDLE') {
+                stepDetail = q.riddle || 'Trouvez le personnage ou le lieu décrit par l\'énigme.';
+                progressPercent = 0;
+                progressText = '0/1';
+            } else if (q.totalSteps) {
+                const current = q.currentStep || 0;
+                stepDetail = `Progressez à travers les ${q.totalSteps} étapes de cette quête.`;
+                progressPercent = (current / q.totalSteps) * 100;
+                progressText = `${current}/${q.totalSteps}`;
+            }
+            
+            // Create or update modal
+            let overlay = document.getElementById('survieQuestModal');
+            if (!overlay) {
+                document.body.insertAdjacentHTML('beforeend', `
+                    <div class="survie-quest-modal-overlay" id="survieQuestModal">
+                        <div class="survie-quest-modal">
+                            <button class="survie-quest-modal-close" id="survieQuestModalClose">✕</button>
+                            <div class="survie-quest-modal-type" id="sqmType"></div>
+                            <div class="survie-quest-modal-title" id="sqmTitle"></div>
+                            <div class="survie-quest-modal-step" id="sqmStep"></div>
+                            <div class="survie-quest-modal-progress">
+                                <div class="survie-quest-modal-progress-bar"><div class="survie-quest-modal-progress-fill" id="sqmBar"></div></div>
+                                <div class="survie-quest-modal-progress-text" id="sqmPercent"></div>
+                            </div>
+                        </div>
+                    </div>
+                `);
+                overlay = document.getElementById('survieQuestModal');
+                
+                // Close on overlay click or button
+                overlay.addEventListener('click', (e) => {
+                    if (e.target === overlay) overlay.classList.remove('active');
+                });
+                document.getElementById('survieQuestModalClose').addEventListener('click', () => {
+                    overlay.classList.remove('active');
+                });
+            }
+            
+            // Fill content
+            document.getElementById('sqmType').textContent = typeLabels[q.type] || q.type;
+            document.getElementById('sqmTitle').textContent = q.desc;
+            document.getElementById('sqmStep').textContent = stepDetail;
+            document.getElementById('sqmBar').style.width = progressPercent + '%';
+            document.getElementById('sqmPercent').textContent = progressText;
+            
+            // Show
+            overlay.classList.add('active');
+        },
+        
         destroySurvieCanvas() {
             if (this._survieCanvas) {
                 this._survieCanvas.stop();
@@ -4101,6 +4312,12 @@ createApp({
             // Cleanup inventory
             const inventory = document.getElementById('survieInventory');
             if (inventory) inventory.remove();
+            // Cleanup quest list
+            const questList = document.getElementById('survieQuestList');
+            if (questList) questList.remove();
+            // Cleanup quest modal
+            const questModal = document.getElementById('survieQuestModal');
+            if (questModal) questModal.remove();
         },
         
         showAnswerNotification(username) {
