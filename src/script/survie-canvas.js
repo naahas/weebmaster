@@ -17,8 +17,8 @@ const AURA_COLORS = [
 ];
 
 // Map dimensions (world space)
-const MAP_WIDTH = 32000;
-const MAP_HEIGHT = 20000;
+const MAP_WIDTH = 38000;
+const MAP_HEIGHT = 24000;
 
 class SurvieAura {
     constructor(twitchId, username, colorIndex, x, y) {
@@ -34,13 +34,16 @@ class SurvieAura {
         this.trail = [];
         this.pulsePhase = Math.random() * Math.PI * 2;
         this.size = 18;
-        this.speed = 350; // TEMP - remettre à 105
+        this.speed = 220;
         // Remote interpolation
         this.remoteTargetX = null;
         this.remoteTargetY = null;
         this.isRemote = false;
+        this._firstUpdate = true; // Teleport on first position update
         // Spawn animation
         this.spawnedAt = performance.now();
+        // Boost state
+        this.boosted = false;
     }
 
     updatePosition(x, y, vx, vy) {
@@ -48,6 +51,13 @@ class SurvieAura {
         const cx = Math.max(30, Math.min(MAP_WIDTH - 30, x));
         const cy = Math.max(30, Math.min(MAP_HEIGHT - 30, y));
         if (this.isRemote) {
+            // Teleport on first update (avoid lerp from 0,0)
+            if (this._firstUpdate) {
+                this._firstUpdate = false;
+                this.x = cx;
+                this.y = cy;
+                this.trail = [];
+            }
             this.remoteTargetX = cx;
             this.remoteTargetY = cy;
             this.vx = vx || 0;
@@ -139,18 +149,52 @@ class SurvieAura {
     }
 
     draw(ctx) {
-        // Spawn animation (fade-in + scale over 0.8s)
+        // Spawn animation (1.2s — glow burst + ring shockwave + scale)
         const spawnElapsed = (performance.now() - this.spawnedAt) / 1000;
-        const spawnDuration = 0.8;
-        if (spawnElapsed < spawnDuration) {
+        const spawnDuration = 1.2;
+        const isSpawning = spawnElapsed < spawnDuration;
+        
+        if (isSpawning) {
             const t = spawnElapsed / spawnDuration;
-            // Ease out cubic
-            const ease = 1 - Math.pow(1 - t, 3);
+            // Ease out quart
+            const ease = 1 - Math.pow(1 - t, 4);
+            // Slight overshoot for scale
+            const scaleEase = t < 0.7 ? (ease / 0.7 * 1.08) : (1.08 - 0.08 * ((t - 0.7) / 0.3));
+            const finalScale = Math.min(scaleEase, 1.08) * (0.15 + 0.85 * Math.min(ease * 1.2, 1));
+            
             ctx.save();
-            ctx.globalAlpha = ease;
+            ctx.globalAlpha = Math.min(ease * 2, 1); // Fade in faster
             ctx.translate(this.x, this.y);
-            ctx.scale(0.3 + ease * 0.7, 0.3 + ease * 0.7);
+            ctx.scale(finalScale, finalScale);
             ctx.translate(-this.x, -this.y);
+            
+            // Ring shockwave (expands and fades out)
+            if (t < 0.8) {
+                const ringT = t / 0.8;
+                const ringRadius = this.size * (3 + ringT * 12);
+                const ringAlpha = (1 - ringT) * 0.4;
+                const ringWidth = 2.5 * (1 - ringT * 0.7);
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, ringRadius, 0, Math.PI * 2);
+                ctx.strokeStyle = this.color.glow + ringAlpha + ')';
+                ctx.lineWidth = ringWidth;
+                ctx.stroke();
+            }
+            
+            // Bright flash at start
+            if (t < 0.3) {
+                const flashT = t / 0.3;
+                const flashAlpha = (1 - flashT) * 0.5;
+                const flashRadius = this.size * (1 + flashT * 6);
+                const flashGrad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, flashRadius);
+                flashGrad.addColorStop(0, 'rgba(255, 255, 255, ' + flashAlpha + ')');
+                flashGrad.addColorStop(0.3, this.color.glow + (flashAlpha * 0.6) + ')');
+                flashGrad.addColorStop(1, this.color.glow + '0)');
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, flashRadius, 0, Math.PI * 2);
+                ctx.fillStyle = flashGrad;
+                ctx.fill();
+            }
         }
 
         const pulse = Math.sin(this.pulsePhase) * 0.15 + 1;
@@ -214,6 +258,33 @@ class SurvieAura {
             ctx.fill();
         }
 
+        // Boost speed effect (speed lines + blue-tinted outer ring)
+        if (this.boosted) {
+            // Pulsing blue ring
+            const bPulse = Math.sin(this.pulsePhase * 3) * 0.15 + 0.85;
+            const bRing = this.size * 3.5 * bPulse;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, bRing, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(100, 180, 255, 0.2)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Speed streaks
+            for (let i = 0; i < 6; i++) {
+                const a = this.pulsePhase * 2 + (Math.PI * 2 / 6) * i;
+                const innerR = this.size * 2.5;
+                const outerR = this.size * 4 * bPulse;
+                const sa = 0.15 + Math.sin(this.pulsePhase * 4 + i * 1.5) * 0.1;
+                ctx.beginPath();
+                ctx.moveTo(this.x + Math.cos(a) * innerR, this.y + Math.sin(a) * innerR);
+                ctx.lineTo(this.x + Math.cos(a + 0.08) * outerR, this.y + Math.sin(a + 0.08) * outerR);
+                ctx.strokeStyle = `rgba(140, 210, 255, ${sa})`;
+                ctx.lineWidth = 2;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+        }
+
         // Name
         ctx.font = '600 13px "Segoe UI", sans-serif';
         ctx.textAlign = 'center';
@@ -221,8 +292,7 @@ class SurvieAura {
         ctx.fillText(this.isRemote ? this.username : 'Vous', this.x, this.y + this.size * 2.5 + 8);
         
         // End spawn animation
-        const spawnElapsedEnd = (performance.now() - this.spawnedAt) / 1000;
-        if (spawnElapsedEnd < 0.8) {
+        if (isSpawning) {
             ctx.restore();
         }
     }
@@ -248,8 +318,9 @@ class SurvieCanvas {
         // Mobile / responsive detection
         this.isMobile = ('ontouchstart' in window) || window.innerWidth < 900;
         this.isLandscape = window.innerWidth > window.innerHeight;
-        this.zoom = this.isMobile ? 0.7 : 0.82;
-        this.npcScale = this.isMobile ? 0.7 : 1.0; // NPCs smaller on mobile
+        this.is2K = window.innerWidth > 1920;
+        this.zoom = this.isMobile ? 0.6 : (this.is2K ? 0.95 : 0.65);
+        this.npcScale = this.isMobile ? 0.7 : (this.is2K ? 1.2 : 1.0);
 
         // Click-to-move
         this.mouseDown = false;
@@ -280,6 +351,18 @@ class SurvieCanvas {
         this.onNPCInteract = options.onNPCInteract || null; // Callback when player interacts
         this.onDialogueClose = options.onDialogueClose || null; // Callback when dialogue closes
 
+        // Ground items
+        this.groundItems = [];
+        this.groundItemImages = new Map();
+        this.onItemPickup = options.onItemPickup || null;
+
+        // Speed boosts
+        this.boosts = [];
+        this.boostShatters = []; // Active shatter animations
+        this.boostActive = false;
+        this.boostEndTime = 0;
+        this.onBoostPickup = options.onBoostPickup || null;
+
         this._onResize = () => this.resize();
         this._onMouseDown = (e) => this._handleMouseDown(e);
         this._onMouseMove = (e) => this._handleMouseMove(e);
@@ -300,6 +383,20 @@ class SurvieCanvas {
         this._onTouchStart = (e) => {
             e.preventDefault();
             // Check if touch is on a nearby NPC (tap to interact on mobile)
+            // Tap on item to pick up
+            if (this.nearestItem && !this.nearestItem.picked && !this.dialogueOpen) {
+                const touch = e.touches[0];
+                const rect = this.canvas.getBoundingClientRect();
+                const tx = (touch.clientX - rect.left) / this.zoom + this.camX;
+                const ty = (touch.clientY - rect.top) / this.zoom + this.camY;
+                const dx = tx - this.nearestItem.x;
+                const dy = ty - this.nearestItem.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < this.nearestItem.size * 2) {
+                    this._triggerItemPickup();
+                    return;
+                }
+            }
             if (this.nearestNPC && !this.dialogueOpen) {
                 const touch = e.touches[0];
                 const rect = this.canvas.getBoundingClientRect();
@@ -349,6 +446,9 @@ class SurvieCanvas {
                         this.onDialogueClose();
                     }
                     this.dialogueOpen = false;
+                } else if (this.nearestItem) {
+                    // Pickup item (priority over NPC if both in range)
+                    this._triggerItemPickup();
                 } else if (this.nearestNPC) {
                     this._triggerInteraction();
                 }
@@ -365,6 +465,14 @@ class SurvieCanvas {
         this._dialogueNPC = this.nearestNPC;
         if (this.onNPCInteract) {
             this.onNPCInteract(this.nearestNPC);
+        }
+    }
+
+    _triggerItemPickup() {
+        if (!this.nearestItem || this.nearestItem.picked) return;
+        this.nearestItem.picked = true;
+        if (this.onItemPickup) {
+            this.onItemPickup(this.nearestItem);
         }
     }
     
@@ -452,8 +560,9 @@ class SurvieCanvas {
         // Recalculate mobile state on resize/orientation change
         this.isMobile = ('ontouchstart' in window) || window.innerWidth < 900;
         this.isLandscape = window.innerWidth > window.innerHeight;
-        this.zoom = this.isMobile ? 0.7 : 0.82;
-        this.npcScale = this.isMobile ? 0.7 : 1.0;
+        this.is2K = window.innerWidth > 1920;
+        this.zoom = this.isMobile ? 0.6 : (this.is2K ? 0.95 : 0.65);
+        this.npcScale = this.isMobile ? 0.7 : (this.is2K ? 1.2 : 1.0);
     }
 
     addPlayer(twitchId, username, colorIndex, posX, posY) {
@@ -513,6 +622,446 @@ class SurvieCanvas {
 
     removeNPC(id) {
         this.npcs = this.npcs.filter(n => n.id !== id);
+    }
+
+    addGroundItem(id, imageUrl, x, y, size) {
+        const item = {
+            id, imageUrl, x, y,
+            size: size || 50,
+            bobPhase: Math.random() * Math.PI * 2,
+            image: null,
+            loaded: false,
+            picked: false,
+        };
+        
+        const fullUrl = '/tracepic/' + imageUrl;
+        if (!this.groundItemImages.has(fullUrl)) {
+            const img = new Image();
+            img.onload = () => {
+                item.loaded = true;
+                item.image = img;
+                this.groundItemImages.set(fullUrl, img);
+            };
+            img.src = fullUrl;
+        } else {
+            item.image = this.groundItemImages.get(fullUrl);
+            item.loaded = true;
+        }
+        
+        this.groundItems.push(item);
+    }
+
+    removeGroundItem(id) {
+        const item = this.groundItems.find(i => i.id === id);
+        if (item) item.picked = true;
+    }
+
+    addBoost(id, x, y) {
+        this.boosts.push({
+            id, x, y,
+            phase: Math.random() * Math.PI * 2,
+            picked: false,
+        });
+    }
+
+    _drawBoosts(ctx, dt) {
+        const local = this.auras.get(this.localTwitchId);
+        const VISIBLE_RANGE = 1100;
+        const FADE_RANGE = 300;
+        const PICKUP_RANGE = 100; // Auto-pickup when walking over/near
+        const now = performance.now();
+
+        // Check boost active state
+        if (this.boostActive && now > this.boostEndTime) {
+            this.boostActive = false;
+            // Reset speed
+            if (local) {
+                local.speed = 220;
+                local.boosted = false;
+            }
+        }
+
+        // Draw shatters first (behind everything)
+        for (let i = this.boostShatters.length - 1; i >= 0; i--) {
+            const s = this.boostShatters[i];
+            const elapsed = (now - s.time) / 1000;
+            if (elapsed > 0.7) { this.boostShatters.splice(i, 1); continue; }
+
+            const t = elapsed / 0.7;
+            ctx.save();
+            ctx.translate(s.x, s.y);
+
+            // Shockwave ring — fast and bright
+            const ringR = t * 250;
+            const ringA = (1 - t) * 0.6;
+            ctx.beginPath();
+            ctx.arc(0, 0, ringR, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(140, 200, 255, ${ringA})`;
+            ctx.lineWidth = 4 * (1 - t);
+            ctx.stroke();
+
+            // Second inner ring
+            if (t < 0.5) {
+                const r2 = t * 2 * 150;
+                const a2 = (1 - t * 2) * 0.4;
+                ctx.beginPath();
+                ctx.arc(0, 0, r2, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(200, 230, 255, ${a2})`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            // Flash
+            if (t < 0.15) {
+                const flashA = (1 - t / 0.15) * 0.7;
+                const flashG = ctx.createRadialGradient(0, 0, 0, 0, 0, 120);
+                flashG.addColorStop(0, `rgba(220, 240, 255, ${flashA})`);
+                flashG.addColorStop(0.3, `rgba(140, 200, 255, ${flashA * 0.5})`);
+                flashG.addColorStop(1, 'rgba(100, 160, 255, 0)');
+                ctx.beginPath();
+                ctx.arc(0, 0, 120, 0, Math.PI * 2);
+                ctx.fillStyle = flashG;
+                ctx.fill();
+            }
+
+            // Crystal shards flying out
+            for (let j = 0; j < s.shards.length; j++) {
+                const sh = s.shards[j];
+                const d = t * sh.speed;
+                const px = Math.cos(sh.angle) * d;
+                const py = Math.sin(sh.angle) * d - t * 40; // slight upward drift
+                const pa = (1 - t) * 0.85;
+                const ss = sh.size * (1 - t * 0.6);
+                const rot = t * sh.rotSpeed;
+
+                ctx.save();
+                ctx.translate(px, py);
+                ctx.rotate(rot);
+                ctx.globalAlpha = pa;
+
+                // Diamond shard
+                ctx.beginPath();
+                ctx.moveTo(0, -ss);
+                ctx.lineTo(ss * 0.5, 0);
+                ctx.lineTo(0, ss);
+                ctx.lineTo(-ss * 0.5, 0);
+                ctx.closePath();
+                ctx.fillStyle = sh.color;
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            // Sparkle particles
+            for (let j = 0; j < 10; j++) {
+                const a = (Math.PI * 2 / 10) * j + j * 0.5;
+                const d = t * (120 + j * 15);
+                const px = Math.cos(a) * d;
+                const py = Math.sin(a) * d;
+                const pa = (1 - t) * 0.6;
+                const ps = 3 * (1 - t);
+                ctx.beginPath();
+                ctx.arc(px, py, ps, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(180, 220, 255, ${pa})`;
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        // Draw boost crystals
+        this.boosts.forEach(boost => {
+            if (boost.picked) return;
+
+            boost.phase += dt * 2.5;
+
+            // Distance-based visibility
+            let alpha = 1;
+            if (local) {
+                const dx = local.x - boost.x;
+                const dy = local.y - boost.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist > VISIBLE_RANGE) { alpha = 0; }
+                else if (dist > VISIBLE_RANGE - FADE_RANGE) {
+                    alpha = 1 - (dist - (VISIBLE_RANGE - FADE_RANGE)) / FADE_RANGE;
+                }
+
+                // Auto-pickup on walk-over
+                if (!this.isAdmin && dist < PICKUP_RANGE && !this.boostActive) {
+                    boost.picked = true;
+                    this.boostActive = true;
+                    this.boostEndTime = now + 10000; // 10s
+                    local.speed = 440;
+                    local.boosted = true;
+
+                    // Trigger shatter
+                    const shardColors = [
+                        'rgba(180, 220, 255, 0.9)', 'rgba(140, 180, 255, 0.8)',
+                        'rgba(200, 240, 255, 0.9)', 'rgba(100, 200, 255, 0.8)',
+                        'rgba(160, 140, 255, 0.7)', 'rgba(220, 200, 255, 0.8)',
+                    ];
+                    const shards = [];
+                    for (let k = 0; k < 14; k++) {
+                        shards.push({
+                            angle: (Math.PI * 2 / 14) * k + (Math.random() - 0.5) * 0.4,
+                            speed: 150 + Math.random() * 200,
+                            size: 5 + Math.random() * 7,
+                            rotSpeed: 6 + Math.random() * 10,
+                            color: shardColors[k % shardColors.length],
+                        });
+                    }
+                    this.boostShatters.push({ x: boost.x, y: boost.y, time: now, shards });
+
+                    // Screen shake
+                    this.shakeIntensity = 6;
+                    this.shakeDuration = 0.25;
+                    this.shakeTime = 0;
+
+                    if (this.onBoostPickup) this.onBoostPickup(boost);
+                    return;
+                }
+            } else if (!this.localTwitchId) {
+                alpha = 1; // Admin spectator sees all
+            }
+
+            if (alpha <= 0) return;
+
+            ctx.save();
+            ctx.globalAlpha = alpha;
+
+            const cx = boost.x;
+            const cy = boost.y;
+            const bob = Math.sin(boost.phase) * 5;
+            const pulse = Math.sin(boost.phase * 1.6) * 0.1 + 1;
+
+            // Outer prismatic glow
+            const g1 = ctx.createRadialGradient(cx, cy + bob, 0, cx, cy + bob, 55 * pulse);
+            g1.addColorStop(0, `rgba(140, 200, 255, 0.2)`);
+            g1.addColorStop(0.5, `rgba(100, 160, 255, 0.06)`);
+            g1.addColorStop(1, 'rgba(80, 140, 255, 0)');
+            ctx.beginPath();
+            ctx.arc(cx, cy + bob, 55 * pulse, 0, Math.PI * 2);
+            ctx.fillStyle = g1;
+            ctx.fill();
+
+            // Ground glow
+            const gg = ctx.createRadialGradient(cx, cy + 20, 0, cx, cy + 20, 40);
+            gg.addColorStop(0, 'rgba(100, 180, 255, 0.12)');
+            gg.addColorStop(1, 'rgba(100, 180, 255, 0)');
+            ctx.beginPath();
+            ctx.arc(cx, cy + 20, 40, 0, Math.PI * 2);
+            ctx.fillStyle = gg;
+            ctx.fill();
+
+            // Crystal body (static diamond, no rotation)
+            const cSize = 22 * pulse;
+            const cg = ctx.createLinearGradient(cx, cy + bob - cSize, cx, cy + bob + cSize);
+            cg.addColorStop(0, 'rgba(200, 235, 255, 0.92)');
+            cg.addColorStop(0.5, 'rgba(130, 190, 255, 0.75)');
+            cg.addColorStop(1, 'rgba(160, 130, 255, 0.65)');
+
+            ctx.beginPath();
+            ctx.moveTo(cx, cy + bob - cSize);
+            ctx.lineTo(cx + cSize * 0.58, cy + bob);
+            ctx.lineTo(cx, cy + bob + cSize);
+            ctx.lineTo(cx - cSize * 0.58, cy + bob);
+            ctx.closePath();
+            ctx.fillStyle = cg;
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(200, 230, 255, 0.4)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Inner facet highlight
+            ctx.beginPath();
+            ctx.moveTo(cx, cy + bob - cSize);
+            ctx.lineTo(cx + cSize * 0.28, cy + bob - cSize * 0.2);
+            ctx.lineTo(cx, cy + bob + cSize * 0.15);
+            ctx.lineTo(cx - cSize * 0.28, cy + bob - cSize * 0.2);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.fill();
+
+            // Core bright point
+            const coreG = ctx.createRadialGradient(cx, cy + bob - 3, 1, cx, cy + bob, 8);
+            coreG.addColorStop(0, 'rgba(255, 255, 255, 0.7)');
+            coreG.addColorStop(1, 'rgba(150, 200, 255, 0)');
+            ctx.beginPath();
+            ctx.arc(cx, cy + bob, 8, 0, Math.PI * 2);
+            ctx.fillStyle = coreG;
+            ctx.fill();
+
+            // Orbiting sparkles
+            for (let i = 0; i < 5; i++) {
+                const a = boost.phase * 1.3 + (Math.PI * 2 / 5) * i;
+                const d = 30 + Math.sin(boost.phase * 1.8 + i * 1.5) * 6;
+                const sx = cx + Math.cos(a) * d;
+                const sy = cy + bob + Math.sin(a) * d;
+                const sa = 0.35 + Math.sin(boost.phase * 2.5 + i * 2) * 0.25;
+                const ss = 1.8 + Math.sin(boost.phase * 2 + i) * 0.8;
+                ctx.beginPath();
+                ctx.arc(sx, sy, ss, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(180, 220, 255, ${sa})`;
+                ctx.fill();
+            }
+
+            ctx.restore();
+        });
+    }
+
+    _drawGroundItems(ctx, dt) {
+        const local = this.auras.get(this.localTwitchId);
+        const VISIBLE_RANGE = 1100;
+        const FADE_RANGE = 300;
+        const INTERACT_RANGE = 120;
+        
+        // Track nearest item for pickup
+        let closestItem = null;
+        let closestItemDist = Infinity;
+        
+        this.groundItems.forEach(item => {
+            if (item.picked || !item.loaded) return;
+            
+            item.bobPhase += dt * 2.5;
+            
+            const sx = item.x;
+            const sy = item.y;
+            
+            // Distance-based visibility
+            let alpha = 1;
+            let proximity = 0;
+            if (local) {
+                const dx = local.x - sx;
+                const dy = local.y - sy;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist > VISIBLE_RANGE) {
+                    alpha = 0;
+                } else if (dist > VISIBLE_RANGE - FADE_RANGE) {
+                    alpha = 1 - (dist - (VISIBLE_RANGE - FADE_RANGE)) / FADE_RANGE;
+                }
+                
+                // Track proximity for interaction hint
+                if (dist < INTERACT_RANGE) {
+                    proximity = 1 - (dist / INTERACT_RANGE);
+                    if (dist < closestItemDist) {
+                        closestItemDist = dist;
+                        closestItem = item;
+                    }
+                }
+            } else if (!this.localTwitchId) {
+                alpha = 1;
+            }
+            
+            if (alpha <= 0) return;
+            
+            // Smooth proximity
+            if (item._proxSmooth === undefined) item._proxSmooth = 0;
+            item._proxSmooth += (proximity - item._proxSmooth) * 0.08;
+            const p = item._proxSmooth;
+            
+            // Bob animation
+            const bob = Math.sin(item.bobPhase) * 5;
+            const size = item.size * this.npcScale * (1 + p * 0.08);
+            
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            
+            // Glow circle on ground (brighter when close)
+            const glowRadius = size * 0.9 + p * 10;
+            const glowAlpha = 0.12 + p * 0.1;
+            const glowGrad = ctx.createRadialGradient(sx, sy + size * 0.3, 0, sx, sy + size * 0.3, glowRadius);
+            glowGrad.addColorStop(0, `rgba(255, 200, 80, ${glowAlpha})`);
+            glowGrad.addColorStop(1, 'rgba(255, 200, 80, 0)');
+            ctx.beginPath();
+            ctx.arc(sx, sy + size * 0.3, glowRadius, 0, Math.PI * 2);
+            ctx.fillStyle = glowGrad;
+            ctx.fill();
+            
+            // Draw item sprite
+            if (item.image) {
+                const aspect = item.image.width / item.image.height;
+                const drawH = size;
+                const drawW = drawH * aspect;
+                ctx.drawImage(item.image, sx - drawW / 2, sy - drawH / 2 + bob - size * 0.2, drawW, drawH);
+            }
+            
+            // "!" icon + "E pour ramasser" hint when close (same style as NPCs)
+            if (p > 0.15) {
+                const t = Math.min(1, (p - 0.15) / 0.1);
+                const elastic = t < 1 
+                    ? 1 + Math.sin(t * Math.PI * 3) * (1 - t) * 0.4
+                    : 1;
+                const popScale = t * elastic;
+                const iconAlpha = Math.min(1, t * 1.5);
+                
+                const iconX = sx;
+                const iconY = sy - size * 1.1 + bob;
+                const fontSize = 24 * popScale;
+                
+                ctx.save();
+                ctx.globalAlpha = alpha * iconAlpha;
+                
+                // Soft glow behind !
+                const excGlowGrad = ctx.createRadialGradient(iconX, iconY, 0, iconX, iconY, fontSize * 1.2);
+                excGlowGrad.addColorStop(0, 'rgba(255, 200, 50, 0.2)');
+                excGlowGrad.addColorStop(1, 'rgba(255, 200, 50, 0)');
+                ctx.beginPath();
+                ctx.arc(iconX, iconY, fontSize * 1.2, 0, Math.PI * 2);
+                ctx.fillStyle = excGlowGrad;
+                ctx.fill();
+                
+                // "!" with dark outline then gold fill
+                ctx.font = `900 ${fontSize}px "Segoe UI", Impact, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
+                ctx.lineWidth = 4 * popScale;
+                ctx.lineJoin = 'round';
+                ctx.strokeText('!', iconX, iconY);
+                ctx.fillStyle = '#ffcc00';
+                ctx.fillText('!', iconX, iconY);
+                
+                // White inner highlight
+                ctx.globalAlpha = alpha * iconAlpha * 0.3;
+                ctx.fillStyle = '#fff';
+                ctx.fillText('!', iconX - 0.5, iconY - 0.5);
+                
+                // "E pour ramasser" below !
+                ctx.globalAlpha = alpha * iconAlpha * 0.8;
+                const hintSize = 16 * popScale;
+                ctx.font = `600 ${hintSize}px "Rajdhani", "Segoe UI", sans-serif`;
+                ctx.fillStyle = '#ffcc00';
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
+                ctx.lineWidth = 3 * popScale;
+                const hintText = this.isMobile ? 'TAP' : 'E pour ramasser';
+                ctx.strokeText(hintText, iconX, iconY + fontSize * 1.05);
+                ctx.fillText(hintText, iconX, iconY + fontSize * 1.05);
+                
+                ctx.restore();
+            }
+            
+            // Sparkle particles
+            ctx.globalAlpha = alpha;
+            for (let i = 0; i < 3; i++) {
+                const angle = item.bobPhase * 0.8 + (Math.PI * 2 * i / 3);
+                const dist = size * 0.5 + Math.sin(item.bobPhase + i) * 4;
+                const px = sx + Math.cos(angle) * dist;
+                const py = sy + Math.sin(angle) * dist * 0.5 + bob - size * 0.1;
+                const sparkleSize = 1.5 + Math.sin(item.bobPhase * 2 + i) * 0.5;
+                const sparkleAlpha = 0.3 + Math.sin(item.bobPhase * 1.5 + i) * 0.15;
+                ctx.beginPath();
+                ctx.arc(px, py, sparkleSize, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 200, 80, ${sparkleAlpha})`;
+                ctx.fill();
+            }
+            
+            ctx.restore();
+        });
+        
+        // Store nearest item for E key pickup
+        this.nearestItem = closestItem;
     }
 
     _drawNPCs(ctx, dt) {
@@ -687,7 +1236,7 @@ class SurvieCanvas {
                 
                 // "E pour interagir" hint below "!" (or "TAP" on mobile)
                 ctx.globalAlpha = iconAlpha * 0.8;
-                const hintSize = 14 * popScale;
+                const hintSize = 16 * popScale;
                 ctx.font = `600 ${hintSize}px "Rajdhani", "Segoe UI", sans-serif`;
                 ctx.fillStyle = '#ffcc00';
                 ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
@@ -1064,6 +1613,12 @@ class SurvieCanvas {
         ctx.save();
         ctx.translate(-this.camX, -this.camY);
         
+        // Draw boosts (behind ground items)
+        this._drawBoosts(ctx, dt);
+        
+        // Draw ground items (behind NPCs)
+        this._drawGroundItems(ctx, dt);
+        
         // Draw NPCs (behind auras)
         this._drawNPCs(ctx, dt);
         
@@ -1079,22 +1634,18 @@ class SurvieCanvas {
         // End shake offset
         ctx.restore();
 
-        // "Mode test" banner (screen space, always on top)
+        // Controls hint (screen space, always on top)
         ctx.save();
         ctx.textAlign = 'center';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
         if (this.isMobile) {
-            ctx.font = '600 13px "Rajdhani", "Segoe UI", sans-serif';
-            ctx.fillText('VOUS ÊTES EN MODE TEST', this.w / 2, this.h - 36);
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.50)';
-            ctx.font = '400 10px "Rajdhani", "Segoe UI", sans-serif';
-            ctx.fillText('Déplacez-vous en touchant l\'écran', this.w / 2, this.h - 20);
+            // No text on mobile
+        } else if (this.is2K) {
+            ctx.font = '400 18px "Rajdhani", "Segoe UI", sans-serif';
+            ctx.fillText('Déplacez-vous avec la souris, ZQSD ou les flèches', this.w / 2, this.h - 35);
         } else {
-            ctx.font = '600 20px "Rajdhani", "Segoe UI", sans-serif';
-            ctx.fillText('VOUS ÊTES EN MODE TEST', this.w / 2, this.h - 62);
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.50)';
-            ctx.font = '400 14px "Rajdhani", "Segoe UI", sans-serif';
-            ctx.fillText('Déplacez-vous avec la souris, ZQSD ou les flèches', this.w / 2, this.h - 40);
+            ctx.font = '400 12px "Rajdhani", "Segoe UI", sans-serif';
+            ctx.fillText('Déplacez-vous avec la souris, ZQSD ou les flèches', this.w / 2, this.h - 25);
         }
         ctx.restore();
 

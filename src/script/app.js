@@ -318,6 +318,11 @@ createApp({
     },
 
     async mounted() {
+        // Bind give mode click handler
+        this._onGiveSlotClick = this._handleGiveSlotClick.bind(this);
+        
+        // Restore winner banner if active (delayed to ensure DOM is ready)
+        setTimeout(() => this._restoreWinnerBanner(), 1500);
 
         // 🔊 Raccourci clavier: Ctrl+M pour mute/unmute le son
         document.addEventListener('keydown', (e) => {
@@ -1552,6 +1557,16 @@ createApp({
                             this.survie.timer = state.survie.timer || 30;
                             this.survie.currentEpreuve = state.survie.currentEpreuve;
                             this.survie.npcs = state.survie.npcs || [];
+                            this.survie.quests = state.survie.quests || [];
+                            this.survie.groundItems = state.survie.groundItems || [];
+                            if (state.survie.boosts) this.survie.boosts = state.survie.boosts;
+                            if (state.survie.questItems) this.survie.questItems = state.survie.questItems;
+                            
+                            // Restore player's saved quest state from server
+                            if (state.survie.playerQuestStates && this.twitchId && state.survie.playerQuestStates[this.twitchId]) {
+                                this.survie.savedQuestState = state.survie.playerQuestStates[this.twitchId];
+                                console.log('📋 Resync: saved quest state found for', this.twitchId);
+                            }
                             
                             this.survie.isEliminated = false;
                             
@@ -1563,14 +1578,20 @@ createApp({
                             }
                             
                             // Init canvas after Vue renders
-                            this.$nextTick(() => this.initSurvieCanvas());
+                            this.$nextTick(() => {
+                                this.initSurvieCanvas();
+                                this._restoreWinnerBanner();
+                            });
                         } else {
                             // Survie terminée mais lobby encore ouvert
                             this.survie.active = true;
                             this.survie.npcs = state.survie?.npcs || [];
                             this.gameInProgress = true;
                             document.body.classList.add('game-active');
-                            this.$nextTick(() => this.initSurvieCanvas());
+                            this.$nextTick(() => {
+                                this.initSurvieCanvas();
+                                this._restoreWinnerBanner();
+                            });
                         }
                     } else {
                         this.gameInProgress = true;
@@ -1699,6 +1720,201 @@ createApp({
         // ========== Socket.IO ==========
         initSocket() {
             this.socket = io();
+            
+            // ═══ Permanent survie listeners (bound once, never removed) ═══
+            this.socket.on('survie-interact-result', (data) => {
+                if (!this.survie?.active) return;
+                console.log('📨 Interact result:', data.npcId, 'questDialogue:', data.questDialogue ? 'OUI' : 'NON', 'update:', data.questUpdate);
+                
+                // Update quest UI
+                if (data.questState) {
+                    this.updateQuestListUI(data.questState);
+                }
+                
+                // Show quest dialogue if any (overrides default)
+                if (data.questDialogue) {
+                    const overlay = document.getElementById('survieDialogueOverlay');
+                    const text = document.getElementById('survieDialogueText');
+                    if (overlay && text) {
+                        // Convert **word** to highlighted spans
+                        const parsed = data.questDialogue.replace(/\*\*(.+?)\*\*/g, '<span class="quest-highlight">$1</span>');
+                        // Strip ** for typewriter char counting
+                        const rawText = data.questDialogue.replace(/\*\*/g, '');
+                        text.innerHTML = '';
+                        let charIndex = 0;
+                        if (this._typewriterInterval) clearInterval(this._typewriterInterval);
+                        this._typewriterInterval = setInterval(() => {
+                            if (charIndex < rawText.length) {
+                                // Build partial text with highlights
+                                const partial = data.questDialogue.replace(/\*\*(.+?)\*\*/g, '<span class="quest-highlight">$1</span>');
+                                // Slice raw text to charIndex, but render with HTML
+                                let shown = 0, htmlOut = '', inTag = false;
+                                for (let ci = 0; ci < parsed.length; ci++) {
+                                    if (parsed[ci] === '<') inTag = true;
+                                    if (inTag) { htmlOut += parsed[ci]; if (parsed[ci] === '>') inTag = false; continue; }
+                                    if (shown <= charIndex) { htmlOut += parsed[ci]; shown++; } else break;
+                                }
+                                text.innerHTML = htmlOut + '<span class="typing-cursor"></span>';
+                                charIndex++;
+                            } else {
+                                text.innerHTML = parsed;
+                                clearInterval(this._typewriterInterval);
+                                this._typewriterInterval = null;
+                            }
+                        }, 15);
+                    }
+                }
+                
+                // Update inventory UI
+                if (data.itemGiven) {
+                    this._addItemToInventory(data.itemGiven);
+                }
+                if (data.itemTaken) {
+                    this._removeItemFromInventory(data.itemTaken);
+                }
+                
+                // Hide NPC from canvas (ESCORT quest)
+                if (data.questUpdate?.hideNpc && this._survieCanvas) {
+                    this._survieCanvas.removeNPC(data.questUpdate.hideNpc);
+                }
+                
+                // Check if all quests completed
+                if (data.completedCount >= data.totalQuests) {
+                    console.log('🏆 Toutes les quêtes complétées !');
+                }
+                
+                // Handle awaiting give — enter inventory selection mode
+                if (data.questUpdate?.awaitingGive) {
+                    this._enterGiveMode(data.npcId, data.questUpdate.questId, data.questUpdate.requiredItems, data.questUpdate.requiredCount, data.questUpdate.requiredImageUrls);
+                }
+            });
+            
+            // ═══ Give items result ═══
+            this.socket.on('survie-give-result', (data) => {
+                if (!this.survie?.active) return;
+                console.log('🎁 Give result:', data.questId, data.questDialogue ? 'OUI' : 'NON');
+                
+                // Exit give mode
+                this._exitGiveMode();
+                
+                // Update quest UI
+                if (data.questState) {
+                    this.updateQuestListUI(data.questState);
+                }
+                
+                // Show final dialogue
+                if (data.questDialogue) {
+                    const text = document.getElementById('survieDialogueText');
+                    if (text) {
+                        const parsed = data.questDialogue.replace(/\*\*(.+?)\*\*/g, '<span class="quest-highlight">$1</span>');
+                        const rawText = data.questDialogue.replace(/\*\*/g, '');
+                        text.innerHTML = '';
+                        let charIndex = 0;
+                        if (this._typewriterInterval) clearInterval(this._typewriterInterval);
+                        this._typewriterInterval = setInterval(() => {
+                            if (charIndex < rawText.length) {
+                                let shown = 0, htmlOut = '', inTag = false;
+                                for (let ci = 0; ci < parsed.length; ci++) {
+                                    if (parsed[ci] === '<') inTag = true;
+                                    if (inTag) { htmlOut += parsed[ci]; if (parsed[ci] === '>') inTag = false; continue; }
+                                    if (shown <= charIndex) { htmlOut += parsed[ci]; shown++; } else break;
+                                }
+                                text.innerHTML = htmlOut + '<span class="typing-cursor"></span>';
+                                charIndex++;
+                            } else {
+                                text.innerHTML = parsed;
+                                clearInterval(this._typewriterInterval);
+                                this._typewriterInterval = null;
+                            }
+                        }, 15);
+                    }
+                }
+                
+                // Add/remove items
+                if (data.itemGiven) {
+                    this._addItemToInventory(data.itemGiven);
+                }
+                if (data.itemsTaken) {
+                    data.itemsTaken.forEach(itemId => this._removeItemFromInventory(itemId));
+                }
+            });
+            
+            this.socket.on('survie-pickup-result', (data) => {
+                if (!this.survie?.active) return;
+                console.log('📦 Pickup result:', data.groundItemId, data.itemData?.name);
+                
+                // Update quest UI
+                if (data.questState) {
+                    this.updateQuestListUI(data.questState);
+                }
+                
+                // Fix slot itemId — replace ground item ID with real quest item ID
+                if (data.itemData && data.groundItemId) {
+                    for (let i = 1; i <= 12; i++) {
+                        const slot = document.getElementById(`survieSlot${i}`);
+                        if (slot && slot.dataset.itemId === data.groundItemId) {
+                            slot.dataset.itemId = data.itemData.id;
+                            slot.dataset.itemName = data.itemData.name || data.itemData.id;
+                            break;
+                        }
+                    }
+                }
+            });
+            
+            // Listen for boost picked by another player
+            this.socket.on('survie-boost-picked', (data) => {
+                if (!this._survieCanvas) return;
+                console.log('⚡ Boost picked by other player:', data.boostId);
+                const boost = this._survieCanvas.boosts.find(b => b.id === data.boostId);
+                if (boost && !boost.picked) {
+                    boost.picked = true;
+                    // Show shatter animation even for other players
+                    const shardColors = [
+                        'rgba(180, 220, 255, 0.9)', 'rgba(140, 180, 255, 0.8)',
+                        'rgba(200, 240, 255, 0.9)', 'rgba(100, 200, 255, 0.8)',
+                        'rgba(160, 140, 255, 0.7)', 'rgba(220, 200, 255, 0.8)',
+                    ];
+                    const shards = [];
+                    for (let k = 0; k < 14; k++) {
+                        shards.push({
+                            angle: (Math.PI * 2 / 14) * k + (Math.random() - 0.5) * 0.4,
+                            speed: 150 + Math.random() * 200,
+                            size: 5 + Math.random() * 7,
+                            rotSpeed: 6 + Math.random() * 10,
+                            color: shardColors[k % shardColors.length],
+                        });
+                    }
+                    this._survieCanvas.boostShatters.push({ x: boost.x, y: boost.y, time: performance.now(), shards });
+                }
+            });
+            
+            // Listen for new boost spawned by server
+            this.socket.on('survie-boost-spawn', (data) => {
+                if (!this._survieCanvas) return;
+                console.log('⚡ New boost spawned:', data.id);
+                this._survieCanvas.addBoost(data.id, data.x * 38000, data.y * 24000);
+            });
+            
+            // Listen for player finishing all quests
+            this.socket.on('survie-player-finished', (data) => {
+                console.log(`🏆 ${data.username} a terminé ! Rang: ${data.rank}`);
+                // Don't show notification during countdown (winner banner visible)
+                if (!document.getElementById('survieWinnerBanner')) {
+                    this._showFinishNotification(data.username, data.rank);
+                }
+            });
+            
+            // Listen for winner (first to finish)
+            this.socket.on('survie-winner', (data) => {
+                console.log(`🥇 WINNER: ${data.username}`);
+                this._showWinnerBanner(data);
+            });
+            
+            // Listen for game over (60s after first winner)
+            this.socket.on('survie-game-over', (data) => {
+                console.log('🏆 Game over!', data);
+                this._showVictoryOverlay(data);
+            });
 
             // Événements de connexion
             this.socket.on('connect', () => {
@@ -1956,12 +2172,19 @@ createApp({
                 this.survie.qualifiedCount = 0;
                 this.survie.toEliminateCount = 0;
                 this.survie.npcs = [];
+                this.survie.quests = [];
+                this.survie.groundItems = [];
+                this.survie.boosts = [];
+                this.survie.questItems = {};
+                this.survie.savedQuestState = null;
                 this.survie.isEliminated = false;
                 this.survie.isQualified = false;
                 this.survie.currentEpreuve = null;
                 this.survie.showElimOverlay = false;
+                this._questState = null;
                 this.stopSurvieTimer();
                 this.destroySurvieCanvas();
+                document.body.classList.remove('game-active');
                 
                 // Force cleanup after Vue re-render
                 this.$nextTick(() => {
@@ -1973,6 +2196,8 @@ createApp({
                     if (qm) qm.remove();
                     const dl = document.getElementById('survieDialogueOverlay');
                     if (dl) dl.remove();
+                    const mm = document.getElementById('survieMinimap');
+                    if (mm) mm.remove();
                 });
 
                 // Arrêter le timer si actif
@@ -1997,6 +2222,24 @@ createApp({
                 this.bombanime.active = false;
                 sessionStorage.removeItem('bombanimeInProgress');
                 sessionStorage.removeItem('bombanimeSuggestionUsed');
+                
+                // 🏆 Reset winner banner
+                sessionStorage.removeItem('survieWinnerEndTime');
+                sessionStorage.removeItem('survieWinnerName');
+                const winBanner = document.getElementById('survieWinnerBanner');
+                if (winBanner) winBanner.remove();
+                if (this._winnerCountdownInterval) {
+                    clearInterval(this._winnerCountdownInterval);
+                    this._winnerCountdownInterval = null;
+                }
+                const vicOverlay = document.getElementById('survieVictoryOverlay');
+                if (vicOverlay) vicOverlay.remove();
+                
+                // 🗺️ Reset Survie
+                if (this.survie.active) {
+                    this.survie.active = false;
+                    this.destroySurvieCanvas();
+                }
 
                 this.showNotification('Le jeu a été désactivé', 'info');
             });
@@ -3857,14 +4100,33 @@ createApp({
                 this.survie.isEliminated = false;
                 this.survie.isQualified = false;
                 this.survie.npcs = data.npcs || [];
+                this.survie.quests = data.quests || [];
+                this.survie.groundItems = data.groundItems || [];
+                this.survie.boosts = data.boosts || [];
+                this.survie.questItems = data.questItems || {};
                 this.gameInProgress = true;
                 this.gameEnded = false;
                 
+                // Save player's quest state (with stepDesc) from server
+                if (data.playerQuestStates && this.twitchId && data.playerQuestStates[this.twitchId]) {
+                    this.survie.savedQuestState = data.playerQuestStates[this.twitchId];
+                }
+                
                 document.body.classList.add('game-active');
+                
+                // Ensure server has our current socket.id mapped to our twitchId
+                if (this.twitchId && this.username) {
+                    this.socket.emit('reconnect-player', {
+                        twitchId: this.twitchId,
+                        username: this.username
+                    });
+                }
                 
                 // Init canvas after Vue renders the template
                 this.$nextTick(() => {
                     this.initSurvieCanvas();
+                    // Restore winner banner if active
+                    this._restoreWinnerBanner();
                 });
             });
             
@@ -3998,7 +4260,7 @@ createApp({
                 isAdmin: false,
                 onPosition(x, y, vx, vy) {
                     if (self.socket) {
-                        self.socket.emit('survie-position', { x, y, vx, vy });
+                        self.socket.emit('survie-position', { x, y, vx, vy, twitchId: self.twitchId });
                     }
                 },
                 onNPCInteract(npc) {
@@ -4006,6 +4268,29 @@ createApp({
                 },
                 onDialogueClose() {
                     self.closeSurvieDialogue();
+                },
+                onItemPickup(item) {
+                    console.log('📦 Pickup:', item.id, item.imageUrl);
+                    if (self.socket) {
+                        self.socket.emit('survie-pickup', { groundItemId: item.id, twitchId: self.twitchId });
+                    }
+                    // Optimistic update — add to inventory immediately
+                    if (item.imageUrl) {
+                        // Resolve real item name from questItems if available
+                        let itemName = item.id;
+                        const qi = self.survie.questItems || {};
+                        // Try direct match or match by imageUrl
+                        for (const [key, val] of Object.entries(qi)) {
+                            if (val.imageUrl === item.imageUrl) { itemName = val.name; break; }
+                        }
+                        self._addItemToInventory({ id: item.id, name: itemName, imageUrl: item.imageUrl });
+                    }
+                },
+                onBoostPickup(boost) {
+                    console.log('⚡ Boost pickup:', boost.id);
+                    if (self.socket) {
+                        self.socket.emit('survie-boost-pickup', { boostId: boost.id, twitchId: self.twitchId });
+                    }
                 }
             });
             
@@ -4019,9 +4304,28 @@ createApp({
             
             this._survieCanvas.start();
             
+            // Force resize after a short delay (ensures header is hidden and layout is settled)
+            setTimeout(() => {
+                if (this._survieCanvas) this._survieCanvas.resize();
+            }, 100);
+            setTimeout(() => {
+                if (this._survieCanvas) this._survieCanvas.resize();
+            }, 500);
+            
             // Add NPCs from server data
             (this.survie.npcs || []).forEach(npc => {
                 this._survieCanvas.addNPC(npc.id, npc.name, npc.imageUrl, npc.x * MAP_WIDTH, npc.y * MAP_HEIGHT, npc.size, npc.defaultDialogues, npc.questDialogues, npc.isStructure);
+            });
+            
+            // Add ground items
+            this._pickedItems = this._pickedItems || new Set();
+            (this.survie.groundItems || []).forEach(gi => {
+                this._survieCanvas.addGroundItem(gi.id, gi.imageUrl, gi.x * MAP_WIDTH, gi.y * MAP_HEIGHT, gi.size);
+            });
+            
+            // Add boosts
+            (this.survie.boosts || []).forEach(b => {
+                this._survieCanvas.addBoost(b.id, b.x * MAP_WIDTH, b.y * MAP_HEIGHT);
             });
             
             // Create dialogue overlay if not exists
@@ -4048,7 +4352,7 @@ createApp({
             // Create inventory if not exists
             if (!document.getElementById('survieInventory')) {
                 let slotsHTML = '';
-                for (let i = 1; i <= 10; i++) {
+                for (let i = 1; i <= 12; i++) {
                     slotsHTML += `<div class="survie-inventory-slot" data-slot="${i}" id="survieSlot${i}"></div>`;
                 }
                 document.body.insertAdjacentHTML('beforeend', `
@@ -4059,7 +4363,7 @@ createApp({
             // Create quest list if not exists
             if (!document.getElementById('survieQuestList')) {
                 document.body.insertAdjacentHTML('beforeend', `
-                    <div class="survie-quest-list" id="survieQuestList">
+                    <div class="survie-quest-list quest-entrance" id="survieQuestList">
                         <div class="survie-quest-header" id="survieQuestHeader">
                             <span class="survie-quest-title">Objectifs</span>
                             <div style="display:flex;align-items:center;">
@@ -4071,25 +4375,485 @@ createApp({
                     </div>
                 `);
                 
+                // Remove entrance class after animation completes
+                setTimeout(() => {
+                    const ql = document.getElementById('survieQuestList');
+                    if (ql) ql.classList.remove('quest-entrance');
+                }, 2000);
+                
                 // Toggle collapse
                 document.getElementById('survieQuestHeader').addEventListener('click', () => {
                     document.getElementById('survieQuestList').classList.toggle('collapsed');
                 });
             }
             
-            // TEST — Mock quest data (remove when real quests are connected)
-            this.updateQuestListUI({
-                quests: [
-                    { id: 'deliver_armor_erza', type: 'DELIVER', desc: "Rapporter l'armure à Erza", currentStep: 2, totalSteps: 2, completed: true },
-                    { id: 'reunion_straw_hats', type: 'REUNION', desc: 'Réunir le Chapeau de Paille', found: ['luffy', 'zoro', 'nami', 'robin'], count: 4, completed: true },
-                    { id: 'collect_bentos', type: 'COLLECT_ITEMS', desc: 'Trouver les bentos pour Rengoku', collected: 3, count: 5, totalSteps: 6, completed: false },
-                    { id: 'riddle_kakashi', type: 'RIDDLE', desc: "L'énigme du masqué", completed: false },
-                    { id: 'escort_zoro', type: 'ESCORT', desc: 'Escorter Zoro jusqu\'au Sunny', currentStep: 0, totalSteps: 3, completed: false },
-                    { id: 'mystery_deathnote', type: 'MYSTERY', desc: 'Retrouver le Death Note volé', interrogated: ['makima'], completed: false },
-                ],
-            });
+            // Create minimap if not exists
+            if (!document.getElementById('survieMinimap')) {
+                document.body.insertAdjacentHTML('beforeend', `
+                    <div class="survie-minimap" id="survieMinimap">
+                        <div class="survie-minimap-frame">
+                            <div class="survie-minimap-inner">
+                                <div class="survie-minimap-grid"></div>
+                            </div>
+                            <div class="survie-minimap-boundary"></div>
+                            <canvas class="survie-minimap-canvas" id="survieMinimapCanvas"></canvas>
+                            <div class="survie-minimap-coord" id="survieMinimapCoord"></div>
+                        </div>
+                        <div class="survie-minimap-corner tl"></div>
+                        <div class="survie-minimap-corner tr"></div>
+                        <div class="survie-minimap-corner bl"></div>
+                        <div class="survie-minimap-corner br"></div>
+                    </div>
+                `);
+                
+                // Setup minimap canvas
+                const mmCanvas = document.getElementById('survieMinimapCanvas');
+                const mmRect = mmCanvas.parentElement.getBoundingClientRect();
+                mmCanvas.width = mmRect.width - 12;
+                mmCanvas.height = mmRect.height - 12;
+                
+                // Start minimap render loop
+                this._minimapInterval = setInterval(() => {
+                    this._renderMinimap();
+                }, 100);
+            }
+            
+            // Load quests — use saved state if available (after refresh), otherwise fresh
+            console.log('📋 Player quests:', this.survie.quests?.length || 0, 'savedState:', !!this.survie.savedQuestState);
+            if (this.survie.savedQuestState && this.survie.savedQuestState.quests) {
+                // Restored from server after refresh
+                console.log('📋 Using SAVED quest state');
+                this.updateQuestListUI(this.survie.savedQuestState);
+                
+                // Remove already-picked items from canvas
+                if (this.survie.savedQuestState.pickedItems && this._survieCanvas) {
+                    this.survie.savedQuestState.pickedItems.forEach(itemId => {
+                        this._survieCanvas.removeGroundItem(itemId);
+                    });
+                    console.log('📦 Removed', this.survie.savedQuestState.pickedItems.length, 'picked items from canvas');
+                }
+                
+                // Restore inventory UI
+                if (this.survie.savedQuestState.inventory) {
+                    this.survie.savedQuestState.inventory.forEach(itemId => {
+                        // Try questItems dict first (for NPC-given items like armor, scroll, etc.)
+                        const questItems = this.survie.questItems || {};
+                        const qi = questItems[itemId];
+                        if (qi) {
+                            this._addItemToInventory({ id: itemId, name: qi.name || itemId, imageUrl: qi.imageUrl });
+                        } else {
+                            // Fallback to ground items (for collectibles like dragonballs)
+                            const allItems = this.survie.groundItems || [];
+                            const gi = allItems.find(g => g.itemId === itemId);
+                            if (gi) {
+                                this._addItemToInventory({ id: itemId, name: gi.name || itemId, imageUrl: gi.imageUrl });
+                            }
+                        }
+                    });
+                }
+                
+                this.survie.savedQuestState = null;
+            } else if (this.survie.quests && this.survie.quests.length > 0) {
+                // Fresh game start — generate initial stepDesc client-side as fallback
+                this.updateQuestListUI({
+                    quests: this.survie.quests.map(q => ({
+                        ...q,
+                        currentStep: 0,
+                        completed: false,
+                        stepDesc: this._getInitialStepDesc(q),
+                        ...(q.type === 'REUNION' && { found: [] }),
+                        ...(q.type === 'COLLECT_ITEMS' && { collected: 0 }),
+                        ...(q.type === 'MYSTERY' && { interrogated: [] }),
+                    })),
+                });
+            }
+            
+            // Request saved quest state from server (with delay to ensure server has re-registered us)
+            setTimeout(() => {
+                this.socket.emit('survie-reconnect', { twitchId: this.twitchId });
+            }, 500);
+            
+            // Handle survie-state (reconnect response)
+            this.socket.off('survie-state');
+            this.socket.on('survie-state', (data) => {
+                    if (!data) return;
+                    console.log('📋 Reconnect: quests:', data.quests?.length || 0, 'items:', data.groundItems?.length || 0, 'playerQuestState:', !!data.playerQuestState, data.playerQuestState?.quests?.length || 0);
+                    if (data.playerQuestState?.quests) {
+                        console.log('📋 Saved progress:', data.playerQuestState.quests.map(q => `${q.id}:step${q.currentStep}/${q.completed?'DONE':'active'}`).join(', '));
+                    }
+                    this.survie.quests = data.quests || [];
+                    this.survie.groundItems = data.groundItems || [];
+                    if (data.questItems) this.survie.questItems = data.questItems;
+                    
+                    // Add ground items to canvas if not already there
+                    if (this._survieCanvas && data.groundItems) {
+                        data.groundItems.forEach(gi => {
+                            if (!this._survieCanvas.groundItems.find(g => g.id === gi.id)) {
+                                this._survieCanvas.addGroundItem(gi.id, gi.imageUrl, gi.x * 38000, gi.y * 24000, gi.size);
+                            }
+                        });
+                    }
+                    
+                    // Add boosts to canvas if not already there
+                    if (this._survieCanvas && data.boosts) {
+                        data.boosts.forEach(b => {
+                            if (!this._survieCanvas.boosts.find(eb => eb.id === b.id)) {
+                                this._survieCanvas.addBoost(b.id, b.x * 38000, b.y * 24000);
+                            }
+                        });
+                    }
+                    
+                    // Use player's saved quest state if available, otherwise init fresh
+                    if (data.playerQuestState && data.playerQuestState.quests) {
+                        this.updateQuestListUI(data.playerQuestState);
+                        
+                        // Remove already-picked items from canvas
+                        if (data.playerQuestState.pickedItems && this._survieCanvas) {
+                            data.playerQuestState.pickedItems.forEach(itemId => {
+                                this._survieCanvas.removeGroundItem(itemId);
+                            });
+                        }
+                    } else if (data.quests && data.quests.length > 0) {
+                        this.updateQuestListUI({
+                            quests: data.quests.map(q => ({
+                                ...q,
+                                currentStep: 0,
+                                completed: false,
+                                ...(q.type === 'REUNION' && { found: [] }),
+                                ...(q.type === 'COLLECT_ITEMS' && { collected: 0 }),
+                                ...(q.type === 'MYSTERY' && { interrogated: [] }),
+                            })),
+                        });
+                    }
+                });
+            
+            // Ensure server has our current socket.id (critical after page refresh)
+            if (this.socket && this.twitchId && this.username) {
+                this.socket.emit('reconnect-player', {
+                    twitchId: this.twitchId,
+                    username: this.username
+                });
+            }
+        },
+        sendSurvieInteract(npc) {
+            console.log('🗣️ sendSurvieInteract:', npc.id, 'survie.active:', this.survie.active, 'socket:', !!this.socket);
+            if (this.socket && this.survie.active) {
+                this.socket.emit('survie-interact', {
+                    npcId: npc.id,
+                    isStructure: !!npc.isStructure,
+                    twitchId: this.twitchId,
+                });
+                console.log('📤 survie-interact émis pour', npc.id);
+            } else {
+                console.warn('⚠️ survie-interact NON émis - active:', this.survie.active);
+            }
         },
         
+        _addItemToInventory(item) {
+            console.log('📦 _addItemToInventory:', item.id, item.imageUrl, item.name);
+            // Find first empty slot
+            let found = false;
+            for (let i = 1; i <= 12; i++) {
+                const slot = document.getElementById(`survieSlot${i}`);
+                if (slot && !slot.classList.contains('filled')) {
+                    slot.classList.add('filled', 'item-new');
+                    slot.innerHTML = `<img src="/tracepic/${item.imageUrl}" alt="${item.name}">`;
+                    slot.dataset.itemId = item.id;
+                    slot.dataset.itemName = item.name || item.id;
+                    setTimeout(() => slot.classList.remove('item-new'), 500);
+                    found = true;
+                    console.log('📦 Item ajouté au slot', i);
+                    break;
+                }
+            }
+            if (!found) console.warn('⚠️ Aucun slot vide trouvé !');
+        },
+        
+        _removeItemFromInventory(itemId) {
+            for (let i = 1; i <= 12; i++) {
+                const slot = document.getElementById(`survieSlot${i}`);
+                if (slot && slot.dataset.itemId === itemId) {
+                    slot.classList.remove('filled');
+                    slot.innerHTML = '';
+                    slot.dataset.itemId = '';
+                    slot.dataset.itemName = '';
+                    break;
+                }
+            }
+        },
+        
+        // ═══ GIVE MODE — Inventory selection for item delivery ═══
+        _giveMode: null,
+        
+        _enterGiveMode(npcId, questId, requiredItems, requiredCount, requiredImageUrls) {
+            console.log('🎁 Entering give mode:', questId, requiredItems, requiredImageUrls);
+            this._giveMode = {
+                npcId,
+                questId,
+                requiredItems: requiredItems,
+                requiredCount: requiredCount,
+                selectedItems: []
+            };
+            
+            // Style all slots — highlight valid items, grey out others
+            for (let i = 1; i <= 12; i++) {
+                const slot = document.getElementById(`survieSlot${i}`);
+                if (!slot) continue;
+                
+                if (slot.classList.contains('filled')) {
+                    const itemId = slot.dataset.itemId;
+                    const img = slot.querySelector('img');
+                    const imgSrc = img ? img.getAttribute('src')?.split('/').pop() : '';
+                    
+                    // Match by itemId OR by imageUrl
+                    const isRequired = requiredItems.includes(itemId) || 
+                        (requiredImageUrls && requiredImageUrls.includes(imgSrc));
+                    
+                    if (isRequired) {
+                        slot.classList.add('give-selectable');
+                        slot.addEventListener('click', this._onGiveSlotClick);
+                    } else {
+                        slot.classList.add('give-disabled');
+                    }
+                }
+            }
+            
+            // Add give-mode class to inventory container
+            const inv = document.getElementById('survieInventory');
+            if (inv) inv.classList.add('give-mode-active');
+        },
+        
+        _exitGiveMode() {
+            console.log('🎁 Exiting give mode');
+            this._giveMode = null;
+            
+            for (let i = 1; i <= 12; i++) {
+                const slot = document.getElementById(`survieSlot${i}`);
+                if (!slot) continue;
+                slot.classList.remove('give-selectable', 'give-disabled', 'give-selected');
+                slot.removeEventListener('click', this._onGiveSlotClick);
+            }
+            
+            const inv = document.getElementById('survieInventory');
+            if (inv) inv.classList.remove('give-mode-active');
+        },
+        
+        _onGiveSlotClick: null, // Will be bound in created()
+        
+        _handleGiveSlotClick(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            if (!this._giveMode) return;
+            const slot = e.currentTarget;
+            const itemId = slot.dataset.itemId;
+            if (!itemId) return;
+            
+            // Use slot index as unique key (handles duplicate itemIds like 'berries')
+            const slotKey = slot.id || itemId;
+            
+            // Toggle selection
+            const idx = this._giveMode.selectedItems.findIndex(s => s.slotKey === slotKey);
+            if (idx === -1) {
+                this._giveMode.selectedItems.push({ slotKey, itemId });
+                slot.classList.add('give-selected');
+                slot.classList.remove('give-selectable');
+            } else {
+                this._giveMode.selectedItems.splice(idx, 1);
+                slot.classList.remove('give-selected');
+                slot.classList.add('give-selectable');
+            }
+            
+            console.log('🎁 Selected:', this._giveMode.selectedItems.length, '/', this._giveMode.requiredCount);
+            
+            // Auto-send when all required items are selected
+            if (this._giveMode.selectedItems.length >= this._giveMode.requiredCount) {
+                console.log('🎁 All items selected — sending!');
+                if (this.socket) {
+                    this.socket.emit('survie-give-items', {
+                        twitchId: this.twitchId,
+                        npcId: this._giveMode.npcId,
+                        questId: this._giveMode.questId,
+                        givenItems: this._giveMode.selectedItems.map(s => s.itemId)
+                    });
+                }
+            }
+        },
+
+        // ═══ VICTORY SYSTEM ═══
+        _showFinishNotification(username, rank) {
+            const rankLabels = { 1: '★ 1ER', 2: '☆ 2ÈME', 3: '☆ 3ÈME' };
+            const rankLabel = rankLabels[rank] || `${rank}ÈME`;
+            const isMe = username === this.username;
+            
+            const notif = document.createElement('div');
+            notif.className = 'survie-finish-notif';
+            notif.innerHTML = `
+                <div class="notif-rank">${rankLabel} À FINIR</div>
+                <div class="notif-name">${isMe ? 'VOUS !' : username}</div>
+            `;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 4000);
+        },
+        
+        _showWinnerBanner(data) {
+            const isMe = data.twitchId === this.twitchId;
+            
+            // Remove existing banner
+            const existing = document.getElementById('survieWinnerBanner');
+            if (existing) existing.remove();
+            
+            // Store winner end time for restore after refresh
+            this._winnerEndTime = Date.now() + 60000;
+            sessionStorage.setItem('survieWinnerEndTime', this._winnerEndTime);
+            sessionStorage.setItem('survieWinnerName', data.username);
+            
+            const banner = document.createElement('div');
+            banner.id = 'survieWinnerBanner';
+            banner.className = 'survie-winner-text';
+            banner.innerHTML = `<span class="winner-text-name">Un joueur</span> a terminé ses quêtes · Fin dans <span class="winner-text-timer" id="survieWinnerTimer">60</span> secondes`;
+            document.body.appendChild(banner);
+            
+            // Start countdown
+            if (this._winnerCountdownInterval) clearInterval(this._winnerCountdownInterval);
+            this._winnerCountdownInterval = setInterval(() => {
+                const remaining = Math.max(0, Math.ceil((this._winnerEndTime - Date.now()) / 1000));
+                const timerEl = document.getElementById('survieWinnerTimer');
+                if (timerEl) timerEl.textContent = remaining;
+                if (remaining <= 0) {
+                    clearInterval(this._winnerCountdownInterval);
+                    this._winnerCountdownInterval = null;
+                }
+            }, 1000);
+        },
+        
+        _restoreWinnerBanner() {
+            const endTime = sessionStorage.getItem('survieWinnerEndTime');
+            const winnerName = sessionStorage.getItem('survieWinnerName');
+            if (!endTime || !winnerName) return;
+            
+            const remaining = Math.ceil((parseInt(endTime) - Date.now()) / 1000);
+            if (remaining <= 0) {
+                sessionStorage.removeItem('survieWinnerEndTime');
+                sessionStorage.removeItem('survieWinnerName');
+                return;
+            }
+            
+            this._winnerEndTime = parseInt(endTime);
+            
+            const existing = document.getElementById('survieWinnerBanner');
+            if (existing) existing.remove();
+            
+            const banner = document.createElement('div');
+            banner.id = 'survieWinnerBanner';
+            banner.className = 'survie-winner-text';
+            banner.innerHTML = `<span class="winner-text-name">Un joueur</span> a terminé ses quêtes · Fin dans <span class="winner-text-timer" id="survieWinnerTimer">${remaining}</span> secondes`;
+            document.body.appendChild(banner);
+            
+            if (this._winnerCountdownInterval) clearInterval(this._winnerCountdownInterval);
+            this._winnerCountdownInterval = setInterval(() => {
+                const rem = Math.max(0, Math.ceil((this._winnerEndTime - Date.now()) / 1000));
+                const timerEl = document.getElementById('survieWinnerTimer');
+                if (timerEl) timerEl.textContent = rem;
+                if (rem <= 0) {
+                    clearInterval(this._winnerCountdownInterval);
+                    this._winnerCountdownInterval = null;
+                }
+            }, 1000);
+        },
+        
+        _showVictoryOverlay(data) {
+            // SVG icons
+            const crownSVG = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M8 48h48v6H8z" fill="rgba(255,200,80,0.9)"/><path d="M8 48L4 20l14 12 14-18 14 18 14-12-4 28z" fill="rgba(255,200,80,0.85)" stroke="rgba(255,170,30,0.6)" stroke-width="1.5"/><circle cx="4" cy="20" r="3" fill="rgba(255,220,100,0.9)"/><circle cx="18" cy="32" r="3" fill="rgba(255,220,100,0.9)"/><circle cx="32" cy="14" r="3.5" fill="rgba(255,240,150,1)"/><circle cx="46" cy="32" r="3" fill="rgba(255,220,100,0.9)"/><circle cx="60" cy="20" r="3" fill="rgba(255,220,100,0.9)"/></svg>`;
+            const medalSVGs = [
+                `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="22" r="14" fill="rgba(255,200,80,0.2)" stroke="rgba(255,200,80,0.8)" stroke-width="2"/><circle cx="20" cy="22" r="10" fill="rgba(255,200,80,0.1)" stroke="rgba(255,200,80,0.4)" stroke-width="1"/><text x="20" y="27" text-anchor="middle" font-family="Orbitron,sans-serif" font-size="14" font-weight="700" fill="rgba(255,200,80,0.9)">1</text><path d="M15 4l5 8 5-8" fill="rgba(255,200,80,0.6)"/></svg>`,
+                `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="22" r="14" fill="rgba(192,192,192,0.15)" stroke="rgba(192,192,192,0.7)" stroke-width="2"/><circle cx="20" cy="22" r="10" fill="rgba(192,192,192,0.08)" stroke="rgba(192,192,192,0.3)" stroke-width="1"/><text x="20" y="27" text-anchor="middle" font-family="Orbitron,sans-serif" font-size="14" font-weight="700" fill="rgba(192,192,192,0.8)">2</text><path d="M15 4l5 8 5-8" fill="rgba(192,192,192,0.5)"/></svg>`,
+                `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="22" r="14" fill="rgba(205,127,50,0.15)" stroke="rgba(205,127,50,0.7)" stroke-width="2"/><circle cx="20" cy="22" r="10" fill="rgba(205,127,50,0.08)" stroke="rgba(205,127,50,0.3)" stroke-width="1"/><text x="20" y="27" text-anchor="middle" font-family="Orbitron,sans-serif" font-size="14" font-weight="700" fill="rgba(205,127,50,0.8)">3</text><path d="M15 4l5 8 5-8" fill="rgba(205,127,50,0.5)"/></svg>`,
+            ];
+            
+            // Remove existing overlay and banner
+            const existing = document.getElementById('survieVictoryOverlay');
+            if (existing) existing.remove();
+            const banner = document.getElementById('survieWinnerBanner');
+            if (banner) banner.remove();
+            if (this._winnerCountdownInterval) {
+                clearInterval(this._winnerCountdownInterval);
+                this._winnerCountdownInterval = null;
+            }
+            
+            // Build podium HTML — skip 1st place (already shown above)
+            const classes = ['first', 'second', 'third'];
+            const rankLabels = ['CHAMPION', '2ÈME PLACE', '3ÈME PLACE'];
+            
+            let podiumHTML = '';
+            const podiumPlayers = (data.podium || []).slice(1); // Skip winner
+            if (podiumPlayers.length > 0) {
+                podiumPlayers.forEach((p, i) => {
+                    const actualIdx = i + 1; // 2nd, 3rd
+                    const questInfo = `${p.completedCount}/${p.totalQuests || 5} quêtes`;
+                    podiumHTML += `
+                        <div class="survie-podium-place ${classes[actualIdx] || ''}">
+                            <div class="survie-podium-medal">${medalSVGs[actualIdx] || ''}</div>
+                            <div class="survie-podium-name">${p.username}</div>
+                            <div class="survie-podium-quests">${questInfo}</div>
+                            <div class="survie-podium-rank">${rankLabels[actualIdx] || `${actualIdx + 1}ÈME`}</div>
+                        </div>
+                    `;
+                });
+            }
+            
+            const self = this;
+            const overlay = document.createElement('div');
+            overlay.id = 'survieVictoryOverlay';
+            overlay.className = 'survie-victory-overlay';
+            overlay.innerHTML = `
+                <div class="survie-victory-crown">${crownSVG}</div>
+                <div class="survie-victory-title">VICTOIRE</div>
+                <div class="survie-victory-winner">${data.winner.username}</div>
+                <div class="survie-victory-podium">${podiumHTML}</div>
+                <div class="survie-victory-btn-wrap"><span class="survie-victory-btn" id="survieVictoryRetour">RETOUR</span></div>
+            `;
+            document.body.appendChild(overlay);
+            
+            // Activate with delay for transition
+            requestAnimationFrame(() => overlay.classList.add('active'));
+            
+            // Retour button handler
+            document.getElementById('survieVictoryRetour').addEventListener('click', () => {
+                overlay.remove();
+                // Return to lobby state
+                self.isGameActive = false;
+                self.gameInProgress = false;
+                self.gameEnded = true;
+                self.survie.active = false;
+                self.destroySurvieCanvas();
+            });
+            
+            // Spawn particles
+            this._spawnVictoryParticles(overlay);
+        },
+        
+        _spawnVictoryParticles(container) {
+            const colors = [
+                'rgba(255, 200, 80, 0.8)', 'rgba(255, 150, 50, 0.7)',
+                'rgba(255, 255, 200, 0.6)', 'rgba(200, 160, 80, 0.7)',
+                'rgba(255, 220, 100, 0.8)', 'rgba(180, 140, 60, 0.6)',
+            ];
+            for (let i = 0; i < 40; i++) {
+                setTimeout(() => {
+                    const particle = document.createElement('div');
+                    particle.className = 'survie-victory-particle';
+                    particle.style.left = Math.random() * 100 + '%';
+                    particle.style.top = '-10px';
+                    particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    particle.style.width = (3 + Math.random() * 5) + 'px';
+                    particle.style.height = particle.style.width;
+                    particle.style.animationDuration = (3 + Math.random() * 4) + 's';
+                    container.appendChild(particle);
+                    setTimeout(() => particle.remove(), 7000);
+                }, i * 100);
+            }
+        },
+
         openSurvieDialogue(npc) {
             const overlay = document.getElementById('survieDialogueOverlay');
             const name = document.getElementById('survieDialogueName');
@@ -4101,7 +4865,10 @@ createApp({
             name.textContent = npc.name;
             name.classList.toggle('structure', !!npc.isStructure);
             
-            // Pick dialogue: quest dialogue if active, otherwise random default
+            // Send interact to server (server will respond with quest dialogue if applicable)
+            this.sendSurvieInteract(npc);
+            
+            // Pick default dialogue (server may override with quest dialogue via survie-interact-result)
             const dialogues = npc.defaultDialogues || ["..."];
             const dialogue = dialogues[Math.floor(Math.random() * dialogues.length)];
             
@@ -4132,12 +4899,51 @@ createApp({
                 clearInterval(this._typewriterInterval);
                 this._typewriterInterval = null;
             }
+            // Exit give mode if active
+            if (this._giveMode) {
+                this._exitGiveMode();
+            }
+        },
+        
+        // Generate initial step description client-side (fallback)
+        _getInitialStepDesc(q) {
+            if (!q) return '';
+            // For step-based quests, we don't have NPC names client-side in templates
+            // So return a generic first-step hint based on type
+            if (q.type === 'DELIVER' || q.type === 'VISIT_DELIVER' || q.type === 'CHAIN' || q.type === 'TRADE_CHAIN') {
+                return null; // Will use stepDesc from server once interaction happens
+            }
+            if (q.type === 'RIDDLE') return 'Résolvez l\'énigme...';
+            if (q.type === 'ESCORT') return 'Trouver le personnage';
+            if (q.type === 'MYSTERY') return 'Enquêter sur le vol';
+            return '';
         },
         
         updateQuestListUI(questState) {
             const container = document.getElementById('survieQuestItems');
             const counter = document.getElementById('survieQuestCounter');
             if (!container || !questState) return;
+            
+            // Detect changes from previous state for animations
+            const prevState = this._questState;
+            const changedQuests = new Set();
+            const completedQuests = new Set();
+            if (prevState && prevState.quests) {
+                const quests = questState.quests || [];
+                quests.forEach((q, idx) => {
+                    const prev = prevState.quests[idx];
+                    if (!prev) return;
+                    // Detect step change
+                    if (q.currentStep !== prev.currentStep) changedQuests.add(idx);
+                    // Detect found/collected change
+                    if (q.type === 'REUNION' && (q.found || []).length !== (prev.found || []).length) changedQuests.add(idx);
+                    if (q.type === 'COLLECT_ITEMS' && (q.collected || 0) !== (prev.collected || 0)) changedQuests.add(idx);
+                    if (q.type === 'MYSTERY' && (q.interrogated || []).length !== (prev.interrogated || []).length) changedQuests.add(idx);
+                    if (q.type === 'RIDDLE' && q.hintReceived !== prev.hintReceived) changedQuests.add(idx);
+                    // Detect completion
+                    if (q.completed && !prev.completed) completedQuests.add(idx);
+                });
+            }
             
             // Store quest state for modal
             this._questState = questState;
@@ -4173,21 +4979,33 @@ createApp({
                         progressPercent = (found / q.count) * 100;
                         showBar = true;
                     } else if (q.type === 'COLLECT_ITEMS') {
-                        stepText = `► ${q.collected || 0}/${q.count} collectés`;
-                        progressPercent = ((q.collected || 0) / q.count) * 100;
-                        showBar = true;
+                        const collected = q.collected || 0;
+                        if (q.stepDesc && collected >= q.count) {
+                            // All collected → show delivery target
+                            stepText = `► ${q.stepDesc}`;
+                            progressPercent = 100;
+                            showBar = false;
+                        } else {
+                            stepText = `► ${collected}/${q.count} collectés`;
+                            progressPercent = (collected / q.count) * 100;
+                            showBar = true;
+                        }
                     } else if (q.type === 'MYSTERY') {
-                        const interr = (q.interrogated || []).length;
-                        stepText = `► ${interr}/3 suspects interrogés`;
+                        const interr = (q.interrogated || []).filter(i => i !== '_victim').length;
+                        stepText = q.stepDesc ? `► ${q.stepDesc}` : `► ${interr}/3 suspects interrogés`;
                         progressPercent = (interr / 3) * 100;
                         showBar = true;
                     } else if (q.type === 'RIDDLE') {
-                        stepText = '► Résolvez l\'énigme...';
-                    } else if (q.totalSteps) {
+                        stepText = q.stepDesc ? `► ${q.stepDesc}` : '► Résolvez l\'énigme...';
+                    } else if (q.stepDesc) {
+                        // DELIVER, CHAIN, VISIT_DELIVER, TRADE_CHAIN, ESCORT
+                        stepText = `► ${q.stepDesc}`;
                         const current = q.currentStep || 0;
-                        stepText = `► Étape ${current + 1}/${q.totalSteps}`;
-                        progressPercent = (current / q.totalSteps) * 100;
-                        showBar = q.totalSteps > 1;
+                        progressPercent = (current / (q.totalSteps || 1)) * 100;
+                        showBar = (q.totalSteps || 0) > 1;
+                    } else if (q.totalSteps) {
+                        // No stepDesc yet — don't show "Étape x/y", wait for server update
+                        stepText = '';
                     }
                 }
                 
@@ -4205,12 +5023,34 @@ createApp({
             
             container.innerHTML = html;
             
-            // Add click listeners for modal
+            // Trigger animations for changed quests
             container.querySelectorAll('.survie-quest-item').forEach(el => {
+                const idx = parseInt(el.dataset.questIdx);
+                
+                // Step progress glow
+                if (changedQuests.has(idx) && !completedQuests.has(idx)) {
+                    el.classList.add('step-progress');
+                    const stepEl = el.querySelector('.survie-quest-step');
+                    if (stepEl) stepEl.classList.add('step-text-flash');
+                    const barFill = el.querySelector('.survie-quest-bar-fill');
+                    if (barFill) barFill.classList.add('bar-pulse');
+                    setTimeout(() => {
+                        el.classList.remove('step-progress');
+                        if (stepEl) stepEl.classList.remove('step-text-flash');
+                        if (barFill) barFill.classList.remove('bar-pulse');
+                    }, 800);
+                }
+                
+                // Quest completed flash
+                if (completedQuests.has(idx)) {
+                    el.classList.add('just-completed');
+                    setTimeout(() => el.classList.remove('just-completed'), 800);
+                }
+                
+                // Click listener for modal
                 el.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    const idx = parseInt(el.dataset.questIdx);
-                    this.openQuestDetailModal(idx);
+                    this.openQuestDetailModal(parseInt(el.dataset.questIdx));
                 });
             });
         },
@@ -4237,26 +5077,30 @@ createApp({
                 progressText = '100%';
             } else if (q.type === 'REUNION') {
                 const found = (q.found || []).length;
-                stepDetail = `Trouvez et parlez à ${q.count} membres du groupe. ${found} trouvé${found > 1 ? 's' : ''} pour l'instant.`;
+                stepDetail = q.stepDesc ? `► ${q.stepDesc}` : `Trouvez et parlez à ${q.count} membres du groupe.`;
                 progressPercent = (found / q.count) * 100;
                 progressText = `${found}/${q.count}`;
             } else if (q.type === 'COLLECT_ITEMS') {
                 const collected = q.collected || 0;
-                stepDetail = `Récupérez ${q.count} objets dispersés sur la map, puis livrez-les.`;
+                if (q.stepDesc && collected >= q.count) {
+                    stepDetail = `► ${q.stepDesc}`;
+                } else {
+                    stepDetail = `Récupérez ${q.count} objets dispersés sur la map.`;
+                }
                 progressPercent = (collected / q.count) * 100;
                 progressText = `${collected}/${q.count}`;
             } else if (q.type === 'MYSTERY') {
-                const interr = (q.interrogated || []).length;
-                stepDetail = `Interrogez les suspects pour découvrir le coupable. ${interr} suspect${interr > 1 ? 's' : ''} interrogé${interr > 1 ? 's' : ''}.`;
+                const interr = (q.interrogated || []).filter(i => i !== '_victim').length;
+                stepDetail = q.stepDesc ? `► ${q.stepDesc}` : `Interrogez les suspects pour découvrir le coupable.`;
                 progressPercent = (interr / 3) * 100;
                 progressText = `${interr}/3`;
             } else if (q.type === 'RIDDLE') {
-                stepDetail = q.riddle || 'Trouvez le personnage ou le lieu décrit par l\'énigme.';
-                progressPercent = 0;
-                progressText = '0/1';
+                stepDetail = q.stepDesc ? `► ${q.stepDesc}` : 'Trouvez le personnage ou le lieu décrit par l\'énigme.';
+                progressPercent = q.hintReceived ? 50 : 0;
+                progressText = q.hintReceived ? '1/2' : '0/2';
             } else if (q.totalSteps) {
                 const current = q.currentStep || 0;
-                stepDetail = `Progressez à travers les ${q.totalSteps} étapes de cette quête.`;
+                stepDetail = q.stepDesc ? `► ${q.stepDesc}` : `Étape ${current + 1}/${q.totalSteps}`;
                 progressPercent = (current / q.totalSteps) * 100;
                 progressText = `${current}/${q.totalSteps}`;
             }
@@ -4300,11 +5144,84 @@ createApp({
             overlay.classList.add('active');
         },
         
+        _renderMinimap() {
+            const canvas = document.getElementById('survieMinimapCanvas');
+            const coord = document.getElementById('survieMinimapCoord');
+            if (!canvas || !this._survieCanvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+            const MAP_W = 38000;
+            const MAP_H = 24000;
+            
+            ctx.clearRect(0, 0, w, h);
+            
+            // Draw structures only (cyan squares, more visible)
+            this._survieCanvas.npcs.forEach(npc => {
+                if (!npc.isStructure) return;
+                const sx = (npc.x / MAP_W) * w;
+                const sy = (npc.y / MAP_H) * h;
+                ctx.fillStyle = 'rgba(126, 200, 227, 0.7)';
+                ctx.fillRect(sx - 3, sy - 3, 6, 6);
+                ctx.strokeStyle = 'rgba(126, 200, 227, 0.4)';
+                ctx.lineWidth = 0.5;
+                ctx.strokeRect(sx - 3, sy - 3, 6, 6);
+            });
+            
+            // Draw other players (white dots, no distinction)
+            this._survieCanvas.auras.forEach((aura, id) => {
+                if (id === this._survieCanvas.localTwitchId) return;
+                const px = (aura.x / MAP_W) * w;
+                const py = (aura.y / MAP_H) * h;
+                ctx.beginPath();
+                ctx.arc(px, py, 3, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+                ctx.fill();
+            });
+            
+            // Draw local player (gold, with glow)
+            const local = this._survieCanvas.auras.get(this._survieCanvas.localTwitchId);
+            if (local) {
+                const lx = (local.x / MAP_W) * w;
+                const ly = (local.y / MAP_H) * h;
+                
+                // Glow
+                ctx.beginPath();
+                ctx.arc(lx, ly, 6, 0, Math.PI * 2);
+                const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, 6);
+                glow.addColorStop(0, 'rgba(255, 200, 80, 0.3)');
+                glow.addColorStop(1, 'rgba(255, 200, 80, 0)');
+                ctx.fillStyle = glow;
+                ctx.fill();
+                
+                // Dot
+                ctx.beginPath();
+                ctx.arc(lx, ly, 3, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffcc00';
+                ctx.fill();
+                
+                // Update coord
+                if (coord) {
+                    const kx = (local.x / 1000).toFixed(1);
+                    const ky = (local.y / 1000).toFixed(1);
+                    coord.textContent = `${kx}K · ${ky}K`;
+                }
+            }
+        },
+        
         destroySurvieCanvas() {
             if (this._survieCanvas) {
                 this._survieCanvas.stop();
                 this._survieCanvas = null;
             }
+            // Cleanup minimap
+            if (this._minimapInterval) {
+                clearInterval(this._minimapInterval);
+                this._minimapInterval = null;
+            }
+            const minimap = document.getElementById('survieMinimap');
+            if (minimap) minimap.remove();
             // Cleanup dialogue
             this.closeSurvieDialogue();
             const overlay = document.getElementById('survieDialogueOverlay');

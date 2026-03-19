@@ -9,6 +9,11 @@
     background: #181820;
 }
 
+/* Hide header when survie is active */
+body.survie-active #mainHeader {
+    display: none !important;
+}
+
 #survieAdminCanvas {
     cursor: crosshair;
 }
@@ -51,11 +56,28 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: border-color 0.3s, box-shadow 0.3s;
+    transition: border-color 0.3s, box-shadow 0.3s, transform 0.2s;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     cursor: default;
 }
 
+/* Hover on filled slot */
+.survie-inventory-slot.filled:hover {
+    transform: scale(1.08);
+    border-color: rgba(255, 200, 80, 0.45);
+    box-shadow: 0 0 18px rgba(255, 200, 80, 0.15), inset 0 0 12px rgba(255, 200, 80, 0.06);
+    z-index: 10;
+    cursor: pointer;
+}
+
+.survie-inventory-slot.filled:hover img {
+    filter: drop-shadow(0 0 8px rgba(255, 200, 80, 0.4)) brightness(1.1);
+    transform: scale(1.05);
+    transition: filter 0.2s, transform 0.2s;
+}
+
+/* Tooltip on hover */
+/* Slot number */
 .survie-inventory-slot::after {
     content: attr(data-slot);
     position: absolute;
@@ -68,28 +90,122 @@
     letter-spacing: 0.5px;
 }
 
+/* Tooltip on hover — overrides slot number */
+.survie-inventory-slot.filled:hover::after {
+    content: attr(data-item-name);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    top: auto;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(8, 8, 18, 0.92);
+    border: 1px solid rgba(255, 200, 80, 0.2);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 200, 80, 0.85);
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+    z-index: 20;
+    opacity: 1;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Hide tooltip if no name — restore slot number look */
+.survie-inventory-slot.filled:not([data-item-name]):hover::after,
+.survie-inventory-slot.filled[data-item-name=""]:hover::after {
+    content: attr(data-slot);
+    top: 3px;
+    right: 5px;
+    left: auto;
+    bottom: auto;
+    transform: none;
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 8px;
+    color: rgba(255, 255, 255, 0.12);
+    box-shadow: none;
+    border-radius: 0;
+}
+
 .survie-inventory-slot.filled {
-    border-color: rgba(255, 200, 80, 0.2);
-    box-shadow: inset 0 0 12px rgba(255, 200, 80, 0.05);
+    border-color: rgba(255, 200, 80, 0.25);
+    box-shadow: inset 0 0 15px rgba(255, 200, 80, 0.06), 0 0 8px rgba(255, 200, 80, 0.08);
+    background: radial-gradient(ellipse at center, rgba(255, 200, 80, 0.04) 0%, transparent 70%);
 }
 
 .survie-inventory-slot.filled img {
-    width: 34px;
-    height: 34px;
+    width: 58px;
+    height: 58px;
     object-fit: contain;
-    filter: drop-shadow(0 0 4px rgba(255, 200, 80, 0.2));
+    filter: drop-shadow(0 0 5px rgba(255, 200, 80, 0.25));
 }
 
 .survie-inventory-slot.item-new {
-    animation: slotPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    border-color: rgba(255, 200, 80, 0.4);
-    box-shadow: 0 0 16px rgba(255, 200, 80, 0.15);
+    animation: slotPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border-color: rgba(255, 200, 80, 0.5);
+    box-shadow: 0 0 20px rgba(255, 200, 80, 0.2), inset 0 0 15px rgba(255, 200, 80, 0.08);
+}
+
+.survie-inventory-slot.item-new img {
+    animation: itemFadeIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes slotPop {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.15); }
+    0% { transform: scale(0.6); opacity: 0.5; }
+    60% { transform: scale(1.18); opacity: 1; }
+    80% { transform: scale(0.95); }
     100% { transform: scale(1); }
+}
+
+@keyframes itemFadeIn {
+    0% { opacity: 0; transform: scale(0.3) rotate(-10deg); }
+    60% { opacity: 1; transform: scale(1.1) rotate(2deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+/* ═══ GIVE MODE — Inventory selection ═══ */
+.survie-inventory.give-mode-active {
+    z-index: 100;
+}
+
+.survie-inventory-slot.give-disabled {
+    opacity: 0.25;
+    pointer-events: none;
+    filter: grayscale(0.8);
+}
+
+.survie-inventory-slot.give-selectable {
+    cursor: pointer;
+    animation: giveSelectable 1.2s ease infinite;
+    border-color: rgba(255, 200, 80, 0.5);
+}
+
+@keyframes giveSelectable {
+    0%, 100% { box-shadow: 0 0 8px rgba(255, 200, 80, 0.15); }
+    50% { box-shadow: 0 0 18px rgba(255, 200, 80, 0.35), inset 0 0 10px rgba(255, 200, 80, 0.08); }
+}
+
+.survie-inventory-slot.give-selectable:hover {
+    transform: scale(1.12);
+    border-color: rgba(255, 200, 80, 0.7);
+    box-shadow: 0 0 22px rgba(255, 200, 80, 0.4);
+}
+
+.survie-inventory-slot.give-selected {
+    border-color: rgba(80, 200, 120, 0.6);
+    box-shadow: 0 0 18px rgba(80, 200, 120, 0.3), inset 0 0 12px rgba(80, 200, 120, 0.1);
+    animation: none;
+    transform: scale(1.05);
+}
+
+.survie-inventory-slot.give-selected img {
+    filter: drop-shadow(0 0 8px rgba(80, 200, 120, 0.5)) brightness(1.15);
 }
 
 .survie-inventory-slot:first-child::before {
@@ -111,7 +227,7 @@
 .survie-close-lobby-btn {
     position: fixed;
     bottom: 16px;
-    left: 16px;
+    right: 16px;
     z-index: 100;
     font-family: 'Rajdhani', sans-serif;
     font-size: 10px;
@@ -327,6 +443,12 @@
     letter-spacing: 0.2px;
 }
 
+.survie-dialogue-text .quest-highlight {
+    color: rgba(230, 180, 80, 0.9);
+    font-weight: 600;
+    text-shadow: 0 0 6px rgba(200, 160, 60, 0.2);
+}
+
 .survie-dialogue-text .typing-cursor {
     display: inline-block;
     width: 2px;
@@ -365,8 +487,46 @@
     width: 300px;
     z-index: 55;
     pointer-events: auto;
-    opacity: 0.45;
+    opacity: 0.6;
     transition: opacity 0.3s;
+}
+
+.survie-quest-list.quest-entrance {
+    animation: questListEntrance 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.survie-quest-list.quest-entrance .survie-quest-item {
+    opacity: 0;
+    animation: questItemSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.survie-quest-list.quest-entrance .survie-quest-item:nth-child(1) { animation-delay: 0.4s; }
+.survie-quest-list.quest-entrance .survie-quest-item:nth-child(2) { animation-delay: 0.55s; }
+.survie-quest-list.quest-entrance .survie-quest-item:nth-child(3) { animation-delay: 0.7s; }
+.survie-quest-list.quest-entrance .survie-quest-item:nth-child(4) { animation-delay: 0.85s; }
+.survie-quest-list.quest-entrance .survie-quest-item:nth-child(5) { animation-delay: 1.0s; }
+.survie-quest-list.quest-entrance .survie-quest-item:nth-child(6) { animation-delay: 1.15s; }
+
+@keyframes questListEntrance {
+    0% { opacity: 0; transform: translateX(-40px); filter: blur(6px); }
+    30% { opacity: 0.8; filter: blur(0px); }
+    100% { opacity: 0.6; transform: translateX(0); filter: blur(0); }
+}
+
+@keyframes questItemSlideIn {
+    0% { opacity: 0; transform: translateX(-30px) scale(0.95); }
+    60% { opacity: 1; transform: translateX(4px) scale(1.01); }
+    100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+.survie-quest-list.quest-entrance::before {
+    animation: questLineGlow 1.5s ease forwards;
+}
+
+@keyframes questLineGlow {
+    0% { opacity: 0; width: 0; left: 50%; }
+    40% { opacity: 1; width: 100%; left: 0; }
+    100% { opacity: 0.5; }
 }
 
 .survie-quest-list:hover {
@@ -448,7 +608,7 @@
 
 .survie-quest-info-icon {
     position: absolute;
-    right: 4px;
+    right: 12px;
     top: 50%;
     transform: translateY(-50%);
     width: 16px;
@@ -493,9 +653,9 @@
     background: rgba(16, 16, 28, 0.95);
     border: 1px solid rgba(255, 200, 80, 0.12);
     border-radius: 14px;
-    padding: 28px 32px;
-    max-width: 420px;
-    width: 85%;
+    padding: 32px 38px;
+    max-width: 480px;
+    width: 88%;
     position: relative;
     transform: scale(0.95) translateY(10px);
     transition: transform 0.25s ease;
@@ -627,7 +787,7 @@
 
 .survie-quest-desc {
     font-family: 'Inter', sans-serif;
-    font-size: 12.5px;
+    font-size: 13.5px;
     color: rgba(255, 255, 255, 0.55);
     line-height: 1.35;
 }
@@ -642,10 +802,15 @@
 
 .survie-quest-step {
     font-family: 'Rajdhani', sans-serif;
-    font-size: 10px;
-    color: rgba(255, 200, 80, 0.5);
+    font-size: 11px;
+    color: rgba(255, 200, 80, 0.85);
     margin-top: 4px;
     letter-spacing: 0.5px;
+    transition: color 0.2s;
+}
+
+.survie-quest-item:hover .survie-quest-step {
+    color: rgba(255, 200, 80, 1);
 }
 
 .survie-quest-bar {
@@ -662,4 +827,484 @@
     border-radius: 1px;
     box-shadow: 0 0 6px rgba(255, 200, 80, 0.3);
     transition: width 0.5s ease;
+}
+
+.survie-quest-bar-fill.bar-pulse {
+    animation: barPulse 0.8s ease;
+}
+
+@keyframes barPulse {
+    0% { box-shadow: 0 0 6px rgba(255, 200, 80, 0.3); }
+    30% { box-shadow: 0 0 18px rgba(255, 200, 80, 0.8), 0 0 30px rgba(255, 150, 0, 0.4); }
+    60% { box-shadow: 0 0 12px rgba(255, 200, 80, 0.5); }
+    100% { box-shadow: 0 0 6px rgba(255, 200, 80, 0.3); }
+}
+
+.survie-quest-item.step-progress {
+    animation: stepGlow 0.7s ease;
+}
+
+@keyframes stepGlow {
+    0% { background: transparent; box-shadow: none; }
+    20% { background: rgba(255, 200, 80, 0.08); box-shadow: inset 0 0 20px rgba(255, 200, 80, 0.1), 0 0 15px rgba(255, 200, 80, 0.1); }
+    50% { background: rgba(255, 200, 80, 0.04); box-shadow: inset 0 0 10px rgba(255, 200, 80, 0.05); }
+    100% { background: transparent; box-shadow: none; }
+}
+
+.survie-quest-step.step-text-flash {
+    animation: stepTextFlash 0.6s ease;
+}
+
+@keyframes stepTextFlash {
+    0% { color: rgba(255, 200, 80, 0.85); }
+    30% { color: rgba(255, 255, 255, 1); text-shadow: 0 0 8px rgba(255, 200, 80, 0.6); }
+    100% { color: rgba(255, 200, 80, 0.85); text-shadow: none; }
+}
+
+.survie-quest-item.just-completed {
+    animation: questComplete 0.8s ease;
+}
+
+@keyframes questComplete {
+    0% { background: transparent; box-shadow: none; }
+    20% { background: rgba(80, 200, 120, 0.1); box-shadow: inset 0 0 25px rgba(80, 200, 120, 0.15), 0 0 20px rgba(80, 200, 120, 0.15); }
+    50% { background: rgba(80, 200, 120, 0.05); }
+    100% { background: transparent; box-shadow: none; }
+}
+
+/* ============================================
+   MINI-MAP — Premium + Cadre (Admin)
+   ============================================ */
+
+.survie-minimap {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    width: 250px;
+    height: 170px;
+    z-index: 55;
+    pointer-events: none;
+    opacity: 0.5;
+    transition: opacity 0.3s;
+}
+
+.survie-minimap:hover {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.survie-minimap-frame {
+    position: absolute;
+    inset: 0;
+    border-radius: 8px;
+    background: rgba(8, 8, 18, 0.85);
+    border: 1px solid rgba(255, 200, 80, 0.08);
+    overflow: hidden;
+}
+
+.survie-minimap-frame::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,200,80,0.4), transparent);
+}
+
+.survie-minimap-frame::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,200,80,0.15), transparent);
+}
+
+.survie-minimap-corner {
+    position: absolute;
+    width: 8px; height: 8px;
+    z-index: 6;
+}
+.survie-minimap-corner::before,
+.survie-minimap-corner::after {
+    content: '';
+    position: absolute;
+    background: rgba(255, 200, 80, 0.25);
+}
+.survie-minimap-corner::before { width: 8px; height: 1px; }
+.survie-minimap-corner::after { width: 1px; height: 8px; }
+.survie-minimap-corner.tl { top: 0; left: 0; }
+.survie-minimap-corner.tl::before { top: 0; left: 0; }
+.survie-minimap-corner.tl::after { top: 0; left: 0; }
+.survie-minimap-corner.tr { top: 0; right: 0; }
+.survie-minimap-corner.tr::before { top: 0; right: 0; }
+.survie-minimap-corner.tr::after { top: 0; right: 0; }
+.survie-minimap-corner.bl { bottom: 0; left: 0; }
+.survie-minimap-corner.bl::before { bottom: 0; left: 0; }
+.survie-minimap-corner.bl::after { bottom: 0; left: 0; }
+.survie-minimap-corner.br { bottom: 0; right: 0; }
+.survie-minimap-corner.br::before { bottom: 0; right: 0; }
+.survie-minimap-corner.br::after { bottom: 0; right: 0; }
+
+.survie-minimap-inner {
+    position: absolute;
+    inset: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+}
+
+.survie-minimap-grid {
+    position: absolute;
+    inset: 0;
+    background:
+        repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(255,200,80,0.025) 19px, rgba(255,200,80,0.025) 20px),
+        repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(255,200,80,0.025) 19px, rgba(255,200,80,0.025) 20px);
+}
+
+.survie-minimap-boundary {
+    position: absolute;
+    inset: 6px;
+    border: 1px solid rgba(255, 200, 80, 0.06);
+    border-radius: 3px;
+}
+
+.survie-minimap-coord {
+    position: absolute;
+    top: 2px;
+    right: 8px;
+    font-family: 'Orbitron', 'Rajdhani', sans-serif;
+    font-size: 6.5px;
+    font-weight: 400;
+    color: rgba(255, 200, 80, 0.2);
+    z-index: 6;
+}
+
+.survie-minimap-canvas {
+    position: absolute;
+    inset: 6px;
+    border-radius: 4px;
+}
+/* ============================================
+   VICTORY OVERLAY — Admin
+   ============================================ */
+
+.survie-victory-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0);
+    pointer-events: none;
+    opacity: 0;
+}
+
+.survie-victory-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+    animation: victoryBgFade 1s ease forwards;
+}
+
+@keyframes victoryBgFade {
+    0% { background: rgba(0, 0, 0, 0); }
+    100% { background: rgba(0, 0, 0, 0.85); }
+}
+
+.survie-victory-crown {
+    width: 72px;
+    height: 72px;
+    animation: crownBounce 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    opacity: 0;
+    filter: drop-shadow(0 0 30px rgba(255, 200, 80, 0.5));
+}
+
+.survie-victory-crown svg {
+    width: 100%;
+    height: 100%;
+}
+
+@keyframes crownBounce {
+    0% { opacity: 0; transform: scale(0) rotate(-20deg); }
+    60% { opacity: 1; transform: scale(1.2) rotate(5deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+.survie-victory-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: rgba(255, 200, 80, 0.6);
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    margin-top: 16px;
+    opacity: 0;
+    animation: victoryTextFade 0.8s ease 0.3s forwards;
+}
+
+.survie-victory-winner {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 48px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 0 40px rgba(255, 200, 80, 0.3);
+    margin-top: 8px;
+    opacity: 0;
+    animation: victoryTextFade 0.8s ease 0.5s forwards;
+}
+
+@keyframes victoryTextFade {
+    0% { opacity: 0; transform: translateY(15px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+.survie-victory-podium {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    margin-top: 40px;
+    opacity: 0;
+    animation: victoryTextFade 0.8s ease 0.8s forwards;
+}
+
+.survie-podium-place {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 24px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    min-width: 120px;
+}
+
+.survie-podium-place.first {
+    background: rgba(255, 200, 80, 0.06);
+    border-color: rgba(255, 200, 80, 0.15);
+    padding: 20px 28px;
+    box-shadow: 0 0 30px rgba(255, 200, 80, 0.08);
+}
+
+.survie-podium-place.second {
+    background: rgba(192, 192, 192, 0.04);
+    border-color: rgba(192, 192, 192, 0.1);
+}
+
+.survie-podium-place.third {
+    background: rgba(205, 127, 50, 0.04);
+    border-color: rgba(205, 127, 50, 0.1);
+}
+
+.survie-podium-name {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.survie-podium-place.first .survie-podium-name {
+    color: #ffcc00;
+    font-size: 20px;
+}
+
+.survie-podium-quests {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255, 200, 80, 0.5);
+    margin-top: 4px;
+}
+
+.survie-podium-rank {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 4px;
+}
+
+.survie-victory-timer {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.25);
+    margin-top: 30px;
+    letter-spacing: 1px;
+    opacity: 0;
+    animation: victoryTextFade 0.8s ease 1.2s forwards;
+}
+
+.survie-victory-particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: particleFall linear forwards;
+}
+
+@keyframes particleFall {
+    0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+    100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
+}
+
+.survie-winner-text {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9998;
+    font-family: 'Orbitron', 'Rajdhani', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 10px 28px;
+    background: rgba(8, 8, 18, 0.4);
+    border: none;
+    border-radius: 8px;
+    backdrop-filter: blur(8px);
+    animation: winnerTextEntrance 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards, winnerTextPulse 2.5s ease 0.8s infinite;
+    white-space: nowrap;
+    opacity: 0;
+}
+
+@keyframes winnerTextEntrance {
+    0% { opacity: 0; transform: translateX(-50%) translateY(-15px); filter: blur(4px); }
+    100% { opacity: 1; transform: translateX(-50%) translateY(0); filter: blur(0); }
+}
+
+.survie-winner-text .winner-text-name {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 700;
+}
+
+.survie-winner-text .winner-text-timer {
+    color: rgba(255, 200, 80, 0.6);
+    display: inline-block;
+    min-width: 22px;
+    text-align: center;
+}
+
+@keyframes winnerTextPulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; text-shadow: 0 0 12px rgba(255, 255, 255, 0.08); }
+}
+
+.survie-podium-medal {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 8px;
+}
+
+.survie-podium-medal svg {
+    width: 100%;
+    height: 100%;
+}
+
+.survie-victory-btn-wrap {
+    margin-top: 30px;
+    opacity: 0;
+    animation: victoryTextFade 0.8s ease 1.5s forwards;
+}
+
+.survie-victory-btn {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.3);
+    background: none;
+    border: none;
+    padding: 8px 20px;
+    cursor: pointer;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    transition: color 0.3s;
+}
+
+.survie-victory-btn:hover {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* ============================================
+   2K+ DISPLAYS (2560x1440+)
+   ============================================ */
+@media (min-width: 1921px) {
+    .survie-quest-list {
+        width: 420px;
+        top: 28px;
+        left: 28px;
+    }
+    .survie-quest-title {
+        font-size: 12px;
+        letter-spacing: 4px;
+    }
+    .survie-quest-counter {
+        font-size: 26px;
+    }
+    .survie-quest-counter span {
+        font-size: 16px;
+    }
+    .survie-quest-desc {
+        font-size: 16px;
+    }
+    .survie-quest-step {
+        font-size: 13px;
+    }
+    .survie-quest-dot {
+        width: 12px;
+        height: 12px;
+    }
+    .survie-minimap {
+        width: 340px;
+        height: 215px;
+        bottom: 28px;
+        left: 28px;
+    }
+    .survie-inventory {
+        right: 28px;
+        gap: 10px 8px;
+    }
+    .survie-inventory-slot {
+        width: 80px;
+        height: 80px;
+        border-radius: 10px;
+    }
+    .survie-dialogue-box {
+        width: 52%;
+    }
+    .survie-dialogue-name {
+        font-size: 16px;
+    }
+    .survie-dialogue-text {
+        font-size: 22px;
+        line-height: 1.7;
+    }
+    .survie-victory-crown {
+        width: 90px;
+        height: 90px;
+    }
+    .survie-victory-title {
+        font-size: 18px;
+        letter-spacing: 8px;
+    }
+    .survie-victory-winner {
+        font-size: 60px;
+    }
+    .survie-podium-place {
+        padding: 20px 30px;
+        min-width: 150px;
+    }
+    .survie-podium-name {
+        font-size: 22px;
+    }
+    .survie-podium-medal {
+        width: 44px;
+        height: 44px;
+    }
+    .survie-winner-text {
+        font-size: 14px;
+        padding: 12px 34px;
+    }
 }

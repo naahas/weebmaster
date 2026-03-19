@@ -591,6 +591,7 @@ function closeLobbyUI() {
             }
             
             // 🎮 Restaurer les éléments quiz cachés par survie
+            document.body.classList.remove('survie-active');
             const mainHeaderRestore = document.getElementById('mainHeader');
             if (mainHeaderRestore) {
                 mainHeaderRestore.style.display = '';
@@ -6135,10 +6136,11 @@ async function restoreGameState() {
                     if (modeBadgeHeader) modeBadgeHeader.style.display = 'none';
                     
                     // 🎮 Initialiser l'UI Survie (cache les éléments quiz, injecte le container)
+                    document.body.classList.add('survie-active');
                     showSurvieGameUI();
                     
                     // Demander l'état survie au serveur
-                    socket.emit('survie-reconnect');
+                    socket.emit('survie-reconnect', { twitchId: twitchUser?.id });
                     
                     return true; // Ne pas continuer avec la restauration quiz classique
                 } else {
@@ -8734,6 +8736,7 @@ function returnToIdle() {
     statusText.textContent = 'Inactif';
 
     // Cleanup Survie
+    document.body.classList.remove('survie-active');
     const survieContainer = document.getElementById('survieContainer');
     if (survieContainer) survieContainer.remove();
     if (typeof survieState !== 'undefined') {
@@ -8746,10 +8749,22 @@ function returnToIdle() {
         survieState.qualifiedCount = 0;
         survieState.toEliminateCount = 0;
         survieState.npcs = [];
+        survieState.quests = [];
+        survieState.groundItems = [];
+        survieState.boosts = [];
+        survieState.questItems = {};
+        survieState.savedQuestState = null;
     }
     if (typeof survieAdminCanvas !== 'undefined' && survieAdminCanvas) {
         survieAdminCanvas.stop();
         survieAdminCanvas = null;
+    }
+    if (typeof _adminMinimapInterval !== 'undefined' && _adminMinimapInterval) {
+        clearInterval(_adminMinimapInterval);
+        _adminMinimapInterval = null;
+    }
+    if (typeof survieAdminMovedListenerSet !== 'undefined') {
+        survieAdminMovedListenerSet = false;
     }
     // Restore header hidden by survie
     const mainHeaderRestore = document.getElementById('mainHeader');
