@@ -9662,7 +9662,26 @@ body {
 }
 @media (min-width: 2000px) {
     .mode-card { width: 280px; }
-    .mode-card-title { font-size: 1.6rem !important; }
+    .mode-card-title { font-size: 1.60rem !important; }
+    .mode-card-label { font-size: 0.5rem; letter-spacing: 2.5px; }
+    .mode-card-separator { width: 44px; margin: 16px 0 10px !important; }
+    .mode-card-body { padding: 0.2rem 0.9rem 0.85rem; }
+}
+
+@media (min-width: 2400px) {
+    .mode-cards-container { gap: 4.5rem; }
+    .mode-card { width: 370px; height: 545px; border-radius: 20px; }
+    .mode-card-title { font-size: 1.60rem !important; }
+    .mode-card-label { font-size: 0.5rem; letter-spacing: 3px; }
+    .mode-card-separator { width: 48px; margin: 8px 0 6px; }
+    .mode-card-desc { font-size: 0.85rem; }
+    .mode-card.classique .mode-card-content,
+    .mode-card.inter-commu .mode-card-content,
+    .mode-card.bombanime .mode-card-content { bottom: 4.2rem; }
+    .mode-players-count { font-size: 0.7rem; }
+    .mode-card-players { padding: 5px 9px; }
+    .mode-soon-banner { font-size: 1.35rem; padding: 7px 0; letter-spacing: 7px; }
+    .mode-modal-content { top: 53%; }
 }
 
 /* Premium hover glow */

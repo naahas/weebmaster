@@ -1581,6 +1581,7 @@ createApp({
                             this.$nextTick(() => {
                                 this.initSurvieCanvas();
                                 this._restoreWinnerBanner();
+                                
                             });
                         } else {
                             // Survie terminée mais lobby encore ouvert
@@ -1591,6 +1592,7 @@ createApp({
                             this.$nextTick(() => {
                                 this.initSurvieCanvas();
                                 this._restoreWinnerBanner();
+                                
                             });
                         }
                     } else {
@@ -1793,6 +1795,7 @@ createApp({
             this.socket.on('survie-give-result', (data) => {
                 if (!this.survie?.active) return;
                 console.log('🎁 Give result:', data.questId, data.questDialogue ? 'OUI' : 'NON');
+                this._playSound('pickup');
                 
                 // Exit give mode
                 this._exitGiveMode();
@@ -1842,6 +1845,7 @@ createApp({
             this.socket.on('survie-pickup-result', (data) => {
                 if (!this.survie?.active) return;
                 console.log('📦 Pickup result:', data.groundItemId, data.itemData?.name);
+                this._playSound('pickup');
                 
                 // Update quest UI
                 if (data.questState) {
@@ -2226,6 +2230,7 @@ createApp({
                 // 🏆 Reset winner banner
                 sessionStorage.removeItem('survieWinnerEndTime');
                 sessionStorage.removeItem('survieWinnerName');
+                sessionStorage.removeItem('survieIntroShown');
                 const winBanner = document.getElementById('survieWinnerBanner');
                 if (winBanner) winBanner.remove();
                 if (this._winnerCountdownInterval) {
@@ -2235,11 +2240,19 @@ createApp({
                 const vicOverlay = document.getElementById('survieVictoryOverlay');
                 if (vicOverlay) vicOverlay.remove();
                 
+                // Clean all survie UI elements
+                ['survieIntro', 'survieQuestComplete', 'survieQuestModalMobile', 'survieQuestBackdrop', 'survieMinimap', 'survieQuestList'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.remove();
+                });
+                document.body.classList.remove('survie-intro-active');
+                
                 // 🗺️ Reset Survie
                 if (this.survie.active) {
                     this.survie.active = false;
                     this.destroySurvieCanvas();
                 }
+                this._questState = null;
 
                 this.showNotification('Le jeu a été désactivé', 'info');
             });
@@ -4087,6 +4100,9 @@ createApp({
                 console.log('Survie demarree:', data);
                 this.gameStartedOnServer = true;
                 
+                // Reset intro flag for fresh game
+                sessionStorage.removeItem('survieIntroShown');
+                
                 if (!this.hasJoined) {
                     this.gameInProgress = false;
                     return;
@@ -4125,8 +4141,13 @@ createApp({
                 // Init canvas after Vue renders the template
                 this.$nextTick(() => {
                     this.initSurvieCanvas();
-                    // Restore winner banner if active
                     this._restoreWinnerBanner();
+                    
+                    // Show intro only on first game start
+                    if (!sessionStorage.getItem('survieIntroShown')) {
+                        sessionStorage.setItem('survieIntroShown', 'true');
+                        this._showSurvieIntro();
+                    }
                 });
             });
             
@@ -4251,6 +4272,23 @@ createApp({
         initSurvieCanvas() {
             this.destroySurvieCanvas();
             
+            // Init audio system
+            if (!this._survieAudio) {
+                this._survieAudio = {
+                    boost: new Audio('boost.mp3'),
+                    pickup: new Audio('pickup.mp3'),
+                    npc: new Audio('npc.mp3'),
+                    step: new Audio('step.mp3'),
+                    quest: new Audio('quest.mp3'),
+                };
+                // Set volumes
+                this._survieAudio.boost.volume = 0.4;
+                this._survieAudio.pickup.volume = 0.5;
+                this._survieAudio.npc.volume = 0.3;
+                this._survieAudio.step.volume = 0.4;
+                this._survieAudio.quest.volume = 0.5;
+            }
+            
             const canvasEl = document.getElementById('surviePlayerCanvas');
             if (!canvasEl || !window.SurvieCanvas) return;
             
@@ -4288,6 +4326,7 @@ createApp({
                 },
                 onBoostPickup(boost) {
                     console.log('⚡ Boost pickup:', boost.id);
+                    self._playSound('boost');
                     if (self.socket) {
                         self.socket.emit('survie-boost-pickup', { boostId: boost.id, twitchId: self.twitchId });
                     }
@@ -4385,6 +4424,15 @@ createApp({
                 document.getElementById('survieQuestHeader').addEventListener('click', () => {
                     document.getElementById('survieQuestList').classList.toggle('collapsed');
                 });
+                
+                // Mobile: open separate quest modal
+                const ql = document.getElementById('survieQuestList');
+                ql.addEventListener('click', (e) => {
+                    if (window.innerWidth <= 600) {
+                        e.stopPropagation();
+                        this._openMobileQuestModal();
+                    }
+                });
             }
             
             // Create minimap if not exists
@@ -4397,14 +4445,74 @@ createApp({
                             </div>
                             <div class="survie-minimap-boundary"></div>
                             <canvas class="survie-minimap-canvas" id="survieMinimapCanvas"></canvas>
-                            <div class="survie-minimap-coord" id="survieMinimapCoord"></div>
                         </div>
                         <div class="survie-minimap-corner tl"></div>
                         <div class="survie-minimap-corner tr"></div>
                         <div class="survie-minimap-corner bl"></div>
                         <div class="survie-minimap-corner br"></div>
+                        <div class="survie-minimap-pins">
+                            <div class="survie-minimap-pin-btn pin-red" id="surviePin1" title="Épingle rouge">
+                                <svg viewBox="0 0 24 24" width="14" height="14"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="rgba(255,80,80,0.9)"/><circle cx="12" cy="9" r="2.5" fill="rgba(30,10,10,0.6)"/></svg>
+                            </div>
+                            <div class="survie-minimap-pin-btn pin-green" id="surviePin2" title="Épingle verte">
+                                <svg viewBox="0 0 24 24" width="14" height="14"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="rgba(80,220,120,0.9)"/><circle cx="12" cy="9" r="2.5" fill="rgba(10,30,15,0.6)"/></svg>
+                            </div>
+                        </div>
                     </div>
                 `);
+                
+                // Init pins system
+                this._minimapPins = { red: null, green: null };
+                this._pinMode = null; // null, 'red', or 'green'
+                
+                // Pin button clicks
+                document.getElementById('surviePin1').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (this._minimapPins.red) {
+                        // Remove pin
+                        this._minimapPins.red = null;
+                        document.getElementById('surviePin1').classList.remove('placed');
+                        this._pinMode = null;
+                    } else if (this._pinMode === 'red') {
+                        this._pinMode = null;
+                        document.getElementById('surviePin1').classList.remove('active');
+                    } else {
+                        this._pinMode = 'red';
+                        document.getElementById('surviePin1').classList.add('active');
+                        document.getElementById('surviePin2').classList.remove('active');
+                    }
+                });
+                
+                document.getElementById('surviePin2').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (this._minimapPins.green) {
+                        this._minimapPins.green = null;
+                        document.getElementById('surviePin2').classList.remove('placed');
+                        this._pinMode = null;
+                    } else if (this._pinMode === 'green') {
+                        this._pinMode = null;
+                        document.getElementById('surviePin2').classList.remove('active');
+                    } else {
+                        this._pinMode = 'green';
+                        document.getElementById('surviePin2').classList.add('active');
+                        document.getElementById('surviePin1').classList.remove('active');
+                    }
+                });
+                
+                // Click on minimap canvas to place pin
+                const mmCanvasEl = document.getElementById('survieMinimapCanvas');
+                mmCanvasEl.style.pointerEvents = 'auto';
+                mmCanvasEl.addEventListener('click', (e) => {
+                    if (!this._pinMode) return;
+                    const rect = mmCanvasEl.getBoundingClientRect();
+                    const px = (e.clientX - rect.left) / rect.width;
+                    const py = (e.clientY - rect.top) / rect.height;
+                    
+                    this._minimapPins[this._pinMode] = { x: px, y: py };
+                    document.getElementById(this._pinMode === 'red' ? 'surviePin1' : 'surviePin2').classList.remove('active');
+                    document.getElementById(this._pinMode === 'red' ? 'surviePin1' : 'surviePin2').classList.add('placed');
+                    this._pinMode = null;
+                });
                 
                 // Setup minimap canvas
                 const mmCanvas = document.getElementById('survieMinimapCanvas');
@@ -4679,6 +4787,138 @@ createApp({
             }
         },
 
+        // ═══ AUDIO SYSTEM ═══
+        _playSound(name) {
+            if (!this._survieAudio || !this._survieAudio[name]) return;
+            const sound = this._survieAudio[name];
+            sound.currentTime = 0;
+            sound.play().catch(() => {});
+        },
+
+        // ═══ QUEST COMPLETE CENTER TEXT ═══
+        _showQuestCompleteText(completed, total) {
+            const existing = document.getElementById('survieQuestComplete');
+            if (existing) existing.remove();
+            
+            const el = document.createElement('div');
+            el.id = 'survieQuestComplete';
+            el.className = 'survie-quest-complete-text';
+            el.innerHTML = `QUÊTE COMPLÈTE <span class="qc-count">${completed}/${total}</span>`;
+            document.body.appendChild(el);
+            
+            setTimeout(() => {
+                el.classList.add('exit');
+                setTimeout(() => el.remove(), 600);
+            }, 2000);
+        },
+
+        // ═══ MOBILE QUEST ICON PULSE ═══
+        _pulseQuestIcon(type) {
+            const ql = document.getElementById('survieQuestList');
+            if (!ql) return;
+            const cls = type === 'complete' ? 'quest-icon-complete' : 'quest-icon-step';
+            ql.classList.remove('quest-icon-step', 'quest-icon-complete');
+            void ql.offsetWidth; // Force reflow
+            ql.classList.add(cls);
+            setTimeout(() => ql.classList.remove(cls), type === 'complete' ? 1200 : 600);
+        },
+
+        // ═══ MOBILE QUEST MODAL ═══
+        _openMobileQuestModal() {
+            // Remove existing
+            const existing = document.getElementById('survieQuestModalMobile');
+            if (existing) existing.remove();
+            const existingBd = document.getElementById('survieQuestBackdrop');
+            if (existingBd) existingBd.remove();
+            
+            // Build quest list from current state
+            const quests = this._questState?.quests || [];
+            let questsHTML = '';
+            quests.forEach(q => {
+                const done = q.completed;
+                let step = '';
+                let barHTML = '';
+                if (!done) {
+                    if (q.type === 'REUNION') {
+                        const found = (q.found || []).length;
+                        const pct = Math.round((found / q.count) * 100);
+                        step = `${found}/${q.count} trouvés`;
+                        barHTML = `<div class="modal-quest-bar"><div class="modal-quest-bar-fill" style="width:${pct}%"></div></div>`;
+                    } else if (q.type === 'COLLECT_ITEMS') {
+                        const collected = q.collected || 0;
+                        if (q.stepDesc && collected >= q.count) {
+                            step = q.stepDesc;
+                        } else {
+                            const pct = Math.round((collected / q.count) * 100);
+                            step = `${collected}/${q.count} collectés`;
+                            barHTML = `<div class="modal-quest-bar"><div class="modal-quest-bar-fill" style="width:${pct}%"></div></div>`;
+                        }
+                    } else if (q.type === 'MYSTERY') {
+                        step = q.stepDesc || 'Interroger les suspects';
+                    } else if (q.type === 'RIDDLE') {
+                        step = q.stepDesc || 'Résolvez l\'énigme...';
+                    } else if (q.stepDesc) {
+                        step = q.stepDesc;
+                    }
+                }
+                questsHTML += `
+                    <div class="modal-quest-item">
+                        <div class="modal-quest-dot ${done ? 'completed' : ''}"></div>
+                        <div class="modal-quest-info">
+                            <div class="modal-quest-desc ${done ? 'completed' : ''}">${q.desc || ''}</div>
+                            ${!done && step ? `<div class="modal-quest-step">► ${step}</div>` : ''}
+                            ${!done ? barHTML : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            const completed = quests.filter(q => q.completed).length;
+            
+            const modal = document.createElement('div');
+            modal.id = 'survieQuestModalMobile';
+            modal.className = 'survie-quest-modal-mobile active';
+            modal.innerHTML = `
+                <div class="modal-quest-title">OBJECTIFS ${completed}/${quests.length}</div>
+                ${questsHTML}
+            `;
+            
+            const backdrop = document.createElement('div');
+            backdrop.id = 'survieQuestBackdrop';
+            backdrop.className = 'survie-quest-backdrop active';
+            
+            document.body.appendChild(backdrop);
+            document.body.appendChild(modal);
+            
+            backdrop.onclick = () => {
+                modal.remove();
+                backdrop.remove();
+            };
+        },
+
+        // ═══ INTRO SYSTEM ═══
+        _showSurvieIntro() {
+            const intro = document.createElement('div');
+            intro.id = 'survieIntro';
+            intro.className = 'survie-intro-text';
+            intro.innerHTML = `TRACE <span class="intro-on">ON</span>`;
+            document.body.appendChild(intro);
+            
+            setTimeout(() => {
+                intro.classList.add('exit');
+                setTimeout(() => {
+                    intro.innerHTML = `ACCOMPLISSEZ VOS OBJECTIFS`;
+                    intro.classList.remove('exit');
+                    intro.classList.add('subtitle');
+                    
+                    setTimeout(() => {
+                        intro.classList.add('exit');
+                        setTimeout(() => intro.remove(), 500);
+                    }, 1800);
+                }, 400);
+            }, 1800);
+        },
+
         // ═══ VICTORY SYSTEM ═══
         _showFinishNotification(username, rank) {
             const rankLabels = { 1: '★ 1ER', 2: '☆ 2ÈME', 3: '☆ 3ÈME' };
@@ -4820,7 +5060,20 @@ createApp({
             // Retour button handler
             document.getElementById('survieVictoryRetour').addEventListener('click', () => {
                 overlay.remove();
-                // Return to lobby state
+                // Full cleanup
+                sessionStorage.removeItem('survieWinnerEndTime');
+                sessionStorage.removeItem('survieWinnerName');
+                sessionStorage.removeItem('survieIntroShown');
+                ['survieWinnerBanner', 'survieIntro', 'survieQuestComplete', 'survieQuestModalMobile', 'survieQuestBackdrop', 'survieMinimap', 'survieQuestList'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.remove();
+                });
+                if (self._winnerCountdownInterval) {
+                    clearInterval(self._winnerCountdownInterval);
+                    self._winnerCountdownInterval = null;
+                }
+                document.body.classList.remove('survie-intro-active');
+                self._questState = null;
                 self.isGameActive = false;
                 self.gameInProgress = false;
                 self.gameEnded = true;
@@ -4855,6 +5108,7 @@ createApp({
         },
 
         openSurvieDialogue(npc) {
+            this._playSound('npc');
             const overlay = document.getElementById('survieDialogueOverlay');
             const name = document.getElementById('survieDialogueName');
             const text = document.getElementById('survieDialogueText');
@@ -4955,6 +5209,10 @@ createApp({
             // Update counter
             counter.innerHTML = `${completedCount}<span>/${total}</span>`;
             
+            // Update mobile badge
+            const ql = document.getElementById('survieQuestList');
+            if (ql) ql.setAttribute('data-remaining', total - completedCount);
+            
             // Type labels
             const typeLabels = {
                 'DELIVER': 'Livraison', 'VISIT_DELIVER': 'Exploration', 'CHAIN': 'Chaîne',
@@ -5039,12 +5297,20 @@ createApp({
                         if (stepEl) stepEl.classList.remove('step-text-flash');
                         if (barFill) barFill.classList.remove('bar-pulse');
                     }, 800);
+                    // Pulse mobile quest icon
+                    this._pulseQuestIcon('step');
+                    this._playSound('step');
                 }
                 
                 // Quest completed flash
                 if (completedQuests.has(idx)) {
                     el.classList.add('just-completed');
                     setTimeout(() => el.classList.remove('just-completed'), 800);
+                    // Strong pulse mobile quest icon
+                    this._pulseQuestIcon('complete');
+                    // Show center text
+                    this._showQuestCompleteText(completedCount, total);
+                    this._playSound('quest');
                 }
                 
                 // Click listener for modal
@@ -5146,7 +5412,6 @@ createApp({
         
         _renderMinimap() {
             const canvas = document.getElementById('survieMinimapCanvas');
-            const coord = document.getElementById('survieMinimapCoord');
             if (!canvas || !this._survieCanvas) return;
             
             const ctx = canvas.getContext('2d');
@@ -5157,26 +5422,23 @@ createApp({
             
             ctx.clearRect(0, 0, w, h);
             
-            // Draw structures only (cyan squares, more visible)
+            // Draw structures only (cyan squares)
             this._survieCanvas.npcs.forEach(npc => {
                 if (!npc.isStructure) return;
                 const sx = (npc.x / MAP_W) * w;
                 const sy = (npc.y / MAP_H) * h;
-                ctx.fillStyle = 'rgba(126, 200, 227, 0.7)';
-                ctx.fillRect(sx - 3, sy - 3, 6, 6);
-                ctx.strokeStyle = 'rgba(126, 200, 227, 0.4)';
-                ctx.lineWidth = 0.5;
-                ctx.strokeRect(sx - 3, sy - 3, 6, 6);
+                ctx.fillStyle = 'rgba(126, 200, 227, 0.6)';
+                ctx.fillRect(sx - 2, sy - 2, 4, 4);
             });
             
-            // Draw other players (white dots, no distinction)
+            // Draw other players (white dots)
             this._survieCanvas.auras.forEach((aura, id) => {
                 if (id === this._survieCanvas.localTwitchId) return;
                 const px = (aura.x / MAP_W) * w;
                 const py = (aura.y / MAP_H) * h;
                 ctx.beginPath();
-                ctx.arc(px, py, 3, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+                ctx.arc(px, py, 2, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
                 ctx.fill();
             });
             
@@ -5188,25 +5450,55 @@ createApp({
                 
                 // Glow
                 ctx.beginPath();
-                ctx.arc(lx, ly, 6, 0, Math.PI * 2);
-                const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, 6);
-                glow.addColorStop(0, 'rgba(255, 200, 80, 0.3)');
+                ctx.arc(lx, ly, 5, 0, Math.PI * 2);
+                const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, 5);
+                glow.addColorStop(0, 'rgba(255, 200, 80, 0.25)');
                 glow.addColorStop(1, 'rgba(255, 200, 80, 0)');
                 ctx.fillStyle = glow;
                 ctx.fill();
                 
                 // Dot
                 ctx.beginPath();
-                ctx.arc(lx, ly, 3, 0, Math.PI * 2);
+                ctx.arc(lx, ly, 2.5, 0, Math.PI * 2);
                 ctx.fillStyle = '#ffcc00';
                 ctx.fill();
-                
-                // Update coord
-                if (coord) {
-                    const kx = (local.x / 1000).toFixed(1);
-                    const ky = (local.y / 1000).toFixed(1);
-                    coord.textContent = `${kx}K · ${ky}K`;
-                }
+            }
+            
+            // Draw pins
+            if (this._minimapPins) {
+                const pinColors = { red: 'rgba(255, 80, 80,', green: 'rgba(80, 220, 120,' };
+                ['red', 'green'].forEach(color => {
+                    const pin = this._minimapPins[color];
+                    if (!pin) return;
+                    const px = pin.x * w;
+                    const py = pin.y * h;
+                    const c = pinColors[color];
+                    
+                    // Glow
+                    ctx.beginPath();
+                    ctx.arc(px, py, 6, 0, Math.PI * 2);
+                    const pGlow = ctx.createRadialGradient(px, py, 0, px, py, 6);
+                    pGlow.addColorStop(0, c + '0.3)');
+                    pGlow.addColorStop(1, c + '0)');
+                    ctx.fillStyle = pGlow;
+                    ctx.fill();
+                    
+                    // Diamond
+                    ctx.beginPath();
+                    ctx.moveTo(px, py - 5);
+                    ctx.lineTo(px + 3, py);
+                    ctx.lineTo(px, py + 2);
+                    ctx.lineTo(px - 3, py);
+                    ctx.closePath();
+                    ctx.fillStyle = c + '0.85)';
+                    ctx.fill();
+                    
+                    // Dot
+                    ctx.beginPath();
+                    ctx.arc(px, py, 2, 0, Math.PI * 2);
+                    ctx.fillStyle = c + '1)';
+                    ctx.fill();
+                });
             }
         },
         
@@ -6253,7 +6545,7 @@ createApp({
             this.clickSound = new Audio('click.mp3');
             this.clickSound.volume = 0.5;
             
-            // 💣 Sons BombAnime (placés dans src/sound/)
+            // 💣 Sons BombAnime (placés dans src)
             this.sounds = {
                 bombanimePass: this.createPreloadedSound('slash3.mp3'),
                 bombanimeWrong: this.createPreloadedSound('wrong.mp3'),

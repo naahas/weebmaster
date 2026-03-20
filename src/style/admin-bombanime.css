@@ -1968,6 +1968,16 @@
     transition: all 0.3s ease;
 }
 
+/* 2K scaling */
+@media (min-width: 2400px) {
+    .bombanime-admin-container .game-input {
+        font-size: 0.82rem;
+    }
+    .bombanime-admin-container .game-input::placeholder {
+        font-size: 0.78rem;
+    }
+}
+
 .bombanime-admin-container .feedback-message.show {
     opacity: 1;
     animation: admin-feedback-pop 0.3s ease;

@@ -34,7 +34,7 @@ class SurvieAura {
         this.trail = [];
         this.pulsePhase = Math.random() * Math.PI * 2;
         this.size = 18;
-        this.speed = 220;
+        this.speed = 380;
         // Remote interpolation
         this.remoteTargetX = null;
         this.remoteTargetY = null;
@@ -84,8 +84,9 @@ class SurvieAura {
         if (dist < 5) {
             this.targetX = null;
             this.targetY = null;
-            this.vx *= 0.88;
-            this.vy *= 0.88;
+            const idleDamp = Math.pow(0.88, dt * 60);
+            this.vx *= idleDamp;
+            this.vy *= idleDamp;
             return;
         }
 
@@ -94,8 +95,9 @@ class SurvieAura {
         const ny = dy / dist;
         this.vx += nx * this.speed * dt;
         this.vy += ny * this.speed * dt;
-        this.vx *= 0.88;
-        this.vy *= 0.88;
+        const damp = Math.pow(0.88, dt * 60);
+        this.vx *= damp;
+        this.vy *= damp;
     }
 
     update(dt) {
@@ -676,7 +678,7 @@ class SurvieCanvas {
             this.boostActive = false;
             // Reset speed
             if (local) {
-                local.speed = 220;
+                local.speed = 380;
                 local.boosted = false;
             }
         }
@@ -792,7 +794,7 @@ class SurvieCanvas {
                     boost.picked = true;
                     this.boostActive = true;
                     this.boostEndTime = now + 10000; // 10s
-                    local.speed = 440;
+                    local.speed = 680;
                     local.boosted = true;
 
                     // Trigger shatter
@@ -1543,8 +1545,9 @@ class SurvieCanvas {
                     ky /= len;
                     local.vx += kx * local.speed * dt;
                     local.vy += ky * local.speed * dt;
-                    local.vx *= 0.88;
-                    local.vy *= 0.88;
+                    const kDamp = Math.pow(0.88, dt * 60);
+                    local.vx *= kDamp;
+                    local.vy *= kDamp;
                     // Cancel mouse target while using keyboard
                     local.targetX = null;
                     local.targetY = null;
@@ -1616,11 +1619,11 @@ class SurvieCanvas {
         // Draw boosts (behind ground items)
         this._drawBoosts(ctx, dt);
         
-        // Draw ground items (behind NPCs)
-        this._drawGroundItems(ctx, dt);
-        
-        // Draw NPCs (behind auras)
+        // Draw NPCs
         this._drawNPCs(ctx, dt);
+        
+        // Draw ground items (AFTER NPCs — always visible on top)
+        this._drawGroundItems(ctx, dt);
         
         this.auras.forEach(aura => aura.draw(ctx));
         ctx.restore();
@@ -1634,19 +1637,7 @@ class SurvieCanvas {
         // End shake offset
         ctx.restore();
 
-        // Controls hint (screen space, always on top)
-        ctx.save();
-        ctx.textAlign = 'center';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-        if (this.isMobile) {
-            // No text on mobile
-        } else if (this.is2K) {
-            ctx.font = '400 18px "Rajdhani", "Segoe UI", sans-serif';
-            ctx.fillText('Déplacez-vous avec la souris, ZQSD ou les flèches', this.w / 2, this.h - 35);
-        } else {
-            ctx.font = '400 12px "Rajdhani", "Segoe UI", sans-serif';
-            ctx.fillText('Déplacez-vous avec la souris, ZQSD ou les flèches', this.w / 2, this.h - 25);
-        }
+        // Controls hint removed - clean UI
         ctx.restore();
 
         requestAnimationFrame((t) => this._loop(t));

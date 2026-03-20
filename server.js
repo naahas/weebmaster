@@ -522,13 +522,13 @@ const QUEST_ITEMS = {
     photo:      { id: 'photo', name: 'Photo', icon: '📷', imageUrl: 'photo_trace.png' },
     mask:       { id: 'mask', name: 'Masque', icon: '🎭', imageUrl: 'masque1_trace.png' },
     // Dragon Balls
-    dragonball1: { id: 'dragonball1', name: 'Dragon Ball ⭐', icon: '🟠', imageUrl: 'dragonball1_trace.png' },
-    dragonball2: { id: 'dragonball2', name: 'Dragon Ball ⭐⭐', icon: '🟠', imageUrl: 'dragonball2_trace.png' },
-    dragonball3: { id: 'dragonball3', name: 'Dragon Ball ⭐⭐⭐', icon: '🟠', imageUrl: 'dragonball3_trace.png' },
-    dragonball4: { id: 'dragonball4', name: 'Dragon Ball ⭐⭐⭐⭐', icon: '🟠', imageUrl: 'dragonball4_trace.png' },
-    dragonball5: { id: 'dragonball5', name: 'Dragon Ball ⭐⭐⭐⭐⭐', icon: '🟠', imageUrl: 'dragonball5_trace.png' },
-    dragonball6: { id: 'dragonball6', name: 'Dragon Ball ⭐⭐⭐⭐⭐⭐', icon: '🟠', imageUrl: 'dragonball6_trace.png' },
-    dragonball7: { id: 'dragonball7', name: 'Dragon Ball ⭐⭐⭐⭐⭐⭐⭐', icon: '🟠', imageUrl: 'dragonball7_trace.png' },
+    dragonball1: { id: 'dragonball1', name: 'Dragon Ball 1', icon: '🟠', imageUrl: 'dragonball1_trace.png' },
+    dragonball2: { id: 'dragonball2', name: 'Dragon Ball 2', icon: '🟠', imageUrl: 'dragonball2_trace.png' },
+    dragonball3: { id: 'dragonball3', name: 'Dragon Ball 3', icon: '🟠', imageUrl: 'dragonball3_trace.png' },
+    dragonball4: { id: 'dragonball4', name: 'Dragon Ball 4', icon: '🟠', imageUrl: 'dragonball4_trace.png' },
+    dragonball5: { id: 'dragonball5', name: 'Dragon Ball 5', icon: '🟠', imageUrl: 'dragonball5_trace.png' },
+    dragonball6: { id: 'dragonball6', name: 'Dragon Ball 6', icon: '🟠', imageUrl: 'dragonball6_trace.png' },
+    dragonball7: { id: 'dragonball7', name: 'Dragon Ball 7', icon: '🟠', imageUrl: 'dragonball7_trace.png' },
     // New items
     portrait:   { id: 'portrait', name: 'Portrait', icon: '🎨', imageUrl: 'portrait_trace.png' },
     chocolate:  { id: 'chocolate', name: 'Chocolats', icon: '🍫', imageUrl: 'chocolate_trace.png' },
@@ -538,8 +538,8 @@ const QUEST_ITEMS = {
     cooking1:   { id: 'cooking1', name: 'Poisson frais', icon: '🐟', imageUrl: 'cooking_trace.png' },
     cooking2:   { id: 'cooking2', name: 'Légumes du marché', icon: '🥕', imageUrl: 'cooking_trace.png' },
     cooking3:   { id: 'cooking3', name: 'Épices rares', icon: '🌶️', imageUrl: 'cooking_trace.png' },
-    zoro1:      { id: 'zoro1', name: 'Sabre Wado Ichimonji', icon: '⚔️', imageUrl: 'zoro1_trace.png' },
-    zoro2:      { id: 'zoro2', name: 'Sabre Sandai Kitetsu', icon: '⚔️', imageUrl: 'zoro2_trace.png' },
+    zoro1:      { id: 'zoro1', name: 'Sabre Wado', icon: '⚔️', imageUrl: 'zoro1_trace.png' },
+    zoro2:      { id: 'zoro2', name: 'Sabre Sandai', icon: '⚔️', imageUrl: 'zoro2_trace.png' },
     zoro3:      { id: 'zoro3', name: 'Sabre Enma', icon: '⚔️', imageUrl: 'zoro3_trace.png' },
     tools:      { id: 'tools', name: 'Outils', icon: '🔧', imageUrl: 'tools_trace.png' },
 };
@@ -8969,9 +8969,7 @@ io.on('connection', (socket) => {
                         questUpdate = { questId: quest.id, interrogated: quest.interrogated, accused: true, itemGiven };
                     } else {
                         questDialogue = template.innocent_dialogues[Math.floor(Math.random() * template.innocent_dialogues.length)];
-                        const interrogated = quest.interrogated.filter(i => i !== '_victim').length;
-                        const remaining = template.suspects.length - interrogated;
-                        quest.stepDesc = remaining > 0 ? `${remaining} suspect${remaining > 1 ? 's' : ''} restant${remaining > 1 ? 's' : ''}` : 'Identifier le coupable';
+                        // Keep the original hint as stepDesc (don't replace with suspect count)
                         questUpdate = { questId: quest.id, interrogated: quest.interrogated };
                     }
                     break;
@@ -9914,7 +9912,7 @@ async function startSurvieGame() {
             const itemData = QUEST_ITEMS[itemId];
             if (!itemData) continue;
             
-            // Place item randomly, away from center spawn
+            // Place item randomly, away from center spawn AND away from NPCs/structures
             let ix, iy, valid, attempts = 0;
             do {
                 ix = 0.08 + Math.random() * 0.84;
@@ -9936,6 +9934,20 @@ async function startSurvieGame() {
                         valid = true;
                     }
                 }
+                
+                // Check distance from all NPCs and structures
+                if (valid) {
+                    for (const npc of placedAll) {
+                        const dnx = ix - npc.x;
+                        const dny = iy - npc.y;
+                        const minDist = npc.isStructure ? 0.035 : 0.02;
+                        if (Math.sqrt(dnx * dnx + dny * dny) < minDist) {
+                            valid = false;
+                            break;
+                        }
+                    }
+                }
+                
                 attempts++;
             } while (!valid && attempts < 100);
             

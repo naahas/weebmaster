@@ -1,4 +1,3 @@
-
 /* ============================================
    🎴 COLLECT - Admin Styles
    ============================================ */
@@ -4355,57 +4354,8 @@
         top: 53%;
     }
 
-    .mode-cards-container {
-        gap: 4.5rem;
-    }
-
-    .mode-card {
-        width: 370px;
-        height: 570px;
-        border-radius: 20px;
-    }
-
-    .mode-card-label {
-        font-size: 0.7rem;
-        letter-spacing: 3px;
-    }
-
-    .mode-card-title {
-        font-size: 2.4rem;
-        letter-spacing: 3px;
-    }
-
-    .mode-card-desc {
-        font-size: 0.85rem;
-    }
-
-    .mode-card.classique .mode-card-content,
-    .mode-card.inter-commu .mode-card-content,
-    .mode-card.bombanime .mode-card-content {
-        bottom: 4.2rem;
-    }
-
     .mode-card.collect .mode-card-content {
         bottom: 5.2rem;
-    }
-
-    .mode-card-separator {
-        width: 52px;
-        margin: 0.6rem auto;
-    }
-
-    .mode-players-count {
-        font-size: 0.7rem;
-    }
-
-    .mode-card-players {
-        padding: 5px 9px;
-    }
-
-    .mode-soon-banner {
-        font-size: 1.35rem;
-        padding: 7px 0;
-        letter-spacing: 7px;
     }
 
     /* Character images - scale to overflow like FHD */
@@ -4463,15 +4413,6 @@
     .bomb-body::after {
         width: 14px;
         height: 14px;
-    }
-
-    /* Input zone bombanime */
-    .bombanime-admin-container .game-input {
-        font-size: 1.6rem;
-    }
-
-    .bombanime-admin-container .serie-name {
-        font-size: 0.85rem;
     }
 
     /* Alphabet grid */

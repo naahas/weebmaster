@@ -3765,13 +3765,7 @@ if (bombanimeTimerSlider) {
         const value = bombanimeTimerSlider.value;
         const valueDisplay = document.getElementById('bombanimeTimerValue');
         if (valueDisplay) {
-            if (value >= 60) {
-                const min = Math.floor(value / 60);
-                const sec = value % 60;
-                valueDisplay.textContent = sec > 0 ? `${min}m${sec}s` : `${min}m`;
-            } else {
-                valueDisplay.textContent = value + 's';
-            }
+            valueDisplay.textContent = value + 's';
             anime({
                 targets: valueDisplay,
                 scale: [1.1, 1],

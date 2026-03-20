@@ -3,6 +3,17 @@
 // ============================================
 
 let _adminMinimapInterval = null;
+let _adminMinimapPins = { red: null, green: null };
+let _adminPinMode = null;
+let _adminAudio = null;
+let _adminWinnerInterval = null;
+
+function _playAdminSound(name) {
+    if (!_adminAudio || !_adminAudio[name]) return;
+    const sound = _adminAudio[name];
+    sound.currentTime = 0;
+    sound.play().catch(() => {});
+}
 
 const survieState = {
     active: false,
@@ -104,6 +115,9 @@ function initSurvieSocketHandlers(socket) {
 // UI
 // ============================================
 function showSurvieGameUI() {
+    // Reset intro flag for fresh game
+    sessionStorage.removeItem('survieIntroShownAdmin');
+    
     // Hide header immediately via CSS class
     document.body.classList.add('survie-active');
     
@@ -208,12 +222,19 @@ function showSurvieGameUI() {
                     </div>
                     <div class="survie-minimap-boundary"></div>
                     <canvas class="survie-minimap-canvas" id="survieMinimapCanvas"></canvas>
-                    <div class="survie-minimap-coord" id="survieMinimapCoord"></div>
                 </div>
                 <div class="survie-minimap-corner tl"></div>
                 <div class="survie-minimap-corner tr"></div>
                 <div class="survie-minimap-corner bl"></div>
                 <div class="survie-minimap-corner br"></div>
+                <div class="survie-minimap-pins">
+                    <div class="survie-minimap-pin-btn pin-red" id="surviePin1" title="Épingle rouge">
+                        <svg viewBox="0 0 24 24" width="14" height="14"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="rgba(255,80,80,0.9)"/><circle cx="12" cy="9" r="2.5" fill="rgba(30,10,10,0.6)"/></svg>
+                    </div>
+                    <div class="survie-minimap-pin-btn pin-green" id="surviePin2" title="Épingle verte">
+                        <svg viewBox="0 0 24 24" width="14" height="14"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="rgba(80,220,120,0.9)"/><circle cx="12" cy="9" r="2.5" fill="rgba(10,30,15,0.6)"/></svg>
+                    </div>
+                </div>
             </div>
         `;
         
@@ -257,6 +278,15 @@ function showSurvieGameUI() {
                 confirmOverlay.classList.remove('active');
                 try {
                     await fetch('/admin/toggle-game', { method: 'POST', credentials: 'same-origin' });
+                    sessionStorage.removeItem('survieIntroShownAdmin');
+                    sessionStorage.removeItem('survieWinnerEndTime');
+                    sessionStorage.removeItem('survieWinnerName');
+                    ['survieWinnerBanner', 'survieIntro', 'survieQuestComplete', 'survieVictoryOverlay'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) el.remove();
+                    });
+                    if (_adminWinnerInterval) { clearInterval(_adminWinnerInterval); _adminWinnerInterval = null; }
+                    document.body.classList.remove('survie-intro-active');
                 } catch (e) {
                     console.error('Erreur fermeture lobby survie:', e);
                 }
@@ -332,6 +362,12 @@ function showSurvieGameUI() {
     } else {
         updateAdminQuestListUI({ quests: [] });
     }
+    
+    // Show intro overlay only on first game start (not resync)
+    if (!sessionStorage.getItem('survieIntroShownAdmin')) {
+        sessionStorage.setItem('survieIntroShownAdmin', 'true');
+        _showAdminSurvieIntro();
+    }
 }
 
 // Admin canvas instance
@@ -346,6 +382,22 @@ function initSurvieAdminCanvas() {
     if (_adminMinimapInterval) {
         clearInterval(_adminMinimapInterval);
         _adminMinimapInterval = null;
+    }
+    
+    // Init audio system
+    if (!_adminAudio) {
+        _adminAudio = {
+            boost: new Audio('boost.mp3'),
+            pickup: new Audio('pickup.mp3'),
+            npc: new Audio('npc.mp3'),
+            step: new Audio('step.mp3'),
+            quest: new Audio('quest.mp3'),
+        };
+        _adminAudio.boost.volume = 0.4;
+        _adminAudio.pickup.volume = 0.5;
+        _adminAudio.npc.volume = 0.3;
+        _adminAudio.step.volume = 0.4;
+        _adminAudio.quest.volume = 0.5;
     }
     
     const canvasEl = document.getElementById('survieAdminCanvas');
@@ -363,6 +415,7 @@ function initSurvieAdminCanvas() {
             }
         },
         onNPCInteract(npc) {
+            _playAdminSound('npc');
             openAdminSurvieDialogue(npc);
             // Send interact to server for quest progression
             if (socket) {
@@ -385,6 +438,7 @@ function initSurvieAdminCanvas() {
         },
         onBoostPickup(boost) {
             console.log('⚡ Admin boost pickup:', boost.id);
+            _playAdminSound('boost');
             if (socket) {
                 socket.emit('survie-boost-pickup', { boostId: boost.id, twitchId: twitchUser ? twitchUser.id : null });
             }
@@ -452,6 +506,69 @@ function initSurvieAdminCanvas() {
         const mmRect = mmCanvas.parentElement.getBoundingClientRect();
         mmCanvas.width = mmRect.width - 12;
         mmCanvas.height = mmRect.height - 12;
+    }
+    
+    // Init admin pins
+    _adminMinimapPins = { red: null, green: null };
+    _adminPinMode = null;
+    
+    const pin1 = document.getElementById('surviePin1');
+    const pin2 = document.getElementById('surviePin2');
+    const mmCanvasForPins = document.getElementById('survieMinimapCanvas');
+    
+    if (pin1) {
+        // Clone to remove old listeners
+        const newPin1 = pin1.cloneNode(true);
+        pin1.parentNode.replaceChild(newPin1, pin1);
+        newPin1.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (_adminMinimapPins.red) {
+                _adminMinimapPins.red = null;
+                newPin1.classList.remove('placed');
+                _adminPinMode = null;
+            } else if (_adminPinMode === 'red') {
+                _adminPinMode = null;
+                newPin1.classList.remove('active');
+            } else {
+                _adminPinMode = 'red';
+                newPin1.classList.add('active');
+                document.getElementById('surviePin2').classList.remove('active');
+            }
+        });
+    }
+    
+    if (pin2) {
+        const newPin2 = pin2.cloneNode(true);
+        pin2.parentNode.replaceChild(newPin2, pin2);
+        newPin2.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (_adminMinimapPins.green) {
+                _adminMinimapPins.green = null;
+                newPin2.classList.remove('placed');
+                _adminPinMode = null;
+            } else if (_adminPinMode === 'green') {
+                _adminPinMode = null;
+                newPin2.classList.remove('active');
+            } else {
+                _adminPinMode = 'green';
+                newPin2.classList.add('active');
+                document.getElementById('surviePin1').classList.remove('active');
+            }
+        });
+    }
+    
+    if (mmCanvasForPins) {
+        mmCanvasForPins.style.pointerEvents = 'auto';
+        mmCanvasForPins.addEventListener('click', (e) => {
+            if (!_adminPinMode) return;
+            const rect = mmCanvasForPins.getBoundingClientRect();
+            const px = (e.clientX - rect.left) / rect.width;
+            const py = (e.clientY - rect.top) / rect.height;
+            _adminMinimapPins[_adminPinMode] = { x: px, y: py };
+            document.getElementById(_adminPinMode === 'red' ? 'surviePin1' : 'surviePin2').classList.remove('active');
+            document.getElementById(_adminPinMode === 'red' ? 'surviePin1' : 'surviePin2').classList.add('placed');
+            _adminPinMode = null;
+        });
     }
     
     // Start minimap render loop
@@ -530,6 +647,7 @@ function initSurvieAdminCanvas() {
         // Listen for give results
         socket.on('survie-give-result', (data) => {
             console.log('🎁 Admin give result:', data.questId);
+            _playAdminSound('pickup');
             _exitAdminGiveMode();
             
             if (data.questState) {
@@ -570,6 +688,7 @@ function initSurvieAdminCanvas() {
         // Listen for pickup results
         socket.on('survie-pickup-result', (data) => {
             console.log('📦 Admin pickup result:', data.groundItemId);
+            _playAdminSound('pickup');
             
             if (data.questState) {
                 updateAdminQuestListUI(data.questState);
@@ -723,7 +842,6 @@ let _adminQuestState = null;
 
 function renderAdminMinimap() {
     const canvas = document.getElementById('survieMinimapCanvas');
-    const coord = document.getElementById('survieMinimapCoord');
     if (!canvas || !survieAdminCanvas) return;
     
     const ctx = canvas.getContext('2d');
@@ -762,11 +880,8 @@ function renderAdminMinimap() {
         if (!npc.isStructure) return;
         const nx = (npc.x / MAP_W) * w;
         const ny = (npc.y / MAP_H) * h;
-        ctx.fillStyle = 'rgba(126, 200, 227, 0.7)';
-        ctx.fillRect(nx - 3, ny - 3, 6, 6);
-        ctx.strokeStyle = 'rgba(126, 200, 227, 0.4)';
-        ctx.lineWidth = 0.5;
-        ctx.strokeRect(nx - 3, ny - 3, 6, 6);
+        ctx.fillStyle = 'rgba(126, 200, 227, 0.6)';
+        ctx.fillRect(nx - 2, ny - 2, 4, 4);
     });
     
     // Draw all players
@@ -778,7 +893,6 @@ function renderAdminMinimap() {
         const py = (aura.y / MAP_H) * h;
         
         if (id === adminTwitchId) {
-            // Local player (gold, bigger)
             ctx.beginPath();
             ctx.arc(px, py, 6, 0, Math.PI * 2);
             const glow = ctx.createRadialGradient(px, py, 0, px, py, 6);
@@ -791,15 +905,8 @@ function renderAdminMinimap() {
             ctx.arc(px, py, 3, 0, Math.PI * 2);
             ctx.fillStyle = '#ffcc00';
             ctx.fill();
-            
-            if (coord) {
-                const kx = (aura.x / 1000).toFixed(1);
-                const ky = (aura.y / 1000).toFixed(1);
-                coord.textContent = `${kx}K · ${ky}K`;
-            }
             localDrawn = true;
         } else {
-            // Other players (white, no distinction)
             ctx.beginPath();
             ctx.arc(px, py, 3, 0, Math.PI * 2);
             ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
@@ -807,10 +914,37 @@ function renderAdminMinimap() {
         }
     });
     
-    // If admin is spectator (no local player), show center
-    if (!localDrawn && coord) {
-        coord.textContent = 'SPECTATEUR';
-    }
+    // Draw pins
+    const pinColors = { red: 'rgba(255, 80, 80,', green: 'rgba(80, 220, 120,' };
+    ['red', 'green'].forEach(color => {
+        const pin = _adminMinimapPins[color];
+        if (!pin) return;
+        const ppx = pin.x * w;
+        const ppy = pin.y * h;
+        const c = pinColors[color];
+        
+        ctx.beginPath();
+        ctx.arc(ppx, ppy, 6, 0, Math.PI * 2);
+        const pGlow = ctx.createRadialGradient(ppx, ppy, 0, ppx, ppy, 6);
+        pGlow.addColorStop(0, c + '0.3)');
+        pGlow.addColorStop(1, c + '0)');
+        ctx.fillStyle = pGlow;
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.moveTo(ppx, ppy - 5);
+        ctx.lineTo(ppx + 3, ppy);
+        ctx.lineTo(ppx, ppy + 2);
+        ctx.lineTo(ppx - 3, ppy);
+        ctx.closePath();
+        ctx.fillStyle = c + '0.85)';
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.arc(ppx, ppy, 2, 0, Math.PI * 2);
+        ctx.fillStyle = c + '1)';
+        ctx.fill();
+    });
 }
 
 function addAdminInventoryItem(item) {
@@ -944,11 +1078,15 @@ function updateAdminQuestListUI(questState) {
                 if (stepEl) stepEl.classList.remove('step-text-flash');
                 if (barFill) barFill.classList.remove('bar-pulse');
             }, 800);
+            _playAdminSound('step');
         }
         
         if (completedQuests.has(idx)) {
             el.classList.add('just-completed');
             setTimeout(() => el.classList.remove('just-completed'), 800);
+            // Show center text
+            _showAdminQuestCompleteText(completedCount, total);
+            _playAdminSound('quest');
         }
         
         el.addEventListener('click', (e) => {
@@ -1122,7 +1260,6 @@ function _handleAdminGiveClick(e) {
 }
 
 // ═══ ADMIN VICTORY SYSTEM ═══
-let _adminWinnerInterval = null;
 
 function _showAdminWinnerBanner(data) {
     const existing = document.getElementById('survieWinnerBanner');
@@ -1248,9 +1385,55 @@ function _showAdminVictoryOverlay(data) {
     // Fermer lobby button
     document.getElementById('survieVictoryClose').addEventListener('click', () => {
         overlay.remove();
-        // Toggle game off via admin API
+        sessionStorage.removeItem('survieIntroShownAdmin');
+        sessionStorage.removeItem('survieWinnerEndTime');
+        sessionStorage.removeItem('survieWinnerName');
+        ['survieWinnerBanner', 'survieIntro', 'survieQuestComplete'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        });
+        if (_adminWinnerInterval) { clearInterval(_adminWinnerInterval); _adminWinnerInterval = null; }
+        document.body.classList.remove('survie-intro-active');
         fetch('/admin/toggle-game', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
             .then(() => console.log('✅ Lobby fermé après victoire'))
             .catch(err => console.error('❌ Erreur fermeture lobby:', err));
     });
+}
+
+function _showAdminSurvieIntro() {
+    const intro = document.createElement('div');
+    intro.id = 'survieIntro';
+    intro.className = 'survie-intro-text';
+    intro.innerHTML = `TRACE <span class="intro-on">ON</span>`;
+    document.body.appendChild(intro);
+    
+    setTimeout(() => {
+        intro.classList.add('exit');
+        setTimeout(() => {
+            intro.innerHTML = `ACCOMPLISSEZ VOS OBJECTIFS`;
+            intro.classList.remove('exit');
+            intro.classList.add('subtitle');
+            
+            setTimeout(() => {
+                intro.classList.add('exit');
+                setTimeout(() => intro.remove(), 500);
+            }, 1800);
+        }, 400);
+    }, 1800);
+}
+
+function _showAdminQuestCompleteText(completed, total) {
+    const existing = document.getElementById('survieQuestComplete');
+    if (existing) existing.remove();
+    
+    const el = document.createElement('div');
+    el.id = 'survieQuestComplete';
+    el.className = 'survie-quest-complete-text';
+    el.innerHTML = `QUÊTE COMPLÈTE <span class="qc-count">${completed}/${total}</span>`;
+    document.body.appendChild(el);
+    
+    setTimeout(() => {
+        el.classList.add('exit');
+        setTimeout(() => el.remove(), 600);
+    }, 2000);
 }

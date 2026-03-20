@@ -174,38 +174,60 @@ body.survie-active #mainHeader {
     z-index: 100;
 }
 
+
+
 .survie-inventory-slot.give-disabled {
-    opacity: 0.25;
+    opacity: 0.15;
     pointer-events: none;
-    filter: grayscale(0.8);
+    filter: grayscale(1);
 }
 
 .survie-inventory-slot.give-selectable {
     cursor: pointer;
     animation: giveSelectable 1.2s ease infinite;
     border-color: rgba(255, 200, 80, 0.5);
+    position: relative;
 }
 
 @keyframes giveSelectable {
     0%, 100% { box-shadow: 0 0 8px rgba(255, 200, 80, 0.15); }
-    50% { box-shadow: 0 0 18px rgba(255, 200, 80, 0.35), inset 0 0 10px rgba(255, 200, 80, 0.08); }
+    50% { box-shadow: 0 0 22px rgba(255, 200, 80, 0.4), inset 0 0 12px rgba(255, 200, 80, 0.1); }
 }
 
 .survie-inventory-slot.give-selectable:hover {
-    transform: scale(1.12);
-    border-color: rgba(255, 200, 80, 0.7);
-    box-shadow: 0 0 22px rgba(255, 200, 80, 0.4);
+    transform: scale(1.15);
+    border-color: rgba(255, 200, 80, 0.8);
+    box-shadow: 0 0 25px rgba(255, 200, 80, 0.5);
 }
 
 .survie-inventory-slot.give-selected {
-    border-color: rgba(80, 200, 120, 0.6);
-    box-shadow: 0 0 18px rgba(80, 200, 120, 0.3), inset 0 0 12px rgba(80, 200, 120, 0.1);
+    border: 2px solid rgba(80, 220, 120, 0.8);
+    box-shadow: 0 0 20px rgba(80, 220, 120, 0.4), inset 0 0 15px rgba(80, 220, 120, 0.15);
     animation: none;
-    transform: scale(1.05);
+    transform: scale(1.08);
+    background: linear-gradient(135deg, rgba(80, 220, 120, 0.12) 0%, rgba(80, 220, 120, 0.05) 100%);
+}
+
+.survie-inventory-slot.give-selected::after {
+    content: '✓';
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 18px;
+    height: 18px;
+    background: rgba(80, 220, 120, 0.9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    box-shadow: 0 0 8px rgba(80, 220, 120, 0.5);
 }
 
 .survie-inventory-slot.give-selected img {
-    filter: drop-shadow(0 0 8px rgba(80, 200, 120, 0.5)) brightness(1.15);
+    filter: drop-shadow(0 0 10px rgba(80, 220, 120, 0.6)) brightness(1.2);
 }
 
 .survie-inventory-slot:first-child::before {
@@ -489,6 +511,10 @@ body.survie-active #mainHeader {
     pointer-events: auto;
     opacity: 0.6;
     transition: opacity 0.3s;
+}
+
+.survie-quest-list:hover {
+    opacity: 1;
 }
 
 .survie-quest-list.quest-entrance {
@@ -883,14 +909,13 @@ body.survie-active #mainHeader {
     width: 250px;
     height: 170px;
     z-index: 55;
-    pointer-events: none;
-    opacity: 0.5;
+    pointer-events: auto;
+    opacity: 0.85;
     transition: opacity 0.3s;
 }
 
 .survie-minimap:hover {
     opacity: 1;
-    pointer-events: auto;
 }
 
 .survie-minimap-frame {
@@ -1307,4 +1332,160 @@ body.survie-active #mainHeader {
         font-size: 14px;
         padding: 12px 34px;
     }
+}
+
+/* Hide game elements during intro */
+body.survie-intro-active #survieAdminCanvas,
+body.survie-intro-active .survie-quest-list,
+body.survie-intro-active .survie-inventory,
+body.survie-intro-active .survie-minimap,
+body.survie-intro-active .survie-dialogue-overlay,
+body.survie-intro-active .survie-close-lobby-btn {
+    opacity: 0 !important;
+    transition: opacity 1s ease;
+}
+
+/* ============================================
+   INTRO TEXT — Simple top banner
+   ============================================ */
+.survie-intro-text {
+    position: fixed;
+    top: 42%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.85);
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    opacity: 0;
+    animation: introTextIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+}
+
+.survie-intro-text .intro-on {
+    color: rgba(245, 166, 35, 0.95);
+    text-shadow: 0 0 20px rgba(245, 166, 35, 0.3);
+}
+
+.survie-intro-text.subtitle {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.4);
+    letter-spacing: 5px;
+    animation: introTextIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.survie-intro-text.exit {
+    animation: introTextOut 0.4s ease forwards;
+}
+
+@keyframes introTextIn {
+    0% { opacity: 0; filter: blur(6px); }
+    100% { opacity: 1; filter: blur(0); }
+}
+
+@keyframes introTextOut {
+    0% { opacity: 1; filter: blur(0); }
+    100% { opacity: 0; filter: blur(4px); }
+}
+
+@media (min-width: 1921px) {
+    .survie-intro-text { font-size: 24px; letter-spacing: 8px; }
+    .survie-intro-text.subtitle { font-size: 15px; letter-spacing: 6px; }
+}
+
+/* Quest complete center text */
+.survie-quest-complete-text {
+    position: fixed;
+    top: 42%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9998;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: rgba(80, 220, 120, 0.95);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    text-shadow: 0 0 20px rgba(80, 220, 120, 0.4), 0 0 40px rgba(80, 220, 120, 0.15);
+    animation: qcTextIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.survie-quest-complete-text .qc-count {
+    color: rgba(255, 255, 255, 0.9);
+    margin-left: 6px;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+}
+
+.survie-quest-complete-text.exit {
+    animation: qcTextOut 0.5s ease forwards;
+}
+
+@keyframes qcTextIn {
+    0% { opacity: 0; filter: blur(8px); transform: translate(-50%, -50%) scale(0.8); }
+    50% { opacity: 1; filter: blur(0); transform: translate(-50%, -50%) scale(1.08); }
+    100% { opacity: 1; filter: blur(0); transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes qcTextOut {
+    0% { opacity: 1; filter: blur(0); }
+    100% { opacity: 0; filter: blur(6px); }
+}
+
+@media (min-width: 1921px) {
+    .survie-quest-complete-text { font-size: 22px; letter-spacing: 6px; }
+}
+
+/* Minimap pins */
+.survie-minimap-pins {
+    position: absolute;
+    top: -16px;
+    right: -8px;
+    display: flex;
+    gap: 4px;
+    z-index: 10;
+    pointer-events: auto;
+}
+
+.survie-minimap-pin-btn {
+    width: 26px;
+    height: 26px;
+    background: rgba(12, 12, 22, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    opacity: 0.7;
+}
+
+.survie-minimap-pin-btn svg {
+    pointer-events: none;
+}
+
+.survie-minimap-pin-btn.pin-red { border-color: rgba(255, 80, 80, 0.5); }
+.survie-minimap-pin-btn.pin-green { border-color: rgba(80, 220, 120, 0.5); }
+
+.survie-minimap-pin-btn:hover { opacity: 1; transform: scale(1.1); }
+.survie-minimap-pin-btn.pin-red:hover,
+.survie-minimap-pin-btn.pin-red.active { border-color: rgba(255, 80, 80, 0.9); }
+.survie-minimap-pin-btn.pin-green:hover,
+.survie-minimap-pin-btn.pin-green.active { border-color: rgba(80, 220, 120, 0.9); }
+
+.survie-minimap-pin-btn.active { opacity: 1; animation: pinBtnPulse 1s ease infinite; }
+.survie-minimap-pin-btn.pin-red.active { box-shadow: 0 0 12px rgba(255, 80, 80, 0.5); }
+.survie-minimap-pin-btn.pin-green.active { box-shadow: 0 0 12px rgba(80, 220, 120, 0.5); }
+
+.survie-minimap-pin-btn.placed { opacity: 1; }
+.survie-minimap-pin-btn.pin-red.placed { border-color: rgba(255, 80, 80, 0.7); background: rgba(255, 80, 80, 0.15); }
+.survie-minimap-pin-btn.pin-green.placed { border-color: rgba(80, 220, 120, 0.7); background: rgba(80, 220, 120, 0.15); }
+
+@keyframes pinBtnPulse {
+    0%, 100% { box-shadow: 0 0 6px rgba(255, 255, 255, 0.1); }
+    50% { box-shadow: 0 0 14px rgba(255, 255, 255, 0.3); }
 }

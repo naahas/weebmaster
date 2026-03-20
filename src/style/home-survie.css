@@ -34,12 +34,7 @@
     grid-template-columns: 1fr 1fr;
     gap: 8px 6px;
     pointer-events: auto;
-    opacity: 0;
-    animation: inventoryFadeIn 0.5s ease 0.3s forwards;
-}
-
-@keyframes inventoryFadeIn {
-    to { opacity: 1; }
+    opacity: 1;
 }
 
 .survie-inventory-slot {
@@ -177,38 +172,61 @@
     z-index: 100;
 }
 
+/* Instruction text above inventory in give mode */
+
+
 .survie-inventory-slot.give-disabled {
-    opacity: 0.25;
+    opacity: 0.15;
     pointer-events: none;
-    filter: grayscale(0.8);
+    filter: grayscale(1);
 }
 
 .survie-inventory-slot.give-selectable {
     cursor: pointer;
     animation: giveSelectable 1.2s ease infinite;
     border-color: rgba(255, 200, 80, 0.5);
+    position: relative;
 }
 
 @keyframes giveSelectable {
     0%, 100% { box-shadow: 0 0 8px rgba(255, 200, 80, 0.15); }
-    50% { box-shadow: 0 0 18px rgba(255, 200, 80, 0.35), inset 0 0 10px rgba(255, 200, 80, 0.08); }
+    50% { box-shadow: 0 0 22px rgba(255, 200, 80, 0.4), inset 0 0 12px rgba(255, 200, 80, 0.1); }
 }
 
 .survie-inventory-slot.give-selectable:hover {
-    transform: scale(1.12);
-    border-color: rgba(255, 200, 80, 0.7);
-    box-shadow: 0 0 22px rgba(255, 200, 80, 0.4);
+    transform: scale(1.15);
+    border-color: rgba(255, 200, 80, 0.8);
+    box-shadow: 0 0 25px rgba(255, 200, 80, 0.5);
 }
 
 .survie-inventory-slot.give-selected {
-    border-color: rgba(80, 200, 120, 0.6);
-    box-shadow: 0 0 18px rgba(80, 200, 120, 0.3), inset 0 0 12px rgba(80, 200, 120, 0.1);
+    border: 2px solid rgba(80, 220, 120, 0.8);
+    box-shadow: 0 0 20px rgba(80, 220, 120, 0.4), inset 0 0 15px rgba(80, 220, 120, 0.15);
     animation: none;
-    transform: scale(1.05);
+    transform: scale(1.08);
+    background: linear-gradient(135deg, rgba(80, 220, 120, 0.12) 0%, rgba(80, 220, 120, 0.05) 100%);
+}
+
+.survie-inventory-slot.give-selected::after {
+    content: '✓';
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 18px;
+    height: 18px;
+    background: rgba(80, 220, 120, 0.9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    box-shadow: 0 0 8px rgba(80, 220, 120, 0.5);
 }
 
 .survie-inventory-slot.give-selected img {
-    filter: drop-shadow(0 0 8px rgba(80, 200, 120, 0.5)) brightness(1.15);
+    filter: drop-shadow(0 0 10px rgba(80, 220, 120, 0.6)) brightness(1.2);
 }
 
 /* Top accent line on first slot */
@@ -230,22 +248,36 @@
 /* Mobile */
 @media (max-width: 600px) {
     .survie-inventory {
-        right: 8px;
-        top: 8px;
+        right: 6px;
+        top: 10px;
         transform: none;
         gap: 3px;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: repeat(6, 1fr);
     }
     .survie-inventory-slot {
-        width: 28px;
-        height: 28px;
-        border-radius: 4px;
+        width: 27px;
+        height: 27px;
+        border-radius: 5px;
     }
     .survie-inventory-slot.filled img {
-        width: 20px;
-        height: 20px;
+        width: 24px;
+        height: 24px;
     }
     .survie-inventory-slot::after {
         font-size: 5px;
+    }
+    .survie-inventory-slot.give-selectable,
+    .survie-inventory-slot.give-selected {
+        width: 36px;
+        height: 36px;
+    }
+    .survie-inventory-slot.give-selected::after {
+        width: 14px;
+        height: 14px;
+        font-size: 8px;
+        top: -3px;
+        right: -3px;
     }
 }
 
@@ -411,6 +443,10 @@
     transition: opacity 0.3s;
 }
 
+.survie-quest-list:hover {
+    opacity: 1;
+}
+
 /* Entrance animation at game start */
 .survie-quest-list.quest-entrance {
     animation: questListEntrance 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -469,10 +505,6 @@
     0% { opacity: 0; width: 0; left: 50%; }
     40% { opacity: 1; width: 100%; left: 0; }
     100% { opacity: 0.5; }
-}
-
-.survie-quest-list:hover {
-    opacity: 1;
 }
 
 .survie-quest-list::before {
@@ -853,7 +885,7 @@
     height: 170px;
     z-index: 55;
     pointer-events: none;
-    opacity: 0.5;
+    opacity: 0.85;
     transition: opacity 0.3s;
 }
 
@@ -967,27 +999,220 @@
 
 /* Mobile */
 @media (max-width: 600px) {
-    .survie-quest-list {
-        top: 6px;
+    .survie-minimap {
+        width: 150px;
+        height: 108px;
+        bottom: 8px;
         left: 8px;
-        width: 220px;
     }
-    .survie-quest-title {
-        font-size: 8px;
-        letter-spacing: 2px;
+}
+
+/* Mobile — Quest icon + modal */
+@media (max-width: 600px) {
+    .survie-quest-list {
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        width: 44px;
+        height: 44px;
+        background: rgba(12, 12, 22, 0.85);
+        border: 1px solid rgba(255, 200, 80, 0.35);
+        border-radius: 10px;
+        backdrop-filter: blur(8px);
+        padding: 0;
+        overflow: visible;
+        z-index: 200;
+        pointer-events: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,200,80,0.85)' stroke-width='1.8'%3E%3Cpath d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2'/%3E%3Crect x='9' y='3' width='6' height='4' rx='1'/%3E%3Cpath d='M9 12l2 2 4-4'/%3E%3C/svg%3E");
+        background-size: 24px;
+        background-repeat: no-repeat;
+        background-position: center;
+        background-color: rgba(12, 12, 22, 0.85);
     }
-    .survie-quest-counter {
-        font-size: 14px;
+    
+    .survie-quest-list .survie-quest-header,
+    .survie-quest-list .survie-quest-item,
+    .survie-quest-list .survie-quest-items,
+    .survie-quest-list::before {
+        display: none;
     }
-    .survie-quest-counter span {
-        font-size: 11px;
-    }
-    .survie-quest-desc {
-        font-size: 10.5px;
-    }
-    .survie-quest-step {
+    
+    /* Badge bottom-right, pulsing */
+    .survie-quest-list::after {
+        content: attr(data-remaining);
+        position: absolute;
+        bottom: -6px;
+        right: -6px;
+        min-width: 18px;
+        height: 18px;
+        background: rgba(245, 166, 35, 1);
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Orbitron', sans-serif;
         font-size: 9px;
+        font-weight: 700;
+        color: rgba(10, 10, 20, 0.95);
+        padding: 0 4px;
+        box-shadow: 0 0 10px rgba(245, 166, 35, 0.5);
+        animation: badgePulse 2s ease infinite;
+        z-index: 5;
     }
+    
+    @keyframes badgePulse {
+        0%, 100% { box-shadow: 0 0 8px rgba(245, 166, 35, 0.4); transform: scale(1); }
+        50% { box-shadow: 0 0 16px rgba(245, 166, 35, 0.7); transform: scale(1.1); }
+    }
+    
+    /* Step progress — subtle gold pulse */
+    .survie-quest-list.quest-icon-step {
+        animation: questIconStep 0.6s ease;
+    }
+    
+    @keyframes questIconStep {
+        0% { box-shadow: 0 0 0 rgba(255, 200, 80, 0); }
+        40% { box-shadow: 0 0 18px rgba(255, 200, 80, 0.5); border-color: rgba(255, 200, 80, 0.7); transform: scale(1.12); }
+        100% { box-shadow: 0 0 0 rgba(255, 200, 80, 0); transform: scale(1); }
+    }
+    
+    /* Quest complete — strong green burst */
+    .survie-quest-list.quest-icon-complete {
+        animation: questIconComplete 1.2s ease;
+    }
+    
+    @keyframes questIconComplete {
+        0% { box-shadow: 0 0 0 rgba(80, 220, 120, 0); }
+        20% { box-shadow: 0 0 30px rgba(80, 220, 120, 0.7), 0 0 60px rgba(80, 220, 120, 0.3); border-color: rgba(80, 220, 120, 0.8); transform: scale(1.25); }
+        50% { box-shadow: 0 0 15px rgba(80, 220, 120, 0.4); transform: scale(1.05); }
+        100% { box-shadow: 0 0 0 rgba(80, 220, 120, 0); transform: scale(1); }
+    }
+    
+    .survie-quest-title { font-size: 9px; letter-spacing: 2px; }
+    .survie-quest-counter { font-size: 15px; }
+    .survie-quest-counter span { font-size: 11px; }
+    .survie-quest-desc { font-size: 12px; }
+    .survie-quest-step { font-size: 10px; }
+}
+
+/* Mobile quest modal — separate from icon */
+.survie-quest-modal-mobile {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 88vw;
+    max-width: 340px;
+    max-height: 70vh;
+    overflow-y: auto;
+    background: rgba(8, 8, 18, 0.95);
+    border: 1px solid rgba(255, 200, 80, 0.15);
+    border-radius: 14px;
+    padding: 18px 16px;
+    z-index: 210;
+    backdrop-filter: blur(12px);
+}
+
+.survie-quest-modal-mobile.active {
+    display: block;
+    animation: mobileQuestIn 0.25s ease;
+}
+
+@keyframes mobileQuestIn {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.survie-quest-modal-mobile .modal-quest-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(255, 200, 80, 0.7);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    text-align: center;
+}
+
+.survie-quest-modal-mobile .modal-quest-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.survie-quest-modal-mobile .modal-quest-item:last-child {
+    border-bottom: none;
+}
+
+.survie-quest-modal-mobile .modal-quest-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 200, 80, 0.7);
+    margin-top: 3px;
+    flex-shrink: 0;
+}
+
+.survie-quest-modal-mobile .modal-quest-dot.completed {
+    background: rgba(80, 220, 120, 0.7);
+}
+
+.survie-quest-modal-mobile .modal-quest-info {
+    flex: 1;
+}
+
+.survie-quest-modal-mobile .modal-quest-desc {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.survie-quest-modal-mobile .modal-quest-desc.completed {
+    color: rgba(255, 255, 255, 0.3);
+    text-decoration: line-through;
+}
+
+.survie-quest-modal-mobile .modal-quest-step {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 11px;
+    color: rgba(245, 166, 35, 0.6);
+    margin-top: 2px;
+}
+
+.survie-quest-modal-mobile .modal-quest-bar {
+    width: 100%;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 2px;
+    margin-top: 6px;
+    overflow: hidden;
+}
+
+.survie-quest-modal-mobile .modal-quest-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, rgba(245, 166, 35, 0.7), rgba(255, 200, 80, 0.8));
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+/* Backdrop */
+.survie-quest-backdrop {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 205;
+    display: none;
+}
+
+.survie-quest-backdrop.active {
+    display: block;
 }
 
 /* Mobile */
@@ -1418,8 +1643,295 @@
         height: 26px;
     }
     .survie-winner-text {
-        font-size: 10px;
-        padding: 8px 16px;
+        font-size: 8px;
+        padding: 6px 10px;
         letter-spacing: 1px;
+        top: auto !important;
+        left: auto !important;
+        transform: none !important;
+        bottom: 12px;
+        right: 12px;
+        white-space: normal;
+        text-align: right;
+        max-width: 55vw;
+        line-height: 1.4;
     }
+}
+
+/* Hide game elements during intro */
+body.survie-intro-active #surviePlayerCanvas,
+body.survie-intro-active .survie-quest-list,
+body.survie-intro-active .survie-inventory,
+body.survie-intro-active .survie-minimap,
+body.survie-intro-active .survie-dialogue-overlay {
+    opacity: 0 !important;
+    transition: opacity 1s ease;
+}
+
+/* ============================================
+   QUEST COMPLETE — Center text
+   ============================================ */
+.survie-quest-complete-text {
+    position: fixed;
+    top: 42%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9998;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: rgba(80, 220, 120, 0.95);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    text-shadow: 0 0 20px rgba(80, 220, 120, 0.4), 0 0 40px rgba(80, 220, 120, 0.15);
+    animation: qcTextIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.survie-quest-complete-text .qc-count {
+    color: rgba(255, 255, 255, 0.9);
+    margin-left: 6px;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+}
+
+.survie-quest-complete-text.exit {
+    animation: qcTextOut 0.5s ease forwards;
+}
+
+@keyframes qcTextIn {
+    0% { opacity: 0; filter: blur(8px); transform: translate(-50%, -50%) scale(0.8); }
+    50% { opacity: 1; filter: blur(0); transform: translate(-50%, -50%) scale(1.08); }
+    100% { opacity: 1; filter: blur(0); transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes qcTextOut {
+    0% { opacity: 1; filter: blur(0); }
+    100% { opacity: 0; filter: blur(6px); }
+}
+
+@media (max-width: 600px) {
+    .survie-quest-complete-text {
+        font-size: 12px;
+        letter-spacing: 2px;
+    }
+}
+
+@media (min-width: 1921px) {
+    .survie-quest-complete-text {
+        font-size: 22px;
+        letter-spacing: 6px;
+    }
+}
+
+/* ============================================
+   INTRO TEXT — Simple top banner
+   ============================================ */
+.survie-intro-text {
+    position: fixed;
+    top: 42%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.85);
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    opacity: 0;
+    animation: introTextIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+}
+
+.survie-intro-text .intro-on {
+    color: rgba(245, 166, 35, 0.95);
+    text-shadow: 0 0 20px rgba(245, 166, 35, 0.3);
+}
+
+.survie-intro-text.subtitle {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.4);
+    letter-spacing: 5px;
+    animation: introTextIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.survie-intro-text.exit {
+    animation: introTextOut 0.4s ease forwards;
+}
+
+@keyframes introTextIn {
+    0% { opacity: 0; filter: blur(6px); }
+    100% { opacity: 1; filter: blur(0); }
+}
+
+@keyframes introTextOut {
+    0% { opacity: 1; filter: blur(0); }
+    100% { opacity: 0; filter: blur(4px); }
+}
+
+@media (max-width: 600px) {
+    .survie-intro-text {
+        font-size: 16px;
+        letter-spacing: 5px;
+        top: 40%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        animation: introTextInMobile 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+    }
+    .survie-intro-text.subtitle {
+        font-size: 9px;
+        letter-spacing: 3px;
+        top: 40%;
+        animation: introTextInMobile 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .survie-intro-text.exit {
+        animation: introTextOutMobile 0.4s ease forwards;
+    }
+    @keyframes introTextInMobile {
+        0% { opacity: 0; filter: blur(6px); }
+        100% { opacity: 1; filter: blur(0); }
+    }
+    @keyframes introTextOutMobile {
+        0% { opacity: 1; filter: blur(0); }
+        100% { opacity: 0; filter: blur(4px); }
+    }
+}
+
+@media (min-width: 1921px) {
+    .survie-intro-text { font-size: 24px; letter-spacing: 8px; }
+    .survie-intro-text.subtitle { font-size: 15px; letter-spacing: 6px; }
+}
+
+/* ============================================
+   MINIMAP PIN SYSTEM
+   ============================================ */
+.survie-minimap-pins {
+    position: absolute;
+    top: -16px;
+    right: -8px;
+    display: flex;
+    gap: 4px;
+    z-index: 10;
+    pointer-events: auto;
+}
+
+.survie-minimap-pin-btn {
+    width: 26px;
+    height: 26px;
+    background: rgba(12, 12, 22, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    opacity: 0.7;
+}
+
+.survie-minimap-pin-btn svg {
+    pointer-events: none;
+}
+
+.survie-minimap-pin-btn.pin-red { border-color: rgba(255, 80, 80, 0.5); }
+.survie-minimap-pin-btn.pin-green { border-color: rgba(80, 220, 120, 0.5); }
+
+.survie-minimap-pin-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.survie-minimap-pin-btn.pin-red:hover,
+.survie-minimap-pin-btn.pin-red.active { border-color: rgba(255, 80, 80, 0.9); }
+.survie-minimap-pin-btn.pin-green:hover,
+.survie-minimap-pin-btn.pin-green.active { border-color: rgba(80, 220, 120, 0.9); }
+
+.survie-minimap-pin-btn.active {
+    opacity: 1;
+    animation: pinBtnPulse 1s ease infinite;
+}
+
+.survie-minimap-pin-btn.pin-red.active { box-shadow: 0 0 12px rgba(255, 80, 80, 0.5); }
+.survie-minimap-pin-btn.pin-green.active { box-shadow: 0 0 12px rgba(80, 220, 120, 0.5); }
+
+.survie-minimap-pin-btn.placed {
+    opacity: 1;
+}
+
+.survie-minimap-pin-btn.pin-red.placed { border-color: rgba(255, 80, 80, 0.7); background: rgba(255, 80, 80, 0.15); }
+.survie-minimap-pin-btn.pin-green.placed { border-color: rgba(80, 220, 120, 0.7); background: rgba(80, 220, 120, 0.15); }
+
+@keyframes pinBtnPulse {
+    0%, 100% { box-shadow: 0 0 6px rgba(255, 255, 255, 0.1); }
+    50% { box-shadow: 0 0 14px rgba(255, 255, 255, 0.3); }
+}
+
+@media (max-width: 600px) {
+    .survie-minimap-pins { top: -14px; right: -6px; gap: 3px; }
+    .survie-minimap-pin-btn { width: 22px; height: 22px; }
+    .survie-minimap-pin-btn svg { width: 10px; height: 10px; }
+}
+
+/* ============================================
+   LANDSCAPE MOBILE
+   ============================================ */
+@media (max-height: 500px) and (orientation: landscape) {
+    .survie-quest-list {
+        top: 8px;
+        left: 10px;
+        width: 220px;
+        max-height: none;
+        overflow: visible;
+    }
+    .survie-quest-title { font-size: 7px; letter-spacing: 1.5px; }
+    .survie-quest-counter { font-size: 11px; }
+    .survie-quest-counter span { font-size: 9px; }
+    .survie-quest-desc { font-size: 9.5px; }
+    .survie-quest-step { font-size: 8px; }
+    .survie-quest-item { padding: 3px 0 3px 4px; margin-left: 0; border-left: none; }
+    .survie-quest-item::before { display: none; }
+    
+    .survie-inventory {
+        right: 8px;
+        top: 8px;
+        transform: none;
+        gap: 4px 3px;
+        grid-template-columns: repeat(6, 1fr);
+        grid-template-rows: 1fr 1fr;
+    }
+    .survie-inventory-slot {
+        width: 34px;
+        height: 34px;
+        border-radius: 5px;
+    }
+    .survie-inventory-slot.filled img {
+        width: 26px;
+        height: 26px;
+    }
+    .survie-inventory-slot::after { font-size: 5px; }
+    
+    .survie-minimap {
+        width: 145px;
+        height: 92px;
+        bottom: 8px;
+        left: 10px;
+    }
+    .survie-minimap-pins { top: -12px; right: -6px; gap: 2px; }
+    .survie-minimap-pin-btn { width: 20px; height: 20px; }
+    .survie-minimap-pin-btn svg { width: 10px; height: 10px; }
+    
+    .survie-dialogue-box { width: 70%; }
+    .survie-dialogue-content { padding: 10px 14px; min-height: 40px; }
+    .survie-dialogue-name { font-size: 10px; }
+    .survie-dialogue-text { font-size: 11px; }
+    
+    .survie-winner-text {
+        font-size: 8px;
+        padding: 4px 8px;
+    }
+    
+    .survie-intro-text { font-size: 14px; letter-spacing: 4px; }
+    .survie-intro-text.subtitle { font-size: 8px; letter-spacing: 3px; }
+    
+    .survie-quest-complete-text { font-size: 11px; letter-spacing: 2px; }
 }
