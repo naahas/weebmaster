@@ -79,6 +79,20 @@ const CHARACTER_VARIANTS = {
     ],
 
     // ============================================
+    // STUDIO
+    // ============================================
+    "STUDIO": [
+        ["A1 PICTURES", "A-1 PICTURES"],
+        ["C-STATION", "C STATION"],
+        ["CYGAMESPICTURES", "CYGAMES PICTURES"],
+        ["EIGHT BIT", "8 BIT"],
+        ["KYOTO ANIMATION", "KYOANIMATION", "KYO ANIMATION" , "KYOANI"],
+        ["PRODUCTIONS I.G", "PRODUCTIONS IG"],
+        ["PROJECT NO 9", "PROJECT 9"],
+        ["STUDIO A CAT", "STUDIO A-CAT", "A CAT", "A-CAT"]
+    ],
+
+    // ============================================
     // ONE PIECE
     // ============================================
     "OnePiece": [
@@ -315,6 +329,7 @@ const CHARACTER_VARIANTS = {
         ["KAMADO", "TANJIRO"],
         ["KAMADO", "TANJIRO"]
     ],
+    
 
     // ============================================
     // MANGANIME
@@ -329,6 +344,7 @@ const CHARACTER_VARIANTS = {
         ["HUNTER HUNTER" , "HXH" , "HUNTER X HUNTER"],
         ["GTO" , "GREAT TEACHER ONIZUKA"],
         ["BATTLE ANGEL ALITA" , "GUNNM"],
+        ["MERMAID MELODY" , "PICHI PICHI PITCH"],
         ["HARUKANA MACHI E" , "QUARTIER LOINTAIN"],
         ["BOKU NO HERO ACADEMIA" , "MY HERO ACADEMIA" , "BNHA" , "MHA"],
         ["JOJO NO KIMYOU NA BOUKEN" , "JOJO" , "JOJO'S BIZARRE ADVENTURE" , "JOJOS BIZARRE ADVENTURE" , "JJBA"],
@@ -930,6 +946,7 @@ const THEME_MAPPING = {
     "Fma": "FullmetalAlchemist",
     "Prota" : "Protagonist",
     "Manganime" : "Manganime",
+    "Studio" : "Studio",
     "Gintama" : "Gintama",
     "BokuNoHeroAcademia": "MyHeroAcademia",
     "Jojo": "Jojo",

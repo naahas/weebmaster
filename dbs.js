@@ -469,6 +469,97 @@ const db = {
         return data;
     },
 
+    // ========== TITRES CUSTOM (PREFIX/SUFFIX) ==========
+    async equipTitlePrefix(twitchId, prefix) {
+        // Si prefix est null, on retire le préfixe
+        if (prefix === null) {
+            const { data, error } = await supabase
+                .from('users')
+                .update({ equipped_title_prefix: null, updated_at: new Date().toISOString() })
+                .eq('twitch_id', twitchId)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        }
+
+        // Vérifier que le joueur possède ce préfixe
+        const purchases = await this.getUserPurchases(twitchId);
+        const shopItems = await this.getShopItems();
+        const ownedPrefixes = shopItems.filter(item => 
+            item.type === 'title_prefix' && purchases.some(p => p.item_id === item.id)
+        );
+
+        const hasPrefix = ownedPrefixes.some(p => p.value === prefix);
+        if (!hasPrefix) throw new Error('Préfixe non possédé');
+
+        const { data, error } = await supabase
+            .from('users')
+            .update({ equipped_title_prefix: prefix, updated_at: new Date().toISOString() })
+            .eq('twitch_id', twitchId)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
+
+    async equipTitleSuffix(twitchId, suffix) {
+        // Si suffix est null, on retire le suffixe
+        if (suffix === null) {
+            const { data, error } = await supabase
+                .from('users')
+                .update({ equipped_title_suffix: null, updated_at: new Date().toISOString() })
+                .eq('twitch_id', twitchId)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        }
+
+        // Vérifier que le joueur possède ce suffixe
+        const purchases = await this.getUserPurchases(twitchId);
+        const shopItems = await this.getShopItems();
+        const ownedSuffixes = shopItems.filter(item => 
+            item.type === 'title_suffix' && purchases.some(p => p.item_id === item.id)
+        );
+
+        const hasSuffix = ownedSuffixes.some(s => s.value === suffix);
+        if (!hasSuffix) throw new Error('Suffixe non possédé');
+
+        const { data, error } = await supabase
+            .from('users')
+            .update({ equipped_title_suffix: suffix, updated_at: new Date().toISOString() })
+            .eq('twitch_id', twitchId)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
+
+    // Récupérer le titre complet d'un joueur (ancien système + custom)
+    async getFullTitle(twitchId) {
+        const user = await this.getUserByTwitchId(twitchId);
+        if (!user) return 'Novice';
+
+        const prefix = user.equipped_title_prefix;
+        const suffix = user.equipped_title_suffix;
+
+        // Si le joueur a un titre custom (prefix et/ou suffix)
+        if (prefix || suffix) {
+            return [prefix, suffix].filter(Boolean).join(' ');
+        }
+
+        // Sinon, retourner le titre classique (ancien système)
+        if (user.current_title_id) {
+            const title = await this.getTitleById(user.current_title_id);
+            return title ? title.title_name : 'Novice';
+        }
+
+        return 'Novice';
+    },
+
     // ========== BADGES ==========
     async getUserBadges(twitchId) {
         const { data, error } = await supabase
@@ -550,9 +641,12 @@ const db = {
             .select(`
                 twitch_id,
                 username,
+                avatar_url,
                 total_victories,
                 total_games_played,
                 current_title_id,
+                equipped_title_prefix,
+                equipped_title_suffix,
                 last_placement,
                 updated_at,
                 best_win_streak,
@@ -589,7 +683,9 @@ const db = {
                 win_rate: user.total_games_played > 0
                     ? ((user.total_victories / user.total_games_played) * 100).toFixed(1)
                     : '0.0',
-                title_name: user.titles?.title_name || 'Novice',
+                title_name: (user.equipped_title_prefix || user.equipped_title_suffix) 
+                    ? [user.equipped_title_prefix, user.equipped_title_suffix].filter(Boolean).join(' ')
+                    : (user.titles?.title_name || 'Novice'),
                 titles_unlocked: unlockedCount,
                 total_titles: totalTitlesCount,
                 last_activity: user.updated_at,
@@ -803,4 +899,169 @@ function getFallbackDifficulties(difficulty) {
 
 
 
-module.exports = { supabase, db, SERIES_FILTERS, getFilterSeries };
+// ============================================
+// S-COINS - Système de monnaie
+// ============================================
+
+const COIN_REWARDS = {
+    PARTICIPATE: 1000,
+    TOP_3: 2000,
+    TOP_2: 2000,
+    WIN: 4000
+};
+
+// Fonctions coins
+db.getUserCoins = async function(twitchId) {
+    const { data, error } = await supabase
+        .from('users')
+        .select('coins')
+        .eq('twitch_id', twitchId)
+        .single();
+
+    if (error) throw error;
+    return data?.coins || 0;
+};
+
+db.addCoins = async function(twitchId, amount, reason = '') {
+    const user = await this.getUserByTwitchId(twitchId);
+    if (!user) return null;
+
+    const currentCoins = user.coins || 0;
+    const newCoins = currentCoins + amount;
+
+    const { data, error } = await supabase
+        .from('users')
+        .update({ coins: newCoins, updated_at: new Date().toISOString() })
+        .eq('twitch_id', twitchId)
+        .select()
+        .single();
+
+    if (error) throw error;
+    console.log(`💰 ${user.username}: +${amount} S-Coins (${reason}) → ${newCoins} total`);
+    return data;
+};
+
+db.removeCoins = async function(twitchId, amount) {
+    const user = await this.getUserByTwitchId(twitchId);
+    if (!user) return { success: false, error: 'Utilisateur non trouvé' };
+
+    const currentCoins = user.coins || 0;
+    if (currentCoins < amount) {
+        return { success: false, error: 'Solde insuffisant', balance: currentCoins };
+    }
+
+    const newCoins = currentCoins - amount;
+
+    const { data, error } = await supabase
+        .from('users')
+        .update({ coins: newCoins, updated_at: new Date().toISOString() })
+        .eq('twitch_id', twitchId)
+        .select()
+        .single();
+
+    if (error) throw error;
+    console.log(`💰 ${user.username}: -${amount} S-Coins → ${newCoins} total`);
+    return { success: true, balance: newCoins, data };
+};
+
+db.distributeGameCoins = async function(sortedPlayers, initialPlayerCount, minPlayers = 1) {
+    if (initialPlayerCount < minPlayers) {
+        console.log(`⚠️ S-Coins NON distribués (${initialPlayerCount} joueurs)`);
+        return {};
+    }
+
+    const rewards = {};
+
+    for (let i = 0; i < sortedPlayers.length; i++) {
+        const player = sortedPlayers[i];
+        let amount = COIN_REWARDS.PARTICIPATE;
+        let reason = 'participation';
+
+        if (i === 0) {
+            amount = COIN_REWARDS.WIN;
+            reason = 'victoire';
+        } else if (i === 1) {
+            amount = COIN_REWARDS.TOP_2;
+            reason = 'top 2';
+        } else if (i === 2) {
+            amount = COIN_REWARDS.TOP_3;
+            reason = 'top 3';
+        }
+
+        try {
+            await this.addCoins(player.twitchId, amount, reason);
+            rewards[player.twitchId] = { amount, reason };
+        } catch (err) {
+            console.error(`❌ Erreur S-Coins pour ${player.username}:`, err);
+        }
+    }
+
+    console.log(`💰 S-Coins distribués à ${Object.keys(rewards).length} joueurs`);
+    return rewards;
+};
+
+// ============================================
+// SHOP - Boutique
+// ============================================
+
+db.getShopItems = async function() {
+    const { data, error } = await supabase
+        .from('shop_items')
+        .select('*')
+        .eq('active', true)
+        .order('price', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+};
+
+db.purchaseItem = async function(twitchId, itemId) {
+    const { data: item, error: itemError } = await supabase
+        .from('shop_items')
+        .select('*')
+        .eq('id', itemId)
+        .eq('active', true)
+        .single();
+
+    if (itemError || !item) return { success: false, error: 'Article introuvable' };
+
+    const { data: existing } = await supabase
+        .from('user_purchases')
+        .select('id')
+        .eq('twitch_id', twitchId)
+        .eq('item_id', itemId)
+        .single();
+
+    if (existing) return { success: false, error: 'Article déjà possédé' };
+
+    const result = await this.removeCoins(twitchId, item.price);
+    if (!result.success) return result;
+
+    const { error: purchaseError } = await supabase
+        .from('user_purchases')
+        .insert({
+            twitch_id: twitchId,
+            item_id: itemId,
+            price_paid: item.price,
+            purchased_at: new Date().toISOString()
+        });
+
+    if (purchaseError) throw purchaseError;
+
+    console.log(`🛒 ${twitchId} a acheté "${item.name}" pour ${item.price} S-Coins`);
+    return { success: true, item, balance: result.balance };
+};
+
+db.getUserPurchases = async function(twitchId) {
+    const { data, error } = await supabase
+        .from('user_purchases')
+        .select('item_id, price_paid, purchased_at')
+        .eq('twitch_id', twitchId);
+
+    if (error) throw error;
+    return data || [];
+};
+
+
+
+module.exports = { supabase, db, SERIES_FILTERS, getFilterSeries, COIN_REWARDS };

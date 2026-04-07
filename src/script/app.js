@@ -73,6 +73,7 @@ createApp({
             showProfileModal: false,
             currentTab: 'profile',
             profileData: null,
+            profileLoading: false,
             savedScrollY: 0,
 
             // Leaderboard
@@ -289,6 +290,50 @@ createApp({
                 elimPlayers: [],
                 isQualified: false,
                 npcs: [],
+            },
+
+            // 🗳️ POLL
+            poll: {
+                active: false,
+                currentRound: 0,
+                totalRounds: 0,
+                currentMatchIndex: 0,
+                totalMatches: 0,
+                categoryName: '',
+                perMatch: 2,
+                bracketSize: 16,
+                showNames: false,
+                isTie: false,
+                showNotifs: true,
+                votersByChar: {},
+                votersByChar: {},
+                characters: [],
+                myVote: null,
+                votingOpen: false,
+                showingResults: false,
+                resultsVisible: false,   // Delayed flag for CSS animation
+                timer: 15,
+                timeRemaining: 15,
+                timerInterval: null,
+                voteCounts: {},
+                totalVotes: 0,
+                voteResults: null,
+                winner: null,
+                wasRandom: false,
+                gameWinner: null,
+                allCharacters: [],
+            },
+
+            // 🏔️ Ascension
+            ascension: {
+                active: false,
+                floors: 15,
+                timer: 15,
+                currentFloor: 0,
+                playerProgress: [],
+                floorData: null,
+                myFloor: 0,
+                validated: false,
             },
 
 
@@ -801,110 +846,61 @@ createApp({
         async openProfile() {
             if (!this.isAuthenticated) return;
 
+            // Afficher le modal immédiatement avec un état loading
+            this.profileData = null;
+            this.showProfileModal = true;
+            this.currentTab = 'profile';
+            this.profileLoading = true;
+
+            this.savedScrollY = window.scrollY;
+            document.body.style.top = `-${this.savedScrollY}px`;
+            document.body.classList.add('modal-open');
+
+            // Charger les données en arrière-plan
             try {
                 const response = await fetch(`/profile/${this.twitchId}`);
                 const data = await response.json();
 
                 this.profileData = data;
-                this.showProfileModal = true;
-                this.currentTab = 'profile';
+                this.profileLoading = false;
 
-                // 🆕 Empêcher le décalage du contenu
-                this.savedScrollY = window.scrollY;
-                document.body.style.top = `-${this.savedScrollY}px`;
-                document.body.classList.add('modal-open');
-
-                // 🔥 NOUVEAU: Extraire l'avatar Twitch si c'est une URL Twitch
                 if (data.user.avatar_url && data.user.avatar_url.includes('jtvnw.net')) {
                     this.twitchAvatarUrl = data.user.avatar_url;
                 } else {
-                    // Sinon, essayer de le récupérer depuis le serveur
-                    // (On pourrait aussi le stocker séparément en BDD)
                     this.twitchAvatarUrl = data.user.twitch_avatar_url || null;
                 }
 
-                console.log('✅ Profil chargé:', data);
-
-                // Attendre le rendu puis animer
                 this.$nextTick(() => {
                     this.animateProfileOpen();
+                    this.animateProfileCounters();
                 });
 
             } catch (error) {
                 console.error('❌ Erreur chargement profil:', error);
+                this.profileLoading = false;
             }
         },
 
         closeProfile() {
-            // Animation de fermeture
-            const modal = this.$refs.profileModal;
-            if (modal) {
-                anime({
-                    targets: modal,
-                    scale: [1, 0.8],
-                    opacity: [1, 0],
-                    translateY: [0, 50],
-                    duration: 300,
-                    easing: 'easeInQuad',
-                    complete: () => {
-                        // 🔥 FIX: Reset les styles inline pour permettre réouverture
-                        modal.style.transform = '';
-                        modal.style.opacity = '';
-                        modal.style.scale = '';
-
-                        this.showProfileModal = false;
-                        this.profileData = null;
-                        
-                        // 🆕 Réactiver le scroll et restaurer la position
-                        document.body.classList.remove('modal-open');
-                        document.body.style.top = '';
-                        window.scrollTo(0, this.savedScrollY || 0);
-                    }
-                });
-            } else {
-                this.showProfileModal = false;
-                this.profileData = null;
-                
-                // 🆕 Réactiver le scroll et restaurer la position
-                document.body.classList.remove('modal-open');
-                document.body.style.top = '';
-                window.scrollTo(0, this.savedScrollY || 0);
-            }
+            this.showProfileModal = false;
+            this.profileData = null;
+            
+            document.body.classList.remove('modal-open');
+            document.body.style.top = '';
+            window.scrollTo(0, this.savedScrollY || 0);
         },
 
 
         animateProfileOpen() {
-            const modal = this.$refs.profileModal;
-            const scanLine = this.$refs.profileScanLine;
             const tabIndicator = this.$refs.profileTabIndicator;
             const activeTab = this.$refs.tabProfile;
 
-            if (!modal) return;
-
-            // Animer la scan line
-            if (scanLine) {
-                anime({
-                    targets: scanLine,
-                    opacity: [0, 1, 0],
-                    translateY: [0, 400],
-                    duration: 800,
-                    easing: 'easeInOutQuad',
-                    delay: 200
-                });
-            }
-
-            // Positionner l'indicateur de tab
             if (tabIndicator && activeTab) {
-                setTimeout(() => {
+                this.$nextTick(() => {
                     tabIndicator.style.left = activeTab.offsetLeft + 'px';
                     tabIndicator.style.width = activeTab.offsetWidth + 'px';
-                }, 400);
+                });
             }
-
-            // Animer le contenu du premier tab
-            setTimeout(() => {
-                this.animateProfileTabContent('profile');
-            }, 500);
         },
 
         // ========== AJOUTER switchProfileTab ==========
@@ -913,208 +909,31 @@ createApp({
 
             this.currentTab = tabName;
 
-            // Animer l'indicateur
             const tabIndicator = this.$refs.profileTabIndicator;
             let targetTab;
 
             if (tabName === 'profile') targetTab = this.$refs.tabProfile;
             else if (tabName === 'badges') targetTab = this.$refs.tabBadges;
             else if (tabName === 'titres') targetTab = this.$refs.tabTitres;
-            else if (tabName === 'avatar') targetTab = this.$refs.tabAvatar; // 🔥 NOUVEAU
+            else if (tabName === 'avatar') targetTab = this.$refs.tabAvatar;
 
             if (tabIndicator && targetTab) {
-                anime({
-                    targets: tabIndicator,
-                    left: targetTab.offsetLeft,
-                    width: targetTab.offsetWidth,
-                    duration: 400,
-                    easing: 'easeOutElastic(1, 0.5)'
-                });
+                tabIndicator.style.transition = 'left 0.2s ease, width 0.2s ease';
+                tabIndicator.style.left = targetTab.offsetLeft + 'px';
+                tabIndicator.style.width = targetTab.offsetWidth + 'px';
             }
 
-            // Animer le nouveau contenu
-            this.$nextTick(() => {
-                this.animateProfileTabContent(tabName);
-            });
+            // Counters for profile tab
+            if (tabName === 'profile') {
+                this.$nextTick(() => { this.animateProfileCounters(); });
+            }
         },
 
         // ========== AJOUTER animateProfileTabContent ==========
+        // animateProfileTabContent - disabled for performance
         animateProfileTabContent(tabName) {
             if (tabName === 'profile') {
-                const showcase = this.$refs.titleShowcase;
-                const cards = [this.$refs.statCard1, this.$refs.statCard2, this.$refs.statCard3].filter(Boolean);
-
-                // Reset
-                if (showcase) {
-                    anime.set(showcase, { opacity: 0, translateY: 20 });
-                }
-                cards.forEach(card => {
-                    anime.set(card, { opacity: 0, translateY: 30, scale: 0.9 });
-                });
-
-                // Animer le panel
-                const panel = this.$refs.panelProfile;
-                if (panel) {
-                    anime({
-                        targets: panel,
-                        opacity: [0, 1],
-                        duration: 300,
-                        easing: 'easeOutExpo'
-                    });
-                }
-
-                // Animer le showcase
-                if (showcase) {
-                    anime({
-                        targets: showcase,
-                        opacity: [0, 1],
-                        translateY: [20, 0],
-                        duration: 500,
-                        easing: 'easeOutExpo',
-                        delay: 100
-                    });
-                }
-
-                // Animer les cards avec stagger
-                anime({
-                    targets: cards,
-                    opacity: [0, 1],
-                    translateY: [30, 0],
-                    scale: [0.9, 1],
-                    duration: 500,
-                    easing: 'easeOutExpo',
-                    delay: anime.stagger(100, { start: 200 })
-                });
-
-                // Animer les compteurs
-                setTimeout(() => {
-                    this.animateProfileCounters();
-                }, 400);
-
-            } else if (tabName === 'badges') {
-                const categories = [this.$refs.badgesCat1, this.$refs.badgesCat2].filter(Boolean);
-                const panel = this.$refs.panelBadges;
-
-                // Reset
-                categories.forEach(cat => {
-                    anime.set(cat, { opacity: 0, translateX: -20 });
-                });
-
-                // Animer le panel
-                if (panel) {
-                    anime({
-                        targets: panel,
-                        opacity: [0, 1],
-                        duration: 300,
-                        easing: 'easeOutExpo'
-                    });
-                }
-
-                // Animer les catégories
-                anime({
-                    targets: categories,
-                    opacity: [0, 1],
-                    translateX: [-20, 0],
-                    duration: 400,
-                    easing: 'easeOutExpo',
-                    delay: anime.stagger(150, { start: 100 })
-                });
-
-                // Animer les badges
-                setTimeout(() => {
-                    const badges = panel?.querySelectorAll('.profile-badge-item');
-                    if (badges) {
-                        anime({
-                            targets: badges,
-                            opacity: (el) => el.classList.contains('locked') ? 0.35 : 1,
-                            scale: [0, 1],
-                            rotate: [-180, 0],
-                            duration: 600,
-                            easing: 'easeOutExpo',
-                            delay: anime.stagger(50, { grid: [5, 2], from: 'center' })
-                        });
-                    }
-                }, 200);
-
-            } else if (tabName === 'titres') {
-                const panel = this.$refs.panelTitres;
-                const rows = panel?.querySelectorAll('.profile-title-row');
-
-                // Animer le panel
-                if (panel) {
-                    anime({
-                        targets: panel,
-                        opacity: [0, 1],
-                        duration: 300,
-                        easing: 'easeOutExpo'
-                    });
-                }
-
-                // Animer les lignes
-                if (rows) {
-                    anime.set(rows, { opacity: 0, translateX: 50 });
-
-                    anime({
-                        targets: rows,
-                        opacity: (el) => el.classList.contains('locked') ? 0.4 : 1,
-                        translateX: [50, 0],
-                        duration: 500,
-                        easing: 'easeOutExpo',
-                        delay: anime.stagger(80, { start: 100 })
-                    });
-                }
-            } else if (tabName === 'avatar') {
-                const panel = this.$refs.panelAvatar;
-                const currentAvatar = panel?.querySelector('.profile-current-avatar');
-                const sections = [this.$refs.avatarSectionTwitch, this.$refs.avatarSectionDefault].filter(Boolean);
-                const avatarOptions = panel?.querySelectorAll('.profile-avatar-option');
-
-                // Animer le panel
-                if (panel) {
-                    anime({
-                        targets: panel,
-                        opacity: [0, 1],
-                        duration: 300,
-                        easing: 'easeOutExpo'
-                    });
-                }
-
-                // Animer l'avatar actuel
-                if (currentAvatar) {
-                    anime.set(currentAvatar, { opacity: 0, scale: 0.8 });
-                    anime({
-                        targets: currentAvatar,
-                        opacity: [0, 1],
-                        scale: [0.8, 1],
-                        duration: 500,
-                        easing: 'easeOutElastic(1, 0.5)',
-                        delay: 100
-                    });
-                }
-
-                // Animer les sections
-                anime({
-                    targets: sections,
-                    opacity: [0, 1],
-                    translateY: [20, 0],
-                    duration: 400,
-                    easing: 'easeOutExpo',
-                    delay: anime.stagger(100, { start: 200 })
-                });
-
-                // Animer les options d'avatar
-                if (avatarOptions) {
-                    anime.set(avatarOptions, { opacity: 0, scale: 0, rotate: -10 });
-                    anime({
-                        targets: avatarOptions,
-                        opacity: [0, 1],
-                        scale: [0, 1],
-                        rotate: [-10, 0],
-                        duration: 400,
-                        easing: 'easeOutBack',
-                        delay: anime.stagger(50, { start: 400, grid: [4, 3], from: 'first' })
-                    });
-                }
+                this.animateProfileCounters();
             }
         },
 
@@ -1167,28 +986,7 @@ createApp({
 
 
         animateAvatarChange() {
-            const preview = this.$refs.panelAvatar?.querySelector('.profile-avatar-preview');
-
-            if (preview) {
-                anime({
-                    targets: preview,
-                    scale: [1, 1.2, 1],
-                    rotate: [0, 10, -10, 0],
-                    duration: 600,
-                    easing: 'easeOutElastic(1, 0.5)'
-                });
-            }
-
-            // Animer aussi l'avatar dans le header
-            const headerAvatar = this.$refs.profileModal?.querySelector('.profile-avatar-wrapper');
-            if (headerAvatar) {
-                anime({
-                    targets: headerAvatar,
-                    scale: [1, 1.15, 1],
-                    duration: 500,
-                    easing: 'easeOutElastic(1, 0.5)'
-                });
-            }
+            // Simple visual feedback without anime.js
         },
 
 
@@ -1285,7 +1083,7 @@ createApp({
 
                 if (data.success) {
                     // Afficher le toast
-                    this.showProfileToast(`Titre "${titleName}" équipé !`);
+                    // Titre équipé silencieusement
 
                     // Recharger le profil
                     const profileResponse = await fetch(`/profile/${this.twitchId}`);
@@ -1346,7 +1144,7 @@ createApp({
                     await new Promise(resolve => setTimeout(resolve, 1000));
                 }
 
-                const response = await fetch('/leaderboard?limit=10');
+                const response = await fetch('/leaderboard?limit=3');
                 const data = await response.json();
 
                 // Arrondir le win rate (pas de décimal)
@@ -1405,6 +1203,11 @@ createApp({
                 // 🎮 Resync bonusEnabled
                 if (state.bonusEnabled !== undefined) {
                     this.bonusEnabled = state.bonusEnabled;
+                }
+                
+                // 🏔️ Resync Ascension
+                if (state.isActive && state.inProgress && state.lobbyMode === 'ascension' && this.isAuthenticated && this.hasJoined) {
+                    this.socket.emit('ascension-reconnect', { twitchId: this.twitchId });
                 }
             } catch (e) {
                 console.warn('⚠️ Resync échoué:', e);
@@ -1561,6 +1364,7 @@ createApp({
                             this.survie.groundItems = state.survie.groundItems || [];
                             if (state.survie.boosts) this.survie.boosts = state.survie.boosts;
                             if (state.survie.questItems) this.survie.questItems = state.survie.questItems;
+                            if (state.survie.gameStartedAt) this.survie.gameStartedAt = state.survie.gameStartedAt;
                             
                             // Restore player's saved quest state from server
                             if (state.survie.playerQuestStates && this.twitchId && state.survie.playerQuestStates[this.twitchId]) {
@@ -1594,6 +1398,52 @@ createApp({
                                 this._restoreWinnerBanner();
                                 
                             });
+                        }
+                    // 🗳️ En mode Poll, restaurer l'état poll
+                    } else if (state.lobbyMode === 'poll') {
+                        if (state.poll && state.poll.active) {
+                            this.poll.active = true;
+                            this.poll.categoryName = state.poll.categoryName || '';
+                            this.poll.currentRound = state.poll.currentRound || 0;
+                            this.poll.totalRounds = state.poll.totalRounds || 0;
+                            this.poll.currentMatchIndex = state.poll.currentMatchIndex || 0;
+                            this.poll.totalMatches = state.poll.totalMatches || 0;
+                            this.poll.votingOpen = state.poll.votingOpen || false;
+                            this.poll.showingResults = state.poll.showingResults || false;
+                            this.poll.showNames = state.poll.showNames !== undefined ? state.poll.showNames : false;
+                            this.poll.allCharacters = state.poll.allCharacters || [];
+                            this.poll.gameWinner = state.poll.winner || null;
+                            
+                            if (state.poll.currentMatch) {
+                                this.poll.characters = state.poll.currentMatch.characters || [];
+                                this.poll.myVote = state.poll.currentMatch.myVote || null;
+                                this.poll.voteResults = state.poll.currentMatch.voteResults || null;
+                                this.poll.winner = state.poll.currentMatch.winner || null;
+                                this.poll.wasRandom = state.poll.currentMatch.wasRandom || false;
+                                this.poll.isTie = state.poll.currentMatch.isTie || false;
+                            }
+                            
+                            // Restore results visibility
+                            if (state.poll.showingResults && state.poll.currentMatch && state.poll.currentMatch.voteResults) {
+                                this.$nextTick(() => {
+                                    this.poll.resultsVisible = true;
+                                    const fill = this.$refs.pollTimerFill;
+                                    if (fill) {
+                                        fill.classList.add('poll-p-timer-shattered');
+                                        fill.style.opacity = '0';
+                                    }
+                                });
+                            }
+                            
+                            this.gameInProgress = true;
+                            document.body.classList.add('game-active');
+                            
+                            if (state.poll.votingOpen && state.poll.timeRemaining > 0) {
+                                this.poll.timer = state.poll.timer || 15;
+                                this.startPollTimer(state.poll.timeRemaining, state.poll.endTime);
+                            }
+                        } else {
+                            this.gameInProgress = false;
                         }
                     } else {
                         this.gameInProgress = true;
@@ -1920,6 +1770,190 @@ createApp({
                 this._showVictoryOverlay(data);
             });
 
+            // ═══ 🗳️ POLL - Socket Listeners ═══
+            
+            this.socket.on('poll-game-started', (data) => {
+                console.log('🗳️ Poll game started:', data);
+                this.gameStartedOnServer = true;
+                
+                if (!this.hasJoined) {
+                    this.gameInProgress = false;
+                    return;
+                }
+                
+                this.poll.active = true;
+                this.poll.categoryName = data.categoryName;
+                this.poll.perMatch = data.perMatch;
+                this.poll.bracketSize = data.bracketSize;
+                this.poll.showNames = data.showNames !== undefined ? data.showNames : false;
+                this.poll.totalRounds = data.totalRounds;
+                this.poll.totalMatches = data.totalMatches;
+                this.poll.allCharacters = data.allCharacters || [];
+                this.poll.currentRound = 0;
+                this.poll.currentMatchIndex = 0;
+                this.poll.gameWinner = null;
+                this.gameInProgress = true;
+                this.gameEnded = false;
+                
+                document.body.classList.add('game-active');
+            });
+            
+            this.socket.on('poll-match-start', (data) => {
+                console.log('🗳️ Match start:', data);
+                this.poll.currentRound = data.round;
+                this.poll.currentMatchIndex = data.matchIndex;
+                this.poll.totalMatches = data.totalMatches;
+                this.poll.totalRounds = data.totalRounds;
+                this.poll.characters = data.characters;
+                this.poll.votingOpen = true;
+                this.poll.showingResults = false;
+                this.poll.resultsVisible = false;
+                this.poll.myVote = null;
+                this.poll.winner = null;
+                this.poll.wasRandom = false;
+                this.poll.isTie = false;
+                this.poll.voteResults = null;
+                this.poll.voteCounts = {};
+                this.poll.votersByChar = {};
+                this.poll.votersByChar = {};
+                this.poll.totalVotes = 0;
+                this.poll.timer = data.timer;
+                this.poll.timeRemaining = data.timer;
+                this.poll._shattered = false;
+                
+                // Start countdown (handles fill bar CSS transition internally)
+                this.startPollTimer(data.timer, data.endTime);
+            });
+            
+            this.socket.on('poll-vote-update', (data) => {
+                this.poll.voteCounts = data.voteCounts;
+                this.poll.totalVotes = data.totalVotes;
+                if (data.votersByChar) this.poll.votersByChar = data.votersByChar;
+            });
+            
+            this.socket.on('poll-vote-confirmed', (data) => {
+                this.poll.myVote = data.characterId;
+            });
+            
+            // Vote notification from other players
+            this.socket.on('poll-vote-notif', (data) => {
+                this.pollSpawnVoteNotif(data.username, data.avatar);
+            });
+            
+            this.socket.on('poll-match-result', (data) => {
+                console.log('🗳️ Match result:', data);
+                this.poll.votingOpen = false;
+                this.poll.showingResults = true;
+                this.poll.voteResults = data.voteResults;
+                this.poll.totalVotes = data.totalVotes;
+                this.poll.winner = data.winner;
+                this.poll.isTie = data.isTie || false;
+                this.poll.wasRandom = false;
+                this.poll.resultsVisible = false;
+                if (data.votersByChar) this.poll.votersByChar = data.votersByChar;
+                this.stopPollTimer();
+                if (!this.poll._shattered) {
+                    this.pollShatterTimer();
+                }
+                // Winner reveal + particles + sound — immediate with shatter
+                if (data.winner && !data.isTie) {
+                    this.$nextTick(() => {
+                        const winnerRef = this.$refs['pollCard_' + data.winner.id];
+                        const winnerEl = Array.isArray(winnerRef) ? winnerRef[0] : winnerRef;
+                        if (winnerEl) {
+                            this.pollSpawnParticles(winnerEl);
+                        }
+                        this.pollPlayWinSound();
+                    });
+                }
+                // Tie sound
+                if (data.isTie && !data.winner) {
+                    this.pollPlayTieSound();
+                }
+                // Results percentages — delayed for stagger effect
+                setTimeout(() => {
+                    this.poll.resultsVisible = true;
+                }, 500);
+            });
+            
+            // Tie resolved by admin
+            this.socket.on('poll-tie-resolved', (data) => {
+                console.log('🗳️ Tie resolved:', data);
+                this.poll.winner = data.winner;
+                this.poll.isTie = false;
+                // Winner animation — particles + sound
+                this.$nextTick(() => {
+                    const winnerRef = this.$refs['pollCard_' + data.winner.id];
+                    const winnerEl = Array.isArray(winnerRef) ? winnerRef[0] : winnerRef;
+                    if (winnerEl) {
+                        this.pollSpawnParticles(winnerEl);
+                    }
+                    this.pollPlayWinSound();
+                });
+            });
+            
+            this.socket.on('poll-round-start', (data) => {
+                console.log('🗳️ Round start:', data);
+                this.poll.currentRound = data.round;
+            });
+            
+            this.socket.on('poll-game-ended', (data) => {
+                console.log('🏆 Poll ended:', data);
+                this.poll.gameWinner = data.winner;
+                this.poll.votingOpen = false;
+                this.poll.showingResults = false;
+                // Spawn victory sparkles after render
+                this.$nextTick(() => {
+                    setTimeout(() => this.pollSpawnVictorySparkles(), 400);
+                });
+            });
+            
+            this.socket.on('poll-state', (data) => {
+                if (!data) return;
+                console.log('🗳️ Poll state restored:', data);
+                this.poll.active = data.active;
+                this.poll.categoryName = data.categoryName;
+                this.poll.showNames = data.showNames !== undefined ? data.showNames : false;
+                this.poll.currentRound = data.currentRound;
+                this.poll.totalRounds = data.totalRounds;
+                this.poll.currentMatchIndex = data.currentMatchIndex;
+                this.poll.totalMatches = data.totalMatches;
+                this.poll.votingOpen = data.votingOpen;
+                this.poll.showingResults = data.showingResults;
+                this.poll.allCharacters = data.allCharacters || [];
+                this.poll.gameWinner = data.winner;
+                if (data.currentMatch) {
+                    this.poll.characters = data.currentMatch.characters;
+                    this.poll.myVote = data.currentMatch.myVote;
+                    this.poll.voteResults = data.currentMatch.voteResults;
+                    this.poll.winner = data.currentMatch.winner;
+                    this.poll.wasRandom = data.currentMatch.wasRandom || false;
+                    this.poll.isTie = data.currentMatch.isTie || false;
+                }
+                // Restore results visibility
+                if (data.showingResults && data.currentMatch && data.currentMatch.voteResults) {
+                    this.$nextTick(() => {
+                        this.poll.resultsVisible = true;
+                        // Hide timer fill during results
+                        const fill = this.$refs.pollTimerFill;
+                        if (fill) {
+                            fill.classList.add('poll-p-timer-shattered');
+                            fill.style.opacity = '0';
+                        }
+                    });
+                }
+                if (data.votingOpen && data.timeRemaining > 0) {
+                    this.poll.timer = data.timer || 15;
+                    this.startPollTimer(data.timeRemaining, data.endTime);
+                } else if (!data.votingOpen && !data.showingResults) {
+                    // Timer ended but no results yet — hide fill
+                    this.$nextTick(() => {
+                        const fill = this.$refs.pollTimerFill;
+                        if (fill) { fill.style.visibility = 'hidden'; }
+                    });
+                }
+            });
+
             // Événements de connexion
             this.socket.on('connect', () => {
 
@@ -2190,6 +2224,24 @@ createApp({
                 this.destroySurvieCanvas();
                 document.body.classList.remove('game-active');
                 
+                // 🗳️ Reset Poll
+                this.poll.active = false;
+                this.poll.currentRound = 0;
+                this.poll.totalRounds = 0;
+                this.poll.characters = [];
+                this.poll.myVote = null;
+                this.poll.votingOpen = false;
+                this.poll.showingResults = false;
+                this.poll.resultsVisible = false;
+                this.poll.voteResults = null;
+                this.poll.winner = null;
+                this.poll.gameWinner = null;
+                this.poll.isTie = false;
+                this.poll.allCharacters = [];
+                this.poll._shattered = false;
+                this.poll._endTime = null;
+                this.stopPollTimer();
+                
                 // Force cleanup after Vue re-render
                 this.$nextTick(() => {
                     const inv = document.getElementById('survieInventory');
@@ -2266,6 +2318,16 @@ createApp({
                 // Ignorer en mode Survie (géré par survie-game-started)
                 if (this.lobbyMode === 'survie') {
                     console.log('🎮 game-started ignoré en mode Survie');
+                    return;
+                }
+                // Ignorer en mode Poll (géré par poll-game-started)
+                if (this.lobbyMode === 'poll') {
+                    console.log('🎮 game-started ignoré en mode Poll');
+                    return;
+                }
+                // Ignorer en mode Ascension (géré par ascension-game-started)
+                if (this.lobbyMode === 'ascension') {
+                    console.log('🎮 game-started ignoré en mode Ascension');
                     return;
                 }
                 
@@ -4113,6 +4175,7 @@ createApp({
                 this.survie.alivePlayers = data.players || [];
                 this.survie.eliminatedPlayers = [];
                 this.survie.timer = data.timer || 30;
+                this.survie.gameStartedAt = data.gameStartedAt || Date.now();
                 this.survie.isEliminated = false;
                 this.survie.isQualified = false;
                 this.survie.npcs = data.npcs || [];
@@ -4146,13 +4209,138 @@ createApp({
                     // Show intro only on first game start
                     if (!sessionStorage.getItem('survieIntroShown')) {
                         sessionStorage.setItem('survieIntroShown', 'true');
+                        if (this._survieCanvas) this._survieCanvas.frozen = true;
                         this._showSurvieIntro();
                     }
                 });
             });
             
+            // 🏔️ ASCENSION — Game started
+            this.socket.on('ascension-game-started', (data) => {
+                console.log('🏔️ Ascension démarrée:', data);
+                this.gameStartedOnServer = true;
+                
+                if (!this.hasJoined) {
+                    this.gameInProgress = false;
+                    return;
+                }
+                
+                this.gameInProgress = true;
+                this.gameEnded = false;
+                this.ascension = {
+                    active: true,
+                    floors: data.floors,
+                    timer: data.timer,
+                    currentFloor: 0,
+                    playerProgress: data.players || [],
+                    floorData: null,
+                    myFloor: 0,
+                    validated: false,
+                };
+                document.body.classList.add('game-active');
+                
+                this.$nextTick(() => {
+                    this._initAscensionUI();
+                    this._startAscensionCountdown(data.countdownEndsAt);
+                });
+            });
+            
+            this.socket.on('ascension-floor-start', (data) => {
+                if (!this.ascension?.active) return;
+                console.log(`🏔️ Étage ${data.floor + 1}:`, data.floorData?.type);
+                this.ascension.currentFloor = data.floor;
+                this.ascension.floorData = data.floorData;
+                this.ascension.playerProgress = data.playerProgress || this.ascension.playerProgress;
+                this.ascension.validated = false;
+                
+                // Reveal UI elements (hidden during countdown)
+                document.querySelectorAll('.asc-pre-start').forEach(el => {
+                    el.classList.remove('asc-pre-start');
+                    el.classList.add('asc-reveal');
+                });
+                
+                this._renderAscensionPlayerFloor(data.floorData, data.floor);
+                this._startAscensionPlayerTimer(data.timerEndTime);
+                this._updateAscensionPlayerTower();
+            });
+            
+            this.socket.on('ascension-floor-end', (data) => {
+                if (!this.ascension?.active) return;
+                this.ascension.playerProgress = data.playerProgress || this.ascension.playerProgress;
+                this._stopAscensionPlayerTimer();
+                this._updateAscensionPlayerTower();
+            });
+            
+            this.socket.on('ascension-progress', (data) => {
+                if (!this.ascension?.active) return;
+                this.ascension.playerProgress = data.playerProgress || this.ascension.playerProgress;
+                // Update my floor
+                const me = this.ascension.playerProgress.find(p => p.twitchId === this.twitchId);
+                if (me) this.ascension.myFloor = me.floor;
+                this._updateAscensionPlayerTower();
+            });
+            
+            this.socket.on('ascension-answer-result', (data) => {
+                if (data.correct) {
+                    this.ascension.validated = true;
+                    this.ascension.myFloor = data.floor;
+                    this._flashAscensionPlayerSuccess();
+                }
+            });
+            
+            this.socket.on('ascension-game-end', (data) => {
+                if (!this.ascension?.active) return;
+                console.log('🏔️ Fin:', data);
+                this.ascension.active = false;
+                this._stopAscensionPlayerTimer();
+                this._showAscensionPlayerPodium(data.podium, data.winner);
+            });
+            
+            this.socket.on('ascension-state', (data) => {
+                if (!data || !data.active) return;
+                console.log('🏔️ Reconnexion ascension:', data);
+                this.gameStartedOnServer = true;
+                this.gameInProgress = true;
+                this.gameEnded = false;
+                document.body.classList.add('game-active');
+                
+                this.ascension = {
+                    active: true,
+                    floors: data.floors,
+                    timer: data.timer,
+                    currentFloor: data.currentFloor || 0,
+                    playerProgress: data.playerProgress || [],
+                    floorData: data.floorData,
+                    myFloor: 0,
+                    validated: false,
+                };
+                
+                // Find my floor
+                const me = this.ascension.playerProgress.find(p => p.twitchId === this.twitchId);
+                if (me) this.ascension.myFloor = me.floor;
+                
+                this.$nextTick(() => {
+                    this._initAscensionUI();
+                    
+                    // Reveal UI immediately then render floor
+                    setTimeout(() => {
+                        document.querySelectorAll('.asc-pre-start').forEach(el => {
+                            el.classList.remove('asc-pre-start');
+                            el.classList.add('asc-reveal');
+                        });
+                        // Render after reveal so title pop is visible
+                        setTimeout(() => {
+                            this._updateAscensionPlayerTower();
+                            if (data.floorData) this._renderAscensionPlayerFloor(data.floorData, data.currentFloor);
+                            if (data.floorTimerEndTime) this._startAscensionPlayerTimer(data.floorTimerEndTime);
+                        }, 100);
+                    }, 50);
+                });
+            });
+            
             // Receive other players' positions
             const handleSurvieMove = (data) => {
+
                 if (this._survieCanvas && data.twitchId !== this.twitchId) {
                     this._survieCanvas.updateRemotePlayer(data.twitchId, data.x, data.y, data.vx, data.vy);
                 }
@@ -4264,6 +4452,420 @@ createApp({
             }
         },
         
+        // ═══ 🗳️ POLL METHODS ═══
+        
+        startPollTimer(seconds, endTime) {
+            this.stopPollTimer();
+            this.poll._shattered = false;
+            
+            // Calculate precise remaining time from server endTime
+            const now = Date.now();
+            if (endTime) {
+                this.poll._endTime = endTime;
+            } else {
+                this.poll._endTime = now + seconds * 1000;
+            }
+            const remainingMs = Math.max(0, this.poll._endTime - now);
+            const remainingSec = remainingMs / 1000;
+            const totalTimer = this.poll.timer || 15;
+            const startPercent = (remainingSec / totalTimer) * 100;
+            
+            this.poll.timeRemaining = Math.ceil(remainingSec);
+            
+            // Drive the fill bar with CSS transition (smooth, like admin)
+            this.$nextTick(() => {
+                const fill = this.$refs.pollTimerFill;
+                if (fill) {
+                    fill.classList.remove('poll-p-timer-shattered');
+                    fill.style.transition = 'none';
+                    fill.style.opacity = '';
+                    fill.style.visibility = '';
+                    fill.style.width = startPercent + '%';
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            fill.style.transition = `width ${remainingSec}s linear`;
+                            fill.style.width = '0%';
+                        });
+                    });
+                }
+            });
+            
+            // JS interval only for urgency class + shatter trigger + timeRemaining display
+            this.poll.timerInterval = setInterval(() => {
+                const remaining = Math.max(0, Math.ceil((this.poll._endTime - Date.now()) / 1000));
+                this.poll.timeRemaining = remaining;
+                if (remaining <= 0) {
+                    this.stopPollTimer();
+                    this.pollShatterTimer();
+                }
+            }, 250);
+        },
+        
+        stopPollTimer() {
+            if (this.poll.timerInterval) {
+                clearInterval(this.poll.timerInterval);
+                this.poll.timerInterval = null;
+            }
+        },
+        
+        pollVote(characterId) {
+            if (!this.poll.votingOpen || this.poll.myVote) return;
+            this.socket.emit('poll-vote', { characterId });
+            this.poll.myVote = characterId;
+            
+            // Play vote sound
+            this.pollPlayVoteSound();
+            
+            // Spawn particles on voted card
+            this.$nextTick(() => {
+                const refKey = 'pollCard_' + characterId;
+                const cardEl = this.$refs[refKey];
+                if (cardEl) {
+                    const el = Array.isArray(cardEl) ? cardEl[0] : cardEl;
+                    if (el) this.pollSpawnParticles(el);
+                }
+            });
+        },
+        
+        // ── Vote sound (from prototype) ──
+        pollPlayVoteSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                // Mid-high hit
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(260, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(90, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.12, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.14);
+                osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.15);
+                // Bright click
+                const noise = ctx.createBufferSource();
+                const buf = ctx.createBuffer(1, ctx.sampleRate * 0.025, ctx.sampleRate);
+                const d = buf.getChannelData(0);
+                for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (d.length * 0.12));
+                noise.buffer = buf;
+                const nGain = ctx.createGain();
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'bandpass'; filter.frequency.value = 3000; filter.Q.value = 1.2;
+                noise.connect(filter); filter.connect(nGain); nGain.connect(ctx.destination);
+                nGain.gain.setValueAtTime(0.07, ctx.currentTime);
+                noise.start(ctx.currentTime);
+                // Tiny ding
+                const ding = ctx.createOscillator();
+                const dg = ctx.createGain();
+                ding.connect(dg); dg.connect(ctx.destination);
+                ding.type = 'sine';
+                ding.frequency.setValueAtTime(650, ctx.currentTime + 0.03);
+                dg.gain.setValueAtTime(0, ctx.currentTime);
+                dg.gain.setValueAtTime(0.04, ctx.currentTime + 0.03);
+                dg.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+                ding.start(ctx.currentTime + 0.03); ding.stop(ctx.currentTime + 0.16);
+            } catch(e) {}
+        },
+        
+        pollPlayWinSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const t = ctx.currentTime;
+                // Rising sweep
+                const sweep = ctx.createOscillator();
+                const sweepGain = ctx.createGain();
+                sweep.connect(sweepGain); sweepGain.connect(ctx.destination);
+                sweep.type = 'sine';
+                sweep.frequency.setValueAtTime(250, t);
+                sweep.frequency.exponentialRampToValueAtTime(600, t + 0.15);
+                sweep.frequency.exponentialRampToValueAtTime(400, t + 0.25);
+                sweepGain.gain.setValueAtTime(0.08, t);
+                sweepGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+                sweep.start(t); sweep.stop(t + 0.3);
+                // High chime 1
+                const chime1 = ctx.createOscillator();
+                const cg1 = ctx.createGain();
+                chime1.connect(cg1); cg1.connect(ctx.destination);
+                chime1.type = 'sine';
+                chime1.frequency.setValueAtTime(880, t + 0.08);
+                cg1.gain.setValueAtTime(0, t);
+                cg1.gain.setValueAtTime(0.06, t + 0.08);
+                cg1.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+                chime1.start(t + 0.08); chime1.stop(t + 0.36);
+                // High chime 2
+                const chime2 = ctx.createOscillator();
+                const cg2 = ctx.createGain();
+                chime2.connect(cg2); cg2.connect(ctx.destination);
+                chime2.type = 'sine';
+                chime2.frequency.setValueAtTime(1100, t + 0.14);
+                cg2.gain.setValueAtTime(0, t);
+                cg2.gain.setValueAtTime(0.04, t + 0.14);
+                cg2.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+                chime2.start(t + 0.14); chime2.stop(t + 0.46);
+                // Impact
+                const noise = ctx.createBufferSource();
+                const buf = ctx.createBuffer(1, ctx.sampleRate * 0.04, ctx.sampleRate);
+                const d = buf.getChannelData(0);
+                for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (d.length * 0.08));
+                noise.buffer = buf;
+                const nGain = ctx.createGain();
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'highpass'; filter.frequency.value = 3000;
+                noise.connect(filter); filter.connect(nGain); nGain.connect(ctx.destination);
+                nGain.gain.setValueAtTime(0.05, t);
+                noise.start(t);
+            } catch(e) {}
+        },
+        
+        pollPlayTieSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const t = ctx.currentTime;
+                const o1 = ctx.createOscillator();
+                const g1 = ctx.createGain();
+                o1.connect(g1); g1.connect(ctx.destination);
+                o1.type = 'sine';
+                o1.frequency.setValueAtTime(520, t);
+                o1.frequency.exponentialRampToValueAtTime(480, t + 0.15);
+                g1.gain.setValueAtTime(0.04, t);
+                g1.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+                o1.start(t); o1.stop(t + 0.2);
+                const o2 = ctx.createOscillator();
+                const g2 = ctx.createGain();
+                o2.connect(g2); g2.connect(ctx.destination);
+                o2.type = 'sine';
+                o2.frequency.setValueAtTime(400, t + 0.12);
+                o2.frequency.exponentialRampToValueAtTime(350, t + 0.3);
+                g2.gain.setValueAtTime(0, t);
+                g2.gain.setValueAtTime(0.035, t + 0.12);
+                g2.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+                o2.start(t + 0.12); o2.stop(t + 0.36);
+            } catch(e) {}
+        },
+        
+        // ── Particles on vote (edge burst from prototype) ──
+        pollSpawnParticles(card) {
+            const inner = card.querySelector('.poll-p-card-inner');
+            if (!inner) return;
+            const r = inner.getBoundingClientRect();
+            const cardR = card.getBoundingClientRect();
+            const w = r.width, h = r.height;
+            const ox = r.left - cardR.left, oy = r.top - cardR.top;
+            
+            const edgePoints = [];
+            for (let i = 0; i < 12; i++) edgePoints.push({ x: ox + (w * i/11), y: oy, angle: -Math.PI/2 + (Math.random()-0.5)*0.8 });
+            for (let i = 0; i < 12; i++) edgePoints.push({ x: ox + (w * i/11), y: oy + h, angle: Math.PI/2 + (Math.random()-0.5)*0.8 });
+            for (let i = 0; i < 8; i++) edgePoints.push({ x: ox, y: oy + (h * i/7), angle: Math.PI + (Math.random()-0.5)*0.8 });
+            for (let i = 0; i < 8; i++) edgePoints.push({ x: ox + w, y: oy + (h * i/7), angle: 0 + (Math.random()-0.5)*0.8 });
+            [{x: ox, y: oy}, {x: ox+w, y: oy}, {x: ox, y: oy+h}, {x: ox+w, y: oy+h}].forEach(corner => {
+                for (let i = 0; i < 6; i++) {
+                    const a = Math.atan2(corner.y - (oy+h/2), corner.x - (ox+w/2)) + (Math.random()-0.5)*0.6;
+                    edgePoints.push({ x: corner.x, y: corner.y, angle: a });
+                }
+            });
+            
+            edgePoints.forEach((pt) => {
+                const p = document.createElement('div');
+                const dist = 60 + Math.random() * 100;
+                const s = 3 + Math.random() * 6;
+                const hue = 325 + Math.random() * 40;
+                const light = 55 + Math.random() * 30;
+                const dur = 0.5 + Math.random() * 0.5;
+                Object.assign(p.style, {
+                    position: 'absolute', width: s+'px', height: s+'px', borderRadius: '50%',
+                    background: `hsl(${hue}, 85%, ${light}%)`,
+                    left: pt.x+'px', top: pt.y+'px', opacity: '1',
+                    transition: `all ${dur}s cubic-bezier(.15,.9,.3,1)`,
+                    pointerEvents: 'none', zIndex: '10',
+                    boxShadow: `0 0 ${s*3}px hsl(${hue}, 85%, ${light}%), 0 0 ${s*6}px hsl(${hue}, 60%, ${light-10}%)`
+                });
+                card.appendChild(p);
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    p.style.left = (pt.x + Math.cos(pt.angle) * dist) + 'px';
+                    p.style.top = (pt.y + Math.sin(pt.angle) * dist) + 'px';
+                    p.style.opacity = '0';
+                    p.style.transform = `scale(0.2) rotate(${Math.random()*180}deg)`;
+                }));
+                setTimeout(() => p.remove(), (dur * 1000) + 100);
+            });
+            
+            // Edge glow flash
+            const glow = document.createElement('div');
+            Object.assign(glow.style, {
+                position: 'absolute', left: ox+'px', top: oy+'px', width: w+'px', height: h+'px',
+                borderRadius: '14px', border: '2px solid rgba(240,128,176,0.6)',
+                boxShadow: '0 0 20px rgba(240,128,176,0.4), inset 0 0 20px rgba(240,128,176,0.1)',
+                pointerEvents: 'none', zIndex: '9', transition: 'all 0.6s ease-out', opacity: '1'
+            });
+            card.appendChild(glow);
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                glow.style.opacity = '0'; glow.style.transform = 'scale(1.08)';
+                glow.style.boxShadow = '0 0 40px rgba(240,128,176,0), inset 0 0 40px rgba(240,128,176,0)';
+            }));
+            setTimeout(() => glow.remove(), 700);
+        },
+        
+        // ── Shatter timer (dot explodes into particles) ──
+        pollShatterTimer() {
+            if (this.poll._shattered) return;
+            this.poll._shattered = true;
+            const bar = this.$refs.pollTimerBar;
+            const fill = this.$refs.pollTimerFill;
+            const flash = this.$refs.pollTimerFlash;
+            if (!bar || !fill) return;
+            
+            const fillRect = fill.getBoundingClientRect();
+            const barRect = bar.getBoundingClientRect();
+            const dotX = fillRect.right - barRect.left;
+            
+            // Hide the fill and its dot
+            fill.style.opacity = '0';
+            fill.classList.add('poll-p-timer-shattered');
+            
+            // Flash
+            if (flash) {
+                flash.style.setProperty('--fx', ((dotX / barRect.width) * 100) + '%');
+                flash.classList.add('active');
+                setTimeout(() => flash.classList.remove('active'), 700);
+            }
+            
+            // Burst particles from dot position
+            for (let i = 0; i < 12; i++) {
+                const p = document.createElement('div');
+                const a = (Math.PI * 2 * i) / 12 + (Math.random() - 0.5) * 0.5;
+                const d = 15 + Math.random() * 35;
+                const s = 2 + Math.random() * 4;
+                const isWhite = Math.random() > 0.7;
+                p.className = `poll-p-timer-shard ${isWhite ? 'white' : 'red'}`;
+                Object.assign(p.style, {
+                    left: dotX + 'px', top: '0px',
+                    width: s + 'px', height: s + 'px', borderRadius: '50%',
+                    transition: `all ${0.5 + Math.random() * 0.4}s cubic-bezier(.16,1,.3,1)`,
+                });
+                bar.appendChild(p);
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    p.style.transform = `translate(${Math.cos(a) * d}px, ${Math.sin(a) * d}px)`;
+                    p.style.opacity = '0';
+                }));
+                setTimeout(() => p.remove(), 1000);
+            }
+        },
+        
+        getPollVotePercent(charId) {
+            if (!this.poll.showingResults || !this.poll.voteResults || !this.poll.voteResults[charId]) return 0;
+            return this.poll.voteResults[charId].percentage;
+        },
+        
+        pollSpawnVoteNotif(username, avatar) {
+            if (!this.poll.showNotifs) return;
+            const zone = this.$refs.pollNotifZone;
+            if (!zone) return;
+            
+            const zW = zone.offsetWidth;
+            const zH = zone.offsetHeight;
+            const rand = (a, b) => a + Math.random() * (b - a);
+            
+            const angle = rand(-2.8, -0.3);
+            const totalDist = rand(70, 160);
+            const midX = rand(20, zW * 0.78);
+            const midY = rand(zH * 0.18, zH * 0.78);
+            const halfDist = totalDist / 2;
+            const sx = midX - Math.cos(angle) * halfDist;
+            const sy = midY - Math.sin(angle) * halfDist;
+            const ex = midX + Math.cos(angle) * halfDist;
+            const ey = midY + Math.sin(angle) * halfDist;
+            const life = rand(2.4, 3.8);
+            const peakOp = rand(0.55, 1.0);
+            const sr = rand(-12, 12);
+            const er = sr + rand(-10, 10);
+            
+            const notif = document.createElement('div');
+            notif.className = 'poll-vote-notif';
+            notif.style.setProperty('--sx', sx + 'px');
+            notif.style.setProperty('--sy', sy + 'px');
+            notif.style.setProperty('--ex', ex + 'px');
+            notif.style.setProperty('--ey', ey + 'px');
+            notif.style.setProperty('--life', life + 's');
+            notif.style.setProperty('--peak-op', peakOp);
+            notif.style.setProperty('--sr', sr + 'deg');
+            notif.style.setProperty('--er', er + 'deg');
+            
+            const avatarHtml = avatar 
+                ? `<img class="pn-avatar" src="${avatar}" alt="" onerror="this.style.display='none'">` 
+                : '';
+            notif.innerHTML = `
+                ${avatarHtml}
+                <div class="pn-text"><strong>${username}</strong> a voté</div>
+                <span class="pn-check">✓</span>
+            `;
+            
+            zone.appendChild(notif);
+            setTimeout(() => { if (notif.parentNode) notif.remove(); }, life * 1000 + 300);
+            while (zone.children.length > 30) zone.removeChild(zone.firstChild);
+        },
+        
+        getPollVoteCount(charId) {
+            if (this.poll.showingResults && this.poll.voteResults && this.poll.voteResults[charId]) {
+                return this.poll.voteResults[charId].count;
+            }
+            return this.poll.voteCounts[charId] || 0;
+        },
+        
+        pollSpawnVictorySparkles() {
+            const container = this.$refs.pollVictorySparkles;
+            if (!container) return;
+            const cx = 40, cy = 30;
+            const spawn = () => {
+                for (let i = 0; i < 8; i++) {
+                    const p = document.createElement('div');
+                    const a = Math.random() * Math.PI * 2;
+                    const d = 30 + Math.random() * 50;
+                    const s = 2 + Math.random() * 3;
+                    const hue = 325 + Math.random() * 40;
+                    const light = 60 + Math.random() * 30;
+                    Object.assign(p.style, {
+                        position: 'absolute', width: s+'px', height: s+'px', borderRadius: '50%',
+                        background: `hsl(${hue}, 85%, ${light}%)`,
+                        left: cx+'px', top: cy+'px', opacity: '0.8',
+                        transition: `all ${0.8 + Math.random()*0.5}s cubic-bezier(.15,.9,.3,1)`,
+                        pointerEvents: 'none',
+                        boxShadow: `0 0 ${s*3}px hsl(${hue}, 85%, ${light}%)`
+                    });
+                    container.appendChild(p);
+                    requestAnimationFrame(() => requestAnimationFrame(() => {
+                        p.style.left = (cx + Math.cos(a) * d) + 'px';
+                        p.style.top = (cy + Math.sin(a) * d) + 'px';
+                        p.style.opacity = '0';
+                        p.style.transform = 'scale(0)';
+                    }));
+                    setTimeout(() => p.remove(), 1400);
+                }
+            };
+            spawn();
+            this._victorySparkleInterval = setInterval(spawn, 1200);
+            setTimeout(() => clearInterval(this._victorySparkleInterval), 8000);
+        },
+        
+        pollBackToLobby() {
+            this.stopPollTimer();
+            if (this._victorySparkleInterval) {
+                clearInterval(this._victorySparkleInterval);
+                this._victorySparkleInterval = null;
+            }
+            this.poll.active = false;
+            this.poll.gameWinner = null;
+            this.poll.characters = [];
+            this.poll.myVote = null;
+            this.poll.votingOpen = false;
+            this.poll.showingResults = false;
+            this.poll.resultsVisible = false;
+            this.poll.voteResults = null;
+            this.poll.winner = null;
+            this.poll._shattered = false;
+            this.poll._endTime = null;
+            this.gameInProgress = false;
+            this.gameEnded = false;
+        },
+        
         survieComplete() {
             if (!this.survie.active || !this.survie.roundInProgress || this.survie.isQualified || this.survie.isEliminated) return;
             this.socket.emit('survie-completed', {});
@@ -4335,6 +4937,31 @@ createApp({
             
             // Resize first so dimensions are available
             this._survieCanvas.resize();
+            
+            // Always start frozen — unfreeze only after tutorial period
+            const TUTO_DURATION = 14000;
+            if (this.survie.gameStartedAt) {
+                const elapsed = Date.now() - this.survie.gameStartedAt;
+                const remaining = TUTO_DURATION - elapsed;
+                if (remaining > 0) {
+                    this._survieCanvas.frozen = true;
+                    setTimeout(() => {
+                        if (this._survieCanvas) this._survieCanvas.frozen = false;
+                    }, remaining);
+                } else {
+                    // Tuto already over
+                    this._survieCanvas.frozen = false;
+                }
+            } else {
+                // No gameStartedAt yet — freeze and wait for survie-state to provide it
+                this._survieCanvas.frozen = true;
+                // Safety: unfreeze after max tuto duration in case state never arrives
+                setTimeout(() => {
+                    if (this._survieCanvas && this._survieCanvas.frozen) {
+                        this._survieCanvas.frozen = false;
+                    }
+                }, TUTO_DURATION);
+            }
             
             // Add all players
             this.survie.alivePlayers.forEach(p => {
@@ -4592,6 +5219,7 @@ createApp({
                     this.survie.quests = data.quests || [];
                     this.survie.groundItems = data.groundItems || [];
                     if (data.questItems) this.survie.questItems = data.questItems;
+                    if (data.gameStartedAt) this.survie.gameStartedAt = data.gameStartedAt;
                     
                     // Add ground items to canvas if not already there
                     if (this._survieCanvas && data.groundItems) {
@@ -4632,6 +5260,19 @@ createApp({
                                 ...(q.type === 'MYSTERY' && { interrogated: [] }),
                             })),
                         });
+                    }
+                    
+                    // Freeze during tutorial if still in tuto period
+                    if (data.gameStartedAt && this._survieCanvas) {
+                        const TUTO_DURATION = 14000; // 1s delay + 4 slides × 3s + buffer
+                        const elapsed = Date.now() - data.gameStartedAt;
+                        const remaining = TUTO_DURATION - elapsed;
+                        if (remaining > 0) {
+                            this._survieCanvas.frozen = true;
+                            setTimeout(() => {
+                                if (this._survieCanvas) this._survieCanvas.frozen = false;
+                            }, remaining);
+                        }
                     }
                 });
             
@@ -4795,6 +5436,321 @@ createApp({
             sound.play().catch(() => {});
         },
 
+        _playSurvieStartSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const t = ctx.currentTime;
+                const bip1 = ctx.createOscillator();
+                const g1 = ctx.createGain();
+                bip1.connect(g1); g1.connect(ctx.destination);
+                bip1.type = 'square';
+                bip1.frequency.setValueAtTime(880, t);
+                g1.gain.setValueAtTime(0.12, t);
+                g1.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+                bip1.start(t); bip1.stop(t + 0.08);
+                const bip2 = ctx.createOscillator();
+                const g2 = ctx.createGain();
+                bip2.connect(g2); g2.connect(ctx.destination);
+                bip2.type = 'square';
+                bip2.frequency.setValueAtTime(1320, t + 0.08);
+                g2.gain.setValueAtTime(0, t);
+                g2.gain.setValueAtTime(0.14, t + 0.08);
+                g2.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+                bip2.start(t + 0.08); bip2.stop(t + 0.19);
+                const noise = ctx.createBufferSource();
+                const buf = ctx.createBuffer(1, ctx.sampleRate * 0.03, ctx.sampleRate);
+                const d = buf.getChannelData(0);
+                for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (d.length * 0.02));
+                noise.buffer = buf;
+                const nG = ctx.createGain();
+                const hp = ctx.createBiquadFilter();
+                hp.type = 'highpass'; hp.frequency.value = 4000;
+                noise.connect(hp); hp.connect(nG); nG.connect(ctx.destination);
+                nG.gain.setValueAtTime(0.08, t + 0.07);
+                noise.start(t + 0.07);
+            } catch(e) {}
+        },
+
+        _showTraceOnText() {
+            const intro = document.createElement('div');
+            intro.id = 'survieIntro';
+            intro.className = 'survie-intro-text';
+            intro.innerHTML = `TRACE <span class="intro-on">ON</span>`;
+            document.body.appendChild(intro);
+            
+            setTimeout(() => {
+                intro.classList.add('exit');
+                setTimeout(() => {
+                    intro.innerHTML = `ACCOMPLISSEZ VOS OBJECTIFS`;
+                    intro.classList.remove('exit');
+                    intro.classList.add('subtitle');
+                    
+                    setTimeout(() => {
+                        intro.classList.add('exit');
+                        setTimeout(() => intro.remove(), 500);
+                    }, 1800);
+                }, 400);
+            }, 1800);
+        },
+
+        // ═══ ASCENSION COUNTDOWN ═══
+        _startAscensionCountdown(countdownEndsAt) {
+            const existing = document.getElementById('ascensionCountdown');
+            if (existing) existing.remove();
+            
+            const self = this;
+            const overlay = document.createElement('div');
+            overlay.id = 'ascensionCountdown';
+            overlay.className = 'ascension-countdown';
+            overlay.innerHTML = '<div class="asc-cd-number"></div>';
+            document.body.appendChild(overlay);
+            
+            const numEl = overlay.querySelector('.asc-cd-number');
+            const steps = ['3', '2', '1', 'GO'];
+            let lastStep = -1;
+            
+            function tick() {
+                const remaining = countdownEndsAt - Date.now();
+                
+                if (remaining <= 0) {
+                    numEl.classList.remove('pop', 'go');
+                    numEl.style.animation = 'none';
+                    numEl.style.opacity = '0';
+                    overlay.classList.add('fade-out');
+                    setTimeout(() => overlay.remove(), 400);
+                    return;
+                }
+                
+                let step;
+                if (remaining > 3000) step = 0;
+                else if (remaining > 2000) step = 1;
+                else if (remaining > 1000) step = 2;
+                else step = 3;
+                
+                if (step !== lastStep) {
+                    lastStep = step;
+                    numEl.textContent = steps[step];
+                    numEl.classList.remove('pop', 'go');
+                    void numEl.offsetHeight;
+                    numEl.classList.add('pop');
+                    
+                    if (step === 3) {
+                        numEl.classList.remove('pop');
+                        numEl.classList.add('go');
+                        for (let i = 0; i < 2; i++) {
+                            const ring = document.createElement('div');
+                            ring.className = 'asc-cd-ring';
+                            overlay.appendChild(ring);
+                            setTimeout(() => ring.remove(), 900);
+                        }
+                        self._playAscensionGoSound();
+                    }
+                }
+                
+                requestAnimationFrame(tick);
+            }
+            
+            requestAnimationFrame(tick);
+        },
+
+        _playAscensionGoSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const t = ctx.currentTime;
+                const b1 = ctx.createOscillator();
+                const g1 = ctx.createGain();
+                b1.connect(g1); g1.connect(ctx.destination);
+                b1.type = 'square';
+                b1.frequency.setValueAtTime(880, t);
+                g1.gain.setValueAtTime(0.12, t);
+                g1.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+                b1.start(t); b1.stop(t + 0.08);
+                const b2 = ctx.createOscillator();
+                const g2 = ctx.createGain();
+                b2.connect(g2); g2.connect(ctx.destination);
+                b2.type = 'square';
+                b2.frequency.setValueAtTime(1320, t + 0.07);
+                g2.gain.setValueAtTime(0, t);
+                g2.gain.setValueAtTime(0.14, t + 0.07);
+                g2.gain.exponentialRampToValueAtTime(0.001, t + 0.17);
+                b2.start(t + 0.07); b2.stop(t + 0.18);
+                const n = ctx.createBufferSource();
+                const buf = ctx.createBuffer(1, ctx.sampleRate * 0.03, ctx.sampleRate);
+                const d = buf.getChannelData(0);
+                for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (d.length * 0.02));
+                n.buffer = buf;
+                const ng = ctx.createGain();
+                const hp = ctx.createBiquadFilter();
+                hp.type = 'highpass'; hp.frequency.value = 4000;
+                n.connect(hp); hp.connect(ng); ng.connect(ctx.destination);
+                ng.gain.setValueAtTime(0.08, t + 0.06);
+                n.start(t + 0.06);
+            } catch(e) {}
+        },
+
+        // ═══ ASCENSION — Player UI Methods ═══
+        _initAscensionUI() {
+            const screen = document.querySelector('.ascension-player-screen');
+            if (!screen) return;
+            
+            screen.innerHTML = `
+                <div class="asc-player-topbar asc-pre-start">
+                    <div class="asc-topbar-left">
+                        <div class="asc-floor-badge">
+                            <span class="asc-floor-label">ÉTAGE</span>
+                            <span class="asc-floor-num" id="ascPlayerFloorNum">1</span>
+                        </div>
+                        <div class="asc-timer-wrap" id="ascPlayerTimerWrap">
+                            <svg class="asc-timer-svg" viewBox="0 0 44 44" width="36" height="36">
+                                <circle class="asc-timer-bg" cx="22" cy="22" r="18"/>
+                                <circle class="asc-timer-fill" id="ascPlayerTimerFill" cx="22" cy="22" r="18"/>
+                            </svg>
+                            <div class="asc-timer-text" id="ascPlayerTimerText"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="asc-floor-title asc-pre-start" id="ascPlayerFloorTitle"></div>
+                <div class="asc-player-content" id="ascPlayerContent"></div>
+                <div class="asc-player-tower asc-pre-start">
+                    <div class="asc-tower-crown">♛</div>
+                    <div class="asc-tower-track">
+                        <div class="asc-tower-marks" id="ascPlayerTowerMarks"></div>
+                        <div class="asc-tower-players" id="ascPlayerTowerPlayers"></div>
+                    </div>
+                </div>
+            `;
+            
+            const marks = document.getElementById('ascPlayerTowerMarks');
+            if (marks) {
+                for (let i = 1; i < this.ascension.floors; i++) {
+                    const m = document.createElement('div');
+                    m.className = 'asc-tower-mark';
+                    m.style.bottom = (i / this.ascension.floors * 100) + '%';
+                    if (i % 5 === 0) { m.classList.add('major'); m.dataset.floor = i; }
+                    marks.appendChild(m);
+                }
+            }
+        },
+
+        _renderAscensionPlayerFloor(floorData, floorIndex) {
+            const content = document.getElementById('ascPlayerContent');
+            const floorNum = document.getElementById('ascPlayerFloorNum');
+            const floorTitle = document.getElementById('ascPlayerFloorTitle');
+            
+            if (floorNum) floorNum.textContent = floorIndex + 1;
+            
+            // Animate floor title + subtitle
+            if (floorTitle) {
+                floorTitle.classList.remove('pop');
+                const desc = this._getAscFloorDesc(floorData);
+                floorTitle.innerHTML = '<span class="asc-title-main">' + (floorData?.label || '') + '</span>' +
+                    (desc ? '<span class="asc-title-sub">' + desc + '</span>' : '');
+                void floorTitle.offsetHeight;
+                floorTitle.classList.add('pop');
+            }
+            
+            if (!content || !floorData) return;
+            
+            // Content will be filled by actual mini-game renderers later
+            content.innerHTML = '';
+        },
+
+        _getAscFloorDesc(data) {
+            switch (data.type) {
+                case 'guess': return 'Devinez le nom de ' + data.totalToGuess + ' personnages';
+                case 'target': return 'Trouvez ' + data.totalTargets + ' cibles';
+                case 'intruder': return 'Trouvez les 3 intrus de ' + data.anime;
+                case 'wordle': return 'Devinez le mot de ' + data.wordLength + ' lettres';
+                case 'silhouette': return 'Identifiez le personnage';
+                case 'order': return 'Classez les arcs de ' + data.anime;
+                case 'match': return 'Associez chaque élément de gauche avec celui de droite';
+                default: return '';
+            }
+        },
+
+        _startAscensionPlayerTimer(endTime) {
+            this._stopAscensionPlayerTimer();
+            
+            const fill = document.getElementById('ascPlayerTimerFill');
+            const text = document.getElementById('ascPlayerTimerText');
+            const wrap = document.getElementById('ascPlayerTimerWrap');
+            if (!fill || !text) return;
+            if (wrap) wrap.style.opacity = '1';
+            
+            const circumference = 2 * Math.PI * 18;
+            fill.style.strokeDasharray = circumference;
+            const timer = this.ascension.timer;
+            const self = this;
+            
+            function tick() {
+                const remaining = Math.max(0, endTime - Date.now());
+                const pct = remaining / (timer * 1000);
+                fill.style.strokeDashoffset = circumference * (1 - pct);
+                text.textContent = Math.ceil(remaining / 1000);
+                if (remaining <= 0) { text.textContent = '0'; return; }
+                self._ascTimerRAF = requestAnimationFrame(tick);
+            }
+            this._ascTimerRAF = requestAnimationFrame(tick);
+        },
+
+        _stopAscensionPlayerTimer() {
+            if (this._ascTimerRAF) {
+                cancelAnimationFrame(this._ascTimerRAF);
+                this._ascTimerRAF = null;
+            }
+        },
+
+        _updateAscensionPlayerTower() {
+            const el = document.getElementById('ascPlayerTowerPlayers');
+            if (!el || !this.ascension.playerProgress) return;
+            
+            const COLORS = ['#50dc78', '#ef7844', '#788cff', '#ff50a0', '#ffd700', '#00d4ff', '#c084fc', '#f97316'];
+            const progress = this.ascension.playerProgress;
+            let maxFloor = 0;
+            progress.forEach(p => { if (p.floor > maxFloor) maxFloor = p.floor; });
+            
+            el.innerHTML = '';
+            progress.forEach((p, i) => {
+                const color = COLORS[i % COLORS.length];
+                const pct = this.ascension.floors > 0 ? (p.floor / this.ascension.floors * 100) : 0;
+                const isLeader = p.floor === maxFloor && maxFloor > 0;
+                const isMe = p.twitchId === this.twitchId;
+                
+                const div = document.createElement('div');
+                div.className = 'asc-tower-player' + (isLeader ? ' leader' : '') + (isMe ? ' me' : '');
+                div.style.bottom = pct + '%';
+                div.style.setProperty('--pcolor', color);
+                const offset = (i % 2 === 0) ? -12 : 12;
+                div.style.left = 'calc(50% + ' + offset + 'px)';
+                div.innerHTML = '<span class="asc-tower-pname">' + (isMe ? 'Vous' : p.username) + '</span><div class="asc-tower-pdot" style="background:' + color + ';box-shadow:0 0 8px ' + color + ';"></div>';
+                el.appendChild(div);
+            });
+        },
+
+        _flashAscensionPlayerSuccess() {
+            const flash = document.createElement('div');
+            flash.className = 'asc-success-flash';
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 600);
+        },
+
+        _showAscensionPlayerPodium(podium, winner) {
+            const content = document.getElementById('ascPlayerContent');
+            if (!content) return;
+            
+            const rows = podium.slice(0, 5).map((p, i) => {
+                const isMe = p.twitchId === this.twitchId;
+                return '<div class="asc-podium-row ' + (i === 0 ? 'winner' : '') + (isMe ? ' me' : '') + '">' +
+                    '<span class="asc-podium-rank">' + (i === 0 ? '♛' : (i + 1)) + '</span>' +
+                    '<span class="asc-podium-name">' + (isMe ? 'Vous' : p.username) + '</span>' +
+                    '<span class="asc-podium-floor">Étage ' + p.floor + '</span></div>';
+            }).join('');
+            
+            content.innerHTML = '<div class="asc-podium"><div class="asc-podium-title">' + 
+                (winner ? winner.username + ' remporte la partie !' : 'Partie terminée') + 
+                '</div><div class="asc-podium-list">' + rows + '</div></div>';
+        },
+
         // ═══ QUEST COMPLETE CENTER TEXT ═══
         _showQuestCompleteText(completed, total) {
             const existing = document.getElementById('survieQuestComplete');
@@ -4898,25 +5854,118 @@ createApp({
 
         // ═══ INTRO SYSTEM ═══
         _showSurvieIntro() {
-            const intro = document.createElement('div');
-            intro.id = 'survieIntro';
-            intro.className = 'survie-intro-text';
-            intro.innerHTML = `TRACE <span class="intro-on">ON</span>`;
-            document.body.appendChild(intro);
-            
-            setTimeout(() => {
-                intro.classList.add('exit');
-                setTimeout(() => {
-                    intro.innerHTML = `ACCOMPLISSEZ VOS OBJECTIFS`;
-                    intro.classList.remove('exit');
-                    intro.classList.add('subtitle');
-                    
+            const SLIDE_MS = 3000;
+            const TOTAL = 4;
+            let current = 0;
+
+            const existing = document.getElementById('survieTutoOverlay');
+            if (existing) existing.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'survieTutoOverlay';
+            overlay.className = 'survie-tuto-overlay';
+            overlay.innerHTML = `
+                <div class="survie-tuto-step" id="survTutoStep1">
+                    <div class="survie-tuto-visual">
+                        <div class="survie-tuto-keys">
+                            <div class="survie-tuto-key stk-up">Z</div>
+                            <div class="survie-tuto-key stk-left">Q</div>
+                            <div class="survie-tuto-key stk-down">S</div>
+                            <div class="survie-tuto-key stk-right">D</div>
+                        </div>
+                    </div>
+                    <div class="survie-tuto-title">Explorez la map</div>
+                    <div class="survie-tuto-desc">Utilisez <span class="sthl">ZQSD</span>, les <span class="sthl">flèches</span> ou <span class="sthl">cliquez</span> pour vous déplacer. Sur mobile, <span class="sthl">touchez</span> l'écran.</div>
+                    <div class="survie-tuto-timer"><div class="survie-tuto-timer-fill" id="survTutoTimer1"></div></div>
+                </div>
+                <div class="survie-tuto-step" id="survTutoStep2">
+                    <div class="survie-tuto-visual">
+                        <div class="survie-tuto-ekey">E</div>
+                    </div>
+                    <div class="survie-tuto-title">Interagissez</div>
+                    <div class="survie-tuto-desc">Appuyez <span class="sthl">E</span> pour parler aux <span class="sthl">personnages</span>, interagir avec des <span class="sthl">structures</span> et <span class="sthl">ramasser des objets</span>. Sur mobile, <span class="sthl">touchez</span> directement.</div>
+                    <div class="survie-tuto-timer"><div class="survie-tuto-timer-fill" id="survTutoTimer2"></div></div>
+                </div>
+                <div class="survie-tuto-step" id="survTutoStep3">
+                    <div class="survie-tuto-visual">
+                        <div class="survie-tuto-boosts">
+                            <div class="survie-tuto-boost-item">
+                                <div class="survie-tuto-orb st-speed"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(100,200,255,0.8)" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+                                <div class="survie-tuto-boost-lbl st-speed">Vitesse</div>
+                            </div>
+                            <div class="survie-tuto-boosts-sep"></div>
+                            <div class="survie-tuto-boost-item">
+                                <div class="survie-tuto-orb st-malus"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,80,80,0.8)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></div>
+                                <div class="survie-tuto-boost-lbl st-malus">Malus</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="survie-tuto-title">Boosts & Malus</div>
+                    <div class="survie-tuto-desc">Ramassez des <span class="sthl">boosts</span> pour accélérer et des <span class="sthl">malus</span> pour ralentir vos adversaires. Ils apparaissent sur toute la carte.</div>
+                    <div class="survie-tuto-timer"><div class="survie-tuto-timer-fill" id="survTutoTimer3"></div></div>
+                </div>
+                <div class="survie-tuto-step" id="survTutoStep4">
+                    <div class="survie-tuto-visual">
+                        <div class="survie-tuto-quests">
+                            <div class="survie-tuto-qcard stq-1"><div class="survie-tuto-qdot"></div><span>Livrer le parchemin</span></div>
+                            <div class="survie-tuto-qcard stq-2"><div class="survie-tuto-qdot"></div><span>Réunir l'équipe</span></div>
+                            <div class="survie-tuto-qcard stq-3"><div class="survie-tuto-qdot"></div><span>Trouver le trésor</span></div>
+                            <div class="survie-tuto-qcard stq-4"><div class="survie-tuto-qdot"></div><span>Résoudre l'énigme</span></div>
+                        </div>
+                    </div>
+                    <div class="survie-tuto-title">Complétez vos quêtes</div>
+                    <div class="survie-tuto-desc">Vos objectifs s'affichent <span class="sthl">en haut à gauche</span>. Le premier joueur à terminer toutes ses quêtes <span class="sthl">remporte la partie</span>.</div>
+                    <div class="survie-tuto-timer"><div class="survie-tuto-timer-fill" id="survTutoTimer4"></div></div>
+                </div>
+                <div class="survie-tuto-pips">
+                    <div class="survie-tuto-pip st-active"></div>
+                    <div class="survie-tuto-pip"></div>
+                    <div class="survie-tuto-pip"></div>
+                    <div class="survie-tuto-pip"></div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            requestAnimationFrame(() => overlay.classList.add('active'));
+
+            const self = this;
+            function advance() {
+                if (current >= TOTAL - 1) {
+                    self._playSurvieStartSound();
+                    overlay.classList.add('exiting');
                     setTimeout(() => {
-                        intro.classList.add('exit');
-                        setTimeout(() => intro.remove(), 500);
-                    }, 1800);
-                }, 400);
-            }, 1800);
+                        overlay.remove();
+                        if (self._survieCanvas) self._survieCanvas.frozen = false;
+                        // Show "TRACE ON" then "ACCOMPLISSEZ VOS OBJECTIFS"
+                        self._showTraceOnText();
+                    }, 600);
+                    return;
+                }
+                const curEl = document.getElementById('survTutoStep' + (current + 1));
+                if (curEl) curEl.classList.add('exiting');
+                setTimeout(() => {
+                    if (curEl) curEl.classList.remove('active', 'exiting');
+                    current++;
+                    const nextEl = document.getElementById('survTutoStep' + (current + 1));
+                    if (nextEl) nextEl.classList.add('active');
+                    const timer = document.getElementById('survTutoTimer' + (current + 1));
+                    if (timer) { timer.style.animation = 'none'; void timer.offsetHeight; timer.style.animation = 'survTutoShrink ' + SLIDE_MS + 'ms linear forwards'; }
+                    document.querySelectorAll('.survie-tuto-pip').forEach((p, i) => {
+                        p.classList.remove('st-active', 'st-done');
+                        if (i === current) p.classList.add('st-active');
+                        else if (i < current) p.classList.add('st-done');
+                    });
+                    setTimeout(advance, SLIDE_MS);
+                }, 250);
+            }
+
+            // 1s delay before first slide appears
+            setTimeout(() => {
+                const firstStep = document.getElementById('survTutoStep1');
+                if (firstStep) firstStep.classList.add('active');
+                const firstTimer = document.getElementById('survTutoTimer1');
+                if (firstTimer) { firstTimer.style.animation = 'none'; void firstTimer.offsetHeight; firstTimer.style.animation = 'survTutoShrink ' + SLIDE_MS + 'ms linear forwards'; }
+                setTimeout(advance, SLIDE_MS);
+            }, 1000);
         },
 
         // ═══ VICTORY SYSTEM ═══

@@ -345,6 +345,14 @@ class SurvieCanvas {
         this.shakeOffsetX = 0;
         this.shakeOffsetY = 0;
 
+        // Spectator mode (admin only)
+        this.spectatorTarget = null;
+        this.spectatorIndex = 0;
+        this.onSpectatorChange = options.onSpectatorChange || null;
+
+        // Frozen (tutorial — block all input)
+        this.frozen = false;
+
         // NPCs
         this.npcs = [];
         this.npcImages = new Map(); // url -> Image
@@ -384,6 +392,7 @@ class SurvieCanvas {
         // Touch handlers (mobile)
         this._onTouchStart = (e) => {
             e.preventDefault();
+            if (this.frozen) return;
             // Check if touch is on a nearby NPC (tap to interact on mobile)
             // Tap on item to pick up
             if (this.nearestItem && !this.nearestItem.picked && !this.dialogueOpen) {
@@ -435,6 +444,7 @@ class SurvieCanvas {
         // Keyboard movement (ZQSD + arrows + E for interact)
         this.keysDown = new Set();
         this._onKeyDown = (e) => {
+            if (this.frozen) return;
             const key = e.key.toLowerCase();
             if (['z', 'q', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
                 this.keysDown.add(key);
@@ -497,6 +507,19 @@ class SurvieCanvas {
             this.canvas.addEventListener('touchcancel', this._onTouchEnd, { passive: false });
             window.addEventListener('keydown', this._onKeyDown);
             window.addEventListener('keyup', this._onKeyUp);
+        } else {
+            // Admin spectator: arrow keys to switch players
+            this._onSpectatorKey = (e) => {
+                const key = e.key.toLowerCase();
+                if (key === 'arrowright' || key === 'd') {
+                    e.preventDefault();
+                    this.spectatorNext();
+                } else if (key === 'arrowleft' || key === 'q' || key === 'a') {
+                    e.preventDefault();
+                    this.spectatorPrev();
+                }
+            };
+            window.addEventListener('keydown', this._onSpectatorKey);
         }
         this.running = true;
         this.lastTime = performance.now();
@@ -518,15 +541,18 @@ class SurvieCanvas {
         this.canvas.removeEventListener('touchcancel', this._onTouchEnd);
         window.removeEventListener('keydown', this._onKeyDown);
         window.removeEventListener('keyup', this._onKeyUp);
+        if (this._onSpectatorKey) window.removeEventListener('keydown', this._onSpectatorKey);
         this.keysDown.clear();
     }
 
     _handleMouseDown(e) {
+        if (this.frozen) return;
         this.mouseDown = true;
         this._updateMouseTarget(e);
     }
 
     _handleMouseMove(e) {
+        if (this.frozen) return;
         if (this.mouseDown) {
             this._updateMouseTarget(e);
         }
@@ -1289,21 +1315,60 @@ class SurvieCanvas {
         aura.updatePosition(x * MAP_WIDTH, y * MAP_HEIGHT, vx, vy);
     }
 
+    // ═══ Spectator system ═══
+    
+    spectatorNext() {
+        if (this.auras.size === 0) return;
+        const ids = Array.from(this.auras.keys());
+        this.spectatorIndex = (this.spectatorIndex + 1) % ids.length;
+        this.spectatorTarget = ids[this.spectatorIndex];
+        if (this.onSpectatorChange) {
+            const aura = this.auras.get(this.spectatorTarget);
+            this.onSpectatorChange(this.spectatorTarget, aura?.username || '???');
+        }
+    }
+    
+    spectatorPrev() {
+        if (this.auras.size === 0) return;
+        const ids = Array.from(this.auras.keys());
+        this.spectatorIndex = (this.spectatorIndex - 1 + ids.length) % ids.length;
+        this.spectatorTarget = ids[this.spectatorIndex];
+        if (this.onSpectatorChange) {
+            const aura = this.auras.get(this.spectatorTarget);
+            this.onSpectatorChange(this.spectatorTarget, aura?.username || '???');
+        }
+    }
+    
+    spectatorAutoSelect() {
+        if (this.spectatorTarget && this.auras.has(this.spectatorTarget)) return;
+        if (this.auras.size > 0) {
+            const ids = Array.from(this.auras.keys());
+            this.spectatorIndex = 0;
+            this.spectatorTarget = ids[0];
+            if (this.onSpectatorChange) {
+                const aura = this.auras.get(this.spectatorTarget);
+                this.onSpectatorChange(this.spectatorTarget, aura?.username || '???');
+            }
+        }
+    }
+
     _updateCamera() {
         const local = this.auras.get(this.localTwitchId);
         const vw = this.w / this.zoom;
         const vh = this.h / this.zoom;
         if (!local) {
-            // Admin: smooth follow average of all players
-            if (this.auras.size > 0) {
-                let ax = 0, ay = 0;
-                this.auras.forEach(a => { ax += a.x; ay += a.y; });
-                ax /= this.auras.size;
-                ay /= this.auras.size;
-                const targetCamX = ax - vw / 2;
-                const targetCamY = ay - vh / 2;
-                this.camX += (targetCamX - this.camX) * 0.05;
-                this.camY += (targetCamY - this.camY) * 0.05;
+            // Admin spectator: follow a specific player
+            if (this.isAdmin && this.auras.size > 0) {
+                // Auto-select first player if no target
+                this.spectatorAutoSelect();
+                
+                const target = this.auras.get(this.spectatorTarget);
+                if (target) {
+                    const targetCamX = target.x - vw / 2;
+                    const targetCamY = target.y - vh / 2;
+                    this.camX += (targetCamX - this.camX) * 0.08;
+                    this.camY += (targetCamY - this.camY) * 0.08;
+                }
             }
         } else {
             // Player: always exactly centered
@@ -1528,7 +1593,7 @@ class SurvieCanvas {
         // Update local player movement
         if (this.localTwitchId && !this.isAdmin) {
             const local = this.auras.get(this.localTwitchId);
-            if (local) {
+            if (local && !this.frozen) {
                 // Keyboard movement (ZQSD + arrows)
                 let kx = 0, ky = 0;
                 if (this.keysDown.has('z') || this.keysDown.has('arrowup')) ky = -1;

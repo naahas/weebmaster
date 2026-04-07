@@ -7,7 +7,17 @@ const express = require('express');
 const session = require('express-session');
 const { Server } = require('socket.io');
 const axios = require('axios');
-const { db, supabase, SERIES_FILTERS, getFilterSeries } = require('./dbs');
+const { db, supabase, SERIES_FILTERS, getFilterSeries, COIN_REWARDS } = require('./dbs');
+const { 
+    POLL_DATA, POLL_CONFIG, createPollState, startPollGame, startCurrentMatch,
+    registerVote, endCurrentVote, nextMatch, endPollGame,
+    getPollStateForClient, resetPollState, getPollCategories, 
+    getValidBracketSizes, getCharactersForCategory, resolveTie
+} = require('./server-poll');
+const {
+    createAscensionState, startAscensionGame, resetAscensionState,
+    registerAscensionSocketHandlers, getAscensionStateForClient,
+} = require('./server-ascension');
 
 const app = express();
 const PORT = process.env.PORT || 7000;
@@ -1452,10 +1462,24 @@ app.get('/game/state', (req, res) => {
             groundItems: gameState.survie.groundItems || [],
             boosts: gameState.survie.boosts || [],
             questItems: QUEST_ITEMS,
+            gameStartedAt: gameState.survie.gameStartedAt || null,
             playerQuestStates: gameState.survie.playerQuestStates ? Object.fromEntries(
                 Object.entries(gameState.survie.playerQuestStates).map(([tid, pqs]) => [tid, { quests: pqs.quests, pickedItems: pqs.pickedItems || [], inventory: pqs.inventory || [] }])
             ) : {},
-        } : null
+        } : null,
+        // 🗳️ Mode Poll
+        poll: gameState.lobbyMode === 'poll' && gameState.poll.active 
+            ? getPollStateForClient(gameState, req.session.twitchId)
+            : null,
+        // 🏔️ Mode Ascension
+        ascension: gameState.lobbyMode === 'ascension' && gameState.ascension.active
+            ? {
+                active: true,
+                floors: gameState.ascension.floors,
+                timer: gameState.ascension.timer,
+                countdownEndsAt: gameState.ascension.countdownEndsAt,
+            }
+            : null
     });
 });
 
@@ -1469,6 +1493,7 @@ app.use(express.static('src/img'));
 app.use(express.static('src/img/questionpic'));
 app.use(express.static('src/img/collectpic'));
 app.use(express.static('src/img/tracepic'));
+app.use(express.static('src/img/pollpic'));
 app.use(express.static('src/img/avatar'));
 app.use(express.static('src/script'));
 
@@ -1603,7 +1628,13 @@ const gameState = {
         toEliminateCount: 0,
         timer: 30,                  // Réglable par le streamer
         npcs: []                    // Positions randomisées à chaque partie
-    }
+    },
+    
+    // ============================================
+    // 🗳️ POLL - État du mode
+    // ============================================
+    poll: createPollState(),
+    ascension: createAscensionState()
 };
 
 // ============================================
@@ -2315,6 +2346,12 @@ app.post('/admin/toggle-game', async (req, res) => {
             console.log('🎮 Survie/Trace state reset');
         }
 
+        // 🗳️ Reset Poll state (clear any active timers)
+        resetPollState(gameState);
+
+        // 🏔️ Reset Ascension state
+        resetAscensionState(gameState);
+
         io.emit('game-deactivated');
     }
 
@@ -2736,6 +2773,61 @@ app.post('/admin/start-game', async (req, res) => {
             }
         } catch (error) {
             console.error('❌ Erreur démarrage Survie:', error);
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    // 🗳️ MODE POLL - Démarrage spécial
+    if (gameState.lobbyMode === 'poll') {
+        const { pollCategory, pollPerMatch, pollBracketSize, pollShowNames, pollVoteTimer } = req.body || {};
+        
+        try {
+            const result = startPollGame(gameState, io, {
+                category: pollCategory || 'all',
+                perMatch: parseInt(pollPerMatch) || 2,
+                bracketSize: parseInt(pollBracketSize) || 16,
+                showNames: pollShowNames === true || pollShowNames === 'true',
+                voteTimer: parseInt(pollVoteTimer) || 15
+            });
+            
+            if (result.success) {
+                addLog('poll-start', { 
+                    category: gameState.poll.categoryName, 
+                    bracketSize: gameState.poll.bracketSize,
+                    perMatch: gameState.poll.perMatch,
+                    players: gameState.players.size
+                });
+                return res.json({ success: true, mode: 'poll' });
+            } else {
+                return res.status(400).json({ success: false, error: result.error });
+            }
+        } catch (error) {
+            console.error('❌ Erreur démarrage Poll:', error);
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    // 🏔️ MODE ASCENSION - Démarrage spécial
+    if (gameState.lobbyMode === 'ascension') {
+        const { ascensionFloors, ascensionTimer, ascensionSync } = req.body || {};
+        
+        try {
+            gameState.inProgress = true;
+            const result = startAscensionGame(gameState, io, {
+                floors: parseInt(ascensionFloors) || 15,
+                timer: parseInt(ascensionTimer) || 15,
+                syncEpreuves: ascensionSync !== false,
+            });
+            
+            if (result.success) {
+                return res.json({ success: true, mode: 'ascension' });
+            } else {
+                gameState.inProgress = false;
+                return res.status(400).json({ success: false, error: result.error });
+            }
+        } catch (error) {
+            console.error('❌ Erreur démarrage Ascension:', error);
+            gameState.inProgress = false;
             return res.status(500).json({ success: false, error: error.message });
         }
     }
@@ -4327,6 +4419,9 @@ async function endGameByPoints() {
 
                 addLog('game-end', { winner: winner.username });
 
+                // 💰 Distribuer les S-Coins
+                const coinRewards = await db.distributeGameCoins(sortedPlayers, gameState.initialPlayerCount);
+
                 const winnerUser = await db.getUserByTwitchId(winner.twitchId);
 
                 const winnerData = {
@@ -5050,6 +5145,9 @@ async function endGameWithTie() {
         console.log(`⚠️ Stats NON comptabilisées (égalité, ${gameState.initialPlayerCount} < ${MIN_PLAYERS_FOR_STATS} joueurs)`);
     }
 
+    // 💰 Distribuer les S-Coins
+    await db.distributeGameCoins(sortedPlayers, gameState.initialPlayerCount);
+
     const winnerData = {
         tie: true,
         winners: winners.map(w => ({
@@ -5140,6 +5238,10 @@ async function endGame(winner) {
             } else {
                 console.log(`⚠️ Stats NON comptabilisées (mode vies, ${gameState.initialPlayerCount} < ${MIN_PLAYERS_FOR_STATS} joueurs)`);
             }
+
+            // 💰 Distribuer les S-Coins
+            const allPlayers = [winner, ...Array.from(gameState.players.values()).filter(p => p !== winner)];
+            const coinRewards = await db.distributeGameCoins(allPlayers, gameState.initialPlayerCount);
 
             addLog('game-end', { winner: winner.username });
 
@@ -5298,6 +5400,14 @@ async function endGameRivalry(winningTeam) {
             } else {
                 console.log(`⚠️ Stats équipe NON comptabilisées (${savedInitialPlayerCount} < ${MIN_PLAYERS_FOR_TEAM_STATS} joueurs ou égalité)`);
             }
+
+            // 💰 Distribuer les S-Coins (trié par team gagnante en premier)
+            const sortedForCoins = [...playersData].sort((a, b) => {
+                if (a.team === winningTeam && b.team !== winningTeam) return -1;
+                if (a.team !== winningTeam && b.team === winningTeam) return 1;
+                return (b.correctAnswers || 0) - (a.correctAnswers || 0);
+            });
+            await db.distributeGameCoins(sortedForCoins, savedInitialPlayerCount);
         } catch (dbError) {
             console.error('⚠️ Erreur DB post-émission (non bloquante):', dbError.message);
         }
@@ -5561,15 +5671,25 @@ app.get('/profile/:twitchId', async (req, res) => {
 
         const badges = await db.getUserBadges(twitchId);
         const unlockedTitles = await db.getUserUnlockedTitles(twitchId);
+        const purchases = await db.getUserPurchases(twitchId);
         const currentTitle = user.current_title_id
             ? await db.getTitleById(user.current_title_id)
             : await db.getTitleById(1); // Novice par défaut
+
+        // Calculer le titre affiché (custom ou classique)
+        const displayTitle = (user.equipped_title_prefix || user.equipped_title_suffix)
+            ? [user.equipped_title_prefix, user.equipped_title_suffix].filter(Boolean).join(' ')
+            : (currentTitle ? currentTitle.title_name : 'Novice');
 
         res.json({
             user: {
                 twitch_id: user.twitch_id,
                 username: user.username,
-                avatar_url: user.avatar_url || '/img/avatars/novice.png', // 🔥 NOUVEAU
+                avatar_url: user.avatar_url || '/img/avatars/novice.png',
+                coins: user.coins || 0,
+                equipped_title_prefix: user.equipped_title_prefix || null,
+                equipped_title_suffix: user.equipped_title_suffix || null,
+                display_title: displayTitle,
                 total_games_played: user.total_games_played,
                 total_victories: user.total_victories,
                 last_placement: user.last_placement || null,
@@ -5591,7 +5711,8 @@ app.get('/profile/:twitchId', async (req, res) => {
             titles: {
                 current: currentTitle,
                 unlocked: unlockedTitles
-            }
+            },
+            purchases: purchases.map(p => p.item_id)
         });
     } catch (error) {
         console.error('❌ Erreur profil:', error);
@@ -5649,6 +5770,10 @@ app.post('/profile/update-title', async (req, res) => {
             return res.status(400).json({ error: 'Paramètres manquants' });
         }
 
+        // Quand on équipe un titre classique, on retire les titres custom
+        await db.equipTitlePrefix(twitchId, null);
+        await db.equipTitleSuffix(twitchId, null);
+
         const updatedUser = await db.updateUserTitle(twitchId, titleId);
         const newTitle = await db.getTitleById(titleId);
 
@@ -5659,6 +5784,38 @@ app.post('/profile/update-title', async (req, res) => {
         });
     } catch (error) {
         console.error('❌ Erreur update titre:', error);
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Équiper un préfixe custom
+app.post('/profile/equip-prefix', async (req, res) => {
+    try {
+        const { twitchId, prefix } = req.body;
+        if (!twitchId) return res.status(400).json({ error: 'Paramètres manquants' });
+
+        const updatedUser = await db.equipTitlePrefix(twitchId, prefix || null);
+        const fullTitle = await db.getFullTitle(twitchId);
+
+        res.json({ success: true, user: updatedUser, displayTitle: fullTitle });
+    } catch (error) {
+        console.error('❌ Erreur equip prefix:', error);
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Équiper un suffixe custom
+app.post('/profile/equip-suffix', async (req, res) => {
+    try {
+        const { twitchId, suffix } = req.body;
+        if (!twitchId) return res.status(400).json({ error: 'Paramètres manquants' });
+
+        const updatedUser = await db.equipTitleSuffix(twitchId, suffix || null);
+        const fullTitle = await db.getFullTitle(twitchId);
+
+        res.json({ success: true, user: updatedUser, displayTitle: fullTitle });
+    } catch (error) {
+        console.error('❌ Erreur equip suffix:', error);
         res.status(400).json({ error: error.message });
     }
 });
@@ -5723,6 +5880,62 @@ app.get('/leaderboard', async (req, res) => {
     }
 });
 
+// ============================================
+// S-COINS & BOUTIQUE
+// ============================================
+
+// Récupérer le solde S-Coins
+app.get('/coins/:twitchId', async (req, res) => {
+    try {
+        const coins = await db.getUserCoins(req.params.twitchId);
+        res.json({ coins });
+    } catch (error) {
+        console.error('❌ Erreur coins:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Récupérer les articles de la boutique
+app.get('/shop', async (req, res) => {
+    try {
+        const items = await db.getShopItems();
+        const twitchId = req.query.twitchId;
+
+        let purchases = [];
+        if (twitchId) {
+            purchases = await db.getUserPurchases(twitchId);
+        }
+
+        const purchasedIds = purchases.map(p => p.item_id);
+
+        const itemsWithOwnership = items.map(item => ({
+            ...item,
+            owned: purchasedIds.includes(item.id)
+        }));
+
+        res.json(itemsWithOwnership);
+    } catch (error) {
+        console.error('❌ Erreur shop:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Acheter un article
+app.post('/shop/purchase', async (req, res) => {
+    try {
+        const { twitchId, itemId } = req.body;
+
+        if (!twitchId || !itemId) {
+            return res.status(400).json({ error: 'Paramètres manquants' });
+        }
+
+        const result = await db.purchaseItem(twitchId, itemId);
+        res.json(result);
+    } catch (error) {
+        console.error('❌ Erreur achat:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // Récupérer les parties récentes
 app.get('/api/recent-games', async (req, res) => {
@@ -7379,8 +7592,60 @@ io.on('connection', (socket) => {
     socket.on('register-authenticated', (data) => {
         authenticatedUsers.set(socket.id, {
             twitchId: data.twitchId,
-            username: data.username
+            username: data.username,
+            avatar: data.avatar || null
         });
+        
+        // 🔥 FIX: Auto-remap socket.id if player already in gameState.players with old socket
+        if (data.twitchId && gameState.isActive) {
+            for (const [oldSocketId, player] of gameState.players.entries()) {
+                if (player.twitchId === data.twitchId && oldSocketId !== socket.id) {
+                    // Transfer player entry to new socket.id
+                    const previousAnswer = gameState.answers.get(oldSocketId);
+                    const oldBonusData = gameState.playerBonuses.get(oldSocketId);
+                    const oldChallengesData = gameState.playerChallenges ? gameState.playerChallenges.get(oldSocketId) : null;
+                    
+                    gameState.players.delete(oldSocketId);
+                    gameState.answers.delete(oldSocketId);
+                    
+                    player.socketId = socket.id;
+                    gameState.players.set(socket.id, player);
+                    
+                    if (previousAnswer) gameState.answers.set(socket.id, previousAnswer);
+                    if (oldBonusData) {
+                        gameState.playerBonuses.set(socket.id, oldBonusData);
+                        gameState.playerBonuses.delete(oldSocketId);
+                    }
+                    if (oldChallengesData) {
+                        gameState.playerChallenges.set(socket.id, oldChallengesData);
+                        gameState.playerChallenges.delete(oldSocketId);
+                    }
+                    
+                    // Cancel pending removal
+                    if (player.pendingRemoval) {
+                        clearTimeout(player.pendingRemoval);
+                        delete player.pendingRemoval;
+                    }
+                    if (player.pendingDisconnectLog) {
+                        clearTimeout(player.pendingDisconnectLog);
+                        delete player.pendingDisconnectLog;
+                    }
+                    delete player.disconnectedAt;
+                    delete player.disconnectedSocketId;
+                    
+                    // Update survie player socketId too
+                    if (gameState.survie?.alivePlayers) {
+                        const surviePlayer = gameState.survie.alivePlayers.find(p => p.twitchId === data.twitchId);
+                        if (surviePlayer) surviePlayer.socketId = socket.id;
+                    }
+                    
+                    console.log(`🔄 Auto-remap: ${data.username} ${oldSocketId} → ${socket.id}`);
+                    broadcastLobbyUpdate();
+                    break;
+                }
+            }
+        }
+        
         console.log(`✅ Utilisateur authentifié enregistré: ${data.username} (${socket.id})`);
     });
 
@@ -7639,8 +7904,8 @@ io.on('connection', (socket) => {
 
     // Reconnexion d'un joueur (nouveau événement)
     socket.on('reconnect-player', (data) => {
-        if (!gameState.inProgress) {
-            return socket.emit('error', { message: 'Aucune partie en cours' });
+        if (!gameState.isActive) {
+            return socket.emit('error', { message: 'Aucune partie active' });
         }
 
         let existingPlayer = null;
@@ -9370,6 +9635,105 @@ io.on('connection', (socket) => {
         }, respawnDelay);
     });
 
+    // ═══════════════════════════════════════════
+    // 🗳️ POLL - Socket Events
+    // ═══════════════════════════════════════════
+    
+    // Admin: récupérer les catégories disponibles
+    socket.on('poll-get-categories', () => {
+        socket.emit('poll-categories', getPollCategories());
+    });
+    
+    // Admin: récupérer les tailles de bracket valides
+    socket.on('poll-get-bracket-sizes', (data) => {
+        const sizes = getValidBracketSizes(data.category, data.perMatch || 2);
+        socket.emit('poll-bracket-sizes', { sizes });
+    });
+    
+    // Admin: lancer le premier match
+    socket.on('poll-start-first-match', () => {
+        if (gameState.lobbyMode !== 'poll' || !gameState.poll.active) return;
+        // Track this socket as the admin
+        gameState.poll._adminSocketId = socket.id;
+        startCurrentMatch(gameState, io);
+    });
+    
+    // Joueur: voter
+    socket.on('poll-vote', (data) => {
+        if (gameState.lobbyMode !== 'poll' || !gameState.poll.active) return;
+        
+        // Get twitchId: try player map, then authenticatedUsers, then admin fallback
+        let twitchId = null;
+        let voterName = null;
+        let voterAvatar = null;
+        const player = gameState.players.get(socket.id);
+        if (player) {
+            twitchId = player.twitchId;
+            voterName = player.username;
+            voterAvatar = player.avatarUrl || null;
+        } else {
+            const authUser = authenticatedUsers.get(socket.id);
+            if (authUser) {
+                twitchId = authUser.twitchId;
+                voterName = authUser.username;
+                voterAvatar = authUser.avatar || null;
+            } else if (gameState.poll._adminSocketId === socket.id) {
+                // Admin fallback — not in players or authenticatedUsers but is the admin
+                twitchId = 'admin_' + socket.id;
+                voterName = 'Admin';
+                voterAvatar = null;
+            }
+        }
+        if (!twitchId) return;
+        
+        const result = registerVote(gameState, io, twitchId, data.characterId, {
+            username: voterName || 'Joueur',
+            avatar: voterAvatar || null
+        });
+        if (result.success) {
+            socket.emit('poll-vote-confirmed', { characterId: data.characterId });
+            // Broadcast vote notification to all players (except the voter)
+            socket.broadcast.emit('poll-vote-notif', {
+                username: voterName || 'Joueur',
+                avatar: voterAvatar || null
+            });
+        }
+    });
+    
+    // Admin: passer au match suivant
+    socket.on('poll-next-match', () => {
+        if (gameState.lobbyMode !== 'poll' || !gameState.poll.active) return;
+        nextMatch(gameState, io);
+    });
+    
+    // Reconnexion
+    socket.on('poll-reconnect', (data) => {
+        if (gameState.lobbyMode !== 'poll') return;
+        const state = getPollStateForClient(gameState, data.twitchId);
+        socket.emit('poll-state', state);
+    });
+    
+    // Admin: forcer la fin du vote (skip timer)
+    socket.on('poll-force-end-vote', () => {
+        if (gameState.lobbyMode !== 'poll' || !gameState.poll.active) return;
+        if (gameState.poll.votingOpen) {
+            endCurrentVote(gameState, io);
+        }
+    });
+    
+    // Admin: résoudre une égalité
+    socket.on('poll-resolve-tie', (data) => {
+        if (gameState.lobbyMode !== 'poll' || !gameState.poll.active) return;
+        if (!data || !data.winnerId) return;
+        const result = resolveTie(gameState, io, data.winnerId);
+        if (!result.success) {
+            console.log('❌ Erreur résolution égalité:', result.error);
+        }
+    });
+
+    // 🏔️ ASCENSION — Socket handlers
+    registerAscensionSocketHandlers(io, socket, gameState);
+
     // Déconnexion
     socket.on('disconnect', () => {
         const ip = socket.handshake.headers['x-forwarded-for']?.split(',')[0] || socket.handshake.address;
@@ -9615,6 +9979,9 @@ function resetGameState() {
         qualifiedCount: 0, toEliminateCount: 0, timer: gameState.survie.timer || 30,
         npcs: []
     };
+
+    // 🗳️ Reset Poll
+    resetPollState(gameState);
 
     // 🔥 COMMENTER CES LIGNES
     // gameState.isActive = false;
@@ -10003,9 +10370,13 @@ async function startSurvieGame() {
         ...(q.type === 'MYSTERY' && { victim: q.victim, suspects: q.suspects }),
     }));
     
+    // Store start timestamp for tutorial sync
+    survie.gameStartedAt = Date.now();
+    
     // Envoyer à tous
     io.emit('survie-game-started', {
         totalPlayers: totalPlayers,
+        gameStartedAt: survie.gameStartedAt,
         players: survie.alivePlayers.map(p => ({
             twitchId: p.twitchId,
             username: p.username,
@@ -10313,6 +10684,7 @@ function getSurvieStateForClient(socketId, twitchIdHint) {
         groundItems: survie.groundItems || [],
         boosts: survie.boosts || [],
         questItems: QUEST_ITEMS,
+        gameStartedAt: survie.gameStartedAt || null,
     };
 }
 

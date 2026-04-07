@@ -811,7 +811,8 @@ const SERIE_NAMES = {
     'Fma': 'Fullmetal Alchemist',
     'ChainsawMan': 'Chainsaw Man',
     'Prota' : 'Protagonist',
-    'Manganime': 'Manganime'
+    'Manganime': 'Manganime',
+    'Studio' : 'Studio'
 };
 
 function renderAdminBombanimeChalllenges() {

@@ -1934,4 +1934,161 @@ body.survie-intro-active .survie-dialogue-overlay {
     .survie-intro-text.subtitle { font-size: 8px; letter-spacing: 3px; }
     
     .survie-quest-complete-text { font-size: 11px; letter-spacing: 2px; }
+}/* ═══════════════════════════════════════════
+   SURVIE TUTORIAL OVERLAY
+   ═══════════════════════════════════════════ */
+
+.survie-tuto-overlay {
+    position: fixed; inset: 0; z-index: 10000;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(6, 6, 14, 0.94);
+    opacity: 0; transition: opacity 0.5s ease;
+    pointer-events: all;
+}
+.survie-tuto-overlay.active { opacity: 1; }
+.survie-tuto-overlay.exiting { opacity: 0; transition: opacity 0.6s ease; }
+
+/* Steps */
+.survie-tuto-step {
+    display: none; flex-direction: column; align-items: center; text-align: center;
+    gap: 0; max-width: 520px; padding: 0 24px;
+    position: relative; width: 100%; height: 280px;
+}
+.survie-tuto-step.active { display: flex; animation: survTutoStepIn 0.4s cubic-bezier(0.16,1,0.3,1) forwards; }
+.survie-tuto-step.exiting { animation: survTutoStepOut 0.25s ease forwards; }
+@keyframes survTutoStepIn { 0% { opacity:0; transform:translateX(50px) scale(0.97); } 100% { opacity:1; transform:translateX(0) scale(1); } }
+@keyframes survTutoStepOut { 0% { opacity:1; transform:translateX(0); } 100% { opacity:0; transform:translateX(-50px); } }
+
+.survie-tuto-visual {
+    position: absolute; top: 0; left: 0; right: 0; height: 100px;
+    display: flex; align-items: center; justify-content: center;
+}
+.survie-tuto-title {
+    position: absolute; top: 116px; left: 0; right: 0;
+    font-family: 'Orbitron', 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700;
+    letter-spacing: 4px; color: rgba(255,255,255,0.9); text-transform: uppercase;
+}
+.survie-tuto-desc {
+    position: absolute; top: 156px; left: 0; right: 0;
+    font-family: 'Rajdhani', sans-serif; font-size: 15px; font-weight: 500;
+    color: rgba(255,255,255,0.35); line-height: 1.65; letter-spacing: 0.3px; padding: 0 40px;
+}
+.sthl { color: rgba(245,166,35,0.85); font-weight: 600; }
+
+/* Timer */
+.survie-tuto-timer {
+    position: absolute; top: 240px; left: 50%; transform: translateX(-50%);
+    width: 180px; height: 2px; background: rgba(255,255,255,0.04);
+    border-radius: 1px; overflow: hidden;
+}
+.survie-tuto-timer-fill {
+    height: 100%; width: 100%; background: rgba(245,166,35,0.4);
+    border-radius: 1px; transform-origin: left;
+    animation: survTutoShrink 3s linear forwards;
+}
+@keyframes survTutoShrink { 0% { transform:scaleX(1); } 100% { transform:scaleX(0); } }
+
+/* Pips */
+.survie-tuto-pips {
+    position: fixed; bottom: 36px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 6px;
+}
+.survie-tuto-pip {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+.survie-tuto-pip.st-active { width: 28px; border-radius: 3px; background: rgba(245,166,35,0.65); }
+.survie-tuto-pip.st-done { background: rgba(245,166,35,0.2); }
+
+/* ═══ Step 1 — Keys ═══ */
+.survie-tuto-keys {
+    display: grid; grid-template-columns: repeat(3, 36px); grid-template-rows: repeat(2, 36px); gap: 4px;
+}
+.survie-tuto-key {
+    width: 36px; height: 36px; border-radius: 7px;
+    border: 1.5px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700;
+    color: rgba(255,255,255,0.35);
+}
+.stk-up { grid-column: 2; }
+.stk-left { grid-column: 1; grid-row: 2; }
+.stk-down { grid-column: 2; grid-row: 2; }
+.stk-right { grid-column: 3; grid-row: 2; }
+
+/* ═══ Step 2 — E key ═══ */
+.survie-tuto-ekey {
+    width: 38px; height: 38px; border-radius: 8px;
+    border: 1.5px solid rgba(245,166,35,0.35); background: rgba(245,166,35,0.04);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 800;
+    color: rgba(245,166,35,0.85); margin-top: 16px;
+    animation: survTutoEPulse 2.5s ease-in-out infinite;
+}
+@keyframes survTutoEPulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(245,166,35,0); }
+    50% { box-shadow: 0 0 24px rgba(245,166,35,0.1); }
+}
+
+/* ═══ Step 3 — Boosts ═══ */
+.survie-tuto-boosts { display: flex; align-items: center; gap: 32px; }
+.survie-tuto-boost-item { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.survie-tuto-orb {
+    width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+}
+.survie-tuto-orb.st-speed {
+    background: radial-gradient(circle, rgba(100,200,255,0.5), rgba(100,200,255,0.05));
+    box-shadow: 0 0 20px rgba(100,200,255,0.15);
+    animation: survTutoOrbP 2s ease-in-out infinite;
+}
+.survie-tuto-orb.st-malus {
+    background: radial-gradient(circle, rgba(255,80,80,0.45), rgba(255,80,80,0.05));
+    box-shadow: 0 0 20px rgba(255,80,80,0.12);
+    animation: survTutoOrbP 2s ease-in-out 0.5s infinite;
+}
+@keyframes survTutoOrbP { 0%,100% { transform:scale(1); } 50% { transform:scale(1.08); } }
+.survie-tuto-orb svg { width: 20px; height: 20px; }
+.survie-tuto-boost-lbl {
+    font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 600;
+    letter-spacing: 1.5px; text-transform: uppercase;
+}
+.survie-tuto-boost-lbl.st-speed { color: rgba(100,200,255,0.6); }
+.survie-tuto-boost-lbl.st-malus { color: rgba(255,80,80,0.5); }
+.survie-tuto-boosts-sep { width: 1px; height: 36px; background: rgba(255,255,255,0.06); }
+
+/* ═══ Step 4 — Quests ═══ */
+.survie-tuto-quests {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.survie-tuto-qcard {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; border-radius: 7px;
+    background: rgba(255,255,255,0.02); border: 1px solid rgba(245,166,35,0.08);
+    font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 500;
+    color: rgba(255,255,255,0.45); white-space: nowrap;
+    opacity: 0; animation: survTutoQIn 0.35s ease forwards;
+}
+.stq-1 { animation-delay: 0.1s; }
+.stq-2 { animation-delay: 0.2s; }
+.stq-3 { animation-delay: 0.3s; }
+.stq-4 { animation-delay: 0.4s; }
+@keyframes survTutoQIn { 0% { opacity:0; transform:scale(0.92); } 100% { opacity:1; transform:scale(1); } }
+.survie-tuto-qdot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(245,166,35,0.6); flex-shrink: 0;
+}
+
+/* ═══ Mobile ═══ */
+@media (max-width: 768px) {
+    .survie-tuto-title { font-size: 12px; letter-spacing: 3px; }
+    .survie-tuto-desc { font-size: 13.5px; padding: 0 20px; }
+    .survie-tuto-key { width: 32px; height: 32px; font-size: 12px; }
+    .survie-tuto-keys { grid-template-columns: repeat(3,32px); grid-template-rows: repeat(2,32px); }
+    .survie-tuto-ekey { width: 34px; height: 34px; font-size: 14px; }
+    .survie-tuto-boosts { gap: 24px; }
+    .survie-tuto-quests { gap: 6px; }
+    .survie-tuto-qcard { padding: 8px 10px; font-size: 11px; }
+    .survie-tuto-timer { width: 140px; }
 }

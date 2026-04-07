@@ -335,10 +335,18 @@ function initSocket() {
             updateLobbyPlayers(data.players);
             
             // 🎴💣🎮 Détecter si l'admin est dans le lobby
-            if (twitchUser && (currentGameMode === 'collect' || currentGameMode === 'bombanime' || currentGameMode === 'survie')) {
+            if (twitchUser && (currentGameMode === 'collect' || currentGameMode === 'bombanime' || currentGameMode === 'survie' || currentGameMode === 'poll' || currentGameMode === 'ascension')) {
                 const wasInLobby = adminInLobby;
                 adminInLobby = data.players.some(p => p.twitchId === twitchUser.id);
                 if (wasInLobby !== adminInLobby) updateAdminJoinButton();
+                // Re-register for poll voting on reconnect if admin is in lobby
+                if (adminInLobby && socket && socket.connected) {
+                    socket.emit('register-authenticated', {
+                        twitchId: twitchUser.id,
+                        username: twitchUser.display_name,
+                        avatar: twitchUser.profile_image_url || null
+                    });
+                }
             }
         }
 
@@ -377,6 +385,11 @@ function initSocket() {
         // Ignorer en mode Survie (géré par survie-game-started)
         if (currentGameMode === 'survie') {
             console.log('🎮 game-started ignoré en mode Survie');
+            return;
+        }
+        // Ignorer en mode Ascension (géré par ascension-game-started)
+        if (currentGameMode === 'ascension') {
+            console.log('🎮 game-started ignoré en mode Ascension');
             return;
         }
         console.log('🎮 Partie démarrée:', data);
@@ -463,6 +476,12 @@ function initSocket() {
     // 🎮 SURVIE - Socket Handlers (module séparé)
     initSurvieSocketHandlers(socket);
 
+    // 🗳️ POLL - Socket Handlers
+    initPollSocketEvents();
+
+    // 🏔️ ASCENSION - Socket Handlers
+    initAscensionSocketHandlers(socket);
+
     socket.on('prepare-next-question', () => {
         console.log('🔄 Préparation question suivante (mode auto)');
 
@@ -525,6 +544,9 @@ function closeLobbyUI() {
     updateAnimeCount();
     const animePanel = document.getElementById('animeFilterPanel');
     if (animePanel) animePanel.style.display = 'none';
+    
+    // 🗳️ Reset Poll
+    if (typeof cleanupPoll === 'function') cleanupPoll();
     const animeChevron = document.getElementById('animeFilterChevron');
     if (animeChevron) animeChevron.classList.remove('open');
 
@@ -569,7 +591,7 @@ function closeLobbyUI() {
 
             // Reset background text
             bgText.textContent = 'MASTER';
-            bgText.classList.remove('lobby-active', 'bombanime-mode', 'survie-mode');
+            bgText.classList.remove('lobby-active', 'bombanime-mode', 'survie-mode', 'poll-mode', 'ascension-mode');
             statusDot.classList.remove('active');
             statusText.textContent = 'Inactif';
 
@@ -592,6 +614,9 @@ function closeLobbyUI() {
             
             // 🎮 Restaurer les éléments quiz cachés par survie
             document.body.classList.remove('survie-active');
+            
+            // 🗳️ Cleanup Poll
+            if (typeof cleanupPoll === 'function') cleanupPoll();
             const mainHeaderRestore = document.getElementById('mainHeader');
             if (mainHeaderRestore) {
                 mainHeaderRestore.style.display = '';
@@ -700,6 +725,12 @@ async function handleLogin(event) {
         const data = await response.json();
 
         if (data.success) {
+            // 🧹 Clear stale session data from previous game states
+            sessionStorage.removeItem('pollGameActive');
+            sessionStorage.removeItem('bombanimeInProgress');
+            sessionStorage.removeItem('collectInProgress');
+            sessionStorage.removeItem('collectState');
+            
             document.getElementById('loginContainer').style.display = 'none';
 
             // Jouer l'intro ou skip
@@ -1870,6 +1901,8 @@ function applySettingsVisibility(mode) {
         if (collectHandGroup) collectHandGroup.style.display = 'none';
         const collectAnimeGrp = document.getElementById('collectAnimeFilterGroup');
         if (collectAnimeGrp) collectAnimeGrp.style.display = 'none';
+        const pollPG = document.getElementById('pollParamsGroup'); if (pollPG) pollPG.style.display = 'none';
+        const ascPGx = document.getElementById('ascensionParamsGroup'); if (ascPGx) ascPGx.style.display = 'none';
     } else if (mode === 'collect') {
         if (teamsGroup) teamsGroup.style.display = 'none';
         if (modeGroup) modeGroup.style.display = 'none';
@@ -1891,6 +1924,8 @@ function applySettingsVisibility(mode) {
         if (collectHandGroup) collectHandGroup.style.display = 'block';
         const collectAnimeGrp = document.getElementById('collectAnimeFilterGroup');
         if (collectAnimeGrp) collectAnimeGrp.style.display = 'block';
+        const pollPGc = document.getElementById('pollParamsGroup'); if (pollPGc) pollPGc.style.display = 'none';
+        const ascPGxc = document.getElementById('ascensionParamsGroup'); if (ascPGxc) ascPGxc.style.display = 'none';
     } else if (mode === 'survie') {
         // 🎮 Mode Survie — cacher tous les paramètres (lobby vierge pour l'instant)
         if (teamsGroup) teamsGroup.style.display = 'none';
@@ -1913,6 +1948,62 @@ function applySettingsVisibility(mode) {
         if (collectHandGroup) collectHandGroup.style.display = 'none';
         const collectAnimeGrpSurvie = document.getElementById('collectAnimeFilterGroup');
         if (collectAnimeGrpSurvie) collectAnimeGrpSurvie.style.display = 'none';
+        const pollParamsGroup = document.getElementById('pollParamsGroup');
+        if (pollParamsGroup) pollParamsGroup.style.display = 'none';
+        const ascPGSurvie = document.getElementById('ascensionParamsGroup');
+        if (ascPGSurvie) ascPGSurvie.style.display = 'none';
+    } else if (mode === 'ascension') {
+        // 🏔️ Mode Ascension — cacher tout, montrer paramètres ascension
+        if (teamsGroup) teamsGroup.style.display = 'none';
+        if (modeGroup) modeGroup.style.display = 'none';
+        if (livesGroup) livesGroup.style.display = 'none';
+        if (livesIconGroup) livesIconGroup.style.display = 'none';
+        if (questionsGroup) questionsGroup.style.display = 'none';
+        if (speedBonusGroup) speedBonusGroup.style.display = 'none';
+        if (timerGroup) timerGroup.style.display = 'none';
+        if (answersGroup) answersGroup.style.display = 'none';
+        if (difficultyGroup) difficultyGroup.style.display = 'none';
+        if (seriesTrigger) seriesTrigger.style.display = 'none';
+        if (noSpoilGroup) noSpoilGroup.style.display = 'none';
+        if (bonusEnabledGroup) bonusEnabledGroup.style.display = 'none';
+        if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
+        if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
+        if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
+        if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'none';
+        if (collectDeckGroup) collectDeckGroup.style.display = 'none';
+        if (collectHandGroup) collectHandGroup.style.display = 'none';
+        const collectAnimeGrpAsc = document.getElementById('collectAnimeFilterGroup');
+        if (collectAnimeGrpAsc) collectAnimeGrpAsc.style.display = 'none';
+        const pollPGAsc = document.getElementById('pollParamsGroup');
+        if (pollPGAsc) pollPGAsc.style.display = 'none';
+        const ascPG = document.getElementById('ascensionParamsGroup');
+        if (ascPG) ascPG.style.display = 'block';
+    } else if (mode === 'poll') {
+        // 🗳️ Mode Poll — cacher tout, montrer paramètres poll
+        if (teamsGroup) teamsGroup.style.display = 'none';
+        if (modeGroup) modeGroup.style.display = 'none';
+        if (livesGroup) livesGroup.style.display = 'none';
+        if (livesIconGroup) livesIconGroup.style.display = 'none';
+        if (questionsGroup) questionsGroup.style.display = 'none';
+        if (speedBonusGroup) speedBonusGroup.style.display = 'none';
+        if (timerGroup) timerGroup.style.display = 'none';
+        if (answersGroup) answersGroup.style.display = 'none';
+        if (difficultyGroup) difficultyGroup.style.display = 'none';
+        if (seriesTrigger) seriesTrigger.style.display = 'none';
+        if (noSpoilGroup) noSpoilGroup.style.display = 'none';
+        if (bonusEnabledGroup) bonusEnabledGroup.style.display = 'none';
+        if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
+        if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
+        if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
+        if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'none';
+        if (collectDeckGroup) collectDeckGroup.style.display = 'none';
+        if (collectHandGroup) collectHandGroup.style.display = 'none';
+        const collectAnimeGrpPoll = document.getElementById('collectAnimeFilterGroup');
+        if (collectAnimeGrpPoll) collectAnimeGrpPoll.style.display = 'none';
+        const pollParamsGroup = document.getElementById('pollParamsGroup');
+        if (pollParamsGroup) pollParamsGroup.style.display = 'block';
+        const ascPGPoll = document.getElementById('ascensionParamsGroup');
+        if (ascPGPoll) ascPGPoll.style.display = 'none';
     } else if (mode === 'rivalry') {
         if (teamsGroup) teamsGroup.style.display = 'block';
         if (modeGroup) modeGroup.style.display = 'block';
@@ -1932,6 +2023,8 @@ function applySettingsVisibility(mode) {
         if (collectHandGroup) collectHandGroup.style.display = 'none';
         const collectAnimeGrp = document.getElementById('collectAnimeFilterGroup');
         if (collectAnimeGrp) collectAnimeGrp.style.display = 'none';
+        const pollPG = document.getElementById('pollParamsGroup'); if (pollPG) pollPG.style.display = 'none';
+        const ascPGx = document.getElementById('ascensionParamsGroup'); if (ascPGx) ascPGx.style.display = 'none';
     } else {
         // Classic
         if (teamsGroup) teamsGroup.style.display = 'none';
@@ -1952,6 +2045,8 @@ function applySettingsVisibility(mode) {
         if (collectHandGroup) collectHandGroup.style.display = 'none';
         const collectAnimeGrp = document.getElementById('collectAnimeFilterGroup');
         if (collectAnimeGrp) collectAnimeGrp.style.display = 'none';
+        const pollPG = document.getElementById('pollParamsGroup'); if (pollPG) pollPG.style.display = 'none';
+        const ascPGx = document.getElementById('ascensionParamsGroup'); if (ascPGx) ascPGx.style.display = 'none';
     }
 }
 
@@ -1972,10 +2067,10 @@ function setGameMode(mode) {
     
     // Mettre à jour le badge
     const badgeText = modeBadge?.querySelector('.mode-badge-text');
-    modeBadge?.classList.remove('rivalry', 'bombanime', 'collect', 'survie');
+    modeBadge?.classList.remove('rivalry', 'bombanime', 'collect', 'survie', 'poll', 'ascension');
     
     // Mettre à jour le bouton Jouer et les particules
-    btnWrapper?.classList.remove('rivalry', 'bombanime', 'collect', 'survie');
+    btnWrapper?.classList.remove('rivalry', 'bombanime', 'collect', 'survie', 'poll', 'ascension');
     
     if (mode === 'rivalry') {
         if (badgeText) badgeText.textContent = 'Rivalry Mode';
@@ -2002,6 +2097,15 @@ function setGameMode(mode) {
         if (badgeText) badgeText.textContent = 'Trace Mode';
         if (modeBadge) modeBadge.classList.add('survie');
         if (btnWrapper) btnWrapper.classList.add('survie');
+    } else if (mode === 'poll') {
+        if (badgeText) badgeText.textContent = 'Poll Mode';
+        if (modeBadge) modeBadge.classList.add('poll');
+        if (btnWrapper) btnWrapper.classList.add('poll');
+        onPollModeSelected();
+    } else if (mode === 'ascension') {
+        if (badgeText) badgeText.textContent = 'Ascension Mode';
+        if (modeBadge) modeBadge.classList.add('ascension');
+        if (btnWrapper) btnWrapper.classList.add('ascension');
     } else {
         if (badgeText) badgeText.textContent = 'Classic Mode';
     }
@@ -2583,11 +2687,15 @@ async function launchLobby() {
 
             bgText.textContent = 'LOBBY';
             bgText.classList.add('lobby-active');
-            bgText.classList.remove('bombanime-mode', 'survie-mode');
+            bgText.classList.remove('bombanime-mode', 'survie-mode', 'poll-mode', 'ascension-mode', 'ascension-mode');
             if (currentGameMode === 'bombanime') {
                 bgText.classList.add('bombanime-mode');
             } else if (currentGameMode === 'survie') {
                 bgText.classList.add('survie-mode');
+            } else if (currentGameMode === 'poll') {
+                bgText.classList.add('poll-mode');
+            } else if (currentGameMode === 'ascension') {
+                bgText.classList.add('ascension-mode');
             }
             statusDot.classList.add('active');
             statusText.textContent = 'Lobby ouvert';
@@ -2597,7 +2705,7 @@ async function launchLobby() {
             const modeBadgeText = document.getElementById('modeBadgeText');
             if (modeBadgeHeader && modeBadgeText) {
                 modeBadgeHeader.style.display = 'block';
-                modeBadgeHeader.classList.remove('rivalry', 'bombanime', 'collect', 'survie');
+                modeBadgeHeader.classList.remove('rivalry', 'bombanime', 'collect', 'survie', 'poll', 'ascension');
                 if (currentGameMode === 'rivalry') {
                     modeBadgeText.textContent = 'Rivalité';
                     modeBadgeHeader.classList.add('rivalry');
@@ -2610,6 +2718,12 @@ async function launchLobby() {
                 } else if (currentGameMode === 'survie') {
                     modeBadgeText.textContent = 'Trace';
                     modeBadgeHeader.classList.add('survie');
+                } else if (currentGameMode === 'poll') {
+                    modeBadgeText.textContent = 'Poll';
+                    modeBadgeHeader.classList.add('poll');
+                } else if (currentGameMode === 'ascension') {
+                    modeBadgeText.textContent = 'Ascension';
+                    modeBadgeHeader.classList.add('ascension');
                 } else {
                     modeBadgeText.textContent = 'Classic';
                 }
@@ -2676,6 +2790,8 @@ async function launchLobby() {
                 if (collectHandGroup) collectHandGroup.style.display = 'none';
         const collectAnimeGrp = document.getElementById('collectAnimeFilterGroup');
         if (collectAnimeGrp) collectAnimeGrp.style.display = 'none';
+        const pollPG = document.getElementById('pollParamsGroup'); if (pollPG) pollPG.style.display = 'none';
+        const ascPGx = document.getElementById('ascensionParamsGroup'); if (ascPGx) ascPGx.style.display = 'none';
                 
                 const teamCounters = document.getElementById('teamCounters');
                 if (teamCounters) teamCounters.remove();
@@ -2711,6 +2827,8 @@ async function launchLobby() {
                 if (collectHandGroup) collectHandGroup.style.display = 'block';
         const collectAnimeGrp = document.getElementById('collectAnimeFilterGroup');
         if (collectAnimeGrp) collectAnimeGrp.style.display = 'block';
+        const pollPGc = document.getElementById('pollParamsGroup'); if (pollPGc) pollPGc.style.display = 'none';
+        const ascPGxc = document.getElementById('ascensionParamsGroup'); if (ascPGxc) ascPGxc.style.display = 'none';
                 
                 const teamCounters = document.getElementById('teamCounters');
                 if (teamCounters) teamCounters.remove();
@@ -2741,9 +2859,84 @@ async function launchLobby() {
                 if (collectHandGroup) collectHandGroup.style.display = 'none';
                 const collectAnimeGrpSurvie = document.getElementById('collectAnimeFilterGroup');
                 if (collectAnimeGrpSurvie) collectAnimeGrpSurvie.style.display = 'none';
+                const pollPGSurvie = document.getElementById('pollParamsGroup');
+                if (pollPGSurvie) pollPGSurvie.style.display = 'none';
+                const ascPGSurvie3 = document.getElementById('ascensionParamsGroup');
+                if (ascPGSurvie3) ascPGSurvie3.style.display = 'none';
                 
                 const teamCountersSurvie = document.getElementById('teamCounters');
                 if (teamCountersSurvie) teamCountersSurvie.remove();
+                
+            } else if (currentGameMode === 'ascension') {
+                // 🏔️ Mode Ascension — cacher tout, montrer params ascension
+                if (teamsGroup) teamsGroup.style.display = 'none';
+                if (modeGroup) modeGroup.style.display = 'none';
+                if (livesGroup) livesGroup.style.display = 'none';
+                if (livesIconGroup) livesIconGroup.style.display = 'none';
+                if (questionsGroup) questionsGroup.style.display = 'none';
+                if (speedBonusGroup) speedBonusGroup.style.display = 'none';
+                if (timerGroup) timerGroup.style.display = 'none';
+                if (answersGroup) answersGroup.style.display = 'none';
+                if (difficultyGroup) difficultyGroup.style.display = 'none';
+                if (seriesTrigger) seriesTrigger.style.display = 'none';
+                if (noSpoilGroup) noSpoilGroup.style.display = 'none';
+                if (bonusEnabledGroup) bonusEnabledGroup.style.display = 'none';
+                
+                const tipIconAsc2 = document.getElementById('lobbyTipIcon');
+                if (tipIconAsc2) tipIconAsc2.style.display = 'none';
+                
+                if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
+                if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
+                if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
+                if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'none';
+                if (collectDeckGroup) collectDeckGroup.style.display = 'none';
+                if (collectHandGroup) collectHandGroup.style.display = 'none';
+                const collectAnimeGrpAsc3 = document.getElementById('collectAnimeFilterGroup');
+                if (collectAnimeGrpAsc3) collectAnimeGrpAsc3.style.display = 'none';
+                const pollPGAsc3 = document.getElementById('pollParamsGroup');
+                if (pollPGAsc3) pollPGAsc3.style.display = 'none';
+                const ascPG3 = document.getElementById('ascensionParamsGroup');
+                if (ascPG3) ascPG3.style.display = 'block';
+                
+                const teamCountersAsc2 = document.getElementById('teamCounters');
+                if (teamCountersAsc2) teamCountersAsc2.remove();
+                
+            } else if (currentGameMode === 'poll') {
+                // 🗳️ Mode Poll — cacher tout, montrer paramètres poll
+                if (teamsGroup) teamsGroup.style.display = 'none';
+                if (modeGroup) modeGroup.style.display = 'none';
+                if (livesGroup) livesGroup.style.display = 'none';
+                if (livesIconGroup) livesIconGroup.style.display = 'none';
+                if (questionsGroup) questionsGroup.style.display = 'none';
+                if (speedBonusGroup) speedBonusGroup.style.display = 'none';
+                if (timerGroup) timerGroup.style.display = 'none';
+                if (answersGroup) answersGroup.style.display = 'none';
+                if (difficultyGroup) difficultyGroup.style.display = 'none';
+                if (seriesTrigger) seriesTrigger.style.display = 'none';
+                if (noSpoilGroup) noSpoilGroup.style.display = 'none';
+                if (bonusEnabledGroup) bonusEnabledGroup.style.display = 'none';
+                
+                const tipIconPoll = document.getElementById('lobbyTipIcon');
+                if (tipIconPoll) tipIconPoll.style.display = 'none';
+                
+                if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
+                if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
+                if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
+                if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'none';
+                if (collectDeckGroup) collectDeckGroup.style.display = 'none';
+                if (collectHandGroup) collectHandGroup.style.display = 'none';
+                const collectAnimeGrpPoll = document.getElementById('collectAnimeFilterGroup');
+                if (collectAnimeGrpPoll) collectAnimeGrpPoll.style.display = 'none';
+                
+                // Afficher Poll
+                const pollParamsGroupEl = document.getElementById('pollParamsGroup');
+                if (pollParamsGroupEl) pollParamsGroupEl.style.display = 'block';
+                
+                // Charger les catégories
+                if (socket && socket.connected) socket.emit('poll-get-categories');
+                
+                const teamCountersPoll = document.getElementById('teamCounters');
+                if (teamCountersPoll) teamCountersPoll.remove();
                 
             } else if (currentGameMode === 'rivalry') {
                 // Mode Rivalité
@@ -2773,6 +2966,8 @@ async function launchLobby() {
                 if (collectHandGroup) collectHandGroup.style.display = 'none';
         const collectAnimeGrp = document.getElementById('collectAnimeFilterGroup');
         if (collectAnimeGrp) collectAnimeGrp.style.display = 'none';
+        const pollPG = document.getElementById('pollParamsGroup'); if (pollPG) pollPG.style.display = 'none';
+        const ascPGx = document.getElementById('ascensionParamsGroup'); if (ascPGx) ascPGx.style.display = 'none';
                 
                 // Ajouter les compteurs d'équipe si pas déjà présents
                 if (lobbyHeaderLeft && !document.getElementById('teamCounters')) {
@@ -2824,6 +3019,8 @@ async function launchLobby() {
                 if (collectHandGroup) collectHandGroup.style.display = 'none';
         const collectAnimeGrp = document.getElementById('collectAnimeFilterGroup');
         if (collectAnimeGrp) collectAnimeGrp.style.display = 'none';
+        const pollPG = document.getElementById('pollParamsGroup'); if (pollPG) pollPG.style.display = 'none';
+        const ascPGx = document.getElementById('ascensionParamsGroup'); if (ascPGx) ascPGx.style.display = 'none';
                 
                 const teamCounters = document.getElementById('teamCounters');
                 if (teamCounters) teamCounters.remove();
@@ -2890,11 +3087,13 @@ const MODES_DATA = [
     { id: 'classic', n: 'CLASSIQUE', l: 'Mode Solo', c: 'gold', p: '∞', t: 'solo', d: "Quiz anime en solo. Questions au format QCM , en mode Vies ou Points. Paramètres de difficultés et de séries variables. Chaque joueur peut utiliser des bonus en répondant juste ou en complétant des défis.", img: 'gilga.png', imgStyle: 'transform:scale(1.04) translate(-2%, 3%)' },
     { id: 'rivalry', n: 'RIVALITÉ', l: 'Mode Équipe', c: 'purple', p: '∞', t: 'equipe', d: "Deux équipes s'affrontent sur un Quiz anime. Similaire au mode Classique , chaque équipe cumule les vies ou les points de ses joueurs. L'équipe avec le plus de points ou de joueurs en vies à la fin remporte la partie.", img: 'shark.png' },
     { id: 'bombanime', n: 'BOMBANIME', l: 'Mode Solo', c: 'green', p: '13', t: 'solo', playable: true, d: "Une bombe tourne de joueur en joueur. Citez un personnage d'une série spécifique avant que le timer explose. Le dernier survivant remporte la partie.", img: 'lambo2.png', imgStyle: 'transform:scale(1.2) translateY(5%)' },
-    { id: 'survie', n: 'TRACE', l: 'Mode Solo', c: 'orange', p: '50', t: 'solo', playable: true, d: "Déplacez vous sur un plateau 2D sous forme d'aura. Accomplissez vos objectifs avant les autres joueurs pour remporter la partie.", img: 'kenshin.png', imgStyle: 'transform:scale(1.32) translate(-2%, 12%)' },
+    { id: 'ascension', n: 'ASCENSION', l: 'Mode Solo', c: 'white', p: '∞', t: 'solo', playable: true, d: "Grimpez la tour étage par étage en réussissant des mini-jeux variés. Le premier joueur à atteindre le sommet remporte la partie.", img: 'ascension.png', soon: true, imgStyle: 'transform:scale(0.98) translate(-2%, 3%)' },
+    { id: 'survie', n: 'TRACE', l: 'Mode Solo', c: 'orange', p: '50', t: 'solo', playable: true, d: "Déplacez-vous sur un plateau et accomplissez vos objectifs en premier pour remporter la partie.", img: 'kenshin.png', imgStyle: 'transform:scale(1.32) translate(-2%, 12%)' },
+    { id: 'poll', n: 'POLL', l: 'Mode Solo', c: 'pink', p: '∞', t: 'solo', playable: true, d: "Votez pour votre personnage préféré parmi une sélection. Tournoi par élimination où la communauté décide. Le dernier personnage debout est couronné.", img: 'poll.png', soon: true, imgStyle: 'transform:scale(1.05) translate(-2%, -3%)' },
     { id: 'collect', n: 'COLLECT', l: 'Mode Solo', c: 'blue', p: '5', t: 'solo', playable: true, d: "Jeu de cartes stratégique anime. Collectionnez des personnages, utilisez leurs capacités et affrontez les autres joueurs.", img: 'aventurine3.png', soon: true, imgStyle: 'transform:scale(1.2) translate(3%, 12%)' },
 ];
 
-const MODE_COLORS = { gold:'#d4a017', purple:'#8b5cf6', green:'#22c55e', cyan:'#00d4ff', blue:'#3b82f6', red:'#e74c3c', orange:'#e67e22', pink:'#e91e8b', teal:'#1abc9c', indigo:'#6366f1', amber:'#f59e0b', lime:'#84cc16', rose:'#f43f5e' };
+const MODE_COLORS = { gold:'#d4a017', purple:'#8b5cf6', green:'#22c55e', cyan:'#00d4ff', blue:'#3b82f6', red:'#e74c3c', orange:'#e67e22', pink:'#f080b0', teal:'#1abc9c', indigo:'#6366f1', amber:'#f59e0b', lime:'#84cc16', rose:'#f43f5e', brown:'#a0724a', white:'#d4d4d8' };
 const MODE_PLAYER_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>';
 
 let modeFilterType = 'all', modeFilterPlayers = 'all', modeFilterPlayable = 'all';
@@ -2912,7 +3111,7 @@ const modeTrackEl = document.getElementById('modeTrack');
 
 function setModeFades(count) {
     const viewW = modeCarousel.clientWidth;
-    const maxVisible = Math.max(1, Math.floor((viewW + MCARD_GAP) / (getActualCardWidth() + MCARD_GAP)));
+    const maxVisible = Math.min(5, Math.max(1, Math.floor((viewW + MCARD_GAP) / (getActualCardWidth() + MCARD_GAP))));
     const visible = Math.min(count, maxVisible);
     const contentW = getActualCardWidth() * visible + MCARD_GAP * (visible - 1);
     const basePad = Math.max(20, (viewW - contentW) / 2);
@@ -2925,8 +3124,8 @@ function setModeFades(count) {
 
 function renderModeCards(list) {
     const viewW = modeCarousel.clientWidth;
-    // Calculate how many cards actually fit
-    const maxVisible = Math.max(1, Math.floor((viewW + MCARD_GAP) / (getActualCardWidth() + MCARD_GAP)));
+    // Calculate how many cards actually fit, capped at 5
+    const maxVisible = Math.min(5, Math.max(1, Math.floor((viewW + MCARD_GAP) / (getActualCardWidth() + MCARD_GAP))));
     const visible = Math.min(list.length, maxVisible);
     const contentW = getActualCardWidth() * visible + MCARD_GAP * (visible - 1);
     const basePad = Math.max(20, (viewW - contentW) / 2);
@@ -3330,7 +3529,7 @@ const adminJoinBtn = document.getElementById('adminJoinLobbyBtn');
 function updateAdminJoinButton() {
     if (!adminJoinBtn) return;
     
-    if (currentGameMode === 'collect' || currentGameMode === 'bombanime' || currentGameMode === 'survie') {
+    if (currentGameMode === 'collect' || currentGameMode === 'bombanime' || currentGameMode === 'survie' || currentGameMode === 'poll' || currentGameMode === 'ascension') {
         adminJoinBtn.style.display = 'flex';
         adminJoinBtn.disabled = !twitchUser || adminInLobby;
         adminJoinBtn.querySelector('span').textContent = adminInLobby ? 'Rejoint ✓' : 'Rejoindre';
@@ -3377,6 +3576,13 @@ if (adminJoinBtn) {
 if (adminJoinBtn) {
     adminJoinBtn.addEventListener('click', () => {
         if (!twitchUser || adminInLobby) return;
+        
+        // Register admin for poll voting
+        socket.emit('register-authenticated', {
+            twitchId: twitchUser.id,
+            username: twitchUser.display_name,
+            avatar: twitchUser.profile_image_url || null
+        });
         
         // Rejoindre le lobby
         socket.emit('join-lobby', {
@@ -4331,9 +4537,15 @@ function updateLobbyPlayers(players) {
         } else if (currentGameMode === 'bombanime') {
             // Icônes bombes pour BombAnime
             statsHTML = getBombIconsHTML(currentLives);
+        } else if (currentGameMode === 'ascension') {
+            // Icône montagne pour Ascension
+            statsHTML = '<svg class="ascension-card-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#d4d4d8" stroke-width="1.5"><path d="M3 21h18"/><path d="M12 3l7 18"/><path d="M12 3L5 21"/><path d="M8 14h8"/></svg>';
         } else if (currentGameMode === 'survie') {
             // Icône bouclier cyan pour Survie
             statsHTML = '<svg class="survie-shield-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#e67e22" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>';
+        } else if (currentGameMode === 'poll') {
+            // Icône vote pour Poll
+            statsHTML = '<svg class="poll-vote-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#f080b0" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>';
         } else if (currentMode === 'vie') {
             statsHTML = getLivesIconsHTML(selectedLivesIcon, currentLives, currentLives);
         } else {
@@ -4879,6 +5091,24 @@ document.getElementById('startGameBtn').addEventListener('click', async () => {
             startData.collectHandSize = collectHandSize || 3;
             startData.collectAnimes = Array.from(collectSelectedAnimes);
             console.log('🎴 Paramètres Collect envoyés:', startData);
+        }
+        
+        // 🗳️ Paramètres Poll
+        if (currentGameMode === 'poll') {
+            startData.pollCategory = pollState.category || 'all';
+            startData.pollPerMatch = pollState.perMatch || 2;
+            startData.pollBracketSize = pollState.bracketSize || 16;
+            startData.pollShowNames = pollState.showNames !== undefined ? pollState.showNames : false;
+            startData.pollVoteTimer = pollState.voteTimer || 15;
+            console.log('🗳️ Paramètres Poll envoyés:', startData);
+        }
+        
+        // 🏔️ Paramètres Ascension
+        if (currentGameMode === 'ascension') {
+            startData.ascensionFloors = ascensionConfig.floors || 15;
+            startData.ascensionTimer = ascensionConfig.timer || 15;
+            startData.ascensionSync = ascensionConfig.syncEpreuves;
+            console.log('🏔️ Paramètres Ascension envoyés:', startData);
         }
         
         const response = await fetch('/admin/start-game', {
@@ -6137,6 +6367,49 @@ async function restoreGameState() {
                     socket.emit('survie-reconnect', { twitchId: twitchUser?.id });
                     
                     return true; // Ne pas continuer avec la restauration quiz classique
+                } else if (currentGameMode === 'poll') {
+                    bgTextEl.textContent = 'POLL';
+                    bgTextEl.classList.remove('lobby-active', 'game-active');
+                    bgTextEl.classList.add('poll-mode');
+                    
+                    if (recentPanelEl) recentPanelEl.classList.add('hidden');
+                    if (lastgamePanelEl) lastgamePanelEl.classList.add('hidden');
+                    if (btnWrapperEl) btnWrapperEl.classList.remove('pulse-active');
+                    
+                    const logoutBtn = document.getElementById('headerLogoutBtn');
+                    if (logoutBtn) logoutBtn.style.display = 'none';
+                    
+                    const modeBadgeHeader = document.getElementById('modeBadgeHeader');
+                    if (modeBadgeHeader) modeBadgeHeader.style.display = 'none';
+                    
+                    document.body.classList.add('poll-active');
+                    
+                    // Demander l'état poll au serveur
+                    socket.emit('poll-reconnect', { twitchId: twitchUser?.id });
+                    
+                    return true;
+                } else if (currentGameMode === 'ascension') {
+                    bgTextEl.textContent = 'ASCENSION';
+                    bgTextEl.classList.remove('lobby-active', 'game-active');
+                    bgTextEl.classList.add('ascension-mode');
+                    
+                    if (recentPanelEl) recentPanelEl.classList.add('hidden');
+                    if (lastgamePanelEl) lastgamePanelEl.classList.add('hidden');
+                    if (btnWrapperEl) btnWrapperEl.classList.remove('pulse-active');
+                    
+                    const logoutBtn = document.getElementById('headerLogoutBtn');
+                    if (logoutBtn) logoutBtn.style.display = 'none';
+                    
+                    const modeBadgeHeader = document.getElementById('modeBadgeHeader');
+                    if (modeBadgeHeader) modeBadgeHeader.style.display = 'none';
+                    
+                    // Show ascension game UI
+                    showAscensionGameUI();
+                    
+                    // Request state from server
+                    socket.emit('ascension-reconnect', { twitchId: twitchUser?.id });
+                    
+                    return true;
                 } else {
                     bgTextEl.textContent = 'GAME';
                     bgTextEl.classList.remove('lobby-active');
@@ -6685,7 +6958,7 @@ function showLobbyUI(players = []) {
     const modeBadgeText = document.getElementById('modeBadgeText');
     if (modeBadgeHeader && modeBadgeText) {
         modeBadgeHeader.style.display = 'block';
-        modeBadgeHeader.classList.remove('rivalry', 'bombanime', 'collect', 'survie');
+        modeBadgeHeader.classList.remove('rivalry', 'bombanime', 'collect', 'survie', 'poll', 'ascension');
         if (currentGameMode === 'rivalry') {
             modeBadgeText.textContent = 'Rivalité';
             modeBadgeHeader.classList.add('rivalry');
@@ -6698,6 +6971,12 @@ function showLobbyUI(players = []) {
         } else if (currentGameMode === 'survie') {
             modeBadgeText.textContent = 'Trace';
             modeBadgeHeader.classList.add('survie');
+        } else if (currentGameMode === 'poll') {
+            modeBadgeText.textContent = 'Poll';
+            modeBadgeHeader.classList.add('poll');
+        } else if (currentGameMode === 'ascension') {
+            modeBadgeText.textContent = 'Ascension';
+            modeBadgeHeader.classList.add('ascension');
         } else {
             modeBadgeText.textContent = 'Classic';
         }
@@ -6705,13 +6984,17 @@ function showLobbyUI(players = []) {
 
     bgText.textContent = 'LOBBY';
     bgText.classList.add('lobby-active');
-    bgText.classList.remove('bombanime-mode', 'collect-mode', 'survie-mode');
+    bgText.classList.remove('bombanime-mode', 'collect-mode', 'survie-mode', 'poll-mode');
     if (currentGameMode === 'bombanime') {
         bgText.classList.add('bombanime-mode');
     } else if (currentGameMode === 'collect') {
         bgText.classList.add('collect-mode');
     } else if (currentGameMode === 'survie') {
         bgText.classList.add('survie-mode');
+    } else if (currentGameMode === 'poll') {
+        bgText.classList.add('poll-mode');
+    } else if (currentGameMode === 'ascension') {
+        bgText.classList.add('ascension-mode');
     }
     statusDot.classList.add('active');
     statusText.textContent = 'Lobby ouvert';
@@ -6783,6 +7066,8 @@ function showLobbyUI(players = []) {
                 if (collectHandGroup) collectHandGroup.style.display = 'none';
         const collectAnimeGrp = document.getElementById('collectAnimeFilterGroup');
         if (collectAnimeGrp) collectAnimeGrp.style.display = 'none';
+        const pollPG = document.getElementById('pollParamsGroup'); if (pollPG) pollPG.style.display = 'none';
+        const ascPGx = document.getElementById('ascensionParamsGroup'); if (ascPGx) ascPGx.style.display = 'none';
         
         // Retirer les compteurs d'équipe
         const teamCounters = document.getElementById('teamCounters');
@@ -6817,6 +7102,8 @@ function showLobbyUI(players = []) {
                 if (collectHandGroup) collectHandGroup.style.display = 'block';
         const collectAnimeGrp = document.getElementById('collectAnimeFilterGroup');
         if (collectAnimeGrp) collectAnimeGrp.style.display = 'block';
+        const pollPGc = document.getElementById('pollParamsGroup'); if (pollPGc) pollPGc.style.display = 'none';
+        const ascPGxc = document.getElementById('ascensionParamsGroup'); if (ascPGxc) ascPGxc.style.display = 'none';
         
         // Retirer les compteurs d'équipe
         const teamCounters = document.getElementById('teamCounters');
@@ -6849,6 +7136,79 @@ function showLobbyUI(players = []) {
         
         const teamCountersSurvie = document.getElementById('teamCounters');
         if (teamCountersSurvie) teamCountersSurvie.remove();
+        const pollPGSurvie2 = document.getElementById('pollParamsGroup');
+        if (pollPGSurvie2) pollPGSurvie2.style.display = 'none';
+        const ascPGSurvie2 = document.getElementById('ascensionParamsGroup');
+        if (ascPGSurvie2) ascPGSurvie2.style.display = 'none';
+        
+    } else if (currentGameMode === 'ascension') {
+        // 🏔️ Mode Ascension : cacher tout, montrer params ascension
+        if (teamsGroup) teamsGroup.style.display = 'none';
+        if (modeGroup) modeGroup.style.display = 'none';
+        if (livesGroup) livesGroup.style.display = 'none';
+        if (livesIconGroup) livesIconGroup.style.display = 'none';
+        if (questionsGroup) questionsGroup.style.display = 'none';
+        if (speedBonusGroup) speedBonusGroup.style.display = 'none';
+        if (timerGroup) timerGroup.style.display = 'none';
+        if (answersGroup) answersGroup.style.display = 'none';
+        if (difficultyGroup) difficultyGroup.style.display = 'none';
+        if (seriesTrigger) seriesTrigger.style.display = 'none';
+        
+        const tipIconAsc = document.getElementById('lobbyTipIcon');
+        if (tipIconAsc) tipIconAsc.style.display = 'none';
+        
+        if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
+        if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
+        if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
+        if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'none';
+        if (collectDeckGroup) collectDeckGroup.style.display = 'none';
+        if (collectHandGroup) collectHandGroup.style.display = 'none';
+        const collectAnimeGrpAsc2 = document.getElementById('collectAnimeFilterGroup');
+        if (collectAnimeGrpAsc2) collectAnimeGrpAsc2.style.display = 'none';
+        const pollPGAsc2 = document.getElementById('pollParamsGroup');
+        if (pollPGAsc2) pollPGAsc2.style.display = 'none';
+        const ascPG2 = document.getElementById('ascensionParamsGroup');
+        if (ascPG2) ascPG2.style.display = 'block';
+        
+        const noSpoilGroupAsc = document.querySelector('.no-spoil-group');
+        if (noSpoilGroupAsc) noSpoilGroupAsc.style.display = 'none';
+        const bonusGroupAsc = document.getElementById('bonusEnabledGroup');
+        if (bonusGroupAsc) bonusGroupAsc.style.display = 'none';
+        
+        const teamCountersAsc = document.getElementById('teamCounters');
+        if (teamCountersAsc) teamCountersAsc.remove();
+        
+    } else if (currentGameMode === 'poll') {
+        // 🗳️ Mode Poll
+        if (teamsGroup) teamsGroup.style.display = 'none';
+        if (modeGroup) modeGroup.style.display = 'none';
+        if (livesGroup) livesGroup.style.display = 'none';
+        if (livesIconGroup) livesIconGroup.style.display = 'none';
+        if (questionsGroup) questionsGroup.style.display = 'none';
+        if (speedBonusGroup) speedBonusGroup.style.display = 'none';
+        if (timerGroup) timerGroup.style.display = 'none';
+        if (answersGroup) answersGroup.style.display = 'none';
+        if (difficultyGroup) difficultyGroup.style.display = 'none';
+        if (seriesTrigger) seriesTrigger.style.display = 'none';
+        
+        const tipIconPoll2 = document.getElementById('lobbyTipIcon');
+        if (tipIconPoll2) tipIconPoll2.style.display = 'none';
+        
+        if (bombanimeSerieGroup) bombanimeSerieGroup.style.display = 'none';
+        if (bombanimeLivesGroup) bombanimeLivesGroup.style.display = 'none';
+        if (bombanimeTimerGroup) bombanimeTimerGroup.style.display = 'none';
+        if (bombanimeBotsGroup) bombanimeBotsGroup.style.display = 'none';
+        if (collectDeckGroup) collectDeckGroup.style.display = 'none';
+        if (collectHandGroup) collectHandGroup.style.display = 'none';
+        const collectAnimeGrpPoll2 = document.getElementById('collectAnimeFilterGroup');
+        if (collectAnimeGrpPoll2) collectAnimeGrpPoll2.style.display = 'none';
+        
+        const pollParamsGroupEl2 = document.getElementById('pollParamsGroup');
+        if (pollParamsGroupEl2) pollParamsGroupEl2.style.display = 'block';
+        if (socket && socket.connected) socket.emit('poll-get-categories');
+        
+        const teamCountersPoll2 = document.getElementById('teamCounters');
+        if (teamCountersPoll2) teamCountersPoll2.remove();
         
     } else if (currentGameMode === 'rivalry') {
         // Mode Rivalité
@@ -6873,6 +7233,8 @@ function showLobbyUI(players = []) {
                 if (collectHandGroup) collectHandGroup.style.display = 'none';
         const collectAnimeGrp = document.getElementById('collectAnimeFilterGroup');
         if (collectAnimeGrp) collectAnimeGrp.style.display = 'none';
+        const pollPG = document.getElementById('pollParamsGroup'); if (pollPG) pollPG.style.display = 'none';
+        const ascPGx = document.getElementById('ascensionParamsGroup'); if (ascPGx) ascPGx.style.display = 'none';
         
         // Ajouter les compteurs d'équipe si pas déjà présents
         if (lobbyHeaderLeft && !document.getElementById('teamCounters')) {
@@ -6919,6 +7281,8 @@ function showLobbyUI(players = []) {
                 if (collectHandGroup) collectHandGroup.style.display = 'none';
         const collectAnimeGrp = document.getElementById('collectAnimeFilterGroup');
         if (collectAnimeGrp) collectAnimeGrp.style.display = 'none';
+        const pollPG = document.getElementById('pollParamsGroup'); if (pollPG) pollPG.style.display = 'none';
+        const ascPGx = document.getElementById('ascensionParamsGroup'); if (ascPGx) ascPGx.style.display = 'none';
         
         const teamCounters = document.getElementById('teamCounters');
         if (teamCounters) teamCounters.remove();
@@ -8544,6 +8908,9 @@ function returnToIdle() {
     // Reset admin join state
     resetAdminJoinState();
     
+    // 🏔️ Hide ascension game UI if active
+    if (typeof hideAscensionGameUI === 'function') hideAscensionGameUI();
+    
     const stateGame = document.getElementById('stateGame');
     const stateLobby = document.getElementById('stateLobby');
     const stateIdle = document.getElementById('stateIdle');
@@ -8724,13 +9091,16 @@ function returnToIdle() {
 
     // Reset header
     bgText.textContent = 'MASTER';
-    bgText.classList.remove('lobby-active', 'game-active', 'bombanime-mode', 'survie-mode');
+    bgText.classList.remove('lobby-active', 'game-active', 'bombanime-mode', 'survie-mode', 'poll-mode', 'ascension-mode', 'poll-mode');
     statusDot.classList.remove('active');
     document.querySelector('.status-pill')?.classList.remove('game-mode');
     statusText.textContent = 'Inactif';
 
     // Cleanup Survie
     document.body.classList.remove('survie-active');
+    
+    // Cleanup Poll
+    if (typeof cleanupPoll === 'function') cleanupPoll();
     const survieContainer = document.getElementById('survieContainer');
     if (survieContainer) survieContainer.remove();
     if (typeof survieState !== 'undefined') {
@@ -9317,3 +9687,46 @@ function updateTeamNavVisibility(show) {
         }
     }
 }
+// ═══════════════════════════════════════════
+// 🏔️ ASCENSION — Paramètres Lobby
+// ═══════════════════════════════════════════
+
+let ascensionConfig = {
+    floors: 15,
+    timer: 15,
+    syncEpreuves: true
+};
+
+function setAscensionFloors(value) {
+    ascensionConfig.floors = value;
+    const valEl = document.getElementById('ascensionFloorsValue');
+    if (valEl) valEl.textContent = value;
+    document.querySelectorAll('.ascension-floors-group .poll-option').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.value) === value);
+    });
+}
+
+function setAscensionTimer(value) {
+    ascensionConfig.timer = parseInt(value);
+    const valEl = document.getElementById('ascensionTimerValue');
+    if (valEl) valEl.textContent = value + 's';
+    const slider = document.getElementById('ascensionTimerSlider');
+    if (slider) slider.value = value;
+}
+
+function setAscensionSync(isSync) {
+    ascensionConfig.syncEpreuves = isSync;
+    const valEl = document.getElementById('ascensionSyncValue');
+    if (valEl) valEl.textContent = isSync ? 'Identiques' : 'Aléatoires';
+    document.querySelectorAll('.ascension-sync-group .poll-option').forEach(btn => {
+        const isSyncBtn = btn.dataset.value === 'Identiques';
+        btn.classList.toggle('active', isSyncBtn === isSync);
+    });
+}
+
+// Init ascension defaults on load
+document.addEventListener("DOMContentLoaded", () => {
+    setAscensionFloors(15);
+    setAscensionTimer(15);
+    setAscensionSync(true);
+});

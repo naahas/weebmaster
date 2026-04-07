@@ -86,6 +86,11 @@ body {
     color: rgba(230, 126, 34, 0.03);
 }
 
+.bg-text.poll-mode {
+    font-size: 20vw;
+    color: rgba(240, 128, 176, 0.03);
+}
+
 /* Header */
 .header {
     position: fixed;
@@ -147,6 +152,12 @@ body {
     background: rgba(230, 126, 34, 0.1);
     border-color: rgba(230, 126, 34, 0.25);
     color: rgba(230, 126, 34, 0.8);
+}
+
+.mode-badge-header.poll {
+    background: rgba(240, 128, 176, 0.1);
+    border-color: rgba(240, 128, 176, 0.25);
+    color: rgba(240, 128, 176, 0.8);
 }
 
 .status-pill {
@@ -334,6 +345,22 @@ body {
 
 .mode-badge.survie:hover {
     color: rgba(230, 126, 34, 0.9);
+}
+
+.mode-badge.poll {
+    color: rgba(240, 128, 176, 0.6);
+}
+
+.mode-badge.poll::before {
+    background: linear-gradient(90deg, transparent, rgba(240, 128, 176, 0.1), transparent);
+}
+
+.mode-badge.poll .mode-badge-line {
+    background: linear-gradient(90deg, transparent, rgba(240, 128, 176, 0.4), rgba(240, 128, 176, 0.6));
+}
+
+.mode-badge.poll:hover {
+    color: rgba(240, 128, 176, 0.9);
 }
 
 /* Slide reveal effect */
@@ -657,6 +684,33 @@ body {
 .btn-wrapper.survie .particle {
     background: #e67e22;
     box-shadow: 0 0 0.375rem rgba(230, 126, 34, 0.5);
+}
+
+/* ============================================
+   MODE POLL - Bouton et particules marron
+   ============================================ */
+.btn-wrapper.poll .main-action-btn:hover {
+    border-color: #f080b0;
+    box-shadow: 0 0 3.75rem rgba(240, 128, 176, 0.25);
+}
+
+.btn-wrapper.poll .main-action-btn::before {
+    background: conic-gradient(from 0deg, transparent, #f080b0, transparent);
+}
+
+.btn-wrapper.poll .main-action-btn:hover .btn-text {
+    color: #f080b0;
+    text-shadow: 0 0 1.25rem rgba(240, 128, 176, 0.5);
+}
+
+.btn-wrapper.poll::before {
+    border-color: #f080b0;
+}
+
+/* Particules mode Poll - Marron */
+.btn-wrapper.poll .particle {
+    background: #f080b0;
+    box-shadow: 0 0 0.375rem rgba(240, 128, 176, 0.5);
 }
 
 /* Bouclier Survie sur les cartes joueurs */
@@ -9635,6 +9689,14 @@ body {
     transform: var(--img-transform, scale(1)) scale(1.06);
     filter: brightness(1) saturate(1);
 }
+
+/* Poll card - reduce bright skin tones */
+.mode-card[data-mode-id="poll"] .mode-card-img img {
+    filter: brightness(0.75) saturate(1.1) contrast(1.05);
+}
+.mode-card[data-mode-id="poll"]:hover .mode-card-img img {
+    filter: brightness(0.88) saturate(1.15) contrast(1.05);
+}
 .mode-card-img::after {
     content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 70%;
     background: linear-gradient(to top, var(--mode-card-bg) 10%, transparent);
@@ -10434,4 +10496,57 @@ body {
 @keyframes mvpRingPulse {
     0%, 100% { opacity: 0.4; transform: scale(1); }
     50% { opacity: 0.85; transform: scale(1.18); }
+}
+/* ============================================
+   MODE ASCENSION - Couleur blanc/gris clair
+   ============================================ */
+.bg-text.ascension-mode {
+    font-size: 20vw;
+    color: rgba(212, 212, 216, 0.03);
+}
+
+.mode-badge-header.ascension {
+    background: rgba(212, 212, 216, 0.1);
+    border-color: rgba(212, 212, 216, 0.25);
+    color: rgba(212, 212, 216, 0.8);
+}
+
+.mode-badge.ascension {
+    color: rgba(212, 212, 216, 0.6);
+}
+
+.mode-badge.ascension::before {
+    background: linear-gradient(90deg, transparent, rgba(212, 212, 216, 0.1), transparent);
+}
+
+.mode-badge.ascension .mode-badge-line {
+    background: linear-gradient(90deg, transparent, rgba(212, 212, 216, 0.4), rgba(212, 212, 216, 0.6));
+}
+
+.mode-badge.ascension:hover {
+    color: rgba(212, 212, 216, 0.9);
+}
+
+.btn-wrapper.ascension .main-action-btn:hover {
+    border-color: #d4d4d8;
+    box-shadow: 0 0 3.75rem rgba(212, 212, 216, 0.25);
+}
+
+.btn-wrapper.ascension .main-action-btn::before {
+    background: conic-gradient(from 0deg, transparent, #d4d4d8, transparent);
+}
+
+.btn-wrapper.ascension .main-action-btn:hover .btn-text {
+    color: #d4d4d8;
+    text-shadow: 0 0 1.25rem rgba(212, 212, 216, 0.5);
+}
+
+.btn-wrapper.ascension::before {
+    border-color: #d4d4d8;
+}
+
+/* Particules mode Ascension - Blanc */
+.btn-wrapper.ascension .particle {
+    background: #d4d4d8;
+    box-shadow: 0 0 0.375rem rgba(212, 212, 216, 0.5);
 }

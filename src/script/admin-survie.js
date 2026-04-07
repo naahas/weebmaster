@@ -48,13 +48,14 @@ function initSurvieSocketHandlers(socket) {
         survieState.groundItems = data.groundItems || [];
         survieState.boosts = data.boosts || [];
         survieState.questItems = data.questItems || {};
+        survieState.gameStartedAt = data.gameStartedAt || Date.now();
         
         // Save admin's quest state (with stepDesc) if admin is a player
         if (data.playerQuestStates && twitchUser && data.playerQuestStates[twitchUser.id]) {
             survieState.savedQuestState = data.playerQuestStates[twitchUser.id];
         }
         
-        showSurvieGameUI();
+        showSurvieGameUI(true);
     });
     
     socket.on('survie-round-start', (data) => {
@@ -102,11 +103,12 @@ function initSurvieSocketHandlers(socket) {
             survieState.groundItems = data.groundItems || [];
             if (data.boosts) survieState.boosts = data.boosts;
             if (data.questItems) survieState.questItems = data.questItems;
+            if (data.gameStartedAt) survieState.gameStartedAt = data.gameStartedAt;
             // Save player quest state for restore
             if (data.playerQuestState && data.playerQuestState.quests) {
                 survieState.savedQuestState = data.playerQuestState;
             }
-            showSurvieGameUI();
+            showSurvieGameUI(false);
         }
     });
 }
@@ -114,9 +116,11 @@ function initSurvieSocketHandlers(socket) {
 // ============================================
 // UI
 // ============================================
-function showSurvieGameUI() {
-    // Reset intro flag for fresh game
-    sessionStorage.removeItem('survieIntroShownAdmin');
+function showSurvieGameUI(isFreshStart) {
+    // Only reset intro flag on fresh game start, not reconnect
+    if (isFreshStart) {
+        sessionStorage.removeItem('survieIntroShownAdmin');
+    }
     
     // Hide header immediately via CSS class
     document.body.classList.add('survie-active');
@@ -180,6 +184,14 @@ function showSurvieGameUI() {
         container.id = 'survieContainer';
         container.innerHTML = `
             <canvas id="survieAdminCanvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+            <div class="survie-spectator-hud" id="survieSpectatorHud" style="display:none;">
+                <button class="survie-spec-btn" id="survieSpecPrev">◀</button>
+                <div class="survie-spec-info">
+                    <span class="survie-spec-label">SPECTATEUR</span>
+                    <span class="survie-spec-name" id="survieSpecName">—</span>
+                </div>
+                <button class="survie-spec-btn" id="survieSpecNext">▶</button>
+            </div>
             <button class="survie-close-lobby-btn" id="survieCloseLobbyBtn">Fermer lobby</button>
             <div class="survie-inventory" id="survieInventory">
                 <div class="survie-inventory-slot" data-slot="1" id="survieSlot1"></div>
@@ -293,6 +305,12 @@ function showSurvieGameUI() {
             };
         }
         
+        // Spectator HUD buttons
+        const specPrev = document.getElementById('survieSpecPrev');
+        const specNext = document.getElementById('survieSpecNext');
+        if (specPrev) specPrev.onclick = () => { if (survieAdminCanvas) survieAdminCanvas.spectatorPrev(); };
+        if (specNext) specNext.onclick = () => { if (survieAdminCanvas) survieAdminCanvas.spectatorNext(); };
+        
         // Init admin canvas
         initSurvieAdminCanvas();
     }
@@ -366,7 +384,19 @@ function showSurvieGameUI() {
     // Show intro overlay only on first game start (not resync)
     if (!sessionStorage.getItem('survieIntroShownAdmin')) {
         sessionStorage.setItem('survieIntroShownAdmin', 'true');
+        if (survieAdminCanvas) survieAdminCanvas.frozen = true;
         _showAdminSurvieIntro();
+    } else if (!isFreshStart && survieState.gameStartedAt && survieAdminCanvas) {
+        // Reconnect during tuto — freeze for remaining time
+        const TUTO_DURATION = 14000;
+        const elapsed = Date.now() - survieState.gameStartedAt;
+        const remaining = TUTO_DURATION - elapsed;
+        if (remaining > 0) {
+            survieAdminCanvas.frozen = true;
+            setTimeout(() => {
+                if (survieAdminCanvas) survieAdminCanvas.frozen = false;
+            }, remaining);
+        }
     }
 }
 
@@ -442,8 +472,18 @@ function initSurvieAdminCanvas() {
             if (socket) {
                 socket.emit('survie-boost-pickup', { boostId: boost.id, twitchId: twitchUser ? twitchUser.id : null });
             }
+        },
+        onSpectatorChange(twitchId, username) {
+            const nameEl = document.getElementById('survieSpecName');
+            if (nameEl) nameEl.textContent = username;
         }
     });
+    
+    // Show spectator HUD only if admin is NOT a player
+    const specHud = document.getElementById('survieSpectatorHud');
+    if (specHud) {
+        specHud.style.display = adminIsPlayer ? 'none' : 'flex';
+    }
     
     // Resize first so dimensions are available for position calculation
     survieAdminCanvas.resize();
@@ -1401,6 +1441,134 @@ function _showAdminVictoryOverlay(data) {
 }
 
 function _showAdminSurvieIntro() {
+    const SLIDE_MS = 3000;
+    const TOTAL = 4;
+    let current = 0;
+
+    const existing = document.getElementById('survieTutoOverlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'survieTutoOverlay';
+    overlay.className = 'survie-tuto-overlay';
+    overlay.innerHTML = `
+        <div class="survie-tuto-step" id="survTutoStep1">
+            <div class="survie-tuto-visual">
+                <div class="survie-tuto-keys">
+                    <div class="survie-tuto-key stk-up">Z</div>
+                    <div class="survie-tuto-key stk-left">Q</div>
+                    <div class="survie-tuto-key stk-down">S</div>
+                    <div class="survie-tuto-key stk-right">D</div>
+                </div>
+            </div>
+            <div class="survie-tuto-title">Explorez la map</div>
+            <div class="survie-tuto-desc">Utilisez <span class="sthl">ZQSD</span>, les <span class="sthl">flèches</span> ou <span class="sthl">cliquez</span> pour vous déplacer. Sur mobile, <span class="sthl">touchez</span> l'écran.</div>
+            <div class="survie-tuto-timer"><div class="survie-tuto-timer-fill" id="survTutoTimer1"></div></div>
+        </div>
+        <div class="survie-tuto-step" id="survTutoStep2">
+            <div class="survie-tuto-visual">
+                <div class="survie-tuto-ekey">E</div>
+            </div>
+            <div class="survie-tuto-title">Interagissez</div>
+            <div class="survie-tuto-desc">Appuyez <span class="sthl">E</span> pour parler aux <span class="sthl">personnages</span>, interagir avec des <span class="sthl">structures</span> et <span class="sthl">ramasser des objets</span>. Sur mobile, <span class="sthl">touchez</span> directement.</div>
+            <div class="survie-tuto-timer"><div class="survie-tuto-timer-fill" id="survTutoTimer2"></div></div>
+        </div>
+        <div class="survie-tuto-step" id="survTutoStep3">
+            <div class="survie-tuto-visual">
+                <div class="survie-tuto-boosts">
+                    <div class="survie-tuto-boost-item">
+                        <div class="survie-tuto-orb st-speed"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(100,200,255,0.8)" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+                        <div class="survie-tuto-boost-lbl st-speed">Vitesse</div>
+                    </div>
+                    <div class="survie-tuto-boosts-sep"></div>
+                    <div class="survie-tuto-boost-item">
+                        <div class="survie-tuto-orb st-malus"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,80,80,0.8)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></div>
+                        <div class="survie-tuto-boost-lbl st-malus">Malus</div>
+                    </div>
+                </div>
+            </div>
+            <div class="survie-tuto-title">Boosts & Malus</div>
+            <div class="survie-tuto-desc">Ramassez des <span class="sthl">boosts</span> pour accélérer et des <span class="sthl">malus</span> pour ralentir vos adversaires. Ils apparaissent sur toute la carte.</div>
+            <div class="survie-tuto-timer"><div class="survie-tuto-timer-fill" id="survTutoTimer3"></div></div>
+        </div>
+        <div class="survie-tuto-step" id="survTutoStep4">
+            <div class="survie-tuto-visual">
+                <div class="survie-tuto-quests">
+                    <div class="survie-tuto-qcard stq-1"><div class="survie-tuto-qdot"></div><span>Livrer le parchemin</span></div>
+                    <div class="survie-tuto-qcard stq-2"><div class="survie-tuto-qdot"></div><span>Réunir l'équipe</span></div>
+                    <div class="survie-tuto-qcard stq-3"><div class="survie-tuto-qdot"></div><span>Trouver le trésor</span></div>
+                    <div class="survie-tuto-qcard stq-4"><div class="survie-tuto-qdot"></div><span>Résoudre l'énigme</span></div>
+                </div>
+            </div>
+            <div class="survie-tuto-title">Complétez vos quêtes</div>
+            <div class="survie-tuto-desc">Vos objectifs s'affichent <span class="sthl">en haut à gauche</span>. Le premier joueur à terminer toutes ses quêtes <span class="sthl">remporte la partie</span>.</div>
+            <div class="survie-tuto-timer"><div class="survie-tuto-timer-fill" id="survTutoTimer4"></div></div>
+        </div>
+        <div class="survie-tuto-pips">
+            <div class="survie-tuto-pip st-active"></div>
+            <div class="survie-tuto-pip"></div>
+            <div class="survie-tuto-pip"></div>
+            <div class="survie-tuto-pip"></div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('active'));
+
+    function advance() {
+        if (current >= TOTAL - 1) {
+            _playSurvieStartSound();
+            overlay.classList.add('exiting');
+            setTimeout(() => {
+                overlay.remove();
+                if (survieAdminCanvas) survieAdminCanvas.frozen = false;
+                _showTraceOnText();
+            }, 600);
+            return;
+        }
+        const curEl = document.getElementById('survTutoStep' + (current + 1));
+        if (curEl) curEl.classList.add('exiting');
+        setTimeout(() => {
+            if (curEl) curEl.classList.remove('active', 'exiting');
+            current++;
+            const nextEl = document.getElementById('survTutoStep' + (current + 1));
+            if (nextEl) nextEl.classList.add('active');
+            const timer = document.getElementById('survTutoTimer' + (current + 1));
+            if (timer) { timer.style.animation = 'none'; void timer.offsetHeight; timer.style.animation = 'survTutoShrink ' + SLIDE_MS + 'ms linear forwards'; }
+            document.querySelectorAll('.survie-tuto-pip').forEach((p, i) => {
+                p.classList.remove('st-active', 'st-done');
+                if (i === current) p.classList.add('st-active');
+                else if (i < current) p.classList.add('st-done');
+            });
+            setTimeout(advance, SLIDE_MS);
+        }, 250);
+    }
+
+    // 1s delay before first slide appears
+    setTimeout(() => {
+        const firstStep = document.getElementById('survTutoStep1');
+        if (firstStep) firstStep.classList.add('active');
+        const firstTimer = document.getElementById('survTutoTimer1');
+        if (firstTimer) { firstTimer.style.animation = 'none'; void firstTimer.offsetHeight; firstTimer.style.animation = 'survTutoShrink ' + SLIDE_MS + 'ms linear forwards'; }
+        setTimeout(advance, SLIDE_MS);
+    }, 1000);
+}
+
+function _showAdminQuestCompleteText(completed, total) {
+    const existing = document.getElementById('survieQuestComplete');
+    if (existing) existing.remove();
+    
+    const el = document.createElement('div');
+    el.id = 'survieQuestComplete';
+    el.className = 'survie-quest-complete-text';
+    el.innerHTML = `QUÊTE COMPLÈTE <span class="qc-count">${completed}/${total}</span>`;
+    document.body.appendChild(el);
+    
+    setTimeout(() => {
+        el.classList.add('exit');
+        setTimeout(() => el.remove(), 600);
+    }, 2000);
+}
+function _showTraceOnText() {
     const intro = document.createElement('div');
     intro.id = 'survieIntro';
     intro.className = 'survie-intro-text';
@@ -1422,18 +1590,43 @@ function _showAdminSurvieIntro() {
     }, 1800);
 }
 
-function _showAdminQuestCompleteText(completed, total) {
-    const existing = document.getElementById('survieQuestComplete');
-    if (existing) existing.remove();
-    
-    const el = document.createElement('div');
-    el.id = 'survieQuestComplete';
-    el.className = 'survie-quest-complete-text';
-    el.innerHTML = `QUÊTE COMPLÈTE <span class="qc-count">${completed}/${total}</span>`;
-    document.body.appendChild(el);
-    
-    setTimeout(() => {
-        el.classList.add('exit');
-        setTimeout(() => el.remove(), 600);
-    }, 2000);
+function _playSurvieStartSound() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const t = ctx.currentTime;
+        
+        // Sharp attack bip — two quick ascending tones
+        const bip1 = ctx.createOscillator();
+        const g1 = ctx.createGain();
+        bip1.connect(g1); g1.connect(ctx.destination);
+        bip1.type = 'square';
+        bip1.frequency.setValueAtTime(880, t);
+        g1.gain.setValueAtTime(0.12, t);
+        g1.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+        bip1.start(t); bip1.stop(t + 0.08);
+        
+        // Second bip — higher, punchier
+        const bip2 = ctx.createOscillator();
+        const g2 = ctx.createGain();
+        bip2.connect(g2); g2.connect(ctx.destination);
+        bip2.type = 'square';
+        bip2.frequency.setValueAtTime(1320, t + 0.08);
+        g2.gain.setValueAtTime(0, t);
+        g2.gain.setValueAtTime(0.14, t + 0.08);
+        g2.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+        bip2.start(t + 0.08); bip2.stop(t + 0.19);
+        
+        // Bright snap noise
+        const noise = ctx.createBufferSource();
+        const buf = ctx.createBuffer(1, ctx.sampleRate * 0.03, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (d.length * 0.02));
+        noise.buffer = buf;
+        const nG = ctx.createGain();
+        const hp = ctx.createBiquadFilter();
+        hp.type = 'highpass'; hp.frequency.value = 4000;
+        noise.connect(hp); hp.connect(nG); nG.connect(ctx.destination);
+        nG.gain.setValueAtTime(0.08, t + 0.07);
+        noise.start(t + 0.07);
+    } catch(e) {}
 }

@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="home-collect.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&display=swap"
         rel="stylesheet">
 
     <link rel="icon" type="image/png" href="icon.png">
@@ -246,6 +246,63 @@
                     </button>
                 </div>
 
+                <!-- Mode Poll: Lobby card -->
+                <div class="lobby-card lobby-card-v3 lobby-poll" v-if="lobbyMode === 'poll'">
+                    <div class="lobby-glow-line"></div>
+                    <svg class="lobby-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M18 20V10"/>
+                        <path d="M12 20V4"/>
+                        <path d="M6 20v-6"/>
+                    </svg>
+                    <h2 class="lobby-title">La partie va commencer</h2>
+                    <div class="lobby-subtitle">Mode Poll</div>
+                    <div class="lobby-players-line">
+                        <span class="lobby-line"></span>
+                        <span class="lobby-count">
+                            <span class="lobby-dot"></span>
+                            <strong>{{ playerCount }}</strong> en attente
+                        </span>
+                        <span class="lobby-line"></span>
+                    </div>
+                    <button 
+                        class="lobby-btn" 
+                        :class="{ joined: hasJoined }"
+                        @click="joinLobby" 
+                        :disabled="hasJoined"
+                    >
+                        {{ hasJoined ? 'Vous êtes dans la partie' : 'Rejoindre' }}
+                    </button>
+                </div>
+
+                <!-- Mode Ascension: Lobby card -->
+                <div class="lobby-card lobby-card-v3 lobby-ascension" v-if="lobbyMode === 'ascension'">
+                    <div class="lobby-glow-line"></div>
+                    <svg class="lobby-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M3 21h18"/>
+                        <path d="M12 3l7 18"/>
+                        <path d="M12 3L5 21"/>
+                        <path d="M8 14h8"/>
+                    </svg>
+                    <h2 class="lobby-title">La partie va commencer</h2>
+                    <div class="lobby-subtitle">Mode Ascension</div>
+                    <div class="lobby-players-line">
+                        <span class="lobby-line"></span>
+                        <span class="lobby-count">
+                            <span class="lobby-dot"></span>
+                            <strong>{{ playerCount }}</strong> en attente
+                        </span>
+                        <span class="lobby-line"></span>
+                    </div>
+                    <button 
+                        class="lobby-btn" 
+                        :class="{ joined: hasJoined }"
+                        @click="joinLobby" 
+                        :disabled="hasJoined"
+                    >
+                        {{ hasJoined ? 'Vous êtes dans la partie' : 'Rejoindre' }}
+                    </button>
+                </div>
+
                 <button class="btn-secondary" @click="logout">
                     Déconnexion
                 </button>
@@ -268,7 +325,7 @@
 
             <!-- État: Partie en cours -->
             <div class="content-section game-section" 
-                 :class="{ 'no-animation': lobbyMode === 'bombanime' || lobbyMode === 'collect' || lobbyMode === 'survie' }"
+                 :class="{ 'no-animation': lobbyMode === 'bombanime' || lobbyMode === 'collect' || lobbyMode === 'survie' || lobbyMode === 'ascension' }"
                  v-if="gameInProgress && isAuthenticated && !gameEnded">
                 
                 <!-- ============================================
@@ -1142,10 +1199,131 @@
                     </div>
                 </template>
 
+                <!-- ═══ MODE POLL - Interface de vote ═══ -->
+                <template v-else-if="lobbyMode === 'poll' && poll.active && !gameEnded">
+                    <div class="poll-game-container">
+                        <!-- Vote notification zone -->
+                        <div class="poll-p-notif-zone" ref="pollNotifZone" v-if="poll.showNotifs && (poll.votingOpen || poll.showingResults)"></div>
+                        
+                        <!-- Notif toggle -->
+                        <button class="poll-p-notif-toggle" @click="poll.showNotifs = !poll.showNotifs" :class="{ off: !poll.showNotifs }">
+                            <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                            </svg>
+                        </button>
+                        
+                        <!-- Header (hidden until first match) -->
+                        <div class="poll-p-header" v-if="poll.characters.length > 0 && !poll.gameWinner">
+                            <span class="poll-p-badge-round">Round {{ poll.currentRound + 1 }}/{{ poll.totalRounds }}</span>
+                            <span class="poll-p-badge-match">Match {{ poll.currentMatchIndex + 1 }}/{{ poll.totalMatches }}</span>
+                        </div>
+                        
+                        <!-- Timer -->
+                        <div class="poll-p-timer-wrap" ref="pollTimerWrap" v-if="poll.characters.length > 0 && !poll.gameWinner" :class="{ urgent: poll.votingOpen && poll.timeRemaining <= 3 }">
+                            <div class="poll-p-timer-bar" ref="pollTimerBar">
+                                <div class="poll-p-timer-fill" ref="pollTimerFill"></div>
+                                <div class="poll-p-timer-flash" ref="pollTimerFlash"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Winner screen -->
+                        <div class="poll-p-victory" v-if="poll.gameWinner">
+                            <div class="poll-p-victory-crown">
+                                <svg viewBox="0 0 80 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M4 48L14 18L28 32L40 8L52 32L66 18L76 48H4Z" fill="url(#crownGrad)" stroke="rgba(240,128,176,0.6)" stroke-width="1.5"/>
+                                    <circle cx="14" cy="16" r="4" fill="#f080b0" opacity="0.8"/>
+                                    <circle cx="40" cy="6" r="5" fill="#f5a0c8" opacity="0.9"/>
+                                    <circle cx="66" cy="16" r="4" fill="#f080b0" opacity="0.8"/>
+                                    <rect x="4" y="48" width="72" height="6" rx="2" fill="url(#crownGrad)"/>
+                                    <defs>
+                                        <linearGradient id="crownGrad" x1="4" y1="8" x2="76" y2="54">
+                                            <stop offset="0%" stop-color="#f080b0"/>
+                                            <stop offset="50%" stop-color="#f5c0d8"/>
+                                            <stop offset="100%" stop-color="#f080b0"/>
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                                <div class="poll-p-victory-sparkles" ref="pollVictorySparkles"></div>
+                            </div>
+                            <div class="poll-p-victory-card-wrap">
+                                <div class="poll-p-victory-card-inner">
+                                    <div class="poll-p-victory-card-glow"></div>
+                                    <div class="poll-p-victory-img-wrap">
+                                        <img :src="poll.gameWinner.img" :alt="poll.gameWinner.name" onerror="this.src='novice.png'">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="poll-p-victory-name">{{ poll.gameWinner.name }}</div>
+                            <div class="poll-p-victory-category">{{ poll.categoryName }}</div>
+                            <div class="poll-p-victory-stats">{{ poll.bracketSize }} personnages · {{ poll.totalRounds }} rounds</div>
+                            <button class="poll-p-victory-back" @click="pollBackToLobby">Retour</button>
+                        </div>
+                        
+                        <!-- Character cards -->
+                        <div class="poll-p-cards" :class="{ 'cards-3': poll.characters.length === 3, 'cards-4': poll.characters.length >= 4, 'poll-p-hide-names': !poll.showNames }" v-else>
+                            <template v-for="(char, idx) in poll.characters">
+                                <div class="poll-p-vs" v-if="idx > 0" :key="'vs-'+idx">VS</div>
+                                <div 
+                                    class="poll-p-card"
+                                    :class="{ 
+                                        'poll-p-voted': poll.myVote === char.id,
+                                        'poll-p-not-voted': poll.myVote && poll.myVote !== char.id && !poll.showingResults,
+                                        'poll-p-winner': poll.showingResults && poll.winner && poll.winner.id === char.id,
+                                        'poll-p-loser': poll.showingResults && poll.winner && poll.winner.id !== char.id
+                                    }"
+                                    @click="pollVote(char.id)"
+                                    :key="char.id"
+                                    :ref="'pollCard_' + char.id"
+                                >
+                                    <div class="poll-p-card-inner">
+                                        <div class="poll-p-card-glow"></div>
+                                        <div class="poll-p-card-img-wrap">
+                                            <img :src="char.img" :alt="char.name" class="poll-p-card-img" onerror="this.src='novice.png'">
+                                        </div>
+                                        <div class="poll-p-card-body">
+                                            <div class="poll-p-card-name">{{ char.name }}</div>
+                                            <div class="poll-p-card-bar"></div>
+                                        </div>
+                                        <div class="poll-p-card-pulse"></div>
+                                        <div class="poll-p-card-particles"></div>
+                                        <div class="poll-p-card-shine"></div>
+                                        <div class="poll-p-card-wbadge">WINNER</div>
+                                    </div>
+                                    <!-- Voter avatars badge (outside inner to avoid overflow clip) -->
+                                    <div class="poll-p-voter-badge" v-if="poll.showingResults && poll.resultsVisible && poll.votersByChar && poll.votersByChar[char.id] && poll.votersByChar[char.id].length > 0">
+                                        <div class="pvb-av-wrap" v-for="(voter, vi) in poll.votersByChar[char.id].slice(0, 4)" :key="vi" :title="voter.username">
+                                            <img class="pvb-av" :src="voter.avatar" alt="" onerror="this.parentNode.innerHTML='<div class=pvb-av pvb-av-placeholder>' + (this.alt || '?')[0] + '</div>'">
+                                        </div>
+                                        <span class="pvb-count" v-if="poll.votersByChar[char.id].length > 4">+{{ poll.votersByChar[char.id].length - 4 }}</span>
+                                    </div>
+                                    <!-- Result under card -->
+                                    <div class="poll-p-result" :class="{ show: poll.resultsVisible, win: poll.resultsVisible && poll.winner && poll.winner.id === char.id }" v-if="poll.showingResults && poll.voteResults">
+                                        <div class="poll-p-res-pct">{{ poll.voteResults[char.id]?.percentage || 0 }}%</div>
+                                        <div class="poll-p-res-votes">{{ poll.voteResults[char.id]?.count || 0 }} vote{{ (poll.voteResults[char.id]?.count || 0) > 1 ? 's' : '' }}</div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        
+                        <!-- Tie: waiting for host message -->
+                        <div class="poll-p-tie-message" v-if="poll.showingResults && poll.isTie && !poll.winner && poll.resultsVisible">
+                            <span>Égalité, en attente de l'hôte...</span>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- ============================================
+                     MODE ASCENSION - Interface de jeu
+                     ============================================ -->
+                <template v-else-if="lobbyMode === 'ascension' && !gameEnded">
+                    <div class="ascension-player-screen"></div>
+                </template>
+
                 <!-- ============================================
                      MODE CLASSIQUE/RIVALRY - Interface de jeu
                      ============================================ -->
-                <template v-else-if="!collect.reconnecting">
+                <template v-else-if="!collect.reconnecting && lobbyMode !== 'ascension'">
                 <!-- HUD du joueur -->
                 <div class="player-hud">
                     <div class="hud-item hud-username-item">
@@ -1502,16 +1680,13 @@
                 <!-- Header -->
                 <!-- Header avec Avatar -->
                 <div class="profile-header">
-                    <div class="profile-header-glow"></div>
 
                     <div class="profile-user-info">
-                        <!-- Avatar avec anneau animé -->
+                        <!-- Avatar avec anneau -->
                         <div class="profile-avatar-wrapper">
                             <div class="profile-avatar-ring"></div>
-                            <!-- Si tu as l'URL Twitch dans profileData -->
                             <img v-if="profileData && profileData.user && profileData.user.avatar_url"
                                 :src="profileData.user.avatar_url" :alt="username" class="profile-avatar-img">
-                            <!-- Sinon, icône par défaut -->
                             <div v-else class="profile-avatar-default">
                                 <svg viewBox="0 0 24 24" fill="currentColor">
                                     <path
@@ -1520,7 +1695,13 @@
                             </div>
                         </div>
 
-                        <span class="profile-username">{{ username }}</span>
+                        <div class="profile-user-details">
+                            <span class="profile-username">{{ username }}</span>
+                            <div class="profile-coins-display" v-if="profileData">
+                                <img src="scoin.png" alt="S-Coin" class="scoin-icon">
+                                <span class="scoin-amount">{{ (profileData.user.coins || 0).toLocaleString() }}</span>
+                            </div>
+                        </div>
                     </div>
 
                     <button class="profile-close-btn" @click="closeProfile">×</button>
@@ -1539,13 +1720,18 @@
                     <div class="profile-tab-indicator" ref="profileTabIndicator"></div>
                 </div>
 
+                <!-- Loading -->
+                <div class="profile-loading" v-if="profileLoading">
+                    <div class="profile-loading-spinner"></div>
+                </div>
+
                 <!-- Content -->
                 <div class="profile-content" v-if="profileData">
                     <!-- Tab Profil -->
                     <div class="profile-tab-panel" :class="{ active: currentTab === 'profile' }" ref="panelProfile">
                         <div class="profile-title-showcase" ref="titleShowcase">
                             <div class="profile-title-label">Titre actuel</div>
-                            <div class="profile-title-value">{{ profileData.titles.current.title_name }}</div>
+                            <div class="profile-title-value">{{ profileData.user.display_title || profileData.titles.current.title_name }}</div>
                         </div>
                         <div class="profile-stats-grid">
                             <div class="profile-stat-card" ref="statCard1" @click="rippleEffect($event)">
@@ -1713,26 +1899,28 @@
         <!-- 🆕 Overlay sombre (mobile uniquement) -->
         <div class="leaderboard-overlay" :class="{ active: showLeaderboard }" @click="toggleLeaderboard"
             v-if="leaderboardLoaded && !isAuthenticated"></div>
-        <!-- 🆕 Leaderboard Panel (desktop toujours visible, mobile toggle) -->
+        <!-- Leaderboard Panel (desktop toujours visible, mobile toggle) -->
         <div class="leaderboard-container" :class="{ 'mobile-open': showLeaderboard }"
             v-if="leaderboardLoaded && !isAuthenticated">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <div class="leaderboard-title-wrapper">
-                    <h3 class="leaderboard-title" style="margin-bottom: 0;">🏆 Classement</h3>
-                    <a href="/ranking" target="_blank" class="ranking-redirect-btn" title="Voir le classement complet">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                            <polyline points="15 3 21 3 21 9"></polyline>
-                            <line x1="10" y1="14" x2="21" y2="3"></line>
-                        </svg>
-                    </a>
-                </div>
-                <button class="leaderboard-close-btn" @click="toggleLeaderboard">✕</button>
-            </div>
             <div class="leaderboard-list">
-                <div v-for="(player, index) in leaderboard" :key="player.twitch_id" class="leaderboard-item"
+                <div v-for="(player, index) in leaderboard.slice(0, 3)" :key="player.twitch_id" class="leaderboard-item"
                     :class="'rank-' + (index + 1)">
-                    <span class="rank">{{ index + 1 }}</span>
+                    <span class="rank-medal">
+                        <svg v-if="index === 0" viewBox="0 0 24 24" fill="none" class="medal-icon gold">
+                            <circle cx="12" cy="9" r="7" fill="currentColor"/>
+                            <path d="M8 15l-2 7 6-3 6 3-2-7" fill="currentColor" opacity="0.6"/>
+                        </svg>
+                        <svg v-else-if="index === 1" viewBox="0 0 24 24" fill="none" class="medal-icon silver">
+                            <circle cx="12" cy="9" r="7" fill="currentColor"/>
+                            <path d="M8 15l-2 7 6-3 6 3-2-7" fill="currentColor" opacity="0.6"/>
+                        </svg>
+                        <svg v-else-if="index === 2" viewBox="0 0 24 24" fill="none" class="medal-icon bronze">
+                            <circle cx="12" cy="9" r="7" fill="currentColor"/>
+                            <path d="M8 15l-2 7 6-3 6 3-2-7" fill="currentColor" opacity="0.6"/>
+                        </svg>
+                    </span>
+                    <img v-if="player.avatar_url" :src="player.avatar_url" :alt="player.username" class="lb-avatar">
+                    <div v-else class="lb-avatar-default">{{ player.username.charAt(0).toUpperCase() }}</div>
                     <div class="player-info">
                         <span class="player-name">{{ player.username }}</span>
                         <span class="player-title">{{ player.title_name }}</span>
@@ -1740,11 +1928,8 @@
                     <span class="player-winrate">{{ player.win_rate }}%</span>
                 </div>
             </div>
-        </div>
-
-
-
-        <!-- 🆕 Bouton Instagram (visible uniquement avant connexion) -->
+            <a href="/ranking" target="_blank" class="lb-access-link">Accéder au classement</a>
+        </div>        <!-- 🆕 Bouton Instagram (visible uniquement avant connexion) -->
         <a href="https://www.instagram.com/naahas__" target="_blank" class="instagram-btn"
             v-if="!isAuthenticated && !gameInProgress">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
@@ -1814,7 +1999,7 @@
         </div>
 
         <!-- Jauge de Combo (Desktop uniquement - côté droit) -->
-        <div class="combo-gauge-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'survie' && !collect.active && bonusEnabled">
+        <div class="combo-gauge-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'survie' && lobbyMode !== 'poll' && lobbyMode !== 'ascension' && !collect.active && bonusEnabled">
             <!-- 🔥 Particules EN DEHORS de la jauge -->
             <div class="combo-particles-external"></div>
 
@@ -1837,7 +2022,7 @@
         </div>
 
         <!-- 🆕 NOUVEAU SYSTÈME BONUS - Icône + Hover Menu -->
-        <div class="bonus-icon-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'survie' && !collect.active && bonusEnabled">
+        <div class="bonus-icon-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'survie' && lobbyMode !== 'poll' && lobbyMode !== 'ascension' && !collect.active && bonusEnabled">
             <div class="bonus-icon-wrapper" @mouseenter="showBonusMenu = true" @mouseleave="showBonusMenu = false"
                 @click="showBonusMenu = !showBonusMenu">
 
@@ -1889,7 +2074,7 @@
 
 
         <!-- 🆕 SYSTÈME DE DÉFIS - Bandelettes à gauche -->
-        <div class="challenges-container" v-if="gameInProgress && !gameEnded && challenges.length > 0 && lobbyMode !== 'bombanime' && lobbyMode !== 'collect' && bonusEnabled">
+        <div class="challenges-container" v-if="gameInProgress && !gameEnded && challenges.length > 0 && lobbyMode !== 'bombanime' && lobbyMode !== 'collect' && lobbyMode !== 'ascension' && bonusEnabled">
             <div class="challenge-strip" 
                  v-for="challenge in challenges" 
                  :key="challenge.id"
@@ -1955,7 +2140,7 @@
 
 
         <!-- 🆕 BONUS MOBILE - Icône avec jauge circulaire (mobile uniquement, pas en FizzBuzz) -->
-        <div class="bonus-gauge-mobile" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'survie' && bonusEnabled" @click="toggleBonusArcMobile">
+        <div class="bonus-gauge-mobile" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'survie' && lobbyMode !== 'poll' && lobbyMode !== 'ascension' && bonusEnabled" @click="toggleBonusArcMobile">
 
             <!-- SVG Gauge -->
             <svg class="gauge-svg" viewBox="0 0 68 68">
@@ -1981,7 +2166,7 @@
         </div>
 
         <!-- 🆕 Menu Arc de Cercle (pas en FizzBuzz) -->
-        <div class="bonus-arc-menu" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'survie' && bonusEnabled">
+        <div class="bonus-arc-menu" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'survie' && lobbyMode !== 'poll' && lobbyMode !== 'ascension' && bonusEnabled">
             <!-- Overlay en premier (nth-child(1)) -->
             <div class="bonus-arc-overlay" :class="{ active: showBonusArcMobile }" @click="closeBonusArcMobile"></div>
 
@@ -2011,7 +2196,7 @@
 
 
         <!-- 🆕 DÉFIS MOBILE - Icône en bas gauche (pas en FizzBuzz) -->
-        <div class="challenges-mobile-icon" v-if="gameInProgress && !gameEnded && challenges.length > 0 && lobbyMode !== 'bombanime' && lobbyMode !== 'collect' && bonusEnabled" 
+        <div class="challenges-mobile-icon" v-if="gameInProgress && !gameEnded && challenges.length > 0 && lobbyMode !== 'bombanime' && lobbyMode !== 'collect' && lobbyMode !== 'ascension' && bonusEnabled" 
              @click="showChallengesMobile = !showChallengesMobile">
             <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
@@ -2058,7 +2243,7 @@
         <div class="streamers-panel" v-if="!isAuthenticated && !gameInProgress" :class="{ 'has-live': anyStreamerLive }">
             <div class="streamers-trigger"></div>
             <div class="streamers-content">
-                <div class="streamers-title"></div>
+                <div class="streamers-title">Partenaires</div>
                 <div class="streamers-list">
                     <!-- 5 premiers streamers -->
                     <a v-for="streamer in visibleStreamers" :key="streamer.id"
