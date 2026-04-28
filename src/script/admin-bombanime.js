@@ -283,6 +283,27 @@ function initBombanimeSocketHandlers(socket) {
         sessionStorage.removeItem('adminBombanimePlayer');
         displayBombanimeWinner(data);
     });
+    
+    // 🎁 Les rewards arrivent en différé (calcul DB en arrière-plan)
+    socket.on('bombanime-rewards-ready', (data) => {
+        console.log('🎁 BombAnime rewards prêts:', data);
+        if (!data.rewardsData) return;
+        
+        // Mettre à jour sessionStorage
+        const stored = sessionStorage.getItem('bombanimeWinnerData');
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                parsed.rewardsData = data.rewardsData;
+                sessionStorage.setItem('bombanimeWinnerData', JSON.stringify(parsed));
+            } catch(e) { /* ignore */ }
+        }
+        
+        // Afficher la reward bar pour l'admin s'il a joué
+        if (typeof twitchUser !== 'undefined' && twitchUser && twitchUser.id && data.rewardsData[twitchUser.id]) {
+            showBombanimeAdminReward(data.rewardsData[twitchUser.id]);
+        }
+    });
 
     socket.on('bombanime-typing', (data) => {
         const playerSlot = document.querySelector(`.player-slot[data-twitch-id="${data.playerTwitchId}"]`);
@@ -1616,8 +1637,16 @@ function displayBombanimeWinner(data) {
     sessionStorage.setItem('bombanimeWinnerData', JSON.stringify({
         winner: data.winner,
         namesUsed: data.namesUsed,
-        duration: data.duration
+        duration: data.duration,
+        rewardsData: data.rewardsData,
+        serie: data.serie
     }));
+    
+    // 🎁 Si les rewards sont déjà présents (cas rare), afficher immédiatement
+    // Sinon ils arriveront via bombanime-rewards-ready
+    if (data.rewardsData && typeof twitchUser !== 'undefined' && twitchUser && twitchUser.id && data.rewardsData[twitchUser.id]) {
+        showBombanimeAdminReward(data.rewardsData[twitchUser.id]);
+    }
     
     // 🆕 Cacher l'écran winner classique s'il est visible
     const classicWinnerOverlay = document.getElementById('winnerOverlay');
@@ -1641,6 +1670,7 @@ function displayBombanimeWinner(data) {
     }
     
     const winnerName = data.winner ? data.winner.username : 'Aucun gagnant';
+    const winnerAvatar = data.winner && data.winner.avatarUrl ? data.winner.avatarUrl : 'novice.png';
     
     winnerOverlay.innerHTML = `
         <div class="bombanime-winner-content">
@@ -1652,7 +1682,16 @@ function displayBombanimeWinner(data) {
             </div>
             
             <div class="bombanime-winner-label">VAINQUEUR</div>
-            <div class="bombanime-winner-name">${winnerName}</div>
+            ${data.winner ? `
+                <div class="bombanime-winner-name-row">
+                    <div class="bombanime-winner-avatar">
+                        <img src="${winnerAvatar}" alt="${winnerName}" onerror="this.src='novice.png'">
+                    </div>
+                    <div class="bombanime-winner-name">${winnerName}</div>
+                </div>
+            ` : `
+                <div class="bombanime-winner-name bombanime-winner-name-empty">${winnerName}</div>
+            `}
             
             <div class="bombanime-winner-stats">
                 <div class="bombanime-winner-stat">
@@ -1665,9 +1704,18 @@ function displayBombanimeWinner(data) {
                 </div>
             </div>
             
-            <button class="bombanime-winner-close-btn" onclick="closeBombanimeWinner()">
-                <span>Fermer le lobby</span>
-            </button>
+            <div class="bombanime-winner-actions-row">
+                <button class="bombanime-winner-close-btn" onclick="closeBombanimeWinner()">
+                    <span>Fermer le lobby</span>
+                </button>
+                <button class="bombanime-winner-suggest-btn" onclick="openAdminSuggestionModal()" title="Faire une suggestion de personnages">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+                        <line x1="4" y1="22" x2="4" y2="15"/>
+                    </svg>
+                    <span>Faire une suggestion</span>
+                </button>
+            </div>
         </div>
     `;
     
@@ -1677,10 +1725,284 @@ function displayBombanimeWinner(data) {
     });
 }
 
+// 🎌 Modal de suggestions multi-lignes pour l'admin
+function openAdminSuggestionModal() {
+    let overlay = document.getElementById('bombanimeAdminSuggestionOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'bombanimeAdminSuggestionOverlay';
+        overlay.className = 'bombanime-admin-suggest-overlay';
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closeAdminSuggestionModal();
+        });
+        document.body.appendChild(overlay);
+    }
+
+    const serieName = (typeof bombanimeState !== 'undefined' && bombanimeState.serie) ? bombanimeState.serie : '';
+    const winnerDataStored = sessionStorage.getItem('bombanimeWinnerData');
+    let currentSerie = serieName;
+    if (!currentSerie && winnerDataStored) {
+        try {
+            const parsed = JSON.parse(winnerDataStored);
+            currentSerie = parsed.serie || '';
+        } catch(e) {}
+    }
+
+    overlay.innerHTML = `
+        <div class="bombanime-admin-suggest-modal">
+            <div class="bombanime-admin-suggest-header">
+                <span>Suggestion${currentSerie ? ' - ' + currentSerie : ''}</span>
+                <button class="bombanime-admin-suggest-close" onclick="closeAdminSuggestionModal()" aria-label="Fermer">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="bombanime-admin-suggest-body">
+                <div class="bombanime-admin-suggest-info">
+                    Suggestions de personnages
+                </div>
+                <div class="bombanime-admin-suggest-list" id="adminSuggestList">
+                    <!-- lignes dynamiques -->
+                </div>
+                <button class="bombanime-admin-suggest-add-btn" onclick="addAdminSuggestionLine()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    <span>Ajouter une ligne</span>
+                </button>
+                <div class="bombanime-admin-suggest-actions">
+                    <button class="bombanime-admin-suggest-cancel" onclick="closeAdminSuggestionModal()">
+                        Annuler
+                    </button>
+                    <button class="bombanime-admin-suggest-submit" id="adminSuggestSubmitBtn" onclick="submitAdminSuggestions()">
+                        Envoyer
+                    </button>
+                </div>
+                <div class="bombanime-admin-suggest-result" id="adminSuggestResult"></div>
+            </div>
+        </div>
+    `;
+
+    // Ajouter une première ligne vide automatiquement
+    addAdminSuggestionLine();
+
+    requestAnimationFrame(() => {
+        overlay.classList.add('active');
+        // Focus sur la première ligne
+        const firstInput = overlay.querySelector('.bombanime-admin-suggest-line-input');
+        if (firstInput) firstInput.focus();
+    });
+}
+
+function addAdminSuggestionLine() {
+    const list = document.getElementById('adminSuggestList');
+    if (!list) return;
+
+    const line = document.createElement('div');
+    line.className = 'bombanime-admin-suggest-line';
+    line.innerHTML = `
+        <input type="text" class="bombanime-admin-suggest-line-input" placeholder="Nom du personnage..." maxlength="30" />
+        <button class="bombanime-admin-suggest-line-remove" title="Supprimer cette ligne">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+        </button>
+    `;
+    const removeBtn = line.querySelector('.bombanime-admin-suggest-line-remove');
+    removeBtn.addEventListener('click', () => {
+        line.remove();
+        // Garder au moins une ligne visible
+        if (list.children.length === 0) addAdminSuggestionLine();
+    });
+
+    // Enter = add new line if not empty, else submit
+    const input = line.querySelector('.bombanime-admin-suggest-line-input');
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const val = input.value.trim();
+            if (val) {
+                // Si c'est la dernière ligne, en ajouter une nouvelle
+                if (line === list.lastElementChild) {
+                    addAdminSuggestionLine();
+                    const newInput = list.lastElementChild.querySelector('.bombanime-admin-suggest-line-input');
+                    if (newInput) newInput.focus();
+                }
+            }
+        }
+    });
+
+    list.appendChild(line);
+    input.focus();
+}
+
+function closeAdminSuggestionModal() {
+    const overlay = document.getElementById('bombanimeAdminSuggestionOverlay');
+    if (overlay) {
+        overlay.classList.remove('active');
+        setTimeout(() => overlay.remove(), 300);
+    }
+}
+
+async function submitAdminSuggestions() {
+    const list = document.getElementById('adminSuggestList');
+    const submitBtn = document.getElementById('adminSuggestSubmitBtn');
+    const resultEl = document.getElementById('adminSuggestResult');
+    if (!list) return;
+
+    // Récupérer tous les noms non vides
+    const inputs = list.querySelectorAll('.bombanime-admin-suggest-line-input');
+    const names = [];
+    inputs.forEach(inp => {
+        const v = inp.value.trim();
+        if (v) names.push(v);
+    });
+
+    if (names.length === 0) {
+        if (resultEl) {
+            resultEl.textContent = 'Ajoute au moins un nom de personnage.';
+            resultEl.className = 'bombanime-admin-suggest-result error';
+        }
+        return;
+    }
+
+    // Récupérer la série courante
+    const winnerDataStored = sessionStorage.getItem('bombanimeWinnerData');
+    let currentSerie = (typeof bombanimeState !== 'undefined' && bombanimeState.serie) ? bombanimeState.serie : '';
+    if (!currentSerie && winnerDataStored) {
+        try {
+            const parsed = JSON.parse(winnerDataStored);
+            currentSerie = parsed.serie || '';
+        } catch(e) {}
+    }
+    if (!currentSerie) currentSerie = 'Unknown';
+
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Envoi...';
+    }
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const characterName of names) {
+        try {
+            const response = await fetch('/admin/bombanime/suggestion', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    type: 'add',
+                    anime: currentSerie,
+                    characterName: characterName.toUpperCase(),
+                    submittedBy: '[Admin]'
+                })
+            });
+            const data = await response.json();
+            if (data.success) {
+                successCount++;
+            } else {
+                errorCount++;
+            }
+        } catch (err) {
+            console.error('Erreur suggestion admin:', err);
+            errorCount++;
+        }
+    }
+
+    if (resultEl) {
+        if (errorCount === 0) {
+            resultEl.textContent = `✓ ${successCount} suggestion${successCount > 1 ? 's' : ''} envoyée${successCount > 1 ? 's' : ''}.`;
+            resultEl.className = 'bombanime-admin-suggest-result success';
+            // Fermer après 1s
+            setTimeout(() => closeAdminSuggestionModal(), 1200);
+        } else {
+            resultEl.textContent = `${successCount} envoyée${successCount > 1 ? 's' : ''}, ${errorCount} erreur${errorCount > 1 ? 's' : ''}.`;
+            resultEl.className = 'bombanime-admin-suggest-result error';
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Envoyer';
+            }
+        }
+    }
+}
+
+// 🎁 Afficher la reward bar pour l'admin quand il a joué à BombAnime
+function showBombanimeAdminReward(r) {
+    // r = { levelBefore, levelAfter, xpGained, coinsBefore, coinsGained, xpBefore, xpAfter, xpForNextLevelBefore, xpForNextLevelAfter }
+    let rewardBar = document.getElementById('bombanimeAdminReward');
+    if (!rewardBar) {
+        rewardBar = document.createElement('div');
+        rewardBar.id = 'bombanimeAdminReward';
+        rewardBar.className = 'bombanime-admin-reward';
+        document.body.appendChild(rewardBar);
+    }
+    
+    const leveledUp = r.levelAfter > r.levelBefore;
+    const coinsAfter = (r.coinsBefore || 0) + (r.coinsGained || 0);
+    
+    rewardBar.innerHTML = `
+        <div class="bar-admin-reward">
+            <div class="bar-admin-reward-row">
+                <div class="bar-admin-reward-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M7 4V2h10v2h4v4c0 2.76-2.24 5-5 5h-.34c-.37 1.95-1.58 3.58-3.16 4.51V20h3v2H7.5v-2h3v-2.49C8.92 16.58 7.71 14.95 7.34 13H7c-2.76 0-5-2.24-5-5V4h5zM5 8c0 1.1.9 2 2 2V6H5v2zm12 2c1.1 0 2-.9 2-2V6h-2v4z"/>
+                    </svg>
+                </div>
+                <div class="bar-admin-reward-level">
+                    <span class="bar-admin-reward-level-text">Niv. ${leveledUp ? r.levelAfter : r.levelBefore}</span>
+                    <span class="bar-admin-reward-gain xp">+${(r.xpGained || 0).toLocaleString()}</span>
+                </div>
+                <div class="bar-admin-reward-track">
+                    <div class="bar-admin-reward-fill" style="width:0%"></div>
+                </div>
+                <div class="bar-admin-reward-coins">
+                    <img src="scoin.png" alt="S" class="bar-admin-reward-coin-icon" onerror="this.outerHTML='<div class=\\'bar-admin-reward-coin-fallback\\'>S</div>'">
+                    <span class="bar-admin-reward-coin-val">${coinsAfter.toLocaleString()}</span>
+                    <span class="bar-admin-reward-gain coins">+${(r.coinsGained || 0).toLocaleString()}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Animation: afficher la barre avec délai, puis animer le fill
+    requestAnimationFrame(() => {
+        rewardBar.classList.add('visible');
+    });
+    
+    // Animer le fill de la jauge XP
+    setTimeout(() => {
+        const fill = rewardBar.querySelector('.bar-admin-reward-fill');
+        if (fill) {
+            // Calcul du pourcentage final sur la jauge du niveau en cours
+            let fillPercent = 70;
+            if (leveledUp && r.xpForNextLevelAfter && r.xpAfter !== undefined) {
+                // Après level-up : progression dans le nouveau niveau
+                fillPercent = Math.min(100, Math.max(5, (r.xpAfter / r.xpForNextLevelAfter) * 100));
+            } else if (!leveledUp && r.xpForNextLevelBefore && r.xpAfter !== undefined) {
+                fillPercent = Math.min(100, Math.max(5, (r.xpAfter / r.xpForNextLevelBefore) * 100));
+            }
+            fill.style.width = fillPercent + '%';
+        }
+    }, 500);
+}
+
+function closeBombanimeAdminReward() {
+    const rewardBar = document.getElementById('bombanimeAdminReward');
+    if (rewardBar) {
+        rewardBar.classList.remove('visible');
+        setTimeout(() => rewardBar.remove(), 500);
+    }
+}
+
 // Fermer l'écran winner BombAnime et fermer le lobby
 async function closeBombanimeWinner() {
     // 🆕 Supprimer les données du winner du sessionStorage
     sessionStorage.removeItem('bombanimeWinnerData');
+    
+    // 🎁 Fermer la reward bar admin si présente
+    closeBombanimeAdminReward();
     
     const winnerOverlay = document.getElementById('bombanimeWinnerOverlay');
     if (winnerOverlay) {

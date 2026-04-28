@@ -336,13 +336,14 @@ const db = {
     },
 
     // ========== GAMES ==========
-    async createGame(totalPlayers, mode = 'lives') {
+    async createGame(totalPlayers, mode = 'lives', gameMode = 'classic') {
         const { data, error } = await supabase
             .from('games')
             .insert({
                 questions_count: 0,
                 total_players: totalPlayers,
-                mode: mode
+                mode: mode,
+                game_mode: gameMode
             })
             .select()
             .single();
@@ -378,6 +379,54 @@ const db = {
 
         if (error) throw error;
         return data;
+    },
+
+    // ========== PLAYER GAMES TRACKING ==========
+    async addPlayerGame(gameId, twitchId, gameMode, placement, isWinner, coinsEarned = 0, xpEarned = 0) {
+        const { data, error } = await supabase
+            .from('player_games')
+            .upsert({
+                game_id: gameId,
+                twitch_id: twitchId,
+                game_mode: gameMode,
+                placement: placement,
+                is_winner: isWinner,
+                coins_earned: coinsEarned,
+                xp_earned: xpEarned
+            }, { onConflict: 'game_id,twitch_id' })
+            .select()
+            .single();
+
+        if (error) {
+            console.error(`❌ Erreur addPlayerGame:`, error.message);
+            return null;
+        }
+        return data;
+    },
+
+    async getPlayerModeStats(twitchId) {
+        const { data, error } = await supabase
+            .from('player_games')
+            .select('game_mode')
+            .eq('twitch_id', twitchId);
+
+        if (error) {
+            console.error(`❌ Erreur getPlayerModeStats:`, error.message);
+            return {};
+        }
+
+        const stats = {};
+        const modes = ['classic', 'bombanime', 'collect', 'trace', 'rivalry', 'poll', 'ascension'];
+        modes.forEach(m => stats[m] = 0);
+
+        if (data) {
+            data.forEach(row => {
+                const mode = row.game_mode || 'classic';
+                stats[mode] = (stats[mode] || 0) + 1;
+            });
+        }
+
+        return stats;
     },
 
     async getTotalGames() {
@@ -446,6 +495,54 @@ const db = {
         return unlockedTitles;
     },
 
+    async getUserTitleOptions(twitchId) {
+        const user = await this.getUserByTwitchId(twitchId);
+        if (!user) return { prefixes: [], suffixes: [], equippedPrefix: 'Novice', equippedSuffix: 'courageux' };
+
+        const allTitles = await this.getAllTitles();
+        const purchases = await this.getUserPurchases(twitchId);
+
+        // Titres débloqués par progression
+        const unlockedTitles = allTitles.filter(title => {
+            if (title.title_type === 'games_played') {
+                return user.total_games_played >= title.requirement_value;
+            }
+            if (title.title_type === 'games_won') {
+                return user.total_victories >= title.requirement_value;
+            }
+            return false;
+        });
+
+        const prefixes = unlockedTitles.filter(t => (t.title_category || 'prefix') === 'prefix');
+        const suffixes = unlockedTitles.filter(t => t.title_category === 'suffix');
+
+        // Ajouter les titres achetés en boutique
+        if (purchases && purchases.length > 0) {
+            const shopItems = await this.getShopItems();
+            const purchasedIds = purchases.map(p => p.item_id);
+            const boughtPrefixes = shopItems.filter(i => i.type === 'title_prefix' && purchasedIds.includes(i.id));
+            const boughtSuffixes = shopItems.filter(i => i.type === 'title_suffix' && purchasedIds.includes(i.id));
+
+            boughtPrefixes.forEach(p => {
+                if (!prefixes.some(t => t.title_name === p.value)) {
+                    prefixes.push({ id: 'shop_' + p.id, title_name: p.value, title_category: 'prefix', premium: true });
+                }
+            });
+            boughtSuffixes.forEach(s => {
+                if (!suffixes.some(t => t.title_name === s.value)) {
+                    suffixes.push({ id: 'shop_' + s.id, title_name: s.value, title_category: 'suffix', premium: true });
+                }
+            });
+        }
+
+        return {
+            prefixes,
+            suffixes,
+            equippedPrefix: user.equipped_title_prefix || 'Novice',
+            equippedSuffix: user.equipped_title_suffix || 'courageux'
+        };
+    },
+
     async updateUserTitle(twitchId, titleId) {
         // Vérifier que le titre existe
         const title = await this.getTitleById(titleId);
@@ -471,11 +568,10 @@ const db = {
 
     // ========== TITRES CUSTOM (PREFIX/SUFFIX) ==========
     async equipTitlePrefix(twitchId, prefix) {
-        // Si prefix est null, on retire le préfixe
         if (prefix === null) {
             const { data, error } = await supabase
                 .from('users')
-                .update({ equipped_title_prefix: null, updated_at: new Date().toISOString() })
+                .update({ equipped_title_prefix: prefix, updated_at: new Date().toISOString() })
                 .eq('twitch_id', twitchId)
                 .select()
                 .single();
@@ -483,14 +579,9 @@ const db = {
             return data;
         }
 
-        // Vérifier que le joueur possède ce préfixe
-        const purchases = await this.getUserPurchases(twitchId);
-        const shopItems = await this.getShopItems();
-        const ownedPrefixes = shopItems.filter(item => 
-            item.type === 'title_prefix' && purchases.some(p => p.item_id === item.id)
-        );
-
-        const hasPrefix = ownedPrefixes.some(p => p.value === prefix);
+        // Vérifier via getUserTitleOptions (inclut gratuits + achetés)
+        const options = await this.getUserTitleOptions(twitchId);
+        const hasPrefix = options.prefixes.some(p => p.title_name === prefix);
         if (!hasPrefix) throw new Error('Préfixe non possédé');
 
         const { data, error } = await supabase
@@ -505,11 +596,10 @@ const db = {
     },
 
     async equipTitleSuffix(twitchId, suffix) {
-        // Si suffix est null, on retire le suffixe
         if (suffix === null) {
             const { data, error } = await supabase
                 .from('users')
-                .update({ equipped_title_suffix: null, updated_at: new Date().toISOString() })
+                .update({ equipped_title_suffix: suffix, updated_at: new Date().toISOString() })
                 .eq('twitch_id', twitchId)
                 .select()
                 .single();
@@ -517,14 +607,9 @@ const db = {
             return data;
         }
 
-        // Vérifier que le joueur possède ce suffixe
-        const purchases = await this.getUserPurchases(twitchId);
-        const shopItems = await this.getShopItems();
-        const ownedSuffixes = shopItems.filter(item => 
-            item.type === 'title_suffix' && purchases.some(p => p.item_id === item.id)
-        );
-
-        const hasSuffix = ownedSuffixes.some(s => s.value === suffix);
+        // Vérifier via getUserTitleOptions (inclut gratuits + achetés)
+        const options = await this.getUserTitleOptions(twitchId);
+        const hasSuffix = options.suffixes.some(s => s.title_name === suffix);
         if (!hasSuffix) throw new Error('Suffixe non possédé');
 
         const { data, error } = await supabase
@@ -538,26 +623,14 @@ const db = {
         return data;
     },
 
-    // Récupérer le titre complet d'un joueur (ancien système + custom)
+    // Récupérer le titre complet d'un joueur
     async getFullTitle(twitchId) {
         const user = await this.getUserByTwitchId(twitchId);
-        if (!user) return 'Novice';
+        if (!user) return 'Novice courageux';
 
-        const prefix = user.equipped_title_prefix;
-        const suffix = user.equipped_title_suffix;
-
-        // Si le joueur a un titre custom (prefix et/ou suffix)
-        if (prefix || suffix) {
-            return [prefix, suffix].filter(Boolean).join(' ');
-        }
-
-        // Sinon, retourner le titre classique (ancien système)
-        if (user.current_title_id) {
-            const title = await this.getTitleById(user.current_title_id);
-            return title ? title.title_name : 'Novice';
-        }
-
-        return 'Novice';
+        const prefix = user.equipped_title_prefix || 'Novice';
+        const suffix = user.equipped_title_suffix || 'courageux';
+        return prefix + ' ' + suffix;
     },
 
     // ========== BADGES ==========
@@ -683,9 +756,7 @@ const db = {
                 win_rate: user.total_games_played > 0
                     ? ((user.total_victories / user.total_games_played) * 100).toFixed(1)
                     : '0.0',
-                title_name: (user.equipped_title_prefix || user.equipped_title_suffix) 
-                    ? [user.equipped_title_prefix, user.equipped_title_suffix].filter(Boolean).join(' ')
-                    : (user.titles?.title_name || 'Novice'),
+                title_name: [user.equipped_title_prefix || 'Novice', user.equipped_title_suffix || 'courageux'].join(' '),
                 titles_unlocked: unlockedCount,
                 total_titles: totalTitlesCount,
                 last_activity: user.updated_at,
@@ -910,6 +981,95 @@ const COIN_REWARDS = {
     WIN: 4000
 };
 
+const XP_REWARDS = {
+    PARTICIPATE: 250,
+    TOP_3: 500,
+    TOP_2: 500,
+    WIN: 1000
+};
+
+// Calculer le level à partir de l'XP total
+function calculateLevel(totalXp) {
+    // Chaque niveau coûte niveau * 500 XP
+    // Level 1 = 500, Level 2 = 1000, Level 3 = 1500...
+    let level = 1;
+    let xpNeeded = 500;
+    let xpRemaining = totalXp;
+
+    while (xpRemaining >= xpNeeded) {
+        xpRemaining -= xpNeeded;
+        level++;
+        xpNeeded = level * 500;
+    }
+
+    return {
+        level,
+        currentXp: xpRemaining,
+        xpForNextLevel: xpNeeded,
+        totalXp
+    };
+}
+
+// Fonctions XP
+db.addXp = async function(twitchId, amount, reason = '') {
+    const user = await this.getUserByTwitchId(twitchId);
+    if (!user) return null;
+
+    const currentXp = (user.xp || 0) + amount;
+    const levelData = calculateLevel(currentXp);
+
+    const { data, error } = await supabase
+        .from('users')
+        .update({
+            xp: currentXp,
+            level: levelData.level,
+            updated_at: new Date().toISOString()
+        })
+        .eq('twitch_id', twitchId)
+        .select()
+        .single();
+
+    if (error) throw error;
+    console.log(`⭐ ${user.username}: +${amount} XP (${reason}) → Level ${levelData.level} (${levelData.currentXp}/${levelData.xpForNextLevel})`);
+    return data;
+};
+
+db.distributeGameXp = async function(sortedPlayers, initialPlayerCount, minPlayers = 1) {
+    if (initialPlayerCount < minPlayers) {
+        console.log(`⚠️ XP NON distribué (${initialPlayerCount} joueurs)`);
+        return {};
+    }
+
+    const rewards = {};
+
+    for (let i = 0; i < sortedPlayers.length; i++) {
+        const player = sortedPlayers[i];
+        let amount = XP_REWARDS.PARTICIPATE;
+        let reason = 'participation';
+
+        if (i === 0) {
+            amount = XP_REWARDS.WIN;
+            reason = 'victoire';
+        } else if (i === 1) {
+            amount = XP_REWARDS.TOP_2;
+            reason = 'top 2';
+        } else if (i === 2) {
+            amount = XP_REWARDS.TOP_3;
+            reason = 'top 3';
+        }
+
+        try {
+            await this.addXp(player.twitchId, amount, reason);
+            rewards[player.twitchId] = { amount, reason };
+        } catch (err) {
+            console.error(`❌ Erreur XP pour ${player.username}:`, err);
+        }
+    }
+
+    console.log(`⭐ XP distribué à ${Object.keys(rewards).length} joueurs`);
+    return rewards;
+};
+
 // Fonctions coins
 db.getUserCoins = async function(twitchId) {
     const { data, error } = await supabase
@@ -1064,4 +1224,4 @@ db.getUserPurchases = async function(twitchId) {
 
 
 
-module.exports = { supabase, db, SERIES_FILTERS, getFilterSeries, COIN_REWARDS };
+module.exports = { supabase, db, SERIES_FILTERS, getFilterSeries, COIN_REWARDS, XP_REWARDS, calculateLevel };

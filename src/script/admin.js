@@ -1778,7 +1778,7 @@ function setupPlayerCardEvents() {
                             };
                         }
 
-                        document.getElementById('cardTitle').textContent = data.titles?.current?.title_name || 'Novice';
+                        document.getElementById('cardTitle').textContent = data.user?.display_title || 'Novice courageux';
                         document.getElementById('cardWins').textContent = user.total_victories || 0;
                         document.getElementById('cardGames').textContent = user.total_games_played || 0;
                         document.getElementById('cardTitles').textContent = data.titles?.unlocked?.length || 0;
@@ -1805,7 +1805,7 @@ function setupPlayerCardEvents() {
                 } catch (error) {
                     console.error('Erreur chargement profil:', error);
                     // Fallback sur données par défaut
-                    document.getElementById('cardTitle').textContent = 'Novice';
+                    document.getElementById('cardTitle').textContent = 'Novice courageux';
                     document.getElementById('cardWins').textContent = '-';
                     document.getElementById('cardGames').textContent = '-';
                 }
@@ -3087,9 +3087,7 @@ const MODES_DATA = [
     { id: 'classic', n: 'CLASSIQUE', l: 'Mode Solo', c: 'gold', p: '∞', t: 'solo', d: "Quiz anime en solo. Questions au format QCM , en mode Vies ou Points. Paramètres de difficultés et de séries variables. Chaque joueur peut utiliser des bonus en répondant juste ou en complétant des défis.", img: 'gilga.png', imgStyle: 'transform:scale(1.04) translate(-2%, 3%)' },
     { id: 'rivalry', n: 'RIVALITÉ', l: 'Mode Équipe', c: 'purple', p: '∞', t: 'equipe', d: "Deux équipes s'affrontent sur un Quiz anime. Similaire au mode Classique , chaque équipe cumule les vies ou les points de ses joueurs. L'équipe avec le plus de points ou de joueurs en vies à la fin remporte la partie.", img: 'shark.png' },
     { id: 'bombanime', n: 'BOMBANIME', l: 'Mode Solo', c: 'green', p: '13', t: 'solo', playable: true, d: "Une bombe tourne de joueur en joueur. Citez un personnage d'une série spécifique avant que le timer explose. Le dernier survivant remporte la partie.", img: 'lambo2.png', imgStyle: 'transform:scale(1.2) translateY(5%)' },
-    { id: 'ascension', n: 'ASCENSION', l: 'Mode Solo', c: 'white', p: '∞', t: 'solo', playable: true, d: "Grimpez la tour étage par étage en réussissant des mini-jeux variés. Le premier joueur à atteindre le sommet remporte la partie.", img: 'ascension.png', soon: true, imgStyle: 'transform:scale(0.98) translate(-2%, 3%)' },
-    { id: 'survie', n: 'TRACE', l: 'Mode Solo', c: 'orange', p: '50', t: 'solo', playable: true, d: "Déplacez-vous sur un plateau et accomplissez vos objectifs en premier pour remporter la partie.", img: 'kenshin.png', imgStyle: 'transform:scale(1.32) translate(-2%, 12%)' },
-    { id: 'poll', n: 'POLL', l: 'Mode Solo', c: 'pink', p: '∞', t: 'solo', playable: true, d: "Votez pour votre personnage préféré parmi une sélection. Tournoi par élimination où la communauté décide. Le dernier personnage debout est couronné.", img: 'poll.png', soon: true, imgStyle: 'transform:scale(1.05) translate(-2%, -3%)' },
+    { id: 'ascension', n: 'ASCENSION', l: 'Mode Solo', c: 'white', p: '∞', t: 'solo', playable: true, d: "Grimpez la tour étage par étage en réussissant des mini-jeux variés. Le premier joueur à atteindre le sommet remporte la partie.", img: 'ascension.png', imgStyle: 'transform:scale(0.98) translate(-2%, 3%)' },
     { id: 'collect', n: 'COLLECT', l: 'Mode Solo', c: 'blue', p: '5', t: 'solo', playable: true, d: "Jeu de cartes stratégique anime. Collectionnez des personnages, utilisez leurs capacités et affrontez les autres joueurs.", img: 'aventurine3.png', soon: true, imgStyle: 'transform:scale(1.2) translate(3%, 12%)' },
 ];
 
@@ -4555,7 +4553,7 @@ function updateLobbyPlayers(players) {
         card.innerHTML = `
         ${teamBadgeHTML}
         <div class="player-card-mini-name">${player.username}</div>
-        <div class="player-card-mini-title">${player.title || 'Novice'}</div>
+        <div class="player-card-mini-title">${player.title || 'Novice courageux'}</div>
         <div class="player-card-mini-separator"></div>
         <div class="player-card-mini-stat">
             ${statsHTML}
@@ -4591,7 +4589,7 @@ function updateLobbyPlayers(players) {
         card.addEventListener('click', (e) => {
             if (e.target.closest('.player-card-mini-kick')) return;
             if (e.target.closest('.team-badge-lobby')) return;
-            openPlayerModal(player.username, isChampion, player.title || 'Novice', twitchId);
+            openPlayerModal(player.username, isChampion, player.title || 'Novice courageux', twitchId);
         });
 
         card.style.opacity = '0';
@@ -5106,7 +5104,7 @@ document.getElementById('startGameBtn').addEventListener('click', async () => {
         // 🏔️ Paramètres Ascension
         if (currentGameMode === 'ascension') {
             startData.ascensionFloors = ascensionConfig.floors || 15;
-            startData.ascensionTimer = ascensionConfig.timer || 15;
+            startData.ascensionTimer = ascensionConfig.timer || 30;
             startData.ascensionSync = ascensionConfig.syncEpreuves;
             console.log('🏔️ Paramètres Ascension envoyés:', startData);
         }
@@ -6552,7 +6550,7 @@ function createGamePlayerCardsFromState(players) {
             lives: player.lives || 0,
             points: player.points || 0,
             isChampion: player.isLastGlobalWinner,
-            title: player.title || 'Novice',
+            title: player.title || 'Novice courageux',
             team: player.team || null, // 🆕 Équipe du joueur
             eliminated: player.lives === 0,
             hasAnswered: player.hasAnswered || false,
@@ -6625,7 +6623,7 @@ function createGamePlayerCardsFromState(players) {
         gameCard.addEventListener('click', (e) => {
             if (e.target.closest('.player-card-game-answer-overlay')) return;
             if (e.target.closest('.player-card-game-kick')) return;
-            openPlayerModal(player.username, player.isLastGlobalWinner, player.title || 'Novice', player.twitchId);
+            openPlayerModal(player.username, player.isLastGlobalWinner, player.title || 'Novice courageux', player.twitchId);
         });
 
         gameGrid.appendChild(gameCard);
@@ -9693,7 +9691,7 @@ function updateTeamNavVisibility(show) {
 
 let ascensionConfig = {
     floors: 15,
-    timer: 15,
+    timer: 30,
     syncEpreuves: true
 };
 
@@ -9727,6 +9725,6 @@ function setAscensionSync(isSync) {
 // Init ascension defaults on load
 document.addEventListener("DOMContentLoaded", () => {
     setAscensionFloors(15);
-    setAscensionTimer(15);
+    setAscensionTimer(30);
     setAscensionSync(true);
 });

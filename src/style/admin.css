@@ -412,9 +412,9 @@ body {
 .btn-character {
     position: absolute;
     height: auto;
-    width: 7.1875rem;
-    top: -5.8125rem;
-    left: 19%;
+    width: 7.5rem;
+    top: -5.3rem;
+    left: 15%;
     z-index: 0;
     pointer-events: none;
     opacity: 0;
@@ -10414,15 +10414,16 @@ body {
     background: linear-gradient(
         90deg, 
         transparent 0%,
-        transparent 30%,
-        rgba(255, 215, 0, 0.1) 45%, 
-        rgba(255, 215, 0, 0.18) 50%, 
-        rgba(255, 215, 0, 0.1) 55%,
-        transparent 70%,
+        transparent 35%,
+        rgba(255, 215, 0, 0.05) 47%, 
+        rgba(255, 215, 0, 0.09) 50%, 
+        rgba(255, 215, 0, 0.05) 53%,
+        transparent 65%,
         transparent 100%
     );
     background-size: 250% 100%;
-    animation: winnerShinePass 4s ease-in-out infinite;
+    background-repeat: no-repeat;
+    animation: winnerShinePass 5.5s linear infinite;
     border-radius: inherit;
     z-index: 0;
     pointer-events: none;
@@ -10430,8 +10431,9 @@ body {
 }
 
 @keyframes winnerShinePass {
-    0% { background-position: 200% 0; }
-    100% { background-position: -100% 0; }
+    0% { background-position: 250% 0; }
+    45% { background-position: -150% 0; }
+    100% { background-position: -150% 0; }
 }
 
 /* ============================================

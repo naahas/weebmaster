@@ -72,6 +72,15 @@ createApp({
             // Profil & Badges
             showProfileModal: false,
             currentTab: 'profile',
+            titleSubTab: 'prefix',
+            showShopModal: false,
+            shopTab: 'prefix',
+            shopItems: [],
+            shopLoading: false,
+            shopUserCoins: null,
+            shopNotif: false,
+            shopNotifText: '',
+            shopConfirmItem: null,
             profileData: null,
             profileLoading: false,
             savedScrollY: 0,
@@ -115,6 +124,11 @@ createApp({
                 totalQuestions: 0,
                 duration: 0
             },
+
+            // Reward animation
+            rewardAnimData: null,
+            rewardAnimVisible: false,
+            rewardTimers: [],
 
             // Thème
             isDark: true,
@@ -216,7 +230,11 @@ createApp({
                 showChallengesModal: false,  // Modal défis sur mobile
                 showSuggestionModal: false,  // Modal suggestion joueur
                 suggestionUsed: false,       // 1x par partie
-                suggestionName: '',          // Nom du personnage suggéré
+                suggestionName: '',          // (legacy - single input, gardé pour compat)
+                suggestionLines: [''],       // Lignes multi-suggestions (array de strings)
+                suggestionSubmitting: false, // Indicateur envoi en cours
+                suggestionResult: '',        // Message de feedback
+                suggestionResultType: '',    // 'success' | 'error'
                 showBonusesModal: false,     // Modal bonus sur mobile
                 challengeJustCompleted: null, // Pour animation de défi complété
                 showCharacterImages: true    // 🖼️ Afficher les images de personnages
@@ -481,6 +499,12 @@ createApp({
 
     computed: {
 
+        // 🎌 Au moins une ligne de suggestion non vide
+        hasValidPlayerSuggestions() {
+            if (!this.bombanime || !Array.isArray(this.bombanime.suggestionLines)) return false;
+            return this.bombanime.suggestionLines.some(l => (l || '').trim().length > 0);
+        },
+
         // Au moins 1 streamer est en live
         anyStreamerLive() {
             return Object.values(this.streamersLive).some(v => v === true);
@@ -501,6 +525,24 @@ createApp({
         // Nombre de streamers cachés
         hiddenStreamersCount() {
             return Math.max(0, this.partnersList.length - 5);
+        },
+
+        filteredShopItems() {
+            const typeMap = { prefix: 'title_prefix', suffix: 'title_suffix', avatar: 'avatar' };
+            const targetType = typeMap[this.shopTab];
+            return this.shopItems.filter(item => item.type === targetType);
+        },
+
+        allAvatars() {
+            const avatars = [...this.defaultAvatars];
+            if (this.profileData && this.profileData.purchasedAvatars) {
+                this.profileData.purchasedAvatars.forEach(a => {
+                    if (!avatars.some(d => d.url === a.url)) {
+                        avatars.push({ id: a.id, name: a.name, url: a.url, locked: false, premium: true });
+                    }
+                });
+            }
+            return avatars;
         },
 
 
@@ -581,7 +623,8 @@ createApp({
                     username: p.username,
                     points: p.points,
                     lives: undefined,
-                    rank: p.rank
+                    rank: p.rank,
+                    avatarUrl: p.avatarUrl || null
                 }));
             } else if (this.gameEndData.gameMode === 'lives') {
                 // Mode vies : utiliser livesModePodium
@@ -590,7 +633,8 @@ createApp({
                     lives: p.lives,
                     correctAnswers: p.correctAnswers,
                     points: undefined,
-                    rank: index + 1
+                    rank: index + 1,
+                    avatarUrl: p.avatarUrl || null
                 }));
             }
             return [];
@@ -696,6 +740,20 @@ createApp({
     },
 
     watch: {
+        shopTab() {
+            this.$nextTick(() => {
+                // Move tab indicator
+                this.moveShopTabIndicator();
+                // Re-animate cards
+                const items = document.querySelectorAll('.shop-item');
+                items.forEach((el, i) => {
+                    el.style.animation = 'none';
+                    el.offsetHeight;
+                    el.style.animation = 'shopCardSlideIn 0.4s cubic-bezier(0.16,1,0.3,1) both';
+                    el.style.animationDelay = (i * 0.04) + 's';
+                });
+            });
+        },
         // 🆕 Gérer les tips automatiquement quand l'état du jeu change
         gameInProgress(newVal, oldVal) {
             if (this.isAuthenticated) {
@@ -892,41 +950,13 @@ createApp({
 
 
         animateProfileOpen() {
-            const tabIndicator = this.$refs.profileTabIndicator;
-            const activeTab = this.$refs.tabProfile;
-
-            if (tabIndicator && activeTab) {
-                this.$nextTick(() => {
-                    tabIndicator.style.left = activeTab.offsetLeft + 'px';
-                    tabIndicator.style.width = activeTab.offsetWidth + 'px';
-                });
-            }
+            // No animation needed - CSS handles it
         },
 
         // ========== AJOUTER switchProfileTab ==========
         switchProfileTab(tabName) {
             if (this.currentTab === tabName) return;
-
             this.currentTab = tabName;
-
-            const tabIndicator = this.$refs.profileTabIndicator;
-            let targetTab;
-
-            if (tabName === 'profile') targetTab = this.$refs.tabProfile;
-            else if (tabName === 'badges') targetTab = this.$refs.tabBadges;
-            else if (tabName === 'titres') targetTab = this.$refs.tabTitres;
-            else if (tabName === 'avatar') targetTab = this.$refs.tabAvatar;
-
-            if (tabIndicator && targetTab) {
-                tabIndicator.style.transition = 'left 0.2s ease, width 0.2s ease';
-                tabIndicator.style.left = targetTab.offsetLeft + 'px';
-                tabIndicator.style.width = targetTab.offsetWidth + 'px';
-            }
-
-            // Counters for profile tab
-            if (tabName === 'profile') {
-                this.$nextTick(() => { this.animateProfileCounters(); });
-            }
         },
 
         // ========== AJOUTER animateProfileTabContent ==========
@@ -1082,20 +1112,157 @@ createApp({
                 const data = await response.json();
 
                 if (data.success) {
-                    // Afficher le toast
-                    // Titre équipé silencieusement
-
-                    // Recharger le profil
                     const profileResponse = await fetch(`/profile/${this.twitchId}`);
                     this.profileData = await profileResponse.json();
-
-                    // Re-animer le tab titres
-                    this.$nextTick(() => {
-                        this.animateProfileTabContent('titres');
-                    });
                 }
             } catch (error) {
                 console.error('❌ Erreur équipement titre:', error);
+            }
+        },
+
+        async equipPrefix(prefixName) {
+            try {
+                const response = await fetch('/profile/equip-prefix', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        twitchId: this.twitchId,
+                        prefix: prefixName
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const profileResponse = await fetch(`/profile/${this.twitchId}`);
+                    this.profileData = await profileResponse.json();
+                }
+            } catch (error) {
+                console.error('❌ Erreur équipement préfixe:', error);
+            }
+        },
+
+        async equipSuffix(suffixName) {
+            try {
+                const response = await fetch('/profile/equip-suffix', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        twitchId: this.twitchId,
+                        suffix: suffixName
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const profileResponse = await fetch(`/profile/${this.twitchId}`);
+                    this.profileData = await profileResponse.json();
+                }
+            } catch (error) {
+                console.error('❌ Erreur équipement suffixe:', error);
+            }
+        },
+
+        // ========== BOUTIQUE ==========
+        async openShop() {
+            this.showShopModal = true;
+            this.shopLoading = true;
+            this.shopTab = 'prefix';
+            document.body.classList.add('modal-open');
+
+            try {
+                const shopRes = await fetch(`/shop${this.twitchId ? '?twitchId=' + this.twitchId : ''}`);
+                this.shopItems = await shopRes.json();
+
+                if (this.twitchId) {
+                    const coinsRes = await fetch(`/coins/${this.twitchId}`);
+                    const coinsData = await coinsRes.json();
+                    this.shopUserCoins = coinsData.coins || 0;
+                } else {
+                    this.shopUserCoins = null;
+                }
+            } catch (error) {
+                console.error('❌ Erreur chargement boutique:', error);
+            }
+
+            this.shopLoading = false;
+            this.$nextTick(() => this.moveShopTabIndicator());
+        },
+
+        closeShop() {
+            this.showShopModal = false;
+            document.body.classList.remove('modal-open');
+        },
+
+        moveShopTabIndicator() {
+            const tabMap = { prefix: 'shopTabPrefix', suffix: 'shopTabSuffix', avatar: 'shopTabAvatar' };
+            const tabEl = this.$refs[tabMap[this.shopTab]];
+            const indicator = this.$refs.shopTabIndicator;
+            const bar = this.$refs.shopTabsBar;
+            if (!tabEl || !indicator || !bar) return;
+            const tabRect = tabEl.getBoundingClientRect();
+            const barRect = bar.getBoundingClientRect();
+            indicator.style.left = (tabRect.left - barRect.left + 8) + 'px';
+            indicator.style.width = (tabRect.width - 16) + 'px';
+        },
+
+        shopTabPrev() {
+            const tabs = ['prefix', 'suffix', 'avatar'];
+            const i = tabs.indexOf(this.shopTab);
+            if (i > 0) this.shopTab = tabs[i - 1];
+        },
+
+        shopTabNext() {
+            const tabs = ['prefix', 'suffix', 'avatar'];
+            const i = tabs.indexOf(this.shopTab);
+            if (i < tabs.length - 1) this.shopTab = tabs[i + 1];
+        },
+
+        showShopNotif(msg) {
+            this.shopNotifText = msg;
+            this.shopNotif = true;
+            setTimeout(() => { this.shopNotif = false; }, 2500);
+        },
+
+        async buyItem(item) {
+            if (item.owned || item.locked) return;
+
+            if (!this.isAuthenticated) {
+                this.showShopNotif('Connecte-toi pour acheter des articles');
+                return;
+            }
+
+            if (this.shopUserCoins < item.price) {
+                this.showShopNotif('Pas assez de S-Coins');
+                return;
+            }
+
+            this.shopConfirmItem = item;
+        },
+
+        async confirmBuy() {
+            const item = this.shopConfirmItem;
+            if (!item) return;
+            this.shopConfirmItem = null;
+
+            try {
+                const response = await fetch('/shop/purchase', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        twitchId: this.twitchId,
+                        itemId: item.id
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    item.owned = true;
+                    this.shopUserCoins = data.balance;
+                    this.showShopNotif('Achat effectue !');
+                } else {
+                    this.showShopNotif(data.error || 'Erreur lors de l\'achat');
+                }
+            } catch (error) {
+                console.error('❌ Erreur achat:', error);
             }
         },
 
@@ -1208,6 +1375,21 @@ createApp({
                 // 🏔️ Resync Ascension
                 if (state.isActive && state.inProgress && state.lobbyMode === 'ascension' && this.isAuthenticated && this.hasJoined) {
                     this.socket.emit('ascension-reconnect', { twitchId: this.twitchId });
+                }
+
+                // 🔧 FIX: Si la partie est en cours côté serveur MAIS le client est bloqué sur le modal lobby
+                // (peut arriver si le socket s'est reconnecté avec un nouveau socket.id pendant le démarrage
+                // de la partie, faisant que le serveur envoie isParticipating=false au nouveau socket)
+                // → émettre reconnect-player pour réassigner le player au nouveau socket.id
+                if (state.isActive && state.inProgress && this.isAuthenticated && this.hasJoined && !this.gameInProgress) {
+                    const classicLikeMode = !state.lobbyMode || state.lobbyMode === 'classic' || state.lobbyMode === 'rivalry';
+                    if (classicLikeMode) {
+                        console.log('🔧 Resync: partie en cours serveur mais client bloqué en lobby → reconnect-player');
+                        this.socket.emit('reconnect-player', {
+                            twitchId: this.twitchId,
+                            username: this.username
+                        });
+                    }
                 }
             } catch (e) {
                 console.warn('⚠️ Resync échoué:', e);
@@ -2086,6 +2268,13 @@ createApp({
                 this.currentQuestionNumber = data.currentQuestionIndex;
                 this.hasJoined = true;
 
+                // 🔧 FIX: Activer gameInProgress pour quitter le modal "Vous êtes dans la partie"
+                // Si le serveur nous restaure, c'est qu'une partie est en cours et qu'on est dedans
+                this.gameStartedOnServer = true;
+                this.gameInProgress = true;
+                this.gameMode = data.gameMode || this.gameMode || 'lives';
+                document.body.classList.add('game-active');
+
                 if (data.hasAnswered) {
                     this.hasAnswered = true;
                     this.selectedAnswer = data.selectedAnswer;
@@ -2535,6 +2724,11 @@ createApp({
                 // 🆕 Initialiser les animations du winner
                 this.$nextTick(() => {
                     this.initWinnerAnimations();
+                    // 🎁 Trigger reward animation
+                    if (data.rewardsData && this.twitchId && data.rewardsData[this.twitchId]) {
+                        this.rewardAnimData = data.rewardsData[this.twitchId];
+                        this.$nextTick(() => this.playRewardAnimation());
+                    }
                 });
 
                 // 🆕 Nettoyer localStorage car la partie est terminée
@@ -3277,8 +3471,34 @@ createApp({
                     duration: data.duration,
                     gameMode: 'bombanime',
                     serie: data.serie,
-                    namesUsed: data.namesUsed
+                    namesUsed: data.namesUsed,
+                    rewardsData: data.rewardsData
                 };
+
+                // 🎁 Si les rewards sont déjà présents (cas normal classique/rivalité), déclencher
+                // Sinon ils arriveront via bombanime-rewards-ready
+                if (data.rewardsData && this.twitchId && data.rewardsData[this.twitchId]) {
+                    this.$nextTick(() => {
+                        this.rewardAnimData = data.rewardsData[this.twitchId];
+                        this.$nextTick(() => this.playRewardAnimation());
+                    });
+                }
+            });
+
+            // 🎁 Handler pour les rewards BombAnime qui arrivent après l'écran winner
+            this.socket.on('bombanime-rewards-ready', (data) => {
+                console.log('🎁 Rewards BombAnime reçus:', data);
+                if (!data.rewardsData || !this.twitchId) return;
+                const myReward = data.rewardsData[this.twitchId];
+                if (!myReward) return;
+
+                // Enregistrer dans gameEndData
+                if (this.gameEndData) {
+                    this.gameEndData.rewardsData = data.rewardsData;
+                }
+
+                this.rewardAnimData = myReward;
+                this.$nextTick(() => this.playRewardAnimation());
             });
             
             this.socket.on('bombanime-state', (data) => {
@@ -4227,6 +4447,7 @@ createApp({
                 
                 this.gameInProgress = true;
                 this.gameEnded = false;
+                this._lastAscFloorRender = null;  // 🆕 Reset le tracker de dédup pour une nouvelle game
                 this.ascension = {
                     active: true,
                     floors: data.floors,
@@ -4236,6 +4457,7 @@ createApp({
                     floorData: null,
                     myFloor: 0,
                     validated: false,
+                    countdownEndsAt: data.countdownEndsAt || 0,  // 🆕 Pour différer le render pendant le countdown
                 };
                 document.body.classList.add('game-active');
                 
@@ -4252,16 +4474,68 @@ createApp({
                 this.ascension.floorData = data.floorData;
                 this.ascension.playerProgress = data.playerProgress || this.ascension.playerProgress;
                 this.ascension.validated = false;
+                this.ascension.myValidatedGuesses = [];  // 🆕 Nouveau floor → on repart à vide (la restauration n'a lieu qu'au reload via ascension-state)
                 
-                // Reveal UI elements (hidden during countdown)
-                document.querySelectorAll('.asc-pre-start').forEach(el => {
-                    el.classList.remove('asc-pre-start');
-                    el.classList.add('asc-reveal');
-                });
+                // 🆕 Si on est encore dans le countdown initial (3-2-1-GO du floor 0),
+                // attendre la fin du countdown avant de reveal+render pour éviter
+                // que le contenu apparaisse en fond pendant l'overlay.
+                const now = Date.now();
+                const countdownEnd = this.ascension.countdownEndsAt || 0;
+                const delay = countdownEnd > now ? (countdownEnd - now) : 0;
                 
-                this._renderAscensionPlayerFloor(data.floorData, data.floor);
-                this._startAscensionPlayerTimer(data.timerEndTime);
-                this._updateAscensionPlayerTower();
+                const doReveal = () => {
+                    // Reveal UI elements (hidden during countdown)
+                    document.querySelectorAll('.asc-pre-start').forEach(el => {
+                        el.classList.remove('asc-pre-start');
+                        el.classList.add('asc-reveal');
+                    });
+                    
+                    // 🆕 Transition entre étages : si du contenu existe déjà (étage N → N+1),
+                    // on fait un slide-up-out puis un stagger-in. Sinon (1er render après countdown),
+                    // on render direct sans transition.
+                    const content = document.getElementById('ascPlayerContent');
+                    const titleEl = document.getElementById('ascPlayerFloorTitle');
+                    const isTransition = content && content.children.length > 0;
+                    
+                    if (isTransition) {
+                        // 🆕 Render normal (le _renderAscensionPlayerFloor ajoute la classe `pop`
+                        //    sur le titre qui anime via ascTitlePop maintenant que les keyframes
+                        //    sont définies côté joueur). On ajoute juste un stagger-in sur le content.
+                        this._renderAscensionPlayerFloor(data.floorData, data.floor);
+                        this._startAscensionPlayerTimer(data.timerEndTime);
+                        this._updateAscensionPlayerTower();
+                        
+                        // Animation simple sur content (1 seule classe, 1 seule fois, après render)
+                        if (content) {
+                            // 🆕 BUGFIX double pop : retirer asc-reveal AVANT d'ajouter asc-stagger-in.
+                            //    Sinon quand on retire stagger-in à 700ms, le browser réévalue les
+                            //    animations actives et REDÉCLENCHE ascReveal sur le content (2ème pop).
+                            //    asc-reveal a `forwards` donc l'état final reste appliqué après remove.
+                            content.classList.remove('asc-reveal');
+                            content.classList.remove('asc-stagger-in', 'asc-stagger-d4');
+                            void content.offsetWidth;
+                            content.classList.add('asc-stagger-in', 'asc-stagger-d4');
+                            setTimeout(() => {
+                                content.classList.remove('asc-stagger-in', 'asc-stagger-d4');
+                            }, 700);
+                        }
+                        // 🆕 Pareil pour le titre qui a aussi asc-reveal après doReveal initial
+                        if (titleEl) {
+                            titleEl.classList.remove('asc-reveal');
+                        }
+                    } else {
+                        // 1er render après countdown : direct, pas de transition
+                        this._renderAscensionPlayerFloor(data.floorData, data.floor);
+                        this._startAscensionPlayerTimer(data.timerEndTime);
+                        this._updateAscensionPlayerTower();
+                    }
+                };
+                
+                if (delay > 0) {
+                    setTimeout(doReveal, delay);
+                } else {
+                    doReveal();
+                }
             });
             
             this.socket.on('ascension-floor-end', (data) => {
@@ -4288,6 +4562,181 @@ createApp({
                 }
             });
             
+            // 🎯 Validation du mini-jeu Order — l'ordre proposé est correct → on marque visuellement
+            //    avant que le serveur déclenche le passage à l'étage suivant (1500ms après).
+            this.socket.on('ascension-order-result', (data) => {
+                if (!data || !data.correct) return;
+                if (this.ascension) this.ascension.validated = true;
+                
+                const grid = document.querySelector('.asc-order-grid');
+                if (!grid) return;
+                
+                // 🆕 Cascade de 80ms : ajoute la classe correct + transforme le badge numéro en badge ✓
+                const cards = Array.from(grid.querySelectorAll('.asc-order-card'));
+                cards.forEach((c, i) => {
+                    setTimeout(() => {
+                        c.classList.add('asc-order-correct');
+                        // Transforme le badge numéro en badge de validation (✓)
+                        const numBadge = c.querySelector('.asc-order-num');
+                        if (numBadge && !numBadge.dataset.validated) {
+                            numBadge.dataset.validated = '1';
+                            numBadge.innerHTML = '<svg class="asc-order-check" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 12 L10 18 L20 6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+                        }
+                    }, i * 80);
+                });
+                
+                // Petit son de validation (le même que Guess pour cohérence)
+                this._playAscGuessCorrectSound?.();
+            });
+            
+            // 🎯 Validation incrémentale du mini-jeu Intruder
+            //    Le serveur répond après chaque clic sur une carte: {correct, characterId, foundCount, totalTargets}
+            this.socket.on('ascension-intruder-result', (data) => {
+                if (!data || !data.characterId) return;
+                this._handleIntruderResult(data);
+            });
+            
+            // 🎯 Validation incrémentale du mini-jeu Guess
+            this.socket.on('ascension-guess-result', (data) => {
+                if (!data || !data.characterId) return;
+                
+                const card = document.querySelector(`.asc-guess-card[data-char-id="${data.characterId}"]`);
+                const input = card?.querySelector('.asc-guess-input');
+                
+                if (data.correct) {
+                    if (!this.ascension.guessSolved) this.ascension.guessSolved = {};
+                    this.ascension.guessSolved[data.characterId] = true;
+                    
+                    if (card) {
+                        card.classList.add('asc-guess-correct');
+                        // 🆕 Stamp "PERFECT" qui s'applique sur la card avec rotation
+                        if (!card.querySelector('.asc-guess-stamp')) {
+                            const stamp = document.createElement('div');
+                            stamp.className = 'asc-guess-stamp';
+                            stamp.textContent = 'PERFECT';
+                            card.appendChild(stamp);
+                        }
+                    }
+                    if (input) {
+                        input.disabled = true;
+                        input.blur();
+                    }
+                    
+                    // Petit son success
+                    this._playAscGuessCorrectSound();
+                    
+                    // Pop animation punchy sur la card validée
+                    if (card) {
+                        card.classList.remove('asc-guess-pop');
+                        void card.offsetWidth;
+                        card.classList.add('asc-guess-pop');
+                    }
+                    
+                    // 🆕 Focus sur le prochain input non-disabled à DROITE de celui qu'on vient de valider
+                    //     (et seulement si rien à droite, on retombe vers la gauche)
+                    const allCards = Array.from(document.querySelectorAll('.asc-guess-card'));
+                    const validatedIdx = allCards.findIndex(c => c.dataset.charId === data.characterId);
+                    let nextInput = null;
+                    // 1) cherche à droite
+                    for (let i = validatedIdx + 1; i < allCards.length; i++) {
+                        const inp = allCards[i].querySelector('.asc-guess-input');
+                        if (inp && !inp.disabled) { nextInput = inp; break; }
+                    }
+                    // 2) sinon, retombe sur le premier dispo à gauche
+                    if (!nextInput && validatedIdx > 0) {
+                        for (let i = 0; i < validatedIdx; i++) {
+                            const inp = allCards[i].querySelector('.asc-guess-input');
+                            if (inp && !inp.disabled) { nextInput = inp; break; }
+                        }
+                    }
+                    if (nextInput) nextInput.focus();
+                } else {
+                    // 🆕 Shake UNIQUEMENT si la validation vient d'un Enter explicite (pas à chaque frappe)
+                    if (data.source === 'enter' && card) {
+                        card.classList.remove('asc-guess-shake');
+                        void card.offsetWidth;
+                        card.classList.add('asc-guess-shake');
+                    }
+                }
+            });
+            
+            // 🎵 Son court pour validation guess (généré, pas de fichier)
+            //    Sweep descendant + click percussif → feeling "validation tech" mature
+            this._playAscGuessCorrectSound = function() {
+                try {
+                    if (!this._ascGuessCtx) {
+                        this._ascGuessCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    const ctx = this._ascGuessCtx;
+                    if (ctx.state === 'suspended') ctx.resume();
+                    const t = ctx.currentTime;
+                    
+                    // Couche 1 — Click percussif court (impact / attaque)
+                    const click = ctx.createOscillator();
+                    const clickGain = ctx.createGain();
+                    click.type = 'triangle';
+                    click.frequency.setValueAtTime(2200, t);
+                    click.frequency.exponentialRampToValueAtTime(900, t + 0.04);
+                    clickGain.gain.setValueAtTime(0, t);
+                    clickGain.gain.linearRampToValueAtTime(0.05, t + 0.002);
+                    clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+                    click.connect(clickGain).connect(ctx.destination);
+                    click.start(t);
+                    click.stop(t + 0.06);
+                    
+                    // Couche 2 — Body warm tone descendant (confirmation)
+                    const body = ctx.createOscillator();
+                    const bodyGain = ctx.createGain();
+                    body.type = 'sine';
+                    body.frequency.setValueAtTime(720, t + 0.01);
+                    body.frequency.exponentialRampToValueAtTime(440, t + 0.18);
+                    bodyGain.gain.setValueAtTime(0, t + 0.01);
+                    bodyGain.gain.linearRampToValueAtTime(0.07, t + 0.025);
+                    bodyGain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+                    body.connect(bodyGain).connect(ctx.destination);
+                    body.start(t + 0.01);
+                    body.stop(t + 0.24);
+                } catch(e) { /* ignore */ }
+            };
+            
+            // 🎵 Son d'interchange Order — 2 clicks rapides décalés (suggère 2 cards qui s'échangent)
+            this._playAscOrderSwapSound = function() {
+                try {
+                    if (!this._ascGuessCtx) {
+                        this._ascGuessCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    const ctx = this._ascGuessCtx;
+                    if (ctx.state === 'suspended') ctx.resume();
+                    const t = ctx.currentTime;
+                    
+                    // Click 1 — fréquence descendante (la card qui part)
+                    const c1 = ctx.createOscillator();
+                    const g1 = ctx.createGain();
+                    c1.type = 'triangle';
+                    c1.frequency.setValueAtTime(1400, t);
+                    c1.frequency.exponentialRampToValueAtTime(600, t + 0.06);
+                    g1.gain.setValueAtTime(0, t);
+                    g1.gain.linearRampToValueAtTime(0.06, t + 0.003);
+                    g1.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+                    c1.connect(g1).connect(ctx.destination);
+                    c1.start(t);
+                    c1.stop(t + 0.09);
+                    
+                    // Click 2 — fréquence montante 80ms plus tard (la card qui arrive à destination)
+                    const c2 = ctx.createOscillator();
+                    const g2 = ctx.createGain();
+                    c2.type = 'triangle';
+                    c2.frequency.setValueAtTime(700, t + 0.08);
+                    c2.frequency.exponentialRampToValueAtTime(1500, t + 0.14);
+                    g2.gain.setValueAtTime(0, t + 0.08);
+                    g2.gain.linearRampToValueAtTime(0.06, t + 0.083);
+                    g2.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+                    c2.connect(g2).connect(ctx.destination);
+                    c2.start(t + 0.08);
+                    c2.stop(t + 0.17);
+                } catch(e) { /* ignore */ }
+            };
+            
             this.socket.on('ascension-game-end', (data) => {
                 if (!this.ascension?.active) return;
                 console.log('🏔️ Fin:', data);
@@ -4304,15 +4753,35 @@ createApp({
                 this.gameEnded = false;
                 document.body.classList.add('game-active');
                 
+                // 🆕 SOFT SYNC : si on est déjà en ascension active sur le même floor avec
+                //    le DOM rendu (cas typique : visibilitychange = onglet caché → visible),
+                //    on synchronise juste les progress sans toucher au DOM. Ça évite le
+                //    "faux refresh" qui vide les inputs déjà tapés et fait disparaître les stamps.
+                const incomingFloor = data.currentFloor || 0;
+                const uiIsRendered = !!document.getElementById('ascPlayerContent')?.children.length;
+                const sameFloor = this.ascension?.active && this.ascension?.currentFloor === incomingFloor;
+                
+                if (uiIsRendered && sameFloor) {
+                    console.log('🏔️ Soft sync (UI déjà rendue, même étage) — pas de re-render');
+                    this.ascension.playerProgress = data.playerProgress || this.ascension.playerProgress;
+                    const me = this.ascension.playerProgress.find(p => p.twitchId === this.twitchId);
+                    if (me) this.ascension.myFloor = me.floor;
+                    this._updateAscensionPlayerTower();
+                    return;
+                }
+                
+                // Hard sync : reset complet (vrai cas de reconnexion après reload de la page)
                 this.ascension = {
                     active: true,
                     floors: data.floors,
                     timer: data.timer,
-                    currentFloor: data.currentFloor || 0,
+                    currentFloor: incomingFloor,
                     playerProgress: data.playerProgress || [],
                     floorData: data.floorData,
                     myFloor: 0,
                     validated: false,
+                    countdownEndsAt: data.countdownEndsAt || 0,  // 🆕 Idem pour reconnexion pendant countdown initial
+                    myValidatedGuesses: data.myValidatedGuesses || [],  // 🆕 Guesses déjà validées au refresh (mode race)
                 };
                 
                 // Find my floor
@@ -4322,17 +4791,38 @@ createApp({
                 this.$nextTick(() => {
                     this._initAscensionUI();
                     
+                    // 🆕 Si on reconnect pendant le countdown initial, relancer le countdown overlay
+                    const now = Date.now();
+                    const countdownEnd = data.countdownEndsAt || 0;
+                    const inCountdown = countdownEnd > now;
+                    
+                    if (inCountdown) {
+                        this._startAscensionCountdown(countdownEnd);
+                    }
+                    
                     // Reveal UI immediately then render floor
+                    // (Si countdown actif, _renderAscensionPlayerFloor se chargera de différer
+                    //  via sa garde défensive interne, et idem pour le reveal des éléments)
                     setTimeout(() => {
-                        document.querySelectorAll('.asc-pre-start').forEach(el => {
-                            el.classList.remove('asc-pre-start');
-                            el.classList.add('asc-reveal');
-                        });
+                        if (!inCountdown) {
+                            document.querySelectorAll('.asc-pre-start').forEach(el => {
+                                el.classList.remove('asc-pre-start');
+                                el.classList.add('asc-reveal');
+                            });
+                        }
                         // Render after reveal so title pop is visible
                         setTimeout(() => {
                             this._updateAscensionPlayerTower();
                             if (data.floorData) this._renderAscensionPlayerFloor(data.floorData, data.currentFloor);
-                            if (data.floorTimerEndTime) this._startAscensionPlayerTimer(data.floorTimerEndTime);
+                            // Le timer se synchronise sur l'horloge serveur (timestamp absolu),
+                            // donc même différé il affichera la bonne valeur restante.
+                            if (data.floorTimerEndTime) {
+                                if (inCountdown) {
+                                    setTimeout(() => this._startAscensionPlayerTimer(data.floorTimerEndTime), countdownEnd - Date.now());
+                                } else {
+                                    this._startAscensionPlayerTimer(data.floorTimerEndTime);
+                                }
+                            }
                         }, 100);
                     }, 50);
                 });
@@ -5544,6 +6034,9 @@ createApp({
                             setTimeout(() => ring.remove(), 900);
                         }
                         self._playAscensionGoSound();
+                    } else {
+                        // 🆕 Tick sound façon Mario Kart pour 3, 2, 1
+                        self._playAscensionTickSound();
                     }
                 }
                 
@@ -5555,7 +6048,11 @@ createApp({
 
         _playAscensionGoSound() {
             try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (!this._ascGuessCtx) {
+                    this._ascGuessCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const ctx = this._ascGuessCtx;
+                if (ctx.state === 'suspended') ctx.resume();
                 const t = ctx.currentTime;
                 const b1 = ctx.createOscillator();
                 const g1 = ctx.createGain();
@@ -5588,6 +6085,28 @@ createApp({
             } catch(e) {}
         },
 
+        // 🆕 Tick sound façon Mario Kart — joué pour 3, 2, 1 dans le countdown
+        _playAscensionTickSound() {
+            try {
+                if (!this._ascGuessCtx) {
+                    this._ascGuessCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const ctx = this._ascGuessCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+                const t = ctx.currentTime;
+                const o = ctx.createOscillator();
+                const g = ctx.createGain();
+                o.type = 'square';
+                o.frequency.setValueAtTime(700, t);
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(0.09, t + 0.005);
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+                o.connect(g).connect(ctx.destination);
+                o.start(t);
+                o.stop(t + 0.1);
+            } catch(e) {}
+        },
+
         // ═══ ASCENSION — Player UI Methods ═══
         _initAscensionUI() {
             const screen = document.querySelector('.ascension-player-screen');
@@ -5596,10 +6115,6 @@ createApp({
             screen.innerHTML = `
                 <div class="asc-player-topbar asc-pre-start">
                     <div class="asc-topbar-left">
-                        <div class="asc-floor-badge">
-                            <span class="asc-floor-label">ÉTAGE</span>
-                            <span class="asc-floor-num" id="ascPlayerFloorNum">1</span>
-                        </div>
                         <div class="asc-timer-wrap" id="ascPlayerTimerWrap">
                             <svg class="asc-timer-svg" viewBox="0 0 44 44" width="36" height="36">
                                 <circle class="asc-timer-bg" cx="22" cy="22" r="18"/>
@@ -5610,8 +6125,8 @@ createApp({
                     </div>
                 </div>
                 <div class="asc-floor-title asc-pre-start" id="ascPlayerFloorTitle"></div>
-                <div class="asc-player-content" id="ascPlayerContent"></div>
-                <div class="asc-player-tower asc-pre-start">
+                <div class="asc-player-content asc-pre-start" id="ascPlayerContent"></div>
+                <div class="asc-player-tower asc-tower-reveal">
                     <div class="asc-tower-crown">♛</div>
                     <div class="asc-tower-track">
                         <div class="asc-tower-marks" id="ascPlayerTowerMarks"></div>
@@ -5630,36 +6145,812 @@ createApp({
                     marks.appendChild(m);
                 }
             }
+            
+            // 🆕 Position immédiatement les joueurs sur la tour (tous à l'étage 0)
+            //    pour que la tour soit déjà animée et stylée pendant le countdown 3-2-1-GO
+            this._updateAscensionPlayerTower();
         },
 
         _renderAscensionPlayerFloor(floorData, floorIndex) {
+            // 🆕 Garde défensive : tant que le countdown initial 3-2-1-GO est actif,
+            // on diffère TOUT le rendu (titre + cards) pour éviter le flash en arrière-plan.
+            // Peu importe d'où l'appel vient (ascension-floor-start, ascension-state, …).
+            const now = Date.now();
+            const countdownEnd = this.ascension?.countdownEndsAt || 0;
+            if (countdownEnd > now) {
+                const delay = countdownEnd - now;
+                setTimeout(() => {
+                    this._renderAscensionPlayerFloor(floorData, floorIndex);
+                }, delay);
+                return;
+            }
+            
+            // 🆕 Garde de déduplication : si on a déjà rendu ce floor il y a moins de 2 secondes,
+            //    on skip ce re-render. Évite le double render quand 2 events (ascension-floor-start
+            //    et ascension-state par exemple) tentent tous deux de render le même étage.
+            const lastRender = this._lastAscFloorRender;
+            if (lastRender && lastRender.floor === floorIndex && (now - lastRender.at) < 2000) {
+                return;
+            }
+            this._lastAscFloorRender = { floor: floorIndex, at: now };
+            
+            // Reveal UI elements au cas où ils seraient encore cachés (idempotent)
+            document.querySelectorAll('.ascension-player-screen .asc-pre-start').forEach(el => {
+                el.classList.remove('asc-pre-start');
+                el.classList.add('asc-reveal');
+            });
+            
+            // 🆕 Cleanup du resize listener Order si on change d'étage (le grid précédent
+            // sera détaché du DOM, son listener doit l'être aussi)
+            if (this._ascOrderResizeHandler) {
+                window.removeEventListener('resize', this._ascOrderResizeHandler);
+                this._ascOrderResizeHandler = null;
+                clearTimeout(this._ascOrderResizeTO);
+            }
+            
             const content = document.getElementById('ascPlayerContent');
             const floorNum = document.getElementById('ascPlayerFloorNum');
             const floorTitle = document.getElementById('ascPlayerFloorTitle');
             
+            // 🆕 Le badge ÉTAGE en haut à gauche n'existe plus, mais on reste safe avec le if
             if (floorNum) floorNum.textContent = floorIndex + 1;
             
             // Animate floor title + subtitle
             if (floorTitle) {
+                // 🆕 Retirer asc-reveal (résiduel du 1er countdown reveal) pour éviter
+                //    qu'il se redéclenche au moment où on retire `pop` plus tard.
+                floorTitle.classList.remove('asc-reveal');
                 floorTitle.classList.remove('pop');
+                
                 const desc = this._getAscFloorDesc(floorData);
-                floorTitle.innerHTML = '<span class="asc-title-main">' + (floorData?.label || '') + '</span>' +
-                    (desc ? '<span class="asc-title-sub">' + desc + '</span>' : '');
+                const etageNum = floorIndex + 1;
+                const label = floorData?.label || '';
+                // 🆕 Pour Intruder : pas de subtitle (déplacé dans le sidebar) mais on garde le divider stylisé
+                const isIntruder = floorData?.type === 'intruder';
+                floorTitle.innerHTML = '<span class="asc-title-main">E' + etageNum + ' — ' + label + '</span>' +
+                    (desc ? '<div class="asc-title-divider"></div><span class="asc-title-sub">' + desc + '</span>'
+                          : (isIntruder ? '<div class="asc-title-divider"></div>' : ''));
                 void floorTitle.offsetHeight;
                 floorTitle.classList.add('pop');
             }
             
             if (!content || !floorData) return;
             
-            // Content will be filled by actual mini-game renderers later
+            // Reset l'état de validation pour cet étage
+            this.ascension.guessSolved = {};
+            this.ascension.intruderFound = null;  // 🆕 Reset tracker Intruder pour le nouveau floor
+            
+            // Render le mini-jeu correspondant au type
             content.innerHTML = '';
+            switch (floorData.type) {
+                case 'guess':
+                    this._renderGuessGame(content, floorData);
+                    break;
+                case 'order':
+                    this._renderOrderGame(content, floorData);
+                    break;
+                case 'intruder':
+                    this._renderIntruderGame(content, floorData);
+                    break;
+                // Les autres types seront ajoutés progressivement
+                default:
+                    content.innerHTML = '<div class="asc-todo">Mini-jeu "' + floorData.type + '" à venir...</div>';
+            }
+        },
+        
+        // 🆕 Apply stagger-in animation aux 4 éléments centraux (titre, divider, subtitle, content)
+        // Appelé après _renderAscensionPlayerFloor lors d'une transition d'étage à étage
+        _applyAscStaggerIn() {
+            const titleEl = document.getElementById('ascPlayerFloorTitle');
+            const content = document.getElementById('ascPlayerContent');
+            
+            const items = [
+                { el: titleEl?.querySelector('.asc-title-main'),    delay: 'asc-stagger-d1' },
+                { el: titleEl?.querySelector('.asc-title-divider'), delay: 'asc-stagger-d2' },
+                { el: titleEl?.querySelector('.asc-title-sub'),     delay: 'asc-stagger-d3' },
+                { el: content,                                       delay: 'asc-stagger-d4' },
+            ];
+            // 🆕 Applique d'abord les classes d'animation. La classe asc-stagger-in contient
+            //    `opacity: 0; transform: translateY(20px)` au début → l'élément reste invisible
+            //    avant que l'animation kick in. Comme ça, même si on retire l'inline opacity:0
+            //    qui était en place, il n'y a pas de "flash visible" intermédiaire.
+            items.forEach(({ el, delay }) => {
+                if (!el) return;
+                el.classList.remove('asc-stagger-in', 'asc-stagger-d1', 'asc-stagger-d2', 'asc-stagger-d3', 'asc-stagger-d4');
+                void el.offsetWidth;  // force reflow
+                el.classList.add('asc-stagger-in', delay);
+            });
+            // 🆕 Maintenant que la classe asc-stagger-in est posée (et donc opacity:0 via CSS),
+            //    on peut retirer l'inline opacity:0 qui était posé par doReveal.
+            //    Sans ça, l'inline persiste après le cleanup à 700ms et le content redisparait.
+            //    NOTE : on retire les inlines APRÈS un nouveau reflow pour s'assurer que la
+            //    classe a bien pris effet avant.
+            requestAnimationFrame(() => {
+                if (titleEl) { titleEl.style.opacity = ''; titleEl.style.transform = ''; }
+                if (content) { content.style.opacity = ''; content.style.transform = ''; }
+            });
+            // Cleanup les classes après l'anim pour ne pas affecter les renders suivants
+            setTimeout(() => {
+                items.forEach(({ el }) => {
+                    if (el) el.classList.remove('asc-stagger-in', 'asc-stagger-d1', 'asc-stagger-d2', 'asc-stagger-d3', 'asc-stagger-d4');
+                });
+            }, 700);
         },
 
+        // 🎯 Mini-jeu GUESS — 5 personnages à deviner par leur image
+        _renderGuessGame(container, floorData) {
+            const grid = document.createElement('div');
+            grid.className = 'asc-guess-grid';
+            
+            floorData.characters.forEach(char => {
+                const card = document.createElement('div');
+                card.className = 'asc-guess-card';
+                card.dataset.charId = char.id;
+                
+                const imgWrap = document.createElement('div');
+                imgWrap.className = 'asc-guess-img-wrap';
+                const img = document.createElement('img');
+                img.className = 'asc-guess-img';
+                img.src = char.img;
+                img.alt = '';
+                img.draggable = false;
+                img.onerror = () => { img.style.display = 'none'; imgWrap.classList.add('asc-guess-img-fail'); };
+                imgWrap.appendChild(img);
+                
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'asc-guess-input';
+                input.placeholder = 'Nom...';
+                input.maxLength = 30;
+                input.autocomplete = 'off';
+                input.spellcheck = false;
+                input.dataset.charId = char.id;
+                
+                // 🆕 Validation instantanée à chaque frappe (source='input', sans shake si faux)
+                input.addEventListener('input', (e) => {
+                    const val = e.target.value.trim();
+                    if (val.length < 2) return; // Pas la peine de checker pour 1 lettre
+                    this._submitGuessCheck(char.id, val, 'input');
+                });
+                
+                // 🆕 Validation explicite sur Enter (source='enter', shake si faux)
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const val = input.value.trim();
+                        if (val) this._submitGuessCheck(char.id, val, 'enter');
+                    }
+                });
+                
+                card.appendChild(imgWrap);
+                card.appendChild(input);
+                grid.appendChild(card);
+            });
+            
+            container.appendChild(grid);
+            
+            // 🆕 RESTAURATION (mode race) : si on reconnect après refresh et qu'on avait
+            //    déjà validé certaines cards, on les marque visuellement (stamp + disabled)
+            const validated = this.ascension?.myValidatedGuesses || [];
+            if (validated.length > 0) {
+                console.log(`🏔️ Restauration de ${validated.length} guess(es) déjà validée(s)`);
+                if (!this.ascension.guessSolved) this.ascension.guessSolved = {};
+                validated.forEach(charId => {
+                    const card = grid.querySelector(`.asc-guess-card[data-char-id="${charId}"]`);
+                    if (!card) return;
+                    card.classList.add('asc-guess-correct');
+                    if (!card.querySelector('.asc-guess-stamp')) {
+                        const stamp = document.createElement('div');
+                        stamp.className = 'asc-guess-stamp';
+                        stamp.textContent = 'PERFECT';
+                        // Pas d'animation au refresh : le stamp apparaît directement sans pop
+                        stamp.style.animation = 'none';
+                        stamp.style.transform = 'translate(-50%, -50%) rotate(-12deg) scale(1)';
+                        stamp.style.opacity = '1';
+                        card.appendChild(stamp);
+                    }
+                    const input = card.querySelector('.asc-guess-input');
+                    if (input) input.disabled = true;
+                    this.ascension.guessSolved[charId] = true;
+                });
+                // Reset myValidatedGuesses pour ne pas re-restaurer si on re-render le floor
+                this.ascension.myValidatedGuesses = [];
+            }
+            
+            // Focus sur le 1er input non-validé (skip ceux déjà validés au refresh)
+            setTimeout(() => {
+                const firstAvailable = grid.querySelector('.asc-guess-input:not([disabled])');
+                if (firstAvailable) firstAvailable.focus();
+            }, 100);
+        },
+
+        _submitGuessCheck(characterId, name, source) {
+            if (!this.ascension?.active || this.ascension.validated) return;
+            if (!this.ascension.guessSolved) this.ascension.guessSolved = {};
+            if (this.ascension.guessSolved[characterId]) return; // Déjà validé
+            
+            this.socket.emit('ascension-check-guess', { characterId, name, source: source || 'input' });
+        },
+
+        // 🎯 Mini-jeu ORDER — drag & drop pour classer 5 arcs par ordre chronologique
+        _renderOrderGame(container, floorData) {
+            const wrap = document.createElement('div');
+            wrap.className = 'asc-order-wrap';
+            
+            // Grille de 5 cards
+            const grid = document.createElement('div');
+            grid.className = 'asc-order-grid';
+            grid.dataset.role = 'order-grid';
+            
+            floorData.arcs.forEach((arc, idx) => {
+                const card = this._createOrderCard(arc, idx);
+                grid.appendChild(card);
+            });
+            
+            // Setup les listeners (un seul par grid, pas par card)
+            this._setupOrderDragListeners(grid);
+            
+            wrap.appendChild(grid);
+            container.appendChild(wrap);
+            
+            // 🆕 Build les connecteurs SVG après que le DOM soit en place et stylé
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => this._buildOrderConnectors(grid));
+            });
+            
+            // 🆕 Re-build au resize (les positions changent → les paths SVG aussi)
+            if (this._ascOrderResizeHandler) {
+                window.removeEventListener('resize', this._ascOrderResizeHandler);
+            }
+            this._ascOrderResizeHandler = () => {
+                clearTimeout(this._ascOrderResizeTO);
+                this._ascOrderResizeTO = setTimeout(() => {
+                    if (document.body.contains(grid)) this._buildOrderConnectors(grid);
+                }, 150);
+            };
+            window.addEventListener('resize', this._ascOrderResizeHandler);
+        },
+
+        _createOrderCard(arc, idx) {
+            const card = document.createElement('div');
+            card.className = 'asc-order-card';
+            card.dataset.arcId = arc.id;
+            
+            // Numéro d'ordre actuel (badge en haut à gauche)
+            const numBadge = document.createElement('div');
+            numBadge.className = 'asc-order-num';
+            numBadge.textContent = idx + 1;
+            
+            // Image de l'arc
+            const imgWrap = document.createElement('div');
+            imgWrap.className = 'asc-order-img-wrap';
+            const img = document.createElement('img');
+            img.className = 'asc-order-img';
+            img.src = arc.img;
+            img.alt = '';
+            img.draggable = false;
+            img.onerror = () => { img.style.display = 'none'; imgWrap.classList.add('asc-order-img-fail'); };
+            imgWrap.appendChild(img);
+            
+            // Nom de l'arc en bas
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'asc-order-name';
+            nameDiv.textContent = arc.name;
+            
+            card.appendChild(numBadge);
+            card.appendChild(imgWrap);
+            card.appendChild(nameDiv);
+            return card;
+        },
+
+        // Drag & drop custom avec pointer events (marche desktop + mobile)
+        // Au drop, FLIP animation pour le swap des cards adjacentes.
+        _setupOrderDragListeners(grid) {
+            const self = this;
+            let dragCard = null;
+            let pointerId = null;
+            let startX = 0, startY = 0;
+            let originRect = null;
+            let hoveredTarget = null;  // 🆕 Cible actuellement highlightée — source de vérité pour le drop
+            
+            const onPointerDown = (e) => {
+                if (self.ascension?.validated) return;
+                const card = e.target.closest('.asc-order-card');
+                if (!card || !grid.contains(card)) return;
+                
+                e.preventDefault();
+                dragCard = card;
+                pointerId = e.pointerId;
+                startX = e.clientX;
+                startY = e.clientY;
+                originRect = card.getBoundingClientRect();
+                hoveredTarget = null;
+                
+                card.setPointerCapture(pointerId);
+                card.classList.add('asc-order-dragging');
+            };
+            
+            const onPointerMove = (e) => {
+                if (!dragCard) return;
+                e.preventDefault();
+                
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                dragCard.style.transform = `translate(${dx}px, ${dy}px) scale(1.05) rotate(2deg)`;
+                
+                // 🆕 Highlight la card cible — on stocke la cible dans hoveredTarget
+                //    pour la réutiliser au drop (cohérence visuel ↔ logique).
+                const target = self._findOrderTargetCard(grid, dragCard);
+                if (target !== hoveredTarget) {
+                    if (hoveredTarget) hoveredTarget.classList.remove('asc-order-target');
+                    if (target) target.classList.add('asc-order-target');
+                    hoveredTarget = target;
+                }
+            };
+            
+            const onPointerUp = (e) => {
+                if (!dragCard) return;
+                const card = dragCard;
+                
+                // 🆕 On utilise hoveredTarget directement (= ce que le user VOIT highlighté)
+                //    Plus de recalcul → plus de risque d'incohérence visuel/logique
+                const target = hoveredTarget;
+                
+                // Cleanup highlight
+                if (hoveredTarget) hoveredTarget.classList.remove('asc-order-target');
+                hoveredTarget = null;
+                
+                if (target && target !== card) {
+                    // 🆕 INSERT basé sur l'INDEX LOGIQUE (pas la position visuelle, qui dépend
+                    //    d'où la souris a lâché et créait des bugs "1x sur 2").
+                    //    Règle simple : la dragCard prend la place de la cible.
+                    //    - Si dragCard vient d'AVANT la cible → on l'insère APRÈS (la cible recule)
+                    //    - Si dragCard vient d'APRÈS la cible → on l'insère AVANT (la cible avance)
+                    const allCards = Array.from(grid.querySelectorAll('.asc-order-card'));
+                    const dragIdx   = allCards.indexOf(card);
+                    const targetIdx = allCards.indexOf(target);
+                    const insertBefore = dragIdx > targetIdx;
+                    self._reorderOrderCardsWithFLIP(grid, card, target, insertBefore);
+                    self._playAscOrderSwapSound?.();  // 🔊 Son d'interchange
+                } else {
+                    // Pas de cible → retour smooth à la position originale
+                    card.style.transition = 'transform 0.25s cubic-bezier(0.25, 1, 0.5, 1)';
+                    card.style.transform = '';
+                    setTimeout(() => { card.style.transition = ''; }, 260);
+                }
+                
+                card.classList.remove('asc-order-dragging');
+                try { card.releasePointerCapture(pointerId); } catch(e) {}
+                
+                // Update les numéros d'ordre + envoyer au serveur pour validation
+                setTimeout(() => {
+                    self._updateOrderNums(grid);
+                    self._buildOrderConnectors(grid);  // 🆕 Rebuild les connecteurs (positions des cards ont changé)
+                    self._submitOrderCheck(grid);
+                }, 520);  // 🆕 Aligné avec FLIP cascade (380ms + jusqu'à 80ms stagger)
+                
+                dragCard = null;
+                pointerId = null;
+            };
+            
+            grid.addEventListener('pointerdown', onPointerDown);
+            grid.addEventListener('pointermove', onPointerMove);
+            grid.addEventListener('pointerup', onPointerUp);
+            grid.addEventListener('pointercancel', onPointerUp);
+        },
+
+        // Trouve la card sous le pointeur (ignorant la dragCard elle-même)
+        // 🆕 Trouve la card cible par chevauchement HORIZONTAL avec la dragCard.
+        //    Beaucoup plus permissif et fiable que l'ancienne méthode (basée sur le pointer X seul).
+        //    Renvoie la card avec le plus grand overlap, à condition qu'il dépasse un seuil minimum.
+        _findOrderTargetCard(grid, dragCard, pointerX) {
+            const cards = Array.from(grid.querySelectorAll('.asc-order-card')).filter(c => c !== dragCard);
+            if (cards.length === 0) return null;
+            
+            const dragRect = dragCard.getBoundingClientRect();
+            const dragLeft  = dragRect.left;
+            const dragRight = dragRect.right;
+            const dragWidth = dragRect.width;
+            
+            // Seuil : il faut au moins 25% de la largeur d'une card en chevauchement pour considérer une cible
+            const MIN_OVERLAP = dragWidth * 0.25;
+            
+            let bestCard = null;
+            let bestOverlap = 0;
+            
+            for (const c of cards) {
+                const rect = c.getBoundingClientRect();
+                // Calcul de l'overlap horizontal entre dragRect et rect
+                const overlapLeft  = Math.max(dragLeft,  rect.left);
+                const overlapRight = Math.min(dragRight, rect.right);
+                const overlap = Math.max(0, overlapRight - overlapLeft);
+                
+                if (overlap > bestOverlap && overlap >= MIN_OVERLAP) {
+                    bestOverlap = overlap;
+                    bestCard = c;
+                }
+            }
+            
+            return bestCard;
+        },
+
+        // FLIP technique : INSERT logic — la dragCard se place à la position du target,
+        // et toutes les cards entre les deux se décalent d'un cran. Animation fluide en cascade
+        // pour que le mouvement des cards intermédiaires soit lisible.
+        _reorderOrderCardsWithFLIP(grid, dragCard, targetCard, insertBefore) {
+            const allCards = Array.from(grid.querySelectorAll('.asc-order-card'));
+            
+            // 1. FIRST : capture les positions actuelles
+            const positions = new Map();
+            allCards.forEach(c => positions.set(c, c.getBoundingClientRect()));
+            
+            // Index du drag et du target avant déplacement (pour la cascade)
+            const dragIdxBefore = allCards.indexOf(dragCard);
+            
+            // 2. LAST : reorder DOM (insertion à la position du target)
+            dragCard.style.transition = 'none';
+            dragCard.style.transform = '';
+            
+            if (insertBefore) {
+                grid.insertBefore(dragCard, targetCard);
+            } else {
+                grid.insertBefore(dragCard, targetCard.nextSibling);
+            }
+            
+            // 3. INVERT : pour chaque card qui a bougé, calcule la translation depuis l'ancienne position
+            const movedCards = [];
+            allCards.forEach(c => {
+                const oldRect = positions.get(c);
+                const newRect = c.getBoundingClientRect();
+                const dx = oldRect.left - newRect.left;
+                const dy = oldRect.top  - newRect.top;
+                if (dx === 0 && dy === 0) return;
+                movedCards.push({ card: c, dx, dy });
+                c.style.transition = 'none';
+                c.style.transform = `translate(${dx}px, ${dy}px)`;
+            });
+            
+            // 4. PLAY : anim avec délai en cascade pour les cards "poussées" (pas la dragCard)
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    const easing = 'cubic-bezier(0.34, 1.2, 0.5, 1)';  // léger overshoot doux
+                    const duration = 380;
+                    
+                    movedCards.forEach(({ card }) => {
+                        // dragCard part immédiatement, les cards intermédiaires ont un mini délai
+                        // proportionnel à leur distance de la dragCard (cascade lisible)
+                        const isDrag = card === dragCard;
+                        const idx = allCards.indexOf(card);
+                        const stagger = isDrag ? 0 : Math.min(80, Math.abs(idx - dragIdxBefore) * 25);
+                        
+                        card.style.transition = `transform ${duration}ms ${easing} ${stagger}ms`;
+                        card.style.transform = '';
+                    });
+                    
+                    setTimeout(() => {
+                        movedCards.forEach(({ card }) => {
+                            card.style.transition = '';
+                            card.style.transform = '';
+                        });
+                    }, duration + 120);
+                });
+            });
+        },
+
+        // Met à jour les badges de position (1, 2, 3, 4, 5) selon l'ordre actuel dans le DOM
+        _updateOrderNums(grid) {
+            const cards = grid.querySelectorAll('.asc-order-card');
+            cards.forEach((c, i) => {
+                const num = c.querySelector('.asc-order-num');
+                if (num) num.textContent = i + 1;
+            });
+        },
+
+        // Envoie l'ordre actuel au serveur pour validation continue
+        _submitOrderCheck(grid) {
+            if (!this.ascension?.active || this.ascension.validated) return;
+            const order = Array.from(grid.querySelectorAll('.asc-order-card')).map(c => c.dataset.arcId);
+            this.socket.emit('ascension-check-order', { order });
+        },
+        
+        // 🆕 Construit (ou reconstruit) les connecteurs SVG entre les cards de la roadmap.
+        // Calcule des courbes de Bézier cubiques entre les bords droit/gauche des cards consécutives,
+        // avec une petite flèche à l'arrivée.
+        _buildOrderConnectors(grid) {
+            if (!grid || !grid.isConnected) return;
+            
+            // Cleanup ancien SVG s'il existe
+            const old = grid.querySelector('.asc-order-connectors');
+            if (old) old.remove();
+            
+            const cards = grid.querySelectorAll('.asc-order-card');
+            if (cards.length < 2) return;
+            
+            // 🆕 Forcer le cleanup des transforms FLIP résiduels avant de mesurer les positions
+            //    (sinon on lit des positions intermédiaires d'animation → courbes en S déformées)
+            cards.forEach(c => {
+                if (c.style.transform || c.style.transition) {
+                    c.style.transition = '';
+                    c.style.transform = '';
+                }
+            });
+            
+            const containerRect = grid.getBoundingClientRect();
+            const w = containerRect.width;
+            const h = containerRect.height;
+            if (w === 0 || h === 0) return;
+            
+            // Calcul des points d'ancrage (centre vertical sur les bords droit/gauche)
+            const points = [];
+            cards.forEach(card => {
+                const r = card.getBoundingClientRect();
+                points.push({
+                    left:  r.left  - containerRect.left,
+                    right: r.right - containerRect.left,
+                    cy:    (r.top + r.bottom) / 2 - containerRect.top,
+                });
+            });
+            
+            const SVG_NS = 'http://www.w3.org/2000/svg';
+            const svg = document.createElementNS(SVG_NS, 'svg');
+            svg.setAttribute('class', 'asc-order-connectors');
+            svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+            svg.setAttribute('preserveAspectRatio', 'none');
+            
+            // Defs : gradient blanc symétrique (transparent → opaque → transparent)
+            const defs = document.createElementNS(SVG_NS, 'defs');
+            defs.innerHTML = `
+                <linearGradient id="ascOrderGradWhite" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.35"/>
+                    <stop offset="50%"  stop-color="#ffffff" stop-opacity="1"/>
+                    <stop offset="100%" stop-color="#ffffff" stop-opacity="0.35"/>
+                </linearGradient>
+            `;
+            svg.appendChild(defs);
+            
+            // Pour chaque paire de cards consécutives → un path en courbe + une flèche
+            for (let i = 0; i < points.length - 1; i++) {
+                const a = points[i], b = points[i + 1];
+                const x1 = a.right + 4, y1 = a.cy;
+                const x2 = b.left - 4,  y2 = b.cy;
+                const dx = x2 - x1;
+                const cx1 = x1 + dx * 0.45, cy1 = y1;
+                const cx2 = x2 - dx * 0.45, cy2 = y2;
+                const pathD = `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`;
+                
+                const path = document.createElementNS(SVG_NS, 'path');
+                path.setAttribute('class', 'conn-path');
+                path.setAttribute('d', pathD);
+                svg.appendChild(path);
+                
+                // Petite flèche triangulaire à l'arrivée, alignée sur la tangente
+                const angle = Math.atan2(y2 - cy2, x2 - cx2) * 180 / Math.PI;
+                const arrow = document.createElementNS(SVG_NS, 'path');
+                arrow.setAttribute('class', 'conn-arrow');
+                arrow.setAttribute('d', 'M 0 0 L -10 -5 L -7 0 L -10 5 Z');
+                arrow.setAttribute('transform', `translate(${x2}, ${y2}) rotate(${angle})`);
+                svg.appendChild(arrow);
+            }
+            
+            grid.appendChild(svg);
+        },
+
+        // ═══════════════════════════════════════════════════════════════
+        // 🎯 ASCENSION — Mini-jeu INTRUDER (Joueur)
+        // ═══════════════════════════════════════════════════════════════
+        // 3 variantes :
+        //   - 'not_in'    : trouvez les N intrus qui ne sont pas de [anime]
+        //   - 'in'        : trouvez les N personnages de [anime]
+        //   - 'find_one'  : trouvez [personnage]
+        // Validation incrémentale : chaque clic envoie 'ascension-check-intruder'
+        // au serveur qui répond {correct, characterId, foundCount, totalTargets}
+        _renderIntruderGame(container, floorData) {
+            const characters = floorData.characters || [];
+            const totalTargets = floorData.totalTargets || 1;
+            
+            // Restauration : si on a déjà trouvé des targets (refresh page)
+            const alreadyFound = (this.ascension.intruderFound instanceof Set)
+                ? this.ascension.intruderFound
+                : new Set();
+            
+            // Wrapper principal en row : grille à gauche + panneau à droite
+            const wrap = document.createElement('div');
+            wrap.className = 'asc-intruder-wrap';
+            
+            // Grille (à gauche)
+            const grid = document.createElement('div');
+            grid.className = 'asc-intruder-grid';
+            
+            characters.forEach(char => {
+                const card = this._createIntruderCard(char, floorData);
+                if (alreadyFound.has(char.id)) {
+                    card.classList.add('asc-intruder-correct');
+                    card.style.pointerEvents = 'none';
+                }
+                grid.appendChild(card);
+            });
+            
+            // Panneau latéral à droite : description + compteur
+            const sidebar = document.createElement('div');
+            sidebar.className = 'asc-intruder-sidebar';
+            
+            // Description du mini-jeu (au-dessus du compteur)
+            const desc = document.createElement('div');
+            desc.className = 'asc-intruder-desc';
+            desc.textContent = floorData.instruction || 'Trouvez les intrus';
+            sidebar.appendChild(desc);
+            
+            const counter = document.createElement('div');
+            counter.className = 'asc-intruder-counter';
+            const counterLabel = (floorData.variant === 'not_in') ? 'Intrus trouvés' : 'Personnages trouvés';
+            counter.innerHTML = '<span class="asc-intruder-counter-label">' + counterLabel + '</span>'
+                + '<span class="asc-intruder-counter-num"><span id="ascIntruderCount">' + alreadyFound.size + '</span><span class="asc-intruder-counter-sep">/</span>' + totalTargets + '</span>';
+            sidebar.appendChild(counter);
+            
+            wrap.appendChild(grid);
+            wrap.appendChild(sidebar);
+            container.appendChild(wrap);
+            
+            // Si tout est déjà trouvé, désactiver les autres cartes
+            if (alreadyFound.size >= totalTargets) {
+                grid.querySelectorAll('.asc-intruder-card:not(.asc-intruder-correct)').forEach(c => {
+                    c.style.pointerEvents = 'none';
+                    c.style.opacity = '0.4';
+                });
+            }
+        },
+        
+        _createIntruderCard(char, floorData) {
+            const card = document.createElement('div');
+            card.className = 'asc-intruder-card';
+            card.dataset.id = char.id;
+            
+            // Img (avec fallback placeholder coloré si pas d'image)
+            const img = document.createElement('div');
+            img.className = 'asc-intruder-card-img';
+            if (char.img) {
+                img.style.backgroundImage = "url('" + char.img + "')";
+            } else {
+                // Placeholder visuel fallback
+                img.style.background = 'linear-gradient(135deg, #2a2a3a, #1a1a2a)';
+                img.textContent = (char.name || '?').charAt(0).toUpperCase();
+                img.style.display = 'flex';
+                img.style.alignItems = 'center';
+                img.style.justifyContent = 'center';
+                img.style.fontFamily = "'Orbitron', sans-serif";
+                img.style.fontSize = '28px';
+                img.style.color = 'rgba(255,255,255,0.4)';
+            }
+            card.appendChild(img);
+            
+            // Nom
+            const name = document.createElement('div');
+            name.className = 'asc-intruder-card-name';
+            name.textContent = char.name || '';
+            card.appendChild(name);
+            
+            // Click handler
+            card.addEventListener('click', () => this._onIntruderCardClick(card, char, floorData));
+            
+            return card;
+        },
+        
+        _onIntruderCardClick(card, char, floorData) {
+            // Si déjà trouvé / déjà cliqué → ignorer
+            if (card.classList.contains('asc-intruder-correct')) return;
+            if (this.ascension?.validated) return;
+            
+            // Animation feedback "wrong" se réapplique si on reclique
+            card.classList.remove('asc-intruder-wrong');
+            void card.offsetWidth;
+            
+            // Envoyer la validation au serveur
+            this.socket.emit('ascension-check-intruder', { characterId: char.id });
+        },
+        
+        _handleIntruderResult(data) {
+            // data = {correct, characterId, foundCount, totalTargets, alreadyFound?}
+            const grid = document.querySelector('.asc-intruder-grid');
+            if (!grid) return;
+            
+            const card = grid.querySelector('.asc-intruder-card[data-id="' + data.characterId + '"]');
+            if (!card) return;
+            
+            if (data.correct) {
+                // ─── BONNE RÉPONSE — apparition burst minimaliste blanc ───
+                card.classList.add('asc-intruder-correct');
+                card.style.pointerEvents = 'none';
+                
+                // Update compteur
+                const countEl = document.getElementById('ascIntruderCount');
+                if (countEl) countEl.textContent = data.foundCount;
+                
+                // Tracker côté client pour le refresh
+                if (!(this.ascension.intruderFound instanceof Set)) {
+                    this.ascension.intruderFound = new Set();
+                }
+                this.ascension.intruderFound.add(data.characterId);
+                
+                // Petit son de validation (réutilise le son swap d'order ou un similaire)
+                this._playAscIntruderCorrectSound();
+                
+                // Si tout trouvé → fade des autres cartes
+                if (data.foundCount >= data.totalTargets) {
+                    setTimeout(() => {
+                        grid.querySelectorAll('.asc-intruder-card:not(.asc-intruder-correct)').forEach(c => {
+                            c.style.transition = 'opacity 0.4s';
+                            c.style.opacity = '0.35';
+                            c.style.pointerEvents = 'none';
+                        });
+                    }, 400);
+                    // Reset le tracker pour le prochain étage
+                    this.ascension.intruderFound = null;
+                }
+            } else {
+                // ─── MAUVAISE RÉPONSE — pas de pénalité, juste feedback visuel temporaire ───
+                card.classList.add('asc-intruder-wrong');
+                this._playAscIntruderWrongSound();
+                // L'effet wrong reste visible 800ms puis se retire pour permettre re-clic
+                setTimeout(() => {
+                    card.classList.remove('asc-intruder-wrong');
+                }, 800);
+            }
+        },
+        
+        _playAscIntruderCorrectSound() {
+            // Son court tech (un "tick" aigu) — réutilise l'audio context d'Order si disponible
+            try {
+                if (!this._ascAudioCtx) {
+                    this._ascAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const ctx = this._ascAudioCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+                const now = ctx.currentTime;
+                
+                // Click 1 : note aigüe
+                const o1 = ctx.createOscillator();
+                const g1 = ctx.createGain();
+                o1.type = 'sine';
+                o1.frequency.setValueAtTime(1200, now);
+                o1.frequency.exponentialRampToValueAtTime(1800, now + 0.08);
+                g1.gain.setValueAtTime(0.001, now);
+                g1.gain.exponentialRampToValueAtTime(0.08, now + 0.01);
+                g1.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                o1.connect(g1).connect(ctx.destination);
+                o1.start(now);
+                o1.stop(now + 0.13);
+            } catch (e) { /* ignore */ }
+        },
+        
+        _playAscIntruderWrongSound() {
+            // Son grave bref pour erreur (sans agressivité)
+            try {
+                if (!this._ascAudioCtx) {
+                    this._ascAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const ctx = this._ascAudioCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+                const now = ctx.currentTime;
+                
+                const o = ctx.createOscillator();
+                const g = ctx.createGain();
+                o.type = 'sine';
+                o.frequency.setValueAtTime(280, now);
+                o.frequency.exponentialRampToValueAtTime(160, now + 0.15);
+                g.gain.setValueAtTime(0.001, now);
+                g.gain.exponentialRampToValueAtTime(0.05, now + 0.01);
+                g.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+                o.connect(g).connect(ctx.destination);
+                o.start(now);
+                o.stop(now + 0.2);
+            } catch (e) { /* ignore */ }
+        },
+        
         _getAscFloorDesc(data) {
             switch (data.type) {
                 case 'guess': return 'Devinez le nom de ' + data.totalToGuess + ' personnages';
                 case 'target': return 'Trouvez ' + data.totalTargets + ' cibles';
-                case 'intruder': return 'Trouvez les 3 intrus de ' + data.anime;
+                case 'intruder': return '';  // 🆕 La description est affichée dans le sidebar à droite
                 case 'wordle': return 'Devinez le mot de ' + data.wordLength + ' lettres';
                 case 'silhouette': return 'Identifiez le personnage';
                 case 'order': return 'Classez les arcs de ' + data.anime;
@@ -6665,14 +7956,27 @@ createApp({
         },
         
         // Sélectionner une équipe ET rejoindre le lobby (nouveau modal V9)
-        selectAndJoinTeam(team) {
+        selectAndJoinTeam(team, event) {
             // Bloquer si déjà dans le lobby
             if (this.hasJoined) return;
-            
+
+            // 🎯 Feedback tactile : son + particules + ripple
+            this.playSound(this.clickSound);
+            if (event) this.spawnClickParticles(event);
+
+            // Ripple effect sur la card cliquée
+            if (event && event.currentTarget) {
+                const card = event.currentTarget;
+                card.classList.remove('just-selected');
+                // Force reflow pour que la classe se re-applique et redéclenche l'animation
+                void card.offsetWidth;
+                card.classList.add('just-selected');
+            }
+
             // Sélectionner l'équipe
             this.selectedTeam = team;
             localStorage.setItem('selectedTeam', team);
-            
+
             // Rejoindre automatiquement le lobby
             this.joinLobby();
         },
@@ -6685,33 +7989,169 @@ createApp({
             if (this.hasAnswered || this.playerLives === 0) return;
 
             this.selectedAnswer = answerIndex;
+            this._lastClickTime = Date.now();
 
-            this.playSound(this.clickSound);
+            // 💥 Son "Shockwave 3D"
+            this.playShockwaveSound();
 
-            if (event) this.spawnClickParticles(event);
+            if (event) {
+                this.spawnClickParticles(event);
+                // 💥 Effet visuel "Flash impact" via un CLONE superposé
+                // Immunisé contre les re-renders Vue, classes qui changent, transitions CSS, etc.
+                this.playClickFlashOverlay(event.currentTarget);
+            }
 
             this.socket.emit('submit-answer', {
                 answer: answerIndex,
-                bonusActive: this.activeBonusEffect // 🔥 CHANGÉ : envoie 'shield', 'doublex2', etc.
+                bonusActive: this.activeBonusEffect
             });
 
             console.log(`📤 Réponse envoyée: ${answerIndex}, bonus: ${this.activeBonusEffect}`);
         },
 
         // Sélection carte FizzBuzz
-        selectFizzbuzzCard(cardIndex) {
+        selectFizzbuzzCard(cardIndex, event) {
             if (this.hasAnswered || this.playerLives === 0) return;
 
             this.selectedAnswer = cardIndex;
+            this._lastClickTime = Date.now();
 
-            this.playSound(this.clickSound);
+            this.playShockwaveSound();
+
+            if (event) {
+                this.spawnClickParticles(event);
+                this.playClickFlashOverlay(event.currentTarget);
+            }
 
             this.socket.emit('submit-answer', {
                 answer: cardIndex,
-                bonusActive: null // Pas de bonus en mode FizzBuzz
+                bonusActive: null
             });
 
             console.log(`📤 Carte FizzBuzz sélectionnée: ${cardIndex}`);
+        },
+
+        // 💥 Crée un clone overlay de la card pour jouer l'animation
+        // sans être perturbé par les re-renders Vue ou les changements de classe
+        playClickFlashOverlay(originalCard) {
+            if (!originalCard) return;
+            const rect = originalCard.getBoundingClientRect();
+            
+            // Récupérer le texte de la card pour l'inclure dans le clone
+            const textEl = originalCard.querySelector('.answer-text');
+            const answerText = textEl ? textEl.textContent : '';
+            
+            // Clone visuel FIDÈLE qui MASQUE l'original pendant l'animation
+            // + transform visible (rebond) sans toucher à l'original
+            const clone = document.createElement('div');
+            clone.className = 'click-flash-overlay';
+            clone.style.cssText = `
+                position: fixed;
+                left: ${rect.left}px;
+                top: ${rect.top}px;
+                width: ${rect.width}px;
+                height: ${rect.height}px;
+                pointer-events: none;
+                z-index: 9998;
+                border-radius: 1rem 1.5rem 1.25rem 1.375rem / 1.375rem 1.25rem 1.5rem 1.125rem;
+                background: linear-gradient(145deg, #2a2a2a 0%, #1f1f1f 100%);
+                border: 0.125rem solid rgba(255, 232, 138, 0.9);
+                animation: clickFlashImpactOverlay 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+                transform-origin: center;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 1.25rem 2rem;
+                box-sizing: border-box;
+                overflow: hidden;
+            `;
+            // Ajouter le texte identique
+            const textSpan = document.createElement('span');
+            textSpan.textContent = answerText;
+            textSpan.style.cssText = `
+                font-size: 1rem;
+                font-weight: 500;
+                color: rgba(255, 255, 255, 0.88);
+                text-align: center;
+                font-family: 'Poppins', sans-serif;
+                text-shadow: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.3);
+            `;
+            clone.appendChild(textSpan);
+            document.body.appendChild(clone);
+            
+            // Anneau qui se propage
+            const ring = document.createElement('div');
+            ring.className = 'click-flash-overlay-ring';
+            ring.style.cssText = `
+                position: fixed;
+                left: ${rect.left - 2}px;
+                top: ${rect.top - 2}px;
+                width: ${rect.width + 4}px;
+                height: ${rect.height + 4}px;
+                pointer-events: none;
+                z-index: 9997;
+                border-radius: 1rem 1.5rem 1.25rem 1.375rem / 1.375rem 1.25rem 1.5rem 1.125rem;
+                border: 3px solid rgba(245, 212, 66, 0.9);
+                opacity: 0;
+                animation: clickFlashOverlayRing 0.65s ease-out forwards;
+                transform-origin: center;
+                background: transparent;
+            `;
+            document.body.appendChild(ring);
+            
+            setTimeout(() => {
+                clone.remove();
+                ring.remove();
+            }, 700);
+        },
+
+        // 💥 Son "Shockwave 3D" — généré via Web Audio API (pas de fichier MP3)
+        playShockwaveSound() {
+            try {
+                if (!this._shockwaveCtx) {
+                    this._shockwaveCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const ctx = this._shockwaveCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+                const t = ctx.currentTime;
+
+                // 🧚 Fairy chime - 2 notes décalées + shimmer aigu
+
+                // Note 1 haute (ping principal)
+                const o1 = ctx.createOscillator();
+                const g1 = ctx.createGain();
+                o1.type = 'sine';
+                o1.frequency.setValueAtTime(4400, t);
+                g1.gain.setValueAtTime(0, t);
+                g1.gain.linearRampToValueAtTime(0.08, t + 0.005);
+                g1.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+                o1.connect(g1).connect(ctx.destination);
+                o1.start(t); o1.stop(t + 0.35);
+
+                // Note 2 un peu plus basse, légèrement décalée
+                const o2 = ctx.createOscillator();
+                const g2 = ctx.createGain();
+                o2.type = 'sine';
+                o2.frequency.setValueAtTime(3300, t + 0.03);
+                g2.gain.setValueAtTime(0, t + 0.03);
+                g2.gain.linearRampToValueAtTime(0.07, t + 0.04);
+                g2.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+                o2.connect(g2).connect(ctx.destination);
+                o2.start(t + 0.03); o2.stop(t + 0.4);
+
+                // Harmonique haute shimmer
+                const o3 = ctx.createOscillator();
+                const g3 = ctx.createGain();
+                o3.type = 'triangle';
+                o3.frequency.setValueAtTime(8800, t + 0.01);
+                g3.gain.setValueAtTime(0, t + 0.01);
+                g3.gain.linearRampToValueAtTime(0.025, t + 0.02);
+                g3.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+                o3.connect(g3).connect(ctx.destination);
+                o3.start(t + 0.01); o3.stop(t + 0.25);
+            } catch(e) {
+                console.warn('Fairy chime sound failed:', e);
+            }
         },
 
         startTimer(initialTime = null) {
@@ -6798,11 +8238,366 @@ createApp({
             // Reset le système de combo
             this.resetComboSystem();
 
+            // 🎁 Cleanup reward animation
+            this.rewardTimers.forEach(t => clearTimeout(t));
+            this.rewardTimers = [];
+            this.rewardAnimData = null;
+            this.rewardAnimVisible = false;
+
             localStorage.removeItem('hasJoinedLobby');
             localStorage.removeItem('lobbyTwitchId');
 
             // 🆕 Demander l'état actuel du serveur pour rafraîchir le compteur
             this.refreshGameState();
+        },
+
+        // ============================================
+        // 🎁 REWARD ANIMATION
+        // ============================================
+        playRewardAnimation() {
+            const r = this.rewardAnimData;
+            if (!r) return;
+
+            this.rewardTimers.forEach(t => clearTimeout(t));
+            this.rewardTimers = [];
+
+            // 🎯 Délai adapté au mode : modes classique/rivalité ont une longue animation podium,
+            // BombAnime/autres modes ont un écran winner quasi instantané
+            const isInstantMode = this.gameEndData && (
+                this.gameEndData.gameMode === 'bombanime' ||
+                this.gameEndData.gameMode === 'survie' ||
+                this.gameEndData.gameMode === 'ascension' ||
+                this.gameEndData.gameMode === 'collect'
+            );
+            const waitBeforeSlide = isInstantMode ? 600 : 4500;
+            const waitBeforeFill = isInstantMode ? 200 : 400;
+
+            // Wait for podium (or short delay for instant modes), then slide in reward from top
+            this.rewardTimers.push(setTimeout(() => {
+                this.rewardAnimVisible = true;
+
+                // Start the reward sequence after slide-in
+                this.rewardTimers.push(setTimeout(() => {
+                    this._startRewardSequence(r);
+                }, waitBeforeFill));
+            }, waitBeforeSlide));
+        },
+
+        _playSparkleSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const duration = 0.35;
+                const osc1 = ctx.createOscillator();
+                const osc2 = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(2400, ctx.currentTime);
+                osc1.frequency.exponentialRampToValueAtTime(4800, ctx.currentTime + 0.08);
+                osc1.frequency.exponentialRampToValueAtTime(1800, ctx.currentTime + duration);
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(3600, ctx.currentTime);
+                osc2.frequency.exponentialRampToValueAtTime(6000, ctx.currentTime + 0.05);
+                osc2.frequency.exponentialRampToValueAtTime(2400, ctx.currentTime + duration);
+                gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+                osc1.connect(gain);
+                osc2.connect(gain);
+                gain.connect(ctx.destination);
+                osc1.start(ctx.currentTime);
+                osc2.start(ctx.currentTime);
+                osc1.stop(ctx.currentTime + duration);
+                osc2.stop(ctx.currentTime + duration);
+                setTimeout(() => ctx.close(), 500);
+            } catch(e) { /* silent */ }
+        },
+
+        _startRewardSequence(r) {
+            const fill = document.getElementById('rewardFill');
+            const coinVal = document.getElementById('rewardCoinVal');
+            const xpGainEl = document.getElementById('rewardXpGain');
+            const coinsGainEl = document.getElementById('rewardCoinsGain');
+
+            if (!fill) return;
+
+            // Reset
+            fill.style.transition = 'none';
+            fill.style.width = '0%';
+            fill.style.background = '';
+            const sparks = document.getElementById('rewardSparks');
+            if (sparks) sparks.innerHTML = '';
+            const xpParticles = document.getElementById('rewardXpParticles');
+            if (xpParticles) xpParticles.innerHTML = '';
+            const lvlBadge = document.getElementById('rewardLvlBadge');
+            if (lvlBadge) lvlBadge.classList.remove('show', 'hide');
+            const track = document.getElementById('rewardTrack');
+            if (track) track.classList.remove('faded');
+            if (xpGainEl) xpGainEl.classList.remove('show');
+            if (coinsGainEl) coinsGainEl.classList.remove('show');
+            void fill.offsetHeight;
+
+            if (!r.leveledUp) {
+                // === NORMAL ===
+                const dur = 1600;
+                const finalPct = r.xpForNextLevel > 0 ? ((r.xpInLevel + r.xpGained) / r.xpForNextLevel) * 100 : 0;
+
+                this.rewardTimers.push(setTimeout(() => {
+                    fill.style.transition = `width ${dur}ms cubic-bezier(0.25,0.1,0.25,1)`;
+                    fill.style.width = Math.min(finalPct, 100) + '%';
+                    this._startXpParticleLoop(dur);
+                }, 300));
+
+            } else {
+                // === LEVEL UP ===
+                const fillTo100dur = 1200;
+                const remainderPct = r.newXpForNextLevel > 0 ? (r.newXpInLevel / r.newXpForNextLevel) * 100 : 0;
+                const remainderDur = 800;
+
+                this.rewardTimers.push(setTimeout(() => {
+                    fill.style.transition = `width ${fillTo100dur}ms cubic-bezier(0.25,0.1,0.25,1)`;
+                    fill.style.width = '100%';
+                    this._startXpParticleLoop(fillTo100dur);
+                }, 300));
+
+                const sparkTime = 300 + fillTo100dur + 100;
+                this.rewardTimers.push(setTimeout(() => {
+                    this._spawnRewardSparks();
+                    this._playSparkleSound();
+                    if (track) track.classList.add('faded');
+
+                    // 🆕 Animer le Niv de gauche en même temps que le son
+                    const sideMain = document.querySelector('.reward-anim-level-text');
+                    if (sideMain) {
+                        sideMain.classList.remove('leveling-up');
+                        void sideMain.offsetHeight;
+                        this._spawnLevelUpBurst(sideMain);
+                        setTimeout(() => {
+                            sideMain.textContent = 'Niv. ' + r.levelAfter;
+                        }, 180);
+                        sideMain.classList.add('leveling-up');
+                        setTimeout(() => sideMain.classList.remove('leveling-up'), 900);
+                    }
+                }, sparkTime));
+
+                const resetTime = sparkTime + 300 + 1000;
+                this.rewardTimers.push(setTimeout(() => {
+                    fill.style.transition = 'none';
+                    fill.style.width = '0%';
+                    fill.style.background = '';
+                    if (track) track.classList.remove('faded');
+                    void fill.offsetHeight;
+
+                    fill.style.transition = `width ${remainderDur}ms cubic-bezier(0.25,0.1,0.25,1)`;
+                    fill.style.width = remainderPct + '%';
+                    this._startXpParticleLoop(remainderDur);
+                }, resetTime));
+            }
+
+            // +XP gain label
+            this.rewardTimers.push(setTimeout(() => {
+                if (xpGainEl) xpGainEl.classList.add('show');
+            }, 800));
+
+            // +Coins gain label + coin counter
+            this.rewardTimers.push(setTimeout(() => {
+                if (coinsGainEl) coinsGainEl.classList.add('show');
+                this._spawnRewardParticles('rewardParticlesCoins', '#f5d442', '#ffe066');
+                this._animateRewardCoins(coinVal, r.coinsBefore, r.coinsAfter, 1200);
+            }, 1000));
+        },
+
+        _animateRewardCounter(el, from, to, max, duration) {
+            if (!el) return;
+            const start = performance.now();
+            function tick(now) {
+                const p = Math.min((now - start) / duration, 1);
+                const eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+                const val = Math.round(from + (to - from) * eased);
+                el.textContent = val.toLocaleString() + ' / ' + max.toLocaleString();
+                if (p < 1) requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+        },
+
+        _animateRewardCoins(el, from, to, duration) {
+            if (!el) return;
+            const start = performance.now();
+            function tick(now) {
+                const p = Math.min((now - start) / duration, 1);
+                const eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+                const val = Math.round(from + (to - from) * eased);
+                el.textContent = val.toLocaleString();
+                if (p < 1) requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+        },
+
+        _startXpParticleLoop(durationMs) {
+            const track = document.getElementById('rewardTrack');
+            const fill = document.getElementById('rewardFill');
+            const container = document.getElementById('rewardXpParticles');
+            if (!track || !fill || !container) return;
+
+            const startTime = performance.now();
+            const endTime = startTime + durationMs + 150;
+            const self = this;
+
+            function tick(now) {
+                if (now > endTime) return;
+
+                const trackW = track.getBoundingClientRect().width;
+                const fillW = fill.getBoundingClientRect().width;
+                if (trackW <= 0) {
+                    requestAnimationFrame(tick);
+                    return;
+                }
+                const filled = Math.max(0, Math.min(100, (fillW / trackW) * 100));
+
+                const trailingCount = Math.max(1, Math.floor(filled / 12));
+                for (let k = 0; k < trailingCount; k++) {
+                    if (Math.random() > 0.5) {
+                        self._spawnXpParticle(container, Math.random() * filled * 0.92, 'rising');
+                    }
+                }
+
+                for (let k = 0; k < 6; k++) {
+                    const jitter = (Math.random() - 0.2) * 1.5;
+                    self._spawnXpParticle(container, Math.max(0, Math.min(100, filled + jitter)), 'edge');
+                }
+
+                if (Math.random() > 0.4) {
+                    self._spawnXpParticle(container, filled, 'burst');
+                }
+
+                requestAnimationFrame(tick);
+            }
+
+            requestAnimationFrame(tick);
+        },
+
+        _spawnXpParticle(container, xPct, type) {
+            const p = document.createElement('div');
+            p.className = 'reward-xp-particle ' + type;
+            const color = Math.random() > 0.5 ? '#fff8dc' : '#f5d442';
+            let size, driftX, driftY, dur;
+
+            if (type === 'edge') {
+                size = 2.2 + Math.random() * 2.2;
+                driftX = (Math.random() - 0.3) * 16;
+                driftY = -(14 + Math.random() * 22);
+                dur = 0.7 + Math.random() * 0.5;
+            } else if (type === 'burst') {
+                size = 1.8 + Math.random() * 2.5;
+                const angle = (Math.random() * Math.PI) - Math.PI / 2;
+                const dist = 8 + Math.random() * 18;
+                driftX = Math.cos(angle) * dist;
+                driftY = Math.sin(angle) * dist - 6;
+                dur = 0.5 + Math.random() * 0.4;
+            } else {
+                size = 1 + Math.random() * 1.5;
+                driftX = (Math.random() - 0.5) * 8;
+                driftY = -(10 + Math.random() * 14);
+                dur = 0.8 + Math.random() * 0.5;
+            }
+
+            p.style.cssText = `width:${size}px;height:${size}px;left:${xPct}%;top:50%;background:${color};box-shadow:0 0 ${3 + Math.random() * 3}px ${color};--dx:${driftX}px;--dy:${driftY}px;animation-duration:${dur}s;`;
+            container.appendChild(p);
+            setTimeout(() => p.remove(), dur * 1000 + 50);
+        },
+
+        _spawnLevelUpBurst(anchorEl) {
+            if (!anchorEl) return;
+            const parent = anchorEl.parentElement;
+            if (!parent) return;
+
+            let burst = parent.querySelector('.reward-lvl-burst');
+            if (!burst) {
+                burst = document.createElement('div');
+                burst.className = 'reward-lvl-burst';
+                parent.appendChild(burst);
+            }
+            burst.innerHTML = '';
+
+            const rect = anchorEl.getBoundingClientRect();
+            const parentRect = parent.getBoundingClientRect();
+            burst.style.left = (rect.left - parentRect.left + rect.width / 2) + 'px';
+            burst.style.top = (rect.top - parentRect.top + rect.height / 2) + 'px';
+
+            const colors = ['#f5d442', '#ffe066', '#daa520', '#fff8dc', '#fff'];
+            for (let i = 0; i < 18; i++) {
+                const p = document.createElement('div');
+                p.className = 'reward-lvl-burst-particle';
+                const angle = (Math.PI * 2 / 18) * i + (Math.random() - 0.5) * 0.4;
+                const dist = 18 + Math.random() * 32;
+                const size = 1.8 + Math.random() * 2.8;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const dur = 0.55 + Math.random() * 0.4;
+                p.style.cssText = `width:${size}px;height:${size}px;background:${color};box-shadow:0 0 ${size * 2}px ${color};--tx:${Math.cos(angle) * dist}px;--ty:${Math.sin(angle) * dist}px;--duration:${dur}s;`;
+                burst.appendChild(p);
+            }
+
+            setTimeout(() => { if (burst) burst.innerHTML = ''; }, 1100);
+        },
+
+        _spawnRewardParticles(containerId, c1, c2) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            for (let i = 0; i < 14; i++) {
+                const p = document.createElement('div');
+                p.className = 'reward-particle';
+                const angle = (Math.PI * 2 / 14) * i + (Math.random() - 0.5) * 0.6;
+                const dist = 25 + Math.random() * 40;
+                const size = 2 + Math.random() * 3;
+                const color = Math.random() > 0.5 ? c1 : c2;
+                p.style.cssText = `width:${size}px;height:${size}px;left:50%;top:50%;margin-left:-${size/2}px;margin-top:-${size/2}px;background:${color};--tx:${Math.cos(angle)*dist}px;--ty:${Math.sin(angle)*dist}px;--duration:${0.5+Math.random()*0.4}s;--delay:${Math.random()*0.15}s;box-shadow:0 0 ${size*2}px ${color};`;
+                container.appendChild(p);
+                requestAnimationFrame(() => p.classList.add('show'));
+            }
+        },
+
+        _spawnRewardSparks() {
+            const container = document.getElementById('rewardSparks');
+            if (!container) return;
+            container.innerHTML = '';
+            const colors = ['#f5d442','#ffe066','#daa520','#fff8dc','#fff'];
+            for (let i = 0; i < 16; i++) {
+                const spark = document.createElement('div');
+                const isLine = Math.random() > 0.4;
+                spark.className = 'reward-spark ' + (isLine ? 'reward-spark-line' : 'reward-spark-dot');
+                const angle = (Math.random() - 0.5) * Math.PI * 1.2;
+                const dist = 18 + Math.random() * 50;
+                const tx = Math.cos(angle) * dist + 8;
+                const ty = Math.sin(angle) * dist;
+                const dur = 0.4 + Math.random() * 0.35;
+                const delay = Math.random() * 0.12;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                if (isLine) {
+                    const len = 5 + Math.random() * 12;
+                    spark.style.cssText = `width:${len}px;--angle:${angle}rad;--tx:${tx}px;--ty:${ty}px;--duration:${dur}s;--delay:${delay}s;background:${color};box-shadow:0 0 ${3+Math.random()*3}px ${color};`;
+                } else {
+                    const sz = 2 + Math.random() * 3;
+                    spark.style.cssText = `width:${sz}px;height:${sz}px;--angle:0rad;--tx:${tx}px;--ty:${ty}px;--duration:${dur}s;--delay:${delay}s;background:${color};box-shadow:0 0 ${sz*2}px ${color};`;
+                }
+                container.appendChild(spark);
+                requestAnimationFrame(() => spark.classList.add('show'));
+            }
+        },
+
+        _spawnRewardLvlParticles() {
+            const container = document.getElementById('rewardSparks');
+            if (!container) return;
+            for (let i = 0; i < 12; i++) {
+                const p = document.createElement('div');
+                p.className = 'reward-particle';
+                const angle = (Math.PI * 2 / 12) * i + (Math.random() - 0.5) * 0.5;
+                const dist = 20 + Math.random() * 35;
+                const size = 2 + Math.random() * 3;
+                const colors = ['#f5d442','#daa520','#ffe066','#fff'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                p.style.cssText = `width:${size}px;height:${size}px;background:${color};--tx:${Math.cos(angle)*dist}px;--ty:${Math.sin(angle)*dist}px;--duration:${0.5+Math.random()*0.4}s;--delay:${Math.random()*0.12}s;box-shadow:0 0 ${size*2}px ${color};`;
+                container.appendChild(p);
+                requestAnimationFrame(() => p.classList.add('show'));
+            }
         },
 
         // 🆕 Ajoute cette nouvelle méthode juste après backToHome()
@@ -7420,91 +9215,290 @@ createApp({
 
         // 🆕 Initialiser les animations du podium winner
         initWinnerAnimations() {
-            // Créer les particules de fond
-            const particlesContainer = document.getElementById('winnerParticles');
-            if (particlesContainer) {
-                particlesContainer.innerHTML = '';
-                for (let i = 0; i < 40; i++) {
-                    const p = document.createElement('div');
-                    p.className = 'winner-particle' + (Math.random() > 0.6 ? ' accent' : '');
-                    p.style.left = Math.random() * 100 + '%';
-                    p.style.animationDelay = Math.random() * 12 + 's';
-                    p.style.animationDuration = (10 + Math.random() * 5) + 's';
-                    p.style.width = (2 + Math.random() * 3) + 'px';
-                    p.style.height = p.style.width;
-                    particlesContainer.appendChild(p);
-                }
+            // 🆕 Animation winner V3 - JS natif équivalent GSAP
+            this._fsWinnerTimers = this._fsWinnerTimers || [];
+            this._fsWinnerTimers.forEach(t => clearTimeout(t));
+            this._fsWinnerTimers = [];
+
+            const beam = document.querySelector('.fs-beam');
+            const stars = document.querySelectorAll('.fs-star');
+
+            // Beam fade in
+            if (beam) {
+                beam.animate(
+                    [{ opacity: 0 }, { opacity: 1 }],
+                    { duration: 1200, fill: 'forwards', easing: 'ease-out' }
+                );
             }
 
-            // Démarrer les explosions aléatoires
-            this.startRandomExplosions();
+            // Stars twinkle (stagger + infinite)
+            stars.forEach((star, i) => {
+                const t = setTimeout(() => {
+                    star.animate(
+                        [{ opacity: 0 }, { opacity: 0.4 }],
+                        { duration: 800, fill: 'forwards', easing: 'ease-out' }
+                    );
+                    star.animate(
+                        [{ opacity: 0.2 }, { opacity: 0.6 }, { opacity: 0.2 }],
+                        { duration: 2000, delay: 800, iterations: Infinity, easing: 'ease-in-out' }
+                    );
+                }, 300 + i * 80);
+                this._fsWinnerTimers.push(t);
+            });
 
-            // Burst de particules pour le winner
-            setTimeout(() => {
-                this.createWinnerBurst();
-            }, 3200);
+            // 3ème à 900ms
+            this._fsWinnerTimers.push(setTimeout(() => {
+                const el = document.querySelector('.fs-chal-3');
+                if (el) this._fsAnimateIn(el, { x: -40, scale: 0.9, duration: 600, easing: 'back-out' });
+            }, 900));
+
+            // 2ème à 1700ms
+            this._fsWinnerTimers.push(setTimeout(() => {
+                const el = document.querySelector('.fs-chal-2');
+                if (el) this._fsAnimateIn(el, { x: -40, scale: 0.9, duration: 600, easing: 'back-out' });
+            }, 1700));
+
+            // Champion à 2900ms
+            const champTime = 2900;
+
+            // Avatar frame pop
+            this._fsWinnerTimers.push(setTimeout(() => {
+                const frame = document.getElementById('fsAvatarFrame');
+                if (!frame) return;
+
+                frame.animate(
+                    [
+                        { opacity: 0, transform: 'scale(0.2) rotate(-180deg)' },
+                        { opacity: 1, transform: 'scale(1.18) rotate(0deg)', offset: 0.7 },
+                        { opacity: 1, transform: 'scale(1) rotate(0deg)' }
+                    ],
+                    { duration: 1250, fill: 'forwards', easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }
+                );
+            }, champTime));
+
+            // Shockwave à champ+300ms
+            this._fsWinnerTimers.push(setTimeout(() => {
+                const sw = document.getElementById('fsShockwave');
+                if (!sw) return;
+                sw.animate(
+                    [
+                        { opacity: 0.9, transform: 'translate(-50%, -50%) scale(1)' },
+                        { opacity: 0, transform: 'translate(-50%, -50%) scale(2.8)' }
+                    ],
+                    { duration: 900, fill: 'forwards', easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }
+                );
+            }, champTime + 300));
+
+            // Burst particles à champ+300ms
+            this._fsWinnerTimers.push(setTimeout(() => {
+                this._fsExplodeChampion();
+            }, champTime + 300));
+
+            // Ring fade in à champ+550ms
+            this._fsWinnerTimers.push(setTimeout(() => {
+                const ring = document.querySelector('.fs-avatar-ring');
+                if (ring) ring.animate(
+                    [{ opacity: 0 }, { opacity: 0.9 }],
+                    { duration: 600, fill: 'forwards', easing: 'ease-out' }
+                );
+            }, champTime + 550));
+
+            // Glow pulse à champ+550ms puis infinie
+            this._fsWinnerTimers.push(setTimeout(() => {
+                const glow = document.querySelector('.fs-avatar-glow');
+                if (!glow) return;
+                glow.animate(
+                    [{ opacity: 0 }, { opacity: 0.55 }],
+                    { duration: 700, fill: 'forwards', easing: 'ease-out' }
+                );
+                setTimeout(() => {
+                    glow.animate(
+                        [
+                            { opacity: 0.55, transform: 'scale(1)' },
+                            { opacity: 0.8, transform: 'scale(1.05)' },
+                            { opacity: 0.55, transform: 'scale(1)' }
+                        ],
+                        { duration: 2200, iterations: Infinity, easing: 'ease-in-out' }
+                    );
+                }, 700);
+            }, champTime + 550));
+
+            // Couronne à champ+450ms
+            this._fsWinnerTimers.push(setTimeout(() => {
+                const crown = document.getElementById('fsCrownBar');
+                if (!crown) return;
+                crown.animate(
+                    [
+                        { opacity: 0, transform: 'translateX(-50%) rotate(-30deg) scale(0.6) translateY(-40px)' },
+                        { opacity: 1, transform: 'translateX(-50%) rotate(-12deg) scale(1) translateY(0)' }
+                    ],
+                    { duration: 750, fill: 'forwards', easing: 'cubic-bezier(0.34, 1.8, 0.64, 1)' }
+                );
+                // Swing infini après
+                setTimeout(() => {
+                    crown.animate(
+                        [
+                            { transform: 'translateX(-50%) rotate(-12deg)' },
+                            { transform: 'translateX(-50%) rotate(-15deg)' },
+                            { transform: 'translateX(-50%) rotate(-12deg)' }
+                        ],
+                        { duration: 3500, iterations: Infinity, easing: 'ease-in-out' }
+                    );
+                }, 850);
+            }, champTime + 450));
+
+            // Nom champion à champ+750ms
+            this._fsWinnerTimers.push(setTimeout(() => {
+                const name = document.querySelector('.fs-name');
+                if (name) this._fsAnimateIn(name, { y: 20, scale: 0.95, duration: 600, easing: 'ease-out' });
+            }, champTime + 750));
+
+            // "is the Master" à champ+950ms
+            this._fsWinnerTimers.push(setTimeout(() => {
+                const tag = document.querySelector('.fs-master-tag');
+                if (tag) this._fsAnimateIn(tag, { y: 8, duration: 700, easing: 'ease-out' });
+            }, champTime + 950));
+
+            // Stats à champ+1000ms
+            this._fsWinnerTimers.push(setTimeout(() => {
+                const stats = document.querySelector('.fs-stats');
+                if (stats) this._fsAnimateIn(stats, { y: 12, duration: 550, easing: 'ease-out' });
+            }, champTime + 1000));
+
+            // Votre rang à champ+1100ms
+            this._fsWinnerTimers.push(setTimeout(() => {
+                const you = document.getElementById('fsYouRank');
+                if (you) this._fsAnimateIn(you, { x: -30, duration: 600, easing: 'ease-out' });
+            }, champTime + 1100));
+
+            // Bouton Retour à champ+1200ms
+            this._fsWinnerTimers.push(setTimeout(() => {
+                const btn = document.querySelector('.fs-champ-action');
+                if (btn) this._fsAnimateIn(btn, { y: 10, duration: 500, easing: 'ease-out' });
+            }, champTime + 1200));
+
+            // Particules orbitales à champ+800ms
+            this._fsWinnerTimers.push(setTimeout(() => {
+                this._fsAnimateOrbitals();
+            }, champTime + 800));
+
+            // Reward bar à champ+1400ms (après le champion reveal)
+            this._fsWinnerTimers.push(setTimeout(() => {
+                const reward = document.querySelector('.reward-anim');
+                if (reward) {
+                    reward.classList.add('visible');
+                }
+            }, champTime + 1400));
         },
 
-        startRandomExplosions() {
-            const container = document.getElementById('bgExplosions');
+        _fsAnimateIn(el, { x = 0, y = 0, scale = 1, duration = 500, easing = 'ease-out' } = {}) {
+            if (!el) return;
+            const fromTransform = [];
+            if (x !== 0) fromTransform.push(`translateX(${x}px)`);
+            if (y !== 0) fromTransform.push(`translateY(${y}px)`);
+            if (scale !== 1) fromTransform.push(`scale(${scale})`);
+
+            const easingMap = {
+                'back-out': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+                'ease-out': 'cubic-bezier(0.22, 1, 0.36, 1)'
+            };
+
+            el.animate(
+                [
+                    { opacity: 0, transform: fromTransform.join(' ') || 'none' },
+                    { opacity: 1, transform: 'translateX(0) translateY(0) scale(1)' }
+                ],
+                { duration, fill: 'forwards', easing: easingMap[easing] || easing }
+            );
+        },
+
+        _fsExplodeChampion() {
+            const burst = document.getElementById('fsBurst');
+            if (!burst) return;
+            burst.innerHTML = '';
+
+            const NUM = 36;
+            const colors = ['#f5d442', '#ffe88a', '#fff8dc', '#daa520', '#fff'];
+
+            for (let i = 0; i < NUM; i++) {
+                const p = document.createElement('div');
+                p.className = 'fs-burst-particle';
+                const size = 2 + Math.random() * 4;
+                const col = colors[Math.floor(Math.random() * colors.length)];
+                p.style.width = size + 'px';
+                p.style.height = size + 'px';
+                p.style.background = col;
+                p.style.boxShadow = `0 0 ${4 + Math.random() * 5}px ${col}`;
+
+                const angle = (Math.PI * 2 / NUM) * i + (Math.random() - 0.5) * 0.3;
+                const dist = 120 + Math.random() * 100;
+                const dur = 700 + Math.random() * 500;
+
+                burst.appendChild(p);
+
+                const anim = p.animate(
+                    [
+                        { opacity: 1, transform: 'translate(0, 0) scale(1.5)' },
+                        { opacity: 0, transform: `translate(${Math.cos(angle) * dist}px, ${Math.sin(angle) * dist}px) scale(0)` }
+                    ],
+                    { duration: dur, fill: 'forwards', easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }
+                );
+                anim.onfinish = () => p.remove();
+            }
+        },
+
+        _fsAnimateOrbitals() {
+            const container = document.getElementById('fsParticles');
             if (!container) return;
+            container.innerHTML = '';
 
-            const createExplosion = () => {
-                const explosion = document.createElement('div');
-                explosion.className = 'bg-explosion';
-                explosion.style.left = (10 + Math.random() * 80) + '%';
-                explosion.style.top = (10 + Math.random() * 80) + '%';
-                container.appendChild(explosion);
+            const NUM = 14;
+            const colors = ['#f5d442', '#ffe88a', '#fff8dc', '#daa520'];
+            this._fsOrbitalAnims = [];
 
-                const colors = ['#FFD700', '#F0C850', '#6366F1', '#8B5CF6', '#FFE55C'];
-                const particleCount = 8 + Math.floor(Math.random() * 8);
+            for (let i = 0; i < NUM; i++) {
+                const p = document.createElement('div');
+                p.className = 'fs-particle';
+                const size = 2 + Math.random() * 3;
+                const col = colors[Math.floor(Math.random() * colors.length)];
+                p.style.width = size + 'px';
+                p.style.height = size + 'px';
+                p.style.background = col;
+                p.style.boxShadow = `0 0 ${4 + Math.random() * 4}px ${col}`;
+                container.appendChild(p);
 
-                for (let i = 0; i < particleCount; i++) {
-                    const particle = document.createElement('div');
-                    particle.className = 'bg-explosion-particle';
-                    const angle = (i / particleCount) * Math.PI * 2 + Math.random() * 0.5;
-                    const distance = 40 + Math.random() * 60;
-                    particle.style.setProperty('--ex', Math.cos(angle) * distance + 'px');
-                    particle.style.setProperty('--ey', Math.sin(angle) * distance + 'px');
-                    particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-                    particle.style.width = (2 + Math.random() * 4) + 'px';
-                    particle.style.height = particle.style.width;
-                    particle.style.animationDelay = (Math.random() * 0.1) + 's';
-                    explosion.appendChild(particle);
+                const baseAngle = (Math.PI * 2 / NUM) * i;
+                const radius = 95 + Math.random() * 25;
+                const speed = 8000 + Math.random() * 6000;
+                const direction = Math.random() > 0.5 ? 1 : -1;
+                const delay = Math.random() * 3000;
+
+                // Construction du keyframes orbital
+                const keyframes = [];
+                const steps = 24;
+                for (let s = 0; s <= steps; s++) {
+                    const progress = s / steps;
+                    const angle = baseAngle + direction * Math.PI * 2 * progress;
+                    const x = Math.cos(angle) * radius;
+                    const y = Math.sin(angle) * radius;
+                    keyframes.push({
+                        transform: `translate(-50%, -50%) translate(${x}px, ${y}px)`,
+                        opacity: s === 0 ? 0 : (0.3 + 0.5 * Math.abs(Math.sin(progress * Math.PI * 2)))
+                    });
                 }
 
-                setTimeout(() => explosion.remove(), 2000);
-            };
-
-            // Créer des explosions périodiques
-            const scheduleExplosion = () => {
-                if (!this.gameEnded) return;
-                createExplosion();
-                setTimeout(scheduleExplosion, 1500 + Math.random() * 2500);
-            };
-
-            setTimeout(scheduleExplosion, 500);
-        },
-
-        createWinnerBurst() {
-            const burstContainer = document.getElementById('winnerBurst');
-            if (!burstContainer) return;
-
-            const colors = ['#FFD700', '#FFF8DC', '#F0C850', '#FFE55C', '#FFFFFF'];
-            for (let i = 0; i < 25; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'winner-burst-particle';
-                const angle = (i / 25) * Math.PI * 2;
-                const distance = 100 + Math.random() * 80;
-                particle.style.setProperty('--tx', Math.cos(angle) * distance + 'px');
-                particle.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
-                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-                particle.style.width = (4 + Math.random() * 5) + 'px';
-                particle.style.height = particle.style.width;
-                particle.style.animationDelay = (Math.random() * 0.2) + 's';
-                burstContainer.appendChild(particle);
+                const t = setTimeout(() => {
+                    const anim = p.animate(keyframes, {
+                        duration: speed,
+                        iterations: Infinity,
+                        easing: 'linear'
+                    });
+                    this._fsOrbitalAnims.push(anim);
+                }, delay);
+                this._fsWinnerTimers.push(t);
             }
         },
+
 
 
         toggleBonusArcMobile() {
@@ -7833,48 +9827,120 @@ createApp({
             return (this.bombanime.bonuses.freeCharacter || 0) + (this.bombanime.bonuses.extraLife || 0);
         },
         
-        // 🎌 Ouvrir la suggestion joueur
+        // 🎌 Ouvrir la suggestion joueur (modal multi-lignes)
         openPlayerSuggestion() {
             if (this.bombanime.suggestionUsed) return;
+            this.bombanime.suggestionLines = [''];
+            this.bombanime.suggestionResult = '';
+            this.bombanime.suggestionResultType = '';
+            this.bombanime.suggestionSubmitting = false;
             this.bombanime.showSuggestionModal = true;
-            this.bombanime.suggestionName = '';
+            // Focus sur le premier input après rendu
+            this.$nextTick(() => {
+                const firstInput = document.querySelector('.player-suggestion-line-input');
+                if (firstInput) firstInput.focus();
+            });
         },
         
         // 🎌 Fermer la suggestion joueur
         closePlayerSuggestion() {
             this.bombanime.showSuggestionModal = false;
+            this.bombanime.suggestionLines = [''];
             this.bombanime.suggestionName = '';
+            this.bombanime.suggestionResult = '';
+            this.bombanime.suggestionResultType = '';
+        },
+
+        // 🎌 Ajouter une ligne de suggestion (max 5)
+        addPlayerSuggestionLine() {
+            if (this.bombanime.suggestionLines.length >= 5) return;
+            this.bombanime.suggestionLines.push('');
+            this.$nextTick(() => {
+                const inputs = document.querySelectorAll('.player-suggestion-line-input');
+                const lastInput = inputs[inputs.length - 1];
+                if (lastInput) lastInput.focus();
+            });
+        },
+
+        // 🎌 Supprimer une ligne de suggestion
+        removePlayerSuggestionLine(idx) {
+            if (this.bombanime.suggestionLines.length <= 1) return;
+            this.bombanime.suggestionLines.splice(idx, 1);
+        },
+
+        // 🎌 Enter dans un input: si dernière ligne non vide, ajouter une nouvelle ligne (max 5)
+        onPlayerSuggestEnter(idx) {
+            const val = (this.bombanime.suggestionLines[idx] || '').trim();
+            if (!val) return;
+            if (idx === this.bombanime.suggestionLines.length - 1 && this.bombanime.suggestionLines.length < 5) {
+                this.addPlayerSuggestionLine();
+            }
         },
         
-        // 🎌 Envoyer la suggestion joueur
+        // 🎌 Envoyer les suggestions joueur (multi-lignes)
         async submitPlayerSuggestion() {
-            const name = this.bombanime.suggestionName.trim();
-            if (!name || this.bombanime.suggestionUsed) return;
-            
-            try {
-                const response = await fetch('/bombanime/player-suggestion', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        anime: this.bombanime.serie || 'Unknown',
-                        characterName: name,
-                        submittedBy: this.twitchUsername || this.twitchId || 'Joueur'
-                    })
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    this.bombanime.suggestionUsed = true;
-                    this.bombanime.showSuggestionModal = false;
-                    this.bombanime.suggestionName = '';
-                    sessionStorage.setItem('bombanimeSuggestionUsed', 'true');
-                    this.showNotification('Suggestion envoyée !', 'success');
-                } else {
-                    this.showNotification('Erreur: ' + (data.error || 'Réessaie'), 'error');
+            if (this.bombanime.suggestionUsed || this.bombanime.suggestionSubmitting) return;
+
+            // Récupérer toutes les lignes non vides
+            const names = this.bombanime.suggestionLines
+                .map(n => (n || '').trim())
+                .filter(n => n.length > 0);
+
+            if (names.length === 0) {
+                this.bombanime.suggestionResult = 'Ajoute au moins un nom de personnage.';
+                this.bombanime.suggestionResultType = 'error';
+                return;
+            }
+
+            this.bombanime.suggestionSubmitting = true;
+            this.bombanime.suggestionResult = '';
+            this.bombanime.suggestionResultType = '';
+
+            const serie = this.bombanime.serie || 'Unknown';
+            const submittedBy = this.twitchUsername || this.twitchId || 'Joueur';
+            let successCount = 0;
+            let errorCount = 0;
+
+            for (const characterName of names) {
+                try {
+                    const response = await fetch('/bombanime/player-suggestion', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            anime: serie,
+                            characterName: characterName,
+                            submittedBy: submittedBy
+                        })
+                    });
+                    const data = await response.json();
+                    if (data.success) successCount++;
+                    else errorCount++;
+                } catch (err) {
+                    console.error('Erreur suggestion:', err);
+                    errorCount++;
                 }
-            } catch (error) {
-                console.error('Erreur suggestion:', error);
-                this.showNotification('Erreur réseau', 'error');
+            }
+
+            this.bombanime.suggestionSubmitting = false;
+
+            if (errorCount === 0 && successCount > 0) {
+                // Succès total : on marque comme utilisé (bouton disparaît)
+                this.bombanime.suggestionUsed = true;
+                sessionStorage.setItem('bombanimeSuggestionUsed', 'true');
+                this.bombanime.suggestionResult = `✓ ${successCount} suggestion${successCount > 1 ? 's' : ''} envoyée${successCount > 1 ? 's' : ''}.`;
+                this.bombanime.suggestionResultType = 'success';
+                this.showNotification('Suggestions envoyées !', 'success');
+                // Auto-close après 1.2s
+                setTimeout(() => this.closePlayerSuggestion(), 1200);
+            } else if (successCount > 0) {
+                // Partiel : on marque quand même comme utilisé
+                this.bombanime.suggestionUsed = true;
+                sessionStorage.setItem('bombanimeSuggestionUsed', 'true');
+                this.bombanime.suggestionResult = `${successCount} envoyée${successCount > 1 ? 's' : ''}, ${errorCount} erreur${errorCount > 1 ? 's' : ''}.`;
+                this.bombanime.suggestionResultType = 'error';
+            } else {
+                this.bombanime.suggestionResult = 'Erreur réseau. Réessaie.';
+                this.bombanime.suggestionResultType = 'error';
             }
         },
         

@@ -1,4 +1,3 @@
-
 /* ============================================
    💣 BOMBANIME - Player Styles
    ============================================ */
@@ -221,6 +220,34 @@
     letter-spacing: 0.3em;
 }
 
+/* Ligne avatar + nom */
+.bombanime-winner-screen .winner-name-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.1rem;
+    margin: 0;
+    animation: stats-fade-in 0.5s ease-out 0.4s both;
+}
+
+.bombanime-winner-screen .bombanime-winner-avatar {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid rgba(240, 192, 64, 0.5);
+    box-shadow: 0 0 20px rgba(240, 192, 64, 0.25);
+    background: radial-gradient(circle at 30% 25%, #2a1f10, #120c06 70%);
+    flex-shrink: 0;
+}
+
+.bombanime-winner-screen .bombanime-winner-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
 /* Nom du gagnant - SPÉCIFIQUE BOMBANIME */
 .bombanime-winner-screen .winner-name {
     font-size: 3rem;
@@ -280,9 +307,36 @@
     letter-spacing: 0.1em;
 }
 
+/* Row pour les boutons Retour + Signaler */
+.winner-actions-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 2rem;
+    animation: btn-fade-in 0.5s ease-out 1s both;
+    flex-wrap: wrap;
+}
+
+/* Sur mobile, empiler les boutons verticalement */
+@media (max-width: 600px) {
+    .winner-actions-row {
+        flex-direction: column;
+        gap: 0.6rem;
+        width: 100%;
+        max-width: 280px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .winner-actions-row .winner-back-btn,
+    .winner-actions-row .winner-suggest-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
 /* Bouton retour */
 .winner-back-btn {
-    margin-top: 2rem;
     padding: 0.75rem 2.5rem;
     background: rgba(240, 192, 64, 0.1);
     border: none;
@@ -292,7 +346,6 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.3s ease;
-    animation: btn-fade-in 0.5s ease-out 1s both;
 }
 
 @keyframes btn-fade-in {
@@ -308,6 +361,35 @@
     background: rgba(240, 192, 64, 0.2);
     color: #f0c040;
     transform: scale(1.05);
+}
+
+/* Bouton Signaler un perso */
+.winner-suggest-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 25px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.winner-suggest-btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.winner-suggest-btn:hover {
+    background: rgba(240, 192, 64, 0.05);
+    border-color: rgba(240, 192, 64, 0.3);
+    color: rgba(240, 192, 64, 0.75);
 }
 
 /* Particules de célébration */
@@ -2191,6 +2273,204 @@
 }
 
 /* ============================================
+   🎌 Modal Suggestion Joueur - VERSION MULTI-LIGNES
+   ============================================ */
+.player-suggestion-modal-multi {
+    width: min(90vw, 400px) !important;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.player-suggestion-modal-multi .player-suggestion-header {
+    padding: 18px 22px;
+    font-size: 16px;
+}
+
+.player-suggestion-modal-multi .player-suggestion-header span {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.player-suggestion-modal-multi .player-suggestion-body {
+    overflow-y: auto;
+    max-height: calc(88vh - 70px);
+    padding: 22px;
+    gap: 16px;
+}
+
+.player-suggestion-info {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.55);
+    line-height: 1.5;
+    padding: 2px 2px 4px;
+    font-weight: 500;
+}
+
+.player-suggestion-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 45vh;
+    overflow-y: auto;
+    padding: 2px;
+}
+
+.player-suggestion-line {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    animation: playerSuggestLineIn 0.25s ease-out;
+}
+
+@keyframes playerSuggestLineIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.player-suggestion-line-input {
+    flex: 1;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.player-suggestion-line-input:focus {
+    border-color: rgba(212, 168, 67, 0.45);
+    background: rgba(212, 168, 67, 0.04);
+}
+
+.player-suggestion-line-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.player-suggestion-line-remove {
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.player-suggestion-line-remove svg {
+    width: 16px;
+    height: 16px;
+}
+
+.player-suggestion-line-remove:hover:not(:disabled) {
+    background: rgba(231, 76, 60, 0.1);
+    border-color: rgba(231, 76, 60, 0.35);
+    color: #ff6b6b;
+}
+
+.player-suggestion-line-remove:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.player-suggestion-add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: transparent;
+    border: 1px dashed rgba(212, 168, 67, 0.3);
+    border-radius: 8px;
+    color: rgba(212, 168, 67, 0.75);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.player-suggestion-add-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.player-suggestion-add-btn:hover {
+    background: rgba(212, 168, 67, 0.06);
+    border-color: rgba(212, 168, 67, 0.5);
+    color: #d4a843;
+}
+
+.player-suggestion-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.player-suggestion-cancel,
+.player-suggestion-modal-multi .player-suggestion-submit {
+    flex: 1;
+    padding: 13px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.player-suggestion-cancel {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.player-suggestion-cancel:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: #fff;
+}
+
+.player-suggestion-result {
+    font-size: 13px;
+    text-align: center;
+    padding: 4px;
+    min-height: 18px;
+}
+
+.player-suggestion-result.success {
+    color: #4ade80;
+}
+
+.player-suggestion-result.error {
+    color: #ff6b6b;
+}
+
+@media (max-width: 600px) {
+    .player-suggestion-modal-multi {
+        width: 94vw !important;
+        max-height: 92vh;
+    }
+    .player-suggestion-modal-multi .player-suggestion-header {
+        padding: 14px 18px;
+    }
+    .player-suggestion-modal-multi .player-suggestion-header span {
+        font-size: 15px;
+    }
+    .player-suggestion-modal-multi .player-suggestion-body {
+        max-height: calc(92vh - 60px);
+        padding: 18px;
+    }
+}
+
+/* ============================================
    🎯 BOMBANIME - MODALS MOBILE (Améliorées)
    ============================================ */
 .bombanime-modal-overlay {
@@ -2896,6 +3176,15 @@
     
     .bombanime-winner-screen .winner-name.no-winner {
         font-size: 1.5rem;
+    }
+    
+    .bombanime-winner-screen .bombanime-winner-avatar {
+        width: 2.8rem;
+        height: 2.8rem;
+    }
+    
+    .bombanime-winner-screen .winner-name-row {
+        gap: 0.8rem;
     }
     
     .winner-stats {

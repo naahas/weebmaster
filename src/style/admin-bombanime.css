@@ -1774,6 +1774,59 @@
     transform: translateY(0);
 }
 
+/* Ligne avatar + nom gagnant */
+.bombanime-winner-name-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.4s ease 0.25s;
+}
+
+.bombanime-winner-overlay.active .bombanime-winner-name-row {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.bombanime-winner-name-row .bombanime-winner-name {
+    opacity: 1;
+    transform: none;
+    transition: none;
+}
+
+.bombanime-winner-avatar {
+    width: 3.4rem;
+    height: 3.4rem;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 2px solid rgba(240, 192, 64, 0.55);
+    box-shadow: 0 0 18px rgba(240, 192, 64, 0.25);
+    background: radial-gradient(circle at 30% 25%, #2a1f10, #120c06 70%);
+}
+
+.bombanime-winner-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.bombanime-winner-name-empty {
+    font-size: 1.8rem !important;
+    color: rgba(255, 255, 255, 0.4) !important;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.4s ease 0.25s;
+}
+
+.bombanime-winner-overlay.active .bombanime-winner-name-empty {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 /* Stats container */
 .bombanime-winner-stats {
     display: flex;
@@ -1807,22 +1860,31 @@
     margin-top: 0.25rem;
 }
 
+/* Row: Fermer le lobby + Signaler */
+.bombanime-winner-actions-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 2.5rem;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.4s ease 0.55s;
+    flex-wrap: wrap;
+}
+
+.bombanime-winner-overlay.active .bombanime-winner-actions-row {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 /* Bouton moderne */
 .bombanime-winner-close-btn {
-    margin-top: 2.5rem;
     padding: 0;
     background: transparent;
     border: none;
     cursor: pointer;
     position: relative;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: all 0.4s ease 0.55s;
-}
-
-.bombanime-winner-overlay.active .bombanime-winner-close-btn {
-    opacity: 1;
-    transform: translateY(0);
 }
 
 .bombanime-winner-close-btn span {
@@ -1855,6 +1917,307 @@
     left: 0;
     right: 0;
     opacity: 0.6;
+}
+
+/* Bouton Signaler des persos */
+.bombanime-winner-suggest-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.55rem 1.1rem;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.4);
+    font-family: inherit;
+    transition: all 0.3s ease;
+}
+
+.bombanime-winner-suggest-btn svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+}
+
+.bombanime-winner-suggest-btn span {
+    font-size: 0.62rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+}
+
+.bombanime-winner-suggest-btn:hover {
+    background: rgba(240, 192, 64, 0.05);
+    border-color: rgba(240, 192, 64, 0.3);
+    color: rgba(240, 192, 64, 0.8);
+}
+
+/* ============================================
+   🎌 BOMBANIME ADMIN - Modal suggestions multi-lignes
+   ============================================ */
+.bombanime-admin-suggest-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.bombanime-admin-suggest-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.bombanime-admin-suggest-modal {
+    width: min(92vw, 440px);
+    max-height: 85vh;
+    background: linear-gradient(135deg, rgba(30, 30, 38, 0.98), rgba(18, 18, 24, 0.98));
+    border: 1px solid rgba(240, 192, 64, 0.25);
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(240, 192, 64, 0.08);
+    display: flex;
+    flex-direction: column;
+    transform: translateY(10px) scale(0.98);
+    transition: transform 0.3s ease;
+    overflow: hidden;
+}
+
+.bombanime-admin-suggest-overlay.active .bombanime-admin-suggest-modal {
+    transform: translateY(0) scale(1);
+}
+
+.bombanime-admin-suggest-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.1rem 1.4rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.bombanime-admin-suggest-header span {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #f0c040;
+    letter-spacing: 0.5px;
+}
+
+.bombanime-admin-suggest-close {
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.bombanime-admin-suggest-close svg {
+    width: 16px;
+    height: 16px;
+}
+
+.bombanime-admin-suggest-close:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.bombanime-admin-suggest-body {
+    padding: 1.2rem 1.4rem 1.4rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+
+.bombanime-admin-suggest-info {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.45);
+    line-height: 1.5;
+}
+
+.bombanime-admin-suggest-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 40vh;
+    overflow-y: auto;
+    padding: 0.1rem 0;
+}
+
+.bombanime-admin-suggest-line {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    animation: adminSuggestLineIn 0.25s ease-out;
+}
+
+@keyframes adminSuggestLineIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.bombanime-admin-suggest-line-input {
+    flex: 1;
+    padding: 0.55rem 0.8rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 0.8rem;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.bombanime-admin-suggest-line-input:focus {
+    border-color: rgba(240, 192, 64, 0.45);
+    background: rgba(240, 192, 64, 0.04);
+}
+
+.bombanime-admin-suggest-line-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.bombanime-admin-suggest-line-remove {
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 7px;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.bombanime-admin-suggest-line-remove svg {
+    width: 14px;
+    height: 14px;
+}
+
+.bombanime-admin-suggest-line-remove:hover {
+    background: rgba(231, 76, 60, 0.1);
+    border-color: rgba(231, 76, 60, 0.35);
+    color: #ff6b6b;
+}
+
+.bombanime-admin-suggest-add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0.55rem 0.95rem;
+    background: transparent;
+    border: 1px dashed rgba(240, 192, 64, 0.3);
+    border-radius: 8px;
+    color: rgba(240, 192, 64, 0.75);
+    font-size: 0.75rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.bombanime-admin-suggest-add-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.bombanime-admin-suggest-add-btn:hover {
+    background: rgba(240, 192, 64, 0.06);
+    border-color: rgba(240, 192, 64, 0.5);
+    color: #f0c040;
+}
+
+.bombanime-admin-suggest-actions {
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 0.4rem;
+}
+
+.bombanime-admin-suggest-cancel,
+.bombanime-admin-suggest-submit {
+    flex: 1;
+    padding: 0.65rem 0.95rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.bombanime-admin-suggest-cancel {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.bombanime-admin-suggest-cancel:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: #fff;
+}
+
+.bombanime-admin-suggest-submit {
+    background: linear-gradient(135deg, rgba(240, 192, 64, 0.2), rgba(240, 192, 64, 0.12));
+    border: 1px solid rgba(240, 192, 64, 0.45);
+    color: #f0c040;
+}
+
+.bombanime-admin-suggest-submit:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(240, 192, 64, 0.3), rgba(240, 192, 64, 0.18));
+    border-color: rgba(240, 192, 64, 0.7);
+    box-shadow: 0 0 18px rgba(240, 192, 64, 0.15);
+}
+
+.bombanime-admin-suggest-submit:disabled {
+    opacity: 0.5;
+    cursor: wait;
+}
+
+.bombanime-admin-suggest-result {
+    font-size: 0.78rem;
+    text-align: center;
+    padding: 0.3rem;
+    min-height: 1.2rem;
+}
+
+.bombanime-admin-suggest-result.success {
+    color: #4ade80;
+}
+
+.bombanime-admin-suggest-result.error {
+    color: #ff6b6b;
+}
+
+@media (max-width: 600px) {
+    .bombanime-admin-suggest-modal {
+        width: 94vw;
+        max-height: 90vh;
+    }
+    .bombanime-admin-suggest-header {
+        padding: 0.95rem 1.1rem;
+    }
+    .bombanime-admin-suggest-body {
+        padding: 1rem 1.1rem 1.2rem;
+    }
+    .bombanime-winner-actions-row {
+        gap: 1rem;
+    }
 }
 
 
@@ -2518,5 +2881,213 @@
     .character-flash img {
         width: 170px;
         height: 170px;
+    }
+}
+
+/* ============================================
+   🎁 BOMBANIME ADMIN REWARD BAR
+   Affiche les gains (coins, XP, level) quand l'admin a joué
+   ============================================ */
+.bombanime-admin-reward {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1100;
+    pointer-events: none;
+    display: flex;
+    justify-content: center;
+    padding-top: 5.5vh;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.bombanime-admin-reward.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.bar-admin-reward {
+    padding: 20px 32px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(245,212,66,0.05), rgba(245,212,66,0.01) 50%, rgba(139,105,20,0.03));
+    border: 1px solid rgba(245,212,66,0.1);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 0 rgba(0,0,0,0.25), 0 4px 20px rgba(0,0,0,0.35);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    max-width: 500px;
+    width: 100%;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+}
+
+.bar-admin-reward-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+/* Icône trophée */
+.bar-admin-reward-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: rgba(245, 212, 66, 0.7);
+    filter: drop-shadow(0 0 6px rgba(245, 212, 66, 0.35));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: -4px;
+}
+.bar-admin-reward-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* Niv. X avec +XP au dessus */
+.bar-admin-reward-level {
+    position: relative;
+    display: inline-flex;
+    align-items: baseline;
+    flex-shrink: 0;
+}
+.bar-admin-reward-level-text {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #f5d442;
+    display: inline-block;
+}
+
+/* Jauge XP */
+.bar-admin-reward-track {
+    height: 1.5px;
+    border-radius: 2px;
+    flex: 1;
+    background: rgba(245,212,66,0.12);
+    overflow: visible;
+    position: relative;
+    min-width: 80px;
+}
+.bar-admin-reward-track::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -5px;
+    height: 12px;
+    background: radial-gradient(ellipse at center, rgba(245,212,66,0.12), transparent 65%);
+    pointer-events: none;
+    animation: rewardTrackPulseAdmin 2s ease-in-out infinite;
+}
+@keyframes rewardTrackPulseAdmin {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+.bar-admin-reward-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #8b6914, #daa520 30%, #ffe88a 70%, #fff8dc);
+    box-shadow: 0 0 10px rgba(245,212,66,0.7), 0 0 3px #fff;
+    width: 0%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Coins */
+.bar-admin-reward-coins {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-shrink: 0;
+    position: relative;
+}
+.bar-admin-reward-coin-icon {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 12px rgba(245,212,66,0.45));
+}
+.bar-admin-reward-coin-fallback {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ffe88a, #daa520 55%, #8b6914);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 900;
+    color: #3a2a05;
+    font-family: Georgia, serif;
+    box-shadow: 0 0 10px rgba(245,212,66,0.45);
+}
+.bar-admin-reward-coin-val {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #f5d442;
+    letter-spacing: 0.3px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Gains (+XP, +coins) placés au-dessus */
+.bar-admin-reward-gain {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 9px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.bar-admin-reward-gain.xp {
+    color: rgba(218,165,32,0.55);
+    position: absolute;
+    top: -12px;
+    left: -4px;
+}
+.bar-admin-reward-gain.coins {
+    color: rgba(245,212,66,0.6);
+    position: absolute;
+    top: -10px;
+    right: -6px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .bombanime-admin-reward {
+        padding-top: 3vh;
+        padding-left: 3vw;
+        padding-right: 3vw;
+    }
+    .bar-admin-reward {
+        padding: 12px 20px;
+        max-width: 100%;
+    }
+    .bar-admin-reward-row {
+        gap: 10px;
+    }
+    .bar-admin-reward-icon {
+        width: 16px;
+        height: 16px;
+    }
+    .bar-admin-reward-level-text {
+        font-size: 12px;
+    }
+    .bar-admin-reward-track {
+        min-width: 0;
+    }
+    .bar-admin-reward-coin-icon,
+    .bar-admin-reward-coin-fallback {
+        width: 24px;
+        height: 24px;
+    }
+    .bar-admin-reward-coin-val {
+        font-size: 12px;
+    }
+    .bar-admin-reward-gain {
+        font-size: 8px;
     }
 }

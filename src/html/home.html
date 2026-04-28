@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="home-collect.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Russo+One&family=Space+Grotesk:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
 
     <link rel="icon" type="image/png" href="icon.png">
@@ -57,7 +57,7 @@
                 <h1 class="logo-title">
                     <!-- <span class="neon-text">Shonen</span><span class="neon-text-alt">Master</span> -->
                 </h1>
-                <div class="live-badge" v-if="isGameActive">
+                <div class="live-badge" v-if="isGameActive && !gameEnded">
                     <span class="pulse-dot"></span>
                     <span>EN LIVE</span>
                 </div>
@@ -107,7 +107,7 @@
                         <div 
                             class="rivalry-team-card team-blue" 
                             :class="{ selected: selectedTeam === 1, disabled: hasJoined && selectedTeam !== 1 }"
-                            @click="selectAndJoinTeam(1)"
+                            @click="selectAndJoinTeam(1, $event)"
                         >
                             <svg class="rivalry-team-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                 <path d="M6 3h12l4 6-10 13L2 9l4-6z"/>
@@ -120,7 +120,7 @@
                         <div 
                             class="rivalry-team-card team-gold" 
                             :class="{ selected: selectedTeam === 2, disabled: hasJoined && selectedTeam !== 2 }"
-                            @click="selectAndJoinTeam(2)"
+                            @click="selectAndJoinTeam(2, $event)"
                         >
                             <svg class="rivalry-team-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                 <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/>
@@ -310,7 +310,7 @@
 
             <!-- État: Spectateur (partie en cours mais pas rejoint) -->
             <div class="content-section"
-                v-if="gameStartedOnServer && !gameInProgress && isGameActive && isAuthenticated">
+                v-if="gameStartedOnServer && !gameInProgress && isGameActive && isAuthenticated && !gameEnded">
                 <div class="info-card spectator-card">
                     <div class="spectator-icon">⏳</div>
                     <h2>Partie en cours</h2>
@@ -359,18 +359,6 @@
                             >
                         </div>
                         
-                        <!-- 🎌 Bouton Suggestion (Desktop - bas gauche) -->
-                        <button class="player-suggestion-btn" 
-                            v-if="!isMobile && bombanime.active && !bombanime.suggestionUsed && !bombanime.isMyTurn"
-                            @click="openPlayerSuggestion"
-                            title="Suggérer un personnage manquant"
-                            :class="{ 'intro-hidden': bombanime.introPhase === 'players' }">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
-                                <line x1="4" y1="22" x2="4" y2="15"/>
-                            </svg>
-                        </button>
-
                         <!-- Zone du cercle de joueurs -->
                         <div class="bombanime-circle" :style="{ '--circle-size': getBombanimeCircleSize() + 'px' }">
                             <!-- Joueurs en cercle -->
@@ -400,7 +388,7 @@
                                         <svg viewBox="0 0 100 100">
                                             <polygon points="50,3 97,25 97,75 50,97 3,75 3,25"/>
                                         </svg>
-                                        <img class="player-avatar" :src="player.avatarUrl || '/img/avatars/novice.png'" :alt="player.username" @error="$event.target.src='/img/avatars/novice.png'"/>
+                                        <img class="player-avatar" :src="player.avatarUrl || 'novice.png'" :alt="player.username" @error="$event.target.src='novice.png'"/>
                                         <!-- 🎯 Éléments animation gain de vie (dans player-hex) -->
                                         <div class="life-glow-ring"></div>
                                         <div class="life-glow-ring ring-2"></div>
@@ -745,34 +733,7 @@
                         </div>
                     </div>
                     
-                    <!-- 🎌 Modal Suggestion Joueur -->
-                    <div class="player-suggestion-overlay" v-if="bombanime.showSuggestionModal" @click.self="closePlayerSuggestion">
-                        <div class="player-suggestion-modal">
-                            <div class="player-suggestion-header">
-                                <span>Personnage manquant ?</span>
-                                <button class="player-suggestion-close" @click="closePlayerSuggestion">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                                    </svg>
-                                </button>
-                            </div>
-                            <div class="player-suggestion-body">
-                                <div class="player-suggestion-serie">{{ getFormattedSerieName() }}</div>
-                                <input 
-                                    type="text" 
-                                    class="player-suggestion-input"
-                                    v-model="bombanime.suggestionName"
-                                    placeholder="Nom du personnage..."
-                                    maxlength="20"
-                                    @keydown.enter.prevent="submitPlayerSuggestion"
-                                >
-                                <button class="player-suggestion-submit" @click="submitPlayerSuggestion" :disabled="!bombanime.suggestionName.trim()">
-                                    Envoyer
-                                </button>
-                                <div class="player-suggestion-note">Tu ne peux proposer qu'1 suggestion par partie</div>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- (Modal Suggestion Joueur déplacé hors template pour rester accessible sur l'écran winner) -->
 
                 </template>
 
@@ -1481,182 +1442,213 @@
                 <!-- Explosions aléatoires -->
                 <div class="bg-explosions" id="bgExplosions"></div>
 
-                <div class="winner-container">
-                    <!-- Podium -->
-                    <div class="winner-podium">
-                        <!-- 2ème (gauche) -->
-                        <div class="podium-place second" v-if="podiumPlayers[1]">
-                            <!-- Silver Medal -->
-                            <div class="podium-medal">
-                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M22 8L32 28L42 8" stroke="#6B7280" stroke-width="12" stroke-linecap="round"/>
-                                    <path d="M22 8L32 28L42 8" stroke="#C0C0C0" stroke-width="8" stroke-linecap="round"/>
-                                    <circle cx="32" cy="40" r="20" fill="url(#silverGrad)" stroke="#6B7280" stroke-width="2"/>
-                                    <circle cx="32" cy="40" r="14" fill="none" stroke="#6B7280" stroke-width="1" opacity="0.5"/>
-                                    <path d="M32 30L34.5 36.5H41L35.75 40.5L38 47L32 43L26 47L28.25 40.5L23 36.5H29.5L32 30Z" fill="#6B7280"/>
-                                    <defs>
-                                        <linearGradient id="silverGrad" x1="12" y1="20" x2="52" y2="60">
-                                            <stop offset="0%" stop-color="#E5E7EB"/>
-                                            <stop offset="50%" stop-color="#FFFFFF"/>
-                                            <stop offset="100%" stop-color="#9CA3AF"/>
-                                        </linearGradient>
-                                    </defs>
-                                </svg>
-                            </div>
-                            <div class="podium-card" :class="{ 'team-card': podiumPlayers[1].isTeam, 'team-1': podiumPlayers[1].team === 1, 'team-2': podiumPlayers[1].team === 2 }">
-                                <div class="podium-player-name">{{ podiumPlayers[1].username }}</div>
-                                <div class="podium-stats single-stat">
-                                    <div class="podium-stat" v-if="gameEndData.gameMode === 'lives' || gameEndData.gameMode === 'rivalry-lives'">
-                                        <div class="podium-stat-val">
-                                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                <div class="winner-container fs-winner-root" :class="{ 'fs-team-mode': podiumPlayers[0] && podiumPlayers[0].isTeam }">
+                    <div class="fs-beam"></div>
+                    <div class="fs-star fs-star-1"></div>
+                    <div class="fs-star fs-star-2"></div>
+                    <div class="fs-star fs-star-3"></div>
+                    <div class="fs-star fs-star-4"></div>
+                    <div class="fs-star fs-star-5"></div>
+                    <div class="fs-star fs-star-6"></div>
+                    <div class="fs-star fs-star-7"></div>
+
+                    <div class="fs-main" id="fsMainGrid">
+
+                        <div class="fs-chals">
+                            <div class="fs-chal fs-chal-2" v-if="podiumPlayers[1]">
+                                <div class="fs-chal-rank">02</div>
+                                <div class="fs-chal-avatar">
+                                    <img :src="podiumPlayers[1].avatarUrl || 'novice.png'" :alt="podiumPlayers[1].username">
+                                </div>
+                                <div class="fs-chal-info">
+                                    <div class="fs-chal-name">{{ podiumPlayers[1].isTeam ? podiumPlayers[1].username : podiumPlayers[1].username }}</div>
+                                    <div class="fs-chal-meta">
+                                        <template v-if="gameEndData.gameMode === 'lives' || gameEndData.gameMode === 'rivalry-lives'">
+                                            <svg class="icon" viewBox="0 0 24 24" fill="#e24b4a"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                                             {{ podiumPlayers[1].lives }}
-                                        </div>
-                                        <div class="podium-stat-label">{{ podiumPlayers[1].isTeam ? 'Vies équipe' : 'Vies' }}</div>
-                                    </div>
-                                    <div class="podium-stat" v-if="gameEndData.gameMode === 'points' || gameEndData.gameMode === 'rivalry-points'">
-                                        <div class="podium-stat-val">{{ podiumPlayers[1].points || 0 }}</div>
-                                        <div class="podium-stat-label">{{ podiumPlayers[1].isTeam ? 'Points équipe' : 'Points' }}</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="podium-step"></div>
-                        </div>
-
-                        <!-- 1er (centre) -->
-                        <div class="podium-place first" v-if="podiumPlayers[0]">
-                            <!-- Gold Medal -->
-                            <div class="podium-medal">
-                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M22 8L32 28L42 8" stroke="#B8860B" stroke-width="12" stroke-linecap="round"/>
-                                    <path d="M22 8L32 28L42 8" stroke="#FFD700" stroke-width="8" stroke-linecap="round"/>
-                                    <circle cx="32" cy="40" r="20" fill="url(#goldGrad)" stroke="#B8860B" stroke-width="2"/>
-                                    <circle cx="32" cy="40" r="14" fill="none" stroke="#B8860B" stroke-width="1" opacity="0.5"/>
-                                    <path d="M32 30L34.5 36.5H41L35.75 40.5L38 47L32 43L26 47L28.25 40.5L23 36.5H29.5L32 30Z" fill="#B8860B"/>
-                                    <defs>
-                                        <linearGradient id="goldGrad" x1="12" y1="20" x2="52" y2="60">
-                                            <stop offset="0%" stop-color="#FFD700"/>
-                                            <stop offset="50%" stop-color="#FFF8DC"/>
-                                            <stop offset="100%" stop-color="#F0C850"/>
-                                        </linearGradient>
-                                    </defs>
-                                </svg>
-                            </div>
-                            <div class="podium-card" :class="{ 'team-card': podiumPlayers[0].isTeam, 'team-1': podiumPlayers[0].team === 1, 'team-2': podiumPlayers[0].team === 2 }">
-                                <div class="podium-light-burst"></div>
-                                <div class="podium-particle-burst" id="winnerBurst"></div>
-                                <div class="podium-winner-content">
-                                    <div class="podium-crown">
-                                        <svg viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3H5v2h14v-2z" fill="url(#crownGrad)"/>
-                                            <defs>
-                                                <linearGradient id="crownGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                    <stop offset="0%" style="stop-color:#FFD700"/>
-                                                    <stop offset="50%" style="stop-color:#FFF"/>
-                                                    <stop offset="100%" style="stop-color:#F0C850"/>
-                                                </linearGradient>
-                                            </defs>
-                                        </svg>
-                                    </div>
-                                    <div class="podium-player-name">{{ podiumPlayers[0].username }}</div>
-                                    <div class="podium-stats single-stat">
-                                        <div class="podium-stat" v-if="gameEndData.gameMode === 'lives' || gameEndData.gameMode === 'rivalry-lives'">
-                                            <div class="podium-stat-val">
-                                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                                                {{ podiumPlayers[0].lives }}
-                                            </div>
-                                            <div class="podium-stat-label">{{ podiumPlayers[0].isTeam ? 'Vies équipe' : 'Vies' }}</div>
-                                        </div>
-                                        <div class="podium-stat" v-if="gameEndData.gameMode === 'points' || gameEndData.gameMode === 'rivalry-points'">
-                                            <div class="podium-stat-val">{{ podiumPlayers[0].points || 0 }}</div>
-                                            <div class="podium-stat-label">{{ podiumPlayers[0].isTeam ? 'Points équipe' : 'Points' }}</div>
-                                        </div>
+                                            <template v-if="podiumPlayers[1].correctAnswers !== undefined">
+                                                <span class="sep">·</span>
+                                                <svg class="icon" viewBox="0 0 24 24" fill="rgba(255,255,255,0.55)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+                                                {{ podiumPlayers[1].correctAnswers }}
+                                            </template>
+                                        </template>
+                                        <template v-else>
+                                            {{ (podiumPlayers[1].points || 0).toLocaleString() }} pts
+                                        </template>
                                     </div>
                                 </div>
                             </div>
-                            <div class="podium-step"></div>
-                        </div>
 
-                        <!-- 3ème (droite) -->
-                        <div class="podium-place third" v-if="podiumPlayers[2]">
-                            <!-- Bronze Medal -->
-                            <div class="podium-medal">
-                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M22 8L32 28L42 8" stroke="#8B4513" stroke-width="12" stroke-linecap="round"/>
-                                    <path d="M22 8L32 28L42 8" stroke="#CD853F" stroke-width="8" stroke-linecap="round"/>
-                                    <circle cx="32" cy="40" r="20" fill="url(#bronzeGrad)" stroke="#8B4513" stroke-width="2"/>
-                                    <circle cx="32" cy="40" r="14" fill="none" stroke="#8B4513" stroke-width="1" opacity="0.5"/>
-                                    <path d="M32 30L34.5 36.5H41L35.75 40.5L38 47L32 43L26 47L28.25 40.5L23 36.5H29.5L32 30Z" fill="#8B4513"/>
-                                    <defs>
-                                        <linearGradient id="bronzeGrad" x1="12" y1="20" x2="52" y2="60">
-                                            <stop offset="0%" stop-color="#CD853F"/>
-                                            <stop offset="50%" stop-color="#DEB887"/>
-                                            <stop offset="100%" stop-color="#B87333"/>
-                                        </linearGradient>
-                                    </defs>
-                                </svg>
-                            </div>
-                            <div class="podium-card">
-                                <div class="podium-player-name">{{ podiumPlayers[2].username }}</div>
-                                <div class="podium-stats single-stat">
-                                    <div class="podium-stat" v-if="gameEndData.gameMode === 'lives'">
-                                        <div class="podium-stat-val">
-                                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                            <div class="fs-chal fs-chal-3" v-if="podiumPlayers[2]">
+                                <div class="fs-chal-rank">03</div>
+                                <div class="fs-chal-avatar">
+                                    <img :src="podiumPlayers[2].avatarUrl || 'novice.png'" :alt="podiumPlayers[2].username">
+                                </div>
+                                <div class="fs-chal-info">
+                                    <div class="fs-chal-name">{{ podiumPlayers[2].username }}</div>
+                                    <div class="fs-chal-meta">
+                                        <template v-if="gameEndData.gameMode === 'lives' || gameEndData.gameMode === 'rivalry-lives'">
+                                            <svg class="icon" viewBox="0 0 24 24" fill="#e24b4a"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                                             {{ podiumPlayers[2].lives }}
-                                        </div>
-                                        <div class="podium-stat-label">Vies</div>
-                                    </div>
-                                    <div class="podium-stat" v-if="gameEndData.gameMode === 'points'">
-                                        <div class="podium-stat-val">{{ podiumPlayers[2].points || 0 }}</div>
-                                        <div class="podium-stat-label">Points</div>
+                                            <template v-if="podiumPlayers[2].correctAnswers !== undefined">
+                                                <span class="sep">·</span>
+                                                <svg class="icon" viewBox="0 0 24 24" fill="rgba(255,255,255,0.55)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+                                                {{ podiumPlayers[2].correctAnswers }}
+                                            </template>
+                                        </template>
+                                        <template v-else>
+                                            {{ (podiumPlayers[2].points || 0).toLocaleString() }} pts
+                                        </template>
                                     </div>
                                 </div>
                             </div>
-                            <div class="podium-step"></div>
-                        </div>
-                    </div>
 
-                    <!-- Ton classement (si hors top 3) -->
-                    <div class="your-rank-section" v-if="myRank && myRank.rank > 3">
-                        <div class="your-rank-position">
-                            <span class="your-rank-number">{{ myRank.rank }}</span>
-                            <span class="your-rank-suffix">{{ myRank.rank === 1 ? 'er' : 'ème' }}</span>
-                        </div>
-                        <div class="your-rank-divider"></div>
-                        <div class="your-rank-info">
-                            <span class="your-rank-name">{{ username }}</span>
-                            <div class="your-rank-stats">
-                                <span v-if="gameEndData.gameMode === 'lives'">
-                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                                    {{ myRank.lives }} vies
-                                </span>
-                                <span v-if="gameEndData.gameMode === 'points'">{{ myRank.points || 0 }} pts</span>
+                            <div class="fs-you" id="fsYouRank" v-if="myRank && myRank.rank > 3">
+                                <div class="fs-you-rank">#{{ myRank.rank }}</div>
+                                <div class="fs-you-avatar">
+                                    <img :src="myRank.avatarUrl || (profileData && profileData.user && profileData.user.avatar_url) || twitchAvatarUrl || 'novice.png'" :alt="username">
+                                </div>
+                                <div class="fs-you-info">
+                                    <div class="fs-you-lbl">Votre rang</div>
+                                    <div class="fs-you-name">{{ username }}</div>
+                                    <div class="fs-you-stats">
+                                        <template v-if="gameEndData.gameMode === 'lives' || gameEndData.gameMode === 'rivalry-lives'">
+                                            <svg class="icon" viewBox="0 0 24 24" fill="#e24b4a"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                                            {{ myRank.lives || 0 }}
+                                            <template v-if="myRank.correctAnswers !== undefined">
+                                                <span class="sep">·</span>
+                                                <svg class="icon" viewBox="0 0 24 24" fill="rgba(255,255,255,0.55)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+                                                {{ myRank.correctAnswers }}
+                                            </template>
+                                        </template>
+                                        <template v-else>
+                                            {{ (myRank.points || 0).toLocaleString() }} pts
+                                        </template>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Bouton Retour -->
-                    <button class="btn-winner-back" @click="backToHome">Retour</button>
+                        <div class="fs-hero" v-if="podiumPlayers[0]">
+                            <div class="fs-avatar-frame" id="fsAvatarFrame" :class="{ 'team-card': podiumPlayers[0].isTeam, 'team-1': podiumPlayers[0].team === 1, 'team-2': podiumPlayers[0].team === 2 }">
+                                <div class="fs-crown-bar" id="fsCrownBar">
+                                    <img src="couronne.png" alt="couronne" onerror="this.style.display='none'">
+                                </div>
+                                <div class="fs-avatar-glow"></div>
+                                <div class="fs-avatar-ring"></div>
+                                <div class="fs-avatar-mask"></div>
+                                <div class="fs-shockwave" id="fsShockwave"></div>
+                                <div class="fs-avatar-inner">
+                                    <img :src="podiumPlayers[0].avatarUrl || 'novice.png'" :alt="podiumPlayers[0].username">
+                                </div>
+                                <div class="fs-particles" id="fsParticles"></div>
+                                <div class="fs-burst" id="fsBurst"></div>
+                            </div>
+                            <div class="fs-name">{{ podiumPlayers[0].username }}</div>
+                            <div class="fs-master-tag">is the <span class="fs-master-word">Master</span></div>
+                            <div class="fs-stats">
+                                <div class="fs-stat" v-if="gameEndData.gameMode === 'lives' || gameEndData.gameMode === 'rivalry-lives'">
+                                    <div class="fs-stat-v">
+                                        <svg class="fs-stat-icon" viewBox="0 0 24 24" fill="#e24b4a"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                                        {{ podiumPlayers[0].lives }}
+                                    </div>
+                                    <div class="fs-stat-l">{{ podiumPlayers[0].isTeam ? 'Vies équipe' : 'Vies' }}</div>
+                                </div>
+                                <div class="fs-stat" v-if="podiumPlayers[0].correctAnswers !== undefined">
+                                    <div class="fs-stat-v fs-stat-v-m">
+                                        <svg class="fs-stat-icon" viewBox="0 0 24 24" fill="rgba(255,255,255,0.8)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+                                        {{ podiumPlayers[0].correctAnswers }}
+                                    </div>
+                                    <div class="fs-stat-l">Bonnes</div>
+                                </div>
+                                <div class="fs-stat" v-if="gameEndData.gameMode === 'points' || gameEndData.gameMode === 'rivalry-points'">
+                                    <div class="fs-stat-v">
+                                        {{ (podiumPlayers[0].points || 0).toLocaleString() }}
+                                    </div>
+                                    <div class="fs-stat-l">{{ podiumPlayers[0].isTeam ? 'Points équipe' : 'Points' }}</div>
+                                </div>
+                            </div>
+                            <div class="fs-champ-action">
+                                <button class="btn-winner-back" @click="backToHome">Retour</button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🎁 Reward Animation (top of screen, during winner) -->
+        <div class="reward-anim-fixed" v-if="rewardAnimData && gameEnded" id="rewardAnim">
+            <div class="reward-anim" :class="{ visible: rewardAnimVisible }">
+                <!-- Bar + coins badge on same row, with level label left of bar -->
+                <div class="reward-anim-bar-row">
+                    <div class="reward-anim-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path d="M7 4V2h10v2h4v4c0 2.76-2.24 5-5 5h-.34c-.37 1.95-1.58 3.58-3.16 4.51V20h3v2H7.5v-2h3v-2.49C8.92 16.58 7.71 14.95 7.34 13H7c-2.76 0-5-2.24-5-5V4h5zM5 8c0 1.1.9 2 2 2V6H5v2zm12 2c1.1 0 2-.9 2-2V6h-2v4z"/>
+                        </svg>
+                    </div>
+                    <div class="reward-anim-level" id="rewardLvlLabel">
+                        <span class="reward-anim-level-text">Niv. {{ rewardAnimData.levelBefore }}</span>
+                        <span class="reward-anim-gain xp" id="rewardXpGain">+{{ rewardAnimData.xpGained.toLocaleString() }}</span>
+                    </div>
+                    <div class="reward-anim-track" id="rewardTrack">
+                        <div class="reward-anim-fill" id="rewardFill"></div>
+                        <div class="reward-xp-particles" id="rewardXpParticles"></div>
+                    </div>
+                    <div class="reward-anim-lvl-badge" id="rewardLvlBadge">
+                        <span class="reward-anim-lvl-badge-label">Niv.</span>
+                        <span class="reward-anim-lvl-badge-num" id="rewardLvlBadgeNum">{{ rewardAnimData.levelAfter }}</span>
+                    </div>
+                    <div class="reward-anim-sparks" id="rewardSparks"></div>
+                    <div class="reward-anim-coins" id="rewardPopupCoins">
+                        <div class="reward-anim-particles" id="rewardParticlesCoins"></div>
+                        <img src="scoin.png" alt="S" class="reward-anim-coin-icon" onerror="this.outerHTML='<div style=\'width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#f5d442,#daa520);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#1a1a0a\'>S</div>'">
+                        <span class="reward-anim-coin-val" id="rewardCoinVal">{{ rewardAnimData.coinsBefore.toLocaleString() }}</span>
+                        <span class="reward-anim-gain coins" id="rewardCoinsGain">+{{ rewardAnimData.coinsGained.toLocaleString() }}</span>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- 🆕 Badge EN LIVE discret en bas (pour utilisateurs NON connectés) -->
-        <div class="live-badge-bottom" v-if="isGameActive && !isAuthenticated && !gameInProgress">
+        <div class="live-badge-bottom" v-if="isGameActive && !isAuthenticated && !gameInProgress && !gameEnded">
             <span class="pulse-dot-small"></span>
             <span>EN LIVE</span>
         </div>
 
 
         <!-- 🆕 Bouton Profil (en haut à droite, visible si connecté) -->
-        <button class="profile-btn" v-if="isAuthenticated && !gameInProgress" @click="openProfile">
+        <button class="profile-btn" v-if="isAuthenticated && !gameInProgress && !gameEnded" @click="openProfile">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                 <path
                     d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
             </svg>
         </button>
 
+        <div class="shop-link" v-if="!gameInProgress && !gameEnded" @click="openShop">Boutique</div>
+
+        <!-- Notification boutique -->
+        <div class="shop-notif" :class="{ show: shopNotif }" v-text="shopNotifText"></div>
+
+        <!-- Modal confirmation achat -->
+        <div class="shop-confirm-overlay" :class="{ active: shopConfirmItem }" @click.self="shopConfirmItem = null">
+            <div class="shop-confirm-modal" v-if="shopConfirmItem">
+                <div class="shop-confirm-title">Confirmer l'achat</div>
+                <div class="shop-confirm-name">{{ shopConfirmItem.type === 'avatar' ? shopConfirmItem.name : (shopConfirmItem.value || shopConfirmItem.name) }}</div>
+                <div class="shop-confirm-price">
+                    <img src="scoin.png" alt="S" class="shop-confirm-coin" onerror="this.outerHTML='<span style=\'color:#daa520;font-weight:800\'>S</span>'">
+                    <span>{{ shopConfirmItem.price.toLocaleString() }}</span>
+                </div>
+                <div class="shop-confirm-actions">
+                    <button class="shop-confirm-cancel" @click="shopConfirmItem = null">Annuler</button>
+                    <button class="shop-confirm-buy" @click="confirmBuy">Acheter</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Tips informatifs (PC uniquement, visible si connecté et pas en jeu) -->
-        <div class="lobby-tips-container" v-if="isAuthenticated && !gameInProgress && currentTip">
+        <div class="lobby-tips-container" v-if="isAuthenticated && !gameInProgress && !gameEnded && currentTip">
             <div class="lobby-tip" :key="tipKey">
                 <span class="tip-icon">💡</span>
                 <span class="tip-text">{{ currentTip }}</span>
@@ -1668,56 +1660,58 @@
              ============================================ -->
         <div class="profile-overlay" :class="{ active: showProfileModal }" @click.self="closeProfile">
             <div class="profile-modal" ref="profileModal">
-                <!-- Scan line -->
-                <div class="profile-scan-line" ref="profileScanLine"></div>
-
-                <!-- Coins décoratifs -->
-                <div class="corner-decoration corner-tl"></div>
-                <div class="corner-decoration corner-tr"></div>
-                <div class="corner-decoration corner-bl"></div>
-                <div class="corner-decoration corner-br"></div>
-
-                <!-- Header -->
-                <!-- Header avec Avatar -->
-                <div class="profile-header">
-
-                    <div class="profile-user-info">
-                        <!-- Avatar avec anneau -->
-                        <div class="profile-avatar-wrapper">
-                            <div class="profile-avatar-ring"></div>
-                            <img v-if="profileData && profileData.user && profileData.user.avatar_url"
-                                :src="profileData.user.avatar_url" :alt="username" class="profile-avatar-img">
-                            <div v-else class="profile-avatar-default">
-                                <svg viewBox="0 0 24 24" fill="currentColor">
-                                    <path
-                                        d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                                </svg>
-                            </div>
-                        </div>
-
-                        <div class="profile-user-details">
-                            <span class="profile-username">{{ username }}</span>
-                            <div class="profile-coins-display" v-if="profileData">
-                                <img src="scoin.png" alt="S-Coin" class="scoin-icon">
-                                <span class="scoin-amount">{{ (profileData.user.coins || 0).toLocaleString() }}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button class="profile-close-btn" @click="closeProfile">×</button>
+                <!-- Close button (outside inner for overflow) -->
+                <div class="profile-close-dot" @click="closeProfile">
+                    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="3" x2="9" y2="9"/><line x1="9" y1="3" x2="3" y2="9"/></svg>
                 </div>
 
-                <!-- Tabs -->
-                <div class="profile-tabs" ref="profileTabs">
-                    <button class="profile-tab-btn" :class="{ active: currentTab === 'profile' }"
-                        @click="switchProfileTab('profile')" ref="tabProfile">Profil</button>
-                    <button class="profile-tab-btn" :class="{ active: currentTab === 'badges' }"
-                        @click="switchProfileTab('badges')" ref="tabBadges">Badges</button>
-                    <button class="profile-tab-btn" :class="{ active: currentTab === 'titres' }"
-                        @click="switchProfileTab('titres')" ref="tabTitres">Titres</button>
-                    <button class="profile-tab-btn" :class="{ active: currentTab === 'avatar' }"
-                        @click="switchProfileTab('avatar')" ref="tabAvatar">Avatar</button>
-                    <div class="profile-tab-indicator" ref="profileTabIndicator"></div>
+                <div class="profile-modal-inner">
+
+                <!-- S-Coins badge -->
+                <div class="profile-coin-badge" v-if="profileData">
+                    <img src="scoin.png" alt="S-Coin" class="scoin-icon" onerror="this.style.display='none'">
+                    <span class="profile-coin-val">{{ (profileData.user.coins || 0).toLocaleString() }}</span>
+                </div>
+
+                <!-- Header -->
+                <div class="profile-header">
+                    <div class="profile-avatar-wrap">
+                        <svg class="profile-xp-ring" viewBox="0 0 60 60">
+                            <circle cx="30" cy="30" r="27" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="2.5"/>
+                            <circle cx="30" cy="30" r="27" fill="none" stroke="#daa520" stroke-width="2.5" stroke-linecap="round" 
+                                :stroke-dasharray="170" 
+                                :stroke-dashoffset="profileData ? 170 - (170 * (profileData.user.levelData?.currentXp || 0) / (profileData.user.levelData?.xpForNextLevel || 1)) : 170" 
+                                transform="rotate(-90 30 30)" opacity="0.55"/>
+                        </svg>
+                        <img v-if="profileData && profileData.user && profileData.user.avatar_url"
+                            :src="profileData.user.avatar_url" :alt="username" class="profile-avatar-img">
+                        <div v-else class="profile-avatar-default">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                            </svg>
+                        </div>
+                        <div class="profile-level-dot" v-if="profileData">{{ profileData.user.level || 1 }}</div>
+                    </div>
+                    <div class="profile-user-info">
+                        <span class="profile-username">{{ username }}</span>
+                        <span class="profile-user-title">{{ profileData ? (profileData.user.display_title || profileData.titles.current.title_name) : '' }}</span>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="profile-stats-row" v-if="profileData">
+                    <div class="profile-stat">
+                        <div class="profile-stat-num">{{ profileData.user.total_games_played || 0 }}</div>
+                        <div class="profile-stat-label">parties</div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="profile-stat-num">{{ profileData.user.total_victories || 0 }}</div>
+                        <div class="profile-stat-label">victoires</div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="profile-stat-num">{{ profileData.user.win_rate || 0 }}%</div>
+                        <div class="profile-stat-label">win rate</div>
+                    </div>
                 </div>
 
                 <!-- Loading -->
@@ -1725,48 +1719,146 @@
                     <div class="profile-loading-spinner"></div>
                 </div>
 
+                <!-- Tabs -->
+                <div class="profile-tab-bar" v-if="profileData">
+                    <div class="profile-tab-item" :class="{ on: currentTab === 'profile' }" @click="switchProfileTab('profile')">Profil</div>
+                    <div class="profile-tab-item" :class="{ on: currentTab === 'titres' }" @click="switchProfileTab('titres')">Titres</div>
+                    <div class="profile-tab-item" :class="{ on: currentTab === 'avatar' }" @click="switchProfileTab('avatar')">Avatar</div>
+                    <div class="profile-tab-item" :class="{ on: currentTab === 'badges' }" @click="switchProfileTab('badges')">Badges</div>
+                    <div class="profile-tab-item" :class="{ on: currentTab === 'settings' }" @click="switchProfileTab('settings')">Param.</div>
+                </div>
+
                 <!-- Content -->
                 <div class="profile-content" v-if="profileData">
                     <!-- Tab Profil -->
-                    <div class="profile-tab-panel" :class="{ active: currentTab === 'profile' }" ref="panelProfile">
-                        <div class="profile-title-showcase" ref="titleShowcase">
-                            <div class="profile-title-label">Titre actuel</div>
-                            <div class="profile-title-value">{{ profileData.user.display_title || profileData.titles.current.title_name }}</div>
+                    <div class="profile-tab-panel" :class="{ active: currentTab === 'profile' }">
+                        <div class="profile-modes-label">Parties par mode</div>
+                        <div class="profile-modes-grid">
+                            <div class="profile-mode-card">
+                                <svg class="profile-mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                </svg>
+                                <span class="profile-mode-name">Classique</span>
+                                <span class="profile-mode-count">{{ profileData.modeStats ? profileData.modeStats.classic || 0 : 0 }}</span>
+                            </div>
+                            <div class="profile-mode-card">
+                                <svg class="profile-mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <circle cx="12" cy="14" r="8"/><path d="M12 6V2"/><path d="M9 2h6"/>
+                                </svg>
+                                <span class="profile-mode-name">BombAnime</span>
+                                <span class="profile-mode-count">{{ profileData.modeStats ? profileData.modeStats.bombanime || 0 : 0 }}</span>
+                            </div>
+                            <div class="profile-mode-card">
+                                <svg class="profile-mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/>
+                                </svg>
+                                <span class="profile-mode-name">Collect</span>
+                                <span class="profile-mode-count">{{ profileData.modeStats ? profileData.modeStats.collect || 0 : 0 }}</span>
+                            </div>
+                            <div class="profile-mode-card">
+                                <svg class="profile-mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>
+                                </svg>
+                                <span class="profile-mode-name">Trace</span>
+                                <span class="profile-mode-count">{{ profileData.modeStats ? profileData.modeStats.trace || 0 : 0 }}</span>
+                            </div>
+                            <div class="profile-mode-card">
+                                <svg class="profile-mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M6 3h12l4 6-10 13L2 9l4-6z"/><path d="M2 9h20"/>
+                                </svg>
+                                <span class="profile-mode-name">Rivalite</span>
+                                <span class="profile-mode-count">{{ profileData.modeStats ? profileData.modeStats.rivalry || 0 : 0 }}</span>
+                            </div>
                         </div>
-                        <div class="profile-stats-grid">
-                            <div class="profile-stat-card" ref="statCard1" @click="rippleEffect($event)">
-                                <div class="profile-stat-value">
-                                    <span class="counter" ref="counterGames">0</span>
+                    </div>
+
+                    <!-- Tab Titres -->
+                    <div class="profile-tab-panel" :class="{ active: currentTab === 'titres' }">
+                        <!-- Preview du titre combiné -->
+                        <div class="title-preview">
+                            <div class="title-preview-label">Titre actuel</div>
+                            <div class="title-preview-value">{{ profileData.titles.equippedPrefix }} {{ profileData.titles.equippedSuffix }}</div>
+                        </div>
+
+                        <!-- Sous-onglets Titre 1 / Titre 2 -->
+                        <div class="title-subtabs">
+                            <div class="title-subtab" :class="{ on: titleSubTab === 'prefix' }" @click="titleSubTab = 'prefix'">Titre 1</div>
+                            <div class="title-subtab" :class="{ on: titleSubTab === 'suffix' }" @click="titleSubTab = 'suffix'">Titre 2</div>
+                        </div>
+
+                        <!-- Préfixes -->
+                        <div class="title-list" v-if="titleSubTab === 'prefix'">
+                            <div v-for="title in profileData.titles.prefixes" :key="'p-' + title.id"
+                                class="title-option" 
+                                :class="{ equipped: title.title_name === profileData.titles.equippedPrefix }"
+                                @click="title.title_name !== profileData.titles.equippedPrefix && equipPrefix(title.title_name)">
+                                <div class="title-option-info">
+                                    <span class="title-option-name">{{ title.title_name }}</span>
+                                    <span class="title-option-req" v-if="title.requirement_value > 0">{{ title.requirement_value }} {{ title.title_type === 'games_played' ? 'parties' : 'victoires' }}</span>
+                                    <span class="title-option-req" v-else>Gratuit</span>
                                 </div>
-                                <div class="profile-stat-label">Parties jouées</div>
+                                <span v-if="title.premium" class="title-premium-badge">Shop</span>
+                                <span v-if="title.title_name === profileData.titles.equippedPrefix" class="title-equipped-badge">Equipé</span>
+                                <span v-else class="title-equip-btn">Equiper</span>
                             </div>
-                            <div class="profile-stat-card" ref="statCard2" @click="rippleEffect($event)">
-                                <div class="profile-stat-value">
-                                    <span class="counter" ref="counterWins">0</span>
+                        </div>
+
+                        <!-- Suffixes -->
+                        <div class="title-list" v-if="titleSubTab === 'suffix'">
+                            <div v-for="title in profileData.titles.suffixes" :key="'s-' + title.id"
+                                class="title-option"
+                                :class="{ equipped: title.title_name === profileData.titles.equippedSuffix }"
+                                @click="title.title_name !== profileData.titles.equippedSuffix && equipSuffix(title.title_name)">
+                                <div class="title-option-info">
+                                    <span class="title-option-name">{{ title.title_name }}</span>
+                                    <span class="title-option-req">Gratuit</span>
                                 </div>
-                                <div class="profile-stat-label">Victoires</div>
+                                <span v-if="title.premium" class="title-premium-badge">Shop</span>
+                                <span v-if="title.title_name === profileData.titles.equippedSuffix" class="title-equipped-badge">Equipé</span>
+                                <span v-else class="title-equip-btn">Equiper</span>
                             </div>
-                            <div class="profile-stat-card" ref="statCard3" @click="rippleEffect($event)">
-                                <div class="profile-stat-value">
-                                    <span class="counter" ref="counterWinrate">0</span>%
+                        </div>
+                    </div>
+
+                    <!-- Tab Avatar -->
+                    <div class="profile-tab-panel" :class="{ active: currentTab === 'avatar' }">
+                        <div class="profile-current-avatar">
+                            <div class="profile-avatar-preview">
+                                <img v-if="profileData && profileData.user && profileData.user.avatar_url"
+                                    :src="profileData.user.avatar_url" alt="Avatar actuel" class="profile-avatar-img-large">
+                                <div v-else class="profile-avatar-default-large">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                                    </svg>
                                 </div>
-                                <div class="profile-stat-label">Win Rate</div>
+                            </div>
+                        </div>
+                        <div class="profile-avatar-divider"><span>Choisir un avatar</span></div>
+                        <div class="profile-avatar-section" ref="avatarSectionDefault">
+                            <div class="profile-avatars-grid">
+                                <div v-for="avatar in allAvatars" :key="avatar.id" class="profile-avatar-option"
+                                    :class="{ selected: profileData?.user?.avatar_url === avatar.url, locked: avatar.locked }"
+                                    @click="!avatar.locked && selectAvatar(avatar.url)">
+                                    <img :src="avatar.url" :alt="avatar.name" class="profile-avatar-option-img">
+                                    <div class="profile-avatar-selected-badge" v-if="profileData?.user?.avatar_url === avatar.url">
+                                        <span class="check-icon">✓</span>
+                                    </div>
+                                    <div class="profile-avatar-lock" v-if="avatar.locked"><span>🔒</span></div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Tab Badges -->
-                    <div class="profile-tab-panel" :class="{ active: currentTab === 'badges' }" ref="panelBadges">
-                        <!-- Parties jouées -->
-                        <div class="profile-badges-category" ref="badgesCat1">
+                    <div class="profile-tab-panel" :class="{ active: currentTab === 'badges' }">
+                        <div class="profile-badges-category">
                             <div class="profile-category-header">
                                 <div class="profile-category-indicator"></div>
                                 <span class="profile-category-title">Parties jouées</span>
                             </div>
                             <div class="profile-badges-grid">
                                 <div v-for="badge in profileData.badges.games_played" :key="'gp-' + badge.tier"
-                                    class="profile-badge-item"
-                                    :class="{ unlocked: badge.unlocked, locked: !badge.unlocked }">
+                                    class="profile-badge-item" :class="{ unlocked: badge.unlocked, locked: !badge.unlocked }">
                                     <div class="profile-badge-icon">
                                         <span v-if="!badge.unlocked" class="profile-lock-symbol">🔒</span>
                                     </div>
@@ -1774,17 +1866,14 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Parties gagnées -->
-                        <div class="profile-badges-category" ref="badgesCat2">
+                        <div class="profile-badges-category">
                             <div class="profile-category-header">
                                 <div class="profile-category-indicator"></div>
                                 <span class="profile-category-title">Parties gagnées</span>
                             </div>
                             <div class="profile-badges-grid">
                                 <div v-for="badge in profileData.badges.games_won" :key="'gw-' + badge.tier"
-                                    class="profile-badge-item"
-                                    :class="{ unlocked: badge.unlocked, locked: !badge.unlocked }">
+                                    class="profile-badge-item" :class="{ unlocked: badge.unlocked, locked: !badge.unlocked }">
                                     <div class="profile-badge-icon">
                                         <span v-if="!badge.unlocked" class="profile-lock-symbol">🔒</span>
                                     </div>
@@ -1794,98 +1883,106 @@
                         </div>
                     </div>
 
-                    <!-- Tab Titres -->
-                    <div class="profile-tab-panel" :class="{ active: currentTab === 'titres' }" ref="panelTitres">
-                        <div class="profile-titles-list">
-                            <div v-for="title in profileData.titles.unlocked" :key="title.id" class="profile-title-row"
-                                :class="{ 
-                                    equipped: title.id === profileData.titles.current.id, 
-                                    locked: false 
-                                }"
-                                @click="title.id !== profileData.titles.current.id ? equipTitleAnimated(title.id, title.title_name) : null">
-                                <div class="profile-title-info">
-                                    <span class="profile-title-name">{{ title.title_name }}</span>
-                                    <span class="profile-title-requirement">{{ title.requirement_value }} {{
-                                        title.title_type === 'games_played' ? 'parties' : 'victoires' }}</span>
-                                </div>
-                                <span v-if="title.id === profileData.titles.current.id"
-                                    class="profile-status-badge equipped">
-                                    <span class="check-icon">✓</span> Équipé
-                                </span>
-                                <span v-else class="profile-status-badge equip">
-                                    Équiper
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-
-                    <!-- Tab Avatar -->
-                    <div class="profile-tab-panel" :class="{ active: currentTab === 'avatar' }" ref="panelAvatar">
-                        <!-- Avatar actuel -->
-                        <div class="profile-current-avatar">
-                            <div class="profile-avatar-preview">
-                                <div class="profile-avatar-ring-large"></div>
-                                <img v-if="profileData && profileData.user && profileData.user.avatar_url"
-                                    :src="profileData.user.avatar_url" alt="Avatar actuel"
-                                    class="profile-avatar-img-large">
-                                <div v-else class="profile-avatar-default-large">
-                                    <svg viewBox="0 0 24 24" fill="currentColor">
-                                        <path
-                                            d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <!-- <span class="profile-avatar-label">Avatar actuel</span> -->
-                        </div>
-
-                        <!-- Séparateur -->
-                        <div class="profile-avatar-divider">
-                            <span>Choisir un avatar</span>
-                        </div>
-
-                        <!-- Section Avatars par défaut -->
-                        <!-- Section Avatars par défaut -->
-                        <div class="profile-avatar-section" ref="avatarSectionDefault">
-                            <div class="profile-avatar-section-header">
-                                <span class="profile-avatar-section-icon">⭐</span>
-                                <span class="profile-avatar-section-title">Personnages</span>
-                            </div>
-                            <div class="profile-avatars-grid">
-                                <div v-for="avatar in defaultAvatars" :key="avatar.id" class="profile-avatar-option"
-                                    :class="{ 
-                selected: profileData?.user?.avatar_url === avatar.url,
-                locked: avatar.locked 
-            }" @click="!avatar.locked && selectAvatar(avatar.url)">
-                                    <img :src="avatar.url" :alt="avatar.name" class="profile-avatar-option-img">
-
-                                    <!-- Badge sélectionné -->
-                                    <div class="profile-avatar-selected-badge"
-                                        v-if="profileData?.user?.avatar_url === avatar.url">
-                                        <span class="check-icon">✓</span>
-                                    </div>
-
-                                    <!-- Cadenas si verrouillé -->
-                                    <div class="profile-avatar-lock" v-if="avatar.locked">
-                                        <span>🔒</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <!-- Tab Param -->
+                    <div class="profile-tab-panel" :class="{ active: currentTab === 'settings' }">
+                        <div class="profile-modes-label">Preferences de jeu</div>
+                        <div style="font-size:0.75rem;color:rgba(200,198,191,0.25);text-align:center;padding:30px 0">Bientot disponible</div>
                     </div>
                 </div>
-
-                <!-- Loading state -->
-                <div class="profile-content" v-else>
-                    <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
-                        Chargement...
-                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Toast notification pour le profil -->
         <div class="profile-toast" ref="profileToast"></div>
+
+        <!-- ============================================
+             BOUTIQUE MODAL
+             ============================================ -->
+        <div class="shop-overlay" :class="{ active: showShopModal }" @click.self="closeShop">
+            <div class="shop-modal">
+
+                <!-- Close -->
+                <div class="shop-close-dot" @click="closeShop">
+                    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="3" x2="9" y2="9"/><line x1="9" y1="3" x2="3" y2="9"/></svg>
+                </div>
+
+                <!-- Header -->
+                <div class="shop-header">
+                    <div class="shop-header-left">
+                        <div class="shop-logo"><span>✦</span></div>
+                        <div>
+                            <div class="shop-header-sub">ShonenMaster</div>
+                            <div class="shop-title-text">Boutique</div>
+                        </div>
+                    </div>
+                    <div class="shop-balance" v-if="shopUserCoins !== null">
+                        <img src="scoin.png" alt="S-Coin" class="shop-coin-img" onerror="this.outerHTML='<div style=\'width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#f5d442,#daa520,#b8860b);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:#1a1a0a;position:relative;z-index:1\'>S</div>'">
+                        <span class="shop-coin-amount">{{ shopUserCoins.toLocaleString() }}</span>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="shop-nav">
+                    <div class="shop-tabs" ref="shopTabsBar">
+                        <div class="shop-tab" :class="{ on: shopTab === 'prefix' }" @click="shopTab = 'prefix'" ref="shopTabPrefix">Titre 1</div>
+                        <div class="shop-tab" :class="{ on: shopTab === 'suffix' }" @click="shopTab = 'suffix'" ref="shopTabSuffix">Titre 2</div>
+                        <div class="shop-tab" :class="{ on: shopTab === 'avatar' }" @click="shopTab = 'avatar'" ref="shopTabAvatar">Avatars</div>
+                        <div class="shop-tabs-indicator" ref="shopTabIndicator"></div>
+                    </div>
+                </div>
+
+                <!-- Loading -->
+                <div class="shop-loading" v-if="shopLoading">
+                    <div class="profile-loading-spinner"></div>
+                </div>
+
+                <!-- Content -->
+                <div class="shop-content" v-if="!shopLoading">
+                    <div class="shop-grid">
+                        <div v-for="item in filteredShopItems" :key="item.id"
+                            class="shop-item"
+                            :class="{ owned: item.owned, locked: item.locked, 'shop-item-avatar-card': item.type === 'avatar' }"
+                            @click="!item.owned && !item.locked && buyItem(item)">
+
+                            <!-- Avatar display -->
+                            <div class="shop-item-avatar" v-if="item.type === 'avatar' && item.image_url">
+                                <div class="shop-item-avatar-inner">
+                                    <img :src="item.image_url" :alt="item.name">
+                                </div>
+                            </div>
+
+                            <!-- Title display -->
+                            <div class="shop-item-top" v-if="item.type !== 'avatar'">
+                                <div class="shop-item-name">{{ item.value || item.name }}</div>
+                            </div>
+                            <div class="shop-item-sep" v-if="item.type !== 'avatar' && !item.owned && !item.locked"></div>
+
+                            <!-- Price / status -->
+                            <div class="shop-item-bottom" v-if="item.owned">
+                                <span class="shop-item-owned-tag">Possédé</span>
+                            </div>
+                            <div class="shop-item-bottom" v-else-if="item.locked">
+                                <span class="shop-item-lock">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                    {{ item.lockReason }}
+                                </span>
+                            </div>
+                            <div class="shop-item-bottom" v-else>
+                                <div class="shop-item-price">
+                                    <img src="scoin.png" alt="S" class="shop-price-coin" onerror="this.outerHTML='<div style=\'width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,#f5d442,#daa520,#b8860b);display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:900;color:#1a1a0a\'>S</div>'">
+                                    <span>{{ item.price.toLocaleString() }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="filteredShopItems.length === 0" style="text-align:center;padding:40px 0;font-size:0.75rem;color:rgba(200,198,191,0.2)">
+                        Aucun article disponible
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- 🆕 Bouton Toggle Leaderboard (mobile uniquement) -->
         <button class="leaderboard-toggle-btn" :class="{ hidden: showLeaderboard }"
@@ -1968,9 +2065,14 @@
                 <!-- Titre -->
                 <div class="winner-title">Victoire</div>
                 
-                <!-- Nom du gagnant -->
-                <div class="winner-name" v-if="gameEndData.winner">
-                    {{ gameEndData.winner.username }}
+                <!-- Nom du gagnant avec avatar -->
+                <div class="winner-name-row" v-if="gameEndData.winner">
+                    <div class="bombanime-winner-avatar">
+                        <img :src="gameEndData.winner.avatarUrl || 'novice.png'" :alt="gameEndData.winner.username">
+                    </div>
+                    <div class="winner-name">
+                        {{ gameEndData.winner.username }}
+                    </div>
                 </div>
                 <div class="winner-name no-winner" v-else>
                     Aucun gagnant
@@ -1988,14 +2090,83 @@
                     </div>
                 </div>
                 
-                <!-- Bouton retour -->
-                <button class="winner-back-btn" @click="returnToLobby">
-                    Retour
-                </button>
+                <!-- Actions: Retour + Signaler -->
+                <div class="winner-actions-row">
+                    <button class="winner-back-btn" @click="returnToLobby">
+                        Retour
+                    </button>
+                    <button class="winner-suggest-btn" 
+                        v-if="!bombanime.suggestionUsed"
+                        @click="openPlayerSuggestion"
+                        title="Faire une suggestion de personnage">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+                            <line x1="4" y1="22" x2="4" y2="15"/>
+                        </svg>
+                        Faire une suggestion
+                    </button>
+                </div>
             </div>
             
             <!-- Particules de célébration -->
             <div class="winner-particles"></div>
+        </div>
+
+        <!-- 🎌 Modal Suggestion Joueur (accessible pendant la partie ET sur l'écran winner) -->
+        <div class="player-suggestion-overlay" v-if="bombanime.showSuggestionModal" @click.self="closePlayerSuggestion">
+            <div class="player-suggestion-modal player-suggestion-modal-multi">
+                <div class="player-suggestion-header">
+                    <span>Suggestion - {{ getFormattedSerieName() }}</span>
+                    <button class="player-suggestion-close" @click="closePlayerSuggestion">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="player-suggestion-body">
+                    <div class="player-suggestion-info">
+                        Suggestions de personnages
+                    </div>
+                    <div class="player-suggestion-list">
+                        <div class="player-suggestion-line" v-for="(line, idx) in bombanime.suggestionLines" :key="idx">
+                            <input
+                                type="text"
+                                class="player-suggestion-line-input"
+                                v-model="bombanime.suggestionLines[idx]"
+                                placeholder="Nom du personnage..."
+                                maxlength="30"
+                                @keydown.enter.prevent="onPlayerSuggestEnter(idx)"
+                            >
+                            <button
+                                class="player-suggestion-line-remove"
+                                @click="removePlayerSuggestionLine(idx)"
+                                :disabled="bombanime.suggestionLines.length <= 1"
+                                title="Supprimer cette ligne">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <button class="player-suggestion-add-btn" @click="addPlayerSuggestionLine" v-if="bombanime.suggestionLines.length < 5">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        <span>Ajouter une ligne</span>
+                    </button>
+                    <div class="player-suggestion-actions">
+                        <button class="player-suggestion-cancel" @click="closePlayerSuggestion">
+                            Annuler
+                        </button>
+                        <button class="player-suggestion-submit" @click="submitPlayerSuggestion" :disabled="!hasValidPlayerSuggestions || bombanime.suggestionSubmitting">
+                            {{ bombanime.suggestionSubmitting ? 'Envoi...' : 'Envoyer' }}
+                        </button>
+                    </div>
+                    <div class="player-suggestion-result" :class="bombanime.suggestionResultType" v-if="bombanime.suggestionResult">
+                        {{ bombanime.suggestionResult }}
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Jauge de Combo (Desktop uniquement - côté droit) -->

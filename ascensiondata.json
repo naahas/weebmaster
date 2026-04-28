@@ -1,447 +1,2807 @@
 {
   "characters": [
-    {"id": "naruto", "name": "Naruto", "anime": "Naruto", "img": "naruto_ascension.png"},
-    {"id": "sasuke", "name": "Sasuke", "anime": "Naruto", "img": "sasuke_ascension.png"},
-    {"id": "sakura", "name": "Sakura", "anime": "Naruto", "img": "sakura_ascension.png"},
-    {"id": "kakashi", "name": "Kakashi", "anime": "Naruto", "img": "kakashi_ascension.png"},
-    {"id": "itachi", "name": "Itachi", "anime": "Naruto", "img": "itachi_ascension.png"},
-    {"id": "madara", "name": "Madara", "anime": "Naruto", "img": "madara_ascension.png"},
-    {"id": "minato", "name": "Minato", "anime": "Naruto", "img": "minato_ascension.png"},
-    {"id": "hinata", "name": "Hinata", "anime": "Naruto", "img": "hinata_ascension.png"},
-    {"id": "gaara", "name": "Gaara", "anime": "Naruto", "img": "gaara_ascension.png"},
-    {"id": "jiraiya", "name": "Jiraiya", "anime": "Naruto", "img": "jiraiya_ascension.png"},
-    {"id": "orochimaru", "name": "Orochimaru", "anime": "Naruto", "img": "orochimaru_ascension.png"},
-    {"id": "rock_lee", "name": "Rock Lee", "anime": "Naruto", "img": "rock_lee_ascension.png"},
-    {"id": "obito", "name": "Obito", "anime": "Naruto", "img": "obito_ascension.png"},
-    {"id": "pain", "name": "Pain", "anime": "Naruto", "img": "pain_ascension.png"},
-    {"id": "tsunade", "name": "Tsunade", "anime": "Naruto", "img": "tsunade_ascension.png"},
+    {
+      "id": "naruto",
+      "name": "Naruto",
+      "anime": "Naruto",
+      "img": "naruto_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "sasuke",
+      "name": "Sasuke",
+      "anime": "Naruto",
+      "img": "sasuke_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "sakura",
+      "name": "Sakura",
+      "anime": "Naruto",
+      "img": "sakura_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "kakashi",
+      "name": "Kakashi",
+      "anime": "Naruto",
+      "img": "kakashi_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "itachi",
+      "name": "Itachi",
+      "anime": "Naruto",
+      "img": "itachi_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "madara",
+      "name": "Madara",
+      "anime": "Naruto",
+      "img": "madara_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "minato",
+      "name": "Minato",
+      "anime": "Naruto",
+      "img": "minato_ascension.png",
+      "aliases": [
+      ]
+    },
+    {
+      "id": "hinata",
+      "name": "Hinata",
+      "anime": "Naruto",
+      "img": "hinata_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "gaara",
+      "name": "Gaara",
+      "anime": "Naruto",
+      "img": "gaara_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "jiraiya",
+      "name": "Jiraiya",
+      "anime": "Naruto",
+      "img": "jiraya_ascension.png",
+      "aliases": [
+        "Jiraya"
+      ]
+    },
+    {
+      "id": "orochimaru",
+      "name": "Orochimaru",
+      "anime": "Naruto",
+      "img": "orochimaru_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "rock_lee",
+      "name": "Rock Lee",
+      "anime": "Naruto",
+      "img": "rocklee_ascension.png",
+      "aliases": [
+        "Lee"
+      ]
+    },
+    {
+      "id": "obito",
+      "name": "Obito",
+      "anime": "Naruto",
+      "img": "obito_ascension.png",
+      "aliases": [
+        "Tobi"
+      ]
+    },
+    {
+      "id": "tsunade",
+      "name": "Tsunade",
+      "anime": "Naruto",
+      "img": "tsunade_ascension.png",
+      "aliases": [
+      ]
+    },
 
-    {"id": "luffy", "name": "Luffy", "anime": "One Piece", "img": "luffy_ascension.png"},
-    {"id": "zoro", "name": "Zoro", "anime": "One Piece", "img": "zoro_ascension.png"},
-    {"id": "sanji", "name": "Sanji", "anime": "One Piece", "img": "sanji_ascension.png"},
-    {"id": "nami", "name": "Nami", "anime": "One Piece", "img": "nami_ascension.png"},
-    {"id": "robin", "name": "Robin", "anime": "One Piece", "img": "robin_ascension.png"},
-    {"id": "ace", "name": "Ace", "anime": "One Piece", "img": "ace_ascension.png"},
-    {"id": "shanks", "name": "Shanks", "anime": "One Piece", "img": "shanks_ascension.png"},
-    {"id": "law", "name": "Law", "anime": "One Piece", "img": "law_ascension.png"},
-    {"id": "kaido", "name": "Kaido", "anime": "One Piece", "img": "kaido_ascension.png"},
-    {"id": "big_mom", "name": "Big Mom", "anime": "One Piece", "img": "big_mom_ascension.png"},
-    {"id": "whitebeard", "name": "Barbe Blanche", "anime": "One Piece", "img": "whitebeard_ascension.png"},
-    {"id": "doflamingo", "name": "Doflamingo", "anime": "One Piece", "img": "doflamingo_ascension.png"},
-    {"id": "katakuri", "name": "Katakuri", "anime": "One Piece", "img": "katakuri_ascension.png"},
-    {"id": "boa_hancock", "name": "Boa Hancock", "anime": "One Piece", "img": "boa_hancock_ascension.png"},
-    {"id": "chopper", "name": "Chopper", "anime": "One Piece", "img": "chopper_ascension.png"},
 
-    {"id": "goku", "name": "Goku", "anime": "Dragon Ball", "img": "goku_ascension.png"},
-    {"id": "vegeta", "name": "Vegeta", "anime": "Dragon Ball", "img": "vegeta_ascension.png"},
-    {"id": "gohan", "name": "Gohan", "anime": "Dragon Ball", "img": "gohan_ascension.png"},
-    {"id": "frieza", "name": "Freezer", "anime": "Dragon Ball", "img": "frieza_ascension.png"},
-    {"id": "cell", "name": "Cell", "anime": "Dragon Ball", "img": "cell_ascension.png"},
-    {"id": "buu", "name": "Buu", "anime": "Dragon Ball", "img": "buu_ascension.png"},
-    {"id": "piccolo", "name": "Piccolo", "anime": "Dragon Ball", "img": "piccolo_ascension.png"},
-    {"id": "trunks", "name": "Trunks", "anime": "Dragon Ball", "img": "trunks_ascension.png"},
-    {"id": "krillin", "name": "Krilin", "anime": "Dragon Ball", "img": "krillin_ascension.png"},
-    {"id": "broly", "name": "Broly", "anime": "Dragon Ball", "img": "broly_ascension.png"},
-    {"id": "beerus", "name": "Beerus", "anime": "Dragon Ball", "img": "beerus_ascension.png"},
+    {
+      "id": "luffy",
+      "name": "Luffy",
+      "anime": "One Piece",
+      "img": "luffy_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "zoro",
+      "name": "Zoro",
+      "anime": "One Piece",
+      "img": "zoro_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "sanji",
+      "name": "Sanji",
+      "anime": "One Piece",
+      "img": "sanji_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "nami",
+      "name": "Nami",
+      "anime": "One Piece",
+      "img": "nami_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "robin",
+      "name": "Robin",
+      "anime": "One Piece",
+      "img": "robin_ascension.png",
+      "aliases": [
+        "nico robin"
+      ]
+    },
+    {
+      "id": "ace",
+      "name": "Ace",
+      "anime": "One Piece",
+      "img": "ace_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "shanks",
+      "name": "Shanks",
+      "anime": "One Piece",
+      "img": "shanks_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "law",
+      "name": "Law",
+      "anime": "One Piece",
+      "img": "law_ascension.png",
+      "aliases": [
+      ]
+    },
+    {
+      "id": "kaido",
+      "name": "Kaido",
+      "anime": "One Piece",
+      "img": "kaido_ascension.png",
+      "aliases": [
+        "kaidou"
+      ]
+    },
+    {
+      "id": "doflamingo",
+      "name": "Doflamingo",
+      "anime": "One Piece",
+      "img": "doflamingo_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "boa_hancock",
+      "name": "Boa Hancock",
+      "anime": "One Piece",
+      "img": "hancock_ascension.png",
+      "aliases": [
+        "Hancock"
+      ]
+    },
+    {
+      "id": "chopper",
+      "name": "Chopper",
+      "anime": "One Piece",
+      "img": "chopper_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "sabo",
+      "name": "Sabo",
+      "anime": "One Piece",
+      "img": "sabo_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "baggy",
+      "name": "Baggy",
+      "anime": "One Piece",
+      "img": "baggy_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "vivi",
+      "name": "Vivi",
+      "anime": "One Piece",
+      "img": "vivi_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "teach",
+      "name": "Teach",
+      "anime": "One Piece",
+      "img": "teach_ascension.png",
+      "aliases": [
+        "Barbe noire",
+        "Blackbeard",
+        "Marshall D Teach"
+      ]
+    },
+    {
+      "id": "goku",
+      "name": "Goku",
+      "anime": "Dragon Ball",
+      "img": "goku_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "vegeta",
+      "name": "Vegeta",
+      "anime": "Dragon Ball",
+      "img": "vegeta_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "gohan",
+      "name": "Gohan",
+      "anime": "Dragon Ball",
+      "img": "gohan_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "frieza",
+      "name": "Freezer",
+      "anime": "Dragon Ball",
+      "img": "freezer_ascension.png",
+      "aliases": [
+        "Frieza"
+      ]
+    },
+    {
+      "id": "cell",
+      "name": "Cell",
+      "anime": "Dragon Ball",
+      "img": "cell_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "buu",
+      "name": "Buu",
+      "anime": "Dragon Ball",
+      "img": "buu_ascension.png",
+      "aliases": [
+        "Boo"
+      ]
+    },
+    {
+      "id": "piccolo",
+      "name": "Piccolo",
+      "anime": "Dragon Ball",
+      "img": "piccolo_ascension.png",
+      "aliases": [
+        "petit coeur",
+        "picolo"
+      ]
+    },
+    {
+      "id": "trunks",
+      "name": "Trunks",
+      "anime": "Dragon Ball",
+      "img": "trunks_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "krillin",
+      "name": "Krilin",
+      "anime": "Dragon Ball",
+      "img": "krillin_ascension.png",
+      "aliases": [
+        "Krilin"
+      ]
+    },
+    {
+      "id": "broly",
+      "name": "Broly",
+      "anime": "Dragon Ball",
+      "img": "broly_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "C-18",
+      "name": "C-18",
+      "anime": "Dragon Ball",
+      "img": "c18_ascension.png",
+      "aliases": [
+        "C18",
+        "C 18",
+        "18"
+      ]
+    },
 
-    {"id": "ichigo", "name": "Ichigo", "anime": "Bleach", "img": "ichigo_ascension.png"},
-    {"id": "rukia", "name": "Rukia", "anime": "Bleach", "img": "rukia_ascension.png"},
-    {"id": "aizen", "name": "Aizen", "anime": "Bleach", "img": "aizen_ascension.png"},
-    {"id": "byakuya", "name": "Byakuya", "anime": "Bleach", "img": "byakuya_ascension.png"},
-    {"id": "toshiro", "name": "Toshiro", "anime": "Bleach", "img": "toshiro_ascension.png"},
-    {"id": "grimmjow", "name": "Grimmjow", "anime": "Bleach", "img": "grimmjow_ascension.png"},
-    {"id": "ulquiorra", "name": "Ulquiorra", "anime": "Bleach", "img": "ulquiorra_ascension.png"},
-    {"id": "renji", "name": "Renji", "anime": "Bleach", "img": "renji_ascension.png"},
-    {"id": "zaraki", "name": "Zaraki", "anime": "Bleach", "img": "zaraki_ascension.png"},
-    {"id": "urahara", "name": "Urahara", "anime": "Bleach", "img": "urahara_ascension.png"},
+    {
+      "id": "Goten",
+      "name": "Goten",
+      "anime": "Dragon Ball",
+      "img": "goten_ascension.png",
+      "aliases": [
+      ]
+    },
 
-    {"id": "deku", "name": "Deku", "anime": "My Hero Academia", "img": "deku_ascension.png"},
-    {"id": "bakugo", "name": "Bakugo", "anime": "My Hero Academia", "img": "bakugo_ascension.png"},
-    {"id": "todoroki", "name": "Todoroki", "anime": "My Hero Academia", "img": "todoroki_ascension.png"},
-    {"id": "all_might", "name": "All Might", "anime": "My Hero Academia", "img": "all_might_ascension.png"},
-    {"id": "shigaraki", "name": "Shigaraki", "anime": "My Hero Academia", "img": "shigaraki_ascension.png"},
-    {"id": "endeavor", "name": "Endeavor", "anime": "My Hero Academia", "img": "endeavor_ascension.png"},
-    {"id": "hawks", "name": "Hawks", "anime": "My Hero Academia", "img": "hawks_ascension.png"},
-    {"id": "uraraka", "name": "Uraraka", "anime": "My Hero Academia", "img": "uraraka_ascension.png"},
+    {
+      "id": "ichigo",
+      "name": "Ichigo",
+      "anime": "Bleach",
+      "img": "ichigo_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "rukia",
+      "name": "Rukia",
+      "anime": "Bleach",
+      "img": "rukia_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "aizen",
+      "name": "Aizen",
+      "anime": "Bleach",
+      "img": "aizen_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "byakuya",
+      "name": "Byakuya",
+      "anime": "Bleach",
+      "img": "byakuya_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "toshiro",
+      "name": "Toshiro",
+      "anime": "Bleach",
+      "img": "toshiro_ascension.png",
+      "aliases": [
+        "Hitsugaya"
+      ]
+    },
+    {
+      "id": "grimmjow",
+      "name": "Grimmjow",
+      "anime": "Bleach",
+      "img": "grimmjow_ascension.png",
+      "aliases": [
+        "Grimjow"
+      ]
+    },
+    {
+      "id": "ulquiorra",
+      "name": "Ulquiorra",
+      "anime": "Bleach",
+      "img": "ulquiorra_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "renji",
+      "name": "Renji",
+      "anime": "Bleach",
+      "img": "renji_ascension.png",
+      "aliases": [
+        "abarai"
+      ]
+    },
+    {
+      "id": "zaraki",
+      "name": "Zaraki",
+      "anime": "Bleach",
+      "img": "zaraki_ascension.png",
+      "aliases": [
+        "kenpachi"
+      ]
+    },
+    {
+      "id": "urahara",
+      "name": "Urahara",
+      "anime": "Bleach",
+      "img": "urahara_ascension.png",
+      "aliases": [
+        "kisuke"
+      ]
+    },
+    {
+      "id": "Gin",
+      "name": "Gin",
+      "anime": "Bleach",
+      "img": "gin_ascension.png",
+      "aliases": [
+        "ichimaru"
+      ]
+    },
+    {
+      "id": "Orihime",
+      "name": "Orihime",
+      "anime": "Bleach",
+      "img": "orihime_ascension.png",
+      "aliases": [
+        "inoue"
+      ]
+    },
+    {
+      "id": "deku",
+      "name": "Deku",
+      "anime": "My Hero Academia",
+      "img": "deku_ascension.png",
+      "aliases": [
+        "Izuku",
+        "Midoriya"
+      ]
+    },
+    {
+      "id": "bakugo",
+      "name": "Bakugo",
+      "anime": "My Hero Academia",
+      "img": "bakugo_ascension.png",
+      "aliases": [
+        "Katsuki"
+      ]
+    },
+    {
+      "id": "todoroki",
+      "name": "Todoroki",
+      "anime": "My Hero Academia",
+      "img": "shoto_ascension.png",
+      "aliases": [
+        "Shoto"
+      ]
+    },
+    {
+      "id": "shigaraki",
+      "name": "Shigaraki",
+      "anime": "My Hero Academia",
+      "img": "shigaraki_ascension.png",
+      "aliases": [
+        "Tomura"
+      ]
+    },
+    {
+      "id": "endeavor",
+      "name": "Endeavor",
+      "anime": "My Hero Academia",
+      "img": "endeavor_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "hawks",
+      "name": "Hawks",
+      "anime": "My Hero Academia",
+      "img": "hawks_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "uraraka",
+      "name": "Uraraka",
+      "anime": "My Hero Academia",
+      "img": "ochaco_ascension.png",
+      "aliases": [
+        "Ochaco"
+      ]
+    },
+    {
+      "id": "denki",
+      "name": "Denki",
+      "anime": "My Hero Academia",
+      "img": "denki_ascension.png",
+      "aliases": [
+      ]
+    },
+    
+    {
+      "id": "kirishima",
+      "name": "Kirishima",
+      "anime": "My Hero Academia",
+      "img": "kirishima_ascension.png",
+      "aliases": [
+      ]
+    },
 
-    {"id": "gojo", "name": "Gojo", "anime": "Jujutsu Kaisen", "img": "gojo_ascension.png"},
-    {"id": "itadori", "name": "Itadori", "anime": "Jujutsu Kaisen", "img": "itadori_ascension.png"},
-    {"id": "sukuna", "name": "Sukuna", "anime": "Jujutsu Kaisen", "img": "sukuna_ascension.png"},
-    {"id": "megumi", "name": "Megumi", "anime": "Jujutsu Kaisen", "img": "megumi_ascension.png"},
-    {"id": "nobara", "name": "Nobara", "anime": "Jujutsu Kaisen", "img": "nobara_ascension.png"},
-    {"id": "todo", "name": "Todo", "anime": "Jujutsu Kaisen", "img": "todo_ascension.png"},
-    {"id": "nanami", "name": "Nanami", "anime": "Jujutsu Kaisen", "img": "nanami_ascension.png"},
-    {"id": "toji", "name": "Toji", "anime": "Jujutsu Kaisen", "img": "toji_ascension.png"},
+    {
+      "id": "overhaul",
+      "name": "Overhaul",
+      "anime": "My Hero Academia",
+      "img": "overhaul_ascension.png",
+      "aliases": [
+      ]
+    },
+    {
+      "id": "mirio",
+      "name": "Mirio",
+      "anime": "My Hero Academia",
+      "img": "mirio_ascension.png",
+      "aliases": [
+        "lemillion",
+        "lemilion"
+      ]
+    },
+    {
+      "id": "toga",
+      "name": "Toga",
+      "anime": "My Hero Academia",
+      "img": "toga_ascension.png",
+      "aliases": [
+        "himiko"
+      ]
+    },
+    {
+      "id": "gojo",
+      "name": "Gojo",
+      "anime": "Jujutsu Kaisen",
+      "img": "gojo_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "itadori",
+      "name": "Itadori",
+      "anime": "Jujutsu Kaisen",
+      "img": "yuji_ascension.png",
+      "aliases": [
+        "Yuji"
+      ]
+    },
+    {
+      "id": "sukuna",
+      "name": "Sukuna",
+      "anime": "Jujutsu Kaisen",
+      "img": "sukuna_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "megumi",
+      "name": "Megumi",
+      "anime": "Jujutsu Kaisen",
+      "img": "megumi_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "nobara",
+      "name": "Nobara",
+      "anime": "Jujutsu Kaisen",
+      "img": "nobara_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "todo",
+      "name": "Todo",
+      "anime": "Jujutsu Kaisen",
+      "img": "todo_ascension.png",
+      "aliases": [
+        "aoi"
+      ]
+    },
+    {
+      "id": "nanami",
+      "name": "Nanami",
+      "anime": "Jujutsu Kaisen",
+      "img": "nanami_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "toji",
+      "name": "Toji",
+      "anime": "Jujutsu Kaisen",
+      "img": "toji_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "nanami",
+      "name": "Nanami",
+      "anime": "Jujutsu Kaisen",
+      "img": "nanami_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "mahito",
+      "name": "Mahito",
+      "anime": "Jujutsu Kaisen",
+      "img": "mahito_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "choso",
+      "name": "Choso",
+      "anime": "Jujutsu Kaisen",
+      "img": "choso_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "yuta",
+      "name": "Yuta",
+      "anime": "Jujutsu Kaisen",
+      "img": "yuta_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "geto",
+      "name": "Geto",
+      "anime": "Jujutsu Kaisen",
+      "img": "geto_ascension.png",
+      "aliases": []
+    },
 
-    {"id": "tanjiro", "name": "Tanjiro", "anime": "Demon Slayer", "img": "tanjiro_ascension.png"},
-    {"id": "nezuko", "name": "Nezuko", "anime": "Demon Slayer", "img": "nezuko_ascension.png"},
-    {"id": "zenitsu", "name": "Zenitsu", "anime": "Demon Slayer", "img": "zenitsu_ascension.png"},
-    {"id": "inosuke", "name": "Inosuke", "anime": "Demon Slayer", "img": "inosuke_ascension.png"},
-    {"id": "rengoku", "name": "Rengoku", "anime": "Demon Slayer", "img": "rengoku_ascension.png"},
-    {"id": "muzan", "name": "Muzan", "anime": "Demon Slayer", "img": "muzan_ascension.png"},
-    {"id": "akaza", "name": "Akaza", "anime": "Demon Slayer", "img": "akaza_ascension.png"},
-    {"id": "giyu", "name": "Giyu", "anime": "Demon Slayer", "img": "giyu_ascension.png"},
 
-    {"id": "gon", "name": "Gon", "anime": "Hunter x Hunter", "img": "gon_ascension.png"},
-    {"id": "killua", "name": "Killua", "anime": "Hunter x Hunter", "img": "killua_ascension.png"},
-    {"id": "kurapika", "name": "Kurapika", "anime": "Hunter x Hunter", "img": "kurapika_ascension.png"},
-    {"id": "hisoka", "name": "Hisoka", "anime": "Hunter x Hunter", "img": "hisoka_ascension.png"},
-    {"id": "meruem", "name": "Meruem", "anime": "Hunter x Hunter", "img": "meruem_ascension.png"},
-    {"id": "netero", "name": "Netero", "anime": "Hunter x Hunter", "img": "netero_ascension.png"},
-    {"id": "leorio", "name": "Leorio", "anime": "Hunter x Hunter", "img": "leorio_ascension.png"},
-    {"id": "chrollo", "name": "Chrollo", "anime": "Hunter x Hunter", "img": "chrollo_ascension.png"},
+    {
+      "id": "tanjiro",
+      "name": "Tanjiro",
+      "anime": "Demon Slayer",
+      "img": "tanjiro_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "nezuko",
+      "name": "Nezuko",
+      "anime": "Demon Slayer",
+      "img": "nezuko_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "zenitsu",
+      "name": "Zenitsu",
+      "anime": "Demon Slayer",
+      "img": "zenitsu_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "inosuke",
+      "name": "Inosuke",
+      "anime": "Demon Slayer",
+      "img": "inosuke_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "rengoku",
+      "name": "Rengoku",
+      "anime": "Demon Slayer",
+      "img": "rengoku_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "muzan",
+      "name": "Muzan",
+      "anime": "Demon Slayer",
+      "img": "muzan_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "akaza",
+      "name": "Akaza",
+      "anime": "Demon Slayer",
+      "img": "akaza_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "giyu",
+      "name": "Giyu",
+      "anime": "Demon Slayer",
+      "img": "giyu_ascension.png",
+      "aliases": [
+        "tomioka"
+      ]
+    },
+    {
+      "id": "shinobu",
+      "name": "Shinobu",
+      "anime": "Demon Slayer",
+      "img": "shinobu_ascension.png",
+      "aliases": [
+      ]
+    },
+    {
+      "id": "tokito",
+      "name": "Tokito",
+      "anime": "Demon Slayer",
+      "img": "tokito_ascension.png",
+      "aliases": [
+        "muichiro"
+      ]
+    },
+    {
+      "id": "gyomei",
+      "name": "Gyomei",
+      "anime": "Demon Slayer",
+      "img": "gyomei_ascension.png",
+      "aliases": [
+      ]
+    },
+    {
+      "id": "sanemi",
+      "name": "Sanemi",
+      "anime": "Demon Slayer",
+      "img": "sanemi_ascension.png",
+      "aliases": [
+      ]
+    },
+    {
+      "id": "muzan",
+      "name": "Muzan",
+      "anime": "Demon Slayer",
+      "img": "muzan_ascension.png",
+      "aliases": [
+      ]
+    },
+    {
+      "id": "doma",
+      "name": "Doma",
+      "anime": "Demon Slayer",
+      "img": "doma_ascension.png",
+      "aliases": [
+        "Douma"
+      ]
+    },
+    {
+      "id": "obanai",
+      "name": "Obanai",
+      "anime": "Demon Slayer",
+      "img": "obanai_ascension.png",
+      "aliases": [
+      ]
+    },
+    {
+      "id": "mitsuri",
+      "name": "Mitsuri",
+      "anime": "Demon Slayer",
+      "img": "mitsuri_ascension.png",
+      "aliases": [
+        "kanroji"
+      ]
+    },
+    {
+      "id": "gon",
+      "name": "Gon",
+      "anime": "Hunter x Hunter",
+      "img": "gon_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "killua",
+      "name": "Killua",
+      "anime": "Hunter x Hunter",
+      "img": "killua_ascension.png",
+      "aliases": [
+        "kirua"
+      ]
+    },
+    {
+      "id": "kurapika",
+      "name": "Kurapika",
+      "anime": "Hunter x Hunter",
+      "img": "kurapika_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "hisoka",
+      "name": "Hisoka",
+      "anime": "Hunter x Hunter",
+      "img": "hisoka_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "meruem",
+      "name": "Meruem",
+      "anime": "Hunter x Hunter",
+      "img": "meruem_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "netero",
+      "name": "Netero",
+      "anime": "Hunter x Hunter",
+      "img": "netero_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "leorio",
+      "name": "Leorio",
+      "anime": "Hunter x Hunter",
+      "img": "leorio_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "chrollo",
+      "name": "Chrollo",
+      "anime": "Hunter x Hunter",
+      "img": "chrollo_ascension.png",
+      "aliases": [
+        "kuroro"
+      ]
+    },
+    {
+      "id": "feitan",
+      "name": "Feitan",
+      "anime": "Hunter x Hunter",
+      "img": "feitan_ascension.png",
+      "aliases": [
+      ]
+    },
+    {
+      "id": "illumi",
+      "name": "Illumi",
+      "anime": "Hunter x Hunter",
+      "img": "illumi_ascension.png",
+      "aliases": [
+      ]
+    },
+    {
+      "id": "eren",
+      "name": "Eren",
+      "anime": "SNK",
+      "img": "eren_ascension.png",
+      "aliases": [
+      ]
+    },
+    {
+      "id": "mikasa",
+      "name": "Mikasa",
+      "anime": "SNK",
+      "img": "mikasa_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "armin",
+      "name": "Armin",
+      "anime": "SNK",
+      "img": "armin_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "levi",
+      "name": "Levi",
+      "anime": "SNK",
+      "img": "levi_ascension.png",
+      "aliases": [
+        "livaille",
+        "rivaille",
+        "livai"
+      ]
+    },
+    {
+      "id": "erwin",
+      "name": "Erwin",
+      "anime": "SNK",
+      "img": "erwin_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "reiner",
+      "name": "Reiner",
+      "anime": "SNK",
+      "img": "reiner_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "annie",
+      "name": "Annie",
+      "anime": "SNK",
+      "img": "annie_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "jean",
+      "name": "Jean",
+      "anime": "SNK",
+      "img": "jean_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "sasha",
+      "name": "Sasha",
+      "anime": "SNK",
+      "img": "sasha_ascension.png",
+      "aliases": [
+        "sacha",
+        "sascha"
+      ]
+    },
+    {
+      "id": "ymir",
+      "name": "Ymir",
+      "anime": "SNK",
+      "img": "ymir_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "krista",
+      "name": "Krista",
+      "anime": "SNK",
+      "img": "krista_ascension.png",
+      "aliases": [
+        "historia"
+      ]
+    },
+    {
+      "id": "jotaro",
+      "name": "Jotaro",
+      "anime": "JoJo",
+      "img": "jotaro_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "dio",
+      "name": "Dio",
+      "anime": "JoJo",
+      "img": "dio_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "giorno",
+      "name": "Giorno",
+      "anime": "JoJo",
+      "img": "giorno_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "josuke",
+      "name": "Josuke",
+      "anime": "JoJo",
+      "img": "josuke_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "joseph",
+      "name": "Joseph",
+      "anime": "JoJo",
+      "img": "joseph_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "jolyne",
+      "name": "Jolyne",
+      "anime": "JoJo",
+      "img": "jolyne_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "bruno",
+      "name": "Bruno",
+      "anime": "JoJo",
+      "img": "bruno_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "polnareff",
+      "name": "Polnareff",
+      "anime": "JoJo",
+      "img": "polnareff_ascension.png",
+      "aliases": [
+        "jean pierre",
+        "jean-pierre"
+      ]
+    },
+    {
+      "id": "johnny",
+      "name": "Johnny",
+      "anime": "JoJo",
+      "img": "johnny_ascension.png",
+      "aliases": [
+      ]
+    },
+    {
+      "id": "kira",
+      "name": "Kira",
+      "anime": "JoJo",
+      "img": "kira_ascension.png",
+      "aliases": [
+      ]
+    },
+    {
+      "id": "diavolo",
+      "name": "Diavolo",
+      "anime": "JoJo",
+      "img": "diavolo_ascension.png",
+      "aliases": [
+      ]
+    },
+    {
+      "id": "gyro",
+      "name": "Gyro",
+      "anime": "JoJo",
+      "img": "gyro_ascension.png",
+      "aliases": [
+      ]
+    },
+    {
+      "id": "edward",
+      "name": "Edward",
+      "anime": "FMA",
+      "img": "edward_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "alphonse",
+      "name": "Alphonse",
+      "anime": "FMA",
+      "img": "alphonse_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "roy_mustang",
+      "name": "Roy Mustang",
+      "anime": "FMA",
+      "img": "roy_ascension.png",
+      "aliases": [
+        "Mustang",
+        "Roy"
+      ]
+    },
+    {
+      "id": "scar_fma",
+      "name": "Scar",
+      "anime": "FMA",
+      "img": "scar_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "winry",
+      "name": "Winry",
+      "anime": "FMA",
+      "img": "winry_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "lust",
+      "name": "Lust",
+      "anime": "FMA",
+      "img": "lust_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "envy",
+      "name": "Envy",
+      "anime": "FMA",
+      "img": "envy_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "natsu",
+      "name": "Natsu",
+      "anime": "Fairy Tail",
+      "img": "natsu_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "erza",
+      "name": "Erza",
+      "anime": "Fairy Tail",
+      "img": "erza_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "gray",
+      "name": "Gray",
+      "anime": "Fairy Tail",
+      "img": "gray_ascension.png",
+      "aliases": [
+      ]
+    },
+    {
+      "id": "laxus",
+      "name": "Laxus",
+      "anime": "Fairy Tail",
+      "img": "laxus_ascension.png",
+      "aliases": [
+        "luxus"
+      ]
+    },
+    {
+      "id": "juvia",
+      "name": "Juvia",
+      "anime": "Fairy Tail",
+      "img": "juvia_ascension.png",
+      "aliases": [
+        "jubia"
+      ]
+    },
+    {
+      "id": "gajeel",
+      "name": "Gajeel",
+      "anime": "Fairy Tail",
+      "img": "gajeel_ascension.png",
+      "aliases": [
+      ]
+    },
+    {
+      "id": "zeref",
+      "name": "Zeref",
+      "anime": "Fairy Tail",
+      "img": "zeref_ascension.png",
+      "aliases": [
+        "zeleph"
+      ]
+    },
+    {
+      "id": "lucy",
+      "name": "Lucy",
+      "anime": "Fairy Tail",
+      "img": "lucy_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "asta",
+      "name": "Asta",
+      "anime": "Black Clover",
+      "img": "asta_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "yuno",
+      "name": "Yuno",
+      "anime": "Black Clover",
+      "img": "yuno_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "yami",
+      "name": "Yami",
+      "anime": "Black Clover",
+      "img": "yami_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "denji",
+      "name": "Denji",
+      "anime": "Chainsaw Man",
+      "img": "denji_ascension.png",
+      "aliases": [
+        "Chainsaw Man"
+      ]
+    },
+    {
+      "id": "makima",
+      "name": "Makima",
+      "anime": "Chainsaw Man",
+      "img": "makima_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "power",
+      "name": "Power",
+      "anime": "Chainsaw Man",
+      "img": "power_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "aki",
+      "name": "Aki",
+      "anime": "Chainsaw Man",
+      "img": "aki_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "reze",
+      "name": "Reze",
+      "anime": "Chainsaw Man",
+      "img": "reze_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "light",
+      "name": "Light",
+      "anime": "Death Note",
+      "img": "light_ascension.png",
+      "aliases": [
+        "Yagami",
+        "Kira"
+      ]
+    },
+    {
+      "id": "l",
+      "name": "L",
+      "anime": "Death Note",
+      "img": "l_ascension.png",
+      "aliases": [
+        "L",
+        "Ryuzaki",
+        "Lawliet"
+      ]
+    },
+    {
+      "id": "kaneki",
+      "name": "Kaneki",
+      "anime": "Tokyo Ghoul",
+      "img": "kaneki_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "gintoki",
+      "name": "Gintoki",
+      "anime": "Gintama",
+      "img": "gintoki_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "tsuna",
+      "name": "Tsuna",
+      "anime": "Reborn",
+      "img": "tsuna_ascension.png",
+      "aliases": [
+        "sawada"
+      ]
+    },
+    {
+      "id": "frieren",
+      "name": "Frieren",
+      "anime": "Frieren",
+      "img": "frieren_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "thorfinn",
+      "name": "Thorfinn",
+      "anime": "Vinland Saga",
+      "img": "thorfinn_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "senku",
+      "name": "Senku",
+      "anime": "Dr. Stone",
+      "img": "senku_ascension.png",
+      "aliases": []
+    },
+    {
+      "id": "shoyo",
+      "name": "Hinata",
+      "anime": "Haikyuu",
+      "img": "shoyo_ascension.png",
+      "aliases": [
+        "shoyo"
+      ]
+    },
+    {
+      "id": "kageyama",
+      "name": "Kageyama",
+      "anime": "Haikyuu",
+      "img": "kageyama_ascension.png",
+      "aliases": []
+    }
+    ,
+    {
+      "id": "nishinoya",
+      "name": "Nishinoya",
+      "anime": "Haikyuu",
+      "img": "nishinoya_ascension.png",
+      "aliases": [
+        "noya"
+      ]
+    }
 
-    {"id": "eren", "name": "Eren", "anime": "SNK", "img": "eren_ascension.png"},
-    {"id": "mikasa", "name": "Mikasa", "anime": "SNK", "img": "mikasa_ascension.png"},
-    {"id": "armin", "name": "Armin", "anime": "SNK", "img": "armin_ascension.png"},
-    {"id": "levi", "name": "Levi", "anime": "SNK", "img": "levi_ascension.png"},
-    {"id": "erwin", "name": "Erwin", "anime": "SNK", "img": "erwin_ascension.png"},
-    {"id": "reiner", "name": "Reiner", "anime": "SNK", "img": "reiner_ascension.png"},
-    {"id": "annie", "name": "Annie", "anime": "SNK", "img": "annie_ascension.png"},
 
-    {"id": "jotaro", "name": "Jotaro", "anime": "JoJo", "img": "jotaro_ascension.png"},
-    {"id": "dio", "name": "Dio", "anime": "JoJo", "img": "dio_ascension.png"},
-    {"id": "giorno", "name": "Giorno", "anime": "JoJo", "img": "giorno_ascension.png"},
-    {"id": "josuke", "name": "Josuke", "anime": "JoJo", "img": "josuke_ascension.png"},
-    {"id": "joseph", "name": "Joseph", "anime": "JoJo", "img": "joseph_ascension.png"},
-    {"id": "jolyne", "name": "Jolyne", "anime": "JoJo", "img": "jolyne_ascension.png"},
 
-    {"id": "edward", "name": "Edward", "anime": "FMA", "img": "edward_ascension.png"},
-    {"id": "alphonse", "name": "Alphonse", "anime": "FMA", "img": "alphonse_ascension.png"},
-    {"id": "roy_mustang", "name": "Roy Mustang", "anime": "FMA", "img": "roy_mustang_ascension.png"},
-    {"id": "scar_fma", "name": "Scar", "anime": "FMA", "img": "scar_fma_ascension.png"},
+    ,
+    {
+      "id": "saber",
+      "name": "Saber",
+      "anime": "Fate",
+      "img": "saber_ascension.png",
+      "aliases": [
+      ]
+    }
 
-    {"id": "natsu", "name": "Natsu", "anime": "Fairy Tail", "img": "natsu_ascension.png"},
-    {"id": "erza", "name": "Erza", "anime": "Fairy Tail", "img": "erza_ascension.png"},
-    {"id": "gray", "name": "Gray", "anime": "Fairy Tail", "img": "gray_ascension.png"},
-    {"id": "lucy", "name": "Lucy", "anime": "Fairy Tail", "img": "lucy_ascension.png"},
 
-    {"id": "asta", "name": "Asta", "anime": "Black Clover", "img": "asta_ascension.png"},
-    {"id": "yuno", "name": "Yuno", "anime": "Black Clover", "img": "yuno_ascension.png"},
-    {"id": "yami", "name": "Yami", "anime": "Black Clover", "img": "yami_ascension.png"},
+    ,
+    {
+      "id": "rin",
+      "name": "Rin",
+      "anime": "Fate",
+      "img": "rin_ascension.png",
+      "aliases": [
+      ]
+    }
 
-    {"id": "denji", "name": "Denji", "anime": "Chainsaw Man", "img": "denji_ascension.png"},
-    {"id": "makima", "name": "Makima", "anime": "Chainsaw Man", "img": "makima_ascension.png"},
-    {"id": "power", "name": "Power", "anime": "Chainsaw Man", "img": "power_ascension.png"},
-    {"id": "aki", "name": "Aki", "anime": "Chainsaw Man", "img": "aki_ascension.png"},
 
-    {"id": "light", "name": "Light", "anime": "Death Note", "img": "light_ascension.png"},
-    {"id": "l", "name": "L", "anime": "Death Note", "img": "l_ascension.png"},
-    {"id": "ryuk", "name": "Ryuk", "anime": "Death Note", "img": "ryuk_ascension.png"},
+    ,
+    {
+      "id": "sakuragi",
+      "name": "Sakuragi",
+      "anime": "Slam Dunk",
+      "img": "sakuragi_ascension.png",
+      "aliases": [
+        "hanamichi"
+      ]
+    }
 
-    {"id": "kaneki", "name": "Kaneki", "anime": "Tokyo Ghoul", "img": "kaneki_ascension.png"},
-    {"id": "touka", "name": "Touka", "anime": "Tokyo Ghoul", "img": "touka_ascension.png"},
 
-    {"id": "gintoki", "name": "Gintoki", "anime": "Gintama", "img": "gintoki_ascension.png"},
-    {"id": "kagura", "name": "Kagura", "anime": "Gintama", "img": "kagura_ascension.png"},
+    ,
+    {
+      "id": "isagi",
+      "name": "Isagi",
+      "anime": "Blue Lock",
+      "img": "isagi_ascension.png",
+      "aliases": [
+      ]
+    }
 
-    {"id": "tsuna", "name": "Tsuna", "anime": "Reborn", "img": "tsuna_ascension.png"},
-    {"id": "reborn_char", "name": "Reborn", "anime": "Reborn", "img": "reborn_char_ascension.png"},
-    {"id": "hibari", "name": "Hibari", "anime": "Reborn", "img": "hibari_ascension.png"},
 
-    {"id": "frieren", "name": "Frieren", "anime": "Frieren", "img": "frieren_ascension.png"},
-    {"id": "fern", "name": "Fern", "anime": "Frieren", "img": "fern_ascension.png"},
-    {"id": "himmel", "name": "Himmel", "anime": "Frieren", "img": "himmel_ascension.png"},
+    ,
+    {
+      "id": "bachira",
+      "name": "Bachira",
+      "anime": "Blue Lock",
+      "img": "bachira_ascension.png",
+      "aliases": [
+      ]
+    }
 
-    {"id": "kaguya", "name": "Kaguya", "anime": "Kaguya-sama", "img": "kaguya_ascension.png"},
-    {"id": "shirogane", "name": "Shirogane", "anime": "Kaguya-sama", "img": "shirogane_ascension.png"},
-    {"id": "chika", "name": "Chika", "anime": "Kaguya-sama", "img": "chika_ascension.png"},
 
-    {"id": "loid", "name": "Loid", "anime": "Spy x Family", "img": "loid_ascension.png"},
-    {"id": "yor", "name": "Yor", "anime": "Spy x Family", "img": "yor_ascension.png"},
-    {"id": "anya", "name": "Anya", "anime": "Spy x Family", "img": "anya_ascension.png"},
+    ,
+    {
+      "id": "nagi",
+      "name": "Nagi",
+      "anime": "Blue Lock",
+      "img": "nagi_ascension.png",
+      "aliases": [
+      ]
+    }
 
-    {"id": "sung_jinwoo", "name": "Sung Jinwoo", "anime": "Solo Leveling", "img": "sung_jinwoo_ascension.png"},
 
-    {"id": "saitama", "name": "Saitama", "anime": "One Punch Man", "img": "saitama_ascension.png"},
-    {"id": "genos", "name": "Genos", "anime": "One Punch Man", "img": "genos_ascension.png"},
+    ,
+    {
+      "id": "rinitoshi",
+      "name": "Rin",
+      "anime": "Blue Lock",
+      "img": "rinitoshi_ascension.png",
+      "aliases": [
+        "itoshi"
+      ]
+    }
 
-    {"id": "mob", "name": "Mob", "anime": "Mob Psycho 100", "img": "mob_ascension.png"},
+    ,
+    {
+      "id": "chigiri",
+      "name": "chigiri",
+      "anime": "Blue Lock",
+      "img": "chigiri_ascension.png",
+      "aliases": [
+      ]
+    }
 
-    {"id": "kirito", "name": "Kirito", "anime": "SAO", "img": "kirito_ascension.png"},
-    {"id": "asuna", "name": "Asuna", "anime": "SAO", "img": "asuna_ascension.png"},
 
-    {"id": "subaru", "name": "Subaru", "anime": "Re:Zero", "img": "subaru_ascension.png"},
-    {"id": "emilia", "name": "Emilia", "anime": "Re:Zero", "img": "emilia_ascension.png"},
-    {"id": "rem", "name": "Rem", "anime": "Re:Zero", "img": "rem_ascension.png"},
+    ,
+    {
+      "id": "baro",
+      "name": "baro",
+      "anime": "Blue Lock",
+      "img": "baro_ascension.png",
+      "aliases": [
+        "barou"
+      ]
+    }
 
-    {"id": "thorfinn", "name": "Thorfinn", "anime": "Vinland Saga", "img": "thorfinn_ascension.png"},
-    {"id": "askeladd", "name": "Askeladd", "anime": "Vinland Saga", "img": "askeladd_ascension.png"},
 
-    {"id": "senku", "name": "Senku", "anime": "Dr. Stone", "img": "senku_ascension.png"},
+    ,
+    {
+      "id": "nana",
+      "name": "nana",
+      "anime": "Nana",
+      "img": "nana_ascension.png",
+      "aliases": [
+      ]
+    }
 
-    {"id": "hinata_haikyuu", "name": "Hinata", "anime": "Haikyuu", "img": "hinata_haikyuu_ascension.png"},
-    {"id": "kageyama", "name": "Kageyama", "anime": "Haikyuu", "img": "kageyama_ascension.png"},
 
-    {"id": "okarun", "name": "Okarun", "anime": "Dandadan", "img": "okarun_ascension.png"},
-    {"id": "momo", "name": "Momo", "anime": "Dandadan", "img": "momo_ascension.png"}
+    ,
+    {
+      "id": "lucy2",
+      "name": "Lucy",
+      "anime": "Cyberpunk Edgerunners",
+      "img": "lucy2_ascension.png",
+      "aliases": [
+      ]
+    }
+
+
+    ,
+    {
+      "id": "limule",
+      "name": "limule",
+      "anime": "Tensura",
+      "img": "limule_ascension.png",
+      "aliases": [
+        "rimuru"
+      ]
+    }
+
+
+    ,
+    {
+      "id": "onizuka",
+      "name": "Onizuka",
+      "anime": "GTO",
+      "img": "onizuka_ascension.png",
+      "aliases": [
+      ]
+    }
+
+
+    ,
+    {
+      "id": "sakuramatou",
+      "name": "Sakura",
+      "anime": "Fate",
+      "img": "sakuramatou_ascension.png",
+      "aliases": [
+
+      ]
+    }
+
+
+    ,
+    {
+      "id": "lancer",
+      "name": "Lancer",
+      "anime": "Fate",
+      "img": "lancer_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+
+    ,
+    {
+      "id": "archer",
+      "name": "Archer",
+      "anime": "Fate",
+      "img": "archer_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+
+    ,
+    {
+      "id": "gilgamesh",
+      "name": "Gilgamesh",
+      "anime": "Fate",
+      "img": "gilgamesh_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+
+    ,
+    {
+      "id": "anya",
+      "name": "Anya",
+      "anime": "Spy x Family",
+      "img": "anya_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+
+    ,
+    {
+      "id": "yor",
+      "name": "Yor",
+      "anime": "Spy x Family",
+      "img": "yor_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+
+    ,
+    {
+      "id": "loid",
+      "name": "Loid",
+      "anime": "Spy x Family",
+      "img": "loid_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+
+    ,
+    {
+      "id": "guts",
+      "name": "Guts",
+      "anime": "Berserk",
+      "img": "guts_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+
+    ,
+    {
+      "id": "rem",
+      "name": "Rem",
+      "anime": "Re:Zero",
+      "img": "rem_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+
+    ,
+    {
+      "id": "ram",
+      "name": "Ram",
+      "anime": "Re:Zero",
+      "img": "ram_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+
+    ,
+    {
+      "id": "emilia",
+      "name": "Emilia",
+      "anime": "Re:Zero",
+      "img": "emilia_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+    ,
+    {
+      "id": "subaru",
+      "name": "Subaru",
+      "anime": "Re:Zero",
+      "img": "subaru_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+
+    ,
+    {
+      "id": "violet",
+      "name": "Violet",
+      "anime": "Violet Evergarden",
+      "img": "violet_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+
+    ,
+    {
+      "id": "elizabeth",
+      "name": "Elizabeth",
+      "anime": "Seven Deadly Sins",
+      "img": "elizabeth_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+
+    ,
+    {
+      "id": "lelouch",
+      "name": "Lelouch",
+      "anime": "Code Geass",
+      "img": "lelouch_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+
+    ,
+    {
+      "id": "kirito",
+      "name": "Kirito",
+      "anime": "Sword Art Online",
+      "img": "kirito_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+
+    ,
+    {
+      "id": "asuna",
+      "name": "Asuna",
+      "anime": "Sword Art Online",
+      "img": "asuna_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+
+    ,
+    {
+      "id": "yumeko",
+      "name": "Yumeko",
+      "anime": "Gambling School",
+      "img": "yumeko_ascension.png",
+      "aliases": [
+        "jabami"
+      ]
+    }
+
+
+    ,
+    {
+      "id": "ban",
+      "name": "Ban",
+      "anime": "Seven Deadly Sins",
+      "img": "ban_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+
+    ,
+    {
+      "id": "fern",
+      "name": "Fern",
+      "anime": "Frieren",
+      "img": "fern_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+
+    ,
+    {
+      "id": "meliodas",
+      "name": "Meliodas",
+      "anime": "Seven Deadly Sins",
+      "img": "meliodas_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+
+    ,
+    {
+      "id": "diane",
+      "name": "Diane",
+      "anime": "Seven Deadly Sins",
+      "img": "diane_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+
+    ,
+    {
+      "id": "gowther",
+      "name": "Gowther",
+      "anime": "Seven Deadly Sins",
+      "img": "gowther_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+    ,
+    {
+      "id": "king",
+      "name": "King",
+      "anime": "Seven Deadly Sins",
+      "img": "king_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+
+    ,
+    {
+      "id": "merlin",
+      "name": "Merlin",
+      "anime": "Seven Deadly Sins",
+      "img": "merlin_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+
+    ,
+    {
+      "id": "escanor",
+      "name": "Escanor",
+      "anime": "Seven Deadly Sins",
+      "img": "escanor_ascension.png",
+      "aliases": [
+        
+      ]
+    }
+
+
+
+
   ],
-
   "animes": [
-    {"name": "Naruto", "studio": "Pierrot"},
-    {"name": "One Piece", "studio": "Toei Animation"},
-    {"name": "Dragon Ball", "studio": "Toei Animation"},
-    {"name": "Bleach", "studio": "Pierrot"},
-    {"name": "My Hero Academia", "studio": "Bones"},
-    {"name": "Jujutsu Kaisen", "studio": "MAPPA"},
-    {"name": "Demon Slayer", "studio": "Ufotable"},
-    {"name": "Hunter x Hunter", "studio": "Madhouse"},
-    {"name": "SNK", "studio": "MAPPA"},
-    {"name": "JoJo", "studio": "David Production"},
-    {"name": "FMA", "studio": "Bones"},
-    {"name": "Fairy Tail", "studio": "A-1 Pictures"},
-    {"name": "Black Clover", "studio": "Pierrot"},
-    {"name": "Chainsaw Man", "studio": "MAPPA"},
-    {"name": "Death Note", "studio": "Madhouse"},
-    {"name": "Tokyo Ghoul", "studio": "Pierrot"},
-    {"name": "Gintama", "studio": "Sunrise"},
-    {"name": "Reborn", "studio": "Artland"},
-    {"name": "Frieren", "studio": "Madhouse"},
-    {"name": "Kaguya-sama", "studio": "A-1 Pictures"},
-    {"name": "Spy x Family", "studio": "Wit Studio"},
-    {"name": "Solo Leveling", "studio": "A-1 Pictures"},
-    {"name": "One Punch Man", "studio": "Madhouse"},
-    {"name": "Mob Psycho 100", "studio": "Bones"},
-    {"name": "SAO", "studio": "A-1 Pictures"},
-    {"name": "Re:Zero", "studio": "White Fox"},
-    {"name": "Vinland Saga", "studio": "Wit Studio"},
-    {"name": "Dr. Stone", "studio": "TMS Entertainment"},
-    {"name": "Haikyuu", "studio": "Production I.G"},
-    {"name": "Dandadan", "studio": "Science SARU"}
+    {
+      "name": "Naruto",
+      "studio": "Pierrot"
+    },
+    {
+      "name": "One Piece",
+      "studio": "Toei Animation"
+    },
+    {
+      "name": "Dragon Ball",
+      "studio": "Toei Animation"
+    },
+    {
+      "name": "Bleach",
+      "studio": "Pierrot"
+    },
+    {
+      "name": "My Hero Academia",
+      "studio": "Bones"
+    },
+    {
+      "name": "Jujutsu Kaisen",
+      "studio": "MAPPA"
+    },
+    {
+      "name": "Demon Slayer",
+      "studio": "Ufotable"
+    },
+    {
+      "name": "Hunter x Hunter",
+      "studio": "Madhouse"
+    },
+    {
+      "name": "SNK",
+      "studio": "MAPPA"
+    },
+    {
+      "name": "JoJo",
+      "studio": "David Production"
+    },
+    {
+      "name": "FMA",
+      "studio": "Bones"
+    },
+    {
+      "name": "Fairy Tail",
+      "studio": "A-1 Pictures"
+    },
+    {
+      "name": "Black Clover",
+      "studio": "Pierrot"
+    },
+    {
+      "name": "Chainsaw Man",
+      "studio": "MAPPA"
+    },
+    {
+      "name": "Death Note",
+      "studio": "Madhouse"
+    },
+    {
+      "name": "Tokyo Ghoul",
+      "studio": "Pierrot"
+    },
+    {
+      "name": "Gintama",
+      "studio": "Sunrise"
+    },
+    {
+      "name": "Reborn",
+      "studio": "Artland"
+    },
+    {
+      "name": "Frieren",
+      "studio": "Madhouse"
+    },
+    {
+      "name": "Kaguya-sama",
+      "studio": "A-1 Pictures"
+    },
+    {
+      "name": "Spy x Family",
+      "studio": "Wit Studio"
+    },
+    {
+      "name": "Solo Leveling",
+      "studio": "A-1 Pictures"
+    },
+    {
+      "name": "One Punch Man",
+      "studio": "Madhouse"
+    },
+    {
+      "name": "Mob Psycho 100",
+      "studio": "Bones"
+    },
+    {
+      "name": "SAO",
+      "studio": "A-1 Pictures"
+    },
+    {
+      "name": "Re:Zero",
+      "studio": "White Fox"
+    },
+    {
+      "name": "Vinland Saga",
+      "studio": "Wit Studio"
+    },
+    {
+      "name": "Dr. Stone",
+      "studio": "TMS Entertainment"
+    },
+    {
+      "name": "Haikyuu",
+      "studio": "Production I.G"
+    },
+    {
+      "name": "Dandadan",
+      "studio": "Science SARU"
+    }
   ],
-
   "arcs": {
     "Naruto": [
-      {"name": "Examen Chunin", "order": 1},
-      {"name": "Poursuite de Sasuke", "order": 2},
-      {"name": "Sauvetage du Kazekage", "order": 3},
-      {"name": "Rencontre avec Sasuke", "order": 4},
-      {"name": "Invasion de Pain", "order": 5},
-      {"name": "Guerre des Ninjas", "order": 6}
+      {
+        "name": "Examen Chunin",
+        "order": 1
+      },
+      {
+        "name": "Recherche de Tsunade",
+        "order": 2
+      },
+      {
+        "name": "Poursuite de Sasuke",
+        "order": 3
+      },
+      {
+        "name": "Sauvetage du Kazekage",
+        "order": 4
+      },
+      {
+        "name": "Le Duo Immortel",
+        "order": 5
+      },
+      {
+        "name": "Invasion de Pain",
+        "order": 6
+      },
+      {
+        "name": "4e Grande guerre des ninjas",
+        "order": 7
+      }
+    ],
+    "Fairy Tail": [
+      {
+        "name": "Phantom Lord",
+        "order": 1
+      },
+      {
+        "name": "Tour du Paradis",
+        "order": 2
+      },
+      {
+        "name": "Bataille de Fairy Tail",
+        "order": 3
+      },
+      {
+        "name": "Oracion Seis",
+        "order": 4
+      },
+      {
+        "name": "Edolas",
+        "order": 5
+      },
+      {
+        "name": "Grands Jeux Magiques",
+        "order": 6
+      },
+      {
+        "name": "Tartaros",
+        "order": 7
+      },
+      {
+        "name": "Alvarez",
+        "order": 8
+      }
     ],
     "One Piece": [
-      {"name": "Arlong Park", "order": 1},
-      {"name": "Alabasta", "order": 2},
-      {"name": "Enies Lobby", "order": 3},
-      {"name": "Marineford", "order": 4},
-      {"name": "Dressrosa", "order": 5},
-      {"name": "Whole Cake Island", "order": 6},
-      {"name": "Wano", "order": 7}
+      {
+        "name": "Arlong Park",
+        "order": 1
+      },
+      {
+        "name": "Baratie",
+        "order": 2
+      },
+      {
+        "name": "Ile de Drum",
+        "order": 3
+      },
+      {
+        "name": "Alabasta",
+        "order": 4
+      },
+      {
+        "name": "Skypiea",
+        "order": 5
+      },
+      {
+        "name": "Enies Lobby",
+        "order": 6
+      },
+      {
+        "name": "Thriller Bark",
+        "order": 7
+      },
+      {
+        "name": "Sabaody",
+        "order": 8
+      },
+      {
+        "name": "Impel Down",
+        "order": 9
+      },
+      {
+        "name": "Marineford",
+        "order": 10
+      },
+      {
+        "name": "Ile des hommes poissons",
+        "order": 11
+      },
+      {
+        "name": "Punk Hazard",
+        "order": 12
+      },
+      {
+        "name": "Dressrosa",
+        "order": 13
+      },
+      {
+        "name": "Whole Cake Island",
+        "order": 14
+      },
+      {
+        "name": "Wano",
+        "order": 15
+      }
     ],
     "Dragon Ball": [
-      {"name": "Tournoi des Arts Martiaux", "order": 1},
-      {"name": "Saiyans", "order": 2},
-      {"name": "Namek / Freezer", "order": 3},
-      {"name": "Cell", "order": 4},
-      {"name": "Buu", "order": 5},
-      {"name": "Tournoi du Pouvoir", "order": 6}
+      {
+        "name": "22e Tournoi des Arts Martiaux",
+        "order": 1
+      },
+      {
+        "name": "Saiyans",
+        "order": 2
+      },
+      {
+        "name": "Namek",
+        "order": 3
+      },
+      {
+        "name": "Cyborgs",
+        "order": 4
+      },
+      {
+        "name": "Cell",
+        "order": 5
+      },
+      {
+        "name": "Buu",
+        "order": 6
+      }
     ],
     "Bleach": [
-      {"name": "Agent Shinigami", "order": 1},
-      {"name": "Soul Society", "order": 2},
-      {"name": "Arrancar", "order": 3},
-      {"name": "Hueco Mundo", "order": 4},
-      {"name": "Fake Karakura", "order": 5},
-      {"name": "Thousand Year Blood War", "order": 6}
+      {
+        "name": "Soul Society",
+        "order": 1
+      },
+      {
+        "name": "Hueco Mundo",
+        "order": 2
+      },
+      {
+        "name": "Bataille de Karakura",
+        "order": 3
+      },
+      {
+        "name": "Fullbringer",
+        "order": 4
+      },
+      {
+        "name": "Thousand Year Blood War",
+        "order": 5
+      }
     ],
     "Hunter x Hunter": [
-      {"name": "Examen Hunter", "order": 1},
-      {"name": "Tour Celeste", "order": 2},
-      {"name": "York Shin", "order": 3},
-      {"name": "Greed Island", "order": 4},
-      {"name": "Chimera Ants", "order": 5},
-      {"name": "Élection", "order": 6}
+      {
+        "name": "Examen Hunter",
+        "order": 1
+      },
+      {
+        "name": "Tour Celeste",
+        "order": 2
+      },
+      {
+        "name": "York Shin City",
+        "order": 3
+      },
+      {
+        "name": "Greed Island",
+        "order": 4
+      },
+      {
+        "name": "Chimera Ants",
+        "order": 5
+      },
+      {
+        "name": "Élections",
+        "order": 6
+      }
     ],
     "Demon Slayer": [
-      {"name": "Sélection Finale", "order": 1},
-      {"name": "Mont Natagumo", "order": 2},
-      {"name": "Train de l'Infini", "order": 3},
-      {"name": "Quartier des Plaisirs", "order": 4},
-      {"name": "Village des Forgerons", "order": 5},
-      {"name": "Château Infini", "order": 6}
+      {
+        "name": "Sélection Finale",
+        "order": 1
+      },
+      {
+        "name": "Mont Natagumo",
+        "order": 2
+      },
+      {
+        "name": "Train de l'Infini",
+        "order": 3
+      },
+      {
+        "name": "Quartier des Plaisirs",
+        "order": 4
+      },
+      {
+        "name": "Village des Forgerons",
+        "order": 5
+      },
+      {
+        "name": "Château de l'infini",
+        "order": 6
+      }
     ],
     "Jujutsu Kaisen": [
-      {"name": "Incident de Juvénile", "order": 1},
-      {"name": "Échange Kyoto", "order": 2},
-      {"name": "Incident de Shibuya", "order": 3},
-      {"name": "Culling Game", "order": 4},
-      {"name": "Bataille de Shinjuku", "order": 5}
+      {
+        "name": "Tournoi des lycées de Tokyo et Kyoto",
+        "order": 1
+      },
+      {
+        "name": "Pont de Yasohachi",
+        "order": 2
+      },
+      {
+        "name": "Passé de Gojo",
+        "order": 3
+      },
+      {
+        "name": "Incident de Shibuya",
+        "order": 4
+      },
+      {
+        "name": "Traque meurtrière",
+        "order": 5
+      }
     ],
-    "SNK": [
-      {"name": "Chute de Shiganshina", "order": 1},
-      {"name": "Expédition 57e", "order": 2},
-      {"name": "Insurrection", "order": 3},
-      {"name": "Retour à Shiganshina", "order": 4},
-      {"name": "Mahr", "order": 5},
-      {"name": "Guerre Finale", "order": 6}
+    "Shingeki no Kyojin": [
+      {
+        "name": "Chute de Shiganshina",
+        "order": 1
+      },
+      {
+        "name": "Bataille de Trost",
+        "order": 2
+      },
+      {
+        "name": "Titan Féminin",
+        "order": 3
+      },
+      {
+        "name": "Mahrs",
+        "order": 4
+      },
+      {
+        "name": "Retour à Paradis",
+        "order": 5
+      }
     ]
   },
-
   "techniques": [
-    {"character": "naruto", "technique": "Rasengan"},
-    {"character": "sasuke", "technique": "Chidori"},
-    {"character": "kakashi", "technique": "Raikiri"},
-    {"character": "itachi", "technique": "Tsukuyomi"},
-    {"character": "minato", "technique": "Hiraishin"},
-    {"character": "gaara", "technique": "Sabaku Kyu"},
-    {"character": "rock_lee", "technique": "Hachimon"},
-    {"character": "pain", "technique": "Shinra Tensei"},
-    {"character": "madara", "technique": "Susanoo"},
-    {"character": "luffy", "technique": "Gear 5"},
-    {"character": "zoro", "technique": "Santoryu"},
-    {"character": "sanji", "technique": "Diable Jambe"},
-    {"character": "ace", "technique": "Hiken"},
-    {"character": "law", "technique": "Room"},
-    {"character": "doflamingo", "technique": "Ito Ito no Mi"},
-    {"character": "goku", "technique": "Kamehameha"},
-    {"character": "vegeta", "technique": "Final Flash"},
-    {"character": "gohan", "technique": "Masenko"},
-    {"character": "frieza", "technique": "Death Beam"},
-    {"character": "piccolo", "technique": "Makankosappo"},
-    {"character": "ichigo", "technique": "Getsuga Tensho"},
-    {"character": "aizen", "technique": "Kyoka Suigetsu"},
-    {"character": "byakuya", "technique": "Senbonzakura"},
-    {"character": "toshiro", "technique": "Hyorinmaru"},
-    {"character": "zaraki", "technique": "Nozarashi"},
-    {"character": "deku", "technique": "One For All"},
-    {"character": "bakugo", "technique": "Explosion"},
-    {"character": "todoroki", "technique": "Half-Cold Half-Hot"},
-    {"character": "all_might", "technique": "United States of Smash"},
-    {"character": "gojo", "technique": "Mugen Void"},
-    {"character": "sukuna", "technique": "Malevolent Shrine"},
-    {"character": "itadori", "technique": "Black Flash"},
-    {"character": "toji", "technique": "Inverted Spear of Heaven"},
-    {"character": "tanjiro", "technique": "Hinokami Kagura"},
-    {"character": "zenitsu", "technique": "Thunderclap and Flash"},
-    {"character": "rengoku", "technique": "Flame Breathing"},
-    {"character": "gon", "technique": "Jajanken"},
-    {"character": "killua", "technique": "Godspeed"},
-    {"character": "kurapika", "technique": "Chain Jail"},
-    {"character": "netero", "technique": "100-Type Guanyin Bodhisattva"},
-    {"character": "eren", "technique": "Titan Assaillant"},
-    {"character": "levi", "technique": "Tournoiement"},
-    {"character": "jotaro", "technique": "Star Platinum"},
-    {"character": "dio", "technique": "The World"},
-    {"character": "giorno", "technique": "Gold Experience Requiem"},
-    {"character": "edward", "technique": "Transmutation"},
-    {"character": "roy_mustang", "technique": "Flame Alchemy"},
-    {"character": "natsu", "technique": "Dragon Slayer"},
-    {"character": "asta", "technique": "Anti-Magie"},
-    {"character": "gintoki", "technique": "Shiroyasha"},
-    {"character": "tsuna", "technique": "X-Burner"},
-    {"character": "light", "technique": "Death Note"},
-    {"character": "kaneki", "technique": "Kagune"},
-    {"character": "saitama", "technique": "Serious Punch"}
+    {
+      "character": "naruto",
+      "technique": "Rasengan"
+    },
+    {
+      "character": "sasuke",
+      "technique": "Chidori"
+    },
+    {
+      "character": "kakashi",
+      "technique": "Raikiri"
+    },
+    {
+      "character": "itachi",
+      "technique": "Tsukuyomi"
+    },
+    {
+      "character": "minato",
+      "technique": "Hiraishin"
+    },
+    {
+      "character": "gaara",
+      "technique": "Sabaku Kyu"
+    },
+    {
+      "character": "rock_lee",
+      "technique": "Hachimon"
+    },
+    {
+      "character": "pain",
+      "technique": "Shinra Tensei"
+    },
+    {
+      "character": "madara",
+      "technique": "Susanoo"
+    },
+    {
+      "character": "luffy",
+      "technique": "Gear 5"
+    },
+    {
+      "character": "zoro",
+      "technique": "Santoryu"
+    },
+    {
+      "character": "sanji",
+      "technique": "Diable Jambe"
+    },
+    {
+      "character": "ace",
+      "technique": "Hiken"
+    },
+    {
+      "character": "law",
+      "technique": "Room"
+    },
+    {
+      "character": "doflamingo",
+      "technique": "Ito Ito no Mi"
+    },
+    {
+      "character": "goku",
+      "technique": "Kamehameha"
+    },
+    {
+      "character": "vegeta",
+      "technique": "Final Flash"
+    },
+    {
+      "character": "gohan",
+      "technique": "Masenko"
+    },
+    {
+      "character": "frieza",
+      "technique": "Death Beam"
+    },
+    {
+      "character": "piccolo",
+      "technique": "Makankosappo"
+    },
+    {
+      "character": "ichigo",
+      "technique": "Getsuga Tensho"
+    },
+    {
+      "character": "aizen",
+      "technique": "Kyoka Suigetsu"
+    },
+    {
+      "character": "byakuya",
+      "technique": "Senbonzakura"
+    },
+    {
+      "character": "toshiro",
+      "technique": "Hyorinmaru"
+    },
+    {
+      "character": "zaraki",
+      "technique": "Nozarashi"
+    },
+    {
+      "character": "deku",
+      "technique": "One For All"
+    },
+    {
+      "character": "bakugo",
+      "technique": "Explosion"
+    },
+    {
+      "character": "todoroki",
+      "technique": "Half-Cold Half-Hot"
+    },
+    {
+      "character": "all_might",
+      "technique": "United States of Smash"
+    },
+    {
+      "character": "gojo",
+      "technique": "Mugen Void"
+    },
+    {
+      "character": "sukuna",
+      "technique": "Malevolent Shrine"
+    },
+    {
+      "character": "itadori",
+      "technique": "Black Flash"
+    },
+    {
+      "character": "toji",
+      "technique": "Inverted Spear of Heaven"
+    },
+    {
+      "character": "tanjiro",
+      "technique": "Hinokami Kagura"
+    },
+    {
+      "character": "zenitsu",
+      "technique": "Thunderclap and Flash"
+    },
+    {
+      "character": "rengoku",
+      "technique": "Flame Breathing"
+    },
+    {
+      "character": "gon",
+      "technique": "Jajanken"
+    },
+    {
+      "character": "killua",
+      "technique": "Godspeed"
+    },
+    {
+      "character": "kurapika",
+      "technique": "Chain Jail"
+    },
+    {
+      "character": "netero",
+      "technique": "100-Type Guanyin Bodhisattva"
+    },
+    {
+      "character": "eren",
+      "technique": "Titan Assaillant"
+    },
+    {
+      "character": "levi",
+      "technique": "Tournoiement"
+    },
+    {
+      "character": "jotaro",
+      "technique": "Star Platinum"
+    },
+    {
+      "character": "dio",
+      "technique": "The World"
+    },
+    {
+      "character": "giorno",
+      "technique": "Gold Experience Requiem"
+    },
+    {
+      "character": "edward",
+      "technique": "Transmutation"
+    },
+    {
+      "character": "roy_mustang",
+      "technique": "Flame Alchemy"
+    },
+    {
+      "character": "natsu",
+      "technique": "Dragon Slayer"
+    },
+    {
+      "character": "asta",
+      "technique": "Anti-Magie"
+    },
+    {
+      "character": "gintoki",
+      "technique": "Shiroyasha"
+    },
+    {
+      "character": "tsuna",
+      "technique": "X-Burner"
+    },
+    {
+      "character": "light",
+      "technique": "Death Note"
+    },
+    {
+      "character": "kaneki",
+      "technique": "Kagune"
+    },
+    {
+      "character": "saitama",
+      "technique": "Serious Punch"
+    }
   ],
-
   "weapons": [
-    {"character": "naruto", "weapon": "Kunai"},
-    {"character": "sasuke", "weapon": "Kusanagi"},
-    {"character": "zoro", "weapon": "Enma"},
-    {"character": "ichigo", "weapon": "Zangetsu"},
-    {"character": "byakuya", "weapon": "Senbonzakura"},
-    {"character": "zaraki", "weapon": "Nozarashi"},
-    {"character": "toshiro", "weapon": "Hyorinmaru"},
-    {"character": "tanjiro", "weapon": "Nichirin Noire"},
-    {"character": "zenitsu", "weapon": "Nichirin Jaune"},
-    {"character": "inosuke", "weapon": "Nichirin Dentelées"},
-    {"character": "rengoku", "weapon": "Nichirin Rouge"},
-    {"character": "giyu", "weapon": "Nichirin Bleue"},
-    {"character": "eren", "weapon": "Équipement Tridimensionnel"},
-    {"character": "levi", "weapon": "Lames Anti-Titans"},
-    {"character": "edward", "weapon": "Automail"},
-    {"character": "jotaro", "weapon": "Star Platinum"},
-    {"character": "gintoki", "weapon": "Bokuto"},
-    {"character": "asta", "weapon": "Épée Anti-Magie"},
-    {"character": "kirito", "weapon": "Elucidator"},
-    {"character": "kurapika", "weapon": "Chaînes"},
-    {"character": "trunks", "weapon": "Épée de Tapion"},
-    {"character": "law", "weapon": "Kikoku"},
-    {"character": "shanks", "weapon": "Gryphon"},
-    {"character": "hibari", "weapon": "Tonfas"}
+    {
+      "character": "naruto",
+      "weapon": "Kunai"
+    },
+    {
+      "character": "sasuke",
+      "weapon": "Kusanagi"
+    },
+    {
+      "character": "zoro",
+      "weapon": "Enma"
+    },
+    {
+      "character": "ichigo",
+      "weapon": "Zangetsu"
+    },
+    {
+      "character": "byakuya",
+      "weapon": "Senbonzakura"
+    },
+    {
+      "character": "zaraki",
+      "weapon": "Nozarashi"
+    },
+    {
+      "character": "toshiro",
+      "weapon": "Hyorinmaru"
+    },
+    {
+      "character": "tanjiro",
+      "weapon": "Nichirin Noire"
+    },
+    {
+      "character": "zenitsu",
+      "weapon": "Nichirin Jaune"
+    },
+    {
+      "character": "inosuke",
+      "weapon": "Nichirin Dentelées"
+    },
+    {
+      "character": "rengoku",
+      "weapon": "Nichirin Rouge"
+    },
+    {
+      "character": "giyu",
+      "weapon": "Nichirin Bleue"
+    },
+    {
+      "character": "eren",
+      "weapon": "Équipement Tridimensionnel"
+    },
+    {
+      "character": "levi",
+      "weapon": "Lames Anti-Titans"
+    },
+    {
+      "character": "edward",
+      "weapon": "Automail"
+    },
+    {
+      "character": "jotaro",
+      "weapon": "Star Platinum"
+    },
+    {
+      "character": "gintoki",
+      "weapon": "Bokuto"
+    },
+    {
+      "character": "asta",
+      "weapon": "Épée Anti-Magie"
+    },
+    {
+      "character": "kirito",
+      "weapon": "Elucidator"
+    },
+    {
+      "character": "kurapika",
+      "weapon": "Chaînes"
+    },
+    {
+      "character": "trunks",
+      "weapon": "Épée de Tapion"
+    },
+    {
+      "character": "law",
+      "weapon": "Kikoku"
+    },
+    {
+      "character": "shanks",
+      "weapon": "Gryphon"
+    },
+    {
+      "character": "hibari",
+      "weapon": "Tonfas"
+    }
   ],
-
   "rivals": [
-    {"char1": "naruto", "char2": "sasuke"},
-    {"char1": "goku", "char2": "vegeta"},
-    {"char1": "luffy", "char2": "kaido"},
-    {"char1": "ichigo", "char2": "aizen"},
-    {"char1": "deku", "char2": "bakugo"},
-    {"char1": "gon", "char2": "hisoka"},
-    {"char1": "eren", "char2": "reiner"},
-    {"char1": "jotaro", "char2": "dio"},
-    {"char1": "edward", "char2": "scar_fma"},
-    {"char1": "tanjiro", "char2": "muzan"},
-    {"char1": "gojo", "char2": "sukuna"},
-    {"char1": "asta", "char2": "yuno"},
-    {"char1": "natsu", "char2": "gray"},
-    {"char1": "light", "char2": "l"},
-    {"char1": "kaneki", "char2": "touka"},
-    {"char1": "killua", "char2": "gon"},
-    {"char1": "tsuna", "char2": "hibari"},
-    {"char1": "denji", "char2": "makima"},
-    {"char1": "thorfinn", "char2": "askeladd"},
-    {"char1": "subaru", "char2": "emilia"}
+    {
+      "char1": "naruto",
+      "char2": "sasuke"
+    },
+    {
+      "char1": "goku",
+      "char2": "vegeta"
+    },
+    {
+      "char1": "luffy",
+      "char2": "kaido"
+    },
+    {
+      "char1": "ichigo",
+      "char2": "aizen"
+    },
+    {
+      "char1": "deku",
+      "char2": "bakugo"
+    },
+    {
+      "char1": "gon",
+      "char2": "hisoka"
+    },
+    {
+      "char1": "eren",
+      "char2": "reiner"
+    },
+    {
+      "char1": "jotaro",
+      "char2": "dio"
+    },
+    {
+      "char1": "edward",
+      "char2": "scar_fma"
+    },
+    {
+      "char1": "tanjiro",
+      "char2": "muzan"
+    },
+    {
+      "char1": "gojo",
+      "char2": "sukuna"
+    },
+    {
+      "char1": "asta",
+      "char2": "yuno"
+    },
+    {
+      "char1": "natsu",
+      "char2": "gray"
+    },
+    {
+      "char1": "light",
+      "char2": "l"
+    },
+    {
+      "char1": "kaneki",
+      "char2": "touka"
+    },
+    {
+      "char1": "killua",
+      "char2": "gon"
+    },
+    {
+      "char1": "tsuna",
+      "char2": "hibari"
+    },
+    {
+      "char1": "denji",
+      "char2": "makima"
+    },
+    {
+      "char1": "thorfinn",
+      "char2": "askeladd"
+    },
+    {
+      "char1": "subaru",
+      "char2": "emilia"
+    }
   ],
-
   "couples": [
-    {"char1": "naruto", "char2": "hinata"},
-    {"char1": "sasuke", "char2": "sakura"},
-    {"char1": "luffy", "char2": "boa_hancock"},
-    {"char1": "ichigo", "char2": "rukia"},
-    {"char1": "goku", "char2": "chichi", "char2_name": "Chichi"},
-    {"char1": "deku", "char2": "uraraka"},
-    {"char1": "eren", "char2": "mikasa"},
-    {"char1": "kirito", "char2": "asuna"},
-    {"char1": "subaru", "char2": "emilia"},
-    {"char1": "shirogane", "char2": "kaguya"},
-    {"char1": "loid", "char2": "yor"},
-    {"char1": "natsu", "char2": "lucy"},
-    {"char1": "kaneki", "char2": "touka"},
-    {"char1": "denji", "char2": "makima"},
-    {"char1": "tanjiro", "char2": "nezuko", "_note": "siblings not couple - can adapt"},
-    {"char1": "thorfinn", "char2": "askeladd", "_note": "mentor/enemy"},
-    {"char1": "senku", "char2": "kohaku", "char2_name": "Kohaku"},
-    {"char1": "okarun", "char2": "momo"}
+    {
+      "char1": "naruto",
+      "char2": "hinata"
+    },
+    {
+      "char1": "sasuke",
+      "char2": "sakura"
+    },
+    {
+      "char1": "luffy",
+      "char2": "boa_hancock"
+    },
+    {
+      "char1": "ichigo",
+      "char2": "rukia"
+    },
+    {
+      "char1": "goku",
+      "char2": "chichi",
+      "char2_name": "Chichi"
+    },
+    {
+      "char1": "deku",
+      "char2": "uraraka"
+    },
+    {
+      "char1": "eren",
+      "char2": "mikasa"
+    },
+    {
+      "char1": "kirito",
+      "char2": "asuna"
+    },
+    {
+      "char1": "subaru",
+      "char2": "emilia"
+    },
+    {
+      "char1": "shirogane",
+      "char2": "kaguya"
+    },
+    {
+      "char1": "loid",
+      "char2": "yor"
+    },
+    {
+      "char1": "natsu",
+      "char2": "lucy"
+    },
+    {
+      "char1": "kaneki",
+      "char2": "touka"
+    },
+    {
+      "char1": "denji",
+      "char2": "makima"
+    },
+    {
+      "char1": "tanjiro",
+      "char2": "nezuko",
+      "_note": "siblings not couple - can adapt"
+    },
+    {
+      "char1": "thorfinn",
+      "char2": "askeladd",
+      "_note": "mentor/enemy"
+    },
+    {
+      "char1": "senku",
+      "char2": "kohaku",
+      "char2_name": "Kohaku"
+    },
+    {
+      "char1": "okarun",
+      "char2": "momo"
+    }
   ],
-
   "same_voice": [
-    {"chars": ["naruto", "gon", "tsuna"], "seiyuu": "Junko Takeuchi / Yukari Tamura (similar vibe)", "desc": "Naruto, Gon & Tsuna"},
-    {"chars": ["luffy", "krillin"], "seiyuu": "Mayumi Tanaka", "desc": "Luffy & Krilin"},
-    {"chars": ["goku", "gohan", "goten"], "seiyuu": "Masako Nozawa", "desc": "Goku, Gohan & Goten"},
-    {"chars": ["zoro", "erwin"], "seiyuu": "Kazuya Nakai / Daisuke Ono", "desc": "Zoro & Erwin"},
-    {"chars": ["vegeta", "piccolo", "zaraki"], "seiyuu": "Ryo Horikawa / Toshiyuki Morikawa", "desc": "Vegeta & Zaraki"},
-    {"chars": ["levi", "law", "giorno"], "seiyuu": "Hiroshi Kamiya / Kensho Ono", "desc": "Levi, Law & Giorno"},
-    {"chars": ["ichigo", "gintoki"], "seiyuu": "Masakazu Morita / Tomokazu Sugita", "desc": "Ichigo & Gintoki"},
-    {"chars": ["gojo", "denji"], "seiyuu": "Yuichi Nakamura / Kikunosuke Toya", "desc": "Gojo & Denji"},
-    {"chars": ["todoroki", "zenitsu"], "seiyuu": "Yuki Kaji", "desc": "Todoroki & Zenitsu"},
-    {"chars": ["deku", "mob"], "seiyuu": "Daiki Yamashita / Setsuo Ito", "desc": "Deku & Mob"},
-    {"chars": ["bakugo", "itadori", "asta"], "seiyuu": "Nobuhiko Okamoto / Junya Enoki / Gakuto Kajiwara", "desc": "Bakugo, Itadori & Asta"},
-    {"chars": ["eren", "kirito"], "seiyuu": "Yuki Kaji / Yoshitsugu Matsuoka", "desc": "Eren & Kirito"}
+    {
+      "chars": [
+        "naruto",
+        "gon",
+        "tsuna"
+      ],
+      "seiyuu": "Junko Takeuchi / Yukari Tamura (similar vibe)",
+      "desc": "Naruto, Gon & Tsuna"
+    },
+    {
+      "chars": [
+        "luffy",
+        "krillin"
+      ],
+      "seiyuu": "Mayumi Tanaka",
+      "desc": "Luffy & Krilin"
+    },
+    {
+      "chars": [
+        "goku",
+        "gohan",
+        "goten"
+      ],
+      "seiyuu": "Masako Nozawa",
+      "desc": "Goku, Gohan & Goten"
+    },
+    {
+      "chars": [
+        "zoro",
+        "erwin"
+      ],
+      "seiyuu": "Kazuya Nakai / Daisuke Ono",
+      "desc": "Zoro & Erwin"
+    },
+    {
+      "chars": [
+        "vegeta",
+        "piccolo",
+        "zaraki"
+      ],
+      "seiyuu": "Ryo Horikawa / Toshiyuki Morikawa",
+      "desc": "Vegeta & Zaraki"
+    },
+    {
+      "chars": [
+        "levi",
+        "law",
+        "giorno"
+      ],
+      "seiyuu": "Hiroshi Kamiya / Kensho Ono",
+      "desc": "Levi, Law & Giorno"
+    },
+    {
+      "chars": [
+        "ichigo",
+        "gintoki"
+      ],
+      "seiyuu": "Masakazu Morita / Tomokazu Sugita",
+      "desc": "Ichigo & Gintoki"
+    },
+    {
+      "chars": [
+        "gojo",
+        "denji"
+      ],
+      "seiyuu": "Yuichi Nakamura / Kikunosuke Toya",
+      "desc": "Gojo & Denji"
+    },
+    {
+      "chars": [
+        "todoroki",
+        "zenitsu"
+      ],
+      "seiyuu": "Yuki Kaji",
+      "desc": "Todoroki & Zenitsu"
+    },
+    {
+      "chars": [
+        "deku",
+        "mob"
+      ],
+      "seiyuu": "Daiki Yamashita / Setsuo Ito",
+      "desc": "Deku & Mob"
+    },
+    {
+      "chars": [
+        "bakugo",
+        "itadori",
+        "asta"
+      ],
+      "seiyuu": "Nobuhiko Okamoto / Junya Enoki / Gakuto Kajiwara",
+      "desc": "Bakugo, Itadori & Asta"
+    },
+    {
+      "chars": [
+        "eren",
+        "kirito"
+      ],
+      "seiyuu": "Yuki Kaji / Yoshitsugu Matsuoka",
+      "desc": "Eren & Kirito"
+    }
   ],
-
   "wordle_words": [
-    "NARUTO", "SASUKE", "KAKASHI", "ITACHI", "MADARA", "SAKURA", "GAARA", "MINATO",
-    "LUFFY", "ZORO", "SANJI", "NAMI", "ROBIN", "SHANKS", "KAIDO",
-    "GOKU", "VEGETA", "GOHAN", "FRIEZA", "PICCOLO", "BROLY", "BEERUS",
-    "ICHIGO", "RUKIA", "AIZEN", "BYAKUYA", "RENJI", "URAHARA",
-    "DEKU", "BAKUGO", "TODOROKI", "HAWKS", "URARAKA",
-    "GOJO", "SUKUNA", "MEGUMI", "NOBARA", "NANAMI", "TOJI",
-    "TANJIRO", "NEZUKO", "ZENITSU", "INOSUKE", "RENGOKU", "MUZAN", "AKAZA",
-    "GON", "KILLUA", "HISOKA", "KURAPIKA", "MERUEM", "NETERO",
-    "EREN", "MIKASA", "LEVI", "ARMIN", "ERWIN", "REINER",
-    "JOTARO", "DIO", "GIORNO", "JOSUKE", "JOLYNE",
-    "EDWARD", "ALPHONSE", "MUSTANG",
-    "NATSU", "ERZA", "LUCY",
-    "ASTA", "YAMI", "YUNO",
-    "DENJI", "MAKIMA", "POWER",
-    "LIGHT", "RYUK",
-    "KANEKI", "TOUKA",
+    "NARUTO",
+    "SASUKE",
+    "KAKASHI",
+    "ITACHI",
+    "MADARA",
+    "SAKURA",
+    "GAARA",
+    "MINATO",
+    "LUFFY",
+    "ZORO",
+    "SANJI",
+    "NAMI",
+    "ROBIN",
+    "SHANKS",
+    "KAIDO",
+    "GOKU",
+    "VEGETA",
+    "GOHAN",
+    "FRIEZA",
+    "PICCOLO",
+    "BROLY",
+    "BEERUS",
+    "ICHIGO",
+    "RUKIA",
+    "AIZEN",
+    "BYAKUYA",
+    "RENJI",
+    "URAHARA",
+    "DEKU",
+    "BAKUGO",
+    "TODOROKI",
+    "HAWKS",
+    "URARAKA",
+    "GOJO",
+    "SUKUNA",
+    "MEGUMI",
+    "NOBARA",
+    "NANAMI",
+    "TOJI",
+    "TANJIRO",
+    "NEZUKO",
+    "ZENITSU",
+    "INOSUKE",
+    "RENGOKU",
+    "MUZAN",
+    "AKAZA",
+    "GON",
+    "KILLUA",
+    "HISOKA",
+    "KURAPIKA",
+    "MERUEM",
+    "NETERO",
+    "EREN",
+    "MIKASA",
+    "LEVI",
+    "ARMIN",
+    "ERWIN",
+    "REINER",
+    "JOTARO",
+    "DIO",
+    "GIORNO",
+    "JOSUKE",
+    "JOLYNE",
+    "EDWARD",
+    "ALPHONSE",
+    "MUSTANG",
+    "NATSU",
+    "ERZA",
+    "LUCY",
+    "ASTA",
+    "YAMI",
+    "YUNO",
+    "DENJI",
+    "MAKIMA",
+    "POWER",
+    "LIGHT",
+    "RYUK",
+    "KANEKI",
+    "TOUKA",
     "GINTOKI",
-    "FRIEREN", "FERN",
-    "ANYA", "LOID",
-    "SAITAMA", "GENOS",
-    "SUBARU", "EMILIA", "REM",
-    "SENKU", "KIRITO", "ASUNA"
+    "FRIEREN",
+    "FERN",
+    "ANYA",
+    "LOID",
+    "SAITAMA",
+    "GENOS",
+    "SUBARU",
+    "EMILIA",
+    "REM",
+    "SENKU",
+    "KIRITO",
+    "ASUNA"
   ]
 }
