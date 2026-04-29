@@ -185,7 +185,7 @@ function generateFloorData(type, usedData) {
                         label: 'Trouve les intrus',
                         variant: 'not_in',
                         targetAnime: biggestAnime,
-                        instruction: `Trouvez les ${intrudersN} intrus qui ne sont pas de ${biggestAnime}`,
+                        instruction: `${intrudersN} intrus qui ne sont pas de ${biggestAnime}`,
                         characters: allChars.map(c => ({ id: c.id, img: c.img, name: c.name, anime: c.anime })),
                         targetIds: intruders.map(c => c.id),
                         totalTargets: intrudersN,
@@ -200,10 +200,10 @@ function generateFloorData(type, usedData) {
                     
                     return {
                         type: 'intruder',
-                        label: 'Cherche & trouve',
+                        label: 'Search',
                         variant: 'in',
                         targetAnime: biggestAnime,
-                        instruction: `Trouvez les ${adjustedN} personnages de ${biggestAnime}`,
+                        instruction: `${adjustedN} personnages de ${biggestAnime}`,
                         characters: allChars.map(c => ({ id: c.id, img: c.img, name: c.name, anime: c.anime })),
                         targetIds: insiders.map(c => c.id),
                         totalTargets: adjustedN,
@@ -225,7 +225,7 @@ function generateFloorData(type, usedData) {
                     label: 'Trouve les intrus',
                     variant: 'not_in',
                     targetAnime: animeName,
-                    instruction: `Trouvez les ${N} intrus qui ne sont pas de ${animeName}`,
+                    instruction: `${N} intrus qui ne sont pas de ${animeName}`,
                     characters: allChars.map(c => ({ id: c.id, img: c.img, name: c.name, anime: c.anime })),
                     targetIds: intruders.map(c => c.id),
                     totalTargets: N,
@@ -238,10 +238,10 @@ function generateFloorData(type, usedData) {
                 
                 return {
                     type: 'intruder',
-                    label: 'Cherche & trouve',
+                    label: 'Search',
                     variant: 'in',
                     targetAnime: animeName,
-                    instruction: `Trouvez les ${N} personnages de ${animeName}`,
+                    instruction: `${N} personnages de ${animeName}`,
                     characters: allChars.map(c => ({ id: c.id, img: c.img, name: c.name, anime: c.anime })),
                     targetIds: insiders.map(c => c.id),
                     totalTargets: N,

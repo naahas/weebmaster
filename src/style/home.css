@@ -14415,6 +14415,17 @@ body.modal-open {
     padding: 20px;
 }
 
+/* 🆕 Effet de validation finale : zoom léger + blur + fade out de tout le wrap */
+.asc-intruder-wrap.asc-intruder-validated {
+    animation: ascIntruderWrapValidated 0.45s cubic-bezier(0.4, 0, 0.4, 1) forwards;
+    pointer-events: none;
+}
+@keyframes ascIntruderWrapValidated {
+    0%   { opacity: 1; transform: scale(1); filter: blur(0); }
+    60%  { opacity: 0.45; transform: scale(1.025); filter: blur(2px); }
+    100% { opacity: 0; transform: scale(1.05); filter: blur(5px); }
+}
+
 .asc-intruder-grid {
     grid-column: 2;  /* 🆕 Centrée dans la viewport */
     display: grid;
@@ -14422,6 +14433,38 @@ body.modal-open {
     grid-template-rows: repeat(4, auto);
     gap: 12px;
     justify-content: center;
+    position: relative;
+}
+
+/* 🆕 État LOCKED (anti-spam 3s sur mauvais clic) : grille bloquée + halo rouge pulsant + cartes qui clignotent sombre */
+.asc-intruder-grid.asc-intruder-locked {
+    pointer-events: none;
+}
+.asc-intruder-grid.asc-intruder-locked::after {
+    content: '';
+    position: absolute;
+    inset: -14px;
+    border: 2px solid rgba(255, 80, 100, 0);
+    border-radius: 18px;
+    pointer-events: none;
+    z-index: 10;
+    animation: ascIntruderLockGlow 3s ease-out forwards;
+}
+/* 🆕 Cartes (sauf les déjà validées) : dim constant pendant le lock — fade in rapide / fade out doux */
+.asc-intruder-grid.asc-intruder-locked .asc-intruder-card:not(.asc-intruder-correct) {
+    animation: ascIntruderLockCardDim 3s ease-out forwards;
+}
+@keyframes ascIntruderLockCardDim {
+    0%   { filter: brightness(1) saturate(1); }
+    8%   { filter: brightness(0.45) saturate(0.65); }
+    87%  { filter: brightness(0.45) saturate(0.65); }
+    100% { filter: brightness(1) saturate(1); }
+}
+@keyframes ascIntruderLockGlow {
+    0%   { border-color: rgba(255, 80, 100, 0); box-shadow: 0 0 0 rgba(255, 80, 100, 0); }
+    6%   { border-color: rgba(255, 80, 100, 1); box-shadow: 0 0 30px rgba(255, 80, 100, 0.6), 0 0 60px rgba(255, 80, 100, 0.3), inset 0 0 25px rgba(255, 80, 100, 0.15); }
+    92%  { border-color: rgba(255, 80, 100, 1); box-shadow: 0 0 30px rgba(255, 80, 100, 0.6), 0 0 60px rgba(255, 80, 100, 0.3), inset 0 0 25px rgba(255, 80, 100, 0.15); }
+    100% { border-color: rgba(255, 80, 100, 0); box-shadow: 0 0 0 rgba(255, 80, 100, 0); }
 }
 
 /* 🆕 Sidebar à droite : positionné dans la 3e colonne, centré dedans */
@@ -14493,6 +14536,28 @@ body.modal-open {
     z-index: 2;
 }
 
+/* 🆕 État PRESSED : feedback de clic moderne (compress + assombrissement fort + inner glow) */
+.asc-intruder-card.asc-intruder-pressed {
+    animation: ascIntruderPress 0.22s cubic-bezier(0.34, 1.2, 0.64, 1);
+    z-index: 3;
+}
+.asc-intruder-card.asc-intruder-pressed .asc-intruder-card-img {
+    filter: brightness(0.35) saturate(0.7) contrast(1.05);
+    transition: filter 0.06s ease-out;
+}
+
+/* 🆕 Ripple Material-style : disque blanc qui se propage depuis le point de clic */
+.asc-intruder-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.25) 45%, rgba(255,255,255,0) 80%);
+    pointer-events: none;
+    transform: translate(-50%, -50%) scale(0);
+    animation: ascIntruderRipple 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    z-index: 3;
+    mix-blend-mode: screen;
+}
+
 .asc-intruder-card-img {
     width: 100%; height: 100%;
     background-size: cover;
@@ -14517,7 +14582,7 @@ body.modal-open {
     animation: ascIntruderCorrectPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .asc-intruder-card.asc-intruder-correct .asc-intruder-card-img {
-    filter: brightness(1.15) contrast(1.1) saturate(1.2);
+    filter: brightness(0.35) saturate(0.55) contrast(1.05);
 }
 /* Burst : cercle qui explose vers l'extérieur */
 .asc-intruder-card.asc-intruder-correct::before {
@@ -14528,7 +14593,7 @@ body.modal-open {
     border: 3px solid rgba(255,255,255,0.7);
     border-radius: 50%;
     transform: translate(-50%, -50%);
-    animation: ascIntruderBurst 0.7s ease-out;
+    animation: ascIntruderBurst 0.7s ease-out forwards;
     z-index: 4;
     pointer-events: none;
 }
@@ -14559,26 +14624,30 @@ body.modal-open {
 .asc-intruder-card.asc-intruder-wrong .asc-intruder-card-img {
     filter: grayscale(0.95) brightness(0.6);
 }
-.asc-intruder-card.asc-intruder-wrong::after {
-    content: '';
-    position: absolute;
-    top: 8px; right: 8px;
-    width: 22px; height: 22px;
-    background: rgba(180,180,200,0.5);
-    border-radius: 50%;
-    z-index: 5;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230a0a14' stroke-width='3' stroke-linecap='round'><line x1='18' y1='6' x2='6' y2='18'/><line x1='6' y1='6' x2='18' y2='18'/></svg>");
-    background-size: 14px 14px;
-    background-repeat: no-repeat;
-    background-position: center;
-    animation: ascIntruderBadgeAppear 0.3s ease-out backwards;
-}
 
 @keyframes ascIntruderCorrectPop {
     0%   { transform: scale(1); }
     20%  { transform: scale(1.1); }
     50%  { transform: scale(0.97); }
     100% { transform: scale(1); }
+}
+/* 🆕 Press : compress vers le bas, retour au hover-state */
+@keyframes ascIntruderPress {
+    0%   { transform: translateY(-3px) scale(1.02); box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
+    35%  {
+        transform: translateY(0) scale(0.93);
+        box-shadow:
+            inset 0 0 0 2px rgba(255,255,255,0.45),
+            inset 0 0 18px rgba(255,255,255,0.15),
+            0 2px 6px rgba(0,0,0,0.7);
+    }
+    100% { transform: translateY(-3px) scale(1.02); box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
+}
+/* 🆕 Ripple : disque qui se propage et fond */
+@keyframes ascIntruderRipple {
+    0%   { transform: translate(-50%, -50%) scale(0); opacity: 0.85; }
+    60%  { opacity: 0.55; }
+    100% { transform: translate(-50%, -50%) scale(4.5); opacity: 0; }
 }
 @keyframes ascIntruderShake {
     0%, 100% { transform: translateX(0); }

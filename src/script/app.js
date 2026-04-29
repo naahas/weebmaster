@@ -6830,22 +6830,49 @@ createApp({
             card.appendChild(name);
             
             // Click handler
-            card.addEventListener('click', () => this._onIntruderCardClick(card, char, floorData));
-            
+            card.addEventListener('click', (e) => this._onIntruderCardClick(card, char, floorData, e));
+
             return card;
         },
-        
-        _onIntruderCardClick(card, char, floorData) {
+
+        _onIntruderCardClick(card, char, floorData, event) {
             // Si déjà trouvé / déjà cliqué → ignorer
             if (card.classList.contains('asc-intruder-correct')) return;
             if (this.ascension?.validated) return;
-            
+
+            // 🔊 Click tactile immédiat (feedback neutre avant résultat serveur)
+            this._playAscIntruderClickSound();
+
+            // 🆕 Feedback visuel "press" + ripple depuis le point de clic
+            this._triggerIntruderPress(card, event);
+
             // Animation feedback "wrong" se réapplique si on reclique
             card.classList.remove('asc-intruder-wrong');
             void card.offsetWidth;
-            
+
             // Envoyer la validation au serveur
             this.socket.emit('ascension-check-intruder', { characterId: char.id });
+        },
+
+        _triggerIntruderPress(card, event) {
+            // 🆕 Press feedback : classe pressed + ripple stylé au point de clic
+            card.classList.remove('asc-intruder-pressed');
+            void card.offsetWidth;
+            card.classList.add('asc-intruder-pressed');
+            setTimeout(() => card.classList.remove('asc-intruder-pressed'), 220);
+
+            const rect = card.getBoundingClientRect();
+            const ripple = document.createElement('span');
+            ripple.className = 'asc-intruder-ripple';
+            const x = event ? event.clientX - rect.left : rect.width / 2;
+            const y = event ? event.clientY - rect.top : rect.height / 2;
+            const size = Math.max(rect.width, rect.height) * 0.5;
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            ripple.style.width = size + 'px';
+            ripple.style.height = size + 'px';
+            card.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 620);
         },
         
         _handleIntruderResult(data) {
@@ -6874,29 +6901,81 @@ createApp({
                 // Petit son de validation (réutilise le son swap d'order ou un similaire)
                 this._playAscIntruderCorrectSound();
                 
-                // Si tout trouvé → fade des autres cartes
+                // Si tout trouvé → effet de validation stylé : cartes restantes fadent, puis wrap zoom-out + blur
                 if (data.foundCount >= data.totalTargets) {
+                    this._playAscIntruderVictorySound();
                     setTimeout(() => {
                         grid.querySelectorAll('.asc-intruder-card:not(.asc-intruder-correct)').forEach(c => {
-                            c.style.transition = 'opacity 0.4s';
-                            c.style.opacity = '0.35';
+                            c.style.transition = 'opacity 0.35s ease-out, transform 0.35s ease-out';
+                            c.style.opacity = '0';
+                            c.style.transform = 'scale(0.92)';
                             c.style.pointerEvents = 'none';
                         });
-                    }, 400);
+                    }, 100);
+                    setTimeout(() => {
+                        const wrap = document.querySelector('.asc-intruder-wrap');
+                        if (wrap) wrap.classList.add('asc-intruder-validated');
+                    }, 250);
                     // Reset le tracker pour le prochain étage
                     this.ascension.intruderFound = null;
                 }
             } else {
-                // ─── MAUVAISE RÉPONSE — pas de pénalité, juste feedback visuel temporaire ───
+                // ─── MAUVAISE RÉPONSE — feedback + verrouillage grille 3s (anti-spam) ───
                 card.classList.add('asc-intruder-wrong');
                 this._playAscIntruderWrongSound();
-                // L'effet wrong reste visible 800ms puis se retire pour permettre re-clic
+
+                // 🆕 Verrouille toute la grille pendant 3s : pointer-events:none + glow rouge pulsant
+                if (!grid.classList.contains('asc-intruder-locked')) {
+                    grid.classList.add('asc-intruder-locked');
+                    setTimeout(() => grid.classList.remove('asc-intruder-locked'), 3000);
+                }
+
                 setTimeout(() => {
                     card.classList.remove('asc-intruder-wrong');
                 }, 800);
             }
         },
         
+        _playAscIntruderClickSound() {
+            // 🔊 Click tactile neutre joué dès qu'une card est cliquée (avant le résultat serveur).
+            //    Plage médium (1600→900Hz) pour ne pas concurrencer le correct (aigu) ni le wrong (grave).
+            //    2 couches : click percussif triangle + body sine chaud → feeling tactile.
+            try {
+                if (!this._ascAudioCtx) {
+                    this._ascAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const ctx = this._ascAudioCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+                const t = ctx.currentTime;
+
+                // Couche 1 — click percussif (attaque sèche)
+                const click = ctx.createOscillator();
+                const clickGain = ctx.createGain();
+                click.type = 'triangle';
+                click.frequency.setValueAtTime(1600, t);
+                click.frequency.exponentialRampToValueAtTime(900, t + 0.04);
+                clickGain.gain.setValueAtTime(0, t);
+                clickGain.gain.linearRampToValueAtTime(0.045, t + 0.002);
+                clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+                click.connect(clickGain).connect(ctx.destination);
+                click.start(t);
+                click.stop(t + 0.07);
+
+                // Couche 2 — body warm bref (donne du corps au tap)
+                const body = ctx.createOscillator();
+                const bodyGain = ctx.createGain();
+                body.type = 'sine';
+                body.frequency.setValueAtTime(520, t);
+                body.frequency.exponentialRampToValueAtTime(380, t + 0.08);
+                bodyGain.gain.setValueAtTime(0, t);
+                bodyGain.gain.linearRampToValueAtTime(0.04, t + 0.005);
+                bodyGain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+                body.connect(bodyGain).connect(ctx.destination);
+                body.start(t);
+                body.stop(t + 0.11);
+            } catch (e) { /* ignore */ }
+        },
+
         _playAscIntruderCorrectSound() {
             // Son court tech (un "tick" aigu) — réutilise l'audio context d'Order si disponible
             try {
@@ -6922,6 +7001,51 @@ createApp({
             } catch (e) { /* ignore */ }
         },
         
+        _playAscIntruderVictorySound() {
+            // 🔊 Son de validation finale (tous trouvés) : do5 → sol5 → do6 en sine waves douces (sobre)
+            try {
+                if (!this._ascAudioCtx) {
+                    this._ascAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const ctx = this._ascAudioCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+                const t = ctx.currentTime;
+
+                // Note 1 — Tonique (do5 ~523Hz)
+                const n1 = ctx.createOscillator();
+                const g1 = ctx.createGain();
+                n1.type = 'sine';
+                n1.frequency.setValueAtTime(523, t);
+                g1.gain.setValueAtTime(0, t);
+                g1.gain.linearRampToValueAtTime(0.08, t + 0.04);
+                g1.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+                n1.connect(g1).connect(ctx.destination);
+                n1.start(t); n1.stop(t + 0.55);
+
+                // Note 2 — Quinte (sol5 ~784Hz), 120ms après
+                const n2 = ctx.createOscillator();
+                const g2 = ctx.createGain();
+                n2.type = 'sine';
+                n2.frequency.setValueAtTime(784, t + 0.12);
+                g2.gain.setValueAtTime(0, t + 0.12);
+                g2.gain.linearRampToValueAtTime(0.08, t + 0.16);
+                g2.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+                n2.connect(g2).connect(ctx.destination);
+                n2.start(t + 0.12); n2.stop(t + 0.65);
+
+                // Shimmer (do6 ~1046Hz), 240ms après — apporte la touche finale
+                const sh = ctx.createOscillator();
+                const shGain = ctx.createGain();
+                sh.type = 'triangle';
+                sh.frequency.setValueAtTime(1046, t + 0.24);
+                shGain.gain.setValueAtTime(0, t + 0.24);
+                shGain.gain.linearRampToValueAtTime(0.04, t + 0.27);
+                shGain.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+                sh.connect(shGain).connect(ctx.destination);
+                sh.start(t + 0.24); sh.stop(t + 0.6);
+            } catch (e) { /* ignore */ }
+        },
+
         _playAscIntruderWrongSound() {
             // Son grave bref pour erreur (sans agressivité)
             try {
