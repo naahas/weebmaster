@@ -106,6 +106,72 @@ function computeExpectedRewards(preData, sortedPlayers) {
     return rewards;
 }
 
+// ═══ Mode ASCENSION : rewards + stats à la fin de partie ═══
+function handleAscensionGameEndRewards(podium, winner) {
+    const sortedPlayers = (podium || []).map(p => ({
+        twitchId: p.twitchId,
+        username: p.username,
+    }));
+    if (sortedPlayers.length === 0) return;
+
+    const gameId = gameState.currentGameId;
+    const startTime = gameState.gameStartTime || Date.now();
+    const duration = Math.floor((Date.now() - startTime) / 1000);
+    const initialCount = gameState.initialPlayerCount || sortedPlayers.length;
+    const minPlayers = getMinPlayersForStats('ascension');
+
+    // 🎁 Rewards (XP / S-Coins) en arrière-plan
+    (async () => {
+        try {
+            let preRewardData = {};
+            try {
+                preRewardData = await getPreRewardData(sortedPlayers);
+            } catch (e) { console.error('⚠️ Pre-reward error (ascension):', e.message); }
+
+            const coinRewards = await db.distributeGameCoins(sortedPlayers, sortedPlayers.length);
+            const xpRewards = await db.distributeGameXp(sortedPlayers, sortedPlayers.length);
+
+            let rewardsData = null;
+            try {
+                rewardsData = buildRewardSummary(preRewardData, coinRewards, xpRewards);
+            } catch (e) { console.error('⚠️ Reward summary error (ascension):', e.message); }
+
+            io.emit('ascension-rewards-ready', { rewardsData });
+        } catch (rewardError) {
+            console.error('⚠️ Erreur rewards Ascension (non bloquante):', rewardError.message);
+        }
+    })();
+
+    // 📊 Stats + historique
+    (async () => {
+        try {
+            if (winner && gameId) {
+                try { await db.endGame(gameId, winner.twitchId, sortedPlayers.length, duration); }
+                catch (e) { console.error('endGame error (ascension):', e.message); }
+            }
+
+            if (initialCount >= minPlayers) {
+                for (let i = 0; i < sortedPlayers.length; i++) {
+                    const p = sortedPlayers[i];
+                    try { await db.updateUserStats(p.twitchId, i === 0, i + 1); }
+                    catch (e) { console.error('updateUserStats error (ascension):', e.message); }
+                }
+                console.log(`📊 Stats Ascension mises à jour (${sortedPlayers.length} joueurs)`);
+            } else {
+                console.log(`⚠️ Stats Ascension NON comptabilisées (${initialCount} < ${minPlayers} joueurs [ascension])`);
+            }
+
+            for (let i = 0; i < sortedPlayers.length; i++) {
+                const p = sortedPlayers[i];
+                try { await db.addPlayerGame(gameId, p.twitchId, 'ascension', i + 1, i === 0); }
+                catch (e) { console.error('Track player error (ascension):', e.message); }
+            }
+        } catch (dbError) {
+            console.error('⚠️ Erreur DB Ascension (non bloquante):', dbError.message);
+        }
+    })();
+}
+
 let lastRefreshPlayersTime = 0;
 const REFRESH_COOLDOWN_MS = 20000;
 
@@ -1576,6 +1642,7 @@ app.use(express.static('src/img/pollpic'));
 app.use(express.static('src/img/collectpic'));
 app.use(express.static('src/img/ascensionpic'));
 app.use(express.static('src/img/ascensionpic/ascensionarcs'));
+app.use(express.static('src/img/ascensionpic/ascensionanime'));
 app.use(express.static('src/img/tracepic'));
 app.use(express.static('src/img/avatarpic'));
 app.use(express.static('src/img/avatar'));
@@ -2894,15 +2961,28 @@ app.post('/admin/start-game', async (req, res) => {
     // 🏔️ MODE ASCENSION - Démarrage spécial
     if (gameState.lobbyMode === 'ascension') {
         const { ascensionFloors, ascensionTimer, ascensionSync } = req.body || {};
-        
+
         try {
+            // 🐛 DEBUG : log les joueurs au moment du start
+            console.log('🏔️ DEBUG /admin/start-game gameState.players:', Array.from(gameState.players.entries()).map(([sid, p]) => ({ sid, tid: p.twitchId, name: p.username, ghost: !!p.isGhost })));
+
+            // 🆕 Créer la partie en DB pour pouvoir tracker les stats + rewards à la fin
+            const game = await db.createGame(totalPlayers, gameState.mode, 'ascension');
+            gameState.currentGameId = game.id;
+            gameState.initialPlayerCount = totalPlayers;
+            gameState.gameStartTime = Date.now();
             gameState.inProgress = true;
+
             const result = startAscensionGame(gameState, io, {
                 floors: parseInt(ascensionFloors) || 15,
                 timer: parseInt(ascensionTimer) || 15,
                 syncEpreuves: ascensionSync !== false,
+                // 🆕 Callback exécuté à la fin de la partie ascension : XP / S-Coins + stats
+                onGameEnd: (podium, winner) => {
+                    handleAscensionGameEndRewards(podium, winner);
+                },
             });
-            
+
             if (result.success) {
                 return res.json({ success: true, mode: 'ascension' });
             } else {
@@ -3686,6 +3766,11 @@ app.post('/admin/next-question', async (req, res) => {
         return res.status(400).json({ error: 'Aucune partie en cours' });
     }
 
+    // 🆕 Bloquer si la partie est déjà en cours de finalisation (dernière question atteinte)
+    if (gameState.endingGame) {
+        return res.status(400).json({ error: 'Partie en cours de finalisation', ending: true });
+    }
+
     // Bloquer si une question est déjà en cours
     if (gameState.questionStartTime && gameState.currentQuestion) {
         const elapsed = Math.floor((Date.now() - gameState.questionStartTime) / 1000);
@@ -4182,7 +4267,9 @@ function revealAnswers(correctAnswer) {
         // 🆕 Données équipe pour mode Rivalité
         lobbyMode: gameState.lobbyMode,
         teamScores: gameState.lobbyMode === 'rivalry' ? gameState.teamScores : null,
-        teamNames: gameState.lobbyMode === 'rivalry' ? gameState.teamNames : null
+        teamNames: gameState.lobbyMode === 'rivalry' ? gameState.teamNames : null,
+        // 🆕 Flag dernière question (mode points) → client désactive le bouton "Suivant"
+        isLastQuestion: gameState.mode === 'points' && gameState.currentQuestionIndex >= gameState.questionsCount,
     };
 
     gameState.showResults = true;
@@ -4221,12 +4308,14 @@ function revealAnswers(correctAnswer) {
     } else if (gameState.mode === 'points' && gameState.currentQuestionIndex >= gameState.questionsCount) {
         // 🆕 MODE RIVALITÉ : Fin par points
         if (gameState.lobbyMode === 'rivalry') {
+            gameState.endingGame = true;  // 🆕 Bloque /admin/next-question pendant le délai
             gameState.rivalryEndGameTimeout = setTimeout(() => {
                 endGameRivalryPoints();
             }, 100); // 🔥 FIX: Afficher le winner directement (comme en classique)
             return; // 🆕 IMPORTANT: Arrêter pour ne pas continuer avec le mode auto
         } else {
             // Terminer automatiquement après la dernière question
+            gameState.endingGame = true;  // 🆕 Bloque /admin/next-question pendant le délai
             setTimeout(() => {
                 endGameByPoints();
             }, 100);
@@ -4489,15 +4578,40 @@ async function endGameByPoints() {
                     duration
                 );
                 
-                // 🆕 Stats comptabilisées uniquement si 15+ joueurs
-                if (gameState.initialPlayerCount >= getMinPlayersForStats(gameState.lobbyMode)) {
-                    await db.updateUserStats(winner.twitchId, true, 1);
-                    
-                    // Mettre à jour les stats des perdants
-                    let placement = 2;
-                    for (const player of sortedPlayers.slice(1)) {
-                        await db.updateUserStats(player.twitchId, false, placement++);
-                    }
+                // 🆕 PARALLÉLISATION : on lance toutes les écritures DB indépendantes en parallèle
+                //    (loops séquentielles précédentes faisaient ~30 awaits = ~10s avec 30 joueurs).
+                //    Toutes ces opérations touchent des tables/colonnes différentes → pas de race.
+                const statsEnabled = gameState.initialPlayerCount >= getMinPlayersForStats(gameState.lobbyMode);
+                const statsPromise = statsEnabled
+                    ? Promise.all(sortedPlayers.map((p, i) =>
+                        db.updateUserStats(p.twitchId, i === 0, i + 1).catch(e => console.error('updateUserStats error:', e.message))
+                    ))
+                    : Promise.resolve();
+
+                const trackPromise = Promise.all(sortedPlayers.map((p, i) =>
+                    db.addPlayerGame(gameState.currentGameId, p.twitchId, gameState.lobbyMode, i + 1, i === 0)
+                        .catch(e => console.error('Track player error:', e.message))
+                ));
+
+                const preRewardPromise = getPreRewardData(sortedPlayers).catch(e => { console.error('⚠️ Pre-reward error:', e.message); return {}; });
+
+                const [
+                    _stats,
+                    _track,
+                    preRewardData,
+                    coinRewards,
+                    xpRewards,
+                    winnerUser,
+                ] = await Promise.all([
+                    statsPromise,
+                    trackPromise,
+                    preRewardPromise,
+                    db.distributeGameCoins(sortedPlayers, gameState.initialPlayerCount),
+                    db.distributeGameXp(sortedPlayers, gameState.initialPlayerCount),
+                    db.getUserByTwitchId(winner.twitchId),
+                ]);
+
+                if (statsEnabled) {
                     console.log(`📊 Stats mises à jour (${gameState.initialPlayerCount} joueurs)`);
                 } else {
                     console.log(`⚠️ Stats NON comptabilisées (${gameState.initialPlayerCount} < ${getMinPlayersForStats(gameState.lobbyMode)} joueurs [${gameState.lobbyMode}])`);
@@ -4505,32 +4619,11 @@ async function endGameByPoints() {
 
                 addLog('game-end', { winner: winner.username });
 
-                // 🎁 Reward animation data
-                let rewardsData = null;
-                let preRewardData = {};
-                try {
-                    preRewardData = await getPreRewardData(sortedPlayers);
-                } catch(e) { console.error('⚠️ Pre-reward error:', e.message); }
-
-                // 💰 Distribuer les S-Coins
-                const coinRewards = await db.distributeGameCoins(sortedPlayers, gameState.initialPlayerCount);
-                // ⭐ Distribuer l'XP
-                const xpRewards = await db.distributeGameXp(sortedPlayers, gameState.initialPlayerCount);
-
                 // 🎁 Construire le résumé des rewards
+                let rewardsData = null;
                 try {
                     rewardsData = buildRewardSummary(preRewardData, coinRewards, xpRewards);
                 } catch(e) { console.error('⚠️ Reward summary error:', e.message); }
-
-                // 📋 Tracker chaque joueur dans player_games
-                for (let i = 0; i < sortedPlayers.length; i++) {
-                    const p = sortedPlayers[i];
-                    try {
-                        await db.addPlayerGame(gameState.currentGameId, p.twitchId, gameState.lobbyMode, i + 1, i === 0);
-                    } catch(e) { console.error('Track player error:', e.message); }
-                }
-
-                const winnerUser = await db.getUserByTwitchId(winner.twitchId);
 
                 const winnerData = {
                     username: winner.username,
@@ -10352,6 +10445,7 @@ async function generateGameEndedData() {
 // FONCTION: Reset complet de l'état du jeu
 function resetGameState() {
     gameState.inProgress = false;
+    gameState.endingGame = false; // 🆕 Reset du flag de finalisation
     gameState.currentGameId = null;
     gameState.currentQuestionIndex = 0;
     gameState.currentQuestion = null;

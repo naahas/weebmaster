@@ -9,9 +9,9 @@ const GAME_TYPES = [
     'target',     // Cible (30 persos, 5 consignes "clique sur X")
     'intruder',   // Intrus (30 persos, trouve les 3 pas du bon anime)
     'wordle',     // Lettres communes (style Wordle)
-    'silhouette', // Silhouette noire, devine le perso
     'order',      // Classer des arcs par ordre
     'match',      // Relie (perso→anime, couples, techniques, armes, rivaux, voix, studio)
+    'scramble',   // Anagramme : lettres mélangées du nom d'un perso, à remettre dans l'ordre
 ];
 
 const MATCH_SUBTYPES = [
@@ -22,6 +22,7 @@ const MATCH_SUBTYPES = [
     'rivals',       // Rivaux
     'same_voice',   // Même voix
     'anime_studio', // Anime → studio
+    'anime_year',   // Anime → année de sortie (1ère diffusion)
 ];
 
 // ═══ State ═══
@@ -47,20 +48,35 @@ function createAscensionState() {
 // ═══ Floor sequence generation ═══
 
 function generateFloorSequence(numFloors) {
+    // 🆕 Approche "bag" : on pioche dans un sac contenant 1 exemplaire de chaque type ;
+    //    quand le sac est vide, on le remet à plein → on ne répète JAMAIS un type tant
+    //    que tous les autres ne sont pas passés au moins 1x dans le cycle courant.
+    //    Bonus : on évite aussi le back-to-back entre 2 cycles (le 1er d'un nouveau cycle
+    //    ne peut pas être identique au dernier de l'ancien).
     const seq = [];
+    let bag = [];
     for (let i = 0; i < numFloors; i++) {
-        // 🧪 DEBUG: Forcer le 1er étage à être 'intruder' pour tester
-        if (i === 0) {
-            seq.push('intruder');
-            continue;
+        if (bag.length === 0) {
+            // Cycle terminé : on refait un sac plein, mais on retire le dernier type
+            //    pour empêcher le back-to-back (sera réinjecté juste après pioche).
+            bag = GAME_TYPES.slice();
+            const last = seq[seq.length - 1];
+            if (last) {
+                const idx = bag.indexOf(last);
+                if (idx >= 0) {
+                    bag.splice(idx, 1);
+                    // Mémorise pour réinjecter après le 1er pick du nouveau cycle
+                    bag._reinjectAfterPick = last;
+                }
+            }
         }
-        let available = GAME_TYPES.filter(t => {
-            if (seq.length >= 2 && seq[seq.length - 1] === t && seq[seq.length - 2] === t) return false;
-            if (seq.length >= 1 && seq[seq.length - 1] === t && Math.random() > 0.3) return false;
-            return true;
-        });
-        if (available.length === 0) available = GAME_TYPES;
-        seq.push(available[Math.floor(Math.random() * available.length)]);
+        const pickIdx = Math.floor(Math.random() * bag.length);
+        const pick = bag.splice(pickIdx, 1)[0];
+        seq.push(pick);
+        if (bag._reinjectAfterPick) {
+            bag.push(bag._reinjectAfterPick);
+            delete bag._reinjectAfterPick;
+        }
     }
     return seq;
 }
@@ -91,7 +107,10 @@ function slugifyArc(name) {
 }
 
 function generateFloorData(type, usedData) {
-    const chars = ASCENSION_DATA.characters;
+    // 🆕 Pour les jeux où le perso est la cible (guess/intruder/target/silhouette/char_anime),
+    //    on exclut les persos marqués `match_only: true` (ils n'existent que pour servir de
+    //    cible dans couples/rivals/same_voice/techniques/weapons côté Liaison).
+    const chars = (ASCENSION_DATA.characters || []).filter(c => !c.match_only);
     const animes = ASCENSION_DATA.animes;
     
     switch (type) {
@@ -112,7 +131,8 @@ function generateFloorData(type, usedData) {
         }
 
         case 'target': {
-            const pool = pickRandom(chars, 30);
+            // Grille 6x4 = 24 cards. 5 targets à cliquer d'affilée.
+            const pool = pickRandom(chars, 24);
             const targets = pickRandom(pool, 5);
             return {
                 type: 'target',
@@ -250,14 +270,34 @@ function generateFloorData(type, usedData) {
         }
 
         case 'wordle': {
-            const words = ASCENSION_DATA.wordle_words;
-            const word = words[Math.floor(Math.random() * words.length)];
+            // 🆕 Map nom UPPER → anime pour retrouver l'anime d'un perso wordle_words
+            const charAnimeMap = {};
+            (ASCENSION_DATA.characters || []).forEach(c => {
+                if (c && c.name) charAnimeMap[c.name.toUpperCase()] = c.anime;
+            });
+
+            // Pool : persos (wordle_words, single-word) + animes (single OU multi-mots, lettres+espaces only)
+            const personsPool = (ASCENSION_DATA.wordle_words || []).map(w => ({
+                raw: w,
+                groups: [w.length],
+                anime: charAnimeMap[w] || null,
+            }));
+            const animesPool = (ASCENSION_DATA.animes || [])
+                .map(a => a.name.toUpperCase())
+                .filter(n => /^[A-Z]+( [A-Z]+)*$/.test(n))
+                .map(n => ({ raw: n, groups: n.split(' ').map(g => g.length) }));
+            const pickFromAnimes = animesPool.length > 0 && Math.random() < 0.5;
+            const pool = pickFromAnimes ? animesPool : personsPool;
+            const picked = pool[Math.floor(Math.random() * pool.length)];
+            const totalLetters = picked.groups.reduce((a, b) => a + b, 0);
             return {
                 type: 'wordle',
-                label: 'Lettres communes',
-                word: word,
-                wordLength: word.length,
-                maxAttempts: 6,
+                label: 'Wordle',
+                word: picked.raw,                          // ex: "DEMON SLAYER" (avec espace) — strippé par getFloorDataForClient
+                wordLength: totalLetters,                  // 11 (sans espaces)
+                category: pickFromAnimes ? 'anime' : 'character',
+                groups: picked.groups,                     // ex: [5, 6] pour rendre les cells avec un gap entre groupes
+                animeHint: picked.anime || null,
             };
         }
 
@@ -323,6 +363,49 @@ function generateFloorData(type, usedData) {
             return generateMatchData(subtype);
         }
 
+        case 'scramble': {
+            // Anagramme : pioche soit un perso (single-word 4-10 lettres), soit un anime (single-word).
+            // 50/50 entre les 2 pools pour la variété.
+            const personsPool = chars.filter(c =>
+                c.img && c.name && /^[A-Z]+$/i.test(c.name) && c.name.length >= 4 && c.name.length <= 10
+            );
+            const animesPool = (ASCENSION_DATA.animes || []).filter(a =>
+                a.name && /^[A-Z]+$/i.test(a.name) && a.name.length >= 4 && a.name.length <= 10
+            );
+            const pickFromAnime = animesPool.length > 0 && Math.random() < 0.5;
+            let word, hint, category;
+            if (pickFromAnime) {
+                const picked = animesPool[Math.floor(Math.random() * animesPool.length)];
+                word = picked.name.toUpperCase();
+                hint = null;
+                category = 'anime';
+            } else {
+                if (personsPool.length === 0) return generateFloorData('guess', usedData);
+                const picked = personsPool[Math.floor(Math.random() * personsPool.length)];
+                word = picked.name.toUpperCase();
+                hint = picked.anime;
+                category = 'character';
+            }
+
+            // Shuffle des lettres en garantissant un résultat différent du mot original
+            let scrambled;
+            let safety = 0;
+            do {
+                scrambled = shuffle(word.split(''));
+                safety++;
+            } while (safety < 20 && scrambled.join('') === word);
+
+            return {
+                type: 'scramble',
+                label: 'Anagramme',
+                word: word,                  // strippé client-side (anti-triche)
+                scrambled: scrambled,
+                wordLength: word.length,
+                category: category,          // 'anime' ou 'character'
+                hint: hint,                  // anime du perso (si character), null sinon
+            };
+        }
+
         default:
             return generateFloorData('guess', usedData);
     }
@@ -335,18 +418,20 @@ function generateMatchData(subtype) {
 
     switch (subtype) {
         case 'char_anime': {
+            // 5 persos d'animes différents → relier au nom de leur anime
+            // 🆕 Exclut les `match_only` (ils n'apparaissent que comme partenaire dans couples/rivals/same_voice/techniques/weapons)
             const usedAnimes = new Set();
             const picked = [];
-            const shuffled = shuffle(chars);
+            const shuffled = shuffle(chars.filter(c => !c.match_only));
             for (const c of shuffled) {
-                if (!usedAnimes.has(c.anime) && picked.length < 4) {
+                if (!usedAnimes.has(c.anime) && picked.length < 5) {
                     picked.push(c);
                     usedAnimes.add(c.anime);
                 }
             }
             return {
                 type: 'match', subtype: 'char_anime',
-                label: 'Relie — Perso → Anime',
+                label: 'Liaison',
                 left: picked.map(c => ({ id: c.id, name: c.name, img: c.img })),
                 right: shuffle(picked.map(c => ({ id: c.id, value: c.anime }))),
                 pairs: picked.map(c => ({ leftId: c.id, rightId: c.id })),
@@ -355,22 +440,23 @@ function generateMatchData(subtype) {
 
         case 'couples': {
             const couples = ASCENSION_DATA.couples;
-            const picked = pickRandom(couples, Math.min(4, couples.length));
+            const picked = pickRandom(couples, Math.min(5, couples.length));
             return {
                 type: 'match', subtype: 'couples',
-                label: 'Relie — Couples',
+                label: 'Liaison',
                 left: picked.map(c => ({ id: c.char1, name: charMap[c.char1]?.name || c.char1, img: charMap[c.char1]?.img })),
-                right: shuffle(picked.map(c => ({ id: c.char1, value: charMap[c.char2]?.name || c.char2_name || c.char2 }))),
+                // 🆕 right inclut img pour le layout image-image
+                right: shuffle(picked.map(c => ({ id: c.char1, value: charMap[c.char2]?.name || c.char2_name || c.char2, img: charMap[c.char2]?.img }))),
                 pairs: picked.map(c => ({ leftId: c.char1, rightId: c.char1 })),
             };
         }
 
         case 'techniques': {
             const techs = ASCENSION_DATA.techniques;
-            const picked = pickRandom(techs, Math.min(4, techs.length));
+            const picked = pickRandom(techs, Math.min(5, techs.length));
             return {
                 type: 'match', subtype: 'techniques',
-                label: 'Relie — Perso → Technique',
+                label: 'Liaison',
                 left: picked.map(t => ({ id: t.character, name: charMap[t.character]?.name || t.character, img: charMap[t.character]?.img })),
                 right: shuffle(picked.map(t => ({ id: t.character, value: t.technique }))),
                 pairs: picked.map(t => ({ leftId: t.character, rightId: t.character })),
@@ -379,10 +465,10 @@ function generateMatchData(subtype) {
 
         case 'weapons': {
             const weapons = ASCENSION_DATA.weapons;
-            const picked = pickRandom(weapons, Math.min(4, weapons.length));
+            const picked = pickRandom(weapons, Math.min(5, weapons.length));
             return {
                 type: 'match', subtype: 'weapons',
-                label: 'Relie — Perso → Arme',
+                label: 'Liaison',
                 left: picked.map(w => ({ id: w.character, name: charMap[w.character]?.name || w.character, img: charMap[w.character]?.img })),
                 right: shuffle(picked.map(w => ({ id: w.character, value: w.weapon }))),
                 pairs: picked.map(w => ({ leftId: w.character, rightId: w.character })),
@@ -391,12 +477,13 @@ function generateMatchData(subtype) {
 
         case 'rivals': {
             const rivals = ASCENSION_DATA.rivals;
-            const picked = pickRandom(rivals, Math.min(4, rivals.length));
+            const picked = pickRandom(rivals, Math.min(5, rivals.length));
             return {
                 type: 'match', subtype: 'rivals',
-                label: 'Relie — Rivaux',
+                label: 'Liaison',
                 left: picked.map(r => ({ id: r.char1, name: charMap[r.char1]?.name || r.char1, img: charMap[r.char1]?.img })),
-                right: shuffle(picked.map(r => ({ id: r.char1, value: charMap[r.char2]?.name || r.char2 }))),
+                // 🆕 right inclut img pour le layout image-image
+                right: shuffle(picked.map(r => ({ id: r.char1, value: charMap[r.char2]?.name || r.char2, img: charMap[r.char2]?.img }))),
                 pairs: picked.map(r => ({ leftId: r.char1, rightId: r.char1 })),
             };
         }
@@ -404,7 +491,7 @@ function generateMatchData(subtype) {
         case 'same_voice': {
             const voiceGroups = ASCENSION_DATA.same_voice;
             if (voiceGroups.length === 0) return generateMatchData('char_anime');
-            const picked = pickRandom(voiceGroups, Math.min(4, voiceGroups.length));
+            const picked = pickRandom(voiceGroups, Math.min(5, voiceGroups.length));
             const pairs = [];
             picked.forEach(g => {
                 if (g.chars.length >= 2) {
@@ -412,39 +499,66 @@ function generateMatchData(subtype) {
                     pairs.push({ char1: c1, char2: c2 });
                 }
             });
-            if (pairs.length < 3) return generateMatchData('char_anime');
+            if (pairs.length < 4) return generateMatchData('char_anime');
             return {
                 type: 'match', subtype: 'same_voice',
-                label: 'Relie — Même voix',
+                label: 'Liaison',
                 left: pairs.map(p => ({ id: p.char1, name: charMap[p.char1]?.name || p.char1, img: charMap[p.char1]?.img })),
-                right: shuffle(pairs.map(p => ({ id: p.char1, value: charMap[p.char2]?.name || p.char2 }))),
+                // 🆕 right inclut img pour le layout image-image
+                right: shuffle(pairs.map(p => ({ id: p.char1, value: charMap[p.char2]?.name || p.char2, img: charMap[p.char2]?.img }))),
                 pairs: pairs.map(p => ({ leftId: p.char1, rightId: p.char1 })),
             };
         }
 
         case 'anime_studio': {
-            const animes = ASCENSION_DATA.animes;
+            // 🆕 Exclut les animes `multi_studio: true` (studio a changé entre saisons, ambigu)
+            const animes = (ASCENSION_DATA.animes || []).filter(a => !a.multi_studio);
             const usedStudios = new Set();
             const picked = [];
             const shuffled = shuffle(animes);
             for (const a of shuffled) {
-                if (!usedStudios.has(a.studio) && picked.length < 4) {
+                if (!usedStudios.has(a.studio) && picked.length < 5) {
                     picked.push(a);
                     usedStudios.add(a.studio);
                 }
             }
-            if (picked.length < 4) {
-                for (const a of shuffled) {
-                    if (picked.length < 4 && !picked.find(p => p.name === a.name)) {
-                        picked.push(a);
-                    }
-                }
+            // 🆕 Si on a moins de 5 studios uniques (très improbable), fallback vers un autre subtype
+            //    plutôt que d'autoriser des studios doublons (qui rendrait le jeu non-résolvable).
+            if (picked.length < 5) {
+                console.warn(`⚠️ Pas assez de studios uniques pour anime_studio (${picked.length}/5) → fallback sur char_anime`);
+                return generateMatchData('char_anime');
             }
             return {
                 type: 'match', subtype: 'anime_studio',
-                label: 'Relie — Anime → Studio',
+                label: 'Liaison',
                 left: picked.map(a => ({ id: a.name, name: a.name })),
                 right: shuffle(picked.map(a => ({ id: a.name, value: a.studio }))),
+                pairs: picked.map(a => ({ leftId: a.name, rightId: a.name })),
+            };
+        }
+
+        case 'anime_year': {
+            // 🆕 Lie chaque anime à son année de 1ère diffusion (pas le manga)
+            //    Exclut les animes sans `year` et garantit 5 années uniques (sinon non-résolvable).
+            const animes = (ASCENSION_DATA.animes || []).filter(a => typeof a.year === 'number');
+            const usedYears = new Set();
+            const picked = [];
+            const shuffled = shuffle(animes);
+            for (const a of shuffled) {
+                if (!usedYears.has(a.year) && picked.length < 5) {
+                    picked.push(a);
+                    usedYears.add(a.year);
+                }
+            }
+            if (picked.length < 5) {
+                console.warn(`⚠️ Pas assez d'années uniques pour anime_year (${picked.length}/5) → fallback sur char_anime`);
+                return generateMatchData('char_anime');
+            }
+            return {
+                type: 'match', subtype: 'anime_year',
+                label: 'Liaison',
+                left: picked.map(a => ({ id: a.name, name: a.name })),
+                right: shuffle(picked.map(a => ({ id: a.name, value: String(a.year) }))),
                 pairs: picked.map(a => ({ leftId: a.name, rightId: a.name })),
             };
         }
@@ -458,13 +572,15 @@ function generateMatchData(subtype) {
 
 function startAscensionGame(gameState, io, options = {}) {
     const ascension = gameState.ascension;
-    
+
     ascension.active = true;
     ascension.floors = options.floors || 15;
-    ascension.timer = options.timer || 30;
+    ascension.timer = options.timer || 60;
     ascension.syncEpreuves = options.syncEpreuves !== undefined ? options.syncEpreuves : true;
     ascension.startedAt = Date.now();
     ascension.finishedPlayers = [];
+    // 🆕 Callback exécuté à la fin de la partie (server.js l'utilise pour distribuer rewards + tracker stats)
+    ascension.onGameEnd = typeof options.onGameEnd === 'function' ? options.onGameEnd : null;
     
     ascension.floorSequence = generateFloorSequence(ascension.floors);
     
@@ -480,12 +596,15 @@ function startAscensionGame(gameState, io, options = {}) {
             floor: 0,
             validated: false,
             username: player.username,
+            avatarUrl: player.avatarUrl || null,
             socketId: socketId,
             colorIndex: player.colorIndex || 0,
+            isGhost: !!player.isGhost,   // 🆕 Admin non-inscrit : joue mais invisible au classement
             // 🆕 Champs personnels (mode race indépendant par joueur)
             floorTimerEndTime: null,
             floorTimer: null,
             guessProgress: {},
+            guessJokerUsed: {},   // 🆕 floorIndex → true si le joker a été utilisé pour cet étage
         };
         
         if (!ascension.syncEpreuves) {
@@ -512,6 +631,7 @@ function startAscensionGame(gameState, io, options = {}) {
             username: p.username,
             floor: 0,
             colorIndex: p.colorIndex,
+            avatarUrl: p.avatarUrl || null,   // 🆕 inclus l'avatar dès le démarrage (sinon initiale jusqu'au reload)
         })),
     });
     
@@ -588,6 +708,9 @@ function startPlayerFloor(gameState, io, twitchId, floorIndex) {
         playerProgress: getPlayerProgressForClient(ascension),
     };
     
+    // 🆕 Emit via room twitchId pour garantir la livraison (au cas où socketId est stale)
+    //    Tous les sockets de ce user reçoivent (admin/joueur/refresh, peu importe).
+    io.to('asctid:' + twitchId).emit('ascension-floor-start', eventData);
     if (sock) {
         sock.emit('ascension-floor-start', eventData);
     }
@@ -599,36 +722,49 @@ function startPlayerFloor(gameState, io, twitchId, floorIndex) {
         floor: floorIndex,
         playerProgress: getPlayerProgressForClient(ascension),
     });
-    
+
     console.log(`🏔️ ${pp.username} → étage ${floorIndex + 1}/${ascension.floors}: ${floorData.type}`);
 }
 
 // 🆕 Avance le joueur au floor suivant (avec délai pour l'animation côté client)
-function advancePlayerToNextFloor(gameState, io, twitchId, success) {
+function advancePlayerToNextFloor(gameState, io, twitchId, success, customDelay) {
     const ascension = gameState.ascension;
     if (!ascension.active) return;
-    
+
     const pp = ascension.playerProgress[twitchId];
     if (!pp) return;
-    
+
     if (pp.floorTimer) {
         clearTimeout(pp.floorTimer);
         pp.floorTimer = null;
     }
-    
+
     if (success) pp.validated = true;
-    
+
     const nextFloor = pp.floor + 1;
-    
+
     if (nextFloor >= ascension.floors) {
         pp.floor = nextFloor;
         finalizePlayerFinish(gameState, io, twitchId);
         return;
     }
-    
-    // Délai pour laisser jouer l'animation du stamp PERFECT côté client (anim ~700ms)
+
+    // 🆕 Bump immédiat du floor + emit ascension-progress → le client anime la tour
+    //    tout de suite (à la validation), pas seulement au démarrage du mini-jeu suivant.
+    if (success) {
+        pp.floor = nextFloor;
+        io.emit('ascension-progress', {
+            twitchId: twitchId,
+            username: pp.username,
+            floor: nextFloor,
+            playerProgress: getPlayerProgressForClient(ascension),
+            });
+    }
+
+    // Délai pour laisser jouer l'animation de validation côté client (~750ms pour wrap fade + breathing room)
     // En cas d'échec (timer expiré), on enchaîne plus vite (300ms)
-    const delay = success ? 700 : 300;
+    // customDelay : override pour les mini-jeux qui ont une animation de victoire plus longue (ex: wordle 2500ms)
+    const delay = customDelay !== undefined ? customDelay : (success ? 1100 : 300);
     setTimeout(() => {
         if (ascension.active && ascension.playerProgress[twitchId]) {
             startPlayerFloor(gameState, io, twitchId, nextFloor);
@@ -647,29 +783,38 @@ function finalizePlayerFinish(gameState, io, twitchId) {
         pp.floorTimer = null;
     }
     
-    if (!ascension.finishedPlayers.find(f => f.twitchId === twitchId)) {
+    const reachedSummit = pp.floor >= ascension.floors;
+    // 🆕 Les ghosts (admin non inscrits) n'apparaissent pas au classement
+    if (!pp.isGhost && !ascension.finishedPlayers.find(f => f.twitchId === twitchId)) {
         ascension.finishedPlayers.push({
             twitchId: twitchId,
             username: pp.username,
             rank: ascension.finishedPlayers.length + 1,
             finishedAt: Date.now(),
+            reachedSummit,
         });
-        console.log(`🏔️ 🏁 ${pp.username} a fini la partie (rang ${ascension.finishedPlayers.length})`);
+        console.log(`🏔️ 🏁 ${pp.username} a fini la partie (rang ${ascension.finishedPlayers.length}${reachedSummit ? ' — SOMMET' : ''})`);
     }
-    
+
     io.emit('ascension-progress', {
         twitchId: twitchId,
         username: pp.username,
         floor: pp.floor,
         playerProgress: getPlayerProgressForClient(ascension),
     });
-    
-    // Vérifier si tous les joueurs ont fini → fin de la partie
-    const allFinished = Object.keys(ascension.playerProgress).every(tid => {
-        return ascension.playerProgress[tid].floor >= ascension.floors;
+
+    // 🆕 Mort subite : dès qu'un VRAI joueur (pas un ghost admin) atteint le sommet → fin immédiate
+    if (reachedSummit && !pp.isGhost) {
+        endAscensionGame(gameState, io);
+        return;
+    }
+
+    // Sinon, si tous les VRAIS joueurs ont fini sans atteindre le sommet → fin
+    const realPlayers = Object.entries(ascension.playerProgress).filter(([_, pp]) => !pp.isGhost);
+    const allFinished = realPlayers.every(([tid, _]) => {
+        return !!ascension.finishedPlayers.find(f => f.twitchId === tid);
     });
-    
-    if (allFinished) {
+    if (allFinished && realPlayers.length > 0) {
         endAscensionGame(gameState, io);
     }
 }
@@ -679,6 +824,11 @@ function getFloorDataForClient(floorData) {
     
     if (data.type === 'wordle') {
         const { word, ...rest } = data;
+        return rest;
+    }
+    if (data.type === 'scramble') {
+        // Strip word + characterName (anti-triche) — le joueur ne doit pas pouvoir lire la réponse dans le DOM
+        const { word, characterName, ...rest } = data;
         return rest;
     }
     if (data.type === 'silhouette') {
@@ -878,10 +1028,13 @@ function endAscensionGame(gameState, io) {
     }
     
     const podium = Object.entries(ascension.playerProgress)
+        .filter(([_, pp]) => !pp.isGhost)   // 🆕 ghosts (admin) exclus du podium
         .map(([tid, pp]) => {
             const finished = ascension.finishedPlayers.find(f => f.twitchId === tid);
             return {
                 twitchId: tid, username: pp.username, floor: pp.floor,
+                avatarUrl: pp.avatarUrl || null,
+                colorIndex: pp.colorIndex,
                 rank: finished ? finished.rank : null,
                 finishedAt: finished ? finished.finishedAt : null,
             };
@@ -896,20 +1049,34 @@ function endAscensionGame(gameState, io) {
     let rank = ascension.finishedPlayers.length + 1;
     podium.forEach(p => { if (!p.rank) p.rank = rank++; });
     
-    io.emit('ascension-game-end', { podium, winner: podium[0] || null });
-    
+    const winner = podium[0] || null;
+    io.emit('ascension-game-end', { podium, winner });
+
+    // 🆕 Callback côté server.js : rewards (XP/coins) + stats DB
+    if (ascension.onGameEnd) {
+        try {
+            ascension.onGameEnd(podium, winner);
+        } catch (e) {
+            console.error('⚠️ Ascension onGameEnd callback error:', e.message);
+        }
+    }
+
     ascension.active = false;
     gameState.inProgress = false;
-    
+
     console.log(`🏔️ Ascension terminée! Podium:`, podium.map(p => `${p.rank}. ${p.username} (étage ${p.floor})`).join(', '));
 }
 
 // ═══ Helpers ═══
 
 function getPlayerProgressForClient(ascension) {
-    return Object.entries(ascension.playerProgress).map(([tid, pp]) => ({
-        twitchId: tid, username: pp.username, floor: pp.floor, colorIndex: pp.colorIndex,
-    }));
+    // 🆕 On filtre les ghosts (admin non-joueur) : ils jouent localement mais
+    //    n'apparaissent pas dans le classement / la tour.
+    return Object.entries(ascension.playerProgress)
+        .filter(([_, pp]) => !pp.isGhost)
+        .map(([tid, pp]) => ({
+            twitchId: tid, username: pp.username, floor: pp.floor, colorIndex: pp.colorIndex, avatarUrl: pp.avatarUrl || null,
+        }));
 }
 
 function getAscensionStateForClient(gameState, twitchId) {
@@ -923,7 +1090,8 @@ function getAscensionStateForClient(gameState, twitchId) {
     let floorTimerEndTime = null;
     let floorData = null;
     let myValidatedGuesses = [];
-    
+    let myGuessJokerUsed = false;
+
     if (pp) {
         currentFloor = pp.floor;
         floorTimerEndTime = pp.floorTimerEndTime;
@@ -934,11 +1102,14 @@ function getAscensionStateForClient(gameState, twitchId) {
         if (pp.guessProgress?.[currentFloor]) {
             myValidatedGuesses = Array.from(pp.guessProgress[currentFloor]);
         }
+        if (pp.guessJokerUsed?.[currentFloor]) {
+            myGuessJokerUsed = true;
+        }
     } else {
-        // Admin spectateur sans pp : retour basique sans état perso
+        // Admin sans pp (avant ghost-add) : retour basique
         floorData = ascension.floorData[0] ? getFloorDataForClient(ascension.floorData[0]) : null;
     }
-    
+
     return {
         active: true,
         floors: ascension.floors,
@@ -949,6 +1120,7 @@ function getAscensionStateForClient(gameState, twitchId) {
         floorData: floorData,
         playerProgress: getPlayerProgressForClient(ascension),
         myValidatedGuesses: myValidatedGuesses,
+        myGuessJokerUsed: myGuessJokerUsed,
     };
 }
 
@@ -975,6 +1147,101 @@ function registerAscensionSocketHandlers(io, socket, gameState) {
     socket.on('ascension-check-guess', (data) => {
         handleAscensionCheckGuess(gameState, io, socket, data);
     });
+
+    // 🆕 Bind admin / joueur via room par twitchId (livraison fiable même au reconnect)
+    //    Met aussi à jour pp.socketId + gameState.players pour les actions (resolvePlayerFromSocket).
+    socket.on('ascension-admin-bind', (data) => {
+        if (!data || !data.twitchId) return;
+        // Rejoint la room du twitchId pour recevoir les ascension-floor-start et autres events ciblés
+        socket.join('asctid:' + data.twitchId);
+
+        const ascension = gameState.ascension;
+        if (ascension?.playerProgress) {
+            const pp = ascension.playerProgress[data.twitchId];
+            if (pp) {
+                const oldSid = pp.socketId;
+                pp.socketId = socket.id;
+                // Met à jour gameState.players (retire ancienne entrée si stale, ajoute nouvelle)
+                if (oldSid && oldSid !== socket.id) {
+                    const oldPlayer = gameState.players.get(oldSid);
+                    if (oldPlayer && oldPlayer.twitchId === data.twitchId) {
+                        gameState.players.delete(oldSid);
+                        gameState.players.set(socket.id, { ...oldPlayer, socketId: socket.id });
+                    }
+                }
+                // Si l'entrée n'existe pas du tout dans gameState.players (cas extrême), la créer
+                if (!gameState.players.get(socket.id)) {
+                    gameState.players.set(socket.id, {
+                        socketId: socket.id,
+                        twitchId: data.twitchId,
+                        username: pp.username,
+                        avatarUrl: pp.avatarUrl || 'novice.png',
+                        isGhost: !!pp.isGhost,
+                        isAdmin: true,
+                    });
+                }
+                console.log(`🏔️ admin-bind: ${pp.username} pp.socketId=${socket.id} (room asctid:${data.twitchId})`);
+            }
+        }
+    });
+
+    // 🆕 Admin qui veut jouer une partie ascension sans s'être inscrit → ghost (invisible au classement)
+    socket.on('ascension-admin-ghost-join', (data) => {
+        console.log('👻 ghost-join reçu:', { socketId: socket.id, data, inProgress: gameState.inProgress, mode: gameState.lobbyMode });
+        if (gameState.inProgress) { console.log('👻 → bloqué: partie en cours'); return; }
+        if (gameState.lobbyMode !== 'ascension') { console.log('👻 → bloqué: pas mode ascension'); return; }
+        if (!data || !data.twitchId) { console.log('👻 → bloqué: pas de twitchId'); return; }
+        const already = Array.from(gameState.players.values()).some(p => p.twitchId === data.twitchId);
+        if (already) { console.log('👻 → bloqué: déjà inscrit'); return; }
+        gameState.players.set(socket.id, {
+            socketId: socket.id,
+            twitchId: data.twitchId,
+            username: data.username || 'Admin',
+            avatarUrl: data.avatarUrl || 'novice.png',
+            isGhost: true,
+            isAdmin: true,
+            colorIndex: 0,
+        });
+        socket.join('asctid:' + data.twitchId);  // 🆕 join room dès l'ajout (pour livraison fiable)
+        console.log(`👻 Ghost admin ${data.username} ajouté + room asctid:${data.twitchId} (size=${gameState.players.size})`);
+    });
+
+    // 🆕 Joker Guess utilisé : valide côté serveur + révèle le nom (anti-triche : le name n'est jamais envoyé d'avance)
+    //    Réponse : 'ascension-guess-joker-revealed' avec { characterId, name }
+    socket.on('ascension-guess-joker-used', (data) => {
+        const ascension = gameState.ascension;
+        if (!ascension?.active) return;
+        const player = gameState.players.get(socket.id);
+        if (!player) return;
+        const pp = ascension.playerProgress[player.twitchId];
+        if (!pp) return;
+
+        // Vérifie que l'étage courant est bien un guess
+        const fd = ascension.syncEpreuves
+            ? ascension.floorData[pp.floor]
+            : (pp.personalFloorData?.[pp.floor] || ascension.floorData[pp.floor]);
+        if (!fd || fd.type !== 'guess') return;
+
+        // Anti-spam : déjà utilisé
+        if (!pp.guessJokerUsed) pp.guessJokerUsed = {};
+        if (pp.guessJokerUsed[pp.floor]) return;
+
+        // Charge la progression : besoin d'au moins 2 guesses validées
+        const validated = pp.guessProgress?.[pp.floor];
+        const validatedCount = validated ? validated.size : 0;
+        if (validatedCount < 2) return;
+
+        // Vérifie que le characterId est bien dans cet étage et pas déjà validé
+        const charId = data && data.characterId;
+        if (!charId) return;
+        const char = fd.characters.find(c => c.id === charId);
+        if (!char) return;
+        if (validated && validated.has(charId)) return;
+
+        // OK : marque consommé + envoie le nom
+        pp.guessJokerUsed[pp.floor] = true;
+        socket.emit('ascension-guess-joker-revealed', { characterId: charId, name: char.name });
+    });
     
     // 🆕 Validation continue de l'ordre des arcs (mini-jeu Order)
     // Le client envoie {order: [arcId1, arcId2, ...]} après chaque drop
@@ -990,10 +1257,39 @@ function registerAscensionSocketHandlers(io, socket, gameState) {
     socket.on('ascension-check-intruder', (data) => {
         handleAscensionCheckIntruder(gameState, io, socket, data);
     });
+
+    // 🆕 Validation d'une tentative Wordle. Client envoie {guess: 'NARUTO'}.
+    // Serveur répond {guess, statuses: ['green','yellow','red',...], isCorrect}.
+    socket.on('ascension-check-wordle', (data) => {
+        handleAscensionCheckWordle(gameState, io, socket, data);
+    });
+
+    // 🆕 Validation des connexions Match (relie 2 colonnes). Client envoie {connections: [{leftId, rightId}, ...]}.
+    // Serveur répond {results: [{leftId, rightId, correct}], allCorrect}.
+    socket.on('ascension-check-match', (data) => {
+        handleAscensionCheckMatch(gameState, io, socket, data);
+    });
+
+    // 🆕 Validation incrémentale d'un clic sur le mini-jeu Target (clique sur 5 persos d'affilée).
+    // Client envoie {characterId}. Serveur tracke pp.targetProgress et reset à 0 sur erreur.
+    socket.on('ascension-check-target', (data) => {
+        handleAscensionCheckTarget(gameState, io, socket, data);
+    });
+
+    // 🆕 Validation d'une tentative Scramble (anagramme). Client envoie {guess: 'NARUTO'}.
+    // Serveur compare au word et répond {correct, guess}.
+    socket.on('ascension-check-scramble', (data) => {
+        handleAscensionCheckScramble(gameState, io, socket, data);
+    });
     
     socket.on('ascension-reconnect', (data) => {
         const ascension = gameState.ascension;
-        
+
+        // 🆕 Rejoint la room twitchId pour recevoir les emits ciblés
+        if (data?.twitchId) {
+            socket.join('asctid:' + data.twitchId);
+        }
+
         // Remap socket ID for this player
         if (data?.twitchId && ascension?.playerProgress) {
             const pp = ascension.playerProgress[data.twitchId];
@@ -1014,13 +1310,17 @@ function registerAscensionSocketHandlers(io, socket, gameState) {
 // 🆕 Validation incrémentale d'une seule guess pour le mini-jeu Guess
 function handleAscensionCheckGuess(gameState, io, socket, data) {
     const ascension = gameState.ascension;
-    if (!ascension.active) return;
-    
+    if (!ascension.active) { console.log('🐛 [server] check-guess: ascension not active'); return; }
+
     const player = resolvePlayerFromSocket(gameState, socket);
-    if (!player) return;
-    
+    if (!player) {
+        console.log('🐛 [server] check-guess: no player from socket.id=' + socket.id + ' | gameState.players keys=', Array.from(gameState.players.keys()).slice(0, 5), '| pp socketIds=', Object.values(ascension.playerProgress || {}).map(p => p.socketId).slice(0, 5));
+        return;
+    }
+    console.log('🐛 [server] check-guess: player resolved tid=' + player.twitchId + ' name=' + player.username);
+
     const pp = ascension.playerProgress[player.twitchId];
-    if (!pp || pp.validated) return;
+    if (!pp || pp.validated) { console.log('🐛 [server] check-guess: no pp or already validated'); return; }
     
     // 🆕 Utiliser le floor PERSONNEL du joueur (mode race indépendant)
     const floorIndex = pp.floor;
@@ -1092,6 +1392,213 @@ function handleAscensionCheckOrder(gameState, io, socket, data) {
         advancePlayerToNextFloor(gameState, io, player.twitchId, true);
     }
     // Si pas correct → on ne répond rien (le client continue à drag)
+}
+
+// 🆕 Validation d'une tentative Wordle (essais infinis, le timer du floor gère la fin)
+// Calcul des statuts par lettre avec gestion correcte des doublons (greens d'abord, puis yellows
+// en consommant les positions disponibles dans le mot cible).
+function handleAscensionCheckWordle(gameState, io, socket, data) {
+    const ascension = gameState.ascension;
+    if (!ascension.active) return;
+
+    const player = resolvePlayerFromSocket(gameState, socket);
+    if (!player) return;
+
+    const pp = ascension.playerProgress[player.twitchId];
+    if (!pp || pp.validated) return;
+
+    const floorIndex = pp.floor;
+    const floorData = ascension.syncEpreuves
+        ? ascension.floorData[floorIndex]
+        : (pp.personalFloorData?.[floorIndex] || ascension.floorData[floorIndex]);
+
+    if (!floorData || floorData.type !== 'wordle') return;
+    if (!data || typeof data.guess !== 'string') return;
+
+    const guess = data.guess.toUpperCase();
+    // 🆕 Strip les espaces pour la comparaison (multi-mots : "DEMON SLAYER" → "DEMONSLAYER")
+    const word = floorData.word.replace(/\s+/g, '');
+    if (guess.length !== word.length) return;
+
+    const statuses = new Array(word.length).fill('red');
+    const used = new Array(word.length).fill(false);
+
+    // Pass 1 : greens (lettre + position correctes)
+    for (let i = 0; i < word.length; i++) {
+        if (guess[i] === word[i]) {
+            statuses[i] = 'green';
+            used[i] = true;
+        }
+    }
+    // Pass 2 : yellows (lettre présente ailleurs, sans double-comptage)
+    for (let i = 0; i < word.length; i++) {
+        if (statuses[i] === 'green') continue;
+        for (let j = 0; j < word.length; j++) {
+            if (!used[j] && guess[i] === word[j]) {
+                statuses[i] = 'yellow';
+                used[j] = true;
+                break;
+            }
+        }
+    }
+
+    const isCorrect = statuses.every(s => s === 'green');
+
+    socket.emit('ascension-wordle-result', { guess, statuses, isCorrect });
+
+    if (isCorrect) {
+        console.log(`🏔️ ✅ ${player.username} valide étage Wordle ${floorIndex + 1} (${word})`);
+        socket.emit('ascension-answer-result', { correct: true, floor: pp.floor + 1 });
+        // Délai 2500ms : laisse le temps de jouer le flip + pulse verte + fade-out du wrap côté client
+        advancePlayerToNextFloor(gameState, io, player.twitchId, true, 2500);
+    }
+}
+
+// 🆕 Validation des connexions Match (relie). Le client envoie toutes les connexions en bloc
+// (auto-submit quand toutes les paires sont faites). Serveur valide chaque paire individuellement.
+// Si tout est correct → étage validé. Sinon, le client retire les wrongs et re-soumet après que le joueur les refasse.
+function handleAscensionCheckMatch(gameState, io, socket, data) {
+    const ascension = gameState.ascension;
+    if (!ascension.active) return;
+
+    const player = resolvePlayerFromSocket(gameState, socket);
+    if (!player) return;
+
+    const pp = ascension.playerProgress[player.twitchId];
+    if (!pp || pp.validated) return;
+
+    const floorIndex = pp.floor;
+    const floorData = ascension.syncEpreuves
+        ? ascension.floorData[floorIndex]
+        : (pp.personalFloorData?.[floorIndex] || ascension.floorData[floorIndex]);
+
+    if (!floorData || floorData.type !== 'match') return;
+    if (!data || !Array.isArray(data.connections)) return;
+
+    const pairs = floorData.pairs;
+    const pairMap = new Map(pairs.map(p => [p.leftId, p.rightId]));
+
+    const results = data.connections.map(c => {
+        const expected = pairMap.get(c.leftId);
+        return {
+            leftId: c.leftId,
+            rightId: c.rightId,
+            correct: expected !== undefined && expected === c.rightId,
+        };
+    });
+
+    const allCorrect = results.length === pairs.length && results.every(r => r.correct);
+
+    socket.emit('ascension-match-result', { results, allCorrect });
+
+    if (allCorrect) {
+        console.log(`🏔️ ✅ ${player.username} valide étage Match ${floorIndex + 1} (${floorData.subtype})`);
+        socket.emit('ascension-answer-result', { correct: true, floor: pp.floor + 1 });
+        // Délai pour laisser jouer la cascade de validation + wrap fade
+        advancePlayerToNextFloor(gameState, io, player.twitchId, true, 2500);
+    }
+}
+
+// 🆕 Validation d'une tentative Scramble (anagramme).
+// Le joueur réorganise les lettres et soumet → serveur compare au word.
+// Si correct → étage validé. Sinon → renvoie correct: false, joueur peut réessayer.
+function handleAscensionCheckScramble(gameState, io, socket, data) {
+    const ascension = gameState.ascension;
+    if (!ascension.active) return;
+
+    const player = resolvePlayerFromSocket(gameState, socket);
+    if (!player) return;
+
+    const pp = ascension.playerProgress[player.twitchId];
+    if (!pp || pp.validated) return;
+
+    const floorIndex = pp.floor;
+    const floorData = ascension.syncEpreuves
+        ? ascension.floorData[floorIndex]
+        : (pp.personalFloorData?.[floorIndex] || ascension.floorData[floorIndex]);
+
+    if (!floorData || floorData.type !== 'scramble') return;
+    if (!data || typeof data.guess !== 'string') return;
+
+    const guess = data.guess.toUpperCase();
+    const word = floorData.word;
+    const isCorrect = guess === word;
+
+    // 🆕 Marqueur par position : true = lettre était à la bonne place (hint en cas de wrong)
+    const correctPositions = guess.split('').map((letter, i) => letter === word[i]);
+
+    socket.emit('ascension-scramble-result', {
+        correct: isCorrect,
+        guess,
+        correctPositions,
+    });
+
+    if (isCorrect) {
+        console.log(`🏔️ ✅ ${player.username} valide étage Scramble ${floorIndex + 1} (${word})`);
+        socket.emit('ascension-answer-result', { correct: true, floor: pp.floor + 1 });
+        advancePlayerToNextFloor(gameState, io, player.twitchId, true);
+    }
+}
+
+// 🆕 Validation incrémentale du mini-jeu Target.
+// Le joueur doit cliquer sur 5 persos d'affilée. Sur erreur, progress reset à 0 et 1er target ré-affiché.
+function handleAscensionCheckTarget(gameState, io, socket, data) {
+    const ascension = gameState.ascension;
+    if (!ascension.active) return;
+
+    const player = resolvePlayerFromSocket(gameState, socket);
+    if (!player) return;
+
+    const pp = ascension.playerProgress[player.twitchId];
+    if (!pp || pp.validated) return;
+
+    const floorIndex = pp.floor;
+    const floorData = ascension.syncEpreuves
+        ? ascension.floorData[floorIndex]
+        : (pp.personalFloorData?.[floorIndex] || ascension.floorData[floorIndex]);
+
+    if (!floorData || floorData.type !== 'target') return;
+    if (!data || !data.characterId) return;
+
+    if (typeof pp.targetProgress !== 'number') pp.targetProgress = 0;
+
+    const expectedTarget = floorData.targets[pp.targetProgress];
+    if (!expectedTarget) return;
+
+    // 🆕 Match par id OU par name : si plusieurs persos partagent le même nom (ex: Hinata Naruto vs Hinata Haikyuu),
+    //    cliquer n'importe quel perso de ce nom est validé (sinon le joueur ne peut pas savoir lequel est attendu).
+    const clickedChar = floorData.characters.find(c => c.id === data.characterId);
+    const isCorrect = data.characterId === expectedTarget.id
+        || (clickedChar && clickedChar.name === expectedTarget.name);
+
+    if (isCorrect) {
+        pp.targetProgress++;
+        const isComplete = pp.targetProgress >= floorData.totalTargets;
+        const nextTarget = isComplete ? null : floorData.targets[pp.targetProgress];
+        socket.emit('ascension-target-result', {
+            correct: true,
+            characterId: data.characterId,
+            progress: pp.targetProgress,
+            currentTarget: nextTarget,
+            isComplete,
+        });
+        if (isComplete) {
+            console.log(`🏔️ ✅ ${player.username} valide étage Target ${floorIndex + 1}`);
+            socket.emit('ascension-answer-result', { correct: true, floor: pp.floor + 1 });
+            pp.targetProgress = 0;
+            advancePlayerToNextFloor(gameState, io, player.twitchId, true);
+        }
+    } else {
+        // Wrong → reset progress, ré-envoie le 1er target
+        pp.targetProgress = 0;
+        socket.emit('ascension-target-result', {
+            correct: false,
+            characterId: data.characterId,
+            progress: 0,
+            currentTarget: floorData.targets[0],
+            isComplete: false,
+        });
+    }
 }
 
 // 🆕 Validation incrémentale d'un clic sur une carte du mini-jeu Intruder

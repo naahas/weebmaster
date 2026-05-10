@@ -421,9 +421,19 @@ function initSocket() {
         // Ignorer en mode BombAnime
         if (currentGameMode === 'bombanime') return;
         console.log('📊 Résultats:', data);
-        console.log('📊 Stats:', data.stats);  // AJOUTER
-        console.log('📊 Fastest:', data.fastestPlayer);  // AJOUTER
+        console.log('📊 Stats:', data.stats);
+        console.log('📊 Fastest:', data.fastestPlayer);
         displayResults(data);
+
+        // 🆕 Si c'est la dernière question (mode points), désactiver le bouton "Suivant"
+        //    → le serveur passera automatiquement au winner screen, l'admin n'a rien à faire
+        if (data.isLastQuestion) {
+            const nextBtn = document.getElementById('nextQuestionBtn');
+            if (nextBtn) {
+                nextBtn.classList.add('auto-disabled');
+                nextBtn.disabled = true;
+            }
+        }
     });
 
 
@@ -3087,11 +3097,11 @@ const MODES_DATA = [
     { id: 'classic', n: 'CLASSIQUE', l: 'Mode Solo', c: 'gold', p: '∞', t: 'solo', d: "Quiz anime en solo. Questions au format QCM , en mode Vies ou Points. Paramètres de difficultés et de séries variables. Chaque joueur peut utiliser des bonus en répondant juste ou en complétant des défis.", img: 'gilga.png', imgStyle: 'transform:scale(1.04) translate(-2%, 3%)' },
     { id: 'rivalry', n: 'RIVALITÉ', l: 'Mode Équipe', c: 'purple', p: '∞', t: 'equipe', d: "Deux équipes s'affrontent sur un Quiz anime. Similaire au mode Classique , chaque équipe cumule les vies ou les points de ses joueurs. L'équipe avec le plus de points ou de joueurs en vies à la fin remporte la partie.", img: 'shark.png' },
     { id: 'bombanime', n: 'BOMBANIME', l: 'Mode Solo', c: 'green', p: '13', t: 'solo', playable: true, d: "Une bombe tourne de joueur en joueur. Citez un personnage d'une série spécifique avant que le timer explose. Le dernier survivant remporte la partie.", img: 'lambo2.png', imgStyle: 'transform:scale(1.2) translateY(5%)' },
-    { id: 'ascension', n: 'ASCENSION', l: 'Mode Solo', c: 'white', p: '∞', t: 'solo', playable: true, soon: true, d: "Grimpez la tour étage par étage en réussissant des mini-jeux variés. Le premier joueur à atteindre le sommet remporte la partie.", img: 'ascension.png', imgStyle: 'transform:scale(0.98) translate(-2%, 3%)' },
+    { id: 'ascension', n: 'ASCENSION', l: 'Mode Solo', c: 'crimson', p: '∞', t: 'solo', playable: true, soon: true, d: "Grimpez la tour étage par étage en réussissant des mini-jeux variés. Le premier joueur à atteindre le sommet remporte la partie.", img: 'ascension.png', imgStyle: 'transform:scale(0.92) translate(-2%, -10%)' },
     { id: 'collect', n: 'COLLECT', l: 'Mode Solo', c: 'blue', p: '5', t: 'solo', playable: true, d: "Jeu de cartes stratégique anime. Collectionnez des personnages, utilisez leurs capacités et affrontez les autres joueurs.", img: 'aventurine3.png', soon: true, imgStyle: 'transform:scale(1.2) translate(3%, 12%)' },
 ];
 
-const MODE_COLORS = { gold:'#d4a017', purple:'#8b5cf6', green:'#22c55e', cyan:'#00d4ff', blue:'#3b82f6', red:'#e74c3c', orange:'#e67e22', pink:'#f080b0', teal:'#1abc9c', indigo:'#6366f1', amber:'#f59e0b', lime:'#84cc16', rose:'#f43f5e', brown:'#a0724a', white:'#d4d4d8' };
+const MODE_COLORS = { gold:'#d4a017', purple:'#8b5cf6', green:'#22c55e', cyan:'#00d4ff', blue:'#3b82f6', red:'#e74c3c', orange:'#e67e22', pink:'#f080b0', teal:'#1abc9c', indigo:'#6366f1', amber:'#f59e0b', lime:'#84cc16', rose:'#f43f5e', brown:'#a0724a', white:'#d4d4d8', crimson:'#a8131a' };
 const MODE_PLAYER_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>';
 
 let modeFilterType = 'all', modeFilterPlayers = 'all', modeFilterPlayable = 'all';
@@ -3325,9 +3335,62 @@ function modeStopParticles(card) {
 // Select mode
 let modeIsSelecting = false;
 
+let _modeSelectAudioCtx = null;
+function playModeSelectSound() {
+    // 🔊 "Chime" cristalline pour la sélection d'un mode (très différent du click intruder).
+    //    Arpège rapide ascendant 3 notes (C5 → E5 → G5) avec timbre cloche (sine + harmonique).
+    //    Ressort comme un "ding" musical, pas comme un tap.
+    if (typeof adminSoundMuted !== 'undefined' && adminSoundMuted) return;
+    try {
+        if (!_modeSelectAudioCtx) {
+            _modeSelectAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        const ctx = _modeSelectAudioCtx;
+        if (ctx.state === 'suspended') ctx.resume();
+        const t = ctx.currentTime;
+        const vol = (typeof adminSoundVolume !== 'undefined' ? adminSoundVolume : 50) / 100;
+
+        // Arpège C5–E5–G5 (accord majeur joué en cascade rapide)
+        const notes = [
+            { freq: 523.25, delay: 0.00 },   // C5
+            { freq: 659.25, delay: 0.045 },  // E5
+            { freq: 783.99, delay: 0.09  },  // G5
+        ];
+
+        notes.forEach(n => {
+            const start = t + n.delay;
+
+            // Fondamentale sine (corps de la cloche)
+            const fund = ctx.createOscillator();
+            const fundGain = ctx.createGain();
+            fund.type = 'sine';
+            fund.frequency.setValueAtTime(n.freq, start);
+            fundGain.gain.setValueAtTime(0, start);
+            fundGain.gain.linearRampToValueAtTime(0.045 * vol, start + 0.008);
+            fundGain.gain.exponentialRampToValueAtTime(0.001, start + 0.45);
+            fund.connect(fundGain).connect(ctx.destination);
+            fund.start(start);
+            fund.stop(start + 0.5);
+
+            // Harmonique octave (donne le brillant cristallin de cloche)
+            const harm = ctx.createOscillator();
+            const harmGain = ctx.createGain();
+            harm.type = 'sine';
+            harm.frequency.setValueAtTime(n.freq * 2, start);
+            harmGain.gain.setValueAtTime(0, start);
+            harmGain.gain.linearRampToValueAtTime(0.018 * vol, start + 0.005);
+            harmGain.gain.exponentialRampToValueAtTime(0.001, start + 0.3);
+            harm.connect(harmGain).connect(ctx.destination);
+            harm.start(start);
+            harm.stop(start + 0.32);
+        });
+    } catch (e) { /* ignore */ }
+}
+
 function selectModeCard(card, modeId, idx) {
     if (modeWasDrag || modeIsSelecting) return;
     const m = MODES_DATA[idx]; if (!m || m.soon) return;
+    playModeSelectSound();
     modeIsSelecting = true;
     modeStopParticles(card);
     hideModeDesc();
@@ -5104,9 +5167,22 @@ document.getElementById('startGameBtn').addEventListener('click', async () => {
         // 🏔️ Paramètres Ascension
         if (currentGameMode === 'ascension') {
             startData.ascensionFloors = ascensionConfig.floors || 15;
-            startData.ascensionTimer = ascensionConfig.timer || 30;
+            startData.ascensionTimer = ascensionConfig.timer || 60;
             startData.ascensionSync = ascensionConfig.syncEpreuves;
             console.log('🏔️ Paramètres Ascension envoyés:', startData);
+
+            // 🆕 Toujours emit ghost-join : le serveur skip si admin déjà inscrit comme vrai joueur
+            try {
+                if (typeof socket !== 'undefined' && socket && typeof twitchUser !== 'undefined' && twitchUser && twitchUser.id) {
+                    socket.emit('ascension-admin-ghost-join', {
+                        twitchId: twitchUser.id,
+                        username: twitchUser.display_name || twitchUser.login || 'Admin',
+                        avatarUrl: twitchUser.profile_image_url || 'novice.png',
+                    });
+                    // petit délai pour que le serveur traite l'event avant le start
+                    await new Promise(r => setTimeout(r, 120));
+                }
+            } catch (e) { console.warn('ghost-join error:', e.message); }
         }
         
         const response = await fetch('/admin/start-game', {
@@ -9725,6 +9801,6 @@ function setAscensionSync(isSync) {
 // Init ascension defaults on load
 document.addEventListener("DOMContentLoaded", () => {
     setAscensionFloors(15);
-    setAscensionTimer(30);
+    setAscensionTimer(60);
     setAscensionSync(true);
 });

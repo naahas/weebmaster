@@ -324,9 +324,9 @@
             </div>
 
             <!-- État: Partie en cours -->
-            <div class="content-section game-section" 
+            <div class="content-section game-section"
                  :class="{ 'no-animation': lobbyMode === 'bombanime' || lobbyMode === 'collect' || lobbyMode === 'survie' || lobbyMode === 'ascension' }"
-                 v-if="gameInProgress && isAuthenticated && !gameEnded">
+                 v-if="gameInProgress && isAuthenticated && (!gameEnded || lobbyMode === 'ascension')">
                 
                 <!-- ============================================
                      MODE BOMBANIME - Interface de jeu
@@ -1277,7 +1277,7 @@
                 <!-- ============================================
                      MODE ASCENSION - Interface de jeu
                      ============================================ -->
-                <template v-else-if="lobbyMode === 'ascension' && !gameEnded">
+                <template v-else-if="lobbyMode === 'ascension'">
                     <div class="ascension-player-screen"></div>
                 </template>
 
@@ -1768,6 +1768,13 @@
                                 </svg>
                                 <span class="profile-mode-name">Rivalite</span>
                                 <span class="profile-mode-count">{{ profileData.modeStats ? profileData.modeStats.rivalry || 0 : 0 }}</span>
+                            </div>
+                            <div class="profile-mode-card">
+                                <svg class="profile-mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 21h18M3 21V3l9 4 9-4v18"/>
+                                </svg>
+                                <span class="profile-mode-name">Ascension</span>
+                                <span class="profile-mode-count">{{ profileData.modeStats ? profileData.modeStats.ascension || 0 : 0 }}</span>
                             </div>
                         </div>
                     </div>

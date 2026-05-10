@@ -994,6 +994,7 @@
                                     <span class="setting-group-value" id="ascensionFloorsValue">15</span>
                                 </div>
                                 <div class="setting-group-options poll-options-row">
+                                    <button class="setting-option-btn poll-option" data-value="5" onclick="setAscensionFloors(5)">5</button>
                                     <button class="setting-option-btn poll-option" data-value="10" onclick="setAscensionFloors(10)">10</button>
                                     <button class="setting-option-btn poll-option active" data-value="15" onclick="setAscensionFloors(15)">15</button>
                                     <button class="setting-option-btn poll-option" data-value="20" onclick="setAscensionFloors(20)">20</button>
@@ -1012,10 +1013,10 @@
                                         </svg>
                                         <span class="setting-group-label">Timer</span>
                                     </div>
-                                    <span class="setting-group-value" id="ascensionTimerValue">30s</span>
+                                    <span class="setting-group-value" id="ascensionTimerValue">60s</span>
                                 </div>
                                 <div class="setting-group-options timer-slider-container" style="overflow: visible; padding: 8px 16px 12px;">
-                                    <input type="range" class="timer-slider" id="ascensionTimerSlider" min="10" max="60" value="30" oninput="setAscensionTimer(this.value)">
+                                    <input type="range" class="timer-slider" id="ascensionTimerSlider" min="30" max="90" value="60" oninput="setAscensionTimer(this.value)">
                                     <div class="timer-slider-labels">
                                         <span>10s</span>
                                         <span>30s</span>

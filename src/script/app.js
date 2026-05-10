@@ -2499,27 +2499,31 @@ createApp({
             });
 
             this.socket.on('game-started', (data) => {
-                // Ignorer en mode BombAnime (géré par bombanime-game-started)
+                // 🔧 FIX: synchroniser le lobbyMode avec le serveur AVANT les checks de mode.
+                // Sans ça, si le client a un lobbyMode stale (ex: 'bombanime' resté après une fermeture
+                // de lobby ratée), l'event serait ignoré → playerLives=0 + bouton réponse disabled.
+                if (data && data.lobbyMode) {
+                    this.lobbyMode = data.lobbyMode;
+                }
+
+                // Modes ayant leur propre handler dédié → on ignore game-started générique
                 if (this.lobbyMode === 'bombanime') {
                     console.log('🎮 game-started ignoré en mode BombAnime');
                     return;
                 }
-                // Ignorer en mode Survie (géré par survie-game-started)
                 if (this.lobbyMode === 'survie') {
                     console.log('🎮 game-started ignoré en mode Survie');
                     return;
                 }
-                // Ignorer en mode Poll (géré par poll-game-started)
                 if (this.lobbyMode === 'poll') {
                     console.log('🎮 game-started ignoré en mode Poll');
                     return;
                 }
-                // Ignorer en mode Ascension (géré par ascension-game-started)
                 if (this.lobbyMode === 'ascension') {
                     console.log('🎮 game-started ignoré en mode Ascension');
                     return;
                 }
-                
+
                 this.gameStartedOnServer = true;
                 this.gameMode = data.gameMode || 'lives';
                 
@@ -4475,6 +4479,7 @@ createApp({
                 this.ascension.playerProgress = data.playerProgress || this.ascension.playerProgress;
                 this.ascension.validated = false;
                 this.ascension.myValidatedGuesses = [];  // 🆕 Nouveau floor → on repart à vide (la restauration n'a lieu qu'au reload via ascension-state)
+                this.ascension.myGuessJokerUsed = false;  // 🆕 Idem : reset le flag joker (sinon état "used" hérité du floor précédent)
                 
                 // 🆕 Si on est encore dans le countdown initial (3-2-1-GO du floor 0),
                 // attendre la fin du countdown avant de reveal+render pour éviter
@@ -4595,7 +4600,49 @@ createApp({
                 if (!data || !data.characterId) return;
                 this._handleIntruderResult(data);
             });
+
+            // 🎯 Validation d'une tentative Wordle
+            //    Le serveur répond {guess, statuses: ['green'|'yellow'|'red',...], isCorrect}
+            this.socket.on('ascension-wordle-result', (data) => {
+                if (!data || typeof data.guess !== 'string') return;
+                this._handleWordleResult(data);
+            });
+
+            // 🎯 Validation des connexions Match (relie 2 colonnes)
+            //    Le serveur répond {results: [{leftId, rightId, correct}], allCorrect}
+            this.socket.on('ascension-match-result', (data) => {
+                if (!data || !Array.isArray(data.results)) return;
+                this._handleMatchResult(data);
+            });
+
+            // 🎯 Validation incrémentale du mini-jeu Target (clic par clic)
+            //    Le serveur répond {correct, characterId, progress, currentTarget, isComplete}
+            this.socket.on('ascension-target-result', (data) => {
+                if (!data || !data.characterId) return;
+                this._handleTargetResult(data);
+            });
+
+            // 🎯 Validation d'une tentative Scramble (anagramme)
+            //    Le serveur répond {correct, guess}
+            this.socket.on('ascension-scramble-result', (data) => {
+                if (!data || typeof data.guess !== 'string') return;
+                this._handleScrambleResult(data);
+            });
             
+            // 🎯 Joker Guess : le serveur révèle le nom (anti-triche : name jamais envoyé d'avance)
+            this.socket.on('ascension-guess-joker-revealed', (data) => {
+                if (!data || !data.characterId || typeof data.name !== 'string') return;
+                const card = document.querySelector(`.asc-guess-card[data-char-id="${data.characterId}"]`);
+                const input = card?.querySelector('.asc-guess-input');
+                if (input && !input.disabled) {
+                    input.value = data.name;
+                    input.focus();
+                    input.setSelectionRange(input.value.length, input.value.length);
+                }
+                this._playGuessJokerSound();
+                this._shatterAllGuessJokers();
+            });
+
             // 🎯 Validation incrémentale du mini-jeu Guess
             this.socket.on('ascension-guess-result', (data) => {
                 if (!data || !data.characterId) return;
@@ -4604,9 +4651,16 @@ createApp({
                 const input = card?.querySelector('.asc-guess-input');
                 
                 if (data.correct) {
+                    const wasNew = !this.ascension.guessSolved || !this.ascension.guessSolved[data.characterId];
                     if (!this.ascension.guessSolved) this.ascension.guessSolved = {};
                     this.ascension.guessSolved[data.characterId] = true;
-                    
+
+                    // 🆕 Incrémente la progression du joker (max 2, 1x par perso)
+                    if (wasNew && this.ascension.guessJoker && !this.ascension.guessJoker.used && this.ascension.guessJoker.progress < 2) {
+                        this.ascension.guessJoker.progress++;
+                        this._updateGuessJokerVisual();
+                    }
+
                     if (card) {
                         card.classList.add('asc-guess-correct');
                         // 🆕 Stamp "PERFECT" qui s'applique sur la card avec rotation
@@ -4741,8 +4795,38 @@ createApp({
                 if (!this.ascension?.active) return;
                 console.log('🏔️ Fin:', data);
                 this.ascension.active = false;
+                this.gameEnded = true;
                 this._stopAscensionPlayerTimer();
-                this._showAscensionPlayerPodium(data.podium, data.winner);
+
+                // 🎁 Setup pour la reward animation (XP/S-Coins).
+                //    Les rewards arriveront via 'ascension-rewards-ready' (calcul async côté serveur).
+                this.gameEndData = {
+                    winner: data.winner,
+                    ranking: data.podium,
+                    gameMode: 'ascension',
+                    rewardsData: null,
+                };
+
+                // 🆕 $nextTick : on s'assure que Vue a fini son render cycle (déclenché par gameEnded=true)
+                //    avant d'injecter le podium dans le DOM (sinon Vue peut écraser nos modifs).
+                this.$nextTick(() => {
+                    // Si le screen ascension a perdu son contenu (au cas où Vue l'aurait recréé), re-init
+                    if (!document.getElementById('ascPlayerContent')) {
+                        this._initAscensionUI();
+                    }
+                    this._showAscensionPlayerPodium(data.podium, data.winner);
+                });
+            });
+
+            // 🎁 Rewards Ascension reçus (XP + S-Coins)
+            this.socket.on('ascension-rewards-ready', (data) => {
+                console.log('🎁 Rewards Ascension reçus:', data);
+                if (!data || !data.rewardsData || !this.twitchId) return;
+                const myReward = data.rewardsData[this.twitchId];
+                if (!myReward) return;
+                if (this.gameEndData) this.gameEndData.rewardsData = data.rewardsData;
+                this.rewardAnimData = myReward;
+                this.$nextTick(() => this.playRewardAnimation());
             });
             
             this.socket.on('ascension-state', (data) => {
@@ -4782,6 +4866,7 @@ createApp({
                     validated: false,
                     countdownEndsAt: data.countdownEndsAt || 0,  // 🆕 Idem pour reconnexion pendant countdown initial
                     myValidatedGuesses: data.myValidatedGuesses || [],  // 🆕 Guesses déjà validées au refresh (mode race)
+                    myGuessJokerUsed: !!data.myGuessJokerUsed,            // 🆕 Joker Guess déjà consommé pour cet étage (anti-spam refresh)
                 };
                 
                 // Find my floor
@@ -6126,26 +6211,86 @@ createApp({
                 </div>
                 <div class="asc-floor-title asc-pre-start" id="ascPlayerFloorTitle"></div>
                 <div class="asc-player-content asc-pre-start" id="ascPlayerContent"></div>
+                <div class="asc-mobile-rank" id="ascPlayerMobileRank">
+                    <span class="asc-mobile-rank-label">Vous êtes</span>
+                    <span class="asc-mobile-rank-pos" id="ascPlayerMobileRankPos">—</span>
+                    <span class="asc-mobile-rank-suffix" id="ascPlayerMobileRankSuffix"></span>
+                </div>
                 <div class="asc-player-tower asc-tower-reveal">
-                    <div class="asc-tower-crown">♛</div>
-                    <div class="asc-tower-track">
-                        <div class="asc-tower-marks" id="ascPlayerTowerMarks"></div>
-                        <div class="asc-tower-players" id="ascPlayerTowerPlayers"></div>
+                    <div class="asc-tower-glow"></div>
+                    <div class="asc-tower-sparks" id="ascPlayerTowerSparks"></div>
+                    <div class="asc-tower-links"></div>
+                    <div class="asc-tower-crown">
+                        <svg viewBox="0 0 60 64" width="40" height="42" fill="none" aria-hidden="true">
+                            <defs>
+                                <linearGradient id="ascCrownGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stop-color="#fff5c8"/>
+                                    <stop offset="100%" stop-color="#a87012"/>
+                                </linearGradient>
+                            </defs>
+                            <!-- Pétale central -->
+                            <path d="M30 4 Q22 18 26 30 L30 36 L34 30 Q38 18 30 4 Z" fill="url(#ascCrownGrad)" stroke="#7a5210" stroke-width="1"/>
+                            <!-- Pétales latéraux -->
+                            <path d="M30 24 Q14 16 10 30 Q12 38 26 32 Z" fill="url(#ascCrownGrad)" stroke="#7a5210" stroke-width="1"/>
+                            <path d="M30 24 Q46 16 50 30 Q48 38 34 32 Z" fill="url(#ascCrownGrad)" stroke="#7a5210" stroke-width="1"/>
+                            <!-- Bandeau central -->
+                            <rect x="14" y="30" width="32" height="6" rx="1" fill="#a87012" stroke="#5a3a08" stroke-width="0.6"/>
+                            <!-- Tige + base évasée -->
+                            <path d="M28 36 L24 56 L36 56 L32 36 Z" fill="url(#ascCrownGrad)" stroke="#7a5210" stroke-width="1"/>
+                        </svg>
                     </div>
+                    <!-- 🆕 Aura/halo sous la couronne (effet sommet) -->
+                    <div class="asc-tower-summit-aura"></div>
+                    <div class="asc-tower-platforms" id="ascPlayerTowerPlatforms"></div>
+                    <div class="asc-tower-players" id="ascPlayerTowerPlayers"></div>
                 </div>
             `;
-            
-            const marks = document.getElementById('ascPlayerTowerMarks');
-            if (marks) {
-                for (let i = 1; i < this.ascension.floors; i++) {
-                    const m = document.createElement('div');
-                    m.className = 'asc-tower-mark';
-                    m.style.bottom = (i / this.ascension.floors * 100) + '%';
-                    if (i % 5 === 0) { m.classList.add('major'); m.dataset.floor = i; }
-                    marks.appendChild(m);
+
+            // 🆕 Taille des avatars adaptée au nombre d'étages (sinon overlap quand beaucoup de floors)
+            const tower = document.querySelector('.asc-player-tower');
+            if (tower) {
+                const f = this.ascension.floors || 15;
+                let size = 28;
+                if (f >= 25) size = 18;
+                else if (f >= 20) size = 21;
+                else if (f >= 15) size = 24;
+                else if (f >= 10) size = 26;
+                tower.style.setProperty('--asc-avatar-size', size + 'px');
+                tower.style.setProperty('--asc-avatar-font', Math.round(size * 0.42) + 'px');
+            }
+
+            // 🆕 Génère les plateformes (1 par étage), majeures tous les 5, summit pour la dernière
+            const platforms = document.getElementById('ascPlayerTowerPlatforms');
+            if (platforms) {
+                const total = this.ascension.floors;
+                for (let i = 0; i < total; i++) {
+                    const p = document.createElement('div');
+                    const isSummit = (i === total - 1);
+                    let cls = 'asc-tower-platform';
+                    if ((i + 1) % 5 === 0) cls += ' major';
+                    if (isSummit) cls += ' summit';
+                    p.className = cls;
+                    p.style.bottom = (i / total * 100) + '%';
+                    p.innerHTML = '<div class="asc-tower-disc"></div>'
+                        + (isSummit ? '<div class="asc-tower-summit-rays"></div>' : '');
+                    platforms.appendChild(p);
                 }
             }
-            
+
+            // 🆕 Génère les étincelles montantes
+            const sparks = document.getElementById('ascPlayerTowerSparks');
+            if (sparks) {
+                for (let i = 0; i < 16; i++) {
+                    const s = document.createElement('div');
+                    s.className = 'asc-tower-spark';
+                    s.style.left = (15 + Math.random() * 70) + '%';
+                    s.style.bottom = (-5 - Math.random() * 20) + 'px';
+                    s.style.animationDuration = (3 + Math.random() * 4) + 's';
+                    s.style.animationDelay = (Math.random() * 5) + 's';
+                    sparks.appendChild(s);
+                }
+            }
+
             // 🆕 Position immédiatement les joueurs sur la tour (tous à l'étage 0)
             //    pour que la tour soit déjà animée et stylée pendant le countdown 3-2-1-GO
             this._updateAscensionPlayerTower();
@@ -6219,7 +6364,12 @@ createApp({
             // Reset l'état de validation pour cet étage
             this.ascension.guessSolved = {};
             this.ascension.intruderFound = null;  // 🆕 Reset tracker Intruder pour le nouveau floor
-            
+            this._cleanupWordleKeyboard();        // 🆕 Démonte le keydown handler éventuellement actif
+            this._cleanupScrambleKeyboard();      // 🆕 Démonte le keydown handler Scramble éventuellement actif
+            this._cleanupMatchDrag();             // 🆕 Démonte les pointer handlers Match éventuellement actifs
+            // 🆕 Cleanup joker Guess (mini-ampoules + shatter overlays orphelins)
+            document.querySelectorAll('.asc-guess-joker-shatter').forEach(s => s.remove());
+
             // Render le mini-jeu correspondant au type
             content.innerHTML = '';
             switch (floorData.type) {
@@ -6231,6 +6381,18 @@ createApp({
                     break;
                 case 'intruder':
                     this._renderIntruderGame(content, floorData);
+                    break;
+                case 'wordle':
+                    this._renderWordleGame(content, floorData);
+                    break;
+                case 'match':
+                    this._renderMatchGame(content, floorData);
+                    break;
+                case 'target':
+                    this._renderTargetGame(content, floorData);
+                    break;
+                case 'scramble':
+                    this._renderScrambleGame(content, floorData);
                     break;
                 // Les autres types seront ajoutés progressivement
                 default:
@@ -6279,9 +6441,17 @@ createApp({
 
         // 🎯 Mini-jeu GUESS — 5 personnages à deviner par leur image
         _renderGuessGame(container, floorData) {
+            // 🆕 Init joker (1x par étage Guess) : ampoule qui se charge en 2 parties
+            //    Si déjà consommé avant un refresh, on le marque used d'entrée → pas de render
+            const alreadyUsed = !!this.ascension?.myGuessJokerUsed;
+            this.ascension.guessJoker = { progress: 0, used: alreadyUsed };
+            this.ascension.guessFloorChars = floorData.characters;
+            // Consomme le flag pour ne pas re-déclencher si on re-render le floor
+            if (this.ascension) this.ascension.myGuessJokerUsed = false;
+
             const grid = document.createElement('div');
             grid.className = 'asc-guess-grid';
-            
+
             floorData.characters.forEach(char => {
                 const card = document.createElement('div');
                 card.className = 'asc-guess-card';
@@ -6328,7 +6498,12 @@ createApp({
             });
             
             container.appendChild(grid);
-            
+
+            // 🆕 Joker : 1 mini-ampoule au-dessus de chaque card (skip si déjà consommé)
+            if (!this.ascension.guessJoker.used) {
+                this._attachGuessJokerBulbs(grid, floorData.characters);
+            }
+
             // 🆕 RESTAURATION (mode race) : si on reconnect après refresh et qu'on avait
             //    déjà validé certaines cards, on les marque visuellement (stamp + disabled)
             const validated = this.ascension?.myValidatedGuesses || [];
@@ -6368,8 +6543,165 @@ createApp({
             if (!this.ascension?.active || this.ascension.validated) return;
             if (!this.ascension.guessSolved) this.ascension.guessSolved = {};
             if (this.ascension.guessSolved[characterId]) return; // Déjà validé
-            
+
             this.socket.emit('ascension-check-guess', { characterId, name, source: source || 'input' });
+        },
+
+        // 🆕 ─── JOKER GUESS (mini-ampoule par carte) ───
+        _attachGuessJokerBulbs(grid, characters) {
+            characters.forEach(char => {
+                const card = grid.querySelector(`.asc-guess-card[data-char-id="${char.id}"]`);
+                if (!card) return;
+                if (card.classList.contains('asc-guess-correct')) return; // pas de bulb sur card déjà validée
+                const bulb = document.createElement('button');
+                bulb.className = 'asc-guess-joker-mini';
+                bulb.type = 'button';
+                bulb.dataset.charId = char.id;
+                bulb.dataset.progress = '0';
+                bulb.setAttribute('aria-label', 'Joker : révèle ce nom (charge en devinant 2 personnages)');
+                bulb.innerHTML = `
+                    <svg viewBox="0 0 64 96" class="asc-guess-joker-svg" aria-hidden="true">
+                        <defs>
+                            <clipPath id="ascJokerClip-${char.id}">
+                                <path d="M22 8 Q22 0 32 0 Q42 0 42 8 Q56 14 56 30 Q56 44 46 54 L46 70 Q46 74 42 74 L22 74 Q18 74 18 70 L18 54 Q8 44 8 30 Q8 14 22 8 Z"/>
+                            </clipPath>
+                        </defs>
+                        <path class="asc-guess-joker-outline" d="M22 8 Q22 0 32 0 Q42 0 42 8 Q56 14 56 30 Q56 44 46 54 L46 70 Q46 74 42 74 L22 74 Q18 74 18 70 L18 54 Q8 44 8 30 Q8 14 22 8 Z" />
+                        <g clip-path="url(#ascJokerClip-${char.id})">
+                            <rect class="asc-guess-joker-fill" x="0" y="74" width="64" height="0"/>
+                        </g>
+                        <path class="asc-guess-joker-filament" d="M26 36 Q32 28 38 36 Q32 44 26 36 Z M30 44 L30 50 M34 44 L34 50" fill="none" stroke-width="1.5"/>
+                        <line class="asc-guess-joker-thread" x1="22" y1="80" x2="42" y2="80"/>
+                        <line class="asc-guess-joker-thread" x1="24" y1="86" x2="40" y2="86"/>
+                        <line class="asc-guess-joker-thread" x1="26" y1="92" x2="38" y2="92"/>
+                    </svg>
+                    <div class="asc-guess-joker-glow"></div>
+                `;
+                bulb.addEventListener('click', () => this._useGuessJoker(char.id));
+                card.appendChild(bulb);
+            });
+            this._updateGuessJokerVisual();
+        },
+
+        _updateGuessJokerVisual() {
+            const j = this.ascension?.guessJoker;
+            if (!j) return;
+            const bulbs = document.querySelectorAll('.asc-guess-joker-mini');
+            // 🆕 Au max (2/2), on remplit JUSQU'EN HAUT (y=0, height=74) pour ne plus voir de creux noir
+            const h = j.progress >= 2 ? 74 : (j.progress >= 1 ? 30 : 0);
+            const y = 74 - h;
+            bulbs.forEach(b => {
+                b.dataset.progress = String(j.progress);
+                b.classList.toggle('asc-guess-joker-ready', j.progress >= 2 && !j.used);
+                const fill = b.querySelector('.asc-guess-joker-fill');
+                if (fill) {
+                    fill.setAttribute('y', String(y));
+                    fill.setAttribute('height', String(h));
+                }
+                if (j.progress > 0) {
+                    b.classList.remove('asc-guess-joker-pulse');
+                    void b.offsetWidth;
+                    b.classList.add('asc-guess-joker-pulse');
+                }
+            });
+        },
+
+        _useGuessJoker(charId) {
+            const j = this.ascension?.guessJoker;
+            if (!j || j.used || j.progress < 2) return;
+            if (!charId || !this.socket) return;
+            const card = document.querySelector(`.asc-guess-card[data-char-id="${charId}"]`);
+            const input = card?.querySelector('.asc-guess-input');
+            if (!input || input.disabled) return;
+
+            // Marque optimiste pour éviter double clic, et demande le nom au serveur
+            j.used = true;
+            this._updateGuessJokerVisual();
+            this.socket.emit('ascension-guess-joker-used', { characterId: charId });
+        },
+
+        _shatterAllGuessJokers() {
+            const bulbs = document.querySelectorAll('.asc-guess-joker-mini');
+            bulbs.forEach(bulb => this._shatterGuessJoker(bulb));
+        },
+
+        _shatterGuessJoker(bulb) {
+            bulb.style.pointerEvents = 'none';
+            const rect = bulb.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+
+            const layer = document.createElement('div');
+            layer.className = 'asc-guess-joker-shatter';
+            layer.style.left = cx + 'px';
+            layer.style.top = cy + 'px';
+            for (let i = 0; i < 12; i++) {
+                const frag = document.createElement('span');
+                frag.className = 'asc-guess-joker-frag';
+                const angle = (i / 12) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
+                const dist = 60 + Math.random() * 40;
+                const dx = Math.cos(angle) * dist;
+                const dy = Math.sin(angle) * dist - 12;
+                const rot = (Math.random() - 0.5) * 720;
+                const size = 3 + Math.random() * 5;
+                frag.style.setProperty('--dx', dx + 'px');
+                frag.style.setProperty('--dy', dy + 'px');
+                frag.style.setProperty('--rot', rot + 'deg');
+                frag.style.width = size + 'px';
+                frag.style.height = size + 'px';
+                layer.appendChild(frag);
+            }
+            document.body.appendChild(layer);
+            bulb.classList.add('asc-guess-joker-vanish');
+            setTimeout(() => { bulb.remove(); layer.remove(); }, 900);
+        },
+
+        _playGuessJokerSound() {
+            // 🔊 Magique/power-up : sweep ascendant + chime cristallin
+            try {
+                if (!this._ascAudioCtx) {
+                    this._ascAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const ctx = this._ascAudioCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+                const t = ctx.currentTime;
+
+                // Sweep magique ascendant (sine)
+                const sweep = ctx.createOscillator();
+                const sweepGain = ctx.createGain();
+                sweep.type = 'sine';
+                sweep.frequency.setValueAtTime(300, t);
+                sweep.frequency.exponentialRampToValueAtTime(1400, t + 0.18);
+                sweepGain.gain.setValueAtTime(0, t);
+                sweepGain.gain.linearRampToValueAtTime(0.06, t + 0.02);
+                sweepGain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+                sweep.connect(sweepGain).connect(ctx.destination);
+                sweep.start(t); sweep.stop(t + 0.28);
+
+                // Chime cristallin 2 notes (B5+E6) en cascade
+                [{ f: 987.77, d: 0.18 }, { f: 1318.51, d: 0.24 }].forEach(n => {
+                    const o = ctx.createOscillator();
+                    const g = ctx.createGain();
+                    o.type = 'sine';
+                    o.frequency.setValueAtTime(n.f, t + n.d);
+                    g.gain.setValueAtTime(0, t + n.d);
+                    g.gain.linearRampToValueAtTime(0.05, t + n.d + 0.005);
+                    g.gain.exponentialRampToValueAtTime(0.001, t + n.d + 0.5);
+                    o.connect(g).connect(ctx.destination);
+                    o.start(t + n.d); o.stop(t + n.d + 0.55);
+
+                    // Harmonique octave (cristal)
+                    const h = ctx.createOscillator();
+                    const hg = ctx.createGain();
+                    h.type = 'sine';
+                    h.frequency.setValueAtTime(n.f * 2, t + n.d);
+                    hg.gain.setValueAtTime(0, t + n.d);
+                    hg.gain.linearRampToValueAtTime(0.018, t + n.d + 0.005);
+                    hg.gain.exponentialRampToValueAtTime(0.001, t + n.d + 0.32);
+                    h.connect(hg).connect(ctx.destination);
+                    h.start(t + n.d); h.stop(t + n.d + 0.34);
+                });
+            } catch (e) { /* ignore */ }
         },
 
         // 🎯 Mini-jeu ORDER — drag & drop pour classer 5 arcs par ordre chronologique
@@ -7055,7 +7387,7 @@ createApp({
                 const ctx = this._ascAudioCtx;
                 if (ctx.state === 'suspended') ctx.resume();
                 const now = ctx.currentTime;
-                
+
                 const o = ctx.createOscillator();
                 const g = ctx.createGain();
                 o.type = 'sine';
@@ -7069,16 +7401,1303 @@ createApp({
                 o.stop(now + 0.2);
             } catch (e) { /* ignore */ }
         },
-        
+
+        // ═══════════════════════════════════════════════════════════════
+        // 🎯 ASCENSION — Mini-jeu WORDLE (Joueur)
+        // ═══════════════════════════════════════════════════════════════
+
+        _renderWordleGame(content, floorData) {
+            const wordLength = floorData.wordLength;
+            const groups = (floorData.groups && floorData.groups.length) ? floorData.groups : [wordLength];
+
+            // Reset l'état Wordle pour ce floor
+            this.ascension.wordleAttempts = [];
+            this.ascension.wordleCurrent = '';
+            this.ascension.wordleSubmitting = false;
+            this.ascension.wordleGroups = groups;
+            this.ascension.wordleLength = wordLength;
+
+            const wrap = document.createElement('div');
+            wrap.className = 'asc-wordle-wrap';
+
+            // ─── Centre : grille des tentatives ───
+            const centerStack = document.createElement('div');
+            centerStack.className = 'asc-wordle-center';
+
+            // Grid wrap
+            const gridWrap = document.createElement('div');
+            gridWrap.className = 'asc-wordle-grid-wrap';
+
+            const grid = document.createElement('div');
+            grid.className = 'asc-wordle-grid';
+            grid.style.setProperty('--asc-wordle-cols', wordLength);
+            gridWrap.appendChild(grid);
+            grid.appendChild(this._createWordleRow(groups, true));
+
+            centerStack.appendChild(gridWrap);
+
+            // ─── Sidebar droite (compteur) ───
+            const sidebar = document.createElement('div');
+            sidebar.className = 'asc-wordle-sidebar';
+
+            const counter = document.createElement('div');
+            counter.className = 'asc-wordle-counter';
+            counter.innerHTML =
+                '<span class="asc-wordle-counter-label">Tentatives</span>' +
+                '<span class="asc-wordle-counter-num" id="ascWordleAttemptCount">0</span>';
+            sidebar.appendChild(counter);
+
+            wrap.appendChild(centerStack);
+            wrap.appendChild(sidebar);
+            content.appendChild(wrap);
+
+            // Active le clavier physique
+            this._setupWordleKeyboard(wordLength);
+        },
+
+        _createWordleRow(groups, isActive) {
+            // groups : tableau de longueurs (ex: [5, 6] pour "DEMON SLAYER")
+            const row = document.createElement('div');
+            row.className = 'asc-wordle-row';
+            if (isActive) row.classList.add('asc-wordle-row-active');
+            let globalIdx = 0;
+            groups.forEach((groupLen) => {
+                const groupEl = document.createElement('div');
+                groupEl.className = 'asc-wordle-group';
+                for (let i = 0; i < groupLen; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'asc-wordle-cell';
+                    cell.dataset.idx = globalIdx;
+                    groupEl.appendChild(cell);
+                    globalIdx++;
+                }
+                row.appendChild(groupEl);
+            });
+            return row;
+        },
+
+        _setupWordleKeyboard(wordLength) {
+            this._cleanupWordleKeyboard();
+            const handler = (e) => {
+                if (this.ascension?.validated) return;
+                if (this.ascension?.wordleSubmitting) return;
+                // Sécurité : ne capter que sur un floor wordle
+                const grid = document.querySelector('.asc-wordle-grid');
+                if (!grid) return;
+                // Ne pas hijacker la frappe si l'utilisateur est dans un input
+                const tgt = e.target;
+                if (tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.isContentEditable)) return;
+
+                const key = e.key;
+                if (key === 'Enter') {
+                    this._submitWordleAttempt(wordLength);
+                    e.preventDefault();
+                } else if (key === 'Backspace') {
+                    this._wordleBackspace(wordLength);
+                    e.preventDefault();
+                } else if (/^[a-zA-Z]$/.test(key)) {
+                    this._wordleAddLetter(key.toUpperCase(), wordLength);
+                    e.preventDefault();
+                }
+            };
+            document.addEventListener('keydown', handler);
+            this.ascension.wordleKeydownHandler = handler;
+        },
+
+        _cleanupWordleKeyboard() {
+            if (this.ascension?.wordleKeydownHandler) {
+                document.removeEventListener('keydown', this.ascension.wordleKeydownHandler);
+                this.ascension.wordleKeydownHandler = null;
+            }
+        },
+
+        _wordleAddLetter(letter, wordLength) {
+            const buf = this.ascension.wordleCurrent || '';
+            if (buf.length >= wordLength) return;
+            this.ascension.wordleCurrent = buf + letter;
+            this._renderWordleActiveRow();
+            this._playAscWordleTypeSound();
+            // 🆕 Auto-submit dès que la ligne est pleine (pas besoin d'Enter)
+            if (this.ascension.wordleCurrent.length === wordLength) {
+                this._submitWordleAttempt(wordLength);
+            }
+        },
+
+        _wordleBackspace() {
+            const buf = this.ascension.wordleCurrent || '';
+            if (buf.length === 0) return;
+            this.ascension.wordleCurrent = buf.slice(0, -1);
+            this._renderWordleActiveRow();
+        },
+
+        _renderWordleActiveRow() {
+            const grid = document.querySelector('.asc-wordle-grid');
+            if (!grid) return;
+            const activeRow = grid.querySelector('.asc-wordle-row-active');
+            if (!activeRow) return;
+            const cells = activeRow.querySelectorAll('.asc-wordle-cell');
+            const buffer = this.ascension.wordleCurrent || '';
+            cells.forEach((cell, i) => {
+                const newLetter = buffer[i] || '';
+                if (cell.textContent !== newLetter) {
+                    cell.textContent = newLetter;
+                    if (newLetter) {
+                        cell.classList.remove('asc-wordle-cell-pop');
+                        void cell.offsetWidth;
+                        cell.classList.add('asc-wordle-cell-filled', 'asc-wordle-cell-pop');
+                    } else {
+                        cell.classList.remove('asc-wordle-cell-filled', 'asc-wordle-cell-pop');
+                    }
+                }
+            });
+        },
+
+        _submitWordleAttempt(wordLength) {
+            const buffer = this.ascension.wordleCurrent || '';
+            if (buffer.length !== wordLength) {
+                // Shake animation : ligne incomplète
+                const activeRow = document.querySelector('.asc-wordle-row-active');
+                if (activeRow) {
+                    activeRow.classList.remove('asc-wordle-row-shake');
+                    void activeRow.offsetWidth;
+                    activeRow.classList.add('asc-wordle-row-shake');
+                    setTimeout(() => activeRow.classList.remove('asc-wordle-row-shake'), 500);
+                }
+                this._playAscWordleInvalidSound();
+                return;
+            }
+            this.ascension.wordleSubmitting = true;
+            this.socket.emit('ascension-check-wordle', { guess: buffer });
+        },
+
+        _handleWordleResult(data) {
+            // {guess, statuses, isCorrect}
+            const grid = document.querySelector('.asc-wordle-grid');
+            if (!grid) return;
+            const activeRow = grid.querySelector('.asc-wordle-row-active');
+            if (!activeRow) return;
+            const cells = activeRow.querySelectorAll('.asc-wordle-cell');
+
+            // Animation flip 3D séquentielle — couleur révélée à mi-flip
+            const STAGGER = 110;
+            const FLIP_DURATION = 350;
+            const COLOR_AT = 175;
+            cells.forEach((cell, i) => {
+                setTimeout(() => {
+                    cell.classList.add('asc-wordle-cell-flipping');
+                    this._playAscWordleFlipSound();
+                    setTimeout(() => {
+                        cell.classList.add('asc-wordle-cell-' + data.statuses[i]);
+                    }, COLOR_AT);
+                    setTimeout(() => {
+                        cell.classList.remove('asc-wordle-cell-flipping');
+                        cell.classList.add('asc-wordle-cell-revealed');
+                    }, FLIP_DURATION);
+                }, i * STAGGER);
+            });
+
+            const totalAnimDuration = (cells.length - 1) * STAGGER + FLIP_DURATION;
+
+            setTimeout(() => {
+                this.ascension.wordleAttempts.push({ guess: data.guess, statuses: data.statuses });
+                this.ascension.wordleCurrent = '';
+                this.ascension.wordleSubmitting = false;
+
+                const counterEl = document.getElementById('ascWordleAttemptCount');
+                if (counterEl) {
+                    counterEl.textContent = this.ascension.wordleAttempts.length;
+                    counterEl.classList.remove('asc-wordle-counter-bump');
+                    void counterEl.offsetWidth;
+                    counterEl.classList.add('asc-wordle-counter-bump');
+                }
+
+                if (data.isCorrect) {
+                    // Victoire : pulse glow vert sur la ligne, son, puis fade-out du wrap
+                    activeRow.classList.add('asc-wordle-row-victory');
+                    this._playAscWordleVictorySound();
+                    this._cleanupWordleKeyboard();
+                    // 🆕 Laisse 700ms pour bien voir la ligne verte + pulse avant de lancer le fade
+                    setTimeout(() => {
+                        const wrap = document.querySelector('.asc-wordle-wrap');
+                        if (wrap) wrap.classList.add('asc-wordle-validated');
+                    }, 700);
+                } else {
+                    // 🆕 Snapshot l'état validé en past row insérée juste sous l'active, puis clear l'active EN PLACE
+                    //    (l'élément input ne disparaît jamais → pas de flash, position stable)
+                    const pastRow = activeRow.cloneNode(true);
+                    pastRow.classList.remove('asc-wordle-row-active');
+                    pastRow.classList.add('asc-wordle-row-past', 'asc-wordle-row-enter');
+                    if (activeRow.nextSibling) {
+                        grid.insertBefore(pastRow, activeRow.nextSibling);
+                    } else {
+                        grid.appendChild(pastRow);
+                    }
+                    setTimeout(() => pastRow.classList.remove('asc-wordle-row-enter'), 400);
+
+                    // Clear les cells de l'active row sur place
+                    cells.forEach(cell => {
+                        cell.textContent = '';
+                        cell.classList.remove(
+                            'asc-wordle-cell-filled',
+                            'asc-wordle-cell-pop',
+                            'asc-wordle-cell-flipping',
+                            'asc-wordle-cell-revealed',
+                            'asc-wordle-cell-green',
+                            'asc-wordle-cell-yellow',
+                            'asc-wordle-cell-red'
+                        );
+                    });
+                }
+            }, totalAnimDuration);
+        },
+
+        _playAscWordleTypeSound() {
+            // 🔊 Tick court (frappe de touche) — médium-aigu, très bref
+            try {
+                if (!this._ascAudioCtx) {
+                    this._ascAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const ctx = this._ascAudioCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+                const t = ctx.currentTime;
+                const o = ctx.createOscillator();
+                const g = ctx.createGain();
+                o.type = 'triangle';
+                o.frequency.setValueAtTime(1400, t);
+                o.frequency.exponentialRampToValueAtTime(900, t + 0.03);
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(0.035, t + 0.002);
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+                o.connect(g).connect(ctx.destination);
+                o.start(t); o.stop(t + 0.06);
+            } catch (e) { /* ignore */ }
+        },
+
+        _playAscWordleInvalidSound() {
+            // 🔊 Buzz court grave : tentative incomplète
+            try {
+                if (!this._ascAudioCtx) {
+                    this._ascAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const ctx = this._ascAudioCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+                const t = ctx.currentTime;
+                const o = ctx.createOscillator();
+                const g = ctx.createGain();
+                o.type = 'sawtooth';
+                o.frequency.setValueAtTime(180, t);
+                o.frequency.exponentialRampToValueAtTime(120, t + 0.18);
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(0.05, t + 0.01);
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+                o.connect(g).connect(ctx.destination);
+                o.start(t); o.stop(t + 0.24);
+            } catch (e) { /* ignore */ }
+        },
+
+        _playAscWordleFlipSound() {
+            // 🔊 Click sec, accompagne le flip d'une cell
+            try {
+                if (!this._ascAudioCtx) {
+                    this._ascAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const ctx = this._ascAudioCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+                const t = ctx.currentTime;
+                const o = ctx.createOscillator();
+                const g = ctx.createGain();
+                o.type = 'triangle';
+                o.frequency.setValueAtTime(900, t);
+                o.frequency.exponentialRampToValueAtTime(500, t + 0.06);
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(0.04, t + 0.003);
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+                o.connect(g).connect(ctx.destination);
+                o.start(t); o.stop(t + 0.09);
+            } catch (e) { /* ignore */ }
+        },
+
+        _playAscWordleVictorySound() {
+            // 🔊 Même son de validation que les autres mini-jeux (cohérence)
+            this._playAscIntruderVictorySound();
+        },
+
+        // ═══════════════════════════════════════════════════════════════
+        // 🎯 ASCENSION — Mini-jeu MATCH (Joueur)
+        //   3 layouts adaptatifs selon subtype :
+        //     - 'char_anime', 'techniques', 'weapons'   → image-texte
+        //     - 'couples', 'rivals', 'same_voice'       → image-image
+        //     - 'anime_studio'                          → texte-texte
+        //   Drag-and-drop SVG : tirez une corde d'une carte vers une carte de l'autre colonne
+        //   Auto-submit dès que toutes les paires sont faites
+        //   Si erreur : les bonnes paires restent (vert), les mauvaises se brisent + cooldown 2s
+        // ═══════════════════════════════════════════════════════════════
+
+        _renderMatchGame(content, floorData) {
+            this.ascension.matchConnections = {};   // leftId → rightId
+            this.ascension.matchSubtype = floorData.subtype;
+            this.ascension.matchTotal = floorData.left.length;
+            this.ascension.matchLocked = false;
+            this.ascension.matchSubmitting = false;
+            this.ascension.matchDrag = null;        // {originSide, originId, originPort:{x,y}}
+
+            const wrap = document.createElement('div');
+            wrap.className = 'asc-match-wrap asc-match-subtype-' + floorData.subtype;
+
+            const grid = document.createElement('div');
+            grid.className = 'asc-match-grid';
+
+            // Colonne GAUCHE
+            const leftCol = document.createElement('div');
+            leftCol.className = 'asc-match-col asc-match-col-left';
+            floorData.left.forEach(item => {
+                leftCol.appendChild(this._createMatchCard(item, 'left', floorData.subtype));
+            });
+            grid.appendChild(leftCol);
+
+            // SVG layer (overlay) entre les 2 colonnes pour les lignes
+            const SVG_NS = 'http://www.w3.org/2000/svg';
+            const svg = document.createElementNS(SVG_NS, 'svg');
+            svg.setAttribute('class', 'asc-match-svg');
+            svg.setAttribute('preserveAspectRatio', 'none');
+            const defs = document.createElementNS(SVG_NS, 'defs');
+            defs.innerHTML = ''
+                + '<linearGradient id="ascMatchGradLine" x1="0%" y1="0%" x2="100%" y2="0%">'
+                +   '<stop offset="0%"   stop-color="#a0e0ff" stop-opacity="0.85"/>'
+                +   '<stop offset="50%"  stop-color="#ffffff" stop-opacity="1"/>'
+                +   '<stop offset="100%" stop-color="#a0e0ff" stop-opacity="0.85"/>'
+                + '</linearGradient>'
+                + '<linearGradient id="ascMatchGradLineCorrect" x1="0%" y1="0%" x2="100%" y2="0%">'
+                +   '<stop offset="0%"   stop-color="#22c55e" stop-opacity="0.9"/>'
+                +   '<stop offset="50%"  stop-color="#86efac" stop-opacity="1"/>'
+                +   '<stop offset="100%" stop-color="#22c55e" stop-opacity="0.9"/>'
+                + '</linearGradient>'
+                + '<linearGradient id="ascMatchGradLineWrong" x1="0%" y1="0%" x2="100%" y2="0%">'
+                +   '<stop offset="0%"   stop-color="#ef4444" stop-opacity="0.95"/>'
+                +   '<stop offset="50%"  stop-color="#fca5a5" stop-opacity="1"/>'
+                +   '<stop offset="100%" stop-color="#ef4444" stop-opacity="0.95"/>'
+                + '</linearGradient>'
+                + '<filter id="ascMatchGlow" x="-100%" y="-100%" width="300%" height="300%" filterUnits="userSpaceOnUse">'
+                +   '<feGaussianBlur stdDeviation="3" result="b"/>'
+                +   '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>'
+                + '</filter>';
+            svg.appendChild(defs);
+            grid.appendChild(svg);
+
+            // Colonne DROITE
+            const rightCol = document.createElement('div');
+            rightCol.className = 'asc-match-col asc-match-col-right';
+            floorData.right.forEach(item => {
+                rightCol.appendChild(this._createMatchCard(item, 'right', floorData.subtype));
+            });
+            grid.appendChild(rightCol);
+
+            wrap.appendChild(grid);
+            content.appendChild(wrap);
+
+            // Setup pointer drag
+            this._setupMatchDrag();
+
+            // Resize window → redraw lines
+            this._matchResizeHandler = () => this._redrawMatchLines();
+            window.addEventListener('resize', this._matchResizeHandler);
+
+            // 🆕 ResizeObserver sur la grid : capture aussi les layout shifts internes
+            //    (image loading, font loading, content reflow) → redraw les lignes auto
+            if (window.ResizeObserver) {
+                this._matchResizeObserver = new ResizeObserver(() => this._redrawMatchLines());
+                this._matchResizeObserver.observe(grid);
+                // Observer les cards aussi (au cas où une seule carte resize, ex: hover qui scale)
+                grid.querySelectorAll('.asc-match-card').forEach(c => this._matchResizeObserver.observe(c));
+            }
+        },
+
+        _createMatchCard(item, side, subtype) {
+            const card = document.createElement('div');
+            card.className = 'asc-match-card asc-match-card-' + side;
+            card.dataset.side = side;
+            card.dataset.id = item.id;
+
+            // Persos = image SEULE (pas de nom). Sans image = icône SVG + texte centré.
+            if (item.img) {
+                const img = document.createElement('div');
+                img.className = 'asc-match-card-img';
+                img.style.backgroundImage = "url('" + item.img + "')";
+                card.appendChild(img);
+            } else {
+                // 🆕 Card text-only : icône SVG (line-art) selon subtype + side, puis texte
+                const iconText = document.createElement('div');
+                iconText.className = 'asc-match-card-icon-text';
+
+                const iconSvg = this._getMatchIconSvg(subtype, side);
+                if (iconSvg) {
+                    const iconEl = document.createElement('span');
+                    iconEl.className = 'asc-match-card-icon';
+                    iconEl.innerHTML = iconSvg;
+                    iconText.appendChild(iconEl);
+                }
+
+                const txt = document.createElement('span');
+                txt.className = 'asc-match-card-text';
+                txt.textContent = side === 'left' ? item.name : item.value;
+                iconText.appendChild(txt);
+
+                card.appendChild(iconText);
+            }
+
+            // Port d'attache (visuellement un dot)
+            const port = document.createElement('div');
+            port.className = 'asc-match-port';
+            card.appendChild(port);
+
+            return card;
+        },
+
+        // 🆕 Icônes SVG line-art pour les cards text-only (clé = subtype_side)
+        _getMatchIconSvg(subtype, side) {
+            const key = subtype + '_' + side;
+            // Anime (TV avec antennes) — utilisé pour char_anime RIGHT et anime_studio LEFT
+            const ICON_ANIME = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M7 21h10M8 7l4-4M16 7l-4-4"/></svg>';
+            // Studio (bâtiment) — pour anime_studio RIGHT
+            const ICON_STUDIO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 10h2M13 10h2M9 14h2M13 14h2M10 21v-3h4v3"/></svg>';
+            // Arme (épée diagonale) — pour weapons RIGHT
+            const ICON_WEAPON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5 3 6V3h3l11.5 11.5"/><path d="M13 19l6-6M16 16l4 4M19 21l2-2"/></svg>';
+            // Technique (étincelles) — pour techniques RIGHT
+            const ICON_TECHNIQUE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L13.5 9L19.5 10.5L13.5 12L12 18L10.5 12L4.5 10.5L10.5 9z"/><path d="M19 3L19.6 5.4L22 6L19.6 6.6L19 9L18.4 6.6L16 6L18.4 5.4z"/></svg>';
+            // Calendrier — pour anime_year RIGHT
+            const ICON_CALENDAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
+
+            const map = {
+                'char_anime_right':   ICON_ANIME,
+                'anime_studio_left':  ICON_ANIME,
+                'anime_studio_right': ICON_STUDIO,
+                'anime_year_left':    ICON_ANIME,
+                'anime_year_right':   ICON_CALENDAR,
+                'weapons_right':      ICON_WEAPON,
+                'techniques_right':   ICON_TECHNIQUE,
+            };
+            return map[key] || null;
+        },
+
+        _setupMatchDrag() {
+            this._cleanupMatchDrag();
+            const wrap = document.querySelector('.asc-match-wrap');
+            if (!wrap) return;
+
+            const onPointerDown = (e) => {
+                if (this.ascension.matchLocked || this.ascension.matchSubmitting) return;
+                if (this.ascension?.validated) return;
+                const card = e.target.closest('.asc-match-card');
+                if (!card || !wrap.contains(card)) return;
+                e.preventDefault();
+                this._startMatchDrag(card, e);
+            };
+            const onPointerMove = (e) => {
+                if (!this.ascension.matchDrag) return;
+                this._updateMatchDrag(e);
+            };
+            const onPointerUp = (e) => {
+                if (!this.ascension.matchDrag) return;
+                this._endMatchDrag(e);
+            };
+            wrap.addEventListener('pointerdown', onPointerDown);
+            window.addEventListener('pointermove', onPointerMove);
+            window.addEventListener('pointerup', onPointerUp);
+            window.addEventListener('pointercancel', onPointerUp);
+            this._matchPointerHandlers = { wrap, onPointerDown, onPointerMove, onPointerUp };
+        },
+
+        _cleanupMatchDrag() {
+            const h = this._matchPointerHandlers;
+            if (h) {
+                h.wrap.removeEventListener('pointerdown', h.onPointerDown);
+                window.removeEventListener('pointermove', h.onPointerMove);
+                window.removeEventListener('pointerup', h.onPointerUp);
+                window.removeEventListener('pointercancel', h.onPointerUp);
+                this._matchPointerHandlers = null;
+            }
+            if (this._matchResizeHandler) {
+                window.removeEventListener('resize', this._matchResizeHandler);
+                this._matchResizeHandler = null;
+            }
+            if (this._matchResizeObserver) {
+                this._matchResizeObserver.disconnect();
+                this._matchResizeObserver = null;
+            }
+        },
+
+        _getMatchPortPos(card) {
+            // Coords du port d'attache de la card RELATIVES au SVG
+            const svg = document.querySelector('.asc-match-svg');
+            if (!svg) return { x: 0, y: 0 };
+            const svgRect = svg.getBoundingClientRect();
+            const port = card.querySelector('.asc-match-port');
+            const portRect = (port || card).getBoundingClientRect();
+            return {
+                x: portRect.left + portRect.width / 2 - svgRect.left,
+                y: portRect.top + portRect.height / 2 - svgRect.top,
+            };
+        },
+
+        _startMatchDrag(card, event) {
+            // 🆕 Cleanup défensif : retire toute drag-line orpheline d'un drag précédent mal terminé
+            const svgClean = document.querySelector('.asc-match-svg');
+            if (svgClean) svgClean.querySelectorAll('.asc-match-drag-line').forEach(p => p.remove());
+            this._matchDragPath = null;
+            document.querySelectorAll('.asc-match-card-dragging').forEach(c => c.classList.remove('asc-match-card-dragging'));
+
+            const side = card.dataset.side;
+            const id = card.dataset.id;
+
+            // Si la card est déjà connectée, on casse la connexion existante et on démarre un drag depuis ce point
+            if (side === 'left' && this.ascension.matchConnections[id]) {
+                this._breakMatchConnection(id);
+            } else if (side === 'right') {
+                // Trouver le leftId connecté à ce rightId, briser
+                const leftId = Object.keys(this.ascension.matchConnections).find(k => this.ascension.matchConnections[k] === id);
+                if (leftId) this._breakMatchConnection(leftId);
+            }
+
+            const origin = this._getMatchPortPos(card);
+            this.ascension.matchDrag = {
+                originSide: side,
+                originId: id,
+                originX: origin.x,
+                originY: origin.y,
+                pointerId: event.pointerId,
+            };
+            card.classList.add('asc-match-card-dragging');
+            this._playAscMatchSelectSound();
+
+            // Crée le path drag temporaire dans le SVG
+            const SVG_NS = 'http://www.w3.org/2000/svg';
+            const svg = document.querySelector('.asc-match-svg');
+            const path = document.createElementNS(SVG_NS, 'path');
+            path.setAttribute('class', 'asc-match-drag-line');
+            path.setAttribute('stroke', '#c8e8ff');
+            path.setAttribute('filter', 'url(#ascMatchGlow)');
+            svg.appendChild(path);
+            this._matchDragPath = path;
+
+            // Init pointer position = origin (puis update via move)
+            this._updateMatchDragPath(origin.x, origin.y);
+        },
+
+        _updateMatchDrag(event) {
+            const svg = document.querySelector('.asc-match-svg');
+            if (!svg) return;
+            const svgRect = svg.getBoundingClientRect();
+            const x = event.clientX - svgRect.left;
+            const y = event.clientY - svgRect.top;
+            this._updateMatchDragPath(x, y);
+
+            // Highlight la cible potentielle (carte de l'autre side sous le pointeur)
+            const wrap = document.querySelector('.asc-match-wrap');
+            const targetSide = this.ascension.matchDrag.originSide === 'left' ? 'right' : 'left';
+            wrap.querySelectorAll('.asc-match-card-hover').forEach(c => c.classList.remove('asc-match-card-hover'));
+            const elUnder = document.elementFromPoint(event.clientX, event.clientY);
+            const targetCard = elUnder?.closest('.asc-match-card[data-side="' + targetSide + '"]');
+            if (targetCard) targetCard.classList.add('asc-match-card-hover');
+        },
+
+        _updateMatchDragPath(x, y) {
+            const drag = this.ascension.matchDrag;
+            if (!drag || !this._matchDragPath) return;
+            const x1 = drag.originX, y1 = drag.originY;
+            // Bezier control points VERTICAUX (les rows sont empilées verticalement)
+            const dy = y - y1;
+            const cx1 = x1, cy1 = y1 + dy * 0.5;
+            const cx2 = x,  cy2 = y - dy * 0.5;
+            this._matchDragPath.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' C ' + cx1 + ' ' + cy1 + ', ' + cx2 + ' ' + cy2 + ', ' + x + ' ' + y);
+        },
+
+        _endMatchDrag(event) {
+            // 🆕 Cleanup défensif TOUJOURS : retire toute drag-line orpheline du SVG, peu importe l'état
+            const svgClean = document.querySelector('.asc-match-svg');
+            if (svgClean) svgClean.querySelectorAll('.asc-match-drag-line').forEach(p => p.remove());
+            this._matchDragPath = null;
+
+            const drag = this.ascension.matchDrag;
+            if (!drag) return;
+            const wrap = document.querySelector('.asc-match-wrap');
+
+            const targetSide = drag.originSide === 'left' ? 'right' : 'left';
+            const elUnder = document.elementFromPoint(event.clientX, event.clientY);
+            const targetCard = elUnder?.closest('.asc-match-card[data-side="' + targetSide + '"]');
+
+            // Cleanup state visuel
+            wrap.querySelectorAll('.asc-match-card-dragging').forEach(c => c.classList.remove('asc-match-card-dragging'));
+            wrap.querySelectorAll('.asc-match-card-hover').forEach(c => c.classList.remove('asc-match-card-hover'));
+            this.ascension.matchDrag = null;
+
+            if (!targetCard) return;
+            const targetId = targetCard.dataset.id;
+            const leftId = drag.originSide === 'left' ? drag.originId : targetId;
+            const rightId = drag.originSide === 'left' ? targetId : drag.originId;
+            this._connectMatchPair(leftId, rightId);
+        },
+
+        _connectMatchPair(leftId, rightId) {
+            // Si le rightId est déjà connecté à un autre leftId → on brise l'ancienne
+            const oldLeftForRight = Object.keys(this.ascension.matchConnections).find(k => this.ascension.matchConnections[k] === rightId);
+            if (oldLeftForRight && oldLeftForRight !== leftId) {
+                this._breakMatchConnection(oldLeftForRight);
+            }
+            // Si le leftId est déjà connecté à un autre rightId → on brise l'ancienne
+            if (this.ascension.matchConnections[leftId] && this.ascension.matchConnections[leftId] !== rightId) {
+                this._breakMatchConnection(leftId);
+            }
+
+            this.ascension.matchConnections[leftId] = rightId;
+
+            // Crée la ligne SVG persistante
+            this._drawMatchLine(leftId, rightId, 'asc-match-line');
+            this._updateMatchCounter();
+            this._playAscMatchConnectSound();
+
+            // Auto-submit si toutes les paires sont faites
+            this._checkMatchAutoSubmit();
+        },
+
+        _breakMatchConnection(leftId) {
+            delete this.ascension.matchConnections[leftId];
+            const svg = document.querySelector('.asc-match-svg');
+            if (svg) {
+                const line = svg.querySelector('.asc-match-line[data-left-id="' + leftId + '"]');
+                if (line) line.remove();
+            }
+            this._updateMatchCounter();
+        },
+
+        _drawMatchLine(leftId, rightId, baseClass) {
+            const svg = document.querySelector('.asc-match-svg');
+            if (!svg) return;
+            // Cleanup ligne existante pour ce leftId
+            const existing = svg.querySelector('.asc-match-line[data-left-id="' + leftId + '"]');
+            if (existing) existing.remove();
+
+            const leftCard = document.querySelector('.asc-match-card[data-side="left"][data-id="' + leftId + '"]');
+            const rightCard = document.querySelector('.asc-match-card[data-side="right"][data-id="' + rightId + '"]');
+            if (!leftCard || !rightCard) return;
+
+            const a = this._getMatchPortPos(leftCard);
+            const b = this._getMatchPortPos(rightCard);
+            // 🆕 Défensif : si layout pas prêt (positions à 0,0), retry sur le prochain frame
+            if ((a.x === 0 && a.y === 0) || (b.x === 0 && b.y === 0)) {
+                requestAnimationFrame(() => this._drawMatchLine(leftId, rightId, baseClass));
+                return;
+            }
+            // Bezier vertical : control points sur l'axe Y
+            const dy = b.y - a.y;
+            const cx1 = a.x, cy1 = a.y + dy * 0.5;
+            const cx2 = b.x, cy2 = b.y - dy * 0.5;
+
+            const SVG_NS = 'http://www.w3.org/2000/svg';
+            const path = document.createElementNS(SVG_NS, 'path');
+            path.setAttribute('class', baseClass);
+            path.setAttribute('d', 'M ' + a.x + ' ' + a.y + ' C ' + cx1 + ' ' + cy1 + ', ' + cx2 + ' ' + cy2 + ', ' + b.x + ' ' + b.y);
+            path.setAttribute('stroke', '#c8e8ff');             /* solide : robuste pour lignes verticales (gradient bbox cassé sur w=0) */
+            path.setAttribute('filter', 'url(#ascMatchGlow)');
+            path.dataset.leftId = leftId;
+            path.dataset.rightId = rightId;
+            svg.appendChild(path);
+            return path;
+        },
+
+        _redrawMatchLines() {
+            // Recalcule toutes les lignes (utilisé sur resize)
+            const svg = document.querySelector('.asc-match-svg');
+            if (!svg) return;
+            const conns = this.ascension.matchConnections || {};
+            Object.keys(conns).forEach(leftId => {
+                const rightId = conns[leftId];
+                const line = svg.querySelector('.asc-match-line[data-left-id="' + leftId + '"]');
+                const colorClass = line?.classList.contains('asc-match-line-correct') ? 'asc-match-line-correct'
+                                  : (line?.classList.contains('asc-match-line') ? 'asc-match-line' : 'asc-match-line');
+                if (line) line.remove();
+                const newLine = this._drawMatchLine(leftId, rightId, colorClass);
+                if (newLine && colorClass === 'asc-match-line-correct') {
+                    newLine.setAttribute('stroke', '#5fdf7a');
+                }
+            });
+        },
+
+        _updateMatchCounter() {
+            const el = document.getElementById('ascMatchCount');
+            if (el) el.textContent = Object.keys(this.ascension.matchConnections).length;
+        },
+
+        _checkMatchAutoSubmit() {
+            const count = Object.keys(this.ascension.matchConnections).length;
+            if (count !== this.ascension.matchTotal) return;
+            // Auto-submit
+            this.ascension.matchSubmitting = true;
+            const connections = Object.keys(this.ascension.matchConnections).map(leftId => ({
+                leftId,
+                rightId: this.ascension.matchConnections[leftId],
+            }));
+            this.socket.emit('ascension-check-match', { connections });
+        },
+
+        _handleMatchResult(data) {
+            // {results: [{leftId, rightId, correct}], allCorrect}
+            const svg = document.querySelector('.asc-match-svg');
+            if (!svg) return;
+
+            // Cascade : pour chaque résultat, applique correct/wrong avec stagger
+            const STAGGER = 90;
+            data.results.forEach((r, i) => {
+                setTimeout(() => {
+                    const line = svg.querySelector('.asc-match-line[data-left-id="' + r.leftId + '"]');
+                    const leftCard = document.querySelector('.asc-match-card[data-side="left"][data-id="' + r.leftId + '"]');
+                    const rightCard = document.querySelector('.asc-match-card[data-side="right"][data-id="' + r.rightId + '"]');
+                    if (r.correct) {
+                        if (line) {
+                            line.classList.add('asc-match-line-correct');
+                            line.setAttribute('stroke', '#5fdf7a');
+                        }
+                        leftCard?.classList.add('asc-match-card-correct');
+                        rightCard?.classList.add('asc-match-card-correct');
+                        this._playAscMatchPairCorrectSound();
+                    } else {
+                        if (line) {
+                            line.classList.add('asc-match-line-wrong');
+                            line.setAttribute('stroke', '#ef4444');
+                        }
+                        leftCard?.classList.add('asc-match-card-wrong');
+                        rightCard?.classList.add('asc-match-card-wrong');
+                        this._playAscMatchPairWrongSound();
+                    }
+                }, i * STAGGER);
+            });
+
+            const totalCascade = data.results.length * STAGGER;
+
+            setTimeout(() => {
+                if (data.allCorrect) {
+                    // Victoire : pulse + son + fade-out wrap
+                    this._playAscMatchVictorySound();
+                    this._cleanupMatchDrag();
+                    setTimeout(() => {
+                        const wrap = document.querySelector('.asc-match-wrap');
+                        if (wrap) wrap.classList.add('asc-match-validated');
+                    }, 700);
+                } else {
+                    // Erreur : reset TOTAL après court délai + lock 2s
+                    const wrap = document.querySelector('.asc-match-wrap');
+                    if (wrap) wrap.classList.add('asc-match-locked');
+                    this.ascension.matchLocked = true;
+
+                    // Brise TOUTES les connexions (correct + wrong) après un court délai
+                    setTimeout(() => {
+                        svg.querySelectorAll('.asc-match-line, .asc-match-line-correct, .asc-match-line-wrong').forEach(l => l.remove());
+                        document.querySelectorAll('.asc-match-card').forEach(c => {
+                            c.classList.remove('asc-match-card-correct', 'asc-match-card-wrong');
+                        });
+                        this.ascension.matchConnections = {};
+                        this._updateMatchCounter();
+                    }, 600);
+
+                    // Unlock après 2s
+                    setTimeout(() => {
+                        if (wrap) wrap.classList.remove('asc-match-locked');
+                        this.ascension.matchLocked = false;
+                        this.ascension.matchSubmitting = false;
+                    }, 2000);
+                }
+            }, totalCascade + 100);
+        },
+
+        // 🔊 Sons Match
+        _playAscMatchSelectSound() {
+            try {
+                if (!this._ascAudioCtx) this._ascAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const ctx = this._ascAudioCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+                const t = ctx.currentTime;
+                const o = ctx.createOscillator();
+                const g = ctx.createGain();
+                o.type = 'triangle';
+                o.frequency.setValueAtTime(800, t);
+                o.frequency.exponentialRampToValueAtTime(1100, t + 0.05);
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(0.04, t + 0.005);
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+                o.connect(g).connect(ctx.destination);
+                o.start(t); o.stop(t + 0.09);
+            } catch(e) {}
+        },
+        _playAscMatchConnectSound() {
+            try {
+                if (!this._ascAudioCtx) this._ascAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const ctx = this._ascAudioCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+                const t = ctx.currentTime;
+                const o = ctx.createOscillator();
+                const g = ctx.createGain();
+                o.type = 'sine';
+                o.frequency.setValueAtTime(1200, t);
+                o.frequency.exponentialRampToValueAtTime(1800, t + 0.1);
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(0.06, t + 0.01);
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+                o.connect(g).connect(ctx.destination);
+                o.start(t); o.stop(t + 0.2);
+            } catch(e) {}
+        },
+        _playAscMatchPairCorrectSound() {
+            try {
+                if (!this._ascAudioCtx) this._ascAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const ctx = this._ascAudioCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+                const t = ctx.currentTime;
+                const o = ctx.createOscillator();
+                const g = ctx.createGain();
+                o.type = 'sine';
+                o.frequency.setValueAtTime(1400, t);
+                g.gain.setValueAtTime(0.001, t);
+                g.gain.exponentialRampToValueAtTime(0.07, t + 0.01);
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+                o.connect(g).connect(ctx.destination);
+                o.start(t); o.stop(t + 0.13);
+            } catch(e) {}
+        },
+        _playAscMatchPairWrongSound() {
+            try {
+                if (!this._ascAudioCtx) this._ascAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const ctx = this._ascAudioCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+                const t = ctx.currentTime;
+                const o = ctx.createOscillator();
+                const g = ctx.createGain();
+                o.type = 'sawtooth';
+                o.frequency.setValueAtTime(220, t);
+                o.frequency.exponentialRampToValueAtTime(140, t + 0.15);
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(0.05, t + 0.01);
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+                o.connect(g).connect(ctx.destination);
+                o.start(t); o.stop(t + 0.2);
+            } catch(e) {}
+        },
+        _playAscMatchVictorySound() {
+            this._playAscIntruderVictorySound();
+        },
+
+        // ═══════════════════════════════════════════════════════════════
+        // 🎯 ASCENSION — Mini-jeu TARGET (Joueur)
+        //   Grille 6x5 = 30 persos. Sidebar : "Trouve <NOM>" + barre 5 étapes.
+        //   Click le bon perso → étape suivante. Wrong → reset progress + premier target.
+        // ═══════════════════════════════════════════════════════════════
+
+        _renderTargetGame(content, floorData) {
+            this.ascension.targetProgress = 0;
+            this.ascension.targetCurrentId = floorData.currentTarget?.id || null;
+            this.ascension.targetLocked = false;
+            this.ascension.targetTotal = floorData.totalTargets || 5;
+
+            const wrap = document.createElement('div');
+            wrap.className = 'asc-target-wrap';
+
+            // Container pour grid + barre de progression empilés verticalement
+            const center = document.createElement('div');
+            center.className = 'asc-target-center';
+
+            // Barre de progression (5 segments) AU-DESSUS de la grille
+            const progress = document.createElement('div');
+            progress.className = 'asc-target-progress';
+            for (let i = 0; i < this.ascension.targetTotal; i++) {
+                const seg = document.createElement('div');
+                seg.className = 'asc-target-progress-seg';
+                seg.dataset.idx = i;
+                progress.appendChild(seg);
+            }
+            center.appendChild(progress);
+
+            // Grille 6x5
+            const grid = document.createElement('div');
+            grid.className = 'asc-target-grid';
+            floorData.characters.forEach(char => {
+                grid.appendChild(this._createTargetCard(char));
+            });
+            center.appendChild(grid);
+
+            // Sidebar droite — "Trouve <NOM>" + nom mis en évidence en couleur
+            const sidebar = document.createElement('div');
+            sidebar.className = 'asc-target-sidebar';
+            sidebar.innerHTML =
+                '<div class="asc-target-label">Trouve</div>' +
+                '<div class="asc-target-name" id="ascTargetName">' + (floorData.currentTarget?.name || '') + '</div>';
+
+            wrap.appendChild(center);
+            wrap.appendChild(sidebar);
+            content.appendChild(wrap);
+        },
+
+        _createTargetCard(char) {
+            const card = document.createElement('div');
+            card.className = 'asc-target-card';
+            card.dataset.id = char.id;
+            const img = document.createElement('div');
+            img.className = 'asc-target-card-img';
+            if (char.img) img.style.backgroundImage = "url('" + char.img + "')";
+            card.appendChild(img);
+            card.addEventListener('click', () => this._onTargetCardClick(card, char));
+            return card;
+        },
+
+        _onTargetCardClick(card, char) {
+            if (this.ascension?.validated) return;
+            if (this.ascension?.targetLocked) return;
+            this._playAscIntruderClickSound();
+            this.socket.emit('ascension-check-target', { characterId: char.id });
+        },
+
+        _handleTargetResult(data) {
+            const grid = document.querySelector('.asc-target-grid');
+            if (!grid) return;
+            const card = grid.querySelector('.asc-target-card[data-id="' + data.characterId + '"]');
+
+            if (data.correct) {
+                // Marque la card comme validée + son
+                if (card) {
+                    card.classList.add('asc-target-card-correct');
+                }
+                this._playAscIntruderCorrectSound();
+
+                // Remplit le segment de la barre correspondant à l'étape qu'on vient de valider
+                const segIdx = data.progress - 1;
+                const seg = document.querySelector('.asc-target-progress-seg[data-idx="' + segIdx + '"]');
+                if (seg) {
+                    seg.classList.add('asc-target-progress-seg-filled');
+                }
+
+                if (data.isComplete) {
+                    // Victoire 5/5
+                    this._playAscIntruderVictorySound();
+                    setTimeout(() => {
+                        const wrap = document.querySelector('.asc-target-wrap');
+                        if (wrap) wrap.classList.add('asc-target-validated');
+                    }, 700);
+                } else {
+                    // Update le nom du target avec animation pop
+                    this.ascension.targetCurrentId = data.currentTarget?.id || null;
+                    const nameEl = document.getElementById('ascTargetName');
+                    if (nameEl && data.currentTarget) {
+                        nameEl.classList.remove('asc-target-name-pop');
+                        void nameEl.offsetWidth;
+                        nameEl.textContent = data.currentTarget.name;
+                        nameEl.classList.add('asc-target-name-pop');
+                    }
+                }
+            } else {
+                // Wrong → flash rouge sur card, reset complet (cards correct désactivées + barre vidée)
+                if (card) {
+                    card.classList.add('asc-target-card-wrong');
+                    setTimeout(() => card.classList.remove('asc-target-card-wrong'), 1200);
+                }
+                this._playAscIntruderWrongSound();
+
+                // Lock 1.2s pendant le feedback visuel
+                this.ascension.targetLocked = true;
+                const wrap = document.querySelector('.asc-target-wrap');
+                if (wrap) wrap.classList.add('asc-target-locked');
+
+                // Reset visuel : fade out cascade des cards correct + barre qui se vide en cascade inverse
+                const correctCards = document.querySelectorAll('.asc-target-card-correct');
+                correctCards.forEach((c, i) => {
+                    setTimeout(() => c.classList.remove('asc-target-card-correct'), i * 60);
+                });
+                const filledSegs = Array.from(document.querySelectorAll('.asc-target-progress-seg-filled'));
+                // Reset segments dans l'ordre inverse (effet "vidage")
+                filledSegs.reverse().forEach((s, i) => {
+                    setTimeout(() => {
+                        s.classList.remove('asc-target-progress-seg-filled');
+                        s.classList.add('asc-target-progress-seg-resetting');
+                        setTimeout(() => s.classList.remove('asc-target-progress-seg-resetting'), 400);
+                    }, i * 80);
+                });
+
+                setTimeout(() => {
+                    if (wrap) wrap.classList.remove('asc-target-locked');
+                    this.ascension.targetLocked = false;
+                }, 1200);
+
+                // Update nom au premier target avec petite anim
+                this.ascension.targetCurrentId = data.currentTarget?.id || null;
+                const nameEl = document.getElementById('ascTargetName');
+                if (nameEl && data.currentTarget) {
+                    setTimeout(() => {
+                        nameEl.classList.remove('asc-target-name-pop');
+                        void nameEl.offsetWidth;
+                        nameEl.textContent = data.currentTarget.name;
+                        nameEl.classList.add('asc-target-name-pop');
+                    }, 350);
+                }
+            }
+        },
+
+        // ═══════════════════════════════════════════════════════════════
+        // 🎯 ASCENSION — Mini-jeu SCRAMBLE / Anagramme (Joueur)
+        //   Image perso visible (colorée) + nom anime ; lettres mélangées en réserve.
+        //   Click une lettre réserve → vole dans le 1er slot vide. Click slot → revient.
+        //   Auto-submit dès que tous les slots sont remplis.
+        // ═══════════════════════════════════════════════════════════════
+
+        _renderScrambleGame(content, floorData) {
+            this.ascension.scrambleLetters = [...floorData.scrambled];
+            this.ascension.scrambleSlots = new Array(floorData.wordLength).fill(null);
+            this.ascension.scrambleSubmitting = false;
+
+            const wrap = document.createElement('div');
+            wrap.className = 'asc-scramble-wrap';
+
+            // Top : label catégorie au-dessus + carte mystère "?"
+            const top = document.createElement('div');
+            top.className = 'asc-scramble-top';
+
+            const catLbl = document.createElement('div');
+            catLbl.className = 'asc-scramble-cat';
+            catLbl.textContent = floorData.category === 'anime' ? 'Anime' : 'Personnage';
+            top.appendChild(catLbl);
+
+            const imgWrap = document.createElement('div');
+            imgWrap.className = 'asc-scramble-img-wrap asc-scramble-mystery';
+            const mystery = document.createElement('div');
+            mystery.className = 'asc-scramble-mystery-icon';
+            mystery.textContent = '?';
+            imgWrap.appendChild(mystery);
+            top.appendChild(imgWrap);
+
+            wrap.appendChild(top);
+
+            // Slots vides ordonnés
+            const slotEl = document.createElement('div');
+            slotEl.className = 'asc-scramble-slot';
+            for (let i = 0; i < floorData.wordLength; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'asc-scramble-cell';
+                cell.dataset.slotIdx = i;
+                cell.addEventListener('click', () => this._onScrambleSlotClick(i));
+                slotEl.appendChild(cell);
+            }
+            wrap.appendChild(slotEl);
+
+            // Réserve : lettres mélangées en boutons
+            const reserve = document.createElement('div');
+            reserve.className = 'asc-scramble-reserve';
+            this.ascension.scrambleLetters.forEach((letter, idx) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'asc-scramble-letter';
+                btn.textContent = letter;
+                btn.dataset.idx = idx;
+                btn.addEventListener('click', () => this._onScrambleReserveClick(idx));
+                reserve.appendChild(btn);
+            });
+            wrap.appendChild(reserve);
+
+            content.appendChild(wrap);
+
+            // 🆕 Active le clavier physique : tape une lettre pour la placer, Backspace pour retirer la dernière
+            this._setupScrambleKeyboard();
+        },
+
+        _setupScrambleKeyboard() {
+            this._cleanupScrambleKeyboard();
+            const handler = (e) => {
+                if (this.ascension?.validated) return;
+                if (this.ascension?.scrambleSubmitting) return;
+                const wrap = document.querySelector('.asc-scramble-wrap');
+                if (!wrap) return;
+                const tgt = e.target;
+                if (tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.isContentEditable)) return;
+
+                const key = e.key;
+                if (key === 'Backspace') {
+                    // Retire la dernière lettre placée
+                    const slots = this.ascension.scrambleSlots;
+                    for (let i = slots.length - 1; i >= 0; i--) {
+                        if (slots[i]) {
+                            this._onScrambleSlotClick(i);
+                            break;
+                        }
+                    }
+                    e.preventDefault();
+                } else if (/^[a-zA-Z]$/.test(key)) {
+                    // Cherche une lettre matching dans la réserve qui n'est pas encore utilisée
+                    const letter = key.toUpperCase();
+                    const slots = this.ascension.scrambleSlots;
+                    const usedReserveIdxs = new Set(slots.filter(s => s).map(s => s.reserveIdx));
+                    const reserveIdx = this.ascension.scrambleLetters.findIndex((l, idx) =>
+                        l === letter && !usedReserveIdxs.has(idx)
+                    );
+                    if (reserveIdx !== -1) {
+                        this._onScrambleReserveClick(reserveIdx);
+                        e.preventDefault();
+                    }
+                }
+            };
+            document.addEventListener('keydown', handler);
+            this.ascension.scrambleKeydownHandler = handler;
+        },
+
+        _cleanupScrambleKeyboard() {
+            if (this.ascension?.scrambleKeydownHandler) {
+                document.removeEventListener('keydown', this.ascension.scrambleKeydownHandler);
+                this.ascension.scrambleKeydownHandler = null;
+            }
+        },
+
+        _onScrambleReserveClick(reserveIdx) {
+            if (this.ascension?.validated) return;
+            if (this.ascension?.scrambleSubmitting) return;
+            const slots = this.ascension.scrambleSlots;
+            // Trouver le 1er slot vide
+            const firstEmpty = slots.findIndex(s => s === null);
+            if (firstEmpty === -1) return;
+
+            // Vérifier que la lettre n'est pas déjà placée (anti-double-click)
+            if (slots.some(s => s && s.reserveIdx === reserveIdx)) return;
+
+            const letter = this.ascension.scrambleLetters[reserveIdx];
+            slots[firstEmpty] = { letter, reserveIdx };
+            this._setScrambleCellLetter(firstEmpty, letter, true);
+            this._setScrambleReserveUsed(reserveIdx, true);
+            this._playAscScrambleClickSound();
+            this._checkScrambleAutoSubmit();
+        },
+
+        _onScrambleSlotClick(slotIdx) {
+            if (this.ascension?.validated) return;
+            if (this.ascension?.scrambleSubmitting) return;
+            const slots = this.ascension.scrambleSlots;
+            const slot = slots[slotIdx];
+            if (!slot) return;
+
+            slots[slotIdx] = null;
+            this._setScrambleCellLetter(slotIdx, null, false);
+            this._setScrambleReserveUsed(slot.reserveIdx, false);
+            this._playAscScrambleClickSound();
+        },
+
+        _setScrambleCellLetter(slotIdx, letter, animate) {
+            const cell = document.querySelector('.asc-scramble-cell[data-slot-idx="' + slotIdx + '"]');
+            if (!cell) return;
+            cell.textContent = letter || '';
+            if (letter) {
+                cell.classList.add('asc-scramble-cell-filled');
+                if (animate) {
+                    cell.classList.remove('asc-scramble-cell-pop');
+                    void cell.offsetWidth;
+                    cell.classList.add('asc-scramble-cell-pop');
+                }
+            } else {
+                cell.classList.remove('asc-scramble-cell-filled', 'asc-scramble-cell-pop');
+            }
+        },
+
+        _setScrambleReserveUsed(reserveIdx, used) {
+            const btn = document.querySelector('.asc-scramble-letter[data-idx="' + reserveIdx + '"]');
+            if (btn) btn.classList.toggle('asc-scramble-letter-used', used);
+        },
+
+        _checkScrambleAutoSubmit() {
+            const slots = this.ascension.scrambleSlots;
+            if (slots.some(s => s === null)) return;
+            // Tous les slots remplis → submit
+            this.ascension.scrambleSubmitting = true;
+            const guess = slots.map(s => s.letter).join('');
+            this.socket.emit('ascension-check-scramble', { guess });
+        },
+
+        _handleScrambleResult(data) {
+            const slotEl = document.querySelector('.asc-scramble-slot');
+            if (!slotEl) return;
+
+            if (data.correct) {
+                // Pulse green + son + fade out wrap
+                slotEl.classList.add('asc-scramble-slot-correct');
+                this._playAscIntruderVictorySound();
+                this._cleanupScrambleKeyboard();
+                setTimeout(() => {
+                    const wrap = document.querySelector('.asc-scramble-wrap');
+                    if (wrap) wrap.classList.add('asc-scramble-validated');
+                }, 700);
+            } else {
+                // Shake + flash rouge, MAIS d'abord highlight en vert les positions qui étaient correctes
+                slotEl.classList.remove('asc-scramble-slot-shake');
+                void slotEl.offsetWidth;
+                slotEl.classList.add('asc-scramble-slot-shake', 'asc-scramble-slot-wrong');
+                this._playAscIntruderWrongSound();
+
+                // 🆕 Highlight cells qui étaient à la bonne place
+                if (Array.isArray(data.correctPositions)) {
+                    data.correctPositions.forEach((isOk, i) => {
+                        if (!isOk) return;
+                        const cell = document.querySelector('.asc-scramble-cell[data-slot-idx="' + i + '"]');
+                        if (cell) cell.classList.add('asc-scramble-cell-was-correct');
+                    });
+                }
+
+                setTimeout(() => {
+                    slotEl.classList.remove('asc-scramble-slot-shake', 'asc-scramble-slot-wrong');
+                    document.querySelectorAll('.asc-scramble-cell-was-correct').forEach(c => c.classList.remove('asc-scramble-cell-was-correct'));
+                    // Reset: vider tous les slots + restaurer toutes les lettres réserve
+                    for (let i = 0; i < this.ascension.scrambleSlots.length; i++) {
+                        this.ascension.scrambleSlots[i] = null;
+                        this._setScrambleCellLetter(i, null, false);
+                    }
+                    document.querySelectorAll('.asc-scramble-letter').forEach(btn => {
+                        btn.classList.remove('asc-scramble-letter-used');
+                    });
+                    this.ascension.scrambleSubmitting = false;
+                }, 1100);
+            }
+        },
+
+        _playAscScrambleClickSound() {
+            // Petit tick neutre, similaire au click intruder
+            try {
+                if (!this._ascAudioCtx) this._ascAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const ctx = this._ascAudioCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+                const t = ctx.currentTime;
+                const o = ctx.createOscillator();
+                const g = ctx.createGain();
+                o.type = 'triangle';
+                o.frequency.setValueAtTime(1100, t);
+                o.frequency.exponentialRampToValueAtTime(700, t + 0.04);
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(0.04, t + 0.005);
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+                o.connect(g).connect(ctx.destination);
+                o.start(t); o.stop(t + 0.07);
+            } catch(e) {}
+        },
+
         _getAscFloorDesc(data) {
             switch (data.type) {
                 case 'guess': return 'Devinez le nom de ' + data.totalToGuess + ' personnages';
-                case 'target': return 'Trouvez ' + data.totalTargets + ' cibles';
+                case 'target': return 'Clique sur les ' + data.totalTargets + ' bonnes cibles d\'affilée';
+                case 'scramble': return data.category === 'anime' ? "Reconstitue le nom de l'anime" : 'Reconstitue le nom du personnage';
                 case 'intruder': return '';  // 🆕 La description est affichée dans le sidebar à droite
-                case 'wordle': return 'Devinez le mot de ' + data.wordLength + ' lettres';
+                case 'wordle': return data.category === 'anime' ? "Devine l'anime" : 'Devine le personnage';
                 case 'silhouette': return 'Identifiez le personnage';
                 case 'order': return 'Classez les arcs de ' + data.anime;
-                case 'match': return 'Associez chaque élément de gauche avec celui de droite';
+                case 'match': {
+                    switch (data.subtype) {
+                        case 'char_anime':   return "Lie les personnages à leur anime";
+                        case 'techniques':   return "Lie les personnages à leur technique";
+                        case 'weapons':      return "Lie les personnages à leur arme";
+                        case 'couples':      return "Lie les couples";
+                        case 'rivals':       return "Lie les rivaux";
+                        case 'same_voice':   return "Lie les personnages ayant la même voix japonaise";
+                        case 'anime_studio': return "Lie chaque anime à son studio";
+                        case 'anime_year':   return "Lie chaque anime à sa première année de parution";
+                        default:             return "Reliez les bonnes paires";
+                    }
+                }
                 default: return '';
             }
         },
@@ -7118,28 +8737,98 @@ createApp({
         _updateAscensionPlayerTower() {
             const el = document.getElementById('ascPlayerTowerPlayers');
             if (!el || !this.ascension.playerProgress) return;
-            
+
             const COLORS = ['#50dc78', '#ef7844', '#788cff', '#ff50a0', '#ffd700', '#00d4ff', '#c084fc', '#f97316'];
             const progress = this.ascension.playerProgress;
-            let maxFloor = 0;
-            progress.forEach(p => { if (p.floor > maxFloor) maxFloor = p.floor; });
-            
-            el.innerHTML = '';
+            const floors = this.ascension.floors;
+
+            // Compte par étage pour répartir horizontalement les joueurs au même niveau
+            const byFloor = {};
+            progress.forEach(p => {
+                const f = p.floor;
+                if (!byFloor[f]) byFloor[f] = [];
+                byFloor[f].push(p);
+            });
+
+            const escapeHtml = (s) => String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            const initial = (n) => { const t = (n || '?').trim(); return t ? t.charAt(0).toUpperCase() : '?'; };
+
+            // 🆕 Mise à jour incrémentale : on garde les éléments existants pour préserver
+            //    la transition CSS sur `bottom` (animation de montée fluide).
+            const seen = new Set();
             progress.forEach((p, i) => {
                 const color = COLORS[i % COLORS.length];
-                const pct = this.ascension.floors > 0 ? (p.floor / this.ascension.floors * 100) : 0;
-                const isLeader = p.floor === maxFloor && maxFloor > 0;
+                const pct = floors > 0 ? (p.floor / floors * 100) : 0;
                 const isMe = p.twitchId === this.twitchId;
-                
-                const div = document.createElement('div');
-                div.className = 'asc-tower-player' + (isLeader ? ' leader' : '') + (isMe ? ' me' : '');
-                div.style.bottom = pct + '%';
-                div.style.setProperty('--pcolor', color);
-                const offset = (i % 2 === 0) ? -12 : 12;
-                div.style.left = 'calc(50% + ' + offset + 'px)';
-                div.innerHTML = '<span class="asc-tower-pname">' + (isMe ? 'Vous' : p.username) + '</span><div class="asc-tower-pdot" style="background:' + color + ';box-shadow:0 0 8px ' + color + ';"></div>';
-                el.appendChild(div);
+                const key = p.twitchId || ('idx-' + i);
+                seen.add(key);
+
+                const sameFloorList = byFloor[p.floor] || [];
+                const myIdxOnFloor = sameFloorList.indexOf(p);
+                const sameCount = sameFloorList.length;
+                const spread = 50;
+                const offsetX = sameCount > 1
+                    ? ((myIdxOnFloor / (sameCount - 1)) - 0.5) * spread
+                    : 0;
+
+                let div = el.querySelector('.asc-tower-player[data-twitch-id="' + CSS.escape(String(key)) + '"]');
+                if (!div) {
+                    // Création initiale
+                    div = document.createElement('div');
+                    div.className = 'asc-tower-player' + (isMe ? ' me' : '');
+                    div.dataset.twitchId = String(key);
+                    div.style.setProperty('--pcolor', color);
+
+                    // Avatar Twitch si dispo, sinon fallback initiale
+                    const avatarInner = p.avatarUrl
+                        ? '<img class="asc-tower-avatar-img" src="' + escapeHtml(p.avatarUrl) + '" alt="" draggable="false" onerror="this.replaceWith(Object.assign(document.createElement(\'span\'),{className:\'asc-tower-avatar-fallback\',textContent:\'' + escapeHtml(initial(p.username)) + '\'}))"/>'
+                        : '<span class="asc-tower-avatar-fallback">' + escapeHtml(initial(p.username)) + '</span>';
+                    div.innerHTML =
+                          '<div class="asc-tower-avatar">' + avatarInner + '</div>'
+                        + '<div class="asc-tower-tip">' + escapeHtml(isMe ? 'Vous' : p.username) + '</div>';
+
+                    // 🆕 Position initiale immédiate (sans transition pour le 1er placement)
+                    div.style.transition = 'none';
+                    div.style.bottom = pct + '%';
+                    div.style.left = 'calc(50% + ' + offsetX + 'px)';
+                    el.appendChild(div);
+                    // Force reflow puis réactive la transition pour les futurs updates
+                    void div.offsetWidth;
+                    div.style.transition = '';
+                } else {
+                    // Update : on change juste les styles → transition CSS s'applique
+                    div.style.bottom = pct + '%';
+                    div.style.left = 'calc(50% + ' + offsetX + 'px)';
+                }
             });
+
+            // Retirer les joueurs disparus (déconnexions)
+            el.querySelectorAll('.asc-tower-player').forEach(node => {
+                if (!seen.has(node.dataset.twitchId)) node.remove();
+            });
+
+            // 🆕 Mobile : update du rang du joueur courant
+            this._updateAscensionMobileRank(progress);
+        },
+
+        _updateAscensionMobileRank(progress) {
+            const posEl = document.getElementById('ascPlayerMobileRankPos');
+            const suffixEl = document.getElementById('ascPlayerMobileRankSuffix');
+            if (!posEl || !suffixEl) return;
+
+            // Tri par floor descendant pour calculer le rang
+            const sorted = [...progress].sort((a, b) => b.floor - a.floor);
+            const myIdx = sorted.findIndex(p => p.twitchId === this.twitchId);
+            if (myIdx < 0) {
+                posEl.textContent = '—';
+                suffixEl.textContent = '';
+                return;
+            }
+            const rank = myIdx + 1;
+            posEl.textContent = String(rank);
+            suffixEl.textContent = rank === 1 ? 'er' : 'ᵉ';
         },
 
         _flashAscensionPlayerSuccess() {
@@ -7151,19 +8840,68 @@ createApp({
 
         _showAscensionPlayerPodium(podium, winner) {
             const content = document.getElementById('ascPlayerContent');
+            const wrapper = document.querySelector('.ascension-player-screen') || content?.parentElement;
             if (!content) return;
-            
-            const rows = podium.slice(0, 5).map((p, i) => {
-                const isMe = p.twitchId === this.twitchId;
-                return '<div class="asc-podium-row ' + (i === 0 ? 'winner' : '') + (isMe ? ' me' : '') + '">' +
-                    '<span class="asc-podium-rank">' + (i === 0 ? '♛' : (i + 1)) + '</span>' +
-                    '<span class="asc-podium-name">' + (isMe ? 'Vous' : p.username) + '</span>' +
-                    '<span class="asc-podium-floor">Étage ' + p.floor + '</span></div>';
-            }).join('');
-            
-            content.innerHTML = '<div class="asc-podium"><div class="asc-podium-title">' + 
-                (winner ? winner.username + ' remporte la partie !' : 'Partie terminée') + 
-                '</div><div class="asc-podium-list">' + rows + '</div></div>';
+
+            // 🆕 Phase 1 : fade-out + blur de l'écran de jeu (1000ms pour bien laisser respirer)
+            if (wrapper) wrapper.classList.add('asc-ending');
+
+            const renderPodium = () => {
+                const escapeHtml = (s) => String(s == null ? '' : s)
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                const initialFromName = (n) => { const t = (n || '?').trim(); return t ? t.charAt(0).toUpperCase() : '?'; };
+
+                const medalSvg = (rank) => {
+                    return '<svg viewBox="0 0 24 24" class="asc-podium-medal asc-podium-medal-r' + rank + '" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'
+                         + '<path d="M8 3l-3 6 4 5"/><path d="M16 3l3 6-4 5"/>'
+                         + '<circle cx="12" cy="16" r="6"/>'
+                         + '<text x="12" y="19.2" text-anchor="middle" font-size="7" font-weight="700" fill="currentColor" stroke="none">' + rank + '</text>'
+                         + '</svg>';
+                };
+
+                // 🆕 Liste = uniquement rang 2 et 3 (le winner est dans le hero)
+                const others = podium.slice(1, 3);
+                const rows = others.map((p, idx) => {
+                    const rank = idx + 2;
+                    const avatar = p.avatarUrl
+                        ? '<img class="asc-podium-avatar-img" src="' + escapeHtml(p.avatarUrl) + '" alt=""/>'
+                        : '<span class="asc-podium-avatar-fallback">' + escapeHtml(initialFromName(p.username)) + '</span>';
+                    return '<div class="asc-podium-row asc-podium-rank-' + rank + '" style="--asc-row-i:' + idx + '">'
+                         +   '<span class="asc-podium-medal-wrap">' + medalSvg(rank) + '</span>'
+                         +   '<span class="asc-podium-avatar">' + avatar + '</span>'
+                         +   '<span class="asc-podium-name">' + escapeHtml(p.username) + '</span>'
+                         +   '<span class="asc-podium-floor">Étage ' + p.floor + '</span>'
+                         + '</div>';
+                }).join('');
+
+                const winnerName = winner ? escapeHtml(winner.username) : '';
+                const winnerAvatar = winner && winner.avatarUrl
+                    ? '<img class="asc-podium-hero-avatar-img" src="' + escapeHtml(winner.avatarUrl) + '" alt=""/>'
+                    : '<span class="asc-podium-hero-avatar-fallback">' + escapeHtml(initialFromName(winner?.username)) + '</span>';
+                // Étoiles décoratives autour du winner
+                const stars = ['<span class="asc-podium-spark asc-podium-spark-1"></span>',
+                               '<span class="asc-podium-spark asc-podium-spark-2"></span>',
+                               '<span class="asc-podium-spark asc-podium-spark-3"></span>',
+                               '<span class="asc-podium-spark asc-podium-spark-4"></span>'].join('');
+
+                content.innerHTML =
+                    '<div class="asc-podium">'
+                    + '<div class="asc-podium-hero">'
+                        + '<div class="asc-podium-hero-avatar">' + stars + winnerAvatar + '</div>'
+                        + '<div class="asc-podium-hero-name">' + winnerName + '</div>'
+                        + '<div class="asc-podium-hero-sub">a atteint le sommet</div>'
+                    + '</div>'
+                    + (rows ? '<div class="asc-podium-list">' + rows + '</div>' : '')
+                    + '</div>';
+
+                if (wrapper) {
+                    wrapper.classList.remove('asc-ending');
+                    wrapper.classList.add('asc-end-shown');
+                }
+            };
+
+            setTimeout(renderPodium, 1400);
         },
 
         // ═══ QUEST COMPLETE CENTER TEXT ═══

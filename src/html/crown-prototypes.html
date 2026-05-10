@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Ascension - Prototypes d'icône (sommet)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            background: radial-gradient(ellipse at 50% 30%, #14141e 0%, #06060a 80%);
+            color: #e8e8f0;
+            font-family: 'Rajdhani', sans-serif;
+            min-height: 100vh;
+        }
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 22px; font-weight: 700;
+            letter-spacing: 3px; text-transform: uppercase;
+            text-align: center;
+            padding: 30px 20px 10px;
+            color: #d4d4d8;
+        }
+        .lead {
+            text-align: center; max-width: 720px; margin: 0 auto;
+            font-size: 13px; color: rgba(255,255,255,0.45);
+            letter-spacing: 0.5px; line-height: 1.6;
+            padding: 0 20px 24px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 22px;
+            padding: 30px 40px 60px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .card {
+            position: relative;
+            min-height: 220px;
+            display: flex; flex-direction: column; align-items: center;
+            border-radius: 14px;
+            background: linear-gradient(180deg, rgba(20,20,30,0.5), rgba(8,8,14,0.8));
+            border: 1px solid rgba(255,255,255,0.06);
+            padding: 18px 14px 18px;
+            backdrop-filter: blur(6px);
+            transition: border-color 0.25s, transform 0.25s;
+        }
+        .card:hover {
+            border-color: rgba(255,210,120,0.4);
+            transform: translateY(-3px);
+        }
+        .card-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: rgba(255,255,255,0.85);
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        .icon-stage {
+            flex: 1;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 110px;
+            position: relative;
+            width: 100%;
+        }
+        .icon-stage svg {
+            display: block;
+            filter: drop-shadow(0 0 10px rgba(255,210,120,0.5)) drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+            animation: floatY 3s ease-in-out infinite;
+        }
+        @keyframes floatY {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+        .card-tag {
+            font-size: 10px;
+            color: rgba(255,255,255,0.35);
+            margin-top: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Aura derrière chaque icône */
+        .icon-stage::before {
+            content: ''; position: absolute;
+            width: 90px; height: 90px; border-radius: 50%;
+            background: radial-gradient(circle,
+                rgba(255,210,120,0.18) 0%,
+                rgba(255,180,80,0.08) 35%,
+                transparent 70%);
+            animation: auraPulse 3.5s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes auraPulse {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.15); }
+        }
+
+        /* Variantes d'animations spécifiques */
+        .spin svg { animation: floatY 3s ease-in-out infinite, spinSlow 14s linear infinite; }
+        @keyframes spinSlow { to { transform: translateY(0) rotate(360deg); } }
+        .pulse svg {
+            animation: floatY 3s ease-in-out infinite, scalePulse 2.4s ease-in-out infinite;
+        }
+        @keyframes scalePulse {
+            0%, 100% { filter: drop-shadow(0 0 10px rgba(255,210,120,0.5)) drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+            50% { filter: drop-shadow(0 0 20px rgba(255,210,120,0.85)) drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+        }
+
+        /* Couleur diamant (cyan/blanc) */
+        .diamond svg { filter: drop-shadow(0 0 12px rgba(180,220,255,0.6)) drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+        .diamond .icon-stage::before {
+            background: radial-gradient(circle,
+                rgba(180,220,255,0.18) 0%,
+                rgba(120,180,240,0.08) 35%,
+                transparent 70%);
+        }
+    </style>
+</head>
+<body>
+    <h1>Sommet Tour — Prototypes d'icône</h1>
+    <div class="lead">Variantes pour l'icône au-dessus de la tour Ascension. Toutes en SVG inline (pas d'emoji), avec gradient + filtres + animations subtiles.</div>
+
+    <div class="grid">
+
+        <!-- 1. Couronne actuelle (référence) -->
+        <div class="card">
+            <div class="card-title">1. Actuelle (réf)</div>
+            <div class="icon-stage">
+                <svg viewBox="0 0 64 44" width="64" height="44" fill="none" stroke-linejoin="round">
+                    <defs><linearGradient id="g1" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#fff5c8"/><stop offset="50%" stop-color="#ffd266"/><stop offset="100%" stop-color="#c8902a"/>
+                    </linearGradient></defs>
+                    <path d="M4 14 L12 28 L24 8 L32 32 L40 8 L52 28 L60 14 L56 40 L8 40 Z" fill="url(#g1)" stroke="#a87012" stroke-width="1.4"/>
+                    <rect x="10" y="36" width="44" height="4" rx="1" fill="#a87012" opacity="0.55"/>
+                    <circle cx="16" cy="38" r="2" fill="#ff6b6b"/><circle cx="32" cy="38" r="2.4" fill="#76d4ff"/><circle cx="48" cy="38" r="2" fill="#a4ff76"/>
+                </svg>
+            </div>
+            <div class="card-tag">Couronne 5-pointes + joyaux</div>
+        </div>
+
+        <!-- 2. Couronne royale arquée -->
+        <div class="card">
+            <div class="card-title">2. Royale (arches)</div>
+            <div class="icon-stage">
+                <svg viewBox="0 0 70 56" width="70" height="56" fill="none">
+                    <defs><linearGradient id="g2" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#fff7d6"/><stop offset="40%" stop-color="#ffd266"/><stop offset="100%" stop-color="#a87012"/>
+                    </linearGradient></defs>
+                    <!-- Bandeau base -->
+                    <rect x="6" y="40" width="58" height="8" rx="2" fill="url(#g2)" stroke="#7a5210" stroke-width="0.8"/>
+                    <!-- Arches -->
+                    <path d="M10 40 Q10 16 35 14 Q60 16 60 40" stroke="url(#g2)" stroke-width="3" fill="none" stroke-linecap="round"/>
+                    <path d="M22 40 Q22 22 35 20 Q48 22 48 40" stroke="url(#g2)" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.85"/>
+                    <!-- Globe + croix au sommet -->
+                    <circle cx="35" cy="10" r="4.5" fill="url(#g2)" stroke="#7a5210" stroke-width="0.8"/>
+                    <line x1="35" y1="0" x2="35" y2="6" stroke="#fff7d6" stroke-width="2.2" stroke-linecap="round"/>
+                    <line x1="32" y1="3" x2="38" y2="3" stroke="#fff7d6" stroke-width="2" stroke-linecap="round"/>
+                    <!-- Joyaux base -->
+                    <circle cx="20" cy="44" r="2" fill="#ff5566" stroke="#5a1218" stroke-width="0.5"/>
+                    <circle cx="35" cy="44" r="2.4" fill="#5cd4ff" stroke="#0e3a64" stroke-width="0.5"/>
+                    <circle cx="50" cy="44" r="2" fill="#80ff66" stroke="#1a4818" stroke-width="0.5"/>
+                </svg>
+            </div>
+            <div class="card-tag">Type couronne britannique</div>
+        </div>
+
+        <!-- 3. Diamant facetté -->
+        <div class="card diamond pulse">
+            <div class="card-title">3. Diamant Facetté</div>
+            <div class="icon-stage">
+                <svg viewBox="0 0 60 70" width="56" height="64" fill="none" stroke-linejoin="round">
+                    <defs>
+                        <linearGradient id="g3a" x1="0%" y1="0%" x2="50%" y2="100%">
+                            <stop offset="0%" stop-color="#fff"/><stop offset="100%" stop-color="#76d4ff"/>
+                        </linearGradient>
+                        <linearGradient id="g3b" x1="50%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#a8e0ff"/><stop offset="100%" stop-color="#3a7eb8"/>
+                        </linearGradient>
+                        <linearGradient id="g3c" x1="50%" y1="100%" x2="50%" y2="60%">
+                            <stop offset="0%" stop-color="#1f4f7a"/><stop offset="100%" stop-color="#76b8e0"/>
+                        </linearGradient>
+                    </defs>
+                    <!-- Top facets -->
+                    <path d="M30 4 L8 24 L52 24 Z" fill="url(#g3a)" stroke="#1f4f7a" stroke-width="1"/>
+                    <path d="M8 24 L52 24 L42 30 L18 30 Z" fill="#cae8ff" stroke="#1f4f7a" stroke-width="1"/>
+                    <!-- Bottom facets -->
+                    <path d="M8 24 L18 30 L30 66 Z" fill="url(#g3b)" stroke="#1f4f7a" stroke-width="1"/>
+                    <path d="M52 24 L42 30 L30 66 Z" fill="url(#g3b)" stroke="#1f4f7a" stroke-width="1"/>
+                    <path d="M18 30 L42 30 L30 66 Z" fill="url(#g3c)" stroke="#1f4f7a" stroke-width="1"/>
+                    <!-- Sparkle highlights -->
+                    <line x1="20" y1="14" x2="24" y2="16" stroke="#fff" stroke-width="1.2" stroke-linecap="round" opacity="0.85"/>
+                    <line x1="22" y1="12" x2="22" y2="18" stroke="#fff" stroke-width="0.8" stroke-linecap="round" opacity="0.6"/>
+                </svg>
+            </div>
+            <div class="card-tag">Pierre précieuse cyan</div>
+        </div>
+
+        <!-- 4. Étoile à 8 pointes (compass) -->
+        <div class="card spin">
+            <div class="card-title">4. Étoile Compass</div>
+            <div class="icon-stage">
+                <svg viewBox="0 0 64 64" width="60" height="60" fill="none">
+                    <defs><linearGradient id="g4" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#fff5c8"/><stop offset="100%" stop-color="#c8902a"/>
+                    </linearGradient></defs>
+                    <!-- Branches -->
+                    <path d="M32 4 L36 28 L32 32 L28 28 Z" fill="url(#g4)"/>
+                    <path d="M32 60 L36 36 L32 32 L28 36 Z" fill="url(#g4)"/>
+                    <path d="M4 32 L28 36 L32 32 L28 28 Z" fill="url(#g4)"/>
+                    <path d="M60 32 L36 36 L32 32 L36 28 Z" fill="url(#g4)"/>
+                    <!-- Diagonales -->
+                    <path d="M12 12 L30 30 L32 32 L30 30 Z" fill="#a87012" opacity="0.65"/>
+                    <path d="M52 12 L34 30 L32 32 L34 30 Z" fill="#a87012" opacity="0.65"/>
+                    <path d="M12 52 L30 34 L32 32 L30 34 Z" fill="#a87012" opacity="0.65"/>
+                    <path d="M52 52 L34 34 L32 32 L34 34 Z" fill="#a87012" opacity="0.65"/>
+                    <!-- Centre -->
+                    <circle cx="32" cy="32" r="4" fill="#fff5c8" stroke="#a87012" stroke-width="1"/>
+                    <circle cx="32" cy="32" r="1.5" fill="#a87012"/>
+                </svg>
+            </div>
+            <div class="card-tag">Boussole / étoile polaire</div>
+        </div>
+
+        <!-- 5. Soleil rayonnant -->
+        <div class="card spin">
+            <div class="card-title">5. Soleil Rayonnant</div>
+            <div class="icon-stage">
+                <svg viewBox="0 0 70 70" width="60" height="60" fill="none">
+                    <defs><radialGradient id="g5" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="#fff5c8"/><stop offset="60%" stop-color="#ffd266"/><stop offset="100%" stop-color="#a87012"/>
+                    </radialGradient></defs>
+                    <!-- Rayons -->
+                    <g stroke="#ffd266" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="35" y1="4" x2="35" y2="14"/>
+                        <line x1="35" y1="56" x2="35" y2="66"/>
+                        <line x1="4" y1="35" x2="14" y2="35"/>
+                        <line x1="56" y1="35" x2="66" y2="35"/>
+                        <line x1="13" y1="13" x2="20" y2="20"/>
+                        <line x1="50" y1="50" x2="57" y2="57"/>
+                        <line x1="57" y1="13" x2="50" y2="20"/>
+                        <line x1="13" y1="57" x2="20" y2="50"/>
+                    </g>
+                    <!-- Petits rayons -->
+                    <g stroke="#fff5c8" stroke-width="1.5" stroke-linecap="round" opacity="0.7">
+                        <line x1="35" y1="9" x2="35" y2="11"/>
+                        <line x1="35" y1="59" x2="35" y2="61"/>
+                        <line x1="9" y1="35" x2="11" y2="35"/>
+                        <line x1="59" y1="35" x2="61" y2="35"/>
+                    </g>
+                    <!-- Disque -->
+                    <circle cx="35" cy="35" r="14" fill="url(#g5)" stroke="#a87012" stroke-width="1.2"/>
+                    <circle cx="35" cy="35" r="6" fill="#fff5c8" opacity="0.55"/>
+                </svg>
+            </div>
+            <div class="card-tag">Astre + rayons</div>
+        </div>
+
+        <!-- 6. Couronne minimaliste anglée (fine line) -->
+        <div class="card">
+            <div class="card-title">6. Minimal Linéaire</div>
+            <div class="icon-stage">
+                <svg viewBox="0 0 64 44" width="60" height="40" fill="none">
+                    <defs><linearGradient id="g6" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#ffe199"/><stop offset="100%" stop-color="#c8902a"/>
+                    </linearGradient></defs>
+                    <!-- Couronne en trait -->
+                    <path d="M6 14 L14 30 L24 8 L32 32 L40 8 L50 30 L58 14"
+                          stroke="url(#g6)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+                    <!-- Bandeau -->
+                    <line x1="6" y1="34" x2="58" y2="34" stroke="url(#g6)" stroke-width="2.4" stroke-linecap="round"/>
+                    <!-- Petits cercles aux pointes -->
+                    <circle cx="14" cy="30" r="2" fill="#ffd266"/>
+                    <circle cx="24" cy="8" r="2.5" fill="#ffd266"/>
+                    <circle cx="32" cy="32" r="2" fill="#ffd266"/>
+                    <circle cx="40" cy="8" r="2.5" fill="#ffd266"/>
+                    <circle cx="50" cy="30" r="2" fill="#ffd266"/>
+                </svg>
+            </div>
+            <div class="card-tag">Stroke fin élégant</div>
+        </div>
+
+        <!-- 7. Laurier (couronne romaine) -->
+        <div class="card">
+            <div class="card-title">7. Laurier Romain</div>
+            <div class="icon-stage">
+                <svg viewBox="0 0 80 60" width="80" height="60" fill="none">
+                    <defs><linearGradient id="g7" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#9bd47a"/><stop offset="50%" stop-color="#5fa83a"/><stop offset="100%" stop-color="#9bd47a"/>
+                    </linearGradient></defs>
+                    <!-- Branches gauche -->
+                    <g fill="url(#g7)" stroke="#3a6a25" stroke-width="0.6">
+                        <path d="M14 14 Q22 24 36 50 L34 50 Q22 28 12 16 Z"/>
+                        <ellipse cx="14" cy="20" rx="4" ry="2.2" transform="rotate(-30 14 20)"/>
+                        <ellipse cx="18" cy="28" rx="4.5" ry="2.4" transform="rotate(-20 18 28)"/>
+                        <ellipse cx="24" cy="36" rx="5" ry="2.6" transform="rotate(-10 24 36)"/>
+                        <ellipse cx="30" cy="44" rx="4.8" ry="2.4" transform="rotate(0 30 44)"/>
+                    </g>
+                    <!-- Branches droite (mirror) -->
+                    <g fill="url(#g7)" stroke="#3a6a25" stroke-width="0.6">
+                        <path d="M66 14 Q58 24 44 50 L46 50 Q58 28 68 16 Z"/>
+                        <ellipse cx="66" cy="20" rx="4" ry="2.2" transform="rotate(30 66 20)"/>
+                        <ellipse cx="62" cy="28" rx="4.5" ry="2.4" transform="rotate(20 62 28)"/>
+                        <ellipse cx="56" cy="36" rx="5" ry="2.6" transform="rotate(10 56 36)"/>
+                        <ellipse cx="50" cy="44" rx="4.8" ry="2.4" transform="rotate(0 50 44)"/>
+                    </g>
+                    <!-- Ruban central -->
+                    <circle cx="40" cy="50" r="3.5" fill="#ffd266" stroke="#a87012" stroke-width="0.8"/>
+                </svg>
+            </div>
+            <div class="card-tag">Couronne romaine victorieuse</div>
+        </div>
+
+        <!-- 8. Triangle ascension (pyramide minimaliste) -->
+        <div class="card">
+            <div class="card-title">8. Pyramide Sacrée</div>
+            <div class="icon-stage">
+                <svg viewBox="0 0 64 56" width="60" height="52" fill="none">
+                    <defs>
+                        <linearGradient id="g8a" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#fff5c8"/><stop offset="100%" stop-color="#ffd266"/>
+                        </linearGradient>
+                        <linearGradient id="g8b" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#c8902a"/><stop offset="100%" stop-color="#7a5210"/>
+                        </linearGradient>
+                    </defs>
+                    <!-- Triangle externe -->
+                    <path d="M32 4 L60 50 L4 50 Z" fill="url(#g8a)" stroke="#a87012" stroke-width="1.4"/>
+                    <!-- Face cachée (côté droit, dégradé sombre) -->
+                    <path d="M32 4 L60 50 L40 50 L32 12 Z" fill="url(#g8b)" opacity="0.55"/>
+                    <!-- Œil au centre -->
+                    <circle cx="32" cy="32" r="6" fill="none" stroke="#a87012" stroke-width="1.3"/>
+                    <circle cx="32" cy="32" r="3" fill="#fff5c8"/>
+                    <circle cx="32" cy="32" r="1.5" fill="#a87012"/>
+                    <!-- Pointe brillante -->
+                    <circle cx="32" cy="6" r="2" fill="#fff" opacity="0.9"/>
+                </svg>
+            </div>
+            <div class="card-tag">Triangle ornemental abstrait</div>
+        </div>
+
+        <!-- 9. Aile angélique paire -->
+        <div class="card">
+            <div class="card-title">9. Ailes</div>
+            <div class="icon-stage">
+                <svg viewBox="0 0 80 50" width="76" height="48" fill="none">
+                    <defs><linearGradient id="g9" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#fff5c8"/><stop offset="50%" stop-color="#ffd266"/><stop offset="100%" stop-color="#fff5c8"/>
+                    </linearGradient></defs>
+                    <!-- Aile gauche -->
+                    <g fill="url(#g9)" stroke="#a87012" stroke-width="0.8">
+                        <path d="M40 28 Q26 22 14 26 Q22 22 38 24 Z"/>
+                        <path d="M40 32 Q22 30 6 36 Q22 30 38 28 Z"/>
+                        <path d="M40 36 Q24 38 12 46 Q26 38 38 32 Z"/>
+                    </g>
+                    <!-- Aile droite (mirror) -->
+                    <g fill="url(#g9)" stroke="#a87012" stroke-width="0.8">
+                        <path d="M40 28 Q54 22 66 26 Q58 22 42 24 Z"/>
+                        <path d="M40 32 Q58 30 74 36 Q58 30 42 28 Z"/>
+                        <path d="M40 36 Q56 38 68 46 Q54 38 42 32 Z"/>
+                    </g>
+                    <!-- Pierre centrale -->
+                    <circle cx="40" cy="28" r="4.5" fill="#fff5c8" stroke="#a87012" stroke-width="1"/>
+                    <circle cx="40" cy="28" r="2" fill="#ffd266"/>
+                </svg>
+            </div>
+            <div class="card-tag">Ailes ouvertes + pierre</div>
+        </div>
+
+        <!-- 10. Médaille étoilée -->
+        <div class="card pulse">
+            <div class="card-title">10. Médaille</div>
+            <div class="icon-stage">
+                <svg viewBox="0 0 64 70" width="56" height="62" fill="none">
+                    <defs>
+                        <linearGradient id="g10a" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#fff5c8"/><stop offset="100%" stop-color="#c8902a"/>
+                        </linearGradient>
+                        <linearGradient id="g10b" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#3a7eb8"/><stop offset="100%" stop-color="#1f4f7a"/>
+                        </linearGradient>
+                    </defs>
+                    <!-- Ruban -->
+                    <path d="M20 2 L24 22 L32 18 L40 22 L44 2 Z" fill="url(#g10b)" stroke="#0e3a64" stroke-width="0.8"/>
+                    <!-- Cercle médaille -->
+                    <circle cx="32" cy="42" r="20" fill="url(#g10a)" stroke="#a87012" stroke-width="1.5"/>
+                    <circle cx="32" cy="42" r="16" fill="none" stroke="#a87012" stroke-width="0.8" opacity="0.5"/>
+                    <!-- Étoile au centre -->
+                    <path d="M32 30 L34.5 38 L43 38 L36 43 L38.5 51 L32 46 L25.5 51 L28 43 L21 38 L29.5 38 Z"
+                          fill="#a87012"/>
+                </svg>
+            </div>
+            <div class="card-tag">Étoile + ruban (médaille)</div>
+        </div>
+
+        <!-- 11. Fleur de lys / motif royal -->
+        <div class="card">
+            <div class="card-title">11. Fleur de Lys</div>
+            <div class="icon-stage">
+                <svg viewBox="0 0 60 64" width="56" height="60" fill="none">
+                    <defs><linearGradient id="g11" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#fff5c8"/><stop offset="100%" stop-color="#a87012"/>
+                    </linearGradient></defs>
+                    <!-- Pétale central -->
+                    <path d="M30 4 Q22 18 26 30 L30 36 L34 30 Q38 18 30 4 Z" fill="url(#g11)" stroke="#7a5210" stroke-width="1"/>
+                    <!-- Pétales latéraux -->
+                    <path d="M30 24 Q14 16 10 30 Q12 38 26 32 Z" fill="url(#g11)" stroke="#7a5210" stroke-width="1"/>
+                    <path d="M30 24 Q46 16 50 30 Q48 38 34 32 Z" fill="url(#g11)" stroke="#7a5210" stroke-width="1"/>
+                    <!-- Bandeau central -->
+                    <rect x="14" y="30" width="32" height="6" rx="1" fill="#a87012" stroke="#5a3a08" stroke-width="0.6"/>
+                    <!-- Tige + base évasée -->
+                    <path d="M28 36 L24 56 L36 56 L32 36 Z" fill="url(#g11)" stroke="#7a5210" stroke-width="1"/>
+                </svg>
+            </div>
+            <div class="card-tag">Symbole héraldique</div>
+        </div>
+
+        <!-- 12. Glyphe sci-fi -->
+        <div class="card spin">
+            <div class="card-title">12. Glyphe Sigil</div>
+            <div class="icon-stage">
+                <svg viewBox="0 0 64 64" width="60" height="60" fill="none">
+                    <defs><linearGradient id="g12" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#fff5c8"/><stop offset="100%" stop-color="#c8902a"/>
+                    </linearGradient></defs>
+                    <!-- Cercle externe -->
+                    <circle cx="32" cy="32" r="28" stroke="url(#g12)" stroke-width="1.4" fill="none" opacity="0.7"/>
+                    <!-- Triangle pointe haut -->
+                    <path d="M32 8 L52 44 L12 44 Z" stroke="url(#g12)" stroke-width="2" fill="none" stroke-linejoin="round"/>
+                    <!-- Triangle inverse (entrelacé) -->
+                    <path d="M32 56 L12 20 L52 20 Z" stroke="url(#g12)" stroke-width="2" fill="none" stroke-linejoin="round" opacity="0.5"/>
+                    <!-- Cercle central plein -->
+                    <circle cx="32" cy="32" r="5" fill="url(#g12)" stroke="#a87012" stroke-width="0.8"/>
+                    <!-- Tirets décoratifs cardinaux -->
+                    <line x1="32" y1="0" x2="32" y2="4" stroke="url(#g12)" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="32" y1="60" x2="32" y2="64" stroke="url(#g12)" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="0" y1="32" x2="4" y2="32" stroke="url(#g12)" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="60" y1="32" x2="64" y2="32" stroke="url(#g12)" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <div class="card-tag">Sigil ésotérique / sci-fi</div>
+        </div>
+
+    </div>
+</body>
+</html>
