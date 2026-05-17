@@ -772,6 +772,7 @@ const CHARACTER_VARIANTS = {
         ["LARCADE", "LARCADE DRAGNEEL", "RAHKEID"],
         ["ZEREF", "ZELEPH"],
         ["FREED", "FREED JUSTINE" , "FRIED"],
+        ["REVY", "LEVY" , "REBY", "LEVY MCGARDEN"],
         ["NATSU", "NATSU DRAGNEEL", "E.N.D", "END"],
     ],
 

@@ -203,7 +203,7 @@ const PLAYER_COLORS = [
 // ============================================
 const fs = require('fs');
 const path = require('path');
-const { getAllNamesToBlock } = require('./character-variants');
+const { getAllNamesToBlock, CHARACTER_VARIANTS: BOMB_VARIANTS, THEME_MAPPING: BOMB_THEME_MAPPING } = require('./character-variants');
 
 // Charger les personnages depuis le JSON
 let BOMBANIME_CHARACTERS = {};
@@ -1416,16 +1416,28 @@ app.get('/auth/twitch/callback', async (req, res) => {
     }
 });
 
-// Status Twitch pour l'admin
+// Status Twitch — admin OU joueur normal
 app.get('/auth/twitch/status', (req, res) => {
+    // 1) Admin connecté via Twitch
     if (req.session.adminTwitchUser) {
-        res.json({
+        return res.json({
             connected: true,
             user: req.session.adminTwitchUser
         });
-    } else {
-        res.json({ connected: false });
     }
+    // 2) Joueur normal connecté via Twitch (cas landing / lobby)
+    if (req.session.isAuthenticated && req.session.twitchId) {
+        return res.json({
+            connected: true,
+            user: {
+                id: req.session.twitchId,
+                login: req.session.username,
+                display_name: req.session.username,
+                profile_image_url: req.session.twitchAvatar || null,
+            }
+        });
+    }
+    res.json({ connected: false });
 });
 
 // Route de déconnexion
@@ -2170,7 +2182,8 @@ async function logVisit(page, twitchUsername = null, userAgent = null) {
 
 app.get('/', (req, res) => {
     logVisit('home', req.session?.username || null, req.headers['user-agent'] || null);
-    res.sendFile(__dirname + '/src/html/home.html');
+    // 🚧 Landing temporaire (avant lancement officiel) — pour repasser sur la home : remplacer par 'home.html'
+    res.sendFile(__dirname + '/src/html/landing.html');
 });
 
 // ============================================
@@ -2179,6 +2192,19 @@ app.get('/', (req, res) => {
 
 // Page admin
 app.get('/admin', (req, res) => {
+    // 🚧 Pendant la maintenance : seul un master déjà authentifié accède à l'admin.
+    // Tout le reste (streamer, anonyme) est redirigé vers la landing.
+    if (!req.session.isMasterAdmin) {
+        return res.redirect('/');
+    }
+    logVisit('admin', req.session?.username || null, req.headers['user-agent'] || null);
+    res.sendFile(__dirname + '/src/html/admin.html');
+});
+
+// 🔑 Backdoor pour le master pendant la maintenance : sert la page admin
+// pour permettre la première connexion (saisie du master override).
+// Une fois la session master active, /admin fonctionne normalement.
+app.get('/admin/master', (req, res) => {
     logVisit('admin', req.session?.username || null, req.headers['user-agent'] || null);
     res.sendFile(__dirname + '/src/html/admin.html');
 });
@@ -6774,6 +6800,47 @@ async function checkPartnersLive() {
 // Vérifier au démarrage puis toutes les 2 minutes
 checkPartnersLive();
 setInterval(checkPartnersLive, 120000);
+
+// Liste publique des partenaires + statut live (utilisée par la landing en maintenance)
+const PARTNERS_PUBLIC = [
+    { id: 'Mikyatc',         name: 'Mikyatc',   avatar: 'mikyatc.png' },
+    { id: 'MinoStreaming',   name: 'Mino',      avatar: 'mino.png' },
+    { id: 'Zogaa_',          name: 'Zogaa',     avatar: 'zogaa.png' },
+    { id: 'pikinemadd',      name: 'Pikinemad', avatar: 'pikine.png' },
+    { id: 'luidjy_skyblex',  name: 'Luidjy',    avatar: 'luidjy.png' },
+];
+app.get('/api/partners', (req, res) => {
+    const list = PARTNERS_PUBLIC.map(p => ({
+        ...p,
+        live: !!partnersLiveStatus[p.id],
+    }));
+    res.json({ partners: list });
+});
+
+// Données BombAnime pour la version solo-vs-bot de la page maintenance.
+// Sert juste les listes de personnages + table de variantes (read-only, non sensible).
+app.get('/api/bombanime/data', (req, res) => {
+    res.json({
+        series: Object.keys(BOMBANIME_CHARACTERS).sort(),
+        characters: BOMBANIME_CHARACTERS,
+        variants: BOMB_VARIANTS,
+        themeMapping: BOMB_THEME_MAPPING,
+    });
+});
+
+// Dernière partie BombAnime-vs-bot (mémoire process uniquement, partagé entre visiteurs)
+let lastBombanimeBotResult = null;  // { username, chars, serie, at }
+app.get('/api/bombanime/last', (req, res) => {
+    res.json({ last: lastBombanimeBotResult });
+});
+app.post('/api/bombanime/last', express.json(), (req, res) => {
+    const username = String((req.body && req.body.username) || '').trim().slice(0, 30);
+    const chars = Math.max(0, Math.min(9999, parseInt((req.body && req.body.chars), 10) || 0));
+    const serie = String((req.body && req.body.serie) || '').trim().slice(0, 40);
+    if (!username) return res.status(400).json({ error: 'username required' });
+    lastBombanimeBotResult = { username, chars, serie, at: Date.now() };
+    res.json({ ok: true });
+});
 
 // ============================================
 // 💣 BOMBANIME - Fonctions de jeu

@@ -1,0 +1,3676 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShonenMaster — Bientôt</title>
+    <meta name="description" content="ShonenMaster : la plateforme de quiz anime communautaire arrive bientôt.">
+    <meta name="keywords" content="quiz anime, manga quiz, ShonenMaster, weeb game, anime trivia, otaku, naruto, one piece, shonen">
+    <meta name="theme-color" content="#0a0a14">
+    <meta property="og:title" content="ShonenMaster — Bientôt">
+    <meta property="og:description" content="La plateforme de quiz anime communautaire arrive bientôt.">
+    <meta property="og:type" content="website">
+    <link rel="icon" type="image/png" href="/logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%; height: 100%;
+            background: #06060a;
+            color: #e8e8f0;
+            font-family: 'Rajdhani', sans-serif;
+            overflow: hidden;
+        }
+        body {
+            background:
+                radial-gradient(ellipse at 20% 25%, rgba(140, 70, 220, 0.28) 0%, transparent 55%),
+                radial-gradient(ellipse at 80% 75%, rgba(80, 200, 220, 0.20) 0%, transparent 60%),
+                radial-gradient(ellipse at 50% 100%, rgba(255, 180, 80, 0.14) 0%, transparent 50%),
+                linear-gradient(180deg, #0a0816 0%, #0f0c1f 50%, #06060a 100%);
+            display: flex; flex-direction: column;
+        }
+        /* Canvas pure-JS fallback (toujours actif, garantit la présence des particules) */
+        #particlesCanvas {
+            position: fixed; inset: 0;
+            z-index: 2;
+            pointer-events: none;
+            width: 100%; height: 100%;
+        }
+
+        /* ───── Grille de fond plus visible ───── */
+        .grid-bg {
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 60px 60px;
+            opacity: 0.7;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Texte de fond géant */
+        .bg-text {
+            position: fixed;
+            left: 50%; top: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14vw;
+            font-weight: 900;
+            letter-spacing: -4px;
+            color: rgba(255, 210, 120, 0.045);
+            text-transform: uppercase;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 1;
+            user-select: none;
+            text-shadow:
+                0 0 80px rgba(255, 210, 120, 0.08),
+                0 0 40px rgba(180, 100, 220, 0.06);
+        }
+
+        /* tsParticles container */
+        #tsparticles {
+            position: fixed; inset: 0;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* ───── Top bar ───── */
+        .topbar {
+            position: relative;
+            z-index: 5;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            padding: 22px 36px;
+            min-height: 86px;
+            opacity: 0;
+            animation: topFadeIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
+        }
+        .topbar-left   { justify-self: start; }
+        .topbar-center { justify-self: center; }
+        .topbar-right  { justify-self: end; }
+
+        /* ───── Partners (centrés en haut) ───── */
+        .partners {
+            display: flex; align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 210, 120, 0.04));
+            border: 1px solid rgba(255, 210, 120, 0.18);
+            border-radius: 50px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+        }
+        .partner-link {
+            position: relative;
+            display: inline-flex;
+            text-decoration: none;
+            transition: transform 0.25s ease;
+        }
+        .partner-link:hover { transform: translateY(-2px); }
+        .partner-avatar-wrap {
+            position: relative;
+            width: 38px; height: 38px;
+        }
+        .partner-avatar {
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            object-fit: cover; object-position: center;
+            border: 1.5px solid rgba(255, 255, 255, 0.18);
+            background: rgba(0, 0, 0, 0.3);
+            transition: border-color 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
+            filter: saturate(0.7) brightness(0.85);
+        }
+        .partner-link:hover .partner-avatar {
+            border-color: rgba(255, 210, 120, 0.55);
+            box-shadow: 0 0 14px rgba(255, 210, 120, 0.35);
+            filter: saturate(1) brightness(1);
+        }
+        /* État LIVE : ring rouge pulsant + couleur normale */
+        .partner-link.is-live .partner-avatar {
+            border-color: #ff3b5c;
+            filter: saturate(1) brightness(1);
+            box-shadow: 0 0 0 0 rgba(255, 59, 92, 0.6);
+            animation: partnerLivePulse 2.2s ease-in-out infinite;
+        }
+        @keyframes partnerLivePulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 59, 92, 0.55), 0 0 10px rgba(255, 59, 92, 0.4); }
+            50%      { box-shadow: 0 0 0 6px rgba(255, 59, 92, 0), 0 0 18px rgba(255, 59, 92, 0.55); }
+        }
+        .partner-link.is-live::after {
+            content: 'LIVE';
+            position: absolute;
+            top: -8px; left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 7px; font-weight: 800;
+            letter-spacing: 1px;
+            color: #fff;
+            background: linear-gradient(135deg, #ff3b5c, #d62a4a);
+            padding: 2px 6px;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(255, 59, 92, 0.5);
+            pointer-events: none;
+        }
+        .partner-name-tip {
+            position: absolute;
+            top: calc(100% + 6px); left: 50%;
+            transform: translateX(-50%) translateY(-4px);
+            opacity: 0;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 11px; font-weight: 600;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.85);
+            background: rgba(10, 8, 22, 0.95);
+            border: 1px solid rgba(255, 210, 120, 0.25);
+            padding: 3px 8px;
+            border-radius: 6px;
+            white-space: nowrap;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .partner-link:hover .partner-name-tip {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        @keyframes topFadeIn {
+            0%   { opacity: 0; transform: translateY(-12px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .logo-mini {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 15px; font-weight: 700;
+            letter-spacing: 4px;
+            color: rgba(255, 255, 255, 0.85);
+            text-transform: uppercase;
+        }
+        .logo-mini span { color: #ffd266; }
+        .top-badge {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 9px; font-weight: 600;
+            letter-spacing: 3px; text-transform: uppercase;
+            padding: 7px 14px 7px 22px;
+            border: 1px solid rgba(255, 210, 120, 0.45);
+            border-radius: 14px;
+            color: #ffd266;
+            background: rgba(255, 210, 120, 0.08);
+            position: relative;
+        }
+        .top-badge::before {
+            content: '';
+            position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+            width: 6px; height: 6px; border-radius: 50%;
+            background: #ffd266;
+            box-shadow: 0 0 8px rgba(255, 210, 120, 0.9);
+            animation: badgePulse 1.6s ease-in-out infinite;
+        }
+        @keyframes badgePulse {
+            0%, 100% { opacity: 1; transform: translateY(-50%) scale(1); }
+            50%      { opacity: 0.4; transform: translateY(-50%) scale(0.7); }
+        }
+
+        /* ───── Bouton boutique (centré) ───── */
+        .top-link {
+            position: relative;
+            display: inline-flex; align-items: center; gap: 10px;
+            padding: 10px 22px;
+            background: linear-gradient(135deg, rgba(255, 210, 120, 0.10), rgba(180, 100, 220, 0.10));
+            border: 1px solid rgba(255, 210, 120, 0.32);
+            border-radius: 14px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px; font-weight: 700;
+            letter-spacing: 3px; text-transform: uppercase;
+            color: #ffd266;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 0 rgba(255, 210, 120, 0);
+            overflow: hidden;
+        }
+        .top-link::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(120deg, transparent 30%, rgba(255, 230, 160, 0.18) 50%, transparent 70%);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+        .top-link:hover::before { transform: translateX(100%); }
+        .top-link:hover {
+            background: linear-gradient(135deg, rgba(255, 210, 120, 0.18), rgba(180, 100, 220, 0.18));
+            border-color: rgba(255, 210, 120, 0.6);
+            color: #fff;
+            box-shadow: 0 0 24px rgba(255, 210, 120, 0.35);
+            transform: translateY(-2px);
+        }
+        .top-link svg { width: 14px; height: 14px; fill: currentColor; position: relative; z-index: 1; }
+        .top-link .top-link-label { position: relative; z-index: 1; }
+
+        /* ───── Classement (top 5, centré verticalement à gauche, ultra sobre) ───── */
+        .leaderboard {
+            position: fixed;
+            top: 50%; left: 28px;
+            transform: translateY(-50%);
+            z-index: 5;
+            width: 230px;
+            padding: 22px 16px;
+            background: transparent;
+            border: none;
+            border-left: 1px solid rgba(255, 210, 120, 0.18);
+            opacity: 0;
+            animation: leaderboardFadeIn 1s cubic-bezier(0.22, 1, 0.36, 1) 1.4s forwards;
+            user-select: none;
+        }
+        @keyframes leaderboardFadeIn {
+            0%   { opacity: 0; transform: translate(-16px, -50%); }
+            100% { opacity: 1; transform: translate(0, -50%); }
+        }
+        .leaderboard-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px; font-weight: 700;
+            letter-spacing: 4px; text-transform: uppercase;
+            color: rgba(255, 210, 120, 0.75);
+            text-align: left;
+            padding: 0 0 18px 4px;
+            margin-bottom: 6px;
+            position: relative;
+        }
+        .leaderboard-title::after {
+            content: '';
+            position: absolute;
+            left: 4px; bottom: 8px;
+            width: 28px; height: 1px;
+            background: linear-gradient(90deg, rgba(255, 210, 120, 0.6), transparent);
+        }
+        .lb-row {
+            display: grid;
+            grid-template-columns: 26px 34px 1fr;
+            align-items: center;
+            gap: 12px;
+            padding: 22px 6px;
+            border-radius: 6px;
+            transition: background 0.2s ease;
+        }
+        .lb-row + .lb-row {
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .lb-row:hover { background: rgba(255, 210, 120, 0.04); }
+        .lb-rank {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px; font-weight: 600;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.35);
+            text-align: left;
+        }
+        .lb-row.rank-1 .lb-rank { color: #ffd266; text-shadow: 0 0 8px rgba(255, 210, 120, 0.55); }
+        .lb-row.rank-2 .lb-rank { color: #d4d4dc; }
+        .lb-row.rank-3 .lb-rank { color: #cd9968; }
+        .lb-avatar {
+            width: 34px; height: 34px;
+            border-radius: 50%;
+            object-fit: cover; object-position: center;
+            border: 1.5px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.25);
+        }
+        .lb-row.rank-1 .lb-avatar { border-color: rgba(255, 210, 120, 0.65); box-shadow: 0 0 10px rgba(255, 210, 120, 0.3); }
+        .lb-row.rank-2 .lb-avatar { border-color: rgba(220, 220, 235, 0.5); }
+        .lb-row.rank-3 .lb-avatar { border-color: rgba(205, 153, 104, 0.55); }
+        .lb-name {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 13px; font-weight: 600;
+            color: rgba(255, 255, 255, 0.78);
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .lb-row.rank-1 .lb-name { color: #fff; }
+        .lb-victories {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px; font-weight: 700;
+            color: #ffd266;
+            letter-spacing: 0.5px;
+            display: inline-flex; align-items: center; gap: 5px;
+            opacity: 0.85;
+        }
+        .lb-victories::before {
+            content: '';
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            background: #ffd266;
+            box-shadow: 0 0 5px rgba(255, 210, 120, 0.6);
+        }
+        .lb-empty {
+            text-align: left;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.3);
+            padding: 14px 6px;
+        }
+
+        /* ───── Slide-in panel "Classement" (mobile) ───── */
+        .lb-side {
+            position: fixed; inset: 0;
+            z-index: 70;
+            pointer-events: none;
+            visibility: hidden;
+        }
+        .lb-side.open { visibility: visible; pointer-events: auto; }
+        .lb-side-backdrop {
+            position: absolute; inset: 0;
+            background: rgba(6, 6, 14, 0.55);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+        .lb-side.open .lb-side-backdrop { opacity: 1; }
+        .lb-side-panel {
+            position: absolute;
+            top: 0; left: 0; bottom: 0;
+            width: min(280px, 86vw);
+            padding: 22px 18px 18px 22px;
+            background: linear-gradient(135deg, rgba(20, 16, 36, 0.96) 0%, rgba(10, 8, 22, 0.96) 100%);
+            border-right: 1px solid rgba(255, 210, 120, 0.25);
+            box-shadow: 18px 0 38px rgba(0, 0, 0, 0.55);
+            transform: translateX(-100%);
+            transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+            display: flex; flex-direction: column;
+            user-select: none;
+        }
+        .lb-side.open .lb-side-panel { transform: translateX(0); }
+        .lb-side-head {
+            display: flex; align-items: center; justify-content: space-between;
+            padding-bottom: 14px;
+            border-bottom: 1px solid rgba(255, 210, 120, 0.18);
+            margin-bottom: 8px;
+        }
+        .lb-side-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px; font-weight: 700;
+            letter-spacing: 4px; text-transform: uppercase;
+            color: #ffd266;
+        }
+        .lb-side-close {
+            width: 30px; height: 30px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 18px; line-height: 1;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .lb-side-close:hover, .lb-side-close:active {
+            color: #ef6262;
+            border-color: rgba(239, 98, 98, 0.4);
+            background: rgba(239, 98, 98, 0.08);
+        }
+        .lb-side-body { flex: 1; overflow-y: auto; }
+
+        /* ───── Twitch auth (login + mini profil) ───── */
+        #authSlot {
+            display: flex; align-items: center;
+            min-height: 42px;   /* 🆕 réserve l'espace du bouton/chip avant son rendu (évite reflow) */
+        }
+        .twitch-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 8px 14px;
+            background: rgba(145, 70, 255, 0.12);
+            border: 1px solid rgba(145, 70, 255, 0.4);
+            border-radius: 12px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px; font-weight: 600;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: #d4b5ff;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .twitch-btn:hover {
+            background: rgba(145, 70, 255, 0.22);
+            border-color: rgba(180, 120, 255, 0.7);
+            color: #fff;
+            box-shadow: 0 0 18px rgba(145, 70, 255, 0.35);
+            transform: translateY(-1px);
+        }
+        .twitch-btn svg { width: 14px; height: 14px; fill: currentColor; }
+        .twitch-chip {
+            display: inline-flex; align-items: center; gap: 10px;
+            padding: 6px 14px 6px 6px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            transition: all 0.25s ease;
+            cursor: pointer;
+        }
+        .twitch-chip:hover {
+            border-color: rgba(255, 210, 120, 0.4);
+            background: rgba(255, 210, 120, 0.06);
+            transform: translateY(-1px);
+        }
+        .twitch-chip-avatar {
+            width: 28px; height: 28px; border-radius: 50%;
+            border: 1.5px solid rgba(255, 210, 120, 0.6);
+            box-shadow: 0 0 8px rgba(255, 210, 120, 0.3);
+        }
+        .twitch-chip-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px; font-weight: 600;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.85);
+        }
+        .twitch-logout {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 9px; font-weight: 600;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.35);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0 0 0 6px;
+            transition: color 0.2s;
+        }
+        .twitch-logout:hover { color: #ef6262; }
+
+        /* ───── Hero centré ───── */
+        .hero {
+            position: relative;
+            z-index: 5;
+            flex: 1;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 0 24px;
+            gap: 6px;
+        }
+
+        /* Wrapper qui centre le titre et accueille les particules autour */
+        .hero-title-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center; justify-content: center;
+            padding: 24px 60px;
+            isolation: isolate;
+        }
+
+        /* Halo doré radial discret qui respire derrière le titre */
+        .hero-title-wrap::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 70%; height: 80%;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle at center, rgba(255, 210, 120, 0.22) 0%, transparent 65%);
+            filter: blur(20px);
+            z-index: -1;
+            animation: heroAura 6s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes heroAura {
+            0%, 100% { opacity: 0.75; transform: translate(-50%, -50%) scale(1); }
+            50%      { opacity: 1;    transform: translate(-50%, -50%) scale(1.06); }
+        }
+
+        /* Particules orbitales autour du titre */
+        .title-orbits {
+            position: absolute; inset: 0;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0;
+            animation: heroLayerFade 1.2s ease 0.8s forwards;
+        }
+        @keyframes heroLayerFade {
+            to { opacity: 1; }
+        }
+        .orbit-dot {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 5px; height: 5px;
+            margin: -2.5px 0 0 -2.5px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #fff 0%, #ffd266 40%, rgba(255, 210, 120, 0) 100%);
+            box-shadow: 0 0 10px rgba(255, 210, 120, 0.9), 0 0 22px rgba(255, 210, 120, 0.45);
+            animation: orbitDot var(--dur, 9s) linear infinite;
+            animation-delay: var(--delay, 0s);
+        }
+        @keyframes orbitDot {
+            0%   { transform: rotate(var(--start, 0deg)) translateX(var(--r, 220px)) rotate(calc(-1 * var(--start, 0deg))); opacity: 0; }
+            10%  { opacity: 1; }
+            90%  { opacity: 1; }
+            100% { transform: rotate(calc(var(--start, 0deg) + 360deg)) translateX(var(--r, 220px)) rotate(calc(-1 * (var(--start, 0deg) + 360deg))); opacity: 0; }
+        }
+
+        /* Étincelles qui montent en continu */
+        .title-sparks {
+            position: absolute; inset: 0;
+            pointer-events: none;
+            overflow: visible;
+            z-index: 1;
+            opacity: 0;
+            animation: heroLayerFade 1.2s ease 0.8s forwards;
+        }
+        .spark {
+            position: absolute;
+            bottom: 0;
+            width: 3px; height: 3px;
+            border-radius: 50%;
+            background: #ffd266;
+            box-shadow: 0 0 8px #ffd266, 0 0 14px rgba(255, 210, 120, 0.5);
+            opacity: 0;
+            animation: sparkRise var(--dur, 5s) ease-out infinite;
+            animation-delay: var(--delay, 0s);
+        }
+        @keyframes sparkRise {
+            0%   { transform: translate(0, 30px) scale(0.6); opacity: 0; }
+            10%  { opacity: 1; }
+            100% { transform: translate(var(--dx, 0px), -260px) scale(0.2); opacity: 0; }
+        }
+
+        /* Titre principal — bold, halo doré marqué mais format compact */
+        .hero-title {
+            position: relative;
+            z-index: 2;
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(18px, 2.1vw, 28px);
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            user-select: none;
+            -webkit-user-select: none;
+            cursor: default;
+            background: linear-gradient(135deg, #fff 0%, #ffe199 30%, #ffd266 50%, #ffe199 70%, #fff 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: titleShimmer 5s linear infinite, titleReveal 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.6s both, titlePulse 4s ease-in-out infinite 2s;
+            filter: drop-shadow(0 0 18px rgba(255, 210, 120, 0.45)) drop-shadow(0 0 6px rgba(255, 210, 120, 0.3));
+            display: inline-block;
+            white-space: nowrap;
+            padding-right: 6px;  /* compense le letter-spacing à droite */
+        }
+        @keyframes titleShimmer {
+            0%   { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+        @keyframes titleReveal {
+            0%   { opacity: 0; transform: translateY(14px); letter-spacing: 16px; filter: blur(8px); }
+            100% { opacity: 1; transform: translateY(0); letter-spacing: 6px; filter: drop-shadow(0 0 18px rgba(255, 210, 120, 0.45)) drop-shadow(0 0 6px rgba(255, 210, 120, 0.3)); }
+        }
+        @keyframes titlePulse {
+            0%, 100% { filter: drop-shadow(0 0 16px rgba(255, 210, 120, 0.4)) drop-shadow(0 0 5px rgba(255, 210, 120, 0.3)); }
+            50%      { filter: drop-shadow(0 0 28px rgba(255, 210, 120, 0.65)) drop-shadow(0 0 10px rgba(255, 210, 120, 0.45)); }
+        }
+
+        /* Sous-texte (rotation auto entre plusieurs messages) */
+        .hero-subtext {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: clamp(12px, 1.25vw, 15px);
+            font-weight: 400;
+            letter-spacing: 1.5px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 22px;
+            opacity: 0;
+            min-height: 22px;
+            text-align: center;
+            max-width: 720px;
+            line-height: 1.5;
+            animation: subFadeIn 1s cubic-bezier(0.22, 1, 0.36, 1) 2.2s forwards;
+            user-select: none;
+            -webkit-user-select: none;
+            cursor: default;
+        }
+        @keyframes subFadeIn {
+            0%   { opacity: 0; transform: translateY(8px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .hero-subtext-current {
+            display: inline-block;
+            animation: subTextSwap 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        @keyframes subTextSwap {
+            0%   { opacity: 0; transform: translateY(10px); filter: blur(4px); }
+            100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+        .hero-subtext-current.fade-out {
+            animation: subTextOut 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        @keyframes subTextOut {
+            0%   { opacity: 1; transform: translateY(0); filter: blur(0); }
+            100% { opacity: 0; transform: translateY(-8px); filter: blur(4px); }
+        }
+
+        /* ───── Row horizontale: titre + bombe côte à côte (desktop) ───── */
+        .hero-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+        }
+
+        /* ───── Bouton bombe "Jouer contre le bot" (à droite du titre sur desktop) ───── */
+        .play-bot-btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center; justify-content: center;
+            padding: 0;
+            margin-left: -28px;     /* rapproche la bombe du texte "En maintenance" */
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            z-index: 6;
+            opacity: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            animation: playBtnIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.6s forwards;
+        }
+        .play-bot-btn img {
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-user-drag: none;
+            pointer-events: none;   /* le clic est porté par le bouton, pas l'image */
+        }
+        @keyframes playBtnIn {
+            0%   { opacity: 0; transform: translateY(20px) scale(0.6); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .play-bot-btn img {
+            width: 56px; height: 56px;
+            display: block;
+            filter:
+                drop-shadow(0 0 12px rgba(255, 210, 120, 0.38))
+                drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+            animation: bombIdle 1.6s ease-in-out infinite;
+            transition: filter 0.3s ease, transform 0.3s ease;
+            transform-origin: center;
+        }
+        /* Pulse léger + balance subtile (rythme de mèche qui se consume) */
+        @keyframes bombIdle {
+            0%, 100% {
+                transform: scale(1) rotate(-3deg);
+                filter:
+                    drop-shadow(0 0 10px rgba(255, 210, 120, 0.35))
+                    drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+            }
+            50% {
+                transform: scale(1.08) rotate(3deg);
+                filter:
+                    drop-shadow(0 0 18px rgba(255, 220, 130, 0.55))
+                    drop-shadow(0 0 30px rgba(240, 192, 64, 0.25))
+                    drop-shadow(0 6px 14px rgba(0, 0, 0, 0.5));
+            }
+        }
+        /* Anneau lumineux qui pulse derrière la bombe */
+        .play-bot-btn::before {
+            content: '';
+            position: absolute;
+            left: 50%; top: 50%;
+            width: 56px; height: 56px;
+            margin: -28px 0 0 -28px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 210, 120, 0.35) 0%, rgba(240, 192, 64, 0.14) 40%, transparent 70%);
+            filter: blur(8px);
+            z-index: -1;
+            animation: bombHalo 1.6s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes bombHalo {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50%      { opacity: 0.85; transform: scale(1.35); }
+        }
+        /* Hover : la bombe "s'amorce" — secousse rapide + lueur intense */
+        .play-bot-btn:hover img {
+            animation: bombFuseFast 0.35s ease-in-out infinite;
+            filter:
+                drop-shadow(0 0 22px rgba(255, 230, 140, 0.75))
+                drop-shadow(0 0 38px rgba(240, 192, 64, 0.45))
+                drop-shadow(0 6px 14px rgba(0, 0, 0, 0.5));
+        }
+        @keyframes bombFuseFast {
+            0%, 100% { transform: scale(1.12) rotate(-5deg) translate(-1px, 0); }
+            25%      { transform: scale(1.14) rotate(4deg) translate(1px, -1px); }
+            50%      { transform: scale(1.12) rotate(-4deg) translate(0, 1px); }
+            75%      { transform: scale(1.14) rotate(5deg) translate(-1px, -1px); }
+        }
+        .play-bot-btn:hover::before {
+            animation: bombHaloFast 0.5s ease-in-out infinite;
+            background: radial-gradient(circle, rgba(255, 220, 130, 0.55) 0%, rgba(240, 180, 60, 0.22) 40%, transparent 70%);
+        }
+        @keyframes bombHaloFast {
+            0%, 100% { opacity: 0.75; transform: scale(1.2); }
+            50%      { opacity: 1;    transform: scale(1.7); }
+        }
+        .play-bot-btn:active img { transform: scale(0.96); }
+        .play-bot-btn:focus { outline: none; }
+        .play-bot-btn:focus-visible img {
+            filter:
+                drop-shadow(0 0 26px rgba(255, 230, 150, 0.8))
+                drop-shadow(0 0 44px rgba(240, 192, 64, 0.5));
+        }
+
+        /* Mini texte "Dernière partie" — restera en bas de l'écran */
+        .last-game {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 6;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.45);
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            pointer-events: none;
+            user-select: none;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .last-game.show { opacity: 1; }
+        .last-game .lg-pseudo { color: #ffd266; font-weight: 700; }
+        .last-game .lg-serie { color: rgba(255, 255, 255, 0.7); font-weight: 600; }
+        .last-game .lg-sep { color: rgba(255, 210, 120, 0.45); margin: 0 5px; }
+
+        /* ───── Modal paramètres BombAnime ───── */
+        #bbSettingsModal .modal-panel {
+            max-width: 620px;
+        }
+        #bbSettingsModal .modal-title {
+            font-size: 18px;
+            background: linear-gradient(135deg, #fff 0%, #ffd266 60%, #ff9933 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 16px rgba(255, 210, 120, 0.35));
+        }
+        #bbSettingsModal .modal-sub {
+            margin-bottom: 26px;
+        }
+        #bbSettingsModal .section-label {
+            display: flex; align-items: center; gap: 10px;
+            margin: 0 0 14px;
+        }
+        #bbSettingsModal .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(255, 210, 120, 0.22), transparent);
+        }
+        .bb-settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+            max-height: 340px;
+            overflow-y: auto;
+            padding: 4px 8px 4px 2px;
+            margin-bottom: 26px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 210, 120, 0.35) transparent;
+        }
+        .bb-settings-grid::-webkit-scrollbar { width: 6px; }
+        .bb-settings-grid::-webkit-scrollbar-thumb { background: rgba(255, 210, 120, 0.4); border-radius: 3px; }
+
+        .bb-serie-btn {
+            position: relative;
+            display: flex; align-items: center; gap: 10px;
+            padding: 14px 16px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 14px; font-weight: 600;
+            color: rgba(255, 255, 255, 0.82);
+            letter-spacing: 0.4px;
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.25s ease;
+            text-align: left;
+            overflow: hidden;
+        }
+        .bb-serie-btn::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, rgba(255, 210, 120, 0.4), rgba(255, 153, 51, 0.2));
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .bb-serie-btn .bb-serie-dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.18);
+            box-shadow: 0 0 4px rgba(255, 255, 255, 0.15);
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+        .bb-serie-btn .bb-serie-label {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .bb-serie-btn:hover {
+            border-color: rgba(255, 210, 120, 0.38);
+            background: linear-gradient(135deg, rgba(255, 210, 120, 0.08), rgba(255, 210, 120, 0.02));
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+        }
+        .bb-serie-btn:hover::before { opacity: 1; }
+        .bb-serie-btn:hover .bb-serie-dot {
+            background: #ffd266;
+            box-shadow: 0 0 8px rgba(255, 210, 120, 0.6);
+        }
+        .bb-serie-btn.active {
+            background: linear-gradient(135deg, rgba(255, 210, 120, 0.18), rgba(180, 100, 220, 0.12));
+            border-color: rgba(255, 210, 120, 0.6);
+            color: #ffd266;
+            box-shadow: 0 0 18px rgba(255, 210, 120, 0.22), inset 0 0 0 1px rgba(255, 210, 120, 0.25);
+        }
+        .bb-serie-btn.active::before { opacity: 1; }
+        .bb-serie-btn.active .bb-serie-dot {
+            background: #ffd266;
+            box-shadow: 0 0 10px rgba(255, 210, 120, 0.8);
+        }
+
+        .bb-start-btn {
+            display: block; width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, rgba(145, 70, 255, 0.28), rgba(180, 100, 220, 0.20));
+            border: 1px solid rgba(180, 120, 255, 0.55);
+            border-radius: 14px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px; font-weight: 700;
+            letter-spacing: 4px; text-transform: uppercase;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 0 20px rgba(145, 70, 255, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+        .bb-start-btn::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.18) 50%, transparent 70%);
+            transform: translateX(-100%);
+            transition: transform 0.7s ease;
+        }
+        .bb-start-btn:hover:not(:disabled)::before { transform: translateX(100%); }
+        .bb-start-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(145, 70, 255, 0.42), rgba(180, 100, 220, 0.32));
+            border-color: rgba(220, 180, 255, 0.85);
+            box-shadow: 0 0 30px rgba(145, 70, 255, 0.5);
+            transform: translateY(-2px);
+        }
+        .bb-start-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.08);
+            box-shadow: none;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* ───── Fullscreen game BombAnime ───── */
+        .bb-game {
+            position: fixed; inset: 0;
+            z-index: 60;
+            display: none;
+            flex-direction: column;
+            background: #000;
+            user-select: none;
+        }
+        .bb-game.open { display: flex; }
+        .bb-game-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 26px;
+        }
+        .bb-game-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px; font-weight: 700;
+            letter-spacing: 2px;
+            color: #fff;
+        }
+        .bb-game-title b { color: #f0c040; }
+        .bb-game-serie {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 5px 12px;
+            margin-left: 14px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 12px; font-weight: 600;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.7);
+            background: rgba(125, 206, 160, 0.08);
+            border: 1px solid rgba(125, 206, 160, 0.35);
+            border-radius: 999px;
+        }
+        .bb-game-serie::before {
+            content: '';
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: #7dceA0;
+            box-shadow: 0 0 6px rgba(125, 206, 160, 0.7);
+        }
+        .bb-game-close {
+            width: 36px; height: 36px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.55);
+            font-size: 20px; line-height: 1;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .bb-game-close:hover {
+            color: #ef6262;
+            border-color: rgba(239, 98, 98, 0.4);
+            background: rgba(239, 98, 98, 0.08);
+        }
+        .bb-game-body {
+            flex: 1;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+        .bb-round {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px; font-weight: 700;
+            letter-spacing: 3px; text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.25);
+            margin-bottom: 30px;
+        }
+        .bb-round span { color: #f0c040; }
+
+        /* Arène : 2 joueurs + bombe au centre */
+        .bb-arena {
+            position: relative;
+            display: flex; align-items: center; justify-content: center;
+            gap: 440px;
+            margin-bottom: 60px;
+        }
+
+        /* Slot joueur avec hexagone */
+        .bb-slot {
+            position: relative;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 12px;
+            transition: opacity 0.4s ease;
+        }
+        .bb-slot.is-dead { opacity: 0.3; filter: grayscale(80%); }
+
+        .bb-name {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 14px; font-weight: 600;
+            color: rgba(255, 255, 255, 0.7);
+            letter-spacing: 0.5px;
+        }
+        .bb-slot.is-active .bb-name {
+            color: #fff;
+        }
+
+        .bb-hex {
+            position: relative;
+            width: 114px; height: 114px;
+        }
+        /* Fond hexagonal sombre (visible si l'avatar a de la transparence) */
+        .bb-hex::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: #101018;
+            clip-path: polygon(50% 3%, 97% 25%, 97% 75%, 50% 97%, 3% 75%, 3% 25%);
+            z-index: 0;
+        }
+        /* ⚠️ direct-child uniquement : sinon ces règles écraseraient les SVG des cœurs imbriqués */
+        .bb-hex > svg {
+            position: absolute; inset: 0;
+            width: 100%; height: 100%;
+            z-index: 2;
+            pointer-events: none;
+            filter:
+                drop-shadow(0 0 1px rgba(255, 255, 255, 0.18))
+                drop-shadow(0 0 6px rgba(240, 192, 64, 0.30));
+            transition: filter 0.25s ease;
+        }
+        /* Polygon EXTÉRIEUR (cadre principal) */
+        .bb-hex > svg .bb-hex-frame {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.18);
+            stroke-width: 3;
+            transition: stroke 0.25s ease, stroke-width 0.25s ease;
+        }
+        /* Polygon INTÉRIEUR fin (double bordure stylée) */
+        .bb-hex > svg .bb-hex-inner {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.08);
+            stroke-width: 1;
+            transition: stroke 0.25s ease, opacity 0.25s ease;
+        }
+        /* Joueur actif (vous) — accent doré */
+        .bb-slot.is-active .bb-hex > svg {
+            filter:
+                drop-shadow(0 0 2px rgba(255, 255, 255, 0.4))
+                drop-shadow(0 0 14px rgba(240, 192, 64, 0.70));
+        }
+        .bb-slot.is-active .bb-hex > svg .bb-hex-frame { stroke: #f0c040; }
+        .bb-slot.is-active .bb-hex > svg .bb-hex-inner { stroke: rgba(255, 230, 160, 0.45); }
+
+        /* 🔥 Bot : palette rouge/cramoisi pour démarquer "l'ennemi", double bordure plus marquée */
+        #bbPlayerBot .bb-hex > svg {
+            filter:
+                drop-shadow(0 0 1px rgba(255, 255, 255, 0.22))
+                drop-shadow(0 0 8px rgba(255, 80, 80, 0.35));
+        }
+        #bbPlayerBot .bb-hex > svg .bb-hex-frame {
+            stroke: rgba(255, 100, 100, 0.45);
+            stroke-width: 3;
+        }
+        #bbPlayerBot .bb-hex > svg .bb-hex-inner {
+            stroke: rgba(255, 80, 80, 0.18);
+            stroke-width: 1.2;
+        }
+        #bbPlayerBot.is-active .bb-hex > svg {
+            filter:
+                drop-shadow(0 0 3px rgba(255, 255, 255, 0.5))
+                drop-shadow(0 0 18px rgba(255, 60, 60, 0.75));
+        }
+        #bbPlayerBot.is-active .bb-hex > svg .bb-hex-frame { stroke: #ff4848; }
+        #bbPlayerBot.is-active .bb-hex > svg .bb-hex-inner { stroke: rgba(255, 180, 180, 0.45); }
+        .bb-avatar {
+            position: absolute; inset: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+            border-radius: 0;
+            object-fit: cover; object-position: center;
+            clip-path: polygon(50% 3%, 97% 25%, 97% 75%, 50% 97%, 3% 75%, 3% 25%);
+            filter: grayscale(40%) brightness(0.65);
+            opacity: 0.55;
+            transition: filter 0.25s ease, opacity 0.25s ease;
+        }
+        .bb-slot.is-active .bb-avatar {
+            filter: grayscale(0%) brightness(1.1);
+            opacity: 1;
+        }
+        .bb-slot.is-dead .bb-avatar {
+            filter: grayscale(100%) brightness(0.4);
+            opacity: 0.4;
+        }
+        /* 🤖 Bot : cover pour remplir l'hexagone (pas de côtés vides) + cadrage haut pour le visage */
+        #bbPlayerBot .bb-avatar {
+            object-fit: cover;
+            object-position: center 30%;
+        }
+
+        /* Hearts badge sous l'hexagone */
+        .bb-lives {
+            position: absolute;
+            left: 50%; bottom: -10px;
+            transform: translateX(-50%);
+            display: flex; gap: 3px;
+            padding: 3px 7px;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 10px;
+            z-index: 3;
+        }
+        .bb-lives .bb-life {
+            width: 16px; height: 16px;
+            min-width: 16px; min-height: 16px;
+            flex-shrink: 0;
+            fill: #ef4444;
+            transition: fill 0.3s ease, transform 0.3s ease;
+        }
+        .bb-life.lost {
+            fill: rgba(255, 255, 255, 0.15);
+            animation: bbHeartBreak 0.35s ease-out forwards;
+        }
+        @keyframes bbHeartBreak {
+            0%   { fill: #ef4444; transform: scale(1); }
+            40%  { fill: #ef4444; transform: scale(1.25); }
+            100% { fill: rgba(255, 255, 255, 0.15); transform: scale(1); }
+        }
+
+        /* ✨ Bonne réponse — inclinaison + scale (comme en jeu classique) */
+        .bb-slot.bb-success .bb-hex {
+            animation: bbSuccessTilt 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes bbSuccessTilt {
+            0%   { transform: rotate(0deg) scale(1); }
+            40%  { transform: rotate(-10deg) scale(1.12); }
+            100% { transform: rotate(0deg) scale(1); }
+        }
+        /* Particules dorées qui jaillissent autour de l'hexagone */
+        .bb-success-particles {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: visible;
+            z-index: 4;
+        }
+        .bb-success-particle {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 8px; height: 8px;
+            margin: -4px 0 0 -4px;
+            background: radial-gradient(circle, #fff 0%, #ffd700 45%, rgba(255, 200, 80, 0) 100%);
+            border-radius: 50%;
+            opacity: 0;
+            box-shadow:
+                0 0 10px rgba(255, 215, 0, 0.95),
+                0 0 22px rgba(255, 200, 80, 0.55),
+                0 0 38px rgba(255, 180, 60, 0.25);
+        }
+        .bb-slot.bb-success .bb-success-particle {
+            animation: bbSuccessBurst 0.6s ease-out forwards;
+        }
+        @keyframes bbSuccessBurst {
+            /* Pop immédiat à pleine taille + opacité → trajet rapide → fade-out */
+            0%   { opacity: 1; transform: translate(0, 0) scale(0.9); }
+            12%  { opacity: 1; transform: translate(var(--px), var(--py)) scale(1.05); }
+            100% { opacity: 0; transform: translate(calc(var(--px) * 2), calc(var(--py) * 2)) scale(0.3); }
+        }
+        /* 12 particules tout autour de l'hex — délais minimaux pour un burst quasi-simultané */
+        .bb-success-particle:nth-child(1)  { --px: -38px; --py: -44px; animation-delay: 0ms; }
+        .bb-success-particle:nth-child(2)  { --px: 42px;  --py: -36px; animation-delay: 8ms; }
+        .bb-success-particle:nth-child(3)  { --px: -46px; --py: 22px;  animation-delay: 22ms; }
+        .bb-success-particle:nth-child(4)  { --px: 38px;  --py: 30px;  animation-delay: 14ms; }
+        .bb-success-particle:nth-child(5)  { --px: 0px;   --py: -54px; animation-delay: 4ms; }
+        .bb-success-particle:nth-child(6)  { --px: -54px; --py: -4px;  animation-delay: 18ms; }
+        .bb-success-particle:nth-child(7)  { --px: 52px;  --py: 0px;   animation-delay: 26ms; }
+        .bb-success-particle:nth-child(8)  { --px: 6px;   --py: 48px;  animation-delay: 30ms; }
+        .bb-success-particle:nth-child(9)  { --px: -28px; --py: 44px;  animation-delay: 12ms; }
+        .bb-success-particle:nth-child(10) { --px: 30px;  --py: 46px;  animation-delay: 20ms; }
+        .bb-success-particle:nth-child(11) { --px: -14px; --py: -34px; animation-delay: 10ms; }
+        .bb-success-particle:nth-child(12) { --px: 18px;  --py: -42px; animation-delay: 24ms; }
+
+        /* 🔒 Cadenas (déjà utilisé) — popup à droite de l'hexagone */
+        .bb-slot .bb-lock {
+            position: absolute;
+            top: 65%; right: -42px;
+            transform: translateY(-50%) rotate(8deg);
+            opacity: 0;
+            pointer-events: none;
+            color: #888;
+        }
+        .bb-slot .bb-lock svg {
+            width: 26px; height: 26px;
+            fill: #888;
+            stroke: #aaa;
+            filter: drop-shadow(0 0 4px rgba(150, 150, 150, 0.5));
+        }
+        .bb-slot .bb-lock.show {
+            animation: bbLockPopup 0.6s ease-out forwards;
+        }
+        @keyframes bbLockPopup {
+            0%   { opacity: 0; transform: translateY(-30%) rotate(8deg); }
+            25%  { opacity: 1; transform: translateY(-50%) rotate(8deg); }
+            65%  { opacity: 1; transform: translateY(-55%) rotate(8deg); }
+            100% { opacity: 0; transform: translateY(-65%) rotate(8deg); }
+        }
+        /* ↔ Shake horizontal sur le joueur en cas de mauvaise réponse */
+        .bb-slot.shake-error {
+            animation: bbSlotShake 0.4s ease;
+        }
+        @keyframes bbSlotShake {
+            0%, 100% { transform: translateX(0); }
+            15%      { transform: translateX(-6px); }
+            30%      { transform: translateX(6px); }
+            45%      { transform: translateX(-5px); }
+            60%      { transform: translateX(5px); }
+            75%      { transform: translateX(-3px); }
+            90%      { transform: translateX(3px); }
+        }
+
+        /* Réponse écrite sous le nom du joueur (style du vrai jeu) */
+        .bb-answer {
+            position: absolute;
+            top: calc(100% + 30px);
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 17px; font-weight: 700;
+            color: rgba(255, 255, 255, 0.28);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            max-width: 220px;
+            transition: color 0.25s ease;
+        }
+        .bb-slot.is-active .bb-answer { color: #f0c040; text-shadow: 0 0 10px rgba(240, 192, 64, 0.5); }
+
+        /* ============ BOMBE centrale (réplique du vrai jeu) ============ */
+        .bb-bomb-wrap {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+        }
+        .bb-bomb-body-wrap {
+            position: relative;
+            width: 82px; height: 82px;
+        }
+        .bb-bomb-body {
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            position: relative;
+            z-index: 2;
+            transition: background 0.5s, box-shadow 0.5s;
+        }
+        .bb-bomb-body::after {
+            content: '';
+            position: absolute;
+            top: 14%; left: 22%;
+            width: 28%; height: 16%;
+            background: radial-gradient(ellipse, rgba(255, 255, 255, 0.15), transparent);
+            border-radius: 50%;
+            transform: rotate(-15deg);
+        }
+        .bb-bomb-cracks {
+            position: absolute; inset: 0;
+            border-radius: 50%;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+        .bb-bomb-pulse {
+            position: absolute; inset: -6px;
+            border-radius: 50%;
+            border: 1.5px solid transparent;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .bb-fuse-pivot {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform-origin: 0 0;
+            transform: rotate(0deg);
+            transition: transform 0.12s linear;
+            z-index: 3;
+        }
+        .bb-fuse-inner {
+            display: flex; align-items: center;
+            margin-left: 39px;   /* ≈ bomb-size * 0.47 (82 * 0.47) */
+            transform: translateY(-50%);
+        }
+        .bb-fuse-socle {
+            width: 10px; height: 10px;
+            border-radius: 2px;
+            background: linear-gradient(to bottom, #888, #555, #888);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+            flex-shrink: 0;
+            transition: background 0.4s, border-color 0.4s;
+        }
+        .bb-fuse-wave-wrap {
+            width: 52px; height: 12px;
+            transition: width 0.12s linear;
+        }
+        .bb-fuse-wave-svg {
+            width: 100%; height: 12px;
+            overflow: visible;
+            display: block;
+            transition: width 0.12s linear;
+        }
+        .bb-fuse-wave-svg path {
+            stroke: #aaa;
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: round;
+            transition: stroke 0.4s;
+        }
+        .bb-fuse-spark-wrap {
+            position: relative;
+            flex-shrink: 0;
+            margin-left: -2px;
+        }
+        .bb-fuse-spark {
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            transition: width 0.3s, height 0.3s, background 0.3s, box-shadow 0.3s;
+        }
+        .bb-mini-sparks {
+            position: absolute;
+            top: 50%; left: 50%;
+            pointer-events: none;
+        }
+        .bb-mini-s {
+            position: absolute;
+            width: 3px; height: 3px;
+            border-radius: 50%;
+            opacity: 0;
+        }
+        .bb-mini-s:nth-child(1) { --mx: -8px; --my: -12px; animation-delay: 0s; }
+        .bb-mini-s:nth-child(2) { --mx: 6px;  --my: -14px; animation-delay: 0.15s; }
+        .bb-mini-s:nth-child(3) { --mx: -5px; --my: 10px;  animation-delay: 0.3s; }
+        .bb-mini-s:nth-child(4) { --mx: 10px; --my: 8px;   animation-delay: 0.45s; }
+
+        /* États bombe — normal / warning / critical */
+        .bb-bomb-wrap.state-normal .bb-bomb-body {
+            background: radial-gradient(circle at 35% 30%, #4a4a4a, #222 55%, #111);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(255, 255, 255, 0.04);
+        }
+        .bb-bomb-wrap.state-normal .bb-fuse-wave-svg path { stroke: #aaa; }
+        .bb-bomb-wrap.state-normal .bb-fuse-spark {
+            background: radial-gradient(circle, #ffd700, #ff8c00 50%, transparent 70%);
+            box-shadow: 0 0 10px rgba(255, 200, 0, 0.6);
+            animation: bbSparkPulse 1s ease-in-out infinite;
+        }
+        .bb-bomb-wrap.state-normal .bb-mini-s { display: none; }
+        .bb-bomb-wrap.state-normal .bb-bomb-cracks { opacity: 0; }
+        .bb-bomb-wrap.state-normal .bb-bomb-pulse { border-color: transparent; }
+
+        .bb-bomb-wrap.state-warning .bb-bomb-body {
+            background: radial-gradient(circle at 35% 30%, #5a4020, #2d1a08 55%, #1a0f00);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 150, 0, 0.15);
+            animation: bbShakeWarn 0.35s ease-in-out infinite;
+        }
+        .bb-bomb-wrap.state-warning .bb-fuse-wave-svg path { stroke: #cc9944; }
+        .bb-bomb-wrap.state-warning .bb-fuse-socle {
+            background: linear-gradient(to bottom, #996633, #664422, #996633);
+            border-color: rgba(255, 150, 0, 0.1);
+            animation: bbSocleShakeWarn 0.4s ease-in-out infinite;
+        }
+        .bb-bomb-wrap.state-warning .bb-fuse-spark {
+            width: 15px; height: 15px;
+            background: radial-gradient(circle, #ffaa00, #ff6600 50%, transparent 70%);
+            box-shadow: 0 0 14px rgba(255, 150, 0, 0.7);
+            animation: bbSparkPulse 0.6s ease-in-out infinite;
+        }
+        .bb-bomb-wrap.state-warning .bb-mini-s {
+            background: #ffcc00;
+            box-shadow: 0 0 4px rgba(255, 200, 0, 0.6);
+            animation: bbMiniSpark 0.7s ease-out infinite;
+            display: block;
+        }
+        .bb-bomb-wrap.state-warning .bb-bomb-cracks {
+            opacity: 0.5;
+            background: linear-gradient(45deg, transparent 46%, rgba(255, 180, 0, 0.3) 47%, rgba(255, 180, 0, 0.3) 53%, transparent 54%);
+        }
+        .bb-bomb-wrap.state-warning .bb-bomb-pulse {
+            border-color: rgba(255, 150, 0, 0.25);
+            animation: bbPulseRing 1.5s ease-in-out infinite;
+        }
+
+        .bb-bomb-wrap.state-critical .bb-bomb-body {
+            background: radial-gradient(circle at 35% 30%, #5a1515, #2d0808 55%, #1a0000);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 25px rgba(255, 50, 0, 0.25), 0 0 50px rgba(255, 0, 0, 0.1);
+            animation: bbShakeCrit 0.12s ease-in-out infinite;
+        }
+        .bb-bomb-wrap.state-critical .bb-fuse-wave-svg path { stroke: #cc4444; }
+        .bb-bomb-wrap.state-critical .bb-fuse-socle {
+            background: linear-gradient(to bottom, #993333, #662222, #993333);
+            border-color: rgba(255, 50, 0, 0.15);
+            animation: bbSocleShakeCrit 0.18s ease-in-out infinite;
+        }
+        .bb-bomb-wrap.state-critical .bb-fuse-spark {
+            width: 20px; height: 20px;
+            background: radial-gradient(circle, #ff4444, #ff0000 40%, transparent 70%);
+            box-shadow: 0 0 20px rgba(255, 50, 0, 0.8);
+            animation: bbSparkPulse 0.25s ease-in-out infinite;
+        }
+        .bb-bomb-wrap.state-critical .bb-mini-s {
+            background: #ff5555;
+            width: 4px; height: 4px;
+            box-shadow: 0 0 6px rgba(255, 60, 0, 0.7);
+            animation: bbMiniSpark 0.4s ease-out infinite;
+            display: block;
+        }
+        .bb-bomb-wrap.state-critical .bb-bomb-cracks {
+            opacity: 1;
+            background:
+                linear-gradient(45deg, transparent 45%, rgba(255, 80, 20, 0.5) 46%, rgba(255, 80, 20, 0.5) 54%, transparent 55%),
+                linear-gradient(-30deg, transparent 42%, rgba(255, 60, 10, 0.4) 43%, rgba(255, 60, 10, 0.4) 48%, transparent 49%);
+        }
+        .bb-bomb-wrap.state-critical .bb-bomb-pulse {
+            border-color: rgba(255, 50, 0, 0.35);
+            animation: bbPulseRing 0.8s ease-in-out infinite;
+        }
+        @keyframes bbSparkPulse {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50%      { opacity: 1;   transform: scale(1.35); }
+        }
+        @keyframes bbMiniSpark {
+            0%   { opacity: 1; transform: translate(0) scale(1.2); }
+            100% { opacity: 0; transform: translate(var(--mx), var(--my)) scale(0.4); }
+        }
+        @keyframes bbShakeWarn {
+            0%, 100% { transform: translate(0); }
+            50%      { transform: translate(-1.5px, 1px); }
+        }
+        @keyframes bbShakeCrit {
+            0%, 100% { transform: translate(0); }
+            25%      { transform: translate(-2.5px, 1.5px); }
+            75%      { transform: translate(2.5px, -1.5px); }
+        }
+        @keyframes bbSocleShakeWarn {
+            0%, 100% { transform: translate(0); }
+            50%      { transform: translate(-0.4px, 0.3px); }
+        }
+        @keyframes bbSocleShakeCrit {
+            0%, 100% { transform: translate(0); }
+            25%      { transform: translate(-0.6px, 0.4px); }
+            75%      { transform: translate(0.6px, -0.4px); }
+        }
+        @keyframes bbPulseRing {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50%      { opacity: 0.8; transform: scale(1.2); }
+        }
+
+        /* Input minimaliste, en bas, style JKLM */
+        .bb-input-zone {
+            position: absolute;
+            bottom: 6%; left: 50%;
+            transform: translateX(-50%);
+            width: 100%; max-width: 320px;
+            padding: 0 20px;
+            text-align: center;
+        }
+        .bb-input {
+            width: 100%;
+            padding: 14px 8px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid rgba(240, 192, 64, 0.4);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 22px; font-weight: 600;
+            color: #fff;
+            letter-spacing: 1px;
+            text-align: center;
+            text-transform: uppercase;
+            outline: none;
+            transition: border-color 0.25s ease;
+        }
+        .bb-input::placeholder { color: rgba(255, 255, 255, 0.25); text-transform: uppercase; letter-spacing: 2px; font-size: 14px; }
+        .bb-input:focus { border-bottom-color: #f0c040; }
+        .bb-input:disabled { opacity: 0.4; cursor: not-allowed; border-bottom-color: rgba(255, 255, 255, 0.1); }
+        .bb-input.invalid {
+            border-bottom-color: #ef4444;
+            animation: bbShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+        }
+        @keyframes bbShake {
+            10%, 90% { transform: translate(-1px, 0); }
+            20%, 80% { transform: translate(2px, 0); }
+            30%, 50%, 70% { transform: translate(-4px, 0); }
+            40%, 60% { transform: translate(4px, 0); }
+        }
+        .bb-status {
+            margin-top: 14px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.55);
+            min-height: 18px;
+            letter-spacing: 0.5px;
+        }
+        .bb-status .ok  { color: #7dceA0; }
+        .bb-status .ko  { color: #ef6262; }
+        .bb-status .bot { color: #f0c040; }
+
+        /* Écran fin de partie */
+        .bb-end {
+            position: absolute; inset: 0;
+            display: none;
+            flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 28px;
+            background: rgba(6, 6, 14, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 10;
+            gap: 14px;
+        }
+        .bb-end.open { display: flex; }
+        .bb-end-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px; font-weight: 900;
+            letter-spacing: 6px; text-transform: uppercase;
+            background: linear-gradient(135deg, #fff, #ffd266);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 18px rgba(255, 210, 120, 0.4));
+        }
+        .bb-end-sub {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.65);
+            margin-bottom: 10px;
+        }
+        .bb-end-actions {
+            display: flex; gap: 12px;
+            margin-top: 8px;
+        }
+        .bb-end-btn {
+            padding: 12px 22px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .bb-end-btn.primary {
+            background: linear-gradient(135deg, rgba(255, 210, 120, 0.22), rgba(255, 153, 51, 0.15));
+            border: 1px solid rgba(255, 210, 120, 0.55);
+            color: #ffd266;
+        }
+        .bb-end-btn.primary:hover {
+            color: #fff; transform: translateY(-2px);
+            box-shadow: 0 0 22px rgba(255, 210, 120, 0.4);
+        }
+        .bb-end-btn.secondary {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.75);
+        }
+        .bb-end-btn.secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+
+        /* (les ajustements mobile BombAnime sont dans le bloc @media global plus bas) */
+
+        /* Ligne décorative animée */
+        .hero-divider {
+            width: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 210, 120, 0.6), transparent);
+            margin-top: -2px;
+            animation: dividerExpand 1s cubic-bezier(0.22, 1, 0.36, 1) 1.6s forwards;
+        }
+        @keyframes dividerExpand {
+            0%   { width: 0; }
+            100% { width: 200px; }
+        }
+
+        /* ───── Footer ───── */
+        .footer {
+            position: relative;
+            z-index: 5;
+            padding: 22px 36px;
+            display: flex; align-items: center; justify-content: space-between;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.35);
+            opacity: 0;
+            animation: topFadeIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) 1.8s forwards;
+        }
+        /* Bouton classement dans le footer — caché sur desktop (panel latéral déjà visible) */
+        .footer-lb-btn { display: none; }
+
+        .footer-instagram {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(255, 210, 120, 0.16), rgba(255, 153, 51, 0.12));
+            border: 1px solid rgba(255, 210, 120, 0.55);
+            color: #ffd266;
+            box-shadow: 0 0 16px rgba(255, 210, 120, 0.35), inset 0 0 6px rgba(255, 210, 120, 0.12);
+            transition: all 0.25s ease;
+            animation: instaPulse 2.6s ease-in-out infinite;
+        }
+        .footer-instagram svg {
+            width: 18px; height: 18px;
+            fill: currentColor;
+            filter: drop-shadow(0 0 5px rgba(255, 210, 120, 0.7));
+        }
+        @keyframes instaPulse {
+            0%, 100% { box-shadow: 0 0 14px rgba(255, 210, 120, 0.35), inset 0 0 8px rgba(255, 210, 120, 0.12); }
+            50%      { box-shadow: 0 0 24px rgba(255, 210, 120, 0.6),  inset 0 0 10px rgba(255, 210, 120, 0.2); }
+        }
+        .footer-instagram:hover {
+            color: #fff;
+            border-color: rgba(255, 230, 160, 0.9);
+            background: linear-gradient(135deg, rgba(255, 210, 120, 0.32), rgba(255, 153, 51, 0.22));
+            box-shadow: 0 0 32px rgba(255, 210, 120, 0.7);
+            transform: translateY(-2px) scale(1.04);
+        }
+
+        /* ───── Modales (profil & boutique) ───── */
+        .modal-backdrop {
+            position: fixed; inset: 0;
+            z-index: 50;
+            background: rgba(6, 6, 14, 0.78);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: none;
+            align-items: center; justify-content: center;
+            padding: 24px;
+            animation: modalBackdropIn 0.3s ease forwards;
+        }
+        .modal-backdrop.open { display: flex; }
+        @keyframes modalBackdropIn {
+            0%   { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        .modal-panel {
+            position: relative;
+            width: 100%;
+            max-width: 520px;
+            max-height: 86vh;
+            overflow-y: auto;
+            background: linear-gradient(180deg, rgba(20, 16, 36, 0.96) 0%, rgba(10, 8, 22, 0.96) 100%);
+            border: 1px solid rgba(255, 210, 120, 0.22);
+            border-radius: 18px;
+            padding: 0 28px 28px;   /* padding-top: 0 → permet sticky flush au bord supérieur */
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.55), 0 0 40px rgba(180, 100, 220, 0.18);
+            animation: modalPanelIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 210, 120, 0.35) transparent;
+        }
+        .modal-panel > .modal-title:first-of-type { padding-top: 28px; }
+        .modal-panel > .shop-head { padding-top: 28px; }
+        .modal-panel.modal-wide { max-width: 960px; }
+        .modal-panel::-webkit-scrollbar { width: 8px; }
+        .modal-panel::-webkit-scrollbar-track {
+            background: transparent;
+            margin: 14px 0;
+        }
+        .modal-panel::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(255, 210, 120, 0.45), rgba(180, 100, 220, 0.45));
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .modal-panel::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, rgba(255, 210, 120, 0.7), rgba(180, 100, 220, 0.7));
+        }
+        @keyframes modalPanelIn {
+            0%   { opacity: 0; transform: translateY(20px) scale(0.97); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .modal-close {
+            position: absolute; top: 14px; right: 14px;
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 18px; line-height: 1;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .modal-close:hover {
+            color: #ef6262;
+            border-color: rgba(239, 98, 98, 0.4);
+            background: rgba(239, 98, 98, 0.08);
+        }
+        .modal-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px; font-weight: 700;
+            letter-spacing: 3px; text-transform: uppercase;
+            color: #ffd266;
+            margin-bottom: 4px;
+        }
+        .modal-sub {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: 0.5px;
+            margin-bottom: 22px;
+        }
+
+        /* Profil */
+        .profile-head {
+            display: flex; align-items: center; gap: 18px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            margin-bottom: 18px;
+        }
+        .profile-avatar-wrap {
+            position: relative;
+            width: 82px; height: 82px;
+            flex-shrink: 0;
+        }
+        .profile-avatar-wrap::before {
+            content: '';
+            position: absolute; inset: -4px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, rgba(255, 210, 120, 0.55), rgba(180, 100, 220, 0.55), rgba(120, 200, 255, 0.55), rgba(255, 210, 120, 0.55));
+            filter: blur(6px);
+            opacity: 0.75;
+        }
+        .profile-avatar {
+            position: relative;
+            width: 82px; height: 82px;
+            border-radius: 50%;
+            object-fit: cover;     /* 🛠 corrige l'avatar étiré */
+            object-position: center;
+            border: 2px solid rgba(255, 210, 120, 0.55);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+        }
+        .profile-id {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 17px; font-weight: 700;
+            letter-spacing: 2px;
+            color: #fff;
+        }
+        .profile-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 12px;
+            color: rgba(255, 210, 120, 0.85);
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        /* Onglets profil */
+        .profile-tabs {
+            display: flex; gap: 4px;
+            margin: 0 -28px 18px;
+            padding: 12px 28px;
+            position: sticky;
+            top: 0;
+            z-index: 3;
+            background: linear-gradient(180deg, rgba(14, 10, 28, 0.97) 0%, rgba(14, 10, 28, 0.92) 100%);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .profile-tabs-inner {
+            display: flex; gap: 4px; flex: 1;
+            padding: 4px;
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+        }
+        .profile-tab {
+            flex: 1;
+            padding: 9px 10px;
+            background: transparent; border: none;
+            border-radius: 10px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px; font-weight: 600;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.45);
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .profile-tab:hover { color: rgba(255, 255, 255, 0.8); }
+        .profile-tab.active {
+            background: linear-gradient(135deg, rgba(255, 210, 120, 0.18), rgba(180, 100, 220, 0.12));
+            color: #ffd266;
+            box-shadow: 0 4px 16px rgba(255, 210, 120, 0.12), inset 0 0 0 1px rgba(255, 210, 120, 0.25);
+        }
+        .profile-tab-panel { display: none; }
+        .profile-tab-panel.active { display: block; }
+
+        .profile-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        /* Per-mode grid */
+        .profile-modes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .profile-mode-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+        }
+        .profile-mode-card .stat-label { margin-bottom: 4px; }
+        .profile-mode-card .stat-value { font-size: 18px; }
+        .section-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px; font-weight: 600;
+            letter-spacing: 3px; text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.45);
+            margin: 14px 0 8px;
+        }
+
+        /* Liste titres équipables */
+        .title-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 10px;
+        }
+        .title-chip {
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px; font-weight: 600;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.85);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+        .title-chip:hover {
+            border-color: rgba(255, 210, 120, 0.4);
+            background: rgba(255, 210, 120, 0.06);
+            transform: translateY(-1px);
+        }
+        .title-chip.equipped {
+            background: linear-gradient(135deg, rgba(255, 210, 120, 0.18), rgba(180, 100, 220, 0.12));
+            border-color: rgba(255, 210, 120, 0.5);
+            color: #ffd266;
+            box-shadow: 0 4px 14px rgba(255, 210, 120, 0.18);
+        }
+
+        /* Liste avatars */
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 12px;
+        }
+        .avatar-cell {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            border-radius: 50%;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.25);
+            transition: all 0.25s ease;
+        }
+        .avatar-cell img {
+            width: 100%; height: 100%;
+            object-fit: cover; object-position: center;
+            display: block;
+        }
+        .avatar-cell:hover {
+            border-color: rgba(255, 210, 120, 0.5);
+            transform: translateY(-2px) scale(1.04);
+        }
+        .avatar-cell.equipped {
+            border-color: #ffd266;
+            box-shadow: 0 0 18px rgba(255, 210, 120, 0.5);
+        }
+        .avatar-cell.equipped::after {
+            content: '';
+            position: absolute; inset: -4px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, rgba(255, 210, 120, 0.6), rgba(180, 100, 220, 0.6), rgba(255, 210, 120, 0.6));
+            filter: blur(6px);
+            z-index: -1;
+        }
+
+        /* Badges */
+        .badge-section { margin-bottom: 18px; }
+        .badge-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+            gap: 8px;
+        }
+        .badge-cell {
+            aspect-ratio: 1 / 1;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px; font-weight: 700;
+            color: rgba(255, 255, 255, 0.25);
+        }
+        .badge-cell.unlocked {
+            background: linear-gradient(135deg, rgba(255, 210, 120, 0.18), rgba(180, 100, 220, 0.12));
+            border-color: rgba(255, 210, 120, 0.45);
+            color: #ffd266;
+            box-shadow: 0 0 10px rgba(255, 210, 120, 0.2);
+        }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 14px;
+        }
+        .stat-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 9px; font-weight: 600;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 6px;
+        }
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 22px; font-weight: 700;
+            color: #fff;
+        }
+        .stat-value.gold { color: #ffd266; }
+        .xp-bar {
+            grid-column: span 2;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 14px;
+        }
+        .xp-bar-track {
+            height: 10px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .xp-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffd266, #ff9933);
+            border-radius: 6px;
+            box-shadow: 0 0 12px rgba(255, 210, 120, 0.5);
+            transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /* ───── Boutique ───── */
+        .shop-head {
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 16px;
+            margin-bottom: 18px;
+        }
+        .shop-balance {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 8px 18px;
+            background: linear-gradient(135deg, rgba(255, 210, 120, 0.14), rgba(255, 153, 51, 0.10));
+            border: 1px solid rgba(255, 210, 120, 0.4);
+            border-radius: 22px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px; font-weight: 700;
+            color: #ffd266;
+            box-shadow: 0 0 18px rgba(255, 210, 120, 0.15);
+        }
+        .shop-balance::before {
+            content: '';
+            display: inline-block;
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #ffd266 0%, #ff9933 100%);
+            box-shadow: 0 0 8px rgba(255, 210, 120, 0.8);
+        }
+
+        /* Tabs (sticky en haut du panel pendant le scroll) */
+        .shop-tabs {
+            display: flex; gap: 4px;
+            margin: 0 -28px 22px;
+            padding: 14px 28px;
+            background: linear-gradient(180deg, rgba(14, 10, 28, 0.97) 0%, rgba(14, 10, 28, 0.92) 100%);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            position: sticky;
+            top: 0;
+            z-index: 3;
+        }
+        .shop-tabs-inner {
+            display: flex; gap: 4px;
+            flex: 1;
+            padding: 4px;
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+        }
+        .shop-tab {
+            flex: 1;
+            padding: 10px 14px;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px; font-weight: 600;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.45);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+        }
+        .shop-tab:hover { color: rgba(255, 255, 255, 0.75); }
+        .shop-tab.active {
+            background: linear-gradient(135deg, rgba(255, 210, 120, 0.18), rgba(180, 100, 220, 0.12));
+            color: #ffd266;
+            box-shadow: 0 4px 16px rgba(255, 210, 120, 0.12), inset 0 0 0 1px rgba(255, 210, 120, 0.25);
+        }
+
+        /* Grids */
+        .shop-grid {
+            display: grid;
+            gap: 14px;
+        }
+        .shop-grid.shop-grid-titles {
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        }
+        .shop-grid.shop-grid-avatars {
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        }
+
+        /* Carte commune */
+        .shop-item {
+            position: relative;
+            background: linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 14px;
+            padding: 16px 14px 14px;
+            display: flex; flex-direction: column;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        .shop-item::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(circle at top, rgba(255, 210, 120, 0.10), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        .shop-item:hover {
+            border-color: rgba(255, 210, 120, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3), 0 0 18px rgba(255, 210, 120, 0.1);
+        }
+        .shop-item:hover::before { opacity: 1; }
+        .shop-item.owned {
+            border-color: rgba(80, 200, 120, 0.3);
+        }
+        .shop-item.owned::after {
+            content: '✓';
+            position: absolute; top: 8px; right: 10px;
+            font-size: 14px; font-weight: 700;
+            color: #8fe0a8;
+            opacity: 0.85;
+        }
+
+        /* Variante avatar : image circulaire centrée + halo */
+        .shop-item-avatar-card {
+            align-items: center;
+            text-align: center;
+            padding-top: 22px;
+        }
+        .shop-item-avatar-wrap {
+            position: relative;
+            width: 96px; height: 96px;
+            margin-bottom: 14px;
+        }
+        .shop-item-avatar-wrap::before {
+            content: '';
+            position: absolute; inset: -4px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, rgba(255, 210, 120, 0.5), rgba(180, 100, 220, 0.5), rgba(120, 200, 255, 0.5), rgba(255, 210, 120, 0.5));
+            opacity: 0.55;
+            filter: blur(6px);
+            transition: opacity 0.3s ease;
+        }
+        .shop-item:hover .shop-item-avatar-wrap::before { opacity: 1; }
+        .shop-item-avatar-img {
+            position: relative;
+            width: 96px; height: 96px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255, 210, 120, 0.5);
+            background: rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+        }
+
+        /* Variante titre : pas d'image, texte mis en valeur */
+        .shop-item-title-card {
+            align-items: stretch;
+            padding-top: 18px;
+        }
+        .shop-item-title-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 17px; font-weight: 700;
+            letter-spacing: 1.5px;
+            color: #fff;
+            background: linear-gradient(135deg, #fff 0%, #ffe199 50%, #fff 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            margin-bottom: 6px;
+            text-shadow: 0 0 30px rgba(255, 210, 120, 0.3);
+            min-height: 24px;
+        }
+        .shop-item-title-tag {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 10px;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: rgba(180, 120, 255, 0.7);
+            text-align: center;
+            margin-bottom: 14px;
+        }
+
+        .shop-item-name {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 14px; font-weight: 600;
+            color: #fff;
+            line-height: 1.2;
+            margin-bottom: 12px;
+        }
+        .shop-item-price {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px; font-weight: 700;
+            color: #ffd266;
+            letter-spacing: 1px;
+            margin-top: auto;
+            margin-bottom: 14px;
+        }
+        .shop-item-price::before {
+            content: '';
+            width: 9px; height: 9px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #ffd266, #ff9933);
+            box-shadow: 0 0 6px rgba(255, 210, 120, 0.6);
+        }
+        .shop-item-btn {
+            padding: 10px 12px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase;
+            background: linear-gradient(135deg, rgba(145, 70, 255, 0.2), rgba(180, 100, 220, 0.15));
+            border: 1px solid rgba(145, 70, 255, 0.45);
+            border-radius: 10px;
+            color: #d4b5ff;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .shop-item-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(145, 70, 255, 0.35), rgba(180, 100, 220, 0.28));
+            color: #fff;
+            box-shadow: 0 0 16px rgba(145, 70, 255, 0.4);
+            transform: translateY(-1px);
+        }
+        .shop-item-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .shop-item.owned .shop-item-btn {
+            background: rgba(80, 200, 120, 0.12);
+            border-color: rgba(80, 200, 120, 0.35);
+            color: #8fe0a8;
+        }
+        .shop-item-btn.deny {
+            background: linear-gradient(135deg, rgba(239, 98, 98, 0.25), rgba(239, 98, 98, 0.15));
+            border-color: rgba(239, 98, 98, 0.5);
+            color: #ff9999;
+            animation: btnShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+        }
+        @keyframes btnShake {
+            10%, 90%  { transform: translateX(-1px); }
+            20%, 80%  { transform: translateX(2px); }
+            30%, 50%, 70% { transform: translateX(-4px); }
+            40%, 60%  { transform: translateX(4px); }
+        }
+        .modal-empty {
+            text-align: center;
+            padding: 40px 12px;
+            color: rgba(255, 255, 255, 0.45);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 14px;
+        }
+
+        /* Mobile */
+        @media (max-width: 700px) {
+            /* ⛔ Pas de scroll sur la page maintenance : tout tient dans la viewport */
+            html, body { overflow: hidden; height: 100%; }
+            body { display: flex; flex-direction: column; }
+            .play-bot-btn {
+                position: fixed;
+                top: 60%; bottom: auto;
+                left: 50%;
+                margin-left: 0;
+                animation: playBtnInMobile 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.6s forwards;
+            }
+            @keyframes playBtnInMobile {
+                0%   { opacity: 0; transform: translate(-50%, 20px) scale(0.6); }
+                100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+            }
+            .play-bot-btn img { width: 52px; height: 52px; }
+            .play-bot-btn::before { width: 52px; height: 52px; margin: -26px 0 0 -26px; }
+            .last-game {
+                top: auto;
+                bottom: 14px;
+                font-size: 11px;
+            }
+            .topbar {
+                padding: 12px 18px;
+                min-height: 0;
+                grid-template-columns: 1fr auto;
+                grid-template-areas: "left right";
+                row-gap: 0;
+            }
+            .topbar-left   { grid-area: left; }
+            .topbar-right  { grid-area: right; }
+            .topbar-center { display: none; }              /* 📵 partenaires masqués sur mobile */
+            .logo-mini { font-size: 12px; letter-spacing: 3px; }
+            .top-link { padding: 8px 14px; font-size: 9px; letter-spacing: 2px; }
+            .top-link .top-link-label { display: none; }
+            .hero { min-height: 0; padding: 14px 18px 0; gap: 4px; }
+            .hero-title-wrap { padding: 16px 24px; }
+            .hero-title { font-size: clamp(14px, 4.8vw, 21px); letter-spacing: 3px; padding-right: 3px; }
+            .hero-subtext { font-size: 11px; letter-spacing: 1px; margin-top: 14px; max-width: 90%; }
+            .orbit-dot { --r: 85px !important; }
+            .bg-text { font-size: 38vw; }
+
+            /* Footer mobile : ❌ © text, ✅ bouton classement à gauche + instagram à droite */
+            .footer {
+                padding: 8px 16px;
+                justify-content: space-between;
+            }
+            .footer-copy { display: none; }
+            .footer-lb-btn {
+                display: inline-flex;
+                align-items: center; justify-content: center;
+                width: 32px; height: 32px;
+                padding: 0;
+                background: linear-gradient(135deg, rgba(255, 210, 120, 0.14), rgba(255, 153, 51, 0.10));
+                border: 1px solid rgba(255, 210, 120, 0.5);
+                border-radius: 10px;
+                color: #ffd266;
+                cursor: pointer;
+                box-shadow: 0 0 12px rgba(255, 210, 120, 0.25);
+                transition: all 0.2s ease;
+                -webkit-tap-highlight-color: transparent;
+            }
+            .footer-lb-btn svg {
+                width: 16px; height: 16px;
+                fill: currentColor;
+                filter: drop-shadow(0 0 4px rgba(255, 210, 120, 0.6));
+            }
+            .footer-lb-btn:hover, .footer-lb-btn:active {
+                background: linear-gradient(135deg, rgba(255, 210, 120, 0.28), rgba(255, 153, 51, 0.18));
+                border-color: rgba(255, 230, 160, 0.85);
+                color: #fff;
+                box-shadow: 0 0 18px rgba(255, 210, 120, 0.45);
+            }
+            .footer-instagram { width: 32px; height: 32px; }
+            .footer-instagram svg { width: 16px; height: 16px; }
+
+            /* Chip Twitch : pseudo visible mais compact pour tenir à droite */
+            .twitch-chip { padding: 5px 12px 5px 5px; gap: 7px; max-width: 160px; }
+            .twitch-chip-avatar { width: 24px; height: 24px; }
+            .twitch-chip-name {
+                display: inline-block;
+                font-size: 10px;
+                letter-spacing: 0.5px;
+                max-width: 96px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .twitch-logout { font-size: 11px; padding: 0 0 0 4px; }
+            .twitch-btn { padding: 7px 12px; font-size: 9px; letter-spacing: 1.5px; }
+            .modal-panel { padding: 22px 18px; }
+            .shop-tab { padding: 8px 6px; font-size: 9px; letter-spacing: 1px; }
+            .shop-grid.shop-grid-titles { grid-template-columns: 1fr; }
+            .shop-grid.shop-grid-avatars { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+            .shop-item-avatar-wrap, .shop-item-avatar-img { width: 80px; height: 80px; }
+            .leaderboard { display: none; }
+
+            /* ───── BombAnime : disposition verticale bot ↑ / bombe / vous ↓ ───── */
+            .bb-arena {
+                flex-direction: column;
+                gap: 110px;             /* ← un peu plus d'air entre joueurs et bombe */
+                margin-bottom: 0;
+            }
+            .bb-hex { width: 74px; height: 74px; }              /* ← joueurs un peu plus petits */
+            .bb-bomb-body-wrap { width: 58px; height: 58px; }
+            .bb-fuse-inner { margin-left: 27px; }               /* ≈ 58 * 0.47 */
+            .bb-fuse-wave-wrap, .bb-fuse-wave-svg { width: 30px; }
+            #bbPlayerBot { order: 1; }
+            #bbBombWrap {
+                order: 2;
+                position: relative;
+                top: auto; left: auto;
+                transform: none;
+            }
+            #bbPlayerYou { order: 3; }
+            .bb-name { font-size: 12px; }
+            .bb-answer { font-size: 14px; top: calc(100% + 22px); max-width: 180px; }
+            .bb-lock { right: -36px; }
+            .bb-lock svg { width: 22px; height: 22px; }
+            .bb-input { font-size: 18px; padding: 10px 6px; }
+            .bb-input-zone { max-width: 280px; bottom: 12px; }
+            .bb-game-header { padding: 10px 14px; }
+            .bb-game-title { font-size: 12px; letter-spacing: 1.5px; }
+            .bb-game-serie { font-size: 11px; padding: 4px 10px; margin-left: 8px; }
+            .bb-game-close { width: 30px; height: 30px; font-size: 18px; }
+            .bb-end-title { font-size: 22px; letter-spacing: 4px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-bg"></div>
+    <canvas id="particlesCanvas"></canvas>
+
+    <div class="topbar">
+        <div class="topbar-left">
+            <div class="logo-mini">Shonen<span>Master</span></div>
+        </div>
+        <div class="topbar-center">
+            <div id="partnersSlot"></div>
+        </div>
+        <div class="topbar-right">
+            <div id="authSlot"></div>
+        </div>
+    </div>
+
+    <!-- Modale Profil -->
+    <div class="modal-backdrop" id="profileModal" role="dialog" aria-modal="true">
+        <div class="modal-panel">
+            <button class="modal-close" type="button" data-close-modal>×</button>
+            <div class="modal-title">Profil</div>
+            <div class="modal-sub" id="profileSub">Vos statistiques</div>
+            <div id="profileBody">
+                <div class="modal-empty">Chargement…</div>
+            </div>
+        </div>
+    </div>
+
+
+    <main class="hero">
+      <div class="hero-row">
+        <div class="hero-title-wrap">
+            <div class="title-orbits" aria-hidden="true">
+                <span class="orbit-dot" style="--r:120px; --dur:11s; --start:0deg;   --delay:0s;"></span>
+                <span class="orbit-dot" style="--r:160px; --dur:14s; --start:60deg;  --delay:-2s;"></span>
+                <span class="orbit-dot" style="--r:200px; --dur:18s; --start:130deg; --delay:-5s;"></span>
+                <span class="orbit-dot" style="--r:140px; --dur:13s; --start:200deg; --delay:-7s;"></span>
+                <span class="orbit-dot" style="--r:180px; --dur:16s; --start:280deg; --delay:-3s;"></span>
+                <span class="orbit-dot" style="--r:110px; --dur:9s;  --start:330deg; --delay:-1s;"></span>
+            </div>
+            <div class="title-sparks" aria-hidden="true">
+                <span class="spark" style="left:8%;  --dur:4.5s; --dx:14px;  --delay:0s;"></span>
+                <span class="spark" style="left:22%; --dur:6s;   --dx:-10px; --delay:1.2s;"></span>
+                <span class="spark" style="left:38%; --dur:5.2s; --dx:8px;   --delay:2.5s;"></span>
+                <span class="spark" style="left:54%; --dur:4.8s; --dx:-14px; --delay:0.6s;"></span>
+                <span class="spark" style="left:70%; --dur:6.4s; --dx:12px;  --delay:3s;"></span>
+                <span class="spark" style="left:86%; --dur:5.6s; --dx:-6px;  --delay:1.8s;"></span>
+                <span class="spark" style="left:14%; --dur:7s;   --dx:-12px; --delay:3.4s;"></span>
+                <span class="spark" style="left:46%; --dur:5.8s; --dx:18px;  --delay:4s;"></span>
+                <span class="spark" style="left:78%; --dur:6.2s; --dx:-16px; --delay:2.2s;"></span>
+            </div>
+            <h1 class="hero-title" id="heroTitle">En maintenance</h1>
+        </div>
+        <button type="button" class="play-bot-btn" id="playBotBtn" aria-label="Jouer contre le bot" title="Jouer contre le bot">
+            <img src="maintenancebomb.png" alt="" draggable="false">
+        </button>
+      </div>
+        <div class="hero-divider"></div>
+        <p class="hero-subtext" id="heroSubtext"><span class="hero-subtext-current">ShonenMaster revient très bientôt</span></p>
+    </main>
+    <div class="last-game" id="lastGame" aria-live="polite"></div>
+
+    <!-- Modal paramètres BombAnime -->
+    <div class="modal-backdrop" id="bbSettingsModal" role="dialog" aria-modal="true">
+        <div class="modal-panel">
+            <button class="modal-close" type="button" data-close-modal>×</button>
+            <div class="modal-title">BombAnime</div>
+            <div class="modal-sub">Choisissez votre série et affrontez le bot</div>
+            <div class="section-label">Série</div>
+            <div class="bb-settings-grid" id="bbSerieList">
+                <div class="modal-empty">Chargement…</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen BombAnime game -->
+    <div class="bb-game" id="bbGame" aria-hidden="true">
+        <div class="bb-game-header">
+            <div>
+                <span class="bb-game-title">Shonen<b>Master</b></span>
+                <span class="bb-game-serie" id="bbGameSerie">—</span>
+            </div>
+            <button class="bb-game-close" type="button" id="bbGameClose">×</button>
+        </div>
+        <div class="bb-game-body">
+            <div class="bb-arena">
+                <!-- Joueur (vous) -->
+                <div class="bb-slot" id="bbPlayerYou">
+                    <div class="bb-name" id="bbPlayerYouName">Vous</div>
+                    <div class="bb-hex">
+                        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                            <polygon class="bb-hex-frame" points="50,3 97,25 97,75 50,97 3,75 3,25"></polygon>
+                            <polygon class="bb-hex-inner" points="50,11 89,30 89,70 50,89 11,70 11,30"></polygon>
+                        </svg>
+                        <img class="bb-avatar" id="bbPlayerYouAvatar" src="novice.png" alt="">
+                        <div class="bb-lives" id="bbPlayerYouLives"></div>
+                        <div class="bb-success-particles" aria-hidden="true">
+                            <div class="bb-success-particle"></div><div class="bb-success-particle"></div>
+                            <div class="bb-success-particle"></div><div class="bb-success-particle"></div>
+                            <div class="bb-success-particle"></div><div class="bb-success-particle"></div>
+                            <div class="bb-success-particle"></div><div class="bb-success-particle"></div>
+                            <div class="bb-success-particle"></div><div class="bb-success-particle"></div>
+                            <div class="bb-success-particle"></div><div class="bb-success-particle"></div>
+                        </div>
+                    </div>
+                    <div class="bb-answer" id="bbPlayerYouAnswer"></div>
+                    <div class="bb-lock" id="bbPlayerYouLock" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                    </div>
+                </div>
+
+                <!-- Bombe au centre -->
+                <div class="bb-bomb-wrap state-normal" id="bbBombWrap">
+                    <div class="bb-bomb-body-wrap">
+                        <div class="bb-bomb-body"><div class="bb-bomb-cracks"></div></div>
+                        <div class="bb-bomb-pulse"></div>
+                    </div>
+                    <div class="bb-fuse-pivot" id="bbFusePivot">
+                        <div class="bb-fuse-inner">
+                            <div class="bb-fuse-socle"></div>
+                            <div class="bb-fuse-wave-wrap">
+                                <svg class="bb-fuse-wave-svg" viewBox="0 0 52 12">
+                                    <path d="M0,6 Q13,2.5 26,6 Q39,9.5 52,6"></path>
+                                </svg>
+                            </div>
+                            <div class="bb-fuse-spark-wrap">
+                                <div class="bb-fuse-spark"></div>
+                                <div class="bb-mini-sparks">
+                                    <div class="bb-mini-s"></div><div class="bb-mini-s"></div>
+                                    <div class="bb-mini-s"></div><div class="bb-mini-s"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bot -->
+                <div class="bb-slot" id="bbPlayerBot">
+                    <div class="bb-name">Master</div>
+                    <div class="bb-hex">
+                        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                            <polygon class="bb-hex-frame" points="50,3 97,25 97,75 50,97 3,75 3,25"></polygon>
+                            <polygon class="bb-hex-inner" points="50,11 89,30 89,70 50,89 11,70 11,30"></polygon>
+                        </svg>
+                        <img class="bb-avatar" id="bbPlayerBotAvatar" src="ninja.png" alt="">
+                        <div class="bb-lives" id="bbPlayerBotLives"></div>
+                        <div class="bb-success-particles" aria-hidden="true">
+                            <div class="bb-success-particle"></div><div class="bb-success-particle"></div>
+                            <div class="bb-success-particle"></div><div class="bb-success-particle"></div>
+                            <div class="bb-success-particle"></div><div class="bb-success-particle"></div>
+                            <div class="bb-success-particle"></div><div class="bb-success-particle"></div>
+                            <div class="bb-success-particle"></div><div class="bb-success-particle"></div>
+                            <div class="bb-success-particle"></div><div class="bb-success-particle"></div>
+                        </div>
+                    </div>
+                    <div class="bb-answer" id="bbPlayerBotAnswer"></div>
+                </div>
+            </div>
+
+            <!-- Saisie en bas -->
+            <div class="bb-input-zone">
+                <input type="text" class="bb-input" id="bbInput" placeholder="Nom du personnage…" autocomplete="off" spellcheck="false">
+                <div class="bb-status" id="bbStatus">À vous de jouer !</div>
+            </div>
+        </div>
+        <!-- Écran de fin -->
+        <div class="bb-end" id="bbEnd">
+            <div class="bb-end-title" id="bbEndTitle">—</div>
+            <div class="bb-end-sub" id="bbEndSub"></div>
+            <div class="bb-end-actions">
+                <button class="bb-end-btn primary" type="button" id="bbEndReplay">Rejouer</button>
+                <button class="bb-end-btn secondary" type="button" id="bbEndQuit">Quitter</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🏆 Classement top 5 -->
+    <aside class="leaderboard" id="leaderboard" aria-label="Classement">
+        <div class="leaderboard-title">Classement</div>
+        <div id="leaderboardBody">
+            <div class="lb-empty">Chargement…</div>
+        </div>
+    </aside>
+
+    <footer class="footer">
+        <div class="footer-copy">© ShonenMaster</div>
+        <button type="button" class="footer-lb-btn" id="footerLbBtn" aria-label="Classement" title="Classement">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/>
+            </svg>
+        </button>
+        <a href="https://www.instagram.com/naahas__" target="_blank" rel="noopener" class="footer-instagram" aria-label="Instagram">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+            </svg>
+        </a>
+    </footer>
+
+    <!-- 🏆 Classement (mobile) — panel slidant depuis la gauche -->
+    <div class="lb-side" id="lbSide" aria-hidden="true">
+        <div class="lb-side-backdrop" data-lb-close></div>
+        <aside class="lb-side-panel" role="dialog" aria-modal="true" aria-label="Classement">
+            <div class="lb-side-head">
+                <span class="lb-side-title">Classement</span>
+                <button class="lb-side-close" type="button" data-lb-close aria-label="Fermer">×</button>
+            </div>
+            <div class="lb-side-body" id="lbSideBody">
+                <div class="lb-empty">Chargement…</div>
+            </div>
+        </aside>
+    </div>
+
+
+    <!-- 🔄 Rotation auto des sous-textes -->
+    <script>
+    (function () {
+        const messages = [
+            'ShonenMaster revient très bientôt avec une refonte visuelle complète',
+            '+500 questions bientôt disponibles pour les modes quiz',
+            'De nouveaux modes solo et par équipes arrivent très bientôt',
+            'Un mode Ascension repensé avec des défis encore plus exigeants',
+            'Plus de titres, plus d’avatars et des récompenses inédites',
+            'Une boutique enrichie et des badges de prestige à débloquer',
+        ];
+        const wrap = document.getElementById('heroSubtext');
+        if (!wrap) return;
+        let idx = 0;
+        function swap() {
+            const cur = wrap.querySelector('.hero-subtext-current');
+            if (!cur) return;
+            cur.classList.add('fade-out');
+            setTimeout(() => {
+                idx = (idx + 1) % messages.length;
+                wrap.innerHTML = '<span class="hero-subtext-current">' + messages[idx] + '</span>';
+            }, 400);
+        }
+        // Première rotation 3s après le fade-in initial (qui finit à ~3.2s), puis toutes les 3s
+        setTimeout(() => { swap(); setInterval(swap, 3000); }, 3200);
+    })();
+    </script>
+
+    <!-- 🟣 Auth Twitch + Profil + Boutique -->
+    <script>
+    (function () {
+        const slot = document.getElementById('authSlot');
+        if (!slot) return;
+
+        // État utilisateur courant (rempli après /auth/twitch/status)
+        window.__sm_user = null;
+
+        const escapeHtml = (s) => String(s == null ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+        const twitchSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2 L2 7v14h5v3h3l3-3h4l6-6V2H4zm17 12l-3 3h-5l-3 3v-3H6V4h15v10zm-5-8v6h-2V6h2zm-5 0v6h-2V6h2z"/></svg>';
+
+        function renderLogin() {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'twitch-btn';
+            btn.innerHTML = twitchSvg + 'Connexion';
+            btn.addEventListener('click', () => {
+                window.location.assign('/auth/twitch');
+            });
+            slot.innerHTML = '';
+            slot.appendChild(btn);
+        }
+        function renderProfile(user) {
+            const avatar = user.profile_image_url || 'novice.png';
+            const name = user.display_name || user.login || 'Profil';
+            slot.innerHTML =
+                '<div class="twitch-chip" id="chipProfile" title="Voir le profil">' +
+                    '<img class="twitch-chip-avatar" src="' + escapeHtml(avatar) + '" alt="" onerror="this.src=\'/novice.png\'">' +
+                    '<span class="twitch-chip-name">' + escapeHtml(name) + '</span>' +
+                    '<button class="twitch-logout" type="button" id="btnLogout" title="Déconnexion">×</button>' +
+                '</div>';
+            const chip = document.getElementById('chipProfile');
+            const logout = document.getElementById('btnLogout');
+            chip.addEventListener('click', (e) => {
+                if (e.target.closest('#btnLogout')) return;
+                openProfile();
+            });
+            logout.addEventListener('click', (e) => {
+                e.stopPropagation();
+                window.location.href = '/auth/logout';
+            });
+        }
+
+        // ─── Modales (ouverture/fermeture) ───
+        function openModal(id) {
+            const m = document.getElementById(id);
+            if (m) m.classList.add('open');
+        }
+        function closeModal(id) {
+            const m = document.getElementById(id);
+            if (m) m.classList.remove('open');
+        }
+        document.querySelectorAll('[data-close-modal]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const m = btn.closest('.modal-backdrop');
+                if (m) m.classList.remove('open');
+            });
+        });
+        document.querySelectorAll('.modal-backdrop').forEach(m => {
+            m.addEventListener('click', (e) => {
+                if (e.target === m) m.classList.remove('open');
+            });
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-backdrop.open').forEach(m => m.classList.remove('open'));
+            }
+        });
+
+        // ─── Profil ───
+        let __profileData = null;
+
+        function renderProfileBody() {
+            const body = document.getElementById('profileBody');
+            const sub = document.getElementById('profileSub');
+            if (!body || !__profileData) return;
+            const u = __profileData.user || {};
+            const lv = u.levelData || {};
+            const pct = lv.xpForNextLevel ? Math.min(100, Math.round((lv.currentLevelXP / lv.xpForNextLevel) * 100)) : 0;
+            sub.textContent = 'Niveau ' + (u.level || 1) + ' · ' + (u.coins || 0) + ' S-Coins';
+
+            const ms = __profileData.modeStats || {};
+            const modes = [
+                ['Classique', ms.classic || 0],
+                ['BombAnime', ms.bombanime || 0],
+                ['Collect', ms.collect || 0],
+                ['Trace', ms.trace || 0],
+                ['Rivalité', ms.rivalry || 0],
+                ['Ascension', ms.ascension || 0],
+            ];
+
+            body.innerHTML =
+                '<div class="profile-head">' +
+                    '<div class="profile-avatar-wrap">' +
+                        '<img class="profile-avatar" src="' + escapeHtml(u.avatar_url || 'novice.png') + '" onerror="this.src=\'/novice.png\'" alt="">' +
+                    '</div>' +
+                    '<div>' +
+                        '<div class="profile-id">' + escapeHtml(u.username || '—') + '</div>' +
+                        '<div class="profile-title">' + escapeHtml(u.display_title || '') + '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="profile-stats">' +
+                    '<div class="stat-card"><div class="stat-label">S-Coins</div><div class="stat-value gold">' + (u.coins || 0) + '</div></div>' +
+                    '<div class="stat-card"><div class="stat-label">Niveau</div><div class="stat-value">' + (u.level || 1) + '</div></div>' +
+                    '<div class="stat-card"><div class="stat-label">Parties</div><div class="stat-value">' + (u.total_games_played || 0) + '</div></div>' +
+                    '<div class="stat-card"><div class="stat-label">Victoires</div><div class="stat-value gold">' + (u.total_victories || 0) + '</div></div>' +
+                    '<div class="xp-bar">' +
+                        '<div class="stat-label">XP — ' + (lv.currentLevelXP || 0) + ' / ' + (lv.xpForNextLevel || 0) + '</div>' +
+                        '<div class="xp-bar-track"><div class="xp-bar-fill" style="width:' + pct + '%"></div></div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="section-label">Parties par mode</div>' +
+                '<div class="profile-modes-grid">' +
+                    modes.map(m => '<div class="profile-mode-card"><div class="stat-label">' + escapeHtml(m[0]) + '</div><div class="stat-value">' + m[1] + '</div></div>').join('') +
+                '</div>';
+        }
+
+        async function openProfile() {
+            openModal('profileModal');
+            const body = document.getElementById('profileBody');
+            if (!window.__sm_user || !window.__sm_user.id) {
+                body.innerHTML = '<div class="modal-empty">Connectez-vous pour voir votre profil.</div>';
+                return;
+            }
+            body.innerHTML = '<div class="modal-empty">Chargement…</div>';
+            try {
+                const res = await fetch('/profile/' + encodeURIComponent(window.__sm_user.id), { credentials: 'same-origin' });
+                if (!res.ok) throw new Error('http ' + res.status);
+                __profileData = await res.json();
+                renderProfileBody();
+            } catch (e) {
+                body.innerHTML = '<div class="modal-empty">Impossible de charger le profil.</div>';
+            }
+        }
+
+        // ─── Fetch statut Twitch ───
+        (async () => {
+            try {
+                const res = await fetch('/auth/twitch/status', { credentials: 'same-origin' });
+                const data = await res.json();
+                if (data && data.connected && data.user) {
+                    window.__sm_user = data.user;
+                    renderProfile(data.user);
+                } else {
+                    renderLogin();
+                }
+            } catch (e) {
+                renderLogin();
+            }
+        })();
+
+        // ─── Twitch Partners (centrés en haut) ───
+        async function renderPartners() {
+            const slot = document.getElementById('partnersSlot');
+            if (!slot) return;
+            try {
+                const res = await fetch('/api/partners', { credentials: 'same-origin' });
+                const data = await res.json();
+                const list = Array.isArray(data.partners) ? data.partners : [];
+                if (list.length === 0) { slot.innerHTML = ''; return; }
+                // Live d'abord
+                list.sort((a, b) => (b.live ? 1 : 0) - (a.live ? 1 : 0));
+                slot.innerHTML =
+                    '<div class="partners">' +
+                        list.slice(0, 5).map(p => {
+                            const url = 'https://twitch.tv/' + encodeURIComponent(p.id);
+                            return '<a class="partner-link' + (p.live ? ' is-live' : '') + '" href="' + url + '" target="_blank" rel="noopener" aria-label="' + escapeHtml(p.name) + '">' +
+                                '<div class="partner-avatar-wrap">' +
+                                    '<img class="partner-avatar" src="' + escapeHtml(p.avatar) + '" onerror="this.style.opacity=0.3" alt="">' +
+                                '</div>' +
+                                '<span class="partner-name-tip">' + escapeHtml(p.name) + (p.live ? ' · en live' : '') + '</span>' +
+                            '</a>';
+                        }).join('') +
+                    '</div>';
+            } catch (e) {
+                slot.innerHTML = '';
+            }
+        }
+        renderPartners();
+        setInterval(renderPartners, 120000);  // refresh live status toutes les 2 min
+
+        // ─── Leaderboard top 5 (alimente le panel desktop ET le slide-in mobile) ───
+        function lbRowsHtml(list) {
+            return list.slice(0, 5).map((p, i) => {
+                const rank = i + 1;
+                const avatar = p.avatar_url || 'novice.png';
+                const name = p.username || '—';
+                return '<div class="lb-row rank-' + rank + '">' +
+                    '<div class="lb-rank">#' + rank + '</div>' +
+                    '<img class="lb-avatar" src="' + escapeHtml(avatar) + '" onerror="this.src=\'/novice.png\'" alt="">' +
+                    '<div class="lb-name" title="' + escapeHtml(name) + '">' + escapeHtml(name) + '</div>' +
+                '</div>';
+            }).join('');
+        }
+        function paintLeaderboard(html) {
+            const desk = document.getElementById('leaderboardBody');
+            const side = document.getElementById('lbSideBody');
+            if (desk) desk.innerHTML = html;
+            if (side) side.innerHTML = html;
+        }
+        async function renderLeaderboard() {
+            try {
+                const res = await fetch('/leaderboard?limit=5', { credentials: 'same-origin' });
+                const data = await res.json();
+                const list = Array.isArray(data) ? data : (Array.isArray(data.leaderboard) ? data.leaderboard : []);
+                if (list.length === 0) {
+                    paintLeaderboard('<div class="lb-empty">Pas encore de classement.</div>');
+                    return;
+                }
+                paintLeaderboard(lbRowsHtml(list));
+            } catch (e) {
+                paintLeaderboard('<div class="lb-empty">Indisponible.</div>');
+            }
+        }
+        renderLeaderboard();
+        setInterval(renderLeaderboard, 60000);  // refresh toutes les minutes
+
+        // ─── "Dernière partie" sous la bombe ───
+        function paintLastGame(data) {
+            const el = document.getElementById('lastGame');
+            if (!el || !data || !data.username) return;
+            const n = data.chars || 0;
+            const serieLabel = data.serie ? formatSerieName(data.serie) : '';
+            el.innerHTML = 'Dernière partie : ' +
+                '<span class="lg-pseudo">' + escapeHtml(data.username) + '</span>' +
+                (serieLabel ? ('<span class="lg-sep">·</span><span class="lg-serie">' + escapeHtml(serieLabel) + '</span>') : '') +
+                '<span class="lg-sep">·</span>' +
+                n + ' personnage' + (n > 1 ? 's' : '');
+            el.classList.add('show');
+        }
+        let __lastGameInitialDone = false;
+        async function fetchLastGame() {
+            try {
+                const res = await fetch('/api/bombanime/last', { credentials: 'same-origin' });
+                const data = await res.json();
+                if (!data || !data.last) return;
+                if (!__lastGameInitialDone) {
+                    // 1er affichage : sync avec l'apparition de la bombe (~2.4s)
+                    __lastGameInitialDone = true;
+                    setTimeout(() => paintLastGame(data.last), 2600);
+                } else {
+                    paintLastGame(data.last);
+                }
+            } catch (e) { /* ignore */ }
+        }
+        fetchLastGame();
+        // Refresh régulier : tous les visiteurs voient la dernière partie jouée par n'importe qui
+        setInterval(fetchLastGame, 25000);
+
+        // 🏆 Classement (mobile) : slide-in instantané (contenu déjà rendu)
+        const _lbSide = document.getElementById('lbSide');
+        function openLbSide() { if (_lbSide) _lbSide.classList.add('open'); }
+        function closeLbSide() { if (_lbSide) _lbSide.classList.remove('open'); }
+        const _lbBtn = document.getElementById('footerLbBtn');
+        if (_lbBtn) _lbBtn.addEventListener('click', openLbSide);
+        if (_lbSide) {
+            _lbSide.querySelectorAll('[data-lb-close]').forEach(el => {
+                el.addEventListener('click', closeLbSide);
+            });
+        }
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && _lbSide && _lbSide.classList.contains('open')) closeLbSide();
+        });
+
+        // ─── BombAnime vs Bot (page maintenance) ───
+        const BB = {
+            data: null,            // { series, characters, variants, themeMapping }
+            serie: null,
+            used: null,            // Set of normalized character names already used
+            remaining: null,       // Array of normalized characters still available
+            myLives: 2,
+            botLives: 2,
+            round: 1,
+            charsAnswered: 0,      // nombre de personnages valides cités (vous + bot)
+            turn: 'you',           // 'you' | 'bot'
+            timer: null,
+            timeLeft: 8000,
+            tickInterval: null,
+            botTimeout: null,
+            over: false,
+        };
+        const BB_TURN_MS = 8000;
+        const BB_HEART_SVG = '<svg class="bb-life" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
+        const BB_HEART_SVG_LOST = '<svg class="bb-life lost" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
+
+        // 🔊 Sons identiques au mode BombAnime classique
+        function _bbMakeSound(file, vol) {
+            const a = new Audio(file);
+            a.preload = 'auto';
+            a.volume = vol == null ? 0.5 : vol;
+            try { a.load(); } catch (_) {}
+            return a;
+        }
+        const BB_SOUNDS = {
+            pass:       _bbMakeSound('slash3.mp3',     0.5),  // bonne réponse → passage de tour
+            playerturn: _bbMakeSound('playerturn.mp3', 0.5),  // début de votre tour
+            explode:    _bbMakeSound('explode.mp3',    0.5),  // perte de vie
+            used:       _bbMakeSound('lock1.mp3',      0.5),  // perso déjà utilisé (cadenas)
+            wrong:      _bbMakeSound('wrong.mp3',      0.5),  // perso inconnu
+        };
+        function bbPlay(name) {
+            const s = BB_SOUNDS[name];
+            if (!s) return;
+            try {
+                const clone = s.cloneNode();
+                clone.volume = s.volume;
+                clone.play().catch(() => {});
+            } catch (_) {}
+        }
+        // 💣 Tictac en boucle, accélère selon l'état de la bombe
+        const BB_TICTAC = (() => {
+            const a = new Audio('tictac.mp3');
+            a.loop = true;
+            a.volume = 0.18;
+            a.preload = 'auto';
+            try { a.load(); } catch (_) {}
+            return a;
+        })();
+        function bbTictacStart() {
+            try {
+                BB_TICTAC.currentTime = 0;
+                BB_TICTAC.playbackRate = 1.0;
+                BB_TICTAC.play().catch(() => {});
+            } catch (_) {}
+        }
+        function bbTictacStop() {
+            try { BB_TICTAC.pause(); BB_TICTAC.currentTime = 0; } catch (_) {}
+        }
+        // ✨ Anim de bonne réponse (tilt + particules) sur un slot
+        // Garde la classe ~750ms : plus long délai de particule (75ms) + durée (600ms) + marge
+        function bbPlaySuccess(slotId) {
+            const slot = document.getElementById(slotId);
+            if (!slot) return;
+            slot.classList.remove('bb-success');
+            void slot.offsetWidth;
+            slot.classList.add('bb-success');
+            setTimeout(() => slot.classList.remove('bb-success'), 750);
+        }
+
+        function bbTictacRate(ms) {
+            if (!BB_TICTAC || BB_TICTAC.paused) return;
+            if (ms <= 2000)      BB_TICTAC.playbackRate = 1.5;
+            else if (ms <= 5000) BB_TICTAC.playbackRate = 1.2;
+            else                 BB_TICTAC.playbackRate = 1.0;
+        }
+
+        const normalize = (s) => String(s || '').trim().toUpperCase();
+        function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+        // Réimplémentation light de getAllNamesToBlock (server-side mirror)
+        function getNamesToBlock(name, availableNames, theme) {
+            const variants = BB.data && BB.data.variants;
+            const mapping = (BB.data && BB.data.themeMapping) || {};
+            const variantKey = mapping[theme] || theme;
+            const themeVariants = variants ? variants[variantKey] : null;
+            const normalized = normalize(name);
+            const toBlock = new Set([normalized]);
+            // Variantes du groupe
+            if (themeVariants) {
+                for (const group of themeVariants) {
+                    const upperGroup = group.map(g => g.toUpperCase());
+                    if (upperGroup.includes(normalized)) {
+                        upperGroup.forEach(g => toBlock.add(g));
+                    }
+                }
+            }
+            // Manganime → exact match only
+            if (variantKey === 'Manganime') return toBlock;
+            // Word-boundary cross-matching
+            for (const avail of availableNames) {
+                const upper = avail.toUpperCase();
+                if (upper === normalized) continue;
+                try {
+                    if (new RegExp(`\\b${escapeRegex(normalized)}\\b`).test(upper)) toBlock.add(upper);
+                    if (new RegExp(`\\b${escapeRegex(upper)}\\b`).test(normalized)) toBlock.add(upper);
+                } catch (_) { /* ignore bad regex */ }
+            }
+            return toBlock;
+        }
+
+        async function loadBombanimeData() {
+            if (BB.data) return BB.data;
+            const res = await fetch('/api/bombanime/data', { credentials: 'same-origin' });
+            BB.data = await res.json();
+            return BB.data;
+        }
+
+        // Avatar du bot pour chaque série (clé = ID série tel que renvoyé par /api/bombanime/data)
+        // Fallback automatique sur 'ninja.png' si pas d'entrée
+        const BB_BOT_AVATARS = {
+            'Naruto':        'madara_maintenance.png',
+            'Bleach':        'aizen_maintenance.png',
+            'Jojo':          'dio_maintenance.png',
+            'Hxh':           'meruem_maintenance.png',
+            'BlackClover':   'zagred_maintenance.png',
+            'OnePiece':      'teach_maintenance.png',
+            'ChainsawMan':   'makima_maintenance.png',
+            'Dbz':           'black_maintenance.png',
+            'DemonSlayer':   'muzan_maintenance.png',
+            'FairyTail':     'acnologia_maintenance.png',
+            'Gintama':       'utsuro_maintenance.png',
+            'JujutsuKaisen': 'sukuna_maintenance.png',
+            'Reborn':        'xanxus_maintenance.png',
+            'Mha':           'tomura_maintenance.png',
+            'Pokemon':       'n_maintenance.png',
+            'Snk':           'eren_maintenance.png',
+            'Fma':           'envy_maintenance.png',
+            'Studio':        'kirby_maintenance.png',
+            'Prota':         'rias_maintenance.png',
+            'Manganime':     'akeno_maintenance.png',
+        };
+
+        // Surcharges manuelles pour certains IDs de série
+        const BB_SERIE_NAME_OVERRIDES = {
+            'Dbz':   'Dragon Ball',
+            'Prota': 'Protagoniste',
+            'Fma':   'Fullmetal Alchemist',
+            'Hxh':   'Hunter Hunter',
+            'Snk':   'Attack on Titan',
+        };
+        // Séries masquées dans le sélecteur
+        const BB_SERIE_HIDDEN = new Set(['DeathNote']);
+        // Séries à afficher en premier (ordre du haut)
+        const BB_SERIE_PRIORITY = ['Prota', 'Manganime', 'Studio', 'Naruto', 'OnePiece', 'Bleach'];
+
+        // Convertit "ChainsawMan" → "Chainsaw Man", "OnePiece" → "One Piece", etc.
+        function formatSerieName(s) {
+            if (BB_SERIE_NAME_OVERRIDES[s]) return BB_SERIE_NAME_OVERRIDES[s];
+            return String(s)
+                .replace(/([a-z])([A-Z])/g, '$1 $2')
+                .replace(/([A-Z])([A-Z][a-z])/g, '$1 $2');
+        }
+
+        function renderSerieList() {
+            const wrap = document.getElementById('bbSerieList');
+            if (!wrap || !BB.data) return;
+            let visibleSeries = BB.data.series.filter(s => !BB_SERIE_HIDDEN.has(s));
+            // Place les séries prioritaires en haut, dans l'ordre défini
+            const priority = BB_SERIE_PRIORITY.filter(s => visibleSeries.includes(s));
+            const rest = visibleSeries.filter(s => !BB_SERIE_PRIORITY.includes(s));
+            visibleSeries = priority.concat(rest);
+            wrap.innerHTML = visibleSeries.map(s => {
+                const count = (BB.data.characters[s] || []).length;
+                const label = formatSerieName(s);
+                return '<button type="button" class="bb-serie-btn" data-serie="' + escapeHtml(s) + '" title="' + count + ' personnages">' +
+                    '<span class="bb-serie-dot"></span>' +
+                    '<span class="bb-serie-label">' + escapeHtml(label) + '</span>' +
+                '</button>';
+            }).join('');
+            wrap.querySelectorAll('[data-serie]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Sélection visuelle brève puis lancement immédiat
+                    wrap.querySelectorAll('[data-serie]').forEach(b => b.classList.toggle('active', b === btn));
+                    BB.serie = btn.getAttribute('data-serie');
+                    closeModal('bbSettingsModal');
+                    startBombGame();
+                });
+            });
+        }
+
+        async function openBombSettings() {
+            if (!window.__sm_user || !window.__sm_user.id) {
+                // Forcer login Twitch
+                window.location.assign('/auth/twitch');
+                return;
+            }
+            openModal('bbSettingsModal');
+            const wrap = document.getElementById('bbSerieList');
+            try {
+                // Charge en parallèle les données du jeu + l'avatar perso depuis le profil DB
+                const [_, profileRes] = await Promise.all([
+                    loadBombanimeData(),
+                    (window.__sm_user.dbAvatar)
+                        ? Promise.resolve(null)
+                        : fetch('/profile/' + encodeURIComponent(window.__sm_user.id), { credentials: 'same-origin' })
+                            .then(r => r.ok ? r.json() : null)
+                            .catch(() => null),
+                ]);
+                if (profileRes && profileRes.user && profileRes.user.avatar_url) {
+                    window.__sm_user.dbAvatar = profileRes.user.avatar_url;
+                }
+                renderSerieList();
+            } catch (e) {
+                wrap.innerHTML = '<div class="modal-empty">Impossible de charger les données.</div>';
+            }
+        }
+        document.getElementById('playBotBtn').addEventListener('click', openBombSettings);
+
+        function renderLives() {
+            const make = (n) => {
+                let h = '';
+                for (let i = 0; i < 2; i++) h += (i < n) ? BB_HEART_SVG : BB_HEART_SVG_LOST;
+                return h;
+            };
+            document.getElementById('bbPlayerYouLives').innerHTML = make(BB.myLives);
+            document.getElementById('bbPlayerBotLives').innerHTML = make(BB.botLives);
+        }
+
+        function setActivePlayer() {
+            document.getElementById('bbPlayerYou').classList.toggle('is-active', BB.turn === 'you' && !BB.over);
+            document.getElementById('bbPlayerBot').classList.toggle('is-active', BB.turn === 'bot' && !BB.over);
+            document.getElementById('bbPlayerYou').classList.toggle('is-dead', BB.myLives <= 0);
+            document.getElementById('bbPlayerBot').classList.toggle('is-dead', BB.botLives <= 0);
+        }
+
+        function setTimerVisual(ms) {
+            const ratio = Math.max(0, Math.min(1, ms / BB_TURN_MS));
+            const wrap = document.getElementById('bbBombWrap');
+            // La mèche pointe vers le joueur actif.
+            // Desktop (horizontal): 180° = gauche (vous), 0° = droite (bot)
+            // Mobile (vertical):    90°  = bas (vous),    -90° = haut (bot)
+            const isMobile = window.innerWidth <= 700;
+            let angle;
+            if (isMobile) angle = (BB.turn === 'you') ? 90 : -90;
+            else          angle = (BB.turn === 'you') ? 180 : 0;
+            document.getElementById('bbFusePivot').style.transform = 'rotate(' + angle + 'deg)';
+            // Et raccourcit progressivement (l'étincelle se rapproche du corps de la bombe)
+            const waveWidth = Math.max(6, 52 * ratio);
+            const waveWrap = document.querySelector('#bbBombWrap .bb-fuse-wave-wrap');
+            if (waveWrap) waveWrap.style.width = waveWidth + 'px';
+            // États d'alarme (couleur + animations)
+            wrap.classList.remove('state-normal', 'state-warning', 'state-critical');
+            if (ms <= 2000)      wrap.classList.add('state-critical');
+            else if (ms <= 5000) wrap.classList.add('state-warning');
+            else                 wrap.classList.add('state-normal');
+            // 🔊 Accélération du tictac selon l'état (sans effet si tictac en pause)
+            bbTictacRate(ms);
+        }
+
+        function stopTimer() {
+            if (BB.tickInterval) { clearInterval(BB.tickInterval); BB.tickInterval = null; }
+            if (BB.botTimeout) { clearTimeout(BB.botTimeout); BB.botTimeout = null; }
+        }
+
+        function startTimer(onTimeout) {
+            stopTimer();
+            BB.timeLeft = BB_TURN_MS;
+            setTimerVisual(BB.timeLeft);
+            const startedAt = Date.now();
+            BB.tickInterval = setInterval(() => {
+                BB.timeLeft = Math.max(0, BB_TURN_MS - (Date.now() - startedAt));
+                setTimerVisual(BB.timeLeft);
+                if (BB.timeLeft <= 0) {
+                    clearInterval(BB.tickInterval);
+                    BB.tickInterval = null;
+                    onTimeout();
+                }
+            }, 80);
+        }
+
+        function startBombGame() {
+            const game = document.getElementById('bbGame');
+            const endScreen = document.getElementById('bbEnd');
+            endScreen.classList.remove('open');
+            game.classList.add('open');
+            game.setAttribute('aria-hidden', 'false');
+
+            // Réinit
+            BB.used = new Set();
+            BB.remaining = (BB.data.characters[BB.serie] || []).map(c => normalize(c));
+            BB.myLives = 2;
+            BB.botLives = 2;
+            BB.round = 1;
+            BB.charsAnswered = 0;
+            BB.over = false;
+            BB.turn = Math.random() < 0.5 ? 'you' : 'bot';
+
+            // Avatar : priorité au choix DB du joueur (équipé dans son profil), sinon Twitch, sinon novice
+            const userAvatar = (window.__sm_user && (window.__sm_user.dbAvatar || window.__sm_user.profile_image_url)) || 'novice.png';
+            const userName = (window.__sm_user && (window.__sm_user.display_name || window.__sm_user.login)) || 'Vous';
+            document.getElementById('bbPlayerYouAvatar').src = userAvatar;
+            document.getElementById('bbPlayerYouAvatar').onerror = function () { this.src = '/novice.png'; };
+            document.getElementById('bbPlayerYouName').textContent = userName;
+            document.getElementById('bbGameSerie').textContent = formatSerieName(BB.serie);
+            document.getElementById('bbInput').placeholder = formatSerieName(BB.serie) + '…';
+            // Avatar bot selon la série (fallback ninja.png)
+            const botAvatarEl = document.getElementById('bbPlayerBotAvatar');
+            if (botAvatarEl) {
+                botAvatarEl.src = BB_BOT_AVATARS[BB.serie] || 'ninja.png';
+                botAvatarEl.onerror = function () { this.onerror = null; this.src = '/ninja.png'; };
+            }
+            document.getElementById('bbPlayerYouAnswer').textContent = '';
+            document.getElementById('bbPlayerBotAnswer').textContent = '';
+
+            renderLives();
+            setActivePlayer();
+            // Mèche pleine au lancement
+            setTimerVisual(BB_TURN_MS);
+            nextTurn(true);
+        }
+
+        function endGame(winner) {
+            BB.over = true;
+            stopTimer();
+            bbTictacStop();
+            // 📡 Enregistre la dernière partie (mémoire serveur, partagée)
+            if (window.__sm_user && (window.__sm_user.display_name || window.__sm_user.login)) {
+                const username = window.__sm_user.display_name || window.__sm_user.login;
+                const chars = BB.charsAnswered;
+                const serie = BB.serie || '';
+                fetch('/api/bombanime/last', {
+                    method: 'POST', credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, chars, serie }),
+                }).then(() => paintLastGame({ username, chars, serie })).catch(() => {});
+            }
+            setActivePlayer();
+            const input = document.getElementById('bbInput');
+            input.disabled = true; input.value = '';
+            const title = document.getElementById('bbEndTitle');
+            const sub = document.getElementById('bbEndSub');
+            const n = BB.charsAnswered;
+            const persoLabel = n + ' personnage' + (n > 1 ? 's' : '') + ' cité' + (n > 1 ? 's' : '');
+            if (winner === 'you') {
+                title.textContent = 'Victoire !';
+                sub.textContent = persoLabel + '.';
+            } else {
+                title.textContent = 'Défaite';
+                sub.textContent = 'Le bot a gagné — ' + persoLabel + '.';
+            }
+            document.getElementById('bbEnd').classList.add('open');
+        }
+
+        function consumeAnswer(normalizedName) {
+            // Bloque toutes les variantes / formes (mots complets) du nom
+            const allBlocked = getNamesToBlock(normalizedName, BB.remaining, BB.serie);
+            BB.remaining = BB.remaining.filter(c => !allBlocked.has(c));
+            allBlocked.forEach(n => BB.used.add(n));
+        }
+
+        function nextTurn(firstTurn) {
+            if (BB.over) return;
+            if (BB.myLives <= 0) { endGame('bot'); return; }
+            if (BB.botLives <= 0) { endGame('you'); return; }
+            if (BB.remaining.length === 0) {
+                // Pool épuisé : impossible pour quiconque de jouer → l'user gagne
+                // (le bot ne perd jamais de vie, mais la partie s'arrête en faveur du joueur)
+                endGame('you');
+                return;
+            }
+            if (!firstTurn) {
+                BB.round++;
+            }
+            setActivePlayer();
+            const input = document.getElementById('bbInput');
+            const status = document.getElementById('bbStatus');
+            if (BB.turn === 'you') {
+                input.disabled = false;
+                input.value = '';
+                input.classList.remove('invalid');
+                status.innerHTML = '';
+                document.getElementById('bbPlayerYouAnswer').textContent = '';
+                bbPlay('playerturn');
+                bbTictacStart();
+                setTimeout(() => input.focus(), 30);
+                startTimer(() => {
+                    bbTictacStop();
+                    BB.myLives--;
+                    renderLives();
+                    // 💥 Shake bref du joueur qui perd une vie
+                    const slot = document.getElementById('bbPlayerYou');
+                    slot.classList.remove('shake-error');
+                    void slot.offsetWidth;
+                    slot.classList.add('shake-error');
+                    setTimeout(() => slot.classList.remove('shake-error'), 400);
+                    bbPlay('explode');
+                    // Dernière vie : on saute la rotation vers le bot, défaite immédiate
+                    if (BB.myLives <= 0) {
+                        endGame('bot');
+                        return;
+                    }
+                    BB.turn = 'bot';
+                    setActivePlayer();            // ← retire la brillance IMMÉDIATEMENT
+                    setTimerVisual(BB_TURN_MS);   //   rotation vers le bot
+                    status.innerHTML = '';
+                    setTimeout(() => nextTurn(false), 450);
+                });
+            } else {
+                input.disabled = true;
+                input.value = '';
+                status.innerHTML = '';
+                document.getElementById('bbPlayerBotAnswer').textContent = '';
+                bbTictacStop();
+                setTimerVisual(BB_TURN_MS);  // mèche pleine pendant la réflexion
+                // Le bot ne perd jamais : réfléchit brièvement puis pioche
+                const thinkMs = 150 + Math.random() * 180;
+                BB.botTimeout = setTimeout(() => {
+                    BB.botTimeout = null;
+                    const pick = BB.remaining[Math.floor(Math.random() * BB.remaining.length)];
+                    if (!pick) { endGame('you'); return; }
+                    // Son IMMÉDIAT (lead-in audio), le texte tombe juste après
+                    bbPlay('pass');
+                    consumeAnswer(pick);
+                    BB.charsAnswered++;
+                    BB.turn = 'you';
+                    // Sequence : texte → particules + tilt → rotation
+                    setTimeout(() => {
+                        document.getElementById('bbPlayerBotAnswer').textContent = pick;
+                    }, 70);
+                    setTimeout(() => bbPlaySuccess('bbPlayerBot'), 120);
+                    setTimeout(() => {
+                        setTimerVisual(BB_TURN_MS);
+                        setTimeout(() => nextTurn(false), 120);
+                    }, 140);
+                }, thinkMs);
+            }
+        }
+
+        // Saisie utilisateur : affichage progressif sous le joueur
+        document.getElementById('bbInput').addEventListener('input', (e) => {
+            if (BB.over || BB.turn !== 'you') return;
+            document.getElementById('bbPlayerYouAnswer').textContent = e.target.value;
+        });
+
+        // Saisie utilisateur : Enter pour valider
+        document.getElementById('bbInput').addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter') return;
+            if (BB.over || BB.turn !== 'you') return;
+            const val = e.target.value;
+            const norm = normalize(val);
+            if (!norm) return;
+            const status = document.getElementById('bbStatus');
+
+            // Validation : exact match dans la liste de la série
+            const seriesChars = (BB.data.characters[BB.serie] || []).map(c => normalize(c));
+            const inList = seriesChars.includes(norm);
+            const alreadyUsed = BB.used.has(norm);
+
+            const slot = document.getElementById('bbPlayerYou');
+            const lock = document.getElementById('bbPlayerYouLock');
+            const shakeSlot = () => {
+                slot.classList.remove('shake-error');
+                void slot.offsetWidth;
+                slot.classList.add('shake-error');
+                setTimeout(() => slot.classList.remove('shake-error'), 400);
+            };
+            const popLock = () => {
+                lock.classList.remove('show');
+                void lock.offsetWidth;
+                lock.classList.add('show');
+                setTimeout(() => lock.classList.remove('show'), 600);
+            };
+
+            if (!inList) {
+                e.target.classList.remove('invalid');
+                void e.target.offsetWidth;
+                e.target.classList.add('invalid');
+                shakeSlot();
+                bbPlay('wrong');
+                e.target.value = '';
+                document.getElementById('bbPlayerYouAnswer').textContent = '';
+                status.innerHTML = '';
+                return;
+            }
+            if (alreadyUsed) {
+                e.target.classList.remove('invalid');
+                void e.target.offsetWidth;
+                e.target.classList.add('invalid');
+                shakeSlot();
+                popLock();
+                bbPlay('used');
+                e.target.value = '';
+                document.getElementById('bbPlayerYouAnswer').textContent = '';
+                status.innerHTML = '';
+                return;
+            }
+            // Valide — bascule de la mèche IMMÉDIATE vers le bot
+            stopTimer();
+            bbTictacStop();
+            consumeAnswer(norm);
+            BB.charsAnswered++;
+            document.getElementById('bbPlayerYouAnswer').textContent = norm;
+            bbPlay('pass');
+            bbPlaySuccess('bbPlayerYou');
+            status.innerHTML = '';
+            e.target.value = '';
+            e.target.classList.remove('invalid');
+            BB.turn = 'bot';
+            setTimerVisual(BB_TURN_MS);           // ← rotation instantanée vers la droite
+            setTimeout(() => nextTurn(false), 120);
+        });
+
+        // Fermeture / replay
+        function closeBombGame() {
+            BB.over = true;
+            stopTimer();
+            bbTictacStop();
+            const g = document.getElementById('bbGame');
+            g.classList.remove('open');
+            g.setAttribute('aria-hidden', 'true');
+            document.getElementById('bbEnd').classList.remove('open');
+        }
+        document.getElementById('bbGameClose').addEventListener('click', closeBombGame);
+        document.getElementById('bbEndQuit').addEventListener('click', closeBombGame);
+        document.getElementById('bbEndReplay').addEventListener('click', () => {
+            // Rejouer avec la même série
+            document.getElementById('bbEnd').classList.remove('open');
+            startBombGame();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.getElementById('bbGame').classList.contains('open')) {
+                closeBombGame();
+            }
+        });
+    })();
+    </script>
+
+    <!-- 🌟 Particules canvas (pure JS, fallback robuste sans dépendance externe) -->
+    <script>
+    (function () {
+        const canvas = document.getElementById('particlesCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let W = 0, H = 0;
+        function resize() {
+            W = canvas.width = window.innerWidth * devicePixelRatio;
+            H = canvas.height = window.innerHeight * devicePixelRatio;
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        const COLORS = ['#ffd266', '#ffffff', '#a78bfa', '#76d4ff'];
+        const N = 90;
+        const particles = [];
+        for (let i = 0; i < N; i++) {
+            particles.push({
+                x: Math.random() * W,
+                y: Math.random() * H,
+                vx: (Math.random() - 0.5) * 0.6 * devicePixelRatio,
+                vy: (Math.random() - 0.5) * 0.6 * devicePixelRatio,
+                r: (0.6 + Math.random() * 2.4) * devicePixelRatio,
+                color: COLORS[Math.floor(Math.random() * COLORS.length)],
+                opacity: 0.25 + Math.random() * 0.55,
+                opacityDir: Math.random() > 0.5 ? 1 : -1,
+            });
+        }
+
+        // Étincelles dorées qui montent en continu
+        const sparks = [];
+        function spawnSpark() {
+            sparks.push({
+                x: Math.random() * W,
+                y: H + 10 * devicePixelRatio,
+                vy: -(1.5 + Math.random() * 2) * devicePixelRatio,
+                r: (1 + Math.random() * 1.6) * devicePixelRatio,
+                life: 0,
+                maxLife: 300 + Math.random() * 250,
+            });
+        }
+
+        // Souris pour effet "grab" + traînée stylée
+        const mouse = { x: -9999, y: -9999, active: false };
+        const trail = [];          // historique des positions souris
+        const MAX_TRAIL = 28;
+        let lastSpawnDist = 0;     // distance cumulée depuis le dernier point ajouté
+        window.addEventListener('mousemove', (e) => {
+            const nx = e.clientX * devicePixelRatio;
+            const ny = e.clientY * devicePixelRatio;
+            if (mouse.active) {
+                const dx = nx - mouse.x, dy = ny - mouse.y;
+                lastSpawnDist += Math.sqrt(dx * dx + dy * dy);
+            }
+            mouse.x = nx;
+            mouse.y = ny;
+            mouse.active = true;
+            // n'ajoute un point que si la souris a bougé suffisamment (régule la densité)
+            if (lastSpawnDist >= 6 * devicePixelRatio) {
+                lastSpawnDist = 0;
+                trail.push({ x: nx, y: ny, life: 1, r: (2 + Math.random() * 1.5) * devicePixelRatio });
+                if (trail.length > MAX_TRAIL) trail.shift();
+            }
+        });
+        window.addEventListener('mouseleave', () => { mouse.active = false; });
+
+        // ───── Explosion de particules au clic ─────
+        const bursts = [];       // particules d'explosion
+        const shockwaves = [];   // ondes de choc circulaires
+        const BURST_COLORS = ['#ffd266', '#ffffff', '#a78bfa', '#ff9933', '#76d4ff'];
+        function triggerBurst(clientX, clientY) {
+            const cx = clientX * devicePixelRatio;
+            const cy = clientY * devicePixelRatio;
+            // Onde de choc dorée
+            shockwaves.push({ x: cx, y: cy, r: 0, life: 1 });
+            // Petite onde violette plus rapide
+            shockwaves.push({ x: cx, y: cy, r: 0, life: 1, color: 'rgba(167, 139, 250,', speed: 5 });
+            // Particules radiales
+            const N = 28;
+            for (let i = 0; i < N; i++) {
+                const angle = (Math.PI * 2 * i) / N + (Math.random() - 0.5) * 0.4;
+                const speed = (3 + Math.random() * 5) * devicePixelRatio;
+                bursts.push({
+                    x: cx, y: cy,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    r: (1.4 + Math.random() * 2.2) * devicePixelRatio,
+                    life: 1,
+                    decay: 0.012 + Math.random() * 0.018,
+                    gravity: 0.045 * devicePixelRatio,
+                    color: BURST_COLORS[Math.floor(Math.random() * BURST_COLORS.length)],
+                });
+            }
+            // Quelques étincelles centrales plus vives
+            for (let i = 0; i < 8; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = (1 + Math.random() * 2) * devicePixelRatio;
+                bursts.push({
+                    x: cx, y: cy,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    r: (2 + Math.random() * 1.5) * devicePixelRatio,
+                    life: 1,
+                    decay: 0.025 + Math.random() * 0.015,
+                    gravity: 0,
+                    color: '#fff',
+                });
+            }
+        }
+        window.addEventListener('click', (e) => {
+            // Ignorer clics sur éléments interactifs ou modales
+            if (e.target.closest('button, a, input, textarea, select, .modal-backdrop, .twitch-chip, .partners, .footer-instagram, .leaderboard, .bb-game, .play-bot-btn, .lb-side')) return;
+            triggerBurst(e.clientX, e.clientY);
+        });
+
+        const LINK_DIST = 140 * devicePixelRatio;
+        const GRAB_DIST = 200 * devicePixelRatio;
+        let frame = 0;
+
+        function tick() {
+            ctx.clearRect(0, 0, W, H);
+
+            // Update + draw particles
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.x < 0 || p.x > W) p.vx *= -1;
+                if (p.y < 0 || p.y > H) p.vy *= -1;
+                p.opacity += p.opacityDir * 0.005;
+                if (p.opacity > 0.8) p.opacityDir = -1;
+                if (p.opacity < 0.2) p.opacityDir = 1;
+
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.opacity;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Liens entre particules proches + lien vers la souris
+            ctx.lineWidth = 1 * devicePixelRatio;
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                for (let j = i + 1; j < particles.length; j++) {
+                    const q = particles[j];
+                    const dx = p.x - q.x, dy = p.y - q.y;
+                    const d = Math.sqrt(dx * dx + dy * dy);
+                    if (d < LINK_DIST) {
+                        const o = (1 - d / LINK_DIST) * 0.22;
+                        ctx.strokeStyle = 'rgba(255, 210, 120,' + o + ')';
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(q.x, q.y);
+                        ctx.stroke();
+                    }
+                }
+                if (mouse.active) {
+                    const dx = p.x - mouse.x, dy = p.y - mouse.y;
+                    const d = Math.sqrt(dx * dx + dy * dy);
+                    if (d < GRAB_DIST) {
+                        const o = (1 - d / GRAB_DIST) * 0.5;
+                        ctx.strokeStyle = 'rgba(255, 230, 160,' + o + ')';
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(mouse.x, mouse.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Étincelles dorées qui montent
+            if (frame % 30 === 0) spawnSpark();
+            for (let i = sparks.length - 1; i >= 0; i--) {
+                const s = sparks[i];
+                s.y += s.vy;
+                s.life++;
+                if (s.life > s.maxLife || s.y < -20 * devicePixelRatio) {
+                    sparks.splice(i, 1);
+                    continue;
+                }
+                const fade = 1 - s.life / s.maxLife;
+                ctx.globalAlpha = fade;
+                ctx.fillStyle = '#ffd266';
+                ctx.shadowColor = '#ffd266';
+                ctx.shadowBlur = 8 * devicePixelRatio;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            // Traînée souris : ligne dorée fade + orbes brillantes
+            if (trail.length > 1) {
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                // Ligne reliant les points, opacité croissante du plus ancien au plus récent
+                for (let i = 1; i < trail.length; i++) {
+                    const a = trail[i - 1], b = trail[i];
+                    const t = i / trail.length;             // 0 → ancien, 1 → récent
+                    const alpha = t * b.life * 0.55;
+                    ctx.globalAlpha = alpha;
+                    ctx.strokeStyle = '#ffd266';
+                    ctx.shadowColor = '#ffd266';
+                    ctx.shadowBlur = 10 * devicePixelRatio * t;
+                    ctx.lineWidth = (1.2 + 2.2 * t) * devicePixelRatio;
+                    ctx.beginPath();
+                    ctx.moveTo(a.x, a.y);
+                    ctx.lineTo(b.x, b.y);
+                    ctx.stroke();
+                }
+                // Orbes lumineuses sur quelques points (effet pointillé brillant)
+                for (let i = 0; i < trail.length; i++) {
+                    const p = trail[i];
+                    const t = i / trail.length;
+                    const alpha = t * p.life;
+                    ctx.globalAlpha = alpha;
+                    ctx.fillStyle = i === trail.length - 1 ? '#fff' : '#ffd266';
+                    ctx.shadowColor = '#ffd266';
+                    ctx.shadowBlur = 14 * devicePixelRatio * t;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r * (0.4 + 0.6 * t), 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.shadowBlur = 0;
+            }
+            // Décroissance de la traînée (fade naturel quand la souris s'arrête)
+            for (let i = trail.length - 1; i >= 0; i--) {
+                trail[i].life -= 0.035;
+                if (trail[i].life <= 0) trail.splice(i, 1);
+            }
+
+            // Ondes de choc (clic)
+            for (let i = shockwaves.length - 1; i >= 0; i--) {
+                const s = shockwaves[i];
+                s.r += (s.speed || 3.5) * devicePixelRatio;
+                s.life -= 0.04;
+                if (s.life <= 0) { shockwaves.splice(i, 1); continue; }
+                const colorBase = s.color || 'rgba(255, 210, 120,';
+                ctx.globalAlpha = 1;
+                ctx.strokeStyle = colorBase + (s.life * 0.7) + ')';
+                ctx.lineWidth = (2 + s.life * 1.5) * devicePixelRatio;
+                ctx.shadowColor = s.color ? '#a78bfa' : '#ffd266';
+                ctx.shadowBlur = 14 * devicePixelRatio * s.life;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // Particules d'explosion (clic)
+            for (let i = bursts.length - 1; i >= 0; i--) {
+                const p = bursts[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += p.gravity;
+                p.vx *= 0.985;
+                p.vy *= 0.985;
+                p.life -= p.decay;
+                if (p.life <= 0) { bursts.splice(i, 1); continue; }
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 12 * devicePixelRatio * p.life;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, Math.max(0.4, p.r * p.life), 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.shadowBlur = 0;
+
+            ctx.globalAlpha = 1;
+            frame++;
+            requestAnimationFrame(tick);
+        }
+        tick();
+    })();
+    </script>
+
+</body>
+</html>
