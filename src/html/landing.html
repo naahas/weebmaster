@@ -351,6 +351,85 @@
             padding: 14px 6px;
         }
 
+        /* ───── Panel "Dernières parties" (droite, desktop) ───── */
+        .recent-games {
+            position: fixed;
+            top: 50%; right: 28px;
+            transform: translateY(-50%);
+            z-index: 5;
+            width: 230px;
+            padding: 22px 18px 22px 16px;
+            background: transparent;
+            border-right: 1px solid rgba(255, 210, 120, 0.18);
+            opacity: 0;
+            animation: recentGamesFadeIn 1s cubic-bezier(0.22, 1, 0.36, 1) 1.6s forwards;
+            user-select: none;
+        }
+        @keyframes recentGamesFadeIn {
+            0%   { opacity: 0; transform: translate(16px, -50%); }
+            100% { opacity: 1; transform: translate(0, -50%); }
+        }
+        .recent-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px; font-weight: 700;
+            letter-spacing: 4px; text-transform: uppercase;
+            color: rgba(255, 210, 120, 0.75);
+            text-align: right;
+            padding: 0 4px 18px 0;
+            margin-bottom: 6px;
+            position: relative;
+        }
+        .recent-title::after {
+            content: '';
+            position: absolute;
+            right: 4px; bottom: 8px;
+            width: 28px; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 210, 120, 0.6));
+        }
+        .rg-row {
+            padding: 14px 6px;
+            border-radius: 6px;
+            text-align: right;
+            transition: background 0.2s ease;
+        }
+        .rg-row + .rg-row {
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .rg-row:hover { background: rgba(255, 210, 120, 0.04); }
+        .rg-pseudo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px; font-weight: 700;
+            letter-spacing: 1.5px;
+            color: rgba(255, 255, 255, 0.9);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .rg-row.is-fresh .rg-pseudo {
+            color: #ffd266;
+            text-shadow: 0 0 8px rgba(255, 210, 120, 0.45);
+        }
+        .rg-sub {
+            margin-top: 6px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 11px; font-weight: 500;
+            color: rgba(255, 255, 255, 0.42);
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .rg-sub .rg-serie { color: rgba(255, 210, 120, 0.75); font-weight: 600; }
+        .rg-sub .rg-dot   { color: rgba(255, 210, 120, 0.35); margin: 0 6px; }
+        .rg-sub .rg-count { color: rgba(255, 230, 160, 0.85); font-weight: 700; font-family: 'Orbitron', sans-serif; font-size: 10px; }
+        .rg-empty {
+            text-align: right;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.3);
+            padding: 14px 6px;
+        }
+
         /* ───── Slide-in panel "Classement" (mobile) ───── */
         .lb-side {
             position: fixed; inset: 0;
@@ -754,7 +833,7 @@
                 drop-shadow(0 0 44px rgba(240, 192, 64, 0.5));
         }
 
-        /* Mini texte "Dernière partie" — restera en bas de l'écran */
+        /* Mini texte "Dernière partie" — affiché uniquement sur mobile (le panel droit prend la place sur desktop) */
         .last-game {
             position: fixed;
             bottom: 30px;
@@ -771,6 +850,7 @@
             user-select: none;
             opacity: 0;
             transition: opacity 0.4s ease;
+            display: none;          /* caché par défaut, ré-affiché en mobile */
         }
         .last-game.show { opacity: 1; }
         .last-game .lg-pseudo { color: #ffd266; font-weight: 700; }
@@ -2229,6 +2309,7 @@
             .play-bot-btn img { width: 52px; height: 52px; }
             .play-bot-btn::before { width: 52px; height: 52px; margin: -26px 0 0 -26px; }
             .last-game {
+                display: block;        /* ré-affiché sur mobile (le panel droit est caché) */
                 top: auto;
                 bottom: 14px;
                 font-size: 11px;
@@ -2307,6 +2388,7 @@
             .shop-grid.shop-grid-avatars { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
             .shop-item-avatar-wrap, .shop-item-avatar-img { width: 80px; height: 80px; }
             .leaderboard { display: none; }
+            .recent-games { display: none; }
 
             /* ───── BombAnime : disposition verticale bot ↑ / bombe / vous ↓ ───── */
             .bb-arena {
@@ -2515,6 +2597,14 @@
             </div>
         </div>
     </div>
+
+    <!-- 💣 Dernières parties BombAnime (desktop) -->
+    <aside class="recent-games" id="recentGames" aria-label="Dernières parties">
+        <div class="recent-title">Dernières parties</div>
+        <div id="recentGamesBody">
+            <div class="rg-empty">Aucune partie pour l'instant.</div>
+        </div>
+    </aside>
 
     <!-- 🏆 Classement top 5 -->
     <aside class="leaderboard" id="leaderboard" aria-label="Classement">
@@ -2815,14 +2905,39 @@
                 n + ' personnage' + (n > 1 ? 's' : '');
             el.classList.add('show');
         }
+        // 💣 Panel droite "Dernières parties" — 5 entrées luxe/sobre
+        function paintRecentGames(results) {
+            const body = document.getElementById('recentGamesBody');
+            if (!body) return;
+            if (!Array.isArray(results) || results.length === 0) {
+                body.innerHTML = '<div class="rg-empty">Aucune partie pour l\'instant.</div>';
+                return;
+            }
+            body.innerHTML = results.slice(0, 5).map((r, i) => {
+                const pseudo = r.username || '—';
+                const serie  = r.serie ? formatSerieName(r.serie) : '';
+                const chars  = r.chars || 0;
+                const freshClass = i === 0 ? ' is-fresh' : '';
+                return '<div class="rg-row' + freshClass + '">' +
+                    '<div class="rg-pseudo">' + escapeHtml(pseudo) + '</div>' +
+                    '<div class="rg-sub">' +
+                        (serie ? '<span class="rg-serie">' + escapeHtml(serie) + '</span><span class="rg-dot">·</span>' : '') +
+                        '<span class="rg-count">' + chars + '</span>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+        }
+
         let __lastGameInitialDone = false;
         async function fetchLastGame() {
             try {
                 const res = await fetch('/api/bombanime/last', { credentials: 'same-origin' });
                 const data = await res.json();
+                // Met à jour le panel droite (5 dernières)
+                paintRecentGames((data && data.results) || (data && data.last ? [data.last] : []));
+                // Met à jour le texte mobile (juste la dernière)
                 if (!data || !data.last) return;
                 if (!__lastGameInitialDone) {
-                    // 1er affichage : tout petit délai pour laisser l'UI démarrer
                     __lastGameInitialDone = true;
                     setTimeout(() => paintLastGame(data.last), 300);
                 } else {
@@ -2831,7 +2946,7 @@
             } catch (e) { /* ignore */ }
         }
         fetchLastGame();
-        // Refresh régulier : tous les visiteurs voient la dernière partie jouée par n'importe qui
+        // Refresh régulier : tous les visiteurs voient les dernières parties jouées par n'importe qui
         setInterval(fetchLastGame, 25000);
 
         // 🏆 Classement (mobile) : slide-in instantané (contenu déjà rendu)
@@ -3189,7 +3304,11 @@
                     method: 'POST', credentials: 'same-origin',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, chars, serie }),
-                }).then(() => paintLastGame({ username, chars, serie })).catch(() => {});
+                }).then(() => {
+                    paintLastGame({ username, chars, serie });
+                    // Re-fetch pour rafraîchir le panel droite avec la nouvelle entrée en tête
+                    fetchLastGame();
+                }).catch(() => {});
             }
             setActivePlayer();
             const input = document.getElementById('bbInput');
@@ -3270,7 +3389,7 @@
                 bbTictacStop();
                 setTimerVisual(BB_TURN_MS);  // mèche pleine pendant la réflexion
                 // Le bot ne perd jamais : réfléchit brièvement puis pioche
-                const thinkMs = 150 + Math.random() * 180;
+                const thinkMs = 100 + Math.random() * 150;
                 BB.botTimeout = setTimeout(() => {
                     BB.botTimeout = null;
                     const pick = BB.remaining[Math.floor(Math.random() * BB.remaining.length)];

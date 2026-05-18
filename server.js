@@ -6828,17 +6828,24 @@ app.get('/api/bombanime/data', (req, res) => {
     });
 });
 
-// Dernière partie BombAnime-vs-bot (mémoire process uniquement, partagé entre visiteurs)
-let lastBombanimeBotResult = null;  // { username, chars, serie, at }
+// Dernières parties BombAnime-vs-bot (mémoire process, partagé entre visiteurs)
+const BOMB_LAST_MAX = 5;
+let lastBombanimeBotResults = [];  // [{ username, chars, serie, at }, ...] (récent → ancien)
 app.get('/api/bombanime/last', (req, res) => {
-    res.json({ last: lastBombanimeBotResult });
+    res.json({
+        last: lastBombanimeBotResults[0] || null,  // back-compat (utilisé par .last-game mobile)
+        results: lastBombanimeBotResults,
+    });
 });
 app.post('/api/bombanime/last', express.json(), (req, res) => {
     const username = String((req.body && req.body.username) || '').trim().slice(0, 30);
     const chars = Math.max(0, Math.min(9999, parseInt((req.body && req.body.chars), 10) || 0));
     const serie = String((req.body && req.body.serie) || '').trim().slice(0, 40);
     if (!username) return res.status(400).json({ error: 'username required' });
-    lastBombanimeBotResult = { username, chars, serie, at: Date.now() };
+    lastBombanimeBotResults.unshift({ username, chars, serie, at: Date.now() });
+    if (lastBombanimeBotResults.length > BOMB_LAST_MAX) {
+        lastBombanimeBotResults.length = BOMB_LAST_MAX;
+    }
     res.json({ ok: true });
 });
 
