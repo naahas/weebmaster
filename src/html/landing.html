@@ -2822,9 +2822,9 @@
                 const data = await res.json();
                 if (!data || !data.last) return;
                 if (!__lastGameInitialDone) {
-                    // 1er affichage : sync avec l'apparition de la bombe (~2.4s)
+                    // 1er affichage : tout petit délai pour laisser l'UI démarrer
                     __lastGameInitialDone = true;
-                    setTimeout(() => paintLastGame(data.last), 2600);
+                    setTimeout(() => paintLastGame(data.last), 300);
                 } else {
                     paintLastGame(data.last);
                 }
