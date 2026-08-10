@@ -2420,6 +2420,401 @@
             .bb-game-close { width: 30px; height: 30px; font-size: 18px; }
             .bb-end-title { font-size: 22px; letter-spacing: 4px; }
         }
+
+        /* ═══════════════════════════════════════════
+           🪢 PENDU : bouton d'entrée
+           ═══════════════════════════════════════════ */
+        .play-pendu-btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center; justify-content: center;
+            width: 58px; height: 58px;
+            padding: 0;
+            margin-left: -10px;
+            background: linear-gradient(135deg, rgba(40,30,68,0.65), rgba(20,16,36,0.65));
+            border: 1px solid rgba(255,210,120,0.32);
+            border-radius: 14px;
+            color: #ffd266;
+            cursor: pointer;
+            z-index: 6;
+            opacity: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            animation: playBtnIn 1.2s cubic-bezier(0.22,1,0.36,1) 0.6s forwards;
+            box-shadow: 0 6px 22px rgba(0,0,0,0.45), 0 0 18px rgba(255,210,120,0.18);
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+        }
+        .play-pendu-btn svg {
+            width: 32px; height: 32px;
+            filter: drop-shadow(0 0 6px rgba(255,210,120,0.4));
+            pointer-events: none;
+            transition: transform 0.25s ease, filter 0.25s ease;
+        }
+        .play-pendu-btn:hover {
+            background: linear-gradient(135deg, rgba(60,42,98,0.85), rgba(30,22,56,0.85));
+            border-color: rgba(255,210,120,0.7);
+            box-shadow: 0 10px 28px rgba(0,0,0,0.5), 0 0 28px rgba(255,210,120,0.32);
+            transform: translateY(-2px);
+        }
+        .play-pendu-btn:hover svg {
+            transform: scale(1.08);
+            filter: drop-shadow(0 0 10px rgba(255,230,150,0.7));
+        }
+        .play-pendu-btn:active { transform: translateY(0) scale(0.96); }
+        .play-pendu-btn:focus { outline: none; }
+        .play-pendu-btn:focus-visible {
+            box-shadow: 0 0 0 2px rgba(255,210,120,0.55), 0 10px 28px rgba(0,0,0,0.5);
+        }
+
+        /* ═══════════════════════════════════════════
+           🪢 PENDU : formulaires (accès + setup)
+           ═══════════════════════════════════════════ */
+        .pend-form {
+            display: flex; flex-direction: column;
+            gap: 12px;
+            margin-top: 4px;
+        }
+        .pend-text-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(20,16,36,0.6);
+            border: 1px solid rgba(255,210,120,0.22);
+            border-radius: 12px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 17px; font-weight: 600;
+            color: #fff;
+            letter-spacing: 1px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .pend-text-input::placeholder { color: rgba(255,255,255,0.32); }
+        .pend-text-input:focus {
+            border-color: rgba(255,210,120,0.65);
+            box-shadow: 0 0 18px rgba(255,210,120,0.22);
+        }
+        .pend-text-input.shake { animation: pendShake 0.45s cubic-bezier(0.36,0.07,0.19,0.97); }
+        @keyframes pendShake {
+            10%,90% { transform: translateX(-3px); }
+            20%,80% { transform: translateX(5px); }
+            30%,50%,70% { transform: translateX(-7px); }
+            40%,60% { transform: translateX(7px); }
+        }
+        .pend-form-msg {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 13px; font-weight: 500;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 0.5px;
+            min-height: 16px;
+        }
+        .pend-form-msg.error { color: #ef6262; }
+        .pend-form-msg.ok { color: #ffd266; }
+
+        /* ═══════════════════════════════════════════
+           🪢 PENDU : vue plein écran
+           ═══════════════════════════════════════════ */
+        .pend-game {
+            position: fixed; inset: 0;
+            z-index: 60;
+            display: none;
+            flex-direction: column;
+            background:
+                radial-gradient(ellipse at 20% 25%, rgba(140,70,220,0.22) 0%, transparent 55%),
+                radial-gradient(ellipse at 80% 75%, rgba(80,200,220,0.16) 0%, transparent 60%),
+                linear-gradient(180deg, #0a0816 0%, #0f0c1f 50%, #06060a 100%);
+            user-select: none;
+        }
+        .pend-game.open { display: flex; }
+
+        .pend-game-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 22px;
+            border-bottom: 1px solid rgba(255,210,120,0.12);
+        }
+        .pend-game-header-left { display: inline-flex; align-items: center; }
+        .pend-game-mode {
+            margin-left: 12px;
+            padding: 5px 12px;
+            background: linear-gradient(135deg, rgba(180,100,220,0.22), rgba(145,70,255,0.18));
+            border: 1px solid rgba(180,120,255,0.4);
+            border-radius: 999px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+            color: #e2c3ff;
+        }
+
+        .pend-game-body {
+            flex: 1;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 40px;
+            padding: 40px 32px;
+            position: relative;
+        }
+
+        .pend-counter {
+            display: flex; flex-direction: column;
+            align-items: center; gap: 4px;
+        }
+        .pend-counter-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px; letter-spacing: 4px; text-transform: uppercase;
+            color: rgba(212,212,216,0.55);
+        }
+        .pend-counter-num {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 64px; font-weight: 700;
+            color: #fff;
+            text-shadow: 0 0 16px rgba(255,255,255,0.45);
+            line-height: 1;
+            transition: color 0.25s, text-shadow 0.25s;
+            display: inline-block;
+        }
+        .pend-counter-num.danger {
+            color: #ff7a7a;
+            text-shadow: 0 0 22px rgba(239,98,98,0.6);
+        }
+        .pend-counter-num.bump {
+            animation: pendCounterBump 0.5s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        @keyframes pendCounterBump {
+            0%   { transform: scale(1); }
+            40%  { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+
+        .pend-word {
+            display: flex; flex-wrap: wrap;
+            gap: 28px;
+            justify-content: center;
+            max-width: 96vw;
+        }
+        .pend-word-group {
+            display: flex; gap: 10px;
+        }
+        .pend-cell {
+            width: 64px; height: 80px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 38px; font-weight: 700;
+            color: #fff;
+            text-transform: uppercase;
+            padding-bottom: 12px;
+            position: relative;
+        }
+        .pend-cell::after {
+            content: '';
+            position: absolute; left: 6px; right: 6px; bottom: 6px;
+            height: 3px;
+            background: linear-gradient(90deg, rgba(255,210,120,0.5), rgba(180,100,220,0.5));
+            border-radius: 2px;
+            box-shadow: 0 0 10px rgba(255,210,120,0.32);
+            transition: background 0.3s ease, box-shadow 0.3s ease;
+        }
+        .pend-cell.fixed::after {
+            background: linear-gradient(90deg, rgba(255,255,255,0.1), rgba(255,255,255,0.1));
+            box-shadow: none;
+            opacity: 0.35;
+        }
+        .pend-cell.fixed {
+            color: rgba(255,255,255,0.6);
+            font-size: 32px;
+        }
+        .pend-cell.revealed::after {
+            background: linear-gradient(90deg, #22c55e, #4ade80);
+            box-shadow: 0 0 14px rgba(34,197,94,0.55);
+        }
+        .pend-cell.reveal-anim {
+            animation: pendReveal 0.4s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        @keyframes pendReveal {
+            0%   { transform: translateY(14px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        .pend-cell.victory {
+            animation: pendVictoryPulse 0.7s cubic-bezier(0.4,0,0.4,1);
+            text-shadow: 0 0 24px rgba(34,197,94,0.9);
+        }
+        @keyframes pendVictoryPulse {
+            0%   { transform: scale(1); }
+            40%  { transform: scale(1.18); }
+            100% { transform: scale(1); }
+        }
+
+        .pend-controls {
+            display: flex; align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .pend-input {
+            width: 110px;
+            padding: 16px 12px;
+            background: rgba(20,16,36,0.6);
+            border: 1px solid rgba(255,210,120,0.35);
+            border-radius: 14px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 30px; font-weight: 700;
+            color: #fff;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            caret-color: rgba(255,210,120,0.6);
+        }
+        .pend-input::placeholder { color: rgba(255,255,255,0.18); }
+        .pend-input:focus {
+            border-color: rgba(255,210,120,0.8);
+            box-shadow: 0 0 22px rgba(255,210,120,0.32);
+        }
+        .pend-input.shake { animation: pendShake 0.4s cubic-bezier(0.36,0.07,0.19,0.97); }
+        .pend-input.flash-green {
+            animation: pendFlashGreen 0.55s ease;
+        }
+        .pend-input.flash-red {
+            animation: pendFlashRed 0.55s ease;
+        }
+        @keyframes pendFlashGreen {
+            0%, 100% { border-color: rgba(255,210,120,0.35); box-shadow: 0 0 22px rgba(255,210,120,0.32); }
+            40%      { border-color: rgba(34,197,94,0.95);   box-shadow: 0 0 30px rgba(34,197,94,0.6); }
+        }
+        @keyframes pendFlashRed {
+            0%, 100% { border-color: rgba(255,210,120,0.35); box-shadow: 0 0 22px rgba(255,210,120,0.32); }
+            40%      { border-color: rgba(239,98,98,0.95);   box-shadow: 0 0 30px rgba(239,98,98,0.6); }
+        }
+
+        .pend-counter-btns { display: flex; gap: 8px; }
+        .pend-err-btn {
+            padding: 16px 18px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px; font-weight: 600;
+            color: rgba(255,255,255,0.78);
+            letter-spacing: 2px; text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 56px;
+        }
+        .pend-err-btn:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.22);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+        .pend-err-btn:active { transform: translateY(0); }
+        .pend-err-btn.pend-err-plus {
+            background: linear-gradient(135deg, rgba(239,98,98,0.18), rgba(220,80,80,0.12));
+            border-color: rgba(239,98,98,0.4);
+            color: #ffb0b0;
+        }
+        .pend-err-btn.pend-err-plus:hover {
+            background: linear-gradient(135deg, rgba(239,98,98,0.32), rgba(220,80,80,0.22));
+            border-color: rgba(239,98,98,0.7);
+            color: #fff;
+            box-shadow: 0 0 18px rgba(239,98,98,0.32);
+        }
+
+        .pend-used {
+            display: flex; flex-direction: column;
+            align-items: center; gap: 10px;
+            max-width: 720px;
+            min-height: 60px;
+        }
+        .pend-used-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+            color: rgba(212,212,216,0.4);
+        }
+        .pend-used-list {
+            display: flex; flex-wrap: wrap; gap: 6px;
+            justify-content: center;
+        }
+        .pend-used-letter {
+            padding: 5px 11px;
+            border-radius: 7px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px; font-weight: 600;
+            letter-spacing: 1px;
+            border: 1px solid;
+            animation: pendUsedIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        @keyframes pendUsedIn {
+            0%   { opacity: 0; transform: scale(0.5); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .pend-used-letter.good {
+            background: rgba(34,197,94,0.16);
+            border-color: rgba(34,197,94,0.55);
+            color: #86efac;
+        }
+        .pend-used-letter.bad {
+            background: rgba(239,98,98,0.16);
+            border-color: rgba(239,98,98,0.55);
+            color: #ffb0b0;
+        }
+
+        /* ───── Pendu : écran de fin ───── */
+        .pend-end {
+            position: absolute; inset: 0;
+            display: none;
+            flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 22px;
+            background: rgba(6,6,14,0.86);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 3;
+            animation: modalBackdropIn 0.3s ease forwards;
+        }
+        .pend-end.open { display: flex; }
+        .pend-end-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 36px; font-weight: 800;
+            letter-spacing: 8px; text-transform: uppercase;
+            background: linear-gradient(135deg, #fff 0%, #ffd266 60%, #ff9933 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 40px rgba(255,210,120,0.4);
+        }
+        .pend-end-title.loss {
+            background: linear-gradient(135deg, #fff 0%, #ffb0b0 60%, #ef6262 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 40px rgba(239,98,98,0.45);
+        }
+        .pend-end-sub {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 18px;
+            color: rgba(255,255,255,0.78);
+            letter-spacing: 1px;
+            text-align: center;
+            max-width: 80vw;
+        }
+        .pend-end-actions {
+            display: flex; gap: 14px;
+            flex-wrap: wrap; justify-content: center;
+        }
+
+        /* Mobile : tailles réduites */
+        @media (max-width: 768px) {
+            .play-pendu-btn { width: 50px; height: 50px; margin-left: -6px; border-radius: 12px; }
+            .play-pendu-btn svg { width: 28px; height: 28px; }
+            .pend-game-body { gap: 28px; padding: 24px 14px; }
+            .pend-counter-num { font-size: 48px; }
+            .pend-cell { width: 44px; height: 60px; font-size: 26px; padding-bottom: 9px; }
+            .pend-cell.fixed { font-size: 22px; }
+            .pend-word { gap: 18px; }
+            .pend-word-group { gap: 6px; }
+            .pend-input { width: 78px; font-size: 24px; padding: 12px 8px; }
+            .pend-err-btn { padding: 12px 14px; font-size: 11px; min-width: 48px; }
+            .pend-end-title { font-size: 24px; letter-spacing: 5px; }
+            .pend-end-sub { font-size: 15px; }
+        }
     </style>
 </head>
 <body>
@@ -2475,8 +2870,18 @@
             </div>
             <h1 class="hero-title" id="heroTitle">En maintenance</h1>
         </div>
-        <button type="button" class="play-bot-btn" id="playBotBtn" aria-label="Jouer contre le bot" title="Jouer contre le bot">
+        <button type="button" class="play-bot-btn" id="playBotBtn" aria-label="Jouer contre le bot" title="Jouer contre le bot" style="display:none">
             <img src="maintenancebomb.png" alt="" draggable="false">
+        </button>
+        <button type="button" class="play-pendu-btn" id="playPenduBtn" aria-label="Lancer le pendu (code requis)" title="Pendu — code requis">
+            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 28 L20 28"/>
+                <path d="M8 28 L8 4 L22 4 L22 8"/>
+                <circle cx="22" cy="11.5" r="2.8"/>
+                <path d="M22 14.3 L22 22"/>
+                <path d="M18 17 L22 15.5 L26 17"/>
+                <path d="M19 27 L22 22 L25 27"/>
+            </svg>
         </button>
       </div>
         <div class="hero-divider"></div>
@@ -2594,6 +2999,72 @@
             <div class="bb-end-actions">
                 <button class="bb-end-btn primary" type="button" id="bbEndReplay">Rejouer</button>
                 <button class="bb-end-btn secondary" type="button" id="bbEndQuit">Quitter</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🪢 Pendu : modale code d'accès -->
+    <div class="modal-backdrop" id="pendAccessModal" role="dialog" aria-modal="true">
+        <div class="modal-panel" style="max-width:420px;">
+            <button class="modal-close" type="button" data-close-modal>×</button>
+            <div class="modal-title">Pendu</div>
+            <div class="modal-sub">Code d'accès streamer requis</div>
+            <div class="pend-form">
+                <input type="password" class="pend-text-input" id="pendAccessInput" placeholder="Code d'accès" autocomplete="off" spellcheck="false">
+                <div class="pend-form-msg" id="pendAccessError"></div>
+                <button class="bb-start-btn" type="button" id="pendAccessSubmit">Continuer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🪢 Pendu : modale mot à deviner -->
+    <div class="modal-backdrop" id="pendSetupModal" role="dialog" aria-modal="true">
+        <div class="modal-panel" style="max-width:480px;">
+            <button class="modal-close" type="button" data-close-modal>×</button>
+            <div class="modal-title">Pendu</div>
+            <div class="modal-sub">Définis le mot ou la phrase à faire deviner</div>
+            <div class="pend-form">
+                <input type="text" class="pend-text-input" id="pendSetupInput" placeholder="Ex. Naruto" autocomplete="off" spellcheck="false" maxlength="40">
+                <div class="pend-form-msg" id="pendSetupHint">Au moins 1 lettre</div>
+                <button class="bb-start-btn" type="button" id="pendSetupSubmit" disabled>Démarrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🪢 Pendu : vue plein écran -->
+    <div class="pend-game" id="pendGame" aria-hidden="true">
+        <div class="pend-game-header">
+            <div class="pend-game-header-left">
+                <span class="bb-game-title">Shonen<b>Master</b></span>
+                <span class="pend-game-mode">PENDU</span>
+            </div>
+            <button class="bb-game-close" type="button" id="pendGameClose" aria-label="Quitter">×</button>
+        </div>
+        <div class="pend-game-body">
+            <div class="pend-counter">
+                <span class="pend-counter-label">Erreurs</span>
+                <span class="pend-counter-num" id="pendCounterNum">0</span>
+            </div>
+            <div class="pend-word" id="pendWord" aria-live="polite"></div>
+            <div class="pend-controls">
+                <input type="text" class="pend-input" id="pendLetterInput" placeholder="A" autocomplete="off" spellcheck="false" maxlength="1" aria-label="Lettre proposée">
+                <div class="pend-counter-btns">
+                    <button type="button" class="pend-err-btn" id="pendErrMinus" title="Retirer une erreur" aria-label="Retirer une erreur">−</button>
+                    <button type="button" class="pend-err-btn pend-err-plus" id="pendErrPlus" title="Compter une erreur" aria-label="Ajouter une erreur">+1 erreur</button>
+                </div>
+            </div>
+            <div class="pend-used">
+                <span class="pend-used-label">Lettres essayées</span>
+                <div class="pend-used-list" id="pendUsedList"></div>
+            </div>
+        </div>
+        <!-- Écran de fin -->
+        <div class="pend-end" id="pendEnd">
+            <div class="pend-end-title" id="pendEndTitle">—</div>
+            <div class="pend-end-sub" id="pendEndSub"></div>
+            <div class="pend-end-actions">
+                <button class="bb-end-btn primary" type="button" id="pendEndReplay">Nouveau mot</button>
+                <button class="bb-end-btn secondary" type="button" id="pendEndQuit">Quitter</button>
             </div>
         </div>
     </div>
@@ -3788,6 +4259,339 @@
             requestAnimationFrame(tick);
         }
         tick();
+    })();
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🪢 PENDU — mini-jeu streamer (single-player, code d'accès requis)
+    // ═══════════════════════════════════════════════════════════════
+    (function setupPendu() {
+        const ACCESS_CODE = 'shonenm4ster07!';
+
+        const state = {
+            original: [],      // tableau de caractères tels que saisis
+            normalized: [],    // chaque case : lettre majuscule sans accent, espace, ou caractère brut
+            isLetter: [],      // true si la case est une lettre à deviner
+            revealed: [],      // booléen par case
+            tried: [],         // ordre d'arrivée des lettres essayées (pour l'affichage)
+            triedSet: new Set(),
+            good: new Set(),
+            bad: new Set(),
+            errors: 0,
+            finished: false,
+        };
+
+        const $ = (id) => document.getElementById(id);
+        const btn       = $('playPenduBtn');
+        const accessIn  = $('pendAccessInput');
+        const accessBtn = $('pendAccessSubmit');
+        const accessErr = $('pendAccessError');
+        const setupIn   = $('pendSetupInput');
+        const setupBtn  = $('pendSetupSubmit');
+        const setupHint = $('pendSetupHint');
+        const game      = $('pendGame');
+        const gameClose = $('pendGameClose');
+        const wordEl    = $('pendWord');
+        const counter   = $('pendCounterNum');
+        const letterIn  = $('pendLetterInput');
+        const errPlus   = $('pendErrPlus');
+        const errMinus  = $('pendErrMinus');
+        const usedList  = $('pendUsedList');
+        const endEl     = $('pendEnd');
+        const endTitle  = $('pendEndTitle');
+        const endSub    = $('pendEndSub');
+        const endReplay = $('pendEndReplay');
+        const endQuit   = $('pendEndQuit');
+
+        const LETTER_RE = /[a-zA-ZÀ-ÖØ-öø-ÿ]/;
+        const normLetter = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+
+        let unlocked = false;     // une fois le code validé, plus besoin de le redemander cette session
+
+        // ─── Étape 1 : ouverture + code d'accès (ou setup direct si déjà déverrouillé) ───
+        btn.addEventListener('click', () => {
+            if (unlocked) {
+                openSetup();
+                return;
+            }
+            accessIn.value = '';
+            accessErr.textContent = '';
+            accessErr.classList.remove('error', 'ok');
+            openModal('pendAccessModal');
+            setTimeout(() => accessIn.focus(), 60);
+        });
+
+        function trySubmitAccess() {
+            if (accessIn.value === ACCESS_CODE) {
+                accessErr.textContent = '';
+                unlocked = true;
+                closeModal('pendAccessModal');
+                openSetup();
+            } else {
+                accessErr.textContent = 'Code incorrect.';
+                accessErr.classList.add('error');
+                accessIn.classList.remove('shake');
+                void accessIn.offsetWidth;
+                accessIn.classList.add('shake');
+                accessIn.select();
+            }
+        }
+        accessBtn.addEventListener('click', trySubmitAccess);
+        accessIn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); trySubmitAccess(); }
+        });
+
+        // ─── Étape 2 : saisie du mot ───
+        function openSetup() {
+            setupIn.value = '';
+            setupBtn.disabled = true;
+            setupHint.textContent = 'Au moins 1 lettre';
+            setupHint.classList.remove('ok', 'error');
+            openModal('pendSetupModal');
+            setTimeout(() => setupIn.focus(), 60);
+        }
+        function refreshSetupValidity() {
+            const v = setupIn.value || '';
+            const letters = (v.match(/[a-zA-ZÀ-ÖØ-öø-ÿ]/g) || []).length;
+            if (letters >= 1) {
+                setupBtn.disabled = false;
+                setupHint.textContent = letters + ' lettre' + (letters > 1 ? 's' : '') + ' à deviner';
+                setupHint.classList.add('ok');
+                setupHint.classList.remove('error');
+            } else {
+                setupBtn.disabled = true;
+                setupHint.textContent = 'Au moins 1 lettre';
+                setupHint.classList.remove('ok', 'error');
+            }
+        }
+        setupIn.addEventListener('input', refreshSetupValidity);
+        setupIn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !setupBtn.disabled) { e.preventDefault(); startGame(); }
+        });
+        setupBtn.addEventListener('click', startGame);
+
+        // ─── Étape 3 : démarrage du jeu ───
+        function startGame() {
+            const raw = (setupIn.value || '').trim();
+            if (!raw) return;
+
+            state.original = [];
+            state.normalized = [];
+            state.isLetter = [];
+            state.revealed = [];
+            for (const ch of raw) {
+                const isLet = LETTER_RE.test(ch);
+                const isSpace = /\s/.test(ch);
+                state.original.push(ch);
+                state.normalized.push(isLet ? normLetter(ch) : (isSpace ? ' ' : ch));
+                state.isLetter.push(isLet);
+                // Tout sauf les lettres est révélé d'office (chiffres, ponctuation, etc.)
+                state.revealed.push(!isLet);
+            }
+            state.tried = [];
+            state.triedSet = new Set();
+            state.good = new Set();
+            state.bad = new Set();
+            state.errors = 0;
+            state.finished = false;
+
+            closeModal('pendSetupModal');
+            renderWord();
+            renderCounter(false);
+            renderUsed();
+            endEl.classList.remove('open');
+            game.classList.add('open');
+            game.setAttribute('aria-hidden', 'false');
+            setTimeout(() => letterIn.focus(), 80);
+        }
+
+        // ─── Rendu : mot ───
+        function renderWord() {
+            wordEl.innerHTML = '';
+            let group = null;
+            state.original.forEach((ch, i) => {
+                if (state.normalized[i] === ' ') {
+                    group = null;
+                    return;
+                }
+                if (!group) {
+                    group = document.createElement('div');
+                    group.className = 'pend-word-group';
+                    wordEl.appendChild(group);
+                }
+                const cell = document.createElement('div');
+                cell.className = 'pend-cell';
+                cell.dataset.idx = i;
+                if (!state.isLetter[i]) {
+                    // Caractère non-lettre affiché tout le temps, plus discret
+                    cell.classList.add('fixed');
+                    cell.textContent = state.original[i];
+                } else if (state.revealed[i]) {
+                    cell.textContent = state.original[i];
+                    cell.classList.add('revealed');
+                }
+                group.appendChild(cell);
+            });
+        }
+
+        function revealLetter(letter) {
+            let revealedAny = false;
+            state.normalized.forEach((n, i) => {
+                if (state.isLetter[i] && n === letter && !state.revealed[i]) {
+                    state.revealed[i] = true;
+                    revealedAny = true;
+                    const cell = wordEl.querySelector('.pend-cell[data-idx="' + i + '"]');
+                    if (cell) {
+                        cell.textContent = state.original[i];
+                        cell.classList.add('revealed', 'reveal-anim');
+                        setTimeout(() => cell.classList.remove('reveal-anim'), 450);
+                    }
+                }
+            });
+            return revealedAny;
+        }
+
+        // ─── Rendu : compteur ───
+        function renderCounter(animate) {
+            counter.textContent = state.errors;
+            counter.classList.toggle('danger', state.errors > 0);
+            if (animate) {
+                counter.classList.remove('bump');
+                void counter.offsetWidth;
+                counter.classList.add('bump');
+            }
+        }
+
+        // ─── Rendu : lettres essayées ───
+        function renderUsed() {
+            usedList.innerHTML = '';
+            state.tried.forEach((l) => {
+                const el = document.createElement('span');
+                el.className = 'pend-used-letter ' + (state.good.has(l) ? 'good' : 'bad');
+                el.textContent = l;
+                usedList.appendChild(el);
+            });
+        }
+
+        // ─── Victoire ───
+        function checkWin() {
+            // On gagne quand toutes les CASES LETTRES sont révélées
+            const allDone = state.isLetter.every((isL, i) => !isL || state.revealed[i]);
+            if (!allDone || state.finished) return;
+            state.finished = true;
+            // Pulse séquentiel sur les cells
+            const cells = wordEl.querySelectorAll('.pend-cell:not(.fixed)');
+            cells.forEach((c, idx) => {
+                setTimeout(() => {
+                    c.classList.remove('victory');
+                    void c.offsetWidth;
+                    c.classList.add('victory');
+                }, idx * 55);
+            });
+            setTimeout(() => {
+                endTitle.textContent = 'Gagné';
+                endTitle.classList.remove('loss');
+                endSub.textContent = state.errors === 0
+                    ? 'Mot trouvé sans aucune erreur.'
+                    : 'Mot trouvé en ' + state.errors + ' erreur' + (state.errors > 1 ? 's' : '') + '.';
+                endEl.classList.add('open');
+            }, cells.length * 55 + 500);
+        }
+
+        // ─── Saisie d'une lettre ───
+        function flashInput(cls) {
+            letterIn.classList.remove('flash-green', 'flash-red', 'shake');
+            void letterIn.offsetWidth;
+            letterIn.classList.add(cls);
+        }
+
+        function handleLetter(rawLetter) {
+            if (state.finished) return;
+            const letter = normLetter(rawLetter);
+            if (!letter || !/^[A-Z]$/.test(letter)) {
+                flashInput('shake');
+                return;
+            }
+            if (state.triedSet.has(letter)) {
+                flashInput('shake');
+                return;
+            }
+            state.triedSet.add(letter);
+            state.tried.push(letter);
+            const found = revealLetter(letter);
+            if (found) {
+                state.good.add(letter);
+                flashInput('flash-green');
+            } else {
+                state.bad.add(letter);
+                state.errors++;
+                flashInput('flash-red');
+                renderCounter(true);
+            }
+            renderUsed();
+            checkWin();
+        }
+
+        // Auto-submit dès qu'un caractère est saisi
+        letterIn.addEventListener('input', () => {
+            const v = letterIn.value;
+            if (!v) return;
+            const ch = v.charAt(0);
+            letterIn.value = '';
+            handleLetter(ch);
+        });
+        letterIn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') e.preventDefault();
+        });
+
+        // ─── Boutons erreur manuels ───
+        errPlus.addEventListener('click', () => {
+            if (state.finished) return;
+            state.errors++;
+            renderCounter(true);
+            letterIn.focus();
+        });
+        errMinus.addEventListener('click', () => {
+            if (state.finished) return;
+            if (state.errors > 0) {
+                state.errors--;
+                renderCounter(true);
+            }
+            letterIn.focus();
+        });
+
+        // ─── Capture clavier global pendant le jeu (redirige les lettres vers l'input) ───
+        document.addEventListener('keydown', (e) => {
+            if (!game.classList.contains('open')) return;
+            if (state.finished) return;
+            if (e.target === letterIn) return;
+            // Ignorer si focus dans un autre input (ex: une modale ouverte par-dessus)
+            const tgt = e.target;
+            if (tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.isContentEditable)) return;
+            if (e.key === 'Escape' || e.key === 'Backspace' || e.ctrlKey || e.metaKey || e.altKey) return;
+            if (LETTER_RE.test(e.key) && e.key.length === 1) {
+                handleLetter(e.key);
+                e.preventDefault();
+            }
+        });
+
+        // ─── Fermeture ───
+        function closeGame() {
+            game.classList.remove('open');
+            game.setAttribute('aria-hidden', 'true');
+            endEl.classList.remove('open');
+        }
+        gameClose.addEventListener('click', closeGame);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && game.classList.contains('open')) closeGame();
+        });
+
+        // ─── Fin de partie ───
+        endReplay.addEventListener('click', () => {
+            endEl.classList.remove('open');
+            closeGame();
+            openSetup();
+        });
+        endQuit.addEventListener('click', closeGame);
     })();
     </script>
 
