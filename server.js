@@ -4,173 +4,11 @@
 
 require('dotenv').config();
 const express = require('express');
-const session = require('express-session');
 const { Server } = require('socket.io');
-const axios = require('axios');
-const { db, supabase, SERIES_FILTERS, getFilterSeries, COIN_REWARDS, XP_REWARDS, calculateLevel } = require('./dbs');
-const { 
-    POLL_DATA, POLL_CONFIG, createPollState, startPollGame, startCurrentMatch,
-    registerVote, endCurrentVote, nextMatch, endPollGame,
-    getPollStateForClient, resetPollState, getPollCategories, 
-    getValidBracketSizes, getCharactersForCategory, resolveTie
-} = require('./server-poll');
-const {
-    createAscensionState, startAscensionGame, resetAscensionState,
-    registerAscensionSocketHandlers, getAscensionStateForClient,
-} = require('./server-ascension');
+const { db, supabase, SERIES_FILTERS, getFilterSeries } = require('./dbs');
 
 const app = express();
 const PORT = process.env.PORT || 7000;
-
-const MIN_PLAYERS_FOR_STATS = 1; // ⚠️ TEMPORAIRE POUR TEST (remettre à 15)
-const MIN_PLAYERS_FOR_TEAM_STATS = 1; // ⚠️ TEMPORAIRE POUR TEST (remettre à 20)
-const MIN_PLAYERS_LIMITED_MODES = 1; // ⚠️ TEMPORAIRE POUR TEST (remettre à 5)
-
-function getMinPlayersForStats(lobbyMode) {
-    const limitedModes = ['bombanime', 'collect', 'trace', 'survie'];
-    return limitedModes.includes(lobbyMode) ? MIN_PLAYERS_LIMITED_MODES : MIN_PLAYERS_FOR_STATS;
-}
-
-// ============================================
-// REWARD ANIMATION HELPERS
-// ============================================
-async function getPreRewardData(players) {
-    const preData = {};
-    for (const p of players) {
-        try {
-            const user = await db.getUserByTwitchId(p.twitchId);
-            if (user) {
-                preData[p.twitchId] = {
-                    xp: user.xp || 0,
-                    coins: user.coins || 0,
-                    levelData: calculateLevel(user.xp || 0)
-                };
-            }
-        } catch(e) { /* silent */ }
-    }
-    return preData;
-}
-
-function buildRewardSummary(preData, coinRewards, xpRewards) {
-    const rewards = {};
-    for (const twitchId of Object.keys(preData)) {
-        const pre = preData[twitchId];
-        const xpGained = xpRewards[twitchId]?.amount || 0;
-        const coinsGained = coinRewards[twitchId]?.amount || 0;
-        const newTotalXp = pre.xp + xpGained;
-        const newLevelData = calculateLevel(newTotalXp);
-        rewards[twitchId] = {
-            xpGained,
-            coinsGained,
-            levelBefore: pre.levelData.level,
-            levelAfter: newLevelData.level,
-            xpInLevel: pre.levelData.currentXp,
-            xpForNextLevel: pre.levelData.xpForNextLevel,
-            newXpInLevel: newLevelData.currentXp,
-            newXpForNextLevel: newLevelData.xpForNextLevel,
-            coinsBefore: pre.coins,
-            coinsAfter: pre.coins + coinsGained,
-            leveledUp: newLevelData.level > pre.levelData.level
-        };
-    }
-    return rewards;
-}
-
-// Version qui calcule les rewards AVANT distribution (pour modes rivalry post-emit)
-function computeExpectedRewards(preData, sortedPlayers) {
-    const rewards = {};
-    for (let i = 0; i < sortedPlayers.length; i++) {
-        const p = sortedPlayers[i];
-        const pre = preData[p.twitchId];
-        if (!pre) continue;
-        let xpGained = XP_REWARDS.PARTICIPATE;
-        let coinsGained = COIN_REWARDS.PARTICIPATE;
-        if (i === 0) { xpGained = XP_REWARDS.WIN; coinsGained = COIN_REWARDS.WIN; }
-        else if (i === 1) { xpGained = XP_REWARDS.TOP_2; coinsGained = COIN_REWARDS.TOP_2; }
-        else if (i === 2) { xpGained = XP_REWARDS.TOP_3; coinsGained = COIN_REWARDS.TOP_3; }
-        const newTotalXp = pre.xp + xpGained;
-        const newLevelData = calculateLevel(newTotalXp);
-        rewards[p.twitchId] = {
-            xpGained, coinsGained,
-            levelBefore: pre.levelData.level,
-            levelAfter: newLevelData.level,
-            xpInLevel: pre.levelData.currentXp,
-            xpForNextLevel: pre.levelData.xpForNextLevel,
-            newXpInLevel: newLevelData.currentXp,
-            newXpForNextLevel: newLevelData.xpForNextLevel,
-            coinsBefore: pre.coins,
-            coinsAfter: pre.coins + coinsGained,
-            leveledUp: newLevelData.level > pre.levelData.level
-        };
-    }
-    return rewards;
-}
-
-// ═══ Mode ASCENSION : rewards + stats à la fin de partie ═══
-function handleAscensionGameEndRewards(podium, winner) {
-    const sortedPlayers = (podium || []).map(p => ({
-        twitchId: p.twitchId,
-        username: p.username,
-    }));
-    if (sortedPlayers.length === 0) return;
-
-    const gameId = gameState.currentGameId;
-    const startTime = gameState.gameStartTime || Date.now();
-    const duration = Math.floor((Date.now() - startTime) / 1000);
-    const initialCount = gameState.initialPlayerCount || sortedPlayers.length;
-    const minPlayers = getMinPlayersForStats('ascension');
-
-    // 🎁 Rewards (XP / S-Coins) en arrière-plan
-    (async () => {
-        try {
-            let preRewardData = {};
-            try {
-                preRewardData = await getPreRewardData(sortedPlayers);
-            } catch (e) { console.error('⚠️ Pre-reward error (ascension):', e.message); }
-
-            const coinRewards = await db.distributeGameCoins(sortedPlayers, sortedPlayers.length);
-            const xpRewards = await db.distributeGameXp(sortedPlayers, sortedPlayers.length);
-
-            let rewardsData = null;
-            try {
-                rewardsData = buildRewardSummary(preRewardData, coinRewards, xpRewards);
-            } catch (e) { console.error('⚠️ Reward summary error (ascension):', e.message); }
-
-            io.emit('ascension-rewards-ready', { rewardsData });
-        } catch (rewardError) {
-            console.error('⚠️ Erreur rewards Ascension (non bloquante):', rewardError.message);
-        }
-    })();
-
-    // 📊 Stats + historique
-    (async () => {
-        try {
-            if (winner && gameId) {
-                try { await db.endGame(gameId, winner.twitchId, sortedPlayers.length, duration); }
-                catch (e) { console.error('endGame error (ascension):', e.message); }
-            }
-
-            if (initialCount >= minPlayers) {
-                for (let i = 0; i < sortedPlayers.length; i++) {
-                    const p = sortedPlayers[i];
-                    try { await db.updateUserStats(p.twitchId, i === 0, i + 1); }
-                    catch (e) { console.error('updateUserStats error (ascension):', e.message); }
-                }
-                console.log(`📊 Stats Ascension mises à jour (${sortedPlayers.length} joueurs)`);
-            } else {
-                console.log(`⚠️ Stats Ascension NON comptabilisées (${initialCount} < ${minPlayers} joueurs [ascension])`);
-            }
-
-            for (let i = 0; i < sortedPlayers.length; i++) {
-                const p = sortedPlayers[i];
-                try { await db.addPlayerGame(gameId, p.twitchId, 'ascension', i + 1, i === 0); }
-                catch (e) { console.error('Track player error (ascension):', e.message); }
-            }
-        } catch (dbError) {
-            console.error('⚠️ Erreur DB Ascension (non bloquante):', dbError.message);
-        }
-    })();
-}
 
 let lastRefreshPlayersTime = 0;
 const REFRESH_COOLDOWN_MS = 20000;
@@ -274,1022 +112,6 @@ const BOMBANIME_CONFIG = {
     ALPHABET_BONUS_LIVES: 1
 };
 
-// 🎴 Configuration Collect
-const COLLECT_CONFIG = {
-    MIN_PLAYERS: 2,
-    MAX_PLAYERS: 5,
-    STARS_TO_WIN: 3
-};
-
-// 🎮 Configuration Survie
-const SURVIE_CONFIG = {
-    MIN_PLAYERS: 2,
-    MAX_PLAYERS: 50,
-    DEFAULT_TIMER: 30
-};
-
-// 🎮 Personnages du mode Survie
-const SURVIE_CHARACTERS = [
-    { id: 'erza', name: 'Erza', imageUrl: 'erza_trace.png', size: 120,
-        defaultDialogues: ["Si tu veux me tenir compagnie n'hésite pas , j'ai besoin d'un partenaire d'entraînement.", "Tu veux un morceau de fraisier ? ...Non ? Tant mieux, je n'avais pas l'intention de partager.", "Dis , tu pourrais me dire comment tu trouves ma nouvelle armure ? Je ne la trouve pas très efficace..."], questDialogues: {} },
-    { id: 'denji', name: 'Denji', imageUrl: 'denji_trace.png', size: 120,
-        defaultDialogues: ["Hé, t'aurais pas une copine à me présenter ?", "Pourquoi j'ai jamais de chance avec les filles...", "ELLE EST OÙ ?! ...Ah Salut mec , j'tavais pas vu désolé."], questDialogues: {} },
-    { id: 'ban', name: 'Ban', imageUrl: 'ban_trace.png', size: 120,
-        defaultDialogues: ["Ahhh je cherche quelqu'un d'intéressant. Dis , t'es intéressant toi ?", "Salut , tu veux me tenir compagnie ? J'espère que tu tiens bien la bière.", "Laisse moi dormir mon pote !"], questDialogues: {} },
-    { id: 'toji', name: 'Toji', imageUrl: 'toji_trace.png', size: 120,
-        defaultDialogues: ["Les exorcistes me font rire. Tout ce pouvoir et ils ne savent même pas se battre.", "Hé toi , t'as misé sur qui ? Dis le moi.", "Mon fils ? Changeons de sujet."], questDialogues: {} },
-    { id: 'minato', name: 'Minato', imageUrl: 'minato_trace.png', size: 120,
-        defaultDialogues: ["Oh tu as entendu de parler de moi ? Merci ca me flatte hahaha.", "Quand tu as quelqu'un à protéger , tu as tendance à agir sans reflechir alors fais attention ! ", "On me surnomme l'éclair jaune et toi ?"], questDialogues: {} },
-    { id: 'ulquiorra', name: 'Ulquiorra', imageUrl: 'ulquiorra_trace.png', size: 120,
-        defaultDialogues: ["Humain , a quoi penses-tu ?", "Tout se passera selon ses ordres.", "Tu es insignifiant. ...Ce n'est pas une insulte, c'est un fait."], questDialogues: {} },
-    { id: 'tsunade', name: 'Tsunade', imageUrl: 'tsunade_trace.png', size: 120,
-        defaultDialogues: ["Si tu es blessé, viens me voir. Sinon, ne me dérange pas, j'ai du sake à finir.", "Hé toi , ne dis pas a personne que tu m'as vu entrée dans ce casino !", "C'est beau la jeunesse."], questDialogues: {} },
-    { id: 'naruto', name: 'Naruto', imageUrl: 'naruto_trace.png', size: 120,
-        defaultDialogues: ["Salut ! T'es pas d'ici ?", "J'ai enfin pu réaliser mon rêve , j'espère que ce sera le cas pour toi aussi !", "Je connais un bon restaurant donc n'hésite pas à passer me voir à l'occasion."], questDialogues: {} },
-    { id: 'luffy', name: 'Luffy', imageUrl: 'luffy_trace.png', size: 120,
-        defaultDialogues: ["Dis toi , tu sais qui deviendras le roi des pirates ? Tu sais c'est qui ?? Hein tu sais c'est qui ??? C'est moiiiiii.", "T'as l'air drôle toi ! Rejoins mon équipage ! Allez !!!", "J'ai faim.............."], questDialogues: {} },
-    { id: 'ichigo', name: 'Ichigo', imageUrl: 'ichigo_trace.png', size: 120,
-        defaultDialogues: ["Salut , tu cherches quelque chose ?", "Désole , je suis un peu occupé , on se parle plus tard.", "Si t'as besoin de quelque chose , n'hésite pas !"], questDialogues: {} },
-    { id: 'mikasa', name: 'Mikasa', imageUrl: 'mikasa_trace.png', size: 120,
-        defaultDialogues: ["Dis , tu l'as vu ? Où est-il ? Je sens son odeur sur toi , tu l'as rencontré ?", "Je dois le retrouver...", "Toi , va te mettre à l'abri , on ne sait jamais."], questDialogues: {} },
-    { id: 'rengoku', name: 'Rengoku', imageUrl: 'rengoku_trace.png', size: 120,
-        defaultDialogues: ["DÉLICIEUX !! .. Pardon , je ne t'avais pas vu , que puis-je faire pour toi hahaha ?", "Efforce toi d'être toujours dynamique et la vie sera plus belle hahaha.", "Enflamme ton coeur ! Si tu avances avec détermination, rien ne pourra t'arrêter !"], questDialogues: {} },
-    { id: 'killua', name: 'Killua', imageUrl: 'killua_trace.png', size: 120,
-        defaultDialogues: ["Toi , t'as l'air faible... J'mennuiiiiiiiiiiie trop.", "Dis , tu sais jouer au YoYo ? Regarde ça !", "Hé toi , évite de me bousculer si tu tiens a la vie , juste un conseil."], questDialogues: {} },
-    { id: 'shoto', name: 'Shoto', imageUrl: 'shoto_trace.png', size: 120,
-        defaultDialogues: ["Tu as déjà goûté du soba froid ? Non ? Tu rates ta vie.", "Salut... De quoi veux-tu parler ?", "Tu sais , la famille c'est important , j'en ai enfin pris conscience..."], questDialogues: {} },
-    { id: 'frieren', name: 'Frieren', imageUrl: 'frieren_trace.png', size: 120,
-        defaultDialogues: ["Salut , saurais-tu où je pourrais trouver un grimoire ?", "Ah, un humain. Dans cent ans tu ne seras plus là... Désolée, c'était impoli ?", "Désolé , je ne suis pas du coin , je suis voyageur moi aussi."], questDialogues: {} },
-    { id: 'tsuna', name: 'Tsuna', imageUrl: 'tsuna_trace.png', size: 120,
-        defaultDialogues: ["HIII ! Tu m'as fait peur ! ...Désolé, je suis un peu nerveux en ce moment.", "Je vais le faire ! Je peux le faire pour mes amis , je ne reculerai plus !", "J'ai encore eu une mauvaise note , ma mère va me tuer..."], questDialogues: {} },
-    { id: 'zoro', name: 'Zoro', imageUrl: 'zoro_trace.png', size: 120,
-        defaultDialogues: ["Purée je suis où là... Dis toi , tu sais où on est ?" , "Hé touche pas a mon sabre , tu vas le regretter." , "Si t'as de la bière , je prends."], questDialogues: {} },
-    { id: 'goku', name: 'Goku', imageUrl: 'goku_trace.png', size: 120,
-        defaultDialogues: ["Hé toi , ca te dit de me servir de partenaire ? T'as l'air costaud. ", "Ma femme va encore me tuer si je rentre en retard... Bon, je me dépêche !", "La Terre est enfin paisible... Ou presque , j'entends des missiles..."], questDialogues: {} },
-    { id: 'gohan', name: 'Gohan', imageUrl: 'gohan_trace.png', size: 120,
-        defaultDialogues: ["Oh salut , tu as besoin de quelque chose ?", "Plus tard je veux être un grand scientifique et toi , c'est quoi ton rêve ?", "Quelques fois j'ai peur de moi-même..."], questDialogues: {} },
-    { id: 'rem', name: 'Rem', imageUrl: 'rem_trace.png', size: 120,
-        defaultDialogues: ["Tu as l'air fatigué. Rem peut te préparer quelque chose si tu veux ?", "Tu me regardes bizarrement... Tu ne confonds pas Rem avec sa sœur, quand même ?", "Rem est là pour toi !"], questDialogues: {} },
-    { id: 'robin', name: 'Robin', imageUrl: 'robin_trace.png', size: 120,
-        defaultDialogues: ["Tu es vraiment quelqu'un d'intéressant. J'aimerais en savoir plus sur toi.", "Tu veux savoir comment tu vas mourir ? ...Je plaisante. Peut-être.", "Es-tu la réincarnation d'un squelette antique ?"], questDialogues: {} },
-    { id: 'thorfinn', name: 'Thorfinn', imageUrl: 'thorfinn_trace.png', size: 120,
-        defaultDialogues: ["Quoi ? T'as un problème ?", "Dégage de mon chemin , j'ai un compte à régler.", "Si tu ne veux pas avoir d'ennuis , passe ton chemin."], questDialogues: {} },
-    { id: 'itachi', name: 'Itachi', imageUrl: 'itachi_trace.png', size: 120,
-        defaultDialogues: ["Toi , tes yeux reflètent quelque chose de profond.", "Tu ne sais rien de moi. Et crois-moi... c'est mieux ainsi.", "La prochaine fois que tu croiseras mon regard... détourne les yeux."], questDialogues: {} },
-    { id: 'yor', name: 'Yor', imageUrl: 'yor_trace.png', size: 120,
-        defaultDialogues: ["Oh mon dieu , j'ai oubliée de préparer le dîner...", "Tu veux goûter ma cuisine ?", "Moi ? Je suis juste une fonctionnaire ! Enchanté."], questDialogues: {} },
-    { id: 'loid', name: 'Loid', imageUrl: 'loid_trace.png', size: 120,
-        defaultDialogues: ["Enchanté. Je suis psychiatre... Enfin , c'est ce que dit ma carte de visite.", "Ma famille est un peu... particulière. Mais je ne l'échangerais pour rien au monde.", "Tu as l'air tendu. Un conseil : souris toujours , même quand tout s'effondre."], questDialogues: {} },
-    { id: 'gojo', name: 'Gojo', imageUrl: 'gojo_trace.png', size: 120,
-        defaultDialogues: ["Toi , tu es.. spécial.", "Aaaaaaaaaah j'ai envie de faire une sieste , pas toi ?", "Hé toi , tu veux devenir ecorciste ?"], questDialogues: {} },
-    { id: 'jotaro', name: 'Jotaro', imageUrl: 'jotaro_trace.png', size: 120,
-        defaultDialogues: ["Encore un coup de ce vieux débris, je ne pourrai donc jamais être tranquille...", "... T'es encore là toi ?", "Pourquoi tu me fixes ?"], questDialogues: {} },
-    { id: 'saitama', name: 'Saitama', imageUrl: 'saitama_trace.png', size: 120,
-        defaultDialogues: ["Mec , tu peux pas me remplacer a ma réunion ? Allez sois sympa...", "L'ennui c'es pas cool , t'es pas d'accord ?", "Je sais pas quoi manger ce soir , t'as une idée ?"], questDialogues: {} },
-    { id: 'seiya', name: 'Seiya', imageUrl: 'seiya_trace.png', size: 120,
-        defaultDialogues: ["Fais exploser ton cosmos !", "Tant qu'il me restera un souffle de vie, je me relèverai. Retiens ça et prends en de la graine..", "Désolé mais j'ai pas de temps à perdre , je suis pressé !"], questDialogues: {} },
-    { id: 'saber', name: 'Saber', imageUrl: 'saber_trace.png', size: 120,
-        defaultDialogues: ["Je suis le Servant Saber. Identifie-toi... Es-tu mon Master ?", "Il n'y aurait pas un bon restaurant dans le coin ? ...C'est pour un ami.", "Ne te méprends pas, je ne suis pas une demoiselle en détresse. Je suis le roi."], questDialogues: {} },
-    { id: 'eren', name: 'Eren', imageUrl: 'eren_trace.png', size: 120,
-        defaultDialogues: ["Je les éliminerai tous. Jusqu'au dernier... Oh, je parle des titans, évidemment.", "Dis , t'as déjà vu la mer ?", "La liberté... Tu sais ce que c'est, toi ? Moi je suis prêt à tout pour elle."], questDialogues: {} },
-    { id: 'madara', name: 'Madara', imageUrl: 'madara_trace.png', size: 120,
-        defaultDialogues: ["Toi aussi , tu veux danser ? Fais en sorte que ta dance dure au moins 1 minute.", "Ce monde n'est qu'illusion. Mais toi... tu es réel, non ?", "Ne m'adresse pas la parole."], questDialogues: {} },
-    { id: 'vegeta', name: 'Vegeta', imageUrl: 'vegeta_trace.png', size: 120,
-        defaultDialogues: ["Qui je suis ? Comment oses-tu l'ignorer ? Je suis le Prince , le plus grand de tous.", "Mh tu ne m'intéresses pas , c'est lui que je veux.", "Qu'est-ce que tu regardes petit insecte ?"], questDialogues: {} },
-    { id: 'makima', name: 'Makima', imageUrl: 'makima_trace.png', size: 120,
-        defaultDialogues: ["Assis.", "Mh , tu sembles être quelqu'un d'intéressant...", "Tu es libre pour aller au cinéma avec moi demain ?"], questDialogues: {} },
-    { id: 'cc', name: 'CC', imageUrl: 'cc_trace.png', size: 120,
-        defaultDialogues: ["Tu aimes les pizzas toi aussi ?", "Toi , tu as un avenir tragique qui t'attend.", "Tu veux passer un contrat avec moi ? ...Réfléchis bien avant de répondre."], questDialogues: {} },
-    { id: 'light', name: 'Light', imageUrl: 'light_trace.png', size: 120,
-        defaultDialogues: ["Vous subirez tous le jugement suprême.", "Hé toi , tu t'appelles comment ? Juste pour savoir.", "Le monde a besoin d'ordre. Mais ça, tu ne peux pas encore le comprendre."], questDialogues: {} },
-    { id: 'gintoki', name: 'Gintoki', imageUrl: 'gintoki_trace.png', size: 120,
-        defaultDialogues: ["T'as vraiment une tête à faire peur toi...", "T'as pas du boulot à me filer ? J'suis un peu fauché là..", "Hé touche pas à mon parfait au chocolat !"  , "Pourquoi je tombe que sur des fous aujourd'hui..."], questDialogues: {} },
-    { id: 'boruto', name: 'Boruto', imageUrl: 'boruto_trace.png', size: 120,
-        defaultDialogues: ["Arrrrh je ne suis pas juste le fils de mon père !", "Hé toi ! T'es nouveau ici ? Moi c'est Boruto, retiens bien ce nom !", "Tu veux voir mes nouvelles techniques ?"], questDialogues: {} },
-    { id: 'sasuke', name: 'Sasuke', imageUrl: 'sasuke_trace.png', size: 120,
-        defaultDialogues: ["Hmph, je n'ai rien à te dire.", "Encore un peu , j'y suis presque , j'accomplirai mon objectif sans faute...", "Dégage."], questDialogues: {} },
-    { id: 'usopp', name: 'Usopp', imageUrl: 'usopp_trace.png', size: 120,
-        defaultDialogues: ["Misère , pourquoi il n'y a que des brutes par ici ?", "Hé toi fais gaffe hein , j'ai une armée derrière moi !", "Olala j'ai le cafard..."], questDialogues: {} },
-    { id: 'nami', name: 'Nami', imageUrl: 'nami_trace.png', size: 120,
-        defaultDialogues: ["Salut toi ! Tu n'aurais pas un peu d'argent à me prêter ? Je te les rendrai, promis, hihi.", "Je sais que je suis belle mais c'est pas une raison pour me regarder comme ça !", "Dis , tu penses quoi de ma nouvelle tenue ? Elle est mignonne hein ? Avoue !"], questDialogues: {} },
-    { id: 'kakashi', name: 'Kakashi', imageUrl: 'kakashi_trace.png', size: 120,
-        defaultDialogues: ["Yo. Désolé du retard , un chat noir m'a barré la route et j'ai dû faire un détour.", "Tu veux un conseil ? Ceux qui abandonnent leurs amis sont pires que des ordures.", "Hmm ? Mon masque ? Ah , c'est une longue histoire... que je ne te raconterai pas."], questDialogues: {} },
-    { id: 'dio', name: 'Dio', imageUrl: 'dio_trace.png', size: 120,
-        defaultDialogues: ["**KONO DIO DA** !! Tu ne t'attendais pas à me voir , n'est-ce pas ?", "Tu croyais que ton premier interlocuteur serait un PNJ lambda ? Mais c'était moi , DIO !", "Le monde m'appartient. Toi aussi d'ailleurs. Approche."], questDialogues: {} },
-    { id: 'ram', name: 'Ram', imageUrl: 'ram_trace.png', size: 120,
-        defaultDialogues: ["Qu'est-ce que tu veux ? Ram est occupée.", "Si tu cherches ma sœur , elle est quelque part par là. Ne me dérange pas pour ça.", "Cet idiot ferait mieux de ne pas traîner dans le coin... Toi non plus d'ailleurs."], questDialogues: {} },
-    { id: 'edward', name: 'Edward', imageUrl: 'edward_trace.png', size: 120,
-        defaultDialogues: ["QUI EST-CE QUE TU TRAITES DE MINUS ?! ...Ah , t'as rien dit ? Pardon.", "L'alchimie c'est la science de la compréhension , de la décomposition et de la reconstruction.", "Un conseil : ne tente jamais de transmutation humaine. Crois-moi."], questDialogues: {} },
-    { id: 'lelouch', name: 'Lelouch', imageUrl: 'lelouch_trace.png', size: 120,
-        defaultDialogues: ["Si le roi ne bouge pas , ses sujets ne le suivront pas.", "Tu veux changer le monde ? Moi aussi. Mais es-tu prêt à en payer le prix ?", "Les échecs m'ont appris une chose : il faut toujours sacrifier des pièces pour gagner."], questDialogues: {} },
-    { id: 'levi', name: 'Levi', imageUrl: 'levi_trace.png', size: 120,
-        defaultDialogues: ["Tch. C'est sale ici. Tu pourrais au moins nettoyer avant de me parler.", "Choisis. Pas de regrets. Quel que soit ton choix , avance.", "Je suis le soldat le plus fort de l'humanité. Pas le plus aimable."], questDialogues: {} },
-    { id: 'kaneki', name: 'Kaneki', imageUrl: 'kaneki_trace.png', size: 120,
-        defaultDialogues: ["Je ne suis ni humain ni goule... Je suis les deux à la fois.", "Tu sais ce qui fait le plus mal ? C'est d'être seul.", "1000 moins 7... 993... 986... Pardon , une mauvaise habitude."], questDialogues: {} },
-    { id: 'asta', name: 'Asta', imageUrl: 'asta_trace.png', size: 120,
-        defaultDialogues: ["JE VAIS DEVENIR LE ROI DES SORCIERS !!! ...Pourquoi tu recules ?", "J'ai pas de magie mais j'ai mes bras , mes jambes et ma détermination !", "Abandonne ? Ce mot n'existe pas dans mon vocabulaire ! AAAAAAH !"], questDialogues: {} },
-    { id: 'tanjiro', name: 'Tanjiro', imageUrl: 'tanjiro_trace.png', size: 120,
-        defaultDialogues: ["Bonjour ! Tu as l'air d'être quelqu'un de bien , je le sens.", "Ma famille... je ferai tout pour protéger ceux qui me sont chers.", "Tu sens cette odeur ? C'est l'odeur de la gentillesse. Elle vient de toi."], questDialogues: {} },
-    { id: 'sanji', name: 'Sanji', imageUrl: 'sanji_trace.png', size: 120,
-        defaultDialogues: ["MELLORINE !! ...Ah pardon , je croyais que t'étais une fille. Dégage.", "La cuisine c'est de l'amour. Tu veux goûter mon plat du jour ?", "Un vrai homme ne frappe jamais une femme. Même si elle essaie de le tuer."], questDialogues: {} },
-    { id: 'yugi', name: 'Yugi', imageUrl: 'yugi_trace.png', size: 120,
-        defaultDialogues: ["Tu veux faire un duel ? J'ai toujours mon deck sur moi !", "Le cœur des cartes ne ment jamais... Fais confiance à ton deck !", "Hé , tu connais la carte Exodia ? Non ? Alors ne me cherche pas."], questDialogues: {} },
-    { id: 'franky', name: 'Franky', imageUrl: 'franky_trace.png', size: 120,
-        defaultDialogues: ["SUUUUPEEEEER !! Tu veux voir mon nouveau gadget ?", "Le Sunny est le plus beau navire du monde et c'est MOI qui l'ai construit !", "Cola ! J'ai besoin de cola ! Tu en aurais pas sur toi ?"], questDialogues: {} },
-    { id: 'sukuna', name: 'Sukuna', imageUrl: 'sukuna_trace.png', size: 120,
-        defaultDialogues: ["Tu oses m'adresser la parole , vermisseau ?", "Je m'ennuie... Divertis-moi ou disparais.", "Connais ta place. Tu n'es rien face au Roi des Fléaux."], questDialogues: {} },
-    { id: 'akaza', name: 'Akaza', imageUrl: 'akaza_trace.png', size: 120,
-        defaultDialogues: ["Deviens un démon ! Avec ta force , tu serais magnifique !", "Je déteste les faibles... Mais toi , tu as quelque chose dans le regard.", "Montre-moi ta technique de combat ! Allez , bats-toi !"], questDialogues: {} },
-    { id: 'pain', name: 'Pain', imageUrl: 'pain_trace.png', size: 120,
-        defaultDialogues: ["Connais-tu la douleur ? Le monde ne peut connaître la paix sans elle.", "Je suis Dieu. Et Dieu ne se trompe jamais.", "Ce monde est rempli de haine... Toi aussi tu la ressens , n'est-ce pas ?"], questDialogues: {} },
-    { id: 'hisoka', name: 'Hisoka', imageUrl: 'hisoka_trace.png', size: 120,
-        defaultDialogues: ["Hmm... Tu as du potentiel. Reviens me voir quand tu seras plus fort. ♠", "Mon sang bouillonne... J'adore quand je croise quelqu'un d'intéressant. ♣", "Tu veux jouer ? Attention , mes jeux finissent rarement bien pour l'adversaire. ♥"], questDialogues: {} },
-    { id: 'brook', name: 'Brook', imageUrl: 'brook_trace.png', size: 120,
-        defaultDialogues: ["Yohohoho ! Pourrais-je voir tes sous-vêtements ? ...C'est une blague ! Enfin...", "La musique adoucit les mœurs ! Tu veux entendre Binks' Sake ?", "Je suis mort de rire ! Ah mais je suis déjà mort... YOHOHOHO !"], questDialogues: {} },
-    { id: 'aizen', name: 'Aizen', imageUrl: 'aizen_trace.png', size: 120,
-        defaultDialogues: ["Depuis quand crois-tu que je ne t'observais pas ?", "L'admiration est le sentiment le plus éloigné de la compréhension.", "Tout se passe selon mon plan. Même cette conversation."], questDialogues: {} },
-    { id: 'gaara', name: 'Gaara', imageUrl: 'gaara_trace.png', size: 120,
-        defaultDialogues: ["Les liens que j'ai forgés... Ce sont eux qui m'ont sauvé.", "Tu veux être mon ami ? ...Pardon , je ne suis pas encore habitué à demander ça.", "Le sable protège ceux que j'aime. Ne l'oublie pas."], questDialogues: {} },
-    { id: 'koro', name: 'Koro-sensei', imageUrl: 'koro_trace.png', size: 120,
-        defaultDialogues: ["Nurufufufu ! Un élève de plus ? Bienvenue dans ma classe !", "La vitesse Mach 20 c'est pratique pour faire les courses du monde entier !", "Un bon professeur ne renonce jamais sur ses élèves. Jamais."], questDialogues: {} },
-    { id: 'law', name: 'Law', imageUrl: 'law_trace.png', size: 120,
-        defaultDialogues: ["Room... Ah pardon , réflexe. Tu voulais quelque chose ?", "Je ne suis l'allié de personne. Mais on peut coopérer... temporairement.", "Mon allié au chapeau m'a encore entraîné dans ses plans foireux..."], questDialogues: {} },
-    { id: 'nezuko', name: 'Nezuko', imageUrl: 'nezuko_trace.png', size: 120,
-        defaultDialogues: ["Mmm ! Mmmmh !", "...*te regarde avec de grands yeux curieux*...", "*serre son bambou et hoche la tête gentiment*"], questDialogues: {} },
-    { id: 'chopper', name: 'Chopper', imageUrl: 'chopper_trace.png', size: 120,
-        defaultDialogues: ["Ça ne me fait pas plaisir du tout que tu me complimentes , idiot ! ...Hehehe !", "Tu es blessé ? Montre-moi , je suis médecin !", "Arrête de me flatter , crétin ! *danse de joie*"], questDialogues: {} },
-    { id: 'natsu', name: 'Natsu', imageUrl: 'natsu_trace.png', size: 120,
-        defaultDialogues: ["JE SUIS TOUT FEU TOUT FLAMME !! Hé , tu veux goûter mon poing enflammé ?!", "Mon petit compagnon bleu ! T'es où ?! ...Ah c'est toi. T'as pas du poisson sur toi par hasard ?", "Cet exhibitionniste de mage de glace m'a encore cherché... ATTENDS JE VAIS LE CRAMER !"], questDialogues: {} },
-    { id: 'ace', name: 'Ace', imageUrl: 'ace_trace.png', size: 120,
-        defaultDialogues: ["Mon petit frère deviendra le roi des pirates , c'est certain.", "Tu veux voir mes pouvoirs de feu ? ...Attends , je m'endors... *zzz*", "La vraie question c'est : est-ce que j'étais heureux d'être né ? Oui. Oui je l'étais."], questDialogues: {} },
-    { id: 'giorno', name: 'Giorno', imageUrl: 'giorno_trace.png', size: 120,
-        defaultDialogues: ["J'ai un rêve... Devenir un Gang-Star !", "La détermination , c'est la seule chose qui ne peut pas être volée.", "Connais-tu le Requiem ? Non ? Tant mieux pour toi."], questDialogues: {} },
-    { id: 'kurapika', name: 'Kurapika', imageUrl: 'kurapika_trace.png', size: 120,
-        defaultDialogues: ["Mes yeux deviennent écarlates quand je suis en colère. Ne me mets pas en colère.", "La Brigade Fantôme... Un jour , je les retrouverai tous.", "Je n'ai pas besoin d'amis. ...Enfin , peut-être un ou deux."], questDialogues: {} },
-    { id: 'maki', name: 'Maki', imageUrl: 'maki_trace.png', size: 120,
-        defaultDialogues: ["Pas besoin d'énergie occulte pour être forte. Regarde.", "Le clan Zenin peut aller se faire voir. Je me suis faite toute seule.", "Tu veux t'entraîner ? Préviens , j'y vais pas doucement."], questDialogues: {} },
-    { id: 'shoyo', name: 'Shoyo', imageUrl: 'shoyo_trace.png', size: 120,
-        defaultDialogues: ["GWAAAH ! Le volleyball c'est trop cool !! Tu joues ?!", "Je suis peut-être petit mais je saute plus haut que tout le monde !", "Un jour je serai comme le Petit Géant ! Tu verras !"], questDialogues: {} },
-    { id: 'anya', name: 'Anya', imageUrl: 'anya_trace.png', size: 120,
-        defaultDialogues: ["Waku waku ! C'est excitant ici !", "Anya veut des cacahuètes ! Tu en as ?", "Anya peut lire dans tes pensées... hehe , c'est un secret !"], questDialogues: {} },
-    { id: 'kuroko', name: 'Kuroko', imageUrl: 'kuroko_trace.png', size: 120,
-        defaultDialogues: ["...Je suis là depuis le début. Tu ne m'avais pas vu ?", "Mon style de jeu c'est de rendre les autres meilleurs.", "Le basketball , c'est un sport d'équipe. On ne gagne jamais seul."], questDialogues: {} },
-    { id: 'gon', name: 'Gon', imageUrl: 'gon_trace.png', size: 120,
-        defaultDialogues: ["Salut ! Tu veux être mon ami ? Moi c'est Gon !", "Mon père est quelque part dans le monde... Un jour je le retrouverai !", "Mon meilleur ami aux cheveux blancs... Tu l'as vu par ici ?"], questDialogues: {} },
-    { id: 'bakugo', name: 'Bakugo', imageUrl: 'bakugo_trace.png', size: 120,
-        defaultDialogues: ["DÉGAGE DE MON CHEMIN !! JE SUIS LE NUMÉRO 1 !!", "Tu veux mourir ?! Mon explosif va te faire comprendre ta place !", "Ce nerd inutile... Un jour je le surpasserai tellement qu'il pourra même plus me voir !"], questDialogues: {} },
-    { id: 'lucy', name: 'Lucy', imageUrl: 'lucy_trace.png', size: 120,
-        defaultDialogues: ["Je suis une constellationniste ! Mes esprits stellaires sont mes amis !", "Cet idiot de mage de feu a encore détruit la moitié de la ville... Mon loyer va exploser.", "Tu veux lire mon roman ? ...Non en fait oublie , c'est pas encore fini."], questDialogues: {} },
-    { id: 'joseph', name: 'Joseph', imageUrl: 'joseph_trace.png', size: 120,
-        defaultDialogues: ["TON PROCHAIN MOT SERA... 'Comment tu as fait ?!'", "NIGERUNDAYOOO !! ...C'est une technique de survie , pas de la lâcheté !", "OH MY GOD ! OH NOOO ! ...Pardon , réflexe."], questDialogues: {} },
-    { id: 'grimmjow', name: 'Grimmjow', imageUrl: 'grimmjow_trace.png', size: 120,
-        defaultDialogues: ["Je suis le Roi ! Tu ferais mieux de t'en souvenir !", "Ce shinigami de pacotille... La prochaine fois c'est MOI qui gagne.", "Tu me regardes de travers ? T'as envie de crever ?"], questDialogues: {} },
-    { id: 'zaraki', name: 'Zaraki', imageUrl: 'zaraki_trace.png', size: 120,
-        defaultDialogues: ["T'as l'air fort. Bats-toi avec moi !", "Le combat c'est tout ce qui compte. Le reste c'est de la déco.", "Ma petite lieutenant ! ...Ah , elle est partie chercher des bonbons."], questDialogues: {} },
-    { id: 'l', name: 'L', imageUrl: 'l_trace.png', size: 120,
-        defaultDialogues: ["Il y a 5% de chances que tu sois intéressant. Je vais t'observer.", "Tu veux un gâteau ? J'en ai trop commandé.", "Je soupçonne tout le monde. C'est une habitude professionnelle."], questDialogues: {} },
-    { id: 'sabo', name: 'Sabo', imageUrl: 'sabo_trace.png', size: 120,
-        defaultDialogues: ["Mes deux frères comptent plus que tout. On est liés par un serment.", "Le Gouvernement Mondial cache trop de choses. Je vais tout révéler.", "Ces flammes... C'est l'héritage de mon grand frère. Je les protégerai."], questDialogues: {} },
-    { id: 'trunks', name: 'Trunks', imageUrl: 'trunks_trace.png', size: 120,
-        defaultDialogues: ["Je viens du futur. Crois-moi , tu veux pas savoir ce qui s'y passe.", "Mon père ne l'admettra jamais mais il tient à moi.", "Cette épée ? C'est pour les androïdes. Enfin... c'était."], questDialogues: {} },
-    { id: 'alphonse', name: 'Alphonse', imageUrl: 'alphonse_trace.png', size: 120,
-        defaultDialogues: ["Grand frère et moi on cherche la Pierre Philosophale. Tu l'as vue ?", "Mon corps est une armure mais mon cœur est bien là.", "Tu veux voir mon chat ? ...Il est dans l'armure. Chut , dis rien à Ed."], questDialogues: {} },
-    { id: 'chrollo', name: 'Chrollo', imageUrl: 'chrollo_trace.png', size: 120,
-        defaultDialogues: ["Je collectionne les capacités rares. La tienne m'intéresse peut-être.", "La Brigade Fantôme n'a pas de règles. Juste des liens.", "Un bon livre vaut mieux qu'un combat. Mais les deux ensemble..."], questDialogues: {} },
-    { id: 'zenitsu', name: 'Zenitsu', imageUrl: 'zenitsu_trace.png', size: 120,
-        defaultDialogues: ["JE VAIS MOURIR !! ON VA TOUS MOURIR !! MA DÉESSE AUX YEUX ROSES !!", "Je ne sais faire qu'une seule technique... Mais elle est mortelle.", "Quand je dors je deviens fort. Éveillé , je suis une catastrophe."], questDialogues: {} },
-    { id: 'inosuke', name: 'Inosuke', imageUrl: 'inosuke_trace.png', size: 120,
-        defaultDialogues: ["JE SUIS INOSUKE HASHIBIRA !! LE ROI DE LA MONTAGNE !!", "Hé le pleurnichard blond ! ...Ah non t'es pas lui. Tu veux te battre quand même ?!", "Ma tête de sanglier c'est ma fierté ! Touche pas !"], questDialogues: {} },
-    { id: 'meruem', name: 'Meruem', imageUrl: 'meruem_trace.png', size: 120,
-        defaultDialogues: ["Tu es faible. Mais ta présence est... intrigante.", "Cette joueuse de Gungi... Son nom résonne encore dans mon esprit.", "Le pouvoir absolu est ennuyeux. Ce qui compte c'est ce qu'on en fait."], questDialogues: {} },
-    { id: 'hancock', name: 'Hancock', imageUrl: 'hancock_trace.png', size: 120,
-        defaultDialogues: ["Je suis si belle que même ta pierre serait pétrifiée.", "MON CHÉRI AU CHAPEAU DE PAILLE !! ...Pardon , tu disais quelque chose ?", "Regarde-moi de haut si tu veux , je suis une impératrice."], questDialogues: {} },
-    { id: 'yuno', name: 'Yuno', imageUrl: 'yuno_trace.png', size: 120,
-        defaultDialogues: ["Je serai le Roi-Mage. Asta sera mon rival pour toujours.", "Le vent est mon allié. Il me murmure des choses.", "Parler est inutile. Je laisse ma magie s'exprimer."], questDialogues: {} },
-    { id: 'kageyama', name: 'Kageyama', imageUrl: 'kageyama_trace.png', size: 120,
-        defaultDialogues: ["Ma passe sera parfaite. C'est toi qui dois frapper.", "Ce petit rouquin est un idiot. Mais il saute plus haut que tout le monde.", "Le volleyball c'est tout. Le reste ne m'intéresse pas."], questDialogues: {} },
-    { id: 'sakura', name: 'Sakura', imageUrl: 'sakura_trace.png', size: 120,
-        defaultDialogues: ["Je ne suis plus la fille faible d'avant. Un coup de poing et tu comprendras.", "Ces deux idiots de coéquipiers... Ils me rendront folle.", "Mon maître m'a tout appris. Médecine ET destruction."], questDialogues: {} },
-    { id: 'armin', name: 'Armin', imageUrl: 'armin_trace.png', size: 120,
-        defaultDialogues: ["Le monde extérieur... Il est bien plus vaste que ces murs.", "La stratégie peut vaincre la force brute. Toujours.", "Mes deux amis d'enfance comptent plus que tout pour moi."], questDialogues: {} },
-    { id: 'meliodas', name: 'Meliodas', imageUrl: 'meliodas_trace.png', size: 120,
-        defaultDialogues: ["Bienvenue au Boar Hat ! Tu veux une bière ? ...Elle est tiède.", "Ma princesse ! Ah non , c'est toi. T'as pas vu une princesse par hasard ?", "J'ai l'air petit mais crois-moi , tu veux pas me chercher."], questDialogues: {} },
-];
-
-// 🏠 Structures du mode Survie
-const SURVIE_STRUCTURES = [
-    { id: 'kame', name: 'Kame House', imageUrl: 'kame_trace.png', size: 220,
-        defaultDialogues: ["Une petite maison rose sur une île déserte... Ça sent les tortues et les magazines douteux.", "Un panneau indique : 'Kame House'. L'endroit a l'air paisible... Trop paisible."], questDialogues: {} },
-    { id: 'yuei', name: 'Lycée Yuei', imageUrl: 'yuei_trace.png', size: 220,
-        defaultDialogues: ["L'Académie des héros. On sent la pression rien qu'en regardant les murs.", "Les couloirs sont vides. Les élèves doivent être en entraînement.", "Un écriteau : 'Plus Ultra !'. Ça donne presque envie de courir."], questDialogues: {} },
-    { id: 'konoha', name: 'Village de Konoha', imageUrl: 'konoha_trace.png', size: 220,
-        defaultDialogues: ["Le village caché de la feuille. Les visages des Hokages veillent depuis la montagne.", "Des ninjas sautent sur les toits. Personne ne fait attention à toi.", "Ça sent les ramen d'ici... Ou c'est peut-être ton imagination."], questDialogues: {} },
-    { id: 'marineford', name: 'Marineford', imageUrl: 'marineford_trace.png', size: 220,
-        defaultDialogues: ["La forteresse de la Marine. L'air est lourd, chargé de souvenirs de guerre.", "Un avis de recherche vole au vent. Le montant est... impressionnant."], questDialogues: {} },
-    { id: 'sunny', name: 'Thoussand Sunny', imageUrl: 'sunny_trace.png', size: 220,
-        defaultDialogues: ["La figure de proue de ce bateau sourit. Ce bateau a du voir beaucoup de choses.", "Le drapeau au chapeau de paille flotte fièrement. Ca sent l'aventure."], questDialogues: {} },
-    { id: 'snk', name: 'Le Mur', imageUrl: 'snk_trace.png', size: 220,
-        defaultDialogues: ["Un mur immense se dresse devant toi. Qu'est-ce qu'il cache de l'autre côté ?", "Le silence ici est étouffant. Comme si tout le monde retenait son souffle.", "Des traces de griffures géantes marquent la pierre. Mieux vaut ne pas s'attarder."], questDialogues: {} },
-    { id: 'guild', name: 'Guilde Fairy Tail', imageUrl: 'guild_trace.png', size: 220,
-        defaultDialogues: ["La guilde Fairy Tail. On entend des bruits de bagarre à l'intérieur...", "Le panneau des missions est plein. Y'en a pour tous les niveaux."], questDialogues: {} },
-    { id: 'gracefield', name: 'Grace Field House', imageUrl: 'gracefield_trace.png', size: 220,
-        defaultDialogues: ["Un orphelinat paisible... En apparence. Quelque chose cloche ici.", "Les enfants jouent dehors. Leurs sourires sont presque trop parfaits."], questDialogues: {} },
-    { id: 'infinitecastle', name: 'Forteresse infinie', imageUrl: 'infinitecastle_trace.png', size: 220,
-        defaultDialogues: ["Les murs bougent. Les escaliers mènent nulle part. Qu'est-ce qui se passe ici ?", "Si tu entres ici... personne ne garantit que tu trouveras la sortie."], questDialogues: {} },
-    { id: 'haikyuu', name: 'Gynmase', imageUrl: 'haikyuu_trace.png', size: 220,
-        defaultDialogues: ["Un gymnase de volleyball. Le bruit des ballons résonne contre les murs.", "Ça sent la sueur et la détermination. Surtout la sueur."], questDialogues: {} },
-    { id: 'waterseven', name: 'Water Seven', imageUrl: 'waterseven_trace.png', size: 220,
-        defaultDialogues: ["La cité sur l'eau. Les canaux serpentent entre des bâtiments magnifiques."], questDialogues: {} },
-    { id: 'valleyend', name: 'Vallée de la fin', imageUrl: 'valleyend_trace.png', size: 220,
-        defaultDialogues: ["Deux statues colossales se font face. Qui peuvent-elles bien représenter ?", "L'eau de la cascade gronde. Combien de batailles se sont jouées ici ?", "Un endroit chargé d'histoire... et de rivalités qui ne s'éteignent jamais."], questDialogues: {} },
-];
-
-// Combined list for backward compat
-const SURVIE_NPCS = [...SURVIE_STRUCTURES, ...SURVIE_CHARACTERS];
-
-// ═══════════════════════════════════════════════════════════════
-// 🗺️ SYSTÈME DE QUÊTES — DONNÉES
-// ═══════════════════════════════════════════════════════════════
-
-// --- Groupes de NPCs (relations entre personnages) ---
-const QUEST_GROUPS = {
-    // ═══ Duos / Relations ═══
-    duos: [
-        { name: 'CC & Lelouch', members: ['cc', 'lelouch'] },
-        { name: 'Denji & Makima', members: ['denji', 'makima'] },
-        { name: 'Gojo & Toji', members: ['gojo', 'toji'] },
-        { name: 'Gojo & Sukuna', members: ['gojo', 'sukuna'] },
-        { name: 'Itachi & Sasuke', members: ['itachi', 'sasuke'] },
-        { name: 'Rem & Ram', members: ['rem', 'ram'] },
-        { name: 'Goku & Vegeta', members: ['goku', 'vegeta'] },
-        { name: 'Naruto & Sasuke', members: ['naruto', 'sasuke'] },
-        { name: 'Naruto & Pain', members: ['naruto', 'pain'] },
-        { name: 'Naruto & Gaara', members: ['naruto', 'gaara'] },
-        { name: 'Eren & Mikasa', members: ['eren', 'mikasa'] },
-        { name: 'Jotaro & Dio', members: ['jotaro', 'dio'] },
-        { name: 'Giorno & Dio', members: ['giorno', 'dio'] },
-        { name: 'Joseph & Jotaro', members: ['joseph', 'jotaro'] },
-        { name: 'Ichigo & Aizen', members: ['ichigo', 'aizen'] },
-        { name: 'Ichigo & Ulquiorra', members: ['ichigo', 'ulquiorra'] },
-        { name: 'Ichigo & Grimmjow', members: ['ichigo', 'grimmjow'] },
-        { name: 'Light & L', members: ['light', 'l'] },
-        { name: 'Light & Lelouch', members: ['light', 'lelouch'] },
-        { name: 'Killua & Gon', members: ['killua', 'gon'] },
-        { name: 'Killua & Hisoka', members: ['killua', 'hisoka'] },
-        { name: 'Gon & Hisoka', members: ['gon', 'hisoka'] },
-        { name: 'Kurapika & Chrollo', members: ['kurapika', 'chrollo'] },
-        { name: 'Rengoku & Akaza', members: ['rengoku', 'akaza'] },
-        { name: 'Tanjiro & Nezuko', members: ['tanjiro', 'nezuko'] },
-        { name: 'Tanjiro & Zenitsu', members: ['tanjiro', 'zenitsu'] },
-        { name: 'Luffy & Ace', members: ['luffy', 'ace'] },
-        { name: 'Luffy & Law', members: ['luffy', 'law'] },
-        { name: 'Luffy & Hancock', members: ['luffy', 'hancock'] },
-        { name: 'Ace & Sabo', members: ['ace', 'sabo'] },
-        { name: 'Yor & Anya', members: ['yor', 'anya'] },
-        { name: 'Loid & Yor', members: ['loid', 'yor'] },
-        { name: 'Edward & Alphonse', members: ['edward', 'alphonse'] },
-        { name: 'Asta & Yuno', members: ['asta', 'yuno'] },
-        { name: 'Shoyo & Kageyama', members: ['shoyo', 'kageyama'] },
-        { name: 'Meliodas & Ban', members: ['meliodas', 'ban'] },
-        { name: 'Bakugo & Shoto', members: ['bakugo', 'shoto'] },
-    ],
-
-    // ═══ Familles ═══
-    naruto_family: { name: 'Famille de Naruto', members: ['naruto', 'boruto', 'minato'] },
-    saiyans: { name: 'Saiyans', members: ['goku', 'gohan', 'vegeta', 'trunks'] },
-    brothers_asl: { name: 'Frères ASL', members: ['luffy', 'ace', 'sabo'] },
-
-    // ═══ Fratries ═══
-    uchiha_brothers: { name: 'Frères Uchiha', members: ['itachi', 'sasuke'] },
-    rem_ram: { name: 'Rem & Ram', members: ['rem', 'ram'] },
-    tanjiro_nezuko: { name: 'Tanjiro & Nezuko', members: ['tanjiro', 'nezuko'] },
-    luffy_ace: { name: 'Luffy & Ace', members: ['luffy', 'ace'] },
-    elric_brothers: { name: 'Frères Elric', members: ['edward', 'alphonse'] },
-
-    // ═══ Équipages / Teams ═══
-    straw_hats: { name: 'Chapeau de Paille', members: ['luffy', 'zoro', 'nami', 'usopp', 'robin', 'sanji', 'franky', 'brook', 'chopper'] },
-    fairy_tail: { name: 'Fairy Tail', members: ['erza', 'natsu', 'lucy'] },
-    forgers: { name: 'Famille Forger', members: ['loid', 'yor', 'anya'] },
-    demon_slayer_trio: { name: 'Trio Demon Slayer', members: ['tanjiro', 'zenitsu', 'inosuke'] },
-
-    // ═══ Rivaux / Ennemis ═══
-    rivals: [
-        { name: 'Naruto & Pain', members: ['naruto', 'pain'] },
-        { name: 'Gojo & Sukuna', members: ['gojo', 'sukuna'] },
-        { name: 'Rengoku & Akaza', members: ['rengoku', 'akaza'] },
-        { name: 'Ichigo & Aizen', members: ['ichigo', 'aizen'] },
-        { name: 'Jotaro & Dio', members: ['jotaro', 'dio'] },
-        { name: 'Gon & Hisoka', members: ['gon', 'hisoka'] },
-        { name: 'Kurapika & Chrollo', members: ['kurapika', 'chrollo'] },
-        { name: 'Light & L', members: ['light', 'l'] },
-        { name: 'Asta & Yuno', members: ['asta', 'yuno'] },
-        { name: 'Bakugo & Shoto', members: ['bakugo', 'shoto'] },
-    ],
-
-    // ═══ Par anime ═══
-    naruto_series: { name: 'Ninjas', members: ['naruto', 'sasuke', 'kakashi', 'itachi', 'minato', 'boruto', 'madara', 'tsunade', 'sakura'] },
-    one_piece: { name: 'One Piece', members: ['luffy', 'zoro', 'nami', 'usopp', 'robin', 'sanji', 'franky', 'brook', 'chopper', 'law', 'ace', 'sabo', 'hancock'] },
-    dbz: { name: 'Dragon Ball', members: ['goku', 'gohan', 'vegeta', 'trunks'] },
-    snk_series: { name: 'Bataillon d\'Exploration', members: ['eren', 'mikasa', 'levi', 'armin'] },
-    jjk: { name: 'Jujutsu Kaisen', members: ['gojo', 'toji', 'sukuna', 'maki'] },
-    demon_slayer: { name: 'Demon Slayer', members: ['tanjiro', 'nezuko', 'rengoku', 'akaza', 'zenitsu', 'inosuke'] },
-    chainsaw_man: { name: 'Chainsaw Man', members: ['denji', 'makima'] },
-    bleach: { name: 'Bleach', members: ['ichigo', 'ulquiorra', 'aizen', 'grimmjow', 'zaraki'] },
-    code_geass: { name: 'Code Geass', members: ['lelouch', 'cc'] },
-    rezero: { name: 'Re:Zero', members: ['rem', 'ram'] },
-    jojo: { name: 'JoJo', members: ['jotaro', 'giorno', 'joseph'] },
-    fairy_tail_series: { name: 'Fairy Tail', members: ['erza', 'natsu', 'lucy'] },
-    reborn: { name: 'Reborn', members: ['tsuna'] },
-    black_clover: { name: 'Black Clover', members: ['asta', 'yuno'] },
-    hxh: { name: 'Hunter x Hunter', members: ['killua', 'gon', 'hisoka', 'kurapika', 'chrollo', 'meruem'] },
-    mha: { name: 'My Hero Academia', members: ['shoto', 'bakugo'] },
-    frieren_series: { name: 'Frieren', members: ['frieren'] },
-    vinland_saga: { name: 'Vinland Saga', members: ['thorfinn'] },
-    tokyo_ghoul: { name: 'Tokyo Ghoul', members: ['kaneki'] },
-    fma: { name: 'Fullmetal Alchemist', members: ['edward', 'alphonse'] },
-    gintama: { name: 'Gintama', members: ['gintoki'] },
-    spy_family: { name: 'SPY×FAMILY', members: ['loid', 'yor', 'anya'] },
-    fate: { name: 'Fate', members: ['saber'] },
-    saint_seiya: { name: 'Saint Seiya', members: ['seiya'] },
-    opm: { name: 'One Punch Man', members: ['saitama'] },
-    death_note: { name: 'Death Note', members: ['light', 'l'] },
-    yugioh: { name: 'Yu-Gi-Oh!', members: ['yugi'] },
-    assassination_classroom: { name: 'Assassination Classroom', members: ['koro'] },
-    haikyuu_series: { name: 'Haikyuu', members: ['shoyo', 'kageyama'] },
-    kuroko_series: { name: 'Kuroko no Basket', members: ['kuroko'] },
-    seven_deadly_sins: { name: 'Seven Deadly Sins', members: ['meliodas', 'ban'] },
-
-    // ═══ Personnages féminins ═══
-    female: ['erza', 'nami', 'mikasa', 'tsunade', 'rem', 'robin', 'yor', 'makima', 'cc', 'saber', 'frieren', 'ram', 'nezuko', 'maki', 'anya', 'lucy', 'hancock', 'sakura'],
-};
-
-// --- Associations NPC ↔ Structure (qui "appartient" à quel lieu) ---
-const NPC_STRUCTURE_LINKS = {
-    // Naruto
-    naruto: 'konoha', sasuke: 'konoha', kakashi: 'konoha', minato: 'konoha', boruto: 'konoha', tsunade: 'konoha',
-    pain: 'konoha', gaara: 'konoha', sakura: 'konoha',
-    madara: 'valleyend',
-    // One Piece
-    luffy: 'sunny', zoro: 'sunny', nami: 'sunny', usopp: 'sunny', robin: 'sunny', sanji: 'sunny',
-    franky: 'sunny', brook: 'sunny', chopper: 'sunny', law: 'sunny',
-    ace: 'marineford', sabo: 'marineford', hancock: 'marineford', doflamingo: 'waterseven',
-    // DBZ
-    goku: 'kame', gohan: 'kame', vegeta: 'kame', trunks: 'kame',
-    // Fairy Tail
-    erza: 'guild', natsu: 'guild', lucy: 'guild',
-    // Reborn
-    tsuna: 'guild',
-    // SNK
-    eren: 'snk', mikasa: 'snk', levi: 'snk', armin: 'snk',
-    // MHA
-    shoto: 'yuei', bakugo: 'yuei',
-    // Demon Slayer
-    rengoku: 'infinitecastle', tanjiro: 'infinitecastle', akaza: 'infinitecastle', nezuko: 'infinitecastle',
-    zenitsu: 'infinitecastle', inosuke: 'infinitecastle',
-    // JJK
-    sukuna: 'infinitecastle', maki: 'yuei',
-    // Bleach
-    aizen: 'marineford', grimmjow: 'marineford', zaraki: 'marineford',
-    // Assassination Classroom
-    koro: 'yuei',
-    // Haikyuu
-    shoyo: 'haikyuu', kageyama: 'haikyuu',
-    // HxH
-    gon: 'gracefield', killua: 'gracefield', kurapika: 'gracefield', chrollo: 'gracefield', meruem: 'gracefield',
-    // FMA
-    alphonse: 'gracefield',
-    // Seven Deadly Sins
-    meliodas: 'guild',
-};
-
-// --- Items (objets transportables) ---
-const QUEST_ITEMS = {
-    armor:      { id: 'armor', name: 'Armure', icon: '🛡️', imageUrl: 'shield_trace.png' },
-    bento:      { id: 'bento', name: 'Bento', icon: '🍱', imageUrl: 'bento_trace.png' },
-    scroll:     { id: 'scroll', name: 'Parchemin', icon: '📜', imageUrl: 'parchemin_trace.png' },
-    death_note: { id: 'death_note', name: 'Death Note', icon: '📓', imageUrl: 'deathnote_trace.png' },
-    magazine:   { id: 'magazine', name: 'Magazine', icon: '📖', imageUrl: 'magazine_trace.png' },
-    grimoire:   { id: 'grimoire', name: 'Grimoire', icon: '📕', imageUrl: 'grimoire_trace.png' },
-    katana:     { id: 'katana', name: 'Katana', icon: '⚔️', imageUrl: 'katana_trace.png' },
-    berries:    { id: 'berries', name: 'Berries', icon: '💰', imageUrl: 'money_trace.png' },
-    letter:     { id: 'letter', name: 'Lettre', icon: '✉️', imageUrl: 'lettre_trace.png' },
-    hat:        { id: 'hat', name: 'Chapeau de paille', icon: '👒', imageUrl: 'chapeau_trace.png' },
-    headband:   { id: 'headband', name: 'Bandeau', icon: '🎗️', imageUrl: 'bandeau_trace.png' },
-    book:       { id: 'book', name: 'Livre', icon: '📘', imageUrl: 'book_trace.png' },
-    photo:      { id: 'photo', name: 'Photo', icon: '📷', imageUrl: 'photo_trace.png' },
-    mask:       { id: 'mask', name: 'Masque', icon: '🎭', imageUrl: 'masque1_trace.png' },
-    // Dragon Balls
-    dragonball1: { id: 'dragonball1', name: 'Dragon Ball 1', icon: '🟠', imageUrl: 'dragonball1_trace.png' },
-    dragonball2: { id: 'dragonball2', name: 'Dragon Ball 2', icon: '🟠', imageUrl: 'dragonball2_trace.png' },
-    dragonball3: { id: 'dragonball3', name: 'Dragon Ball 3', icon: '🟠', imageUrl: 'dragonball3_trace.png' },
-    dragonball4: { id: 'dragonball4', name: 'Dragon Ball 4', icon: '🟠', imageUrl: 'dragonball4_trace.png' },
-    dragonball5: { id: 'dragonball5', name: 'Dragon Ball 5', icon: '🟠', imageUrl: 'dragonball5_trace.png' },
-    dragonball6: { id: 'dragonball6', name: 'Dragon Ball 6', icon: '🟠', imageUrl: 'dragonball6_trace.png' },
-    dragonball7: { id: 'dragonball7', name: 'Dragon Ball 7', icon: '🟠', imageUrl: 'dragonball7_trace.png' },
-    // New items
-    portrait:   { id: 'portrait', name: 'Portrait', icon: '🎨', imageUrl: 'portrait_trace.png' },
-    chocolate:  { id: 'chocolate', name: 'Chocolats', icon: '🍫', imageUrl: 'chocolate_trace.png' },
-    card:       { id: 'card', name: 'Carte', icon: '🃏', imageUrl: 'card_trace.png' },
-    keys:       { id: 'keys', name: 'Clés du Zodiaque', icon: '🔑', imageUrl: 'keys_trace.png' },
-    cooking:    { id: 'cooking', name: 'Ingrédients', icon: '🥘', imageUrl: 'cooking_trace.png' },
-    cooking1:   { id: 'cooking1', name: 'Poisson frais', icon: '🐟', imageUrl: 'cooking_trace.png' },
-    cooking2:   { id: 'cooking2', name: 'Légumes du marché', icon: '🥕', imageUrl: 'cooking_trace.png' },
-    cooking3:   { id: 'cooking3', name: 'Épices rares', icon: '🌶️', imageUrl: 'cooking_trace.png' },
-    zoro1:      { id: 'zoro1', name: 'Sabre Wado', icon: '⚔️', imageUrl: 'zoro1_trace.png' },
-    zoro2:      { id: 'zoro2', name: 'Sabre Sandai', icon: '⚔️', imageUrl: 'zoro2_trace.png' },
-    zoro3:      { id: 'zoro3', name: 'Sabre Enma', icon: '⚔️', imageUrl: 'zoro3_trace.png' },
-    tools:      { id: 'tools', name: 'Outils', icon: '🔧', imageUrl: 'tools_trace.png' },
-};
-
-// --- Templates de quêtes ---
-const QUEST_TEMPLATES = [
-
-    // ══════════ DELIVER ══════════
-    { type: 'DELIVER', id: 'deliver_armor_erza',
-        steps: [
-            { action: 'talk', npc: 'gintoki', dialogue: "Hé toi ! J'ai trouvé cette **armure** par terre... C'est pas à moi. Tu peux la ramener à **Erza** ? Elle doit la chercher partout.", giveItem: 'armor' },
-            { action: 'deliver', npc: 'erza', item: 'armor', dialogue: "Mon **armure** ! Où l'as-tu trouvée ? Merci, je la cherchais depuis des heures !" },
-        ],
-        desc: "Rapporter l'armure perdue", lockedNPCs: ['gintoki', 'erza'] },
-
-    { type: 'DELIVER', id: 'deliver_scroll_kakashi',
-        steps: [
-            { action: 'talk', npc: 'tsunade', dialogue: "Toi ! J'ai un **parchemin** urgent pour **Kakashi**. Il traîne quelque part, retrouve-le et donne-lui ça.", giveItem: 'scroll' },
-            { action: 'deliver', npc: 'kakashi', item: 'scroll', dialogue: "Un **parchemin** de Tsunade ? Merci... J'espère que ce n'est pas encore une mission suicide." },
-        ],
-        desc: "Livrer le parchemin maudit", lockedNPCs: ['tsunade', 'kakashi'] },
-
-    { type: 'DELIVER', id: 'deliver_letter_mikasa',
-        steps: [
-            { action: 'talk', npc: 'eren', dialogue: "Écoute... J'ai écrit une **lettre** pour **Mikasa** mais je n'arrive pas à la lui donner en face. Tu peux le faire pour moi ?", giveItem: 'letter' },
-            { action: 'deliver', npc: 'mikasa', item: 'letter', dialogue: "Une **lettre** d'Eren... Merci. Vraiment." },
-        ],
-        desc: "Transmettre la lettre secrète", lockedNPCs: ['eren', 'mikasa'] },
-
-    { type: 'DELIVER', id: 'deliver_death_note_light',
-        steps: [
-            { action: 'talk', npc: 'rem', dialogue: "Ce **carnet** noir... Il ne m'appartient pas. Un humain le cherche. Il s'appelle **Light**. Retrouve-le.", giveItem: 'death_note' },
-            { action: 'deliver', npc: 'light', item: 'death_note', dialogue: "Mon **carnet** ! Haha... Merci. Tu n'as pas regardé à l'intérieur, j'espère ?" },
-        ],
-        desc: "Remettre le carnet mystérieux", lockedNPCs: ['rem', 'light'] },
-
-    { type: 'DELIVER', id: 'deliver_portrait_anya',
-        steps: [
-            { action: 'talk', npc: 'anya', dialogue: "Anya a fait un **dessin** pour **papa** ! Tu peux lui donner ? Anya est trop timide...", giveItem: 'portrait' },
-            { action: 'deliver', npc: 'loid', item: 'portrait', dialogue: "Un **portrait** fait par ma fille ? ...C'est magnifique. Merci de me l'avoir apporté." },
-        ],
-        desc: "Livrer le portrait", lockedNPCs: ['anya', 'loid'] },
-
-    { type: 'DELIVER', id: 'deliver_chocolate_gon',
-        steps: [
-            { action: 'talk', npc: 'killua', dialogue: "Hé... J'ai acheté des **chocolats** pour mon **pote**. Mais j'ai la flemme d'y aller. Tu peux les lui amener ?", giveItem: 'chocolate' },
-            { action: 'deliver', npc: 'gon', item: 'chocolate', dialogue: "Des **chocolats** ?! C'est trop gentil ! Dis-lui merci de ma part !" },
-        ],
-        desc: "Livrer un cadeau entre amis", lockedNPCs: ['killua', 'gon'] },
-
-    { type: 'DELIVER', id: 'deliver_letter_sabo',
-        steps: [
-            { action: 'talk', npc: 'ace', dialogue: "J'ai écrit une **lettre** pour mon **frère**... On s'est pas vus depuis longtemps. Tu pourrais la lui remettre ?", giveItem: 'letter' },
-            { action: 'deliver', npc: 'sabo', item: 'letter', dialogue: "Une **lettre** de mon grand frère... Merci. Ça me touche plus que tu ne le penses." },
-        ],
-        desc: "Transmettre une lettre fraternelle", lockedNPCs: ['ace', 'sabo'] },
-
-    // ══════════ VISIT_DELIVER ══════════
-    { type: 'VISIT_DELIVER', id: 'visit_kame_magazine',
-        steps: [
-            { action: 'talk', npc: 'goku', dialogue: "Hé ! Tu vas vers **Kame House** ? Maître Roshi a oublié son **magazine** là-bas. Tu peux aller le chercher ?" },
-            { action: 'visit', structure: 'kame', dialogue: "Vous trouvez un **magazine** suspect sous un coussin...", giveItem: 'magazine' },
-            { action: 'deliver', npc: 'goku', item: 'magazine', dialogue: "Haha merci ! Enfin... c'est pour Maître Roshi hein, pas pour moi !" },
-        ],
-        desc: "Retrouver le magazine perdu", lockedNPCs: ['goku'], lockedStructures: ['kame'] },
-
-    { type: 'VISIT_DELIVER', id: 'visit_konoha_headband',
-        steps: [
-            { action: 'talk', npc: 'naruto', dialogue: "Mon **bandeau** ! Je l'ai oublié à **Konoha** en partant ! Tu peux aller me le chercher ? S'te plaiiiit !" },
-            { action: 'visit', structure: 'konoha', dialogue: "Un **bandeau** de Konoha traîne près de l'entrée du village...", giveItem: 'headband' },
-            { action: 'deliver', npc: 'naruto', item: 'headband', dialogue: "Mon **bandeau** ! Merci ! Sans lui je ne suis pas un vrai ninja, tu comprends ?" },
-        ],
-        desc: "Retrouver le bandeau ninja", lockedNPCs: ['naruto'], lockedStructures: ['konoha'] },
-
-    { type: 'VISIT_DELIVER', id: 'visit_guild_katana',
-        steps: [
-            { action: 'talk', npc: 'erza', dialogue: "J'ai laissé un **katana** spécial à la **guilde**. Je ne peux pas y retourner maintenant. Tu irais le chercher pour moi ?" },
-            { action: 'visit', structure: 'guild', dialogue: "Un **katana** orné repose sur le comptoir de la guilde...", giveItem: 'katana' },
-            { action: 'deliver', npc: 'erza', item: 'katana', dialogue: "Parfait ! Ce **katana** est irremplaçable. Tu as bien mérité ma gratitude." },
-        ],
-        desc: "Retrouver le katana rouge", lockedNPCs: ['erza'], lockedStructures: ['guild'] },
-
-    { type: 'VISIT_DELIVER', id: 'visit_guild_keys',
-        steps: [
-            { action: 'talk', npc: 'lucy', dialogue: "Mes **clés du Zodiaque** ! Je les ai oubliées à la **guilde** en partant... Sans elles je ne peux rien invoquer ! Tu peux y aller ?" },
-            { action: 'visit', structure: 'guild', dialogue: "Un trousseau de **clés dorées** brille sur une table de la guilde...", giveItem: 'keys' },
-            { action: 'deliver', npc: 'lucy', item: 'keys', dialogue: "Mes **clés** !! Merci merci merci ! Aquarius va encore me crier dessus si je les perds..." },
-        ],
-        desc: "Retrouver les clés perdues", lockedNPCs: ['lucy'], lockedStructures: ['guild'] },
-
-    { type: 'VISIT_DELIVER', id: 'visit_haikyuu_kageyama',
-        steps: [
-            { action: 'talk', npc: 'kageyama', dialogue: "Le **gymnase**... Où est-il ? J'ai besoin de m'entraîner. Tu sais où il est ?" },
-            { action: 'visit', structure: 'haikyuu', dialogue: "Le **gymnase** est vide mais les filets sont tendus. Prêt pour l'entraînement." },
-            { action: 'talk', npc: 'kageyama', dialogue: "Tu l'as trouvé ? Parfait. Merci... Maintenant j'ai des passes à perfectionner." },
-        ],
-        desc: "Trouver le gymnase", lockedNPCs: ['kageyama'], lockedStructures: ['haikyuu'] },
-
-    // ══════════ CHAIN ══════════
-    { type: 'CHAIN', id: 'chain_uchiha',
-        steps: [
-            { action: 'talk', npc: 'itachi', dialogue: "Mon **petit frère**... je dois lui parler. Retrouve-le et dis-lui que je veux le voir." },
-            { action: 'talk', npc: 'sasuke', dialogue: "Il veut me voir ? Tch... Dis-lui que j'accepte. Mais c'est la **dernière fois**." },
-            { action: 'talk', npc: 'itachi', dialogue: "Il a accepté... Merci. Tu as fait ce que je n'osais pas faire moi-même." },
-        ],
-        desc: "Réunir les frères Uchihas", lockedNPCs: ['itachi', 'sasuke'] },
-
-    { type: 'CHAIN', id: 'chain_zoro_lost',
-        steps: [
-            { action: 'talk', npc: 'zoro', dialogue: "Hé toi. Je cherche le **Sunny**. C'est par où ? ... Non ne me dis pas que je suis perdu." },
-            { action: 'visit', structure: 'sunny', dialogue: "Le **Thousand Sunny** est ancré ici. Il faudrait prévenir le bretteur..." },
-            { action: 'talk', npc: 'zoro', dialogue: "Tu l'as trouvé ?! ...Je veux dire , évidemment il était là. Je le savais. Merci quand même." },
-        ],
-        desc: "Escorter le bretteur perdu", lockedNPCs: ['zoro'], lockedStructures: ['sunny'] },
-
-    { type: 'CHAIN', id: 'chain_naruto_boruto',
-        steps: [
-            { action: 'talk', npc: 'boruto', dialogue: "Mon **père** est jamais là... Tu pourrais lui dire que j'aimerais qu'on **s'entraîne** ensemble ?" },
-            { action: 'talk', npc: 'naruto', dialogue: "Il veut **s'entraîner** avec moi ? Bien sûr ! Dis-lui que je l'attends , j'ai une surprise pour lui !" },
-            { action: 'talk', npc: 'boruto', dialogue: "**Papa** veut s'entraîner avec moi ? ...Cool. Enfin je veux dire , c'est pas si cool que ça." },
-        ],
-        desc: "Réunion père fils", lockedNPCs: ['boruto', 'naruto'] },
-
-    { type: 'CHAIN', id: 'chain_gojo_sukuna',
-        steps: [
-            { action: 'talk', npc: 'gojo', dialogue: "Hé toi ! Y'a un type super **dangereux** dans le coin. Va lui dire que je l'attends pour un **round**." },
-            { action: 'talk', npc: 'sukuna', dialogue: "L'**exorciste aux yeux bandés** veut se battre ? Hmph... Dis-lui que j'accepte. Ce sera amusant." },
-            { action: 'talk', npc: 'gojo', dialogue: "Il accepte ? Hahaha parfait ! Ça va être le **combat du siècle** ! Merci le messager !" },
-        ],
-        desc: "Organiser le duel ultime", lockedNPCs: ['gojo', 'sukuna'] },
-
-    { type: 'CHAIN', id: 'chain_jotaro_dio',
-        steps: [
-            { action: 'talk', npc: 'jotaro', dialogue: "...**Dio**. Je sens sa présence quelque part. Va le trouver et dis-lui que j'arrive." },
-            { action: 'talk', npc: 'dio', dialogue: "**KONO DIO DA** ! Il me cherche ? Dis-lui que je l'attends ! Ce sera notre **dernier combat** !" },
-            { action: 'talk', npc: 'jotaro', dialogue: "**Yare yare daze**... Merci. Cette fois c'est la bonne." },
-        ],
-        desc: "Préparer l'affrontement final", lockedNPCs: ['jotaro', 'dio'] },
-
-    { type: 'CHAIN', id: 'chain_elric',
-        steps: [
-            { action: 'talk', npc: 'edward', dialogue: "Mon **frère**... On s'est séparés en cherchant la **Pierre Philosophale**. Tu peux le retrouver et lui dire que j'ai trouvé un indice ?" },
-            { action: 'talk', npc: 'alphonse', dialogue: "**Grand frère** a trouvé un indice ?! J'arrive tout de suite ! Merci de m'avoir prévenu !" },
-        ],
-        desc: "Réunir les frères alchimistes", lockedNPCs: ['edward', 'alphonse'] },
-
-    { type: 'CHAIN', id: 'chain_ram_rem',
-        steps: [
-            { action: 'talk', npc: 'ram', dialogue: "Ma **sœur** a encore disparu... Elle est sûrement en train d'aider quelqu'un. Retrouve-la et dis-lui de rentrer." },
-            { action: 'talk', npc: 'rem', dialogue: "Ma **sœur** me cherche ? Rem va rentrer tout de suite ! Dis-lui que Rem est désolée !" },
-            { action: 'talk', npc: 'ram', dialogue: "Elle s'excuse ? Comme d'habitude... Merci de l'avoir retrouvée." },
-        ],
-        desc: "Retrouver la sœur disparue", lockedNPCs: ['ram', 'rem'] },
-
-    { type: 'CHAIN', id: 'chain_tanjiro_nezuko',
-        steps: [
-            { action: 'talk', npc: 'tanjiro', dialogue: "Ma **petite sœur**... Je ne la trouve plus ! Son odeur est faible... Tu peux m'aider à la chercher ?" },
-            { action: 'talk', npc: 'nezuko', dialogue: "Mmm ! *hoche la tête et te suit du regard* *serre son bambou avec un sourire*" },
-            { action: 'talk', npc: 'tanjiro', dialogue: "Tu l'as trouvée ?! Merci !! **Nezuko** , ne t'éloigne plus comme ça !" },
-        ],
-        desc: "Reunion fraternelle", lockedNPCs: ['tanjiro', 'nezuko'] },
-
-    // ══════════ TRADE_CHAIN ══════════
-    { type: 'TRADE_CHAIN', id: 'trade_frieren_grimoire',
-        steps: [
-            { action: 'talk', npc: 'frieren', dialogue: "Je cherche un **grimoire** ancien. Il me semble que **Robin** en avait un." },
-            { action: 'talk', npc: 'robin', dialogue: "Le **grimoire** ? Il me faut une **photo** rare en échange. **Kaneki** en avait une intéressante." },
-            { action: 'talk', npc: 'kaneki', dialogue: "Ma **photo** ? ...Elle est personnelle. Mais je l'échange contre mon **masque**. **Grimmjow** me l'a pris." },
-            { action: 'talk', npc: 'grimmjow', dialogue: "Le **masque** ? Ah ouais je l'ai. Je l'avais confondu avec le mien. Je te le rends si tu me trouves un **adversaire**. Dis à **Ichigo** que je veux un combat !" },
-            { action: 'talk', npc: 'ichigo', dialogue: "**Grimmjow** veut se battre ? Tch... Encore ? Bon dis-lui que j'accepte." },
-            { action: 'talk', npc: 'grimmjow', dialogue: "Il accepte ?! Haha ! Tiens, reprends ce **masque**. J'en ai plus rien à faire !", giveItem: 'mask' },
-            { action: 'trade', npc: 'kaneki', item: 'mask', dialogue: "Mon **masque** ! Merci... Tiens, voici la **photo**. Prends-en soin.", giveItem: 'photo' },
-            { action: 'trade', npc: 'robin', item: 'photo', dialogue: "Oh, quelle **photo** fascinante... Merci. Voici le **grimoire**, comme promis.", giveItem: 'grimoire' },
-            { action: 'deliver', npc: 'frieren', item: 'grimoire', dialogue: "Le **grimoire** ! Après mille ans de recherche... Merci, humain." },
-        ],
-        desc: "Trouver le grimoire ancien", lockedNPCs: ['frieren', 'robin', 'kaneki', 'grimmjow', 'ichigo'] },
-
-    { type: 'TRADE_CHAIN', id: 'trade_denji_girl',
-        steps: [
-            { action: 'talk', npc: 'denji', dialogue: "Mec... J'aimerais trop un **rencard** avec **Makima**. Tu pourrais aller lui demander pour moi ? J'ose pas..." },
-            { action: 'talk', npc: 'makima', dialogue: "Denji veut un rendez-vous ? ...Pourquoi pas. Mais dis-lui que je veux des **chocolats** d'abord." },
-            { action: 'talk', npc: 'saber', dialogue: "Des **chocolats** ? J'en ai, je veux bien partager. Mais en échange je veux une **armure**. **Franky** en fabrique, non ?" },
-            { action: 'talk', npc: 'franky', dialogue: "Une **armure** ? SUUUPER ! Je t'en fais une ! Mais j'ai oublié mes **outils** à **Water Seven**... Tu sais où c'est ?" },
-            { action: 'visit', structure: 'water7', dialogue: "Vous trouvez les **outils** de Franky près de l'atelier de Water Seven.", giveItem: 'tools' },
-            { action: 'trade', npc: 'franky', item: 'tools', dialogue: "Mes **outils** !! SUUUPER ! Tiens, voilà ton **armure** comme promis !", giveItem: 'armor' },
-            { action: 'trade', npc: 'saber', item: 'armor', dialogue: "Oh, une belle **armure** ! Merci. Tiens, voici les **chocolats** comme promis.", giveItem: 'chocolate' },
-            { action: 'trade', npc: 'makima', item: 'chocolate', dialogue: "Des **chocolats**... Bien. Dis à **Denji** que j'accepte son **rendez-vous**. S'il ose venir." },
-            { action: 'talk', npc: 'denji', dialogue: "ELLE A DIT **OUI** ?! UN RENCARD AVEC MAKIMA ?! T'ES LE MEILLEUR POTE DU MONDE !!!" },
-        ],
-        desc: "Un rencard pour Denji", lockedNPCs: ['denji', 'makima', 'saber', 'franky'], lockedStructures: ['water7'] },
-
-    // ══════════ REUNION ══════════
-    { type: 'REUNION', id: 'reunion_straw_hats',
-        group: 'straw_hats', count: 4,
-        dialogue_found: "Tu m'as trouvé ! L'équipage sera bientôt réuni !",
-        desc: "Réunir 4 membres du Chapeau de Paille",
-    },
-
-    { type: 'REUNION', id: 'reunion_naruto_series',
-        group: 'naruto_series', count: 4,
-        dialogue_found: "Un ninja ne refuse jamais l'appel ! Retrouve les autres !",
-        desc: "Réunir 4 ninjas de Konoha",
-    },
-
-    { type: 'REUNION', id: 'reunion_snk',
-        group: 'snk_series', count: 3,
-        dialogue_found: "Le bataillon se rassemble. Continue !",
-        desc: "Réunir le Bataillon d'Exploration",
-    },
-
-    { type: 'REUNION', id: 'reunion_dbz',
-        group: 'dbz', count: 3,
-        dialogue_found: "Tu m'as trouvé ! On sera bientôt au complet pour le tournoi !",
-        desc: "Réunir les guerriers Saiyans",
-    },
-
-    { type: 'REUNION', id: 'reunion_forgers',
-        group: 'forgers', count: 3,
-        dialogue_found: "Tu m'as trouvé ! La famille sera bientôt réunie !",
-        desc: "Réunir la famille d'Anya",
-    },
-
-    { type: 'REUNION', id: 'reunion_jojo',
-        group: 'jojo', count: 3,
-        dialogue_found: "Tu m'as trouvé ! Les JoJo se rassemblent !",
-        desc: "Réunir 3 protagonistes JoJo",
-    },
-
-    // ══════════ COLLECT_ITEMS ══════════
-    { type: 'COLLECT_ITEMS', id: 'collect_bentos_rengoku',
-        item: 'bento', count: 5, deliverTo: 'rengoku',
-        spawnNearStructures: true,
-        desc: "Livrer 5 bentos",
-        lockedNPCs: ['rengoku'],
-        finalDialogue: "DÉLICIEUX ! Cinq bentos ! Tu es un vrai héros !! UMAI !!",
-    },
-
-    { type: 'COLLECT_ITEMS', id: 'collect_berries_nami',
-        item: 'berries', count: 4, deliverTo: 'nami',
-        spawnNearStructures: true,
-        desc: "Apporter 4 billets de berries",
-        lockedNPCs: ['nami'],
-        finalDialogue: "Tout cet argent ! Tu es mon nouveau meilleur ami ! ...Non je ne partage pas.",
-    },
-
-    { type: 'COLLECT_ITEMS', id: 'collect_dragonballs',
-        item: 'dragonball', count: 7, deliverTo: 'goku',
-        spawnNearStructures: false,
-        desc: "Livrez les Dragon Ball",
-        lockedNPCs: ['goku'],
-        finalDialogue: "LES 7 DRAGON BALLS !! Maintenant on peut invoquer Shenron ! T'es incroyable !!",
-        specialItems: ['dragonball1', 'dragonball2', 'dragonball3', 'dragonball4', 'dragonball5', 'dragonball6', 'dragonball7'],
-    },
-
-    { type: 'COLLECT_ITEMS', id: 'collect_sabres_zoro',
-        item: 'sabre', count: 3, deliverTo: 'zoro',
-        spawnNearStructures: false,
-        desc: "Retrouver les 3 sabres perdus",
-        lockedNPCs: ['zoro'],
-        finalDialogue: "Mes trois sabres ! Santoryu est de retour ! ...Ne dis à personne que je les avais perdus.",
-        specialItems: ['zoro1', 'zoro2', 'zoro3'],
-    },
-
-    { type: 'COLLECT_ITEMS', id: 'collect_cooking_sanji',
-        item: 'cooking', count: 3, deliverTo: 'sanji',
-        spawnNearStructures: true,
-        desc: "Trouver les ingrédients du chef",
-        lockedNPCs: ['sanji'],
-        finalDialogue: "PARFAIT ! Avec ça je vais préparer le meilleur plat des sept mers ! Merci, tu es invité à dîner !",
-        specialItems: ['cooking1', 'cooking2', 'cooking3'],
-    },
-
-    // ══════════ RIDDLE ══════════
-    { type: 'RIDDLE', id: 'riddle_kakashi',
-        hint_npc: 'naruto',
-        hint_dialogue: "Tu cherches quelqu'un ? Y'a un type bizarre toujours **en retard** qui lit des **bouquins douteux**...",
-        answer_npc: 'kakashi',
-        answer_structure: null,
-        dialogue_correct: "Tu m'as trouvé. Je suis impressionné... ou pas. Comment savais-tu ?",
-        desc: "Trouver l'homme mystère",
-        lockedNPCs: ['kakashi', 'naruto'],
-    },
-
-    { type: 'RIDDLE', id: 'riddle_saitama',
-        hint_npc: 'goku',
-        hint_dialogue: "Y'a un type super fort par ici ! **Chauve**, l'air **blasé**, une **cape**... J'ai voulu le combattre mais il avait pas l'air intéressé. Hésite pas à lui dire bonjour de ma part si tu le vois.",
-        answer_npc: 'saitama',
-        answer_structure: null,
-        dialogue_correct: "Oh, tu me cherchais ? ...C'est déjà fini ? Comme d'habitude.",
-        desc: "Trouver l'homme mystère",
-        lockedNPCs: ['saitama', 'goku'],
-    },
-
-    { type: 'RIDDLE', id: 'riddle_infinitecastle',
-        hint_npc: 'tanjiro',
-        hint_dialogue: "J'ai senti une odeur de démon venant d'un endroit étrange... Un château où les **murs bougent** et les **escaliers ne mènent nulle part**. Peux tu aller y jeter un oeil ?",
-        answer_npc: null,
-        answer_structure: 'infinitecastle',
-        dialogue_correct: "Vous avez trouvé la Forteresse Infinie. Les murs tremblent à votre arrivée...",
-        desc: "Trouver l'endroit mystère",
-        lockedNPCs: ['tanjiro'], lockedStructures: ['infinitecastle'],
-    },
-
-    { type: 'RIDDLE', id: 'riddle_levi',
-        hint_npc: 'eren',
-        hint_dialogue: "Le plus fort de l'humanité ? Il est **petit**, il fait flipper tout le monde et il est obsédé par la **propreté**. Il porte des **lames** , je te conseille de pas t'y frotter.",
-        answer_npc: 'levi',
-        answer_structure: null,
-        dialogue_correct: "Tch. Tu m'as trouvé. Maintenant dégage avant que je te fasse récurer le sol.",
-        desc: "Trouver l'homme mystère",
-        lockedNPCs: ['levi', 'eren'],
-    },
-
-    { type: 'RIDDLE', id: 'riddle_hisoka',
-        hint_npc: 'killua',
-        hint_dialogue: "Y'a un type flippant dans le coin... Un **magicien** obsédé par les combats. Il joue avec des **cartes** et il **sourit tout le temps**. Fais gaffe si tu le trouves.",
-        answer_npc: 'hisoka',
-        answer_structure: null,
-        dialogue_correct: "Oh ? Tu m'as trouvé... ♠ Intéressant. Tu as du potentiel. Reviens me voir quand tu seras plus fort. ♥",
-        desc: "Trouver l'homme mystère",
-        lockedNPCs: ['hisoka', 'killua'],
-    },
-
-    // ══════════ MYSTERY ══════════
-    { type: 'MYSTERY', id: 'mystery_hat_luffy',
-        stolen_item: 'hat', victim: 'luffy',
-        suspects: ['nami', 'usopp', 'robin'],
-        culprit: null,
-        victim_dialogue: null,
-        culprit_hints: {
-            nami: "MON **CHAPEAU** !! Quelqu'un me l'a **volé** !! J'ai vu quelqu'un s'enfuir... Une fille aux **cheveux oranges** qui courait avec un sac. Retrouve-la !",
-            usopp: "MON **CHAPEAU** !! Quelqu'un me l'a **volé** !! J'ai vu une silhouette... Un type avec un **long nez** et un **lance-pierre**. C'est forcément lui !",
-            robin: "MON **CHAPEAU** !! Quelqu'un me l'a **volé** !! J'ai entrevu quelqu'un... Une femme avec des **cheveux noirs** et un air **mystérieux**. Retrouve-la !",
-        },
-        innocent_dialogues: [
-            "Moi ? Voler le chapeau de Luffy ? Jamais ! ...Enfin, sauf s'il valait beaucoup d'argent. Mais non !",
-            "Ce n'est pas moi ! J'étais occupé(e) à... euh... faire autre chose. Demande aux autres !",
-            "Innocent(e) ! Regarde, je n'ai rien dans les mains !",
-        ],
-        culprit_dialogues: [
-            "Moi ? Non non ! ...Bon ok c'est moi. Tiens, reprends-le. C'était juste une blague !",
-        ],
-        desc: "Retrouver le chapeau volé",
-        lockedNPCs: ['luffy', 'nami', 'usopp', 'robin'],
-    },
-
-    { type: 'MYSTERY', id: 'mystery_deathnote',
-        stolen_item: 'death_note', victim: 'light',
-        suspects: ['makima', 'gintoki', 'lelouch'],
-        culprit: null,
-        victim_dialogue: null, // Generated dynamically based on culprit
-        culprit_hints: {
-            gintoki: "Mon **carnet** a disparu ! J'ai aperçu quelqu'un s'enfuir... Un type avec des **cheveux argentés** en bataille et un air de **fainéant**. Retrouve-le !",
-            lelouch: "Mon **carnet** a disparu ! J'ai vu une silhouette... Un **lycéen en uniforme** avec un **regard rouge** étrange. Il faut le retrouver !",
-            makima: "Mon **carnet** a disparu ! J'ai entrevu quelqu'un... Une femme aux **cheveux roux-orangés** avec un **regard glacial**. Retrouve-la !",
-        },
-        innocent_dialogues: [
-            "Un carnet ? Ça ne m'intéresse pas. J'ai d'autres moyens de contrôler les gens...",
-            "Moi ? Voler un carnet ? J'ai autre chose à faire, tu sais.",
-            "Je ne vois pas de quoi tu parles. Demande à quelqu'un d'autre.",
-        ],
-        culprit_dialogues: [
-            "...Tu m'as percé à jour. Tiens, reprends ce carnet maudit. Il me donnait des frissons.",
-        ],
-        desc: "Retrouver le Death Note volé",
-        lockedNPCs: ['light', 'makima', 'gintoki', 'lelouch'],
-    },
-
-    { type: 'MYSTERY', id: 'mystery_card_yugi',
-        stolen_item: 'card', victim: 'yugi',
-        suspects: ['dio', 'hisoka', 'chrollo'],
-        culprit: null,
-        victim_dialogue: null,
-        culprit_hints: {
-            dio: "Ma **carte** favorite a disparu !! J'ai vu quelqu'un s'enfuir... Un type **blond arrogant** avec un air de **vampire**. Retrouve-le !",
-            hisoka: "Ma **carte** favorite a disparu !! J'ai aperçu une silhouette... Un **magicien** aux **cheveux rouges** qui jouait avec des **cartes**. C'est forcément lui !",
-            chrollo: "Ma **carte** favorite a disparu !! J'ai vu quelqu'un... Un type calme avec un **manteau sombre** et un **regard calculateur**. Retrouve-le !",
-        },
-        innocent_dialogues: [
-            "Une carte ? Je n'ai que faire de vos jeux de mortels...",
-            "Voler une carte ? J'ai des trésors bien plus précieux que ça.",
-            "Ce n'est pas moi. Cherche ailleurs.",
-        ],
-        culprit_dialogues: [
-            "...Tu m'as démasqué. Tiens, reprends cette carte. Elle est puissante mais... pas à mon goût.",
-        ],
-        desc: "Retrouver la carte volée",
-        lockedNPCs: ['yugi', 'dio', 'hisoka', 'chrollo'],
-    },
-];
-
-// ═══════════════════════════════════════════════════════════════
-// 🎲 GÉNÉRATEUR DE QUÊTES
-// ═══════════════════════════════════════════════════════════════
-
-function generateQuestsForGame(questCount = 5) {
-    const available = [...QUEST_TEMPLATES];
-    const selected = [];
-    const usedNPCs = new Set();
-    const usedStructures = new Set();
-    const usedTypes = {};
-
-    // Helper: check if a quest can be added (no NPC/structure conflicts)
-    function canAdd(template) {
-        // Max 1 quest per type
-        if ((usedTypes[template.type] || 0) >= 1) return false;
-
-        const neededNPCs = template.lockedNPCs || [];
-        const neededStructures = template.lockedStructures || [];
-        
-        let reunionMembers = [];
-        if (template.type === 'REUNION') {
-            const groupData = QUEST_GROUPS[template.group];
-            if (groupData && groupData.members) {
-                reunionMembers = groupData.members;
-            }
-        }
-
-        const allNeededNPCs = [...neededNPCs, ...reunionMembers];
-        
-        if (allNeededNPCs.some(id => usedNPCs.has(id))) return false;
-        if (neededStructures.some(id => usedStructures.has(id))) return false;
-        
-        return true;
-    }
-
-    // Helper: add a quest to selected
-    function addQuest(quest) {
-        const q = JSON.parse(JSON.stringify(quest));
-        
-        // Pour MYSTERY, choisir le coupable aléatoirement
-        if (q.type === 'MYSTERY' && !q.culprit) {
-            q.culprit = q.suspects[Math.floor(Math.random() * q.suspects.length)];
-            if (q.culprit_hints && q.culprit_hints[q.culprit]) {
-                q.victim_dialogue = q.culprit_hints[q.culprit];
-            }
-        }
-
-        selected.push(q);
-        const neededNPCs = q.lockedNPCs || [];
-        const neededStructures = q.lockedStructures || [];
-        let reunionMembers = [];
-        if (q.type === 'REUNION') {
-            const groupData = QUEST_GROUPS[q.group];
-            if (groupData && groupData.members) reunionMembers = groupData.members;
-        }
-        [...neededNPCs, ...reunionMembers].forEach(id => usedNPCs.add(id));
-        neededStructures.forEach(id => usedStructures.add(id));
-        usedTypes[q.type] = (usedTypes[q.type] || 0) + 1;
-    }
-
-    // Mélanger
-    for (let i = available.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [available[i], available[j]] = [available[j], available[i]];
-    }
-
-    // Step 1: Guarantee 1 COLLECT_ITEMS quest
-    const collectQuests = available.filter(t => t.type === 'COLLECT_ITEMS');
-    for (const cq of collectQuests) {
-        if (canAdd(cq)) {
-            addQuest(cq);
-            break;
-        }
-    }
-
-    // Step 2: Fill remaining slots with unique types
-    for (const template of available) {
-        if (selected.length >= questCount) break;
-        if (selected.some(s => s.id === template.id)) continue; // Already added
-        if (!canAdd(template)) continue;
-        addQuest(template);
-    }
-
-    // Retourner les IDs des NPCs/structures nécessaires
-    const lockedNPCIds = new Set();
-    const lockedStructureIds = new Set();
-    selected.forEach(q => {
-        (q.lockedNPCs || []).forEach(id => lockedNPCIds.add(id));
-        (q.lockedStructures || []).forEach(id => lockedStructureIds.add(id));
-        if (q.type === 'REUNION') {
-            const groupData = QUEST_GROUPS[q.group];
-            if (groupData && groupData.members) {
-                groupData.members.forEach(id => lockedNPCIds.add(id));
-            }
-        }
-    });
-
-    return {
-        quests: selected,
-        lockedNPCs: [...lockedNPCIds],
-        lockedStructures: [...lockedStructureIds],
-    };
-}
-
-// ═══════════════════════════════════════════════════════════════
-// 👤 STATE JOUEUR (créé par joueur au début de partie)
-// ═══════════════════════════════════════════════════════════════
-
-function createPlayerQuestState(quests) {
-    return {
-        quests: quests.map(q => ({
-            id: q.id,
-            type: q.type,
-            desc: q.desc,
-            currentStep: 0,
-            totalSteps: q.steps ? q.steps.length : (q.type === 'REUNION' ? q.count : (q.type === 'COLLECT_ITEMS' ? q.count + 1 : (q.type === 'RIDDLE' ? 1 : 2))),
-            completed: false,
-            stepDesc: getStepDescription(q, 0),
-            // Type-specific data
-            ...(q.type === 'REUNION' && { found: [], count: q.count, group: q.group }),
-            ...(q.type === 'COLLECT_ITEMS' && { collected: 0, count: q.count, delivered: false }),
-            ...(q.type === 'RIDDLE' && { solved: false, hintReceived: false }),
-            ...(q.type === 'ESCORT' && { escorting: false, arrived: false }),
-            ...(q.type === 'MYSTERY' && { interrogated: [], culprit: q.culprit, accused: false }),
-        })),
-        inventory: [],
-        completedCount: 0,
-    };
-}
-
-// Generate human-readable step description
-function getStepDescription(questTemplate, stepIndex) {
-    if (!questTemplate) return '';
-    
-    // Step-based quests (DELIVER, VISIT_DELIVER, CHAIN, TRADE_CHAIN)
-    if (questTemplate.steps) {
-        if (stepIndex < questTemplate.steps.length) {
-            const step = questTemplate.steps[stepIndex];
-            if (step.action === 'talk') {
-                const npcData = [...SURVIE_CHARACTERS, ...SURVIE_STRUCTURES].find(n => n.id === step.npc);
-                const name = npcData ? npcData.name : step.npc;
-                return `Aller voir ${name}`;
-            }
-            if (step.action === 'visit') {
-                const structData = SURVIE_STRUCTURES.find(n => n.id === step.structure);
-                const name = structData ? structData.name : step.structure;
-                return `Se rendre à ${name}`;
-            }
-            if (step.action === 'deliver') {
-                const npcData = [...SURVIE_CHARACTERS, ...SURVIE_STRUCTURES].find(n => n.id === step.npc);
-                const name = npcData ? npcData.name : step.npc;
-                const itemData = QUEST_ITEMS[step.item];
-                const itemName = itemData ? itemData.name : step.item;
-                return `Apporter ${itemName} à ${name}`;
-            }
-            if (step.action === 'trade') {
-                const npcData = SURVIE_CHARACTERS.find(n => n.id === step.npc);
-                const name = npcData ? npcData.name : step.npc;
-                return `Échanger avec ${name}`;
-            }
-        }
-        return 'Terminé !';
-    }
-    
-    // REUNION / COLLECT_ITEMS — use default counter
-    if (questTemplate.type === 'REUNION' || questTemplate.type === 'COLLECT_ITEMS') {
-        return null;
-    }
-    
-    // RIDDLE
-    if (questTemplate.type === 'RIDDLE') {
-        if (questTemplate.hint_npc) {
-            const hintNpcData = SURVIE_CHARACTERS.find(n => n.id === questTemplate.hint_npc);
-            const name = hintNpcData ? hintNpcData.name : questTemplate.hint_npc;
-            return `Aller voir ${name}`;
-        }
-        return questTemplate.riddle || 'Résolvez l\'énigme...';
-    }
-    
-    // ESCORT
-    if (questTemplate.type === 'ESCORT') {
-        const npcData = SURVIE_CHARACTERS.find(n => n.id === questTemplate.npc);
-        const name = npcData ? npcData.name : questTemplate.npc;
-        return `Trouver ${name}`;
-    }
-    
-    // MYSTERY
-    if (questTemplate.type === 'MYSTERY') {
-        const victimData = SURVIE_CHARACTERS.find(n => n.id === questTemplate.victim);
-        const name = victimData ? victimData.name : questTemplate.victim;
-        return `Aller voir ${name}`;
-    }
-    
-    return '';
-}
-
-// 🎮 Types d'épreuves Survie
-const SURVIE_EPREUVE_TYPES = [
-    'vrai-faux', 'intrus', 'anagramme', 'nomme', 'flou',
-    'pendu', 'qui-suis-je', 'tri-anime', 'reflexe', 'paires',
-    'association', 'comptage', 'timeline', 'chronologie'
-];
 
 // 💣 Set pour réserver les places pendant le traitement async (évite les race conditions)
 const pendingJoins = new Set();
@@ -1297,11 +119,6 @@ const pendingJoins = new Set();
 
 // SERIES_FILTERS importé depuis dbs.js
 
-// Détection automatique de l'URL de redirection
-const TWITCH_REDIRECT_URI = process.env.TWITCH_REDIRECT_URI ||
-    (process.env.NODE_ENV === 'production'
-        ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME || process.env.VERCEL_URL || 'shonenmaster.com'}/auth/twitch/callback`
-        : `http://localhost:${PORT}/auth/twitch/callback`);
 
 // ============================================
 // Middleware
@@ -1311,166 +128,6 @@ app.use(express.urlencoded({ extended: true }));
 
 app.set('trust proxy', 1);
 
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'pikine-secret-2025',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 24 * 60 * 60 * 1000, // 24h
-        httpOnly: true,
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
-    },
-    proxy: process.env.NODE_ENV === 'production'
-}));
-
-
-app.use('/admin/*', (req, res, next) => {
-    if (req.session.isAdmin) {
-        // Si admin normal
-        if (req.session.id === activeAdminSession) {
-            lastAdminActivity = Date.now();
-        }
-        // Si master, ne pas tracker (pas de timeout pour les devs)
-        if (req.session.isMasterAdmin) {
-            // Les masters n'ont pas de timeout
-        }
-    }
-    next();
-});
-
-// ============================================
-// Routes AUTH TWITCH
-// ============================================
-
-// Route pour démarrer l'auth Twitch
-app.get('/auth/twitch', (req, res) => {
-    // Stocker d'où vient la requête (admin ou joueur)
-    if (req.query.from === 'admin') {
-        req.session.twitchAuthFrom = 'admin';
-    } else {
-        req.session.twitchAuthFrom = 'player';
-    }
-    
-    const twitchAuthUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${process.env.TWITCH_CLIENT_ID}&redirect_uri=${encodeURIComponent(TWITCH_REDIRECT_URI)}&response_type=code&scope=user:read:email`;
-    res.redirect(twitchAuthUrl);
-});
-
-// Callback Twitch OAuth
-app.get('/auth/twitch/callback', async (req, res) => {
-    const { code } = req.query;
-    const fromAdmin = req.session.twitchAuthFrom === 'admin';
-
-    if (!code) {
-        return res.redirect(fromAdmin ? '/admin?error=auth_failed' : '/?error=auth_failed');
-    }
-
-    try {
-        // Échanger le code contre un token
-        const tokenResponse = await axios.post('https://id.twitch.tv/oauth2/token', null, {
-            params: {
-                client_id: process.env.TWITCH_CLIENT_ID,
-                client_secret: process.env.TWITCH_CLIENT_SECRET,
-                code: code,
-                grant_type: 'authorization_code',
-                redirect_uri: TWITCH_REDIRECT_URI
-            }
-        });
-
-        const accessToken = tokenResponse.data.access_token;
-
-        // Récupérer les infos utilisateur
-        const userResponse = await axios.get('https://api.twitch.tv/helix/users', {
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Client-Id': process.env.TWITCH_CLIENT_ID
-            }
-        });
-
-        const twitchUser = userResponse.data.data[0];
-
-        // Créer ou mettre à jour l'utilisateur dans la DB (avec avatar)
-        await db.createOrUpdateUser(twitchUser.id, twitchUser.display_name);
-
-        // Stocker dans la session
-        req.session.twitchId = twitchUser.id;
-        req.session.username = twitchUser.display_name;
-        req.session.twitchAvatar = twitchUser.profile_image_url;
-        req.session.isAuthenticated = true;
-        
-        // Stocker les infos Twitch pour l'admin
-        if (fromAdmin) {
-            req.session.adminTwitchUser = {
-                id: twitchUser.id,
-                login: twitchUser.login,
-                display_name: twitchUser.display_name,
-                profile_image_url: twitchUser.profile_image_url
-            };
-        }
-
-        // Rediriger vers la bonne page
-        res.redirect(fromAdmin ? '/admin' : '/');
-    } catch (error) {
-        console.error('❌ Erreur auth Twitch:', error.message);
-        res.redirect(fromAdmin ? '/admin?error=auth_failed' : '/?error=auth_failed');
-    }
-});
-
-// Status Twitch — admin OU joueur normal
-app.get('/auth/twitch/status', (req, res) => {
-    // 1) Admin connecté via Twitch
-    if (req.session.adminTwitchUser) {
-        return res.json({
-            connected: true,
-            user: req.session.adminTwitchUser
-        });
-    }
-    // 2) Joueur normal connecté via Twitch (cas landing / lobby)
-    if (req.session.isAuthenticated && req.session.twitchId) {
-        return res.json({
-            connected: true,
-            user: {
-                id: req.session.twitchId,
-                login: req.session.username,
-                display_name: req.session.username,
-                profile_image_url: req.session.twitchAvatar || null,
-            }
-        });
-    }
-    res.json({ connected: false });
-});
-
-// Route de déconnexion
-app.get('/auth/logout', (req, res) => {
-    // Si c'est l'admin normal qui se déconnecte
-    if (req.session.id === activeAdminSession) {
-        activeAdminSession = null;
-        activeAdminLoginTime = null;
-        console.log('🔓 Slot admin normal libéré (logout)');
-    }
-
-    // Si c'est un master qui se déconnecte
-    if (req.session.isMasterAdmin) {
-        masterAdminSessions.delete(req.session.id);
-        console.log(`👑 Master déconnecté (${masterAdminSessions.size} restant(s))`);
-    }
-
-    req.session.destroy();
-    res.redirect('/');
-});
-
-// Route pour vérifier l'état de l'auth
-app.get('/auth/status', (req, res) => {
-    if (req.session.isAuthenticated) {
-        res.json({
-            authenticated: true,
-            username: req.session.username,
-            twitchId: req.session.twitchId
-        });
-    } else {
-        res.json({ authenticated: false });
-    }
-});
 
 
 // Route pour obtenir l'état actuel du jeu (pour reconnexion)
@@ -1489,9 +146,8 @@ app.get('/game/state', (req, res) => {
     
     // 💣🎴 Vérifier si le lobby BombAnime/Collect est plein
     const isBombanimeMode = gameState.lobbyMode === 'bombanime';
-    const isCollectMode = gameState.lobbyMode === 'collect';
-    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : (isCollectMode ? COLLECT_CONFIG.MAX_PLAYERS : Infinity);
-    const isLobbyFull = (isBombanimeMode || isCollectMode) && gameState.players.size >= maxPlayers;
+    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : Infinity;
+    const isLobbyFull = isBombanimeMode && gameState.players.size >= maxPlayers;
 
     // 🔥 Construire les données des joueurs avec leurs réponses
     const playersData = Array.from(gameState.players.values()).map(player => {
@@ -1590,55 +246,7 @@ app.get('/game/state', (req, res) => {
             timeRemaining: gameState.bombanime.turnStartTime ? 
                 Math.max(0, gameState.bombanime.timer - Math.floor((Date.now() - gameState.bombanime.turnStartTime) / 1000)) : 
                 gameState.bombanime.timer
-        } : null,
-        // 🎮 Mode Survie
-        survie: gameState.lobbyMode === 'survie' && gameState.survie.active ? {
-            active: true,
-            currentRound: gameState.survie.currentRound,
-            roundInProgress: gameState.survie.roundInProgress,
-            currentEpreuve: gameState.survie.currentEpreuve,
-            timer: gameState.survie.timer,
-            alivePlayers: gameState.survie.alivePlayers.map(p => ({
-                twitchId: p.twitchId, username: p.username, avatarUrl: p.avatarUrl, colorIndex: p.colorIndex,
-                posX: p.posX, posY: p.posY
-            })),
-            eliminatedPlayers: gameState.survie.eliminatedPlayers,
-            completedCount: gameState.survie.completedPlayers.length,
-            qualifiedCount: gameState.survie.qualifiedCount,
-            toEliminateCount: gameState.survie.toEliminateCount,
-            timeRemaining: gameState.survie.roundTimerEndTime 
-                ? Math.max(0, Math.ceil((gameState.survie.roundTimerEndTime - Date.now()) / 1000))
-                : gameState.survie.timer,
-            npcs: gameState.survie.npcs || SURVIE_NPCS,
-            quests: gameState.survie.quests ? gameState.survie.quests.map(q => ({
-                id: q.id, type: q.type, desc: q.desc,
-                totalSteps: q.steps ? q.steps.length : (q.type === 'REUNION' ? q.count : (q.type === 'COLLECT_ITEMS' ? q.count + 1 : (q.type === 'RIDDLE' ? 1 : 2))),
-                ...(q.type === 'REUNION' && { count: q.count, group: q.group }),
-                ...(q.type === 'COLLECT_ITEMS' && { count: q.count }),
-                ...(q.type === 'RIDDLE' && { riddle: q.riddle }),
-                ...(q.type === 'MYSTERY' && { victim: q.victim, suspects: q.suspects }),
-            })) : [],
-            groundItems: gameState.survie.groundItems || [],
-            boosts: gameState.survie.boosts || [],
-            questItems: QUEST_ITEMS,
-            gameStartedAt: gameState.survie.gameStartedAt || null,
-            playerQuestStates: gameState.survie.playerQuestStates ? Object.fromEntries(
-                Object.entries(gameState.survie.playerQuestStates).map(([tid, pqs]) => [tid, { quests: pqs.quests, pickedItems: pqs.pickedItems || [], inventory: pqs.inventory || [] }])
-            ) : {},
-        } : null,
-        // 🗳️ Mode Poll
-        poll: gameState.lobbyMode === 'poll' && gameState.poll.active 
-            ? getPollStateForClient(gameState, req.session.twitchId)
-            : null,
-        // 🏔️ Mode Ascension
-        ascension: gameState.lobbyMode === 'ascension' && gameState.ascension.active
-            ? {
-                active: true,
-                floors: gameState.ascension.floors,
-                timer: gameState.ascension.timer,
-                countdownEndsAt: gameState.ascension.countdownEndsAt,
-            }
-            : null
+        } : null
     });
 });
 
@@ -1650,24 +258,11 @@ app.use(express.static('src/style'));
 app.use(express.static('src/sound'));
 app.use(express.static('src/img'));
 app.use(express.static('src/img/questionpic'));
-app.use(express.static('src/img/pollpic'));
-app.use(express.static('src/img/collectpic'));
-app.use(express.static('src/img/ascensionpic'));
-app.use(express.static('src/img/ascensionpic/ascensionarcs'));
-app.use(express.static('src/img/ascensionpic/ascensionanime'));
-app.use(express.static('src/img/tracepic'));
 app.use(express.static('src/img/avatarpic'));
 app.use(express.static('src/img/avatar'));
 app.use(express.static('src/script'));
 
 
-let activeAdminSession = null; // Session de l'admin connecté
-let activeAdminLoginTime = null; // Timestamp de connexion
-let masterAdminSessions = new Set();
-
-
-const MASTER_PASSWORD = process.env.MASTER_ADMIN_PASSWORD || 'cc';
-const ADMIN_TIMEOUT_MS = 10 * 60 * 1000;
 
 
 // ============================================
@@ -1695,7 +290,6 @@ const gameState = {
     answersCount: 4,
     questionsCount: 20,
     usedQuestionIds: [],
-    streamerId: null, // 🎙️ ID Twitch du streamer admin (null = pas d'historique)
     speedBonus: true, // 🆕 Bonus rapidité (500 pts au plus rapide en mode points)
     bonusEnabled: true, // 🎮 Bonus activés (jauge combo, bonus, défis)
 
@@ -1757,47 +351,6 @@ const gameState = {
         playerChallenges: new Map(), // Map<twitchId, {challenges: {id: {progress, target, completed}}, lettersGiven: Map}>
         playerBonuses: new Map()    // Map<twitchId, {freeCharacter: 0, extraLife: 0}>
     },
-    
-    // ============================================
-    // 🎴 COLLECT - État du mode jeu de cartes anime
-    // ============================================
-    collect: {
-        active: false,              // Mode Collect actif
-        deck: [],                   // Deck de cartes
-        playersOrder: [],           // Ordre des joueurs (twitchIds)
-        playersData: new Map(),     // Map<twitchId, {cards, wins}>
-        currentRound: 0,            // Round actuel
-        roundStat: null,            // Stat du round actuel (atk, int, spd, pwr)
-        playedCards: new Map(),     // Map<twitchId, card> - cartes jouées ce round
-        roundTimer: null,           // Timer du round
-        timerEndTime: null          // Timestamp fin du timer (pour sync)
-    },
-    
-    // ============================================
-    // 🎮 SURVIE - État du mode
-    // ============================================
-    survie: {
-        active: false,
-        currentRound: 0,
-        roundTimer: null,
-        roundTimerEndTime: null,
-        roundInProgress: false,
-        alivePlayers: [],           // [{twitchId, username, socketId, avatarUrl}]
-        eliminatedPlayers: [],      // [{twitchId, username, eliminatedRound, position}]
-        currentEpreuve: null,       // {type, data}
-        usedEpreuves: [],           // Types déjà utilisés
-        completedPlayers: [],       // [{twitchId, username, completionTime}]
-        qualifiedCount: 0,
-        toEliminateCount: 0,
-        timer: 30,                  // Réglable par le streamer
-        npcs: []                    // Positions randomisées à chaque partie
-    },
-    
-    // ============================================
-    // 🗳️ POLL - État du mode
-    // ============================================
-    poll: createPollState(),
-    ascension: createAscensionState()
 };
 
 // ============================================
@@ -1859,9 +412,8 @@ function broadcastLobbyUpdate() {
     
     // 💣🎴 Vérifier si le lobby BombAnime/Collect est plein
     const isBombanimeMode = gameState.lobbyMode === 'bombanime';
-    const isCollectMode = gameState.lobbyMode === 'collect';
-    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : (isCollectMode ? COLLECT_CONFIG.MAX_PLAYERS : Infinity);
-    const isLobbyFull = (isBombanimeMode || isCollectMode) && gameState.players.size >= maxPlayers;
+    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : Infinity;
+    const isLobbyFull = isBombanimeMode && gameState.players.size >= maxPlayers;
     
     io.emit('lobby-update', {
         playerCount: gameState.players.size,
@@ -2166,179 +718,25 @@ function getEliminatedCount() {
 }
 
 
-// ============================================
-// 🆕 TRACKING VISITES (discret)
-// ============================================
-async function logVisit(page, twitchUsername = null, userAgent = null) {
-    try {
-        await supabase.from('visits').insert({ 
-            page,
-            twitch_username: twitchUsername,
-            user_agent: userAgent
-        });
-    } catch (e) {}
-}
-
 
 app.get('/', (req, res) => {
-    logVisit('home', req.session?.username || null, req.headers['user-agent'] || null);
-    // 🚧 Landing temporaire (avant lancement officiel) — pour repasser sur la home : remplacer par 'home.html'
-    res.sendFile(__dirname + '/src/html/landing.html');
+    res.sendFile(__dirname + '/src/html/home.html');
 });
 
 // ============================================
-// Routes ADMIN
+// Routes HOST (ex-admin)
 // ============================================
 
-// Page admin
+// Panel du host (créateur de la room)
 app.get('/admin', (req, res) => {
-    // 🚧 Pendant la maintenance : seul un master déjà authentifié accède à l'admin.
-    // Tout le reste (streamer, anonyme) est redirigé vers la landing.
-    if (!req.session.isMasterAdmin) {
-        return res.redirect('/');
-    }
-    logVisit('admin', req.session?.username || null, req.headers['user-agent'] || null);
     res.sendFile(__dirname + '/src/html/admin.html');
 });
-
-// 🔑 Backdoor pour le master pendant la maintenance : sert la page admin
-// pour permettre la première connexion (saisie du master override).
-// Une fois la session master active, /admin fonctionne normalement.
-app.get('/admin/master', (req, res) => {
-    logVisit('admin', req.session?.username || null, req.headers['user-agent'] || null);
-    res.sendFile(__dirname + '/src/html/admin.html');
-});
-
-// 🆕 Page Ranking
-app.get('/ranking', (req, res) => {
-    logVisit('ranking', req.session?.username || null, req.headers['user-agent'] || null);
-    res.sendFile(__dirname + '/src/html/ranking.html');
-});
-
-// Login admin
-app.post('/admin/login', (req, res) => {
-    const { password, masterOverride } = req.body;
-
-    // ========== CAS 1 : Master override (toi le dev) ==========
-    if (masterOverride && masterOverride === MASTER_PASSWORD) {
-        req.session.isAdmin = true;
-        req.session.isMasterAdmin = true;
-
-        // Ajouter à la liste des masters connectés (SANS déconnecter le streamer)
-        masterAdminSessions.add(req.session.id);
-        lastAdminActivity = Date.now();
-
-        req.session.save((err) => {
-            if (err) {
-                return res.status(500).json({ success: false, message: 'Erreur de session' });
-            }
-            console.log(`👑 MASTER ADMIN connecté (${masterAdminSessions.size} master(s) actif(s))`);
-            res.json({
-                success: true,
-                isMaster: true,
-                canObserve: true // Indique que c'est un mode observation
-            });
-        });
-        return;
-    }
-
-    // ========== CAS 2 : Login normal ==========
-    if (password === process.env.ADMIN_PASSWORD) {
-
-        // ⚠️ Vérifier si un admin NORMAL est déjà connecté
-        if (activeAdminSession && activeAdminSession !== req.session.id) {
-            const minutesConnected = Math.floor((Date.now() - activeAdminLoginTime) / 60000);
-            return res.status(409).json({
-                success: false,
-                error: 'admin_already_connected',
-                message: '',
-                connectedSince: minutesConnected,
-                requiresMaster: true
-            });
-        }
-
-        // Sinon, autoriser la connexion normale
-        req.session.isAdmin = true;
-        req.session.isMasterAdmin = false; // Pas un master
-        activeAdminSession = req.session.id;
-        activeAdminLoginTime = Date.now();
-        lastAdminActivity = Date.now();
-
-        req.session.save((err) => {
-            if (err) {
-                console.error('❌ Erreur sauvegarde session:', err);
-                return res.status(500).json({ success: false, message: 'Erreur de session' });
-            }
-            console.log('✅ Admin normal connecté - Slot pris');
-            res.json({ success: true, isMaster: false });
-        });
-        return;
-    }
-
-    // ========== CAS 3 : Mot de passe incorrect ==========
-    res.status(401).json({ success: false, message: 'Mot de passe incorrect' });
-});
-
-// 🆕 Route secrète pour voir les visites
-app.get('/visits-stats', async (req, res) => {
-    try {
-        const { data: homeVisits } = await supabase
-            .from('visits')
-            .select('timestamp')
-            .eq('page', 'home')
-            .order('timestamp', { ascending: false })
-            .limit(20);
-
-        const { data: adminVisits } = await supabase
-            .from('visits')
-            .select('timestamp')
-            .eq('page', 'admin')
-            .order('timestamp', { ascending: false })
-            .limit(20);
-
-        const { count: homeCount } = await supabase
-            .from('visits')
-            .select('*', { count: 'exact', head: true })
-            .eq('page', 'home');
-
-        const { count: adminCount } = await supabase
-            .from('visits')
-            .select('*', { count: 'exact', head: true })
-            .eq('page', 'admin');
-
-        res.json({
-            total: { home: homeCount || 0, admin: adminCount || 0 },
-            recent: {
-                home: homeVisits?.map(v => new Date(v.timestamp).toLocaleString('fr-FR')) || [],
-                admin: adminVisits?.map(v => new Date(v.timestamp).toLocaleString('fr-FR')) || []
-            }
-        });
-    } catch (e) {
-        res.json({ error: e.message });
-    }
-});
-
-// Vérifier si admin
-app.get('/admin/check', (req, res) => {
-    res.json({ isAdmin: req.session.isAdmin === true });
-});
-
-// Vérifier l'authentification admin (utilisé par le nouveau panel)
-app.get('/admin/auth', (req, res) => {
-    res.json({ authenticated: req.session.isAdmin === true });
-});
-
 
 app.get('/admin/game-state', (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
-
     // 💣🎴 Vérifier si le lobby BombAnime/Collect est plein
     const isBombanimeMode = gameState.lobbyMode === 'bombanime';
-    const isCollectMode = gameState.lobbyMode === 'collect';
-    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : (isCollectMode ? COLLECT_CONFIG.MAX_PLAYERS : Infinity);
-    const isLobbyFull = (isBombanimeMode || isCollectMode) && gameState.players.size >= maxPlayers;
+    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : Infinity;
+    const isLobbyFull = isBombanimeMode && gameState.players.size >= maxPlayers;
 
     res.json({
         isActive: gameState.isActive,
@@ -2359,9 +757,6 @@ app.get('/admin/game-state', (req, res) => {
 
 // Activer/désactiver le jeu
 app.post('/admin/toggle-game', async (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé - Session expirée' });
-    }
 
     gameState.isActive = !gameState.isActive;
 
@@ -2442,19 +837,8 @@ app.post('/admin/toggle-game', async (req, res) => {
         console.log('❌ Jeu désactivé');
 
         // Reset complet de l'état si une partie était en cours
-        if (gameState.inProgress && gameState.currentGameId) {
-            console.log('⚠️ Partie en cours annulée - Suppression de la BDD');
-
-            // 🔥 Supprimer la partie interrompue (pas de winner = pas de vraie partie)
-            try {
-                await supabase
-                    .from('games')
-                    .delete()
-                    .eq('id', gameState.currentGameId);
-                console.log(`🗑️ Partie ${gameState.currentGameId} supprimée (interrompue)`);
-            } catch (error) {
-                console.error('❌ Erreur suppression partie:', error);
-            }
+        if (gameState.inProgress) {
+            console.log('⚠️ Partie en cours annulée');
         }
 
         winnerScreenData = null;
@@ -2506,28 +890,6 @@ app.post('/admin/toggle-game', async (req, res) => {
         // 💣 Reset BombAnime
         resetBombanimeState();
         
-        // 🎮 Reset Survie/Trace
-        if (gameState.survie) {
-            // Clear any active round timers
-            if (gameState.survie.roundTimer) {
-                clearTimeout(gameState.survie.roundTimer);
-            }
-            gameState.survie = {
-                active: false, currentRound: 0, roundTimer: null, roundTimerEndTime: null,
-                roundInProgress: false, alivePlayers: [], eliminatedPlayers: [],
-                currentEpreuve: null, usedEpreuves: [], completedPlayers: [],
-                qualifiedCount: 0, toEliminateCount: 0, timer: 30,
-                npcs: [], quests: [], groundItems: [], boosts: [],
-                playerQuestStates: {}
-            };
-            console.log('🎮 Survie/Trace state reset');
-        }
-
-        // 🗳️ Reset Poll state (clear any active timers)
-        resetPollState(gameState);
-
-        // 🏔️ Reset Ascension state
-        resetAscensionState(gameState);
 
         io.emit('game-deactivated');
     }
@@ -2537,9 +899,6 @@ app.post('/admin/toggle-game', async (req, res) => {
 
 // 💣 Mettre à jour la série BombAnime
 app.post('/admin/bombanime/update-serie', (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
     
     const { serie } = req.body;
     
@@ -2566,9 +925,6 @@ app.post('/admin/bombanime/update-serie', (req, res) => {
 
 // 💣 Fermer le lobby BombAnime spécifiquement
 app.post('/admin/bombanime/close-lobby', (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
     
     // Fermer le lobby
     gameState.isActive = false;
@@ -2577,10 +933,6 @@ app.post('/admin/bombanime/close-lobby', (req, res) => {
     // Reset BombAnime
     resetBombanimeState();
     
-    // Reset Collect
-    if (gameState.collect) {
-        resetCollectState();
-    }
     
     // Reset winnerScreenData
     winnerScreenData = null;
@@ -2603,9 +955,6 @@ app.post('/admin/bombanime/close-lobby', (req, res) => {
 
 // Créer une nouvelle suggestion
 app.post('/admin/bombanime/suggestion', async (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
     
     try {
         const { type, anime, characterName, variantOf, details } = req.body;
@@ -2620,7 +969,7 @@ app.post('/admin/bombanime/suggestion', async (req, res) => {
             characterName: characterName.toUpperCase().trim(),
             variantOf: variantOf ? variantOf.toUpperCase().trim() : null,
             details,
-            submittedBy: req.session.adminUsername || 'Admin'
+            submittedBy: 'Host'
         });
         
         res.json({ success: true, suggestion });
@@ -2657,9 +1006,6 @@ app.post('/bombanime/player-suggestion', async (req, res) => {
 
 // Récupérer les suggestions
 app.get('/admin/bombanime/suggestions', async (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
     
     try {
         const { status } = req.query;
@@ -2675,9 +1021,6 @@ app.get('/admin/bombanime/suggestions', async (req, res) => {
 
 // Mettre à jour le statut d'une suggestion
 app.post('/admin/bombanime/suggestion/:id/status', async (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
     
     try {
         const { id } = req.params;
@@ -2697,9 +1040,6 @@ app.post('/admin/bombanime/suggestion/:id/status', async (req, res) => {
 
 // Supprimer une suggestion
 app.delete('/admin/bombanime/suggestion/:id', async (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
     
     try {
         const { id } = req.params;
@@ -2713,9 +1053,6 @@ app.delete('/admin/bombanime/suggestion/:id', async (req, res) => {
 
 // Récupérer la liste des animes disponibles pour les suggestions
 app.get('/admin/bombanime/animes', (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
     
     const animes = Object.keys(BOMBANIME_CHARACTERS).map(key => ({
         key,
@@ -2727,9 +1064,6 @@ app.get('/admin/bombanime/animes', (req, res) => {
 
 // Mettre à jour les paramètres du jeu (vies et temps)
 app.post('/admin/update-settings', (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
 
     const { lives, timePerQuestion } = req.body;
 
@@ -2757,9 +1091,6 @@ app.post('/admin/update-settings', (req, res) => {
 
 // Route séparée pour changer les vies
 app.post('/admin/set-lives', (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
 
     const { lives } = req.body;
     gameState.lives = parseInt(lives);
@@ -2783,9 +1114,6 @@ app.post('/admin/set-lives', (req, res) => {
 
 // Route séparée pour changer le temps par question
 app.post('/admin/set-time', (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
 
     const { time } = req.body;
     gameState.questionTime = parseInt(time);
@@ -2803,9 +1131,6 @@ app.post('/admin/set-time', (req, res) => {
 
 // Route séparée pour changer le nombre de réponses
 app.post('/admin/set-answers', (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
 
     const { answers } = req.body;
     gameState.answersCount = parseInt(answers);
@@ -2824,9 +1149,6 @@ app.post('/admin/set-answers', (req, res) => {
 
 // Démarrer une partie
 app.post('/admin/start-game', async (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
 
     if (gameState.inProgress) {
         return res.status(400).json({ error: 'Une partie est déjà en cours' });
@@ -2890,137 +1212,6 @@ app.post('/admin/start-game', async (req, res) => {
         }
     }
 
-    // 🎴 MODE COLLECT - Démarrage spécial
-    if (gameState.lobbyMode === 'collect') {
-        // Récupérer les paramètres envoyés
-        const { collectAnimes, collectHandSize } = req.body || {};
-        
-        // Stocker la taille de main
-        gameState.collect.handSize = parseInt(collectHandSize) || 3;
-        if (gameState.collect.handSize !== 3 && gameState.collect.handSize !== 5) {
-            gameState.collect.handSize = 3;
-        }
-        
-        // Stocker les animes sélectionnés
-        if (collectAnimes && Array.isArray(collectAnimes) && collectAnimes.length > 0) {
-            gameState.collect.selectedAnimes = collectAnimes;
-            console.log(`🎴 Animes sélectionnés: ${collectAnimes.length}/${Object.keys(COLLECT_CARDS_DATA).length}`);
-        } else {
-            gameState.collect.selectedAnimes = Object.keys(COLLECT_CARDS_DATA);
-            console.log('🎴 Tous les animes sélectionnés');
-        }
-        console.log(`🎴 Cartes en main: ${gameState.collect.handSize}`);
-        
-        // Vérifier les limites de joueurs (2-10)
-        if (totalPlayers > 10) {
-            return res.status(400).json({
-                success: false,
-                error: 'Maximum 5 joueurs en mode Collect'
-            });
-        }
-        
-        try {
-            const result = await startCollectGame();
-            if (result.success) {
-                return res.json({ success: true, mode: 'collect' });
-            } else {
-                return res.status(400).json({ success: false, error: result.error });
-            }
-        } catch (error) {
-            console.error('❌ Erreur démarrage Collect:', error);
-            return res.status(500).json({ success: false, error: error.message });
-        }
-    }
-
-    // 🎮 MODE SURVIE - Démarrage spécial
-    if (gameState.lobbyMode === 'survie') {
-        if (totalPlayers > SURVIE_CONFIG.MAX_PLAYERS) {
-            return res.status(400).json({
-                success: false,
-                error: `Maximum ${SURVIE_CONFIG.MAX_PLAYERS} joueurs en mode Survie`
-            });
-        }
-        
-        try {
-            const result = await startSurvieGame();
-            if (result.success) {
-                return res.json({ success: true, mode: 'survie' });
-            } else {
-                return res.status(400).json({ success: false, error: result.error });
-            }
-        } catch (error) {
-            console.error('❌ Erreur démarrage Survie:', error);
-            return res.status(500).json({ success: false, error: error.message });
-        }
-    }
-
-    // 🗳️ MODE POLL - Démarrage spécial
-    if (gameState.lobbyMode === 'poll') {
-        const { pollCategory, pollPerMatch, pollBracketSize, pollShowNames, pollVoteTimer } = req.body || {};
-        
-        try {
-            const result = startPollGame(gameState, io, {
-                category: pollCategory || 'all',
-                perMatch: parseInt(pollPerMatch) || 2,
-                bracketSize: parseInt(pollBracketSize) || 16,
-                showNames: pollShowNames === true || pollShowNames === 'true',
-                voteTimer: parseInt(pollVoteTimer) || 15
-            });
-            
-            if (result.success) {
-                addLog('poll-start', { 
-                    category: gameState.poll.categoryName, 
-                    bracketSize: gameState.poll.bracketSize,
-                    perMatch: gameState.poll.perMatch,
-                    players: gameState.players.size
-                });
-                return res.json({ success: true, mode: 'poll' });
-            } else {
-                return res.status(400).json({ success: false, error: result.error });
-            }
-        } catch (error) {
-            console.error('❌ Erreur démarrage Poll:', error);
-            return res.status(500).json({ success: false, error: error.message });
-        }
-    }
-
-    // 🏔️ MODE ASCENSION - Démarrage spécial
-    if (gameState.lobbyMode === 'ascension') {
-        const { ascensionFloors, ascensionTimer, ascensionSync } = req.body || {};
-
-        try {
-            // 🐛 DEBUG : log les joueurs au moment du start
-            console.log('🏔️ DEBUG /admin/start-game gameState.players:', Array.from(gameState.players.entries()).map(([sid, p]) => ({ sid, tid: p.twitchId, name: p.username, ghost: !!p.isGhost })));
-
-            // 🆕 Créer la partie en DB pour pouvoir tracker les stats + rewards à la fin
-            const game = await db.createGame(totalPlayers, gameState.mode, 'ascension');
-            gameState.currentGameId = game.id;
-            gameState.initialPlayerCount = totalPlayers;
-            gameState.gameStartTime = Date.now();
-            gameState.inProgress = true;
-
-            const result = startAscensionGame(gameState, io, {
-                floors: parseInt(ascensionFloors) || 15,
-                timer: parseInt(ascensionTimer) || 15,
-                syncEpreuves: ascensionSync !== false,
-                // 🆕 Callback exécuté à la fin de la partie ascension : XP / S-Coins + stats
-                onGameEnd: (podium, winner) => {
-                    handleAscensionGameEndRewards(podium, winner);
-                },
-            });
-
-            if (result.success) {
-                return res.json({ success: true, mode: 'ascension' });
-            } else {
-                gameState.inProgress = false;
-                return res.status(400).json({ success: false, error: result.error });
-            }
-        } catch (error) {
-            console.error('❌ Erreur démarrage Ascension:', error);
-            gameState.inProgress = false;
-            return res.status(500).json({ success: false, error: error.message });
-        }
-    }
 
     // 🆕 Vérifier que les deux équipes ont des joueurs en mode Rivalité
     if (gameState.lobbyMode === 'rivalry') {
@@ -3045,23 +1236,11 @@ app.post('/admin/start-game', async (req, res) => {
     }
 
     try {
-        // 🎙️ Identifier le streamer admin (pour historique questions séparé)
-        gameState.streamerId = req.session.twitchId || null;
-        
-        if (gameState.streamerId) {
-            console.log(`🎙️ Streamer ID: ${gameState.streamerId} — historique personnalisé activé`);
-            // Charger l'historique des questions utilisées (par streamer)
-            gameState.usedQuestionIds = await db.getUsedQuestionIds(gameState.streamerId);
-            console.log(`📊 ${gameState.usedQuestionIds.length} questions déjà utilisées pour ce streamer`);
-        } else {
-            console.log(`🎙️ Aucun streamer Twitch connecté — pas d'historique de questions`);
-            gameState.usedQuestionIds = [];
-        }
-
-        const game = await db.createGame(totalPlayers, gameState.mode, gameState.lobbyMode);
+        // 📝 Historique des questions : local à la partie (v2 : plus de streamerId)
+        gameState.usedQuestionIds = [];
 
         gameState.inProgress = true;
-        gameState.currentGameId = game.id;
+        gameState.currentGameId = null;
         gameState.initialPlayerCount = totalPlayers; // 🆕 Stocker le nombre initial
         gameState.currentQuestionIndex = 0;
         gameState.gameStartTime = Date.now();
@@ -3175,8 +1354,7 @@ app.post('/admin/start-game', async (req, res) => {
                     gameState.usedQuestionIds,
                     gameState.serieFilter,
                     shouldApplySerieCooldown() ? gameState.recentSeries : [],
-                    gameState.noSpoil,  // 🚫 Filtre anti-spoil
-                    gameState.streamerId
+                    gameState.noSpoil  // 🚫 Filtre anti-spoil
                 );
 
                 if (questions.length === 0) {
@@ -3186,7 +1364,6 @@ app.post('/admin/start-game', async (req, res) => {
 
                 const question = questions[0];
                 addToRecentSeries(question.serie);
-                if (gameState.streamerId) await db.addUsedQuestion(question.id, question.difficulty, gameState.streamerId);
                 gameState.usedQuestionIds.push(question.id);
 
                 console.log(`📌 Question 1 - Difficulté: ${difficulty}`);
@@ -3264,9 +1441,6 @@ app.post('/admin/start-game', async (req, res) => {
 
 // Route pour changer le mode de jeu
 app.post('/admin/set-mode', (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
 
     // Bloquer si une partie est en cours
     if (gameState.inProgress) {
@@ -3317,9 +1491,6 @@ app.post('/admin/set-mode', (req, res) => {
 
 // Route pour changer le nombre de questions (Mode Points)
 app.post('/admin/set-questions', (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
 
     const { questions } = req.body;
     const validCounts = [15, 20, 25, 30, 35, 40, 45, 50];
@@ -3344,9 +1515,6 @@ app.post('/admin/set-questions', (req, res) => {
 
 // 🆕 Route pour activer/désactiver le bonus rapidité (mode points uniquement)
 app.post('/admin/set-speed-bonus', (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
 
     const { enabled } = req.body;
     gameState.speedBonus = enabled === true;
@@ -3357,9 +1525,6 @@ app.post('/admin/set-speed-bonus', (req, res) => {
 
 // 🎮 Route pour activer/désactiver les bonus (jauge combo, bonus, défis)
 app.post('/admin/set-bonus-enabled', (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
 
     const { enabled } = req.body;
     gameState.bonusEnabled = enabled === true;
@@ -3371,9 +1536,6 @@ app.post('/admin/set-bonus-enabled', (req, res) => {
 
 // Route pour changer le mode de difficulté
 app.post('/admin/set-difficulty-mode', (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
 
     // Bloquer si une partie est en cours
     if (gameState.inProgress) {
@@ -3408,9 +1570,6 @@ app.post('/admin/set-difficulty-mode', (req, res) => {
 
 // 🚫 Route pour activer/désactiver le filtre anti-spoil
 app.post('/admin/set-no-spoil', (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
 
     if (gameState.inProgress) {
         return res.status(400).json({
@@ -3440,9 +1599,6 @@ app.post('/admin/set-no-spoil', (req, res) => {
 
 // Route pour obtenir les statistiques des séries (nombre de questions)
 app.get('/admin/serie-stats', async (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
 
     try {
         const allQuestions = await db.getAllQuestions();
@@ -3488,9 +1644,6 @@ app.get('/admin/serie-stats', async (req, res) => {
 
 // Route pour changer le filtre série
 app.post('/admin/set-serie-filter', (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
 
     // Bloquer si une partie est en cours
     if (gameState.inProgress) {
@@ -3527,9 +1680,6 @@ app.post('/admin/set-serie-filter', (req, res) => {
 
 // Route pour toggle le mode auto
 app.post('/admin/toggle-auto-mode', (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
 
     gameState.autoMode = !gameState.autoMode;
     console.log(`⚙️ Mode Auto ${gameState.autoMode ? 'activé' : 'désactivé'}`);
@@ -3556,9 +1706,6 @@ app.post('/admin/toggle-auto-mode', (req, res) => {
 
 // Route pour forcer le déclenchement du mode auto (si activé pendant résultats)
 app.post('/admin/trigger-auto-next', (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
 
     // Vérifier que le mode auto est activé et qu'une partie est en cours
     if (!gameState.autoMode || !gameState.inProgress) {
@@ -3611,8 +1758,7 @@ app.post('/admin/trigger-auto-next', (req, res) => {
                 gameState.usedQuestionIds,
                 gameState.serieFilter,
                 shouldApplySerieCooldown() ? gameState.recentSeries : [],  // 🆕
-                gameState.noSpoil,  // 🚫 Filtre anti-spoil
-                    gameState.streamerId
+                gameState.noSpoil  // 🚫 Filtre anti-spoil
             );
 
 
@@ -3623,7 +1769,6 @@ app.post('/admin/trigger-auto-next', (req, res) => {
 
             const question = questions[0];
             addToRecentSeries(question.serie);
-            if (gameState.streamerId) await db.addUsedQuestion(question.id, question.difficulty, gameState.streamerId);
             gameState.usedQuestionIds.push(question.id);
 
             const allAnswers = [
@@ -3691,9 +1836,6 @@ app.post('/admin/trigger-auto-next', (req, res) => {
 
 // Route pour forcer le refresh de tous les joueurs AUTHENTIFIÉS
 app.post('/admin/refresh-players', (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
 
     try {
         const now = Date.now();
@@ -3740,9 +1882,6 @@ app.post('/admin/refresh-players', (req, res) => {
 
 // Route pour vérifier le cooldown restant
 app.get('/admin/refresh-cooldown', (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
 
     const now = Date.now();
     const timeSinceLastRefresh = now - lastRefreshPlayersTime;
@@ -3763,18 +1902,10 @@ app.get('/admin/refresh-cooldown', (req, res) => {
 
 // Route pour reset manuel de l'historique des questions
 app.post('/admin/reset-questions-history', async (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
 
     try {
-        const streamerId = req.session.twitchId || gameState.streamerId;
-        if (!streamerId) {
-            return res.json({ success: true, message: 'Pas de streamer connecté — rien à réinitialiser' });
-        }
-        await db.resetUsedQuestions(null, streamerId);
         gameState.usedQuestionIds = [];
-        console.log(`🔄 Historique des questions réinitialisé manuellement [streamer: ${streamerId}]`);
+        console.log('🔄 Historique des questions réinitialisé manuellement');
         res.json({ success: true, message: 'Historique réinitialisé' });
     } catch (error) {
         console.error('❌ Erreur reset questions:', error);
@@ -3784,9 +1915,6 @@ app.post('/admin/reset-questions-history', async (req, res) => {
 
 // Passer à la question suivante
 app.post('/admin/next-question', async (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
 
     if (!gameState.inProgress) {
         return res.status(400).json({ error: 'Aucune partie en cours' });
@@ -3846,8 +1974,7 @@ app.post('/admin/next-question', async (req, res) => {
             gameState.usedQuestionIds,
             gameState.serieFilter,
             shouldApplySerieCooldown() ? gameState.recentSeries : [],  // 🆕
-            gameState.noSpoil,  // 🚫 Filtre anti-spoil
-                    gameState.streamerId
+            gameState.noSpoil  // 🚫 Filtre anti-spoil
         );
 
 
@@ -3861,7 +1988,6 @@ app.post('/admin/next-question', async (req, res) => {
         // 🔥 DEBUG: Afficher la série de la question retournée
         console.log(`📌 Question série: ${question.serie}, difficulté: ${difficulty}`);
 
-        if (gameState.streamerId) await db.addUsedQuestion(question.id, question.difficulty, gameState.streamerId);
         gameState.usedQuestionIds.push(question.id);
 
         console.log(`📌 Question ${gameState.currentQuestionIndex}/${gameState.mode === 'points' ? gameState.questionsCount : '∞'} - Difficulté: ${difficulty}`);
@@ -3933,38 +2059,6 @@ app.post('/admin/next-question', async (req, res) => {
     }
 });
 
-
-app.post('/admin/logout-silent', (req, res) => {
-    if (req.session.id === activeAdminSession) {
-        activeAdminSession = null;
-        activeAdminLoginTime = null;
-        console.log('🔓 Slot admin normal libéré (silent)');
-    }
-
-    if (req.session.isMasterAdmin) {
-        masterAdminSessions.delete(req.session.id);
-        console.log(`👑 Master déconnecté (silent) (${masterAdminSessions.size} restant(s))`);
-    }
-
-    req.session.destroy();
-    res.json({ success: true });
-});
-
-
-// Vérifier le statut de connexion admin
-app.get('/admin/connection-status', (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.json({ connected: false });
-    }
-
-    res.json({
-        connected: true,
-        isMaster: req.session.isMasterAdmin || false,
-        hasControl: req.session.id === activeAdminSession,
-        normalAdminConnected: !!activeAdminSession,
-        mastersConnected: masterAdminSessions.size
-    });
-});
 
 // Fonction pour calculer la répartition des questions par difficulté
 function getQuestionDistribution(totalQuestions) {
@@ -4399,8 +2493,7 @@ function revealAnswers(correctAnswer) {
                     gameState.usedQuestionIds,
                     gameState.serieFilter,
                     shouldApplySerieCooldown() ? gameState.recentSeries : [],  // 🆕
-                    gameState.noSpoil,  // 🚫 Filtre anti-spoil
-                    gameState.streamerId
+                    gameState.noSpoil  // 🚫 Filtre anti-spoil
                 );
 
                 if (questions.length === 0) {
@@ -4410,7 +2503,6 @@ function revealAnswers(correctAnswer) {
 
                 const question = questions[0];
                 addToRecentSeries(question.serie);
-                if (gameState.streamerId) await db.addUsedQuestion(question.id, question.difficulty, gameState.streamerId);
                 gameState.usedQuestionIds.push(question.id);
 
                 console.log(`📌 Question ${gameState.currentQuestionIndex}/${gameState.mode === 'points' ? gameState.questionsCount : '∞'} - Difficulté: ${difficulty}`);
@@ -4597,64 +2689,13 @@ async function endGameByPoints() {
             lastGlobalWinner = winner.twitchId;
 
             if (winner && winner.points > 0) {
-                await db.endGame(
-                    gameState.currentGameId,
-                    winner.twitchId,
-                    gameState.currentQuestionIndex,
-                    duration
-                );
-                
-                // 🆕 PARALLÉLISATION : on lance toutes les écritures DB indépendantes en parallèle
-                //    (loops séquentielles précédentes faisaient ~30 awaits = ~10s avec 30 joueurs).
-                //    Toutes ces opérations touchent des tables/colonnes différentes → pas de race.
-                const statsEnabled = gameState.initialPlayerCount >= getMinPlayersForStats(gameState.lobbyMode);
-                const statsPromise = statsEnabled
-                    ? Promise.all(sortedPlayers.map((p, i) =>
-                        db.updateUserStats(p.twitchId, i === 0, i + 1).catch(e => console.error('updateUserStats error:', e.message))
-                    ))
-                    : Promise.resolve();
-
-                const trackPromise = Promise.all(sortedPlayers.map((p, i) =>
-                    db.addPlayerGame(gameState.currentGameId, p.twitchId, gameState.lobbyMode, i + 1, i === 0)
-                        .catch(e => console.error('Track player error:', e.message))
-                ));
-
-                const preRewardPromise = getPreRewardData(sortedPlayers).catch(e => { console.error('⚠️ Pre-reward error:', e.message); return {}; });
-
-                const [
-                    _stats,
-                    _track,
-                    preRewardData,
-                    coinRewards,
-                    xpRewards,
-                    winnerUser,
-                ] = await Promise.all([
-                    statsPromise,
-                    trackPromise,
-                    preRewardPromise,
-                    db.distributeGameCoins(sortedPlayers, gameState.initialPlayerCount),
-                    db.distributeGameXp(sortedPlayers, gameState.initialPlayerCount),
-                    db.getUserByTwitchId(winner.twitchId),
-                ]);
-
-                if (statsEnabled) {
-                    console.log(`📊 Stats mises à jour (${gameState.initialPlayerCount} joueurs)`);
-                } else {
-                    console.log(`⚠️ Stats NON comptabilisées (${gameState.initialPlayerCount} < ${getMinPlayersForStats(gameState.lobbyMode)} joueurs [${gameState.lobbyMode}])`);
-                }
-
                 addLog('game-end', { winner: winner.username });
 
-                // 🎁 Construire le résumé des rewards
-                let rewardsData = null;
-                try {
-                    rewardsData = buildRewardSummary(preRewardData, coinRewards, xpRewards);
-                } catch(e) { console.error('⚠️ Reward summary error:', e.message); }
+                const rewardsData = null;
 
                 const winnerData = {
                     username: winner.username,
-                    points: winner.points || 0,
-                    totalVictories: winnerUser ? winnerUser.total_victories : 1
+                    points: winner.points || 0
                 };
 
                 console.log(`🏆 Gagnant: ${winner.username} avec ${winner.points} points`);
@@ -4743,8 +2784,7 @@ async function sendTiebreakerQuestion() {
             gameState.usedQuestionIds,
             gameState.serieFilter,
             shouldApplySerieCooldown() ? gameState.recentSeries : [],  // 🆕
-            gameState.noSpoil,  // 🚫 Filtre anti-spoil
-                    gameState.streamerId
+            gameState.noSpoil  // 🚫 Filtre anti-spoil
         );
 
 
@@ -4757,7 +2797,6 @@ async function sendTiebreakerQuestion() {
 
         const question = questions[0];
         addToRecentSeries(question.serie);
-        if (gameState.streamerId) await db.addUsedQuestion(question.id, question.difficulty, gameState.streamerId);
         gameState.usedQuestionIds.push(question.id);
 
         console.log(`⚔️ Question de départage ${gameState.currentQuestionIndex} - Difficulté: EXTREME`);
@@ -4858,39 +2897,9 @@ async function checkTiebreakerWinner() {
         const duration = Math.floor((Date.now() - gameState.gameStartTime) / 1000);
 
         try {
-            // Enregistrer la victoire
-            await db.endGame(
-                gameState.currentGameId,
-                winner.twitchId,
-                gameState.currentQuestionIndex,
-                duration
-            );
-            
-            // 🆕 Stats comptabilisées uniquement si 15+ joueurs
-            if (gameState.initialPlayerCount >= getMinPlayersForStats(gameState.lobbyMode)) {
-                await db.updateUserStats(winner.twitchId, true, 1);
-
-                // Mettre à jour les stats des perdants
-                const allPlayers = Array.from(gameState.players.values())
-                    .sort((a, b) => (b.points || 0) - (a.points || 0));
-
-                let placement = 2;
-                for (const player of allPlayers) {
-                    if (player.twitchId !== winner.twitchId) {
-                        await db.updateUserStats(player.twitchId, false, placement++);
-                    }
-                }
-                console.log(`📊 Stats mises à jour après tiebreaker (${gameState.initialPlayerCount} joueurs)`);
-            } else {
-                console.log(`⚠️ Stats NON comptabilisées après tiebreaker (${gameState.initialPlayerCount} < ${getMinPlayersForStats(gameState.lobbyMode)} joueurs [${gameState.lobbyMode}])`);
-            }
-
-            const winnerUser = await db.getUserByTwitchId(winner.twitchId);
-
             const winnerData = {
                 username: winner.username,
-                points: winner.points || 0,
-                totalVictories: winnerUser ? winnerUser.total_victories : 1
+                points: winner.points || 0
             };
 
             // Créer le podium Top 3
@@ -4979,8 +2988,7 @@ async function sendRivalryTiebreakerQuestion() {
             gameState.usedQuestionIds,
             gameState.serieFilter,
             shouldApplySerieCooldown() ? gameState.recentSeries : [],
-            gameState.noSpoil,  // 🚫 Filtre anti-spoil
-                    gameState.streamerId
+            gameState.noSpoil  // 🚫 Filtre anti-spoil
         );
 
         if (questions.length === 0) {
@@ -4992,7 +3000,6 @@ async function sendRivalryTiebreakerQuestion() {
 
         const question = questions[0];
         addToRecentSeries(question.serie);
-        if (gameState.streamerId) await db.addUsedQuestion(question.id, question.difficulty, gameState.streamerId);
         gameState.usedQuestionIds.push(question.id);
 
         console.log(`⚔️ Question de départage Rivalry #${gameState.currentQuestionIndex} - Difficulté: ${difficulty.toUpperCase()}`);
@@ -5200,7 +3207,7 @@ async function checkRivalryTiebreakerWinner() {
         // 🔥 FIX: Récupérer topPlayers AVANT l'émission
         let topPlayers = [];
         try {
-            topPlayers = await db.getTopPlayers(10);
+            topPlayers = [];
         } catch (dbError) {
             console.error('⚠️ Erreur récup topPlayers:', dbError.message);
         }
@@ -5229,21 +3236,6 @@ async function checkRivalryTiebreakerWinner() {
 
         io.emit('game-ended', gameEndedPayload);
         console.log('📡 game-ended émis pour rivalry-points-tiebreaker');
-
-        // 🔥 Appels DB APRÈS l'émission (stats équipe uniquement)
-        try {
-            if (savedInitialPlayerCount >= MIN_PLAYERS_FOR_TEAM_STATS) {
-                for (const p of playersData) {
-                    const isWinner = p.team === (team1Score > team2Score ? 1 : 2);
-                    await db.updateTeamStats(p.twitchId, isWinner);
-                }
-                console.log(`📊 Stats équipe mises à jour après tiebreaker (${savedInitialPlayerCount} joueurs)`);
-            } else {
-                console.log(`⚠️ Stats équipe NON comptabilisées après tiebreaker (${savedInitialPlayerCount} < ${MIN_PLAYERS_FOR_TEAM_STATS} joueurs)`);
-            }
-        } catch (dbError) {
-            console.error('⚠️ Erreur DB post-émission tiebreaker (non bloquante):', dbError.message);
-        }
 
         resetGameState();
 
@@ -5313,7 +3305,7 @@ async function endRivalryWithTie() {
     // 🔥 FIX: Récupérer topPlayers AVANT l'émission
     let topPlayers = [];
     try {
-        topPlayers = await db.getTopPlayers(10);
+        topPlayers = [];
     } catch (dbError) {
         console.error('⚠️ Erreur récup topPlayers:', dbError.message);
     }
@@ -5356,52 +3348,7 @@ async function endGameWithTie() {
     const maxPoints = sortedPlayers[0]?.points || 0;
     const winners = sortedPlayers.filter(p => p.points === maxPoints);
 
-    await db.endGame(
-        gameState.currentGameId,
-        null,
-        gameState.currentQuestionIndex,
-        duration
-    );
-
-    // 🆕 Stats comptabilisées uniquement si 15+ joueurs
-    if (gameState.initialPlayerCount >= getMinPlayersForStats(gameState.lobbyMode)) {
-        for (const winner of winners) {
-            await db.updateUserStats(winner.twitchId, true, 1);
-        }
-
-        let placement = winners.length + 1;
-        for (const player of sortedPlayers.slice(winners.length)) {
-            await db.updateUserStats(player.twitchId, false, placement++);
-        }
-        console.log(`📊 Stats mises à jour (égalité, ${gameState.initialPlayerCount} joueurs)`);
-    } else {
-        console.log(`⚠️ Stats NON comptabilisées (égalité, ${gameState.initialPlayerCount} < ${getMinPlayersForStats(gameState.lobbyMode)} joueurs [${gameState.lobbyMode}])`);
-    }
-
-    // 🎁 Reward animation data
-    let rewardsData = null;
-    let preRewardData = {};
-    try {
-        preRewardData = await getPreRewardData(sortedPlayers);
-    } catch(e) { console.error('⚠️ Pre-reward error:', e.message); }
-
-    // 💰 Distribuer les S-Coins
-    const coinRewards = await db.distributeGameCoins(sortedPlayers, gameState.initialPlayerCount);
-    // ⭐ Distribuer l'XP
-    const xpRewards = await db.distributeGameXp(sortedPlayers, gameState.initialPlayerCount);
-
-    // 🎁 Construire le résumé des rewards
-    try {
-        rewardsData = buildRewardSummary(preRewardData, coinRewards, xpRewards);
-    } catch(e) { console.error('⚠️ Reward summary error:', e.message); }
-
-    // 📋 Tracker chaque joueur dans player_games
-    for (let i = 0; i < sortedPlayers.length; i++) {
-        const p = sortedPlayers[i];
-        try {
-            await db.addPlayerGame(gameState.currentGameId, p.twitchId, gameState.lobbyMode, i + 1, i === 0);
-        } catch(e) { console.error('Track player error:', e.message); }
-    }
+    const rewardsData = null;
 
     const winnerData = {
         tie: true,
@@ -5476,75 +3423,16 @@ async function endGame(winner) {
 
         if (winner) {
             lastGlobalWinner = winner.twitchId;
-            await db.endGame(
-                gameState.currentGameId,
-                winner.twitchId,
-                gameState.currentQuestionIndex,
-                duration
-            );
-            
-            // 🆕 Stats comptabilisées uniquement si 15+ joueurs
-            if (gameState.initialPlayerCount >= getMinPlayersForStats(gameState.lobbyMode)) {
-                await db.updateUserStats(winner.twitchId, true, 1);
-                
-                // Mettre à jour les stats des autres joueurs
-                const losers = Array.from(gameState.players.values()).filter(p => p !== winner);
-                let placement = 2;
-                for (const loser of losers) {
-                    await db.updateUserStats(loser.twitchId, false, placement++);
-                }
-                console.log(`📊 Stats mises à jour (mode vies, ${gameState.initialPlayerCount} joueurs)`);
-            } else {
-                console.log(`⚠️ Stats NON comptabilisées (mode vies, ${gameState.initialPlayerCount} < ${getMinPlayersForStats(gameState.lobbyMode)} joueurs [${gameState.lobbyMode}])`);
-            }
-
-            // 💰 Distribuer les S-Coins
-            const allPlayers = [winner, ...Array.from(gameState.players.values()).filter(p => p !== winner)];
-
-            // 🎁 Reward animation data
-            let preRewardData = {};
-            try {
-                preRewardData = await getPreRewardData(allPlayers);
-            } catch(e) { console.error('⚠️ Pre-reward error:', e.message); }
-
-            const coinRewards = await db.distributeGameCoins(allPlayers, gameState.initialPlayerCount);
-            // ⭐ Distribuer l'XP
-            const xpRewards = await db.distributeGameXp(allPlayers, gameState.initialPlayerCount);
-
-            // 🎁 Construire le résumé des rewards
-            try {
-                rewardsData = buildRewardSummary(preRewardData, coinRewards, xpRewards);
-            } catch(e) { console.error('⚠️ Reward summary error:', e.message); }
-
-            // 📋 Tracker chaque joueur dans player_games
-            for (let i = 0; i < allPlayers.length; i++) {
-                const p = allPlayers[i];
-                try {
-                    await db.addPlayerGame(gameState.currentGameId, p.twitchId, gameState.lobbyMode, i + 1, i === 0);
-                } catch(e) { console.error('Track player error:', e.message); }
-            }
-
             addLog('game-end', { winner: winner.username });
-
-            const winnerUser = await db.getUserByTwitchId(winner.twitchId);
 
             winnerData = {
                 username: winner.username,
                 correctAnswers: winner.correctAnswers,
-                livesRemaining: winner.lives,
-                totalVictories: winnerUser ? winnerUser.total_victories : 1
+                livesRemaining: winner.lives
             };
         } else {
             // 🆕 Cas aucun gagnant - terminer la partie en DB quand même
             console.log('💀 Fin de partie sans gagnant');
-            if (gameState.currentGameId) {
-                await db.endGame(
-                    gameState.currentGameId,
-                    null, // Pas de winner
-                    gameState.currentQuestionIndex,
-                    duration
-                );
-            }
             addLog('game-end', { winner: 'Aucun' });
         }
 
@@ -5557,7 +3445,7 @@ async function endGame(winner) {
             avatarUrl: p.avatarUrl || null
         }));
 
-        const topPlayers = await db.getTopPlayers(10);
+        const topPlayers = [];
 
 
         // 🔥 Sauvegarder les données de la dernière question AVANT le reset
@@ -5646,7 +3534,7 @@ async function endGameRivalry(winningTeam) {
         // 🔥 FIX: Récupérer topPlayers AVANT l'émission (comme en mode classique)
         let topPlayers = [];
         try {
-            topPlayers = await db.getTopPlayers(10);
+            topPlayers = [];
         } catch (dbError) {
             console.error('⚠️ Erreur récup topPlayers:', dbError.message);
         }
@@ -5654,15 +3542,7 @@ async function endGameRivalry(winningTeam) {
         // 🔥 Sauvegarder les données de la dernière question AVANT le reset
         const lastQuestionPlayers = getLastQuestionPlayersData();
         
-        // 🎁 Calculer les rewards AVANT l'émission
-        const rvlWinners = [...playersData].filter(p => p.team === winningTeam).sort((a, b) => (b.correctAnswers || 0) - (a.correctAnswers || 0));
-        const rvlLosers = [...playersData].filter(p => p.team !== winningTeam);
-        const sortedForRewards = [...rvlWinners, ...rvlLosers];
-        let rewardsData = null;
-        try {
-            const preRewardData = await getPreRewardData(sortedForRewards);
-            rewardsData = computeExpectedRewards(preRewardData, sortedForRewards);
-        } catch(e) { console.error('⚠️ Erreur pre-reward (non bloquante):', e.message); }
+        const rewardsData = null;
 
         const gameEndedPayload = {
             winner: teamData,
@@ -5685,35 +3565,6 @@ async function endGameRivalry(winningTeam) {
         io.emit('game-ended', gameEndedPayload);
         console.log('📡 game-ended émis pour rivalry-lives');
         
-        // Appels DB post-émission (stats équipe)
-        try {
-            if (savedInitialPlayerCount >= MIN_PLAYERS_FOR_TEAM_STATS && winningTeam !== 'draw') {
-                for (const p of playersData) {
-                    const isWinner = p.team === winningTeam;
-                    await db.updateTeamStats(p.twitchId, isWinner);
-                }
-                console.log(`📊 Stats équipe mises à jour (${savedInitialPlayerCount} joueurs)`);
-            } else {
-                console.log(`⚠️ Stats équipe NON comptabilisées (${savedInitialPlayerCount} < ${MIN_PLAYERS_FOR_TEAM_STATS} joueurs ou égalité)`);
-            }
-
-            // 💰 Distribuer les S-Coins & XP (équipe gagnante = top 1/2/3, équipe perdante = participation)
-            const winners = [...playersData].filter(p => p.team === winningTeam).sort((a, b) => (b.correctAnswers || 0) - (a.correctAnswers || 0));
-            const losers = [...playersData].filter(p => p.team !== winningTeam);
-            const sortedForCoins = [...winners, ...losers];
-            await db.distributeGameCoins(sortedForCoins, savedInitialPlayerCount);
-            await db.distributeGameXp(sortedForCoins, savedInitialPlayerCount);
-
-            // 📋 Tracker chaque joueur dans player_games
-            for (let i = 0; i < sortedForCoins.length; i++) {
-                const p = sortedForCoins[i];
-                try {
-                    await db.addPlayerGame(gameState.currentGameId, p.twitchId, 'rivalry', i + 1, p.team === winningTeam);
-                } catch(e) { console.error('Track player error:', e.message); }
-            }
-        } catch (dbError) {
-            console.error('⚠️ Erreur DB post-émission (non bloquante):', dbError.message);
-        }
         
         resetGameState();
         
@@ -5811,7 +3662,7 @@ async function endGameRivalryPoints() {
         // 🔥 FIX: Récupérer topPlayers AVANT l'émission (comme en mode classique)
         let topPlayers = [];
         try {
-            topPlayers = await db.getTopPlayers(10);
+            topPlayers = [];
         } catch (dbError) {
             console.error('⚠️ Erreur récup topPlayers:', dbError.message);
         }
@@ -5819,15 +3670,7 @@ async function endGameRivalryPoints() {
         // 🔥 Sauvegarder les données de la dernière question AVANT le reset
         const lastQuestionPlayers = getLastQuestionPlayersData();
         
-        // 🎁 Calculer les rewards AVANT l'émission
-        const rpWinners = [...playersData].filter(p => p.team === winningTeam).sort((a, b) => (b.correctAnswers || 0) - (a.correctAnswers || 0));
-        const rpLosers = [...playersData].filter(p => p.team !== winningTeam);
-        const sortedForRewards = [...rpWinners, ...rpLosers];
-        let rewardsData = null;
-        try {
-            const preRewardData = await getPreRewardData(sortedForRewards);
-            rewardsData = computeExpectedRewards(preRewardData, sortedForRewards);
-        } catch(e) { console.error('⚠️ Erreur pre-reward (non bloquante):', e.message); }
+        const rewardsData = null;
 
         const gameEndedPayload = {
             winner: teamData,
@@ -5851,35 +3694,6 @@ async function endGameRivalryPoints() {
         io.emit('game-ended', gameEndedPayload);
         console.log('📡 game-ended émis pour rivalry-points');
         
-        // Appels DB post-émission (stats équipe)
-        try {
-            if (savedInitialPlayerCount >= MIN_PLAYERS_FOR_TEAM_STATS) {
-                for (const p of playersData) {
-                    const isWinner = p.team === winningTeam;
-                    await db.updateTeamStats(p.twitchId, isWinner);
-                }
-                console.log(`📊 Stats équipe mises à jour (${savedInitialPlayerCount} joueurs)`);
-            } else {
-                console.log(`⚠️ Stats équipe NON comptabilisées (${savedInitialPlayerCount} < ${MIN_PLAYERS_FOR_TEAM_STATS} joueurs)`);
-            }
-
-            // 💰 Distribuer les S-Coins & XP (équipe gagnante = top 1/2/3, équipe perdante = participation)
-            const winners = [...playersData].filter(p => p.team === winningTeam).sort((a, b) => (b.correctAnswers || 0) - (a.correctAnswers || 0));
-            const losers = [...playersData].filter(p => p.team !== winningTeam);
-            const sortedForCoins = [...winners, ...losers];
-            await db.distributeGameCoins(sortedForCoins, savedInitialPlayerCount);
-            await db.distributeGameXp(sortedForCoins, savedInitialPlayerCount);
-
-            // 📋 Tracker chaque joueur dans player_games
-            for (let i = 0; i < sortedForCoins.length; i++) {
-                const p = sortedForCoins[i];
-                try {
-                    await db.addPlayerGame(gameState.currentGameId, p.twitchId, 'rivalry', i + 1, p.team === winningTeam);
-                } catch(e) { console.error('Track player error:', e.message); }
-            }
-        } catch (dbError) {
-            console.error('⚠️ Erreur DB post-émission (non bloquante):', dbError.message);
-        }
         
         resetGameState();
         
@@ -5889,437 +3703,7 @@ async function endGameRivalryPoints() {
     }
 }
 
-// Stats admin
-app.get('/admin/stats', async (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
 
-    try {
-        const totalGames = await db.getTotalGames();
-        const topPlayers = await db.getTopPlayers(50);  // ← 50 joueurs max
-        const recentGames = await db.getRecentGames(7);
-
-        res.json({
-            totalGames,
-            topPlayers,
-            recentGames,
-            currentPlayers: gameState.players.size,
-            activePlayers: gameState.inProgress ? getAlivePlayers().length : 0,
-            gameActive: gameState.isActive,
-            gameInProgress: gameState.inProgress
-        });
-    } catch (error) {
-        console.error('❌ Erreur stats:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Route pour les stats de la base de données
-app.get('/admin/db-stats', async (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
-
-    try {
-        const allQuestions = await db.getAllQuestions();
-        const totalPlayers = await db.getTotalPlayers();  // ← AJOUTER
-
-        // Compter les questions par difficulté
-        const byDifficulty = {
-            veryeasy: 0,
-            easy: 0,
-            medium: 0,
-            hard: 0,
-            veryhard: 0
-        };
-
-        const seriesSet = new Set();
-
-        allQuestions.forEach(q => {
-            if (byDifficulty.hasOwnProperty(q.difficulty)) {
-                byDifficulty[q.difficulty]++;
-            }
-            if (q.serie) {
-                seriesSet.add(q.serie);
-            }
-        });
-
-        res.json({
-            totalQuestions: allQuestions.length,
-            totalSeries: seriesSet.size,
-            totalPlayers: totalPlayers,  // ← AJOUTER
-            byDifficulty: byDifficulty
-        });
-    } catch (error) {
-        console.error('❌ Erreur db-stats:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-
-// Route pour mettre à jour les paramètres du jeu
-app.post('/admin/update-settings', (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
-
-    const { lives, timePerQuestion } = req.body;
-
-    if (!lives || !timePerQuestion) {
-        return res.status(400).json({ error: 'Paramètres invalides' });
-    }
-
-    // Mettre à jour les paramètres du jeu
-    gameSettings.lives = parseInt(lives);
-    gameSettings.timePerQuestion = parseInt(timePerQuestion);
-
-    // Émettre vers tous les clients connectés
-    io.emit('settings-updated', {
-        lives: gameSettings.lives,
-        timePerQuestion: gameSettings.timePerQuestion
-    });
-
-    console.log(`✅ Paramètres mis à jour: ${lives} vies, ${timePerQuestion}s`);
-    res.json({ success: true, lives: gameSettings.lives, timePerQuestion: gameSettings.timePerQuestion });
-});
-
-
-// ============================================
-// ROUTES PROFIL & BADGES
-// ============================================
-
-// Récupérer le profil complet d'un joueur
-app.get('/profile/:twitchId', async (req, res) => {
-    try {
-        const { twitchId } = req.params;
-
-        const user = await db.getUserByTwitchId(twitchId);
-        if (!user) {
-            return res.status(404).json({ error: 'Utilisateur non trouvé' });
-        }
-
-        const badges = await db.getUserBadges(twitchId);
-        const unlockedTitles = await db.getUserUnlockedTitles(twitchId);
-        let titleOptions = { prefixes: [], suffixes: [], equippedPrefix: 'Novice', equippedSuffix: 'courageux' };
-        try {
-            titleOptions = await db.getUserTitleOptions(twitchId);
-        } catch(e) {
-            console.error('⚠️ Erreur titleOptions (non bloquante):', e.message);
-        }
-        let purchases = [];
-        try {
-            purchases = await db.getUserPurchases(twitchId);
-        } catch(e) {
-            console.error('⚠️ Erreur purchases (non bloquante):', e.message);
-        }
-        let modeStats = {};
-        try {
-            modeStats = await db.getPlayerModeStats(twitchId);
-        } catch(e) {
-            console.error('⚠️ Erreur modeStats (non bloquante):', e.message);
-        }
-
-        // Titre affiché = toujours prefix + suffix
-        const displayTitle = [
-            user.equipped_title_prefix || 'Novice',
-            user.equipped_title_suffix || 'courageux'
-        ].join(' ');
-
-        res.json({
-            user: {
-                twitch_id: user.twitch_id,
-                username: user.username,
-                avatar_url: user.avatar_url || 'novice.png',
-                coins: user.coins || 0,
-                xp: user.xp || 0,
-                level: user.level || 1,
-                levelData: calculateLevel(user.xp || 0),
-                equipped_title_prefix: user.equipped_title_prefix || null,
-                equipped_title_suffix: user.equipped_title_suffix || null,
-                display_title: displayTitle,
-                total_games_played: user.total_games_played,
-                total_victories: user.total_victories,
-                last_placement: user.last_placement || null,
-                isLastGlobalWinner: user.twitch_id === lastGlobalWinner,
-                win_rate: user.total_games_played > 0
-                    ? ((user.total_victories / user.total_games_played) * 100).toFixed(1)
-                    : '0.0'
-            },
-            badges: {
-                games_played: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(tier => ({
-                    tier,
-                    unlocked: badges.some(b => b.badge_type === 'games_played' && b.badge_tier === tier)
-                })),
-                games_won: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(tier => ({
-                    tier,
-                    unlocked: badges.some(b => b.badge_type === 'games_won' && b.badge_tier === tier)
-                }))
-            },
-            titles: {
-                prefixes: titleOptions.prefixes,
-                suffixes: titleOptions.suffixes,
-                equippedPrefix: titleOptions.equippedPrefix,
-                equippedSuffix: titleOptions.equippedSuffix,
-                unlocked: unlockedTitles
-            },
-            purchases: purchases.map(p => p.item_id),
-            purchasedAvatars: await (async () => {
-                try {
-                    const shopItems = await db.getShopItems();
-                    const purchasedIds = purchases.map(p => p.item_id);
-                    return shopItems.filter(i => i.type === 'avatar' && purchasedIds.includes(i.id))
-                        .map(i => ({ id: 'shop_' + i.id, name: i.name, url: i.image_url || i.value }));
-                } catch(e) { return []; }
-            })(),
-            modeStats: modeStats
-        });
-    } catch (error) {
-        console.error('❌ Erreur profil:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-
-app.post('/profile/update-avatar', async (req, res) => {
-    try {
-        const { twitchId, avatarUrl } = req.body;
-
-        if (!twitchId || !avatarUrl) {
-            return res.status(400).json({ error: 'Paramètres manquants' });
-        }
-
-        const allowedAvatars = [
-            'novice.png',
-            'ninja.png',
-            'knight.png',
-            'knight2.png',
-            'girl.png',
-            'assassin.png',
-            'sorcier.png',
-            'totoro.png',
-            'melody.png'
-        ];
-
-        // Also allow purchased shop avatars
-        let isAllowed = allowedAvatars.includes(avatarUrl);
-        if (!isAllowed) {
-            const purchases = await db.getUserPurchases(twitchId);
-            const shopItems = await db.getShopItems();
-            const purchasedIds = purchases.map(p => p.item_id);
-            const purchasedAvatars = shopItems
-                .filter(i => i.type === 'avatar' && purchasedIds.includes(i.id))
-                .map(i => i.image_url || i.value);
-            isAllowed = purchasedAvatars.includes(avatarUrl);
-        }
-
-        if (!isAllowed) {
-            return res.status(400).json({ error: 'Avatar non autorisé' });
-        }
-
-        const updatedUser = await db.updateUserAvatar(twitchId, avatarUrl);
-
-        res.json({
-            success: true,
-            user: updatedUser
-        });
-    } catch (error) {
-        console.error('❌ Erreur update avatar:', error);
-        res.status(400).json({ error: error.message });
-    }
-});
-
-
-
-
-
-// Changer le titre actuel
-app.post('/profile/update-title', async (req, res) => {
-    try {
-        const { twitchId, titleId } = req.body;
-
-        if (!twitchId || !titleId) {
-            return res.status(400).json({ error: 'Paramètres manquants' });
-        }
-
-        // Quand on équipe un titre classique, on retire les titres custom
-        await db.equipTitlePrefix(twitchId, null);
-        await db.equipTitleSuffix(twitchId, null);
-
-        const updatedUser = await db.updateUserTitle(twitchId, titleId);
-        const newTitle = await db.getTitleById(titleId);
-
-        res.json({
-            success: true,
-            user: updatedUser,
-            title: newTitle
-        });
-    } catch (error) {
-        console.error('❌ Erreur update titre:', error);
-        res.status(400).json({ error: error.message });
-    }
-});
-
-// Équiper un préfixe custom
-app.post('/profile/equip-prefix', async (req, res) => {
-    try {
-        const { twitchId, prefix } = req.body;
-        if (!twitchId) return res.status(400).json({ error: 'Paramètres manquants' });
-
-        const updatedUser = await db.equipTitlePrefix(twitchId, prefix || null);
-        const fullTitle = await db.getFullTitle(twitchId);
-
-        res.json({ success: true, user: updatedUser, displayTitle: fullTitle });
-    } catch (error) {
-        console.error('❌ Erreur equip prefix:', error);
-        res.status(400).json({ error: error.message });
-    }
-});
-
-// Équiper un suffixe custom
-app.post('/profile/equip-suffix', async (req, res) => {
-    try {
-        const { twitchId, suffix } = req.body;
-        if (!twitchId) return res.status(400).json({ error: 'Paramètres manquants' });
-
-        const updatedUser = await db.equipTitleSuffix(twitchId, suffix || null);
-        const fullTitle = await db.getFullTitle(twitchId);
-
-        res.json({ success: true, user: updatedUser, displayTitle: fullTitle });
-    } catch (error) {
-        console.error('❌ Erreur equip suffix:', error);
-        res.status(400).json({ error: error.message });
-    }
-});
-
-
-// Route pour signaler une question
-app.post('/admin/report-question', async (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
-
-    try {
-        const { questionId, questionText, difficulty, reason } = req.body;
-
-        if (!questionText || !reason) {
-            return res.status(400).json({ error: 'Données manquantes' });
-        }
-
-        // Enregistrer le signalement dans Supabase
-        const { data, error } = await supabase
-            .from('reported_questions')
-            .insert({
-                question_id: questionId,
-                question_text: questionText,
-                difficulty: difficulty,
-                reason: reason,
-                reported_at: new Date().toISOString()
-            })
-            .select()
-            .single();
-
-        if (error) throw error;
-
-        console.log('🚨 Question signalée:', questionText);
-        res.json({ success: true, report: data });
-    } catch (error) {
-        console.error('❌ Erreur signalement question:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Récupérer tous les titres disponibles
-app.get('/titles', async (req, res) => {
-    try {
-        const titles = await db.getAllTitles();
-        res.json(titles);
-    } catch (error) {
-        console.error('❌ Erreur titres:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Récupérer le leaderboard
-app.get('/leaderboard', async (req, res) => {
-    try {
-        const limit = parseInt(req.query.limit) || 10;
-        const leaderboard = await db.getLeaderboard(limit);
-        res.json(leaderboard);
-    } catch (error) {
-        console.error('❌ Erreur leaderboard:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// ============================================
-// S-COINS & BOUTIQUE
-// ============================================
-
-// Récupérer le solde S-Coins
-app.get('/coins/:twitchId', async (req, res) => {
-    try {
-        const coins = await db.getUserCoins(req.params.twitchId);
-        res.json({ coins });
-    } catch (error) {
-        console.error('❌ Erreur coins:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Récupérer les articles de la boutique
-app.get('/shop', async (req, res) => {
-    try {
-        const items = await db.getShopItems();
-        const twitchId = req.query.twitchId;
-
-        let purchases = [];
-        if (twitchId) {
-            purchases = await db.getUserPurchases(twitchId);
-        }
-
-        const purchasedIds = purchases.map(p => p.item_id);
-
-        const itemsWithOwnership = items.map(item => ({
-            ...item,
-            owned: purchasedIds.includes(item.id)
-        }));
-
-        res.json(itemsWithOwnership);
-    } catch (error) {
-        console.error('❌ Erreur shop:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Acheter un article
-app.post('/shop/purchase', async (req, res) => {
-    try {
-        const { twitchId, itemId } = req.body;
-
-        if (!twitchId || !itemId) {
-            return res.status(400).json({ error: 'Paramètres manquants' });
-        }
-
-        const result = await db.purchaseItem(twitchId, itemId);
-        res.json(result);
-    } catch (error) {
-        console.error('❌ Erreur achat:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Récupérer les parties récentes
-app.get('/api/recent-games', async (req, res) => {
-    try {
-        const limit = parseInt(req.query.limit) || 5;
-        const games = await db.getRecentGames(limit);
-        res.json({ success: true, games });
-    } catch (error) {
-        console.error('❌ Erreur recent-games:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
 
 
 app.get('/question', (req, res) => {
@@ -6327,106 +3711,6 @@ app.get('/question', (req, res) => {
 });
 
 // API ajout question - avec code spécifique
-// ========== SHOP ADMIN ==========
-app.post('/api/add-shop-item', async (req, res) => {
-    const { adminCode, name, type, value, price, description, image_url } = req.body;
-
-    if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
-        return res.status(401).json({ error: 'Code invalide' });
-    }
-
-    if (!name || !type || !value) {
-        return res.status(400).json({ error: 'Champs requis manquants' });
-    }
-
-    try {
-        const { data, error } = await supabase
-            .from('shop_items')
-            .insert([{
-                name: name,
-                type: type,
-                value: value,
-                price: price || 0,
-                description: description || null,
-                image_url: image_url || null,
-                active: true
-            }])
-            .select()
-            .single();
-
-        if (error) throw error;
-        console.log(`🛒 Nouvel article boutique: ${name} (${type}) - ${price} S-Coins`);
-        res.json({ success: true, item: data });
-    } catch (error) {
-        console.error('❌ Erreur ajout shop item:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.put('/api/shop-items/:id', async (req, res) => {
-    const { adminCode, name, type, value, price, description, image_url } = req.body;
-
-    if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
-        return res.status(401).json({ error: 'Code invalide' });
-    }
-
-    try {
-        const updates = {};
-        if (name !== undefined) updates.name = name;
-        if (type !== undefined) updates.type = type;
-        if (value !== undefined) updates.value = value;
-        if (price !== undefined) updates.price = price;
-        if (description !== undefined) updates.description = description;
-        if (image_url !== undefined) updates.image_url = image_url;
-
-        const { data, error } = await supabase
-            .from('shop_items')
-            .update(updates)
-            .eq('id', req.params.id)
-            .select()
-            .single();
-
-        if (error) throw error;
-        console.log(`🛒 Article modifié: ${data.name} (${data.type})`);
-        res.json({ success: true, item: data });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.get('/api/shop-items', async (req, res) => {
-    try {
-        const { data, error } = await supabase
-            .from('shop_items')
-            .select('*')
-            .order('type')
-            .order('price', { ascending: true });
-
-        if (error) throw error;
-        res.json(data || []);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.delete('/api/shop-items/:id', async (req, res) => {
-    const adminCode = req.query.adminCode;
-    if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
-        return res.status(401).json({ error: 'Code invalide' });
-    }
-
-    try {
-        const { error } = await supabase
-            .from('shop_items')
-            .delete()
-            .eq('id', req.params.id);
-
-        if (error) throw error;
-        res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
 
 app.post('/api/add-question', async (req, res) => {
     const { adminCode, question, answers, correctAnswer, serie, difficulty, proof_url, is_spoil } = req.body;
@@ -6551,75 +3835,6 @@ app.post('/api/delete-question', async (req, res) => {
     }
 });
 
-// 🆕 Récupérer les IDs des questions utilisées
-app.get('/api/used-questions', async (req, res) => {
-    const { adminCode } = req.query;
-
-    if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
-        return res.status(401).json({ error: 'Code invalide' });
-    }
-
-    try {
-        const usedIds = await db.getUsedQuestionIds();
-        res.json({ success: true, usedIds });
-    } catch (error) {
-        console.error('Erreur récupération questions utilisées:', error);
-        res.status(500).json({ error: 'Erreur serveur' });
-    }
-});
-
-// 🆕 Marquer une question comme utilisée (exclure)
-app.post('/api/mark-question-used', async (req, res) => {
-    const { adminCode, questionId } = req.body;
-
-    if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
-        return res.status(401).json({ error: 'Code invalide' });
-    }
-
-    try {
-        // Récupérer la difficulté de la question
-        const { data: questionData } = await supabase
-            .from('questions')
-            .select('difficulty')
-            .eq('id', questionId)
-            .single();
-        
-        if (gameState.streamerId) await db.addUsedQuestion(questionId, questionData?.difficulty || null, gameState.streamerId);
-        gameState.usedQuestionIds.push(questionId);
-        console.log(`🚫 Question ${questionId} (${questionData?.difficulty || '?'}) marquée comme utilisée (exclue)`);
-        res.json({ success: true, message: 'Question exclue' });
-    } catch (error) {
-        console.error('Erreur marquage question:', error);
-        res.status(500).json({ error: 'Erreur serveur' });
-    }
-});
-
-// 🆕 Retirer une question de l'historique (réactiver)
-app.post('/api/unmark-question-used', async (req, res) => {
-    const { adminCode, questionId } = req.body;
-
-    if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
-        return res.status(401).json({ error: 'Code invalide' });
-    }
-
-    try {
-        const { error } = await supabase
-            .from('used_questions')
-            .delete()
-            .eq('question_id', questionId);
-
-        if (error) throw error;
-
-        // Retirer du gameState aussi
-        gameState.usedQuestionIds = gameState.usedQuestionIds.filter(id => id !== questionId);
-        console.log(`✅ Question ${questionId} réactivée (retirée de l'historique)`);
-        res.json({ success: true, message: 'Question réactivée' });
-    } catch (error) {
-        console.error('Erreur réactivation question:', error);
-        res.status(500).json({ error: 'Erreur serveur' });
-    }
-});
-
 // 🆕 Reset toutes les questions utilisées (via page question.html)
 app.post('/api/reset-used-questions', async (req, res) => {
     const { adminCode } = req.body;
@@ -6629,13 +3844,8 @@ app.post('/api/reset-used-questions', async (req, res) => {
     }
 
     try {
-        const streamerId = req.session.twitchId || gameState.streamerId;
-        if (!streamerId) {
-            return res.json({ success: true, message: 'Pas de streamer connecté — rien à réinitialiser' });
-        }
-        await db.resetUsedQuestions(null, streamerId);
         gameState.usedQuestionIds = [];
-        console.log(`🔄 Historique des questions réinitialisé (via page questions) [streamer: ${streamerId}]`);
+        console.log('🔄 Historique des questions réinitialisé (via page questions)');
         res.json({ success: true, message: 'Historique réinitialisé' });
     } catch (error) {
         console.error('Erreur reset questions:', error);
@@ -6706,9 +3916,6 @@ app.post('/api/verify-question-code', (req, res) => {
 
 // POST /admin/set-lives-icon
 app.post('/admin/set-lives-icon', (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
-    }
 
     const { icon } = req.body;
     const validIcons = ['heart', 'dragonball', 'flame', 'sharingan', 'katana', 'shuriken', 'konoha', 'alchemy', 'curse', 'kunai', 'star4'];
@@ -6735,119 +3942,17 @@ app.post('/admin/set-lives-icon', (req, res) => {
 const server = app.listen(PORT, () => {
     console.log(`
     ╔═══════════════════════════════════════╗
-    ║     🎮 WEEBMASTER SERVER 🎮          ║
+    ║    🎮 SHONENMASTER SERVER (v2) 🎮     ║
     ╠═══════════════════════════════════════╣
     ║  Port: ${PORT}                        ║
     ║  Status: ✅ Online                    ║
-    ║  Mode: ${process.env.NODE_ENV}                  ║
-    ║  Twitch Redirect: ${TWITCH_REDIRECT_URI}
+    ║  Mode: ${process.env.NODE_ENV || 'development'}
     ╚═══════════════════════════════════════╝
     `);
 
-    loadLastGlobalWinner();
 });
 
 
-// ============================================
-// STREAMERS PARTENAIRES - LIVE STATUS
-// ============================================
-const PARTNER_STREAMERS = ['MinoStreaming', 'pikinemadd', 'Mikyatc' , 'Zogaa_', 'luidjy_skyblex'];
-let partnersLiveStatus = {}; // Cache du statut
-
-
-
-async function checkPartnersLive() {
-    try {
-        // Token Twitch (App Access Token)
-        const tokenRes = await axios.post('https://id.twitch.tv/oauth2/token', null, {
-            params: {
-                client_id: process.env.TWITCH_CLIENT_ID,
-                client_secret: process.env.TWITCH_CLIENT_SECRET,
-                grant_type: 'client_credentials'
-            }
-        });
-        const accessToken = tokenRes.data.access_token;
-
-        // Vérifier les streams
-        const userLogins = PARTNER_STREAMERS.join('&user_login=');
-        const streamsRes = await axios.get(
-            `https://api.twitch.tv/helix/streams?user_login=${userLogins}`,
-            {
-                headers: {
-                    'Client-ID': process.env.TWITCH_CLIENT_ID,
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            }
-        );
-
-        const liveStreams = streamsRes.data.data || [];
-
-        PARTNER_STREAMERS.forEach(streamer => {
-            partnersLiveStatus[streamer] = liveStreams.some(
-                stream => stream.user_login.toLowerCase() === streamer.toLowerCase()
-            );
-        });
-
-        // Émettre à tous les clients
-        io.emit('partners-live-status', partnersLiveStatus);
-        console.log('📡 Statut live partenaires:', partnersLiveStatus);
-
-    } catch (err) {
-        console.error('❌ Erreur check live partenaires:', err.message);
-    }
-}
-
-// Vérifier au démarrage puis toutes les 2 minutes
-checkPartnersLive();
-setInterval(checkPartnersLive, 120000);
-
-// Liste publique des partenaires + statut live (utilisée par la landing en maintenance)
-const PARTNERS_PUBLIC = [
-    { id: 'Mikyatc',         name: 'Mikyatc',   avatar: 'mikyatc.png' },
-    { id: 'MinoStreaming',   name: 'Mino',      avatar: 'mino.png' },
-    { id: 'Zogaa_',          name: 'Zogaa',     avatar: 'zogaa.png' },
-    { id: 'pikinemadd',      name: 'Pikinemad', avatar: 'pikine.png' },
-    { id: 'luidjy_skyblex',  name: 'Luidjy',    avatar: 'luidjy.png' },
-];
-app.get('/api/partners', (req, res) => {
-    const list = PARTNERS_PUBLIC.map(p => ({
-        ...p,
-        live: !!partnersLiveStatus[p.id],
-    }));
-    res.json({ partners: list });
-});
-
-// Données BombAnime pour la version solo-vs-bot de la page maintenance.
-// Sert juste les listes de personnages + table de variantes (read-only, non sensible).
-app.get('/api/bombanime/data', (req, res) => {
-    res.json({
-        series: Object.keys(BOMBANIME_CHARACTERS).sort(),
-        characters: BOMBANIME_CHARACTERS,
-        variants: BOMB_VARIANTS,
-        themeMapping: BOMB_THEME_MAPPING,
-    });
-});
-
-// Dernières parties BombAnime-vs-bot (mémoire process, partagé entre visiteurs)
-const BOMB_LAST_MAX = 5;
-let lastBombanimeBotResults = [];  // [{ username, chars, serie, at }, ...] (récent → ancien)
-app.get('/api/bombanime/last', (req, res) => {
-    res.json({
-        last: lastBombanimeBotResults[0] || null,  // back-compat (utilisé par .last-game mobile)
-        results: lastBombanimeBotResults,
-    });
-});
-app.post('/api/bombanime/last', express.json(), (req, res) => {
-    const username = String((req.body && req.body.username) || '').trim().slice(0, 30);
-    const chars = Math.max(0, Math.min(9999, parseInt((req.body && req.body.chars), 10) || 0));
-    const serie = String((req.body && req.body.serie) || '').trim().slice(0, 40);
-    if (!username) return res.status(400).json({ error: 'username required' });
-    lastBombanimeBotResults.unshift({ username, chars, serie, at: Date.now() });
-    if (lastBombanimeBotResults.length > BOMB_LAST_MAX) {
-        lastBombanimeBotResults.length = BOMB_LAST_MAX;
-    }
-    res.json({ ok: true });
-});
 
 // ============================================
 // 💣 BOMBANIME - Fonctions de jeu
@@ -7618,62 +4723,6 @@ async function endBombanimeGame(winner) {
         username: r.username
     }));
 
-    // 🎁 Calculer les rewards en arrière-plan et les envoyer quand prêts
-    (async () => {
-        try {
-            let preRewardData = {};
-            try {
-                preRewardData = await getPreRewardData(sortedPlayers);
-            } catch(e) { console.error('⚠️ Pre-reward error:', e.message); }
-
-            // 💰 Distribuer les S-Coins
-            const coinRewards = await db.distributeGameCoins(sortedPlayers, sortedPlayers.length);
-            // ⭐ Distribuer l'XP
-            const xpRewards = await db.distributeGameXp(sortedPlayers, sortedPlayers.length);
-
-            // 🎁 Construire le résumé des rewards
-            let rewardsData = null;
-            try {
-                rewardsData = buildRewardSummary(preRewardData, coinRewards, xpRewards);
-            } catch(e) { console.error('⚠️ Reward summary error:', e.message); }
-
-            // Envoyer les rewards à tous les clients
-            io.emit('bombanime-rewards-ready', { rewardsData });
-        } catch (rewardError) {
-            console.error('⚠️ Erreur rewards BombAnime (non bloquante):', rewardError.message);
-        }
-    })();
-
-    // 📊 Stats + historique (en arrière-plan aussi)
-    (async () => {
-        try {
-            const minPlayers = getMinPlayersForStats(gameState.lobbyMode);
-
-            if (winner && gameState.currentGameId) {
-                await db.endGame(gameState.currentGameId, winner.twitchId, gameState.bombanime.usedNames.size, duration);
-            }
-
-            if (sortedPlayers.length >= minPlayers) {
-                for (let i = 0; i < sortedPlayers.length; i++) {
-                    const p = sortedPlayers[i];
-                    await db.updateUserStats(p.twitchId, i === 0, i + 1);
-                }
-                console.log(`📊 Stats BombAnime mises à jour (${sortedPlayers.length} joueurs)`);
-            } else {
-                console.log(`⚠️ Stats BombAnime NON comptabilisées (${sortedPlayers.length} < ${minPlayers} joueurs [bombanime])`);
-            }
-
-            // 📋 Tracker chaque joueur dans player_games
-            for (let i = 0; i < sortedPlayers.length; i++) {
-                const p = sortedPlayers[i];
-                try {
-                    await db.addPlayerGame(gameState.currentGameId, p.twitchId, 'bombanime', i + 1, i === 0);
-                } catch(e) { console.error('Track player error:', e.message); }
-            }
-        } catch (dbError) {
-            console.error('⚠️ Erreur DB BombAnime (non bloquante):', dbError.message);
-        }
-    })();
 
     // Reset
     resetBombanimeState();
@@ -7702,452 +4751,6 @@ function resetBombanimeState() {
     gameState.bombanime.eliminatedPlayers = [];
 }
 
-// ============================================
-// 🎴 COLLECT - Fonctions du mode jeu de cartes anime
-// ============================================
-
-// Charger les cartes Collect depuis le fichier JSON
-const COLLECT_CARDS_DATA = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'collect-cards.json'), 'utf8'));
-
-// Deck de cartes Collect (construit depuis collect-cards.json)
-const COLLECT_DECK = {
-    // Les 13 animes
-    animes: Object.keys(COLLECT_CARDS_DATA),
-
-    // Les 3 classes (cycle: Assaut > Mirage > Oracle > Assaut)
-    classes: ['assaut', 'oracle', 'mirage'],
-    
-    // Personnages par anime (chargés depuis collect-cards.json)
-    characters: (() => {
-        const chars = {};
-        for (const [anime, data] of Object.entries(COLLECT_CARDS_DATA)) {
-            chars[anime] = {
-                assaut: data.assaut.map(c => c.name),
-                oracle: data.oracle.map(c => c.name),
-                mirage: data.mirage.map(c => c.name),
-                protagonist: data.protagonist || []
-            };
-        }
-        return chars;
-    })()
-};
-
-// Les 3 personnages du BIG 3
-const BIG3_NAMES = ['Luffy', 'Naruto', 'Ichigo'];
-
-// 🎮 COLLECT GAMEPLAY CONSTANTS
-const COLLECT_STATS = ['atk', 'int', 'spd', 'pwr'];
-const COLLECT_STAT_NAMES = {
-    atk: { name: 'Attaque', icon: '⚔️' },
-    int: { name: 'Intelligence', icon: '🧠' },
-    spd: { name: 'Vitesse', icon: '⚡' },
-    pwr: { name: 'Pouvoir', icon: '🔥' }
-};
-const COLLECT_TIMER = 15; // 15 secondes pour choisir sa carte
-// COLLECT_STARS_TO_WIN: dynamique selon handSize (3 cartes = 3⭐, 5 cartes = 5⭐)
-// Utilisé via: gameState.collect.handSize || 3
-const COLLECT_ROUNDS_PER_MANCHE = 3; // 3 rounds par manche
-
-// 🔄 Cycle des classes : Assaut > Mirage > Oracle > Assaut
-// Retourne: 1 si class1 bat class2, -1 si class1 perd, 0 si égalité
-function getClassAdvantage(class1, class2) {
-    if (class1 === class2) return 0;
-    
-    const cycle = {
-        'assaut': 'mirage',  // Assaut bat Mirage
-        'mirage': 'oracle',  // Mirage bat Oracle
-        'oracle': 'assaut'   // Oracle bat Assaut
-    };
-    
-    if (cycle[class1] === class2) return 1;  // class1 bat class2
-    return -1; // class1 perd contre class2
-}
-
-// 🏆 Comparer deux cartes sur une stat donnée (avec avantage de classe en cas d'égalité)
-function compareCards(card1, card2, stat) {
-    const stat1 = card1.stats[stat];
-    const stat2 = card2.stats[stat];
-    
-    if (stat1 > stat2) return 1;  // card1 gagne
-    if (stat1 < stat2) return -1; // card2 gagne
-    
-    // Égalité → utiliser l'avantage de classe
-    return getClassAdvantage(card1.class, card2.class);
-}
-
-// 🎲 Choisir une stat aléatoire pour le round
-function getRandomStat() {
-    return COLLECT_STATS[Math.floor(Math.random() * COLLECT_STATS.length)];
-}
-
-// Générer le deck de cartes avec les 4 stats (ATK, INT, SPD, PWR)
-function generateCollectDeck(minCards = 39) {
-    const deck = [];
-    
-    // Utiliser les animes sélectionnés par l'admin
-    const selectedAnimes = gameState.collect.selectedAnimes || COLLECT_DECK.animes;
-    const animesToUse = COLLECT_DECK.animes.filter(a => selectedAnimes.includes(a));
-    console.log(`🎴 Deck: animes utilisés: ${animesToUse.length}/${COLLECT_DECK.animes.length}`);
-    
-    // Générer des rounds jusqu'à avoir assez de cartes
-    // Chaque round pioche un personnage différent par classe par anime
-    let round = 0;
-    const usedChars = {}; // { 'OnePiece-assaut': ['Luffy', 'Zoro'] }
-    
-    while (deck.length < minCards) {
-        let addedThisRound = 0;
-        
-        animesToUse.forEach(anime => {
-            const characters = COLLECT_DECK.characters[anime];
-            if (!characters) return;
-            
-            COLLECT_DECK.classes.forEach(cardClass => {
-                const charArray = characters[cardClass];
-                if (!charArray || charArray.length === 0) return;
-                
-                const key = `${anime}-${cardClass}`;
-                if (!usedChars[key]) usedChars[key] = [];
-                
-                // Trouver un personnage pas encore utilisé
-                const available = charArray.filter(c => !usedChars[key].includes(c));
-                let charName;
-                
-                if (available.length > 0) {
-                    charName = available[Math.floor(Math.random() * available.length)];
-                } else {
-                    // Tous utilisés → recycler avec un power level différent
-                    charName = charArray[Math.floor(Math.random() * charArray.length)];
-                }
-                
-                usedChars[key].push(charName);
-                
-                const isProtagonist = Array.isArray(characters.protagonist) 
-                    ? characters.protagonist.includes(charName) 
-                    : charName === characters.protagonist;
-                
-                // Charger les stats depuis collect-cards.json
-                const cardData = COLLECT_CARDS_DATA[anime] && COLLECT_CARDS_DATA[anime][cardClass] 
-                    ? COLLECT_CARDS_DATA[anime][cardClass].find(c => c.name === charName)
-                    : null;
-                const stats = cardData 
-                    ? { atk: cardData.atk, int: cardData.int, spd: cardData.spd, pwr: cardData.pwr }
-                    : { atk: 10, int: 10, spd: 10, pwr: 10 }; // Fallback
-                
-                deck.push({
-                    id: `${anime}-${cardClass}-${charName}-r${round}`,
-                    anime: anime,
-                    name: charName,
-                    class: cardClass,
-                    stats: stats,
-                    isProtagonist: isProtagonist,
-                    isBig3: isProtagonist && BIG3_NAMES.includes(charName)
-                });
-                addedThisRound++;
-            });
-        });
-        
-        round++;
-        // Sécurité anti-boucle infinie
-        if (addedThisRound === 0 || round > 10) break;
-    }
-    
-    // Mélanger le deck
-    for (let i = deck.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [deck[i], deck[j]] = [deck[j], deck[i]];
-    }
-    
-    console.log(`🎴 Deck: ${deck.length} cartes (${animesToUse.length} animes, ${round} round(s))`);
-    return deck;
-}
-
-// 🎴 Distribuer 3 cartes avec garantie d'au moins 2 du même anime
-function drawCardsFromDeck(deck, handSize = 3) {
-    const drawn = [];
-    for (let i = 0; i < handSize && deck.length > 0; i++) {
-        const idx = Math.floor(Math.random() * deck.length);
-        drawn.push(deck.splice(idx, 1)[0]);
-    }
-    console.log(`🎴 Distribution aléatoire: ${drawn.map(c => `${c.name}(${c.anime})`).join(', ')}`);
-    return drawn;
-}
-
-function getCollectPlayersData() {
-    const playersData = [];
-    
-    gameState.collect.playersOrder.forEach((twitchId, index) => {
-        const playerData = gameState.collect.playersData.get(twitchId);
-        if (!playerData) return;
-        
-        // Chercher le joueur connecté d'abord, fallback sur les infos sauvegardées
-        const player = Array.from(gameState.players.values()).find(p => p.twitchId === twitchId);
-        
-        playersData.push({
-            twitchId: twitchId,
-            username: player ? player.username : (playerData.username || 'Joueur'),
-            avatar: player ? player.avatar : (playerData.avatar || null),
-            position: index,
-            wins: playerData.wins || 0,
-            cardCount: playerData.cards ? playerData.cards.length : 0
-        });
-    });
-    
-    return playersData;
-}
-
-// Broadcast card counts to all clients
-function broadcastCollectCardCounts() {
-    if (!gameState.collect.active) return;
-    const counts = {};
-    gameState.collect.playersOrder.forEach(twitchId => {
-        const pd = gameState.collect.playersData.get(twitchId);
-        counts[twitchId] = pd && pd.cards ? pd.cards.length : 0;
-    });
-    io.emit('collect-card-counts', counts);
-}
-
-// Démarrer une partie Collect
-async function startCollectGame() {
-    console.log('🎴 Démarrage partie Collect...');
-    
-    // Récupérer les joueurs dans l'ordre où ils ont rejoint
-    const players = Array.from(gameState.players.values());
-    
-    if (players.length < 2) {
-        return { success: false, error: 'Minimum 2 joueurs requis' };
-    }
-    
-    if (players.length > 10) {
-        return { success: false, error: 'Maximum 5 joueurs en mode Collect' };
-    }
-    
-    // Initialiser l'état Collect
-    gameState.collect.active = true;
-    gameState.collect.playersOrder = players.map(p => p.twitchId);
-    gameState.collect.playersData = new Map();
-    
-    // Générer le deck (assez de cartes pour tous les joueurs)
-    const handSize = gameState.collect.handSize || 3;
-    const cardsNeeded = players.length * handSize;
-    gameState.collect.deck = generateCollectDeck(cardsNeeded);
-    console.log(`🎴 Deck généré: ${gameState.collect.deck.length} cartes (besoin: ${cardsNeeded}, main: ${handSize})`);
-    
-    // Initialiser les données de chaque joueur et distribuer les cartes
-    players.forEach((player) => {
-        const cards = drawCardsFromDeck(gameState.collect.deck, handSize);
-        console.log(`🔴 ${player.username} reçoit:`, cards.map(c => `${c.name}(${c.anime})`).join(', '));
-        
-        gameState.collect.playersData.set(player.twitchId, {
-            cards: cards,
-            username: player.username,
-            avatar: player.avatar,
-            wins: 0
-        });
-    });
-    
-    // Marquer la partie comme en cours
-    gameState.inProgress = true;
-    gameState.gameStartTime = Date.now();
-    gameState.initialPlayerCount = players.length;
-    
-    // 🎴 Piocher 4 cartes pour le marché
-    const marketCards = drawCardsFromDeck(gameState.collect.deck, 4);
-    gameState.collect.marketCards = marketCards;
-    console.log(`🏪 Marché:`, marketCards.map(c => `${c.name}(${c.anime})`).join(', '));
-    
-    console.log(`🎴 Partie Collect démarrée avec ${players.length} joueurs`);
-    
-    // Préparer le round 1 AVANT l'emit (pour l'inclure dans game-started)
-    const stats = ['atk', 'int', 'spd', 'pwr'];
-    const statNames = { atk: 'ATK', int: 'INT', spd: 'VIT', pwr: 'POW' };
-    gameState.collect.currentRound = 1;
-    const selectedStat = stats[Math.floor(Math.random() * stats.length)];
-    gameState.collect.roundStat = selectedStat;
-    
-    console.log(`🎲 Round 1 préparé - Stat: ${statNames[selectedStat]}`);
-    
-    // 🎴 Tour par tour : 1er joueur aléatoire, puis sens horaire (ordre des sièges)
-    const startIdx = Math.floor(Math.random() * gameState.collect.playersOrder.length);
-    const clockwiseOrder = [];
-    for (let i = 0; i < gameState.collect.playersOrder.length; i++) {
-        clockwiseOrder.push(gameState.collect.playersOrder[(startIdx + i) % gameState.collect.playersOrder.length]);
-    }
-    gameState.collect.turnOrder = clockwiseOrder;
-    gameState.collect.currentTurnIndex = 0;
-    gameState.collect.currentTurnId = null; // Sera activé après le market reveal
-    
-    console.log(`🎴 Ordre de jeu:`, clockwiseOrder.map(id => {
-        const pd = gameState.collect.playersData.get(id);
-        return pd ? pd.username : id;
-    }).join(' → '));
-    
-    // UN SEUL broadcast à tout le monde — inclut les données du round 1
-    io.emit('collect-game-started', {
-        playersData: getCollectPlayersData(),
-        handSize: gameState.collect.handSize || 3,
-        marketCards: marketCards,
-        round1: {
-            round: 1,
-            stat: selectedStat,
-            statName: statNames[selectedStat]
-        }
-    });
-    
-    // 🏪 Market reveal synchronisé — 5s après game start (~1s après fin du deal)
-    setTimeout(() => {
-        io.emit('collect-market-reveal', { marketCards: marketCards });
-        console.log('🏪 Market reveal envoyé');
-        
-        // 🎴 2s après market reveal → démarrer le premier tour
-        setTimeout(() => {
-            startCollectTurn();
-        }, 2000);
-    }, 5000);
-    
-    // 🎴 Timer temporairement désactivé
-    // const timerDelay = 9000;
-    // const timerDuration = 20;
-    // gameState.collect.roundTimer = setTimeout(() => {
-    //     gameState.collect.timerEndTime = Date.now() + timerDuration * 1000;
-    //     io.emit('collect-timer-start', { duration: timerDuration });
-    //     console.log(`⏱️ Timer round 1 démarré (${timerDuration}s)`);
-    // }, timerDelay);
-    
-    // Les joueurs demanderont leurs cartes via 'collect-request-my-cards'
-    
-    return { success: true };
-}
-
-// 🆕 Démarrer un round Collect (rounds 2+)
-function startCollectRound() {
-    const stats = ['atk', 'int', 'spd', 'pwr'];
-    const statNames = { atk: 'ATK', int: 'INT', spd: 'VIT', pwr: 'POW' };
-    
-    gameState.collect.currentRound++;
-    const selectedStat = stats[Math.floor(Math.random() * stats.length)];
-    gameState.collect.roundStat = selectedStat;
-    
-    // Clear timer du round précédent
-    if (gameState.collect.roundTimer) clearTimeout(gameState.collect.roundTimer);
-    if (gameState.collect.turnTimer) clearTimeout(gameState.collect.turnTimer);
-    gameState.collect.timerEndTime = null;
-    gameState.collect.playedCards = new Map();
-    gameState.collect.discardedPlayers = new Set();
-    
-    // 🎴 Sens horaire : le prochain round commence par le joueur suivant dans l'ordre des sièges
-    const prevStartId = gameState.collect.turnOrder[0];
-    const prevStartIdx = gameState.collect.playersOrder.indexOf(prevStartId);
-    const nextStartIdx = (prevStartIdx + 1) % gameState.collect.playersOrder.length;
-    const clockwiseOrder = [];
-    for (let i = 0; i < gameState.collect.playersOrder.length; i++) {
-        clockwiseOrder.push(gameState.collect.playersOrder[(nextStartIdx + i) % gameState.collect.playersOrder.length]);
-    }
-    gameState.collect.turnOrder = clockwiseOrder;
-    gameState.collect.currentTurnIndex = 0;
-    gameState.collect.currentTurnId = null;
-    
-    console.log(`🎲 Round ${gameState.collect.currentRound} - Stat: ${statNames[selectedStat]}`);
-    console.log(`🎴 Ordre de jeu:`, clockwiseOrder.map(id => {
-        const pd = gameState.collect.playersData.get(id);
-        return pd ? pd.username : id;
-    }).join(' → '));
-    
-    // Pas de showAt pour les rounds 2+ : les clients affichent immédiatement
-    io.emit('collect-round-start', {
-        round: gameState.collect.currentRound,
-        stat: selectedStat,
-        statName: statNames[selectedStat]
-    });
-    
-    // 🎴 Démarrer le premier tour 2s après l'overlay du round
-    setTimeout(() => {
-        startCollectTurn();
-    }, 2000);
-    
-    console.log(`🎲 collect-round-start emitted!`);
-}
-
-// 🎴 Démarrer le tour d'un joueur
-function startCollectTurn() {
-    if (!gameState.collect.active) return;
-    
-    const turnOrder = gameState.collect.turnOrder;
-    const turnIndex = gameState.collect.currentTurnIndex;
-    
-    // Tous les joueurs ont joué → reboucler au premier joueur
-    if (turnIndex >= turnOrder.length) {
-        console.log('🎴 Tour complet — on reboucle');
-        gameState.collect.currentTurnIndex = 0;
-        startCollectTurn();
-        return;
-    }
-    
-    const currentPlayerId = turnOrder[turnIndex];
-    const playerData = gameState.collect.playersData.get(currentPlayerId);
-    
-    if (!playerData) {
-        // Joueur déconnecté → skip
-        console.log(`⚠️ Joueur ${currentPlayerId} introuvable, skip`);
-        gameState.collect.currentTurnIndex++;
-        startCollectTurn();
-        return;
-    }
-    
-    gameState.collect.currentTurnId = currentPlayerId;
-    const timerDuration = 15;
-    gameState.collect.timerEndTime = Date.now() + timerDuration * 1000;
-    
-    // Reset les cartes jouées du tour précédent
-    gameState.collect.playedCards = new Map();
-    gameState.collect.discardedPlayers = new Set();
-    
-    console.log(`🎴 Tour de ${playerData.username} (${timerDuration}s)`);
-    
-    io.emit('collect-turn-start', {
-        twitchId: currentPlayerId,
-        username: playerData.username,
-        duration: timerDuration,
-        turnIndex: turnIndex,
-        totalPlayers: turnOrder.length
-    });
-    
-    // Auto-skip si le joueur ne joue pas à temps
-    if (gameState.collect.turnTimer) clearTimeout(gameState.collect.turnTimer);
-    gameState.collect.turnTimer = setTimeout(() => {
-        if (gameState.collect.currentTurnId === currentPlayerId) {
-            console.log(`⏱️ ${playerData.username} n'a pas joué à temps, tour suivant`);
-            gameState.collect.currentTurnIndex++;
-            startCollectTurn();
-        }
-    }, (timerDuration + 1) * 1000); // +1s de grâce
-}
-
-// Reset l'état Collect
-function resetCollectState() {
-    gameState.collect.active = false;
-    gameState.collect.deck = [];
-    gameState.collect.playersOrder = [];
-    gameState.collect.playersData = new Map();
-    gameState.collect.currentRound = 0;
-    gameState.collect.roundStat = null;
-    gameState.collect.playedCards = new Map();
-    gameState.collect.discardedPlayers = new Set();
-    gameState.collect.handSize = 3;
-    gameState.collect.selectedAnimes = null;
-    gameState.collect.pendingDraws = new Map();
-    if (gameState.collect.roundTimer) {
-        clearTimeout(gameState.collect.roundTimer);
-        gameState.collect.roundTimer = null;
-    }
-    if (gameState.collect.turnTimer) {
-        clearTimeout(gameState.collect.turnTimer);
-        gameState.collect.turnTimer = null;
-    }
-    gameState.collect.timerEndTime = null;
-    gameState.collect.turnOrder = [];
-    gameState.collect.currentTurnIndex = 0;
-    gameState.collect.currentTurnId = null;
-}
 
 const io = new Server(server, {
     cors: {
@@ -8220,11 +4823,6 @@ io.on('connection', (socket) => {
                     delete player.disconnectedAt;
                     delete player.disconnectedSocketId;
                     
-                    // Update survie player socketId too
-                    if (gameState.survie?.alivePlayers) {
-                        const surviePlayer = gameState.survie.alivePlayers.find(p => p.twitchId === data.twitchId);
-                        if (surviePlayer) surviePlayer.socketId = socket.id;
-                    }
                     
                     console.log(`🔄 Auto-remap: ${data.username} ${oldSocketId} → ${socket.id}`);
                     broadcastLobbyUpdate();
@@ -8266,7 +4864,7 @@ io.on('connection', (socket) => {
         
         // 💣🎴 En mode BombAnime/Collect, vérifier la limite avec les places réservées
         if ((gameState.lobbyMode === 'bombanime' || gameState.lobbyMode === 'collect') && !isReconnection) {
-            const maxPlayers = gameState.lobbyMode === 'bombanime' ? BOMBANIME_CONFIG.MAX_PLAYERS : COLLECT_CONFIG.MAX_PLAYERS;
+            const maxPlayers = BOMBANIME_CONFIG.MAX_PLAYERS;
             const currentCount = gameState.players.size + pendingJoins.size;
             if (currentCount >= maxPlayers) {
                 console.log(`🚫 Lobby plein: ${gameState.players.size} joueurs + ${pendingJoins.size} en attente >= ${maxPlayers}`);
@@ -8314,15 +4912,6 @@ io.on('connection', (socket) => {
                 }
             }
 
-            const userInfo = await db.getUserByTwitchId(data.twitchId);
-        
-        // 🔥 Récupérer le titre actuel du joueur (prefix + suffix)
-        let playerTitle = 'Novice courageux';
-        if (userInfo) {
-            const prefix = userInfo.equipped_title_prefix || 'Novice';
-            const suffix = userInfo.equipped_title_suffix || 'courageux';
-            playerTitle = prefix + ' ' + suffix;
-        }
 
         // 🔥 FIX: Re-vérifier après les awaits que la partie n'a pas démarré entre-temps
         // (race condition: admin clique Démarrer pendant que le DB call était en cours)
@@ -8338,9 +4927,7 @@ io.on('connection', (socket) => {
             username: data.username,
             lives: gameState.lives,
             correctAnswers: 0,
-            lastPlacement: userInfo?.last_placement || null,
-            title: playerTitle,
-            avatarUrl: userInfo?.avatar_url || 'novice.png',
+            avatarUrl: 'novice.png',
             team: gameState.lobbyMode === 'rivalry' ? data.team : null,
             isAdmin: data.isAdmin || false
         });
@@ -8531,11 +5118,6 @@ io.on('connection', (socket) => {
             existingPlayer.socketId = socket.id;
             gameState.players.set(socket.id, existingPlayer);
 
-            // Update socketId in survie alivePlayers too
-            if (gameState.survie?.alivePlayers) {
-                const surviePlayer = gameState.survie.alivePlayers.find(p => p.twitchId === data.twitchId);
-                if (surviePlayer) surviePlayer.socketId = socket.id;
-            }
 
             if (previousAnswer) {
                 gameState.answers.set(socket.id, previousAnswer);
@@ -8597,495 +5179,6 @@ io.on('connection', (socket) => {
                 canSpectate: true
             });
         }
-    });
-
-    // 🎴 Joueur demande ses cartes (après avoir reçu collect-game-started)
-    socket.on('collect-get-animes', () => {
-        // Build anime list dynamically from collect-cards.json
-        const animeList = Object.entries(COLLECT_CARDS_DATA).map(([id, data]) => {
-            // protagonist is already included in the class lists, don't double-count
-            const count = (data.assaut ? data.assaut.length : 0)
-                        + (data.oracle ? data.oracle.length : 0)
-                        + (data.mirage ? data.mirage.length : 0);
-            return { id, count };
-        });
-        // Sort by count descending
-        animeList.sort((a, b) => b.count - a.count);
-        socket.emit('collect-animes-list', { animes: animeList, big3: ['OnePiece', 'Naruto', 'Bleach'] });
-    });
-
-    socket.on('collect-request-my-cards', (data) => {
-        const twitchId = data && data.twitchId;
-        console.log(`🎴 Demande cartes de ${twitchId} (active: ${gameState.collect.active}, socket: ${socket.id})`);
-        
-        if (!gameState.collect.active) {
-            console.log(`⚠️ Collect pas active pour demande de ${twitchId}`);
-            return;
-        }
-        if (!twitchId) {
-            console.log(`⚠️ Pas de twitchId dans la demande`);
-            return;
-        }
-        
-        const playerData = gameState.collect.playersData.get(twitchId);
-        if (playerData && playerData.cards && playerData.cards.length > 0) {
-            socket.emit('collect-your-cards', {
-                cards: playerData.cards,
-                dealing: true
-            });
-            console.log(`🎴 Cartes envoyées à ${twitchId} sur demande (${playerData.cards.length} cartes)`);
-        } else {
-            console.log(`⚠️ Pas de cartes trouvées pour ${twitchId} (playerData: ${!!playerData})`);
-        }
-    });
-
-    // ð´ Joueur joue une carte
-    // 🔥 Fusion de cartes Collect
-    socket.on('collect-fuse-cards', (data) => {
-        const twitchId = data && data.twitchId;
-        const sourceIndex = data && data.sourceIndex;
-        const targetIndex = data && data.targetIndex;
-        
-        if (!gameState.collect.active || !twitchId || sourceIndex === undefined || targetIndex === undefined) return;
-        
-        const playerData = gameState.collect.playersData.get(twitchId);
-        if (!playerData || !playerData.cards) return;
-        
-        const src = playerData.cards[sourceIndex];
-        const tgt = playerData.cards[targetIndex];
-        if (!src || !tgt || src.anime !== tgt.anime) {
-            console.log(`⚠️ Fusion invalide pour ${twitchId}: anime mismatch`);
-            return;
-        }
-        
-        // Build fused card
-        const srcCards = src.isFused ? [...src.fusedCards] : [src];
-        const tgtCards = tgt.isFused ? [...tgt.fusedCards] : [tgt];
-        const allCards = [...tgtCards, ...srcCards];
-        if (allCards.length > 3) return;
-        
-        const fusedStats = {
-            atk: Math.max(...allCards.map(c => c.stats ? c.stats.atk : 0)),
-            int: Math.max(...allCards.map(c => c.stats ? c.stats.int : 0)),
-            spd: Math.max(...allCards.map(c => c.stats ? c.stats.spd : 0)),
-            pwr: Math.max(...allCards.map(c => c.stats ? c.stats.pwr : 0))
-        };
-        
-        const fusedCard = {
-            isFused: true,
-            fusedCards: allCards,
-            name: allCards.map(c => c.name).join('+'),
-            anime: src.anime,
-            class: tgt.class,
-            stats: fusedStats,
-            isProtagonist: allCards.some(c => c.isProtagonist),
-            isBig3: allCards.some(c => c.isBig3)
-        };
-        
-        // Update cards array (same logic as client)
-        if (sourceIndex < targetIndex) {
-            playerData.cards.splice(targetIndex, 1, fusedCard);
-            playerData.cards.splice(sourceIndex, 1);
-        } else {
-            playerData.cards.splice(sourceIndex, 1);
-            playerData.cards.splice(targetIndex, 1, fusedCard);
-        }
-        
-        console.log(`🔥 FUSION: ${playerData.username} fusionne ${allCards.map(c => c.name).join(' + ')} → ${fusedCard.name} (${allCards.length} cartes)`);
-        broadcastCollectCardCounts();
-    });
-    
-    socket.on('collect-play-card', (data) => {
-        const twitchId = data && data.twitchId;
-        const cardIndex = data && data.cardIndex;
-        
-        if (!gameState.collect.active || !twitchId || cardIndex === undefined) {
-            console.log('⚠️ collect-play-card: conditions invalides');
-            return;
-        }
-        
-        // 🎴 Vérifier que c'est bien le tour de ce joueur
-        if (gameState.collect.currentTurnId !== twitchId) {
-            console.log(`⚠️ ${twitchId} essaie de jouer mais c'est le tour de ${gameState.collect.currentTurnId}`);
-            socket.emit('collect-card-confirmed', { success: false, reason: 'not_your_turn' });
-            return;
-        }
-        
-        const playerData = gameState.collect.playersData.get(twitchId);
-        if (!playerData || !playerData.cards || !playerData.cards[cardIndex]) {
-            console.log(`⚠️ collect-play-card: carte invalide pour ${twitchId}`);
-            return;
-        }
-        
-        // Vérifier que le joueur n'a pas déjà joué ce round
-        if (gameState.collect.playedCards.has(twitchId)) {
-            console.log(`⚠️ ${twitchId} a déjà joué ce round`);
-            return;
-        }
-        
-        // ⏱️ Vérifier que le timer n'a pas expiré (+1s de grâce réseau)
-        if (gameState.collect.timerEndTime && Date.now() > gameState.collect.timerEndTime + 1000) {
-            console.log(`⏱️ ${twitchId} trop tard, timer expiré`);
-            socket.emit('collect-card-confirmed', { success: false, reason: 'timer_expired' });
-            return;
-        }
-        
-        // Stocker la carte jouée
-        const playedCard = playerData.cards[cardIndex];
-        gameState.collect.playedCards.set(twitchId, playedCard);
-        
-        // Stocker si c'est une défausse
-        if (data.discard) {
-            if (!gameState.collect.discardedPlayers) gameState.collect.discardedPlayers = new Set();
-            gameState.collect.discardedPlayers.add(twitchId);
-        }
-        
-        // Retirer la carte de la main du joueur
-        playerData.cards.splice(cardIndex, 1);
-        
-        console.log(`🎴 ${playerData.username} joue: ${playedCard.name} (round ${gameState.collect.currentRound})`);
-        
-        // Confirmer au joueur
-        socket.emit('collect-card-confirmed', { success: true });
-        broadcastCollectCardCounts();
-        
-        // Notifier tous les clients qu'un joueur a joué (sans révéler la carte sauf discard)
-        io.emit('collect-player-played', {
-            twitchId: twitchId,
-            username: playerData.username,
-            totalPlayed: gameState.collect.playedCards.size,
-            totalPlayers: gameState.collect.playersOrder.length,
-            isDiscard: !!data.discard,
-            playedCard: data.discard ? null : (playedCard.isFused ? playedCard : null)
-        });
-        
-        console.log(`🎴 Cartes jouées: ${gameState.collect.playedCards.size}/${gameState.collect.playersOrder.length}`);
-        
-        // ⭐ Détection Lien/Collect — carte fusionnée jouée (pas défaussée)
-        if (!data.discard && playedCard.isFused && playedCard.fusedCards && playedCard.fusedCards.length >= 2) {
-            const fusionCount = playedCard.fusedCards.length;
-            const starsGained = fusionCount >= 3 ? 2 : 1;
-            const fusionType = fusionCount >= 3 ? 'collect' : 'lien';
-            
-            playerData.wins = (playerData.wins || 0) + starsGained;
-            
-            console.log(`⭐ ${playerData.username} valide ${fusionType.toUpperCase()} → +${starsGained} étoile(s) (total: ${playerData.wins}/${gameState.collect.handSize || 3})`);
-            
-            // Émettre quasi-immédiatement
-            setTimeout(() => {
-                io.emit('collect-star-gain', {
-                    twitchId: twitchId,
-                    username: playerData.username,
-                    starsGained: starsGained,
-                    totalStars: playerData.wins,
-                    fusionType: fusionType,
-                    playedCard: playedCard
-                });
-            }, 50);
-        }
-        
-        // Tour suivant immédiatement après l'action
-        if (gameState.collect.turnTimer) clearTimeout(gameState.collect.turnTimer);
-        gameState.collect.currentTurnIndex++;
-        setTimeout(() => startCollectTurn(), 500);
-    });
-
-    // 🎴 Piocher une carte depuis le deck
-    socket.on('collect-draw-card', (data) => {
-        const twitchId = data.twitchId;
-        if (!gameState.collect.active || !twitchId) return;
-
-        const playerData = gameState.collect.playersData.get(twitchId);
-        if (!playerData) return;
-
-        // Vérifier main pleine
-        const handSize = gameState.collect.handSize || 3;
-        if (playerData.cards.length >= handSize) {
-            socket.emit('collect-draw-full', { message: 'Main pleine' });
-            return;
-        }
-
-        if (!gameState.collect.deck || gameState.collect.deck.length === 0) {
-            console.log(`⚠️ Deck vide, impossible de piocher`);
-            return;
-        }
-
-        // Piocher 1 carte aléatoire
-        const idx = Math.floor(Math.random() * gameState.collect.deck.length);
-        const drawnCard = gameState.collect.deck.splice(idx, 1)[0];
-        
-        // Ajouter à la main
-        playerData.cards.push(drawnCard);
-        console.log(`🎴 ${playerData.username} pioche: ${drawnCard.name} (${drawnCard.anime})`);
-        socket.emit('collect-draw-result', { card: drawnCard });
-        broadcastCollectCardCounts();
-        
-        // Tour suivant immédiatement après la pioche
-        if (gameState.collect.turnTimer) clearTimeout(gameState.collect.turnTimer);
-        gameState.collect.currentTurnIndex++;
-        setTimeout(() => startCollectTurn(), 1000);
-    });
-
-    // 🔄 Échanger une carte avec le marché
-    socket.on('collect-swap-market', (data) => {
-        const twitchId = data && data.twitchId;
-        const cardIndex = data && data.cardIndex;
-        const marketIndex = data && data.marketIndex;
-        
-        if (!gameState.collect.active || !twitchId || cardIndex === undefined || marketIndex === undefined) {
-            console.log('⚠️ collect-swap-market: conditions invalides');
-            return;
-        }
-        
-        // Vérifier que c'est le tour du joueur
-        if (gameState.collect.currentTurnId !== twitchId) {
-            console.log(`⚠️ ${twitchId} essaie d'échanger mais c'est pas son tour`);
-            socket.emit('collect-swap-confirmed', { success: false, reason: 'not_your_turn' });
-            return;
-        }
-        
-        const playerData = gameState.collect.playersData.get(twitchId);
-        if (!playerData || !playerData.cards || !playerData.cards[cardIndex]) {
-            console.log(`⚠️ collect-swap-market: carte main invalide pour ${twitchId}`);
-            return;
-        }
-        
-        // Vérifier que le joueur n'a pas déjà joué
-        if (gameState.collect.playedCards.has(twitchId)) {
-            console.log(`⚠️ ${twitchId} a déjà joué ce round`);
-            return;
-        }
-        
-        // Vérifier timer
-        if (gameState.collect.timerEndTime && Date.now() > gameState.collect.timerEndTime + 1000) {
-            socket.emit('collect-swap-confirmed', { success: false, reason: 'timer_expired' });
-            return;
-        }
-        
-        // Vérifier le marché
-        if (!gameState.collect.marketCards || !gameState.collect.marketCards[marketIndex]) {
-            console.log(`⚠️ collect-swap-market: carte marché invalide index ${marketIndex}`);
-            return;
-        }
-        
-        // Échanger les cartes
-        const playerCard = playerData.cards[cardIndex];
-        const marketCard = gameState.collect.marketCards[marketIndex];
-        
-        // La carte du joueur va au marché, la carte du marché va en main
-        playerData.cards[cardIndex] = marketCard;
-        gameState.collect.marketCards[marketIndex] = playerCard;
-        
-        // Marquer comme ayant joué (compte comme action)
-        gameState.collect.playedCards.set(twitchId, { swapped: true, given: playerCard, received: marketCard });
-        
-        console.log(`🔄 ${playerData.username} échange: ${playerCard.name} ↔ ${marketCard.name} (marché)`);
-        
-        // Confirmer au joueur
-        socket.emit('collect-swap-confirmed', { 
-            success: true, 
-            newCard: marketCard,
-            cardIndex: cardIndex
-        });
-        
-        // Notifier tout le monde du nouveau marché + que le joueur a joué
-        io.emit('collect-market-update', { 
-            marketCards: gameState.collect.marketCards,
-            twitchId: twitchId,
-            username: playerData.username,
-            marketIndex: marketIndex,
-            givenCard: playerCard
-        });
-        
-        io.emit('collect-player-played', {
-            twitchId: twitchId,
-            username: playerData.username,
-            totalPlayed: gameState.collect.playedCards.size,
-            totalPlayers: gameState.collect.playersOrder.length,
-            isDiscard: true, // Visuellement traité comme une défausse (pas de star)
-            isSwap: true
-        });
-        
-        // Tour suivant
-        if (gameState.collect.turnTimer) clearTimeout(gameState.collect.turnTimer);
-        gameState.collect.currentTurnIndex++;
-        setTimeout(() => startCollectTurn(), 500);
-    });
-
-    // 🔍 SCANNER — Voir les cartes d'un adversaire pendant 7s
-    socket.on('collect-scan-player', (data) => {
-        const twitchId = data && data.twitchId;
-        const targetId = data && data.targetId;
-        
-        if (!gameState.collect.active || !twitchId || !targetId) {
-            console.log('⚠️ collect-scan-player: conditions invalides');
-            return;
-        }
-        
-        // Vérifier que c'est bien le tour de ce joueur
-        if (gameState.collect.currentTurnId !== twitchId) {
-            console.log(`⚠️ ${twitchId} essaie de scanner mais c'est pas son tour`);
-            socket.emit('collect-scan-result', { success: false, reason: 'not_your_turn' });
-            return;
-        }
-        
-        // Vérifier que le joueur n'a pas déjà joué
-        if (gameState.collect.playedCards.has(twitchId)) {
-            console.log(`⚠️ ${twitchId} a déjà joué ce round`);
-            return;
-        }
-        
-        // Vérifier timer
-        if (gameState.collect.timerEndTime && Date.now() > gameState.collect.timerEndTime + 1000) {
-            socket.emit('collect-scan-result', { success: false, reason: 'timer_expired' });
-            return;
-        }
-        
-        // Vérifier que la cible est un joueur valide (pas soi-même)
-        if (twitchId === targetId) {
-            console.log(`⚠️ ${twitchId} essaie de se scanner lui-même`);
-            return;
-        }
-        
-        const targetData = gameState.collect.playersData.get(targetId);
-        if (!targetData || !targetData.cards) {
-            console.log(`⚠️ collect-scan-player: cible ${targetId} invalide`);
-            return;
-        }
-        
-        // Marquer comme ayant joué (le scanner coûte le tour)
-        gameState.collect.playedCards.set(twitchId, { scanned: true, target: targetId });
-        
-        const scannerData = gameState.collect.playersData.get(twitchId);
-        console.log(`🔍 ${scannerData ? scannerData.username : twitchId} scanne ${targetData.username} (${targetData.cards.length} cartes)`);
-        
-        // Envoyer les cartes de la cible au scanner (privé — lui seul voit)
-        socket.emit('collect-scan-result', {
-            success: true,
-            targetId: targetId,
-            targetUsername: targetData.username,
-            cards: targetData.cards,
-            duration: 7
-        });
-        
-        // Notifier tout le monde qu'un scan a eu lieu (sans révéler les cartes)
-        io.emit('collect-player-played', {
-            twitchId: twitchId,
-            username: scannerData ? scannerData.username : 'Joueur',
-            totalPlayed: gameState.collect.playedCards.size,
-            totalPlayers: gameState.collect.playersOrder.length,
-            isDiscard: false,
-            isScan: true,
-            scanTargetUsername: targetData.username
-        });
-        
-        // Tour suivant
-        if (gameState.collect.turnTimer) clearTimeout(gameState.collect.turnTimer);
-        gameState.collect.currentTurnIndex++;
-        setTimeout(() => startCollectTurn(), 500);
-    });
-
-    socket.on('collect-reconnect', (data) => {
-        if (!gameState.collect.active) {
-            console.log(`🎴 Pas de partie Collect en cours pour ${data.username}`);
-            socket.emit('collect-reconnect', { active: false });
-            return;
-        }
-
-        const twitchId = data.twitchId;
-        
-        // Vérifier que le joueur fait partie de la partie Collect
-        if (!gameState.collect.playersOrder.includes(twitchId)) {
-            console.log(`🎴 ${data.username} n'est pas dans la partie Collect`);
-            socket.emit('collect-reconnect', { active: false });
-            return;
-        }
-
-        // Mettre à jour le socketId du joueur dans gameState.players
-        let oldSocketId = null;
-        for (const [socketId, player] of gameState.players.entries()) {
-            if (player.twitchId === twitchId && socketId !== socket.id) {
-                oldSocketId = socketId;
-                // Transférer le joueur vers le nouveau socket
-                gameState.players.delete(oldSocketId);
-                player.socketId = socket.id;
-                gameState.players.set(socket.id, player);
-                delete player.disconnectedAt;
-                delete player.disconnectedSocketId;
-                console.log(`🎴 Socket transféré: ${oldSocketId} → ${socket.id}`);
-                break;
-            }
-        }
-
-        // Récupérer les données du joueur
-        const playerData = gameState.collect.playersData.get(twitchId);
-        if (!playerData) {
-            console.log(`🎴 Pas de données Collect pour ${data.username}`);
-            socket.emit('collect-reconnect', { active: false });
-            return;
-        }
-
-        // Envoyer l'état complet de la partie
-        // Vérifier si le joueur a déjà joué ce round
-        const isDiscard = gameState.collect.discardedPlayers && gameState.collect.discardedPlayers.has(twitchId);
-        const playedCard = isDiscard ? null : (gameState.collect.playedCards.get(twitchId) || null);
-        
-        socket.emit('collect-reconnect', {
-            playersData: getCollectPlayersData(),
-            myCards: playerData.cards,
-            handSize: gameState.collect.handSize || 3,
-            marketCards: gameState.collect.marketCards || [],
-            currentRound: gameState.collect.currentRound || 0,
-            roundStat: gameState.collect.roundStat || null,
-            playedCard: playedCard,
-            playersWhoPlayed: Array.from(gameState.collect.playedCards.keys()),
-            timerRemainingMs: gameState.collect.timerEndTime ? Math.max(0, gameState.collect.timerEndTime - Date.now()) : 0,
-            timerStarted: !!gameState.collect.timerEndTime,
-            currentTurnId: gameState.collect.currentTurnId || null,
-            hasPlayed: gameState.collect.currentTurnId !== twitchId
-        });
-
-        console.log(`🎴 ${data.username} reconnecté à la partie Collect (cards: ${playerData.cards.length})`);
-    });
-
-    // Demander l'état Collect (pour reconnexion admin)
-    socket.on('collect-get-state', (data) => {
-        if (!gameState.collect.active) {
-            socket.emit('collect-state', { active: false });
-            return;
-        }
-        
-        // Vérifier si admin a joué ce round
-        const requestTwitchId = data && data.twitchId;
-        const adminIsDiscard = requestTwitchId && gameState.collect.discardedPlayers && gameState.collect.discardedPlayers.has(requestTwitchId);
-        const adminPlayedCard = adminIsDiscard ? null : (requestTwitchId ? (gameState.collect.playedCards.get(requestTwitchId) || null) : null);
-        
-        socket.emit('collect-state', {
-            active: true,
-            playersData: getCollectPlayersData(),
-            handSize: gameState.collect.handSize || 3,
-            marketCards: gameState.collect.marketCards || [],
-            currentRound: gameState.collect.currentRound || 0,
-            roundStat: gameState.collect.roundStat || null,
-            playedCard: adminPlayedCard,
-            playersWhoPlayed: Array.from(gameState.collect.playedCards.keys()),
-            timerRemainingMs: gameState.collect.timerEndTime ? Math.max(0, gameState.collect.timerEndTime - Date.now()) : 0,
-            timerStarted: !!gameState.collect.timerEndTime,
-            currentTurnId: gameState.collect.currentTurnId || null
-        });
-        
-        // Renvoyer les cartes privées si un twitchId est fourni et qu'il est joueur Collect
-        if (requestTwitchId) {
-            const playerData = gameState.collect.playersData.get(requestTwitchId);
-            if (playerData && playerData.cards && playerData.cards.length > 0) {
-                socket.emit('collect-your-cards', {
-                    cards: playerData.cards
-                });
-                console.log(`🎴 Cartes renvoyées à ${requestTwitchId} après reconnexion`);
-            }
-        }
-        
-        console.log(`🎴 État Collect envoyé (joueurs: ${gameState.collect.playersOrder.length})`);
     });
 
 
@@ -9490,836 +5583,6 @@ io.on('connection', (socket) => {
         io.emit('player-count', gameState.players.size);
     });
 
-    // ============================================
-    // 🎮 SURVIE - Socket Handlers
-    // ============================================
-    
-    socket.on('survie-completed', (data) => {
-        if (!gameState.survie?.active || !gameState.survie?.roundInProgress) return;
-        const player = gameState.players.get(socket.id);
-        if (!player) return;
-        surviePlayerCompleted(socket.id, player.twitchId);
-    });
-    
-    socket.on('survie-next-round', () => {
-        if (!gameState.survie?.active) return;
-        // Vérifier que c'est un admin
-        startSurvieNextRound();
-    });
-    
-    socket.on('survie-reconnect', (data) => {
-        if (gameState.survie?.active) {
-            // Try to find player by socket.id or by twitchId passed from client
-            const twitchId = data?.twitchId || null;
-            console.log(`🔄 Survie reconnect: socketId=${socket.id}, twitchId=${twitchId}`);
-            socket.emit('survie-state', getSurvieStateForClient(socket.id, twitchId));
-        }
-    });
-    
-    // Position du joueur sur le plateau
-    socket.on('survie-position', (data) => {
-        if (!gameState.survie?.active) return;
-        let player = gameState.players.get(socket.id);
-        
-        // Fallback: find player by twitchId if socket.id not mapped
-        if (!player && data.twitchId) {
-            for (const [sid, p] of gameState.players.entries()) {
-                if (p.twitchId && p.twitchId === data.twitchId) {
-                    player = p;
-                    gameState.players.delete(sid);
-                    player.socketId = socket.id;
-                    gameState.players.set(socket.id, player);
-                    console.log(`🔄 Socket remappé (position) pour ${player.username}: ${sid} → ${socket.id}`);
-                    break;
-                }
-            }
-        }
-        if (!player) return;
-        
-        // Store position
-        const surviePlayer = gameState.survie.alivePlayers.find(p => p.twitchId === player.twitchId);
-        if (surviePlayer) {
-            surviePlayer.posX = data.x;
-            surviePlayer.posY = data.y;
-        }
-        
-        // Broadcast to ALL (including admin who is just watching)
-        socket.broadcast.emit('survie-player-moved', {
-            twitchId: player.twitchId,
-            x: data.x,
-            y: data.y,
-            vx: data.vx,
-            vy: data.vy
-        });
-        
-        // Also emit to admin sockets specifically (they might not be in players map)
-        io.emit('survie-player-pos', {
-            twitchId: player.twitchId,
-            x: data.x,
-            y: data.y,
-            vx: data.vx,
-            vy: data.vy
-        });
-    });
-
-    // ═══ INTERACTION NPC — Système de quêtes ═══
-    socket.on('survie-interact', (data) => {
-        if (!gameState.survie?.active) return;
-        let player = gameState.players.get(socket.id);
-        
-        // Fallback: find player by twitchId if socket.id not mapped (happens after refresh)
-        if (!player) {
-            for (const [sid, p] of gameState.players.entries()) {
-                if (p.twitchId && p.twitchId === data.twitchId) {
-                    player = p;
-                    // Update socket mapping
-                    gameState.players.delete(sid);
-                    player.socketId = socket.id;
-                    gameState.players.set(socket.id, player);
-                    console.log(`🔄 Socket remappé pour ${player.username}: ${sid} → ${socket.id}`);
-                    break;
-                }
-            }
-        }
-        if (!player) return;
-        
-        const survie = gameState.survie;
-        const twitchId = player.twitchId;
-        const npcId = data.npcId;
-        const isStructure = data.isStructure || false;
-        
-        console.log(`🗣️ ${player.username} interagit avec ${npcId} (structure: ${isStructure})`);
-        
-        // Get player quest state (auto-create for admin if missing)
-        let pState = survie.playerQuestStates?.[twitchId];
-        if (!pState && survie.quests) {
-            console.log(`🔧 Création quest state pour ${twitchId} (admin/late join)`);
-            survie.playerQuestStates[twitchId] = createPlayerQuestState(survie.quests);
-            pState = survie.playerQuestStates[twitchId];
-        }
-        if (!pState) {
-            console.log(`⚠️ Pas de quest state pour ${twitchId}`);
-            return;
-        }
-        
-        // Find if any quest is affected by this interaction
-        let questDialogue = null;
-        let questUpdate = null;
-        let itemGiven = null;
-        let itemTaken = null;
-        
-        for (const quest of pState.quests) {
-            if (quest.completed) continue;
-            
-            // Find the template for this quest
-            const template = survie.quests.find(q => q.id === quest.id);
-            if (!template) continue;
-            
-            // ═══ DELIVER / VISIT_DELIVER / CHAIN / TRADE_CHAIN ═══
-            if (template.steps && quest.currentStep < template.steps.length) {
-                const step = template.steps[quest.currentStep];
-                
-                // Check if this NPC/structure matches the current step
-                if (step.action === 'talk' && step.npc === npcId) {
-                    questDialogue = step.dialogue;
-                    if (step.giveItem) {
-                        itemGiven = step.giveItem;
-                        pState.inventory.push(step.giveItem);
-                    }
-                    quest.currentStep++;
-                    quest.stepDesc = getStepDescription(template, quest.currentStep);
-                    
-                    // Check if quest completed
-                    if (quest.currentStep >= template.steps.length) {
-                        quest.completed = true;
-                        pState.completedCount++;
-                    }
-                    questUpdate = { questId: quest.id, currentStep: quest.currentStep, completed: quest.completed, itemGiven };
-                    break;
-                    
-                } else if (step.action === 'visit' && step.structure === npcId && isStructure) {
-                    questDialogue = step.dialogue;
-                    if (step.giveItem) {
-                        itemGiven = step.giveItem;
-                        pState.inventory.push(step.giveItem);
-                    }
-                    quest.currentStep++;
-                    quest.stepDesc = getStepDescription(template, quest.currentStep);
-                    
-                    if (quest.currentStep >= template.steps.length) {
-                        quest.completed = true;
-                        pState.completedCount++;
-                    }
-                    questUpdate = { questId: quest.id, currentStep: quest.currentStep, completed: quest.completed, itemGiven };
-                    break;
-                    
-                } else if (step.action === 'deliver' && step.npc === npcId && pState.inventory.includes(step.item)) {
-                    // Don't complete yet — ask player to select item from inventory
-                    questDialogue = step.deliverAskDialogue || "Tu as ce que je t'ai demandé ?";
-                    questUpdate = { 
-                        questId: quest.id, 
-                        awaitingGive: true,
-                        requiredItems: [step.item],
-                        requiredCount: 1
-                    };
-                    break;
-                    
-                } else if (step.action === 'trade' && step.npc === npcId && pState.inventory.includes(step.item)) {
-                    // Don't complete yet — ask player to select item from inventory
-                    questDialogue = "Tu veux échanger quelque chose ?";
-                    questUpdate = { 
-                        questId: quest.id, 
-                        awaitingGive: true,
-                        requiredItems: [step.item],
-                        requiredCount: 1
-                    };
-                    break;
-                }
-            }
-            
-            // ═══ REUNION ═══
-            if (template.type === 'REUNION' && !isStructure) {
-                const groupData = QUEST_GROUPS[template.group];
-                if (groupData && groupData.members && groupData.members.includes(npcId)) {
-                    if (!quest.found.includes(npcId)) {
-                        quest.found.push(npcId);
-                        questDialogue = template.dialogue_found;
-                        
-                        if (quest.found.length >= quest.count) {
-                            quest.completed = true;
-                            pState.completedCount++;
-                        }
-                        questUpdate = { questId: quest.id, found: quest.found, completed: quest.completed };
-                        break;
-                    }
-                }
-            }
-            
-            // ═══ COLLECT_ITEMS — Delivery step ═══
-            if (template.type === 'COLLECT_ITEMS' && !quest.completed) {
-                if (template.deliverTo === npcId && !isStructure && quest.collected >= template.count) {
-                    // All items collected — ask player to select items from inventory
-                    const requiredItems = template.specialItems 
-                        ? template.specialItems.filter(si => pState.inventory.includes(si))
-                        : pState.inventory.filter(i => i === template.item).slice(0, template.count);
-                    // Also send imageUrls for client-side matching (slots may have ground item IDs)
-                    const requiredImageUrls = requiredItems.map(ri => QUEST_ITEMS[ri]?.imageUrl).filter(Boolean);
-                    questDialogue = "Tu as tout ce que je t'ai demandé ?";
-                    questUpdate = { 
-                        questId: quest.id, 
-                        awaitingGive: true,
-                        requiredItems: requiredItems,
-                        requiredImageUrls: requiredImageUrls,
-                        requiredCount: requiredItems.length
-                    };
-                    break;
-                }
-            }
-            
-            // ═══ RIDDLE ═══
-            if (template.type === 'RIDDLE' && !quest.solved) {
-                // Step 1: talk to hint NPC for clue
-                if (template.hint_npc && !quest.hintReceived && template.hint_npc === npcId && !isStructure) {
-                    quest.hintReceived = true;
-                    quest.currentStep = 1;
-                    questDialogue = template.hint_dialogue;
-                    // Full hint as stepDesc (no truncation)
-                    quest.stepDesc = (template.hint_dialogue || 'Chercher la réponse...').replace(/\*\*/g, '');
-                    questUpdate = { questId: quest.id, hintReceived: true, currentStep: 1 };
-                    break;
-                }
-                // Step 2: find the answer
-                const matchNPC = template.answer_npc === npcId && !isStructure;
-                const matchStructure = template.answer_structure === npcId && isStructure;
-                if ((matchNPC || matchStructure) && (quest.hintReceived || !template.hint_npc)) {
-                    quest.solved = true;
-                    quest.completed = true;
-                    quest.currentStep = 2;
-                    quest.stepDesc = 'Terminé !';
-                    pState.completedCount++;
-                    questDialogue = template.dialogue_correct;
-                    questUpdate = { questId: quest.id, solved: true, completed: true, currentStep: 2 };
-                    break;
-                }
-            }
-            
-            // ═══ ESCORT ═══
-            if (template.type === 'ESCORT') {
-                if (!quest.escorting && template.npc === npcId && !isStructure) {
-                    quest.escorting = true;
-                    quest.currentStep = 1;
-                    const structData = SURVIE_STRUCTURES.find(n => n.id === template.destination_structure);
-                    quest.stepDesc = `Se rendre à ${structData ? structData.name : template.destination_structure}`;
-                    questDialogue = template.dialogue_start;
-                    questUpdate = { questId: quest.id, escorting: true, currentStep: 1, hideNpc: template.npc };
-                    break;
-                } else if (quest.escorting && template.destination_structure === npcId && isStructure) {
-                    quest.arrived = true;
-                    quest.completed = true;
-                    quest.currentStep = 2;
-                    quest.stepDesc = 'Terminé !';
-                    pState.completedCount++;
-                    questDialogue = template.dialogue_arrive;
-                    questUpdate = { questId: quest.id, arrived: true, completed: true, currentStep: 2 };
-                    break;
-                }
-            }
-            
-            // ═══ MYSTERY ═══
-            if (template.type === 'MYSTERY') {
-                // Return stolen item to victim (after accusing culprit) — uses give system
-                if (quest.accused && !quest.completed && template.victim === npcId && pState.inventory.includes(template.stolen_item)) {
-                    const victimData = SURVIE_CHARACTERS.find(n => n.id === template.victim);
-                    questDialogue = "Tu as ce que je t'ai demandé ?";
-                    questUpdate = {
-                        questId: quest.id,
-                        awaitingGive: true,
-                        requiredItems: [template.stolen_item],
-                        requiredCount: 1
-                    };
-                    break;
-                }
-                
-                // Talk to victim first
-                if (template.victim === npcId && !quest.interrogated.includes('_victim')) {
-                    quest.interrogated.push('_victim');
-                    // Use dynamic hint dialogue if culprit_hints exist
-                    if (template.culprit_hints && quest.culprit && template.culprit_hints[quest.culprit]) {
-                        questDialogue = template.culprit_hints[quest.culprit];
-                    } else {
-                        questDialogue = template.victim_dialogue;
-                    }
-                    // Update stepDesc with hint about culprit
-                    const suspectCount = template.suspects.length;
-                    let shortHint = `Interroger les ${suspectCount} suspects`;
-                    if (template.culprit_hints && quest.culprit && template.culprit_hints[quest.culprit]) {
-                        const fullHint = template.culprit_hints[quest.culprit];
-                        const match = fullHint.match(/\.\.\.\s*(.+?)(?:\.\s*(?:Retrouve|C'est|Il faut))/);
-                        if (match) {
-                            shortHint = match[1].trim();
-                        }
-                    }
-                    quest.stepDesc = shortHint.replace(/\*\*/g, '');
-                    questUpdate = { questId: quest.id, interrogated: quest.interrogated };
-                    break;
-                }
-                // Interrogate suspects (only after talking to victim)
-                if (quest.interrogated.includes('_victim') && template.suspects.includes(npcId) && !quest.interrogated.includes(npcId)) {
-                    quest.interrogated.push(npcId);
-                    
-                    if (npcId === quest.culprit) {
-                        // Found the culprit! Give stolen item, need to return to victim
-                        quest.accused = true;
-                        questDialogue = template.culprit_dialogues[0];
-                        itemGiven = template.stolen_item;
-                        pState.inventory.push(template.stolen_item);
-                        // Update stepDesc to return to victim
-                        const victimData = SURVIE_CHARACTERS.find(n => n.id === template.victim);
-                        const victimName = victimData ? victimData.name : template.victim;
-                        quest.stepDesc = `Rapporter à ${victimName}`;
-                        questUpdate = { questId: quest.id, interrogated: quest.interrogated, accused: true, itemGiven };
-                    } else {
-                        questDialogue = template.innocent_dialogues[Math.floor(Math.random() * template.innocent_dialogues.length)];
-                        // Keep the original hint as stepDesc (don't replace with suspect count)
-                        questUpdate = { questId: quest.id, interrogated: quest.interrogated };
-                    }
-                    break;
-                }
-            }
-        }
-        
-        // Send response to player
-        // Convert **word** to highlight spans in quest dialogues
-        if (questDialogue) {
-            questDialogue = questDialogue.replace(/\*\*(.+?)\*\*/g, '<span class="quest-highlight">$1</span>');
-        }
-        console.log(`📨 Résultat: questDialogue=${questDialogue ? 'OUI' : 'NON'}, update=${questUpdate ? questUpdate.questId : 'AUCUN'}, completed=${pState.completedCount}/${pState.quests.length}`);
-        socket.emit('survie-interact-result', {
-            npcId: npcId,
-            questDialogue: questDialogue, // null if no quest match → client uses default dialogue
-            questUpdate: questUpdate,
-            itemGiven: itemGiven ? QUEST_ITEMS[itemGiven] : null,
-            itemTaken: itemTaken,
-            inventory: pState.inventory,
-            completedCount: pState.completedCount,
-            totalQuests: pState.quests.length,
-            // Send full quest state for UI update
-            questState: {
-                quests: pState.quests.map(q => ({
-                    ...q,
-                    // Add totalSteps from template
-                    totalSteps: q.totalSteps || (survie.quests.find(t => t.id === q.id)?.steps?.length) || 1,
-                })),
-            },
-        });
-        
-        // Check if player completed ALL quests
-        if (pState.completedCount >= pState.quests.length && !pState.finishedAt) {
-            pState.finishedAt = Date.now();
-            
-            // Calculate rank
-            const finishedPlayers = Object.values(survie.playerQuestStates)
-                .filter(ps => ps.finishedAt)
-                .sort((a, b) => a.finishedAt - b.finishedAt);
-            const rank = finishedPlayers.length;
-            pState.rank = rank;
-            
-            console.log(`🏆 ${player.username} a complété toutes les quêtes ! Rang: ${rank}`);
-            
-            // Broadcast to all players
-            io.emit('survie-player-finished', {
-                twitchId: twitchId,
-                username: player.username,
-                rank: rank,
-            });
-            
-            // First player to finish = WINNER
-            if (rank === 1) {
-                console.log(`🥇 ${player.username} est le GAGNANT !`);
-                
-                // Find player's color
-                const winnerPlayer = [...gameState.players.values()].find(pl => pl.twitchId === twitchId);
-                const colorIndex = winnerPlayer ? winnerPlayer.colorIndex : 0;
-                
-                // Broadcast winner immediately
-                io.emit('survie-winner', {
-                    twitchId: twitchId,
-                    username: player.username,
-                    colorIndex: colorIndex,
-                });
-                
-                // Start 60s countdown for podium
-                setTimeout(() => {
-                    if (!gameState.survie?.active) return;
-                    
-                    // Build final podium — all players sorted by completedCount then finishedAt
-                    const allPlayers = Object.entries(survie.playerQuestStates)
-                        .map(([tid, ps]) => {
-                            const p = [...gameState.players.values()].find(pl => pl.twitchId === tid);
-                            return {
-                                twitchId: tid,
-                                username: p ? p.username : tid,
-                                completedCount: ps.completedCount || 0,
-                                totalQuests: ps.quests.length,
-                                finishedAt: ps.finishedAt || null,
-                            };
-                        })
-                        .sort((a, b) => {
-                            // Finished players first, sorted by finish time
-                            if (a.finishedAt && !b.finishedAt) return -1;
-                            if (!a.finishedAt && b.finishedAt) return 1;
-                            if (a.finishedAt && b.finishedAt) return a.finishedAt - b.finishedAt;
-                            // Then by completedCount descending
-                            return b.completedCount - a.completedCount;
-                        })
-                        .map((p, idx) => ({ ...p, rank: idx + 1 }));
-                    
-                    io.emit('survie-game-over', {
-                        winner: allPlayers[0],
-                        podium: allPlayers.slice(0, 3),
-                        totalFinished: allPlayers.filter(p => p.finishedAt).length,
-                    });
-                    console.log(`🏆 Partie terminée ! Podium:`, allPlayers.slice(0, 3).map(p => `${p.rank}. ${p.username} (${p.completedCount}/${p.totalQuests})`));
-                }, 60000);
-            }
-        }
-    });
-
-    // ═══ GIVE ITEMS — Joueur confirme la remise d'items à un NPC ═══
-    socket.on('survie-give-items', (data) => {
-        if (!gameState.survie?.active) return;
-        let player = gameState.players.get(socket.id);
-        const twitchId = data.twitchId || (player ? player.twitchId : null);
-        if (!twitchId) return;
-        
-        const survie = gameState.survie;
-        const pState = survie.playerQuestStates[twitchId];
-        if (!pState) return;
-        
-        const questId = data.questId;
-        const givenItems = data.givenItems || [];
-        const npcId = data.npcId;
-        
-        const quest = pState.quests.find(q => q.id === questId);
-        if (!quest || quest.completed) return;
-        
-        const template = survie.quests.find(q => q.id === questId);
-        if (!template) return;
-        
-        let questDialogue = null;
-        let itemGiven = null;
-        let itemsTaken = [];
-        
-        // ═══ DELIVER / TRADE steps ═══
-        if (template.steps && quest.currentStep < template.steps.length) {
-            const step = template.steps[quest.currentStep];
-            
-            if ((step.action === 'deliver' || step.action === 'trade') && step.npc === npcId) {
-                if (givenItems.includes(step.item)) {
-                    questDialogue = step.dialogue;
-                    itemsTaken.push(step.item);
-                    pState.inventory = pState.inventory.filter(i => i !== step.item);
-                    if (step.giveItem) {
-                        itemGiven = step.giveItem;
-                        pState.inventory.push(step.giveItem);
-                    }
-                    quest.currentStep++;
-                    quest.stepDesc = getStepDescription(template, quest.currentStep);
-                    
-                    if (quest.currentStep >= template.steps.length) {
-                        quest.completed = true;
-                        pState.completedCount++;
-                    }
-                }
-            }
-        }
-        
-        // ═══ COLLECT_ITEMS delivery ═══
-        if (template.type === 'COLLECT_ITEMS' && !quest.completed && template.deliverTo === npcId) {
-            // Remove all given items from inventory
-            if (template.specialItems) {
-                template.specialItems.forEach(si => {
-                    if (givenItems.includes(si)) {
-                        pState.inventory = pState.inventory.filter(i => i !== si);
-                        itemsTaken.push(si);
-                    }
-                });
-            } else {
-                for (let i = 0; i < template.count; i++) {
-                    const idx = pState.inventory.indexOf(template.item);
-                    if (idx !== -1) {
-                        pState.inventory.splice(idx, 1);
-                        itemsTaken.push(template.item);
-                    }
-                }
-            }
-            quest.completed = true;
-            quest.delivered = true;
-            pState.completedCount++;
-            questDialogue = template.finalDialogue;
-            quest.stepDesc = 'Terminé !';
-        }
-        
-        // ═══ MYSTERY return stolen item to victim ═══
-        if (template.type === 'MYSTERY' && quest.accused && !quest.completed && template.victim === npcId) {
-            if (givenItems.includes(template.stolen_item)) {
-                pState.inventory = pState.inventory.filter(i => i !== template.stolen_item);
-                itemsTaken.push(template.stolen_item);
-                quest.completed = true;
-                pState.completedCount++;
-                quest.stepDesc = 'Terminé !';
-                // Victim thank dialogue
-                const itemData = QUEST_ITEMS[template.stolen_item];
-                const itemName = itemData ? itemData.name : template.stolen_item;
-                questDialogue = `Tu l'as retrouvé !! Mon ${itemName.toLowerCase()} ! Merci infiniment !!`;
-            }
-        }
-        
-        // Send result
-        if (questDialogue) {
-            questDialogue = questDialogue.replace(/\*\*(.+?)\*\*/g, '<span class="quest-highlight">$1</span>');
-        }
-        socket.emit('survie-give-result', {
-            npcId,
-            questId,
-            questDialogue,
-            itemGiven: itemGiven ? QUEST_ITEMS[itemGiven] : null,
-            itemsTaken,
-            completedCount: pState.completedCount,
-            totalQuests: pState.quests.length,
-            questState: {
-                quests: pState.quests.map(q => ({
-                    ...q,
-                    stepDesc: q.stepDesc || ''
-                })),
-                pickedItems: pState.pickedItems,
-                inventory: pState.inventory,
-            }
-        });
-        
-        // Check if player completed ALL quests (via give)
-        if (pState.completedCount >= pState.quests.length && !pState.finishedAt) {
-            pState.finishedAt = Date.now();
-            
-            const finishedPlayers = Object.values(survie.playerQuestStates)
-                .filter(ps => ps.finishedAt)
-                .sort((a, b) => a.finishedAt - b.finishedAt);
-            const rank = finishedPlayers.length;
-            pState.rank = rank;
-            
-            console.log(`🏆 ${player.username} a complété toutes les quêtes (give) ! Rang: ${rank}`);
-            
-            io.emit('survie-player-finished', {
-                twitchId: twitchId,
-                username: player.username,
-                rank: rank,
-            });
-            
-            if (rank === 1) {
-                console.log(`🥇 ${player.username} est le GAGNANT !`);
-                
-                const winnerPlayer = [...gameState.players.values()].find(pl => pl.twitchId === twitchId);
-                const colorIndex = winnerPlayer ? winnerPlayer.colorIndex : 0;
-                
-                io.emit('survie-winner', {
-                    twitchId: twitchId,
-                    username: player.username,
-                    colorIndex: colorIndex,
-                });
-                
-                setTimeout(() => {
-                    if (!gameState.survie?.active) return;
-                    const allPlayers = Object.entries(survie.playerQuestStates)
-                        .map(([tid, ps]) => {
-                            const p = [...gameState.players.values()].find(pl => pl.twitchId === tid);
-                            return { twitchId: tid, username: p ? p.username : tid, completedCount: ps.completedCount || 0, totalQuests: ps.quests.length, finishedAt: ps.finishedAt || null };
-                        })
-                        .sort((a, b) => {
-                            if (a.finishedAt && !b.finishedAt) return -1;
-                            if (!a.finishedAt && b.finishedAt) return 1;
-                            if (a.finishedAt && b.finishedAt) return a.finishedAt - b.finishedAt;
-                            return b.completedCount - a.completedCount;
-                        })
-                        .map((p, idx) => ({ ...p, rank: idx + 1 }));
-                    io.emit('survie-game-over', { winner: allPlayers[0], podium: allPlayers.slice(0, 3), totalFinished: allPlayers.filter(p => p.finishedAt).length });
-                }, 60000);
-            }
-        }
-    });
-
-    // ═══ PICKUP ITEM — Joueur ramasse un item au sol ═══
-    socket.on('survie-pickup', (data) => {
-        if (!gameState.survie?.active) return;
-        let player = gameState.players.get(socket.id);
-        
-        // Fallback: find player by twitchId if socket.id not mapped
-        if (!player && data.twitchId) {
-            for (const [sid, p] of gameState.players.entries()) {
-                if (p.twitchId && p.twitchId === data.twitchId) {
-                    player = p;
-                    gameState.players.delete(sid);
-                    player.socketId = socket.id;
-                    gameState.players.set(socket.id, player);
-                    console.log(`🔄 Socket remappé (pickup) pour ${player.username}: ${sid} → ${socket.id}`);
-                    break;
-                }
-            }
-        }
-        if (!player) return;
-        
-        const survie = gameState.survie;
-        const twitchId = player.twitchId;
-        const groundItemId = data.groundItemId;
-        
-        let pState = survie.playerQuestStates?.[twitchId];
-        if (!pState) return;
-        
-        // Check player hasn't already picked this item
-        if (!pState.pickedItems) pState.pickedItems = [];
-        if (pState.pickedItems.includes(groundItemId)) return;
-        
-        // Find the ground item
-        const groundItem = survie.groundItems?.find(gi => gi.id === groundItemId);
-        if (!groundItem) return;
-        
-        // Find matching quest
-        const quest = pState.quests.find(q => q.id === groundItem.questId && !q.completed);
-        if (!quest) return;
-        
-        // Mark as picked
-        pState.pickedItems.push(groundItemId);
-        
-        // Update quest progress
-        if (quest.type === 'COLLECT_ITEMS') {
-            quest.collected = (quest.collected || 0) + 1;
-            console.log(`📦 ${player.username} ramasse ${groundItem.name} (${quest.collected}/${quest.count}) pour quête ${quest.id}`);
-            
-            // Add to inventory
-            const itemData = QUEST_ITEMS[groundItem.itemId];
-            if (itemData) {
-                pState.inventory.push(groundItem.itemId);
-            }
-            
-            // Check if all collected — need to deliver now
-            if (quest.collected >= quest.count) {
-                const template = survie.quests.find(q => q.id === quest.id);
-                if (template && template.deliverTo) {
-                    const npcData = SURVIE_CHARACTERS.find(n => n.id === template.deliverTo);
-                    const name = npcData ? npcData.name : template.deliverTo;
-                    quest.stepDesc = `Aller voir ${name}`;
-                }
-                console.log(`📦 ${player.username} a collecté tous les items pour ${quest.id} → livraison !`);
-            }
-        }
-        
-        // Send result
-        socket.emit('survie-pickup-result', {
-            groundItemId: groundItemId,
-            itemData: QUEST_ITEMS[groundItem.itemId] || null,
-            questState: {
-                quests: pState.quests.map(q => ({
-                    ...q,
-                    totalSteps: q.totalSteps || (survie.quests.find(t => t.id === q.id)?.steps?.length) || 1,
-                })),
-            },
-        });
-    });
-
-    // ═══ BOOST PICKUP — Synchronisé entre joueurs ═══
-    socket.on('survie-boost-pickup', (data) => {
-        if (!gameState.survie?.active) return;
-        const boostId = data.boostId;
-        if (!boostId || !gameState.survie.boosts) return;
-        
-        // Mark as picked server-side
-        const boost = gameState.survie.boosts.find(b => b.id === boostId);
-        if (!boost || boost.picked) return;
-        boost.picked = true;
-        
-        console.log(`⚡ Boost ${boostId} ramassé par ${data.twitchId}`);
-        
-        // Broadcast to ALL OTHER players (the picker already handled it locally)
-        socket.broadcast.emit('survie-boost-picked', { boostId });
-        
-        // Respawn a new boost after 15-20s (max 20 active on map)
-        const respawnDelay = 15000 + Math.random() * 5000;
-        setTimeout(() => {
-            if (!gameState.survie?.active) return;
-            
-            // Check max boosts
-            const activeBoosts = gameState.survie.boosts.filter(b => !b.picked).length;
-            if (activeBoosts >= 20) return;
-            
-            // Clean up old picked boosts
-            gameState.survie.boosts = gameState.survie.boosts.filter(b => !b.picked);
-            
-            // Generate new position
-            let bx, by, valid = false, attempts = 0;
-            do {
-                bx = 0.08 + Math.random() * 0.84;
-                by = 0.08 + Math.random() * 0.84;
-                const dxC = bx - 0.5;
-                const dyC = by - 0.5;
-                valid = Math.sqrt(dxC * dxC + dyC * dyC) > 0.12;
-                // Avoid existing non-picked boosts
-                for (const ob of gameState.survie.boosts) {
-                    if (ob.picked) continue;
-                    const dbx = bx - ob.x;
-                    const dby = by - ob.y;
-                    if (Math.sqrt(dbx * dbx + dby * dby) < 0.08) { valid = false; break; }
-                }
-                attempts++;
-            } while (!valid && attempts < 100);
-            
-            const newBoost = { id: `boost_${Date.now()}_${Math.floor(Math.random() * 1000)}`, x: bx, y: by };
-            gameState.survie.boosts.push(newBoost);
-            
-            console.log(`⚡ Nouveau boost spawné: ${newBoost.id} (${bx.toFixed(2)}, ${by.toFixed(2)})`);
-            
-            // Broadcast to ALL players
-            io.emit('survie-boost-spawn', newBoost);
-        }, respawnDelay);
-    });
-
-    // ═══════════════════════════════════════════
-    // 🗳️ POLL - Socket Events
-    // ═══════════════════════════════════════════
-    
-    // Admin: récupérer les catégories disponibles
-    socket.on('poll-get-categories', () => {
-        socket.emit('poll-categories', getPollCategories());
-    });
-    
-    // Admin: récupérer les tailles de bracket valides
-    socket.on('poll-get-bracket-sizes', (data) => {
-        const sizes = getValidBracketSizes(data.category, data.perMatch || 2);
-        socket.emit('poll-bracket-sizes', { sizes });
-    });
-    
-    // Admin: lancer le premier match
-    socket.on('poll-start-first-match', () => {
-        if (gameState.lobbyMode !== 'poll' || !gameState.poll.active) return;
-        // Track this socket as the admin
-        gameState.poll._adminSocketId = socket.id;
-        startCurrentMatch(gameState, io);
-    });
-    
-    // Joueur: voter
-    socket.on('poll-vote', (data) => {
-        if (gameState.lobbyMode !== 'poll' || !gameState.poll.active) return;
-        
-        // Get twitchId: try player map, then authenticatedUsers, then admin fallback
-        let twitchId = null;
-        let voterName = null;
-        let voterAvatar = null;
-        const player = gameState.players.get(socket.id);
-        if (player) {
-            twitchId = player.twitchId;
-            voterName = player.username;
-            voterAvatar = player.avatarUrl || null;
-        } else {
-            const authUser = authenticatedUsers.get(socket.id);
-            if (authUser) {
-                twitchId = authUser.twitchId;
-                voterName = authUser.username;
-                voterAvatar = authUser.avatar || null;
-            } else if (gameState.poll._adminSocketId === socket.id) {
-                // Admin fallback — not in players or authenticatedUsers but is the admin
-                twitchId = 'admin_' + socket.id;
-                voterName = 'Admin';
-                voterAvatar = null;
-            }
-        }
-        if (!twitchId) return;
-        
-        const result = registerVote(gameState, io, twitchId, data.characterId, {
-            username: voterName || 'Joueur',
-            avatar: voterAvatar || null
-        });
-        if (result.success) {
-            socket.emit('poll-vote-confirmed', { characterId: data.characterId });
-            // Broadcast vote notification to all players (except the voter)
-            socket.broadcast.emit('poll-vote-notif', {
-                username: voterName || 'Joueur',
-                avatar: voterAvatar || null
-            });
-        }
-    });
-    
-    // Admin: passer au match suivant
-    socket.on('poll-next-match', () => {
-        if (gameState.lobbyMode !== 'poll' || !gameState.poll.active) return;
-        nextMatch(gameState, io);
-    });
-    
-    // Reconnexion
-    socket.on('poll-reconnect', (data) => {
-        if (gameState.lobbyMode !== 'poll') return;
-        const state = getPollStateForClient(gameState, data.twitchId);
-        socket.emit('poll-state', state);
-    });
-    
-    // Admin: forcer la fin du vote (skip timer)
-    socket.on('poll-force-end-vote', () => {
-        if (gameState.lobbyMode !== 'poll' || !gameState.poll.active) return;
-        if (gameState.poll.votingOpen) {
-            endCurrentVote(gameState, io);
-        }
-    });
-    
-    // Admin: résoudre une égalité
-    socket.on('poll-resolve-tie', (data) => {
-        if (gameState.lobbyMode !== 'poll' || !gameState.poll.active) return;
-        if (!data || !data.winnerId) return;
-        const result = resolveTie(gameState, io, data.winnerId);
-        if (!result.success) {
-            console.log('❌ Erreur résolution égalité:', result.error);
-        }
-    });
-
-    // 🏔️ ASCENSION — Socket handlers
-    registerAscensionSocketHandlers(io, socket, gameState);
-
     // Déconnexion
     socket.on('disconnect', () => {
         const ip = socket.handshake.headers['x-forwarded-for']?.split(',')[0] || socket.handshake.address;
@@ -10510,7 +5773,7 @@ async function generateGameEndedData() {
         team: p.team || null // 🆕 Inclure l'équipe pour mode Rivalité
     }));
 
-    const topPlayers = await db.getTopPlayers(10);
+    const topPlayers = [];
 
     return { playersData, topPlayers };
 }
@@ -10555,20 +5818,6 @@ function resetGameState() {
 
     resetAllBonuses();
 
-    // 🎮 Reset Survie
-    if (gameState.survie.roundTimer) {
-        clearTimeout(gameState.survie.roundTimer);
-    }
-    gameState.survie = {
-        active: false, currentRound: 0, roundTimer: null, roundTimerEndTime: null,
-        roundInProgress: false, alivePlayers: [], eliminatedPlayers: [],
-        currentEpreuve: null, usedEpreuves: [], completedPlayers: [],
-        qualifiedCount: 0, toEliminateCount: 0, timer: gameState.survie.timer || 30,
-        npcs: []
-    };
-
-    // 🗳️ Reset Poll
-    resetPollState(gameState);
 
     // 🔥 COMMENTER CES LIGNES
     // gameState.isActive = false;
@@ -10666,665 +5915,9 @@ function assignPlayerColor(username) {
 }
 
 
-async function loadLastGlobalWinner() {
-    try {
-        const recentGames = await db.getRecentGames(10);
-        if (recentGames && recentGames.length > 0) {
-            const lastWonGame = recentGames.find(game => game.winner_twitch_id !== null);
-            if (lastWonGame) {
-                lastGlobalWinner = lastWonGame.winner_twitch_id;
-                console.log(`👑 Dernier vainqueur chargé: ${lastGlobalWinner}`);
-            }
-        }
-    } catch (error) {
-        console.error('❌ Erreur chargement dernier vainqueur:', error);
-    }
-}
 
 
 
-// ============================================
-// 🎮 MODE SURVIE - Fonctions
-// ============================================
-
-function calculateSurvieEliminations(aliveCount) {
-    if (aliveCount <= 3) return 1;
-    if (aliveCount <= 6) return 2;
-    if (aliveCount <= 10) return 3;
-    if (aliveCount <= 15) return 4;
-    if (aliveCount <= 20) return 5;
-    if (aliveCount <= 30) return Math.ceil(aliveCount * 0.25);
-    return Math.ceil(aliveCount * 0.2);
-}
-
-function getSurvieEpreuveInstruction(type) {
-    const instructions = {
-        'vrai-faux': 'Vrai ou Faux — Répondez le plus vite possible',
-        'intrus': 'Trouvez l\'intrus dans chaque ligne',
-        'anagramme': 'Retrouvez le nom mélangé',
-        'nomme': 'Tapez le nom des personnages',
-        'flou': 'Devinez le personnage flou',
-        'pendu': 'Trouvez le mot caché',
-        'qui-suis-je': 'Devinez le personnage à partir des indices',
-        'tri-anime': 'Cliquez sur tous les personnages de l\'anime indiqué',
-        'reflexe': 'Cliquez sur les personnages dans l\'ordre indiqué',
-        'paires': 'Retrouvez les paires de personnages',
-        'association': 'Associez les armes aux personnages',
-        'comptage': 'Comptez les personnages selon le critère',
-        'timeline': 'Remettez les scènes dans l\'ordre',
-        'chronologie': 'Classez les animes par date de parution',
-        'duel-final': '⚔️ DUEL FINAL — Le plus rapide remporte la victoire!'
-    };
-    return instructions[type] || 'Complétez l\'épreuve le plus vite possible';
-}
-
-function generateSurvieEpreuveData(type) {
-    // Placeholder pour le Bloc 1 — sera remplacé par les vrais mini-jeux
-    return {
-        type: type,
-        placeholder: true,
-        instruction: getSurvieEpreuveInstruction(type)
-    };
-}
-
-async function startSurvieGame() {
-    const totalPlayers = gameState.players.size;
-    
-    if (totalPlayers < SURVIE_CONFIG.MIN_PLAYERS) {
-        return { success: false, error: `Minimum ${SURVIE_CONFIG.MIN_PLAYERS} joueurs requis` };
-    }
-    
-    // Initialiser l'état
-    const survie = gameState.survie;
-    survie.active = true;
-    survie.currentRound = 0;
-    survie.roundInProgress = false;
-    survie.alivePlayers = [];
-    survie.eliminatedPlayers = [];
-    survie.usedEpreuves = [];
-    survie.completedPlayers = [];
-    
-    // Collecter les joueurs
-    let colorIdx = 0;
-    gameState.players.forEach((player, socketId) => {
-        survie.alivePlayers.push({
-            twitchId: player.twitchId,
-            username: player.username,
-            socketId: socketId,
-            avatarUrl: player.avatarUrl || null,
-            colorIndex: colorIdx++
-        });
-    });
-    
-    gameState.inProgress = true;
-    
-    // Générer des positions aléatoires pour les NPCs (différentes à chaque partie)
-    // Zone d'exclusion autour du centre (spawn joueurs)
-    const SPAWN_CENTER_X = 0.5;
-    const SPAWN_CENTER_Y = 0.5;
-    const EXCLUSION_RADIUS = 0.12; // Zone spawn joueurs (personnages)
-    const STRUCT_EXCLUSION_RADIUS = 0.22; // Zone spawn joueurs (structures — plus large car elles sont grandes)
-    
-    // Distances en pixels (MAP = 10000x7000)
-    const MAP_W = 38000;
-    const MAP_H = 24000;
-    const CHAR_MIN_PX = 1500; // distance min entre personnages en pixels
-    const STRUCT_CHAR_PX = 2500; // distance min entre structure et personnage en pixels
-    const STRUCT_STRUCT_PX = 4000; // distance min entre structures en pixels
-    
-    const placedAll = [];
-    
-    // Helper: distance en pixels entre deux positions normalisées
-    function pixelDist(x1, y1, x2, y2) {
-        const dx = (x1 - x2) * MAP_W;
-        const dy = (y1 - y2) * MAP_H;
-        return Math.sqrt(dx * dx + dy * dy);
-    }
-    
-    // 1. Placer les structures d'abord
-    SURVIE_STRUCTURES.forEach(npc => {
-        let x, y, valid, attempts = 0;
-        do {
-            x = 0.05 + Math.random() * 0.90;
-            y = 0.05 + Math.random() * 0.90;
-            const dxC = x - SPAWN_CENTER_X;
-            const dyC = y - SPAWN_CENTER_Y;
-            const distCenter = Math.sqrt(dxC * dxC + dyC * dyC);
-            let tooClose = false;
-            for (const placed of placedAll) {
-                if (pixelDist(x, y, placed.x, placed.y) < STRUCT_STRUCT_PX) {
-                    tooClose = true;
-                    break;
-                }
-            }
-            valid = distCenter > STRUCT_EXCLUSION_RADIUS && !tooClose;
-            attempts++;
-        } while (!valid && attempts < 500);
-        if (!valid) console.warn(`⚠️ Structure ${npc.id} placée après ${attempts} tentatives (peut être trop proche)`);
-        placedAll.push({ ...npc, x, y, isStructure: true });
-    });
-    
-    // 2. Placer les personnages (éloignés des structures ET entre eux)
-    SURVIE_CHARACTERS.forEach(npc => {
-        let x, y, valid, attempts = 0;
-        do {
-            x = 0.05 + Math.random() * 0.90;
-            y = 0.05 + Math.random() * 0.90;
-            const dxC = x - SPAWN_CENTER_X;
-            const dyC = y - SPAWN_CENTER_Y;
-            const distCenter = Math.sqrt(dxC * dxC + dyC * dyC);
-            let tooClose = false;
-            for (const placed of placedAll) {
-                const minPx = placed.isStructure ? STRUCT_CHAR_PX : CHAR_MIN_PX;
-                if (pixelDist(x, y, placed.x, placed.y) < minPx) {
-                    tooClose = true;
-                    break;
-                }
-            }
-            valid = distCenter > EXCLUSION_RADIUS && !tooClose;
-            attempts++;
-        } while (!valid && attempts < 500);
-        if (!valid) console.warn(`⚠️ Perso ${npc.id} placé après ${attempts} tentatives (peut être trop proche)`);
-        placedAll.push({ ...npc, x, y });
-    });
-    
-    survie.npcs = placedAll;
-    
-    // ═══ Générer les quêtes ═══
-    const questData = generateQuestsForGame(5);
-    survie.quests = questData.quests;
-    survie.playerQuestStates = {};
-    
-    // Créer le state de quête pour chaque joueur
-    survie.alivePlayers.forEach(p => {
-        survie.playerQuestStates[p.twitchId] = createPlayerQuestState(questData.quests);
-    });
-    
-    console.log(`🎮 Survie démarrée: ${totalPlayers} joueurs, ${survie.npcs.length} NPCs, ${questData.quests.length} quêtes`);
-    console.log(`📋 Quêtes: ${questData.quests.map(q => q.id).join(', ')}`);
-    
-    // ═══ Générer les items au sol pour les quêtes COLLECT_ITEMS ═══
-    survie.groundItems = [];
-    const MAP_W_ITEMS = 32000;
-    const MAP_H_ITEMS = 20000;
-    
-    questData.quests.forEach(quest => {
-        if (quest.type !== 'COLLECT_ITEMS') return;
-        
-        const itemIds = quest.specialItems || [];
-        const count = quest.count || 0;
-        
-        for (let i = 0; i < count; i++) {
-            // Determine which item sprite to use
-            let itemId;
-            if (itemIds.length > 0 && i < itemIds.length) {
-                itemId = itemIds[i]; // Special items (dragon balls 1-7)
-            } else {
-                itemId = quest.item; // Same item repeated (bento, berries)
-            }
-            
-            const itemData = QUEST_ITEMS[itemId];
-            if (!itemData) continue;
-            
-            // Place item randomly, away from center spawn AND away from NPCs/structures
-            let ix, iy, valid, attempts = 0;
-            do {
-                ix = 0.08 + Math.random() * 0.84;
-                iy = 0.08 + Math.random() * 0.84;
-                const dxC = ix - 0.5;
-                const dyC = iy - 0.5;
-                const distCenter = Math.sqrt(dxC * dxC + dyC * dyC);
-                valid = distCenter > 0.1;
-                
-                // If spawnNearStructures, place near a random structure
-                if (quest.spawnNearStructures && placedAll.length > 0) {
-                    const structures = placedAll.filter(n => n.isStructure);
-                    if (structures.length > 0) {
-                        const struct = structures[Math.floor(Math.random() * structures.length)];
-                        ix = struct.x + (Math.random() - 0.5) * 0.08;
-                        iy = struct.y + (Math.random() - 0.5) * 0.08;
-                        ix = Math.max(0.05, Math.min(0.95, ix));
-                        iy = Math.max(0.05, Math.min(0.95, iy));
-                        valid = true;
-                    }
-                }
-                
-                // Check distance from all NPCs and structures
-                if (valid) {
-                    for (const npc of placedAll) {
-                        const dnx = ix - npc.x;
-                        const dny = iy - npc.y;
-                        const minDist = npc.isStructure ? 0.035 : 0.02;
-                        if (Math.sqrt(dnx * dnx + dny * dny) < minDist) {
-                            valid = false;
-                            break;
-                        }
-                    }
-                }
-                
-                attempts++;
-            } while (!valid && attempts < 100);
-            
-            survie.groundItems.push({
-                id: `${quest.id}_item_${i}`,
-                questId: quest.id,
-                itemId: itemId,
-                name: itemData.name,
-                imageUrl: itemData.imageUrl,
-                x: ix,
-                y: iy,
-                size: 100,
-            });
-        }
-    });
-    
-    console.log(`📦 ${survie.groundItems.length} items au sol générés`);
-    
-    // ═══ Générer les boosts de vitesse ═══
-    survie.boosts = [];
-    const BOOST_COUNT = 20;
-    for (let i = 0; i < BOOST_COUNT; i++) {
-        let bx, by, valid = false, attempts = 0;
-        do {
-            bx = 0.08 + Math.random() * 0.84;
-            by = 0.08 + Math.random() * 0.84;
-            // Avoid center spawn area
-            const dxC = bx - 0.5;
-            const dyC = by - 0.5;
-            valid = Math.sqrt(dxC * dxC + dyC * dyC) > 0.12;
-            // Avoid being too close to other boosts
-            for (const ob of survie.boosts) {
-                const dbx = bx - ob.x;
-                const dby = by - ob.y;
-                if (Math.sqrt(dbx * dbx + dby * dby) < 0.08) { valid = false; break; }
-            }
-            attempts++;
-        } while (!valid && attempts < 100);
-        
-        survie.boosts.push({ id: `boost_${i}`, x: bx, y: by });
-    }
-    console.log(`⚡ ${survie.boosts.length} boosts générés`);
-    
-    // Préparer les données de quêtes pour le client (sans spoiler les réponses)
-    const clientQuests = questData.quests.map(q => ({
-        id: q.id,
-        type: q.type,
-        desc: q.desc,
-        totalSteps: q.steps ? q.steps.length : (q.type === 'REUNION' ? q.count : (q.type === 'COLLECT_ITEMS' ? q.count + 1 : (q.type === 'RIDDLE' ? 1 : 2))),
-        ...(q.type === 'REUNION' && { count: q.count, group: q.group }),
-        ...(q.type === 'COLLECT_ITEMS' && { count: q.count }),
-        ...(q.type === 'RIDDLE' && { riddle: q.riddle }),
-        ...(q.type === 'MYSTERY' && { victim: q.victim, suspects: q.suspects }),
-    }));
-    
-    // Store start timestamp for tutorial sync
-    survie.gameStartedAt = Date.now();
-    
-    // Envoyer à tous
-    io.emit('survie-game-started', {
-        totalPlayers: totalPlayers,
-        gameStartedAt: survie.gameStartedAt,
-        players: survie.alivePlayers.map(p => ({
-            twitchId: p.twitchId,
-            username: p.username,
-            avatarUrl: p.avatarUrl,
-            colorIndex: p.colorIndex
-        })),
-        timer: survie.timer,
-        npcs: survie.npcs,
-        quests: clientQuests,
-        groundItems: survie.groundItems,
-        boosts: survie.boosts || [],
-        questItems: QUEST_ITEMS,
-        playerQuestStates: Object.fromEntries(
-            Object.entries(survie.playerQuestStates).map(([tid, pqs]) => [tid, { quests: pqs.quests, pickedItems: pqs.pickedItems || [], inventory: pqs.inventory || [] }])
-        ),
-    });
-    
-    // Rounds/épreuves désactivés pour le moment — juste le plateau
-    // setTimeout(() => {
-    //     startSurvieNextRound();
-    // }, 3000);
-    
-    return { success: true };
-}
-
-function startSurvieNextRound() {
-    const survie = gameState.survie;
-    if (!survie || !survie.active) return;
-    
-    const aliveCount = survie.alivePlayers.length;
-    
-    // 1v1 final
-    if (aliveCount === 2) {
-        startSurvieFinalDuel();
-        return;
-    }
-    
-    // Winner direct
-    if (aliveCount <= 1) {
-        endSurvieGame();
-        return;
-    }
-    
-    survie.currentRound++;
-    survie.roundInProgress = true;
-    survie.completedPlayers = [];
-    
-    // Calcul éliminations
-    survie.toEliminateCount = calculateSurvieEliminations(aliveCount);
-    survie.qualifiedCount = aliveCount - survie.toEliminateCount;
-    
-    // Choisir une épreuve aléatoire
-    let available = SURVIE_EPREUVE_TYPES.filter(t => !survie.usedEpreuves.includes(t));
-    if (available.length === 0) {
-        survie.usedEpreuves = [];
-        available = [...SURVIE_EPREUVE_TYPES];
-    }
-    const epreuveType = available[Math.floor(Math.random() * available.length)];
-    survie.usedEpreuves.push(epreuveType);
-    
-    const epreuveData = generateSurvieEpreuveData(epreuveType);
-    survie.currentEpreuve = { type: epreuveType, data: epreuveData };
-    
-    console.log(`🎮 Survie Manche ${survie.currentRound}: ${epreuveType} | ${aliveCount} joueurs | éliminés: ${survie.toEliminateCount} | qualifiés: ${survie.qualifiedCount}`);
-    
-    // Timer
-    const timerMs = survie.timer * 1000;
-    survie.roundTimerEndTime = Date.now() + timerMs;
-    
-    survie.roundTimer = setTimeout(() => {
-        endSurvieRound();
-    }, timerMs);
-    
-    // Broadcast
-    io.emit('survie-round-start', {
-        round: survie.currentRound,
-        epreuveType: epreuveType,
-        epreuveData: epreuveData,
-        timer: survie.timer,
-        aliveCount: aliveCount,
-        qualifiedCount: survie.qualifiedCount,
-        toEliminateCount: survie.toEliminateCount,
-        alivePlayers: survie.alivePlayers.map(p => ({
-            twitchId: p.twitchId, username: p.username, avatarUrl: p.avatarUrl, colorIndex: p.colorIndex
-        }))
-    });
-    
-    addLog('survie-round', { round: survie.currentRound, epreuve: epreuveType, alive: aliveCount });
-}
-
-function surviePlayerCompleted(socketId, twitchId) {
-    const survie = gameState.survie;
-    if (!survie || !survie.active || !survie.roundInProgress) return;
-    
-    // Vérifier joueur en vie
-    const isAlive = survie.alivePlayers.some(p => p.twitchId === twitchId);
-    if (!isAlive) return;
-    
-    // Vérifier pas déjà complété
-    if (survie.completedPlayers.some(p => p.twitchId === twitchId)) return;
-    
-    const player = survie.alivePlayers.find(p => p.twitchId === twitchId);
-    survie.completedPlayers.push({
-        twitchId: twitchId,
-        username: player?.username || 'Unknown',
-        completionTime: Date.now()
-    });
-    
-    const completedCount = survie.completedPlayers.length;
-    console.log(`✅ Survie: ${player?.username} terminé (${completedCount}/${survie.qualifiedCount})`);
-    
-    // Broadcast le compteur en live
-    io.emit('survie-qualified-update', {
-        completedCount: completedCount,
-        qualifiedCount: survie.qualifiedCount,
-        playerTwitchId: twitchId,
-        playerUsername: player?.username
-    });
-    
-    // Quota atteint → STOP NET
-    if (completedCount >= survie.qualifiedCount) {
-        console.log(`🛑 Survie: Quota atteint! ${completedCount}/${survie.qualifiedCount} → Manche terminée!`);
-        endSurvieRound();
-    }
-}
-
-function endSurvieRound() {
-    const survie = gameState.survie;
-    if (!survie || !survie.active || !survie.roundInProgress) return;
-    
-    survie.roundInProgress = false;
-    
-    if (survie.roundTimer) {
-        clearTimeout(survie.roundTimer);
-        survie.roundTimer = null;
-    }
-    
-    // Qualifiés = ceux qui ont complété dans le quota
-    const qualifiedIds = new Set(
-        survie.completedPlayers.slice(0, survie.qualifiedCount).map(p => p.twitchId)
-    );
-    
-    const eliminated = [];
-    const qualified = [];
-    
-    survie.alivePlayers.forEach(player => {
-        if (qualifiedIds.has(player.twitchId)) {
-            qualified.push(player);
-        } else {
-            eliminated.push(player);
-        }
-    });
-    
-    // Positions des éliminés
-    const currentPos = survie.alivePlayers.length;
-    eliminated.forEach((player, idx) => {
-        survie.eliminatedPlayers.push({
-            twitchId: player.twitchId,
-            username: player.username,
-            eliminatedRound: survie.currentRound,
-            position: currentPos - idx
-        });
-    });
-    
-    survie.alivePlayers = qualified;
-    
-    console.log(`🎮 Survie Manche ${survie.currentRound}: ${qualified.length} qualifiés, ${eliminated.length} éliminés`);
-    
-    io.emit('survie-round-results', {
-        round: survie.currentRound,
-        qualified: qualified.map(p => ({ twitchId: p.twitchId, username: p.username, avatarUrl: p.avatarUrl })),
-        eliminated: eliminated.map(p => ({ twitchId: p.twitchId, username: p.username, avatarUrl: p.avatarUrl })),
-        remainingCount: qualified.length,
-        completionOrder: survie.completedPlayers.map(p => ({ twitchId: p.twitchId, username: p.username }))
-    });
-    
-    addLog('survie-elim', { round: survie.currentRound, eliminated: eliminated.map(p => p.username), remaining: qualified.length });
-    
-    // Si 1 ou 0 restant → fin
-    if (qualified.length <= 1) {
-        setTimeout(() => endSurvieGame(), 4000);
-    }
-}
-
-function startSurvieFinalDuel() {
-    const survie = gameState.survie;
-    if (!survie || !survie.active) return;
-    
-    survie.currentRound++;
-    survie.roundInProgress = true;
-    survie.completedPlayers = [];
-    survie.qualifiedCount = 1;
-    survie.toEliminateCount = 1;
-    
-    const epreuveType = 'duel-final';
-    const epreuveData = generateSurvieEpreuveData(epreuveType);
-    survie.currentEpreuve = { type: epreuveType, data: epreuveData };
-    
-    const timerMs = survie.timer * 1000;
-    survie.roundTimerEndTime = Date.now() + timerMs;
-    survie.roundTimer = setTimeout(() => endSurvieRound(), timerMs);
-    
-    console.log(`⚔️ Survie DUEL FINAL: ${survie.alivePlayers.map(p => p.username).join(' vs ')}`);
-    
-    io.emit('survie-duel-start', {
-        round: survie.currentRound,
-        players: survie.alivePlayers.map(p => ({
-            twitchId: p.twitchId, username: p.username, avatarUrl: p.avatarUrl
-        })),
-        epreuveType: epreuveType,
-        epreuveData: epreuveData,
-        timer: survie.timer
-    });
-}
-
-async function endSurvieGame() {
-    const survie = gameState.survie;
-    if (!survie) return;
-    
-    if (survie.roundTimer) {
-        clearTimeout(survie.roundTimer);
-        survie.roundTimer = null;
-    }
-    
-    const winner = survie.alivePlayers.length > 0 ? survie.alivePlayers[0] : null;
-    
-    console.log(`🏆 Survie terminée! Winner: ${winner?.username || 'Aucun'} | ${survie.currentRound} manches`);
-    
-    // Construire le classement : gagnant + alive restants + éliminés (ordre inverse)
-    const ranking = [];
-    if (winner) {
-        ranking.push({ twitchId: winner.twitchId, username: winner.username });
-    }
-    // Autres joueurs vivants (s'il y en a)
-    survie.alivePlayers.filter(p => p !== winner && p.twitchId !== winner?.twitchId).forEach(p => {
-        ranking.push({ twitchId: p.twitchId, username: p.username });
-    });
-    // Éliminés dans l'ordre inverse (dernier éliminé = meilleur classement)
-    if (survie.eliminatedPlayers) {
-        [...survie.eliminatedPlayers].reverse().forEach(p => {
-            if (!ranking.some(r => r.twitchId === p.twitchId)) {
-                ranking.push({ twitchId: p.twitchId, username: p.username });
-            }
-        });
-    }
-
-    io.emit('survie-game-ended', {
-        winner: winner ? {
-            twitchId: winner.twitchId, username: winner.username, avatarUrl: winner.avatarUrl
-        } : null,
-        totalRounds: survie.currentRound,
-        eliminatedPlayers: survie.eliminatedPlayers
-    });
-    
-    // 📊 Comptabiliser les stats, coins, XP
-    try {
-        const duration = Math.floor((Date.now() - gameState.gameStartTime) / 1000);
-        
-        if (winner && gameState.currentGameId) {
-            await db.endGame(gameState.currentGameId, winner.twitchId, survie.currentRound, duration);
-        }
-
-        const minPlayers = getMinPlayersForStats('survie');
-        if (ranking.length >= minPlayers) {
-            for (let i = 0; i < ranking.length; i++) {
-                await db.updateUserStats(ranking[i].twitchId, i === 0, i + 1);
-            }
-            console.log(`📊 Stats Survie mises à jour (${ranking.length} joueurs)`);
-        } else {
-            console.log(`⚠️ Stats Survie NON comptabilisées (${ranking.length} < ${minPlayers} joueurs [survie])`);
-        }
-
-        // 💰 Distribuer les S-Coins
-        await db.distributeGameCoins(ranking, ranking.length);
-        // ⭐ Distribuer l'XP
-        await db.distributeGameXp(ranking, ranking.length);
-
-        // 📋 Tracker chaque joueur dans player_games
-        for (let i = 0; i < ranking.length; i++) {
-            try {
-                await db.addPlayerGame(gameState.currentGameId, ranking[i].twitchId, 'survie', i + 1, i === 0);
-            } catch(e) { console.error('Track player error:', e.message); }
-        }
-    } catch (dbError) {
-        console.error('⚠️ Erreur DB Survie (non bloquante):', dbError.message);
-    }
-
-    // Keep active=true so players can still move on the board
-    // Lobby closing (game-deactivated) will fully reset everything
-    survie.roundInProgress = false;
-    addLog('survie-end', { winner: winner?.username, rounds: survie.currentRound });
-}
-
-function getSurvieStateForClient(socketId, twitchIdHint) {
-    const survie = gameState.survie;
-    if (!survie || !survie.active) return null;
-    
-    // Get player's quest state if available
-    let playerQuestState = null;
-    let clientQuests = [];
-    
-    // Find player twitchId by socketId or use hint
-    let playerTwitchId = twitchIdHint || null;
-    if (!playerTwitchId && socketId) {
-        const player = gameState.players.get(socketId);
-        if (player) playerTwitchId = player.twitchId;
-    }
-    
-    console.log(`📋 getSurvieState: twitchId=${playerTwitchId}, hasQuestStates=${!!survie.playerQuestStates}, keys=${Object.keys(survie.playerQuestStates || {}).join(',')}`);
-    
-    if (survie.quests) {
-        clientQuests = survie.quests.map(q => ({
-            id: q.id,
-            type: q.type,
-            desc: q.desc,
-            totalSteps: q.steps ? q.steps.length : (q.type === 'REUNION' ? q.count : (q.type === 'COLLECT_ITEMS' ? q.count + 1 : (q.type === 'RIDDLE' ? 1 : 2))),
-            ...(q.type === 'REUNION' && { count: q.count, group: q.group }),
-            ...(q.type === 'COLLECT_ITEMS' && { count: q.count }),
-            ...(q.type === 'RIDDLE' && { riddle: q.riddle }),
-            ...(q.type === 'MYSTERY' && { victim: q.victim, suspects: q.suspects }),
-        }));
-    }
-    
-    if (playerTwitchId && survie.playerQuestStates?.[playerTwitchId]) {
-        const pqs = survie.playerQuestStates[playerTwitchId];
-        console.log(`✅ Quest state trouvé pour ${playerTwitchId}: ${pqs.quests.length} quêtes, completed=${pqs.quests.filter(q=>q.completed).length}`);
-        playerQuestState = {
-            quests: pqs.quests,
-            pickedItems: pqs.pickedItems || [],
-            inventory: pqs.inventory || [],
-        };
-    } else {
-        console.log(`❌ Pas de quest state pour twitchId=${playerTwitchId}`);
-    }
-    
-    return {
-        active: true,
-        currentRound: survie.currentRound,
-        roundInProgress: survie.roundInProgress,
-        currentEpreuve: survie.currentEpreuve,
-        timer: survie.timer,
-        alivePlayers: survie.alivePlayers.map(p => ({
-            twitchId: p.twitchId, username: p.username, avatarUrl: p.avatarUrl, colorIndex: p.colorIndex,
-            posX: p.posX, posY: p.posY
-        })),
-        eliminatedPlayers: survie.eliminatedPlayers,
-        completedCount: survie.completedPlayers.length,
-        qualifiedCount: survie.qualifiedCount,
-        toEliminateCount: survie.toEliminateCount,
-        timeRemaining: survie.roundTimerEndTime 
-            ? Math.max(0, Math.ceil((survie.roundTimerEndTime - Date.now()) / 1000))
-            : survie.timer,
-        npcs: survie.npcs || SURVIE_NPCS,
-        quests: clientQuests,
-        playerQuestState: playerQuestState,
-        groundItems: survie.groundItems || [],
-        boosts: survie.boosts || [],
-        questItems: QUEST_ITEMS,
-        gameStartedAt: survie.gameStartedAt || null,
-    };
-}
 
 
 // ============================================
@@ -11332,14 +5925,6 @@ function getSurvieStateForClient(socketId, twitchIdHint) {
 // ============================================
 
 
-setInterval(() => {
-    // Timeout uniquement pour l'admin NORMAL (pas les masters)
-    if (activeAdminSession && Date.now() - lastAdminActivity > ADMIN_TIMEOUT_MS) {
-        console.log('⏰ Timeout admin normal (10min) - Libération du slot');
-        activeAdminSession = null;
-        activeAdminLoginTime = null;
-    }
-}, 30000);
 
 
 process.on('unhandledRejection', (error) => {
