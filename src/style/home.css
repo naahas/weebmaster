@@ -16598,3 +16598,59 @@ body.modal-open {
     cursor: default;
     pointer-events: none;
 }
+
+/* ============================================
+   🆕 v2 — IDENTITÉ INVITÉ (saisie du pseudo)
+   Remplace le bouton "Se connecter avec Twitch"
+   ============================================ */
+.pseudo-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.9rem;
+    width: min(20rem, 82vw);
+    margin: 0 auto;
+}
+
+.pseudo-input {
+    width: 100%;
+    padding: 0.85rem 1.1rem;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-align: center;
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.04);
+    border: 0.1rem solid rgba(255, 215, 0, 0.25);
+    border-radius: 0.6rem;
+    outline: none;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+
+.pseudo-input::placeholder {
+    color: var(--text-secondary);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+
+.pseudo-input:focus {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: var(--neon-primary);
+    box-shadow: 0 0 0 0.2rem rgba(255, 215, 0, 0.12), 0 0 1.4rem rgba(255, 215, 0, 0.18);
+}
+
+.pseudo-form .btn-primary {
+    width: 100%;
+    justify-content: center;
+}
+
+.pseudo-error {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #ff6b6b;
+    margin-top: -0.4rem;
+}

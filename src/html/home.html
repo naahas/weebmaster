@@ -8,9 +8,7 @@
     <meta name="description"
         content="Le meilleur quiz d'Anime/Manga en temps réel ! Affronte d'autres utilisateurs, grimpe le classement et deviens le ShonenMaster ultime.">
     <link rel="stylesheet" href="home.css">
-    <link rel="stylesheet" href="home-survie.css">
     <link rel="stylesheet" href="home-bombanime.css">
-    <link rel="stylesheet" href="home-collect.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Russo+One&family=Space+Grotesk:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap"
@@ -43,13 +41,22 @@
                     <span class="neon-text">Shonen</span><span class="neon-text-alt">Master</span>
                 </h1>
 
-                <button class="btn-primary btn-twitch floating" @click="loginTwitch">
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                        <path
-                            d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
-                    </svg>
-                    <span>Se connecter avec Twitch</span>
-                </button>
+                <!-- 🆕 v2 : identité invité (pseudo), remplace la connexion Twitch -->
+                <div class="pseudo-form">
+                    <input
+                        type="text"
+                        class="pseudo-input"
+                        v-model="pseudoInput"
+                        @keyup.enter="setPseudo"
+                        placeholder="Ton pseudo"
+                        maxlength="16"
+                        autocomplete="off"
+                        spellcheck="false">
+                    <div class="pseudo-error" v-if="pseudoError">{{ pseudoError }}</div>
+                    <button class="btn-primary floating" @click="setPseudo">
+                        <span>Jouer</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Logo simplifié (Utilisateur authentifié uniquement) -->
@@ -181,7 +188,7 @@
                     </div>
                     <button 
                         class="lobby-btn" 
-                        :class="{ joined: hasJoined, 'shake-error': collectShakeError }"
+                        :class="{ joined: hasJoined }"
                         @click="joinLobby" 
                         :disabled="hasJoined || joinCooldown"
                     >
@@ -189,119 +196,6 @@
                     </button>
                 </div>
 
-                <!-- Mode Collect: Lobby card -->
-                <div class="lobby-card lobby-card-v3 lobby-collect" v-if="lobbyMode === 'collect'">
-                    <div class="lobby-glow-line"></div>
-                    <!-- Icône cartes Collect -->
-                    <div class="collect-cards-icon">
-                        <div class="collect-card collect-card-back"></div>
-                        <div class="collect-card collect-card-front">
-                            <span class="collect-card-symbol">♠</span>
-                        </div>
-                    </div>
-                    <h2 class="lobby-title">La partie va commencer</h2>
-                    <div class="lobby-subtitle">Mode Collect</div>
-                    <div class="lobby-players-line">
-                        <span class="lobby-line"></span>
-                        <span class="lobby-count">
-                            <span class="lobby-dot"></span>
-                            <strong>{{ playerCount }}</strong> à la table
-                        </span>
-                        <span class="lobby-line"></span>
-                    </div>
-                    <button 
-                        class="lobby-btn" 
-                        :class="{ joined: hasJoined, 'shake-error': collectShakeError }"
-                        @click="joinLobby" 
-                        :disabled="hasJoined || joinCooldown"
-                    >
-                        {{ hasJoined ? 'Vous êtes à la table' : 'Rejoindre' }}
-                    </button>
-                </div>
-
-                <!-- Mode Survie: Lobby card -->
-                <div class="lobby-card lobby-card-v3 lobby-survie" v-if="lobbyMode === 'survie'">
-                    <div class="lobby-glow-line"></div>
-                    <svg class="lobby-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        <path d="M9 12l2 2 4-4"/>
-                    </svg>
-                    <h2 class="lobby-title">La partie va commencer</h2>
-                    <div class="lobby-subtitle">Mode Trace</div>
-                    <div class="lobby-players-line">
-                        <span class="lobby-line"></span>
-                        <span class="lobby-count">
-                            <span class="lobby-dot"></span>
-                            <strong>{{ playerCount }}</strong> en attente
-                        </span>
-                        <span class="lobby-line"></span>
-                    </div>
-                    <button 
-                        class="lobby-btn" 
-                        :class="{ joined: hasJoined }"
-                        @click="joinLobby" 
-                        :disabled="hasJoined"
-                    >
-                        {{ hasJoined ? 'Vous êtes dans la partie' : 'Rejoindre' }}
-                    </button>
-                </div>
-
-                <!-- Mode Poll: Lobby card -->
-                <div class="lobby-card lobby-card-v3 lobby-poll" v-if="lobbyMode === 'poll'">
-                    <div class="lobby-glow-line"></div>
-                    <svg class="lobby-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M18 20V10"/>
-                        <path d="M12 20V4"/>
-                        <path d="M6 20v-6"/>
-                    </svg>
-                    <h2 class="lobby-title">La partie va commencer</h2>
-                    <div class="lobby-subtitle">Mode Poll</div>
-                    <div class="lobby-players-line">
-                        <span class="lobby-line"></span>
-                        <span class="lobby-count">
-                            <span class="lobby-dot"></span>
-                            <strong>{{ playerCount }}</strong> en attente
-                        </span>
-                        <span class="lobby-line"></span>
-                    </div>
-                    <button 
-                        class="lobby-btn" 
-                        :class="{ joined: hasJoined }"
-                        @click="joinLobby" 
-                        :disabled="hasJoined"
-                    >
-                        {{ hasJoined ? 'Vous êtes dans la partie' : 'Rejoindre' }}
-                    </button>
-                </div>
-
-                <!-- Mode Ascension: Lobby card -->
-                <div class="lobby-card lobby-card-v3 lobby-ascension" v-if="lobbyMode === 'ascension'">
-                    <div class="lobby-glow-line"></div>
-                    <svg class="lobby-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M3 21h18"/>
-                        <path d="M12 3l7 18"/>
-                        <path d="M12 3L5 21"/>
-                        <path d="M8 14h8"/>
-                    </svg>
-                    <h2 class="lobby-title">La partie va commencer</h2>
-                    <div class="lobby-subtitle">Mode Ascension</div>
-                    <div class="lobby-players-line">
-                        <span class="lobby-line"></span>
-                        <span class="lobby-count">
-                            <span class="lobby-dot"></span>
-                            <strong>{{ playerCount }}</strong> en attente
-                        </span>
-                        <span class="lobby-line"></span>
-                    </div>
-                    <button 
-                        class="lobby-btn" 
-                        :class="{ joined: hasJoined }"
-                        @click="joinLobby" 
-                        :disabled="hasJoined"
-                    >
-                        {{ hasJoined ? 'Vous êtes dans la partie' : 'Rejoindre' }}
-                    </button>
-                </div>
 
                 <button class="btn-secondary" @click="logout">
                     Déconnexion
@@ -325,8 +219,8 @@
 
             <!-- État: Partie en cours -->
             <div class="content-section game-section"
-                 :class="{ 'no-animation': lobbyMode === 'bombanime' || lobbyMode === 'collect' || lobbyMode === 'survie' || lobbyMode === 'ascension' }"
-                 v-if="gameInProgress && isAuthenticated && (!gameEnded || lobbyMode === 'ascension')">
+                 :class="{ 'no-animation': lobbyMode === 'bombanime' }"
+                 v-if="gameInProgress && isAuthenticated && !gameEnded">
                 
                 <!-- ============================================
                      MODE BOMBANIME - Interface de jeu
@@ -738,553 +632,9 @@
                 </template>
 
                 <!-- ============================================
-                     MODE COLLECT - Interface de jeu (Poker Anime)
-                     ============================================ -->
-                <template v-else-if="lobbyMode === 'collect' && collect.active && !gameEnded && !collect.reconnecting">
-                    <div class="collect-game-container">
-
-                        <!-- Triangle des classes -->
-                        <div class="class-triangle-widget">
-                            <svg viewBox="0 0 200 210" xmlns="http://www.w3.org/2000/svg">
-                                <defs>
-                                    <filter id="tw-gr"><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#e74c3c" flood-opacity="0.35"/></filter>
-                                    <filter id="tw-gg"><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#f39c12" flood-opacity="0.35"/></filter>
-                                    <filter id="tw-gb"><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#3498db" flood-opacity="0.35"/></filter>
-                                    <marker id="tw-ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
-                                        <path d="M2,1 L8,5 L2,9" fill="none" stroke="#e74c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
-                                    </marker>
-                                    <marker id="tw-ab" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
-                                        <path d="M2,1 L8,5 L2,9" fill="none" stroke="#3498db" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
-                                    </marker>
-                                    <marker id="tw-ag" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
-                                        <path d="M2,1 L8,5 L2,9" fill="none" stroke="#f39c12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
-                                    </marker>
-                                </defs>
-                                <polygon points="100,30 30,152 170,152" fill="rgba(255,255,255,0.01)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
-                                <line x1="114" y1="42" x2="137" y2="86" stroke="#e74c3c" stroke-width="2" opacity="0.5" marker-end="url(#tw-ar)"/>
-                                <line x1="148" y1="108" x2="160" y2="134" stroke="#e74c3c" stroke-width="1.5" opacity="0.15"/>
-                                <line x1="156" y1="152" x2="110" y2="152" stroke="#3498db" stroke-width="2" opacity="0.5" marker-end="url(#tw-ab)"/>
-                                <line x1="90" y1="152" x2="44" y2="152" stroke="#3498db" stroke-width="1.5" opacity="0.15"/>
-                                <line x1="40" y1="134" x2="56" y2="102" stroke="#f39c12" stroke-width="2" opacity="0.5" marker-end="url(#tw-ag)"/>
-                                <line x1="66" y1="82" x2="86" y2="42" stroke="#f39c12" stroke-width="1.5" opacity="0.15"/>
-                                <!-- Nodes -->
-                                <circle cx="100" cy="30" r="20" fill="#0c0c18" stroke="#e74c3c" stroke-width="2" filter="url(#tw-gr)"/>
-                                <circle cx="100" cy="30" r="14" fill="rgba(231,76,60,0.08)" stroke="#e74c3c" stroke-width="0.5" opacity="0.4"/>
-                                <circle cx="30" cy="152" r="20" fill="#0c0c18" stroke="#f39c12" stroke-width="2" filter="url(#tw-gg)"/>
-                                <circle cx="30" cy="152" r="14" fill="rgba(243,156,18,0.08)" stroke="#f39c12" stroke-width="0.5" opacity="0.4"/>
-                                <circle cx="170" cy="152" r="20" fill="#0c0c18" stroke="#3498db" stroke-width="2" filter="url(#tw-gb)"/>
-                                <circle cx="170" cy="152" r="14" fill="rgba(52,152,219,0.08)" stroke="#3498db" stroke-width="0.5" opacity="0.4"/>
-                                <!-- Assaut icon (sword) -->
-                                <g transform="translate(88,18) scale(0.95)" fill="#e74c3c">
-                                    <path d="M6.92 5H5L14 14L15 13.06L6.92 5M19.06 3C18.44 3 17.82 3.24 17.35 3.71L13.71 7.35L16.65 10.29L20.29 6.65C21.24 5.7 21.24 4.14 20.29 3.19C19.82 2.72 19.44 3 19.06 3M7.06 18.34L9.06 16.34L7.66 14.94L5.66 16.94C5.16 17.44 5.16 18.25 5.66 18.75C6.16 19.25 6.97 19.25 7.47 18.75L7.06 18.34Z"/>
-                                </g>
-                                <!-- Oracle icon (checkmark circle) -->
-                                <g transform="translate(18,140) scale(0.95)" fill="#f39c12">
-                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                                </g>
-                                <!-- Mirage icon (exclamation circle) -->
-                                <g transform="translate(158,140) scale(0.95)" fill="#3498db">
-                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
-                                </g>
-                                <!-- Labels with spacing -->
-                                <text x="100" y="2" text-anchor="middle" fill="#e74c3c" font-family="Orbitron,sans-serif" font-size="9" font-weight="700" letter-spacing="2">ASSAUT</text>
-                                <text x="30" y="186" text-anchor="middle" fill="#f39c12" font-family="Orbitron,sans-serif" font-size="9" font-weight="700" letter-spacing="2">ORACLE</text>
-                                <text x="170" y="186" text-anchor="middle" fill="#3498db" font-family="Orbitron,sans-serif" font-size="9" font-weight="700" letter-spacing="2">MIRAGE</text>
-                            </svg>
-                        </div>
-                        
-                        <!-- Menu Combinaisons -->
-                        
-                        <div class="collect-table-container">
-                            <div class="collect-table">
-                                <div class="collect-table-rail"></div>
-                                <div class="collect-table-surface"></div>
-                                
-                                <div class="collect-table-logo">
-                                    <div class="logo-main">COLLECT</div>
-                                    <div class="logo-sub">ShonenMaster</div>
-                                </div>
-                                
-                                <!-- Center Zone: Market + Slot -->
-                                <div class="collect-center-zone">
-                                    <!-- Market Cards -->
-                                    <div class="collect-market" v-if="collect.marketCards && collect.marketCards.length > 0">
-                                        <div v-for="(card, idx) in collect.marketCards" :key="'market-'+idx"
-                                             class="market-card"
-                                             :class="{ 'same-anime-match': marketMatchesHand(card) }"
-                                             :style="{ animationDelay: (idx * 0.18) + 's' }"
-                                             @mouseenter="showCardPreview(card, $event)"
-                                             @mouseleave="hideCardPreview">
-                                            <img :src="getCardImage(card)" :alt="card.name">
-                                            <div class="class-badge" :class="card.class">
-                                                <span class="class-icon" v-html="getClassIcon(card.class)"></span>
-                                            </div>
-                                            <div v-if="card.isProtagonist" class="prota-badge market-prota">
-                                                <svg viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"/></svg>
-                                            </div>
-                                            <!-- Golden glow for matching anime -->
-                                            <template v-if="marketMatchesHand(card)">
-                                                <div class="sa-glow-container">
-                                                    <div class="sa-smoke s1"></div>
-                                                    <div class="sa-smoke s2"></div>
-                                                    <div class="sa-smoke s3"></div>
-                                                </div>
-                                                <div class="sa-particles">
-                                                    <div class="sa-particle sm"></div>
-                                                    <div class="sa-particle md"></div>
-                                                    <div class="sa-particle sm"></div>
-                                                    <div class="sa-particle lg"></div>
-                                                    <div class="sa-particle sm"></div>
-                                                    <div class="sa-particle md"></div>
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Slot carte central -->
-                                    <div class="collect-center-slot" 
-                                         :class="{ visible: collect.showCenterSlot, 'drop-hover': collect.dropZoneActive, 'has-card': collect.cardPlayed && collect.playedCardData }">
-                                        <div class="slot-stat-icon" :class="{ show: collect.showCenterSlot && !collect.playedCardData }" v-if="collect.showCenterSlot">
-                                            <svg viewBox="0 0 24 32" fill="none" width="24" height="32"><rect x="2" y="2" width="20" height="28" rx="3" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><path d="M12 9l1.76 3.57 3.94.57-2.85 2.78.67 3.93L12 17.77l-3.52 1.85.67-3.93-2.85-2.78 3.94-.57L12 9z" fill="currentColor" fill-opacity="0.5"/></svg>
-                                        </div>
-                                        <div class="center-slot-inner">
-                                            <!-- Carte jouée affichée au centre -->
-                                            <div v-if="collect.playedCardData" class="center-played-card"
-                                                 :class="{ 'fused-card': collect.playedCardData.isFused || (collect.playedCardData.fusedCards && collect.playedCardData.fusedCards.length > 1) }"
-                                                 @mouseenter="showCardPreview(collect.playedCardData, $event)"
-                                                 @mouseleave="hideCardPreview">
-                                                <!-- Fused card in slot -->
-                                                <template v-if="collect.playedCardData.isFused || (collect.playedCardData.fusedCards && collect.playedCardData.fusedCards.length > 1)">
-                                                    <div class="center-fused-glow"></div>
-                                                    <div class="fused-img-wrap" :class="'fused-x' + collect.playedCardData.fusedCards.length">
-                                                        <img v-for="fc in collect.playedCardData.fusedCards" :key="fc.name" :src="getCardImage(fc)" :alt="fc.name">
-                                                    </div>
-                                                    <div class="fusion-badge-slot" :class="{ 'x3': collect.playedCardData.fusedCards.length >= 3 }">
-                                                        <div class="fusion-badge-particles"><span></span><span></span><span></span><span></span><span></span><span></span></div>
-                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l7.07 17.32M20 4l-7.07 17.32M3.5 9h17M7 16.5h10"/></svg>
-                                                    </div>
-                                                </template>
-                                                <!-- Normal card in slot -->
-                                                <template v-else>
-                                                    <div class="card-image">
-                                                        <img :src="getCardImage(collect.playedCardData)" :alt="collect.playedCardData.name">
-                                                    </div>
-                                                    <div class="class-badge" :class="collect.playedCardData.class">
-                                                        <span class="class-icon" v-html="getClassIcon(collect.playedCardData.class)"></span>
-                                                    </div>
-                                                </template>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                
-                                <!-- Player Seats (autres joueurs) -->
-                                <div v-for="(player, index) in collect.otherPlayers" 
-                                     :key="'seat-' + player.twitchId"
-                                     class="collect-player-seat"
-                                     :class="{ active: player.isCurrentPlayer, 'scan-target': collect.scanActive && collect.scanTargetId === player.twitchId }"
-                                     :style="getCollectPlayerStyle(index, collect.otherPlayers.length)">
-                                    <div class="collect-player-block">
-                                        <div class="collect-player-cards-wrapper"
-                                             :class="{ 'scannable': collect.isMyTurn && !collect.cardPlayed && !collect.timerExpired && !collect.scanActive }"
-                                             @click="scanPlayer(player)">
-                                            <!-- 🔍 Scanner hover overlay -->
-                                            <div class="scan-hover-overlay" v-if="collect.isMyTurn && !collect.cardPlayed && !collect.timerExpired && !collect.scanActive">
-                                                <svg class="scan-hover-icon" viewBox="0 0 24 24" fill="none" stroke="rgba(0,200,255,0.55)" stroke-width="2" stroke-linecap="round">
-                                                    <circle cx="11" cy="11" r="7"/>
-                                                    <path d="M21 21l-4.35-4.35"/>
-                                                </svg>
-                                            </div>
-                                            
-                                            <div class="collect-player-cards" :class="{ 'hand-5': collect.handSize === 5 }">
-                                                <!-- 🔍 Cartes révélées par scan -->
-                                                <template v-if="collect.scanActive && collect.scanTargetId === player.twitchId">
-                                                    <div v-for="(card, ci) in collect.scanCards" :key="'scan-' + ci" 
-                                                         class="collect-player-card-small scan-revealed"
-                                                         :class="[card.class, { 'scan-fused': card.isFused && card.fusedCards && card.fusedCards.length > 1 }]"
-                                                         @mouseenter="showCardPreview(card, $event)"
-                                                         @mouseleave="hideCardPreview">
-                                                        <div v-if="card.isFused && card.fusedCards && card.fusedCards.length > 1" 
-                                                             :class="'scan-fused-wrap fused-x' + card.fusedCards.length">
-                                                            <img v-for="(fc, fi) in card.fusedCards" :key="'sf-'+fi" class="scan-card-img" :src="getCardImage(fc)" :alt="fc.name">
-                                                        </div>
-                                                        <img v-else class="scan-card-img" :src="getCardImage(card)" :alt="card.name">
-                                                        <div class="scan-card-class" :class="card.class">
-                                                            <span class="class-icon" v-html="getClassIcon(card.class)"></span>
-                                                        </div>
-                                                        <div class="scan-card-info">
-                                                            <div class="scan-card-name">{{ formatName(card.name) }}</div>
-                                                        </div>
-                                                    </div>
-                                                </template>
-                                                <!-- Cartes normales (dos) -->
-                                                <template v-else>
-                                                    <div v-for="n in (player.cardCount !== undefined ? player.cardCount : (collect.handSize || 3))" :key="'sc-' + player.twitchId + '-' + n" class="collect-player-card-small"></div>
-                                                </template>
-                                            </div>
-                                            
-                                        </div>
-                                        <!-- 🔍 Scan timer ring (LEFT, mirroring choose-indicator) -->
-                                        <div class="scan-timer-ring" v-if="collect.scanActive && collect.scanTargetId === player.twitchId">
-                                            <svg viewBox="0 0 34 34">
-                                                <circle class="ring-bg" cx="17" cy="17" r="14.5"/>
-                                                <circle class="ring-progress" cx="17" cy="17" r="14.5"
-                                                        :style="{ strokeDashoffset: collect.scanTimerProgress * 91.1 }"/>
-                                            </svg>
-                                            <div class="scan-timer-text">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="rgba(0,200,255,0.9)" stroke-width="2">
-                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                                    <circle cx="12" cy="12" r="3"/>
-                                                </svg>
-                                            </div>
-                                        </div>
-                                        <div class="collect-choose-indicator" :class="{ active: collect.currentTurnId === player.twitchId, visible: collect.showCenterSlot }">
-                                            <svg class="choose-ring" viewBox="0 0 34 34">
-                                                <circle class="choose-ring-bg" cx="17" cy="17" r="14.5" />
-                                                <circle class="choose-ring-progress" cx="17" cy="17" r="14.5"
-                                                    :style="{ strokeDashoffset: (collect.currentTurnId === player.twitchId ? collect.turnTimerProgress : 1) * 91.1 }" />
-                                            </svg>
-                                            <img src="choose.png" alt="choose">
-                                        </div>
-                                        <div class="collect-player-ribbon">
-                                            <div class="collect-stars">
-                                                <svg v-for="s in (collect.handSize || 3)" :key="'star-' + player.twitchId + '-' + s" class="collect-star" :class="{ won: (player.wins || 0) >= s }" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                                            </div>
-                                        </div>
-                                        <div class="collect-player-name-tag">
-                                            <div class="collect-player-name" :class="{ 'turn-active': collect.currentTurnId === player.twitchId }">{{ player.username }}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Mon siège (POV - toujours en bas) -->
-                                <div class="collect-player-seat me" 
-                                     :class="{ active: collect.isMyTurn }"
-                                     :style="{ '--pov-scale': {2:1.35,3:1.3,4:1.25,5:1.3,6:1.25,7:1.2,8:1.15,9:1.1,10:1.05}[collect.otherPlayers.length + 1] || 1.3 }">
-                                    <div class="collect-my-cards" :class="{ 'hand-5': collect.handSize === 5, 'cards-locked': !collect.cardsActive && !collect.timerExpired && !collect.cardPlayed }">
-                                        <div v-for="(card, cardIndex) in collect.myCards" 
-                                             :key="'mycard-' + cardIndex + '-' + card.name"
-                                             class="collect-card large"
-                                             :class="{ 
-                                                 'same-anime-bonus': hasSameAnimeBonus(card) && !card.isFused,
-                                                 'fused-card': card.isFused,
-                                                 'dragging-origin': collect.draggingCardIndex === cardIndex,
-                                                 'card-played-out': collect.cardPlayed || collect.timerExpired,
-                                                 'card-inactive': !collect.cardsActive && !collect.timerExpired && !collect.cardPlayed
-                                             }"
-                                             @mouseenter="showCardPreview(card, $event)"
-                                             @mouseleave="hideCardPreview"
-                                             @pointerdown.prevent="startCardDrag(cardIndex, $event)">
-                                            <!-- Fused card: breathing border + multi-image -->
-                                            <template v-if="card.isFused">
-                                                <div class="sa-glow-container">
-                                                    <div class="sa-smoke s1"></div>
-                                                    <div class="sa-smoke s2"></div>
-                                                    <div class="sa-smoke s3"></div>
-                                                    <div class="sa-smoke s4"></div>
-                                                    <div class="sa-smoke s5"></div>
-                                                    <div class="sa-corner-glow tl"></div>
-                                                    <div class="sa-corner-glow tr"></div>
-                                                    <div class="sa-corner-glow bl"></div>
-                                                    <div class="sa-corner-glow br"></div>
-                                                </div>
-                                                <div class="sa-particles">
-                                                    <div class="sa-particle md"></div>
-                                                    <div class="sa-particle sm"></div>
-                                                    <div class="sa-particle lg"></div>
-                                                    <div class="sa-particle sm"></div>
-                                                    <div class="sa-particle md"></div>
-                                                    <div class="sa-particle lg"></div>
-                                                    <div class="sa-particle sm"></div>
-                                                    <div class="sa-particle md"></div>
-                                                    <div class="sa-particle lg"></div>
-                                                    <div class="sa-particle sm"></div>
-                                                    <div class="sa-particle sm"></div>
-                                                    <div class="sa-particle sm"></div>
-                                                    <div class="sa-particle sm"></div>
-                                                </div>
-                                                <div class="fused-img-wrap" :class="'fused-x' + card.fusedCards.length">
-                                                    <img v-for="fc in card.fusedCards" :key="fc.name" :src="getCardImage(fc)" :alt="fc.name">
-                                                </div>
-                                                <div class="card-shimmer"></div>
-                                                <!-- Fusion badge -->
-                                                <div class="fusion-badge-hand" :class="{ 'x3': card.fusedCards && card.fusedCards.length >= 3 }">
-                                                    <div class="fusion-badge-particles"><span></span><span></span><span></span><span></span><span></span><span></span></div>
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l7.07 17.32M20 4l-7.07 17.32M3.5 9h17M7 16.5h10"/></svg>
-                                                </div>
-                                            </template>
-                                            <!-- Same-anime Neon Glow Effect -->
-                                            <template v-if="hasSameAnimeBonus(card) && !card.isFused">
-                                                <div class="sa-glow-container">
-                                                    <div class="sa-smoke s1"></div>
-                                                    <div class="sa-smoke s2"></div>
-                                                    <div class="sa-smoke s3"></div>
-                                                    <div class="sa-smoke s4"></div>
-                                                    <div class="sa-smoke s5"></div>
-                                                    <div class="sa-corner-glow tl"></div>
-                                                    <div class="sa-corner-glow tr"></div>
-                                                    <div class="sa-corner-glow bl"></div>
-                                                    <div class="sa-corner-glow br"></div>
-                                                </div>
-                                                <div class="sa-particles">
-                                                    <div class="sa-particle md"></div>
-                                                    <div class="sa-particle sm"></div>
-                                                    <div class="sa-particle lg"></div>
-                                                    <div class="sa-particle sm"></div>
-                                                    <div class="sa-particle md"></div>
-                                                    <div class="sa-particle lg"></div>
-                                                    <div class="sa-particle sm"></div>
-                                                    <div class="sa-particle md"></div>
-                                                    <div class="sa-particle lg"></div>
-                                                    <div class="sa-particle sm"></div>
-                                                    <div class="sa-particle sm"></div>
-                                                    <div class="sa-particle sm"></div>
-                                                    <div class="sa-particle sm"></div>
-                                                </div>
-                                            </template>
-                                            <div class="card-image" v-if="!card.isFused">
-                                                <img :src="getCardImage(card)" :alt="card.name">
-                                            </div>
-                                            <div class="class-badge" :class="card.class" v-if="!card.isFused">
-                                                <span class="class-icon" v-html="getClassIcon(card.class)"></span>
-                                            </div>
-                                            <div class="power-badge">
-                                                <span class="pw-value">{{ card.powerLevel }}</span>
-                                            </div>
-                                            <div class="card-info">
-                                                <template v-if="card.isFused && card.fusedCards">
-                                                    <div class="card-name fused-stacked">
-                                                        <span v-for="fc in card.fusedCards" :key="fc.name">{{ formatName(fc.name) }}</span>
-                                                    </div>
-                                                </template>
-                                                <template v-else>
-                                                    <div class="card-name">{{ formatName(card.name) }}</div>
-                                                </template>
-                                                <div class="card-anime">{{ formatName(card.anime) }}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="collect-player-block">
-                                        <div class="collect-player-ribbon">
-                                            <div class="collect-stars">
-                                                <svg v-for="s in (collect.handSize || 3)" :key="'mystar-' + s" class="collect-star" :class="{ won: (collect.myData.wins || 0) >= s }" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                                            </div>
-                                        </div>
-                                        <div class="collect-player-name-tag">
-                                            <div class="collect-player-name" :class="{ 'turn-active': collect.isMyTurn }">Vous</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        
-                        <!-- 🎴 Timer du tour (centré verticalement à droite) -->
-                        <div class="collect-deck-timer" v-if="collect.isMyTurn && (collect.timer > 0 || collect.timerExpired)" :class="{ 'fade-out': collect.timerExpired && collect.timer <= 0 }">
-                            <svg class="timer-ring" viewBox="0 0 54 54">
-                                <circle class="timer-ring-bg" cx="27" cy="27" r="23" />
-                                <circle class="timer-ring-progress" cx="27" cy="27" r="23" 
-                                        :style="{ strokeDashoffset: collect.timerProgress * 144.51 }" />
-                            </svg>
-                            <span class="timer-number">{{ collect.timer }}</span>
-                        </div>
-                        
-                        <!-- 🎴 Deck de pioche (droite) -->
-                        <div class="collect-deck-zone" 
-                             :class="{ 'can-draw': collect.canDraw, 'deck-visible': collect.showCenterSlot, 'my-turn': collect.isMyTurn && !collect.cardPlayed && !collect.timerExpired, 'deck-full-shake': collect.deckFullFlash }"
-                             @pointerdown="drawFromDeck">
-                            <div class="collect-deck-card"><span class="collect-deck-sm">SM</span></div>
-                            <div class="collect-deck-card"></div>
-                            <div class="collect-deck-card"></div>
-                            <div class="collect-deck-card"></div>
-                            <div class="collect-deck-card"></div>
-                            <div class="collect-deck-card"></div>
-                            <div class="collect-deck-glow"></div>
-                            <div class="collect-deck-wave"></div>
-                            <div class="collect-deck-wave"></div>
-                            <div class="collect-deck-wave"></div>
-                            <div class="deck-hover-ripple"></div>
-                            <div class="deck-hover-ripple delay"></div>
-                        </div>
-
-                        <!-- Card Preview - Style Prototype -->
-                        <div class="collect-card-preview" :class="{ visible: collect.previewVisible, 'has-active-stat': collect.selectedStat }">
-                            <div class="preview-card" v-if="collect.previewCardDisplay">
-                                <!-- Fused card preview: multiple images with vertical fade -->
-                                <div v-if="collect.previewCardDisplay.isFused" class="preview-image fused-preview" :class="'fused-x' + collect.previewCardDisplay.fusedCards.length">
-                                    <img v-for="fc in collect.previewCardDisplay.fusedCards" :key="fc.name" :src="getCardImage(fc)" :alt="fc.name">
-                                </div>
-                                <!-- Normal card preview: single image -->
-                                <div v-else class="preview-image">
-                                    <img :src="getCardImage(collect.previewCardDisplay)" :alt="collect.previewCardDisplay.name">
-                                </div>
-                                <!-- Badges en haut à droite: Classe + Protagoniste (normal cards) -->
-                                <div class="preview-top-badges" v-if="!collect.previewCardDisplay.isFused">
-                                    <div class="class-badge-small" :class="collect.previewCardDisplay.class">
-                                        <span v-html="getClassIcon(collect.previewCardDisplay.class)"></span>
-                                    </div>
-                                    <div v-if="collect.previewCardDisplay.isProtagonist" class="prota-badge" :class="{ big3: collect.previewCardDisplay.isBig3 }">
-                                        <svg viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"/></svg>
-                                    </div>
-                                </div>
-                                <!-- Fusion badge (fused cards) -->
-                                <div class="preview-top-badges" v-if="collect.previewCardDisplay.isFused">
-                                    <div class="fusion-badge-preview" :class="{ 'x3': collect.previewCardDisplay.fusedCards.length >= 3 }">
-                                        <div class="fusion-badge-particles">
-                                            <span></span><span></span><span></span><span></span><span></span><span></span>
-                                        </div>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l7.07 17.32M20 4l-7.07 17.32M3.5 9h17M7 16.5h10"/></svg>
-                                    </div>
-                                </div>
-                                <div class="preview-info">
-                                    <div v-if="collect.previewCardDisplay.isFused" class="preview-name fused-name fused-stacked-preview">
-                                        <span v-for="fc in collect.previewCardDisplay.fusedCards" :key="fc.name">{{ formatName(fc.name) }}</span>
-                                    </div>
-                                    <div v-else class="preview-name">{{ formatName(collect.previewCardDisplay.name) }}</div>
-                                    <div class="preview-anime">{{ formatName(collect.previewCardDisplay.anime) }}</div>
-                                    <div class="preview-separator-line"><span class="sep-diamond"></span></div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </template>
-
-                <!-- ============================================
-                     MODE SURVIE - Interface de jeu
-                     ============================================ -->
-                <template v-if="lobbyMode === 'survie' && survie.active && !gameEnded">
-                    <div class="survie-game-container">
-                        <canvas id="surviePlayerCanvas"></canvas>
-                    </div>
-                </template>
-
-                <!-- ═══ MODE POLL - Interface de vote ═══ -->
-                <template v-else-if="lobbyMode === 'poll' && poll.active && !gameEnded">
-                    <div class="poll-game-container">
-                        <!-- Vote notification zone -->
-                        <div class="poll-p-notif-zone" ref="pollNotifZone" v-if="poll.showNotifs && (poll.votingOpen || poll.showingResults)"></div>
-                        
-                        <!-- Notif toggle -->
-                        <button class="poll-p-notif-toggle" @click="poll.showNotifs = !poll.showNotifs" :class="{ off: !poll.showNotifs }">
-                            <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
-                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                            </svg>
-                        </button>
-                        
-                        <!-- Header (hidden until first match) -->
-                        <div class="poll-p-header" v-if="poll.characters.length > 0 && !poll.gameWinner">
-                            <span class="poll-p-badge-round">Round {{ poll.currentRound + 1 }}/{{ poll.totalRounds }}</span>
-                            <span class="poll-p-badge-match">Match {{ poll.currentMatchIndex + 1 }}/{{ poll.totalMatches }}</span>
-                        </div>
-                        
-                        <!-- Timer -->
-                        <div class="poll-p-timer-wrap" ref="pollTimerWrap" v-if="poll.characters.length > 0 && !poll.gameWinner" :class="{ urgent: poll.votingOpen && poll.timeRemaining <= 3 }">
-                            <div class="poll-p-timer-bar" ref="pollTimerBar">
-                                <div class="poll-p-timer-fill" ref="pollTimerFill"></div>
-                                <div class="poll-p-timer-flash" ref="pollTimerFlash"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Winner screen -->
-                        <div class="poll-p-victory" v-if="poll.gameWinner">
-                            <div class="poll-p-victory-crown">
-                                <svg viewBox="0 0 80 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M4 48L14 18L28 32L40 8L52 32L66 18L76 48H4Z" fill="url(#crownGrad)" stroke="rgba(240,128,176,0.6)" stroke-width="1.5"/>
-                                    <circle cx="14" cy="16" r="4" fill="#f080b0" opacity="0.8"/>
-                                    <circle cx="40" cy="6" r="5" fill="#f5a0c8" opacity="0.9"/>
-                                    <circle cx="66" cy="16" r="4" fill="#f080b0" opacity="0.8"/>
-                                    <rect x="4" y="48" width="72" height="6" rx="2" fill="url(#crownGrad)"/>
-                                    <defs>
-                                        <linearGradient id="crownGrad" x1="4" y1="8" x2="76" y2="54">
-                                            <stop offset="0%" stop-color="#f080b0"/>
-                                            <stop offset="50%" stop-color="#f5c0d8"/>
-                                            <stop offset="100%" stop-color="#f080b0"/>
-                                        </linearGradient>
-                                    </defs>
-                                </svg>
-                                <div class="poll-p-victory-sparkles" ref="pollVictorySparkles"></div>
-                            </div>
-                            <div class="poll-p-victory-card-wrap">
-                                <div class="poll-p-victory-card-inner">
-                                    <div class="poll-p-victory-card-glow"></div>
-                                    <div class="poll-p-victory-img-wrap">
-                                        <img :src="poll.gameWinner.img" :alt="poll.gameWinner.name" onerror="this.src='novice.png'">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="poll-p-victory-name">{{ poll.gameWinner.name }}</div>
-                            <div class="poll-p-victory-category">{{ poll.categoryName }}</div>
-                            <div class="poll-p-victory-stats">{{ poll.bracketSize }} personnages · {{ poll.totalRounds }} rounds</div>
-                            <button class="poll-p-victory-back" @click="pollBackToLobby">Retour</button>
-                        </div>
-                        
-                        <!-- Character cards -->
-                        <div class="poll-p-cards" :class="{ 'cards-3': poll.characters.length === 3, 'cards-4': poll.characters.length >= 4, 'poll-p-hide-names': !poll.showNames }" v-else>
-                            <template v-for="(char, idx) in poll.characters">
-                                <div class="poll-p-vs" v-if="idx > 0" :key="'vs-'+idx">VS</div>
-                                <div 
-                                    class="poll-p-card"
-                                    :class="{ 
-                                        'poll-p-voted': poll.myVote === char.id,
-                                        'poll-p-not-voted': poll.myVote && poll.myVote !== char.id && !poll.showingResults,
-                                        'poll-p-winner': poll.showingResults && poll.winner && poll.winner.id === char.id,
-                                        'poll-p-loser': poll.showingResults && poll.winner && poll.winner.id !== char.id
-                                    }"
-                                    @click="pollVote(char.id)"
-                                    :key="char.id"
-                                    :ref="'pollCard_' + char.id"
-                                >
-                                    <div class="poll-p-card-inner">
-                                        <div class="poll-p-card-glow"></div>
-                                        <div class="poll-p-card-img-wrap">
-                                            <img :src="char.img" :alt="char.name" class="poll-p-card-img" onerror="this.src='novice.png'">
-                                        </div>
-                                        <div class="poll-p-card-body">
-                                            <div class="poll-p-card-name">{{ char.name }}</div>
-                                            <div class="poll-p-card-bar"></div>
-                                        </div>
-                                        <div class="poll-p-card-pulse"></div>
-                                        <div class="poll-p-card-particles"></div>
-                                        <div class="poll-p-card-shine"></div>
-                                        <div class="poll-p-card-wbadge">WINNER</div>
-                                    </div>
-                                    <!-- Voter avatars badge (outside inner to avoid overflow clip) -->
-                                    <div class="poll-p-voter-badge" v-if="poll.showingResults && poll.resultsVisible && poll.votersByChar && poll.votersByChar[char.id] && poll.votersByChar[char.id].length > 0">
-                                        <div class="pvb-av-wrap" v-for="(voter, vi) in poll.votersByChar[char.id].slice(0, 4)" :key="vi" :title="voter.username">
-                                            <img class="pvb-av" :src="voter.avatar" alt="" onerror="this.parentNode.innerHTML='<div class=pvb-av pvb-av-placeholder>' + (this.alt || '?')[0] + '</div>'">
-                                        </div>
-                                        <span class="pvb-count" v-if="poll.votersByChar[char.id].length > 4">+{{ poll.votersByChar[char.id].length - 4 }}</span>
-                                    </div>
-                                    <!-- Result under card -->
-                                    <div class="poll-p-result" :class="{ show: poll.resultsVisible, win: poll.resultsVisible && poll.winner && poll.winner.id === char.id }" v-if="poll.showingResults && poll.voteResults">
-                                        <div class="poll-p-res-pct">{{ poll.voteResults[char.id]?.percentage || 0 }}%</div>
-                                        <div class="poll-p-res-votes">{{ poll.voteResults[char.id]?.count || 0 }} vote{{ (poll.voteResults[char.id]?.count || 0) > 1 ? 's' : '' }}</div>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                        
-                        <!-- Tie: waiting for host message -->
-                        <div class="poll-p-tie-message" v-if="poll.showingResults && poll.isTie && !poll.winner && poll.resultsVisible">
-                            <span>Égalité, en attente de l'hôte...</span>
-                        </div>
-                    </div>
-                </template>
-
-                <!-- ============================================
-                     MODE ASCENSION - Interface de jeu
-                     ============================================ -->
-                <template v-else-if="lobbyMode === 'ascension'">
-                    <div class="ascension-player-screen"></div>
-                </template>
-
-                <!-- ============================================
                      MODE CLASSIQUE/RIVALRY - Interface de jeu
                      ============================================ -->
-                <template v-else-if="!collect.reconnecting && lobbyMode !== 'ascension'">
+                <template v-else>
                 <!-- HUD du joueur -->
                 <div class="player-hud">
                     <div class="hud-item hud-username-item">
@@ -1506,7 +856,7 @@
                             <div class="fs-you" id="fsYouRank" v-if="myRank && myRank.rank > 3">
                                 <div class="fs-you-rank">#{{ myRank.rank }}</div>
                                 <div class="fs-you-avatar">
-                                    <img :src="myRank.avatarUrl || (profileData && profileData.user && profileData.user.avatar_url) || twitchAvatarUrl || 'novice.png'" :alt="username">
+                                    <img :src="myRank.avatarUrl || 'novice.png'" :alt="username">
                                 </div>
                                 <div class="fs-you-info">
                                     <div class="fs-you-lbl">Votre rang</div>
@@ -1578,74 +928,12 @@
             </div>
         </div>
 
-        <!-- 🎁 Reward Animation (top of screen, during winner) -->
-        <div class="reward-anim-fixed" v-if="rewardAnimData && gameEnded" id="rewardAnim">
-            <div class="reward-anim" :class="{ visible: rewardAnimVisible }">
-                <!-- Bar + coins badge on same row, with level label left of bar -->
-                <div class="reward-anim-bar-row">
-                    <div class="reward-anim-icon">
-                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                            <path d="M7 4V2h10v2h4v4c0 2.76-2.24 5-5 5h-.34c-.37 1.95-1.58 3.58-3.16 4.51V20h3v2H7.5v-2h3v-2.49C8.92 16.58 7.71 14.95 7.34 13H7c-2.76 0-5-2.24-5-5V4h5zM5 8c0 1.1.9 2 2 2V6H5v2zm12 2c1.1 0 2-.9 2-2V6h-2v4z"/>
-                        </svg>
-                    </div>
-                    <div class="reward-anim-level" id="rewardLvlLabel">
-                        <span class="reward-anim-level-text">Niv. {{ rewardAnimData.levelBefore }}</span>
-                        <span class="reward-anim-gain xp" id="rewardXpGain">+{{ rewardAnimData.xpGained.toLocaleString() }}</span>
-                    </div>
-                    <div class="reward-anim-track" id="rewardTrack">
-                        <div class="reward-anim-fill" id="rewardFill"></div>
-                        <div class="reward-xp-particles" id="rewardXpParticles"></div>
-                    </div>
-                    <div class="reward-anim-lvl-badge" id="rewardLvlBadge">
-                        <span class="reward-anim-lvl-badge-label">Niv.</span>
-                        <span class="reward-anim-lvl-badge-num" id="rewardLvlBadgeNum">{{ rewardAnimData.levelAfter }}</span>
-                    </div>
-                    <div class="reward-anim-sparks" id="rewardSparks"></div>
-                    <div class="reward-anim-coins" id="rewardPopupCoins">
-                        <div class="reward-anim-particles" id="rewardParticlesCoins"></div>
-                        <img src="scoin.png" alt="S" class="reward-anim-coin-icon" onerror="this.outerHTML='<div style=\'width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#f5d442,#daa520);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#1a1a0a\'>S</div>'">
-                        <span class="reward-anim-coin-val" id="rewardCoinVal">{{ rewardAnimData.coinsBefore.toLocaleString() }}</span>
-                        <span class="reward-anim-gain coins" id="rewardCoinsGain">+{{ rewardAnimData.coinsGained.toLocaleString() }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- 🆕 Badge EN LIVE discret en bas (pour utilisateurs NON connectés) -->
         <div class="live-badge-bottom" v-if="isGameActive && !isAuthenticated && !gameInProgress && !gameEnded">
             <span class="pulse-dot-small"></span>
             <span>EN LIVE</span>
         </div>
 
-
-        <!-- 🆕 Bouton Profil (en haut à droite, visible si connecté) -->
-        <button class="profile-btn" v-if="isAuthenticated && !gameInProgress && !gameEnded" @click="openProfile">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path
-                    d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-            </svg>
-        </button>
-
-        <div class="shop-link" v-if="!gameInProgress && !gameEnded" @click="openShop">Boutique</div>
-
-        <!-- Notification boutique -->
-        <div class="shop-notif" :class="{ show: shopNotif }" v-text="shopNotifText"></div>
-
-        <!-- Modal confirmation achat -->
-        <div class="shop-confirm-overlay" :class="{ active: shopConfirmItem }" @click.self="shopConfirmItem = null">
-            <div class="shop-confirm-modal" v-if="shopConfirmItem">
-                <div class="shop-confirm-title">Confirmer l'achat</div>
-                <div class="shop-confirm-name">{{ shopConfirmItem.type === 'avatar' ? shopConfirmItem.name : (shopConfirmItem.value || shopConfirmItem.name) }}</div>
-                <div class="shop-confirm-price">
-                    <img src="scoin.png" alt="S" class="shop-confirm-coin" onerror="this.outerHTML='<span style=\'color:#daa520;font-weight:800\'>S</span>'">
-                    <span>{{ shopConfirmItem.price.toLocaleString() }}</span>
-                </div>
-                <div class="shop-confirm-actions">
-                    <button class="shop-confirm-cancel" @click="shopConfirmItem = null">Annuler</button>
-                    <button class="shop-confirm-buy" @click="confirmBuy">Acheter</button>
-                </div>
-            </div>
-        </div>
 
         <!-- Tips informatifs (PC uniquement, visible si connecté et pas en jeu) -->
         <div class="lobby-tips-container" v-if="isAuthenticated && !gameInProgress && !gameEnded && currentTip">
@@ -1655,385 +943,7 @@
             </div>
         </div>
 
-        <!-- ============================================
-             MODAL PROFIL ULTRA-ANIMATED
-             ============================================ -->
-        <div class="profile-overlay" :class="{ active: showProfileModal }" @click.self="closeProfile">
-            <div class="profile-modal" ref="profileModal">
-                <!-- Close button (outside inner for overflow) -->
-                <div class="profile-close-dot" @click="closeProfile">
-                    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="3" x2="9" y2="9"/><line x1="9" y1="3" x2="3" y2="9"/></svg>
-                </div>
-
-                <div class="profile-modal-inner">
-
-                <!-- S-Coins badge -->
-                <div class="profile-coin-badge" v-if="profileData">
-                    <img src="scoin.png" alt="S-Coin" class="scoin-icon" onerror="this.style.display='none'">
-                    <span class="profile-coin-val">{{ (profileData.user.coins || 0).toLocaleString() }}</span>
-                </div>
-
-                <!-- Header -->
-                <div class="profile-header">
-                    <div class="profile-avatar-wrap">
-                        <svg class="profile-xp-ring" viewBox="0 0 60 60">
-                            <circle cx="30" cy="30" r="27" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="2.5"/>
-                            <circle cx="30" cy="30" r="27" fill="none" stroke="#daa520" stroke-width="2.5" stroke-linecap="round" 
-                                :stroke-dasharray="170" 
-                                :stroke-dashoffset="profileData ? 170 - (170 * (profileData.user.levelData?.currentXp || 0) / (profileData.user.levelData?.xpForNextLevel || 1)) : 170" 
-                                transform="rotate(-90 30 30)" opacity="0.55"/>
-                        </svg>
-                        <img v-if="profileData && profileData.user && profileData.user.avatar_url"
-                            :src="profileData.user.avatar_url" :alt="username" class="profile-avatar-img">
-                        <div v-else class="profile-avatar-default">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                            </svg>
-                        </div>
-                        <div class="profile-level-dot" v-if="profileData">{{ profileData.user.level || 1 }}</div>
-                    </div>
-                    <div class="profile-user-info">
-                        <span class="profile-username">{{ username }}</span>
-                        <span class="profile-user-title">{{ profileData ? (profileData.user.display_title || profileData.titles.current.title_name) : '' }}</span>
-                    </div>
-                </div>
-
-                <!-- Stats -->
-                <div class="profile-stats-row" v-if="profileData">
-                    <div class="profile-stat">
-                        <div class="profile-stat-num">{{ profileData.user.total_games_played || 0 }}</div>
-                        <div class="profile-stat-label">parties</div>
-                    </div>
-                    <div class="profile-stat">
-                        <div class="profile-stat-num">{{ profileData.user.total_victories || 0 }}</div>
-                        <div class="profile-stat-label">victoires</div>
-                    </div>
-                    <div class="profile-stat">
-                        <div class="profile-stat-num">{{ profileData.user.win_rate || 0 }}%</div>
-                        <div class="profile-stat-label">win rate</div>
-                    </div>
-                </div>
-
-                <!-- Loading -->
-                <div class="profile-loading" v-if="profileLoading">
-                    <div class="profile-loading-spinner"></div>
-                </div>
-
-                <!-- Tabs -->
-                <div class="profile-tab-bar" v-if="profileData">
-                    <div class="profile-tab-item" :class="{ on: currentTab === 'profile' }" @click="switchProfileTab('profile')">Profil</div>
-                    <div class="profile-tab-item" :class="{ on: currentTab === 'titres' }" @click="switchProfileTab('titres')">Titres</div>
-                    <div class="profile-tab-item" :class="{ on: currentTab === 'avatar' }" @click="switchProfileTab('avatar')">Avatar</div>
-                    <div class="profile-tab-item" :class="{ on: currentTab === 'badges' }" @click="switchProfileTab('badges')">Badges</div>
-                    <div class="profile-tab-item" :class="{ on: currentTab === 'settings' }" @click="switchProfileTab('settings')">Param.</div>
-                </div>
-
-                <!-- Content -->
-                <div class="profile-content" v-if="profileData">
-                    <!-- Tab Profil -->
-                    <div class="profile-tab-panel" :class="{ active: currentTab === 'profile' }">
-                        <div class="profile-modes-label">Parties par mode</div>
-                        <div class="profile-modes-grid">
-                            <div class="profile-mode-card">
-                                <svg class="profile-mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                                </svg>
-                                <span class="profile-mode-name">Classique</span>
-                                <span class="profile-mode-count">{{ profileData.modeStats ? profileData.modeStats.classic || 0 : 0 }}</span>
-                            </div>
-                            <div class="profile-mode-card">
-                                <svg class="profile-mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <circle cx="12" cy="14" r="8"/><path d="M12 6V2"/><path d="M9 2h6"/>
-                                </svg>
-                                <span class="profile-mode-name">BombAnime</span>
-                                <span class="profile-mode-count">{{ profileData.modeStats ? profileData.modeStats.bombanime || 0 : 0 }}</span>
-                            </div>
-                            <div class="profile-mode-card">
-                                <svg class="profile-mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/>
-                                </svg>
-                                <span class="profile-mode-name">Collect</span>
-                                <span class="profile-mode-count">{{ profileData.modeStats ? profileData.modeStats.collect || 0 : 0 }}</span>
-                            </div>
-                            <div class="profile-mode-card">
-                                <svg class="profile-mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>
-                                </svg>
-                                <span class="profile-mode-name">Trace</span>
-                                <span class="profile-mode-count">{{ profileData.modeStats ? profileData.modeStats.trace || 0 : 0 }}</span>
-                            </div>
-                            <div class="profile-mode-card">
-                                <svg class="profile-mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <path d="M6 3h12l4 6-10 13L2 9l4-6z"/><path d="M2 9h20"/>
-                                </svg>
-                                <span class="profile-mode-name">Rivalite</span>
-                                <span class="profile-mode-count">{{ profileData.modeStats ? profileData.modeStats.rivalry || 0 : 0 }}</span>
-                            </div>
-                            <div class="profile-mode-card">
-                                <svg class="profile-mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M3 21h18M3 21V3l9 4 9-4v18"/>
-                                </svg>
-                                <span class="profile-mode-name">Ascension</span>
-                                <span class="profile-mode-count">{{ profileData.modeStats ? profileData.modeStats.ascension || 0 : 0 }}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tab Titres -->
-                    <div class="profile-tab-panel" :class="{ active: currentTab === 'titres' }">
-                        <!-- Preview du titre combiné -->
-                        <div class="title-preview">
-                            <div class="title-preview-label">Titre actuel</div>
-                            <div class="title-preview-value">{{ profileData.titles.equippedPrefix }} {{ profileData.titles.equippedSuffix }}</div>
-                        </div>
-
-                        <!-- Sous-onglets Titre 1 / Titre 2 -->
-                        <div class="title-subtabs">
-                            <div class="title-subtab" :class="{ on: titleSubTab === 'prefix' }" @click="titleSubTab = 'prefix'">Titre 1</div>
-                            <div class="title-subtab" :class="{ on: titleSubTab === 'suffix' }" @click="titleSubTab = 'suffix'">Titre 2</div>
-                        </div>
-
-                        <!-- Préfixes -->
-                        <div class="title-list" v-if="titleSubTab === 'prefix'">
-                            <div v-for="title in profileData.titles.prefixes" :key="'p-' + title.id"
-                                class="title-option" 
-                                :class="{ equipped: title.title_name === profileData.titles.equippedPrefix }"
-                                @click="title.title_name !== profileData.titles.equippedPrefix && equipPrefix(title.title_name)">
-                                <div class="title-option-info">
-                                    <span class="title-option-name">{{ title.title_name }}</span>
-                                    <span class="title-option-req" v-if="title.requirement_value > 0">{{ title.requirement_value }} {{ title.title_type === 'games_played' ? 'parties' : 'victoires' }}</span>
-                                    <span class="title-option-req" v-else>Gratuit</span>
-                                </div>
-                                <span v-if="title.premium" class="title-premium-badge">Shop</span>
-                                <span v-if="title.title_name === profileData.titles.equippedPrefix" class="title-equipped-badge">Equipé</span>
-                                <span v-else class="title-equip-btn">Equiper</span>
-                            </div>
-                        </div>
-
-                        <!-- Suffixes -->
-                        <div class="title-list" v-if="titleSubTab === 'suffix'">
-                            <div v-for="title in profileData.titles.suffixes" :key="'s-' + title.id"
-                                class="title-option"
-                                :class="{ equipped: title.title_name === profileData.titles.equippedSuffix }"
-                                @click="title.title_name !== profileData.titles.equippedSuffix && equipSuffix(title.title_name)">
-                                <div class="title-option-info">
-                                    <span class="title-option-name">{{ title.title_name }}</span>
-                                    <span class="title-option-req">Gratuit</span>
-                                </div>
-                                <span v-if="title.premium" class="title-premium-badge">Shop</span>
-                                <span v-if="title.title_name === profileData.titles.equippedSuffix" class="title-equipped-badge">Equipé</span>
-                                <span v-else class="title-equip-btn">Equiper</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tab Avatar -->
-                    <div class="profile-tab-panel" :class="{ active: currentTab === 'avatar' }">
-                        <div class="profile-current-avatar">
-                            <div class="profile-avatar-preview">
-                                <img v-if="profileData && profileData.user && profileData.user.avatar_url"
-                                    :src="profileData.user.avatar_url" alt="Avatar actuel" class="profile-avatar-img-large">
-                                <div v-else class="profile-avatar-default-large">
-                                    <svg viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="profile-avatar-divider"><span>Choisir un avatar</span></div>
-                        <div class="profile-avatar-section" ref="avatarSectionDefault">
-                            <div class="profile-avatars-grid">
-                                <div v-for="avatar in allAvatars" :key="avatar.id" class="profile-avatar-option"
-                                    :class="{ selected: profileData?.user?.avatar_url === avatar.url, locked: avatar.locked }"
-                                    @click="!avatar.locked && selectAvatar(avatar.url)">
-                                    <img :src="avatar.url" :alt="avatar.name" class="profile-avatar-option-img">
-                                    <div class="profile-avatar-selected-badge" v-if="profileData?.user?.avatar_url === avatar.url">
-                                        <span class="check-icon">✓</span>
-                                    </div>
-                                    <div class="profile-avatar-lock" v-if="avatar.locked"><span>🔒</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tab Badges -->
-                    <div class="profile-tab-panel" :class="{ active: currentTab === 'badges' }">
-                        <div class="profile-badges-category">
-                            <div class="profile-category-header">
-                                <div class="profile-category-indicator"></div>
-                                <span class="profile-category-title">Parties jouées</span>
-                            </div>
-                            <div class="profile-badges-grid">
-                                <div v-for="badge in profileData.badges.games_played" :key="'gp-' + badge.tier"
-                                    class="profile-badge-item" :class="{ unlocked: badge.unlocked, locked: !badge.unlocked }">
-                                    <div class="profile-badge-icon">
-                                        <span v-if="!badge.unlocked" class="profile-lock-symbol">🔒</span>
-                                    </div>
-                                    <span class="profile-badge-number">{{ badge.tier }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="profile-badges-category">
-                            <div class="profile-category-header">
-                                <div class="profile-category-indicator"></div>
-                                <span class="profile-category-title">Parties gagnées</span>
-                            </div>
-                            <div class="profile-badges-grid">
-                                <div v-for="badge in profileData.badges.games_won" :key="'gw-' + badge.tier"
-                                    class="profile-badge-item" :class="{ unlocked: badge.unlocked, locked: !badge.unlocked }">
-                                    <div class="profile-badge-icon">
-                                        <span v-if="!badge.unlocked" class="profile-lock-symbol">🔒</span>
-                                    </div>
-                                    <span class="profile-badge-number">{{ badge.tier }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tab Param -->
-                    <div class="profile-tab-panel" :class="{ active: currentTab === 'settings' }">
-                        <div class="profile-modes-label">Preferences de jeu</div>
-                        <div style="font-size:0.75rem;color:rgba(200,198,191,0.25);text-align:center;padding:30px 0">Bientot disponible</div>
-                    </div>
-                </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Toast notification pour le profil -->
-        <div class="profile-toast" ref="profileToast"></div>
-
-        <!-- ============================================
-             BOUTIQUE MODAL
-             ============================================ -->
-        <div class="shop-overlay" :class="{ active: showShopModal }" @click.self="closeShop">
-            <div class="shop-modal">
-
-                <!-- Close -->
-                <div class="shop-close-dot" @click="closeShop">
-                    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="3" x2="9" y2="9"/><line x1="9" y1="3" x2="3" y2="9"/></svg>
-                </div>
-
-                <!-- Header -->
-                <div class="shop-header">
-                    <div class="shop-header-left">
-                        <div class="shop-logo"><span>✦</span></div>
-                        <div>
-                            <div class="shop-header-sub">ShonenMaster</div>
-                            <div class="shop-title-text">Boutique</div>
-                        </div>
-                    </div>
-                    <div class="shop-balance" v-if="shopUserCoins !== null">
-                        <img src="scoin.png" alt="S-Coin" class="shop-coin-img" onerror="this.outerHTML='<div style=\'width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#f5d442,#daa520,#b8860b);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:#1a1a0a;position:relative;z-index:1\'>S</div>'">
-                        <span class="shop-coin-amount">{{ shopUserCoins.toLocaleString() }}</span>
-                    </div>
-                </div>
-
-                <!-- Tabs -->
-                <div class="shop-nav">
-                    <div class="shop-tabs" ref="shopTabsBar">
-                        <div class="shop-tab" :class="{ on: shopTab === 'prefix' }" @click="shopTab = 'prefix'" ref="shopTabPrefix">Titre 1</div>
-                        <div class="shop-tab" :class="{ on: shopTab === 'suffix' }" @click="shopTab = 'suffix'" ref="shopTabSuffix">Titre 2</div>
-                        <div class="shop-tab" :class="{ on: shopTab === 'avatar' }" @click="shopTab = 'avatar'" ref="shopTabAvatar">Avatars</div>
-                        <div class="shop-tabs-indicator" ref="shopTabIndicator"></div>
-                    </div>
-                </div>
-
-                <!-- Loading -->
-                <div class="shop-loading" v-if="shopLoading">
-                    <div class="profile-loading-spinner"></div>
-                </div>
-
-                <!-- Content -->
-                <div class="shop-content" v-if="!shopLoading">
-                    <div class="shop-grid">
-                        <div v-for="item in filteredShopItems" :key="item.id"
-                            class="shop-item"
-                            :class="{ owned: item.owned, locked: item.locked, 'shop-item-avatar-card': item.type === 'avatar' }"
-                            @click="!item.owned && !item.locked && buyItem(item)">
-
-                            <!-- Avatar display -->
-                            <div class="shop-item-avatar" v-if="item.type === 'avatar' && item.image_url">
-                                <div class="shop-item-avatar-inner">
-                                    <img :src="item.image_url" :alt="item.name">
-                                </div>
-                            </div>
-
-                            <!-- Title display -->
-                            <div class="shop-item-top" v-if="item.type !== 'avatar'">
-                                <div class="shop-item-name">{{ item.value || item.name }}</div>
-                            </div>
-                            <div class="shop-item-sep" v-if="item.type !== 'avatar' && !item.owned && !item.locked"></div>
-
-                            <!-- Price / status -->
-                            <div class="shop-item-bottom" v-if="item.owned">
-                                <span class="shop-item-owned-tag">Possédé</span>
-                            </div>
-                            <div class="shop-item-bottom" v-else-if="item.locked">
-                                <span class="shop-item-lock">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                                    {{ item.lockReason }}
-                                </span>
-                            </div>
-                            <div class="shop-item-bottom" v-else>
-                                <div class="shop-item-price">
-                                    <img src="scoin.png" alt="S" class="shop-price-coin" onerror="this.outerHTML='<div style=\'width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,#f5d442,#daa520,#b8860b);display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:900;color:#1a1a0a\'>S</div>'">
-                                    <span>{{ item.price.toLocaleString() }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div v-if="filteredShopItems.length === 0" style="text-align:center;padding:40px 0;font-size:0.75rem;color:rgba(200,198,191,0.2)">
-                        Aucun article disponible
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 🆕 Bouton Toggle Leaderboard (mobile uniquement) -->
-        <button class="leaderboard-toggle-btn" :class="{ hidden: showLeaderboard }"
-            v-if="leaderboardLoaded && !isAuthenticated" @click="toggleLeaderboard">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M7 7h10v2H7zm0 4h10v2H7zm0 4h10v2H7z" />
-                <path d="M12 3L4 9v12h16V9l-8-6zm6 16H6V10l6-4.5L18 10v9z" />
-            </svg>
-        </button>
-
-        <!-- 🆕 Overlay sombre (mobile uniquement) -->
-        <div class="leaderboard-overlay" :class="{ active: showLeaderboard }" @click="toggleLeaderboard"
-            v-if="leaderboardLoaded && !isAuthenticated"></div>
-        <!-- Leaderboard Panel (desktop toujours visible, mobile toggle) -->
-        <div class="leaderboard-container" :class="{ 'mobile-open': showLeaderboard }"
-            v-if="leaderboardLoaded && !isAuthenticated">
-            <div class="leaderboard-list">
-                <div v-for="(player, index) in leaderboard.slice(0, 3)" :key="player.twitch_id" class="leaderboard-item"
-                    :class="'rank-' + (index + 1)">
-                    <span class="rank-medal">
-                        <svg v-if="index === 0" viewBox="0 0 24 24" fill="none" class="medal-icon gold">
-                            <circle cx="12" cy="9" r="7" fill="currentColor"/>
-                            <path d="M8 15l-2 7 6-3 6 3-2-7" fill="currentColor" opacity="0.6"/>
-                        </svg>
-                        <svg v-else-if="index === 1" viewBox="0 0 24 24" fill="none" class="medal-icon silver">
-                            <circle cx="12" cy="9" r="7" fill="currentColor"/>
-                            <path d="M8 15l-2 7 6-3 6 3-2-7" fill="currentColor" opacity="0.6"/>
-                        </svg>
-                        <svg v-else-if="index === 2" viewBox="0 0 24 24" fill="none" class="medal-icon bronze">
-                            <circle cx="12" cy="9" r="7" fill="currentColor"/>
-                            <path d="M8 15l-2 7 6-3 6 3-2-7" fill="currentColor" opacity="0.6"/>
-                        </svg>
-                    </span>
-                    <img v-if="player.avatar_url" :src="player.avatar_url" :alt="player.username" class="lb-avatar">
-                    <div v-else class="lb-avatar-default">{{ player.username.charAt(0).toUpperCase() }}</div>
-                    <div class="player-info">
-                        <span class="player-name">{{ player.username }}</span>
-                        <span class="player-title">{{ player.title_name }}</span>
-                    </div>
-                    <span class="player-winrate">{{ player.win_rate }}%</span>
-                </div>
-            </div>
-            <a href="/ranking" target="_blank" class="lb-access-link">Accéder au classement</a>
-        </div>        <!-- 🆕 Bouton Instagram (visible uniquement avant connexion) -->
+        <!-- 🆕 Bouton Instagram (visible uniquement avant connexion) -->
         <a href="https://www.instagram.com/naahas__" target="_blank" class="instagram-btn"
             v-if="!isAuthenticated && !gameInProgress">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
@@ -2043,14 +953,6 @@
         </a>
 
 
-        <!-- 🆕 Bouton TikTok (visible uniquement avant connexion) -->
-        <!-- <a href="https://www.tiktok.com/@naahas__" target="_blank" class="tiktok-btn" -->
-        v-if="!isAuthenticated && !gameInProgress">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-            <path
-                d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
-        </svg>
-        </a>
 
 
 
@@ -2177,7 +1079,7 @@
         </div>
 
         <!-- Jauge de Combo (Desktop uniquement - côté droit) -->
-        <div class="combo-gauge-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'survie' && lobbyMode !== 'poll' && lobbyMode !== 'ascension' && !collect.active && bonusEnabled">
+        <div class="combo-gauge-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && bonusEnabled">
             <!-- 🔥 Particules EN DEHORS de la jauge -->
             <div class="combo-particles-external"></div>
 
@@ -2200,7 +1102,7 @@
         </div>
 
         <!-- 🆕 NOUVEAU SYSTÈME BONUS - Icône + Hover Menu -->
-        <div class="bonus-icon-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'survie' && lobbyMode !== 'poll' && lobbyMode !== 'ascension' && !collect.active && bonusEnabled">
+        <div class="bonus-icon-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && bonusEnabled">
             <div class="bonus-icon-wrapper" @mouseenter="showBonusMenu = true" @mouseleave="showBonusMenu = false"
                 @click="showBonusMenu = !showBonusMenu">
 
@@ -2252,7 +1154,7 @@
 
 
         <!-- 🆕 SYSTÈME DE DÉFIS - Bandelettes à gauche -->
-        <div class="challenges-container" v-if="gameInProgress && !gameEnded && challenges.length > 0 && lobbyMode !== 'bombanime' && lobbyMode !== 'collect' && lobbyMode !== 'ascension' && bonusEnabled">
+        <div class="challenges-container" v-if="gameInProgress && !gameEnded && challenges.length > 0 && lobbyMode !== 'bombanime' && bonusEnabled">
             <div class="challenge-strip" 
                  v-for="challenge in challenges" 
                  :key="challenge.id"
@@ -2318,7 +1220,7 @@
 
 
         <!-- 🆕 BONUS MOBILE - Icône avec jauge circulaire (mobile uniquement, pas en FizzBuzz) -->
-        <div class="bonus-gauge-mobile" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'survie' && lobbyMode !== 'poll' && lobbyMode !== 'ascension' && bonusEnabled" @click="toggleBonusArcMobile">
+        <div class="bonus-gauge-mobile" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && bonusEnabled" @click="toggleBonusArcMobile">
 
             <!-- SVG Gauge -->
             <svg class="gauge-svg" viewBox="0 0 68 68">
@@ -2344,7 +1246,7 @@
         </div>
 
         <!-- 🆕 Menu Arc de Cercle (pas en FizzBuzz) -->
-        <div class="bonus-arc-menu" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'survie' && lobbyMode !== 'poll' && lobbyMode !== 'ascension' && bonusEnabled">
+        <div class="bonus-arc-menu" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && bonusEnabled">
             <!-- Overlay en premier (nth-child(1)) -->
             <div class="bonus-arc-overlay" :class="{ active: showBonusArcMobile }" @click="closeBonusArcMobile"></div>
 
@@ -2374,7 +1276,7 @@
 
 
         <!-- 🆕 DÉFIS MOBILE - Icône en bas gauche (pas en FizzBuzz) -->
-        <div class="challenges-mobile-icon" v-if="gameInProgress && !gameEnded && challenges.length > 0 && lobbyMode !== 'bombanime' && lobbyMode !== 'collect' && lobbyMode !== 'ascension' && bonusEnabled" 
+        <div class="challenges-mobile-icon" v-if="gameInProgress && !gameEnded && challenges.length > 0 && lobbyMode !== 'bombanime' && bonusEnabled" 
              @click="showChallengesMobile = !showChallengesMobile">
             <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
@@ -2417,34 +1319,6 @@
         </transition>
 
 
-        <!-- Panel Streamers Partenaires -->
-        <div class="streamers-panel" v-if="!isAuthenticated && !gameInProgress" :class="{ 'has-live': anyStreamerLive }">
-            <div class="streamers-trigger"></div>
-            <div class="streamers-content">
-                <div class="streamers-title">Partenaires</div>
-                <div class="streamers-list">
-                    <!-- 5 premiers streamers -->
-                    <a v-for="streamer in visibleStreamers" :key="streamer.id"
-                        :href="'https://www.twitch.tv/' + streamer.id" target="_blank" class="streamer-item"
-                        :class="{ 'is-live': streamersLive[streamer.id] }">
-                        <div class="streamer-avatar-wrapper">
-                            <img :src="streamer.avatar" :alt="streamer.name" class="streamer-avatar">
-                            <span class="live-badge-small" v-if="streamersLive[streamer.id]">LIVE</span>
-                        </div>
-                        <span class="streamer-name">{{ streamer.name }}</span>
-                    </a>
-
-                    <!-- Badge +X si plus de 5 streamers -->
-                    <div class="streamer-item streamer-more" v-if="hiddenStreamersCount > 0">
-                        <div class="streamer-avatar-wrapper">
-                            <div class="streamer-avatar more-badge">+{{ hiddenStreamersCount }}</div>
-                        </div>
-                        <span class="streamer-name">autres</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     </div>
 
 
@@ -2453,7 +1327,6 @@
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="survie-canvas.js"></script>
     <script src="app.js"></script>
 </body>
 
