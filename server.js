@@ -1430,7 +1430,7 @@ app.post('/admin/start-game', async (req, res) => {
             }
         }, 2000);
 
-        res.json({ success: true, gameId: game.id, mode: gameState.mode });
+        res.json({ success: true, mode: gameState.mode });
 
     } catch (error) {
         console.error('❌ Erreur démarrage partie:', error);
@@ -3835,24 +3835,6 @@ app.post('/api/delete-question', async (req, res) => {
     }
 });
 
-// 🆕 Reset toutes les questions utilisées (via page question.html)
-app.post('/api/reset-used-questions', async (req, res) => {
-    const { adminCode } = req.body;
-
-    if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
-        return res.status(401).json({ error: 'Code invalide' });
-    }
-
-    try {
-        gameState.usedQuestionIds = [];
-        console.log('🔄 Historique des questions réinitialisé (via page questions)');
-        res.json({ success: true, message: 'Historique réinitialisé' });
-    } catch (error) {
-        console.error('Erreur reset questions:', error);
-        res.status(500).json({ error: 'Erreur serveur' });
-    }
-});
-
 // Récupérer toutes les questions (avec filtre optionnel)
 app.get('/api/questions', async (req, res) => {
     const { adminCode } = req.query;
@@ -3910,6 +3892,37 @@ app.post('/api/verify-question-code', (req, res) => {
         res.json({ success: true });
     } else {
         res.status(401).json({ success: false });
+    }
+});
+
+// 🚨 Signalement d'une question par l'hôte (qualité de la base de questions)
+app.post('/admin/report-question', async (req, res) => {
+    try {
+        const { questionId, questionText, difficulty, reason } = req.body;
+
+        if (!questionText || !reason) {
+            return res.status(400).json({ error: 'Données manquantes' });
+        }
+
+        const { data, error } = await supabase
+            .from('reported_questions')
+            .insert({
+                question_id: questionId,
+                question_text: questionText,
+                difficulty: difficulty,
+                reason: reason,
+                reported_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        console.log('🚨 Question signalée:', questionText);
+        res.json({ success: true, report: data });
+    } catch (error) {
+        console.error('❌ Erreur signalement question:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 
@@ -4772,11 +4785,6 @@ io.on('connection', (socket) => {
 
     connectionsByIP.set(ip, currentConnections + 1);
     console.log(`🔌 Nouveau socket connecté: ${socket.id} (IP: ${ip}, connexions: ${currentConnections + 1})`);
-
-    // Envoyer immédiatement le statut live des partenaires
-    if (Object.keys(partnersLiveStatus).length > 0) {
-        socket.emit('partners-live-status', partnersLiveStatus);
-    }
 
     // 🔥 NOUVEAU: Événement pour enregistrer l'authentification
     socket.on('register-authenticated', (data) => {

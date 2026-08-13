@@ -4,7 +4,8 @@
   "description": "Party games anime/manga en rooms — quiz & BombAnime",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon server.js"
+    "start": "nodemon server.js",
+    "smoke": "node scripts/smoke-test.js"
   },
   "keywords": [
     "quiz",
@@ -23,6 +24,7 @@
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "socket.io-client": "^4.8.3"
   }
 }

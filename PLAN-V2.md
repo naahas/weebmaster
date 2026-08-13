@@ -192,14 +192,40 @@ Pour TikTok, ce sera **code de room + navigateur mobile**, point.
 
 ## Ordre d'exécution
 
-| # | Phase | Poids | Risque |
-|---|---|---|---|
-| 0 | Filet de sécurité | ▁ | nul |
-| 1 | Suppression | ███ | faible |
-| 2 | Multi-room | █████ | **élevé** |
-| 3 | Identité invité | ██ | faible |
-| 4 | Mobile-first | ████ | moyen |
-| 5 | Chat Twitch | ███ | moyen |
+| # | Phase | Poids | Risque | État |
+|---|---|---|---|---|
+| 0 | Filet de sécurité | ▁ | nul | ✅ fait |
+| 1 | Suppression | ███ | faible | ✅ fait |
+| 2 | Multi-room | █████ | **élevé** | à faire |
+| 3 | Identité invité | ██ | faible | 🟡 version minimale en place |
+| 4 | Mobile-first | ████ | moyen | à faire |
+| 5 | Chat Twitch | ███ | moyen | à faire |
+
+### Résultat de la phase 1
+
+| Fichier | v1 | v2 |
+|---|---|---|
+| `server.js` | 11 352 | 5 945 |
+| `dbs.js` | 1 226 | 340 |
+| `src/script/app.js` | 13 866 | 4 349 |
+| `src/html/home.html` | 2 459 | 1 332 |
+| `src/html/question.html` | 2 205 | 1 863 |
+| `src/script/admin.js` | 9 805 | 9 574 |
+
+Plus les fichiers entièrement supprimés (`server-ascension.js`, `server-poll.js`, `survie-canvas.js`,
+les 4 modules admin de modes, leurs CSS) et 224 Mo d'images. **Environ 21 000 lignes retirées.**
+
+Fait en plus de ce qui était prévu :
+- **Identité invité minimale** (pseudo + `playerId` en `localStorage`) pour garder le jeu testable
+  entre la phase 1 et la phase 3 — sinon le client restait inutilisable tout ce temps.
+- **`scripts/smoke-test.js`** (`npm run smoke`) : test de bout en bout sans navigateur, qui a
+  immédiatement attrapé deux régressions (crash à chaque connexion socket, `game.id` orphelin).
+- Route `/admin/report-question` **restaurée** : elle concerne la qualité des questions, pas les comptes.
+
+Reste connu, à traiter en phase 2 :
+- `admin.js` garde des branches mortes sur les modes supprimés (jamais atteintes, inoffensives).
+- Le champ réseau s'appelle encore `twitchId` alors qu'il porte le `playerId` invité.
+- L'écran idle du panel affiche des tirets à la place des anciennes stats globales.
 
 Validation manuelle après chaque phase (aucun test automatisé dans le projet) : créer une room,
 rejoindre à 2 onglets, lancer une partie de chaque mode, kicker, se déconnecter/reconnecter,

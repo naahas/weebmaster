@@ -1108,7 +1108,6 @@
                 <div class="tabs">
                     <button class="tab-btn active" onclick="switchTab('add')">+ Ajouter</button>
                     <button class="tab-btn" onclick="switchTab('list')">📋 Liste</button>
-                    <button class="tab-btn" onclick="switchTab('shop')">🛒 Boutique</button>
                 </div>
 
                 <!-- Tab: Ajouter -->
@@ -1218,13 +1217,8 @@
                     <!-- Header actions -->
                     <div class="list-header-top">
                         <div class="used-questions-info">
-                            🚫 Questions exclues : <span id="usedCount">0</span>
-                            &nbsp;&nbsp;·&nbsp;&nbsp;
                             ⚠️ Spoils : <span id="spoilCount" style="color: #ef4444; font-weight: 600;">0</span>
                         </div>
-                        <button class="btn-reset-history" id="resetHistoryBtn" onclick="resetUsedQuestions()">
-                            🔄 Reset historique
-                        </button>
                     </div>
 
                     <div class="list-header">
@@ -1245,11 +1239,6 @@
                             <option value="spoil">Spoil</option>
                             <option value="safe">Non-spoil</option>
                         </select>
-                        <select id="filterExcluded" onchange="filterQuestions()">
-                            <option value="">Toutes</option>
-                            <option value="excluded">Exclues</option>
-                            <option value="active">Actives</option>
-                        </select>
                         <input type="text" class="search-input" id="searchInput" placeholder="🔍 Rechercher..." oninput="filterQuestions()">
                         <div class="question-count">
                             <span id="filteredCount">0</span> / <span id="totalCount">0</span> questions
@@ -1265,57 +1254,6 @@
                 </div>
             </div>
 
-                <!-- Tab: Boutique -->
-                <div class="tab-content" id="tabShop">
-                    <div class="form-layout">
-                        <div class="form-col">
-                            <div id="shopEditBanner" style="display:none;padding:8px 12px;background:rgba(218,165,32,0.08);border:1px solid rgba(218,165,32,0.15);border-radius:8px;margin-bottom:12px;font-size:12px;color:#daa520;display:none">
-                                Modification de : <strong id="shopEditName"></strong>
-                                <span onclick="cancelShopEdit()" style="float:right;cursor:pointer;opacity:0.5">Annuler</span>
-                            </div>
-                            <input type="hidden" id="shopEditId" value="">
-                            <div class="form-group">
-                                <label>Type <span class="required">*</span></label>
-                                <select id="shopItemType" onchange="updateShopForm()">
-                                    <option value="title_prefix">Titre 1 (prefixe)</option>
-                                    <option value="title_suffix">Titre 2 (suffixe)</option>
-                                    <option value="avatar">Avatar</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Nom <span class="required">*</span></label>
-                                <input type="text" id="shopItemName" placeholder="Ex: Empereur, divin, Gojo...">
-                            </div>
-                            <div class="form-group">
-                                <label>Description</label>
-                                <input type="text" id="shopItemDesc" placeholder="Courte description (optionnel)">
-                            </div>
-                            <div class="form-group">
-                                <label>Prix (S-Coins)</label>
-                                <input type="number" id="shopItemPrice" placeholder="5000" value="5000">
-                            </div>
-                            <div class="form-group" id="shopImageGroup">
-                                <label>Image <span class="required">*</span></label>
-                                <input type="text" id="shopItemImage" placeholder="Ex: shotoavatar (sans .png)">
-                            </div>
-                            <button type="button" class="btn btn-primary" onclick="submitShopItem()" id="shopSubmitBtn">
-                                <span class="btn-text" id="shopSubmitText">Ajouter l'article</span>
-                                <div class="spinner"></div>
-                            </button>
-                            <div class="status" id="shopStatus"></div>
-                        </div>
-                        <div class="form-col">
-                            <label style="margin-bottom:8px;display:block">Articles existants</label>
-                            <div style="display:flex;gap:4px;margin-bottom:8px">
-                                <button onclick="filterShopList('all')" class="shop-filter active" id="sfAll" style="padding:4px 10px;border-radius:4px;font-size:10px;cursor:pointer;border:1px solid rgba(218,165,32,0.2);background:rgba(218,165,32,0.1);color:#daa520">Tous</button>
-                                <button onclick="filterShopList('title_prefix')" class="shop-filter" id="sfPre" style="padding:4px 10px;border-radius:4px;font-size:10px;cursor:pointer;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:var(--text-secondary)">Titre 1</button>
-                                <button onclick="filterShopList('title_suffix')" class="shop-filter" id="sfSuf" style="padding:4px 10px;border-radius:4px;font-size:10px;cursor:pointer;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:var(--text-secondary)">Titre 2</button>
-                                <button onclick="filterShopList('avatar')" class="shop-filter" id="sfAv" style="padding:4px 10px;border-radius:4px;font-size:10px;cursor:pointer;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:var(--text-secondary)">Avatars</button>
-                            </div>
-                            <div id="shopItemsList" style="max-height:400px;overflow-y:auto"></div>
-                        </div>
-                    </div>
-                </div>
         </div>
 
         <div class="footer-link">
@@ -1433,7 +1371,6 @@
         let adminCode = '';
         let allQuestions = [];
         let allSeries = [];
-        let usedQuestionIds = []; // 🆕 IDs des questions exclues
 
         document.addEventListener('DOMContentLoaded', () => {
             const savedCode = sessionStorage.getItem('questionAdminCode');
@@ -1506,10 +1443,6 @@
                 document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
                 document.getElementById('tabList').classList.add('active');
                 loadQuestions();
-            } else if (tab === 'shop') {
-                document.querySelector('.tab-btn:nth-child(3)').classList.add('active');
-                document.getElementById('tabShop').classList.add('active');
-                loadShopItems();
             }
         }
 
@@ -1529,12 +1462,6 @@
                 const [questionsRes, seriesRes, usedRes] = await Promise.all([
                     fetch(`/api/questions?adminCode=${encodeURIComponent(adminCode)}`),
                     fetch(`/api/series?adminCode=${encodeURIComponent(adminCode)}`),
-                    fetch(`/api/used-questions?adminCode=${encodeURIComponent(adminCode)}`)
-                ]);
-
-                const questionsData = await questionsRes.json();
-                const seriesData = await seriesRes.json();
-                const usedData = await usedRes.json();
 
                 if (questionsData.success) {
                     allQuestions = questionsData.questions;
@@ -1547,10 +1474,6 @@
                     populateSeriesFilter();
                 }
 
-                if (usedData.success) {
-                    usedQuestionIds = usedData.usedIds;
-                    document.getElementById('usedCount').textContent = usedQuestionIds.length;
-                }
 
                 filterQuestions();
             } catch (error) {
@@ -1580,24 +1503,18 @@
             const serieFilter = document.getElementById('filterSerie').value.toLowerCase();
             const difficultyFilter = document.getElementById('filterDifficulty').value.toLowerCase();
             const spoilFilter = document.getElementById('filterSpoil').value;
-            const excludedFilter = document.getElementById('filterExcluded').value;
             const searchFilter = document.getElementById('searchInput').value.toLowerCase();
-
             const filtered = allQuestions.filter(q => {
                 const matchSerie = !serieFilter || (q.serie && q.serie.toLowerCase() === serieFilter);
                 const matchDifficulty = !difficultyFilter || q.difficulty === difficultyFilter;
                 const matchSpoil = !spoilFilter || 
                     (spoilFilter === 'spoil' && q.is_spoil === true) ||
                     (spoilFilter === 'safe' && !q.is_spoil);
-                const isExcluded = usedQuestionIds.includes(q.id);
-                const matchExcluded = !excludedFilter ||
-                    (excludedFilter === 'excluded' && isExcluded) ||
-                    (excludedFilter === 'active' && !isExcluded);
                 const matchSearch = !searchFilter || 
                     q.question.toLowerCase().includes(searchFilter) ||
                     (q.serie && q.serie.toLowerCase().includes(searchFilter));
                 
-                return matchSerie && matchDifficulty && matchSpoil && matchExcluded && matchSearch;
+                return matchSerie && matchDifficulty && matchSpoil && matchSearch;
             });
 
             document.getElementById('filteredCount').textContent = filtered.length;
@@ -1623,14 +1540,12 @@
             }
 
             listContainer.innerHTML = questions.map(q => {
-                const isExcluded = usedQuestionIds.includes(q.id);
                 const hasProof = q.proof_url && q.proof_url.trim() !== '';
                 return `
-                <div class="question-item ${isExcluded ? 'excluded' : ''}" data-id="${q.id}">
+                <div class="question-item" data-id="${q.id}">
                     <div class="question-item-header">
                         <div class="question-text">
                             ${q.is_spoil ? '<span class="spoil-dot" title="Question spoil">●</span>' : ''}${escapeHtml(q.question)}
-                            ${isExcluded ? '<span class="excluded-badge">EXCLUE</span>' : ''}
                         </div>
                         <div class="question-meta">
                             <span class="badge badge-serie">${escapeHtml(q.serie || 'N/A')}</span>
@@ -1665,10 +1580,6 @@
                     </div>
                     <div class="question-actions">
                         <button class="btn-action" onclick="openEditModal(${q.id})">✏️ Modifier</button>
-                        ${isExcluded 
-                            ? `<button class="btn-action reactivate" onclick="unmarkQuestionUsed(${q.id})">✅ Réactiver</button>`
-                            : `<button class="btn-action exclude" onclick="markQuestionUsed(${q.id})">🚫 Exclure</button>`
-                        }
                         <button class="btn-action ${q.is_spoil ? 'spoil-active' : 'spoil-inactive'}" onclick="toggleSpoil(${q.id})">
                             ${q.is_spoil ? '⚠️ Spoil' : '🔓 Non-spoil'}
                         </button>
@@ -1947,259 +1858,6 @@
             }
         }
 
-        // 🆕 Marquer une question comme utilisée (exclure)
-        async function markQuestionUsed(questionId) {
-            try {
-                const response = await fetch('/api/mark-question-used', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ adminCode, questionId })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    usedQuestionIds.push(questionId);
-                    document.getElementById('usedCount').textContent = usedQuestionIds.length;
-                    filterQuestions();
-                } else {
-                    alert(data.error || 'Erreur');
-                }
-            } catch (error) {
-                alert('Erreur de connexion');
-            }
-        }
-
-        // 🆕 Retirer une question de l'historique (réactiver)
-        async function unmarkQuestionUsed(questionId) {
-            try {
-                const response = await fetch('/api/unmark-question-used', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ adminCode, questionId })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    usedQuestionIds = usedQuestionIds.filter(id => id !== questionId);
-                    document.getElementById('usedCount').textContent = usedQuestionIds.length;
-                    filterQuestions();
-                } else {
-                    alert(data.error || 'Erreur');
-                }
-            } catch (error) {
-                alert('Erreur de connexion');
-            }
-        }
-
-        // 🚫 Toggle le statut spoil d'une question
-        async function toggleSpoil(questionId) {
-            const question = allQuestions.find(q => q.id === questionId);
-            if (!question) return;
-
-            const newSpoil = !question.is_spoil;
-
-            try {
-                const response = await fetch('/api/toggle-spoil', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ adminCode, id: questionId, is_spoil: newSpoil })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    question.is_spoil = newSpoil;
-                    filterQuestions();
-                } else {
-                    alert(data.error || 'Erreur');
-                }
-            } catch (error) {
-                alert('Erreur de connexion');
-            }
-        }
-
-        // 🆕 Reset toutes les questions utilisées
-        async function resetUsedQuestions() {
-            if (!confirm(`Réactiver les ${usedQuestionIds.length} questions exclues ?`)) return;
-
-            const btn = document.getElementById('resetHistoryBtn');
-            btn.disabled = true;
-            btn.textContent = '⏳ Reset...';
-
-            try {
-                const response = await fetch('/api/reset-used-questions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ adminCode })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    usedQuestionIds = [];
-                    document.getElementById('usedCount').textContent = 0;
-                    filterQuestions();
-                    alert('✅ Toutes les questions ont été réactivées !');
-                } else {
-                    alert(data.error || 'Erreur');
-                }
-            } catch (error) {
-                alert('Erreur de connexion');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = '🔄 Reset historique';
-            }
-        }
-        // ========== BOUTIQUE ==========
-        let shopEditMode = false;
-        let allShopItems = [];
-        let shopFilter = 'all';
-
-        function updateShopForm() {
-            const type = document.getElementById('shopItemType').value;
-            document.getElementById('shopImageGroup').style.display = type === 'avatar' ? 'block' : 'none';
-        }
-
-        function filterShopList(filter) {
-            shopFilter = filter;
-            document.querySelectorAll('.shop-filter').forEach(b => {
-                b.style.background = 'rgba(255,255,255,0.02)';
-                b.style.borderColor = 'rgba(255,255,255,0.06)';
-                b.style.color = 'var(--text-secondary)';
-            });
-            const activeBtn = filter === 'all' ? 'sfAll' : filter === 'title_prefix' ? 'sfPre' : filter === 'title_suffix' ? 'sfSuf' : 'sfAv';
-            const el = document.getElementById(activeBtn);
-            el.style.background = 'rgba(218,165,32,0.1)';
-            el.style.borderColor = 'rgba(218,165,32,0.2)';
-            el.style.color = '#daa520';
-            renderShopList();
-        }
-
-        function renderShopList() {
-            const list = document.getElementById('shopItemsList');
-            const items = shopFilter === 'all' ? allShopItems : allShopItems.filter(i => i.type === shopFilter);
-
-            if (!items.length) {
-                list.innerHTML = '<div style="color:var(--text-secondary);font-size:13px">Aucun article</div>';
-                return;
-            }
-
-            list.innerHTML = items.map(item => `
-                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(255,255,255,0.02);border-radius:6px;margin-bottom:4px;border:1px solid rgba(255,255,255,0.04)">
-                    <div style="flex:1;min-width:0">
-                        <div style="font-size:13px;font-weight:600;color:#e8e6df">${item.type === 'avatar' ? item.name : (item.value || item.name)}</div>
-                        <div style="font-size:10px;color:var(--text-secondary)">${item.type} · ${item.price} S-Coins${item.image_url ? ' · ' + item.image_url : ''}</div>
-                        ${item.description ? `<div style="font-size:9px;color:rgba(160,158,150,0.4);margin-top:2px;font-style:italic">${item.description}</div>` : ''}
-                    </div>
-                    <div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px">
-                        <button onclick='editShopItem(${JSON.stringify(item).replace(/'/g, "&#39;")})' style="background:rgba(218,165,32,0.1);border:1px solid rgba(218,165,32,0.15);color:#daa520;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer">Modif</button>
-                        <button onclick="deleteShopItem(${item.id})" style="background:rgba(200,60,60,0.15);border:1px solid rgba(200,60,60,0.2);color:rgba(200,60,60,0.7);padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer">Suppr</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function cancelShopEdit() {
-            shopEditMode = false;
-            document.getElementById('shopEditId').value = '';
-            document.getElementById('shopEditBanner').style.display = 'none';
-            document.getElementById('shopSubmitText').textContent = 'Ajouter l\'article';
-            document.getElementById('shopItemType').value = 'title_prefix';
-            document.getElementById('shopItemName').value = '';
-            document.getElementById('shopItemDesc').value = '';
-            document.getElementById('shopItemPrice').value = '5000';
-            document.getElementById('shopItemImage').value = '';
-            updateShopForm();
-        }
-
-        function editShopItem(item) {
-            shopEditMode = true;
-            document.getElementById('shopEditId').value = item.id;
-            document.getElementById('shopEditBanner').style.display = 'block';
-            document.getElementById('shopEditName').textContent = item.name;
-            document.getElementById('shopSubmitText').textContent = 'Sauvegarder';
-            document.getElementById('shopItemType').value = item.type;
-            document.getElementById('shopItemName').value = item.name;
-            document.getElementById('shopItemDesc').value = item.description || '';
-            document.getElementById('shopItemPrice').value = item.price;
-            document.getElementById('shopItemImage').value = item.image_url || '';
-            updateShopForm();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        async function loadShopItems() {
-            const list = document.getElementById('shopItemsList');
-            list.innerHTML = '<div style="color:var(--text-secondary);font-size:13px">Chargement...</div>';
-
-            try {
-                const res = await fetch('/api/shop-items');
-                allShopItems = await res.json();
-                renderShopList();
-            } catch (e) {
-                list.innerHTML = '<div style="color:var(--error);font-size:13px">Erreur chargement</div>';
-            }
-        }
-
-        async function submitShopItem() {
-            const btn = document.getElementById('shopSubmitBtn');
-            const status = document.getElementById('shopStatus');
-            const editId = document.getElementById('shopEditId').value;
-            const name = document.getElementById('shopItemName').value.trim();
-            const type = document.getElementById('shopItemType').value;
-            const description = document.getElementById('shopItemDesc').value.trim();
-            const price = parseInt(document.getElementById('shopItemPrice').value) || 0;
-            const image_raw = document.getElementById('shopItemImage').value.trim();
-            const image_url = image_raw ? (image_raw.includes('.') ? image_raw : image_raw + '.png') : '';
-            const value = type === 'avatar' ? (image_url || name) : name;
-
-            if (!name) {
-                showStatus(status, 'Nom requis', 'error');
-                return;
-            }
-            if (type === 'avatar' && !image_url) {
-                showStatus(status, 'Image requise pour les avatars', 'error');
-                return;
-            }
-
-            btn.classList.add('loading');
-
-            try {
-                const isEdit = shopEditMode && editId;
-                const url = isEdit ? `/api/shop-items/${editId}` : '/api/add-shop-item';
-                const method = isEdit ? 'PUT' : 'POST';
-
-                const res = await fetch(url, {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ adminCode, name, type, value, description: description || null, price, image_url: image_url || null })
-                });
-
-                const data = await res.json();
-                if (data.success) {
-                    showStatus(status, isEdit ? 'Article modifie !' : 'Article ajoute !', 'success');
-                    cancelShopEdit();
-                    loadShopItems();
-                } else {
-                    showStatus(status, data.error || 'Erreur', 'error');
-                }
-            } catch (e) {
-                showStatus(status, 'Erreur de connexion', 'error');
-            } finally {
-                btn.classList.remove('loading');
-            }
-        }
-
-        async function deleteShopItem(id) {
-            if (!confirm('Supprimer cet article ?')) return;
-            try {
-                await fetch(`/api/shop-items/${id}?adminCode=${adminCode}`, { method: 'DELETE' });
-                loadShopItems();
-            } catch (e) {
-                alert('Erreur suppression');
-            }
-        }
     </script>
 </body>
 

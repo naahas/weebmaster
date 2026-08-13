@@ -12,14 +12,8 @@ const introMessages = ['Initialisation...', 'Streamer connecté..', 'Chargement 
 // 🆕 FONCTION DÉCONNEXION ADMIN
 // ============================================
 function adminLogout() {
-    // Appeler logout pour libérer le slot, puis rediriger vers /admin
-    fetch('/auth/logout')
-        .then(() => {
-            window.location.href = '/admin';
-        })
-        .catch(() => {
-            window.location.href = '/admin';
-        });
+    // 🆕 v2 : plus de session admin — simple retour au panel
+    window.location.href = '/admin';
 }
 
 
@@ -481,16 +475,12 @@ function initSocket() {
     initBombanimeSocketHandlers(socket);
 
     // 🎴 COLLECT - Socket Handlers (module séparé)
-    initCollectSocketHandlers(socket);
 
     // 🎮 SURVIE - Socket Handlers (module séparé)
-    initSurvieSocketHandlers(socket);
 
     // 🗳️ POLL - Socket Handlers
-    initPollSocketEvents();
 
     // 🏔️ ASCENSION - Socket Handlers
-    initAscensionSocketHandlers(socket);
 
     socket.on('prepare-next-question', () => {
         console.log('🔄 Préparation question suivante (mode auto)');
@@ -556,7 +546,6 @@ function closeLobbyUI() {
     if (animePanel) animePanel.style.display = 'none';
     
     // 🗳️ Reset Poll
-    if (typeof cleanupPoll === 'function') cleanupPoll();
     const animeChevron = document.getElementById('animeFilterChevron');
     if (animeChevron) animeChevron.classList.remove('open');
 
@@ -608,25 +597,11 @@ function closeLobbyUI() {
             // Cleanup Survie container
             const survieContainer = document.getElementById('survieContainer');
             if (survieContainer) survieContainer.remove();
-            survieState.active = false;
-            survieState.currentRound = 0;
-            survieState.roundInProgress = false;
-            survieState.alivePlayers = [];
-            survieState.eliminatedPlayers = [];
-            survieState.completedCount = 0;
-            survieState.qualifiedCount = 0;
-            survieState.toEliminateCount = 0;
-            survieState.npcs = [];
-            if (survieAdminCanvas) {
-                survieAdminCanvas.stop();
-                survieAdminCanvas = null;
-            }
             
             // 🎮 Restaurer les éléments quiz cachés par survie
             document.body.classList.remove('survie-active');
             
             // 🗳️ Cleanup Poll
-            if (typeof cleanupPoll === 'function') cleanupPoll();
             const mainHeaderRestore = document.getElementById('mainHeader');
             if (mainHeaderRestore) {
                 mainHeaderRestore.style.display = '';
@@ -715,60 +690,24 @@ function closeLobbyUI() {
 // ============================================
 
 async function handleLogin(event) {
-    event.preventDefault();
-    const password = document.getElementById('adminCode').value;
-    const masterPassword = document.getElementById('masterPassword').value;
-    const errorMsg = document.getElementById('errorMsg');
+    // 🆕 v2 : plus de mot de passe — le panel est ouvert (contrôle d'accès = code de room en phase 2)
+    if (event) event.preventDefault();
+    document.getElementById('loginContainer').style.display = 'none';
 
-    errorMsg.innerHTML = '';
-
-    try {
-        const response = await fetch('/admin/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                password,
-                masterOverride: masterPassword || undefined
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            // 🧹 Clear stale session data from previous game states
-            sessionStorage.removeItem('pollGameActive');
-            sessionStorage.removeItem('bombanimeInProgress');
-            sessionStorage.removeItem('collectInProgress');
-            sessionStorage.removeItem('collectState');
-            
-            document.getElementById('loginContainer').style.display = 'none';
-
-            // Jouer l'intro ou skip
-            if (shouldPlayIntro()) {
-                document.getElementById('introScreen').style.display = 'flex';
-                markIntroPlayed();
-                playIntro();
-            } else {
-                showAdminPanel();
-            }
-        } else {
-            if (data.error === 'admin_already_connected') {
-                errorMsg.textContent = 'Un admin est déjà connecté';
-                document.getElementById('masterPasswordGroup').style.display = 'block';
-            } else {
-                errorMsg.textContent = data.message || 'Code incorrect';
-            }
-        }
-    } catch (error) {
-        console.error('Erreur login:', error);
-        errorMsg.textContent = 'Erreur de connexion';
+    if (shouldPlayIntro()) {
+        document.getElementById('introScreen').style.display = 'flex';
+        markIntroPlayed();
+        playIntro();
+    } else {
+        showAdminPanel();
     }
 }
 
+// 🆕 v2 : plus de mot de passe admin — le panel est ouvert, l'hôte est le créateur de la room.
+// Le contrôle d'accès reviendra en phase 2 sous forme de propriété de room (code + host).
 async function checkAuth() {
     try {
-        const response = await fetch('/admin/check', { credentials: 'same-origin' });
-        const data = await response.json();
+        const data = { isAdmin: true };
 
         if (data.isAdmin) {
             document.getElementById('loginContainer').style.display = 'none';
@@ -1097,14 +1036,6 @@ document.addEventListener('visibilitychange', () => {
         }, 300);
     }
     
-    // 🎴 Collect: Vérifier si le timer a expiré pendant que l'onglet était en background
-    if (document.visibilityState === 'visible' && _adminCollectTimerEndMs) {
-        _checkAdminCollectTimerTick();
-    }
-    // 🎴 Collect: Si timer déjà expiré, s'assurer que les cartes sont grisées (rattrapage)
-    if (document.visibilityState === 'visible' && adminCollectTimerExpired && !adminCollectCardPlayed) {
-        document.querySelectorAll('#adminPovCards .collect-card.large:not(.card-played-out)').forEach(el => el.classList.add('card-played-out'));
-    }
 });
 
 
@@ -1297,57 +1228,11 @@ if (chromeGpuLink) {
 // ============================================
 
 async function loadIdleData() {
-    try {
-        // Charger stats générales
-        const statsResponse = await fetch('/admin/stats', { credentials: 'same-origin' });
-        if (statsResponse.ok) {
-            const stats = await statsResponse.json();
-
-            // Mettre à jour les stats sous le bouton
-            const statValues = document.querySelectorAll('.idle-stat-value');
-            setTimeout(() => {
-                if (statValues[0]) animateCounter(statValues[0], stats.totalGames || 0, 1200);
-            }, 600);
-
-            // Mettre à jour le leaderboard
-            if (stats.topPlayers && stats.topPlayers.length > 0) {
-                populateLeaderboard(stats.topPlayers);
-            }
-
-            // Mettre à jour les parties récentes
-            if (stats.recentGames && stats.recentGames.length > 0) {
-                populateRecentGames(stats.recentGames);
-            }
-        }
-
-        // Charger stats DB (nombre de questions ET joueurs)
-        const dbStatsResponse = await fetch('/admin/db-stats', { credentials: 'same-origin' });
-        if (dbStatsResponse.ok) {
-            const dbStats = await dbStatsResponse.json();
-            const statValues = document.querySelectorAll('.idle-stat-value');
-
-            // 🆕 Arrondir à la centaine inférieure
-            const roundedPlayers = Math.floor((dbStats.totalPlayers || 0) / 100) * 100;
-            const roundedQuestions = Math.floor((dbStats.totalQuestions || 0) / 100) * 100 + 300;
-
-            setTimeout(() => {
-                if (statValues[1]) animateCounter(statValues[1], formatPlayerCount(roundedPlayers), 1200, '+');
-                if (statValues[2]) animateCounter(statValues[2], roundedQuestions, 1200, '+');
-            }, 600);
-        }
-
-        return true; // Données chargées
-    } catch (error) {
-        console.error('❌ Erreur chargement données Idle:', error);
-
-        // Fallback en cas d'erreur
-        const statValues = document.querySelectorAll('.idle-stat-value');
-        if (statValues[0]) statValues[0].textContent = '0';
-        if (statValues[1]) statValues[1].textContent = '0';
-        if (statValues[2]) statValues[2].textContent = '+0';
-
-        return false;
-    }
+    // 🆕 v2 : plus de stats globales ni de classement (comptes supprimés).
+    // Le nombre de questions disponibles reste affichable via /admin/serie-stats si besoin.
+    const statValues = document.querySelectorAll('.idle-stat-value');
+    statValues.forEach(el => { el.textContent = '—'; });
+    return true;
 }
 
 function formatPlayerCount(count) {
@@ -2111,7 +1996,6 @@ function setGameMode(mode) {
         if (badgeText) badgeText.textContent = 'Poll Mode';
         if (modeBadge) modeBadge.classList.add('poll');
         if (btnWrapper) btnWrapper.classList.add('poll');
-        onPollModeSelected();
     } else if (mode === 'ascension') {
         if (badgeText) badgeText.textContent = 'Ascension Mode';
         if (modeBadge) modeBadge.classList.add('ascension');
@@ -2418,11 +2302,24 @@ const twitchUsername = document.getElementById('twitchUsername');
 
 let twitchUser = null; // { id, login, display_name, profile_image_url }
 
-// Connexion Twitch
+// 🆕 v2 : identité invité de l'hôte (plus d'OAuth Twitch).
+// La saisie passera par une vraie modale en phase 3 ; ici on réutilise l'identité du navigateur.
 function connectTwitch() {
-    console.log('Connexion Twitch...');
-    // Rediriger vers OAuth Twitch avec le paramètre admin
-    window.location.href = '/auth/twitch?from=admin';
+    const saved = localStorage.getItem('pseudo');
+    const name = (saved || window.prompt('Ton pseudo :') || '').trim();
+
+    if (name.length < 2) return;
+
+    let playerId = localStorage.getItem('playerId');
+    if (!playerId) {
+        playerId = (crypto.randomUUID ? crypto.randomUUID() : 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2));
+        localStorage.setItem('playerId', playerId);
+    }
+    localStorage.setItem('pseudo', name);
+
+    twitchUser = { id: playerId, login: name, display_name: name, profile_image_url: 'novice.png' };
+    updateTwitchUI();
+    updateAdminJoinButton();
 }
 
 // Déconnexion Twitch
@@ -2568,26 +2465,20 @@ twitchConnectBtn.addEventListener('click', (e) => {
 });
 
 // Vérifier si déjà connecté au chargement
+// 🆕 v2 : restaure l'identité invité de l'hôte depuis le localStorage
 async function checkTwitchAuth() {
-    try {
-        const response = await fetch('/auth/twitch/status', { credentials: 'same-origin' });
-        if (response.ok) {
-            const data = await response.json();
-            if (data.connected && data.user) {
-                twitchUser = data.user;
-                updateTwitchUI();
-                updateAdminJoinButton();
-                
-                // Vérifier si l'utilisateur voulait sélectionner Rivalité
-                if (sessionStorage.getItem('pendingRivalryMode') === 'true') {
-                    sessionStorage.removeItem('pendingRivalryMode');
-                    // Sélectionner le mode Rivalité (sans ouvrir le lobby)
-                    setGameMode('rivalry');
-                }
-            }
-        }
-    } catch (error) {
-        console.log('Twitch auth check:', error);
+    const playerId = localStorage.getItem('playerId');
+    const name = localStorage.getItem('pseudo');
+
+    if (!playerId || !name) return;
+
+    twitchUser = { id: playerId, login: name, display_name: name, profile_image_url: 'novice.png' };
+    updateTwitchUI();
+    updateAdminJoinButton();
+
+    if (sessionStorage.getItem('pendingRivalryMode') === 'true') {
+        sessionStorage.removeItem('pendingRivalryMode');
+        setGameMode('rivalry');
     }
 }
 
@@ -3097,8 +2988,6 @@ const MODES_DATA = [
     { id: 'classic', n: 'CLASSIQUE', l: 'Mode Solo', c: 'gold', p: '∞', t: 'solo', d: "Quiz anime en solo. Questions au format QCM , en mode Vies ou Points. Paramètres de difficultés et de séries variables. Chaque joueur peut utiliser des bonus en répondant juste ou en complétant des défis.", img: 'gilga.png', imgStyle: 'transform:scale(1.04) translate(-2%, 3%)' },
     { id: 'rivalry', n: 'RIVALITÉ', l: 'Mode Équipe', c: 'purple', p: '∞', t: 'equipe', d: "Deux équipes s'affrontent sur un Quiz anime. Similaire au mode Classique , chaque équipe cumule les vies ou les points de ses joueurs. L'équipe avec le plus de points ou de joueurs en vies à la fin remporte la partie.", img: 'shark.png' },
     { id: 'bombanime', n: 'BOMBANIME', l: 'Mode Solo', c: 'green', p: '13', t: 'solo', playable: true, d: "Une bombe tourne de joueur en joueur. Citez un personnage d'une série spécifique avant que le timer explose. Le dernier survivant remporte la partie.", img: 'lambo2.png', imgStyle: 'transform:scale(1.2) translateY(5%)' },
-    { id: 'ascension', n: 'ASCENSION', l: 'Mode Solo', c: 'crimson', p: '∞', t: 'solo', playable: true, d: "Grimpez la tour étage par étage en réussissant des mini-jeux variés. Le premier joueur à atteindre le sommet remporte la partie.", img: 'ascension.png', imgStyle: 'transform:scale(0.92) translate(-2%, -10%)' },
-    { id: 'collect', n: 'COLLECT', l: 'Mode Solo', c: 'blue', p: '5', t: 'solo', playable: true, d: "Jeu de cartes stratégique anime. Collectionnez des personnages, utilisez leurs capacités et affrontez les autres joueurs.", img: 'aventurine3.png', soon: true, imgStyle: 'transform:scale(1.2) translate(3%, 12%)' },
 ];
 
 const MODE_COLORS = { gold:'#d4a017', purple:'#8b5cf6', green:'#22c55e', cyan:'#00d4ff', blue:'#3b82f6', red:'#e74c3c', orange:'#e67e22', pink:'#f080b0', teal:'#1abc9c', indigo:'#6366f1', amber:'#f59e0b', lime:'#84cc16', rose:'#f43f5e', brown:'#a0724a', white:'#d4d4d8', crimson:'#a8131a' };
@@ -3981,50 +3870,10 @@ document.addEventListener('change', (e) => {
         selectedCollectAnimes = selectedCollectAnimes.filter(a => a !== anime);
     }
     
-    updateCollectDeckCount();
-    updateCollectStartButton();
     
     console.log(`🎴 Anime Collect: ${selectedCollectAnimes.length} animes`, selectedCollectAnimes);
 });
 
-// Mettre à jour le compteur d'animes
-function updateCollectDeckCount() {
-    const countDisplay = document.getElementById('collectDeckCount');
-    if (countDisplay) {
-        countDisplay.textContent = selectedCollectAnimes.length;
-        
-        anime({
-            targets: countDisplay,
-            scale: [1.2, 1],
-            duration: 200,
-            easing: 'easeOutQuad'
-        });
-    }
-}
-
-// Valider le bouton Démarrer pour Collect
-function updateCollectStartButton() {
-    if (currentGameMode !== 'collect') return;
-    
-    const startBtn = document.getElementById('startGameBtn');
-    const playerCount = document.querySelectorAll('#playersGridLobby .player-card-mini').length;
-    
-    // Besoin d'au moins 3 animes ET au moins 2 joueurs
-    const canStart = playerCount >= 2;
-    
-    if (startBtn) {
-        if (canStart) {
-            startBtn.classList.remove('disabled');
-            startBtn.disabled = false;
-        } else {
-            startBtn.classList.add('disabled');
-            startBtn.disabled = true;
-        }
-    }
-}
-
-// ============================================
-// BOMBANIME - Slider Timer
 // ============================================
 const bombanimeTimerSlider = document.getElementById('bombanimeTimerSlider');
 if (bombanimeTimerSlider) {
@@ -5145,44 +4994,6 @@ document.getElementById('startGameBtn').addEventListener('click', async () => {
             startData.bombanimeTimer = parseInt(document.getElementById('bombanimeTimerSlider')?.value) || 8;
             startData.bombanimeSerie = selectedBombanimeSerie || 'Naruto';
             console.log('💣 Paramètres BombAnime envoyés:', startData);
-        }
-        
-        // 🎴 Paramètres Collect
-        if (currentGameMode === 'collect') {
-            startData.collectHandSize = collectHandSize || 3;
-            startData.collectAnimes = Array.from(collectSelectedAnimes);
-            console.log('🎴 Paramètres Collect envoyés:', startData);
-        }
-        
-        // 🗳️ Paramètres Poll
-        if (currentGameMode === 'poll') {
-            startData.pollCategory = pollState.category || 'all';
-            startData.pollPerMatch = pollState.perMatch || 2;
-            startData.pollBracketSize = pollState.bracketSize || 16;
-            startData.pollShowNames = pollState.showNames !== undefined ? pollState.showNames : false;
-            startData.pollVoteTimer = pollState.voteTimer || 15;
-            console.log('🗳️ Paramètres Poll envoyés:', startData);
-        }
-        
-        // 🏔️ Paramètres Ascension
-        if (currentGameMode === 'ascension') {
-            startData.ascensionFloors = ascensionConfig.floors || 15;
-            startData.ascensionTimer = ascensionConfig.timer || 60;
-            startData.ascensionSync = ascensionConfig.syncEpreuves;
-            console.log('🏔️ Paramètres Ascension envoyés:', startData);
-
-            // 🆕 Toujours emit ghost-join : le serveur skip si admin déjà inscrit comme vrai joueur
-            try {
-                if (typeof socket !== 'undefined' && socket && typeof twitchUser !== 'undefined' && twitchUser && twitchUser.id) {
-                    socket.emit('ascension-admin-ghost-join', {
-                        twitchId: twitchUser.id,
-                        username: twitchUser.display_name || twitchUser.login || 'Admin',
-                        avatarUrl: twitchUser.profile_image_url || 'novice.png',
-                    });
-                    // petit délai pour que le serveur traite l'event avant le start
-                    await new Promise(r => setTimeout(r, 120));
-                }
-            } catch (e) { console.warn('ghost-join error:', e.message); }
         }
         
         const response = await fetch('/admin/start-game', {
@@ -6435,7 +6246,6 @@ async function restoreGameState() {
                     
                     // 🎮 Initialiser l'UI Survie (cache les éléments quiz, injecte le container)
                     document.body.classList.add('survie-active');
-                    showSurvieGameUI();
                     
                     // Demander l'état survie au serveur
                     socket.emit('survie-reconnect', { twitchId: twitchUser?.id });
@@ -6478,7 +6288,6 @@ async function restoreGameState() {
                     if (modeBadgeHeader) modeBadgeHeader.style.display = 'none';
                     
                     // Show ascension game UI
-                    showAscensionGameUI();
                     
                     // Request state from server
                     socket.emit('ascension-reconnect', { twitchId: twitchUser?.id });
@@ -8971,19 +8780,13 @@ document.getElementById('gameCloseBtn')?.addEventListener('click', async () => {
 });
 
 function returnToIdle() {
-    sessionStorage.removeItem('adminCollectTimerExpired');
-    sessionStorage.removeItem('adminCollectTimerEndMs');
-    sessionStorage.removeItem('adminCollectTimerDuration');
-    adminCollectTimerExpired = false;
     // 🔊 Cacher le contrôle de son
     showSoundControl(false);
-    showSuggestionButton(false); // Cacher bouton suggestions
     
     // Reset admin join state
     resetAdminJoinState();
     
     // 🏔️ Hide ascension game UI if active
-    if (typeof hideAscensionGameUI === 'function') hideAscensionGameUI();
     
     const stateGame = document.getElementById('stateGame');
     const stateLobby = document.getElementById('stateLobby');
@@ -9170,40 +8973,6 @@ function returnToIdle() {
     document.querySelector('.status-pill')?.classList.remove('game-mode');
     statusText.textContent = 'Inactif';
 
-    // Cleanup Survie
-    document.body.classList.remove('survie-active');
-    
-    // Cleanup Poll
-    if (typeof cleanupPoll === 'function') cleanupPoll();
-    const survieContainer = document.getElementById('survieContainer');
-    if (survieContainer) survieContainer.remove();
-    if (typeof survieState !== 'undefined') {
-        survieState.active = false;
-        survieState.currentRound = 0;
-        survieState.roundInProgress = false;
-        survieState.alivePlayers = [];
-        survieState.eliminatedPlayers = [];
-        survieState.completedCount = 0;
-        survieState.qualifiedCount = 0;
-        survieState.toEliminateCount = 0;
-        survieState.npcs = [];
-        survieState.quests = [];
-        survieState.groundItems = [];
-        survieState.boosts = [];
-        survieState.questItems = {};
-        survieState.savedQuestState = null;
-    }
-    if (typeof survieAdminCanvas !== 'undefined' && survieAdminCanvas) {
-        survieAdminCanvas.stop();
-        survieAdminCanvas = null;
-    }
-    if (typeof _adminMinimapInterval !== 'undefined' && _adminMinimapInterval) {
-        clearInterval(_adminMinimapInterval);
-        _adminMinimapInterval = null;
-    }
-    if (typeof survieAdminMovedListenerSet !== 'undefined') {
-        survieAdminMovedListenerSet = false;
-    }
     // Restore header hidden by survie
     const mainHeaderRestore = document.getElementById('mainHeader');
     if (mainHeaderRestore) {
