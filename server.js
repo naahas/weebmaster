@@ -136,6 +136,7 @@ app.set('trust proxy', 1);
 // Historique des parties : en mémoire d'abord (aucune dépendance), persisté dans
 // la table `game_history` si elle existe. Voir PLAN-V2.md pour le SQL de création.
 const recentGames = [];
+let gamesPlayedTotal = 0;   // parties terminées (depuis la base si game_history existe)
 const RECENT_GAMES_MAX = 8;
 let gameHistoryTableOk = null; // null = pas encore testé, false = table absente
 
@@ -154,6 +155,7 @@ async function recordFinishedGame({ mode, playersCount, winnerName, duration }) 
         endedAt: new Date().toISOString(),
     };
 
+    gamesPlayedTotal++;
     recentGames.unshift(entry);
     if (recentGames.length > RECENT_GAMES_MAX) recentGames.length = RECENT_GAMES_MAX;
 
@@ -195,7 +197,9 @@ async function loadRecentGamesFromDb() {
             duration: g.duration || 0,
             endedAt: g.created_at,
         }));
-        console.log(`📊 ${recentGames.length} partie(s) chargée(s) depuis game_history`);
+        const { count } = await supabase.from('game_history').select('id', { count: 'exact', head: true });
+        gamesPlayedTotal = count || recentGames.length;
+        console.log(`📊 ${recentGames.length} partie(s) récente(s) chargée(s), ${gamesPlayedTotal} au total`);
     } catch (e) {
         gameHistoryTableOk = false;
     }
@@ -258,6 +262,7 @@ app.get('/api/home-stats', async (req, res) => {
         activeRooms: gameState.isActive ? 1 : 0,   // phase 2 : rooms.size
         inGame: gameState.inProgress ? gameState.players.size : 0,
         questionsCount: await getQuestionsCount(),
+        gamesPlayed: gamesPlayedTotal,
         recentGames,
     });
 });

@@ -20,18 +20,19 @@ createApp({
             // 🆕 v2 — Accueil : choix du mode, création / jointure de salon
             modes: [
                 { id: 'classic',   name: 'Classique', kind: 'Solo',   players: '∞',  img: 'gilga.png',
-                  desc: "Quiz anime au format QCM, en mode Vies ou Points. Difficulté et séries réglables, bonus et défis en cours de partie." },
+                  desc: "Quiz QCM. Vies ou points, difficulté et séries au choix." },
                 { id: 'rivalry',   name: 'Rivalité',  kind: 'Équipe', players: '∞',  img: 'shark.png',
-                  desc: "Le même quiz, mais deux équipes s'affrontent. Chaque camp cumule les vies ou les points de ses joueurs." },
+                  desc: "Deux équipes, un seul quiz. Le camp le plus fort l'emporte." },
                 { id: 'bombanime', name: 'BombAnime', kind: 'Solo',   players: '13', img: 'lambo2.png',
-                  desc: "Une bombe tourne de joueur en joueur : cite un personnage de la série avant qu'elle explose. Le dernier debout gagne." },
+                  desc: "La bombe tourne. Cite un perso avant qu'elle explose." },
             ],
             selectedMode: localStorage.getItem('lastMode') || 'classic',
-            homeStats: { playersOnline: 0, activeRooms: 0, questionsCount: 0, recentGames: [] },
+            homeScreen: 'gate',   // gate | hub | modes | join
+            hubHover: null,
+            homeStats: { playersOnline: 0, activeRooms: 0, questionsCount: 0, gamesPlayed: 0, recentGames: [] },
             homeStatsTimer: null,
             creatingRoom: false,
             createError: '',
-            showJoin: false,
             joinStep: 'code',
             joinCode: '',
             joinError: '',
@@ -248,10 +249,11 @@ createApp({
     },
 
     async mounted() {
-        // Bind give mode click handler
-        this._onGiveSlotClick = this._handleGiveSlotClick.bind(this);
-        
-        // Restore winner banner if active (delayed to ensure DOM is ready)
+        // 🆕 v2 : les stats en premier — elles ne doivent dépendre de rien d'autre
+        this.loadHomeStats();
+        this.homeStatsTimer = setInterval(() => {
+            if (!this.gameInProgress && !this.hasJoined) this.loadHomeStats();
+        }, 20000);
 
         // 🔊 Raccourci clavier: Ctrl+M pour mute/unmute le son
         document.addEventListener('keydown', (e) => {
@@ -268,13 +270,8 @@ createApp({
         await this.checkAuth();
         await this.restoreGameState();
 
-        // 🆕 v2 : stats de l accueil
-        this.loadHomeStats();
-        this.homeStatsTimer = setInterval(() => {
-            if (!this.gameInProgress && !this.hasJoined) this.loadHomeStats();
-        }, 20000);
-
         this.initParticles();
+        this.initCursorDust();
         this.initSocket();
         
         // 🆕 Restaurer l'équipe sélectionnée après refresh
@@ -678,6 +675,7 @@ createApp({
             this.username = savedName;
             this.pseudoInput = savedName;
             this.isAuthenticated = true;
+            this.homeScreen = 'hub';
 
             if (this.socket && this.socket.connected) {
                 this.socket.emit('register-authenticated', {
@@ -690,6 +688,28 @@ createApp({
         // 🆕 v2 : valide le pseudo saisi et ouvre la session invité
         // ========== 🆕 v2 — Accueil : salons ==========
 
+        // ✨ Traînée de poussière dorée qui suit la souris (accueil uniquement)
+        initCursorDust() {
+            let last = 0;
+            document.addEventListener('mousemove', (e) => {
+                if (this.gameInProgress || this.hasJoined) return;
+                const now = Date.now();
+                if (now - last < 28) return;   // ~35 particules/s max
+                last = now;
+
+                const dust = document.createElement('div');
+                dust.className = 'v2-dust';
+                dust.style.left = e.clientX + 'px';
+                dust.style.top = e.clientY + 'px';
+                const size = 0.22 + Math.random() * 0.35;
+                dust.style.width = size + 'rem';
+                dust.style.height = size + 'rem';
+                dust.style.setProperty('--dx', (Math.random() * 1.2 - 0.6).toFixed(2) + 'rem');
+                document.body.appendChild(dust);
+                setTimeout(() => dust.remove(), 760);
+            }, { passive: true });
+        },
+
         async loadHomeStats() {
             try {
                 const res = await fetch('/api/home-stats');
@@ -699,6 +719,7 @@ createApp({
 
         editPseudo() {
             this.isAuthenticated = false;
+            this.homeScreen = 'gate';
             this.pseudoInput = this.username;
         },
 
@@ -762,11 +783,16 @@ createApp({
             } catch (e) { /* le code reste affiché vide, sans bloquer */ }
         },
 
+        goToModes() {
+            this.createError = '';
+            this.homeScreen = 'modes';
+        },
+
         openJoin() {
             this.joinError = '';
             this.joinStep = 'code';
             this.joinCode = '';
-            this.showJoin = true;
+            this.homeScreen = 'join';
         },
 
         joinRoom(team) {
@@ -805,7 +831,6 @@ createApp({
             setTimeout(() => {
                 if (this.pendingJoinCode === code && !this.joinError) {
                     this.hasJoined = true;
-                    this.showJoin = false;
                     this.roomCode = code;
                     sessionStorage.setItem('roomCode', code);
                     localStorage.setItem('hasJoinedLobby', 'true');
@@ -883,6 +908,7 @@ createApp({
             this.twitchId = playerId;
             this.username = name;
             this.isAuthenticated = true;
+            this.homeScreen = 'hub';
 
             if (this.socket && this.socket.connected) {
                 this.socket.emit('register-authenticated', {

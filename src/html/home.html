@@ -30,13 +30,23 @@
 <body>
     <div id="app" v-cloak>
 
+        <!-- 🆕 v2 : fond animé (aurore + grille), derrière les particules -->
+        <div class="v2-bg" aria-hidden="true" v-if="!hasJoined && !gameInProgress && !gameEnded">
+            <div class="v2-bg-aurora a1"></div>
+            <div class="v2-bg-aurora a2"></div>
+            <div class="v2-bg-aurora a3"></div>
+            <div class="v2-bg-grid"></div>
+            <div class="v2-bg-vignette"></div>
+        </div>
+
         <!-- Particles Background -->
         <div id="particles-js"></div>
 
         <!-- Main Container -->
         <div class="main-container">
             <!-- ============================================
-                 🆕 v2 — ACCUEIL (pseudo → mode → créer/rejoindre)
+                 🆕 v2 — ACCUEIL
+                 gate (pseudo) → hub (créer/rejoindre) → modes | join
                  ============================================ -->
             <div class="v2-home" v-if="!hasJoined && !gameInProgress && !gameEnded">
 
@@ -49,10 +59,10 @@
                     </div>
                 </header>
 
-                <!-- Étape 1 : pseudo -->
-                <section class="v2-gate" v-if="!isAuthenticated">
+                <!-- ── Écran 1 : pseudo ───────────────────── -->
+                <section class="v2-gate" v-if="homeScreen === 'gate'">
                     <h1 class="v2-hero-title">Shonen<b>Master</b></h1>
-                    <p class="v2-hero-sub">Party-games anime, entre potes ou en live</p>
+
                     <div class="pseudo-form">
                         <input
                             type="text"
@@ -64,106 +74,138 @@
                             autocomplete="off"
                             spellcheck="false">
                         <div class="pseudo-error" v-if="pseudoError">{{ pseudoError }}</div>
-                        <button class="btn-primary floating" @click="setPseudo">
-                            <span>Jouer</span>
-                        </button>
+                        <button class="v2-btn v2-btn-primary v2-btn-lg" @click="setPseudo">Jouer</button>
                     </div>
-                </section>
 
-                <!-- Étape 2 : choix du mode + création / jointure -->
-                <section class="v2-play" v-else>
-                    <div class="v2-play-head">
-                        <h2 class="v2-section-title">Choisis ton mode</h2>
-                        <div class="v2-live" v-if="isGameActive">
-                            <span class="v2-live-dot"></span>
-                            <span>un salon est ouvert</span>
+                    <!-- Stats générales -->
+                    <div class="v2-bigstats">
+                        <div class="v2-bigstat">
+                            <span class="v2-bigstat-value">{{ homeStats.playersOnline }}</span>
+                            <span class="v2-bigstat-label">en ligne</span>
+                        </div>
+                        <span class="v2-bigstat-sep"></span>
+                        <div class="v2-bigstat">
+                            <span class="v2-bigstat-value">{{ homeStats.activeRooms }}</span>
+                            <span class="v2-bigstat-label">salons</span>
+                        </div>
+                        <span class="v2-bigstat-sep"></span>
+                        <div class="v2-bigstat">
+                            <span class="v2-bigstat-value">{{ homeStats.questionsCount }}</span>
+                            <span class="v2-bigstat-label">questions</span>
+                        </div>
+                        <span class="v2-bigstat-sep"></span>
+                        <div class="v2-bigstat">
+                            <span class="v2-bigstat-value">{{ homeStats.gamesPlayed }}</span>
+                            <span class="v2-bigstat-label">parties</span>
                         </div>
                     </div>
 
-                    <div class="v2-modes">
+                    <div class="v2-ticker" v-if="homeStats.recentGames && homeStats.recentGames.length">
+                        <div class="v2-ticker-item" v-for="(g, i) in homeStats.recentGames.slice(0, 3)" :key="i">
+                            <span class="v2-ticker-mode" :class="'mode-' + g.mode">{{ g.modeLabel }}</span>
+                            <span v-if="g.winnerName">{{ g.winnerName }}</span>
+                            <span class="v2-ticker-players">{{ g.playersCount }}j</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ── Écran 2 : créer / rejoindre ─────────── -->
+                <section class="v2-hub" v-else-if="homeScreen === 'hub'">
+                    <div class="v2-choices" :class="{ hovering: hubHover !== null }">
                         <button
-                            v-for="m in modes"
-                            :key="m.id"
-                            class="v2-mode-card"
-                            :class="['mode-' + m.id, { selected: selectedMode === m.id }]"
-                            @click="selectedMode = m.id">
-                            <div class="v2-mode-img" :style="{ backgroundImage: 'url(' + m.img + ')' }"></div>
-                            <div class="v2-mode-shade"></div>
-                            <div class="v2-mode-players">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                                </svg>
-                                {{ m.players }}
+                            class="v2-choice v2-choice-create"
+                            :class="{ dimmed: hubHover === 'join' }"
+                            @mouseenter="hubHover = 'create'" @mouseleave="hubHover = null"
+                            @click="goToModes">
+                            <div class="v2-choice-art"></div>
+                            <div class="v2-choice-body">
+                                <span class="v2-choice-kicker">Hôte</span>
+                                <span class="v2-choice-title">Créer</span>
+                                <span class="v2-choice-sub">un salon</span>
                             </div>
-                            <div class="v2-mode-meta">
-                                <span class="v2-mode-kind">{{ m.kind }}</span>
-                                <span class="v2-mode-name">{{ m.name }}</span>
+                            <span class="v2-choice-arrow">→</span>
+                        </button>
+
+                        <button
+                            class="v2-choice v2-choice-join"
+                            :class="{ dimmed: hubHover === 'create' }"
+                            @mouseenter="hubHover = 'join'" @mouseleave="hubHover = null"
+                            @click="openJoin">
+                            <div class="v2-choice-art"></div>
+                            <div class="v2-choice-body">
+                                <span class="v2-choice-kicker">Invité</span>
+                                <span class="v2-choice-title">Rejoindre</span>
+                                <span class="v2-choice-sub">avec un code</span>
                             </div>
+                            <span class="v2-choice-arrow">→</span>
                         </button>
                     </div>
-
-                    <p class="v2-mode-desc">{{ currentMode.desc }}</p>
-
-                    <div class="v2-actions">
-                        <button class="v2-btn v2-btn-primary" @click="createRoom" :disabled="creatingRoom">
-                            {{ creatingRoom ? 'Création...' : 'Créer un salon' }}
-                        </button>
-                        <button class="v2-btn v2-btn-ghost" @click="openJoin">Rejoindre avec un code</button>
+                    <div class="v2-hub-live" v-if="isGameActive">
+                        <span class="v2-live-dot"></span> un salon est ouvert
                     </div>
-                    <div class="v2-action-error" v-if="createError">{{ createError }}</div>
                 </section>
 
-                <!-- Bandeau stats + dernières parties -->
-                <footer class="v2-stats" v-if="isAuthenticated">
-                    <div class="v2-stat">
-                        <span class="v2-stat-value">{{ homeStats.playersOnline }}</span>
-                        <span class="v2-stat-label">en ligne</span>
-                    </div>
-                    <div class="v2-stat">
-                        <span class="v2-stat-value">{{ homeStats.activeRooms }}</span>
-                        <span class="v2-stat-label">salon{{ homeStats.activeRooms > 1 ? 's' : '' }}</span>
-                    </div>
-                    <div class="v2-stat">
-                        <span class="v2-stat-value">{{ homeStats.questionsCount }}</span>
-                        <span class="v2-stat-label">questions</span>
-                    </div>
+                <!-- ── Écran 3 : choix du mode ─────────────── -->
+                <section class="v2-modes-screen" v-else-if="homeScreen === 'modes'">
+                    <button class="v2-back" @click="homeScreen = 'hub'">← Retour</button>
 
-                    <div class="v2-recent" v-if="homeStats.recentGames && homeStats.recentGames.length">
-                        <span class="v2-recent-label">Dernières parties</span>
-                        <div class="v2-recent-list">
-                            <div class="v2-recent-item" v-for="(g, i) in homeStats.recentGames.slice(0, 4)" :key="i">
-                                <span class="v2-recent-mode" :class="'mode-' + g.mode">{{ g.modeLabel }}</span>
-                                <span class="v2-recent-winner" v-if="g.winnerName">🏆 {{ g.winnerName }}</span>
-                                <span class="v2-recent-players">{{ g.playersCount }} j.</span>
+                    <div class="v2-modes-layout">
+                        <div class="v2-modes-list">
+                            <button
+                                v-for="m in modes"
+                                :key="m.id"
+                                class="v2-mode-row"
+                                :class="['mode-' + m.id, { active: selectedMode === m.id }]"
+                                @mouseenter="selectedMode = m.id"
+                                @click="selectedMode = m.id">
+                                <span class="v2-mode-row-bar"></span>
+                                <span class="v2-mode-row-text">
+                                    <span class="v2-mode-row-name">{{ m.name }}</span>
+                                    <span class="v2-mode-row-kind">{{ m.kind }} · {{ m.players }}</span>
+                                </span>
+                            </button>
+                        </div>
+
+                        <div class="v2-mode-preview" :class="'mode-' + selectedMode">
+                            <transition name="v2-fade" mode="out-in">
+                                <div class="v2-mode-art" :key="currentMode.id"
+                                     :style="{ backgroundImage: 'url(' + currentMode.img + ')' }"></div>
+                            </transition>
+                            <div class="v2-mode-preview-shade"></div>
+                            <div class="v2-mode-preview-body">
+                                <span class="v2-mode-preview-name">{{ currentMode.name }}</span>
+                                <p class="v2-mode-preview-desc">{{ currentMode.desc }}</p>
+                                <button class="v2-btn v2-btn-primary v2-btn-lg" @click="createRoom" :disabled="creatingRoom">
+                                    {{ creatingRoom ? 'Création…' : 'Lancer le salon' }}
+                                </button>
+                                <div class="v2-action-error" v-if="createError">{{ createError }}</div>
                             </div>
                         </div>
                     </div>
-                </footer>
+                </section>
 
-                <!-- Modale : rejoindre avec un code -->
-                <div class="v2-modal-backdrop" v-if="showJoin" @click.self="showJoin = false">
-                    <div class="v2-modal">
-                        <button class="v2-modal-close" @click="showJoin = false">×</button>
+                <!-- ── Écran 4 : rejoindre ─────────────────── -->
+                <section class="v2-join-screen" v-else-if="homeScreen === 'join'">
+                    <button class="v2-back" @click="homeScreen = 'hub'">← Retour</button>
 
+                    <div class="v2-join-box">
                         <template v-if="joinStep === 'code'">
-                            <div class="v2-modal-title">Rejoindre un salon</div>
-                            <div class="v2-modal-sub">Demande le code à l'hôte</div>
+                            <span class="v2-join-label">Code du salon</span>
                             <input
                                 type="text"
                                 class="v2-code-input"
                                 v-model="joinCode"
                                 @keyup.enter="joinRoom"
-                                placeholder="CODE"
+                                placeholder="····"
                                 maxlength="4"
                                 autocomplete="off"
                                 spellcheck="false">
                             <div class="v2-modal-error" v-if="joinError">{{ joinError }}</div>
-                            <button class="v2-btn v2-btn-primary" @click="joinRoom">Rejoindre</button>
+                            <button class="v2-btn v2-btn-primary v2-btn-lg" @click="joinRoom">Rejoindre</button>
                         </template>
 
                         <template v-else>
-                            <div class="v2-modal-title">Choisis ton camp</div>
-                            <div class="v2-modal-sub">Mode Rivalité</div>
+                            <span class="v2-join-label">Ton camp</span>
                             <div class="v2-team-choice">
                                 <button class="v2-team v2-team-1" @click="joinRoom(1)">{{ teamNames[1] }}</button>
                                 <button class="v2-team v2-team-2" @click="joinRoom(2)">{{ teamNames[2] }}</button>
@@ -171,7 +213,7 @@
                             <div class="v2-modal-error" v-if="joinError">{{ joinError }}</div>
                         </template>
                     </div>
-                </div>
+                </section>
             </div>
 
 
