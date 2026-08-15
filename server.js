@@ -129,6 +129,139 @@ app.use(express.urlencoded({ extended: true }));
 app.set('trust proxy', 1);
 
 
+// ============================================
+// 📊 STATS PUBLIQUES (page d'accueil)
+// ============================================
+
+// Historique des parties : en mémoire d'abord (aucune dépendance), persisté dans
+// la table `game_history` si elle existe. Voir PLAN-V2.md pour le SQL de création.
+const recentGames = [];
+const RECENT_GAMES_MAX = 8;
+let gameHistoryTableOk = null; // null = pas encore testé, false = table absente
+
+let questionsCountCache = { value: null, at: 0 };
+const QUESTIONS_COUNT_TTL = 5 * 60 * 1000;
+
+const MODE_LABELS = { classic: 'Classique', rivalry: 'Rivalité', bombanime: 'BombAnime' };
+
+async function recordFinishedGame({ mode, playersCount, winnerName, duration }) {
+    const entry = {
+        mode,
+        modeLabel: MODE_LABELS[mode] || mode,
+        playersCount: playersCount || 0,
+        winnerName: winnerName || null,
+        duration: duration || 0,
+        endedAt: new Date().toISOString(),
+    };
+
+    recentGames.unshift(entry);
+    if (recentGames.length > RECENT_GAMES_MAX) recentGames.length = RECENT_GAMES_MAX;
+
+    if (gameHistoryTableOk === false) return;
+
+    try {
+        const { error } = await supabase.from('game_history').insert({
+            mode: entry.mode,
+            players_count: entry.playersCount,
+            winner_name: entry.winnerName,
+            duration: entry.duration,
+        });
+        if (error) throw error;
+        gameHistoryTableOk = true;
+    } catch (e) {
+        if (gameHistoryTableOk === null) {
+            console.log('ℹ️ Table game_history absente — historique gardé en mémoire uniquement');
+        }
+        gameHistoryTableOk = false;
+    }
+}
+
+async function loadRecentGamesFromDb() {
+    try {
+        const { data, error } = await supabase
+            .from('game_history')
+            .select('mode, players_count, winner_name, duration, created_at')
+            .order('created_at', { ascending: false })
+            .limit(RECENT_GAMES_MAX);
+        if (error) throw error;
+
+        gameHistoryTableOk = true;
+        recentGames.length = 0;
+        (data || []).forEach(g => recentGames.push({
+            mode: g.mode,
+            modeLabel: MODE_LABELS[g.mode] || g.mode,
+            playersCount: g.players_count || 0,
+            winnerName: g.winner_name || null,
+            duration: g.duration || 0,
+            endedAt: g.created_at,
+        }));
+        console.log(`📊 ${recentGames.length} partie(s) chargée(s) depuis game_history`);
+    } catch (e) {
+        gameHistoryTableOk = false;
+    }
+}
+
+async function getQuestionsCount() {
+    const now = Date.now();
+    if (questionsCountCache.value !== null && now - questionsCountCache.at < QUESTIONS_COUNT_TTL) {
+        return questionsCountCache.value;
+    }
+    try {
+        const { count, error } = await supabase
+            .from('questions')
+            .select('id', { count: 'exact', head: true });
+        if (error) throw error;
+        questionsCountCache = { value: count || 0, at: now };
+    } catch (e) {
+        console.error('⚠️ Comptage des questions impossible:', e.message);
+        questionsCountCache = { value: questionsCountCache.value || 0, at: now };
+    }
+    return questionsCountCache.value;
+}
+
+// 🔑 Code de salon — alphabet sans caractères ambigus (ni 0/O, ni 1/I/L)
+const ROOM_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+function generateRoomCode(length = 4) {
+    let code = '';
+    for (let i = 0; i < length; i++) {
+        code += ROOM_CODE_ALPHABET[Math.floor(Math.random() * ROOM_CODE_ALPHABET.length)];
+    }
+    return code;
+}
+
+// Émet game-ended et enregistre la partie dans l'historique.
+// Toutes les fins de partie passent par ici — ne pas appeler io.emit('game-ended') directement.
+function emitGameEnded(payload) {
+    io.emit('game-ended', payload);
+    recordFinishedGame({
+        mode: gameState.lobbyMode,
+        playersCount: gameState.initialPlayerCount || (payload.playersData || []).length,
+        winnerName: payload.winner?.username || payload.winner?.name || null,
+        duration: payload.duration,
+    });
+}
+
+function emitBombanimeGameEnded(payload) {
+    io.emit('bombanime-game-ended', payload);
+    recordFinishedGame({
+        mode: 'bombanime',
+        playersCount: gameState.initialPlayerCount || (payload.ranking || []).length,
+        winnerName: payload.winner?.username || null,
+        duration: payload.duration,
+    });
+}
+
+// Stats affichées sur la page d'accueil — toutes réelles.
+app.get('/api/home-stats', async (req, res) => {
+    res.json({
+        playersOnline: io ? io.engine.clientsCount : 0,
+        activeRooms: gameState.isActive ? 1 : 0,   // phase 2 : rooms.size
+        inGame: gameState.inProgress ? gameState.players.size : 0,
+        questionsCount: await getQuestionsCount(),
+        recentGames,
+    });
+});
+
 
 // Route pour obtenir l'état actuel du jeu (pour reconnexion)
 app.get('/game/state', (req, res) => {
@@ -317,7 +450,8 @@ const gameState = {
     playerBonuses: new Map(),
     
     // 🆕 Mode Rivalité
-    lobbyMode: 'classic', // 'classic' ou 'rivalry'
+    lobbyMode: 'classic', // 'classic' | 'rivalry' | 'bombanime'
+    roomCode: null,       // 🔑 code du salon ouvert (phase 2 : cle de la Map des rooms)
     teamNames: { 1: 'Team A', 2: 'Team B' },
     teamCounts: { 1: 0, 2: 0 },
     teamScores: { 1: 0, 2: 0 }, // Vies restantes ou points totaux par équipe
@@ -740,6 +874,7 @@ app.get('/admin/game-state', (req, res) => {
 
     res.json({
         isActive: gameState.isActive,
+        roomCode: gameState.roomCode,
         phase: gameState.inProgress ? 'playing' : (gameState.isActive ? 'lobby' : 'idle'),
         players: Array.from(gameState.players.values()).map(p => ({
             username: p.username,
@@ -761,8 +896,11 @@ app.post('/admin/toggle-game', async (req, res) => {
     gameState.isActive = !gameState.isActive;
 
     if (gameState.isActive) {
-        console.log('✅ Jeu activé - Lobby ouvert');
-        
+        // 🔑 Code de salon : généré à l'ouverture, vérifié à chaque jointure.
+        // Phase 2 : ce code deviendra la clé de la Map des rooms.
+        gameState.roomCode = generateRoomCode();
+        console.log(`✅ Jeu activé - Lobby ouvert (code ${gameState.roomCode})`);
+
         // 🔥 FIX: Clear le winnerScreenData pour éviter les données stale
         // (ex: après BombAnime le winner screen data persiste car closeBombanimeWinner n'appelle pas le serveur)
         winnerScreenData = null;
@@ -2726,7 +2864,7 @@ async function endGameByPoints() {
                     rewardsData
                 };
 
-                io.emit('game-ended', {
+                emitGameEnded({
                     winner: winnerData,
                     podium: podium,
                     duration,
@@ -2930,7 +3068,7 @@ async function checkTiebreakerWinner() {
             };
 
 
-            io.emit('game-ended', {
+            emitGameEnded({
                 winner: winnerData,
                 podium: podium,
                 duration,
@@ -3234,7 +3372,7 @@ async function checkRivalryTiebreakerWinner() {
             livesIcon: gameState.livesIcon
         };
 
-        io.emit('game-ended', gameEndedPayload);
+        emitGameEnded(gameEndedPayload);
         console.log('📡 game-ended émis pour rivalry-points-tiebreaker');
 
         resetGameState();
@@ -3331,7 +3469,7 @@ async function endRivalryWithTie() {
         livesIcon: gameState.livesIcon
     };
 
-    io.emit('game-ended', gameEndedPayload);
+    emitGameEnded(gameEndedPayload);
     console.log('📡 game-ended émis pour rivalry-points (égalité)');
 
     resetGameState();
@@ -3386,7 +3524,7 @@ async function endGameWithTie() {
     };
 
 
-    io.emit('game-ended', {
+    emitGameEnded({
         winner: winnerData,
         podium: podium,
         duration,
@@ -3467,7 +3605,7 @@ async function endGame(winner) {
 
         // 🆕 N'envoyer game-ended que s'il y a un gagnant
         if (winner) {
-            io.emit('game-ended', {
+            emitGameEnded({
                 winner: winnerData,
                 duration,
                 totalQuestions: gameState.currentQuestionIndex,
@@ -3562,7 +3700,7 @@ async function endGameRivalry(winningTeam) {
             livesIcon: gameState.livesIcon
         };
         
-        io.emit('game-ended', gameEndedPayload);
+        emitGameEnded(gameEndedPayload);
         console.log('📡 game-ended émis pour rivalry-lives');
         
         
@@ -3691,7 +3829,7 @@ async function endGameRivalryPoints() {
             livesIcon: gameState.livesIcon
         };
         
-        io.emit('game-ended', gameEndedPayload);
+        emitGameEnded(gameEndedPayload);
         console.log('📡 game-ended émis pour rivalry-points');
         
         
@@ -3962,6 +4100,8 @@ const server = app.listen(PORT, () => {
     ║  Mode: ${process.env.NODE_ENV || 'development'}
     ╚═══════════════════════════════════════╝
     `);
+
+    loadRecentGamesFromDb();
 
 });
 
@@ -4713,7 +4853,7 @@ async function endBombanimeGame(winner) {
 
     // 🚀 Émettre le winner IMMÉDIATEMENT pour un affichage instantané
     // Les rewards seront envoyés dans un second event quand calculés
-    io.emit('bombanime-game-ended', {
+    emitBombanimeGameEnded({
         winner: winner ? {
             twitchId: winner.twitchId,
             username: winner.username,
@@ -4846,11 +4986,19 @@ io.on('connection', (socket) => {
     // Rejoindre le lobby
     socket.on('join-lobby', async (data) => {
         if (!gameState.isActive) {
-            return socket.emit('error', { message: 'Le jeu n\'est pas activé' });
+            return socket.emit('error', { message: 'Aucun salon ouvert' });
         }
 
         if (gameState.inProgress) {
             return socket.emit('error', { message: 'Une partie est déjà en cours' });
+        }
+
+        // 🔑 Vérification du code de salon (l'hôte le transmet, il n'a rien à saisir)
+        if (data.code !== undefined && data.code !== null && !data.isHost) {
+            const given = String(data.code).trim().toUpperCase();
+            if (given !== gameState.roomCode) {
+                return socket.emit('error', { message: 'Code de salon invalide', badCode: true });
+            }
         }
         
         // 🔒 Vérifier si ce joueur est déjà en cours de traitement (anti-spam)

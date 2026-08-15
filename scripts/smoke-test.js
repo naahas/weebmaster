@@ -33,7 +33,7 @@ function check(label, ok, extra) {
 
 const WATCHED = [
     'new-question', 'game-started', 'question-results', 'game-ended', 'error', 'lobby-update',
-    'bombanime-game-started', 'bombanime-turn-start', 'bombanime-name-accepted',
+    'bombanime-game-started', 'bombanime-turn-start', 'bombanime-name-accepted', 'bombanime-game-ended',
 ];
 
 function makePlayer(id, name) {
@@ -57,11 +57,22 @@ async function scenarioClassic() {
     const toggle = await post('/admin/toggle-game', { lobbyMode: 'classic' });
     check('ouverture du lobby', toggle.status === 200 && toggle.body.isActive === true);
 
+    const lobby = await get('/admin/game-state');
+    const code = lobby.roomCode;
+    check('code de salon généré', !!code && code.length === 4, code);
+
     const p1 = await makePlayer('smoke-p1', 'Joueur1');
     const p2 = await makePlayer('smoke-p2', 'Joueur2');
     await wait(300);
-    p1.sock.emit('join-lobby', { twitchId: p1.id, username: p1.name });
-    p2.sock.emit('join-lobby', { twitchId: p2.id, username: p2.name });
+
+    // Un mauvais code doit être refusé
+    p1.sock.emit('join-lobby', { twitchId: p1.id, username: p1.name, code: 'ZZZZ' });
+    await wait(400);
+    const refused = p1.seen.find(e => e.evt === 'error' && e.d.badCode);
+    check('mauvais code refusé', !!refused, refused ? refused.d.message : 'aucune erreur reçue');
+
+    p1.sock.emit('join-lobby', { twitchId: p1.id, username: p1.name, code });
+    p2.sock.emit('join-lobby', { twitchId: p2.id, username: p2.name, code });
     await wait(600);
 
     const state = await get('/admin/game-state');
@@ -70,7 +81,8 @@ async function scenarioClassic() {
     const start = await post('/admin/start-game', {});
     check('démarrage de la partie', start.status === 200 && start.body.success, JSON.stringify(start.body).slice(0, 90));
 
-    await wait(2500);
+    // la 1re question dépend d une requête Supabase : marge large
+    await wait(5000);
     const q = p1.seen.find(e => e.evt === 'new-question');
     check('question reçue', !!q, q ? `${q.d.answers?.length} réponses` : 'aucune');
 
@@ -131,6 +143,43 @@ async function scenarioBombanime() {
     await wait(400);
 }
 
+// Partie express (timer 1 s, 1 vie) : personne ne répond, la bombe fait le travail.
+// Sert à vérifier la fin de partie ET l'enregistrement dans l'historique.
+async function scenarioGameEnd() {
+    log('\n── Fin de partie & historique ──');
+
+    await post('/admin/toggle-game', {
+        lobbyMode: 'bombanime', bombanimeSerie: 'Naruto', bombanimeTimer: 1, bombanimeLives: 1,
+    });
+
+    const p1 = await makePlayer('smoke-e1', 'Express1');
+    const p2 = await makePlayer('smoke-e2', 'Express2');
+    await wait(300);
+    p1.sock.emit('join-lobby', { twitchId: p1.id, username: p1.name });
+    p2.sock.emit('join-lobby', { twitchId: p2.id, username: p2.name });
+    await wait(600);
+
+    await post('/admin/start-game', {});
+    await wait(9000); // intro (3 s) + explosions successives
+
+    const ended = [...p1.seen, ...p2.seen].find(e => e.evt === 'bombanime-game-ended');
+    check('partie terminée sur explosion', !!ended, ended?.d?.winner?.username || '');
+
+    p1.sock.close();
+    p2.sock.close();
+    await wait(600);
+}
+
+async function scenarioHomeStats() {
+    log('\n── Stats de l\'accueil ──');
+
+    const stats = await get('/api/home-stats');
+    check('questions comptées', stats.questionsCount > 0, stats.questionsCount + ' questions');
+    check('salons actifs cohérents', typeof stats.activeRooms === 'number', 'activeRooms=' + stats.activeRooms);
+    check('historique alimenté par les parties jouées', Array.isArray(stats.recentGames) && stats.recentGames.length > 0,
+        (stats.recentGames || []).map(g => g.modeLabel).join(', ') || 'vide');
+}
+
 (async () => {
     try {
         await get('/admin/game-state');
@@ -141,6 +190,8 @@ async function scenarioBombanime() {
 
     await scenarioClassic();
     await scenarioBombanime();
+    await scenarioGameEnd();
+    await scenarioHomeStats();
 
     log(failures ? `\n${failures} échec(s)` : '\n✨ Tout est vert');
     process.exit(failures ? 1 : 0);

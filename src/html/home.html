@@ -35,76 +35,167 @@
 
         <!-- Main Container -->
         <div class="main-container">
-            <!-- Logo & Title (Non connecté et jeu non actif) -->
-            <div class="header-section welcome-screen" v-if="!isAuthenticated && !gameInProgress">
-                <h1 class="logo-title">
-                    <span class="neon-text">Shonen</span><span class="neon-text-alt">Master</span>
-                </h1>
+            <!-- ============================================
+                 🆕 v2 — ACCUEIL (pseudo → mode → créer/rejoindre)
+                 ============================================ -->
+            <div class="v2-home" v-if="!hasJoined && !gameInProgress && !gameEnded">
 
-                <!-- 🆕 v2 : identité invité (pseudo), remplace la connexion Twitch -->
-                <div class="pseudo-form">
-                    <input
-                        type="text"
-                        class="pseudo-input"
-                        v-model="pseudoInput"
-                        @keyup.enter="setPseudo"
-                        placeholder="Ton pseudo"
-                        maxlength="16"
-                        autocomplete="off"
-                        spellcheck="false">
-                    <div class="pseudo-error" v-if="pseudoError">{{ pseudoError }}</div>
-                    <button class="btn-primary floating" @click="setPseudo">
-                        <span>Jouer</span>
-                    </button>
-                </div>
-            </div>
+                <header class="v2-topbar">
+                    <div class="v2-logo">Shonen<b>Master</b></div>
+                    <div class="v2-identity" v-if="isAuthenticated">
+                        <span class="v2-identity-dot"></span>
+                        <span class="v2-identity-name">{{ username }}</span>
+                        <button class="v2-identity-edit" @click="editPseudo" title="Changer de pseudo">✎</button>
+                    </div>
+                </header>
 
-            <!-- Logo simplifié (Utilisateur authentifié uniquement) -->
-            <div class="header-section" v-if="isAuthenticated && !gameInProgress">
-                <h1 class="logo-title">
-                    <!-- <span class="neon-text">Shonen</span><span class="neon-text-alt">Master</span> -->
-                </h1>
-                <div class="live-badge" v-if="isGameActive && !gameEnded">
-                    <span class="pulse-dot"></span>
-                    <span>EN LIVE</span>
-                </div>
-            </div>
+                <!-- Étape 1 : pseudo -->
+                <section class="v2-gate" v-if="!isAuthenticated">
+                    <h1 class="v2-hero-title">Shonen<b>Master</b></h1>
+                    <p class="v2-hero-sub">Party-games anime, entre potes ou en live</p>
+                    <div class="pseudo-form">
+                        <input
+                            type="text"
+                            class="pseudo-input"
+                            v-model="pseudoInput"
+                            @keyup.enter="setPseudo"
+                            placeholder="Ton pseudo"
+                            maxlength="16"
+                            autocomplete="off"
+                            spellcheck="false">
+                        <div class="pseudo-error" v-if="pseudoError">{{ pseudoError }}</div>
+                        <button class="btn-primary floating" @click="setPseudo">
+                            <span>Jouer</span>
+                        </button>
+                    </div>
+                </section>
 
-            <!-- État: Connecté mais jeu non activé -->
-            <div class="content-section" v-if="!isGameActive && isAuthenticated">
-                <div class="info-card">
-                    <!-- Coins décoratifs -->
-                    <div class="corner-decoration corner-tl"></div>
-                    <div class="corner-decoration corner-tr"></div>
-                    <div class="corner-decoration corner-bl"></div>
-                    <div class="corner-decoration corner-br"></div>
-
-                    <div class="user-welcome">
-                        <div class="avatar-icon">👤</div>
-                        <div>
-                            <p class="welcome-text">Bienvenue,</p>
-                            <h3 class="username">{{ username }}</h3>
+                <!-- Étape 2 : choix du mode + création / jointure -->
+                <section class="v2-play" v-else>
+                    <div class="v2-play-head">
+                        <h2 class="v2-section-title">Choisis ton mode</h2>
+                        <div class="v2-live" v-if="isGameActive">
+                            <span class="v2-live-dot"></span>
+                            <span>un salon est ouvert</span>
                         </div>
                     </div>
 
-                    <div class="separator"></div>
+                    <div class="v2-modes">
+                        <button
+                            v-for="m in modes"
+                            :key="m.id"
+                            class="v2-mode-card"
+                            :class="['mode-' + m.id, { selected: selectedMode === m.id }]"
+                            @click="selectedMode = m.id">
+                            <div class="v2-mode-img" :style="{ backgroundImage: 'url(' + m.img + ')' }"></div>
+                            <div class="v2-mode-shade"></div>
+                            <div class="v2-mode-players">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                                </svg>
+                                {{ m.players }}
+                            </div>
+                            <div class="v2-mode-meta">
+                                <span class="v2-mode-kind">{{ m.kind }}</span>
+                                <span class="v2-mode-name">{{ m.name }}</span>
+                            </div>
+                        </button>
+                    </div>
 
-                    <h2>En préparation...</h2>
-                    <p>La partie commence bientôt !</p>
+                    <p class="v2-mode-desc">{{ currentMode.desc }}</p>
 
-                    <!-- Katana Slash Loader -->
-                    <div class="katana-container">
-                        <div class="katana-line"></div>
+                    <div class="v2-actions">
+                        <button class="v2-btn v2-btn-primary" @click="createRoom" :disabled="creatingRoom">
+                            {{ creatingRoom ? 'Création...' : 'Créer un salon' }}
+                        </button>
+                        <button class="v2-btn v2-btn-ghost" @click="openJoin">Rejoindre avec un code</button>
+                    </div>
+                    <div class="v2-action-error" v-if="createError">{{ createError }}</div>
+                </section>
+
+                <!-- Bandeau stats + dernières parties -->
+                <footer class="v2-stats" v-if="isAuthenticated">
+                    <div class="v2-stat">
+                        <span class="v2-stat-value">{{ homeStats.playersOnline }}</span>
+                        <span class="v2-stat-label">en ligne</span>
+                    </div>
+                    <div class="v2-stat">
+                        <span class="v2-stat-value">{{ homeStats.activeRooms }}</span>
+                        <span class="v2-stat-label">salon{{ homeStats.activeRooms > 1 ? 's' : '' }}</span>
+                    </div>
+                    <div class="v2-stat">
+                        <span class="v2-stat-value">{{ homeStats.questionsCount }}</span>
+                        <span class="v2-stat-label">questions</span>
+                    </div>
+
+                    <div class="v2-recent" v-if="homeStats.recentGames && homeStats.recentGames.length">
+                        <span class="v2-recent-label">Dernières parties</span>
+                        <div class="v2-recent-list">
+                            <div class="v2-recent-item" v-for="(g, i) in homeStats.recentGames.slice(0, 4)" :key="i">
+                                <span class="v2-recent-mode" :class="'mode-' + g.mode">{{ g.modeLabel }}</span>
+                                <span class="v2-recent-winner" v-if="g.winnerName">🏆 {{ g.winnerName }}</span>
+                                <span class="v2-recent-players">{{ g.playersCount }} j.</span>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
+
+                <!-- Modale : rejoindre avec un code -->
+                <div class="v2-modal-backdrop" v-if="showJoin" @click.self="showJoin = false">
+                    <div class="v2-modal">
+                        <button class="v2-modal-close" @click="showJoin = false">×</button>
+
+                        <template v-if="joinStep === 'code'">
+                            <div class="v2-modal-title">Rejoindre un salon</div>
+                            <div class="v2-modal-sub">Demande le code à l'hôte</div>
+                            <input
+                                type="text"
+                                class="v2-code-input"
+                                v-model="joinCode"
+                                @keyup.enter="joinRoom"
+                                placeholder="CODE"
+                                maxlength="4"
+                                autocomplete="off"
+                                spellcheck="false">
+                            <div class="v2-modal-error" v-if="joinError">{{ joinError }}</div>
+                            <button class="v2-btn v2-btn-primary" @click="joinRoom">Rejoindre</button>
+                        </template>
+
+                        <template v-else>
+                            <div class="v2-modal-title">Choisis ton camp</div>
+                            <div class="v2-modal-sub">Mode Rivalité</div>
+                            <div class="v2-team-choice">
+                                <button class="v2-team v2-team-1" @click="joinRoom(1)">{{ teamNames[1] }}</button>
+                                <button class="v2-team v2-team-2" @click="joinRoom(2)">{{ teamNames[2] }}</button>
+                            </div>
+                            <div class="v2-modal-error" v-if="joinError">{{ joinError }}</div>
+                        </template>
                     </div>
                 </div>
-
-                <button class="btn-secondary" @click="logout">
-                    Déconnexion
-                </button>
             </div>
 
+
             <!-- État: Lobby (jeu activé, en attente) -->
-            <div class="content-section" v-if="isGameActive && !gameInProgress && isAuthenticated && !gameStartedOnServer">
+            <div class="content-section" v-if="isGameActive && !gameInProgress && isAuthenticated && !gameStartedOnServer && hasJoined">
+
+                <!-- 🆕 v2 — Barre du salon : code partageable + contrôles de l'hôte -->
+                <div class="v2-roombar">
+                    <div class="v2-roombar-code" v-if="roomCode">
+                        <span class="v2-roombar-label">Code du salon</span>
+                        <button class="v2-roombar-value" @click="copyRoomCode" title="Copier">
+                            {{ roomCode }}
+                            <span class="v2-roombar-copied" v-if="codeCopied">copié</span>
+                        </button>
+                    </div>
+                    <div class="v2-roombar-actions" v-if="isHost">
+                        <button class="v2-btn v2-btn-primary v2-btn-sm" @click="hostStartGame" :disabled="startingGame">
+                            {{ startingGame ? 'Lancement...' : 'Démarrer' }}
+                        </button>
+                        <button class="v2-btn v2-btn-ghost v2-btn-sm" @click="hostCloseRoom">Fermer</button>
+                    </div>
+                    <div class="v2-roombar-hint" v-else>En attente de l'hôte…</div>
+                </div>
+                <div class="v2-action-error" v-if="hostError">{{ hostError }}</div>
 
                 <!-- Mode Rivalité: Modal choix d'équipe -->
                 <div class="rivalry-modal" v-if="lobbyMode === 'rivalry'">

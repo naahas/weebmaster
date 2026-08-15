@@ -17,6 +17,30 @@ createApp({
             joinPending: false,
             lobbyShakeError: false,
 
+            // 🆕 v2 — Accueil : choix du mode, création / jointure de salon
+            modes: [
+                { id: 'classic',   name: 'Classique', kind: 'Solo',   players: '∞',  img: 'gilga.png',
+                  desc: "Quiz anime au format QCM, en mode Vies ou Points. Difficulté et séries réglables, bonus et défis en cours de partie." },
+                { id: 'rivalry',   name: 'Rivalité',  kind: 'Équipe', players: '∞',  img: 'shark.png',
+                  desc: "Le même quiz, mais deux équipes s'affrontent. Chaque camp cumule les vies ou les points de ses joueurs." },
+                { id: 'bombanime', name: 'BombAnime', kind: 'Solo',   players: '13', img: 'lambo2.png',
+                  desc: "Une bombe tourne de joueur en joueur : cite un personnage de la série avant qu'elle explose. Le dernier debout gagne." },
+            ],
+            selectedMode: localStorage.getItem('lastMode') || 'classic',
+            homeStats: { playersOnline: 0, activeRooms: 0, questionsCount: 0, recentGames: [] },
+            homeStatsTimer: null,
+            creatingRoom: false,
+            createError: '',
+            showJoin: false,
+            joinStep: 'code',
+            joinCode: '',
+            joinError: '',
+            roomCode: sessionStorage.getItem('roomCode') || null,
+            codeCopied: false,
+            isHost: sessionStorage.getItem('isHost') === 'true',
+            startingGame: false,
+            hostError: '',
+
             clickSound: null,
             sounds: {}, // 💣 Sons BombAnime
             soundMuted: localStorage.getItem('soundMuted') === 'true',
@@ -244,6 +268,12 @@ createApp({
         await this.checkAuth();
         await this.restoreGameState();
 
+        // 🆕 v2 : stats de l accueil
+        this.loadHomeStats();
+        this.homeStatsTimer = setInterval(() => {
+            if (!this.gameInProgress && !this.hasJoined) this.loadHomeStats();
+        }, 20000);
+
         this.initParticles();
         this.initSocket();
         
@@ -319,6 +349,11 @@ createApp({
     },
 
     computed: {
+
+        // 🆕 v2 — mode actuellement sélectionné sur l'accueil
+        currentMode() {
+            return this.modes.find(m => m.id === this.selectedMode) || this.modes[0];
+        },
 
         // 🎌 Au moins une ligne de suggestion non vide
         hasValidPlayerSuggestions() {
@@ -653,6 +688,172 @@ createApp({
         },
 
         // 🆕 v2 : valide le pseudo saisi et ouvre la session invité
+        // ========== 🆕 v2 — Accueil : salons ==========
+
+        async loadHomeStats() {
+            try {
+                const res = await fetch('/api/home-stats');
+                if (res.ok) this.homeStats = await res.json();
+            } catch (e) { /* silencieux : l'accueil reste utilisable sans les stats */ }
+        },
+
+        editPseudo() {
+            this.isAuthenticated = false;
+            this.pseudoInput = this.username;
+        },
+
+        // L'hôte ouvre un salon dans le mode sélectionné, puis le rejoint.
+        async createRoom() {
+            if (this.creatingRoom) return;
+            this.creatingRoom = true;
+            this.createError = '';
+
+            try {
+                if (this.isGameActive) {
+                    this.createError = 'Un salon est déjà ouvert — rejoins-le avec son code.';
+                    return;
+                }
+
+                localStorage.setItem('lastMode', this.selectedMode);
+
+                const res = await fetch('/admin/toggle-game', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lobbyMode: this.selectedMode }),
+                });
+                const data = await res.json();
+
+                if (!data.isActive) {
+                    this.createError = "Le salon n'a pas pu être ouvert.";
+                    return;
+                }
+
+                this.isHost = true;
+                sessionStorage.setItem('isHost', 'true');
+                this.lobbyMode = this.selectedMode;
+                await this.fetchRoomCode();
+
+                // En Rivalité l'hôte choisit d'abord son camp dans le salon
+                if (this.selectedMode !== 'rivalry') {
+                    this.socket.emit('join-lobby', {
+                        twitchId: this.twitchId,
+                        username: this.username,
+                        isHost: true,
+                    });
+                    this.hasJoined = true;
+                    localStorage.setItem('hasJoinedLobby', 'true');
+                    localStorage.setItem('lobbyTwitchId', this.twitchId);
+                }
+            } catch (e) {
+                this.createError = 'Erreur de connexion au serveur.';
+            } finally {
+                this.creatingRoom = false;
+            }
+        },
+
+        async fetchRoomCode() {
+            try {
+                const res = await fetch('/admin/game-state');
+                const data = await res.json();
+                if (data.roomCode) {
+                    this.roomCode = data.roomCode;
+                    sessionStorage.setItem('roomCode', data.roomCode);
+                }
+            } catch (e) { /* le code reste affiché vide, sans bloquer */ }
+        },
+
+        openJoin() {
+            this.joinError = '';
+            this.joinStep = 'code';
+            this.joinCode = '';
+            this.showJoin = true;
+        },
+
+        joinRoom(team) {
+            const code = (this.joinCode || '').trim().toUpperCase();
+
+            if (code.length < 4) {
+                this.joinError = 'Code à 4 caractères';
+                return;
+            }
+            if (!this.isGameActive) {
+                this.joinError = 'Aucun salon ouvert pour le moment';
+                return;
+            }
+
+            // Rivalité : il faut un camp avant de rejoindre
+            if (this.lobbyMode === 'rivalry' && !team) {
+                this.joinError = '';
+                this.joinStep = 'team';
+                return;
+            }
+
+            if (team) this.selectedTeam = team;
+            sessionStorage.removeItem('wasKicked');
+            this.joinError = '';
+
+            this.socket.emit('join-lobby', {
+                twitchId: this.twitchId,
+                username: this.username,
+                code,
+                team: this.lobbyMode === 'rivalry' ? this.selectedTeam : null,
+            });
+
+            // Le serveur répond par 'player-joined'/'lobby-update' en cas de succès,
+            // ou par 'error' (badCode) — géré dans le handler 'error'.
+            this.pendingJoinCode = code;
+            setTimeout(() => {
+                if (this.pendingJoinCode === code && !this.joinError) {
+                    this.hasJoined = true;
+                    this.showJoin = false;
+                    this.roomCode = code;
+                    sessionStorage.setItem('roomCode', code);
+                    localStorage.setItem('hasJoinedLobby', 'true');
+                    localStorage.setItem('lobbyTwitchId', this.twitchId);
+                }
+            }, 450);
+        },
+
+        copyRoomCode() {
+            if (!this.roomCode) return;
+            navigator.clipboard?.writeText(this.roomCode);
+            this.codeCopied = true;
+            setTimeout(() => { this.codeCopied = false; }, 1500);
+        },
+
+        async hostStartGame() {
+            if (this.startingGame) return;
+            this.startingGame = true;
+            this.hostError = '';
+            try {
+                const res = await fetch('/admin/start-game', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({}),
+                });
+                const data = await res.json();
+                if (!data.success) this.hostError = data.error || 'Démarrage impossible';
+            } catch (e) {
+                this.hostError = 'Erreur de connexion au serveur.';
+            } finally {
+                this.startingGame = false;
+            }
+        },
+
+        async hostCloseRoom() {
+            try {
+                await fetch('/admin/toggle-game', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({}),
+                });
+            } catch (e) { /* le serveur émet game-deactivated de toute façon */ }
+            this.isHost = false;
+            this.roomCode = null;
+            sessionStorage.removeItem('isHost');
+            sessionStorage.removeItem('roomCode');
+        },
+
         setPseudo() {
             const name = (this.pseudoInput || '').trim();
 
@@ -1448,6 +1649,13 @@ createApp({
             });
 
             this.socket.on('error', (data) => {
+                // 🆕 v2 : code de salon refusé → on reste sur la modale
+                if (data.badCode) {
+                    this.joinError = data.message || 'Code de salon invalide';
+                    this.pendingJoinCode = null;
+                    this.hasJoined = false;
+                    return;
+                }
                 // 🆕 Si canSpectate = true, le joueur n'est plus dans la partie
                 if (data.canSpectate) {
                     console.log('👀 Passage en mode spectateur - plus dans la partie');
@@ -2731,6 +2939,13 @@ createApp({
 
             localStorage.removeItem('hasJoinedLobby');
             localStorage.removeItem('lobbyTwitchId');
+
+            // 🆕 v2 : on quitte le salon et on revient à l'accueil
+            this.isHost = false;
+            this.roomCode = null;
+            sessionStorage.removeItem('isHost');
+            sessionStorage.removeItem('roomCode');
+            this.loadHomeStats();
 
             // 🆕 Demander l'état actuel du serveur pour rafraîchir le compteur
             this.refreshGameState();
