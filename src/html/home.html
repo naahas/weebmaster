@@ -46,35 +46,80 @@
         <div class="main-container">
             <!-- ============================================
                  🆕 v2 — ACCUEIL
-                 gate (pseudo) → hub (créer/rejoindre) → modes | join
+                 hub (créer/rejoindre) → modes | join
                  ============================================ -->
             <div class="v2-home" v-if="!hasJoined && !gameInProgress && !gameEnded">
 
                 <header class="v2-topbar">
-                    <div class="v2-logo">Shonen<b>Master</b></div>
-                    <div class="v2-identity" v-if="isAuthenticated">
+                    <button class="v2-logo" @click="reloadHome" title="Accueil">
+                        <span class="v2-logo-text">SM</span>
+                        <span class="v2-logo-ring"></span>
+                    </button>
+                    <button class="v2-identity" @click="editPseudo" title="Changer de pseudo">
                         <span class="v2-identity-dot"></span>
                         <span class="v2-identity-name">{{ username }}</span>
-                        <button class="v2-identity-edit" @click="editPseudo" title="Changer de pseudo">✎</button>
-                    </div>
+                        <span class="v2-identity-edit">✎</span>
+                    </button>
                 </header>
 
-                <!-- ── Écran 1 : pseudo ───────────────────── -->
-                <section class="v2-gate" v-if="homeScreen === 'gate'">
-                    <h1 class="v2-hero-title">Shonen<b>Master</b></h1>
-
-                    <div class="pseudo-form">
+                <!-- Modale : changer de pseudo -->
+                <div class="v2-pseudo-overlay" v-if="editingPseudo" @click.self="cancelPseudoEdit">
+                    <div class="v2-pseudo-card">
+                        <span class="v2-pseudo-label">Ton pseudo</span>
                         <input
                             type="text"
-                            class="pseudo-input"
+                            class="v2-pseudo-input"
+                            ref="pseudoField"
                             v-model="pseudoInput"
                             @keyup.enter="setPseudo"
-                            placeholder="Ton pseudo"
+                            @keyup.esc="cancelPseudoEdit"
                             maxlength="16"
                             autocomplete="off"
                             spellcheck="false">
-                        <div class="pseudo-error" v-if="pseudoError">{{ pseudoError }}</div>
-                        <button class="v2-btn v2-btn-primary v2-btn-lg" @click="setPseudo">Jouer</button>
+                        <div class="v2-pseudo-error" v-if="pseudoError">{{ pseudoError }}</div>
+                        <div class="v2-pseudo-actions">
+                            <button class="v2-btn v2-btn-ghost v2-btn-sm" @click="rerollPseudo">Au hasard</button>
+                            <button class="v2-btn v2-btn-primary v2-btn-sm" @click="setPseudo">Valider</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Accueil : titre + créer/rejoindre + stats ── -->
+                <section class="v2-hub" v-if="homeScreen === 'hub'">
+                    <h1 class="v2-hero-title">Shonen<b>Master</b></h1>
+
+                    <div class="v2-choices">
+                        <button
+                            class="v2-choice v2-choice-create"
+                            :class="{ dimmed: hubHover === 'join' }"
+                            @mouseenter="hubHover = 'create'" @mouseleave="hubHover = null"
+                            @click="goToModes">
+                            <span class="v2-choice-glow"></span>
+                            <div class="v2-choice-body">
+                                <span class="v2-choice-kicker">Hôte</span>
+                                <span class="v2-choice-title">Créer</span>
+                                <span class="v2-choice-sub">un salon</span>
+                            </div>
+                            <span class="v2-choice-arrow">→</span>
+                        </button>
+
+                        <button
+                            class="v2-choice v2-choice-join"
+                            :class="{ dimmed: hubHover === 'create' }"
+                            @mouseenter="hubHover = 'join'" @mouseleave="hubHover = null"
+                            @click="openJoin">
+                            <span class="v2-choice-glow"></span>
+                            <div class="v2-choice-body">
+                                <span class="v2-choice-kicker">Invité</span>
+                                <span class="v2-choice-title">Rejoindre</span>
+                                <span class="v2-choice-sub">avec un code</span>
+                            </div>
+                            <span class="v2-choice-arrow">→</span>
+                        </button>
+                    </div>
+
+                    <div class="v2-hub-live" v-if="isGameActive">
+                        <span class="v2-live-dot"></span> un salon est ouvert
                     </div>
 
                     <!-- Stats générales -->
@@ -109,41 +154,6 @@
                     </div>
                 </section>
 
-                <!-- ── Écran 2 : créer / rejoindre ─────────── -->
-                <section class="v2-hub" v-else-if="homeScreen === 'hub'">
-                    <div class="v2-choices" :class="{ hovering: hubHover !== null }">
-                        <button
-                            class="v2-choice v2-choice-create"
-                            :class="{ dimmed: hubHover === 'join' }"
-                            @mouseenter="hubHover = 'create'" @mouseleave="hubHover = null"
-                            @click="goToModes">
-                            <div class="v2-choice-art"></div>
-                            <div class="v2-choice-body">
-                                <span class="v2-choice-kicker">Hôte</span>
-                                <span class="v2-choice-title">Créer</span>
-                                <span class="v2-choice-sub">un salon</span>
-                            </div>
-                            <span class="v2-choice-arrow">→</span>
-                        </button>
-
-                        <button
-                            class="v2-choice v2-choice-join"
-                            :class="{ dimmed: hubHover === 'create' }"
-                            @mouseenter="hubHover = 'join'" @mouseleave="hubHover = null"
-                            @click="openJoin">
-                            <div class="v2-choice-art"></div>
-                            <div class="v2-choice-body">
-                                <span class="v2-choice-kicker">Invité</span>
-                                <span class="v2-choice-title">Rejoindre</span>
-                                <span class="v2-choice-sub">avec un code</span>
-                            </div>
-                            <span class="v2-choice-arrow">→</span>
-                        </button>
-                    </div>
-                    <div class="v2-hub-live" v-if="isGameActive">
-                        <span class="v2-live-dot"></span> un salon est ouvert
-                    </div>
-                </section>
 
                 <!-- ── Écran 3 : choix du mode ─────────────── -->
                 <section class="v2-modes-screen" v-else-if="homeScreen === 'modes'">

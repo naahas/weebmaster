@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShonenMaster — Prototypes d'accueil</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Bebas+Neue&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="icon.png">
+    <style>
+        :root {
+            --neon: #FFD700;
+            --accent: #FF8C00;
+            --txt: #ffffff;
+            --txt2: #a0a0a0;
+            --purple: #8b5cf6;
+            --green: #22c55e;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #08080a;
+            color: var(--txt);
+            font-family: 'Poppins', sans-serif;
+            padding: 2.5rem clamp(1rem, 4vw, 3rem) 5rem;
+        }
+
+        .page-head { max-width: 70rem; margin: 0 auto 2.5rem; }
+
+        .page-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.6rem;
+            letter-spacing: 0.03em;
+        }
+
+        .page-sub { color: var(--txt2); font-size: 0.9rem; max-width: 42rem; line-height: 1.6; }
+        .page-sub b { color: var(--neon); font-weight: 600; }
+
+        .protos { max-width: 70rem; margin: 0 auto; display: flex; flex-direction: column; gap: 3.5rem; }
+
+        .proto-head { display: flex; align-items: baseline; gap: 0.8rem; margin-bottom: 0.7rem; }
+
+        .proto-num {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.6rem;
+            color: var(--neon);
+        }
+
+        .proto-name { font-size: 1rem; font-weight: 700; }
+        .proto-note { font-size: 0.78rem; color: var(--txt2); margin-left: auto; text-align: right; max-width: 26rem; }
+
+        /* ── Cadre d'écran ── */
+        .screen {
+            position: relative;
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+            border: 0.09rem solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.9rem;
+            background: radial-gradient(120% 90% at 50% 0%, #14100a 0%, #0c0c0e 45%, #08080a 100%);
+            container-type: inline-size;
+        }
+
+        .aurora, .aurora2 { position: absolute; border-radius: 50%; filter: blur(60px); }
+        .aurora  { width: 46%; height: 80%; top: -18%; left: 8%;  background: radial-gradient(circle, rgba(255,190,40,0.34), transparent 68%); animation: drift1 18s ease-in-out infinite; }
+        .aurora2 { width: 40%; height: 70%; bottom: -20%; right: 6%; background: radial-gradient(circle, rgba(255,120,20,0.26), transparent 68%); animation: drift2 24s ease-in-out infinite; }
+
+        @keyframes drift1 { 0%,100% { transform: none; } 50% { transform: translate(4%, 8%) scale(1.12); } }
+        @keyframes drift2 { 0%,100% { transform: none; } 50% { transform: translate(-5%, -8%) scale(0.9); } }
+
+        .grid {
+            position: absolute; inset: -50%;
+            background-image:
+                linear-gradient(rgba(255,215,0,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,215,0,0.05) 1px, transparent 1px);
+            background-size: 2.4rem 2.4rem;
+            transform: perspective(40rem) rotateX(58deg) translateY(-8%);
+            -webkit-mask-image: radial-gradient(70% 55% at 50% 62%, #000 0%, transparent 78%);
+            mask-image: radial-gradient(70% 55% at 50% 62%, #000 0%, transparent 78%);
+        }
+
+        .vignette { position: absolute; inset: 0; background: radial-gradient(80% 70% at 50% 45%, transparent 40%, rgba(0,0,0,0.72) 100%); }
+
+        .topbar {
+            position: absolute; inset: 0 0 auto 0; z-index: 3;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 3cqw;
+        }
+
+        .logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 4cqw; line-height: 1;
+            background: linear-gradient(135deg, #fff 10%, var(--neon) 55%, var(--accent));
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+        }
+
+        .chip {
+            display: flex; align-items: center; gap: 0.6cqw;
+            padding: 1cqw 2cqw;
+            font-size: 1.7cqw; font-weight: 600; color: var(--txt2);
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 3cqw;
+        }
+
+        .chip .dot { width: 0.8cqw; height: 0.8cqw; border-radius: 50%; background: var(--green); }
+
+        .stage { position: absolute; inset: 0; z-index: 2; display: flex; }
+
+        .title {
+            font-family: 'Bebas Neue', sans-serif;
+            line-height: 0.92; letter-spacing: 0.02em;
+            font-size: 9cqw;
+            text-shadow: 0 0 4cqw rgba(255,190,40,0.22);
+        }
+        .title b { font-weight: inherit; background: linear-gradient(135deg, #ffe066, var(--neon), var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+        .cards { display: flex; gap: 2cqw; }
+
+        .card {
+            position: relative; overflow: hidden;
+            display: flex; flex-direction: column; justify-content: flex-end;
+            padding: 2.4cqw;
+            background: #121214;
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 1.4cqw;
+            transition: transform 0.4s cubic-bezier(.2,.8,.2,1), border-color 0.35s ease, box-shadow 0.4s ease;
+        }
+
+        .card::before {
+            content: ''; position: absolute; inset: 0; opacity: 0.6;
+            transition: opacity 0.4s ease, transform 0.6s ease;
+        }
+        .card.create::before { background: radial-gradient(70% 90% at 22% 8%, rgba(255,190,40,0.32), transparent 70%); }
+        .card.join::before   { background: radial-gradient(70% 90% at 78% 8%, rgba(120,150,255,0.26), transparent 70%); }
+        .card:hover { transform: translateY(-0.6cqw); border-color: rgba(255,215,0,0.5); box-shadow: 0 2cqw 4cqw rgba(255,170,0,0.16); }
+        .card.join:hover { border-color: rgba(140,160,255,0.5); box-shadow: 0 2cqw 4cqw rgba(120,140,255,0.14); }
+        .card:hover::before { opacity: 1; transform: scale(1.08); }
+        .cards:hover .card:not(:hover) { filter: grayscale(0.8) brightness(0.55); opacity: 0.6; }
+
+        .card-kicker { position: relative; font-size: 1.5cqw; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--neon); }
+        .card.join .card-kicker { color: #9db4ff; }
+        .card-title { position: relative; font-family: 'Bebas Neue', sans-serif; font-size: 5cqw; line-height: 1; }
+        .card-sub { position: relative; font-size: 1.6cqw; color: var(--txt2); }
+
+        .stats { display: flex; align-items: center; gap: 4cqw; }
+        .stat { display: flex; flex-direction: column; align-items: center; }
+        .stat-v { font-family: 'Bebas Neue', sans-serif; font-size: 4cqw; line-height: 1; background: linear-gradient(135deg,#ffe066,var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .stat-l { font-size: 1.3cqw; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--txt2); }
+        .sep { width: 1px; height: 3cqw; background: linear-gradient(transparent, rgba(255,255,255,0.16), transparent); }
+
+        /* ── V1 : centré ── */
+        .v1 .stage { flex-direction: column; align-items: center; justify-content: center; gap: 3cqw; }
+        .v1 .cards { width: 62%; }
+        .v1 .card { flex: 1; aspect-ratio: 5 / 3; }
+
+        /* ── V2 : asymétrique ── */
+        .v2 .stage { align-items: center; justify-content: space-between; padding: 0 7cqw; gap: 5cqw; }
+        .v2 .left { display: flex; flex-direction: column; gap: 2.5cqw; }
+        .v2 .title { font-size: 11cqw; }
+        .v2 .stats { gap: 3cqw; }
+        .v2 .cards { flex-direction: column; width: 34%; }
+        .v2 .card { aspect-ratio: 16 / 6; }
+
+        /* ── V3 : bandes larges ── */
+        .v3 .stage { flex-direction: column; align-items: center; justify-content: center; gap: 2.5cqw; padding: 0 6cqw; }
+        .v3 .cards { flex-direction: column; width: 100%; gap: 1.4cqw; }
+        .v3 .card { aspect-ratio: auto; height: 9cqw; flex-direction: row; align-items: center; gap: 2cqw; padding: 0 3cqw; }
+        .v3 .card-title { font-size: 4.4cqw; }
+        .v3 .card-sub { margin-left: auto; }
+
+        /* ── V4 : arche ── */
+        .v4 .stage { flex-direction: column; align-items: center; justify-content: center; gap: 2.5cqw; }
+        .v4 .cards { align-items: flex-end; }
+        .v4 .card { width: 22cqw; aspect-ratio: 3 / 4; }
+        .v4 .card.create { width: 26cqw; aspect-ratio: 3 / 3.4; }
+        .v4 .stats { margin-top: 1cqw; }
+
+        .footer-note { max-width: 70rem; margin: 3rem auto 0; font-size: 0.8rem; color: var(--txt2); }
+        .footer-note a { color: var(--neon); }
+    </style>
+</head>
+
+<body>
+    <div class="page-head">
+        <h1 class="page-title">Prototypes d'accueil</h1>
+        <p class="page-sub">
+            Quatre mises en page pour le même contenu : logo, pseudo, titre, les deux actions et les stats.
+            Le fond, les couleurs et les effets de survol sont identiques partout — <b>seule la composition change</b>.
+            Survole les cartes pour voir le comportement. Dis-moi le numéro que tu préfères.
+        </p>
+    </div>
+
+    <div class="protos">
+
+        <!-- V1 -->
+        <section>
+            <div class="proto-head">
+                <span class="proto-num">01</span>
+                <span class="proto-name">Centré</span>
+                <span class="proto-note">La version actuelle. Lecture évidente, très symétrique — mais le titre et les cartes se disputent le centre.</span>
+            </div>
+            <div class="screen v1">
+                <div class="aurora"></div><div class="aurora2"></div><div class="grid"></div><div class="vignette"></div>
+                <div class="topbar"><div class="logo">SM</div><div class="chip"><span class="dot"></span>Shinobi427 ✎</div></div>
+                <div class="stage">
+                    <h2 class="title">Shonen<b>Master</b></h2>
+                    <div class="cards">
+                        <div class="card create"><span class="card-kicker">Hôte</span><span class="card-title">Créer</span><span class="card-sub">un salon</span></div>
+                        <div class="card join"><span class="card-kicker">Invité</span><span class="card-title">Rejoindre</span><span class="card-sub">avec un code</span></div>
+                    </div>
+                    <div class="stats">
+                        <div class="stat"><span class="stat-v">12</span><span class="stat-l">en ligne</span></div><span class="sep"></span>
+                        <div class="stat"><span class="stat-v">3</span><span class="stat-l">salons</span></div><span class="sep"></span>
+                        <div class="stat"><span class="stat-v">983</span><span class="stat-l">questions</span></div><span class="sep"></span>
+                        <div class="stat"><span class="stat-v">47</span><span class="stat-l">parties</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- V2 -->
+        <section>
+            <div class="proto-head">
+                <span class="proto-num">02</span>
+                <span class="proto-name">Asymétrique</span>
+                <span class="proto-note">Titre géant à gauche, actions empilées à droite. Le plus « identité de marque » : le nom respire et occupe l'écran.</span>
+            </div>
+            <div class="screen v2">
+                <div class="aurora"></div><div class="aurora2"></div><div class="grid"></div><div class="vignette"></div>
+                <div class="topbar"><div class="logo">SM</div><div class="chip"><span class="dot"></span>Shinobi427 ✎</div></div>
+                <div class="stage">
+                    <div class="left">
+                        <h2 class="title">Shonen<b>Master</b></h2>
+                        <div class="stats">
+                            <div class="stat"><span class="stat-v">12</span><span class="stat-l">en ligne</span></div><span class="sep"></span>
+                            <div class="stat"><span class="stat-v">3</span><span class="stat-l">salons</span></div><span class="sep"></span>
+                            <div class="stat"><span class="stat-v">983</span><span class="stat-l">questions</span></div><span class="sep"></span>
+                            <div class="stat"><span class="stat-v">47</span><span class="stat-l">parties</span></div>
+                        </div>
+                    </div>
+                    <div class="cards">
+                        <div class="card create"><span class="card-kicker">Hôte</span><span class="card-title">Créer</span><span class="card-sub">un salon</span></div>
+                        <div class="card join"><span class="card-kicker">Invité</span><span class="card-title">Rejoindre</span><span class="card-sub">avec un code</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- V3 -->
+        <section>
+            <div class="proto-head">
+                <span class="proto-num">03</span>
+                <span class="proto-name">Bandes larges</span>
+                <span class="proto-note">Deux bandes pleine largeur sous le titre. Très lisible, cible énorme au clic, et ça tombe tout seul en mobile.</span>
+            </div>
+            <div class="screen v3">
+                <div class="aurora"></div><div class="aurora2"></div><div class="grid"></div><div class="vignette"></div>
+                <div class="topbar"><div class="logo">SM</div><div class="chip"><span class="dot"></span>Shinobi427 ✎</div></div>
+                <div class="stage">
+                    <h2 class="title">Shonen<b>Master</b></h2>
+                    <div class="cards">
+                        <div class="card create"><span class="card-kicker">Hôte</span><span class="card-title">Créer</span><span class="card-sub">un salon</span></div>
+                        <div class="card join"><span class="card-kicker">Invité</span><span class="card-title">Rejoindre</span><span class="card-sub">avec un code</span></div>
+                    </div>
+                    <div class="stats">
+                        <div class="stat"><span class="stat-v">12</span><span class="stat-l">en ligne</span></div><span class="sep"></span>
+                        <div class="stat"><span class="stat-v">3</span><span class="stat-l">salons</span></div><span class="sep"></span>
+                        <div class="stat"><span class="stat-v">983</span><span class="stat-l">questions</span></div><span class="sep"></span>
+                        <div class="stat"><span class="stat-v">47</span><span class="stat-l">parties</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- V4 -->
+        <section>
+            <div class="proto-head">
+                <span class="proto-num">04</span>
+                <span class="proto-name">Arche</span>
+                <span class="proto-note">Cartes verticales de tailles inégales : « Créer » domine, « Rejoindre » reste secondaire. Hiérarchie claire, plus proche d'un menu de jeu.</span>
+            </div>
+            <div class="screen v4">
+                <div class="aurora"></div><div class="aurora2"></div><div class="grid"></div><div class="vignette"></div>
+                <div class="topbar"><div class="logo">SM</div><div class="chip"><span class="dot"></span>Shinobi427 ✎</div></div>
+                <div class="stage">
+                    <h2 class="title">Shonen<b>Master</b></h2>
+                    <div class="cards">
+                        <div class="card create"><span class="card-kicker">Hôte</span><span class="card-title">Créer</span><span class="card-sub">un salon</span></div>
+                        <div class="card join"><span class="card-kicker">Invité</span><span class="card-title">Rejoindre</span><span class="card-sub">avec un code</span></div>
+                    </div>
+                    <div class="stats">
+                        <div class="stat"><span class="stat-v">12</span><span class="stat-l">en ligne</span></div><span class="sep"></span>
+                        <div class="stat"><span class="stat-v">3</span><span class="stat-l">salons</span></div><span class="sep"></span>
+                        <div class="stat"><span class="stat-v">983</span><span class="stat-l">questions</span></div><span class="sep"></span>
+                        <div class="stat"><span class="stat-v">47</span><span class="stat-l">parties</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <p class="footer-note">
+        Page de travail, hors du jeu. Retour au site : <a href="/">/</a>
+    </p>
+</body>
+
+</html>

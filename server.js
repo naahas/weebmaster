@@ -858,6 +858,11 @@ function getEliminatedCount() {
 
 
 
+// 🧪 Page de travail : prototypes de mise en page de l'accueil
+app.get('/prototypes', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes.html');
+});
+
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/src/html/home.html');
 });

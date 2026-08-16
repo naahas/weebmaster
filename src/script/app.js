@@ -27,7 +27,8 @@ createApp({
                   desc: "La bombe tourne. Cite un perso avant qu'elle explose." },
             ],
             selectedMode: localStorage.getItem('lastMode') || 'classic',
-            homeScreen: 'gate',   // gate | hub | modes | join
+            homeScreen: 'hub',    // hub | modes | join
+            editingPseudo: false,
             hubHover: null,
             homeStats: { playersOnline: 0, activeRooms: 0, questionsCount: 0, gamesPlayed: 0, recentGames: [] },
             homeStatsTimer: null,
@@ -665,15 +666,24 @@ createApp({
         // ========== Authentification ==========
         // 🆕 v2 : identité invité stockée en localStorage (plus de compte, plus d'OAuth).
         // `twitchId` garde son nom sur le fil socket pour l'instant — renommage en playerId en phase 2.
+        // 🆕 v2 : identité invité. Un pseudo est attribué automatiquement à l'arrivée —
+        // le joueur peut le changer d'un clic en haut à droite, jamais bloqué par un formulaire.
         async checkAuth() {
-            const savedId = localStorage.getItem('playerId');
-            const savedName = localStorage.getItem('pseudo');
+            let playerId = localStorage.getItem('playerId');
+            let name = localStorage.getItem('pseudo');
 
-            if (!savedId || !savedName) return;
+            if (!playerId) {
+                playerId = this.makePlayerId();
+                localStorage.setItem('playerId', playerId);
+            }
+            if (!name) {
+                name = this.randomPseudo();
+                localStorage.setItem('pseudo', name);
+            }
 
-            this.twitchId = savedId;
-            this.username = savedName;
-            this.pseudoInput = savedName;
+            this.twitchId = playerId;
+            this.username = name;
+            this.pseudoInput = name;
             this.isAuthenticated = true;
             this.homeScreen = 'hub';
 
@@ -683,6 +693,38 @@ createApp({
                     username: this.username
                 });
             }
+        },
+
+        makePlayerId() {
+            return crypto.randomUUID
+                ? crypto.randomUUID()
+                : 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+        },
+
+        // Pseudo auto : un mot du folklore anime + un nombre
+        randomPseudo() {
+            const words = [
+                'Shinobi', 'Kitsune', 'Senpai', 'Hokage', 'Samurai', 'Ronin', 'Yokai', 'Nakama',
+                'Katana', 'Ramen', 'Kaiju', 'Otaku', 'Sensei', 'Onigiri', 'Mecha', 'Tanuki',
+                'Bushido', 'Shogun', 'Kunai', 'Sakura', 'Tengu', 'Oni', 'Zanpakuto', 'Haki',
+            ];
+            const word = words[Math.floor(Math.random() * words.length)];
+            return word + Math.floor(10 + Math.random() * 990);
+        },
+
+        rerollPseudo() {
+            this.pseudoInput = this.randomPseudo();
+            this.pseudoError = '';
+        },
+
+        cancelPseudoEdit() {
+            this.editingPseudo = false;
+            this.pseudoError = '';
+            this.pseudoInput = this.username;
+        },
+
+        reloadHome() {
+            window.location.reload();
         },
 
         // 🆕 v2 : valide le pseudo saisi et ouvre la session invité
@@ -718,9 +760,10 @@ createApp({
         },
 
         editPseudo() {
-            this.isAuthenticated = false;
-            this.homeScreen = 'gate';
             this.pseudoInput = this.username;
+            this.pseudoError = '';
+            this.editingPseudo = true;
+            this.$nextTick(() => this.$refs.pseudoField?.select());
         },
 
         // L'hôte ouvre un salon dans le mode sélectionné, puis le rejoint.
@@ -900,7 +943,7 @@ createApp({
 
             let playerId = localStorage.getItem('playerId');
             if (!playerId) {
-                playerId = (crypto.randomUUID ? crypto.randomUUID() : 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2));
+                playerId = this.makePlayerId();
                 localStorage.setItem('playerId', playerId);
             }
             localStorage.setItem('pseudo', name);
@@ -908,7 +951,7 @@ createApp({
             this.twitchId = playerId;
             this.username = name;
             this.isAuthenticated = true;
-            this.homeScreen = 'hub';
+            this.editingPseudo = false;
 
             if (this.socket && this.socket.connected) {
                 this.socket.emit('register-authenticated', {
