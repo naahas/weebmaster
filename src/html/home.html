@@ -86,7 +86,43 @@
 
                 <!-- ── Accueil : titre + créer/rejoindre + stats ── -->
                 <section class="v2-hub" v-if="homeScreen === 'hub'">
-                    <h1 class="v2-hero-title">Shonen<b>Master</b></h1>
+                    <div class="v2-hub-left">
+                        <h1 class="v2-hero-title">Shonen<b>Master</b></h1>
+                        <div class="v2-hub-live" v-if="isGameActive">
+                            <span class="v2-live-dot"></span> un salon est ouvert
+                        </div>
+    
+                        <!-- Stats générales -->
+                        <div class="v2-bigstats">
+                            <div class="v2-bigstat">
+                                <span class="v2-bigstat-value">{{ homeStats.playersOnline }}</span>
+                                <span class="v2-bigstat-label">en ligne</span>
+                            </div>
+                            <span class="v2-bigstat-sep"></span>
+                            <div class="v2-bigstat">
+                                <span class="v2-bigstat-value">{{ homeStats.activeRooms }}</span>
+                                <span class="v2-bigstat-label">salons</span>
+                            </div>
+                            <span class="v2-bigstat-sep"></span>
+                            <div class="v2-bigstat">
+                                <span class="v2-bigstat-value">{{ homeStats.questionsCount }}</span>
+                                <span class="v2-bigstat-label">questions</span>
+                            </div>
+                            <span class="v2-bigstat-sep"></span>
+                            <div class="v2-bigstat">
+                                <span class="v2-bigstat-value">{{ homeStats.gamesPlayed }}</span>
+                                <span class="v2-bigstat-label">parties</span>
+                            </div>
+                        </div>
+    
+                        <div class="v2-ticker" v-if="homeStats.recentGames && homeStats.recentGames.length">
+                            <div class="v2-ticker-item" v-for="(g, i) in homeStats.recentGames.slice(0, 3)" :key="i">
+                                <span class="v2-ticker-mode" :class="'mode-' + g.mode">{{ g.modeLabel }}</span>
+                                <span v-if="g.winnerName">{{ g.winnerName }}</span>
+                                <span class="v2-ticker-players">{{ g.playersCount }}j</span>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="v2-choices">
                         <button
@@ -118,40 +154,6 @@
                         </button>
                     </div>
 
-                    <div class="v2-hub-live" v-if="isGameActive">
-                        <span class="v2-live-dot"></span> un salon est ouvert
-                    </div>
-
-                    <!-- Stats générales -->
-                    <div class="v2-bigstats">
-                        <div class="v2-bigstat">
-                            <span class="v2-bigstat-value">{{ homeStats.playersOnline }}</span>
-                            <span class="v2-bigstat-label">en ligne</span>
-                        </div>
-                        <span class="v2-bigstat-sep"></span>
-                        <div class="v2-bigstat">
-                            <span class="v2-bigstat-value">{{ homeStats.activeRooms }}</span>
-                            <span class="v2-bigstat-label">salons</span>
-                        </div>
-                        <span class="v2-bigstat-sep"></span>
-                        <div class="v2-bigstat">
-                            <span class="v2-bigstat-value">{{ homeStats.questionsCount }}</span>
-                            <span class="v2-bigstat-label">questions</span>
-                        </div>
-                        <span class="v2-bigstat-sep"></span>
-                        <div class="v2-bigstat">
-                            <span class="v2-bigstat-value">{{ homeStats.gamesPlayed }}</span>
-                            <span class="v2-bigstat-label">parties</span>
-                        </div>
-                    </div>
-
-                    <div class="v2-ticker" v-if="homeStats.recentGames && homeStats.recentGames.length">
-                        <div class="v2-ticker-item" v-for="(g, i) in homeStats.recentGames.slice(0, 3)" :key="i">
-                            <span class="v2-ticker-mode" :class="'mode-' + g.mode">{{ g.modeLabel }}</span>
-                            <span v-if="g.winnerName">{{ g.winnerName }}</span>
-                            <span class="v2-ticker-players">{{ g.playersCount }}j</span>
-                        </div>
-                    </div>
                 </section>
 
 
