@@ -16665,7 +16665,7 @@ body.modal-open {
     z-index: 2;
     display: flex;
     flex-direction: column;
-    padding: 1.6rem clamp(2rem, 4.5vw, 3.6rem);
+    padding: 1.2rem clamp(0.9rem, 1.6vw, 1.8rem);
     overflow-y: auto;
 }
 
@@ -17036,12 +17036,12 @@ body.modal-open {
 
 .v2-choice-body {
     position: absolute;
-    left: 1.4rem;
-    bottom: 1.2rem;
+    inset: 1.1rem 1.4rem 1.2rem;
     z-index: 2;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    justify-content: space-between;
+    align-items: flex-start;
     text-align: left;
 }
 
@@ -17129,20 +17129,6 @@ body.modal-open {
     gap: 1rem;
     animation: v2Rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
-
-.v2-back {
-    align-self: flex-start;
-    padding: 0.4rem 0.2rem;
-    font-family: inherit;
-    font-size: 0.76rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    background: none;
-    border: none;
-    cursor: pointer;
-    transition: color 0.2s ease, transform 0.2s ease;
-}
-.v2-back:hover { color: var(--neon-primary); transform: translateX(-0.2rem); }
 
 .v2-modes-layout {
     display: grid;
@@ -17525,3 +17511,49 @@ body.modal-open {
 
 .v2-pseudo-actions { display: flex; gap: 0.5rem; }
 .v2-pseudo-actions .v2-btn { flex: 1; }
+
+/* Stat "salons" quand au moins un salon est ouvert */
+.v2-bigstat.live .v2-bigstat-value {
+    background: linear-gradient(135deg, #6ee7b7, #10b981);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: v2StatPulse 1.8s ease-in-out infinite;
+}
+
+.v2-bigstat.live .v2-bigstat-label { color: #6ee7b7; }
+
+@keyframes v2StatPulse {
+    0%, 100% { opacity: 1; filter: drop-shadow(0 0 0.6rem rgba(16, 185, 129, 0.5)); }
+    50%      { opacity: 0.55; filter: drop-shadow(0 0 0 rgba(16, 185, 129, 0)); }
+}
+
+/* Bouton retour : pastille discrète en bas à gauche */
+.v2-back {
+    position: fixed;
+    left: clamp(1rem, 2vw, 2rem);
+    bottom: clamp(1rem, 2vw, 2rem);
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    width: 2.9rem;
+    height: 2.9rem;
+    padding: 0;
+    font-size: 1.15rem;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.035);
+    border: 0.06rem solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+}
+
+.v2-back:hover {
+    color: var(--neon-primary);
+    border-color: rgba(255, 215, 0, 0.45);
+    background: rgba(255, 215, 0, 0.07);
+    transform: translateX(-0.15rem);
+}
+
+.v2-back-arrow { display: block; transition: transform 0.25s ease; }
+.v2-back:hover .v2-back-arrow { transform: translateX(-0.12rem); }

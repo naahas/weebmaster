@@ -863,6 +863,14 @@ app.get('/prototypes', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes.html');
 });
 
+app.get('/prototypes/boutons', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-boutons.html');
+});
+
+app.get('/prototypes/modes', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-modes.html');
+});
+
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/src/html/home.html');
 });
