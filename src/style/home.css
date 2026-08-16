@@ -16954,9 +16954,11 @@ body.modal-open {
     flex: 1;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: clamp(2rem, 6vw, 5rem);
-    padding: 0 clamp(0rem, 3vw, 3rem);
+    justify-content: center;
+    gap: clamp(2rem, 5vw, 4.5rem);
+    width: 100%;
+    max-width: 72rem;
+    margin: 0 auto;
     animation: v2Rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
@@ -16966,13 +16968,14 @@ body.modal-open {
     align-items: flex-start;
     gap: clamp(1.2rem, 3vh, 2.2rem);
     min-width: 0;
+    flex: 0 1 auto;
 }
 
 .v2-choices {
     display: flex;
     flex-direction: column;
     gap: clamp(0.8rem, 1.8vh, 1.4rem);
-    width: clamp(17rem, 32vw, 24rem);
+    width: clamp(16rem, 26vw, 21rem);
     flex: 0 0 auto;
 }
 
