@@ -16993,9 +16993,10 @@ body.modal-open {
     overflow: hidden;
     text-align: left;
     cursor: pointer;
-    background: #121214;
-    border: 0.09rem solid rgba(255, 255, 255, 0.08);
-    border-radius: 1.1rem;
+    background: linear-gradient(135deg, #17150f, #101012);
+    border: 0.09rem solid rgba(255, 255, 255, 0.09);
+    border-radius: 0.55rem;
+    clip-path: polygon(0 0, 100% 0, 100% 70%, 92% 100%, 0 100%);
     box-shadow: 0 1.2rem 3rem rgba(255, 170, 0, 0);
     will-change: transform, opacity;
     transform: translateZ(0);
@@ -17027,12 +17028,19 @@ body.modal-open {
 
 .v2-choice:hover .v2-choice-glow { opacity: 1; }
 
+/* Reflet qui balaie la plaque au survol */
 .v2-choice::after {
     content: '';
     position: absolute;
-    inset: 0;
-    background: linear-gradient(to top, rgba(6, 6, 8, 0.95) 18%, rgba(6, 6, 8, 0.4) 58%, transparent 100%);
+    top: 0;
+    left: -60%;
+    width: 45%;
+    height: 100%;
+    background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.13), transparent);
+    transition: left 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+
+.v2-choice:hover::after { left: 115%; }
 
 .v2-choice-body {
     position: absolute;

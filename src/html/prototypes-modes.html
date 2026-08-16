@@ -21,124 +21,157 @@
             padding: 2.5rem clamp(1rem, 4vw, 3rem) 6rem;
         }
 
-        .nav { max-width: 72rem; margin: 0 auto 2rem; display: flex; gap: 0.6rem; flex-wrap: wrap; }
+        .nav { max-width: 76rem; margin: 0 auto 2rem; display: flex; gap: .6rem; flex-wrap: wrap; }
         .nav a {
-            padding: 0.45rem 0.9rem; font-size: 0.78rem; font-weight: 600; text-decoration: none;
-            color: var(--txt2); background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.08); border-radius: 2rem; transition: 0.2s;
+            padding: .45rem .9rem; font-size: .78rem; font-weight: 600; text-decoration: none;
+            color: var(--txt2); background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08); border-radius: 2rem; transition: .2s;
         }
-        .nav a:hover, .nav a.on { color: var(--neon); border-color: rgba(255,215,0,0.4); }
+        .nav a:hover, .nav a.on { color: var(--neon); border-color: rgba(255,215,0,.4); }
 
-        .head { max-width: 72rem; margin: 0 auto 2.5rem; }
-        .head h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: 0.03em; }
-        .head p { color: var(--txt2); font-size: 0.9rem; max-width: 46rem; line-height: 1.6; }
+        .head { max-width: 76rem; margin: 0 auto 2rem; }
+        .head h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: .03em; }
+        .head p { color: var(--txt2); font-size: .9rem; max-width: 48rem; line-height: 1.6; }
         .head b { color: var(--neon); font-weight: 600; }
 
-        .protos { max-width: 72rem; margin: 0 auto; display: flex; flex-direction: column; gap: 3rem; }
+        .rule {
+            max-width: 76rem; margin: 0 auto 2.5rem; padding: .8rem 1rem;
+            font-size: .82rem; color: #ffe9a8; line-height: 1.5;
+            background: rgba(255,190,40,.07); border-left: 3px solid var(--neon); border-radius: .4rem;
+        }
+
+        .protos { max-width: 76rem; margin: 0 auto; display: flex; flex-direction: column; gap: 3rem; }
         .proto-head { display: flex; align-items: baseline; gap: .8rem; margin-bottom: .9rem; }
         .proto-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--neon); }
         .proto-name { font-size: .98rem; font-weight: 700; }
-        .proto-note { font-size: .76rem; color: var(--txt2); margin-left: auto; text-align: right; max-width: 30rem; }
+        .proto-note { font-size: .76rem; color: var(--txt2); margin-left: auto; text-align: right; max-width: 32rem; }
 
         .frame {
-            position: relative; padding: 2rem; overflow: hidden;
+            position: relative; padding: 1.6rem; overflow: hidden;
             border: 1px solid rgba(255,255,255,.07); border-radius: 1rem;
             background: rgba(255,255,255,.012);
         }
 
-        .art { background-size: cover; background-position: center 20%; }
+        .art { background-size: cover; background-position: center 22%; }
         .art.classic { background-image: url('gilga.png'); }
         .art.rivalry { background-image: url('shark.png'); }
         .art.bomb    { background-image: url('lambo2.png'); }
+        .art.soon    { background-image: url('ascension.png'); }
+        .art.soon2   { background-image: url('big3.png'); }
+        .art.soon3   { background-image: url('aventurine3.png'); }
 
         .name { font-family: 'Bebas Neue', sans-serif; letter-spacing: .04em; line-height: 1; }
-        .meta { font-size: .64rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--txt2); }
+        .meta { font-size: .6rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--txt2); }
         .desc { font-size: .8rem; line-height: 1.5; color: var(--txt2); }
 
         .cta {
-            padding: .8rem 1.8rem; font-family: inherit; font-size: .85rem; font-weight: 700;
+            padding: .75rem 1.6rem; font-family: inherit; font-size: .82rem; font-weight: 700;
             color: #0a0a0a; background: linear-gradient(135deg, #ffd93d, var(--accent));
-            border: none; border-radius: .55rem; cursor: pointer;
+            border: none; border-radius: .5rem; cursor: pointer;
             box-shadow: 0 .35rem 1.4rem rgba(255,180,0,.3);
             transition: transform .2s, box-shadow .25s;
         }
         .cta:hover { transform: translateY(-.12rem); box-shadow: 0 .6rem 2rem rgba(255,180,0,.5); }
 
-        /* ══ 1 : rail vertical avec vignette ══ */
-        .p1 .row-list { display: grid; grid-template-columns: 15rem 1fr; gap: 1.4rem; }
-        .p1 .rows { display: flex; flex-direction: column; gap: .5rem; }
-        .p1 .row {
-            position: relative; display: flex; align-items: center; gap: .8rem; overflow: hidden;
-            padding: .7rem .9rem; cursor: pointer; text-align: left;
-            background: rgba(255,255,255,.025); border: 1px solid rgba(255,255,255,.06);
-            border-radius: .7rem; transition: .3s;
+        .soon-badge {
+            position: absolute; top: .6rem; right: .6rem; z-index: 3;
+            padding: .18rem .5rem; font-size: .55rem; font-weight: 800; letter-spacing: .12em;
+            color: #0a0a0a; background: rgba(255,255,255,.72); border-radius: .3rem;
         }
-        .p1 .thumb { width: 2.6rem; height: 2.6rem; border-radius: .5rem; flex: 0 0 auto; }
-        .p1 .row .name { font-size: 1.2rem; }
-        .p1 .row:hover, .p1 .row.on { background: rgba(255,215,0,.07); border-color: rgba(255,215,0,.35); transform: translateX(.2rem); }
-        .p1 .preview { position: relative; min-height: 17rem; border-radius: .9rem; overflow: hidden; border: 1px solid rgba(255,215,0,.28); }
-        .p1 .preview .art { position: absolute; inset: 0; filter: brightness(.7); }
-        .p1 .shade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(6,6,8,.96) 24%, transparent 75%); }
-        .p1 .body { position: absolute; left: 1.6rem; right: 1.6rem; bottom: 1.4rem; display: flex; flex-direction: column; gap: .5rem; align-items: flex-start; }
-        .p1 .body .name { font-size: 2.4rem; }
 
-        /* ══ 2 : éventail (cartes inclinées) ══ */
-        .p2 .fan { display: flex; justify-content: center; gap: -1rem; padding: 1rem 0 2rem; perspective: 60rem; }
-        .p2 .card {
-            position: relative; width: 13rem; aspect-ratio: 3/4.2; margin: 0 -1.2rem; overflow: hidden;
-            border-radius: .9rem; border: 1px solid rgba(255,255,255,.1); cursor: pointer;
-            transition: transform .45s cubic-bezier(.2,.8,.2,1), box-shadow .4s, border-color .3s;
+        /* ══════ G1 : grille + panneau fixe ══════ */
+        .g1 .split { display: grid; grid-template-columns: 1fr 19rem; gap: 1.2rem; }
+        .g1 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: .7rem; max-height: 24rem; overflow-y: auto; padding-right: .3rem; }
+        .g1 .tile {
+            position: relative; aspect-ratio: 3/4; overflow: hidden; cursor: pointer;
+            border: 1px solid rgba(255,255,255,.08); border-radius: .6rem;
+            transition: border-color .3s, transform .3s cubic-bezier(.2,.8,.2,1);
         }
-        .p2 .card:nth-child(1) { transform: rotate(-7deg) translateY(.6rem); }
-        .p2 .card:nth-child(2) { transform: rotate(0deg) translateY(-.4rem); z-index: 2; }
-        .p2 .card:nth-child(3) { transform: rotate(7deg) translateY(.6rem); }
-        .p2 .card .art { position: absolute; inset: 0; filter: brightness(.62); transition: filter .4s, transform .6s; }
-        .p2 .card .shade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(6,6,8,.95) 22%, transparent 70%); }
-        .p2 .card .body { position: absolute; left: 1rem; bottom: 1rem; z-index: 2; }
-        .p2 .card .name { font-size: 1.6rem; }
-        .p2 .card:hover { transform: rotate(0deg) translateY(-1.2rem) scale(1.06); z-index: 5; border-color: rgba(255,215,0,.55); box-shadow: 0 1.4rem 3rem rgba(0,0,0,.6); }
-        .p2 .card:hover .art { filter: brightness(.95); transform: scale(1.06); }
-        .p2 .foot { display: flex; flex-direction: column; align-items: center; gap: .7rem; }
+        .g1 .tile .art { position: absolute; inset: 0; filter: brightness(.6); transition: filter .35s, transform .6s; }
+        .g1 .tile .shade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(6,6,8,.95) 18%, transparent 62%); }
+        /* le nom est positionné en absolu : il ne bouge jamais */
+        .g1 .tile .label { position: absolute; left: .6rem; right: .6rem; bottom: .55rem; z-index: 2; }
+        .g1 .tile .name { font-size: 1rem; }
+        .g1 .tile:hover { transform: translateY(-.2rem); border-color: rgba(255,215,0,.5); }
+        .g1 .tile:hover .art { filter: brightness(.95); transform: scale(1.06); }
+        .g1 .tile.on { border-color: var(--neon); box-shadow: 0 0 0 1px rgba(255,215,0,.35), 0 .6rem 1.6rem rgba(255,170,0,.16); }
+        .g1 .panel {
+            position: relative; overflow: hidden; display: flex; flex-direction: column;
+            border: 1px solid rgba(255,215,0,.25); border-radius: .8rem; min-height: 24rem;
+        }
+        .g1 .panel .art { position: absolute; inset: 0 0 45% 0; filter: brightness(.7); }
+        .g1 .panel .shade { position: absolute; inset: 0; background: linear-gradient(to top, #0c0c0e 52%, rgba(12,12,14,.2) 78%); }
+        .g1 .panel .body { position: relative; margin-top: auto; padding: 1.2rem; display: flex; flex-direction: column; gap: .6rem; align-items: flex-start; }
+        .g1 .panel .name { font-size: 2rem; }
 
-        /* ══ 3 : colonnes plein cadre ══ */
-        .p3 .cols { display: flex; gap: .5rem; height: 22rem; }
-        .p3 .col {
-            position: relative; flex: 1; overflow: hidden; cursor: pointer;
-            border-radius: .8rem; border: 1px solid rgba(255,255,255,.08);
-            transition: flex .5s cubic-bezier(.2,.8,.2,1), border-color .35s;
+        /* ══════ G2 : grille poster, tout en surimpression ══════ */
+        .g2 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: .8rem; }
+        .g2 .tile {
+            position: relative; aspect-ratio: 3/4; overflow: hidden; cursor: pointer;
+            border: 1px solid rgba(255,255,255,.08); border-radius: .7rem;
+            transition: border-color .3s, box-shadow .35s, transform .35s cubic-bezier(.2,.8,.2,1);
         }
-        .p3 .col .art { position: absolute; inset: 0; filter: brightness(.55) saturate(.9); transition: filter .45s, transform .8s; }
-        .p3 .col .shade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(6,6,8,.95) 20%, transparent 72%); }
-        .p3 .col .body { position: absolute; left: 1.2rem; right: 1.2rem; bottom: 1.2rem; display: flex; flex-direction: column; gap: .5rem; align-items: flex-start; }
-        .p3 .col .name { font-size: 1.9rem; }
-        .p3 .col .desc, .p3 .col .cta { opacity: 0; transform: translateY(.5rem); transition: .35s; }
-        .p3 .cols:hover .col { flex: .75; }
-        .p3 .cols .col:hover { flex: 2.2; border-color: rgba(255,215,0,.5); }
-        .p3 .col:hover .art { filter: brightness(.85); transform: scale(1.04); }
-        .p3 .col:hover .desc, .p3 .col:hover .cta { opacity: 1; transform: none; }
+        .g2 .tile .art { position: absolute; inset: 0; filter: brightness(.55) saturate(.9); transition: filter .4s, transform .7s; }
+        .g2 .tile .shade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(6,6,8,.95) 16%, transparent 58%); }
+        .g2 .tile .label { position: absolute; left: .8rem; right: .8rem; bottom: .8rem; z-index: 2; }
+        .g2 .tile .name { font-size: 1.3rem; }
+        /* la description apparaît par-dessus, en absolu : aucun décalage */
+        .g2 .tile .over {
+            position: absolute; inset: auto .8rem 3.1rem .8rem; z-index: 2;
+            font-size: .7rem; line-height: 1.45; color: #e8e2d4;
+            opacity: 0; transform: translateY(.35rem); transition: opacity .3s, transform .35s;
+        }
+        .g2 .tile .play {
+            position: absolute; top: .7rem; left: .7rem; z-index: 3;
+            display: grid; place-items: center; width: 2rem; height: 2rem;
+            font-size: .8rem; color: #0a0a0a; background: var(--neon); border-radius: 50%;
+            opacity: 0; transform: scale(.7); transition: opacity .3s, transform .35s cubic-bezier(.2,1.4,.4,1);
+        }
+        .g2 .tile:hover { transform: translateY(-.35rem); border-color: rgba(255,215,0,.55); box-shadow: 0 1rem 2.4rem rgba(0,0,0,.55); }
+        .g2 .tile:hover .art { filter: brightness(.85); transform: scale(1.07); }
+        .g2 .tile:hover .over, .g2 .tile:hover .play { opacity: 1; transform: none; }
 
-        /* ══ 4 : bandes horizontales ══ */
-        .p4 .bands { display: flex; flex-direction: column; gap: .6rem; }
-        .p4 .band {
-            position: relative; display: flex; align-items: center; gap: 1.2rem; overflow: hidden;
-            height: 6.4rem; padding: 0 1.4rem; cursor: pointer; text-align: left;
-            border: 1px solid rgba(255,255,255,.07); border-radius: .8rem; background: #0e0e10;
-            transition: transform .35s cubic-bezier(.2,.8,.2,1), border-color .3s;
+        /* ══════ G3 : grille compacte + entête qui change ══════ */
+        .g3 .banner {
+            position: relative; height: 9rem; margin-bottom: .9rem; overflow: hidden;
+            border: 1px solid rgba(255,215,0,.22); border-radius: .8rem;
         }
-        .p4 .band .art {
-            position: absolute; right: 0; top: 0; bottom: 0; width: 38%;
-            filter: brightness(.6); transition: width .45s cubic-bezier(.2,.8,.2,1), filter .4s;
-            -webkit-mask-image: linear-gradient(90deg, transparent, #000 45%);
-            mask-image: linear-gradient(90deg, transparent, #000 45%);
+        .g3 .banner .art { position: absolute; inset: 0; filter: brightness(.55); }
+        .g3 .banner .shade { position: absolute; inset: 0; background: linear-gradient(90deg, #0c0c0e 32%, rgba(12,12,14,.25)); }
+        .g3 .banner .body { position: absolute; left: 1.4rem; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: .35rem; align-items: flex-start; }
+        .g3 .banner .name { font-size: 2.1rem; }
+        .g3 .banner .cta { position: absolute; right: 1.4rem; top: 50%; transform: translateY(-50%); }
+        .g3 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: .55rem; }
+        .g3 .chip {
+            position: relative; height: 4.6rem; overflow: hidden; cursor: pointer;
+            border: 1px solid rgba(255,255,255,.07); border-radius: .55rem;
+            transition: border-color .28s, transform .28s;
         }
-        .p4 .band .body { position: relative; z-index: 2; display: flex; flex-direction: column; gap: .15rem; }
-        .p4 .band .name { font-size: 1.9rem; }
-        .p4 .band .go { position: relative; z-index: 2; margin-left: auto; font-size: 1.4rem; color: var(--neon); opacity: 0; transform: translateX(-.5rem); transition: .3s; }
-        .p4 .band:hover { transform: translateX(.3rem); border-color: rgba(255,215,0,.45); }
-        .p4 .band:hover .art { width: 46%; filter: brightness(.85); }
-        .p4 .band:hover .go { opacity: 1; transform: none; }
+        .g3 .chip .art { position: absolute; inset: 0; filter: brightness(.42) saturate(.8); transition: filter .3s; }
+        .g3 .chip .label { position: absolute; inset: auto .5rem .45rem .5rem; z-index: 2; }
+        .g3 .chip .name { font-size: .95rem; }
+        .g3 .chip:hover { transform: translateY(-.15rem); border-color: rgba(255,215,0,.45); }
+        .g3 .chip:hover .art { filter: brightness(.72); }
+        .g3 .chip.on { border-color: var(--neon); }
 
-        .footer { max-width: 72rem; margin: 3rem auto 0; font-size: .8rem; color: var(--txt2); }
+        /* ══════ G4 : mosaïque avec vedette ══════ */
+        .g4 .mosaic { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 7.4rem; gap: .7rem; }
+        .g4 .cell {
+            position: relative; overflow: hidden; cursor: pointer;
+            border: 1px solid rgba(255,255,255,.08); border-radius: .7rem;
+            transition: border-color .3s, transform .3s;
+        }
+        .g4 .cell .art { position: absolute; inset: 0; filter: brightness(.55); transition: filter .35s, transform .6s; }
+        .g4 .cell .shade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(6,6,8,.95) 18%, transparent 62%); }
+        .g4 .cell .label { position: absolute; left: .75rem; right: .75rem; bottom: .6rem; z-index: 2; }
+        .g4 .cell .name { font-size: 1.05rem; }
+        .g4 .cell:hover { transform: translateY(-.18rem); border-color: rgba(255,215,0,.45); }
+        .g4 .cell:hover .art { filter: brightness(.82); transform: scale(1.05); }
+        .g4 .cell.feature { grid-column: span 2; grid-row: span 2; border-color: rgba(255,215,0,.4); }
+        .g4 .cell.feature .name { font-size: 2rem; }
+        .g4 .cell.feature .label { left: 1.2rem; right: 1.2rem; bottom: 1.1rem; display: flex; flex-direction: column; gap: .5rem; align-items: flex-start; }
+
+        .footer { max-width: 76rem; margin: 3rem auto 0; font-size: .8rem; color: var(--txt2); }
     </style>
 </head>
 
@@ -151,30 +184,43 @@
     </div>
 
     <div class="head">
-        <h1>Prototypes — choix du mode</h1>
+        <h1>Prototypes — choix du mode (grille)</h1>
         <p>
-            Quatre façons de présenter les trois modes après « Créer un salon ». Les illustrations sont
-            celles du projet. <b>Survole</b> : chaque variante a son propre comportement.
+            Quatre grilles pensées pour <b>tenir à 20 modes et plus</b>. Chaque exemple affiche 9 entrées
+            (3 modes réels + 6 « bientôt ») pour montrer le comportement à l'échelle.
         </p>
+    </div>
+
+    <div class="rule">
+        <b>Règle appliquée partout :</b> au survol, aucun texte ne se déplace. Les noms sont positionnés en absolu
+        et les éléments qui apparaissent (description, bouton) sont en surimpression — jamais dans le flux.
+        C'est ce qui manquait à la variante « colonnes qui s'ouvrent ».
     </div>
 
     <div class="protos">
 
-        <!-- 1 -->
-        <section class="p1">
-            <div class="proto-head"><span class="proto-num">01</span><span class="proto-name">Rail + aperçu</span>
-                <span class="proto-note">La version actuelle, enrichie d'une vignette dans chaque ligne. Compact, lisible, sans surprise.</span></div>
+        <!-- G1 -->
+        <section class="g1">
+            <div class="proto-head"><span class="proto-num">G1</span><span class="proto-name">Grille + panneau fixe</span>
+                <span class="proto-note">La grille défile à gauche, le panneau de droite ne bouge jamais. Le plus solide à 30 modes : on ajoute des tuiles, la mise en page ne change pas.</span></div>
             <div class="frame">
-                <div class="row-list">
-                    <div class="rows">
-                        <button class="row on"><span class="thumb art classic"></span><span><span class="name">Classique</span><br><span class="meta">Solo · ∞</span></span></button>
-                        <button class="row"><span class="thumb art rivalry"></span><span><span class="name">Rivalité</span><br><span class="meta">Équipe · ∞</span></span></button>
-                        <button class="row"><span class="thumb art bomb"></span><span><span class="name">BombAnime</span><br><span class="meta">Solo · 13</span></span></button>
+                <div class="split">
+                    <div class="grid">
+                        <div class="tile on"><div class="art classic"></div><div class="shade"></div><div class="label"><span class="name">Classique</span><br><span class="meta">Solo · ∞</span></div></div>
+                        <div class="tile"><div class="art rivalry"></div><div class="shade"></div><div class="label"><span class="name">Rivalité</span><br><span class="meta">Équipe · ∞</span></div></div>
+                        <div class="tile"><div class="art bomb"></div><div class="shade"></div><div class="label"><span class="name">BombAnime</span><br><span class="meta">Solo · 13</span></div></div>
+                        <div class="tile"><span class="soon-badge">BIENTÔT</span><div class="art soon"></div><div class="shade"></div><div class="label"><span class="name">Ascension</span><br><span class="meta">Solo · ∞</span></div></div>
+                        <div class="tile"><span class="soon-badge">BIENTÔT</span><div class="art soon2"></div><div class="shade"></div><div class="label"><span class="name">Duel</span><br><span class="meta">1 v 1</span></div></div>
+                        <div class="tile"><span class="soon-badge">BIENTÔT</span><div class="art soon3"></div><div class="shade"></div><div class="label"><span class="name">Tournoi</span><br><span class="meta">Bracket</span></div></div>
+                        <div class="tile"><span class="soon-badge">BIENTÔT</span><div class="art classic"></div><div class="shade"></div><div class="label"><span class="name">Blind test</span><br><span class="meta">Solo</span></div></div>
+                        <div class="tile"><span class="soon-badge">BIENTÔT</span><div class="art rivalry"></div><div class="shade"></div><div class="label"><span class="name">Silhouette</span><br><span class="meta">Solo</span></div></div>
+                        <div class="tile"><span class="soon-badge">BIENTÔT</span><div class="art bomb"></div><div class="shade"></div><div class="label"><span class="name">Chrono</span><br><span class="meta">Solo</span></div></div>
                     </div>
-                    <div class="preview">
+                    <div class="panel">
                         <div class="art classic"></div><div class="shade"></div>
                         <div class="body">
                             <span class="name">Classique</span>
+                            <span class="meta">Solo · joueurs illimités</span>
                             <span class="desc">Quiz QCM. Vies ou points, difficulté et séries au choix.</span>
                             <button class="cta">Lancer le salon</button>
                         </div>
@@ -183,60 +229,76 @@
             </div>
         </section>
 
-        <!-- 2 -->
-        <section class="p2">
-            <div class="proto-head"><span class="proto-num">02</span><span class="proto-name">Éventail</span>
-                <span class="proto-note">Trois cartes en éventail façon main de cartes ; celle survolée se redresse et passe devant. Très identitaire, joue avec les illustrations.</span></div>
+        <!-- G2 -->
+        <section class="g2">
+            <div class="proto-head"><span class="proto-num">G2</span><span class="proto-name">Posters</span>
+                <span class="proto-note">Grille pleine largeur. Au survol : l'illustration s'éclaire, la description se pose par-dessus et une pastille ▶ apparaît. Le nom reste rigoureusement en place.</span></div>
             <div class="frame">
-                <div class="fan">
-                    <div class="card"><div class="art classic"></div><div class="shade"></div><div class="body"><span class="name">Classique</span><br><span class="meta">Solo · ∞</span></div></div>
-                    <div class="card"><div class="art rivalry"></div><div class="shade"></div><div class="body"><span class="name">Rivalité</span><br><span class="meta">Équipe · ∞</span></div></div>
-                    <div class="card"><div class="art bomb"></div><div class="shade"></div><div class="body"><span class="name">BombAnime</span><br><span class="meta">Solo · 13</span></div></div>
+                <div class="grid">
+                    <div class="tile"><div class="art classic"></div><div class="shade"></div><span class="play">▶</span><span class="over">Quiz QCM. Vies ou points, difficulté et séries au choix.</span><div class="label"><span class="name">Classique</span><br><span class="meta">Solo · ∞</span></div></div>
+                    <div class="tile"><div class="art rivalry"></div><div class="shade"></div><span class="play">▶</span><span class="over">Deux équipes, un seul quiz. Le camp le plus fort l'emporte.</span><div class="label"><span class="name">Rivalité</span><br><span class="meta">Équipe · ∞</span></div></div>
+                    <div class="tile"><div class="art bomb"></div><div class="shade"></div><span class="play">▶</span><span class="over">La bombe tourne. Cite un perso avant qu'elle explose.</span><div class="label"><span class="name">BombAnime</span><br><span class="meta">Solo · 13</span></div></div>
+                    <div class="tile"><span class="soon-badge">BIENTÔT</span><div class="art soon"></div><div class="shade"></div><span class="over">Grimpe la tour, un mini-jeu par étage.</span><div class="label"><span class="name">Ascension</span><br><span class="meta">Solo · ∞</span></div></div>
+                    <div class="tile"><span class="soon-badge">BIENTÔT</span><div class="art soon2"></div><div class="shade"></div><span class="over">Face à face, un seul survivant.</span><div class="label"><span class="name">Duel</span><br><span class="meta">1 v 1</span></div></div>
+                    <div class="tile"><span class="soon-badge">BIENTÔT</span><div class="art soon3"></div><div class="shade"></div><span class="over">Bracket à élimination directe.</span><div class="label"><span class="name">Tournoi</span><br><span class="meta">Bracket</span></div></div>
+                    <div class="tile"><span class="soon-badge">BIENTÔT</span><div class="art classic"></div><div class="shade"></div><span class="over">Reconnais l'opening en quelques secondes.</span><div class="label"><span class="name">Blind test</span><br><span class="meta">Solo</span></div></div>
+                    <div class="tile"><span class="soon-badge">BIENTÔT</span><div class="art rivalry"></div><div class="shade"></div><span class="over">Devine le perso derrière son ombre.</span><div class="label"><span class="name">Silhouette</span><br><span class="meta">Solo</span></div></div>
+                    <div class="tile"><span class="soon-badge">BIENTÔT</span><div class="art bomb"></div><div class="shade"></div><span class="over">Le plus de bonnes réponses en 60 secondes.</span><div class="label"><span class="name">Chrono</span><br><span class="meta">Solo</span></div></div>
                 </div>
-                <div class="foot">
-                    <span class="desc">Quiz QCM. Vies ou points, difficulté et séries au choix.</span>
+            </div>
+        </section>
+
+        <!-- G3 -->
+        <section class="g3">
+            <div class="proto-head"><span class="proto-num">G3</span><span class="proto-name">Bandeau + pastilles</span>
+                <span class="proto-note">Un grand bandeau en haut montre le mode sélectionné ; en dessous, une grille très dense de pastilles. Idéal si la liste devient longue : 30 modes tiennent sans scroll.</span></div>
+            <div class="frame">
+                <div class="banner">
+                    <div class="art classic"></div><div class="shade"></div>
+                    <div class="body">
+                        <span class="name">Classique</span>
+                        <span class="desc">Quiz QCM. Vies ou points, difficulté et séries au choix.</span>
+                    </div>
                     <button class="cta">Lancer le salon</button>
                 </div>
-            </div>
-        </section>
-
-        <!-- 3 -->
-        <section class="p3">
-            <div class="proto-head"><span class="proto-num">03</span><span class="proto-name">Colonnes qui s'ouvrent</span>
-                <span class="proto-note">Trois colonnes plein cadre : la survolée s'élargit et révèle sa description et son bouton. Spectaculaire, zéro clic pour explorer.</span></div>
-            <div class="frame">
-                <div class="cols">
-                    <div class="col">
-                        <div class="art classic"></div><div class="shade"></div>
-                        <div class="body"><span class="name">Classique</span><span class="desc">Quiz QCM. Vies ou points, difficulté et séries au choix.</span><button class="cta">Lancer</button></div>
-                    </div>
-                    <div class="col">
-                        <div class="art rivalry"></div><div class="shade"></div>
-                        <div class="body"><span class="name">Rivalité</span><span class="desc">Deux équipes, un seul quiz. Le camp le plus fort l'emporte.</span><button class="cta">Lancer</button></div>
-                    </div>
-                    <div class="col">
-                        <div class="art bomb"></div><div class="shade"></div>
-                        <div class="body"><span class="name">BombAnime</span><span class="desc">La bombe tourne. Cite un perso avant qu'elle explose.</span><button class="cta">Lancer</button></div>
-                    </div>
+                <div class="grid">
+                    <div class="chip on"><div class="art classic"></div><div class="label"><span class="name">Classique</span></div></div>
+                    <div class="chip"><div class="art rivalry"></div><div class="label"><span class="name">Rivalité</span></div></div>
+                    <div class="chip"><div class="art bomb"></div><div class="label"><span class="name">BombAnime</span></div></div>
+                    <div class="chip"><div class="art soon"></div><div class="label"><span class="name">Ascension</span></div></div>
+                    <div class="chip"><div class="art soon2"></div><div class="label"><span class="name">Duel</span></div></div>
+                    <div class="chip"><div class="art soon3"></div><div class="label"><span class="name">Tournoi</span></div></div>
+                    <div class="chip"><div class="art classic"></div><div class="label"><span class="name">Blind test</span></div></div>
+                    <div class="chip"><div class="art rivalry"></div><div class="label"><span class="name">Silhouette</span></div></div>
+                    <div class="chip"><div class="art bomb"></div><div class="label"><span class="name">Chrono</span></div></div>
                 </div>
             </div>
         </section>
 
-        <!-- 4 -->
-        <section class="p4">
-            <div class="proto-head"><span class="proto-num">04</span><span class="proto-name">Bandes larges</span>
-                <span class="proto-note">Une bande par mode, l'illustration fondue à droite s'étire au survol. Énorme cible au clic et parfait en mobile.</span></div>
+        <!-- G4 -->
+        <section class="g4">
+            <div class="proto-head"><span class="proto-num">G4</span><span class="proto-name">Mosaïque</span>
+                <span class="proto-note">Le mode choisi occupe une case double, les autres restent en petit autour. Hiérarchie forte sans quitter la grille ; le contenu de la vedette est en absolu, donc rien ne saute.</span></div>
             <div class="frame">
-                <div class="bands">
-                    <button class="band"><div class="art classic"></div><div class="body"><span class="name">Classique</span><span class="meta">Solo · ∞</span></div><span class="go">→</span></button>
-                    <button class="band"><div class="art rivalry"></div><div class="body"><span class="name">Rivalité</span><span class="meta">Équipe · ∞</span></div><span class="go">→</span></button>
-                    <button class="band"><div class="art bomb"></div><div class="body"><span class="name">BombAnime</span><span class="meta">Solo · 13</span></div><span class="go">→</span></button>
+                <div class="mosaic">
+                    <div class="cell feature">
+                        <div class="art classic"></div><div class="shade"></div>
+                        <div class="label"><span class="name">Classique</span><span class="desc">Quiz QCM. Vies ou points, difficulté et séries au choix.</span><button class="cta">Lancer le salon</button></div>
+                    </div>
+                    <div class="cell"><div class="art rivalry"></div><div class="shade"></div><div class="label"><span class="name">Rivalité</span></div></div>
+                    <div class="cell"><div class="art bomb"></div><div class="shade"></div><div class="label"><span class="name">BombAnime</span></div></div>
+                    <div class="cell"><span class="soon-badge">BIENTÔT</span><div class="art soon"></div><div class="shade"></div><div class="label"><span class="name">Ascension</span></div></div>
+                    <div class="cell"><span class="soon-badge">BIENTÔT</span><div class="art soon2"></div><div class="shade"></div><div class="label"><span class="name">Duel</span></div></div>
+                    <div class="cell"><span class="soon-badge">BIENTÔT</span><div class="art soon3"></div><div class="shade"></div><div class="label"><span class="name">Tournoi</span></div></div>
+                    <div class="cell"><span class="soon-badge">BIENTÔT</span><div class="art classic"></div><div class="shade"></div><div class="label"><span class="name">Blind test</span></div></div>
+                    <div class="cell"><span class="soon-badge">BIENTÔT</span><div class="art rivalry"></div><div class="shade"></div><div class="label"><span class="name">Silhouette</span></div></div>
+                    <div class="cell"><span class="soon-badge">BIENTÔT</span><div class="art bomb"></div><div class="shade"></div><div class="label"><span class="name">Chrono</span></div></div>
                 </div>
             </div>
         </section>
     </div>
 
-    <p class="footer">Dis-moi le numéro retenu — on peut aussi garder l'aperçu de la 01 avec les bandes de la 04.</p>
+    <p class="footer">Dis-moi la grille retenue. Les combinaisons marchent aussi : par exemple les posters de G2 dans le panneau fixe de G1.</p>
 </body>
 
 </html>
