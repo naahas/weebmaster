@@ -736,7 +736,7 @@ createApp({
             document.addEventListener('mousemove', (e) => {
                 if (this.gameInProgress || this.hasJoined) return;
                 const now = Date.now();
-                if (now - last < 28) return;   // ~35 particules/s max
+                if (now - last < 42) return;   // ~24 particules/s : assez dense, sans saturer le DOM
                 last = now;
 
                 const dust = document.createElement('div');

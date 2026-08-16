@@ -16730,12 +16730,13 @@ body.modal-open {
     transform: perspective(45rem) rotateX(58deg) translateY(-8%);
     mask-image: radial-gradient(70% 55% at 50% 62%, #000 0%, transparent 78%);
     -webkit-mask-image: radial-gradient(70% 55% at 50% 62%, #000 0%, transparent 78%);
+    will-change: transform;
     animation: v2GridScroll 22s linear infinite;
 }
 
 @keyframes v2GridScroll {
-    from { background-position: 0 0; }
-    to   { background-position: 0 3.2rem; }
+    from { transform: perspective(45rem) rotateX(58deg) translateY(-8%); }
+    to   { transform: perspective(45rem) rotateX(58deg) translateY(calc(-8% + 3.2rem)); }
 }
 
 .v2-bg-vignette {
@@ -16819,7 +16820,6 @@ body.modal-open {
     background: rgba(255, 255, 255, 0.04);
     border: 0.06rem solid rgba(255, 255, 255, 0.08);
     border-radius: 2rem;
-    backdrop-filter: blur(0.5rem);
     cursor: pointer;
     transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
 }
@@ -16891,14 +16891,19 @@ body.modal-open {
 .v2-bigstats {
     display: flex;
     align-items: center;
-    gap: clamp(1.2rem, 3vw, 2.6rem);
-    flex-wrap: wrap;
-    justify-content: flex-start;
+    width: 100%;
     margin-top: clamp(0.6rem, 2vh, 1.4rem);
     animation: v2Rise 0.8s 0.1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-.v2-bigstat { display: flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; }
+.v2-bigstat {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.1rem;
+    min-width: 0;
+}
 
 .v2-bigstat-value {
     font-family: 'Bebas Neue', 'Russo One', sans-serif;
@@ -16919,6 +16924,7 @@ body.modal-open {
 }
 
 .v2-bigstat-sep {
+    flex: 0 0 auto;
     width: 0.06rem;
     height: 2rem;
     background: linear-gradient(transparent, rgba(255, 255, 255, 0.14), transparent);
@@ -16955,9 +16961,9 @@ body.modal-open {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: clamp(2rem, 5vw, 4.5rem);
+    gap: clamp(2.5rem, 6vw, 6rem);
     width: 100%;
-    max-width: 72rem;
+    max-width: 76rem;
     margin: 0 auto;
     animation: v2Rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
@@ -16975,7 +16981,7 @@ body.modal-open {
     display: flex;
     flex-direction: column;
     gap: clamp(0.8rem, 1.8vh, 1.4rem);
-    width: clamp(16rem, 26vw, 21rem);
+    width: clamp(17rem, 28vw, 23rem);
     flex: 0 0 auto;
 }
 
@@ -16990,16 +16996,21 @@ body.modal-open {
     background: #121214;
     border: 0.09rem solid rgba(255, 255, 255, 0.08);
     border-radius: 1.1rem;
-    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
-                filter 0.4s ease, opacity 0.4s ease,
-                border-color 0.35s ease, box-shadow 0.4s ease;
+    box-shadow: 0 1.2rem 3rem rgba(255, 170, 0, 0);
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+                opacity 0.35s ease,
+                border-color 0.3s ease,
+                box-shadow 0.35s ease;
 }
 
 .v2-choice-glow {
     position: absolute;
     inset: 0;
     opacity: 0.55;
-    transition: opacity 0.45s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+    will-change: opacity;
+    transition: opacity 0.4s ease;
 }
 
 .v2-choice-create .v2-choice-glow {
@@ -17014,7 +17025,7 @@ body.modal-open {
         linear-gradient(210deg, rgba(140, 90, 255, 0.14), transparent 62%);
 }
 
-.v2-choice:hover .v2-choice-glow { opacity: 1; transform: scale(1.08); }
+.v2-choice:hover .v2-choice-glow { opacity: 1; }
 
 .v2-choice::after {
     content: '';
@@ -17025,12 +17036,12 @@ body.modal-open {
 
 .v2-choice-body {
     position: absolute;
-    left: 1.3rem;
-    bottom: 1.1rem;
+    left: 1.4rem;
+    bottom: 1.2rem;
     z-index: 2;
     display: flex;
     flex-direction: column;
-    gap: 0.05rem;
+    gap: 0.5rem;
     text-align: left;
 }
 
@@ -17044,7 +17055,7 @@ body.modal-open {
 
 .v2-choice-title {
     font-family: 'Bebas Neue', 'Russo One', sans-serif;
-    font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+    font-size: clamp(2rem, 3.8vw, 3rem);
     line-height: 1;
     color: var(--text-primary);
 }
@@ -17067,17 +17078,19 @@ body.modal-open {
 }
 
 .v2-choice:hover {
-    transform: translateY(-0.5rem);
+    transform: translateY(-0.4rem);
     border-color: rgba(255, 215, 0, 0.55);
     box-shadow: 0 1.2rem 3rem rgba(255, 170, 0, 0.18);
 }
 .v2-choice:hover .v2-choice-arrow { opacity: 1; transform: none; }
 
+/* Grisage de l'autre carte : opacité seule (filter/grayscale saccade au survol) */
 .v2-choice.dimmed {
-    filter: grayscale(0.85) brightness(0.55);
-    opacity: 0.55;
-    transform: scale(0.975);
+    opacity: 0.42;
+    transform: translateY(0) scale(0.985);
 }
+
+.v2-choice.dimmed .v2-choice-glow { opacity: 0.18; }
 
 .v2-choice-join:hover { border-color: rgba(140, 160, 255, 0.5); box-shadow: 0 1.2rem 3rem rgba(120, 140, 255, 0.16); }
 .v2-choice-join:hover .v2-choice-arrow { color: #9db4ff; }
