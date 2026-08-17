@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShonenMaster — Prototypes des paramètres</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Bebas+Neue&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="icon.png">
+    <style>
+        :root { --neon: #FFD700; --accent: #FF8C00; --txt: #fff; --txt2: #a0a0a0; --red: #ef4444; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: radial-gradient(120% 90% at 50% 0%, #14100a 0%, #0c0c0e 45%, #08080a 100%);
+            background-attachment: fixed;
+            color: var(--txt);
+            font-family: 'Poppins', sans-serif;
+            padding: 2.5rem clamp(1rem, 4vw, 3rem) 6rem;
+        }
+
+        .nav { max-width: 74rem; margin: 0 auto 2rem; display: flex; gap: .6rem; flex-wrap: wrap; }
+        .nav a {
+            padding: .45rem .9rem; font-size: .78rem; font-weight: 600; text-decoration: none;
+            color: var(--txt2); background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08); border-radius: 2rem; transition: .2s;
+        }
+        .nav a:hover, .nav a.on { color: var(--neon); border-color: rgba(255,215,0,.4); }
+
+        .head { max-width: 74rem; margin: 0 auto 1.4rem; }
+        .head h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: .03em; }
+        .head p { color: var(--txt2); font-size: .9rem; max-width: 48rem; line-height: 1.6; }
+        .head b { color: var(--neon); font-weight: 600; }
+
+        .rule {
+            max-width: 74rem; margin: 0 auto 2.5rem; padding: .8rem 1rem;
+            font-size: .82rem; color: #ffe9a8; line-height: 1.5;
+            background: rgba(255,190,40,.07); border-left: 3px solid var(--neon); border-radius: .4rem;
+        }
+
+        .protos { max-width: 74rem; margin: 0 auto; display: flex; flex-direction: column; gap: 3rem; }
+        .proto-head { display: flex; align-items: baseline; gap: .8rem; margin-bottom: .9rem; }
+        .proto-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--neon); }
+        .proto-name { font-size: .98rem; font-weight: 700; }
+        .proto-note { font-size: .76rem; color: var(--txt2); margin-left: auto; text-align: right; max-width: 32rem; }
+
+        .frame {
+            display: flex; gap: 2rem; align-items: flex-start;
+            padding: 1.8rem; border: 1px solid rgba(255,255,255,.07);
+            border-radius: 1rem; background: rgba(255,255,255,.012);
+        }
+        .frame .hint { font-size: .74rem; color: var(--txt2); line-height: 1.6; max-width: 17rem; }
+        .frame .hint b { color: var(--neon); }
+
+        .panel { width: 20rem; flex: 0 0 auto; }
+        .panel-title {
+            margin-bottom: .8rem; font-size: .62rem; font-weight: 700;
+            letter-spacing: .2em; text-transform: uppercase; color: var(--txt2);
+        }
+
+        svg.ic { width: 1rem; height: 1rem; stroke: currentColor; fill: none; stroke-width: 1.7; }
+
+        /* ═════ P1 : lignes admin, options au survol ═════ */
+        .p1 .row {
+            position: relative; display: flex; align-items: center; gap: .7rem;
+            padding: .75rem .9rem; margin-bottom: .45rem; cursor: pointer;
+            background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);
+            border-radius: .55rem; transition: border-color .25s, background .25s;
+        }
+        .p1 .row .lbl { font-size: .68rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--txt2); }
+        .p1 .row .val { margin-left: auto; font-size: .85rem; font-weight: 700; color: var(--neon); transition: opacity .2s; }
+        .p1 .opts {
+            position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+            display: flex; align-items: center; gap: .25rem; padding: 0 .5rem;
+            background: #16150f; border-radius: .55rem;
+            opacity: 0; pointer-events: none; transform: scale(.97);
+            transition: opacity .2s, transform .2s;
+        }
+        .p1 .row:hover { border-color: rgba(255,215,0,.45); }
+        .p1 .row:hover .opts { opacity: 1; pointer-events: auto; transform: none; }
+        .p1 .opt {
+            flex: 1; padding: .35rem 0; font-family: inherit; font-size: .75rem; font-weight: 600;
+            color: var(--txt2); background: rgba(255,255,255,.05); border: none; border-radius: .35rem; cursor: pointer;
+        }
+        .p1 .opt:hover { color: var(--txt); background: rgba(255,255,255,.12); }
+        .p1 .opt.on { color: #14100a; background: linear-gradient(135deg,#ffe066,var(--neon)); }
+
+        /* ═════ P2 : pastilles compactes + bulle ═════ */
+        .p2 .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
+        .p2 .chip {
+            position: relative; display: flex; flex-direction: column; align-items: center; gap: .25rem;
+            padding: .8rem .4rem; cursor: pointer;
+            background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);
+            border-radius: .6rem; transition: border-color .25s, transform .25s;
+        }
+        .p2 .chip .lbl { font-size: .54rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--txt2); }
+        .p2 .chip .val { font-family: 'Bebas Neue', sans-serif; font-size: 1.25rem; color: var(--neon); line-height: 1; }
+        .p2 .chip:hover { border-color: rgba(255,215,0,.5); transform: translateY(-.15rem); }
+        .p2 .pop {
+            position: absolute; left: 50%; bottom: calc(100% + .4rem); transform: translateX(-50%) translateY(.3rem);
+            display: flex; gap: .25rem; padding: .35rem; z-index: 5;
+            background: #16150f; border: 1px solid rgba(255,215,0,.3); border-radius: .5rem;
+            opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s;
+            box-shadow: 0 .8rem 2rem rgba(0,0,0,.6);
+        }
+        .p2 .chip:hover .pop { opacity: 1; pointer-events: auto; transform: translateX(-50%); }
+        .p2 .opt { padding: .3rem .55rem; font-family: inherit; font-size: .72rem; font-weight: 600; color: var(--txt2); background: rgba(255,255,255,.06); border: none; border-radius: .3rem; cursor: pointer; }
+        .p2 .opt.on { color: #14100a; background: linear-gradient(135deg,#ffe066,var(--neon)); }
+
+        /* ═════ P3 : rail d'icônes qui se déplie ═════ */
+        .p3 .rail {
+            display: flex; flex-direction: column; gap: .4rem; width: 3.4rem;
+            padding: .6rem; overflow: hidden;
+            background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08);
+            border-radius: .7rem; transition: width .38s cubic-bezier(.2,.8,.2,1);
+        }
+        .p3 .rail:hover { width: 20rem; }
+        .p3 .line { display: flex; align-items: center; gap: .7rem; padding: .5rem; border-radius: .45rem; cursor: pointer; white-space: nowrap; transition: background .2s; }
+        .p3 .line:hover { background: rgba(255,255,255,.05); }
+        .p3 .line .ic { flex: 0 0 auto; color: var(--neon); }
+        .p3 .line .lbl { font-size: .68rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--txt2); opacity: 0; transition: opacity .25s .12s; }
+        .p3 .line .val { margin-left: auto; font-size: .82rem; font-weight: 700; color: var(--neon); opacity: 0; transition: opacity .25s .12s; }
+        .p3 .rail:hover .lbl, .p3 .rail:hover .val { opacity: 1; }
+
+        /* ═════ P4 : fiche récapitulative ═════ */
+        .p4 .card {
+            padding: 1.1rem; background: linear-gradient(160deg, rgba(30,26,16,.9), rgba(14,14,16,.9));
+            border: 1px solid rgba(255,215,0,.2); border-radius: .8rem;
+        }
+        .p4 .sum { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .9rem; }
+        .p4 .tag {
+            display: flex; align-items: center; gap: .35rem; padding: .35rem .65rem;
+            font-size: .74rem; font-weight: 600; color: var(--txt);
+            background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); border-radius: 2rem;
+        }
+        .p4 .tag b { color: var(--neon); }
+        .p4 .tag .ic { width: .8rem; height: .8rem; color: var(--txt2); }
+        .p4 .edit {
+            width: 100%; padding: .6rem; font-family: inherit; font-size: .74rem; font-weight: 700;
+            letter-spacing: .1em; text-transform: uppercase; color: var(--txt2);
+            background: rgba(255,255,255,.04); border: 1px dashed rgba(255,255,255,.14);
+            border-radius: .5rem; cursor: pointer; transition: .25s;
+        }
+        .p4 .card:hover .edit { color: var(--neon); border-color: rgba(255,215,0,.45); }
+        .p4 .full { max-height: 0; overflow: hidden; transition: max-height .45s cubic-bezier(.2,.8,.2,1); }
+        .p4 .card:hover .full { max-height: 26rem; }
+        .p4 .full .row { display: flex; align-items: center; gap: .6rem; padding: .5rem 0; border-top: 1px solid rgba(255,255,255,.05); }
+        .p4 .full .lbl { font-size: .64rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--txt2); }
+        .p4 .full .opts { margin-left: auto; display: flex; gap: .22rem; }
+        .p4 .opt { padding: .28rem .5rem; font-family: inherit; font-size: .7rem; font-weight: 600; color: var(--txt2); background: rgba(255,255,255,.05); border: none; border-radius: .3rem; cursor: pointer; }
+        .p4 .opt.on { color: #14100a; background: linear-gradient(135deg,#ffe066,var(--neon)); }
+
+        .footer { max-width: 74rem; margin: 3rem auto 0; font-size: .8rem; color: var(--txt2); }
+    </style>
+</head>
+
+<body>
+    <div class="nav">
+        <a href="/prototypes">Mise en page</a>
+        <a href="/prototypes/boutons">Boutons</a>
+        <a href="/prototypes/modes">Modes — grilles</a>
+        <a href="/prototypes/modes-2">Modes — originales</a>
+        <a href="/prototypes/parametres" class="on">Paramètres</a>
+        <a href="/">← Le site</a>
+    </div>
+
+    <div class="head">
+        <h1>Prototypes — paramètres du salon</h1>
+        <p>
+            Quatre façons d'afficher les réglages de l'hôte, dans l'esprit du panel d'avant :
+            <b>icône + libellé + valeur</b>, les options n'apparaissant qu'au survol.
+        </p>
+    </div>
+
+    <div class="rule">
+        <b>Principe commun :</b> au repos on ne voit que la valeur choisie — l'hôte lit ses réglages d'un coup d'œil.
+        Les options ne se déploient qu'au survol, ce qui évite le mur de boutons actuel.
+    </div>
+
+    <div class="protos">
+
+        <!-- P1 -->
+        <section class="p1">
+            <div class="proto-head"><span class="proto-num">P1</span><span class="proto-name">Lignes à révélation</span>
+                <span class="proto-note">Le plus proche du panel d'avant. Au survol d'une ligne, les options recouvrent la ligne elle-même : rien ne bouge autour.</span></div>
+            <div class="frame">
+                <div class="panel">
+                    <div class="panel-title">Réglages</div>
+                    <div class="row">
+                        <svg class="ic" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21.2l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+                        <span class="lbl">Vies</span><span class="val">4</span>
+                        <span class="opts">
+                            <button class="opt">1</button><button class="opt">2</button><button class="opt">3</button>
+                            <button class="opt on">4</button><button class="opt">5</button>
+                        </span>
+                    </div>
+                    <div class="row">
+                        <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                        <span class="lbl">Temps</span><span class="val">10s</span>
+                        <span class="opts">
+                            <button class="opt">7s</button><button class="opt on">10s</button>
+                            <button class="opt">15s</button><button class="opt">20s</button>
+                        </span>
+                    </div>
+                    <div class="row">
+                        <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                        <span class="lbl">Réponses</span><span class="val">4</span>
+                        <span class="opts">
+                            <button class="opt">2</button><button class="opt">3</button>
+                            <button class="opt on">4</button><button class="opt">5</button><button class="opt">6</button>
+                        </span>
+                    </div>
+                    <div class="row">
+                        <svg class="ic" viewBox="0 0 24 24"><path d="M12 2l3 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.9 21l1.2-6.8-5-4.9 6.9-1z"/></svg>
+                        <span class="lbl">Difficulté</span><span class="val">Croissante</span>
+                        <span class="opts">
+                            <button class="opt on">Croissante</button><button class="opt">Aléatoire</button>
+                        </span>
+                    </div>
+                </div>
+                <p class="hint">Chaque ligne garde exactement la même hauteur, survolée ou non — <b>zéro décalage</b>.
+                    Le panneau reste lisible comme une fiche de réglages.</p>
+            </div>
+        </section>
+
+        <!-- P2 -->
+        <section class="p2">
+            <div class="proto-head"><span class="proto-num">P2</span><span class="proto-name">Pastilles + bulle</span>
+                <span class="proto-note">Réglages en grille de trois. La bulle d'options s'ouvre au-dessus de la pastille survolée. Très compact, tient dans un coin d'écran.</span></div>
+            <div class="frame">
+                <div class="panel">
+                    <div class="panel-title">Réglages</div>
+                    <div class="grid">
+                        <div class="chip"><span class="lbl">Vies</span><span class="val">4</span>
+                            <span class="pop"><button class="opt">1</button><button class="opt">2</button><button class="opt">3</button><button class="opt on">4</button><button class="opt">5</button></span>
+                        </div>
+                        <div class="chip"><span class="lbl">Temps</span><span class="val">10s</span>
+                            <span class="pop"><button class="opt">7s</button><button class="opt on">10s</button><button class="opt">15s</button><button class="opt">20s</button></span>
+                        </div>
+                        <div class="chip"><span class="lbl">Rép.</span><span class="val">4</span>
+                            <span class="pop"><button class="opt">2</button><button class="opt">3</button><button class="opt on">4</button><button class="opt">5</button></span>
+                        </div>
+                        <div class="chip"><span class="lbl">Format</span><span class="val">Vies</span>
+                            <span class="pop"><button class="opt on">Vies</button><button class="opt">Points</button></span>
+                        </div>
+                        <div class="chip"><span class="lbl">Diff.</span><span class="val">↗</span>
+                            <span class="pop"><button class="opt on">Croissante</button><button class="opt">Aléatoire</button></span>
+                        </div>
+                        <div class="chip"><span class="lbl">Séries</span><span class="val">Tout</span>
+                            <span class="pop"><button class="opt on">Tout</button><button class="opt">Big 3</button><button class="opt">Naruto</button></span>
+                        </div>
+                    </div>
+                </div>
+                <p class="hint">Le plus <b>compact</b> des quatre : neuf réglages tiennent dans la place de trois lignes.
+                    En contrepartie, les libellés sont abrégés.</p>
+            </div>
+        </section>
+
+        <!-- P3 -->
+        <section class="p3">
+            <div class="proto-head"><span class="proto-num">P3</span><span class="proto-name">Rail d'icônes</span>
+                <span class="proto-note">Au repos, une simple colonne d'icônes collée au bord. Le panneau se déplie au survol et montre libellés et valeurs. Ne mange aucune place tant qu'on n'y touche pas.</span></div>
+            <div class="frame">
+                <div class="panel" style="width:auto">
+                    <div class="panel-title">Réglages (survole le rail)</div>
+                    <div class="rail">
+                        <div class="line"><svg class="ic" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21.2l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg><span class="lbl">Vies</span><span class="val">4</span></div>
+                        <div class="line"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="lbl">Temps</span><span class="val">10s</span></div>
+                        <div class="line"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="lbl">Réponses</span><span class="val">4</span></div>
+                        <div class="line"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2l3 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.9 21l1.2-6.8-5-4.9 6.9-1z"/></svg><span class="lbl">Difficulté</span><span class="val">Croissante</span></div>
+                        <div class="line"><svg class="ic" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span class="lbl">Séries</span><span class="val">Tout</span></div>
+                        <div class="line"><svg class="ic" viewBox="0 0 24 24"><path d="M17.94 17.94A10 10 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A9 9 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M1 1l22 22"/></svg><span class="lbl">Spoil</span><span class="val">Non</span></div>
+                    </div>
+                </div>
+                <p class="hint">Idéal si tu veux que le salon respire : au repos le panneau ne fait que <b>3,4 rem de large</b>.
+                    Sur mobile il faudra le remplacer par un bouton, faute de survol.</p>
+            </div>
+        </section>
+
+        <!-- P4 -->
+        <section class="p4">
+            <div class="proto-head"><span class="proto-num">P4</span><span class="proto-name">Fiche récapitulative</span>
+                <span class="proto-note">Au repos, les réglages sont résumés en étiquettes lisibles d'un coup d'œil. Le détail modifiable se déplie au survol de la fiche.</span></div>
+            <div class="frame">
+                <div class="panel">
+                    <div class="panel-title">Réglages</div>
+                    <div class="card">
+                        <div class="sum">
+                            <span class="tag"><svg class="ic" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21.2l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>Vies <b>4</b></span>
+                            <span class="tag"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><b>10s</b></span>
+                            <span class="tag"><b>4</b> réponses</span>
+                            <span class="tag">Difficulté <b>croissante</b></span>
+                            <span class="tag">Séries <b>Tout</b></span>
+                            <span class="tag">Bonus <b>oui</b></span>
+                        </div>
+                        <div class="full">
+                            <div class="row"><span class="lbl">Vies</span><span class="opts"><button class="opt">3</button><button class="opt on">4</button><button class="opt">5</button></span></div>
+                            <div class="row"><span class="lbl">Temps</span><span class="opts"><button class="opt">7s</button><button class="opt on">10s</button><button class="opt">15s</button></span></div>
+                            <div class="row"><span class="lbl">Difficulté</span><span class="opts"><button class="opt on">Croiss.</button><button class="opt">Aléat.</button></span></div>
+                        </div>
+                        <button class="edit">Survole pour modifier</button>
+                    </div>
+                </div>
+                <p class="hint">Le seul où l'hôte lit ses réglages comme une <b>phrase</b>, sans chercher.
+                    Utile aussi pour les joueurs : on pourrait leur montrer ce résumé en lecture seule.</p>
+            </div>
+        </section>
+    </div>
+
+    <p class="footer">Dis-moi le numéro retenu — on peut aussi mélanger, par exemple le résumé de P4 au repos et les lignes de P1 au survol.</p>
+</body>
+
+</html>
