@@ -162,7 +162,7 @@
                                 v-for="m in modes"
                                 :key="m.id"
                                 class="v2-mode-row"
-                                :class="['mode-' + m.id, { active: selectedMode === m.id }]"
+                                :class="['mode-' + m.id, { active: selectedMode === m.id, soon: m.soon }]"
                                 @mouseenter="selectedMode = m.id"
                                 @click="selectedMode = m.id">
                                 <span class="v2-mode-row-bar"></span>
@@ -170,11 +170,13 @@
                                     <span class="v2-mode-row-name">{{ m.name }}</span>
                                     <span class="v2-mode-row-kind">{{ m.kind }} · {{ m.players }}</span>
                                 </span>
+                                <span class="v2-mode-row-soon" v-if="m.soon">bientôt</span>
                             </button>
                         </div>
 
                         <div class="v2-mode-preview" :class="'mode-' + selectedMode">
-                            <transition name="v2-fade" mode="out-in">
+                            <!-- fondu croisé : les deux couches coexistent, jamais de trou -->
+                            <transition name="v2-fade">
                                 <div class="v2-mode-art" :key="currentMode.id"
                                      :style="{ backgroundImage: 'url(' + currentMode.img + ')' }"></div>
                             </transition>
@@ -182,8 +184,9 @@
                             <div class="v2-mode-preview-body">
                                 <span class="v2-mode-preview-name">{{ currentMode.name }}</span>
                                 <p class="v2-mode-preview-desc">{{ currentMode.desc }}</p>
-                                <button class="v2-btn v2-btn-primary v2-btn-lg" @click="createRoom" :disabled="creatingRoom">
-                                    {{ creatingRoom ? 'Création…' : 'Lancer le salon' }}
+                                <button class="v2-cta" @click="createRoom" :disabled="creatingRoom || currentMode.soon">
+                                    <span class="v2-cta-label">{{ creatingRoom ? 'Création…' : (currentMode.soon ? 'Bientôt disponible' : 'Créer le salon') }}</span>
+                                    <span class="v2-cta-shine"></span>
                                 </button>
                                 <div class="v2-action-error" v-if="createError">{{ createError }}</div>
                             </div>

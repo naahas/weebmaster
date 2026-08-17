@@ -25,6 +25,17 @@ createApp({
                   desc: "Deux équipes, un seul quiz. Le camp le plus fort l'emporte." },
                 { id: 'bombanime', name: 'BombAnime', kind: 'Solo',   players: '13', img: 'lambo2.png',
                   desc: "La bombe tourne. Cite un perso avant qu'elle explose." },
+                // 🧪 Modes fictifs : uniquement pour juger la mise en page à l'échelle
+                { id: 'ascension', name: 'Ascension', kind: 'Solo',   players: '∞',  img: 'ascension.png', soon: true,
+                  desc: "Grimpe la tour, un mini-jeu différent à chaque étage." },
+                { id: 'duel',      name: 'Duel',      kind: '1 v 1',  players: '2',  img: 'big3.png', soon: true,
+                  desc: "Face à face en une manche. Un seul survivant." },
+                { id: 'tournoi',   name: 'Tournoi',   kind: 'Bracket', players: '32', img: 'aventurine3.png', soon: true,
+                  desc: "Élimination directe jusqu'à la finale." },
+                { id: 'blindtest', name: 'Blind test', kind: 'Solo',  players: '∞',  img: 'dbz.png', soon: true,
+                  desc: "Reconnais l'opening en quelques secondes." },
+                { id: 'chrono',    name: 'Chrono',    kind: 'Solo',   players: '∞',  img: 'bleach.png', soon: true,
+                  desc: "Le plus de bonnes réponses en soixante secondes." },
             ],
             selectedMode: localStorage.getItem('lastMode') || 'classic',
             homeScreen: 'hub',    // hub | modes | join
@@ -271,6 +282,7 @@ createApp({
         await this.checkAuth();
         await this.restoreGameState();
 
+        this.preloadModeArt();
         this.initParticles();
         this.initCursorDust();
         this.initSocket();
@@ -768,6 +780,11 @@ createApp({
 
         // L'hôte ouvre un salon dans le mode sélectionné, puis le rejoint.
         async createRoom() {
+            if (this.currentMode.soon) {
+                this.createError = 'Ce mode arrive bientôt';
+                return;
+            }
+
             if (this.creatingRoom) return;
             this.creatingRoom = true;
             this.createError = '';
@@ -824,6 +841,11 @@ createApp({
                     sessionStorage.setItem('roomCode', data.roomCode);
                 }
             } catch (e) { /* le code reste affiché vide, sans bloquer */ }
+        },
+
+        // Les illustrations sont lourdes : on les met en cache avant le premier survol
+        preloadModeArt() {
+            this.modes.forEach(m => { const i = new Image(); i.src = m.img; });
         },
 
         goToModes() {

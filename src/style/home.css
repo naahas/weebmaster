@@ -17146,15 +17146,27 @@ body.modal-open {
     align-items: stretch;
 }
 
-.v2-modes-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.v2-modes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    max-height: clamp(18rem, 58vh, 26rem);
+    overflow-y: auto;
+    padding-right: 0.3rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 215, 0, 0.35) transparent;
+}
+
+.v2-modes-list::-webkit-scrollbar { width: 0.3rem; }
+.v2-modes-list::-webkit-scrollbar-thumb { background: rgba(255, 215, 0, 0.3); border-radius: 1rem; }
 
 .v2-mode-row {
     position: relative;
     display: flex;
     align-items: center;
     gap: 0.7rem;
-    flex: 1;
-    padding: 0.9rem 1rem;
+    flex: 0 0 auto;
+    padding: 0.7rem 0.9rem;
     text-align: left;
     cursor: pointer;
     background: rgba(255, 255, 255, 0.025);
@@ -17213,11 +17225,14 @@ body.modal-open {
 
 .v2-mode-art {
     position: absolute;
-    inset: 0;
+    inset: 0 0 0 22%;
     background-size: cover;
-    background-position: center 22%;
-    filter: saturate(0.95) brightness(0.72);
-    animation: v2SlowZoom 18s ease-in-out infinite alternate;
+    background-position: center 18%;
+    filter: saturate(1.02) brightness(0.92);
+    /* fondu par la gauche : l'image se dissout là où commence le texte */
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.35) 22%, #000 62%);
+    mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.35) 22%, #000 62%);
+    animation: v2SlowZoom 20s ease-in-out infinite alternate;
 }
 
 @keyframes v2SlowZoom {
@@ -17228,18 +17243,20 @@ body.modal-open {
 .v2-mode-preview-shade {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to top, rgba(6, 6, 8, 0.96) 24%, rgba(6, 6, 8, 0.45) 62%, transparent 100%);
+    background:
+        linear-gradient(90deg, rgba(8, 8, 10, 0.96) 18%, rgba(8, 8, 10, 0.55) 42%, transparent 68%),
+        linear-gradient(to top, rgba(6, 6, 8, 0.9) 6%, transparent 46%);
 }
 
 .v2-mode-preview-body {
     position: absolute;
-    left: clamp(1rem, 2.5vw, 1.8rem);
+    left: clamp(1.4rem, 3vw, 2.4rem);
     right: clamp(1rem, 2.5vw, 1.8rem);
-    bottom: clamp(1rem, 2.5vw, 1.6rem);
+    bottom: clamp(1.4rem, 3vw, 2.2rem);
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.5rem;
+    gap: 1.1rem;
 }
 
 .v2-mode-preview-name {
@@ -17251,13 +17268,14 @@ body.modal-open {
 }
 
 .v2-mode-preview-desc {
-    max-width: 26rem;
-    font-size: 0.8rem;
-    line-height: 1.5;
+    max-width: 22rem;
+    font-size: 0.82rem;
+    line-height: 1.6;
     color: var(--text-secondary);
 }
 
-.v2-fade-enter-active, .v2-fade-leave-active { transition: opacity 0.35s ease; }
+.v2-fade-enter-active { transition: opacity 0.45s ease; }
+.v2-fade-leave-active { transition: opacity 0.45s ease; position: absolute; }
 .v2-fade-enter-from, .v2-fade-leave-to { opacity: 0; }
 
 /* ── Écran 4 : rejoindre ──────────────────── */
@@ -17565,3 +17583,68 @@ body.modal-open {
 
 .v2-back-arrow { display: block; transition: transform 0.25s ease; }
 .v2-back:hover .v2-back-arrow { transform: translateX(-0.12rem); }
+
+/* ── Bouton « Créer le salon » ─────────────── */
+.v2-cta {
+    position: relative;
+    overflow: hidden;
+    padding: 0.95rem 2.1rem;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #14100a;
+    background: linear-gradient(135deg, #ffe066 0%, var(--neon-primary) 45%, var(--accent-color) 100%);
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    box-shadow: 0 0.4rem 1.5rem rgba(255, 175, 0, 0.28),
+                inset 0 0.06rem 0 rgba(255, 255, 255, 0.45);
+    transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease, filter 0.25s ease;
+}
+
+.v2-cta-label { position: relative; z-index: 2; }
+
+/* éclat qui traverse le bouton au survol */
+.v2-cta-shine {
+    position: absolute;
+    top: 0;
+    left: -55%;
+    width: 40%;
+    height: 100%;
+    background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+    transition: left 0.65s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.v2-cta:hover:not(:disabled) {
+    transform: translateY(-0.16rem);
+    box-shadow: 0 0.7rem 2.2rem rgba(255, 175, 0, 0.5),
+                inset 0 0.06rem 0 rgba(255, 255, 255, 0.55);
+}
+
+.v2-cta:hover:not(:disabled) .v2-cta-shine { left: 115%; }
+.v2-cta:active:not(:disabled) { transform: translateY(0); }
+
+.v2-cta:disabled {
+    cursor: default;
+    filter: grayscale(0.7);
+    opacity: 0.55;
+    box-shadow: none;
+}
+
+/* Modes pas encore disponibles */
+.v2-mode-row-soon {
+    margin-left: auto;
+    padding: 0.15rem 0.42rem;
+    font-size: 0.52rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 0.25rem;
+}
+
+.v2-mode-row.soon .v2-mode-row-name { color: rgba(255, 255, 255, 0.62); }
+.v2-mode-row.soon.active { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.18); }
+.v2-mode-row.soon.active .v2-mode-row-bar { background: rgba(255, 255, 255, 0.35); box-shadow: none; }
