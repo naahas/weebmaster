@@ -414,19 +414,6 @@
                                             @click="applySetting('/admin/set-bonus-enabled', { enabled: !bonusEnabled }, () => bonusEnabled = !bonusEnabled)"><span></span></button>
                                 </div>
                             </template>
-
-                            <!-- 🧪 Outil de mise au point : remplir le salon -->
-                            <div class="v2-set">
-                                <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9"/></svg>
-                                <span class="v2-set-label">Test</span>
-                                <span class="v2-set-value">{{ playerCount }}</span>
-                                <span class="v2-set-opts">
-                                    <button v-for="n in [10,20,30,50]" :key="n" class="v2-set-opt"
-                                            @click="addFakePlayers(n)">+{{ n }}</button>
-                                    <button class="v2-set-opt" @click="clearFakePlayers()">vider</button>
-                                </span>
-                            </div>
-
                             <!-- BombAnime -->
                             <template v-else>
                                 <div class="v2-set">
@@ -441,6 +428,20 @@
                                 </div>
                                 <div class="v2-set-note">Le timer et les vies se règlent à l'ouverture du salon.</div>
                             </template>
+
+
+                            <!-- 🧪 Outil de mise au point : remplir le salon -->
+                            <div class="v2-set">
+                                <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9"/></svg>
+                                <span class="v2-set-label">Test</span>
+                                <span class="v2-set-value">{{ playerCount }}</span>
+                                <span class="v2-set-opts">
+                                    <button v-for="n in [10,20,30,50]" :key="n" class="v2-set-opt"
+                                            @click="addFakePlayers(n)">+{{ n }}</button>
+                                    <button class="v2-set-opt" @click="clearFakePlayers()">vider</button>
+                                </span>
+                            </div>
+
                         </div>
 
                     </aside>

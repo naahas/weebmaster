@@ -22,7 +22,7 @@ n'héberge toujours qu'**une seule partie à la fois**.
 - **Frontend joueur** : Vue 3 via CDN (`vue.global.js`), un seul gros composant (`src/script/app.js`)
 - **Frontend hôte** : JS vanilla (`src/script/admin.js` + `admin-bombanime.js`)
 - **Déploiement** : Render (Procfile `web: node server.js`)
-- **Test** : `npm run smoke` — lancer `npm start` à côté, le script joue un cycle complet dans les 2 modes
+- **Tests** : `npm run check` (le template Vue compile-t-il) et `npm run smoke` (cycle de jeu complet, serveur lancé à côté)
 - Pas de build, pas de bundler. Les fichiers sont servis en statique tels quels.
 
 ## Arborescence
@@ -104,4 +104,6 @@ Les variables Twitch, `SESSION_SECRET`, `ADMIN_PASSWORD` et `MASTER_ADMIN_PASSWO
   ne jamais relire en entier.
 - `admin.js` contient encore des branches mortes sur les modes supprimés (inoffensives, jamais
   atteintes). Elles disparaîtront avec la refonte du panel en phase 2.
-- Valider une modif : `npm start` puis `npm run smoke`, et ouvrir `/` + `/admin` dans le navigateur.
+- Valider une modif : `npm run check`, puis `npm start` + `npm run smoke`, et ouvrir `/` dans le navigateur.
+- ⚠️ `home.html` est un template Vue inline : un `v-else` séparé de son `v-if` par un autre
+  élément casse toute la page (écran blanc). `npm run check` attrape ce cas.

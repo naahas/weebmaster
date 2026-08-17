@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "nodemon server.js",
-    "smoke": "node scripts/smoke-test.js"
+    "smoke": "node scripts/smoke-test.js",
+    "check": "node scripts/check-template.js"
   },
   "keywords": [
     "quiz",
@@ -24,6 +25,7 @@
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
+    "@vue/compiler-dom": "^3.5.41",
     "nodemon": "^3.1.10",
     "socket.io-client": "^4.8.3"
   }
