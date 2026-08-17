@@ -907,6 +907,14 @@ createApp({
             }
         },
 
+        addFakePlayers(count) {
+            if (this.socket) this.socket.emit('dev-add-fake-players', { count });
+        },
+
+        clearFakePlayers() {
+            if (this.socket) this.socket.emit('dev-clear-fake-players');
+        },
+
         hostKick(twitchId) {
             if (!this.socket) return;
             this.socket.emit('kick-player', { twitchId });

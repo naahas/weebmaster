@@ -241,18 +241,16 @@
                         <span class="v2-logo-text">SM</span>
                         <span class="v2-logo-ring"></span>
                     </button>
-                    <button class="v2-identity" @click="editPseudo" title="Changer de pseudo">
-                        <span class="v2-identity-dot"></span>
-                        <span class="v2-identity-name">{{ username }}</span>
-                        <span class="v2-identity-edit">✎</span>
-                    </button>
+                    <span class="v2-mode-badge" :class="'mode-' + lobbyMode">
+                        <span class="v2-mode-badge-dot"></span>
+                        {{ modeLabel }}
+                    </span>
                 </header>
 
                 <div class="v2-room-layout" :class="'mode-' + lobbyMode">
 
                     <!-- ── Colonne principale ── -->
                     <section class="v2-room-main">
-                        <span class="v2-room-kicker">{{ modeLabel }}</span>
 
                         <div class="v2-room-code-block" v-if="roomCode">
                             <span class="v2-room-code-label">Code du salon</span>
@@ -319,12 +317,9 @@
 
                     <!-- ── Réglages (hôte uniquement) ── -->
                     <aside class="v2-settings" v-if="isHost" :class="{ open: showSettings }">
-                        <button class="v2-settings-toggle" @click="showSettings = !showSettings">
-                            <span>Réglages</span>
-                            <span class="v2-settings-chevron">{{ showSettings ? '▾' : '▸' }}</span>
-                        </button>
+                        <div class="v2-settings-head">Réglages</div>
 
-                        <div class="v2-settings-body" v-show="showSettings">
+                        <div class="v2-settings-body">
 
                             <!-- Quiz : Classique & Rivalité -->
                             <template v-if="lobbyMode !== 'bombanime'">
@@ -419,6 +414,18 @@
                                             @click="applySetting('/admin/set-bonus-enabled', { enabled: !bonusEnabled }, () => bonusEnabled = !bonusEnabled)"><span></span></button>
                                 </div>
                             </template>
+
+                            <!-- 🧪 Outil de mise au point : remplir le salon -->
+                            <div class="v2-set">
+                                <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9"/></svg>
+                                <span class="v2-set-label">Test</span>
+                                <span class="v2-set-value">{{ playerCount }}</span>
+                                <span class="v2-set-opts">
+                                    <button v-for="n in [10,20,30,50]" :key="n" class="v2-set-opt"
+                                            @click="addFakePlayers(n)">+{{ n }}</button>
+                                    <button class="v2-set-opt" @click="clearFakePlayers()">vider</button>
+                                </span>
+                            </div>
 
                             <!-- BombAnime -->
                             <template v-else>

@@ -5675,6 +5675,47 @@ io.on('connection', (socket) => {
     });
     
     // 🆕 TEMPORAIRE: Ajouter un joueur fictif pour les tests
+    // 🧪 Outil de mise au point : peupler le salon pour juger l'affichage
+    socket.on('dev-add-fake-players', (data) => {
+        if (gameState.inProgress || !gameState.isActive) return;
+
+        const count = Math.min(Math.max(parseInt(data && data.count) || 0, 0), 60);
+        const prenoms = ['Kitsune', 'Shinobi', 'Senpai', 'Hokage', 'Samurai', 'Ronin', 'Yokai', 'Nakama',
+                         'Katana', 'Ramen', 'Kaiju', 'Otaku', 'Sensei', 'Onigiri', 'Mecha', 'Tanuki',
+                         'Bushido', 'Shogun', 'Kunai', 'Sakura', 'Tengu', 'Oni', 'Haki', 'Zanpakuto'];
+
+        for (let i = 0; i < count; i++) {
+            const id = 'fake_' + Date.now() + '_' + i;
+            const nom = prenoms[Math.floor(Math.random() * prenoms.length)] + Math.floor(10 + Math.random() * 990);
+            gameState.players.set(id, {
+                socketId: id,
+                twitchId: id,
+                username: nom,
+                lives: gameState.lives,
+                points: 0,
+                correctAnswers: 0,
+                avatarUrl: 'novice.png',
+                team: gameState.lobbyMode === 'rivalry' ? (i % 2 === 0 ? 1 : 2) : null,
+                isFake: true,
+            });
+        }
+
+        if (gameState.lobbyMode === 'rivalry') updateTeamCounts();
+        console.log(`🧪 ${count} joueur(s) fictif(s) ajouté(s) — total ${gameState.players.size}`);
+        broadcastLobbyUpdate();
+    });
+
+    socket.on('dev-clear-fake-players', () => {
+        if (gameState.inProgress) return;
+        let retires = 0;
+        for (const [id, p] of gameState.players.entries()) {
+            if (p.isFake) { gameState.players.delete(id); retires++; }
+        }
+        if (gameState.lobbyMode === 'rivalry') updateTeamCounts();
+        console.log(`🧪 ${retires} joueur(s) fictif(s) retiré(s)`);
+        broadcastLobbyUpdate();
+    });
+
     socket.on('bombanime-add-fake-player', () => {
         if (gameState.inProgress) {
             console.log('❌ Impossible d\'ajouter un joueur fictif en cours de partie');
