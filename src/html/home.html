@@ -241,13 +241,20 @@
                         <span class="v2-logo-text">SM</span>
                         <span class="v2-logo-ring"></span>
                     </button>
-                    <span class="v2-mode-badge" :class="'mode-' + lobbyMode">
-                        <span class="v2-mode-badge-dot"></span>
-                        {{ modeLabel }}
-                    </span>
+                    <div class="v2-room-topright">
+                        <span class="v2-mode-badge" :class="'mode-' + lobbyMode">
+                            <span class="v2-mode-badge-dot"></span>
+                            {{ modeLabel }}
+                        </span>
+                        <button class="v2-room-close" v-if="isHost" @click="hostCloseRoom" title="Fermer le salon" aria-label="Fermer le salon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                                <path d="M18 6 6 18M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
                 </header>
 
-                <div class="v2-room-layout" :class="'mode-' + lobbyMode">
+                <div class="v2-room-layout" :class="['mode-' + lobbyMode, { guest: !isHost }]">
 
                     <!-- ── Colonne principale ── -->
                     <section class="v2-room-main">
@@ -305,7 +312,6 @@
                                 <span class="v2-cta-label">{{ startingGame ? 'Lancement…' : 'Démarrer la partie' }}</span>
                                 <span class="v2-cta-shine"></span>
                             </button>
-                            <button class="v2-btn v2-btn-ghost" @click="hostCloseRoom">Fermer le salon</button>
                         </div>
                         <div class="v2-room-waiting" v-else>
                             <span class="v2-live-dot"></span>
@@ -345,26 +351,24 @@
                                     </span>
                                 </div>
 
-                                <div class="v2-set" v-else>
+                                <div class="v2-set static" v-else>
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
                                     <span class="v2-set-label">Questions</span>
-                                    <span class="v2-set-value">{{ questionsCount }}</span>
-                                    <span class="v2-set-opts">
-                                        <button v-for="n in [10,15,20,30]" :key="n"
-                                                class="v2-set-opt" :class="{ on: questionsCount === n }"
-                                                @click="applySetting('/admin/set-questions', { questions: n }, () => questionsCount = n)">{{ n }}</button>
-                                    </span>
+                                    <input class="v2-range" type="range" min="15" max="50" step="5"
+                                           :value="questionsCount"
+                                           @input="questionsCount = parseInt($event.target.value)"
+                                           @change="applySetting('/admin/set-questions', { questions: questionsCount }, () => {})">
+                                    <span class="v2-set-value num">{{ questionsCount }}</span>
                                 </div>
 
-                                <div class="v2-set">
+                                <div class="v2-set static">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
                                     <span class="v2-set-label">Temps</span>
-                                    <span class="v2-set-value">{{ gameTime }}s</span>
-                                    <span class="v2-set-opts">
-                                        <button v-for="n in [7,10,15,20]" :key="n"
-                                                class="v2-set-opt" :class="{ on: gameTime === n }"
-                                                @click="applySetting('/admin/set-time', { time: n }, () => gameTime = n)">{{ n }}s</button>
-                                    </span>
+                                    <input class="v2-range" type="range" min="5" max="30" step="1"
+                                           :value="gameTime"
+                                           @input="gameTime = parseInt($event.target.value)"
+                                           @change="applySetting('/admin/set-time', { time: gameTime }, () => {})">
+                                    <span class="v2-set-value num">{{ gameTime }}s</span>
                                 </div>
 
                                 <div class="v2-set">
@@ -372,7 +376,7 @@
                                     <span class="v2-set-label">Réponses</span>
                                     <span class="v2-set-value">{{ answersCount }}</span>
                                     <span class="v2-set-opts">
-                                        <button v-for="n in [2,3,4,5,6]" :key="n"
+                                        <button v-for="n in [4,6]" :key="n"
                                                 class="v2-set-opt" :class="{ on: answersCount === n }"
                                                 @click="applySetting('/admin/set-answers', { answers: n }, () => answersCount = n)">{{ n }}</button>
                                     </span>

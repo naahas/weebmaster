@@ -17931,7 +17931,7 @@ body.modal-open {
 .v2-team-pick.team-2:hover, .v2-team-pick.team-2.picked { border-color: var(--neon-primary); background: rgba(255, 215, 0, 0.09); }
 
 /* Joueurs */
-.v2-room-players { width: 100%; max-width: 34rem; }
+.v2-room-players { width: 100%; max-width: 52rem; }
 
 .v2-room-players-head {
     display: flex;
@@ -17957,8 +17957,8 @@ body.modal-open {
 .v2-room-players-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
-    max-height: 11rem;
+    gap: 0.6rem;
+    max-height: clamp(13rem, 34vh, 20rem);
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 215, 0, 0.3) transparent;
@@ -17967,9 +17967,9 @@ body.modal-open {
 .v2-room-player {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.55rem 0.95rem;
-    font-size: 0.98rem;
+    gap: 0.55rem;
+    padding: 0.62rem 1.05rem;
+    font-size: 1.05rem;
     font-weight: 600;
     color: var(--text-primary);
     background: rgba(255, 255, 255, 0.04);
@@ -18071,8 +18071,10 @@ body.modal-open {
     transition: border-color 0.25s ease, background 0.25s ease;
 }
 
-.v2-set:hover { border-color: rgba(255, 215, 0, 0.4); }
-.v2-set.static:hover { border-color: rgba(255, 255, 255, 0.14); }
+/* Au survol, c'est le tiroir qui porte le liseré : la ligne s'efface derrière
+   lui pour éviter le double contour. */
+.v2-set:hover { border-color: rgba(255, 255, 255, 0.07); }
+.v2-set.static:hover { border-color: rgba(255, 215, 0, 0.3); }
 
 .v2-set-ic {
     flex: 0 0 auto;
@@ -18114,9 +18116,9 @@ body.modal-open {
     gap: 0.22rem;
     padding: 0.28rem;
     background: #17150f;
-    border: 0.06rem solid rgba(255, 215, 0, 0.3);
-    border-radius: 0.45rem;
-    box-shadow: 0 0.7rem 1.8rem rgba(0, 0, 0, 0.55);
+    border: 0.06rem solid rgba(255, 215, 0, 0.45);
+    border-radius: 0.5rem;
+    box-shadow: 0 0.7rem 1.8rem rgba(0, 0, 0, 0.6);
     opacity: 0;
     pointer-events: none;
     transform: translateY(-50%) scale(0.97);
@@ -18232,3 +18234,80 @@ body.modal-open {
 .v2-mode-badge.mode-rivalry .v2-mode-badge-dot { background: #a78bfa; box-shadow: 0 0 0.6rem #a78bfa; }
 .v2-mode-badge.mode-bombanime { border-color: rgba(74, 222, 128, 0.4); }
 .v2-mode-badge.mode-bombanime .v2-mode-badge-dot { background: #4ade80; box-shadow: 0 0 0.6rem #4ade80; }
+
+/* Coin haut droit du salon : badge de mode + fermeture */
+.v2-room-topright { display: flex; align-items: center; gap: 0.6rem; }
+
+.v2-room-close {
+    display: grid;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    padding: 0;
+    color: #ff6b6b;
+    background: rgba(239, 68, 68, 0.1);
+    border: 0.06rem solid rgba(239, 68, 68, 0.35);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.22s ease, border-color 0.22s ease, transform 0.22s ease, color 0.22s ease;
+}
+
+.v2-room-close svg { width: 1.05rem; height: 1.05rem; }
+
+.v2-room-close:hover {
+    color: #fff;
+    background: rgba(239, 68, 68, 0.85);
+    border-color: rgba(239, 68, 68, 0.9);
+    transform: rotate(90deg);
+}
+
+/* Vue invité : une seule colonne, tout centré */
+.v2-room-layout.guest {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    padding: clamp(2rem, 12vh, 7rem) clamp(1rem, 3vw, 3rem) 0;
+}
+
+.v2-room-layout.guest .v2-room-main { align-items: center; text-align: center; }
+.v2-room-layout.guest .v2-room-players-grid { justify-content: center; }
+.v2-room-layout.guest .v2-teams { justify-content: center; }
+
+/* Curseur de réglage (temps, nombre de questions) */
+.v2-range {
+    flex: 1 1 auto;
+    min-width: 4rem;
+    height: 0.28rem;
+    margin: 0 0.5rem;
+    appearance: none;
+    -webkit-appearance: none;
+    background: linear-gradient(90deg, var(--neon-primary), var(--accent-color));
+    border-radius: 1rem;
+    outline: none;
+    cursor: pointer;
+}
+
+.v2-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 0.95rem;
+    height: 0.95rem;
+    border-radius: 50%;
+    background: #fff5cc;
+    border: 0.12rem solid var(--accent-color);
+    box-shadow: 0 0 0.6rem rgba(255, 190, 40, 0.6);
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.v2-range::-webkit-slider-thumb:hover { transform: scale(1.18); }
+
+.v2-range::-moz-range-thumb {
+    width: 0.95rem;
+    height: 0.95rem;
+    border-radius: 50%;
+    background: #fff5cc;
+    border: 0.12rem solid var(--accent-color);
+    box-shadow: 0 0 0.6rem rgba(255, 190, 40, 0.6);
+    cursor: pointer;
+}
+
+.v2-set-value.num { min-width: 2.4rem; text-align: right; }
