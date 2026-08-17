@@ -329,75 +329,91 @@
                             <!-- Quiz : Classique & Rivalité -->
                             <template v-if="lobbyMode !== 'bombanime'">
                                 <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
                                     <span class="v2-set-label">Format</span>
-                                    <div class="v2-set-opts">
+                                    <span class="v2-set-value">{{ gameMode === 'lives' ? 'Vies' : 'Points' }}</span>
+                                    <span class="v2-set-opts">
                                         <button v-for="o in [{v:'lives',l:'Vies'},{v:'points',l:'Points'}]" :key="o.v"
                                                 class="v2-set-opt" :class="{ on: gameMode === o.v }"
                                                 @click="applySetting('/admin/set-mode', { mode: o.v }, () => gameMode = o.v)">{{ o.l }}</button>
-                                    </div>
+                                    </span>
                                 </div>
 
                                 <div class="v2-set" v-if="gameMode === 'lives'">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21.2l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
                                     <span class="v2-set-label">Vies</span>
-                                    <div class="v2-set-opts">
+                                    <span class="v2-set-value">{{ gameLives }}</span>
+                                    <span class="v2-set-opts">
                                         <button v-for="n in [1,2,3,4,5]" :key="n"
                                                 class="v2-set-opt" :class="{ on: gameLives === n }"
                                                 @click="applySetting('/admin/set-lives', { lives: n }, () => gameLives = n)">{{ n }}</button>
-                                    </div>
+                                    </span>
                                 </div>
 
                                 <div class="v2-set" v-else>
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
                                     <span class="v2-set-label">Questions</span>
-                                    <div class="v2-set-opts">
+                                    <span class="v2-set-value">{{ questionsCount }}</span>
+                                    <span class="v2-set-opts">
                                         <button v-for="n in [10,15,20,30]" :key="n"
                                                 class="v2-set-opt" :class="{ on: questionsCount === n }"
                                                 @click="applySetting('/admin/set-questions', { questions: n }, () => questionsCount = n)">{{ n }}</button>
-                                    </div>
+                                    </span>
                                 </div>
 
                                 <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
                                     <span class="v2-set-label">Temps</span>
-                                    <div class="v2-set-opts">
+                                    <span class="v2-set-value">{{ gameTime }}s</span>
+                                    <span class="v2-set-opts">
                                         <button v-for="n in [7,10,15,20]" :key="n"
                                                 class="v2-set-opt" :class="{ on: gameTime === n }"
                                                 @click="applySetting('/admin/set-time', { time: n }, () => gameTime = n)">{{ n }}s</button>
-                                    </div>
+                                    </span>
                                 </div>
 
                                 <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                                     <span class="v2-set-label">Réponses</span>
-                                    <div class="v2-set-opts">
+                                    <span class="v2-set-value">{{ answersCount }}</span>
+                                    <span class="v2-set-opts">
                                         <button v-for="n in [2,3,4,5,6]" :key="n"
                                                 class="v2-set-opt" :class="{ on: answersCount === n }"
                                                 @click="applySetting('/admin/set-answers', { answers: n }, () => answersCount = n)">{{ n }}</button>
-                                    </div>
+                                    </span>
                                 </div>
 
                                 <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M12 2l3 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.9 21l1.2-6.8-5-4.9 6.9-1z"/></svg>
                                     <span class="v2-set-label">Difficulté</span>
-                                    <div class="v2-set-opts">
+                                    <span class="v2-set-value">{{ difficultyMode === 'croissante' ? 'Croissante' : 'Aléatoire' }}</span>
+                                    <span class="v2-set-opts">
                                         <button v-for="o in [{v:'croissante',l:'Croissante'},{v:'aleatoire',l:'Aléatoire'}]" :key="o.v"
                                                 class="v2-set-opt" :class="{ on: difficultyMode === o.v }"
                                                 @click="applySetting('/admin/set-difficulty-mode', { mode: o.v }, () => difficultyMode = o.v)">{{ o.l }}</button>
-                                    </div>
+                                    </span>
                                 </div>
 
                                 <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
                                     <span class="v2-set-label">Séries</span>
-                                    <div class="v2-set-opts wrap">
+                                    <span class="v2-set-value">{{ serieFilterName }}</span>
+                                    <span class="v2-set-opts wrap">
                                         <button v-for="f in serieFilters" :key="f.id"
                                                 class="v2-set-opt" :class="{ on: serieFilter === f.id }"
                                                 @click="applySetting('/admin/set-serie-filter', { filter: f.id }, () => serieFilter = f.id)">{{ f.name }}</button>
-                                    </div>
+                                    </span>
                                 </div>
 
-                                <div class="v2-set">
+                                <div class="v2-set static">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M17.9 17.9A10 10 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.1-5.9M9.9 4.2A9 9 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.2 3.2"/><path d="M1 1l22 22"/></svg>
                                     <span class="v2-set-label">Anti-spoil</span>
                                     <button class="v2-switch" :class="{ on: noSpoil }"
                                             @click="applySetting('/admin/set-no-spoil', { enabled: !noSpoil }, () => noSpoil = !noSpoil)"><span></span></button>
                                 </div>
 
-                                <div class="v2-set">
+                                <div class="v2-set static">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M13 2L4.1 12.9a1 1 0 0 0 .8 1.6H11l-1 7.5 8.9-10.9a1 1 0 0 0-.8-1.6H12z"/></svg>
                                     <span class="v2-set-label">Bonus &amp; défis</span>
                                     <button class="v2-switch" :class="{ on: bonusEnabled }"
                                             @click="applySetting('/admin/set-bonus-enabled', { enabled: !bonusEnabled }, () => bonusEnabled = !bonusEnabled)"><span></span></button>
@@ -407,16 +423,19 @@
                             <!-- BombAnime -->
                             <template v-else>
                                 <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><circle cx="12" cy="14" r="7"/><path d="M16 5l2-2M14 6l1.5-3"/></svg>
                                     <span class="v2-set-label">Série</span>
-                                    <div class="v2-set-opts wrap">
+                                    <span class="v2-set-value">{{ bombanime.serie }}</span>
+                                    <span class="v2-set-opts wrap">
                                         <button v-for="s in bombanimeSeries" :key="s"
                                                 class="v2-set-opt" :class="{ on: bombanime.serie === s }"
                                                 @click="applySetting('/admin/bombanime/update-serie', { serie: s }, () => bombanime.serie = s)">{{ s }}</button>
-                                    </div>
+                                    </span>
                                 </div>
                                 <div class="v2-set-note">Le timer et les vies se règlent à l'ouverture du salon.</div>
                             </template>
                         </div>
+
                     </aside>
                 </div>
             </div>

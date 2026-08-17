@@ -383,6 +383,11 @@ createApp({
         // 🆕 v2 — mode actuellement sélectionné sur l'accueil
         // Le survol prévisualise, le clic verrouille : en sortant de la liste on
         // revient au mode verrouillé.
+        serieFilterName() {
+            const f = this.serieFilters.find(x => x.id === this.serieFilter);
+            return f ? f.name : 'Tout';
+        },
+
         modeLabel() {
             const m = this.modes.find(x => x.id === this.lobbyMode);
             return m ? m.name : 'Salon';
