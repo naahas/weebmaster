@@ -178,7 +178,7 @@
                             <div class="v2-mode-preview-shade"></div>
                             <!-- personnage détouré, au premier plan et débordant du cadre -->
                             <transition name="v2-fade">
-                                <img class="v2-mode-char" :key="currentMode.id"
+                                <img class="v2-mode-char" :class="{ plain: currentMode.plain }" :key="currentMode.id"
                                      :src="currentMode.img" :alt="currentMode.name" draggable="false">
                             </transition>
                             <div class="v2-mode-particles" aria-hidden="true">

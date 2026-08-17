@@ -19,22 +19,24 @@ createApp({
 
             // 🆕 v2 — Accueil : choix du mode, création / jointure de salon
             modes: [
-                { id: 'classic',   name: 'Classique', kind: 'Solo',   players: '∞',  img: 'asta3.png',
+                // `plain: true` = illustration sans fond transparent : elle est alors
+                // cadrée dans le panneau au lieu de flotter comme un personnage détouré.
+                { id: 'classic',   name: 'Classique', kind: 'Solo',   players: '∞',  img: 'kenshin.png', plain: true,
                   desc: "Quiz QCM. Vies ou points, difficulté et séries au choix." },
                 { id: 'rivalry',   name: 'Rivalité',  kind: 'Équipe', players: '∞',  img: 'shark.png',
                   desc: "Deux équipes, un seul quiz. Le camp le plus fort l'emporte." },
                 { id: 'bombanime', name: 'BombAnime', kind: 'Solo',   players: '13', img: 'lambo2.png',
                   desc: "La bombe tourne. Cite un perso avant qu'elle explose." },
                 // 🧪 Modes fictifs : uniquement pour juger la mise en page à l'échelle
-                { id: 'ascension', name: 'Ascension', kind: 'Solo',   players: '∞',  img: 'ascension.png', soon: true,
+                { id: 'ascension', name: 'Ascension', kind: 'Solo',   players: '∞',  img: 'kenshin.png', plain: true, soon: true,
                   desc: "Grimpe la tour, un mini-jeu différent à chaque étage." },
-                { id: 'duel',      name: 'Duel',      kind: '1 v 1',  players: '2',  img: 'big3.png', soon: true,
+                { id: 'duel',      name: 'Duel',      kind: '1 v 1',  players: '2',  img: 'kenshin.png', plain: true, soon: true,
                   desc: "Face à face en une manche. Un seul survivant." },
-                { id: 'tournoi',   name: 'Tournoi',   kind: 'Bracket', players: '32', img: 'aventurine3.png', soon: true,
+                { id: 'tournoi',   name: 'Tournoi',   kind: 'Bracket', players: '32', img: 'kenshin.png', plain: true, soon: true,
                   desc: "Élimination directe jusqu'à la finale." },
-                { id: 'blindtest', name: 'Blind test', kind: 'Solo',  players: '∞',  img: 'dbz.png', soon: true,
+                { id: 'blindtest', name: 'Blind test', kind: 'Solo',  players: '∞',  img: 'kenshin.png', plain: true, soon: true,
                   desc: "Reconnais l'opening en quelques secondes." },
-                { id: 'chrono',    name: 'Chrono',    kind: 'Solo',   players: '∞',  img: 'bleach.png', soon: true,
+                { id: 'chrono',    name: 'Chrono',    kind: 'Solo',   players: '∞',  img: 'kenshin.png', plain: true, soon: true,
                   desc: "Le plus de bonnes réponses en soixante secondes." },
             ],
             selectedMode: localStorage.getItem('lastMode') || 'classic',

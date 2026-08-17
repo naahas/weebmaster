@@ -17140,7 +17140,7 @@ body.modal-open {
 
 .v2-modes-layout {
     display: grid;
-    grid-template-columns: minmax(13rem, 17rem) minmax(0, 1fr);
+    grid-template-columns: minmax(15rem, 19rem) minmax(0, 1fr);
     gap: clamp(1.2rem, 3vw, 2.4rem);
     width: min(72rem, 95vw);
     align-items: stretch;
@@ -17164,9 +17164,9 @@ body.modal-open {
     position: relative;
     display: flex;
     align-items: center;
-    gap: 0.85rem;
+    gap: 0.95rem;
     flex: 0 0 auto;
-    padding: 1.05rem 1.1rem;
+    padding: 1.35rem 1.25rem;
     text-align: left;
     cursor: pointer;
     background: rgba(255, 255, 255, 0.025);
@@ -17176,7 +17176,7 @@ body.modal-open {
 }
 
 .v2-mode-row-bar {
-    width: 0.2rem;
+    width: 0.24rem;
     align-self: stretch;
     border-radius: 1rem;
     background: rgba(255, 255, 255, 0.12);
@@ -17187,13 +17187,13 @@ body.modal-open {
 
 .v2-mode-row-name {
     font-family: 'Bebas Neue', 'Russo One', sans-serif;
-    font-size: 1.6rem;
+    font-size: 1.9rem;
     letter-spacing: 0.04em;
     color: var(--text-primary);
 }
 
 .v2-mode-row-kind {
-    font-size: 0.66rem;
+    font-size: 0.7rem;
     font-weight: 600;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -17770,3 +17770,23 @@ body.modal-open {
 .v2-mode-preview.mode-classic,
 .v2-mode-preview.mode-rivalry,
 .v2-mode-preview.mode-bombanime { border-color: color-mix(in srgb, var(--mode-color) 38%, transparent); }
+
+/* Illustration sans fond transparent : on la cadre dans le panneau au lieu de
+   la faire flotter — sinon on verrait un rectangle photo au milieu du vide. */
+.v2-mode-char.plain {
+    right: 0;
+    bottom: 0;
+    height: 100%;
+    max-width: 58%;
+    object-fit: cover;
+    object-position: center 18%;
+    border-radius: 0 1rem 1rem 0;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.5) 18%, #000 46%),
+                        linear-gradient(to bottom, #000 74%, transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.5) 18%, #000 46%),
+                linear-gradient(to bottom, #000 74%, transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+    filter: saturate(1.02) brightness(0.95);
+    animation: none;
+}
