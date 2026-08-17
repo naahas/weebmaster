@@ -17240,9 +17240,10 @@ body.modal-open {
     object-position: bottom right;
     pointer-events: none;
     user-select: none;
-    filter: drop-shadow(0 1.4rem 2.2rem rgba(0, 0, 0, 0.65));
-    animation: v2CharIn 0.5s cubic-bezier(0.2, 0.9, 0.25, 1) both,
-               v2CharFloat 7s ease-in-out 0.5s infinite;
+    -webkit-mask-image: linear-gradient(to bottom, #000 58%, rgba(0, 0, 0, 0.55) 82%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 58%, rgba(0, 0, 0, 0.55) 82%, transparent 100%);
+    filter: drop-shadow(0 1.2rem 2rem rgba(0, 0, 0, 0.55));
+    animation: v2CharFloat 7s ease-in-out infinite;
 }
 
 @keyframes v2CharIn {
@@ -17271,13 +17272,35 @@ body.modal-open {
 .v2-mode-preview-body {
     z-index: 4;
     position: absolute;
-    left: clamp(1.4rem, 3vw, 2.4rem);
-    right: clamp(1rem, 2.5vw, 1.8rem);
-    bottom: clamp(1.4rem, 3vw, 2.2rem);
+    left: clamp(1.6rem, 3.5vw, 3rem);
+    right: 42%;
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 1.1rem;
+    gap: 1rem;
+}
+
+/* petit trait entre le titre et la description */
+.v2-mode-rule {
+    position: relative;
+    width: 4.5rem;
+    height: 0.14rem;
+    border-radius: 1rem;
+    background: linear-gradient(90deg, var(--mode-color, var(--neon-primary)), transparent);
+}
+
+.v2-mode-rule::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: -0.17rem;
+    width: 0.48rem;
+    height: 0.48rem;
+    border-radius: 50%;
+    background: var(--mode-color, var(--neon-primary));
+    box-shadow: 0 0 0.7rem var(--mode-color, var(--neon-primary));
 }
 
 .v2-mode-preview-name {
@@ -17296,8 +17319,10 @@ body.modal-open {
     color: var(--text-secondary);
 }
 
-.v2-fade-enter-active { transition: opacity 0.45s ease; }
-.v2-fade-leave-active { transition: opacity 0.45s ease; position: absolute; }
+/* L'ancienne illustration disparaît vite, la nouvelle entre juste après :
+   jamais deux personnages opaques en même temps, et jamais de cadre vide. */
+.v2-fade-leave-active { transition: opacity 0.13s ease; }
+.v2-fade-enter-active { transition: opacity 0.3s ease 0.11s; }
 .v2-fade-enter-from, .v2-fade-leave-to { opacity: 0; }
 
 /* ── Écran 4 : rejoindre ──────────────────── */
@@ -17686,3 +17711,62 @@ body.modal-open {
 }
 
 .v2-mode-row.locked.soon::after { background: rgba(255, 255, 255, 0.5); box-shadow: none; }
+
+/* ── Particules montantes, à la couleur du mode ── */
+.v2-mode-preview { --mode-color: #ffd24a; }
+.v2-mode-preview.mode-classic   { --mode-color: #ffd24a; }
+.v2-mode-preview.mode-rivalry   { --mode-color: #a78bfa; }
+.v2-mode-preview.mode-bombanime { --mode-color: #4ade80; }
+.v2-mode-preview.mode-ascension { --mode-color: #f87171; }
+.v2-mode-preview.mode-duel      { --mode-color: #60a5fa; }
+.v2-mode-preview.mode-tournoi   { --mode-color: #fbbf24; }
+.v2-mode-preview.mode-blindtest { --mode-color: #f472b6; }
+.v2-mode-preview.mode-chrono    { --mode-color: #22d3ee; }
+
+.v2-mode-particles {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+.v2-mode-particles span {
+    position: absolute;
+    bottom: -1rem;
+    width: 0.28rem;
+    height: 0.28rem;
+    border-radius: 50%;
+    background: var(--mode-color);
+    opacity: 0;
+    box-shadow: 0 0 0.6rem var(--mode-color);
+    animation: v2ModeRise var(--dur, 7s) linear var(--delay, 0s) infinite;
+}
+
+@keyframes v2ModeRise {
+    0%   { opacity: 0; transform: translateY(0) scale(0.6); }
+    12%  { opacity: 0.85; }
+    75%  { opacity: 0.5; }
+    100% { opacity: 0; transform: translateY(-22rem) translateX(var(--drift, 1rem)) scale(1.05); }
+}
+
+.v2-mode-particles span:nth-child(1)  { left: 6%;  --dur: 7.5s;  --delay: 0s;    --drift: 1.2rem; }
+.v2-mode-particles span:nth-child(2)  { left: 14%; --dur: 9s;    --delay: 1.2s;  --drift: -0.8rem; }
+.v2-mode-particles span:nth-child(3)  { left: 22%; --dur: 6.5s;  --delay: 2.4s;  --drift: 1.6rem; }
+.v2-mode-particles span:nth-child(4)  { left: 31%; --dur: 8.2s;  --delay: 0.6s;  --drift: -1.4rem; }
+.v2-mode-particles span:nth-child(5)  { left: 39%; --dur: 7s;    --delay: 3.1s;  --drift: 0.9rem; }
+.v2-mode-particles span:nth-child(6)  { left: 47%; --dur: 9.5s;  --delay: 1.8s;  --drift: -1.1rem; }
+.v2-mode-particles span:nth-child(7)  { left: 55%; --dur: 6.8s;  --delay: 4.2s;  --drift: 1.4rem; }
+.v2-mode-particles span:nth-child(8)  { left: 63%; --dur: 8.6s;  --delay: 0.3s;  --drift: -0.6rem; }
+.v2-mode-particles span:nth-child(9)  { left: 71%; --dur: 7.3s;  --delay: 2.9s;  --drift: 1.1rem; }
+.v2-mode-particles span:nth-child(10) { left: 78%; --dur: 9.2s;  --delay: 1.5s;  --drift: -1.5rem; }
+.v2-mode-particles span:nth-child(11) { left: 85%; --dur: 6.9s;  --delay: 3.7s;  --drift: 0.7rem; }
+.v2-mode-particles span:nth-child(12) { left: 91%; --dur: 8s;    --delay: 0.9s;  --drift: -1rem; }
+.v2-mode-particles span:nth-child(13) { left: 96%; --dur: 7.7s;  --delay: 2.2s;  --drift: 1.3rem; }
+.v2-mode-particles span:nth-child(14) { left: 3%;  --dur: 8.8s;  --delay: 4.6s;  --drift: -0.9rem; }
+
+/* le liseré du cadre suit lui aussi la couleur du mode */
+.v2-mode-preview.mode-classic,
+.v2-mode-preview.mode-rivalry,
+.v2-mode-preview.mode-bombanime { border-color: color-mix(in srgb, var(--mode-color) 38%, transparent); }

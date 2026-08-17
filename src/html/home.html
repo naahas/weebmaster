@@ -181,8 +181,12 @@
                                 <img class="v2-mode-char" :key="currentMode.id"
                                      :src="currentMode.img" :alt="currentMode.name" draggable="false">
                             </transition>
+                            <div class="v2-mode-particles" aria-hidden="true">
+                                <span v-for="n in 14" :key="n"></span>
+                            </div>
                             <div class="v2-mode-preview-body">
                                 <span class="v2-mode-preview-name">{{ currentMode.name }}</span>
+                                <span class="v2-mode-rule"></span>
                                 <p class="v2-mode-preview-desc">{{ currentMode.desc }}</p>
                                 <button class="v2-cta" @click="createRoom" :disabled="creatingRoom || currentMode.soon">
                                     <span class="v2-cta-label">{{ creatingRoom ? 'Création…' : (currentMode.soon ? 'Bientôt disponible' : 'Créer le salon') }}</span>
@@ -1079,7 +1083,7 @@
 
 
         <!-- Tips informatifs (PC uniquement, visible si connecté et pas en jeu) -->
-        <div class="lobby-tips-container" v-if="isAuthenticated && !gameInProgress && !gameEnded && currentTip">
+        <div class="lobby-tips-container" v-if="isAuthenticated && !gameInProgress && !gameEnded && currentTip && homeScreen === 'hub'">
             <div class="lobby-tip" :key="tipKey">
                 <span class="tip-icon">💡</span>
                 <span class="tip-text">{{ currentTip }}</span>
