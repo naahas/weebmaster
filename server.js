@@ -875,6 +875,10 @@ app.get('/prototypes/modes-2', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-modes2.html');
 });
 
+app.get('/prototypes/lancer', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-lancer.html');
+});
+
 app.get('/prototypes/parametres', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-parametres.html');
 });

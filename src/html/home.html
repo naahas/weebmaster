@@ -242,17 +242,25 @@
                         <span class="v2-logo-ring"></span>
                     </button>
                     <div class="v2-room-topright">
+                        <button class="v2-room-close" v-if="isHost" @click="hostCloseRoom" title="Fermer le salon" aria-label="Fermer le salon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h8"/>
+                                <path d="M18 15l3-3-3-3"/><path d="M21 12H10"/>
+                            </svg>
+                        </button>
                         <span class="v2-mode-badge" :class="'mode-' + lobbyMode">
                             <span class="v2-mode-badge-dot"></span>
                             {{ modeLabel }}
                         </span>
-                        <button class="v2-room-close" v-if="isHost" @click="hostCloseRoom" title="Fermer le salon" aria-label="Fermer le salon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-                                <path d="M18 6 6 18M6 6l12 12"/>
-                            </svg>
-                        </button>
                     </div>
                 </header>
+
+                <button class="v2-room-leave" v-if="!isHost" @click="leaveRoom" title="Quitter le salon" aria-label="Quitter le salon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h4"/>
+                        <path d="M17 15l-3-3 3-3"/><path d="M14 12h7"/>
+                    </svg>
+                </button>
 
                 <div class="v2-room-layout" :class="['mode-' + lobbyMode, { guest: !isHost }]">
 
@@ -292,14 +300,14 @@
                                 </span>
                             </div>
                             <div class="v2-room-players-grid" v-if="lobbyPlayers.length">
-                                <div class="v2-room-player"
+                                <button class="v2-room-player"
                                      v-for="p in lobbyPlayers"
                                      :key="p.twitchId"
-                                     :class="['team-' + (p.team || 0), { me: p.twitchId === twitchId }]">
+                                     :class="['team-' + (p.team || 0), { me: p.twitchId === twitchId, kickable: isHost && p.twitchId !== twitchId }]"
+                                     :title="isHost && p.twitchId !== twitchId ? 'Exclure ' + p.username : null"
+                                     @click="isHost && p.twitchId !== twitchId ? hostKick(p.twitchId) : null">
                                     <span class="v2-room-player-name">{{ p.username }}</span>
-                                    <button class="v2-room-kick" v-if="isHost && p.twitchId !== twitchId"
-                                            @click="hostKick(p.twitchId)" title="Exclure">×</button>
-                                </div>
+                                </button>
                             </div>
                             <div class="v2-room-empty" v-else>
                                 Partage le code pour que tes joueurs te rejoignent
@@ -364,7 +372,7 @@
                                 <div class="v2-set static">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
                                     <span class="v2-set-label">Temps</span>
-                                    <input class="v2-range" type="range" min="5" max="30" step="1"
+                                    <input class="v2-range" type="range" min="5" max="20" step="1"
                                            :value="gameTime"
                                            @input="gameTime = parseInt($event.target.value)"
                                            @change="applySetting('/admin/set-time', { time: gameTime }, () => {})">

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShonenMaster — Prototypes du bouton de lancement</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Bebas+Neue&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="icon.png">
+    <style>
+        :root { --neon: #FFD700; --accent: #FF8C00; --txt: #fff; --txt2: #a0a0a0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: radial-gradient(120% 90% at 50% 0%, #14100a 0%, #0c0c0e 45%, #08080a 100%);
+            background-attachment: fixed;
+            color: var(--txt);
+            font-family: 'Poppins', sans-serif;
+            padding: 2.5rem clamp(1rem, 4vw, 3rem) 6rem;
+        }
+
+        .nav { max-width: 70rem; margin: 0 auto 2rem; display: flex; gap: .6rem; flex-wrap: wrap; }
+        .nav a {
+            padding: .45rem .9rem; font-size: .78rem; font-weight: 600; text-decoration: none;
+            color: var(--txt2); background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08); border-radius: 2rem; transition: .2s;
+        }
+        .nav a:hover, .nav a.on { color: var(--neon); border-color: rgba(255,215,0,.4); }
+
+        .head { max-width: 70rem; margin: 0 auto 2.5rem; }
+        .head h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: .03em; }
+        .head p { color: var(--txt2); font-size: .9rem; max-width: 46rem; line-height: 1.6; }
+        .head b { color: var(--neon); font-weight: 600; }
+
+        .protos { max-width: 70rem; margin: 0 auto; display: flex; flex-direction: column; gap: 2.6rem; }
+        .proto-head { display: flex; align-items: baseline; gap: .8rem; margin-bottom: .8rem; }
+        .proto-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--neon); }
+        .proto-name { font-size: .98rem; font-weight: 700; }
+        .proto-note { font-size: .76rem; color: var(--txt2); margin-left: auto; text-align: right; max-width: 30rem; }
+
+        /* Mise en situation : le code du salon puis le bouton à droite */
+        .stage {
+            display: flex; align-items: center; gap: 3.5rem;
+            padding: 2rem; border: 1px solid rgba(255,255,255,.07);
+            border-radius: 1rem; background: rgba(255,255,255,.012);
+        }
+        .code { display: flex; gap: .45rem; }
+        .code span {
+            display: grid; place-items: center; width: 3.4rem; height: 4.2rem;
+            font-family: 'Space Grotesk', monospace; font-size: 2.3rem; font-weight: 700; color: var(--neon);
+            background: linear-gradient(160deg, rgba(255,200,40,.1), rgba(255,255,255,.02));
+            border: 1px solid rgba(255,215,0,.28); border-radius: .55rem;
+        }
+        .code-wrap { display: flex; flex-direction: column; gap: .35rem; }
+        .code-label { font-size: .62rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--txt2); }
+
+        button { font-family: inherit; cursor: pointer; border: none; }
+
+        /* ═════ L1 : pastille pleine ═════ */
+        .l1 .btn {
+            position: relative; overflow: hidden;
+            display: flex; align-items: center; gap: .7rem;
+            padding: 1.05rem 2.2rem; border-radius: 3rem;
+            font-size: .95rem; font-weight: 700; letter-spacing: .04em; color: #14100a;
+            background: linear-gradient(135deg, #ffe066, var(--neon) 45%, var(--accent));
+            box-shadow: 0 .5rem 1.8rem rgba(255,175,0,.35);
+            transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .3s;
+        }
+        .l1 .btn svg { width: 1.1rem; height: 1.1rem; transition: transform .3s; }
+        .l1 .btn:hover { transform: translateY(-.15rem); box-shadow: 0 .9rem 2.6rem rgba(255,175,0,.55); }
+        .l1 .btn:hover svg { transform: translateX(.25rem); }
+
+        /* ═════ L2 : contour qui se remplit ═════ */
+        .l2 .btn {
+            position: relative; overflow: hidden;
+            padding: 1.05rem 2.4rem; border-radius: .6rem;
+            font-size: .95rem; font-weight: 700; letter-spacing: .06em; color: var(--neon);
+            background: transparent; border: 2px solid var(--neon);
+            transition: color .35s;
+        }
+        .l2 .btn::before {
+            content: ''; position: absolute; inset: 0; z-index: -1;
+            background: linear-gradient(135deg, #ffe066, var(--accent));
+            transform: translateY(101%); transition: transform .35s cubic-bezier(.2,.8,.2,1);
+        }
+        .l2 .btn { z-index: 0; }
+        .l2 .btn:hover { color: #14100a; }
+        .l2 .btn:hover::before { transform: none; }
+
+        /* ═════ L3 : icône seule qui s'étire ═════ */
+        .l3 .btn {
+            display: flex; align-items: center; gap: 0; overflow: hidden;
+            height: 3.6rem; padding: 0 1.15rem; border-radius: 3rem;
+            color: #14100a; background: linear-gradient(135deg, #ffe066, var(--accent));
+            box-shadow: 0 .5rem 1.6rem rgba(255,175,0,.3);
+            transition: gap .35s cubic-bezier(.2,.8,.2,1), padding .35s, box-shadow .3s;
+        }
+        .l3 .btn svg { width: 1.35rem; height: 1.35rem; flex: 0 0 auto; }
+        .l3 .btn .txt {
+            max-width: 0; opacity: 0; white-space: nowrap;
+            font-size: .95rem; font-weight: 700; letter-spacing: .04em;
+            transition: max-width .35s cubic-bezier(.2,.8,.2,1), opacity .3s;
+        }
+        .l3 .btn:hover { gap: .7rem; padding: 0 1.7rem; box-shadow: 0 .8rem 2.4rem rgba(255,175,0,.5); }
+        .l3 .btn:hover .txt { max-width: 12rem; opacity: 1; }
+
+        /* ═════ L4 : plaque biseautée (rappel de l'accueil) ═════ */
+        .l4 .btn {
+            position: relative; overflow: hidden;
+            padding: 1.1rem 2.3rem;
+            font-size: .95rem; font-weight: 700; letter-spacing: .05em; color: var(--txt);
+            background: linear-gradient(135deg, #1d1a12, #131315);
+            border: 1px solid rgba(255,215,0,.45);
+            clip-path: polygon(0 0, 100% 0, 100% 66%, 94% 100%, 0 100%);
+            transition: transform .3s cubic-bezier(.2,.8,.2,1), border-color .3s, color .3s;
+        }
+        .l4 .btn::after {
+            content: ''; position: absolute; top: 0; left: -60%; width: 45%; height: 100%;
+            background: linear-gradient(105deg, transparent, rgba(255,215,0,.35), transparent);
+            transition: left .6s cubic-bezier(.2,.8,.2,1);
+        }
+        .l4 .btn:hover { transform: translateY(-.2rem); color: var(--neon); border-color: var(--neon); }
+        .l4 .btn:hover::after { left: 115%; }
+
+        /* ═════ L5 : halo pulsé ═════ */
+        .l5 .btn {
+            position: relative;
+            padding: 1.05rem 2.3rem; border-radius: .6rem;
+            font-size: .95rem; font-weight: 700; letter-spacing: .05em; color: #14100a;
+            background: linear-gradient(135deg, #ffe066, var(--accent));
+        }
+        .l5 .btn::before {
+            content: ''; position: absolute; inset: -.25rem; border-radius: .85rem; z-index: -1;
+            background: linear-gradient(135deg, #ffe066, var(--accent));
+            opacity: .35; filter: blur(.7rem);
+            animation: pulse 2.4s ease-in-out infinite;
+        }
+        @keyframes pulse { 0%,100% { opacity: .28; transform: scale(1); } 50% { opacity: .6; transform: scale(1.06); } }
+        .l5 .btn:hover::before { animation-duration: 1.1s; }
+
+        /* ═════ L6 : compte à rebours au maintien ═════ */
+        .l6 .btn {
+            position: relative; overflow: hidden;
+            padding: 1.05rem 2.3rem; border-radius: .6rem;
+            font-size: .95rem; font-weight: 700; letter-spacing: .05em; color: var(--neon);
+            background: rgba(255,215,0,.08); border: 1px solid rgba(255,215,0,.4);
+            transition: color .2s;
+        }
+        .l6 .btn .fill {
+            position: absolute; inset: 0; z-index: -1; transform-origin: left;
+            background: linear-gradient(135deg, #ffe066, var(--accent));
+            transform: scaleX(0); transition: transform .1s linear;
+        }
+        .l6 .btn { z-index: 0; }
+        .l6 .btn:active .fill { transform: scaleX(1); transition: transform .8s linear; }
+        .l6 .btn:active { color: #14100a; }
+
+        .hint { margin-top: .8rem; font-size: .74rem; color: var(--txt2); }
+        .footer { max-width: 70rem; margin: 3rem auto 0; font-size: .8rem; color: var(--txt2); }
+    </style>
+</head>
+
+<body>
+    <div class="nav">
+        <a href="/prototypes">Mise en page</a>
+        <a href="/prototypes/boutons">Boutons</a>
+        <a href="/prototypes/modes">Modes — grilles</a>
+        <a href="/prototypes/modes-2">Modes — originales</a>
+        <a href="/prototypes/parametres">Paramètres</a>
+        <a href="/prototypes/lancer" class="on">Lancer la partie</a>
+        <a href="/">← Le site</a>
+    </div>
+
+    <div class="head">
+        <h1>Prototypes — bouton de lancement</h1>
+        <p>
+            Six traitements, tous <b>simples</b> et posés à droite du code du salon comme dans le vrai écran.
+            Survole-les ; le dernier réagit au maintien du clic.
+        </p>
+    </div>
+
+    <div class="protos">
+
+        <section class="l1">
+            <div class="proto-head"><span class="proto-num">L1</span><span class="proto-name">Pastille pleine</span>
+                <span class="proto-note">Forme arrondie, flèche qui glisse au survol. Le plus classique, se marie bien avec les pastilles de joueurs.</span></div>
+            <div class="stage">
+                <div class="code-wrap"><span class="code-label">Code du salon</span><div class="code"><span>T</span><span>2</span><span>A</span><span>C</span></div></div>
+                <button class="btn">Démarrer<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+            </div>
+        </section>
+
+        <section class="l2">
+            <div class="proto-head"><span class="proto-num">L2</span><span class="proto-name">Contour qui se remplit</span>
+                <span class="proto-note">Au repos ce n'est qu'un contour doré ; la couleur monte du bas au survol. Discret tant qu'on n'y touche pas.</span></div>
+            <div class="stage">
+                <div class="code-wrap"><span class="code-label">Code du salon</span><div class="code"><span>T</span><span>2</span><span>A</span><span>C</span></div></div>
+                <button class="btn">Démarrer la partie</button>
+            </div>
+        </section>
+
+        <section class="l3">
+            <div class="proto-head"><span class="proto-num">L3</span><span class="proto-name">Icône qui s'étire</span>
+                <span class="proto-note">Une simple pastille ▶ au repos, qui s'allonge et révèle le texte au survol. Le plus léger visuellement.</span></div>
+            <div class="stage">
+                <div class="code-wrap"><span class="code-label">Code du salon</span><div class="code"><span>T</span><span>2</span><span>A</span><span>C</span></div></div>
+                <button class="btn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><span class="txt">Démarrer la partie</span></button>
+            </div>
+        </section>
+
+        <section class="l4">
+            <div class="proto-head"><span class="proto-num">L4</span><span class="proto-name">Plaque biseautée</span>
+                <span class="proto-note">Reprend exactement la forme des boutons Créer / Rejoindre de l'accueil : cohérence maximale avec le reste du site.</span></div>
+            <div class="stage">
+                <div class="code-wrap"><span class="code-label">Code du salon</span><div class="code"><span>T</span><span>2</span><span>A</span><span>C</span></div></div>
+                <button class="btn">Démarrer la partie</button>
+            </div>
+        </section>
+
+        <section class="l5">
+            <div class="proto-head"><span class="proto-num">L5</span><span class="proto-name">Halo pulsé</span>
+                <span class="proto-note">Un halo doré respire en continu derrière le bouton et s'accélère au survol. Attire l'œil de l'hôte sans clignoter.</span></div>
+            <div class="stage">
+                <div class="code-wrap"><span class="code-label">Code du salon</span><div class="code"><span>T</span><span>2</span><span>A</span><span>C</span></div></div>
+                <button class="btn">Démarrer la partie</button>
+            </div>
+        </section>
+
+        <section class="l6">
+            <div class="proto-head"><span class="proto-num">L6</span><span class="proto-name">Maintien</span>
+                <span class="proto-note">Il faut garder le clic enfoncé pendant que la barre se remplit. Évite le lancement accidentel quand 60 joueurs attendent — clique et maintiens pour voir.</span></div>
+            <div class="stage">
+                <div class="code-wrap"><span class="code-label">Code du salon</span><div class="code"><span>T</span><span>2</span><span>A</span><span>C</span></div></div>
+                <button class="btn"><span class="fill"></span>Maintenir pour démarrer</button>
+            </div>
+            <p class="hint">Démonstration visuelle seulement : ici le remplissage ne déclenche encore rien.</p>
+        </section>
+    </div>
+
+    <p class="footer">Dis-moi la lettre retenue et je l'applique au salon, à droite du code.</p>
+</body>
+
+</html>

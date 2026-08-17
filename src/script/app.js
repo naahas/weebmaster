@@ -915,6 +915,21 @@ createApp({
             if (this.socket) this.socket.emit('dev-clear-fake-players');
         },
 
+        leaveRoom() {
+            if (this.socket) {
+                this.socket.emit('leave-lobby', { twitchId: this.twitchId, username: this.username });
+            }
+            this.hasJoined = false;
+            this.selectedTeam = null;
+            this.roomCode = null;
+            localStorage.removeItem('hasJoinedLobby');
+            localStorage.removeItem('lobbyTwitchId');
+            localStorage.removeItem('selectedTeam');
+            sessionStorage.removeItem('roomCode');
+            this.homeScreen = 'hub';
+            this.loadHomeStats();
+        },
+
         hostKick(twitchId) {
             if (!this.socket) return;
             this.socket.emit('kick-player', { twitchId });
