@@ -174,7 +174,7 @@
                             </button>
                         </div>
 
-                        <div class="v2-mode-preview" :class="'mode-' + currentMode.id">
+                        <div class="v2-mode-preview" :class="['mode-' + currentMode.id, { 'plain-mode': currentMode.plain }]">
                             <div class="v2-mode-preview-shade"></div>
                             <!-- personnage détouré, au premier plan et débordant du cadre -->
                             <transition name="v2-fade">
