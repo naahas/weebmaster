@@ -871,6 +871,10 @@ app.get('/prototypes/modes', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-modes.html');
 });
 
+app.get('/prototypes/modes-2', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-modes2.html');
+});
+
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/src/html/home.html');
 });
