@@ -17140,9 +17140,9 @@ body.modal-open {
 
 .v2-modes-layout {
     display: grid;
-    grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr);
-    gap: clamp(1rem, 2.5vw, 2rem);
-    width: min(58rem, 94vw);
+    grid-template-columns: minmax(13rem, 17rem) minmax(0, 1fr);
+    gap: clamp(1.2rem, 3vw, 2.4rem);
+    width: min(72rem, 95vw);
     align-items: stretch;
 }
 
@@ -17150,7 +17150,7 @@ body.modal-open {
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
-    max-height: clamp(18rem, 58vh, 26rem);
+    max-height: clamp(22rem, 62vh, 32rem);
     overflow-y: auto;
     padding-right: 0.3rem;
     scrollbar-width: thin;
@@ -17164,9 +17164,9 @@ body.modal-open {
     position: relative;
     display: flex;
     align-items: center;
-    gap: 0.7rem;
+    gap: 0.85rem;
     flex: 0 0 auto;
-    padding: 0.7rem 0.9rem;
+    padding: 1.05rem 1.1rem;
     text-align: left;
     cursor: pointer;
     background: rgba(255, 255, 255, 0.025);
@@ -17187,7 +17187,7 @@ body.modal-open {
 
 .v2-mode-row-name {
     font-family: 'Bebas Neue', 'Russo One', sans-serif;
-    font-size: 1.35rem;
+    font-size: 1.6rem;
     letter-spacing: 0.04em;
     color: var(--text-primary);
 }
@@ -17211,28 +17211,48 @@ body.modal-open {
 
 .v2-mode-preview {
     position: relative;
-    min-height: clamp(17rem, 42vh, 24rem);
-    overflow: hidden;
+    min-height: clamp(22rem, 56vh, 32rem);
     border: 0.09rem solid rgba(255, 255, 255, 0.08);
     border-radius: 1rem;
-    background: #101012;
+    background: linear-gradient(120deg, #121216, #0d0d0f);
     transition: border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+/* le cadre garde son voile détouré, mais laisse le personnage déborder */
+.v2-mode-preview-shade {
+    border-radius: inherit;
+    overflow: hidden;
 }
 
 .v2-mode-preview.mode-classic   { border-color: rgba(255, 215, 0, 0.3);  box-shadow: 0 1rem 3rem rgba(255, 170, 0, 0.12); }
 .v2-mode-preview.mode-rivalry   { border-color: rgba(139, 92, 246, 0.35); box-shadow: 0 1rem 3rem rgba(139, 92, 246, 0.14); }
 .v2-mode-preview.mode-bombanime { border-color: rgba(34, 197, 94, 0.35);  box-shadow: 0 1rem 3rem rgba(34, 197, 94, 0.12); }
 
-.v2-mode-art {
+/* Personnage détouré : au premier plan, entier, débordant du cadre par le haut */
+.v2-mode-char {
     position: absolute;
-    inset: 0 0 0 22%;
-    background-size: cover;
-    background-position: center 18%;
-    filter: saturate(1.02) brightness(0.92);
-    /* fondu par la gauche : l'image se dissout là où commence le texte */
-    -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.35) 22%, #000 62%);
-    mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.35) 22%, #000 62%);
-    animation: v2SlowZoom 20s ease-in-out infinite alternate;
+    right: clamp(0.5rem, 2vw, 2rem);
+    bottom: 0;
+    z-index: 3;
+    height: 116%;
+    max-width: 62%;
+    object-fit: contain;
+    object-position: bottom right;
+    pointer-events: none;
+    user-select: none;
+    filter: drop-shadow(0 1.4rem 2.2rem rgba(0, 0, 0, 0.65));
+    animation: v2CharIn 0.5s cubic-bezier(0.2, 0.9, 0.25, 1) both,
+               v2CharFloat 7s ease-in-out 0.5s infinite;
+}
+
+@keyframes v2CharIn {
+    from { opacity: 0; transform: translateY(1.2rem) scale(0.97); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes v2CharFloat {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-0.7rem); }
 }
 
 @keyframes v2SlowZoom {
@@ -17244,11 +17264,12 @@ body.modal-open {
     position: absolute;
     inset: 0;
     background:
-        linear-gradient(90deg, rgba(8, 8, 10, 0.96) 18%, rgba(8, 8, 10, 0.55) 42%, transparent 68%),
-        linear-gradient(to top, rgba(6, 6, 8, 0.9) 6%, transparent 46%);
+        radial-gradient(80% 70% at 78% 40%, rgba(255, 190, 40, 0.09), transparent 70%),
+        linear-gradient(to top, rgba(6, 6, 8, 0.75) 4%, transparent 42%);
 }
 
 .v2-mode-preview-body {
+    z-index: 4;
     position: absolute;
     left: clamp(1.4rem, 3vw, 2.4rem);
     right: clamp(1rem, 2.5vw, 1.8rem);
@@ -17261,14 +17282,15 @@ body.modal-open {
 
 .v2-mode-preview-name {
     font-family: 'Bebas Neue', 'Russo One', sans-serif;
-    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-size: clamp(2.2rem, 5vw, 3.6rem);
+    text-shadow: 0 0.2rem 1.4rem rgba(0, 0, 0, 0.8);
     line-height: 1;
     letter-spacing: 0.04em;
     color: var(--text-primary);
 }
 
 .v2-mode-preview-desc {
-    max-width: 22rem;
+    max-width: 20rem;
     font-size: 0.82rem;
     line-height: 1.6;
     color: var(--text-secondary);
@@ -17648,3 +17670,19 @@ body.modal-open {
 .v2-mode-row.soon .v2-mode-row-name { color: rgba(255, 255, 255, 0.62); }
 .v2-mode-row.soon.active { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.18); }
 .v2-mode-row.soon.active .v2-mode-row-bar { background: rgba(255, 255, 255, 0.35); box-shadow: none; }
+
+/* La ligne verrouillée (cliquée) garde une pastille, même en survolant ailleurs */
+.v2-mode-row.locked::after {
+    content: '';
+    position: absolute;
+    right: 0.7rem;
+    top: 50%;
+    width: 0.35rem;
+    height: 0.35rem;
+    margin-top: -0.17rem;
+    border-radius: 50%;
+    background: var(--neon-primary);
+    box-shadow: 0 0 0.5rem rgba(255, 215, 0, 0.8);
+}
+
+.v2-mode-row.locked.soon::after { background: rgba(255, 255, 255, 0.5); box-shadow: none; }

@@ -19,7 +19,7 @@ createApp({
 
             // 🆕 v2 — Accueil : choix du mode, création / jointure de salon
             modes: [
-                { id: 'classic',   name: 'Classique', kind: 'Solo',   players: '∞',  img: 'gilga.png',
+                { id: 'classic',   name: 'Classique', kind: 'Solo',   players: '∞',  img: 'asta3.png',
                   desc: "Quiz QCM. Vies ou points, difficulté et séries au choix." },
                 { id: 'rivalry',   name: 'Rivalité',  kind: 'Équipe', players: '∞',  img: 'shark.png',
                   desc: "Deux équipes, un seul quiz. Le camp le plus fort l'emporte." },
@@ -38,6 +38,7 @@ createApp({
                   desc: "Le plus de bonnes réponses en soixante secondes." },
             ],
             selectedMode: localStorage.getItem('lastMode') || 'classic',
+            hoverMode: null,   // survol temporaire ; le clic verrouille selectedMode
             homeScreen: 'hub',    // hub | modes | join
             editingPseudo: false,
             hubHover: null,
@@ -361,8 +362,11 @@ createApp({
     computed: {
 
         // 🆕 v2 — mode actuellement sélectionné sur l'accueil
+        // Le survol prévisualise, le clic verrouille : en sortant de la liste on
+        // revient au mode verrouillé.
         currentMode() {
-            return this.modes.find(m => m.id === this.selectedMode) || this.modes[0];
+            const id = this.hoverMode || this.selectedMode;
+            return this.modes.find(m => m.id === id) || this.modes[0];
         },
 
         // 🎌 Au moins une ligne de suggestion non vide
@@ -846,6 +850,12 @@ createApp({
         // Les illustrations sont lourdes : on les met en cache avant le premier survol
         preloadModeArt() {
             this.modes.forEach(m => { const i = new Image(); i.src = m.img; });
+        },
+
+        lockMode(id) {
+            this.selectedMode = id;
+            this.hoverMode = null;
+            localStorage.setItem('lastMode', id);
         },
 
         goToModes() {

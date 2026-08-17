@@ -157,14 +157,14 @@
                     <button class="v2-back" @click="homeScreen = 'hub'" title="Retour" aria-label="Retour"><span class="v2-back-arrow">←</span></button>
 
                     <div class="v2-modes-layout">
-                        <div class="v2-modes-list">
+                        <div class="v2-modes-list" @mouseleave="hoverMode = null">
                             <button
                                 v-for="m in modes"
                                 :key="m.id"
                                 class="v2-mode-row"
-                                :class="['mode-' + m.id, { active: selectedMode === m.id, soon: m.soon }]"
-                                @mouseenter="selectedMode = m.id"
-                                @click="selectedMode = m.id">
+                                :class="['mode-' + m.id, { active: currentMode.id === m.id, locked: selectedMode === m.id, soon: m.soon }]"
+                                @mouseenter="hoverMode = m.id"
+                                @click="lockMode(m.id)">
                                 <span class="v2-mode-row-bar"></span>
                                 <span class="v2-mode-row-text">
                                     <span class="v2-mode-row-name">{{ m.name }}</span>
@@ -174,13 +174,13 @@
                             </button>
                         </div>
 
-                        <div class="v2-mode-preview" :class="'mode-' + selectedMode">
-                            <!-- fondu croisé : les deux couches coexistent, jamais de trou -->
-                            <transition name="v2-fade">
-                                <div class="v2-mode-art" :key="currentMode.id"
-                                     :style="{ backgroundImage: 'url(' + currentMode.img + ')' }"></div>
-                            </transition>
+                        <div class="v2-mode-preview" :class="'mode-' + currentMode.id">
                             <div class="v2-mode-preview-shade"></div>
+                            <!-- personnage détouré, au premier plan et débordant du cadre -->
+                            <transition name="v2-fade">
+                                <img class="v2-mode-char" :key="currentMode.id"
+                                     :src="currentMode.img" :alt="currentMode.name" draggable="false">
+                            </transition>
                             <div class="v2-mode-preview-body">
                                 <span class="v2-mode-preview-name">{{ currentMode.name }}</span>
                                 <p class="v2-mode-preview-desc">{{ currentMode.desc }}</p>
