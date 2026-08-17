@@ -41,6 +41,23 @@ createApp({
             ],
             selectedMode: localStorage.getItem('lastMode') || 'classic',
             hoverMode: null,   // survol temporaire ; le clic verrouille selectedMode
+            showSettings: true,
+            lobbyPlayers: [],
+            answersCount: 4,
+            questionsCount: 20,
+            difficultyMode: 'croissante',
+            serieFilter: 'tout',
+            noSpoil: false,
+            serieFilters: [
+                { id: 'tout', name: 'Tout' },
+                { id: 'big3', name: 'Big 3' },
+                { id: 'mainstream', name: 'Mainstream' },
+                { id: 'onepiece', name: 'One Piece' },
+                { id: 'naruto', name: 'Naruto' },
+                { id: 'dragonball', name: 'Dragon Ball' },
+                { id: 'bleach', name: 'Bleach' },
+            ],
+            bombanimeSeries: ['Naruto', 'OnePiece', 'Dbz', 'Bleach', 'Hxh', 'Snk', 'DemonSlayer', 'JujutsuKaisen', 'FairyTail', 'Mha', 'BlackClover', 'Jojo'],
             homeScreen: 'hub',    // hub | modes | join
             editingPseudo: false,
             hubHover: null,
@@ -366,6 +383,11 @@ createApp({
         // 🆕 v2 — mode actuellement sélectionné sur l'accueil
         // Le survol prévisualise, le clic verrouille : en sortant de la liste on
         // revient au mode verrouillé.
+        modeLabel() {
+            const m = this.modes.find(x => x.id === this.lobbyMode);
+            return m ? m.name : 'Salon';
+        },
+
         currentMode() {
             const id = this.hoverMode || this.selectedMode;
             return this.modes.find(m => m.id === id) || this.modes[0];
@@ -854,6 +876,37 @@ createApp({
             this.modes.forEach(m => { const i = new Image(); i.src = m.img; });
         },
 
+        // Tous les réglages passent par la même route POST, avec application
+        // optimiste côté client et retour arrière si le serveur refuse.
+        async applySetting(url, payload, apply) {
+            const avant = JSON.parse(JSON.stringify({
+                gameMode: this.gameMode, gameLives: this.gameLives, gameTime: this.gameTime,
+                answersCount: this.answersCount, questionsCount: this.questionsCount,
+                difficultyMode: this.difficultyMode, serieFilter: this.serieFilter,
+                noSpoil: this.noSpoil, bonusEnabled: this.bonusEnabled,
+            }));
+            apply();
+            this.hostError = '';
+
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                const data = await res.json();
+                if (!res.ok || data.error) throw new Error(data.error || 'Réglage refusé');
+            } catch (e) {
+                Object.assign(this, avant);
+                this.hostError = e.message;
+            }
+        },
+
+        hostKick(twitchId) {
+            if (!this.socket) return;
+            this.socket.emit('kick-player', { twitchId });
+        },
+
         lockMode(id) {
             this.selectedMode = id;
             this.hoverMode = null;
@@ -1129,6 +1182,12 @@ createApp({
                 if (state.lives) this.gameLives = state.lives;
                 if (state.questionTime) this.gameTime = state.questionTime;
                 if (state.questionsCount) this.totalQuestions = state.questionsCount;
+                if (state.answersCount) this.answersCount = state.answersCount;
+                if (state.questionsCount) this.questionsCount = state.questionsCount;
+                if (state.difficultyMode) this.difficultyMode = state.difficultyMode;
+                if (state.serieFilter) this.serieFilter = state.serieFilter;
+                if (state.noSpoil !== undefined) this.noSpoil = state.noSpoil;
+                if (state.players) this.lobbyPlayers = state.players;
 
                 this.gameStartedOnServer = state.inProgress;
 
@@ -1588,6 +1647,7 @@ createApp({
 
             this.socket.on('lobby-update', (data) => {
                 this.playerCount = data.playerCount;
+                if (data.players) this.lobbyPlayers = data.players;
                 // 🆕 Mettre à jour les paramètres si fournis
                 if (data.lives) this.gameLives = data.lives;
                 if (data.questionTime) this.gameTime = data.questionTime;

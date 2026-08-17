@@ -31,7 +31,7 @@
     <div id="app" v-cloak>
 
         <!-- 🆕 v2 : fond animé (aurore + grille), derrière les particules -->
-        <div class="v2-bg" aria-hidden="true" v-if="!hasJoined && !gameInProgress && !gameEnded">
+        <div class="v2-bg" aria-hidden="true" v-if="!gameInProgress && !gameEnded">
             <div class="v2-bg-aurora a1"></div>
             <div class="v2-bg-aurora a2"></div>
             <div class="v2-bg-aurora a3"></div>
@@ -48,7 +48,7 @@
                  🆕 v2 — ACCUEIL
                  hub (créer/rejoindre) → modes | join
                  ============================================ -->
-            <div class="v2-home" v-if="!hasJoined && !gameInProgress && !gameEnded">
+            <div class="v2-home" v-if="!hasJoined && !isHost && !gameInProgress && !gameEnded">
 
                 <header class="v2-topbar">
                     <button class="v2-logo" @click="reloadHome" title="Accueil">
@@ -231,123 +231,196 @@
             </div>
 
 
-            <!-- État: Lobby (jeu activé, en attente) -->
-            <div class="content-section" v-if="isGameActive && !gameInProgress && isAuthenticated && !gameStartedOnServer && hasJoined">
+            <!-- ============================================
+                 🆕 v2 — SALON (avant le lancement)
+                 ============================================ -->
+            <div class="v2-room" v-if="(hasJoined || isHost) && isGameActive && !gameInProgress && isAuthenticated && !gameEnded">
 
-                <!-- 🆕 v2 — Barre du salon : code partageable + contrôles de l'hôte -->
-                <div class="v2-roombar">
-                    <div class="v2-roombar-code" v-if="roomCode">
-                        <span class="v2-roombar-label">Code du salon</span>
-                        <button class="v2-roombar-value" @click="copyRoomCode" title="Copier">
-                            {{ roomCode }}
-                            <span class="v2-roombar-copied" v-if="codeCopied">copié</span>
-                        </button>
-                    </div>
-                    <div class="v2-roombar-actions" v-if="isHost">
-                        <button class="v2-btn v2-btn-primary v2-btn-sm" @click="hostStartGame" :disabled="startingGame">
-                            {{ startingGame ? 'Lancement...' : 'Démarrer' }}
-                        </button>
-                        <button class="v2-btn v2-btn-ghost v2-btn-sm" @click="hostCloseRoom">Fermer</button>
-                    </div>
-                    <div class="v2-roombar-hint" v-else>En attente de l'hôte…</div>
-                </div>
-                <div class="v2-action-error" v-if="hostError">{{ hostError }}</div>
-
-                <!-- Mode Rivalité: Modal choix d'équipe -->
-                <div class="rivalry-modal" v-if="lobbyMode === 'rivalry'">
-                    <div class="rivalry-modal-title">{{ hasJoined ? (selectedTeam === 1 ? teamNames[1] : teamNames[2]) : 'Rivalité' }}</div>
-                    <div class="rivalry-modal-subtitle">{{ hasJoined ? 'En attente du lancement...' : 'Choisis ton camp' }}</div>
-                    <div class="rivalry-teams">
-                        <div 
-                            class="rivalry-team-card team-blue" 
-                            :class="{ selected: selectedTeam === 1, disabled: hasJoined && selectedTeam !== 1 }"
-                            @click="selectAndJoinTeam(1, $event)"
-                        >
-                            <svg class="rivalry-team-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M6 3h12l4 6-10 13L2 9l4-6z"/>
-                                <path d="M2 9h20"/>
-                                <path d="M10 3l-4 6 6 13 6-13-4-6"/>
-                            </svg>
-                            <div class="rivalry-team-name">{{ teamNames[1] }}</div>
-                            <div class="rivalry-team-count">{{ teamCounts[1] }} joueur{{ teamCounts[1] > 1 ? 's' : '' }}</div>
-                        </div>
-                        <div 
-                            class="rivalry-team-card team-gold" 
-                            :class="{ selected: selectedTeam === 2, disabled: hasJoined && selectedTeam !== 2 }"
-                            @click="selectAndJoinTeam(2, $event)"
-                        >
-                            <svg class="rivalry-team-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/>
-                                <line x1="12" y1="22" x2="12" y2="2"/>
-                            </svg>
-                            <div class="rivalry-team-name">{{ teamNames[2] }}</div>
-                            <div class="rivalry-team-count">{{ teamCounts[2] }} joueur{{ teamCounts[2] > 1 ? 's' : '' }}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Mode Classic: Lobby card -->
-                <div class="lobby-card lobby-card-v3" v-if="lobbyMode === 'classic'">
-                    <div class="lobby-glow-line"></div>
-                    <svg class="lobby-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                    <h2 class="lobby-title">La partie va commencer</h2>
-                    <div class="lobby-subtitle">Mode Classique</div>
-                    <div class="lobby-players-line">
-                        <span class="lobby-line"></span>
-                        <span class="lobby-count">
-                            <span class="lobby-dot"></span>
-                            <strong>{{ playerCount }}</strong> en attente
-                        </span>
-                        <span class="lobby-line"></span>
-                    </div>
-                    <button 
-                        class="lobby-btn" 
-                        :class="{ joined: hasJoined }"
-                        @click="joinLobby" 
-                        :disabled="hasJoined"
-                    >
-                        {{ hasJoined ? 'Vous êtes dans la partie' : 'Rejoindre' }}
+                <header class="v2-topbar">
+                    <button class="v2-logo" @click="reloadHome" title="Accueil">
+                        <span class="v2-logo-text">SM</span>
+                        <span class="v2-logo-ring"></span>
                     </button>
-                </div>
-
-                <!-- Mode BombAnime: Lobby card -->
-                <div class="lobby-card lobby-card-v3 lobby-bombanime" v-if="lobbyMode === 'bombanime'">
-                    <div class="lobby-glow-line"></div>
-                    <svg class="lobby-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <circle cx="12" cy="14" r="8"/>
-                        <path d="M12 6V2"/>
-                        <path d="M9 2h6"/>
-                    </svg>
-                    <h2 class="lobby-title">La partie va commencer</h2>
-                    <div class="lobby-subtitle">Mode BombAnime</div>
-                    <div class="lobby-players-line">
-                        <span class="lobby-line"></span>
-                        <span class="lobby-count">
-                            <span class="lobby-dot"></span>
-                            <strong>{{ playerCount }}</strong> en attente
-                        </span>
-                        <span class="lobby-line"></span>
-                    </div>
-                    <button 
-                        class="lobby-btn" 
-                        :class="{ joined: hasJoined }"
-                        @click="joinLobby" 
-                        :disabled="hasJoined || joinCooldown"
-                    >
-                        {{ hasJoined ? 'Vous êtes dans la partie' : 'Rejoindre' }}
+                    <button class="v2-identity" @click="editPseudo" title="Changer de pseudo">
+                        <span class="v2-identity-dot"></span>
+                        <span class="v2-identity-name">{{ username }}</span>
+                        <span class="v2-identity-edit">✎</span>
                     </button>
+                </header>
+
+                <div class="v2-room-layout" :class="'mode-' + lobbyMode">
+
+                    <!-- ── Colonne principale ── -->
+                    <section class="v2-room-main">
+                        <span class="v2-room-kicker">{{ modeLabel }}</span>
+
+                        <div class="v2-room-code-block" v-if="roomCode">
+                            <span class="v2-room-code-label">Code du salon</span>
+                            <button class="v2-room-code" @click="copyRoomCode" title="Copier le code">
+                                <span v-for="(ch, i) in roomCode.split('')" :key="i" class="v2-room-code-char">{{ ch }}</span>
+                            </button>
+                            <span class="v2-room-copied" :class="{ show: codeCopied }">copié !</span>
+                        </div>
+
+                        <!-- Équipes (mode Rivalité) -->
+                        <div class="v2-teams" v-if="lobbyMode === 'rivalry'">
+                            <button class="v2-team-pick team-1"
+                                    :class="{ picked: selectedTeam === 1 }"
+                                    @click="selectAndJoinTeam(1, $event)">
+                                <span class="v2-team-name">{{ teamNames[1] }}</span>
+                                <span class="v2-team-count">{{ teamCounts[1] }}</span>
+                            </button>
+                            <button class="v2-team-pick team-2"
+                                    :class="{ picked: selectedTeam === 2 }"
+                                    @click="selectAndJoinTeam(2, $event)">
+                                <span class="v2-team-name">{{ teamNames[2] }}</span>
+                                <span class="v2-team-count">{{ teamCounts[2] }}</span>
+                            </button>
+                        </div>
+
+                        <!-- Joueurs présents -->
+                        <div class="v2-room-players">
+                            <div class="v2-room-players-head">
+                                <span class="v2-room-players-count">{{ playerCount }}</span>
+                                <span class="v2-room-players-label">
+                                    joueur<span v-if="playerCount > 1">s</span> dans le salon<span v-if="maxPlayers && lobbyMode === 'bombanime'"> · {{ maxPlayers }} max</span>
+                                </span>
+                            </div>
+                            <div class="v2-room-players-grid" v-if="lobbyPlayers.length">
+                                <div class="v2-room-player"
+                                     v-for="p in lobbyPlayers"
+                                     :key="p.twitchId"
+                                     :class="['team-' + (p.team || 0), { me: p.twitchId === twitchId }]">
+                                    <span class="v2-room-player-name">{{ p.username }}</span>
+                                    <button class="v2-room-kick" v-if="isHost && p.twitchId !== twitchId"
+                                            @click="hostKick(p.twitchId)" title="Exclure">×</button>
+                                </div>
+                            </div>
+                            <div class="v2-room-empty" v-else>
+                                Partage le code pour que tes joueurs te rejoignent
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="v2-room-actions" v-if="isHost">
+                            <button class="v2-cta" @click="hostStartGame" :disabled="startingGame">
+                                <span class="v2-cta-label">{{ startingGame ? 'Lancement…' : 'Démarrer la partie' }}</span>
+                                <span class="v2-cta-shine"></span>
+                            </button>
+                            <button class="v2-btn v2-btn-ghost" @click="hostCloseRoom">Fermer le salon</button>
+                        </div>
+                        <div class="v2-room-waiting" v-else>
+                            <span class="v2-live-dot"></span>
+                            En attente du lancement par l'hôte…
+                        </div>
+
+                        <div class="v2-action-error" v-if="hostError">{{ hostError }}</div>
+                    </section>
+
+                    <!-- ── Réglages (hôte uniquement) ── -->
+                    <aside class="v2-settings" v-if="isHost" :class="{ open: showSettings }">
+                        <button class="v2-settings-toggle" @click="showSettings = !showSettings">
+                            <span>Réglages</span>
+                            <span class="v2-settings-chevron">{{ showSettings ? '▾' : '▸' }}</span>
+                        </button>
+
+                        <div class="v2-settings-body" v-show="showSettings">
+
+                            <!-- Quiz : Classique & Rivalité -->
+                            <template v-if="lobbyMode !== 'bombanime'">
+                                <div class="v2-set">
+                                    <span class="v2-set-label">Format</span>
+                                    <div class="v2-set-opts">
+                                        <button v-for="o in [{v:'lives',l:'Vies'},{v:'points',l:'Points'}]" :key="o.v"
+                                                class="v2-set-opt" :class="{ on: gameMode === o.v }"
+                                                @click="applySetting('/admin/set-mode', { mode: o.v }, () => gameMode = o.v)">{{ o.l }}</button>
+                                    </div>
+                                </div>
+
+                                <div class="v2-set" v-if="gameMode === 'lives'">
+                                    <span class="v2-set-label">Vies</span>
+                                    <div class="v2-set-opts">
+                                        <button v-for="n in [1,2,3,4,5]" :key="n"
+                                                class="v2-set-opt" :class="{ on: gameLives === n }"
+                                                @click="applySetting('/admin/set-lives', { lives: n }, () => gameLives = n)">{{ n }}</button>
+                                    </div>
+                                </div>
+
+                                <div class="v2-set" v-else>
+                                    <span class="v2-set-label">Questions</span>
+                                    <div class="v2-set-opts">
+                                        <button v-for="n in [10,15,20,30]" :key="n"
+                                                class="v2-set-opt" :class="{ on: questionsCount === n }"
+                                                @click="applySetting('/admin/set-questions', { questions: n }, () => questionsCount = n)">{{ n }}</button>
+                                    </div>
+                                </div>
+
+                                <div class="v2-set">
+                                    <span class="v2-set-label">Temps</span>
+                                    <div class="v2-set-opts">
+                                        <button v-for="n in [7,10,15,20]" :key="n"
+                                                class="v2-set-opt" :class="{ on: gameTime === n }"
+                                                @click="applySetting('/admin/set-time', { time: n }, () => gameTime = n)">{{ n }}s</button>
+                                    </div>
+                                </div>
+
+                                <div class="v2-set">
+                                    <span class="v2-set-label">Réponses</span>
+                                    <div class="v2-set-opts">
+                                        <button v-for="n in [2,3,4,5,6]" :key="n"
+                                                class="v2-set-opt" :class="{ on: answersCount === n }"
+                                                @click="applySetting('/admin/set-answers', { answers: n }, () => answersCount = n)">{{ n }}</button>
+                                    </div>
+                                </div>
+
+                                <div class="v2-set">
+                                    <span class="v2-set-label">Difficulté</span>
+                                    <div class="v2-set-opts">
+                                        <button v-for="o in [{v:'croissante',l:'Croissante'},{v:'aleatoire',l:'Aléatoire'}]" :key="o.v"
+                                                class="v2-set-opt" :class="{ on: difficultyMode === o.v }"
+                                                @click="applySetting('/admin/set-difficulty-mode', { mode: o.v }, () => difficultyMode = o.v)">{{ o.l }}</button>
+                                    </div>
+                                </div>
+
+                                <div class="v2-set">
+                                    <span class="v2-set-label">Séries</span>
+                                    <div class="v2-set-opts wrap">
+                                        <button v-for="f in serieFilters" :key="f.id"
+                                                class="v2-set-opt" :class="{ on: serieFilter === f.id }"
+                                                @click="applySetting('/admin/set-serie-filter', { filter: f.id }, () => serieFilter = f.id)">{{ f.name }}</button>
+                                    </div>
+                                </div>
+
+                                <div class="v2-set">
+                                    <span class="v2-set-label">Anti-spoil</span>
+                                    <button class="v2-switch" :class="{ on: noSpoil }"
+                                            @click="applySetting('/admin/set-no-spoil', { enabled: !noSpoil }, () => noSpoil = !noSpoil)"><span></span></button>
+                                </div>
+
+                                <div class="v2-set">
+                                    <span class="v2-set-label">Bonus &amp; défis</span>
+                                    <button class="v2-switch" :class="{ on: bonusEnabled }"
+                                            @click="applySetting('/admin/set-bonus-enabled', { enabled: !bonusEnabled }, () => bonusEnabled = !bonusEnabled)"><span></span></button>
+                                </div>
+                            </template>
+
+                            <!-- BombAnime -->
+                            <template v-else>
+                                <div class="v2-set">
+                                    <span class="v2-set-label">Série</span>
+                                    <div class="v2-set-opts wrap">
+                                        <button v-for="s in bombanimeSeries" :key="s"
+                                                class="v2-set-opt" :class="{ on: bombanime.serie === s }"
+                                                @click="applySetting('/admin/bombanime/update-serie', { serie: s }, () => bombanime.serie = s)">{{ s }}</button>
+                                    </div>
+                                </div>
+                                <div class="v2-set-note">Le timer et les vies se règlent à l'ouverture du salon.</div>
+                            </template>
+                        </div>
+                    </aside>
                 </div>
-
-
-                <button class="btn-secondary" @click="logout">
-                    Déconnexion
-                </button>
             </div>
+
 
             <!-- État: Spectateur (partie en cours mais pas rejoint) -->
             <div class="content-section"

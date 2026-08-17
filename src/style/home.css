@@ -17794,3 +17794,357 @@ body.modal-open {
     filter: saturate(1.02) brightness(0.95);
     animation: none;
 }
+
+/* ============================================
+   🆕 v2 — SALON (avant le lancement)
+   ============================================ */
+
+.v2-room {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    padding: 1.2rem clamp(0.9rem, 1.6vw, 1.8rem);
+    overflow-y: auto;
+}
+
+.v2-room-layout {
+    flex: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(17rem, 26vw, 22rem);
+    align-items: center;
+    gap: clamp(1.5rem, 4vw, 3.5rem);
+    width: 100%;
+    max-width: 76rem;
+    margin: 0 auto;
+    animation: v2Rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* ── Colonne principale ── */
+.v2-room-main {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.4rem;
+    min-width: 0;
+}
+
+.v2-room-kicker {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--neon-primary);
+}
+
+/* Code du salon */
+.v2-room-code-block {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+}
+
+.v2-room-code-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.v2-room-code {
+    display: flex;
+    gap: 0.45rem;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.v2-room-code-char {
+    display: grid;
+    place-items: center;
+    width: clamp(2.6rem, 5.5vw, 3.6rem);
+    height: clamp(3.2rem, 7vw, 4.4rem);
+    font-family: 'Space Grotesk', monospace;
+    font-size: clamp(1.7rem, 3.6vw, 2.5rem);
+    font-weight: 700;
+    color: var(--neon-primary);
+    background: linear-gradient(160deg, rgba(255, 200, 40, 0.1), rgba(255, 255, 255, 0.02));
+    border: 0.09rem solid rgba(255, 215, 0, 0.28);
+    border-radius: 0.55rem;
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.v2-room-code:hover .v2-room-code-char {
+    transform: translateY(-0.18rem);
+    border-color: rgba(255, 215, 0, 0.6);
+    box-shadow: 0 0.5rem 1.4rem rgba(255, 170, 0, 0.18);
+}
+
+.v2-room-code:hover .v2-room-code-char:nth-child(2) { transition-delay: 0.04s; }
+.v2-room-code:hover .v2-room-code-char:nth-child(3) { transition-delay: 0.08s; }
+.v2-room-code:hover .v2-room-code-char:nth-child(4) { transition-delay: 0.12s; }
+
+.v2-room-copied {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--success-color);
+    opacity: 0;
+    transform: translateY(-0.2rem);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.v2-room-copied.show { opacity: 1; transform: none; }
+
+/* Équipes */
+.v2-teams { display: flex; gap: 0.7rem; width: 100%; max-width: 26rem; }
+
+.v2-team-pick {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.85rem 1rem;
+    font-family: inherit;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.03);
+    border: 0.09rem solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.6rem;
+    transition: transform 0.22s ease, border-color 0.25s ease, background 0.25s ease;
+}
+
+.v2-team-name { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); }
+.v2-team-count { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--text-secondary); }
+
+.v2-team-pick:hover { transform: translateY(-0.12rem); }
+.v2-team-pick.team-1:hover, .v2-team-pick.team-1.picked { border-color: #60a5fa; background: rgba(96, 165, 250, 0.1); }
+.v2-team-pick.team-2:hover, .v2-team-pick.team-2.picked { border-color: var(--neon-primary); background: rgba(255, 215, 0, 0.09); }
+
+/* Joueurs */
+.v2-room-players { width: 100%; max-width: 34rem; }
+
+.v2-room-players-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+}
+
+.v2-room-players-count {
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 1.7rem;
+    line-height: 1;
+    color: var(--neon-primary);
+}
+
+.v2-room-players-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+}
+
+.v2-room-players-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    max-height: 11rem;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 215, 0, 0.3) transparent;
+}
+
+.v2-room-player {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.42rem 0.7rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.04);
+    border: 0.06rem solid rgba(255, 255, 255, 0.08);
+    border-radius: 2rem;
+    animation: v2PlayerIn 0.35s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+@keyframes v2PlayerIn {
+    from { opacity: 0; transform: scale(0.88); }
+    to   { opacity: 1; transform: none; }
+}
+
+.v2-room-player.me { border-color: rgba(255, 215, 0, 0.5); background: rgba(255, 215, 0, 0.08); }
+.v2-room-player.team-1 { border-color: rgba(96, 165, 250, 0.4); }
+.v2-room-player.team-2 { border-color: rgba(255, 215, 0, 0.4); }
+
+.v2-room-kick {
+    display: grid;
+    place-items: center;
+    width: 1.05rem;
+    height: 1.05rem;
+    font-size: 0.8rem;
+    line-height: 1;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease;
+}
+
+.v2-room-kick:hover { color: #fff; background: var(--error-color); }
+
+.v2-room-empty {
+    padding: 1.1rem 1.2rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.02);
+    border: 0.06rem dashed rgba(255, 255, 255, 0.1);
+    border-radius: 0.6rem;
+}
+
+/* Actions */
+.v2-room-actions { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; }
+
+.v2-room-waiting {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+/* ── Panneau de réglages ── */
+.v2-settings {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    max-height: 82vh;
+    background: rgba(255, 255, 255, 0.022);
+    border: 0.09rem solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.9rem;
+    overflow: hidden;
+}
+
+.v2-settings-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.95rem 1.1rem;
+    font-family: inherit;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.v2-settings-toggle:hover { color: var(--neon-primary); }
+.v2-settings-chevron { font-size: 0.7rem; }
+
+.v2-settings-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.05rem;
+    padding: 0 1.1rem 1.2rem;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 215, 0, 0.3) transparent;
+}
+
+.v2-set { display: flex; flex-direction: column; gap: 0.45rem; }
+
+.v2-set-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.v2-set-opts { display: flex; gap: 0.32rem; }
+.v2-set-opts.wrap { flex-wrap: wrap; }
+
+.v2-set-opt {
+    flex: 1 1 auto;
+    min-width: 2.2rem;
+    padding: 0.45rem 0.6rem;
+    font-family: inherit;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.03);
+    border: 0.06rem solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.4rem;
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.v2-set-opt:hover { color: var(--text-primary); border-color: rgba(255, 215, 0, 0.35); }
+
+.v2-set-opt.on {
+    color: #14100a;
+    background: linear-gradient(135deg, #ffe066, var(--neon-primary));
+    border-color: transparent;
+}
+
+/* Interrupteur */
+.v2-set:has(.v2-switch) { flex-direction: row; align-items: center; justify-content: space-between; }
+
+.v2-switch {
+    position: relative;
+    width: 2.5rem;
+    height: 1.35rem;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.08);
+    border: 0.06rem solid rgba(255, 255, 255, 0.1);
+    border-radius: 2rem;
+    cursor: pointer;
+    transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+.v2-switch span {
+    position: absolute;
+    top: 0.13rem;
+    left: 0.15rem;
+    width: 0.95rem;
+    height: 0.95rem;
+    border-radius: 50%;
+    background: var(--text-secondary);
+    transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1), background 0.25s ease;
+}
+
+.v2-switch.on { background: rgba(255, 215, 0, 0.22); border-color: rgba(255, 215, 0, 0.5); }
+.v2-switch.on span { transform: translateX(1.1rem); background: var(--neon-primary); }
+
+.v2-set-note {
+    font-size: 0.7rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    opacity: 0.75;
+}
+
+/* ── Mobile ── */
+@media (max-width: 900px) {
+    .v2-room-layout {
+        grid-template-columns: 1fr;
+        align-items: start;
+        gap: 1.4rem;
+        padding-top: 1rem;
+    }
+    .v2-room-main { align-items: center; text-align: center; }
+    .v2-room-players { max-width: none; }
+    .v2-room-players-grid { justify-content: center; }
+    .v2-teams { max-width: none; }
+    .v2-settings { max-height: none; }
+}
