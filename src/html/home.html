@@ -987,6 +987,7 @@
                                     }"
                                     :disabled="hasAnswered || playerLives === 0 || showResults"
                                     @click="selectAnswer(index + 1, $event)">
+                                <span class="v2q-mark" :class="'m' + index" aria-hidden="true">{{ answerMarks[index] }}</span>
                                 <span class="v2q-answer-text">{{ answer }}</span>
                                 <span class="v2q-answer-pct" v-if="showResults">{{ answerPercent(index + 1) }}%</span>
                             </button>
@@ -1328,55 +1329,32 @@
             </div>
         </div>
 
-        <!-- 🆕 NOUVEAU SYSTÈME BONUS - Icône + Hover Menu -->
-        <div class="bonus-icon-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && bonusEnabled">
-            <div class="bonus-icon-wrapper" @mouseenter="showBonusMenu = true" @mouseleave="showBonusMenu = false"
-                @click="showBonusMenu = !showBonusMenu">
+        <!-- 🆕 v2 — Bonus en jetons toujours visibles -->
+        <div class="v2-bonus" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && bonusEnabled">
+            <button class="v2-token"
+                    :class="[getBonusState('5050'), { vide: !bonusInventory['5050'], off: !canUseBonus() }]"
+                    :disabled="!bonusInventory['5050'] || !canUseBonus()"
+                    @click="useBonusStrip('5050')" title="50/50 — retire deux mauvaises réponses">
+                <img src="5050.png" alt="50/50">
+                <span class="v2-token-n" v-if="bonusInventory['5050']">{{ bonusInventory['5050'] }}</span>
+            </button>
 
-                <!-- Icône principale -->
-                <div class="bonus-main-icon" :class="{ active: hasUnusedBonuses }">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path
-                            d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 2.18l8 3.6v8.55c0 4.65-3.2 8.95-8 10.05-4.8-1.1-8-5.4-8-10.05V7.78l8-3.6zM11 10v2h2v-2h-2zm0 4v6h2v-6h-2z" />
-                    </svg>
+            <button class="v2-token"
+                    :class="[getBonusState('reveal'), { vide: !bonusInventory['reveal'], off: !canUseBonus() }]"
+                    :disabled="!bonusInventory['reveal'] || !canUseBonus()"
+                    @click="useBonusStrip('reveal')" title="Joker — révèle si ta réponse est bonne">
+                <img src="reveal2.png" alt="Joker">
+                <span class="v2-token-n" v-if="bonusInventory['reveal']">{{ bonusInventory['reveal'] }}</span>
+            </button>
 
-                    <!-- Badge notification (seulement si bonus disponibles) -->
-                    <span class="bonus-count-badge" v-if="hasUnusedBonuses && playerLives > 0">
-                        {{ unusedBonusCount }}
-                    </span>
-                </div>
-
-                <!-- Menu des bonus (3 bandelettes) - 🔥 REFONTE avec compteurs -->
-                <transition name="bonus-menu">
-                    <div class="bonus-menu" v-show="showBonusMenu" @click.stop>
-                        <!-- Bonus 1 : 50/50 -->
-                        <div class="bonus-strip" :class="[getBonusState('5050'), { disabled: !canUseBonus() }]"
-                            @click="useBonusStrip('5050')">
-                            <img src="5050.png" alt="50/50" class="bonus-icon-img">
-                            <span class="bonus-strip-text">50/50</span>
-                            <span class="bonus-strip-count">{{ bonusInventory['5050'] }}</span>
-                        </div>
-
-                        <!-- Bonus 2 : Joker -->
-                        <div class="bonus-strip" :class="[getBonusState('reveal'), { disabled: !canUseBonus() }]"
-                            @click="useBonusStrip('reveal')">
-                            <img src="reveal2.png" alt="Joker" class="bonus-icon-img">
-                            <span class="bonus-strip-text">Joker</span>
-                            <span class="bonus-strip-count">{{ bonusInventory['reveal'] }}</span>
-                        </div>
-
-                        <!-- Bonus 3 : Points x2 / Shield -->
-                        <div class="bonus-strip"
-                            :class="[getBonusState(gameMode === 'lives' ? 'shield' : 'doublex2'), { disabled: !canUseBonus() }]"
-                            @click="useBonusStrip(gameMode === 'lives' ? 'shield' : 'doublex2')">
-                            <img :src="gameMode === 'lives' ? 'shield.png' : 'x2.png'"
-                                :alt="gameMode === 'lives' ? 'Bouclier' : 'Points x2'" class="bonus-icon-img">
-                            <span class="bonus-strip-text">{{ gameMode === 'lives' ? 'Bouclier' : 'Points x2' }}</span>
-                            <span class="bonus-strip-count">{{ bonusInventory[gameMode === 'lives' ? 'shield' : 'doublex2'] }}</span>
-                        </div>
-                    </div>
-                </transition>
-            </div>
+            <button class="v2-token"
+                    :class="[getBonusState(gameMode === 'lives' ? 'shield' : 'doublex2'), { vide: !bonusInventory[gameMode === 'lives' ? 'shield' : 'doublex2'], off: !canUseBonus() }]"
+                    :disabled="!bonusInventory[gameMode === 'lives' ? 'shield' : 'doublex2'] || !canUseBonus()"
+                    @click="useBonusStrip(gameMode === 'lives' ? 'shield' : 'doublex2')"
+                    :title="gameMode === 'lives' ? 'Bouclier — protège une vie' : 'Points x2 sur cette question'">
+                <img :src="gameMode === 'lives' ? 'shield.png' : 'x2.png'" :alt="gameMode === 'lives' ? 'Bouclier' : 'Points x2'">
+                <span class="v2-token-n" v-if="bonusInventory[gameMode === 'lives' ? 'shield' : 'doublex2']">{{ bonusInventory[gameMode === 'lives' ? 'shield' : 'doublex2'] }}</span>
+            </button>
         </div>
 
 

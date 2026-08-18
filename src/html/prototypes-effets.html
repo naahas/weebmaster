@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShonenMaster — Prototypes d'effets de clic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="icon.png">
+    <style>
+        :root { --neon: #FFD700; --accent: #FF8C00; --txt: #fff; --txt2: #a0a0a0; --green: #10b981; --red: #ef4444; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: radial-gradient(120% 90% at 50% 0%, #14100a 0%, #0c0c0e 45%, #08080a 100%);
+            background-attachment: fixed;
+            color: var(--txt);
+            font-family: 'Poppins', sans-serif;
+            padding: 2.5rem clamp(1rem, 4vw, 3rem) 6rem;
+        }
+
+        .nav { max-width: 74rem; margin: 0 auto 2rem; display: flex; gap: .6rem; flex-wrap: wrap; }
+        .nav a {
+            padding: .45rem .9rem; font-size: .78rem; font-weight: 600; text-decoration: none;
+            color: var(--txt2); background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08); border-radius: 2rem; transition: .2s;
+        }
+        .nav a:hover, .nav a.on { color: var(--neon); border-color: rgba(255,215,0,.4); }
+
+        .head { max-width: 74rem; margin: 0 auto 2.5rem; }
+        .head h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: .03em; }
+        .head p { color: var(--txt2); font-size: .9rem; max-width: 48rem; line-height: 1.6; }
+        .head b { color: var(--neon); font-weight: 600; }
+
+        .protos { max-width: 74rem; margin: 0 auto; display: flex; flex-direction: column; gap: 2.4rem; }
+        .proto-head { display: flex; align-items: baseline; gap: .8rem; margin-bottom: .9rem; }
+        .proto-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--neon); }
+        .proto-name { font-size: .95rem; font-weight: 700; }
+        .proto-note { font-size: .75rem; color: var(--txt2); margin-left: auto; text-align: right; max-width: 34rem; }
+
+        .frame {
+            padding: 2rem;
+            border: 1px solid rgba(255,255,255,.07); border-radius: 1rem; background: rgba(255,255,255,.012);
+        }
+
+        button { font-family: inherit; cursor: pointer; border: none; color: inherit; }
+
+        /* ══════════════ Barre de réponse commune (style Q2 retenu) ══════════════ */
+        .bars { display: flex; flex-direction: column; gap: .65rem; width: min(30rem, 100%); margin: 0 auto; }
+
+        .bar {
+            position: relative; overflow: hidden;
+            display: flex; align-items: center; gap: .85rem;
+            padding: 1.2rem .9rem;
+            background: rgba(255,255,255,.03);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: .6rem;
+            transition: background .25s ease, border-color .25s ease, transform .2s ease;
+        }
+        .bar:hover { background: rgba(255,215,0,.06); border-color: rgba(255,215,0,.35); }
+
+        .mark {
+            position: relative; z-index: 2;
+            flex: 0 0 auto; display: grid; place-items: center;
+            width: 1.75rem; height: 1.75rem; font-size: .72rem; line-height: 1;
+            border-radius: .4rem;
+            transition: transform .25s ease;
+        }
+        .m0 { color: #ffd24a; background: rgba(255,210,74,.12); box-shadow: inset 0 0 0 1px rgba(255,210,74,.35); }
+        .m1 { color: #7fb4ff; background: rgba(127,180,255,.12); box-shadow: inset 0 0 0 1px rgba(127,180,255,.35); }
+        .m2 { color: #6ee7b7; background: rgba(110,231,183,.12); box-shadow: inset 0 0 0 1px rgba(110,231,183,.35); }
+        .m3 { color: #d8b4fe; background: rgba(216,180,254,.12); box-shadow: inset 0 0 0 1px rgba(216,180,254,.35); }
+
+        .txt { position: relative; z-index: 2; flex: 1; font-size: .9rem; font-weight: 500; text-align: left; }
+
+        .hint { margin-top: 1.1rem; text-align: center; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--txt2); }
+
+        /* ══════════════ E1 — Onde de choc ══════════════ */
+        .e1 .ripple {
+            position: absolute; z-index: 1; top: 0; left: 0;
+            width: 1.2rem; height: 1.2rem; margin: -.6rem 0 0 -.6rem;
+            border-radius: 50%; background: rgba(255,215,0,.4);
+            transform: scale(0); opacity: 1; pointer-events: none;
+            animation: e1Wave .62s cubic-bezier(.2,.8,.25,1) forwards;
+        }
+        @keyframes e1Wave { to { transform: scale(38); opacity: 0; } }
+
+        .e1 .bar.press { transform: scale(.975); transition-duration: .09s; }
+        .e1 .bar.on { background: rgba(255,215,0,.1); border-color: rgba(255,215,0,.75); }
+        .e1 .bar.on .mark { transform: scale(1.15); }
+
+        /* ══════════════ E2 — Sceau ninja ══════════════ */
+        .e2 .seal {
+            position: absolute; z-index: 3; top: 50%; right: 1rem; transform: translateY(-50%);
+            display: grid; place-items: center; width: 2.4rem; height: 2.4rem;
+            font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; color: #ff5c5c;
+            border: 2px solid #ff5c5c; border-radius: .35rem;
+            pointer-events: none;
+            animation: e2Stamp .42s cubic-bezier(.2,1.5,.4,1) forwards;
+        }
+        @keyframes e2Stamp {
+            0%   { opacity: 0; transform: translateY(-50%) scale(3.2) rotate(-28deg); }
+            60%  { opacity: 1; transform: translateY(-50%) scale(.9) rotate(-9deg); }
+            100% { opacity: 1; transform: translateY(-50%) scale(1) rotate(-11deg); }
+        }
+        .e2 .shock {
+            position: absolute; z-index: 1; inset: 0; pointer-events: none;
+            border: 2px solid rgba(255,92,92,.8); border-radius: .6rem;
+            animation: e2Shock .5s ease-out forwards;
+        }
+        @keyframes e2Shock { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(1.06); opacity: 0; } }
+        .e2 .bar.on { background: rgba(255,92,92,.07); border-color: rgba(255,92,92,.5); }
+        .e2 .bar.kick { animation: e2Kick .3s cubic-bezier(.2,.9,.3,1); }
+        @keyframes e2Kick { 0% { transform: scale(1); } 35% { transform: scale(.97); } 100% { transform: scale(1); } }
+
+        /* ══════════════ E3 — Éclats ══════════════ */
+        .e3 .shard {
+            position: absolute; z-index: 3; width: .2rem; height: .55rem;
+            background: var(--neon); border-radius: .1rem; pointer-events: none;
+            animation: e3Fly .55s cubic-bezier(.15,.7,.3,1) forwards;
+        }
+        @keyframes e3Fly {
+            0%   { opacity: 1; transform: translate(0,0) scale(1); }
+            100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(.25); }
+        }
+        .e3 .bar.on { background: rgba(255,215,0,.1); border-color: rgba(255,215,0,.75); }
+        .e3 .bar.on .mark { transform: scale(1.2) rotate(12deg); }
+        .e3 .flash { position: absolute; inset: 0; z-index: 1; background: rgba(255,255,255,.22); pointer-events: none; animation: e3Flash .28s ease-out forwards; }
+        @keyframes e3Flash { to { opacity: 0; } }
+
+        /* ══════════════ E4 — Coup de sabre ══════════════ */
+        .e4 .slash {
+            position: absolute; z-index: 3; top: -60%; left: 0; width: 45%; height: 220%;
+            background: linear-gradient(100deg, transparent 42%, rgba(255,255,255,.9) 50%, transparent 58%);
+            transform: translateX(-120%) skewX(-18deg); pointer-events: none;
+            animation: e4Cut .45s cubic-bezier(.3,.7,.2,1) forwards;
+        }
+        @keyframes e4Cut { to { transform: translateX(340%) skewX(-18deg); } }
+        .e4 .trail {
+            position: absolute; z-index: 1; inset: 0; background: linear-gradient(90deg, rgba(255,215,0,.18), transparent);
+            transform-origin: left; transform: scaleX(0); pointer-events: none;
+            animation: e4Trail .5s cubic-bezier(.2,.8,.2,1) forwards;
+        }
+        @keyframes e4Trail { to { transform: scaleX(1); } }
+        .e4 .bar.on { border-color: rgba(255,215,0,.75); }
+        .e4 .bar.on .txt { text-shadow: 0 0 .8rem rgba(255,215,0,.5); }
+
+        /* ══════════════ E5 — Verrou magnétique ══════════════ */
+        .e5 .bar { transition: transform .22s cubic-bezier(.2,1.6,.4,1), border-color .25s, background .25s; }
+        .e5 .bar.on {
+            transform: translateX(.5rem);
+            background: rgba(255,215,0,.09);
+            border-color: rgba(255,215,0,.8);
+        }
+        .e5 .rail {
+            position: absolute; z-index: 2; left: 0; top: 0; bottom: 0; width: .22rem;
+            background: var(--neon); box-shadow: 0 0 .7rem rgba(255,215,0,.7);
+            transform: scaleY(0); transform-origin: center; transition: transform .3s cubic-bezier(.2,1.4,.4,1);
+        }
+        .e5 .bar.on .rail { transform: scaleY(1); }
+        .e5 .bars.choisi .bar:not(.on) { opacity: .5; }
+        .e5 .bar.on .mark { transform: scale(1.1); }
+        .e5 .pulse {
+            position: absolute; inset: -1px; z-index: 1; border: 1px solid var(--neon); border-radius: .6rem;
+            pointer-events: none; animation: e5Pulse .5s ease-out 2 forwards;
+        }
+        @keyframes e5Pulse { 0% { opacity: .8; transform: scale(1); } 100% { opacity: 0; transform: scale(1.035); } }
+
+        /* ══════════════ E6 — Charge d'énergie ══════════════ */
+        .e6 .charge {
+            position: absolute; z-index: 1; inset: 0;
+            background: linear-gradient(90deg, rgba(255,140,0,.28), rgba(255,215,0,.22));
+            transform-origin: left; transform: scaleX(0); pointer-events: none;
+            animation: e6Fill .45s cubic-bezier(.25,.9,.25,1) forwards;
+        }
+        @keyframes e6Fill { to { transform: scaleX(1); } }
+        .e6 .spark {
+            position: absolute; z-index: 2; top: 0; bottom: 0; width: .12rem;
+            background: #fff; box-shadow: 0 0 .8rem .1rem rgba(255,255,255,.8);
+            pointer-events: none; animation: e6Spark .45s cubic-bezier(.25,.9,.25,1) forwards;
+        }
+        @keyframes e6Spark { 0% { left: 0; opacity: 1; } 90% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
+        .e6 .bar.on { border-color: rgba(255,215,0,.8); }
+        .e6 .bar.on .mark { animation: e6Beat .9s ease-in-out infinite; }
+        @keyframes e6Beat { 0%,100% { transform: scale(1); } 50% { transform: scale(1.16); } }
+
+        @media (max-width: 640px) {
+            .proto-note { display: none; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="nav">
+        <a href="/prototypes">Mise en page</a>
+        <a href="/prototypes/boutons">Boutons</a>
+        <a href="/prototypes/modes">Modes — grilles</a>
+        <a href="/prototypes/modes-2">Modes — originales</a>
+        <a href="/prototypes/parametres">Paramètres</a>
+        <a href="/prototypes/lancer">Lancer la partie</a>
+        <a href="/prototypes/jeu">Écran de jeu</a>
+        <a href="/prototypes/effets" class="on">Effets de clic</a>
+        <a href="/">← Le site</a>
+    </div>
+
+    <div class="head">
+        <h1>Prototypes — effets de clic</h1>
+        <p>
+            Six façons de rendre la sélection d'une réponse <b>satisfaisante</b>. Les barres reprennent le style retenu
+            (<b>Q2</b>, symboles colorés sans lettre). <b>Clique</b> sur une réponse pour rejouer l'effet ; tout est
+            en <b>transform / opacity</b> uniquement, donc sans coût pour l'animation.
+        </p>
+    </div>
+
+    <div class="protos" id="protos"></div>
+
+    <script>
+        const REPONSES = ['Monkey D. Luffy', 'Roronoa Zoro', 'Sanji Vinsmoke', 'Nami'];
+        const MARQUES = ['◆', '●', '▲', '■'];
+
+        const PROTOS = [
+            { id: 'e1', num: 'E1', nom: 'Onde de choc', note: "Une onde part du point exact du clic et traverse la barre, avec un très léger enfoncement. Discret, universel, se lit même du coin de l'œil." },
+            { id: 'e2', num: 'E2', nom: 'Sceau ninja', note: "Un sceau s'abat sur la réponse depuis le hors-champ, la barre encaisse le choc et un anneau se propage. Le plus « anime » des six." },
+            { id: 'e3', num: 'E3', nom: 'Éclats', note: "Flash bref puis douze éclats projetés depuis le clic. Très gratifiant, mais attention en 6 réponses sur mobile." },
+            { id: 'e4', num: 'E4', nom: 'Coup de sabre', note: "Une lame traverse la barre en diagonale et laisse une traînée dorée. Rapide, net, très lisible en stream." },
+            { id: 'e5', num: 'E5', nom: 'Verrou magnétique', note: "La barre s'aimante vers la droite, un rail doré se déploie à gauche et les autres réponses s'estompent. Le choix reste visible tout le tour." },
+            { id: 'e6', num: 'E6', nom: "Charge d'énergie", note: "Une étincelle balaie la barre et laisse une charge orangée derrière elle ; le symbole se met à battre. Donne l'impression d'armer sa réponse." },
+        ];
+
+        // Chaque prototype partage la même structure de barres
+        const html = PROTOS.map(p => `
+            <section class="${p.id}">
+                <div class="proto-head">
+                    <span class="proto-num">${p.num}</span>
+                    <span class="proto-name">${p.nom}</span>
+                    <span class="proto-note">${p.note}</span>
+                </div>
+                <div class="frame">
+                    <div class="bars" data-effet="${p.id}">
+                        ${REPONSES.map((r, i) => `
+                            <button class="bar">
+                                <span class="mark m${i}">${MARQUES[i]}</span>
+                                <span class="txt">${r}</span>
+                            </button>`).join('')}
+                    </div>
+                    <div class="hint">Clique pour rejouer</div>
+                </div>
+            </section>
+        `).join('');
+        document.getElementById('protos').innerHTML = html;
+
+        // Retire un décor après son animation, pour pouvoir le rejouer
+        function ephemere(parent, el, ms) {
+            parent.appendChild(el);
+            setTimeout(() => el.remove(), ms);
+        }
+
+        document.querySelectorAll('.bars').forEach(groupe => {
+            const effet = groupe.dataset.effet;
+
+            groupe.addEventListener('click', e => {
+                const bar = e.target.closest('.bar');
+                if (!bar) return;
+
+                // Un seul choix actif par groupe
+                groupe.querySelectorAll('.bar').forEach(b => b.classList.remove('on'));
+                bar.classList.add('on');
+                groupe.classList.add('choisi');
+
+                const r = bar.getBoundingClientRect();
+                const x = e.clientX - r.left;
+                const y = e.clientY - r.top;
+
+                if (effet === 'e1') {
+                    const onde = document.createElement('span');
+                    onde.className = 'ripple';
+                    onde.style.left = x + 'px';
+                    onde.style.top = y + 'px';
+                    ephemere(bar, onde, 700);
+                    bar.classList.add('press');
+                    setTimeout(() => bar.classList.remove('press'), 110);
+                }
+
+                if (effet === 'e2') {
+                    bar.querySelectorAll('.seal, .shock').forEach(n => n.remove());
+                    const sceau = document.createElement('span');
+                    sceau.className = 'seal';
+                    sceau.textContent = '選';
+                    bar.appendChild(sceau);
+                    const anneau = document.createElement('span');
+                    anneau.className = 'shock';
+                    ephemere(bar, anneau, 560);
+                    bar.classList.remove('kick');
+                    void bar.offsetWidth;
+                    bar.classList.add('kick');
+                    // le sceau des autres réponses disparaît
+                    groupe.querySelectorAll('.bar:not(.on) .seal').forEach(n => n.remove());
+                }
+
+                if (effet === 'e3') {
+                    const flash = document.createElement('span');
+                    flash.className = 'flash';
+                    ephemere(bar, flash, 320);
+                    for (let i = 0; i < 12; i++) {
+                        const angle = (Math.PI * 2 * i) / 12 + Math.random() * 0.4;
+                        const dist = 40 + Math.random() * 55;
+                        const eclat = document.createElement('span');
+                        eclat.className = 'shard';
+                        eclat.style.left = x + 'px';
+                        eclat.style.top = y + 'px';
+                        eclat.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+                        eclat.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+                        eclat.style.transform = `rotate(${angle}rad)`;
+                        eclat.style.animationDelay = (Math.random() * 0.06) + 's';
+                        ephemere(bar, eclat, 700);
+                    }
+                }
+
+                if (effet === 'e4') {
+                    bar.querySelectorAll('.trail').forEach(n => n.remove());
+                    const lame = document.createElement('span');
+                    lame.className = 'slash';
+                    ephemere(bar, lame, 520);
+                    const trainee = document.createElement('span');
+                    trainee.className = 'trail';
+                    bar.appendChild(trainee);
+                    groupe.querySelectorAll('.bar:not(.on) .trail').forEach(n => n.remove());
+                }
+
+                if (effet === 'e5') {
+                    // le rail existe en permanence, il ne fait que se déplier
+                    if (!bar.querySelector('.rail')) {
+                        const rail = document.createElement('span');
+                        rail.className = 'rail';
+                        bar.insertBefore(rail, bar.firstChild);
+                    }
+                    const pouls = document.createElement('span');
+                    pouls.className = 'pulse';
+                    ephemere(bar, pouls, 1100);
+                }
+
+                if (effet === 'e6') {
+                    bar.querySelectorAll('.charge').forEach(n => n.remove());
+                    const charge = document.createElement('span');
+                    charge.className = 'charge';
+                    bar.appendChild(charge);
+                    const etincelle = document.createElement('span');
+                    etincelle.className = 'spark';
+                    ephemere(bar, etincelle, 500);
+                    groupe.querySelectorAll('.bar:not(.on) .charge').forEach(n => n.remove());
+                }
+            });
+
+            // E5 : chaque barre a son rail dès le départ
+            if (effet === 'e5') {
+                groupe.querySelectorAll('.bar').forEach(b => {
+                    const rail = document.createElement('span');
+                    rail.className = 'rail';
+                    b.insertBefore(rail, b.firstChild);
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -18677,7 +18677,7 @@ body.modal-open {
     overflow: hidden;
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 0.85rem;
     padding: 1.2rem 2.6rem 1.2rem 0.9rem;
     font-family: inherit;
     background: rgba(255, 255, 255, 0.03);
@@ -18696,12 +18696,52 @@ body.modal-open {
 .v2q-answer:disabled { cursor: default; }
 
 .v2q-answer-text {
+    position: relative;
+    z-index: 1;
     flex: 1;
-    font-size: 0.88rem;
+    font-size: 0.9rem;
     font-weight: 500;
     color: var(--text-primary);
-    text-align: center;
+    text-align: left;
 }
+
+/* Repère de réponse : une forme colorée, sans lettre */
+.v2q-mark {
+    position: relative;
+    z-index: 1;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.72rem;
+    line-height: 1;
+    border-radius: 0.4rem;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.v2q-mark.m0 { color: #ffd24a; background: rgba(255, 210, 74, 0.12); box-shadow: inset 0 0 0 0.06rem rgba(255, 210, 74, 0.35); }
+.v2q-mark.m1 { color: #7fb4ff; background: rgba(127, 180, 255, 0.12); box-shadow: inset 0 0 0 0.06rem rgba(127, 180, 255, 0.35); }
+.v2q-mark.m2 { color: #6ee7b7; background: rgba(110, 231, 183, 0.12); box-shadow: inset 0 0 0 0.06rem rgba(110, 231, 183, 0.35); }
+.v2q-mark.m3 { color: #d8b4fe; background: rgba(216, 180, 254, 0.12); box-shadow: inset 0 0 0 0.06rem rgba(216, 180, 254, 0.35); }
+.v2q-mark.m4 { color: #fca5a5; background: rgba(252, 165, 165, 0.12); box-shadow: inset 0 0 0 0.06rem rgba(252, 165, 165, 0.35); }
+.v2q-mark.m5 { color: #fdba74; background: rgba(253, 186, 116, 0.12); box-shadow: inset 0 0 0 0.06rem rgba(253, 186, 116, 0.35); }
+
+.v2q-answer:hover:not(:disabled) .v2q-mark { transform: scale(1.12); }
+
+/* Balayage doré au survol */
+.v2q-answer::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0;
+    background: rgba(255, 215, 0, 0.08);
+    transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.v2q-answer:hover:not(:disabled)::before { width: 100%; }
+
+.v2q-answer-pct { z-index: 1; }
 
 .v2q-answer-pct {
     position: absolute;
@@ -18781,3 +18821,111 @@ body.modal-open {
 .v2-back.left { right: auto; left: clamp(1rem, 2.5vw, 2.5rem); }
 .v2-back.left svg { transform: none; }
 .v2-back.left:hover { transform: translateY(-50%) translateX(-0.2rem); }
+
+/* ============================================
+   🆕 v2 — JAUGE DE COMBO (tube liquide)
+   ============================================ */
+.combo-gauge-container .combo-bar-bg {
+    position: relative;
+    width: 1.15rem !important;
+    height: 9rem !important;
+    border-radius: 2rem !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 0.06rem solid rgba(255, 255, 255, 0.12) !important;
+    overflow: hidden;
+}
+
+.combo-gauge-container .combo-bar-fill {
+    position: absolute !important;
+    inset: auto 0 0 0 !important;
+    width: 100% !important;
+    border-radius: 0 !important;
+    background: linear-gradient(180deg, #ffe066, var(--accent-color)) !important;
+    box-shadow: 0 0 1rem rgba(255, 190, 40, 0.45);
+    transition: height 0.55s cubic-bezier(0.2, 0.9, 0.25, 1) !important;
+}
+
+/* Surface du liquide : une crête claire qui ondule */
+.combo-gauge-container .combo-bar-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 0.4rem;
+    background: rgba(255, 255, 255, 0.65);
+    filter: blur(0.12rem);
+    animation: v2Wave 2s ease-in-out infinite;
+}
+
+@keyframes v2Wave {
+    0%, 100% { transform: translateY(0) scaleX(1); }
+    50%      { transform: translateY(0.22rem) scaleX(0.88); }
+}
+
+.combo-gauge-container .combo-level-indicator {
+    margin-top: 0.35rem;
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 1.35rem;
+    text-align: center;
+    color: var(--neon-primary);
+    text-shadow: 0 0 0.7rem rgba(255, 190, 40, 0.5);
+}
+
+/* ============================================
+   🆕 v2 — BONUS EN JETONS
+   ============================================ */
+.v2-bonus {
+    position: fixed;
+    left: 50%;
+    bottom: clamp(1rem, 3vh, 2.2rem);
+    transform: translateX(-50%);
+    z-index: 40;
+    display: flex;
+    gap: 0.7rem;
+}
+
+.v2-token {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 3.4rem;
+    height: 3.4rem;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.04);
+    border: 0.06rem solid rgba(255, 255, 255, 0.12);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.25s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+}
+
+.v2-token img { width: 1.55rem; height: 1.55rem; }
+
+.v2-token-n {
+    position: absolute;
+    bottom: -0.15rem;
+    right: -0.15rem;
+    min-width: 1.15rem;
+    height: 1.15rem;
+    display: grid;
+    place-items: center;
+    font-size: 0.6rem;
+    font-weight: 800;
+    color: #14100a;
+    background: var(--neon-primary);
+    border-radius: 1rem;
+}
+
+.v2-token:hover:not(:disabled) {
+    transform: translateY(-0.3rem);
+    border-color: var(--neon-primary);
+    box-shadow: 0 0.5rem 1.5rem rgba(255, 190, 40, 0.3);
+}
+
+.v2-token:active:not(:disabled) { transform: translateY(-0.1rem) scale(0.94); }
+.v2-token.vide { opacity: 0.3; cursor: default; }
+.v2-token.off { opacity: 0.45; cursor: default; }
+.v2-token.used { opacity: 0.25; }
+
+@media (max-width: 768px) {
+    .v2-bonus { gap: 0.5rem; bottom: 0.8rem; }
+    .v2-token { width: 3rem; height: 3rem; }
+}

@@ -45,6 +45,8 @@ createApp({
             autoMode: false,
             nextQuestionBusy: false,
             answerCounts: {},
+            // Repères des réponses : une forme et une couleur, pas de lettre
+            answerMarks: ['◆', '●', '▲', '■', '★', '⬢'],
             lobbyPlayers: [],
             answersCount: 4,
             questionsCount: 20,
