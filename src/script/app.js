@@ -2954,12 +2954,7 @@ createApp({
             // 💥 Son "Shockwave 3D"
             this.playShockwaveSound();
 
-            if (event) {
-                this.spawnClickParticles(event);
-                // 💥 Effet visuel "Flash impact" via un CLONE superposé
-                // Immunisé contre les re-renders Vue, classes qui changent, transitions CSS, etc.
-                this.playClickFlashOverlay(event.currentTarget);
-            }
+            if (event) this.playSealEffect(event.currentTarget);
 
             this.socket.emit('submit-answer', {
                 answer: answerIndex,
@@ -2989,6 +2984,36 @@ createApp({
             });
 
             console.log(`📤 Carte FizzBuzz sélectionnée: ${cardIndex}`);
+        },
+
+        // 🏮 Effet « Sceau ninja » : un sceau doré s'abat sur la réponse choisie,
+        // la barre encaisse le choc et un anneau se propage.
+        // Les décors sont posés en position fixed sur <body> : Vue repatche la
+        // classe du bouton au moment même du clic, tout ce qui vit dedans saute.
+        playSealEffect(bouton) {
+            if (!bouton) return;
+            const r = bouton.getBoundingClientRect();
+
+            // Le choc du bouton passe par l'API d'animation : insensible au repatch
+            if (bouton.animate) {
+                bouton.animate(
+                    [{ transform: 'scale(1)' }, { transform: 'scale(0.968)', offset: 0.35 }, { transform: 'scale(1)' }],
+                    { duration: 300, easing: 'cubic-bezier(0.2, 0.9, 0.3, 1)' }
+                );
+            }
+
+            const anneau = document.createElement('div');
+            anneau.className = 'v2q-shock';
+            anneau.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;`;
+            document.body.appendChild(anneau);
+
+            const sceau = document.createElement('div');
+            sceau.className = 'v2q-seal';
+            sceau.textContent = '選';
+            sceau.style.cssText = `left:${r.right - 46}px;top:${r.top + r.height / 2}px;`;
+            document.body.appendChild(sceau);
+
+            setTimeout(() => { anneau.remove(); sceau.remove(); }, 1400);
         },
 
         // 💥 Crée un clone overlay de la card pour jouer l'animation

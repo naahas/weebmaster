@@ -95,8 +95,9 @@
         .e2 .seal {
             position: absolute; z-index: 3; top: 50%; right: 1rem; transform: translateY(-50%);
             display: grid; place-items: center; width: 2.4rem; height: 2.4rem;
-            font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; color: #ff5c5c;
-            border: 2px solid #ff5c5c; border-radius: .35rem;
+            font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; color: var(--neon);
+            background: rgba(255,215,0,.08); border: 2px solid rgba(255,215,0,.9); border-radius: .35rem;
+            text-shadow: 0 0 .7rem rgba(255,215,0,.6); box-shadow: 0 0 1.4rem rgba(255,215,0,.35);
             pointer-events: none;
             animation: e2Stamp .42s cubic-bezier(.2,1.5,.4,1) forwards;
         }
@@ -107,11 +108,11 @@
         }
         .e2 .shock {
             position: absolute; z-index: 1; inset: 0; pointer-events: none;
-            border: 2px solid rgba(255,92,92,.8); border-radius: .6rem;
+            border: 2px solid rgba(255,215,0,.85); border-radius: .6rem;
             animation: e2Shock .5s ease-out forwards;
         }
         @keyframes e2Shock { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(1.06); opacity: 0; } }
-        .e2 .bar.on { background: rgba(255,92,92,.07); border-color: rgba(255,92,92,.5); }
+        .e2 .bar.on { background: rgba(255,215,0,.09); border-color: rgba(255,215,0,.7); }
         .e2 .bar.kick { animation: e2Kick .3s cubic-bezier(.2,.9,.3,1); }
         @keyframes e2Kick { 0% { transform: scale(1); } 35% { transform: scale(.97); } 100% { transform: scale(1); } }
 
@@ -222,7 +223,7 @@
 
         const PROTOS = [
             { id: 'e1', num: 'E1', nom: 'Onde de choc', note: "Une onde part du point exact du clic et traverse la barre, avec un très léger enfoncement. Discret, universel, se lit même du coin de l'œil." },
-            { id: 'e2', num: 'E2', nom: 'Sceau ninja', note: "Un sceau s'abat sur la réponse depuis le hors-champ, la barre encaisse le choc et un anneau se propage. Le plus « anime » des six." },
+            { id: 'e2', num: 'E2', nom: 'Sceau ninja ✅ retenu', note: "Un sceau s'abat sur la réponse depuis le hors-champ, la barre encaisse le choc et un anneau se propage. Le plus « anime » des six." },
             { id: 'e3', num: 'E3', nom: 'Éclats', note: "Flash bref puis douze éclats projetés depuis le clic. Très gratifiant, mais attention en 6 réponses sur mobile." },
             { id: 'e4', num: 'E4', nom: 'Coup de sabre', note: "Une lame traverse la barre en diagonale et laisse une traînée dorée. Rapide, net, très lisible en stream." },
             { id: 'e5', num: 'E5', nom: 'Verrou magnétique', note: "La barre s'aimante vers la droite, un rail doré se déploie à gauche et les autres réponses s'estompent. Le choix reste visible tout le tour." },

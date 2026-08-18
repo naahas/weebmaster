@@ -18929,3 +18929,48 @@ body.modal-open {
     .v2-bonus { gap: 0.5rem; bottom: 0.8rem; }
     .v2-token { width: 3rem; height: 3rem; }
 }
+
+/* ============================================
+   🆕 v2 — SCEAU NINJA (sélection d'une réponse)
+   ============================================ */
+.v2q-seal {
+    position: fixed;
+    z-index: 9998;
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 1.2rem;
+    line-height: 1;
+    color: var(--neon-primary);
+    background: rgba(255, 215, 0, 0.08);
+    border: 0.13rem solid rgba(255, 215, 0, 0.9);
+    border-radius: 0.35rem;
+    text-shadow: 0 0 0.7rem rgba(255, 215, 0, 0.6);
+    box-shadow: 0 0 1.4rem rgba(255, 215, 0, 0.35);
+    pointer-events: none;
+    animation: v2qSeal 1.3s cubic-bezier(0.2, 1.5, 0.4, 1) forwards;
+}
+
+@keyframes v2qSeal {
+    0%   { opacity: 0; transform: translateY(-50%) scale(3.2) rotate(-28deg); }
+    18%  { opacity: 1; transform: translateY(-50%) scale(0.9) rotate(-9deg); }
+    30%  { opacity: 1; transform: translateY(-50%) scale(1) rotate(-11deg); }
+    78%  { opacity: 1; transform: translateY(-50%) scale(1) rotate(-11deg); }
+    100% { opacity: 0; transform: translateY(-50%) scale(1.18) rotate(-11deg); }
+}
+
+.v2q-shock {
+    position: fixed;
+    z-index: 9997;
+    border: 0.13rem solid rgba(255, 215, 0, 0.85);
+    border-radius: 0.6rem;
+    pointer-events: none;
+    animation: v2qShock 0.5s ease-out forwards;
+}
+
+@keyframes v2qShock {
+    0%   { opacity: 0.9; transform: scale(1); }
+    100% { opacity: 0;   transform: scale(1.07); }
+}
