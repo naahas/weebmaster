@@ -18508,7 +18508,6 @@ body.modal-open {
     box-shadow: 0 1.2rem 3.5rem rgba(0, 0, 0, 0.5),
                 0 0 0 0.06rem rgba(255, 255, 255, 0.03) inset;
     transition: border-color 0.4s ease, box-shadow 0.4s ease;
-    animation: v2qIn 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) both;
 }
 
 .v2q-panel.revealed { border-color: rgba(255, 215, 0, 0.22); }
@@ -19014,4 +19013,14 @@ body.modal-open {
     width: auto !important;
     height: auto !important;
     overflow: visible !important;
+}
+
+/* Passage d'une question à la suivante : l'ancien panel s'efface vers le haut,
+   le nouveau remonte. mode="out-in" côté template, donc jamais les deux en même temps. */
+.v2q-enter-active { animation: v2qIn 0.42s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.v2q-leave-active { animation: v2qOut 0.22s ease-in both; }
+
+@keyframes v2qOut {
+    from { opacity: 1; transform: none; }
+    to   { opacity: 0; transform: translateY(-0.6rem) scale(0.99); }
 }

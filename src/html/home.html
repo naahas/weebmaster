@@ -951,7 +951,10 @@
                 <!-- 🆕 Conteneur fixe pour éviter décalages -->
                 <div class="question-container-wrapper">
                     <!-- 🆕 v2 — Panel de question (reprend le visuel de l'ancien panel hôte) -->
-                    <div class="v2q-panel" v-if="currentQuestion" :class="{ revealed: showResults }">
+                    <!-- La clé sur le numéro force le remplacement du panel à chaque question :
+                         l'ancien s'efface, le nouveau remonte. -->
+                    <transition name="v2q" mode="out-in">
+                    <div class="v2q-panel" v-if="currentQuestion" :key="currentQuestionNumber" :class="{ revealed: showResults }">
 
                         <span class="v2q-tab">Question {{ currentQuestionNumber }}</span>
 
@@ -994,8 +997,7 @@
                         </div>
 
                         <div class="v2q-foot">
-                            <span class="v2q-status ok" v-if="hasAnswered && !showResults">Réponse enregistrée</span>
-                            <span class="v2q-status dead" v-else-if="playerLives === 0">Éliminé — tu peux continuer à regarder</span>
+                            <span class="v2q-status dead" v-if="playerLives === 0">Éliminé — tu peux continuer à regarder</span>
                             <span class="v2q-status" v-else-if="showResults && !questionResults.isTiebreaker && lobbyMode === 'classic'">
                                 {{ questionResults.remainingPlayers }} joueur<span v-if="questionResults.remainingPlayers > 1">s</span> en vie
                             </span>
@@ -1005,6 +1007,7 @@
                             </span>
                         </div>
                     </div>
+                    </transition>
 
                 </div><!-- Fin question-container-wrapper -->
                 </template><!-- Fin template classique/rivalry -->

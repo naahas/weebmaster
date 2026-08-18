@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShonenMaster — Prototypes de vies</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="icon.png">
+    <style>
+        :root { --neon: #FFD700; --accent: #FF8C00; --txt: #fff; --txt2: #a0a0a0; --green: #10b981; --red: #ef4444; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: radial-gradient(120% 90% at 50% 0%, #14100a 0%, #0c0c0e 45%, #08080a 100%);
+            background-attachment: fixed;
+            color: var(--txt);
+            font-family: 'Poppins', sans-serif;
+            padding: 2.5rem clamp(1rem, 4vw, 3rem) 6rem;
+        }
+
+        .nav { max-width: 74rem; margin: 0 auto 2rem; display: flex; gap: .6rem; flex-wrap: wrap; }
+        .nav a {
+            padding: .45rem .9rem; font-size: .78rem; font-weight: 600; text-decoration: none;
+            color: var(--txt2); background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08); border-radius: 2rem; transition: .2s;
+        }
+        .nav a:hover, .nav a.on { color: var(--neon); border-color: rgba(255,215,0,.4); }
+
+        .head { max-width: 74rem; margin: 0 auto 2.5rem; }
+        .head h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: .03em; }
+        .head p { color: var(--txt2); font-size: .9rem; max-width: 50rem; line-height: 1.6; }
+        .head b { color: var(--neon); font-weight: 600; }
+
+        .protos { max-width: 74rem; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(29rem, 1fr)); gap: 2.6rem; }
+        .proto-head { display: flex; align-items: baseline; gap: .8rem; margin-bottom: .9rem; }
+        .proto-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--neon); }
+        .proto-name { font-size: .95rem; font-weight: 700; }
+        .proto-note { font-size: .72rem; color: var(--txt2); line-height: 1.55; margin: .8rem .2rem 0; }
+
+        .frame { padding: 2rem 1.5rem 1.4rem; border: 1px solid rgba(255,255,255,.07); border-radius: 1rem; background: rgba(255,255,255,.012); }
+
+        .cmd { display: flex; justify-content: center; gap: .5rem; margin-top: 1.3rem; }
+        .cmd button {
+            padding: .4rem .9rem; font-family: inherit; font-size: .68rem; font-weight: 700;
+            letter-spacing: .06em; text-transform: uppercase; color: var(--txt2);
+            background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
+            border-radius: 2rem; cursor: pointer; transition: .2s;
+        }
+        .cmd button:hover { color: var(--neon); border-color: rgba(255,215,0,.4); }
+
+        /* ══════ Panel de question, en réduction ══════ */
+        .panel {
+            position: relative;
+            width: min(25rem, 100%); margin: 0 auto;
+            padding: 2.2rem 1.4rem 1.4rem;
+            background: linear-gradient(165deg, rgba(22,20,16,.98), rgba(14,14,16,.98));
+            border: 1px solid rgba(255,255,255,.08); border-radius: 1rem;
+        }
+        .tab {
+            position: absolute; top: -.7rem; left: 50%; transform: translateX(-50%);
+            display: flex; align-items: center; gap: .45rem;
+            padding: .3rem 1rem; font-family: 'Space Grotesk'; font-size: .56rem; font-weight: 700;
+            letter-spacing: .14em; text-transform: uppercase; color: var(--neon);
+            background: linear-gradient(135deg, rgba(240,192,64,.2), rgba(240,192,64,.1));
+            border: 1px solid rgba(240,192,64,.4); border-radius: 1rem; z-index: 6;
+        }
+        .badges { display: flex; justify-content: center; gap: .5rem; margin: .6rem 0 1.2rem; }
+        .badge { padding: .34rem .78rem; font-size: .66rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; border-radius: .32rem; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); }
+        .badge.diff { color: var(--green); background: rgba(16,185,129,.1); border-color: rgba(16,185,129,.25); }
+        .q { font-family: 'Space Grotesk'; font-size: 1.16rem; font-weight: 600; text-align: center; line-height: 1.5; margin-bottom: 1.4rem; }
+        .bars { display: flex; flex-direction: column; gap: .65rem; }
+        .bar { display: flex; align-items: center; gap: .85rem; padding: 1.2rem .9rem; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: .6rem; color: var(--txt); font-family: inherit; }
+        .mark { flex: 0 0 auto; display: grid; place-items: center; width: 1.75rem; height: 1.75rem; font-size: .72rem; border-radius: .4rem; }
+        .m0 { color: #ffd24a; background: rgba(255,210,74,.12); box-shadow: inset 0 0 0 1px rgba(255,210,74,.35); }
+        .m1 { color: #7fb4ff; background: rgba(127,180,255,.12); box-shadow: inset 0 0 0 1px rgba(127,180,255,.35); }
+        .bar span:last-child { font-size: .9rem; font-weight: 500; }
+
+        /* Timer conservé tel quel, il occupe l'angle haut droit */
+        .timer { position: absolute; top: .9rem; right: .9rem; width: 3rem; height: 3rem; z-index: 5; }
+        .timer .ring { position: absolute; inset: 0; border: .09rem solid rgba(240,192,64,.3); border-radius: 50%; }
+        .timer svg { position: absolute; top: 50%; left: 50%; width: 2.4rem; height: 2.4rem; transform: translate(-50%,-50%) rotate(-90deg); }
+        .timer .bg { fill: none; stroke: rgba(255,255,255,.08); stroke-width: 4; }
+        .timer .fg { fill: none; stroke: #f0c040; stroke-width: 4; stroke-linecap: round; stroke-dasharray: 226; stroke-dashoffset: 68; }
+        .timer .n { position: absolute; inset: 0; display: grid; place-items: center; font-family: 'Bebas Neue', sans-serif; font-size: 1rem; color: #f0c040; }
+
+        /* ══════ Cœur SVG commun ══════ */
+        .hp { fill: currentColor; }
+
+        /* ══════ V1 — Trio en ligne ══════ */
+        .v1-hp { position: absolute; top: 1.55rem; right: 4.4rem; display: flex; gap: .3rem; z-index: 5; }
+        .v1-hp i { display: block; width: 1.05rem; height: 1.05rem; color: #ff5a6e; transition: color .35s, transform .35s; }
+        .v1-hp i svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 0 .35rem rgba(255,90,110,.55)); }
+        .v1-hp i.off { color: rgba(255,255,255,.14); transform: scale(.82); }
+        .v1-hp i.off svg { filter: none; }
+        .v1-hp i.dying { animation: v1Break .55s cubic-bezier(.3,.9,.3,1) both; }
+        @keyframes v1Break {
+            0%   { transform: scale(1); }
+            25%  { transform: scale(1.35) rotate(-8deg); }
+            55%  { transform: scale(.7) rotate(6deg); }
+            100% { transform: scale(.82); }
+        }
+
+        /* ══════ V2 — Colonne sous le timer ══════ */
+        .v2-hp { position: absolute; top: 4.3rem; right: 1.35rem; display: flex; flex-direction: column; gap: .28rem; z-index: 5; }
+        .v2-hp i { display: block; width: .95rem; height: .95rem; color: #ff5a6e; transition: color .35s, opacity .35s, transform .35s; }
+        .v2-hp i svg { width: 100%; height: 100%; display: block; }
+        .v2-hp i.off { color: rgba(255,255,255,.14); transform: scale(.8); }
+        .v2-hp i.dying { animation: v2Drop .5s ease-in both; }
+        @keyframes v2Drop { 0% { transform: none; opacity: 1; } 100% { transform: translateY(.7rem) scale(.7); opacity: .25; } }
+
+        /* ══════ V3 — Cœur compté ══════ */
+        .v3-hp {
+            position: absolute; top: 1.5rem; right: 4.3rem; z-index: 5;
+            display: flex; align-items: center; gap: .35rem;
+            padding: .25rem .6rem .25rem .45rem;
+            background: rgba(255,90,110,.1); border: 1px solid rgba(255,90,110,.3); border-radius: 2rem;
+        }
+        .v3-hp span:first-child { display: block; width: 1rem; height: 1rem; color: #ff5a6e; }
+        .v3-hp span:first-child svg { width: 100%; height: 100%; display: block; }
+        .v3-hp b { font-family: 'Bebas Neue', sans-serif; font-size: 1.05rem; color: #ff8a97; }
+        .v3-hp.hit { animation: v3Hit .5s cubic-bezier(.3,1.4,.4,1); }
+        @keyframes v3Hit { 0% { transform: scale(1); } 35% { transform: scale(1.18); } 100% { transform: scale(1); } }
+        .v3-hp.vide { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.12); }
+        .v3-hp.vide span:first-child, .v3-hp.vide b { color: rgba(255,255,255,.25); }
+
+        /* ══════ V4 — Cristaux ══════ */
+        .v4-hp { position: absolute; top: 1.5rem; right: 4.4rem; display: flex; gap: .32rem; z-index: 5; }
+        .v4-hp i {
+            display: block; width: .8rem; height: 1.15rem;
+            background: linear-gradient(160deg, #ffe27a, var(--neon));
+            clip-path: polygon(50% 0, 100% 32%, 50% 100%, 0 32%);
+            box-shadow: 0 0 .5rem rgba(255,215,0,.45);
+            transition: transform .35s, opacity .35s, background .35s;
+        }
+        .v4-hp i.off { background: rgba(255,255,255,.14); box-shadow: none; transform: scale(.78); }
+        .v4-hp i.dying { animation: v4Shatter .55s cubic-bezier(.3,.9,.3,1) both; }
+        @keyframes v4Shatter {
+            0%   { transform: scale(1) rotate(0); opacity: 1; }
+            30%  { transform: scale(1.3) rotate(10deg); opacity: 1; }
+            100% { transform: scale(.4) rotate(-25deg); opacity: .3; }
+        }
+
+        /* ══════ V5 — Jauge segmentée ══════ */
+        .v5-hp { position: absolute; top: 1.75rem; right: 4.4rem; display: flex; gap: .18rem; z-index: 5; }
+        .v5-hp i {
+            display: block; width: 1.1rem; height: .34rem; border-radius: .2rem;
+            background: linear-gradient(90deg, #ff5a6e, #ff8a97);
+            box-shadow: 0 0 .45rem rgba(255,90,110,.5);
+            transform-origin: center; transition: background .35s, box-shadow .35s, transform .35s;
+        }
+        .v5-hp i.off { background: rgba(255,255,255,.12); box-shadow: none; transform: scaleY(.55); }
+        .v5-hp i.dying { animation: v5Burn .5s ease-out both; }
+        @keyframes v5Burn { 0% { transform: scaleX(1); } 40% { transform: scaleX(1.12); } 100% { transform: scaleX(0) ; } }
+
+        /* ══════ V6 — Cœurs dans l'onglet ══════ */
+        .v6-tab-hp { display: flex; gap: .22rem; padding-left: .45rem; margin-left: .1rem; border-left: 1px solid rgba(240,192,64,.35); }
+        .v6-tab-hp i { display: block; width: .7rem; height: .7rem; color: #ff5a6e; transition: color .35s, transform .35s; }
+        .v6-tab-hp i svg { width: 100%; height: 100%; display: block; }
+        .v6-tab-hp i.off { color: rgba(255,255,255,.2); transform: scale(.8); }
+        .v6-tab-hp i.dying { animation: v6Pop .45s cubic-bezier(.3,1.5,.4,1) both; }
+        @keyframes v6Pop { 0% { transform: scale(1); } 40% { transform: scale(1.6); } 100% { transform: scale(.8); } }
+    </style>
+</head>
+
+<body>
+    <div class="nav">
+        <a href="/prototypes">Mise en page</a>
+        <a href="/prototypes/boutons">Boutons</a>
+        <a href="/prototypes/modes">Modes — grilles</a>
+        <a href="/prototypes/modes-2">Modes — originales</a>
+        <a href="/prototypes/parametres">Paramètres</a>
+        <a href="/prototypes/lancer">Lancer la partie</a>
+        <a href="/prototypes/jeu">Écran de jeu</a>
+        <a href="/prototypes/effets">Effets de clic</a>
+        <a href="/prototypes/timer">Timer</a>
+        <a href="/prototypes/vies" class="on">Vies</a>
+        <a href="/">← Le site</a>
+    </div>
+
+    <div class="head">
+        <h1>Prototypes — vies</h1>
+        <p>
+            Six façons d'afficher les vies en mode <b>Vies</b>, en haut à droite du panel. Le timer occupe déjà
+            l'angle : la plupart des variantes se calent <b>juste à sa gauche</b>, une passe <b>dessous</b> et une
+            se loge <b>dans l'onglet</b>. Clique sur <b>Perdre une vie</b> pour voir l'animation de perte.
+        </p>
+    </div>
+
+    <div class="protos" id="protos"></div>
+
+    <script>
+        const COEUR = '<svg viewBox="0 0 24 24"><path class="hp" d="M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4a5.3 5.3 0 0 1 9.6 5.6C19.5 16.4 12 21 12 21z"/></svg>';
+        const MAX = 3;
+
+        const PROTOS = [
+            {
+                id: 'v1', num: 'V1', nom: 'Trio en ligne',
+                note: "Trois cœurs alignés à gauche du timer, avec un halo rouge. La perte fait gonfler puis casser le cœur avant qu'il ne s'éteigne. Le plus classique, et le plus lisible de loin.",
+                cls: 'v1-hp', cible: '.v1-hp', item: () => `<i>${COEUR}</i>`
+            },
+            {
+                id: 'v2', num: 'V2', nom: 'Colonne sous le timer',
+                note: "Les cœurs descendent en colonne sous le timer : l'angle reste dégagé et rien ne se dispute la largeur. La vie perdue tombe et s'estompe.",
+                cls: 'v2-hp', cible: '.v2-hp', item: () => `<i>${COEUR}</i>`
+            },
+            {
+                id: 'v3', num: 'V3', nom: 'Cœur compté',
+                note: "Une seule pastille cœur × N. Compact, insensible au nombre de vies configuré, mais on perd la lecture instantanée « il m'en reste deux ».",
+                cls: 'v3-hp', cible: '.v3-hp', special: true
+            },
+            {
+                id: 'v4', num: 'V4', nom: 'Cristaux',
+                note: "Des cristaux dorés plutôt que des cœurs : plus proche de l'identité du site que du jeu vidéo générique. La perte fait éclater le cristal en tournant.",
+                cls: 'v4-hp', cible: '.v4-hp', item: () => '<i></i>'
+            },
+            {
+                id: 'v5', num: 'V5', nom: 'Jauge segmentée',
+                note: "Trois segments plats, comme une barre de vie de jeu de combat. Très discret, se fond dans le panel — peut-être trop.",
+                cls: 'v5-hp', cible: '.v5-hp', item: () => '<i></i>'
+            },
+            {
+                id: 'v6', num: 'V6', nom: "Cœurs dans l'onglet",
+                note: "Les cœurs rejoignent l'onglet « Question 3 », séparés par un filet. Zéro place prise dans le panel, mais des cœurs minuscules et loin du regard.",
+                cls: 'v6-tab-hp', cible: '.v6-tab-hp', item: () => `<i>${COEUR}</i>`, dansOnglet: true
+            },
+        ];
+
+        document.getElementById('protos').innerHTML = PROTOS.map(p => {
+            const coeurs = p.special
+                ? `<div class="${p.cls}" id="${p.id}-hp"><span>${COEUR}</span><b>×3</b></div>`
+                : `<div class="${p.cls}" id="${p.id}-hp">${Array.from({ length: MAX }, p.item).join('')}</div>`;
+
+            return `
+            <section>
+                <div class="proto-head">
+                    <span class="proto-num">${p.num}</span>
+                    <span class="proto-name">${p.nom}</span>
+                </div>
+                <div class="frame">
+                    <div class="panel">
+                        <span class="tab">Question 3${p.dansOnglet ? coeurs : ''}</span>
+                        <div class="timer">
+                            <span class="ring"></span>
+                            <svg viewBox="0 0 80 80"><circle class="bg" cx="40" cy="40" r="36"/><circle class="fg" cx="40" cy="40" r="36"/></svg>
+                            <span class="n">9</span>
+                        </div>
+                        ${p.dansOnglet ? '' : coeurs}
+                        <div class="badges"><span class="badge">Black Clover</span><span class="badge diff">Very easy</span></div>
+                        <p class="q">Quel est l'objectif principal d'Asta ?</p>
+                        <div class="bars">
+                            <button class="bar"><span class="mark m0">◆</span><span>Devenir Empereur-Mage</span></button>
+                            <button class="bar"><span class="mark m1">●</span><span>Réunir les grimoires</span></button>
+                        </div>
+                    </div>
+                    <div class="cmd">
+                        <button data-perd="${p.id}">Perdre une vie</button>
+                        <button data-reset="${p.id}">Rétablir</button>
+                    </div>
+                </div>
+                <p class="proto-note">${p.note}</p>
+            </section>`;
+        }).join('');
+
+        const restantes = {};
+        PROTOS.forEach(p => restantes[p.id] = MAX);
+
+        function peindre(p) {
+            const zone = document.getElementById(p.id + '-hp');
+            if (p.special) {
+                zone.querySelector('b').textContent = '×' + restantes[p.id];
+                zone.classList.toggle('vide', restantes[p.id] === 0);
+                return;
+            }
+            zone.querySelectorAll('i').forEach((c, i) => c.classList.toggle('off', i >= restantes[p.id]));
+        }
+
+        document.addEventListener('click', e => {
+            const perd = e.target.dataset.perd, reset = e.target.dataset.reset;
+            const id = perd || reset;
+            if (!id) return;
+            const p = PROTOS.find(x => x.id === id);
+            const zone = document.getElementById(id + '-hp');
+
+            if (reset) {
+                restantes[id] = MAX;
+                zone.querySelectorAll('.dying').forEach(n => n.classList.remove('dying'));
+                zone.classList.remove('hit');
+                peindre(p);
+                return;
+            }
+
+            if (restantes[id] === 0) return;
+            restantes[id]--;
+
+            if (p.special) {
+                zone.classList.remove('hit');
+                void zone.offsetWidth;
+                zone.classList.add('hit');
+                peindre(p);
+                return;
+            }
+
+            // Le cœur qui part joue son animation, puis rejoint l'état éteint
+            const perdu = zone.querySelectorAll('i')[restantes[id]];
+            perdu.classList.add('dying');
+            setTimeout(() => { perdu.classList.remove('dying'); peindre(p); }, 520);
+        });
+    </script>
+</body>
+
+</html>
