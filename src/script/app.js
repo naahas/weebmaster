@@ -70,6 +70,7 @@ createApp({
             createError: '',
             joinStep: 'code',
             joinCode: '',
+            joinShake: false,
             joinError: '',
             roomCode: sessionStorage.getItem('roomCode') || null,
             codeCopied: false,
@@ -988,6 +989,16 @@ createApp({
             this.homeScreen = 'modes';
         },
 
+        // Code refusé : une secousse rouge vaut mieux qu'un message
+        signalJoinError(message) {
+            this.joinError = message || '';
+            this.joinShake = false;
+            this.$nextTick(() => {
+                this.joinShake = true;
+                setTimeout(() => { this.joinShake = false; }, 600);
+            });
+        },
+
         openJoin() {
             this.joinError = '';
             this.joinStep = 'code';
@@ -999,11 +1010,11 @@ createApp({
             const code = (this.joinCode || '').trim().toUpperCase();
 
             if (code.length < 4) {
-                this.joinError = 'Code à 4 caractères';
+                this.signalJoinError('Code à 4 caractères');
                 return;
             }
             if (!this.isGameActive) {
-                this.joinError = 'Aucun salon ouvert pour le moment';
+                this.signalJoinError('Aucun salon ouvert pour le moment');
                 return;
             }
 
@@ -1905,7 +1916,7 @@ createApp({
             this.socket.on('error', (data) => {
                 // 🆕 v2 : code de salon refusé → on reste sur la modale
                 if (data.badCode) {
-                    this.joinError = data.message || 'Code de salon invalide';
+                    this.signalJoinError(data.message || 'Code de salon invalide');
                     this.pendingJoinCode = null;
                     this.hasJoined = false;
                     return;

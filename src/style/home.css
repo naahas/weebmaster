@@ -17604,15 +17604,15 @@ body.modal-open {
 /* Bouton retour : pastille discrète en bas à gauche */
 .v2-back {
     position: fixed;
-    left: clamp(1rem, 2vw, 2rem);
-    bottom: clamp(1rem, 2vw, 2rem);
+    right: clamp(1rem, 2.5vw, 2.5rem);
+    top: 50%;
+    transform: translateY(-50%);
     z-index: 20;
     display: grid;
     place-items: center;
-    width: 2.9rem;
-    height: 2.9rem;
+    width: 3rem;
+    height: 3rem;
     padding: 0;
-    font-size: 1.15rem;
     color: var(--text-secondary);
     background: rgba(255, 255, 255, 0.035);
     border: 0.06rem solid rgba(255, 255, 255, 0.1);
@@ -17621,15 +17621,14 @@ body.modal-open {
     transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
 }
 
+.v2-back svg { width: 1.25rem; height: 1.25rem; transform: scaleX(-1); }
+
 .v2-back:hover {
     color: var(--neon-primary);
     border-color: rgba(255, 215, 0, 0.45);
     background: rgba(255, 215, 0, 0.07);
-    transform: translateX(-0.15rem);
+    transform: translateY(-50%) translateX(0.2rem);
 }
-
-.v2-back-arrow { display: block; transition: transform 0.25s ease; }
-.v2-back:hover .v2-back-arrow { transform: translateX(-0.12rem); }
 
 /* ── Bouton « Créer le salon » ─────────────── */
 .v2-cta {
@@ -18320,7 +18319,7 @@ body.modal-open {
 /* Sortie du salon — pastille sur le bord gauche, centrée */
 .v2-room-leave {
     position: fixed;
-    left: clamp(1rem, 2.5vw, 2.5rem);
+    right: clamp(1rem, 2.5vw, 2.5rem);
     top: 50%;
     transform: translateY(-50%);
     z-index: 20;
@@ -18339,11 +18338,13 @@ body.modal-open {
 
 .v2-room-leave svg { width: 1.25rem; height: 1.25rem; }
 
+.v2-room-leave svg { transform: scaleX(-1); }
+
 .v2-room-leave:hover {
     color: #ff8a8a;
     background: rgba(239, 68, 68, 0.14);
     border-color: rgba(239, 68, 68, 0.45);
-    transform: translateY(-50%) translateX(-0.2rem);
+    transform: translateY(-50%) translateX(0.2rem);
 }
 
 /* ── Ligne du haut : code du salon + lancement ── */
@@ -18399,7 +18400,7 @@ body.modal-open {
 
 .v2-start:active:not(:disabled) { transform: translateY(0.08rem); }
 .v2-start:disabled {
-    cursor: not-allowed;
+    cursor: default;
     color: rgba(255, 255, 255, 0.35);
     background: rgba(255, 255, 255, 0.06);
     box-shadow: none;
@@ -18750,3 +18751,21 @@ body.modal-open {
     .v2q-question { font-size: 0.92rem; }
     .v2q-answers.six { grid-template-columns: 1fr; }
 }
+
+/* Code refusé : l'input tremble et rougit brièvement */
+.v2-code-input.ko {
+    border-color: var(--error-color);
+    box-shadow: 0 0 0 0.22rem rgba(239, 68, 68, 0.16);
+    animation: v2Shake 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes v2Shake {
+    10%, 90% { transform: translateX(-0.12rem); }
+    20%, 80% { transform: translateX(0.22rem); }
+    30%, 50%, 70% { transform: translateX(-0.4rem); }
+    40%, 60% { transform: translateX(0.4rem); }
+}
+
+/* Pseudo non modifiable pendant la saisie du code */
+.v2-identity.fixed { cursor: default; }
+.v2-identity.fixed:hover { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.08); transform: none; }
