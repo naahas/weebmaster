@@ -976,101 +976,61 @@
 
                 <!-- 🆕 Conteneur fixe pour éviter décalages -->
                 <div class="question-container-wrapper">
-                    <!-- 🆕 Barre de timer horizontale ultra-fine (toujours présente pour éviter les décalages) -->
-                    <div class="timer-bar-container" :class="{ hidden: !currentQuestion || showResults }">
-                        <div class="timer-bar-progress" :style="{ width: timerProgress + '%' }"
-                            :class="{ warning: timerWarning }"></div>
-                    </div>
+                    <!-- 🆕 v2 — Panel de question (reprend le visuel de l'ancien panel hôte) -->
+                    <div class="v2q-panel" v-if="currentQuestion" :class="{ revealed: showResults }">
 
-                    <!-- Question -->
-                    <div class="question-card" v-if="currentQuestion && !showResults">
-                        <!-- Badges série et difficulté -->
-                        <div class="question-badges">
-                            <span class="serie-badge">{{ currentQuestion.serie }}</span>
-                            <span class="difficulty-badge" :class="'diff-' + currentQuestion.difficulty">
-                                {{ currentQuestion.difficulty.toUpperCase() }}
+                        <span class="v2q-tab">Question {{ currentQuestionNumber }}</span>
+
+                        <div class="v2q-timer" :class="{ warning: timerWarning && !showResults, done: showResults }">
+                            <span class="v2q-timer-ring"></span>
+                            <span class="v2q-timer-symbols">
+                                <span>忍</span><span>術</span><span>気</span><span>力</span>
                             </span>
-
-
+                            <svg class="v2q-timer-svg" viewBox="0 0 80 80">
+                                <circle class="v2q-timer-bg" cx="40" cy="40" r="36"></circle>
+                                <circle class="v2q-timer-progress" cx="40" cy="40" r="36"
+                                        :style="{ strokeDashoffset: 226 - (226 * (showResults ? 0 : timerProgress) / 100) }"></circle>
+                            </svg>
+                            <span class="v2q-timer-num">{{ showResults ? '✓' : timeRemaining }}</span>
                         </div>
 
-                        <!-- Question -->
-                        <h3 class="question-text">{{ currentQuestion.question }}</h3>
+                        <div class="v2q-badges">
+                            <span class="v2q-serie">{{ currentQuestion.serie }}</span>
+                            <span class="v2q-diff" :class="'diff-' + currentQuestion.difficulty">
+                                {{ currentQuestion.difficulty.toUpperCase() }}
+                            </span>
+                        </div>
 
-                        <!-- Réponses -->
-                        <div class="answers-grid" :class="{ 'grid-6': currentQuestion.answers.length === 6 }">
-                            <button v-for="(answer, index) in currentQuestion.answers" :key="index" class="answer-btn"
-                                :class="{ selected: selectedAnswer === index + 1, disabled: hasAnswered || playerLives === 0 }"
-                                @click="selectAnswer(index + 1, $event)" :disabled="hasAnswered || playerLives === 0">
-                                <span class="answer-number">{{ index + 1 }}</span>
-                                <span class="answer-text">{{ answer }}</span>
+                        <p class="v2q-question">{{ currentQuestion.question }}</p>
+
+                        <div class="v2q-answers" :class="{ six: currentQuestion.answers.length > 4 }">
+                            <button v-for="(answer, index) in currentQuestion.answers" :key="index"
+                                    class="v2q-answer"
+                                    :class="{
+                                        selected: selectedAnswer === index + 1,
+                                        correct: showResults && questionResults.correctAnswer === index + 1,
+                                        wrong: showResults && questionResults.correctAnswer !== index + 1
+                                    }"
+                                    :disabled="hasAnswered || playerLives === 0 || showResults"
+                                    @click="selectAnswer(index + 1, $event)">
+                                <span class="v2q-answer-text">{{ answer }}</span>
+                                <span class="v2q-answer-pct" v-if="showResults">{{ answerPercent(index + 1) }}%</span>
                             </button>
                         </div>
 
-                        <div class="answer-status" v-if="hasAnswered">
-                            <div class="status-icon">✓</div>
-                            <p>Réponse enregistrée !</p>
-                        </div>
-
-                        <div class="eliminated-notice" v-if="playerLives === 0">
-                            <div class="skull-icon">💀</div>
-                            <h3>Vous êtes éliminé</h3>
-                            <p>Vous pouvez continuer à regarder la partie</p>
-                        </div>
-                    </div>
-
-                    <!-- 🆕 RÉSULTATS - Question avec indicateurs visuels -->
-                    <div class="question-card results-view" v-if="showResults && currentQuestion">
-                        <!-- Badges série et difficulté -->
-                        <div class="question-badges">
-                            <span class="serie-badge">{{ currentQuestion.serie }}</span>
-                            <span class="difficulty-badge" :class="'diff-' + currentQuestion.difficulty">
-                                {{ currentQuestion.difficulty.toUpperCase() }}
+                        <div class="v2q-foot">
+                            <span class="v2q-status ok" v-if="hasAnswered && !showResults">Réponse enregistrée</span>
+                            <span class="v2q-status dead" v-else-if="playerLives === 0">Éliminé — tu peux continuer à regarder</span>
+                            <span class="v2q-status" v-else-if="showResults && !questionResults.isTiebreaker && lobbyMode === 'classic'">
+                                {{ questionResults.remainingPlayers }} joueur<span v-if="questionResults.remainingPlayers > 1">s</span> en vie
                             </span>
-
-                        </div>
-
-                        <!-- Question -->
-                        <h3 class="question-text">{{ currentQuestion.question }}</h3>
-
-                        <!-- Réponses avec indicateurs -->
-                        <div class="answers-grid" :class="{ 'grid-6': currentQuestion.answers.length === 6 }">
-                            <div v-for="(answer, index) in currentQuestion.answers" :key="index"
-                                class="answer-btn result-answer" :class="{ 
-                'correct': (index + 1) === questionResults.correctAnswer,
-                'wrong': selectedAnswer === (index + 1) && selectedAnswer !== questionResults.correctAnswer,
-                'unselected': selectedAnswer && selectedAnswer !== (index + 1) && (index + 1) !== questionResults.correctAnswer
-            }">
-                                <span class="answer-text">{{ answer }}</span>
-                                <!-- <span class="result-icon" v-if="(index + 1) === questionResults.correctAnswer">✓</span> -->
-                                <!-- <span class="result-icon wrong-icon"
-                                    v-if="selectedAnswer === (index + 1) && selectedAnswer !== questionResults.correctAnswer">✕</span>
-                             -->
-                            </div>
-                        </div>
-
-                        <!-- Stats discrètes en bas -->
-                        <div class="survivors-count" v-if="!questionResults.isTiebreaker && lobbyMode === 'classic'">
-                            👤 {{ questionResults.remainingPlayers }} restants
-                        </div>
-                        
-                        <!-- 🆕 Stats équipe du joueur en mode Rivalité - Style V6 Glow -->
-                        <div class="my-team-score-wrapper" 
-                             v-if="!questionResults.isTiebreaker && lobbyMode === 'rivalry' && selectedTeam"
-                             :key="'team-score-' + currentQuestionNumber + '-' + showResults">
-                            <div class="my-team-score animate-in" :class="'team-' + selectedTeam">
-                                <span class="team-name">{{ teamNames[selectedTeam] }}</span>
-                                <span class="team-separator"></span>
-                                <span class="team-value">{{ teamScores[selectedTeam] }} {{ gameMode === 'lives' ? '👤' : '⭐' }}</span>
-                            </div>
-                        </div>
-
-                        <!-- 🔥 Message tiebreaker -->
-                        <div class="survivors-count" v-if="questionResults.isTiebreaker"
-                            style="color: var(--warning-color);">
-                            ⚔️ Tiebreaker en cours
+                            <span class="v2q-status team" v-else-if="showResults && lobbyMode === 'rivalry' && selectedTeam"
+                                  :class="'team-' + selectedTeam">
+                                {{ teamNames[selectedTeam] }} · {{ teamScores[selectedTeam] }}
+                            </span>
                         </div>
                     </div>
+
                 </div><!-- Fin question-container-wrapper -->
                 </template><!-- Fin template classique/rivalry -->
             </div>

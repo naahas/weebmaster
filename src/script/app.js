@@ -44,6 +44,7 @@ createApp({
             showSettings: true,
             autoMode: false,
             nextQuestionBusy: false,
+            answerCounts: {},
             lobbyPlayers: [],
             answersCount: 4,
             questionsCount: 20,
@@ -923,6 +924,13 @@ createApp({
         },
 
         // Contrôles de l'hôte pendant la partie (ex-panel /admin)
+        // Part des joueurs ayant choisi cette réponse (affichée aux résultats)
+        answerPercent(n) {
+            const total = Object.values(this.answerCounts).reduce((s, v) => s + v, 0);
+            if (!total) return 0;
+            return Math.round(((this.answerCounts[n] || 0) / total) * 100);
+        },
+
         async hostNextQuestion() {
             if (this.nextQuestionBusy) return;
             this.nextQuestionBusy = true;
@@ -1769,6 +1777,7 @@ createApp({
 
             // 🔒 BUG FIX 1: Empêcher l'affichage des questions si non inscrit au lobby
             this.socket.on('new-question', (question) => {
+                this.answerCounts = {};
                 if (!this.hasJoined) {
                     console.log('❌ Vous devez rejoindre le lobby pour voir les questions');
                     return;
@@ -1835,6 +1844,13 @@ createApp({
                 }
 
                 this.resetBonusEffects();
+            });
+
+            // Le serveur diffuse la répartition des réponses en continu. On la garde
+            // sous le coude mais on ne l'affiche qu'une fois les résultats révélés :
+            // en direct, elle inciterait à suivre la majorité.
+            this.socket.on('live-answer-stats', (data) => {
+                this.answerCounts = data.answerCounts || {};
             });
 
             this.socket.on('answer-recorded', () => {
