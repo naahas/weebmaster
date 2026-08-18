@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShonenMaster — Prototypes de l'écran de jeu</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="icon.png">
+    <style>
+        :root { --neon: #FFD700; --accent: #FF8C00; --txt: #fff; --txt2: #a0a0a0; --green: #10b981; --red: #ef4444; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: radial-gradient(120% 90% at 50% 0%, #14100a 0%, #0c0c0e 45%, #08080a 100%);
+            background-attachment: fixed;
+            color: var(--txt);
+            font-family: 'Poppins', sans-serif;
+            padding: 2.5rem clamp(1rem, 4vw, 3rem) 6rem;
+        }
+
+        .nav { max-width: 74rem; margin: 0 auto 2rem; display: flex; gap: .6rem; flex-wrap: wrap; }
+        .nav a {
+            padding: .45rem .9rem; font-size: .78rem; font-weight: 600; text-decoration: none;
+            color: var(--txt2); background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08); border-radius: 2rem; transition: .2s;
+        }
+        .nav a:hover, .nav a.on { color: var(--neon); border-color: rgba(255,215,0,.4); }
+
+        .head { max-width: 74rem; margin: 0 auto 2.5rem; }
+        .head h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: .03em; }
+        .head p { color: var(--txt2); font-size: .9rem; max-width: 48rem; line-height: 1.6; }
+        .head b { color: var(--neon); font-weight: 600; }
+
+        h2.part {
+            max-width: 74rem; margin: 3rem auto 1.4rem; padding-bottom: .5rem;
+            font-family: 'Bebas Neue', sans-serif; font-size: 1.9rem; letter-spacing: .04em;
+            border-bottom: 1px solid rgba(255,255,255,.08);
+        }
+
+        .protos { max-width: 74rem; margin: 0 auto; display: flex; flex-direction: column; gap: 2.4rem; }
+        .proto-head { display: flex; align-items: baseline; gap: .8rem; margin-bottom: .9rem; }
+        .proto-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--neon); }
+        .proto-name { font-size: .95rem; font-weight: 700; }
+        .proto-note { font-size: .75rem; color: var(--txt2); margin-left: auto; text-align: right; max-width: 32rem; }
+
+        .frame {
+            display: flex; align-items: center; justify-content: center; gap: 3rem; flex-wrap: wrap;
+            min-height: 12rem; padding: 2.2rem;
+            border: 1px solid rgba(255,255,255,.07); border-radius: 1rem; background: rgba(255,255,255,.012);
+        }
+
+        button { font-family: inherit; cursor: pointer; border: none; }
+        .lbl { font-size: .6rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--txt2); }
+
+        /* ══════════════ QUESTIONS ══════════════ */
+        .qbase { position: relative; width: 27rem; max-width: 100%; }
+        .qtab {
+            position: absolute; top: -.7rem; left: 50%; transform: translateX(-50%);
+            padding: .3rem 1rem; font-family: 'Space Grotesk'; font-size: .56rem; font-weight: 700;
+            letter-spacing: .14em; text-transform: uppercase; color: var(--neon);
+            background: linear-gradient(135deg, rgba(240,192,64,.2), rgba(240,192,64,.1));
+            border: 1px solid rgba(240,192,64,.4); border-radius: 1rem;
+        }
+        .qtext { font-family: 'Space Grotesk'; font-size: 1rem; font-weight: 600; text-align: center; line-height: 1.5; }
+        .qbadges { display: flex; justify-content: center; gap: .5rem; }
+        .qbadge { padding: .22rem .6rem; font-size: .52rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; border-radius: .3rem; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); }
+        .qbadge.diff { color: var(--green); background: rgba(16,185,129,.1); border-color: rgba(16,185,129,.25); }
+
+        /* Q1 : deux colonnes */
+        .q1 .panel { padding: 2.2rem 1.4rem 1.4rem; background: linear-gradient(165deg, rgba(22,20,16,.98), rgba(14,14,16,.98)); border: 1px solid rgba(255,255,255,.08); border-radius: 1rem; display: flex; flex-direction: column; gap: 1.1rem; }
+        .q1 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+        .q1 .ans {
+            padding: 1.3rem .8rem; text-align: center; font-size: .85rem; font-weight: 500; color: var(--txt);
+            background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: .6rem;
+            transition: .25s;
+        }
+        .q1 .ans:hover { background: rgba(255,215,0,.08); border-color: rgba(255,215,0,.45); transform: translateY(-.15rem); }
+
+        /* Q2 : barres pleines largeur avec lettre */
+        .q2 .panel { padding: 2.2rem 1.4rem 1.4rem; background: linear-gradient(165deg, rgba(22,20,16,.98), rgba(14,14,16,.98)); border: 1px solid rgba(255,255,255,.08); border-radius: 1rem; display: flex; flex-direction: column; gap: 1.1rem; }
+        .q2 .list { display: flex; flex-direction: column; gap: .55rem; }
+        .q2 .ans {
+            position: relative; display: flex; align-items: center; gap: .9rem;
+            padding: 1.1rem 1rem; text-align: left; font-size: .88rem; color: var(--txt);
+            background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08);
+            border-radius: .55rem; overflow: hidden; transition: .25s;
+        }
+        .q2 .key {
+            display: grid; place-items: center; width: 1.7rem; height: 1.7rem; flex: 0 0 auto;
+            font-family: 'Bebas Neue'; font-size: .95rem; color: var(--neon);
+            background: rgba(255,215,0,.1); border: 1px solid rgba(255,215,0,.3); border-radius: .35rem;
+        }
+        .q2 .ans::after { content: ''; position: absolute; inset: 0 auto 0 0; width: 0; background: rgba(255,215,0,.09); transition: width .3s; }
+        .q2 .ans:hover { border-color: rgba(255,215,0,.5); }
+        .q2 .ans:hover::after { width: 100%; }
+
+        /* Q3 : cartes en éventail bas d'écran */
+        .q3 .panel { padding: 1.6rem 0 0; display: flex; flex-direction: column; align-items: center; gap: 1.6rem; }
+        .q3 .qbox { padding: 1.4rem 2rem; background: rgba(20,18,14,.9); border: 1px solid rgba(255,215,0,.2); border-radius: .9rem; }
+        .q3 .fan { display: flex; gap: .5rem; }
+        .q3 .ans {
+            width: 8.5rem; padding: 1.5rem .7rem 1.2rem; text-align: center; font-size: .8rem; color: var(--txt);
+            background: linear-gradient(180deg, rgba(30,26,18,.95), rgba(14,14,16,.95));
+            border: 1px solid rgba(255,255,255,.09); border-radius: .7rem;
+            transition: transform .3s cubic-bezier(.2,.8,.2,1), border-color .3s;
+        }
+        .q3 .ans:nth-child(1) { transform: rotate(-4deg) translateY(.4rem); }
+        .q3 .ans:nth-child(3) { transform: rotate(2deg) translateY(.2rem); }
+        .q3 .ans:nth-child(4) { transform: rotate(5deg) translateY(.5rem); }
+        .q3 .ans:hover { transform: translateY(-.9rem) rotate(0); border-color: var(--neon); }
+
+        /* Q4 : sans panneau, plein centre */
+        .q4 .panel { display: flex; flex-direction: column; align-items: center; gap: 1.6rem; }
+        .q4 .qtext { font-size: 1.4rem; max-width: 30rem; }
+        .q4 .list { display: flex; flex-direction: column; gap: .5rem; width: 26rem; max-width: 100%; }
+        .q4 .ans {
+            padding: 1.15rem 1rem; text-align: center; font-size: .9rem; color: var(--txt2);
+            background: transparent; border: 1px solid rgba(255,255,255,.12); border-radius: 3rem;
+            transition: .25s;
+        }
+        .q4 .ans:hover { color: #14100a; background: linear-gradient(135deg, #ffe066, var(--accent)); border-color: transparent; }
+
+        /* ══════════════ JAUGE ══════════════ */
+        .gbox { display: flex; align-items: flex-end; gap: 3rem; }
+
+        /* G1 : colonne verticale segmentée */
+        .g1 .col { display: flex; flex-direction: column-reverse; gap: .3rem; }
+        .g1 .seg { width: 1.5rem; height: 1.5rem; border-radius: .3rem; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); }
+        .g1 .seg.on { background: linear-gradient(180deg, #ffe066, var(--accent)); box-shadow: 0 0 .7rem rgba(255,190,40,.5); border-color: transparent; }
+
+        /* G2 : tube liquide */
+        .g2 .tube { position: relative; width: 1.1rem; height: 9rem; border-radius: 2rem; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); overflow: hidden; }
+        .g2 .fill { position: absolute; inset: auto 0 0 0; height: 62%; background: linear-gradient(180deg, #ffe066, var(--accent)); }
+        .g2 .fill::after { content: ''; position: absolute; inset: 0 0 auto 0; height: .4rem; background: rgba(255,255,255,.6); filter: blur(2px); animation: wave 2s ease-in-out infinite; }
+        @keyframes wave { 0%,100% { transform: translateY(0); } 50% { transform: translateY(.25rem); } }
+        .g2 .lvl { font-family: 'Bebas Neue'; font-size: 1.3rem; color: var(--neon); text-align: center; margin-top: .3rem; }
+
+        /* G3 : anneau autour du niveau */
+        .g3 .ring { position: relative; width: 5.2rem; height: 5.2rem; }
+        .g3 svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+        .g3 .bg { fill: none; stroke: rgba(255,255,255,.08); stroke-width: 6; }
+        .g3 .fg { fill: none; stroke: url(#gg); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 226; stroke-dashoffset: 80; }
+        .g3 .num { position: absolute; inset: 0; display: grid; place-items: center; font-family: 'Bebas Neue'; font-size: 1.6rem; color: var(--neon); }
+
+        /* G4 : chevrons empilés */
+        .g4 .stack { display: flex; flex-direction: column-reverse; gap: .25rem; align-items: center; }
+        .g4 .chev { width: 2.6rem; height: .9rem; clip-path: polygon(50% 0, 100% 100%, 0 100%); background: rgba(255,255,255,.08); }
+        .g4 .chev.on { background: linear-gradient(180deg, var(--neon), var(--accent)); filter: drop-shadow(0 0 .35rem rgba(255,190,40,.55)); }
+
+        /* ══════════════ BONUS ══════════════ */
+        .bwrap { display: flex; align-items: center; gap: 3.5rem; flex-wrap: wrap; }
+
+        /* B1 : pastille + bandelettes (proche de l'actuel) */
+        .b1 .main { position: relative; display: grid; place-items: center; width: 3.4rem; height: 3.4rem; border-radius: 50%; background: rgba(255,215,0,.1); border: 1px solid rgba(255,215,0,.4); }
+        .b1 .main svg { width: 1.5rem; height: 1.5rem; fill: var(--neon); }
+        .b1 .badge { position: absolute; top: -.25rem; right: -.25rem; min-width: 1.15rem; height: 1.15rem; display: grid; place-items: center; font-size: .6rem; font-weight: 800; color: #14100a; background: var(--neon); border-radius: 1rem; }
+        .b1 .strips { display: flex; flex-direction: column; gap: .4rem; }
+        .b1 .strip { display: flex; align-items: center; gap: .6rem; padding: .55rem .8rem; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); border-radius: .5rem; min-width: 11rem; transition: .2s; }
+        .b1 .strip:hover { border-color: rgba(255,215,0,.5); background: rgba(255,215,0,.07); }
+        .b1 .strip img { width: 1.3rem; height: 1.3rem; }
+        .b1 .strip span.n { margin-left: auto; font-family: 'Bebas Neue'; font-size: 1.1rem; color: var(--neon); }
+
+        /* B2 : trois jetons ronds côte à côte */
+        .b2 .tokens { display: flex; gap: .7rem; }
+        .b2 .tok { position: relative; display: grid; place-items: center; width: 3.4rem; height: 3.4rem; border-radius: 50%; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.12); transition: .25s; }
+        .b2 .tok img { width: 1.5rem; height: 1.5rem; }
+        .b2 .tok .n { position: absolute; bottom: -.2rem; right: -.2rem; min-width: 1.1rem; height: 1.1rem; display: grid; place-items: center; font-size: .58rem; font-weight: 800; color: #14100a; background: var(--neon); border-radius: 1rem; }
+        .b2 .tok:hover { transform: translateY(-.25rem); border-color: var(--neon); box-shadow: 0 .5rem 1.4rem rgba(255,190,40,.25); }
+        .b2 .tok.vide { opacity: .35; }
+
+        /* B3 : cartouches horizontales avec libellé */
+        .b3 .row { display: flex; gap: .5rem; }
+        .b3 .cart { display: flex; align-items: center; gap: .5rem; padding: .5rem .8rem .5rem .55rem; background: linear-gradient(135deg, rgba(30,26,18,.95), rgba(16,16,18,.95)); border: 1px solid rgba(255,215,0,.28); border-radius: 2rem; transition: .25s; }
+        .b3 .cart img { width: 1.2rem; height: 1.2rem; }
+        .b3 .cart .t { font-size: .72rem; font-weight: 600; }
+        .b3 .cart .n { font-family: 'Bebas Neue'; font-size: 1rem; color: var(--neon); }
+        .b3 .cart:hover { transform: translateY(-.15rem); border-color: var(--neon); box-shadow: 0 .4rem 1.2rem rgba(255,190,40,.22); }
+
+        /* B4 : barre d'action en bas (façon jeu) */
+        .b4 .bar { display: flex; gap: .35rem; padding: .4rem; background: rgba(12,12,14,.9); border: 1px solid rgba(255,255,255,.1); border-radius: .8rem; }
+        .b4 .slot { position: relative; display: grid; place-items: center; width: 3.2rem; height: 3.2rem; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); border-radius: .55rem; transition: .2s; }
+        .b4 .slot img { width: 1.4rem; height: 1.4rem; }
+        .b4 .slot .k { position: absolute; top: .12rem; left: .3rem; font-size: .5rem; font-weight: 800; color: var(--txt2); }
+        .b4 .slot .n { position: absolute; bottom: .1rem; right: .3rem; font-family: 'Bebas Neue'; font-size: .85rem; color: var(--neon); }
+        .b4 .slot:hover { border-color: var(--neon); background: rgba(255,215,0,.08); }
+        .b4 .slot.vide { opacity: .3; }
+
+        .footer { max-width: 74rem; margin: 3rem auto 0; font-size: .8rem; color: var(--txt2); }
+    </style>
+</head>
+
+<body>
+    <div class="nav">
+        <a href="/prototypes">Mise en page</a>
+        <a href="/prototypes/boutons">Boutons</a>
+        <a href="/prototypes/modes">Modes — grilles</a>
+        <a href="/prototypes/modes-2">Modes — originales</a>
+        <a href="/prototypes/parametres">Paramètres</a>
+        <a href="/prototypes/lancer">Lancer la partie</a>
+        <a href="/prototypes/jeu" class="on">Écran de jeu</a>
+        <a href="/">← Le site</a>
+    </div>
+
+    <div class="head">
+        <h1>Prototypes — écran de jeu</h1>
+        <p>
+            Trois familles à trancher : <b>la question et ses réponses</b>, <b>la jauge de combo</b> et
+            <b>les bonus</b>. Les défis restent tels quels. Survole tout : chaque variante a son comportement.
+        </p>
+    </div>
+
+    <h2 class="part">Question &amp; réponses</h2>
+    <div class="protos">
+
+        <section class="q1">
+            <div class="proto-head"><span class="proto-num">Q1</span><span class="proto-name">Deux colonnes</span>
+                <span class="proto-note">Réponses en grille 2×2 : panel deux fois moins haut, idéal quand la question est courte. Passe mal à 6 réponses.</span></div>
+            <div class="frame">
+                <div class="qbase panel">
+                    <span class="qtab">Question 4</span>
+                    <div class="qbadges"><span class="qbadge">Naruto</span><span class="qbadge diff">Easy</span></div>
+                    <p class="qtext">Qui est l'auteur du manga Naruto ?</p>
+                    <div class="grid">
+                        <button class="ans">Akira Toriyama</button><button class="ans">Gege Akutami</button>
+                        <button class="ans">Masashi Kishimoto</button><button class="ans">Eiichiro Oda</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="q2">
+            <div class="proto-head"><span class="proto-num">Q2</span><span class="proto-name">Barres avec touche</span>
+                <span class="proto-note">Chaque réponse porte sa lettre : on peut répondre au clavier (A/B/C/D), utile en stream. Un remplissage doré balaie la barre au survol.</span></div>
+            <div class="frame">
+                <div class="qbase panel">
+                    <span class="qtab">Question 4</span>
+                    <div class="qbadges"><span class="qbadge">Naruto</span><span class="qbadge diff">Easy</span></div>
+                    <p class="qtext">Qui est l'auteur du manga Naruto ?</p>
+                    <div class="list">
+                        <button class="ans"><span class="key">A</span>Akira Toriyama</button>
+                        <button class="ans"><span class="key">B</span>Gege Akutami</button>
+                        <button class="ans"><span class="key">C</span>Masashi Kishimoto</button>
+                        <button class="ans"><span class="key">D</span>Eiichiro Oda</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="q3">
+            <div class="proto-head"><span class="proto-num">Q3</span><span class="proto-name">Cartes en éventail</span>
+                <span class="proto-note">La question flotte au-dessus, les réponses sont des cartes légèrement inclinées qui se redressent au survol. Très identitaire, plus lent à lire.</span></div>
+            <div class="frame">
+                <div class="qbase panel">
+                    <div class="qbox"><p class="qtext">Qui est l'auteur du manga Naruto ?</p></div>
+                    <div class="fan">
+                        <button class="ans">Akira Toriyama</button><button class="ans">Gege Akutami</button>
+                        <button class="ans">Masashi Kishimoto</button><button class="ans">Eiichiro Oda</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="q4">
+            <div class="proto-head"><span class="proto-num">Q4</span><span class="proto-name">Sans cadre</span>
+                <span class="proto-note">Plus de panneau : la question en très grand, les réponses en pastilles fines qui se remplissent au survol. Le plus aéré, parfait en vertical mobile.</span></div>
+            <div class="frame">
+                <div class="qbase panel">
+                    <div class="qbadges"><span class="qbadge">Naruto</span><span class="qbadge diff">Easy</span></div>
+                    <p class="qtext">Qui est l'auteur du manga Naruto ?</p>
+                    <div class="list">
+                        <button class="ans">Akira Toriyama</button><button class="ans">Gege Akutami</button>
+                        <button class="ans">Masashi Kishimoto</button><button class="ans">Eiichiro Oda</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <h2 class="part">Jauge de combo</h2>
+    <div class="protos">
+        <section class="g1">
+            <div class="proto-head"><span class="proto-num">G1</span><span class="proto-name">Segments</span>
+                <span class="proto-note">Chaque bonne réponse allume un carré. On voit d'un coup d'œil combien il en manque avant le prochain palier.</span></div>
+            <div class="frame gbox">
+                <div class="col"><span class="seg on"></span><span class="seg on"></span><span class="seg on"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span></div>
+                <span class="lbl">3 / 6 avant le palier</span>
+            </div>
+        </section>
+
+        <section class="g2">
+            <div class="proto-head"><span class="proto-num">G2</span><span class="proto-name">Tube liquide</span>
+                <span class="proto-note">Remplissage continu avec un reflet qui ondule. Proche de l'actuel, en plus vivant.</span></div>
+            <div class="frame gbox">
+                <div><div class="tube"><div class="fill"></div></div><div class="lvl">2</div></div>
+                <span class="lbl">Niveau 2 · 62 %</span>
+            </div>
+        </section>
+
+        <section class="g3">
+            <div class="proto-head"><span class="proto-num">G3</span><span class="proto-name">Anneau</span>
+                <span class="proto-note">Le niveau au centre, la progression sur l'anneau. Compact et rond, se marie avec le timer circulaire de la question.</span></div>
+            <div class="frame gbox">
+                <div class="ring">
+                    <svg viewBox="0 0 80 80">
+                        <defs><linearGradient id="gg"><stop offset="0%" stop-color="#ffe066"/><stop offset="100%" stop-color="#FF8C00"/></linearGradient></defs>
+                        <circle class="bg" cx="40" cy="40" r="36"/><circle class="fg" cx="40" cy="40" r="36"/>
+                    </svg>
+                    <span class="num">2</span>
+                </div>
+                <span class="lbl">Niveau 2</span>
+            </div>
+        </section>
+
+        <section class="g4">
+            <div class="proto-head"><span class="proto-num">G4</span><span class="proto-name">Chevrons</span>
+                <span class="proto-note">Des chevrons qui s'empilent vers le haut, façon rang de jeu de combat. Très lisible de loin, donc en stream.</span></div>
+            <div class="frame gbox">
+                <div class="stack"><span class="chev on"></span><span class="chev on"></span><span class="chev"></span><span class="chev"></span></div>
+                <span class="lbl">Rang 2</span>
+            </div>
+        </section>
+    </div>
+
+    <h2 class="part">Bonus</h2>
+    <div class="protos">
+        <section class="b1">
+            <div class="proto-head"><span class="proto-num">B1</span><span class="proto-name">Pastille + bandelettes</span>
+                <span class="proto-note">L'actuel : une pastille avec un compteur, qui déploie trois bandelettes. Compact au repos, deux gestes pour utiliser.</span></div>
+            <div class="frame bwrap">
+                <div class="main"><svg viewBox="0 0 24 24"><path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/></svg><span class="badge">3</span></div>
+                <div class="strips">
+                    <div class="strip"><img src="5050.png" alt=""><span>50/50</span><span class="n">1</span></div>
+                    <div class="strip"><img src="shield.png" alt=""><span>Bouclier</span><span class="n">1</span></div>
+                    <div class="strip"><img src="x2.png" alt=""><span>Points x2</span><span class="n">1</span></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="b2">
+            <div class="proto-head"><span class="proto-num">B2</span><span class="proto-name">Jetons</span>
+                <span class="proto-note">Trois jetons ronds toujours visibles, avec leur compteur en pastille. Un seul clic pour utiliser, et on voit immédiatement ce qu'on possède.</span></div>
+            <div class="frame bwrap">
+                <div class="tokens">
+                    <div class="tok"><img src="5050.png" alt=""><span class="n">1</span></div>
+                    <div class="tok"><img src="shield.png" alt=""><span class="n">2</span></div>
+                    <div class="tok vide"><img src="x2.png" alt=""></div>
+                </div>
+                <span class="lbl">Un clic = utilisé</span>
+            </div>
+        </section>
+
+        <section class="b3">
+            <div class="proto-head"><span class="proto-num">B3</span><span class="proto-name">Cartouches</span>
+                <span class="proto-note">Icône + nom + compteur sur une pastille allongée. Le plus explicite pour un nouveau joueur, mais prend de la largeur.</span></div>
+            <div class="frame bwrap">
+                <div class="row">
+                    <div class="cart"><img src="5050.png" alt=""><span class="t">50/50</span><span class="n">1</span></div>
+                    <div class="cart"><img src="shield.png" alt=""><span class="t">Bouclier</span><span class="n">2</span></div>
+                    <div class="cart"><img src="x2.png" alt=""><span class="t">x2</span><span class="n">1</span></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="b4">
+            <div class="proto-head"><span class="proto-num">B4</span><span class="proto-name">Barre d'action</span>
+                <span class="proto-note">Emplacements numérotés comme une barre de sorts : chaque bonus a sa touche (1/2/3), utilisable sans lâcher le clavier. Les vides restent visibles.</span></div>
+            <div class="frame bwrap">
+                <div class="bar">
+                    <div class="slot"><span class="k">1</span><img src="5050.png" alt=""><span class="n">1</span></div>
+                    <div class="slot"><span class="k">2</span><img src="shield.png" alt=""><span class="n">2</span></div>
+                    <div class="slot vide"><span class="k">3</span><img src="x2.png" alt=""></div>
+                </div>
+                <span class="lbl">Touches 1 · 2 · 3</span>
+            </div>
+        </section>
+    </div>
+
+    <p class="footer">Donne-moi un code par famille — par exemple « Q2, G3, B2 » — et je les applique à l'écran de jeu.</p>
+</body>
+
+</html>

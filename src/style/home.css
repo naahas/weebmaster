@@ -18510,7 +18510,8 @@ body.modal-open {
     box-shadow: 0 1.2rem 3.5rem rgba(0, 0, 0, 0.5),
                 0 0 0 0.06rem rgba(255, 255, 255, 0.03) inset;
     transition: border-color 0.4s ease, box-shadow 0.4s ease;
-    animation: v2qIn 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+    animation: v2qIn 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) both,
+               v2qFloat 5s ease-in-out 0.4s infinite;
 }
 
 .v2q-panel.revealed { border-color: rgba(255, 215, 0, 0.22); }
@@ -18677,7 +18678,7 @@ body.modal-open {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.9rem 2.6rem 0.9rem 0.9rem;
+    padding: 1.2rem 2.6rem 1.2rem 0.9rem;
     font-family: inherit;
     background: rgba(255, 255, 255, 0.03);
     border: 0.06rem solid rgba(255, 255, 255, 0.08);
@@ -18769,3 +18770,14 @@ body.modal-open {
 /* Pseudo non modifiable pendant la saisie du code */
 .v2-identity.fixed { cursor: default; }
 .v2-identity.fixed:hover { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.08); transform: none; }
+
+/* Le panel respire tres legerement */
+@keyframes v2qFloat {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-0.35rem); }
+}
+
+/* Retour a gauche sur la page du code */
+.v2-back.left { right: auto; left: clamp(1rem, 2.5vw, 2.5rem); }
+.v2-back.left svg { transform: none; }
+.v2-back.left:hover { transform: translateY(-50%) translateX(-0.2rem); }
