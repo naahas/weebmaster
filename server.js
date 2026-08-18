@@ -1608,7 +1608,7 @@ app.post('/admin/start-game', async (req, res) => {
             } catch (error) {
                 console.error('❌ Erreur envoi première question:', error);
             }
-        }, 250);
+        }, 100);
 
         res.json({ success: true, mode: gameState.mode });
 

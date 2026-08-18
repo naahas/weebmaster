@@ -17,6 +17,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
         s.emit('register-authenticated', { twitchId: id, username: nom });
         socks.push({ s, id, nom, vu: [] });
         s.on('new-question', (d) => socks.find(x => x.s === s).vu.push(d));
+        s.on('game-started', (d) => { socks.find(x => x.s === s).depart = d; });
     }
     await wait(300);
     socks.forEach(({ s, id, nom }, i) => s.emit('join-lobby', { twitchId: id, username: nom, isHost: i === 0 }));
@@ -24,8 +25,17 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
     const start = await post('/admin/start-game', {});
     check('partie démarrée', start.success === true);
-    await wait(3500);
-    check('question 1 reçue', socks[0].vu.length >= 1);
+    await wait(400);
+    // L'hôte joue comme les autres : sans isParticipating il n'aurait ni vies ni cœurs
+    check("l'hôte participe à la partie", socks[0].depart && socks[0].depart.isParticipating === true,
+        'mode=' + (socks[0].depart || {}).gameMode);
+    // On mesure le délai réel : la requête Supabase domine, il ne doit plus y avoir
+    // le sursis de 2 s de l'ancien écran de lancement.
+    const depart = Date.now();
+    while (socks[0].vu.length === 0 && Date.now() - depart < 5000) await wait(50);
+    const delai = Date.now() - depart;
+    check('question 1 reçue', socks[0].vu.length >= 1, delai + ' ms après le démarrage');
+    check('pas de sursis de lancement', delai < 2000, delai + ' ms');
 
     // les joueurs répondent, puis l'hôte enchaîne comme depuis la barre de contrôle
     socks.forEach(({ s, id }) => s.emit('submit-answer', { twitchId: id, answerIndex: 0 }));
