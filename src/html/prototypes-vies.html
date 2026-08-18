@@ -155,6 +155,20 @@
         .v5-hp i.dying { animation: v5Burn .5s ease-out both; }
         @keyframes v5Burn { 0% { transform: scaleX(1); } 40% { transform: scaleX(1.12); } 100% { transform: scaleX(0) ; } }
 
+        /* ══════ V7 — Trio à cheval (retenu) ══════ */
+        .v7-hp { position: absolute; top: -.8rem; left: 1.4rem; display: flex; gap: .34rem; z-index: 6; }
+        .v7-hp i { display: block; width: 1.6rem; height: 1.6rem; color: #ff5a6e; transition: color .35s, transform .35s; }
+        .v7-hp i svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 .15rem .5rem rgba(0,0,0,.75)) drop-shadow(0 0 .4rem rgba(255,90,110,.45)); }
+        .v7-hp i.off { color: rgba(255,255,255,.16); transform: scale(.82); }
+        .v7-hp i.off svg { filter: drop-shadow(0 .15rem .4rem rgba(0,0,0,.6)); }
+        .v7-hp i.dying { animation: v7Break .56s cubic-bezier(.3,.9,.3,1) both; }
+        @keyframes v7Break {
+            0%   { transform: scale(1) rotate(0); }
+            25%  { transform: scale(1.4) rotate(-9deg); }
+            55%  { transform: scale(.68) rotate(7deg); }
+            100% { transform: scale(.82) rotate(0); }
+        }
+
         /* ══════ V6 — Cœurs dans l'onglet ══════ */
         .v6-tab-hp { display: flex; gap: .22rem; padding-left: .45rem; margin-left: .1rem; border-left: 1px solid rgba(240,192,64,.35); }
         .v6-tab-hp i { display: block; width: .7rem; height: .7rem; color: #ff5a6e; transition: color .35s, transform .35s; }
@@ -225,6 +239,11 @@
                 id: 'v6', num: 'V6', nom: "Cœurs dans l'onglet",
                 note: "Les cœurs rejoignent l'onglet « Question 3 », séparés par un filet. Zéro place prise dans le panel, mais des cœurs minuscules et loin du regard.",
                 cls: 'v6-tab-hp', cible: '.v6-tab-hp', item: () => `<i>${COEUR}</i>`, dansOnglet: true
+            },
+            {
+                id: 'v7', num: 'V7', nom: 'Trio à cheval ✅ retenu',
+                note: "Les cœurs chevauchent l'arête haute du panel côté gauche, en pendant de l'onglet « Question ». Ils ne prennent aucune place à l'intérieur, restent gros et lisibles, et n'entrent jamais en conflit avec le timer.",
+                cls: 'v7-hp', cible: '.v7-hp', item: () => `<i>${COEUR}</i>`
             },
         ];
 

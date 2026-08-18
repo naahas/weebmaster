@@ -1521,7 +1521,8 @@ app.post('/admin/start-game', async (req, res) => {
             }
         });
 
-        // 🔥 NOUVEAU: Envoyer automatiquement la première question après 2s
+        // La première question part immédiatement : l'écran « c'est parti » n'existe plus.
+        // On garde un souffle de 250 ms, le temps que les clients traitent game-started.
         setTimeout(async () => {
             try {
                 gameState.currentQuestionIndex = 1;
@@ -1607,7 +1608,7 @@ app.post('/admin/start-game', async (req, res) => {
             } catch (error) {
                 console.error('❌ Erreur envoi première question:', error);
             }
-        }, 2000);
+        }, 250);
 
         res.json({ success: true, mode: gameState.mode });
 

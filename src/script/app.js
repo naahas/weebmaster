@@ -162,6 +162,7 @@ createApp({
 
             // Joueur
             playerLives: 3,
+            lifeLost: null,   // index du cœur en train de se briser
 
             // Game Over
             gameEndData: {
@@ -610,6 +611,14 @@ createApp({
     },
 
     watch: {
+        // Une vie perdue : le cœur correspondant se brise avant de s'éteindre
+        playerLives(neuf, ancien) {
+            if (neuf >= ancien) return;
+            this.lifeLost = ancien;
+            clearTimeout(this._timerVie);
+            this._timerVie = setTimeout(() => { this.lifeLost = null; }, 560);
+        },
+
         gameInProgress(newVal, oldVal) {
             if (this.isAuthenticated) {
                 if (newVal) {

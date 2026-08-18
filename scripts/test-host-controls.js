@@ -1,6 +1,6 @@
 // Vérifie que l'hôte peut enchaîner les questions depuis / (sans /admin)
 const { io } = require('socket.io-client');
-const BASE = 'http://localhost:' + (process.env.TEST_PORT || 7206);
+const BASE = 'http://localhost:' + (process.env.TEST_PORT || process.env.PORT || 7000);
 const post = (p, b) => fetch(BASE + p, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b || {}) }).then(r => r.json());
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
 

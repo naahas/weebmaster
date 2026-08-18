@@ -19018,9 +19018,61 @@ body.modal-open {
 /* Passage d'une question à la suivante : l'ancien panel s'efface vers le haut,
    le nouveau remonte. mode="out-in" côté template, donc jamais les deux en même temps. */
 .v2q-enter-active { animation: v2qIn 0.42s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
-.v2q-leave-active { animation: v2qOut 0.22s ease-in both; }
+.v2q-leave-active { animation: v2qOut 0.13s ease-in both; }
 
 @keyframes v2qOut {
     from { opacity: 1; transform: none; }
     to   { opacity: 0; transform: translateY(-0.6rem) scale(0.99); }
+}
+
+/* ============================================
+   🆕 v2 — VIES DU PANEL DE QUESTION
+   À cheval sur l'arête haute, côté gauche, en pendant de l'onglet.
+   ============================================ */
+.v2q-lives {
+    position: absolute;
+    top: -0.8rem;
+    left: 1.4rem;
+    z-index: 6;
+    display: flex;
+    gap: 0.34rem;
+}
+
+.v2q-lives i {
+    display: block;
+    width: 1.6rem;
+    height: 1.6rem;
+    color: #ff5a6e;
+    transition: color 0.35s ease, transform 0.35s ease;
+}
+
+.v2q-lives i svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    fill: currentColor;
+    filter: drop-shadow(0 0.15rem 0.5rem rgba(0, 0, 0, 0.75))
+            drop-shadow(0 0 0.4rem rgba(255, 90, 110, 0.45));
+}
+
+.v2q-lives i.off {
+    color: rgba(255, 255, 255, 0.16);
+    transform: scale(0.82);
+}
+
+.v2q-lives i.off svg { filter: drop-shadow(0 0.15rem 0.4rem rgba(0, 0, 0, 0.6)); }
+
+/* Le cœur gonfle, casse, puis rejoint l'état éteint */
+.v2q-lives i.dying { animation: v2qLifeBreak 0.56s cubic-bezier(0.3, 0.9, 0.3, 1) both; }
+
+@keyframes v2qLifeBreak {
+    0%   { transform: scale(1) rotate(0); }
+    25%  { transform: scale(1.4) rotate(-9deg); }
+    55%  { transform: scale(0.68) rotate(7deg); }
+    100% { transform: scale(0.82) rotate(0); }
+}
+
+@media (max-width: 768px) {
+    .v2q-lives { left: 1rem; gap: 0.26rem; }
+    .v2q-lives i { width: 1.35rem; height: 1.35rem; }
 }

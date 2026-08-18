@@ -958,6 +958,14 @@
 
                         <span class="v2q-tab">Question {{ currentQuestionNumber }}</span>
 
+                        <!-- Vies : à cheval sur l'arête haute, comme l'onglet -->
+                        <div class="v2q-lives" v-if="gameMode === 'lives'">
+                            <i v-for="n in gameLives" :key="n"
+                               :class="{ off: n > playerLives, dying: n === lifeLost }">
+                                <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4a5.3 5.3 0 0 1 9.6 5.6C19.5 16.4 12 21 12 21z"/></svg>
+                            </i>
+                        </div>
+
                         <div class="v2q-timer" :class="{ warning: timerWarning && !showResults, done: showResults }">
                             <span class="v2q-timer-ring"></span>
                             <span class="v2q-timer-symbols">
