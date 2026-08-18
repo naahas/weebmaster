@@ -388,6 +388,11 @@ createApp({
             return f ? f.name : 'Tout';
         },
 
+        // Le serveur refuse en dessous de 2 joueurs : on grise plutot que d avertir
+        canStart() {
+            return this.playerCount >= 2;
+        },
+
         modeLabel() {
             const m = this.modes.find(x => x.id === this.lobbyMode);
             return m ? m.name : 'Salon';

@@ -267,22 +267,22 @@
                     <!-- ── Colonne principale ── -->
                     <section class="v2-room-main">
 
-                        <div class="v2-room-top">
-                            <div class="v2-room-code-block" v-if="roomCode">
-                                <span class="v2-room-code-label">Code du salon</span>
+                        <div class="v2-room-code-block" v-if="roomCode">
+                            <span class="v2-room-code-label">Code du salon</span>
+                            <div class="v2-room-code-row">
                                 <button class="v2-room-code" @click="copyRoomCode" title="Copier le code">
                                     <span v-for="(ch, i) in roomCode.split('')" :key="i" class="v2-room-code-char">{{ ch }}</span>
                                 </button>
-                                <span class="v2-room-copied" :class="{ show: codeCopied }">copié !</span>
-                            </div>
 
-                            <button class="v2-start" v-if="isHost"
-                                    :class="{ busy: startingGame }"
-                                    @click="hostStartGame" :disabled="startingGame"
-                                    title="Démarrer la partie">
-                                <svg class="v2-start-ic" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                                <span class="v2-start-txt">{{ startingGame ? 'Lancement…' : 'Démarrer la partie' }}</span>
-                            </button>
+                                <button class="v2-start" v-if="isHost"
+                                        :class="{ busy: startingGame }"
+                                        @click="hostStartGame" :disabled="startingGame || !canStart"
+                                        :title="canStart ? 'Démarrer la partie' : 'Il faut au moins 2 joueurs'">
+                                    <svg class="v2-start-ic" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                                    <span class="v2-start-txt">{{ startingGame ? 'Lancement…' : (canStart ? 'Démarrer' : '2 joueurs minimum') }}</span>
+                                </button>
+                            </div>
+                            <span class="v2-room-copied" :class="{ show: codeCopied }">copié !</span>
                         </div>
 
                         <!-- Équipes (mode Rivalité) -->
@@ -357,7 +357,7 @@
                                     <span class="v2-set-label">Vies</span>
                                     <span class="v2-set-value">{{ gameLives }}</span>
                                     <span class="v2-set-opts">
-                                        <button v-for="n in [1,2,3,4,5]" :key="n"
+                                        <button v-for="n in [1,2,3]" :key="n"
                                                 class="v2-set-opt" :class="{ on: gameLives === n }"
                                                 @click="applySetting('/admin/set-lives', { lives: n }, () => gameLives = n)">{{ n }}</button>
                                     </span>

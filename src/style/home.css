@@ -17859,6 +17859,13 @@ body.modal-open {
     color: var(--text-secondary);
 }
 
+.v2-room-code-row {
+    display: flex;
+    align-items: center;
+    gap: clamp(1.5rem, 4vw, 3.5rem);
+    flex-wrap: wrap;
+}
+
 .v2-room-code {
     display: flex;
     gap: 0.45rem;
@@ -18355,7 +18362,6 @@ body.modal-open {
     overflow: hidden;
     height: 3.6rem;
     padding: 0 1.15rem;
-    margin-bottom: 0.35rem;
     font-family: inherit;
     color: #14100a;
     background: linear-gradient(135deg, #ffe066, var(--accent-color));
@@ -18392,7 +18398,18 @@ body.modal-open {
 .v2-start.busy .v2-start-txt { max-width: 14rem; opacity: 1; }
 
 .v2-start:active:not(:disabled) { transform: translateY(0.08rem); }
-.v2-start:disabled { cursor: default; opacity: 0.75; }
+.v2-start:disabled {
+    cursor: not-allowed;
+    color: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: none;
+}
+
+.v2-start:disabled .v2-start-ic { opacity: 0.5; }
+
+/* Grise, le bouton reste deploye : une pastille sans texte serait une devinette */
+.v2-start:disabled { gap: 0.7rem; padding: 0 1.7rem; }
+.v2-start:disabled .v2-start-txt { max-width: 14rem; opacity: 1; font-size: 0.85rem; }
 
 @media (max-width: 900px) {
     .v2-room-top { justify-content: center; }
