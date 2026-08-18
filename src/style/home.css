@@ -18387,14 +18387,14 @@ body.modal-open {
     transition: max-width 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease;
 }
 
-.v2-start:hover:not(:disabled),
+.v2-start:hover,
 .v2-start.busy {
     gap: 0.7rem;
     padding: 0 1.7rem;
     box-shadow: 0 0.8rem 2.4rem rgba(255, 175, 0, 0.5);
 }
 
-.v2-start:hover:not(:disabled) .v2-start-txt,
+.v2-start:hover .v2-start-txt,
 .v2-start.busy .v2-start-txt { max-width: 14rem; opacity: 1; }
 
 .v2-start:active:not(:disabled) { transform: translateY(0.08rem); }
@@ -18407,9 +18407,7 @@ body.modal-open {
 
 .v2-start:disabled .v2-start-ic { opacity: 0.5; }
 
-/* Grise, le bouton reste deploye : une pastille sans texte serait une devinette */
-.v2-start:disabled { gap: 0.7rem; padding: 0 1.7rem; }
-.v2-start:disabled .v2-start-txt { max-width: 14rem; opacity: 1; font-size: 0.85rem; }
+
 
 @media (max-width: 900px) {
     .v2-room-top { justify-content: center; }

@@ -48,7 +48,7 @@
                  🆕 v2 — ACCUEIL
                  hub (créer/rejoindre) → modes | join
                  ============================================ -->
-            <div class="v2-home" v-if="!hasJoined && !isHost && !gameInProgress && !gameEnded">
+            <div class="v2-home" v-if="!hasJoined && !(isHost && isGameActive) && !gameInProgress && !gameEnded">
 
                 <header class="v2-topbar">
                     <button class="v2-logo" @click="reloadHome" title="Accueil">
@@ -279,7 +279,7 @@
                                         @click="hostStartGame" :disabled="startingGame || !canStart"
                                         :title="canStart ? 'Démarrer la partie' : 'Il faut au moins 2 joueurs'">
                                     <svg class="v2-start-ic" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                                    <span class="v2-start-txt">{{ startingGame ? 'Lancement…' : (canStart ? 'Démarrer' : '2 joueurs minimum') }}</span>
+                                    <span class="v2-start-txt">{{ startingGame ? 'Lancement…' : 'Démarrer' }}</span>
                                 </button>
                             </div>
                             <span class="v2-room-copied" :class="{ show: codeCopied }">copié !</span>

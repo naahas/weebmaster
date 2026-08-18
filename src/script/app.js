@@ -1229,7 +1229,19 @@ createApp({
                     localStorage.removeItem('lobbyTwitchId');
                     localStorage.removeItem('selectedTeam');
                     localStorage.removeItem('teamCooldownEnd');
-                    console.log('🧹 localStorage nettoyé (jeu non actif)');
+
+                    // 🔧 Le salon n'existe plus (serveur redémarré, salon fermé) : sans ce
+                    // reset, un ancien isHost/roomCode cachait à la fois l'accueil et le
+                    // salon, et la page restait vide.
+                    this.hasJoined = false;
+                    this.isHost = false;
+                    this.roomCode = null;
+                    this.selectedTeam = null;
+                    this.homeScreen = 'hub';
+                    sessionStorage.removeItem('isHost');
+                    sessionStorage.removeItem('roomCode');
+
+                    console.log('🧹 État local nettoyé (aucun salon actif)');
                     return;
                 }
                 
