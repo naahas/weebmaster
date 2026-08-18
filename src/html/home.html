@@ -267,12 +267,22 @@
                     <!-- ── Colonne principale ── -->
                     <section class="v2-room-main">
 
-                        <div class="v2-room-code-block" v-if="roomCode">
-                            <span class="v2-room-code-label">Code du salon</span>
-                            <button class="v2-room-code" @click="copyRoomCode" title="Copier le code">
-                                <span v-for="(ch, i) in roomCode.split('')" :key="i" class="v2-room-code-char">{{ ch }}</span>
+                        <div class="v2-room-top">
+                            <div class="v2-room-code-block" v-if="roomCode">
+                                <span class="v2-room-code-label">Code du salon</span>
+                                <button class="v2-room-code" @click="copyRoomCode" title="Copier le code">
+                                    <span v-for="(ch, i) in roomCode.split('')" :key="i" class="v2-room-code-char">{{ ch }}</span>
+                                </button>
+                                <span class="v2-room-copied" :class="{ show: codeCopied }">copié !</span>
+                            </div>
+
+                            <button class="v2-start" v-if="isHost"
+                                    :class="{ busy: startingGame }"
+                                    @click="hostStartGame" :disabled="startingGame"
+                                    title="Démarrer la partie">
+                                <svg class="v2-start-ic" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                                <span class="v2-start-txt">{{ startingGame ? 'Lancement…' : 'Démarrer la partie' }}</span>
                             </button>
-                            <span class="v2-room-copied" :class="{ show: codeCopied }">copié !</span>
                         </div>
 
                         <!-- Équipes (mode Rivalité) -->
@@ -315,13 +325,7 @@
                         </div>
 
                         <!-- Actions -->
-                        <div class="v2-room-actions" v-if="isHost">
-                            <button class="v2-cta" @click="hostStartGame" :disabled="startingGame">
-                                <span class="v2-cta-label">{{ startingGame ? 'Lancement…' : 'Démarrer la partie' }}</span>
-                                <span class="v2-cta-shine"></span>
-                            </button>
-                        </div>
-                        <div class="v2-room-waiting" v-else>
+                        <div class="v2-room-waiting" v-if="!isHost">
                             <span class="v2-live-dot"></span>
                             En attente du lancement par l'hôte…
                         </div>
