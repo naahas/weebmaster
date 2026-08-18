@@ -888,13 +888,8 @@ app.get('/', (req, res) => {
 });
 
 // ============================================
-// Routes HOST (ex-admin)
+// Routes de contrôle (appelées par l'hôte depuis /)
 // ============================================
-
-// Panel du host (créateur de la room)
-app.get('/admin', (req, res) => {
-    res.sendFile(__dirname + '/src/html/admin.html');
-});
 
 app.get('/admin/game-state', (req, res) => {
     // 💣🎴 Vérifier si le lobby BombAnime/Collect est plein

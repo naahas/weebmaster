@@ -42,6 +42,8 @@ createApp({
             selectedMode: localStorage.getItem('lastMode') || 'classic',
             hoverMode: null,   // survol temporaire ; le clic verrouille selectedMode
             showSettings: true,
+            autoMode: false,
+            nextQuestionBusy: false,
             lobbyPlayers: [],
             answersCount: 4,
             questionsCount: 20,
@@ -920,6 +922,33 @@ createApp({
             if (this.socket) this.socket.emit('dev-clear-fake-players');
         },
 
+        // Contrôles de l'hôte pendant la partie (ex-panel /admin)
+        async hostNextQuestion() {
+            if (this.nextQuestionBusy) return;
+            this.nextQuestionBusy = true;
+            this.hostError = '';
+            try {
+                const res = await fetch('/admin/next-question', { method: 'POST' });
+                const data = await res.json();
+                if (data.error) this.hostError = data.error;
+            } catch (e) {
+                this.hostError = 'Erreur de connexion';
+            } finally {
+                setTimeout(() => { this.nextQuestionBusy = false; }, 600);
+            }
+        },
+
+        async hostToggleAuto() {
+            this.hostError = '';
+            try {
+                const res = await fetch('/admin/toggle-auto-mode', { method: 'POST' });
+                const data = await res.json();
+                if (data.autoMode !== undefined) this.autoMode = data.autoMode;
+            } catch (e) {
+                this.hostError = 'Erreur de connexion';
+            }
+        },
+
         leaveRoom() {
             if (this.socket) {
                 this.socket.emit('leave-lobby', { twitchId: this.twitchId, username: this.username });
@@ -1220,6 +1249,7 @@ createApp({
                 if (state.difficultyMode) this.difficultyMode = state.difficultyMode;
                 if (state.serieFilter) this.serieFilter = state.serieFilter;
                 if (state.noSpoil !== undefined) this.noSpoil = state.noSpoil;
+                if (state.autoMode !== undefined) this.autoMode = state.autoMode;
                 if (state.players) this.lobbyPlayers = state.players;
 
                 this.gameStartedOnServer = state.inProgress;

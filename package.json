@@ -6,7 +6,8 @@
   "scripts": {
     "start": "nodemon server.js",
     "smoke": "node scripts/smoke-test.js",
-    "check": "node scripts/check-template.js"
+    "check": "node scripts/check-template.js",
+    "test:host": "node scripts/test-host-controls.js"
   },
   "keywords": [
     "quiz",
