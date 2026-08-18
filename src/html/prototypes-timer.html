@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShonenMaster — Prototypes de timer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="icon.png">
+    <style>
+        :root { --neon: #FFD700; --accent: #FF8C00; --txt: #fff; --txt2: #a0a0a0; --green: #10b981; --red: #ef4444; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: radial-gradient(120% 90% at 50% 0%, #14100a 0%, #0c0c0e 45%, #08080a 100%);
+            background-attachment: fixed;
+            color: var(--txt);
+            font-family: 'Poppins', sans-serif;
+            padding: 2.5rem clamp(1rem, 4vw, 3rem) 6rem;
+        }
+
+        .nav { max-width: 74rem; margin: 0 auto 2rem; display: flex; gap: .6rem; flex-wrap: wrap; }
+        .nav a {
+            padding: .45rem .9rem; font-size: .78rem; font-weight: 600; text-decoration: none;
+            color: var(--txt2); background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08); border-radius: 2rem; transition: .2s;
+        }
+        .nav a:hover, .nav a.on { color: var(--neon); border-color: rgba(255,215,0,.4); }
+
+        .head { max-width: 74rem; margin: 0 auto 2.5rem; }
+        .head h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: .03em; }
+        .head p { color: var(--txt2); font-size: .9rem; max-width: 48rem; line-height: 1.6; }
+        .head b { color: var(--neon); font-weight: 600; }
+
+        .protos { max-width: 74rem; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(29rem, 1fr)); gap: 2.6rem; }
+        .proto-head { display: flex; align-items: baseline; gap: .8rem; margin-bottom: .9rem; }
+        .proto-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--neon); }
+        .proto-name { font-size: .95rem; font-weight: 700; }
+        .proto-note { font-size: .72rem; color: var(--txt2); line-height: 1.55; margin: .8rem .2rem 0; }
+
+        .frame { padding: 2rem 1.5rem; border: 1px solid rgba(255,255,255,.07); border-radius: 1rem; background: rgba(255,255,255,.012); }
+
+        /* ══════ Panel de question, en réduction ══════ */
+        .panel {
+            position: relative; overflow: hidden;
+            width: min(25rem, 100%); margin: 0 auto;
+            padding: 2.2rem 1.4rem 1.4rem;
+            background: linear-gradient(165deg, rgba(22,20,16,.98), rgba(14,14,16,.98));
+            border: 1px solid rgba(255,255,255,.08); border-radius: 1rem;
+        }
+        .tab {
+            position: absolute; top: -.7rem; left: 50%; transform: translateX(-50%);
+            padding: .3rem 1rem; font-family: 'Space Grotesk'; font-size: .56rem; font-weight: 700;
+            letter-spacing: .14em; text-transform: uppercase; color: var(--neon);
+            background: linear-gradient(135deg, rgba(240,192,64,.2), rgba(240,192,64,.1));
+            border: 1px solid rgba(240,192,64,.4); border-radius: 1rem; z-index: 6;
+        }
+        .badges { position: relative; z-index: 3; display: flex; justify-content: center; gap: .5rem; margin: .6rem 0 1.2rem; }
+        .badge { padding: .34rem .78rem; font-size: .66rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; border-radius: .32rem; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); }
+        .badge.diff { color: var(--green); background: rgba(16,185,129,.1); border-color: rgba(16,185,129,.25); }
+        .q { position: relative; z-index: 3; font-family: 'Space Grotesk'; font-size: 1.16rem; font-weight: 600; text-align: center; line-height: 1.5; margin-bottom: 1.4rem; }
+        .bars { position: relative; z-index: 3; display: flex; flex-direction: column; gap: .65rem; }
+        .bar { display: flex; align-items: center; gap: .85rem; padding: 1.2rem .9rem; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: .6rem; color: var(--txt); font-family: inherit; }
+        .mark { flex: 0 0 auto; display: grid; place-items: center; width: 1.75rem; height: 1.75rem; font-size: .72rem; border-radius: .4rem; }
+        .m0 { color: #ffd24a; background: rgba(255,210,74,.12); box-shadow: inset 0 0 0 1px rgba(255,210,74,.35); }
+        .m1 { color: #7fb4ff; background: rgba(127,180,255,.12); box-shadow: inset 0 0 0 1px rgba(127,180,255,.35); }
+        .bar span:last-child { font-size: .9rem; font-weight: 500; }
+
+        .num { font-family: 'Bebas Neue', sans-serif; font-variant-numeric: tabular-nums; }
+
+        /* ══════ T1 — Anneau net ══════ */
+        .t1 { position: absolute; top: .9rem; right: .9rem; width: 3.1rem; height: 3.1rem; z-index: 5; }
+        .t1 svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+        .t1 .bg { fill: none; stroke: rgba(255,255,255,.07); stroke-width: 5; }
+        .t1 .fg { fill: none; stroke: var(--neon); stroke-width: 5; stroke-linecap: round; stroke-dasharray: 213.6; transition: stroke .4s; }
+        .t1 .n { position: absolute; inset: 0; display: grid; place-items: center; font-size: 1.15rem; color: var(--neon); transition: color .4s; }
+        .low .t1 .fg { stroke: var(--red); }
+        .low .t1 .n { color: var(--red); }
+
+        /* ══════ T2 — Ligne de vie ══════ */
+        .t2-rail { position: absolute; top: 0; left: 0; right: 0; height: .2rem; background: rgba(255,255,255,.06); z-index: 5; }
+        .t2-fill { position: absolute; top: 0; bottom: 0; left: 0; background: linear-gradient(90deg, var(--accent), var(--neon)); transition: background .4s; }
+        .t2-head { position: absolute; top: -.25rem; right: -.2rem; width: .45rem; height: .7rem; border-radius: .3rem; background: #fff; box-shadow: 0 0 .7rem .1rem rgba(255,215,0,.9); }
+        .t2-n { position: absolute; top: .75rem; right: .95rem; font-size: 1.75rem; color: var(--neon); z-index: 5; transition: color .4s; }
+        .low .t2-fill { background: var(--red); }
+        .low .t2-head { box-shadow: 0 0 .7rem .1rem rgba(239,68,68,.9); }
+        .low .t2-n { color: var(--red); }
+
+        /* ══════ T3 — Couronne de graduations ══════ */
+        .t3 { position: absolute; top: .8rem; right: .8rem; width: 3.4rem; height: 3.4rem; z-index: 5; }
+        .t3 i { position: absolute; top: 50%; left: 50%; width: .1rem; height: .38rem; margin: -1.7rem 0 0 -.05rem; transform-origin: 50% 1.7rem; background: var(--neon); border-radius: .1rem; transition: background .25s, opacity .25s; }
+        .t3 i.off { background: rgba(255,255,255,.14); opacity: .55; }
+        .t3 .n { position: absolute; inset: 0; display: grid; place-items: center; font-size: 1.2rem; color: var(--neon); transition: color .4s; }
+        .low .t3 i:not(.off) { background: var(--red); }
+        .low .t3 .n { color: var(--red); }
+
+        /* ══════ T4 — Chiffre fantôme ══════ */
+        .t4 { position: absolute; inset: 0; display: grid; place-items: center; z-index: 1; pointer-events: none; }
+        .t4 .n { font-size: 13rem; line-height: 1; color: rgba(255,215,0,.075); transition: color .4s; }
+        .t4 .n.beat { animation: t4Beat .45s cubic-bezier(.2,.9,.3,1); }
+        @keyframes t4Beat { 0% { transform: scale(1.14); opacity: .5; } 100% { transform: scale(1); opacity: 1; } }
+        .low .t4 .n { color: rgba(239,68,68,.11); }
+
+        /* ══════ T5 — Points de compte ══════ */
+        .t5 { position: absolute; top: .95rem; left: 50%; transform: translateX(-50%); display: flex; gap: .22rem; z-index: 5; }
+        .t5 i { width: .32rem; height: .32rem; border-radius: 50%; background: var(--neon); box-shadow: 0 0 .4rem rgba(255,215,0,.6); transition: transform .3s, background .3s, box-shadow .3s; }
+        .t5 i.off { background: rgba(255,255,255,.14); box-shadow: none; transform: scale(.6); }
+        .low .t5 i:not(.off) { background: var(--red); box-shadow: 0 0 .5rem rgba(239,68,68,.8); animation: t5Blink .7s ease-in-out infinite; }
+        @keyframes t5Blink { 50% { opacity: .35; } }
+        .t5-n { position: absolute; top: .8rem; right: .95rem; font-size: 1.6rem; color: var(--neon); z-index: 5; transition: color .4s; }
+        .low .t5-n { color: var(--red); }
+
+        /* ══════ T6 — Halo battant ══════ */
+        .t6 { position: absolute; top: .9rem; right: .9rem; width: 3.1rem; height: 3.1rem; display: grid; place-items: center; z-index: 5; }
+        .t6 .halo { position: absolute; inset: 0; border: 1px solid rgba(255,215,0,.55); border-radius: 50%; }
+        .t6 .pulse { position: absolute; inset: 0; border: 1px solid rgba(255,215,0,.5); border-radius: 50%; animation: t6Pulse 1s ease-out infinite; }
+        @keyframes t6Pulse { 0% { opacity: .8; transform: scale(1); } 100% { opacity: 0; transform: scale(1.6); } }
+        .t6 .n { font-size: 1.35rem; color: var(--neon); transition: color .4s; }
+        .low .t6 .halo, .low .t6 .pulse { border-color: rgba(239,68,68,.7); }
+        .low .t6 .n { color: var(--red); }
+    </style>
+</head>
+
+<body>
+    <div class="nav">
+        <a href="/prototypes">Mise en page</a>
+        <a href="/prototypes/boutons">Boutons</a>
+        <a href="/prototypes/modes">Modes — grilles</a>
+        <a href="/prototypes/modes-2">Modes — originales</a>
+        <a href="/prototypes/parametres">Paramètres</a>
+        <a href="/prototypes/lancer">Lancer la partie</a>
+        <a href="/prototypes/jeu">Écran de jeu</a>
+        <a href="/prototypes/effets">Effets de clic</a>
+        <a href="/prototypes/timer" class="on">Timer</a>
+        <a href="/">← Le site</a>
+    </div>
+
+    <div class="head">
+        <h1>Prototypes — timer</h1>
+        <p>
+            Six timers modernes, montrés <b>en situation</b> dans le panel de question. Tous tournent sur un compte
+            à rebours de <b>15 secondes</b> en boucle et basculent en <b>rouge sous 5 secondes</b>.
+        </p>
+    </div>
+
+    <div class="protos" id="protos"></div>
+
+    <script>
+        const TOTAL = 15;
+        const GRADS = 30;
+
+        const PROTOS = [
+            {
+                id: 't1', num: 'T1', nom: 'Anneau net',
+                note: "L'anneau actuel débarrassé des kanji tournants : trait épais, bout arrondi, chiffre plein centre. Sobre, lisible même en petit sur un stream.",
+                slot: '<div class="t1"><svg viewBox="0 0 80 80"><circle class="bg" cx="40" cy="40" r="34"/><circle class="fg" cx="40" cy="40" r="34"/></svg><span class="n num">15</span></div>'
+            },
+            {
+                id: 't2', num: 'T2', nom: 'Ligne de vie',
+                note: "Un filet lumineux court sur l'arête haute du panel et se retire vers la gauche, sa tête blanche en avant. Le panel entier devient le timer : on perçoit le temps sans lire de chiffre.",
+                slot: '<div class="t2-rail"><span class="t2-fill"><i class="t2-head"></i></span></div><span class="t2-n num">15</span>'
+            },
+            {
+                id: 't3', num: 'T3', nom: 'Couronne de graduations',
+                note: "Trente graduations en couronne s'éteignent une à une. Le grain donne une sensation d'horloge mécanique, très satisfaisante sur la fin.",
+                slot: '<div class="t3"><span class="n num">15</span></div>'
+            },
+            {
+                id: 't4', num: 'T4', nom: 'Chiffre fantôme',
+                note: "Le compte à rebours devient le décor : un chiffre géant en filigrane derrière la question, qui encaisse chaque seconde. Zéro place perdue, très fort à l'écran.",
+                slot: '<div class="t4"><span class="n num">15</span></div>'
+            },
+            {
+                id: 't5', num: 'T5', nom: 'Points de compte',
+                note: "Une rangée de points s'éteint de droite à gauche sur l'arête haute, doublée d'un chiffre. Les derniers points clignotent en rouge.",
+                slot: '<div class="t5"></div><span class="t5-n num">15</span>'
+            },
+            {
+                id: 't6', num: 'T6', nom: 'Halo battant',
+                note: "Ni barre ni anneau de progression : un halo se propage à intervalle régulier, et le tempo s'accélère à mesure que le temps descend. Le stress vient du rythme.",
+                slot: '<div class="t6"><span class="halo"></span><span class="pulse"></span><span class="n num">15</span></div>'
+            },
+        ];
+
+        document.getElementById('protos').innerHTML = PROTOS.map(p => `
+            <section>
+                <div class="proto-head">
+                    <span class="proto-num">${p.num}</span>
+                    <span class="proto-name">${p.nom}</span>
+                </div>
+                <div class="frame">
+                    <div class="panel" id="${p.id}">
+                        <span class="tab">Question 3</span>
+                        ${p.slot}
+                        <div class="badges"><span class="badge">Dragon Ball</span><span class="badge diff">Very easy</span></div>
+                        <p class="q">Qui est le père de Gohan ?</p>
+                        <div class="bars">
+                            <button class="bar"><span class="mark m0">◆</span><span>Son Goku</span></button>
+                            <button class="bar"><span class="mark m1">●</span><span>Vegeta</span></button>
+                        </div>
+                    </div>
+                </div>
+                <p class="proto-note">${p.note}</p>
+            </section>
+        `).join('');
+
+        // Décors qui ne se posent qu'une fois
+        const couronne = document.querySelector('.t3');
+        for (let i = 0; i < GRADS; i++) {
+            const g = document.createElement('i');
+            g.style.transform = `rotate(${(360 / GRADS) * i}deg)`;
+            couronne.appendChild(g);
+        }
+        const rangee = document.querySelector('.t5');
+        for (let i = 0; i < TOTAL; i++) rangee.appendChild(document.createElement('i'));
+
+        const panels = PROTOS.map(p => document.getElementById(p.id));
+        const chiffres = document.querySelectorAll('.num');
+        const arc = document.querySelector('.t1 .fg');
+        const filet = document.querySelector('.t2-fill');
+        const geant = document.querySelector('.t4 .n');
+        const halo = document.querySelector('.t6 .pulse');
+        const grads = couronne.querySelectorAll('i');
+        const points = rangee.querySelectorAll('i');
+
+        let derniereSeconde = -1;
+
+        function boucle(ms) {
+            // Cycle de TOTAL secondes, avec une courte pause à zéro avant de repartir
+            const r = Math.max(0, TOTAL - ((ms / 1000) % (TOTAL + 1.4)));
+            const p = r / TOTAL;
+            const s = Math.ceil(r);
+            const rouge = r <= 5;
+
+            panels.forEach(x => x.classList.toggle('low', rouge));
+            chiffres.forEach(x => { if (x !== geant) x.textContent = s; });
+
+            arc.style.strokeDashoffset = 213.6 * (1 - p);
+            filet.style.width = (p * 100) + '%';
+
+            const allumees = Math.ceil(p * GRADS);
+            grads.forEach((g, i) => g.classList.toggle('off', i >= allumees));
+            points.forEach((d, i) => d.classList.toggle('off', i >= s));
+
+            // Le halo bat de plus en plus vite
+            halo.style.animationDuration = (0.45 + p * 0.75).toFixed(2) + 's';
+
+            // Le chiffre géant encaisse chaque seconde
+            if (s !== derniereSeconde) {
+                derniereSeconde = s;
+                geant.textContent = s;
+                geant.classList.remove('beat');
+                void geant.offsetWidth;
+                geant.classList.add('beat');
+            }
+
+            requestAnimationFrame(boucle);
+        }
+        requestAnimationFrame(boucle);
+    </script>
+</body>
+
+</html>

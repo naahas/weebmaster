@@ -1791,6 +1791,7 @@ createApp({
             // 🔒 BUG FIX 1: Empêcher l'affichage des questions si non inscrit au lobby
             this.socket.on('new-question', (question) => {
                 this.answerCounts = {};
+                this.clearSeal();
                 if (!this.hasJoined) {
                     console.log('❌ Vous devez rejoindre le lobby pour voir les questions');
                     return;
@@ -1808,6 +1809,7 @@ createApp({
 
             this.socket.on('question-results', (results) => {
                 this.stopTimer();
+                this.clearSeal();
                 this.questionResults = results;
                 this.showResults = true;
                 
@@ -3007,13 +3009,23 @@ createApp({
             anneau.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;`;
             document.body.appendChild(anneau);
 
+            // Le sceau se cale à gauche du pourcentage, qui n'apparaîtra qu'aux résultats
+            const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
             const sceau = document.createElement('div');
             sceau.className = 'v2q-seal';
             sceau.textContent = '選';
-            sceau.style.cssText = `left:${r.right - 46}px;top:${r.top + r.height / 2}px;`;
+            sceau.style.cssText = `left:${r.right - 3.75 * rem}px;top:${r.top + r.height / 2}px;`;
             document.body.appendChild(sceau);
 
-            setTimeout(() => { anneau.remove(); sceau.remove(); }, 1400);
+            // L'anneau ne vit que le temps du choc ; le sceau reste jusqu'à la fin du temps
+            setTimeout(() => anneau.remove(), 600);
+            this._sceau = sceau;
+        },
+
+        // Retire le sceau (fin du temps, question suivante, sortie de partie)
+        clearSeal() {
+            if (this._sceau) { this._sceau.remove(); this._sceau = null; }
+            document.querySelectorAll('.v2q-seal, .v2q-shock').forEach(n => n.remove());
         },
 
         // 💥 Crée un clone overlay de la card pour jouer l'animation
