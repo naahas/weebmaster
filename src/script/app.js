@@ -163,6 +163,8 @@ createApp({
             // Joueur
             playerLives: 3,
             lifeLost: null,   // index du cœur en train de se briser
+            booting: true,        // tant que l'état serveur n'est pas connu, on n'affiche aucun écran
+            questionShown: false, // passe à vrai quand le premier panel de question est visible
 
             // Game Over
             gameEndData: {
@@ -309,6 +311,9 @@ createApp({
 
         await this.checkAuth();
         await this.restoreGameState();
+        // L'état du serveur est connu : on peut choisir quel écran montrer.
+        // Sans ça, l'accueil apparaissait une fraction de seconde avant la partie.
+        this.booting = false;
 
         this.preloadModeArt();
         this.initParticles();
@@ -945,6 +950,14 @@ createApp({
         },
 
         // Contrôles de l'hôte pendant la partie (ex-panel /admin)
+        // Cœurs et jetons rejoignent le panel au lieu de le précéder.
+        // Le retard reprend le délai de .v2q-enter-active : les deux vont de pair.
+        revealQuestionChrome() {
+            if (this.questionShown) return;
+            clearTimeout(this._chromeTimer);
+            this._chromeTimer = setTimeout(() => { this.questionShown = true; }, 800);
+        },
+
         // Part des joueurs ayant choisi cette réponse (affichée aux résultats)
         answerPercent(n) {
             const total = Object.values(this.answerCounts).reduce((s, v) => s + v, 0);
@@ -1390,6 +1403,7 @@ createApp({
                 if (state.currentQuestion && state.inProgress && this.hasJoined) {
                     this.currentQuestion = state.currentQuestion;
                     this.currentQuestionNumber = state.currentQuestion.questionNumber;
+                    this.revealQuestionChrome();
 
                     if (state.timeRemaining > 0) {
                         this.timeRemaining = state.timeRemaining;
@@ -1744,6 +1758,8 @@ createApp({
                     // le temps que la première arrive
                     this.currentQuestion = null;
                     this.showResults = false;
+                    this.questionShown = false;
+                    clearTimeout(this._chromeTimer);
 
                     // 🆕 Initialiser selon le mode
                     if (this.gameMode === 'lives') {
@@ -1815,6 +1831,7 @@ createApp({
             this.socket.on('new-question', (question) => {
                 this.answerCounts = {};
                 this.clearSeal();
+                this.revealQuestionChrome();
                 if (!this.hasJoined) {
                     console.log('❌ Vous devez rejoindre le lobby pour voir les questions');
                     return;

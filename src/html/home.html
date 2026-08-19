@@ -48,7 +48,7 @@
                  🆕 v2 — ACCUEIL
                  hub (créer/rejoindre) → modes | join
                  ============================================ -->
-            <div class="v2-home" v-if="!hasJoined && !(isHost && isGameActive) && !gameInProgress && !gameEnded">
+            <div class="v2-home" v-if="!booting && !hasJoined && !(isHost && isGameActive) && !gameInProgress && !gameEnded">
 
                 <header class="v2-topbar">
                     <button class="v2-logo" @click="reloadHome" title="Accueil">
@@ -158,7 +158,7 @@
 
                 <!-- ── Écran 3 : choix du mode ─────────────── -->
                 <section class="v2-modes-screen" v-else-if="homeScreen === 'modes'">
-                    <button class="v2-back" @click="homeScreen = 'hub'" title="Retour" aria-label="Retour">
+                    <button class="v2-back left" @click="homeScreen = 'hub'" title="Retour" aria-label="Retour">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M10 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h4"/>
                             <path d="M17 15l-3-3 3-3"/><path d="M14 12h7"/>
@@ -247,7 +247,7 @@
             <!-- ============================================
                  🆕 v2 — SALON (avant le lancement)
                  ============================================ -->
-            <div class="v2-room" v-if="(hasJoined || isHost) && isGameActive && !gameInProgress && isAuthenticated && !gameEnded">
+            <div class="v2-room" v-if="!booting && (hasJoined || isHost) && isGameActive && !gameInProgress && isAuthenticated && !gameEnded">
 
                 <header class="v2-topbar">
                     <button class="v2-logo" @click="reloadHome" title="Accueil">
@@ -953,7 +953,7 @@
                     <!-- La clé sur le numéro force le remplacement du panel à chaque question :
                          l'ancien s'efface, le nouveau remonte. -->
                     <!-- HUD de partie : le panel ne porte plus que la question -->
-                    <div class="v2-hud" v-if="currentQuestion">
+                    <div class="v2-hud" v-if="questionShown">
                         <span class="v2-hud-etat">
                             <span class="v2q-lives" v-if="gameMode === 'lives'">
                                 <i v-for="n in gameLives" :key="n"
@@ -965,12 +965,14 @@
                         </span>
                     </div>
 
-                    <div class="v2q-qnum" v-if="currentQuestion">
+                    <transition name="v2q" mode="out-in">
+                    <div class="v2q-block" v-if="currentQuestion" :key="currentQuestionNumber">
+
+                    <div class="v2q-qnum">
                         Question {{ currentQuestionNumber }}<em v-if="currentQuestion.totalQuestions"> / {{ currentQuestion.totalQuestions }}</em>
                     </div>
 
-                    <transition name="v2q" mode="out-in">
-                    <div class="v2q-panel" v-if="currentQuestion" :key="currentQuestionNumber" :class="{ revealed: showResults }">
+                    <div class="v2q-panel" :class="{ revealed: showResults }">
 
                         <!-- Arête vivante : la jauge de combo occupe le bord haut du panel -->
                         <div class="v2q-edge" v-if="bonusEnabled && lobbyMode !== 'bombanime'">
@@ -1016,6 +1018,8 @@
                                 <span class="v2q-answer-pct" v-if="showResults">{{ answerPercent(index + 1) }}%</span>
                             </button>
                         </div>
+
+                    </div>
 
                     </div>
                     </transition>
@@ -1322,7 +1326,7 @@
 
 
         <!-- 🆕 v2 — Bonus en jetons toujours visibles -->
-        <div class="v2-bonus" v-if="gameInProgress && !gameEnded && currentQuestion && lobbyMode !== 'bombanime' && bonusEnabled">
+        <div class="v2-bonus" v-if="gameInProgress && !gameEnded && questionShown && lobbyMode !== 'bombanime' && bonusEnabled">
             <button class="v2-token"
                     :class="[getBonusState('5050'), { vide: !bonusInventory['5050'], off: !canUseBonus() }]"
                     :disabled="!bonusInventory['5050'] || !canUseBonus()"
