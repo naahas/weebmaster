@@ -138,6 +138,7 @@
         .h1 .hud-jauge { position: absolute; top: 3.4rem; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: .6rem; }
 
         /* ══════ H2 — Arête vivante ══════ */
+        .h2 .hud-tl { position: absolute; top: 1.2rem; left: 1.4rem; }
         .h2 .hud-tr { position: absolute; top: 1.15rem; right: 1.4rem; }
         .h2 .arete { position: absolute; top: -1px; left: 0; right: 0; height: .22rem; border-radius: 2rem 2rem 0 0; background: rgba(255,255,255,.06); overflow: hidden; }
         .h2 .arete i { display: block; width: 62%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--neon)); box-shadow: 0 0 .8rem rgba(255,190,40,.6); }
@@ -242,7 +243,6 @@
         const PROTOS = [
             {
                 id: 'h1', num: 'H1', nom: 'Bandeau haut',
-                reco: true,
                 note: "<b>Ta proposition, telle quelle.</b> Numéro de question en pastille discrète en haut à gauche, état du joueur en haut à droite, jauge de combo à l'horizontale juste au-dessus du panel. Le panel ne contient plus que badges, question, réponses et timer. Lecture claire, chaque information a son coin — mais le haut de l'écran se remplit sur trois points distincts.",
                 ecran: `
                     <div class="hud-tl"><span class="qchip">Question 3 <em>/ 20</em></span></div>
@@ -251,11 +251,12 @@
                     <div class="panel">${CORPS(false, false)}</div>`
             },
             {
-                id: 'h2', num: 'H2', nom: 'Arête vivante',
-                note: "La jauge devient <b>l'arête haute du panel</b> : elle ne prend aucune place et se lit sans quitter la question des yeux. Le numéro de question rejoint la rangée de badges, en troisième pastille dorée. Seul l'état du joueur reste en haut à droite de l'écran. Le HUD se réduit à un élément.",
+                id: 'h2', num: 'H2', nom: 'Arête vivante', reco: true,
+                note: "<b>Variante retenue.</b> La jauge devient <b>l'arête haute du panel</b> : elle ne prend aucune place et se lit sans quitter la question des yeux, avec les particules qui jaillissent à chaque palier. Le numéro de question part en haut à gauche de l'écran (et non en badge), l'état du joueur en haut à droite. Le panel ne porte plus que badges, question, réponses et timer.",
                 ecran: `
+                    <div class="hud-tl"><span class="qchip">Question 3 <em>/ 20</em></span></div>
                     <div class="hud-tr">${etat()}</div>
-                    <div class="panel"><span class="arete"><i></i></span>${CORPS(false, true)}</div>`
+                    <div class="panel"><span class="arete"><i></i></span>${CORPS(false, false)}</div>`
             },
             {
                 id: 'h3', num: 'H3', nom: "Colonne d'état",
@@ -285,7 +286,7 @@
             <section>
                 <div class="proto-head">
                     <span class="proto-num">${p.num}</span>
-                    <span class="proto-name">${p.nom}${p.reco ? ' — recommandé' : ''}</span>
+                    <span class="proto-name">${p.nom}${p.reco ? ' ✅ retenu' : ''}</span>
                 </div>
                 <div class="ecran ${p.id}">${p.ecran}</div>
                 <p class="proto-note">${p.note}</p>

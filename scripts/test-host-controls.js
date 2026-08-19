@@ -23,6 +23,21 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     socks.forEach(({ s, id, nom }, i) => s.emit('join-lobby', { twitchId: id, username: nom, isHost: i === 0 }));
     await wait(500);
 
+    // Exclusion d'un joueur : l'hôte n'envoie que l'identifiant depuis la liste du salon
+    const intrus = io(BASE);
+    await new Promise(r => intrus.on('connect', r));
+    let exclu = false;
+    intrus.on('kicked', () => { exclu = true; });
+    intrus.emit('register-authenticated', { twitchId: 'p3', username: 'Intrus' });
+    await wait(300);
+    intrus.emit('join-lobby', { twitchId: 'p3', username: 'Intrus' });
+    await wait(500);
+    socks[0].s.emit('kick-player', { twitchId: 'p3' });
+    await wait(600);
+    check("exclusion par identifiant seul", exclu === true);
+    intrus.close();
+    await wait(300);
+
     const start = await post('/admin/start-game', {});
     check('partie démarrée', start.success === true);
     await wait(400);

@@ -953,17 +953,32 @@
                     <!-- 🆕 v2 — Panel de question (reprend le visuel de l'ancien panel hôte) -->
                     <!-- La clé sur le numéro force le remplacement du panel à chaque question :
                          l'ancien s'efface, le nouveau remonte. -->
+                    <!-- HUD de partie : le panel ne porte plus que la question -->
+                    <div class="v2-hud" v-if="currentQuestion">
+                        <span class="v2-hud-q">
+                            Question {{ currentQuestionNumber }}<em v-if="currentQuestion.totalQuestions"> / {{ currentQuestion.totalQuestions }}</em>
+                        </span>
+
+                        <span class="v2-hud-etat">
+                            <span class="v2q-lives" v-if="gameMode === 'lives'">
+                                <i v-for="n in gameLives" :key="n"
+                                   :class="{ off: n > playerLives, dying: n === lifeLost }">
+                                    <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4a5.3 5.3 0 0 1 9.6 5.6C19.5 16.4 12 21 12 21z"/></svg>
+                                </i>
+                            </span>
+                            <span class="v2-hud-points" v-else>{{ formattedPlayerPoints }}<small>pts</small></span>
+                        </span>
+                    </div>
+
                     <transition name="v2q" mode="out-in">
                     <div class="v2q-panel" v-if="currentQuestion" :key="currentQuestionNumber" :class="{ revealed: showResults }">
 
-                        <span class="v2q-tab">Question {{ currentQuestionNumber }}</span>
-
-                        <!-- Vies : à cheval sur l'arête haute, comme l'onglet -->
-                        <div class="v2q-lives" v-if="gameMode === 'lives'">
-                            <i v-for="n in gameLives" :key="n"
-                               :class="{ off: n > playerLives, dying: n === lifeLost }">
-                                <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4a5.3 5.3 0 0 1 9.6 5.6C19.5 16.4 12 21 12 21z"/></svg>
-                            </i>
+                        <!-- Arête vivante : la jauge de combo occupe le bord haut du panel -->
+                        <div class="v2q-edge" v-if="bonusEnabled && lobbyMode !== 'bombanime'">
+                            <div class="v2q-edge-fill"
+                                 :style="isLevelingUp ? { width: '100%' } : { width: comboBarHeight + '%' }"></div>
+                            <div class="combo-particles-external"></div>
+                            <span class="v2q-edge-lvl" v-if="comboLevel > 0">{{ comboLevelDisplay }}</span>
                         </div>
 
                         <div class="v2q-timer" :class="{ warning: timerWarning && !showResults, done: showResults }">
@@ -1004,18 +1019,19 @@
                             </button>
                         </div>
 
-                        <div class="v2q-foot">
-                            <span class="v2q-status dead" v-if="playerLives === 0">Éliminé — tu peux continuer à regarder</span>
-                            <span class="v2q-status" v-else-if="showResults && !questionResults.isTiebreaker && lobbyMode === 'classic'">
-                                {{ questionResults.remainingPlayers }} joueur<span v-if="questionResults.remainingPlayers > 1">s</span> en vie
-                            </span>
-                            <span class="v2q-status team" v-else-if="showResults && lobbyMode === 'rivalry' && selectedTeam"
-                                  :class="'team-' + selectedTeam">
-                                {{ teamNames[selectedTeam] }} · {{ teamScores[selectedTeam] }}
-                            </span>
-                        </div>
                     </div>
                     </transition>
+
+                    <div class="v2q-under" v-if="currentQuestion">
+                        <span class="v2q-status dead" v-if="playerLives === 0">Éliminé — tu peux continuer à regarder</span>
+                        <span class="v2q-status" v-else-if="showResults && !questionResults.isTiebreaker && lobbyMode === 'classic'">
+                            {{ questionResults.remainingPlayers }} joueur<span v-if="questionResults.remainingPlayers > 1">s</span> en vie
+                        </span>
+                        <span class="v2q-status team" v-else-if="showResults && lobbyMode === 'rivalry' && selectedTeam"
+                              :class="'team-' + selectedTeam">
+                            {{ teamNames[selectedTeam] }} · {{ teamScores[selectedTeam] }}
+                        </span>
+                    </div>
 
                 </div><!-- Fin question-container-wrapper -->
                 </template><!-- Fin template classique/rivalry -->
@@ -1317,28 +1333,6 @@
             </div>
         </div>
 
-        <!-- Jauge de Combo (Desktop uniquement - côté droit) -->
-        <div class="combo-gauge-container" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && bonusEnabled">
-            <!-- 🔥 Particules EN DEHORS de la jauge -->
-            <div class="combo-particles-external"></div>
-
-            <div class="combo-gauge">
-                <div class="combo-bar-wrapper">
-                    <div class="combo-bar-bg">
-                        <!-- Barre de progression -->
-                        <div class="combo-bar-fill"
-                            :style="isLevelingUp ? { height: '100%' } : { height: comboBarHeight + '%' }">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 🔥 MODIFIÉ : Utiliser comboLevelDisplay au lieu de comboLevel -->
-                <!-- 🔥 Afficher même au niveau 3 pour montrer "MAX" -->
-                <div class="combo-level-indicator" v-if="comboLevel > 0">
-                    {{ comboLevelDisplay }}
-                </div>
-            </div>
-        </div>
 
         <!-- 🆕 v2 — Bonus en jetons toujours visibles -->
         <div class="v2-bonus" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && bonusEnabled">

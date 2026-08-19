@@ -986,7 +986,8 @@ createApp({
 
         hostKick(twitchId) {
             if (!this.socket) return;
-            this.socket.emit('kick-player', { twitchId });
+            const cible = this.lobbyPlayers.find(p => p.twitchId === twitchId);
+            this.socket.emit('kick-player', { twitchId, username: cible ? cible.username : undefined });
         },
 
         lockMode(id) {
@@ -3569,23 +3570,16 @@ createApp({
             const container = document.querySelector('.combo-particles-external');
             if (!container) return;
 
-            // 🔥 FIX: Utiliser la VRAIE hauteur actuelle de la barre
-            const currentHeight = this.comboBarHeight;
+            // La jauge est horizontale : les particules jaillissent de la portion remplie
+            const remplissage = this.comboBarHeight;
 
-            console.log(`✨ Spawn particules à ${currentHeight}% de hauteur`);
-
-            // 🔥 40 particules pour un effet explosif
             for (let i = 0; i < 40; i++) {
                 const particle = document.createElement('div');
                 particle.className = 'particle';
 
-                // Position horizontale aléatoire
-                const randomX = Math.random() * 100;
-                particle.style.left = `${randomX}%`;
-
-                // 🔥 FIX: Position verticale ALÉATOIRE sur toute la hauteur actuelle
-                const randomHeightInRange = Math.random() * currentHeight;
-                particle.style.bottom = `${randomHeightInRange}%`;
+                // Réparties sur la longueur déjà acquise
+                particle.style.left = `${Math.random() * remplissage}%`;
+                particle.style.bottom = '0';
 
                 // Dérive horizontale
                 const drift = (Math.random() - 0.5) * 60;

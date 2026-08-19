@@ -5223,17 +5223,20 @@ io.on('connection', (socket) => {
 
     // 🆕 Kick un joueur manuellement (depuis l'admin)
     socket.on('kick-player', (data) => {
-        const { username, twitchId } = data;
-        if (!username) return;
+        const { username, twitchId } = data || {};
+        // L'appel peut ne porter que l'identifiant : exiger le pseudo bloquait tout kick
+        if (!username && !twitchId) return;
 
-        console.log(`🚫 Kick demandé pour: ${username}`);
+        console.log(`🚫 Kick demandé pour: ${username || twitchId}`);
 
         // Trouver le joueur par username ou twitchId
         let targetSocketId = null;
         let targetPlayer = null;
 
         for (const [socketId, player] of gameState.players.entries()) {
-            if (player.username === username || player.twitchId === twitchId) {
+            const parPseudo = username && player.username === username;
+            const parId = twitchId && player.twitchId === twitchId;
+            if (parPseudo || parId) {
                 targetSocketId = socketId;
                 targetPlayer = player;
                 break;
