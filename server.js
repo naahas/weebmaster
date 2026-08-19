@@ -351,6 +351,7 @@ app.get('/game/state', (req, res) => {
         serieFilter: gameState.serieFilter,
         noSpoil: gameState.noSpoil, // 🚫 Filtre anti-spoil
         bonusEnabled: gameState.bonusEnabled, // 🎮 Bonus activés
+        speedBonus: gameState.speedBonus, // ⚡ +500 au plus rapide (mode points)
         isTiebreaker: gameState.isTiebreaker,
         liveAnswerCounts: answerCounts,
         showingWinner: !!winnerScreenData,

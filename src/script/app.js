@@ -166,6 +166,7 @@ createApp({
             displayedPoints: 0,   // valeur affichée, qui rattrape le score réel en s'animant
             pointsDelta: 0,       // gain affiché brièvement au-dessus du compteur
             pointsPulse: false,
+            speedBonus: true,     // +500 points au plus rapide, en mode points
             booting: true,        // tant que l'état serveur n'est pas connu, on n'affiche aucun écran
             questionShown: false, // passe à vrai quand le premier panel de question est visible
 
@@ -1334,6 +1335,9 @@ createApp({
                 // 🎮 Restaurer bonusEnabled
                 if (state.bonusEnabled !== undefined) {
                     this.bonusEnabled = state.bonusEnabled;
+                }
+                if (state.speedBonus !== undefined) {
+                    this.speedBonus = state.speedBonus;
                 }
 
                 if (state.lives) this.gameLives = state.lives;

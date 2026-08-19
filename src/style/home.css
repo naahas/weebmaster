@@ -4116,7 +4116,7 @@ body {
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%;
+    height: 0.24rem;
     pointer-events: none;
     z-index: 999;
     overflow: visible;
@@ -18143,7 +18143,7 @@ body.modal-open {
 .v2-set-opt {
     flex: 1 1 auto;
     min-width: 1.9rem;
-    padding: 0.35rem 0.5rem;
+    padding: 0.62rem 0.6rem;
     font-family: inherit;
     font-size: 0.73rem;
     font-weight: 600;
@@ -18516,7 +18516,7 @@ body.modal-open {
 .v2q-panel.revealed { border-color: rgba(255, 215, 0, 0.22); }
 
 @keyframes v2qIn {
-    from { opacity: 0; transform: translateY(0.8rem) scale(0.985); }
+    from { opacity: 0; transform: translateY(1.1rem) scale(0.978); }
     to   { opacity: 1; transform: none; }
 }
 
@@ -18947,12 +18947,12 @@ body.modal-open {
 
 /* Passage d'une question à la suivante : l'ancien panel s'efface vers le haut,
    le nouveau remonte. mode="out-in" côté template, donc jamais les deux en même temps. */
-.v2q-enter-active { animation: v2qIn 0.42s cubic-bezier(0.2, 0.9, 0.3, 1) 0.42s both; }
-.v2q-leave-active { animation: v2qOut 0.12s ease-in both; }
+.v2q-enter-active { animation: v2qIn 0.62s cubic-bezier(0.2, 0.85, 0.3, 1) 0.3s both; }
+.v2q-leave-active { animation: v2qOut 0.3s cubic-bezier(0.4, 0, 0.7, 0.2) both; }
 
 @keyframes v2qOut {
     from { opacity: 1; transform: none; }
-    to   { opacity: 0; transform: translateY(-0.6rem) scale(0.99); }
+    to   { opacity: 0; transform: translateY(-0.9rem) scale(0.985); }
 }
 
 /* ============================================
@@ -19019,7 +19019,7 @@ body.modal-open {
     margin-top: 0;
 }
 
-.game-section:not(.no-animation) .question-container-wrapper { min-height: 0; margin-top: -2rem; }
+.game-section:not(.no-animation) .question-container-wrapper { min-height: 0; margin-top: -2.9rem; }
 
 /* ============================================
    🆕 v2 — HUD DE PARTIE (variante « arête vivante »)
@@ -19288,3 +19288,6 @@ body.modal-open {
     flex-direction: column;
     align-items: center;
 }
+
+/* Une fois le choix fait, les autres réponses passent en retrait */
+.v2q-answer.dim { opacity: 0.45; }

@@ -436,6 +436,13 @@
                                             @click="applySetting('/admin/set-no-spoil', { enabled: !noSpoil }, () => noSpoil = !noSpoil)"><span></span></button>
                                 </div>
 
+                                <div class="v2-set static" v-if="gameMode === 'points'">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M12 2v6M12 16v6M4.9 4.9l4.2 4.2M14.9 14.9l4.2 4.2M2 12h6M16 12h6M4.9 19.1l4.2-4.2M14.9 9.1l4.2-4.2"/></svg>
+                                    <span class="v2-set-label" title="+500 points au premier joueur qui répond juste">Bonus vitesse</span>
+                                    <button class="v2-switch" :class="{ on: speedBonus }"
+                                            @click="applySetting('/admin/set-speed-bonus', { enabled: !speedBonus }, () => speedBonus = !speedBonus)"><span></span></button>
+                                </div>
+
                                 <div class="v2-set static">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M13 2L4.1 12.9a1 1 0 0 0 .8 1.6H11l-1 7.5 8.9-10.9a1 1 0 0 0-.8-1.6H12z"/></svg>
                                     <span class="v2-set-label">Bonus &amp; défis</span>
@@ -981,11 +988,14 @@
                     <div class="v2q-panel" :class="{ revealed: showResults }">
 
                         <!-- Arête vivante : la jauge de combo occupe le bord haut du panel -->
-                        <div class="v2q-edge" v-if="bonusEnabled && lobbyMode !== 'bombanime'">
-                            <div class="v2q-edge-fill" :class="['lvl' + comboLevel, comboPhase]"
-                                 :style="{ width: comboEdgeWidth + '%' }"></div>
+                        <template v-if="bonusEnabled && lobbyMode !== 'bombanime'">
+                            <div class="v2q-edge">
+                                <div class="v2q-edge-fill" :class="['lvl' + comboLevel, comboPhase]"
+                                     :style="{ width: comboEdgeWidth + '%' }"></div>
+                            </div>
+                            <!-- Hors de l'arête, qui rogne, sinon les particules seraient coupées -->
                             <div class="combo-particles-external"></div>
-                        </div>
+                        </template>
 
                         <div class="v2q-timer" :class="{ warning: timerWarning && !showResults, done: showResults }">
                             <span class="v2q-timer-ring"></span>
@@ -1014,6 +1024,7 @@
                                     class="v2q-answer"
                                     :class="{
                                         selected: selectedAnswer === index + 1,
+                                        dim: selectedAnswer && selectedAnswer !== index + 1 && !showResults,
                                         correct: showResults && questionResults.correctAnswer === index + 1,
                                         wrong: showResults && questionResults.correctAnswer !== index + 1
                                     }"
