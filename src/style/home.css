@@ -19019,7 +19019,7 @@ body.modal-open {
     margin-top: 0;
 }
 
-.game-section:not(.no-animation) .question-container-wrapper { min-height: 0; margin-top: -2.9rem; }
+.game-section:not(.no-animation) .question-container-wrapper { min-height: 0; margin-top: -3.7rem; }
 
 /* ============================================
    🆕 v2 — HUD DE PARTIE (variante « arête vivante »)
