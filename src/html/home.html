@@ -495,17 +495,33 @@
 
             <!-- État: Partie en cours -->
             <!-- 🆕 v2 — Contrôles de l'hôte pendant la partie (remplacent /admin) -->
-            <!-- Arrêt de la partie : porte de sortie en bas à gauche -->
-            <div class="v2-hostbar" v-if="isHost && gameInProgress && !gameEnded">
-                <button class="v2-hoststop" @click="hostCloseRoom" title="Arrêter la partie" aria-label="Arrêter la partie">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M10 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h4"/>
-                        <path d="M17 15l-3-3 3-3"/><path d="M14 12h7"/>
+            <!-- Commandes de l'hôte : enchaînement en bas à droite, arrêt en bas à gauche -->
+            <div class="v2-hostbar" v-if="isHost && gameInProgress && !gameEnded && lobbyMode !== 'bombanime'">
+                <button class="v2q-cmd-btn"
+                        @click="hostNextQuestion" :disabled="nextQuestionBusy || !showResults"
+                        :title="showResults ? 'Question suivante' : 'Disponible à la fin de la question'">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 4l10 8-10 8z"/><path d="M19 5v14"/>
+                    </svg>
+                </button>
+
+                <button class="v2q-cmd-btn toggle" :class="{ on: autoMode }" @click="hostToggleAuto"
+                        title="Enchaîner les questions automatiquement">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/>
                     </svg>
                 </button>
 
                 <span class="v2-hostbar-err" v-if="hostError">{{ hostError }}</span>
             </div>
+
+            <button class="v2-hoststop" v-if="isHost && gameInProgress && !gameEnded"
+                    @click="hostCloseRoom" title="Arrêter la partie" aria-label="Arrêter la partie">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h4"/>
+                    <path d="M17 15l-3-3 3-3"/><path d="M14 12h7"/>
+                </svg>
+            </button>
 
             <div class="content-section game-section"
                  :class="{ 'no-animation': lobbyMode === 'bombanime' }"
@@ -942,7 +958,7 @@
                             <span class="v2q-lives" v-if="gameMode === 'lives'">
                                 <i v-for="n in gameLives" :key="n"
                                    :class="{ off: n > playerLives, dying: n === lifeLost }">
-                                    <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4a5.3 5.3 0 0 1 9.6 5.6C19.5 16.4 12 21 12 21z"/></svg>
+                                    <svg viewBox="0 0 24 24" stroke-linejoin="round"><path d="M12 20.6s-7-4.3-9-8.4A5 5 0 0 1 12 6.6a5 5 0 0 1 9 5.6c-2 4.1-9 8.4-9 8.4z"/></svg>
                                 </i>
                             </span>
                             <span class="v2-hud-points" v-else>{{ formattedPlayerPoints }}<small>pts</small></span>
@@ -1003,24 +1019,6 @@
 
                     </div>
                     </transition>
-
-                    <!-- Commandes de l'hôte, au pied du panel -->
-                    <div class="v2q-cmd" v-if="isHost && currentQuestion">
-                        <button class="v2q-cmd-btn"
-                                @click="hostNextQuestion" :disabled="nextQuestionBusy || !showResults"
-                                :title="showResults ? 'Question suivante' : 'Disponible à la fin de la question'">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M5 4l10 8-10 8z"/><path d="M19 5v14"/>
-                            </svg>
-                        </button>
-
-                        <button class="v2q-cmd-btn toggle" :class="{ on: autoMode }" @click="hostToggleAuto"
-                                title="Enchaîner les questions automatiquement">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/>
-                            </svg>
-                        </button>
-                    </div>
 
                 </div><!-- Fin question-container-wrapper -->
                 </template><!-- Fin template classique/rivalry -->
@@ -1324,7 +1322,7 @@
 
 
         <!-- 🆕 v2 — Bonus en jetons toujours visibles -->
-        <div class="v2-bonus" v-if="gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && bonusEnabled">
+        <div class="v2-bonus" v-if="gameInProgress && !gameEnded && currentQuestion && lobbyMode !== 'bombanime' && bonusEnabled">
             <button class="v2-token"
                     :class="[getBonusState('5050'), { vide: !bonusInventory['5050'], off: !canUseBonus() }]"
                     :disabled="!bonusInventory['5050'] || !canUseBonus()"

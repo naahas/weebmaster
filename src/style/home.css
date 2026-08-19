@@ -18944,8 +18944,8 @@ body.modal-open {
 
 /* Passage d'une question à la suivante : l'ancien panel s'efface vers le haut,
    le nouveau remonte. mode="out-in" côté template, donc jamais les deux en même temps. */
-.v2q-enter-active { animation: v2qIn 0.42s cubic-bezier(0.2, 0.9, 0.3, 1) 0.4s both; }
-.v2q-leave-active { animation: v2qOut 0.4s ease-in both; }
+.v2q-enter-active { animation: v2qIn 0.42s cubic-bezier(0.2, 0.9, 0.3, 1) 0.78s both; }
+.v2q-leave-active { animation: v2qOut 0.12s ease-in both; }
 
 @keyframes v2qOut {
     from { opacity: 1; transform: none; }
@@ -18967,8 +18967,8 @@ body.modal-open {
 
 .v2q-lives i {
     display: block;
-    width: 1.6rem;
-    height: 1.6rem;
+    width: 1.95rem;
+    height: 1.95rem;
     color: #ff5a6e;
     transition: color 0.35s ease, transform 0.35s ease;
 }
@@ -18978,25 +18978,27 @@ body.modal-open {
     width: 100%;
     height: 100%;
     fill: currentColor;
+    stroke: currentColor;
+    stroke-width: 1.6;
     filter: drop-shadow(0 0.15rem 0.5rem rgba(0, 0, 0, 0.75))
             drop-shadow(0 0 0.4rem rgba(255, 90, 110, 0.45));
+    transition: fill 0.35s ease;
 }
 
-.v2q-lives i.off {
-    color: rgba(255, 255, 255, 0.16);
-    transform: scale(0.82);
-}
-
-.v2q-lives i.off svg { filter: drop-shadow(0 0.15rem 0.4rem rgba(0, 0, 0, 0.6)); }
+/* Vie perdue : le cœur se vide, la silhouette reste — la lecture ne bouge pas */
+.v2q-lives i.off { color: rgba(255, 255, 255, 0.28); }
+.v2q-lives i.off svg { fill: transparent; filter: none; }
 
 /* Le cœur gonfle, casse, puis rejoint l'état éteint */
-.v2q-lives i.dying { animation: v2qLifeBreak 0.56s cubic-bezier(0.3, 0.9, 0.3, 1) both; }
+.v2q-lives i.dying { animation: v2qLifeBreak 0.68s cubic-bezier(0.25, 0.9, 0.25, 1) both; }
 
 @keyframes v2qLifeBreak {
     0%   { transform: scale(1) rotate(0); }
-    25%  { transform: scale(1.4) rotate(-9deg); }
-    55%  { transform: scale(0.68) rotate(7deg); }
-    100% { transform: scale(0.82) rotate(0); }
+    14%  { transform: scale(1.75) rotate(-13deg); }
+    30%  { transform: scale(1.45) rotate(11deg); }
+    46%  { transform: scale(0.55) rotate(-8deg); }
+    62%  { transform: scale(1.12) rotate(5deg); }
+    100% { transform: scale(1) rotate(0); }
 }
 
 @media (max-width: 768px) {
@@ -19023,8 +19025,8 @@ body.modal-open {
    ============================================ */
 .v2-hud {
     position: fixed;
-    top: clamp(0.9rem, 2.2vh, 1.7rem);
-    right: clamp(1rem, 2.5vw, 2.2rem);
+    top: clamp(1.5rem, 3.4vh, 2.6rem);
+    right: clamp(1.8rem, 3.4vw, 3.2rem);
     z-index: 30;
     display: flex;
     align-items: center;
@@ -19112,28 +19114,30 @@ body.modal-open {
 /* Numéro de question, posé juste au-dessus du panel */
 .v2q-qnum {
     align-self: center;
-    margin-bottom: 0.85rem;
-    padding: 0.4rem 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.64rem;
+    font-size: 0.66rem;
     font-weight: 700;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--neon-primary);
-    background: linear-gradient(135deg, rgba(240, 192, 64, 0.2), rgba(240, 192, 64, 0.1));
-    border: 0.06rem solid rgba(240, 192, 64, 0.4);
-    border-radius: 2rem;
 }
+
+/* Deux filets dégradés tiennent le numéro, sans cadre */
+.v2q-qnum::before,
+.v2q-qnum::after {
+    content: '';
+    width: 2.4rem;
+    height: 0.06rem;
+    background: linear-gradient(90deg, transparent, rgba(240, 192, 64, 0.6));
+}
+
+.v2q-qnum::after { background: linear-gradient(90deg, rgba(240, 192, 64, 0.6), transparent); }
 
 .v2q-qnum em { font-style: normal; letter-spacing: 0.06em; color: var(--text-secondary); }
-
-/* Commandes de l'hôte, au pied du panel */
-.v2q-cmd {
-    display: flex;
-    justify-content: center;
-    gap: 0.7rem;
-    margin-top: 1.2rem;
-}
 
 .v2q-cmd-btn {
     display: grid;
@@ -19164,15 +19168,18 @@ body.modal-open {
 
 /* Arrêt de la partie : en bas à gauche, comme la sortie du salon */
 .v2-hostbar {
-    right: auto;
-    left: clamp(0.8rem, 2vw, 1.6rem);
     background: none;
     border: none;
     box-shadow: none;
     padding: 0;
+    gap: 0.7rem;
 }
 
 .v2-hoststop {
+    position: fixed;
+    left: clamp(0.8rem, 2vw, 1.6rem);
+    bottom: clamp(0.8rem, 2vw, 1.6rem);
+    z-index: 60;
     display: grid;
     place-items: center;
     width: 3rem;
@@ -19197,4 +19204,40 @@ body.modal-open {
 
 @media (max-width: 768px) {
     .v2q-cmd-btn { width: 2.9rem; height: 2.9rem; }
+}
+
+/* ── Éclat de la vie perdue : onde et éclats, posés sur <body> ── */
+.v2q-hp-wave {
+    position: fixed;
+    z-index: 9996;
+    width: 1.4rem;
+    height: 1.4rem;
+    margin: -0.7rem 0 0 -0.7rem;
+    border: 0.13rem solid rgba(255, 90, 110, 0.85);
+    border-radius: 50%;
+    pointer-events: none;
+    animation: v2qHpWave 0.6s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+
+@keyframes v2qHpWave {
+    0%   { opacity: 0.9; transform: scale(0.4); }
+    100% { opacity: 0;   transform: scale(3.4); }
+}
+
+.v2q-hp-shard {
+    position: fixed;
+    z-index: 9996;
+    width: 0.2rem;
+    height: 0.5rem;
+    margin: -0.25rem 0 0 -0.1rem;
+    background: #ff5a6e;
+    border-radius: 0.1rem;
+    box-shadow: 0 0 0.4rem rgba(255, 90, 110, 0.8);
+    pointer-events: none;
+    animation: v2qHpShard 0.6s cubic-bezier(0.15, 0.7, 0.3, 1) forwards;
+}
+
+@keyframes v2qHpShard {
+    0%   { opacity: 1; transform: rotate(var(--rot)) translate(0, 0) scale(1); }
+    100% { opacity: 0; transform: rotate(var(--rot)) translate(var(--dx), var(--dy)) scale(0.3); }
 }

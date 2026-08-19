@@ -623,8 +623,9 @@ createApp({
         playerLives(neuf, ancien) {
             if (neuf >= ancien) return;
             this.lifeLost = ancien;
+            this.$nextTick(() => this.playLifeLostEffect(ancien));
             clearTimeout(this._timerVie);
-            this._timerVie = setTimeout(() => { this.lifeLost = null; }, 560);
+            this._timerVie = setTimeout(() => { this.lifeLost = null; }, 700);
         },
 
         gameInProgress(newVal, oldVal) {
@@ -1739,6 +1740,10 @@ createApp({
                 if (data.isParticipating) {
                     document.body.classList.add('game-active');
                     this.gameInProgress = true;
+                    // Sans ça, la question de la partie précédente reste affichée
+                    // le temps que la première arrive
+                    this.currentQuestion = null;
+                    this.showResults = false;
 
                     // 🆕 Initialiser selon le mode
                     if (this.gameMode === 'lives') {
@@ -3004,6 +3009,91 @@ createApp({
             });
 
             console.log(`📤 Carte FizzBuzz sélectionnée: ${cardIndex}`);
+        },
+
+        // 💔 Perte d'une vie : le cœur éclate, une onde part et des éclats se dispersent.
+        // Les décors vivent sur <body> : le HUD est repatché par Vue au même instant.
+        playLifeLostEffect(rang) {
+            this.playLifeLostSound();
+
+            const coeur = document.querySelectorAll('.v2q-lives i')[rang - 1];
+            if (!coeur) return;
+            const r = coeur.getBoundingClientRect();
+            const cx = r.left + r.width / 2;
+            const cy = r.top + r.height / 2;
+
+            const onde = document.createElement('div');
+            onde.className = 'v2q-hp-wave';
+            onde.style.cssText = `left:${cx}px;top:${cy}px;`;
+            document.body.appendChild(onde);
+            setTimeout(() => onde.remove(), 700);
+
+            for (let i = 0; i < 12; i++) {
+                const angle = (Math.PI * 2 * i) / 12 + Math.random() * 0.5;
+                const dist = 26 + Math.random() * 34;
+                const eclat = document.createElement('div');
+                eclat.className = 'v2q-hp-shard';
+                eclat.style.cssText = `left:${cx}px;top:${cy}px;` +
+                    `--dx:${Math.cos(angle) * dist}px;--dy:${Math.sin(angle) * dist}px;--rot:${angle}rad;` +
+                    `animation-delay:${(Math.random() * 0.07).toFixed(3)}s;`;
+                document.body.appendChild(eclat);
+                setTimeout(() => eclat.remove(), 800);
+            }
+        },
+
+        // Son de casse : un choc sourd, un craquement, et une note qui retombe
+        playLifeLostSound() {
+            try {
+                if (!this._shockwaveCtx) {
+                    this._shockwaveCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const ctx = this._shockwaveCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+                const t = ctx.currentTime;
+
+                // Impact grave
+                const o1 = ctx.createOscillator();
+                const g1 = ctx.createGain();
+                o1.type = 'sine';
+                o1.frequency.setValueAtTime(190, t);
+                o1.frequency.exponentialRampToValueAtTime(55, t + 0.28);
+                g1.gain.setValueAtTime(0, t);
+                g1.gain.linearRampToValueAtTime(0.14, t + 0.01);
+                g1.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
+                o1.connect(g1).connect(ctx.destination);
+                o1.start(t); o1.stop(t + 0.32);
+
+                // Craquement : bruit blanc court passé en haut du spectre
+                const n = ctx.createBufferSource();
+                const buf = ctx.createBuffer(1, ctx.sampleRate * 0.18, ctx.sampleRate);
+                const data = buf.getChannelData(0);
+                for (let i = 0; i < data.length; i++) {
+                    data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+                }
+                n.buffer = buf;
+                const filtre = ctx.createBiquadFilter();
+                filtre.type = 'highpass';
+                filtre.frequency.setValueAtTime(1800, t);
+                const gn = ctx.createGain();
+                gn.gain.setValueAtTime(0.09, t);
+                gn.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+                n.connect(filtre).connect(gn).connect(ctx.destination);
+                n.start(t); n.stop(t + 0.18);
+
+                // Note qui retombe, pour la couleur
+                const o2 = ctx.createOscillator();
+                const g2 = ctx.createGain();
+                o2.type = 'triangle';
+                o2.frequency.setValueAtTime(880, t + 0.02);
+                o2.frequency.exponentialRampToValueAtTime(240, t + 0.4);
+                g2.gain.setValueAtTime(0, t + 0.02);
+                g2.gain.linearRampToValueAtTime(0.05, t + 0.04);
+                g2.gain.exponentialRampToValueAtTime(0.001, t + 0.42);
+                o2.connect(g2).connect(ctx.destination);
+                o2.start(t + 0.02); o2.stop(t + 0.42);
+            } catch (e) {
+                console.warn('Son de perte de vie indisponible:', e);
+            }
         },
 
         // 🏮 Effet « Sceau ninja » : un sceau doré s'abat sur la réponse choisie,
