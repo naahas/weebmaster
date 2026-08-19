@@ -163,6 +163,9 @@ createApp({
             // Joueur
             playerLives: 3,
             lifeLost: null,   // index du cœur en train de se briser
+            displayedPoints: 0,   // valeur affichée, qui rattrape le score réel en s'animant
+            pointsDelta: 0,       // gain affiché brièvement au-dessus du compteur
+            pointsPulse: false,
             booting: true,        // tant que l'état serveur n'est pas connu, on n'affiche aucun écran
             questionShown: false, // passe à vrai quand le premier panel de question est visible
 
@@ -427,6 +430,11 @@ createApp({
             return this.playerPoints.toLocaleString('fr-FR');
         },
 
+        // Le compteur du HUD suit la valeur animée, pas le score brut
+        formattedPoints() {
+            return this.displayedPoints.toLocaleString('fr-FR');
+        },
+
         // Timer circulaire FizzBuzz (stroke-dashoffset)
         fizzbuzzTimerOffset() {
             // Circumference = 2 * PI * r = 2 * 3.14159 * 45 ≈ 283
@@ -624,6 +632,25 @@ createApp({
     },
 
     watch: {
+        // Points gagnés : le compteur rattrape le score en s'animant, le gain s'envole
+        playerPoints(neuf, ancien) {
+            if (neuf === ancien) return;
+            if (neuf < ancien) { this.displayedPoints = neuf; return; }  // remise à zéro de partie
+            // Restauration après refresh : on cale la valeur sans animer ni sonner
+            if (!this.questionShown) { this.displayedPoints = neuf; return; }
+
+            this.pointsDelta = neuf - ancien;
+            this.pointsPulse = true;
+            this.playPointsSound();
+            this.tweenPoints(ancien, neuf, 700);
+
+            clearTimeout(this._ptsTimer);
+            this._ptsTimer = setTimeout(() => {
+                this.pointsPulse = false;
+                this.pointsDelta = 0;
+            }, 950);
+        },
+
         // Une vie perdue : le cœur correspondant se brise avant de s'éteindre
         playerLives(neuf, ancien) {
             if (neuf >= ancien) return;
@@ -969,12 +996,27 @@ createApp({
             if (this.nextQuestionBusy) return;
             this.nextQuestionBusy = true;
             this.hostError = '';
+
+            // La question sort dès le clic : sans ça on attendrait l'aller-retour
+            // serveur et la requête Supabase avant de voir quoi que ce soit bouger.
+            const sortante = this.currentQuestion;
+            const resultatsSortants = this.showResults;
+            this.currentQuestion = null;
+            this.showResults = false;
+
             try {
                 const res = await fetch('/admin/next-question', { method: 'POST' });
                 const data = await res.json();
-                if (data.error) this.hostError = data.error;
+                if (data.error) {
+                    this.hostError = data.error;
+                    // Refus du serveur : on remet la question en place
+                    this.currentQuestion = sortante;
+                    this.showResults = resultatsSortants;
+                }
             } catch (e) {
                 this.hostError = 'Erreur de connexion';
+                this.currentQuestion = sortante;
+                this.showResults = resultatsSortants;
             } finally {
                 setTimeout(() => { this.nextQuestionBusy = false; }, 600);
             }
@@ -3026,6 +3068,45 @@ createApp({
             });
 
             console.log(`📤 Carte FizzBuzz sélectionnée: ${cardIndex}`);
+        },
+
+        // Le compteur monte progressivement jusqu'au nouveau score
+        tweenPoints(de, vers, duree) {
+            cancelAnimationFrame(this._ptsRaf);
+            const debut = performance.now();
+            const pas = (t) => {
+                const p = Math.min(1, (t - debut) / duree);
+                const k = 1 - Math.pow(1 - p, 3);   // sortie douce
+                this.displayedPoints = Math.round(de + (vers - de) * k);
+                if (p < 1) this._ptsRaf = requestAnimationFrame(pas);
+            };
+            this._ptsRaf = requestAnimationFrame(pas);
+        },
+
+        // Son des points : deux notes qui montent, plus une harmonique brillante
+        playPointsSound() {
+            try {
+                if (!this._shockwaveCtx) {
+                    this._shockwaveCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const ctx = this._shockwaveCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+                const t = ctx.currentTime;
+
+                [[880, 0], [1320, 0.075], [1760, 0.15]].forEach(([freq, retard], i) => {
+                    const o = ctx.createOscillator();
+                    const g = ctx.createGain();
+                    o.type = i === 2 ? 'triangle' : 'sine';
+                    o.frequency.setValueAtTime(freq, t + retard);
+                    g.gain.setValueAtTime(0, t + retard);
+                    g.gain.linearRampToValueAtTime(i === 2 ? 0.035 : 0.06, t + retard + 0.012);
+                    g.gain.exponentialRampToValueAtTime(0.001, t + retard + 0.3);
+                    o.connect(g).connect(ctx.destination);
+                    o.start(t + retard); o.stop(t + retard + 0.3);
+                });
+            } catch (e) {
+                console.warn('Son de points indisponible:', e);
+            }
         },
 
         // 💔 Perte d'une vie : le cœur éclate, une onde part et des éclats se dispersent.

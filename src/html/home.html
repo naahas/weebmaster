@@ -961,7 +961,13 @@
                                     <svg viewBox="0 0 24 24" stroke-linejoin="round"><path d="M12 20.6s-7-4.3-9-8.4A5 5 0 0 1 12 6.6a5 5 0 0 1 9 5.6c-2 4.1-9 8.4-9 8.4z"/></svg>
                                 </i>
                             </span>
-                            <span class="v2-hud-points" v-else>{{ formattedPlayerPoints }}<small>pts</small></span>
+                            <span class="v2-hud-points" :class="{ pulse: pointsPulse }" v-else>
+                                <span class="v2-hud-pts-n">{{ formattedPoints }}</span>
+                                <svg class="v2-hud-pts-mark" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M12 1.6l2.7 7.7 7.7 2.7-7.7 2.7-2.7 7.7-2.7-7.7L1.6 12l7.7-2.7z"/>
+                                </svg>
+                                <span class="v2-hud-pts-delta" v-if="pointsDelta">+{{ pointsDelta }}</span>
+                            </span>
                         </span>
                     </div>
 
@@ -969,7 +975,7 @@
                     <div class="v2q-block" v-if="currentQuestion" :key="currentQuestionNumber">
 
                     <div class="v2q-qnum">
-                        Question {{ currentQuestionNumber }}<em v-if="currentQuestion.totalQuestions"> / {{ currentQuestion.totalQuestions }}</em>
+                        Question {{ currentQuestionNumber }}<em v-if="isHost && currentQuestion.totalQuestions"> / {{ currentQuestion.totalQuestions }}</em>
                     </div>
 
                     <div class="v2q-panel" :class="{ revealed: showResults }">

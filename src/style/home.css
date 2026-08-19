@@ -10872,7 +10872,7 @@ body.modal-open {
     flex-direction: column;
     align-items: center;
     gap: 0.75rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.95rem;
 }
 
 .profile-avatar-preview {
@@ -18947,7 +18947,7 @@ body.modal-open {
 
 /* Passage d'une question à la suivante : l'ancien panel s'efface vers le haut,
    le nouveau remonte. mode="out-in" côté template, donc jamais les deux en même temps. */
-.v2q-enter-active { animation: v2qIn 0.42s cubic-bezier(0.2, 0.9, 0.3, 1) 0.78s both; }
+.v2q-enter-active { animation: v2qIn 0.42s cubic-bezier(0.2, 0.9, 0.3, 1) 0.42s both; }
 .v2q-leave-active { animation: v2qOut 0.12s ease-in both; }
 
 @keyframes v2qOut {
@@ -19019,7 +19019,7 @@ body.modal-open {
     margin-top: 0;
 }
 
-.game-section:not(.no-animation) .question-container-wrapper { min-height: 0; margin-top: -1.1rem; }
+.game-section:not(.no-animation) .question-container-wrapper { min-height: 0; margin-top: -2rem; }
 
 /* ============================================
    🆕 v2 — HUD DE PARTIE (variante « arête vivante »)
@@ -19039,24 +19039,58 @@ body.modal-open {
 .v2-hud-etat { display: flex; align-items: center; }
 
 .v2-hud-points {
+    position: relative;
     display: inline-flex;
-    align-items: baseline;
-    gap: 0.35rem;
+    align-items: center;
+    gap: 0.4rem;
     font-family: 'Bebas Neue', 'Russo One', sans-serif;
-    font-size: 1.9rem;
+    font-size: 2.1rem;
     line-height: 1;
     color: var(--neon-primary);
     text-shadow: 0 0 0.8rem rgba(255, 215, 0, 0.45);
+    font-variant-numeric: tabular-nums;
 }
 
-.v2-hud-points small {
-    font-family: 'Poppins', sans-serif;
-    font-size: 0.58rem;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--text-secondary);
-    text-shadow: none;
+/* Éclat à quatre branches, plutôt qu'un « pts » écrit */
+.v2-hud-pts-mark {
+    width: 1.05rem;
+    height: 1.05rem;
+    fill: var(--neon-primary);
+    filter: drop-shadow(0 0 0.5rem rgba(255, 215, 0, 0.6));
+    transition: transform 0.3s ease;
+}
+
+.v2-hud-points.pulse .v2-hud-pts-n { animation: v2qPtsPop 0.5s cubic-bezier(0.2, 1.4, 0.4, 1); }
+.v2-hud-points.pulse .v2-hud-pts-mark { animation: v2qPtsSpin 0.6s cubic-bezier(0.2, 0.9, 0.3, 1); }
+
+@keyframes v2qPtsPop {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.22); text-shadow: 0 0 1.4rem rgba(255, 215, 0, 0.9); }
+    100% { transform: scale(1); }
+}
+
+@keyframes v2qPtsSpin {
+    0%   { transform: rotate(0) scale(1); }
+    45%  { transform: rotate(110deg) scale(1.5); }
+    100% { transform: rotate(180deg) scale(1); }
+}
+
+/* Le gain s'envole au-dessus du compteur */
+.v2-hud-pts-delta {
+    position: absolute;
+    top: -0.2rem;
+    right: 0;
+    font-size: 1.15rem;
+    color: #7ef7c0;
+    text-shadow: 0 0 0.7rem rgba(110, 231, 183, 0.7);
+    pointer-events: none;
+    animation: v2qPtsRise 0.95s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+
+@keyframes v2qPtsRise {
+    0%   { opacity: 0; transform: translateY(0.5rem) scale(0.8); }
+    25%  { opacity: 1; transform: translateY(-0.6rem) scale(1.1); }
+    100% { opacity: 0; transform: translateY(-2.2rem) scale(0.95); }
 }
 
 /* Les cœurs quittent le panel pour l'angle haut droit */
@@ -19075,6 +19109,9 @@ body.modal-open {
     height: 0.24rem;
     border-radius: 1rem 1rem 0 0;
     background: rgba(255, 255, 255, 0.06);
+    /* Le remplissage est droit : sans rognage, ses coins débordaient
+       des angles arrondis du panel. */
+    overflow: hidden;
 }
 
 .v2q-edge-fill {
@@ -19120,7 +19157,7 @@ body.modal-open {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.95rem;
     font-family: 'Space Grotesk', sans-serif;
     font-size: 0.66rem;
     font-weight: 700;
