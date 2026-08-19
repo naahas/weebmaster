@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShonenMaster — Prototypes de HUD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="icon.png">
+    <style>
+        :root { --neon: #FFD700; --accent: #FF8C00; --txt: #fff; --txt2: #a0a0a0; --green: #10b981; --red: #ef4444; --hp: #ff5a6e; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: radial-gradient(120% 90% at 50% 0%, #14100a 0%, #0c0c0e 45%, #08080a 100%);
+            background-attachment: fixed;
+            color: var(--txt);
+            font-family: 'Poppins', sans-serif;
+            padding: 2.5rem clamp(1rem, 4vw, 3rem) 6rem;
+        }
+
+        .nav { max-width: 74rem; margin: 0 auto 2rem; display: flex; gap: .6rem; flex-wrap: wrap; }
+        .nav a {
+            padding: .45rem .9rem; font-size: .78rem; font-weight: 600; text-decoration: none;
+            color: var(--txt2); background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08); border-radius: 2rem; transition: .2s;
+        }
+        .nav a:hover, .nav a.on { color: var(--neon); border-color: rgba(255,215,0,.4); }
+
+        .head { max-width: 74rem; margin: 0 auto 1.6rem; }
+        .head h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: .03em; }
+        .head p { color: var(--txt2); font-size: .9rem; max-width: 52rem; line-height: 1.6; }
+        .head b { color: var(--neon); font-weight: 600; }
+
+        .switch { max-width: 74rem; margin: 0 auto 2.5rem; display: flex; gap: .5rem; align-items: center; }
+        .switch span { font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--txt2); margin-right: .3rem; }
+        .switch button {
+            padding: .42rem 1rem; font-family: inherit; font-size: .7rem; font-weight: 700;
+            letter-spacing: .06em; text-transform: uppercase; color: var(--txt2);
+            background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
+            border-radius: 2rem; cursor: pointer; transition: .2s;
+        }
+        .switch button.on { color: var(--neon); border-color: rgba(255,215,0,.45); background: rgba(255,215,0,.07); }
+
+        .protos { max-width: 74rem; margin: 0 auto; display: flex; flex-direction: column; gap: 3rem; }
+        .proto-head { display: flex; align-items: baseline; gap: .8rem; margin-bottom: .9rem; }
+        .proto-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--neon); }
+        .proto-name { font-size: 1rem; font-weight: 700; }
+        .proto-note { font-size: .76rem; color: var(--txt2); line-height: 1.6; margin: 1rem .2rem 0; max-width: 58rem; }
+        .proto-note b { color: #d8d8d8; font-weight: 600; }
+
+        /* L'écran de jeu en réduction : tout est positionné par rapport à ce cadre */
+        .ecran {
+            position: relative; overflow: hidden;
+            height: 30rem;
+            border: 1px solid rgba(255,255,255,.07); border-radius: 1rem;
+            background: radial-gradient(120% 90% at 50% 0%, #14100a 0%, #0c0c0e 45%, #08080a 100%);
+            display: grid; place-items: center;
+        }
+
+        /* ══════ Panel de question ══════ */
+        .panel {
+            position: relative;
+            width: 25rem; max-width: 90%;
+            padding: 2.7rem 1.75rem 1.9rem;
+            background: linear-gradient(165deg, rgba(22,20,16,.98), rgba(14,14,16,.98));
+            border: 1px solid rgba(255,255,255,.08); border-radius: 1rem;
+            box-shadow: 0 1.2rem 3.5rem rgba(0,0,0,.5);
+        }
+        .badges { display: flex; justify-content: center; gap: .5rem; margin: 0 0 1.5rem; }
+        .badge {
+            padding: .38rem .85rem; font-size: .7rem; font-weight: 700; letter-spacing: .08em;
+            text-transform: uppercase; border-radius: .32rem;
+            background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
+        }
+        .badge.diff { color: var(--green); background: rgba(16,185,129,.1); border-color: rgba(16,185,129,.25); }
+        .badge.qn { color: var(--neon); background: rgba(240,192,64,.12); border-color: rgba(240,192,64,.35); }
+        .q { font-family: 'Space Grotesk'; font-size: 1.16rem; font-weight: 600; text-align: center; line-height: 1.55; margin-bottom: 1.8rem; }
+        .bars { display: flex; flex-direction: column; gap: .75rem; }
+        .bar { display: flex; align-items: center; gap: .85rem; padding: 1.35rem 1rem; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: .6rem; color: var(--txt); font-family: inherit; text-align: left; }
+        .mark { flex: 0 0 auto; display: grid; place-items: center; width: 1.75rem; height: 1.75rem; font-size: .72rem; border-radius: .4rem; }
+        .m0 { color: #ffd24a; background: rgba(255,210,74,.12); box-shadow: inset 0 0 0 1px rgba(255,210,74,.35); }
+        .m1 { color: #7fb4ff; background: rgba(127,180,255,.12); box-shadow: inset 0 0 0 1px rgba(127,180,255,.35); }
+        .bar span:last-child { font-size: .9rem; font-weight: 500; }
+
+        /* Timer, inchangé, dans l'angle du panel */
+        .timer { position: absolute; top: .9rem; right: .9rem; width: 3rem; height: 3rem; z-index: 5; }
+        .timer .ring { position: absolute; inset: 0; border: .09rem solid rgba(240,192,64,.3); border-radius: 50%; }
+        .timer svg { position: absolute; top: 50%; left: 50%; width: 2.4rem; height: 2.4rem; transform: translate(-50%,-50%) rotate(-90deg); }
+        .timer .bg { fill: none; stroke: rgba(255,255,255,.08); stroke-width: 4; }
+        .timer .fg { fill: none; stroke: #f0c040; stroke-width: 4; stroke-linecap: round; stroke-dasharray: 226; stroke-dashoffset: 68; }
+        .timer .n { position: absolute; inset: 0; display: grid; place-items: center; font-family: 'Bebas Neue', sans-serif; font-size: 1rem; color: #f0c040; }
+
+        /* Onglet « Question X » d'origine, gardé pour H0 */
+        .tab {
+            position: absolute; top: -.7rem; left: 50%; transform: translateX(-50%);
+            padding: .3rem 1rem; font-family: 'Space Grotesk'; font-size: .56rem; font-weight: 700;
+            letter-spacing: .14em; text-transform: uppercase; color: var(--neon);
+            background: linear-gradient(135deg, rgba(240,192,64,.2), rgba(240,192,64,.1));
+            border: 1px solid rgba(240,192,64,.4); border-radius: 1rem; z-index: 6;
+        }
+
+        /* ══════ Éléments de HUD, communs ══════ */
+        .coeurs { display: flex; gap: .34rem; }
+        .coeurs i { display: block; width: 1.5rem; height: 1.5rem; color: var(--hp); }
+        .coeurs i svg { width: 100%; height: 100%; display: block; fill: currentColor; filter: drop-shadow(0 .15rem .5rem rgba(0,0,0,.75)) drop-shadow(0 0 .4rem rgba(255,90,110,.45)); }
+        .coeurs i.off { color: rgba(255,255,255,.16); transform: scale(.82); }
+
+        .points {
+            display: flex; align-items: baseline; gap: .35rem;
+            font-family: 'Bebas Neue', sans-serif;
+        }
+        .points b { font-size: 1.9rem; line-height: 1; color: var(--neon); text-shadow: 0 0 .8rem rgba(255,215,0,.45); }
+        .points small { font-size: .58rem; letter-spacing: .16em; text-transform: uppercase; color: var(--txt2); font-family: 'Poppins'; font-weight: 700; }
+
+        .qchip {
+            display: inline-flex; align-items: baseline; gap: .3rem;
+            padding: .34rem .8rem; border-radius: 2rem;
+            font-family: 'Space Grotesk'; font-size: .62rem; font-weight: 700;
+            letter-spacing: .14em; text-transform: uppercase; color: var(--neon);
+            background: rgba(240,192,64,.1); border: 1px solid rgba(240,192,64,.3);
+        }
+        .qchip em { font-style: normal; color: var(--txt2); letter-spacing: .06em; }
+
+        /* Jauge horizontale */
+        .jauge-h {
+            width: 25rem; max-width: 90%; height: .4rem; border-radius: 2rem;
+            background: rgba(255,255,255,.06); overflow: hidden;
+        }
+        .jauge-h i { display: block; width: 62%; height: 100%; border-radius: 2rem; background: linear-gradient(90deg, var(--accent), var(--neon)); box-shadow: 0 0 .8rem rgba(255,190,40,.5); }
+        .jauge-lvl { font-family: 'Bebas Neue', sans-serif; font-size: 1.05rem; color: var(--neon); }
+
+        /* ══════ H1 — Bandeau haut ══════ */
+        .h1 .hud-tl { position: absolute; top: 1.2rem; left: 1.4rem; }
+        .h1 .hud-tr { position: absolute; top: 1.15rem; right: 1.4rem; }
+        .h1 .hud-jauge { position: absolute; top: 3.4rem; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: .6rem; }
+
+        /* ══════ H2 — Arête vivante ══════ */
+        .h2 .hud-tr { position: absolute; top: 1.15rem; right: 1.4rem; }
+        .h2 .arete { position: absolute; top: -1px; left: 0; right: 0; height: .22rem; border-radius: 2rem 2rem 0 0; background: rgba(255,255,255,.06); overflow: hidden; }
+        .h2 .arete i { display: block; width: 62%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--neon)); box-shadow: 0 0 .8rem rgba(255,190,40,.6); }
+
+        /* ══════ H3 — Colonne d'état ══════ */
+        .h3 .hud-tl { position: absolute; top: 1.2rem; left: 1.4rem; }
+        .h3 .colonne {
+            position: absolute; top: 50%; right: 1.6rem; transform: translateY(-50%);
+            display: flex; flex-direction: column; align-items: center; gap: 1.1rem;
+        }
+        .h3 .colonne .coeurs { flex-direction: column; }
+        .h3 .colonne .points { flex-direction: column; align-items: center; gap: .1rem; }
+        .jauge-v { width: 1.1rem; height: 9rem; border-radius: 2rem; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); position: relative; overflow: hidden; }
+        .jauge-v i { position: absolute; left: 0; right: 0; bottom: 0; height: 62%; background: linear-gradient(180deg, #ffe066, var(--accent)); box-shadow: 0 0 1rem rgba(255,190,40,.45); }
+
+        /* ══════ H4 — Barre unique ══════ */
+        .h4 .barre {
+            position: absolute; top: 1.1rem; left: 50%; transform: translateX(-50%);
+            display: flex; align-items: center; gap: 1.1rem;
+            padding: .55rem 1rem; border-radius: 2rem;
+            background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.08);
+            backdrop-filter: blur(.4rem);
+        }
+        .h4 .barre .jauge-h { width: 11rem; }
+        .h4 .barre .coeurs i { width: 1.25rem; height: 1.25rem; }
+        .h4 .barre .points b { font-size: 1.45rem; }
+        .h4 .sep { width: 1px; height: 1.4rem; background: rgba(255,255,255,.12); }
+
+        /* Repère visuel : ce qui est du HUD clignote doucement au survol du cadre */
+        .ecran:hover .hud-tl, .ecran:hover .hud-tr,
+        .ecran:hover .hud-jauge, .ecran:hover .colonne, .ecran:hover .barre { outline: 1px dashed rgba(255,215,0,.25); outline-offset: .4rem; }
+
+        @media (max-width: 700px) {
+            .ecran { height: 26rem; }
+            .panel { width: 20rem; padding: 2rem 1.2rem 1.4rem; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="nav">
+        <a href="/prototypes">Mise en page</a>
+        <a href="/prototypes/boutons">Boutons</a>
+        <a href="/prototypes/modes">Modes — grilles</a>
+        <a href="/prototypes/modes-2">Modes — originales</a>
+        <a href="/prototypes/parametres">Paramètres</a>
+        <a href="/prototypes/lancer">Lancer la partie</a>
+        <a href="/prototypes/jeu">Écran de jeu</a>
+        <a href="/prototypes/effets">Effets de clic</a>
+        <a href="/prototypes/timer">Timer</a>
+        <a href="/prototypes/vies">Vies</a>
+        <a href="/prototypes/hud" class="on">HUD</a>
+        <a href="/">← Le site</a>
+    </div>
+
+    <div class="head">
+        <h1>Prototypes — HUD de partie</h1>
+        <p>
+            Le principe commun aux quatre : <b>le panel ne porte plus que la question</b>. Tout ce qui décrit
+            <b>ton</b> état — vies ou points, jauge de combo, numéro de question — sort dans un HUD à l'échelle
+            de l'écran. Les badges série et difficulté sont légèrement agrandis et remontés, l'onglet
+            « Question X » disparaît du haut du panel. Survole un cadre pour voir en pointillé ce qui relève du HUD.
+        </p>
+    </div>
+
+    <div class="switch">
+        <span>Mode</span>
+        <button class="on" data-mode="lives">Vies</button>
+        <button data-mode="points">Points</button>
+    </div>
+
+    <div class="protos" id="protos"></div>
+
+    <script>
+        const COEUR = '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9A5.3 5.3 0 0 1 12 6.4a5.3 5.3 0 0 1 9.6 5.6C19.5 16.4 12 21 12 21z"/></svg>';
+
+        const coeurs = (cls) => `<div class="coeurs ${cls || ''}"><i>${COEUR}</i><i>${COEUR}</i><i class="off">${COEUR}</i></div>`;
+        const points = () => '<div class="points"><b>1 240</b><small>pts</small></div>';
+        const etat = (cls) => `<span class="etat">${coeurs(cls)}${points()}</span>`;
+
+        const TIMER = `
+            <div class="timer">
+                <span class="ring"></span>
+                <svg viewBox="0 0 80 80"><circle class="bg" cx="40" cy="40" r="36"/><circle class="fg" cx="40" cy="40" r="36"/></svg>
+                <span class="n">9</span>
+            </div>`;
+
+        const CORPS = (avecOnglet, qnBadge) => `
+            ${avecOnglet ? '<span class="tab">Question 3</span>' : ''}
+            ${TIMER}
+            <div class="badges">
+                ${qnBadge ? '<span class="badge qn">Question 3</span>' : ''}
+                <span class="badge">Demon Slayer</span>
+                <span class="badge diff">Very easy</span>
+            </div>
+            <p class="q">Qui est responsable de la mort de la famille de Tanjiro ?</p>
+            <div class="bars">
+                <button class="bar"><span class="mark m0">◆</span><span>Muzan</span></button>
+                <button class="bar"><span class="mark m1">●</span><span>Nezuko</span></button>
+            </div>`;
+
+        const PROTOS = [
+            {
+                id: 'h1', num: 'H1', nom: 'Bandeau haut',
+                reco: true,
+                note: "<b>Ta proposition, telle quelle.</b> Numéro de question en pastille discrète en haut à gauche, état du joueur en haut à droite, jauge de combo à l'horizontale juste au-dessus du panel. Le panel ne contient plus que badges, question, réponses et timer. Lecture claire, chaque information a son coin — mais le haut de l'écran se remplit sur trois points distincts.",
+                ecran: `
+                    <div class="hud-tl"><span class="qchip">Question 3 <em>/ 20</em></span></div>
+                    <div class="hud-tr">${etat()}</div>
+                    <div class="hud-jauge"><div class="jauge-h"><i></i></div><span class="jauge-lvl">2</span></div>
+                    <div class="panel">${CORPS(false, false)}</div>`
+            },
+            {
+                id: 'h2', num: 'H2', nom: 'Arête vivante',
+                note: "La jauge devient <b>l'arête haute du panel</b> : elle ne prend aucune place et se lit sans quitter la question des yeux. Le numéro de question rejoint la rangée de badges, en troisième pastille dorée. Seul l'état du joueur reste en haut à droite de l'écran. Le HUD se réduit à un élément.",
+                ecran: `
+                    <div class="hud-tr">${etat()}</div>
+                    <div class="panel"><span class="arete"><i></i></span>${CORPS(false, true)}</div>`
+            },
+            {
+                id: 'h3', num: 'H3', nom: "Colonne d'état",
+                note: "Vies et jauge sont réunies dans une <b>colonne à droite de l'écran</b>, à mi-hauteur : la jauge reste verticale (comme aujourd'hui) mais se rapproche du panel, et l'état du joueur forme un bloc unique au lieu d'être éparpillé. Le numéro de question passe en haut à gauche.",
+                ecran: `
+                    <div class="hud-tl"><span class="qchip">Question 3 <em>/ 20</em></span></div>
+                    <div class="colonne">${etat()}<div class="jauge-v"><i></i></div></div>
+                    <div class="panel">${CORPS(false, false)}</div>`
+            },
+            {
+                id: 'h4', num: 'H4', nom: 'Barre unique',
+                note: "Tout le HUD tient dans <b>une seule barre centrée</b> au-dessus du panel : numéro de question, jauge, état du joueur. Un seul objet à regarder, très propre en stream et facile à cadrer — au prix d'un élément de plus entre le haut de l'écran et la question.",
+                ecran: `
+                    <div class="barre">
+                        <span class="qchip">Q3 <em>/ 20</em></span>
+                        <span class="sep"></span>
+                        <div class="jauge-h"><i></i></div>
+                        <span class="jauge-lvl">2</span>
+                        <span class="sep"></span>
+                        ${etat()}
+                    </div>
+                    <div class="panel">${CORPS(false, false)}</div>`
+            },
+        ];
+
+        document.getElementById('protos').innerHTML = PROTOS.map(p => `
+            <section>
+                <div class="proto-head">
+                    <span class="proto-num">${p.num}</span>
+                    <span class="proto-name">${p.nom}${p.reco ? ' — recommandé' : ''}</span>
+                </div>
+                <div class="ecran ${p.id}">${p.ecran}</div>
+                <p class="proto-note">${p.note}</p>
+            </section>
+        `).join('');
+
+        // Bascule Vies / Points : on n'affiche qu'un des deux dans chaque bloc d'état
+        function appliquerMode(mode) {
+            document.querySelectorAll('.etat').forEach(e => {
+                e.querySelector('.coeurs').style.display = mode === 'lives' ? '' : 'none';
+                e.querySelector('.points').style.display = mode === 'points' ? '' : 'none';
+            });
+            document.querySelectorAll('.switch button').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
+        }
+        document.querySelectorAll('.switch button').forEach(b => {
+            b.addEventListener('click', () => appliquerMode(b.dataset.mode));
+        });
+        appliquerMode('lives');
+    </script>
+</body>
+
+</html>

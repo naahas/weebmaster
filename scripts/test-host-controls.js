@@ -29,13 +29,13 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     // L'hôte joue comme les autres : sans isParticipating il n'aurait ni vies ni cœurs
     check("l'hôte participe à la partie", socks[0].depart && socks[0].depart.isParticipating === true,
         'mode=' + (socks[0].depart || {}).gameMode);
-    // On mesure le délai réel : la requête Supabase domine, il ne doit plus y avoir
-    // le sursis de 2 s de l'ancien écran de lancement.
+    // On mesure le délai réel : un court sursis volontaire côté serveur plus la
+    // requête Supabase. Le garde-fou est là pour repérer une dérive, pas une valeur exacte.
     const depart = Date.now();
     while (socks[0].vu.length === 0 && Date.now() - depart < 5000) await wait(50);
     const delai = Date.now() - depart;
     check('question 1 reçue', socks[0].vu.length >= 1, delai + ' ms après le démarrage');
-    check('pas de sursis de lancement', delai < 2000, delai + ' ms');
+    check('délai de lancement maîtrisé', delai < 1800, delai + ' ms');
 
     // les joueurs répondent, puis l'hôte enchaîne comme depuis la barre de contrôle
     socks.forEach(({ s, id }) => s.emit('submit-answer', { twitchId: id, answerIndex: 0 }));

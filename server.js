@@ -879,6 +879,10 @@ app.get('/prototypes/jeu', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-jeu.html');
 });
 
+app.get('/prototypes/hud', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-hud.html');
+});
+
 app.get('/prototypes/vies', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-vies.html');
 });
@@ -1608,7 +1612,7 @@ app.post('/admin/start-game', async (req, res) => {
             } catch (error) {
                 console.error('❌ Erreur envoi première question:', error);
             }
-        }, 100);
+        }, 650);
 
         res.json({ success: true, mode: gameState.mode });
 

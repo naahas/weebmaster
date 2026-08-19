@@ -18499,7 +18499,7 @@ body.modal-open {
     position: relative;
     width: min(30rem, 92vw);
     margin: 0 auto;
-    padding: 2.4rem 1.6rem 1.6rem;
+    padding: 2.7rem 1.75rem 1.9rem;
     display: flex;
     flex-direction: column;
     background: linear-gradient(165deg, rgba(22, 20, 16, 0.98) 0%, rgba(14, 14, 16, 0.98) 100%);
@@ -18616,7 +18616,7 @@ body.modal-open {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    margin: 0.6rem 0 1.2rem;
+    margin: 0.75rem 0 1.5rem;
 }
 
 .v2q-serie {
@@ -18653,19 +18653,19 @@ body.modal-open {
     font-family: 'Space Grotesk', sans-serif;
     font-size: 1.16rem;
     font-weight: 600;
-    line-height: 1.5;
+    line-height: 1.55;
     text-align: center;
     color: var(--text-primary);
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.8rem;
 }
 
 /* Réponses */
-.v2q-answers { display: flex; flex-direction: column; gap: 0.65rem; }
+.v2q-answers { display: flex; flex-direction: column; gap: 0.75rem; }
 
 .v2q-answers.six {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.55rem;
+    gap: 0.65rem;
 }
 
 .v2q-answer {
@@ -18674,7 +18674,7 @@ body.modal-open {
     display: flex;
     align-items: center;
     gap: 0.85rem;
-    padding: 1.2rem 2.6rem 1.2rem 0.9rem;
+    padding: 1.35rem 2.6rem 1.35rem 1rem;
     font-family: inherit;
     background: rgba(255, 255, 255, 0.03);
     border: 0.06rem solid rgba(255, 255, 255, 0.08);
@@ -18768,7 +18768,7 @@ body.modal-open {
     display: flex;
     justify-content: center;
     min-height: 1.6rem;
-    margin-top: 1rem;
+    margin-top: 1.3rem;
 }
 
 .v2q-status {
@@ -19018,7 +19018,7 @@ body.modal-open {
 /* Passage d'une question à la suivante : l'ancien panel s'efface vers le haut,
    le nouveau remonte. mode="out-in" côté template, donc jamais les deux en même temps. */
 .v2q-enter-active { animation: v2qIn 0.42s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
-.v2q-leave-active { animation: v2qOut 0.2s ease-in both; }
+.v2q-leave-active { animation: v2qOut 0.3s ease-in both; }
 
 @keyframes v2qOut {
     from { opacity: 1; transform: none; }
