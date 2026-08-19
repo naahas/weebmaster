@@ -879,6 +879,10 @@ app.get('/prototypes/jeu', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-jeu.html');
 });
 
+app.get('/prototypes/coeurs', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-coeurs.html');
+});
+
 app.get('/prototypes/hud', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-hud.html');
 });

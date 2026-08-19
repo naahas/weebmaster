@@ -18616,12 +18616,12 @@ body.modal-open {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    margin: 0.75rem 0 1.5rem;
+    margin: 0.75rem 0 1.95rem;
 }
 
 .v2q-serie {
-    padding: 0.34rem 0.78rem;
-    font-size: 0.66rem;
+    padding: 0.42rem 0.95rem;
+    font-size: 0.74rem;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -18632,8 +18632,8 @@ body.modal-open {
 }
 
 .v2q-diff {
-    padding: 0.34rem 0.78rem;
-    font-size: 0.66rem;
+    padding: 0.42rem 0.95rem;
+    font-size: 0.74rem;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -18944,8 +18944,8 @@ body.modal-open {
 
 /* Passage d'une question à la suivante : l'ancien panel s'efface vers le haut,
    le nouveau remonte. mode="out-in" côté template, donc jamais les deux en même temps. */
-.v2q-enter-active { animation: v2qIn 0.42s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
-.v2q-leave-active { animation: v2qOut 0.3s ease-in both; }
+.v2q-enter-active { animation: v2qIn 0.42s cubic-bezier(0.2, 0.9, 0.3, 1) 0.4s both; }
+.v2q-leave-active { animation: v2qOut 0.4s ease-in both; }
 
 @keyframes v2qOut {
     from { opacity: 1; transform: none; }
@@ -19024,32 +19024,12 @@ body.modal-open {
 .v2-hud {
     position: fixed;
     top: clamp(0.9rem, 2.2vh, 1.7rem);
-    left: clamp(1rem, 2.5vw, 2.2rem);
     right: clamp(1rem, 2.5vw, 2.2rem);
     z-index: 30;
     display: flex;
     align-items: center;
-    justify-content: space-between;
     pointer-events: none;
 }
-
-.v2-hud-q {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0.3rem;
-    padding: 0.36rem 0.85rem;
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--neon-primary);
-    background: rgba(240, 192, 64, 0.1);
-    border: 0.06rem solid rgba(240, 192, 64, 0.3);
-    border-radius: 2rem;
-}
-
-.v2-hud-q em { font-style: normal; letter-spacing: 0.06em; color: var(--text-secondary); }
 
 .v2-hud-etat { display: flex; align-items: center; }
 
@@ -19100,29 +19080,121 @@ body.modal-open {
     transition: width 0.55s cubic-bezier(0.2, 0.9, 0.25, 1);
 }
 
-/* Le niveau se pose sur l'arête, côté gauche : le timer occupe déjà la droite */
-.v2q-edge-lvl {
-    position: absolute;
-    top: 50%;
-    left: 1rem;
-    transform: translateY(-50%);
-    font-family: 'Bebas Neue', 'Russo One', sans-serif;
-    font-size: 0.95rem;
-    line-height: 1;
-    color: var(--neon-primary);
-    text-shadow: 0 0 0.7rem rgba(255, 215, 0, 0.7), 0 0.1rem 0.4rem rgba(0, 0, 0, 0.8);
-}
-
-/* Statut de fin de question, sous le panel */
-.v2q-under {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 1.7rem;
-    margin-top: 0.9rem;
-}
-
 @media (max-width: 768px) {
     .v2-hud { top: 0.8rem; left: 0.8rem; right: 0.8rem; }
     .v2-hud-points { font-size: 1.55rem; }
+}
+
+/* ============================================
+   🆕 v2 — PALIERS DE COMBO, NUMÉRO ET COMMANDES
+   ============================================ */
+
+/* Le palier se lit à la couleur : or, puis orange, puis rouge */
+.v2q-edge-fill.lvl0 { background: linear-gradient(90deg, #ffd54a, #ffb300); box-shadow: 0 0 0.8rem rgba(255, 190, 40, 0.6); }
+.v2q-edge-fill.lvl1 { background: linear-gradient(90deg, #ffb74d, #ff7a18); box-shadow: 0 0 0.8rem rgba(255, 140, 20, 0.65); }
+.v2q-edge-fill.lvl2 { background: linear-gradient(90deg, #ff8a5c, #ff4438); box-shadow: 0 0 0.9rem rgba(255, 70, 50, 0.7); }
+
+.v2q-edge-fill.lvl3 {
+    background: linear-gradient(90deg, #ff5a5a, #e01b1b);
+    box-shadow: 0 0 1.1rem rgba(255, 45, 45, 0.8);
+    animation: v2qEdgeMax 1.6s ease-in-out infinite;
+}
+
+@keyframes v2qEdgeMax {
+    0%, 100% { box-shadow: 0 0 1rem rgba(255, 45, 45, 0.6); }
+    50%      { box-shadow: 0 0 1.8rem rgba(255, 45, 45, 0.95); }
+}
+
+/* Étapes du passage de palier : la jauge s'efface pleine, puis repart de zéro */
+.v2q-edge-fill.flush { opacity: 0; transition: opacity 0.45s ease-out; }
+.v2q-edge-fill.reset { opacity: 0; transition: none; }
+
+/* Numéro de question, posé juste au-dessus du panel */
+.v2q-qnum {
+    align-self: center;
+    margin-bottom: 0.85rem;
+    padding: 0.4rem 0.95rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--neon-primary);
+    background: linear-gradient(135deg, rgba(240, 192, 64, 0.2), rgba(240, 192, 64, 0.1));
+    border: 0.06rem solid rgba(240, 192, 64, 0.4);
+    border-radius: 2rem;
+}
+
+.v2q-qnum em { font-style: normal; letter-spacing: 0.06em; color: var(--text-secondary); }
+
+/* Commandes de l'hôte, au pied du panel */
+.v2q-cmd {
+    display: flex;
+    justify-content: center;
+    gap: 0.7rem;
+    margin-top: 1.2rem;
+}
+
+.v2q-cmd-btn {
+    display: grid;
+    place-items: center;
+    width: 3.2rem;
+    height: 3.2rem;
+    padding: 0;
+    color: #14100a;
+    background: linear-gradient(135deg, #ffe066, var(--accent-color));
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.25s ease, background 0.25s ease, color 0.25s ease;
+}
+
+.v2q-cmd-btn svg { width: 1.35rem; height: 1.35rem; }
+.v2q-cmd-btn:hover:not(:disabled) { transform: translateY(-0.15rem); box-shadow: 0 0.5rem 1.4rem rgba(255, 175, 0, 0.4); }
+
+.v2q-cmd-btn:disabled {
+    color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.05);
+    cursor: default;
+}
+
+.v2q-cmd-btn.toggle { color: var(--text-secondary); background: rgba(255, 255, 255, 0.06); }
+.v2q-cmd-btn.toggle:hover { color: var(--text-primary); }
+.v2q-cmd-btn.toggle.on { color: #14100a; background: linear-gradient(135deg, #6ee7b7, #10b981); }
+
+/* Arrêt de la partie : en bas à gauche, comme la sortie du salon */
+.v2-hostbar {
+    right: auto;
+    left: clamp(0.8rem, 2vw, 1.6rem);
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+}
+
+.v2-hoststop {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    padding: 0;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.035);
+    border: 0.06rem solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: color 0.25s ease, background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+}
+
+.v2-hoststop svg { width: 1.3rem; height: 1.3rem; }
+
+.v2-hoststop:hover {
+    color: #ff8a8a;
+    background: rgba(239, 68, 68, 0.14);
+    border-color: rgba(239, 68, 68, 0.45);
+    transform: translateX(-0.2rem);
+}
+
+@media (max-width: 768px) {
+    .v2q-cmd-btn { width: 2.9rem; height: 2.9rem; }
 }

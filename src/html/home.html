@@ -495,30 +495,13 @@
 
             <!-- État: Partie en cours -->
             <!-- 🆕 v2 — Contrôles de l'hôte pendant la partie (remplacent /admin) -->
+            <!-- Arrêt de la partie : porte de sortie en bas à gauche -->
             <div class="v2-hostbar" v-if="isHost && gameInProgress && !gameEnded">
-                <button class="v2-hostbar-btn" v-if="lobbyMode !== 'bombanime'"
-                        @click="hostNextQuestion" :disabled="nextQuestionBusy || !showResults"
-                        :title="showResults ? 'Question suivante' : 'Disponible à la fin de la question'">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M5 4l10 8-10 8z"/><path d="M19 5v14"/>
+                <button class="v2-hoststop" @click="hostCloseRoom" title="Arrêter la partie" aria-label="Arrêter la partie">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h4"/>
+                        <path d="M17 15l-3-3 3-3"/><path d="M14 12h7"/>
                     </svg>
-                    <span>{{ nextQuestionBusy ? '…' : 'Suivante' }}</span>
-                </button>
-
-                <button class="v2-hostbar-btn toggle" v-if="lobbyMode !== 'bombanime'"
-                        :class="{ on: autoMode }" @click="hostToggleAuto"
-                        title="Enchaîner les questions automatiquement">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/>
-                    </svg>
-                    <span>Auto</span>
-                </button>
-
-                <button class="v2-hostbar-btn danger" @click="hostCloseRoom" title="Arrêter la partie">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round">
-                        <rect x="6" y="6" width="12" height="12" rx="1.5"/>
-                    </svg>
-                    <span>Arrêter</span>
                 </button>
 
                 <span class="v2-hostbar-err" v-if="hostError">{{ hostError }}</span>
@@ -955,10 +938,6 @@
                          l'ancien s'efface, le nouveau remonte. -->
                     <!-- HUD de partie : le panel ne porte plus que la question -->
                     <div class="v2-hud" v-if="currentQuestion">
-                        <span class="v2-hud-q">
-                            Question {{ currentQuestionNumber }}<em v-if="currentQuestion.totalQuestions"> / {{ currentQuestion.totalQuestions }}</em>
-                        </span>
-
                         <span class="v2-hud-etat">
                             <span class="v2q-lives" v-if="gameMode === 'lives'">
                                 <i v-for="n in gameLives" :key="n"
@@ -970,15 +949,18 @@
                         </span>
                     </div>
 
+                    <div class="v2q-qnum" v-if="currentQuestion">
+                        Question {{ currentQuestionNumber }}<em v-if="currentQuestion.totalQuestions"> / {{ currentQuestion.totalQuestions }}</em>
+                    </div>
+
                     <transition name="v2q" mode="out-in">
                     <div class="v2q-panel" v-if="currentQuestion" :key="currentQuestionNumber" :class="{ revealed: showResults }">
 
                         <!-- Arête vivante : la jauge de combo occupe le bord haut du panel -->
                         <div class="v2q-edge" v-if="bonusEnabled && lobbyMode !== 'bombanime'">
-                            <div class="v2q-edge-fill"
-                                 :style="isLevelingUp ? { width: '100%' } : { width: comboBarHeight + '%' }"></div>
+                            <div class="v2q-edge-fill" :class="['lvl' + comboLevel, comboPhase]"
+                                 :style="{ width: comboEdgeWidth + '%' }"></div>
                             <div class="combo-particles-external"></div>
-                            <span class="v2q-edge-lvl" v-if="comboLevel > 0">{{ comboLevelDisplay }}</span>
                         </div>
 
                         <div class="v2q-timer" :class="{ warning: timerWarning && !showResults, done: showResults }">
@@ -1022,15 +1004,22 @@
                     </div>
                     </transition>
 
-                    <div class="v2q-under" v-if="currentQuestion">
-                        <span class="v2q-status dead" v-if="playerLives === 0">Éliminé — tu peux continuer à regarder</span>
-                        <span class="v2q-status" v-else-if="showResults && !questionResults.isTiebreaker && lobbyMode === 'classic'">
-                            {{ questionResults.remainingPlayers }} joueur<span v-if="questionResults.remainingPlayers > 1">s</span> en vie
-                        </span>
-                        <span class="v2q-status team" v-else-if="showResults && lobbyMode === 'rivalry' && selectedTeam"
-                              :class="'team-' + selectedTeam">
-                            {{ teamNames[selectedTeam] }} · {{ teamScores[selectedTeam] }}
-                        </span>
+                    <!-- Commandes de l'hôte, au pied du panel -->
+                    <div class="v2q-cmd" v-if="isHost && currentQuestion">
+                        <button class="v2q-cmd-btn"
+                                @click="hostNextQuestion" :disabled="nextQuestionBusy || !showResults"
+                                :title="showResults ? 'Question suivante' : 'Disponible à la fin de la question'">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M5 4l10 8-10 8z"/><path d="M19 5v14"/>
+                            </svg>
+                        </button>
+
+                        <button class="v2q-cmd-btn toggle" :class="{ on: autoMode }" @click="hostToggleAuto"
+                                title="Enchaîner les questions automatiquement">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/>
+                            </svg>
+                        </button>
                     </div>
 
                 </div><!-- Fin question-container-wrapper -->

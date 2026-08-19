@@ -223,6 +223,7 @@ createApp({
             showChallengesMobile: false, // Afficher le modal défis sur mobile
 
             isLevelingUp: false,
+            comboPhase: '',   // '' | 'up' | 'flush' | 'reset' — étapes du passage de palier
 
 
 
@@ -546,7 +547,7 @@ createApp({
         },
 
         comboBarHeight() {
-            if (this.comboLevel >= 3) return 0; // 🔥 CHANGÉ: Jauge vide au MAX
+            if (this.comboLevel >= 3) return 100; // Palier maximum : la jauge reste pleine, en rouge
 
             if (this.isLevelingUp) {
                 console.log('🔒 Recalcul bloqué - Animation en cours');
@@ -562,6 +563,13 @@ createApp({
             const result = Math.min(100, (progressInCurrentLevel / rangeForCurrentLevel) * 100);
             console.log(`📊 ComboBarHeight calculé: ${result}%`);
             return result;
+        },
+
+        // Largeur de l'arête : les étapes du palier priment sur la progression
+        comboEdgeWidth() {
+            if (this.comboPhase === 'up' || this.comboPhase === 'flush') return 100;
+            if (this.comboPhase === 'reset') return 0;
+            return this.comboBarHeight;
         },
 
         comboLevelDisplay() {
@@ -3500,71 +3508,30 @@ createApp({
 
 
 
+        // Passage de palier. La jauge est un enfant du panel, recréé à chaque question :
+        // toute manipulation directe du DOM serait perdue. Tout passe donc par l'état.
+        // C'est ce qui bloquait la jauge : l'ancienne version cherchait .combo-bar-fill,
+        // ne le trouvait plus, et sortait sans jamais relâcher isLevelingUp.
         animateLevelUp() {
-            const barFill = document.querySelector('.combo-bar-fill');
-            if (!barFill) {
-                console.error('❌ Barre combo non trouvée');
-                return;
-            }
+            clearTimeout(this._comboT1);
+            clearTimeout(this._comboT2);
+            clearTimeout(this._comboT3);
 
-            console.log('🎉 === DEBUT ANIMATION LEVEL-UP ===');
-
-            // 🔥 ÉTAPE 1: BLOQUER le recalcul IMMÉDIATEMENT
             this.isLevelingUp = true;
-
-            // 🔥 ÉTAPE 2: Forcer le border-radius
-            barFill.style.borderRadius = '15px';
-
-            // 🔥 ÉTAPE 3: Monter à 100% de manière FLUIDE
-            barFill.style.height = '100%';
-
+            this.comboPhase = 'up';          // la jauge finit sa montée
             this.spawnParticles();
 
-            // 🔥 ÉTAPE 4: Attendre la FIN de la montée (500ms)
-            setTimeout(() => {
-                console.log('💥 === PIC ATTEINT - EXPLOSION ===');
-
-                barFill.offsetHeight;
-
-                barFill.style.transition = 'opacity 0.5s ease-out';
-                barFill.style.opacity = '0';
-
-                // APRÈS le fade (500ms), reset complet
-                setTimeout(() => {
-                    barFill.style.transition = 'none';
-                    barFill.style.height = '0%';
-                    barFill.style.minHeight = '';
-                    barFill.style.maxHeight = '';
-                    barFill.style.borderRadius = '';
-
-                    setTimeout(() => {
-                        barFill.style.opacity = '1';
-                    }, 500);
-
-                    // Débloquer le système
-                    this.isLevelingUp = false;
-
-                    console.log(`📊 Reset complet - Level=${this.comboLevel}, Progress=${this.comboProgress}`);
-
-                    // 🔥 MODIFIÉ: Si niveau MAX, ne pas remonter la jauge
-                    if (this.comboLevel < 3) {
-                        this.$nextTick(() => {
-                            barFill.style.transition = '';
-                            const newHeight = this.comboBarHeight;
-                            console.log(`📈 Remontée à ${newHeight}%`);
-                            barFill.style.height = `${newHeight}%`;
-                        });
-                    } else {
-                        // 🆕 Niveau MAX atteint, jauge reste vide
-                        console.log('🎯 Niveau MAX atteint - Jauge reste vide');
-                    }
-                }, 500);
-
+            this._comboT1 = setTimeout(() => {
+                this.comboPhase = 'flush';   // elle s'efface, pleine
+                this._comboT2 = setTimeout(() => {
+                    this.comboPhase = 'reset';   // vidée d'un coup, encore invisible
+                    this._comboT3 = setTimeout(() => {
+                        this.comboPhase = '';    // et repart de la progression réelle
+                        this.isLevelingUp = false;
+                    }, 60);
+                }, 450);
             }, 500);
         },
-
-
-
 
         spawnParticles() {
             const container = document.querySelector('.combo-particles-external');
