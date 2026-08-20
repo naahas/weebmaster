@@ -10,7 +10,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="icon.png">
     <style>
-        :root { --neon: #FFD700; --accent: #FF8C00; --txt: #fff; --txt2: #a0a0a0; --green: #10b981; --red: #ef4444; --hp: #ff5a6e; }
+        :root {
+            --neon: #FFD700; --accent: #FF8C00; --txt: #fff; --txt2: #a0a0a0; --hp: #ff5a6e;
+            /* Couleurs des repères de réponse : c'est le seul code couleur de la page */
+            --r0: #ffd24a; --r1: #7fb4ff; --r2: #6ee7b7; --r3: #d8b4fe;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
@@ -31,7 +35,7 @@
 
         .head { max-width: 78rem; margin: 0 auto 1.4rem; }
         .head h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: .03em; }
-        .head p { color: var(--txt2); font-size: .9rem; max-width: 54rem; line-height: 1.6; }
+        .head p { color: var(--txt2); font-size: .9rem; max-width: 56rem; line-height: 1.65; }
         .head b { color: var(--neon); font-weight: 600; }
 
         .barre { max-width: 78rem; margin: 0 auto 2.5rem; display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
@@ -55,13 +59,13 @@
         .proto-head { display: flex; align-items: baseline; gap: .8rem; margin-bottom: .9rem; }
         .proto-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--neon); }
         .proto-name { font-size: 1rem; font-weight: 700; }
-        .proto-note { font-size: .76rem; color: var(--txt2); line-height: 1.6; margin: 1rem .2rem 0; max-width: 60rem; }
+        .proto-note { font-size: .76rem; color: var(--txt2); line-height: 1.6; margin: 1rem .2rem 0; max-width: 62rem; }
         .proto-note b { color: #d8d8d8; font-weight: 600; }
 
         .ecran {
             position: relative; overflow: hidden;
             min-height: 31rem; padding: 2rem;
-            display: flex; align-items: center; justify-content: center; gap: 1.6rem;
+            display: flex; align-items: center; justify-content: center; gap: 2.4rem;
             border: 1px solid rgba(255,255,255,.07); border-radius: 1rem;
             background: radial-gradient(120% 90% at 50% 0%, #14100a 0%, #0c0c0e 45%, #08080a 100%);
         }
@@ -77,7 +81,7 @@
 
         .bloc { display: flex; flex-direction: column; align-items: center; }
         .panel {
-            position: relative; width: 24rem; max-width: 100%;
+            position: relative; width: 23rem; max-width: 100%;
             padding: 2.2rem 1.5rem 1.5rem;
             background: linear-gradient(165deg, rgba(22,20,16,.98), rgba(14,14,16,.98));
             border: 1px solid rgba(255,215,0,.22); border-radius: 1rem;
@@ -85,120 +89,89 @@
         }
         .arete { position: absolute; top: -1px; left: -1px; right: -1px; height: .24rem; border-radius: 1rem 1rem 0 0; background: rgba(255,255,255,.06); overflow: hidden; }
         .arete i { display: block; width: 58%; height: 100%; background: linear-gradient(90deg, #ffd54a, #ffb300); }
-        .badges { display: flex; justify-content: center; gap: .5rem; margin: 0 0 1.5rem; }
-        .badge { padding: .38rem .85rem; font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; border-radius: .32rem; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); }
-        .badge.diff { color: var(--green); background: rgba(16,185,129,.1); border-color: rgba(16,185,129,.25); }
-        .q { font-family: 'Space Grotesk'; font-size: 1.05rem; font-weight: 600; text-align: center; line-height: 1.5; margin-bottom: 1.4rem; }
-        .ans { display: flex; flex-direction: column; gap: .55rem; }
-        .a {
-            position: relative; display: flex; align-items: center; gap: .8rem;
-            padding: .95rem .85rem; border-radius: .6rem;
-            background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08);
-        }
+        .badges { display: flex; justify-content: center; gap: .5rem; margin: 0 0 1.4rem; }
+        .badge { padding: .36rem .8rem; font-size: .66rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; border-radius: .32rem; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); }
+        .badge.diff { color: #6ee7b7; background: rgba(16,185,129,.1); border-color: rgba(16,185,129,.25); }
+        .q { font-family: 'Space Grotesk'; font-size: 1rem; font-weight: 600; text-align: center; line-height: 1.5; margin-bottom: 1.3rem; }
+        .ans { display: flex; flex-direction: column; gap: .5rem; }
+        .a { display: flex; align-items: center; gap: .75rem; padding: .85rem .8rem; border-radius: .6rem; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); }
         .a.ok { border-color: rgba(16,185,129,.55); background: rgba(16,185,129,.12); }
         .a.ko { opacity: .4; }
-        .mk { flex: 0 0 auto; display: grid; place-items: center; width: 1.6rem; height: 1.6rem; font-size: .68rem; border-radius: .4rem; }
-        .m0 { color: #ffd24a; background: rgba(255,210,74,.12); box-shadow: inset 0 0 0 1px rgba(255,210,74,.35); }
-        .m1 { color: #7fb4ff; background: rgba(127,180,255,.12); box-shadow: inset 0 0 0 1px rgba(127,180,255,.35); }
-        .m2 { color: #6ee7b7; background: rgba(110,231,183,.12); box-shadow: inset 0 0 0 1px rgba(110,231,183,.35); }
-        .m3 { color: #d8b4fe; background: rgba(216,180,254,.12); box-shadow: inset 0 0 0 1px rgba(216,180,254,.35); }
-        .a > span:nth-child(2) { flex: 1; font-size: .86rem; font-weight: 500; }
+        .mk { flex: 0 0 auto; display: grid; place-items: center; width: 1.5rem; height: 1.5rem; font-size: .64rem; border-radius: .4rem; }
+        .m0 { color: var(--r0); background: rgba(255,210,74,.12); box-shadow: inset 0 0 0 1px rgba(255,210,74,.35); }
+        .m1 { color: var(--r1); background: rgba(127,180,255,.12); box-shadow: inset 0 0 0 1px rgba(127,180,255,.35); }
+        .m2 { color: var(--r2); background: rgba(110,231,183,.12); box-shadow: inset 0 0 0 1px rgba(110,231,183,.35); }
+        .m3 { color: var(--r3); background: rgba(216,180,254,.12); box-shadow: inset 0 0 0 1px rgba(216,180,254,.35); }
+        .a > span:nth-child(2) { flex: 1; font-size: .84rem; font-weight: 500; }
         .pct { font-family: 'Bebas Neue'; font-size: .95rem; color: rgba(255,255,255,.6); }
-        .a.ok .pct { color: var(--green); }
+        .a.ok .pct { color: #6ee7b7; }
 
-        /* ══════ Éléments partagés du classement ══════ */
-        .aside { width: 17rem; flex: 0 0 auto; align-self: center; }
+        /* ══════ Apparition à la fin du chrono ══════ */
+        .aside { width: 16.5rem; flex: 0 0 auto; align-self: center; }
         .ecran:not(.revealed) .aside,
         .ecran:not(.revealed) .stat-ic { opacity: 0; pointer-events: none; }
         .aside, .stat-ic { transition: opacity .4s ease, transform .5s cubic-bezier(.2,.85,.3,1); }
-        .ecran:not(.revealed) .aside { transform: translateX(1.2rem); }
+        .ecran:not(.revealed) .aside { transform: translateX(1rem); }
 
         .aside-t {
-            display: flex; align-items: center; gap: .5rem; margin-bottom: .7rem;
-            font-family: 'Space Grotesk'; font-size: .58rem; font-weight: 700;
-            letter-spacing: .18em; text-transform: uppercase; color: var(--txt2);
+            display: flex; align-items: center; gap: .6rem; margin-bottom: .9rem;
+            font-family: 'Space Grotesk'; font-size: .56rem; font-weight: 700;
+            letter-spacing: .2em; text-transform: uppercase; color: var(--txt2);
         }
         .aside-t::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,.1); }
 
-        .moi {
-            margin-top: .65rem; padding: .55rem .8rem; border-radius: .55rem;
-            font-size: .74rem; color: var(--txt2);
-            background: rgba(255,215,0,.07); border: 1px solid rgba(255,215,0,.25);
-        }
-        .moi b { font-family: 'Bebas Neue'; font-size: 1.15rem; color: var(--neon); }
+        .moi { margin-top: 1rem; padding-top: .8rem; border-top: 1px solid rgba(255,255,255,.08); font-size: .74rem; color: var(--txt2); }
+        .moi b { font-family: 'Bebas Neue'; font-size: 1.2rem; color: var(--neon); }
 
-        .voir {
-            width: 100%; margin-top: .55rem; padding: .55rem;
-            font-family: inherit; font-size: .68rem; font-weight: 700;
-            letter-spacing: .1em; text-transform: uppercase; color: var(--txt2);
-            background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.09);
-            border-radius: .55rem; cursor: pointer; transition: .2s;
-        }
-        .voir:hover { color: var(--neon); border-color: rgba(255,215,0,.4); }
-
-        .hp { display: inline-flex; gap: .12rem; }
-        .hp i { display: block; width: .62rem; height: .62rem; color: var(--hp); }
+        /* Cœurs, en trait */
+        .hp { display: inline-flex; gap: .13rem; }
+        .hp i { display: block; width: .6rem; height: .6rem; color: var(--hp); }
         .hp i svg { width: 100%; height: 100%; display: block; fill: currentColor; stroke: currentColor; stroke-width: 1.6; }
         .hp i.off svg { fill: transparent; }
-        .hp i.off { color: rgba(255,255,255,.28); }
+        .hp i.off { color: rgba(255,255,255,.24); }
 
-        .st { flex: 0 0 auto; width: .5rem; height: .5rem; border-radius: 50%; }
-        .st.ok { background: var(--green); box-shadow: 0 0 .4rem rgba(16,185,129,.7); }
-        .st.ko { background: var(--red); box-shadow: 0 0 .4rem rgba(239,68,68,.6); }
-        .st.afk { background: rgba(255,255,255,.22); }
+        /* Repère de réponse en miniature : c'est lui qui porte le statut, pas un fond rouge */
+        .tag { flex: 0 0 auto; width: .95rem; height: .95rem; display: grid; place-items: center; font-size: .44rem; border-radius: .22rem; }
+        .tag.t0 { color: var(--r0); box-shadow: inset 0 0 0 1px rgba(255,210,74,.5); }
+        .tag.t1 { color: var(--r1); box-shadow: inset 0 0 0 1px rgba(127,180,255,.5); }
+        .tag.t2 { color: var(--r2); box-shadow: inset 0 0 0 1px rgba(110,231,183,.5); }
+        .tag.t3 { color: var(--r3); box-shadow: inset 0 0 0 1px rgba(216,180,254,.5); }
+        .tag.tafk { color: rgba(255,255,255,.22); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); }
+        .tag.juste { box-shadow: inset 0 0 0 1px currentColor, 0 0 .5rem -.05rem currentColor; }
 
-        /* ══════ S1 — Colonne alignée ══════ */
-        .s1 .row {
-            display: flex; align-items: center; gap: .6rem;
-            padding: .6rem .7rem; margin-bottom: .3rem; border-radius: .55rem;
-            background: rgba(255,255,255,.028); border: 1px solid rgba(255,255,255,.06);
-        }
-        .s1 .row.me { background: rgba(255,215,0,.08); border-color: rgba(255,215,0,.35); }
-        .s1 .rk { font-family: 'Bebas Neue'; font-size: 1.05rem; width: 1.1rem; color: var(--txt2); }
-        .s1 .row:nth-child(2) .rk { color: var(--neon); }
-        .s1 .nm { flex: 1; font-size: .8rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .s1 .sc { font-family: 'Bebas Neue'; font-size: 1.05rem; color: var(--neon); }
+        /* ══════════════ S1 — Lignes nues ══════════════ */
+        .s1 .row { display: flex; align-items: center; gap: .7rem; padding: .62rem .15rem; }
+        .s1 .row + .row { border-top: 1px solid rgba(255,255,255,.055); }
+        .s1 .rk { font-family: 'Bebas Neue'; font-size: 1.1rem; width: 1rem; color: rgba(255,255,255,.3); }
+        .s1 .row:first-child .rk { color: var(--neon); }
+        .s1 .nm { flex: 1; font-size: .82rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .s1 .row.me .nm { color: var(--neon); }
+        .s1 .sc { font-family: 'Bebas Neue'; font-size: 1.1rem; font-variant-numeric: tabular-nums; }
 
-        /* ══════ S2 — Podium compact ══════ */
-        .s2 .pod { display: flex; align-items: flex-end; gap: .4rem; margin-bottom: .6rem; }
-        .s2 .pl { flex: 1; text-align: center; padding: .6rem .3rem; border-radius: .55rem .55rem 0 0; background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.07); border-bottom: none; }
-        .s2 .pl.p1 { padding-top: 1.1rem; background: linear-gradient(180deg, rgba(255,215,0,.16), rgba(255,215,0,.03)); border-color: rgba(255,215,0,.4); }
-        .s2 .pl.p2 { padding-top: .85rem; background: linear-gradient(180deg, rgba(200,200,215,.13), rgba(255,255,255,.02)); }
-        .s2 .pl .md { font-family: 'Bebas Neue'; font-size: 1.35rem; color: var(--neon); }
-        .s2 .pl.p2 .md { color: #cfd4e0; } .s2 .pl.p3 .md { color: #d19a63; }
-        .s2 .pl .nm { display: block; font-size: .7rem; font-weight: 600; margin: .2rem 0 .1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .s2 .pl .sc { font-family: 'Bebas Neue'; font-size: .95rem; color: var(--txt2); }
-        .s2 .row { display: flex; align-items: center; gap: .55rem; padding: .45rem .7rem; font-size: .76rem; border-top: 1px solid rgba(255,255,255,.05); }
-        .s2 .row .rk { font-family: 'Bebas Neue'; color: var(--txt2); width: 1.1rem; }
-        .s2 .row .nm { flex: 1; font-weight: 600; }
-        .s2 .row .sc { font-family: 'Bebas Neue'; color: var(--neon); }
+        /* ══════════════ S2 — Typographique ══════════════ */
+        .s2 .row { display: flex; align-items: baseline; gap: .8rem; padding: .5rem 0; }
+        .s2 .rk { font-family: 'Bebas Neue'; font-size: 2rem; line-height: .8; width: 1.6rem; color: rgba(255,255,255,.13); }
+        .s2 .row:first-child .rk { color: rgba(255,215,0,.5); }
+        .s2 .col { flex: 1; min-width: 0; }
+        .s2 .nm { display: block; font-size: .88rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .s2 .sub { display: flex; align-items: center; gap: .4rem; margin-top: .18rem; font-size: .62rem; color: var(--txt2); }
+        .s2 .row.me .nm { color: var(--neon); }
+        .s2 .sc { font-family: 'Bebas Neue'; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
 
-        /* ══════ S3 — Barres de score ══════ */
-        .s3 .row { position: relative; overflow: hidden; display: flex; align-items: center; gap: .6rem; padding: .62rem .7rem; margin-bottom: .3rem; border-radius: .55rem; background: rgba(255,255,255,.025); }
-        .s3 .fill { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, rgba(255,215,0,.22), rgba(255,140,0,.06)); }
-        .s3 .row.me .fill { background: linear-gradient(90deg, rgba(110,231,183,.28), rgba(16,185,129,.05)); }
-        .s3 .rk, .s3 .nm, .s3 .sc, .s3 .st { position: relative; z-index: 2; }
-        .s3 .rk { font-family: 'Bebas Neue'; font-size: 1.05rem; width: 1.1rem; color: var(--txt2); }
-        .s3 .nm { flex: 1; font-size: .8rem; font-weight: 600; }
-        .s3 .sc { font-family: 'Bebas Neue'; font-size: 1.05rem; }
+        /* ══════════════ S3 — Filet de score ══════════════ */
+        .s3 .row { padding: .55rem 0 .7rem; }
+        .s3 .row + .row { margin-top: .1rem; }
+        .s3 .haut { display: flex; align-items: center; gap: .7rem; margin-bottom: .42rem; }
+        .s3 .rk { font-family: 'Bebas Neue'; font-size: 1.05rem; width: 1rem; color: rgba(255,255,255,.3); }
+        .s3 .row:first-child .rk { color: var(--neon); }
+        .s3 .nm { flex: 1; font-size: .82rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .s3 .row.me .nm { color: var(--neon); }
+        .s3 .sc { font-family: 'Bebas Neue'; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+        .s3 .filet { height: .12rem; border-radius: 2rem; background: rgba(255,255,255,.07); }
+        .s3 .filet i { display: block; height: 100%; border-radius: 2rem; background: linear-gradient(90deg, rgba(255,140,0,.7), var(--neon)); }
+        .s3 .row.me .filet i { background: linear-gradient(90deg, rgba(110,231,183,.6), #6ee7b7); }
 
-        /* ══════ S4 — Cartes à liseré ══════ */
-        .s4 .row {
-            display: flex; align-items: center; gap: .65rem;
-            padding: .62rem .75rem; margin-bottom: .35rem; border-radius: .5rem;
-            background: rgba(255,255,255,.03); border-left: .18rem solid rgba(255,255,255,.12);
-        }
-        .s4 .row.ok { border-left-color: var(--green); }
-        .s4 .row.ko { border-left-color: var(--red); }
-        .s4 .row.afk { border-left-color: rgba(255,255,255,.2); }
-        .s4 .row.me { background: rgba(255,215,0,.08); }
-        .s4 .rk { font-family: 'Bebas Neue'; font-size: 1.05rem; width: 1.1rem; color: var(--txt2); }
-        .s4 .col { flex: 1; min-width: 0; }
-        .s4 .nm { display: block; font-size: .8rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .s4 .rep { display: block; font-size: .64rem; color: var(--txt2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .s4 .sc { font-family: 'Bebas Neue'; font-size: 1.05rem; color: var(--neon); }
-
-        /* ══════ Icône stats (hôte) ══════ */
+        /* ══════════════ Icône stats (hôte) ══════════════ */
         .stat-ic {
             position: absolute; top: 50%; left: 2rem; transform: translateY(-50%);
             display: grid; place-items: center; width: 3rem; height: 3rem;
@@ -213,72 +186,93 @@
             font-size: .5rem; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,215,0,.55);
         }
 
-        /* ══════ Surfaces « tous les joueurs » ══════ */
-        .voile {
-            position: absolute; inset: 0; z-index: 20; display: none;
-            background: rgba(6,6,8,.72); backdrop-filter: blur(.2rem);
-        }
+        /* ══════════════ Surfaces de détail ══════════════ */
+        .voile { position: absolute; inset: 0; z-index: 20; display: none; background: rgba(6,6,8,.78); backdrop-filter: blur(.25rem); }
         .voile.on { display: grid; place-items: center; }
 
-        .modal {
-            width: min(38rem, 92%); max-height: 88%; overflow: auto;
-            padding: 1.4rem; border-radius: 1rem;
-            background: linear-gradient(165deg, rgba(22,20,16,.99), rgba(13,13,15,.99));
-            border: 1px solid rgba(255,215,0,.25);
-            animation: entre .35s cubic-bezier(.2,.9,.3,1) both;
+        .feuille {
+            width: min(42rem, 94%); max-height: 90%; overflow: auto;
+            padding: 1.8rem 1.7rem 1.5rem;
+            background: linear-gradient(170deg, rgba(20,19,15,.99), rgba(11,11,13,.99));
+            border: 1px solid rgba(255,255,255,.09); border-radius: 1.1rem;
+            animation: entre .38s cubic-bezier(.2,.9,.3,1) both;
         }
-        @keyframes entre { from { opacity: 0; transform: translateY(.8rem) scale(.985); } }
-        .modal-h { display: flex; align-items: baseline; gap: .7rem; margin-bottom: 1rem; }
-        .modal-h h3 { font-family: 'Bebas Neue'; font-size: 1.5rem; letter-spacing: .03em; }
-        .modal-h span { font-size: .68rem; color: var(--txt2); margin-left: auto; }
-        .fermer { padding: .3rem .7rem; font-family: inherit; font-size: .66rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--txt2); background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 2rem; cursor: pointer; }
-        .fermer:hover { color: var(--neon); }
+        @keyframes entre { from { opacity: 0; transform: translateY(1rem) scale(.985); } }
 
-        /* Répartition en trois compteurs */
-        .repart { display: flex; gap: .5rem; margin-bottom: 1rem; }
-        .rp { flex: 1; padding: .7rem; border-radius: .6rem; text-align: center; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); }
-        .rp b { display: block; font-family: 'Bebas Neue'; font-size: 1.7rem; line-height: 1; }
-        .rp span { font-size: .6rem; letter-spacing: .1em; text-transform: uppercase; color: var(--txt2); }
-        .rp.ok b { color: var(--green); } .rp.ko b { color: var(--red); } .rp.afk b { color: rgba(255,255,255,.4); }
-        .jauge { display: flex; height: .3rem; border-radius: 2rem; overflow: hidden; margin-bottom: 1rem; background: rgba(255,255,255,.06); }
-        .jauge i { display: block; height: 100%; }
-        .jauge .j1 { background: var(--green); } .jauge .j2 { background: var(--red); } .jauge .j3 { background: rgba(255,255,255,.2); }
-
-        /* Grille de cartes joueur */
-        .grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: .5rem; }
-        .pc { padding: .6rem .7rem; border-radius: .55rem; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-left: .18rem solid rgba(255,255,255,.12); }
-        .pc.ok { border-left-color: var(--green); } .pc.ko { border-left-color: var(--red); } .pc.afk { border-left-color: rgba(255,255,255,.2); opacity: .65; }
-        .pc .nm { display: block; font-size: .76rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .pc .rep { display: block; font-size: .63rem; color: var(--txt2); margin: .12rem 0 .3rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .pc .bas { display: flex; align-items: center; justify-content: space-between; }
-        .pc .sc { font-family: 'Bebas Neue'; font-size: .95rem; color: var(--neon); }
-
-        /* Tableau compact */
-        .tab { width: 100%; border-collapse: collapse; font-size: .76rem; }
-        .tab th { text-align: left; padding: .4rem .6rem; font-size: .58rem; letter-spacing: .12em; text-transform: uppercase; color: var(--txt2); border-bottom: 1px solid rgba(255,255,255,.08); }
-        .tab td { padding: .5rem .6rem; border-bottom: 1px solid rgba(255,255,255,.045); }
-        .tab tr.me td { background: rgba(255,215,0,.07); }
-        .tab .rk { font-family: 'Bebas Neue'; color: var(--txt2); }
-        .tab .sc { font-family: 'Bebas Neue'; color: var(--neon); }
-        .tab .rep { color: var(--txt2); }
-
-        /* Tiroir latéral */
-        .tiroir {
-            position: absolute; top: 0; right: 0; bottom: 0; z-index: 20; width: min(24rem, 78%);
-            padding: 1.3rem; overflow: auto;
-            background: linear-gradient(180deg, rgba(20,18,14,.99), rgba(12,12,14,.99));
-            border-left: 1px solid rgba(255,215,0,.22);
-            transform: translateX(100%); transition: transform .38s cubic-bezier(.2,.85,.3,1);
+        .f-head { display: flex; align-items: flex-end; gap: 1rem; margin-bottom: 1.5rem; }
+        .f-head h3 { font-family: 'Bebas Neue'; font-size: 1.7rem; letter-spacing: .03em; line-height: 1; }
+        .f-head p { font-size: .68rem; color: var(--txt2); margin-top: .25rem; }
+        .fermer {
+            margin-left: auto; padding: .34rem .8rem; font-family: inherit; font-size: .62rem; font-weight: 700;
+            letter-spacing: .12em; text-transform: uppercase; color: var(--txt2);
+            background: none; border: 1px solid rgba(255,255,255,.13); border-radius: 2rem; cursor: pointer; transition: .2s;
         }
-        .tiroir.on { transform: none; }
+        .fermer:hover { color: var(--neon); border-color: rgba(255,215,0,.4); }
 
-        /* Dépliage sous le top */
-        .depli { max-height: 0; overflow: hidden; transition: max-height .4s cubic-bezier(.2,.85,.3,1); }
-        .depli.on { max-height: 18rem; overflow: auto; }
+        /* Chiffres de tête, sans encadré */
+        .cles { display: flex; gap: 2.4rem; margin-bottom: 1.6rem; }
+        .cle b { display: block; font-family: 'Bebas Neue'; font-size: 2.4rem; line-height: .85; font-variant-numeric: tabular-nums; }
+        .cle span { font-size: .58rem; letter-spacing: .14em; text-transform: uppercase; color: var(--txt2); }
+        .cle.or b { color: var(--neon); }
+
+        /* ══════════════ M1 — Colonnes par réponse ══════════════ */
+        .m1-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: 1.1rem; }
+        .col-r { min-width: 0; }
+        .col-h { display: flex; align-items: center; gap: .45rem; padding-bottom: .5rem; margin-bottom: .6rem; border-bottom: 1px solid rgba(255,255,255,.09); }
+        .col-h .lbl { flex: 1; font-size: .72rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .col-h .nb { font-family: 'Bebas Neue'; font-size: 1.1rem; color: var(--txt2); }
+        .col-r.juste .col-h { border-bottom-color: rgba(255,215,0,.55); }
+        .col-r.juste .col-h .nb { color: var(--neon); }
+        .col-r li { list-style: none; display: flex; align-items: center; gap: .4rem; padding: .28rem 0; font-size: .72rem; color: rgba(255,255,255,.78); }
+        .col-r.juste li { color: #fff; }
+        .col-r li.me { color: var(--neon); font-weight: 600; }
+        .col-r li .hp { margin-left: auto; }
+
+        /* ══════════════ M2 — Bandes proportionnelles ══════════════ */
+        .m2-band + .m2-band { margin-top: 1.2rem; }
+        .m2-h { display: flex; align-items: baseline; gap: .6rem; margin-bottom: .45rem; }
+        .m2-h .lbl { font-size: .82rem; font-weight: 600; }
+        .m2-h .p { margin-left: auto; font-family: 'Bebas Neue'; font-size: 1.5rem; line-height: 1; font-variant-numeric: tabular-nums; }
+        .m2-bar { height: .34rem; border-radius: 2rem; background: rgba(255,255,255,.06); overflow: hidden; margin-bottom: .5rem; }
+        .m2-bar i { display: block; height: 100%; border-radius: 2rem; }
+        .m2-noms { display: flex; flex-wrap: wrap; gap: .3rem .55rem; font-size: .68rem; color: var(--txt2); }
+        .m2-noms b { font-weight: 600; color: var(--neon); }
+        .m2-band.juste .m2-noms { color: rgba(255,255,255,.85); }
+
+        /* ══════════════ M3 — Anneau + liste ══════════════ */
+        .m3-wrap { display: flex; gap: 2rem; align-items: center; flex-wrap: wrap; }
+        .anneau { position: relative; width: 11rem; height: 11rem; flex: 0 0 auto; border-radius: 50%; }
+        .anneau::after {
+            content: ''; position: absolute; inset: 1.55rem; border-radius: 50%;
+            background: #0d0d0f;
+        }
+        .anneau-c { position: absolute; inset: 0; display: grid; place-items: center; z-index: 2; text-align: center; }
+        .anneau-c b { display: block; font-family: 'Bebas Neue'; font-size: 2.6rem; line-height: .85; color: var(--neon); }
+        .anneau-c span { font-size: .55rem; letter-spacing: .14em; text-transform: uppercase; color: var(--txt2); }
+        .m3-leg { flex: 1; min-width: 12rem; }
+        .m3-leg .li { display: flex; align-items: center; gap: .6rem; padding: .5rem 0; font-size: .76rem; }
+        .m3-leg .li + .li { border-top: 1px solid rgba(255,255,255,.055); }
+        .m3-leg .pt { width: .5rem; height: .5rem; border-radius: 50%; flex: 0 0 auto; }
+        .m3-leg .lbl { flex: 1; }
+        .m3-leg .n { font-family: 'Bebas Neue'; font-size: 1.05rem; color: var(--txt2); }
+        .m3-leg .li.juste .lbl { color: var(--neon); font-weight: 600; }
+
+        /* ══════════════ M4 — Feuille typographique ══════════════ */
+        .m4 .ligne { display: flex; align-items: center; gap: .8rem; padding: .6rem 0; }
+        .m4 .ligne + .ligne { border-top: 1px solid rgba(255,255,255,.05); }
+        .m4 .rk { font-family: 'Bebas Neue'; font-size: 1rem; width: 1.4rem; color: rgba(255,255,255,.25); }
+        .m4 .nm { width: 8rem; font-size: .8rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .m4 .ligne.me .nm { color: var(--neon); }
+        .m4 .rep { flex: 1; font-size: .74rem; color: rgba(255,255,255,.55); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .m4 .ligne.juste .rep { color: #fff; }
+        .m4 .ligne.afk .rep { color: rgba(255,255,255,.25); font-style: italic; }
+        .m4 .sc { font-family: 'Bebas Neue'; font-size: 1.05rem; font-variant-numeric: tabular-nums; width: 3.2rem; text-align: right; }
+        .m4 .entete { display: flex; gap: .8rem; padding-bottom: .5rem; font-size: .55rem; letter-spacing: .14em; text-transform: uppercase; color: var(--txt2); border-bottom: 1px solid rgba(255,255,255,.1); }
+        .m4 .entete .rk { color: var(--txt2); }
 
         @media (max-width: 900px) {
             .ecran { flex-direction: column; }
-            .aside { width: 100%; max-width: 24rem; }
+            .aside { width: 100%; max-width: 23rem; }
             .stat-ic { position: static; transform: none; }
             .stat-ic:hover { transform: scale(1.06); }
         }
@@ -306,10 +300,10 @@
     <div class="head">
         <h1>Prototypes — classement &amp; stats</h1>
         <p>
-            Ce qui apparaît <b>à la fin du chrono</b>, quand les résultats tombent. Le <b>top 5</b> se montre à droite
-            du panel et il est vu de <b>tout le monde</b> ; ceux qui n'y sont pas lisent leur rang juste en dessous.
-            Le détail question par question (réponse de chacun, statut, vies, points) reste <b>réservé à l'hôte</b>,
-            derrière l'icône marquée « Hôte ».
+            Deuxième passe. Le top 5 abandonne les cellules encadrées au profit de <b>lignes nues</b> séparées par un
+            filet. Et le détail de la question ne parle plus en <b>vert / rouge</b> : il reprend les
+            <b>couleurs des repères de réponse</b> (◆ ● ▲ ■), déjà présentes dans le panel — la bonne réponse se
+            distingue par l'<b>or</b>, jamais par un fond coloré.
         </p>
     </div>
 
@@ -320,41 +314,50 @@
     </div>
 
     <h2 class="part">1 · Le top 5, vu de tous
-        <small>À droite du panel, à l'arrivée des résultats. Le joueur hors du top lit son rang sous la liste.</small>
+        <small>Sans encadrés. Le joueur hors du top lit son rang sous la liste.</small>
     </h2>
     <div class="protos" id="tops"></div>
 
-    <h2 class="part">2 · Tous les joueurs, réservé à l'hôte
-        <small>Réponse de chacun, statut, vies et points. Quatre surfaces possibles pour la même donnée.</small>
+    <h2 class="part">2 · Le détail de la question, réservé à l'hôte
+        <small>Qui a répondu quoi. Une seule couleur d'accent — l'or — et les teintes des repères de réponse.</small>
     </h2>
     <div class="protos" id="listes"></div>
 
     <script>
         const COEUR = '<svg viewBox="0 0 24 24" stroke-linejoin="round"><path d="M12 20.6s-7-4.3-9-8.4A5 5 0 0 1 12 6.6a5 5 0 0 1 9 5.6c-2 4.1-9 8.4-9 8.4z"/></svg>';
+        const SYM = ['◆', '●', '▲', '■'];
+        const REPONSES = ['Nezuko', 'Muzan', 'Tamayo', 'Inosuke'];
+        const JUSTE = 1;   // index de la bonne réponse
 
-        // Jeu d'essai : 14 joueurs, l'utilisateur est 8e
+        // Jeu d'essai : 14 joueurs, l'utilisateur est 8e. rep = index de la réponse choisie, null = pas répondu
         const JOUEURS = [
-            { n: 'Tanuki118', pts: 3200, v: 3, rep: 'Muzan', st: 'ok' },
-            { n: 'KenshinX', pts: 2950, v: 3, rep: 'Muzan', st: 'ok' },
-            { n: 'Sakura_92', pts: 2740, v: 2, rep: 'Muzan', st: 'ok' },
-            { n: 'GonFreecss', pts: 2310, v: 2, rep: 'Nezuko', st: 'ko' },
-            { n: 'Levi_Acker', pts: 2180, v: 3, rep: 'Muzan', st: 'ok' },
-            { n: 'ZoroLost', pts: 1890, v: 1, rep: 'Tamayo', st: 'ko' },
-            { n: 'MikasaA', pts: 1720, v: 2, rep: 'Muzan', st: 'ok' },
-            { n: 'sqQSs', pts: 1540, v: 2, rep: 'Muzan', st: 'ok', moi: true },
-            { n: 'Killua_07', pts: 1330, v: 1, rep: null, st: 'afk' },
-            { n: 'Asta_Black', pts: 1120, v: 1, rep: 'Nezuko', st: 'ko' },
-            { n: 'Rem__', pts: 980, v: 2, rep: 'Muzan', st: 'ok' },
-            { n: 'Yugi0h', pts: 640, v: 1, rep: null, st: 'afk' },
-            { n: 'Deku4All', pts: 420, v: 0, rep: 'Tamayo', st: 'ko' },
-            { n: 'Saitama1P', pts: 210, v: 0, rep: null, st: 'afk' },
+            { n: 'Tanuki118', pts: 3200, v: 3, rep: 1 },
+            { n: 'KenshinX', pts: 2950, v: 3, rep: 1 },
+            { n: 'Sakura_92', pts: 2740, v: 2, rep: 1 },
+            { n: 'GonFreecss', pts: 2310, v: 2, rep: 0 },
+            { n: 'Levi_Acker', pts: 2180, v: 3, rep: 1 },
+            { n: 'ZoroLost', pts: 1890, v: 1, rep: 2 },
+            { n: 'MikasaA', pts: 1720, v: 2, rep: 1 },
+            { n: 'sqQSs', pts: 1540, v: 2, rep: 1, moi: true },
+            { n: 'Killua_07', pts: 1330, v: 1, rep: null },
+            { n: 'Asta_Black', pts: 1120, v: 1, rep: 0 },
+            { n: 'Rem__', pts: 980, v: 2, rep: 1 },
+            { n: 'Yugi0h', pts: 640, v: 1, rep: null },
+            { n: 'Deku4All', pts: 420, v: 0, rep: 2 },
+            { n: 'Saitama1P', pts: 210, v: 0, rep: 3 },
         ];
         const TOP = JOUEURS.slice(0, 5);
         const MOI = JOUEURS.findIndex(p => p.moi) + 1;
         const MAXI = JOUEURS[0].pts;
+        const TOTAL = JOUEURS.length;
+        const PAR_REP = REPONSES.map((_, i) => JOUEURS.filter(p => p.rep === i));
+        const SANS = JOUEURS.filter(p => p.rep === null);
 
         const coeurs = (v) => `<span class="hp">${[1, 2, 3].map(i => `<i class="${i > v ? 'off' : ''}">${COEUR}</i>`).join('')}</span>`;
         const pts = (n) => n.toLocaleString('fr-FR');
+        const tag = (r) => r === null
+            ? '<span class="tag tafk">×</span>'
+            : `<span class="tag t${r} ${r === JUSTE ? 'juste' : ''}">${SYM[r]}</span>`;
 
         const PANEL = `
             <div class="bloc">
@@ -364,21 +367,22 @@
                     <div class="badges"><span class="badge">Demon Slayer</span><span class="badge diff">Very easy</span></div>
                     <p class="q">Qui est responsable de la mort de la famille de Tanjiro ?</p>
                     <div class="ans">
-                        <div class="a ko"><span class="mk m0">◆</span><span>Nezuko</span><span class="pct">7%</span></div>
-                        <div class="a ok"><span class="mk m1">●</span><span>Muzan</span><span class="pct">64%</span></div>
-                        <div class="a ko"><span class="mk m2">▲</span><span>Tamayo</span><span class="pct">21%</span></div>
-                        <div class="a ko"><span class="mk m3">■</span><span>Inosuke</span><span class="pct">8%</span></div>
+                        ${REPONSES.map((r, i) => `
+                            <div class="a ${i === JUSTE ? 'ok' : 'ko'}">
+                                <span class="mk m${i}">${SYM[i]}</span><span>${r}</span>
+                                <span class="pct">${Math.round(PAR_REP[i].length / TOTAL * 100)}%</span>
+                            </div>`).join('')}
                     </div>
                 </div>
             </div>`;
 
-        const RANG = `<div class="moi">Tu es <b>${MOI}<sup>e</sup></b> sur ${JOUEURS.length}</div>`;
+        const RANG = `<div class="moi">Tu es <b>${MOI}<sup>e</sup></b> sur ${TOTAL}</div>`;
 
         // ══════════════════ 1 · Top 5 ══════════════════
         const TOPS = [
             {
-                id: 's1', num: 'S1', nom: 'Colonne alignée',
-                note: "Une ligne par joueur : rang, pseudo, cœurs, score, et une pastille de statut pour la question qui vient de tomber. <b>Le plus lisible</b>, et le plus facile à faire tenir sur mobile en le glissant sous le panel.",
+                id: 's1', num: 'S1', nom: 'Lignes nues',
+                note: "Plus de cellule encadrée : un simple filet entre les lignes, et le repère de la réponse choisie en bout de ligne — cerclé et lumineux quand c'est la bonne. <b>Le plus sobre et le plus dense</b> ; c'est celui qui passera tel quel sous le panel en mobile.",
                 aside: `
                     <div class="aside-t">Top 5</div>
                     ${TOP.map((p, i) => `
@@ -387,58 +391,41 @@
                             <span class="nm">${p.n}</span>
                             ${coeurs(p.v)}
                             <span class="sc">${pts(p.pts)}</span>
-                            <span class="st ${p.st}"></span>
+                            ${tag(p.rep)}
                         </div>`).join('')}
                     ${RANG}`
             },
             {
-                id: 's2', num: 'S2', nom: 'Podium compact',
-                note: "Les trois premiers en marches, les deux suivants en lignes serrées. <b>Très parlant en stream</b> — on voit le duel de tête d'un coup d'œil — mais ça prend plus de hauteur et les cœurs n'y tiennent pas.",
-                aside: `
-                    <div class="aside-t">Top 5</div>
-                    <div class="pod">
-                        <div class="pl p2"><div class="md">2</div><span class="nm">${TOP[1].n}</span><span class="sc">${pts(TOP[1].pts)}</span></div>
-                        <div class="pl p1"><div class="md">1</div><span class="nm">${TOP[0].n}</span><span class="sc">${pts(TOP[0].pts)}</span></div>
-                        <div class="pl p3"><div class="md">3</div><span class="nm">${TOP[2].n}</span><span class="sc">${pts(TOP[2].pts)}</span></div>
-                    </div>
-                    ${TOP.slice(3).map((p, i) => `
-                        <div class="row">
-                            <span class="rk">${i + 4}</span>
-                            <span class="nm">${p.n}</span>
-                            <span class="st ${p.st}"></span>
-                            <span class="sc">${pts(p.pts)}</span>
-                        </div>`).join('')}
-                    ${RANG}`
-            },
-            {
-                id: 's3', num: 'S3', nom: 'Barres de score',
-                note: "Chaque ligne porte une barre proportionnelle au score du premier : <b>on lit l'écart, pas seulement l'ordre</b>. Ta ligne passe en vert. Attention en mode Vies, où les scores sont plus resserrés.",
+                id: 's2', num: 'S2', nom: 'Typographique',
+                note: "Aucun filet, aucun fond : le rang devient un <b>grand chiffre en filigrane</b> et l'air fait la séparation. Les cœurs et la réponse passent en seconde ligne, en petit. Le plus élégant, mais il demande plus de hauteur.",
                 aside: `
                     <div class="aside-t">Top 5</div>
                     ${TOP.map((p, i) => `
                         <div class="row ${p.moi ? 'me' : ''}">
-                            <span class="fill" style="width:${Math.round(p.pts / MAXI * 100)}%"></span>
-                            <span class="rk">${i + 1}</span>
-                            <span class="nm">${p.n}</span>
-                            <span class="st ${p.st}"></span>
-                            <span class="sc">${pts(p.pts)}</span>
-                        </div>`).join('')}
-                    ${RANG}`
-            },
-            {
-                id: 's4', num: 'S4', nom: 'Cartes à liseré',
-                note: "Le liseré de gauche donne le statut, et la <b>réponse choisie s'affiche sous le pseudo</b>. Le top 5 dit déjà presque tout, ce qui rend le détail complet moins indispensable — au prix de lignes plus hautes.",
-                aside: `
-                    <div class="aside-t">Top 5</div>
-                    ${TOP.map((p, i) => `
-                        <div class="row ${p.st} ${p.moi ? 'me' : ''}">
                             <span class="rk">${i + 1}</span>
                             <span class="col">
                                 <span class="nm">${p.n}</span>
-                                <span class="rep">${p.rep || 'Pas de réponse'}</span>
+                                <span class="sub">${coeurs(p.v)} ${tag(p.rep)} ${p.rep === null ? 'sans réponse' : REPONSES[p.rep]}</span>
                             </span>
-                            ${coeurs(p.v)}
                             <span class="sc">${pts(p.pts)}</span>
+                        </div>`).join('')}
+                    ${RANG}`
+            },
+            {
+                id: 's3', num: 'S3', nom: 'Filet de score',
+                note: "Chaque ligne est soulignée d'un <b>filet proportionnel</b> au score du premier : on lit l'écart autant que l'ordre, sans le poids d'une barre pleine. Ta ligne passe en vert d'eau.",
+                aside: `
+                    <div class="aside-t">Top 5</div>
+                    ${TOP.map((p, i) => `
+                        <div class="row ${p.moi ? 'me' : ''}">
+                            <span class="haut">
+                                <span class="rk">${i + 1}</span>
+                                <span class="nm">${p.n}</span>
+                                ${coeurs(p.v)}
+                                ${tag(p.rep)}
+                                <span class="sc">${pts(p.pts)}</span>
+                            </span>
+                            <span class="filet"><i style="width:${Math.round(p.pts / MAXI * 100)}%"></i></span>
                         </div>`).join('')}
                     ${RANG}`
             },
@@ -454,7 +441,7 @@
                 <p class="proto-note">${p.note}</p>
             </section>`).join('');
 
-        // ══════════════════ 2 · Tous les joueurs ══════════════════
+        // ══════════════════ 2 · Détail de la question ══════════════════
         const ICONE = `
             <button class="stat-ic" data-ouvre>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -462,110 +449,132 @@
                 </svg>
             </button>`;
 
-        const REPART = () => {
-            const ok = JOUEURS.filter(p => p.st === 'ok').length;
-            const ko = JOUEURS.filter(p => p.st === 'ko').length;
-            const afk = JOUEURS.filter(p => p.st === 'afk').length;
-            const t = JOUEURS.length;
-            return `
-                <div class="repart">
-                    <div class="rp ok"><b>${ok}</b><span>Bonne</span></div>
-                    <div class="rp ko"><b>${ko}</b><span>Mauvaise</span></div>
-                    <div class="rp afk"><b>${afk}</b><span>Sans réponse</span></div>
-                </div>
-                <div class="jauge">
-                    <i class="j1" style="width:${ok / t * 100}%"></i>
-                    <i class="j2" style="width:${ko / t * 100}%"></i>
-                    <i class="j3" style="width:${afk / t * 100}%"></i>
-                </div>`;
-        };
+        const TETE = (cles) => `
+            <div class="f-head">
+                <div><h3>Question 7</h3><p>Demon Slayer · Very easy · ${TOTAL} joueurs</p></div>
+                <button class="fermer" data-ferme>Fermer</button>
+            </div>
+            <div class="cles">${cles}</div>`;
 
-        const CARTES = JOUEURS.map(p => `
-            <div class="pc ${p.st}">
-                <span class="nm">${p.n}</span>
-                <span class="rep">${p.rep || 'Pas de réponse'}</span>
-                <span class="bas">${coeurs(p.v)}<span class="sc">${pts(p.pts)}</span></span>
-            </div>`).join('');
-
-        const LIGNES = JOUEURS.map((p, i) => `
-            <tr class="${p.moi ? 'me' : ''}">
-                <td class="rk">${i + 1}</td>
-                <td>${p.n}</td>
-                <td class="rep">${p.rep || '—'}</td>
-                <td><span class="st ${p.st}"></span></td>
-                <td>${coeurs(p.v)}</td>
-                <td class="sc">${pts(p.pts)}</td>
-            </tr>`).join('');
-
-        const TABLEAU = `
-            <table class="tab">
-                <thead><tr><th>#</th><th>Joueur</th><th>Réponse</th><th>Statut</th><th>Vies</th><th>Points</th></tr></thead>
-                <tbody>${LIGNES}</tbody>
-            </table>`;
+        const CLES = `
+            <div class="cle or"><b>${PAR_REP[JUSTE].length}</b><span>Bonnes réponses</span></div>
+            <div class="cle"><b>${Math.round(PAR_REP[JUSTE].length / TOTAL * 100)}<small style="font-size:1.1rem">%</small></b><span>de réussite</span></div>
+            <div class="cle"><b>${SANS.length}</b><span>Sans réponse</span></div>
+            <div class="cle"><b>2.4<small style="font-size:1.1rem">s</small></b><span>Plus rapide</span></div>`;
 
         const LISTES = [
             {
-                id: 'l1', num: 'L1', nom: 'Modal en grille',
-                note: "L'icône ouvre un <b>modal centré</b> : la répartition en trois compteurs et une jauge, puis une carte par joueur avec sa réponse. Le plus spectaculaire, mais il masque la question le temps de la consultation.",
+                id: 'm1', num: 'M1', nom: 'Colonnes par réponse',
+                note: "Une colonne par proposition, chacune sous son repère coloré, et les joueurs rangés dessous. <b>On voit d'un coup où les gens se sont trompés</b> — quelle mauvaise réponse a piégé le plus de monde. La colonne juste se signale par un filet doré, pas par du vert.",
                 corps: `
                     ${ICONE}
                     <div class="voile">
-                        <div class="modal">
-                            <div class="modal-h"><h3>Question 7</h3><span>14 joueurs</span><button class="fermer" data-ferme>Fermer</button></div>
-                            ${REPART()}
-                            <div class="grille">${CARTES}</div>
+                        <div class="feuille">
+                            ${TETE(CLES)}
+                            <div class="m1-grid">
+                                ${REPONSES.map((r, i) => `
+                                    <div class="col-r ${i === JUSTE ? 'juste' : ''}">
+                                        <div class="col-h">
+                                            <span class="tag t${i} ${i === JUSTE ? 'juste' : ''}">${SYM[i]}</span>
+                                            <span class="lbl">${r}</span>
+                                            <span class="nb">${PAR_REP[i].length}</span>
+                                        </div>
+                                        <ul>${PAR_REP[i].map(p => `<li class="${p.moi ? 'me' : ''}">${p.n}${coeurs(p.v)}</li>`).join('')}</ul>
+                                    </div>`).join('')}
+                                <div class="col-r">
+                                    <div class="col-h">
+                                        <span class="tag tafk">×</span>
+                                        <span class="lbl">Sans réponse</span>
+                                        <span class="nb">${SANS.length}</span>
+                                    </div>
+                                    <ul>${SANS.map(p => `<li>${p.n}${coeurs(p.v)}</li>`).join('')}</ul>
+                                </div>
+                            </div>
                         </div>
                     </div>`
             },
             {
-                id: 'l2', num: 'L2', nom: 'Tiroir latéral',
-                note: "Le détail <b>glisse depuis le bord droit</b> sans rien cacher : la question reste lisible pendant que tu regardes. Le mieux placé si l'hôte veut commenter à voix haute — le top 5 se replie derrière.",
-                corps: `
-                    ${ICONE}
-                    <div class="tiroir">
-                        <div class="modal-h"><h3>Question 7</h3><span>14 joueurs</span><button class="fermer" data-ferme>Fermer</button></div>
-                        ${REPART()}
-                        <div class="grille" style="grid-template-columns:1fr">${CARTES}</div>
-                    </div>`
-            },
-            {
-                id: 'l3', num: 'L3', nom: 'Tableau compact',
-                note: "Un <b>tableau dense</b> dans le modal : une ligne par joueur, six colonnes. Le plus lisible quand la partie compte trente ou cinquante joueurs, là où les cartes deviennent une bouillie.",
+                id: 'm2', num: 'M2', nom: 'Bandes proportionnelles',
+                note: "Une bande par proposition : le pourcentage en très gros, un filet à la largeur du score, et les pseudos alignés dessous. <b>Le plus lisible à distance</b>, taillé pour être commenté en direct — mais les cœurs n'y tiennent pas.",
                 corps: `
                     ${ICONE}
                     <div class="voile">
-                        <div class="modal">
-                            <div class="modal-h"><h3>Question 7</h3><span>14 joueurs</span><button class="fermer" data-ferme>Fermer</button></div>
-                            ${REPART()}
-                            ${TABLEAU}
+                        <div class="feuille">
+                            ${TETE(CLES)}
+                            ${REPONSES.map((r, i) => `
+                                <div class="m2-band ${i === JUSTE ? 'juste' : ''}">
+                                    <div class="m2-h">
+                                        <span class="tag t${i} ${i === JUSTE ? 'juste' : ''}">${SYM[i]}</span>
+                                        <span class="lbl">${r}</span>
+                                        <span class="p" style="color:var(--r${i})">${Math.round(PAR_REP[i].length / TOTAL * 100)}%</span>
+                                    </div>
+                                    <div class="m2-bar"><i style="width:${PAR_REP[i].length / TOTAL * 100}%;background:var(--r${i})"></i></div>
+                                    <div class="m2-noms">${PAR_REP[i].map(p => p.moi ? `<b>${p.n}</b>` : p.n).join(' · ') || '—'}</div>
+                                </div>`).join('')}
+                            <div class="m2-band">
+                                <div class="m2-h">
+                                    <span class="tag tafk">×</span>
+                                    <span class="lbl" style="color:var(--txt2)">Sans réponse</span>
+                                    <span class="p" style="color:rgba(255,255,255,.35)">${Math.round(SANS.length / TOTAL * 100)}%</span>
+                                </div>
+                                <div class="m2-bar"><i style="width:${SANS.length / TOTAL * 100}%;background:rgba(255,255,255,.22)"></i></div>
+                                <div class="m2-noms">${SANS.map(p => p.n).join(' · ') || '—'}</div>
+                            </div>
                         </div>
                     </div>`
             },
             {
-                id: 'l4', num: 'L4', nom: 'Dépliage sous le top',
-                note: "Pas d'icône ni de modal : un bouton <b>« voir les 9 autres »</b> sous le top 5 déroule le reste du classement sur place. Le plus discret et le plus rapide d'accès, mais sans place pour la répartition ni les réponses.",
-                sansIcone: true,
-                aside: `
-                    <div class="aside-t">Top 5</div>
-                    ${TOP.map((p, i) => `
-                        <div class="row ${p.moi ? 'me' : ''}">
-                            <span class="rk">${i + 1}</span>
-                            <span class="nm">${p.n}</span>
-                            ${coeurs(p.v)}
-                            <span class="sc">${pts(p.pts)}</span>
-                            <span class="st ${p.st}"></span>
-                        </div>`).join('')}
-                    ${RANG}
-                    <button class="voir" data-deplie>Voir les ${JOUEURS.length - 5} autres</button>
-                    <div class="depli">
-                        ${JOUEURS.slice(5).map((p, i) => `
-                            <div class="row ${p.moi ? 'me' : ''}">
-                                <span class="rk">${i + 6}</span>
-                                <span class="nm">${p.n}</span>
-                                ${coeurs(p.v)}
-                                <span class="sc">${pts(p.pts)}</span>
-                                <span class="st ${p.st}"></span>
-                            </div>`).join('')}
+                id: 'm3', num: 'M3', nom: 'Anneau &amp; légende',
+                note: "Un anneau fin composé aux couleurs des repères, le taux de réussite au centre, et la légende en lignes nues à côté. <b>La lecture la plus immédiate</b> de la répartition — c'est l'héritier du camembert d'avant, débarrassé de ses aplats verts et rouges.",
+                corps: `
+                    ${ICONE}
+                    <div class="voile">
+                        <div class="feuille">
+                            ${TETE(CLES)}
+                            <div class="m3-wrap">
+                                <div class="anneau" id="anneau">
+                                    <div class="anneau-c">
+                                        <div>
+                                            <b>${Math.round(PAR_REP[JUSTE].length / TOTAL * 100)}%</b>
+                                            <span>de réussite</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="m3-leg">
+                                    ${REPONSES.map((r, i) => `
+                                        <div class="li ${i === JUSTE ? 'juste' : ''}">
+                                            <span class="pt" style="background:var(--r${i})"></span>
+                                            <span class="lbl">${r}</span>
+                                            <span class="n">${PAR_REP[i].length}</span>
+                                        </div>`).join('')}
+                                    <div class="li">
+                                        <span class="pt" style="background:rgba(255,255,255,.22)"></span>
+                                        <span class="lbl" style="color:var(--txt2)">Sans réponse</span>
+                                        <span class="n">${SANS.length}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`
+            },
+            {
+                id: 'm4', num: 'M4', nom: 'Feuille typographique',
+                note: "Aucun graphique : les quatre chiffres clés en haut, puis une ligne par joueur — rang, pseudo, réponse, score. <b>Le plus calme, et le seul qui tient à cinquante joueurs</b> sans devenir illisible. Les erreurs se lisent au repère et au gris, pas au rouge.",
+                corps: `
+                    ${ICONE}
+                    <div class="voile">
+                        <div class="feuille m4">
+                            ${TETE(CLES)}
+                            <div class="entete"><span class="rk">#</span><span class="nm">Joueur</span><span class="rep">Réponse</span><span class="sc">Points</span></div>
+                            ${JOUEURS.map((p, i) => `
+                                <div class="ligne ${p.rep === JUSTE ? 'juste' : ''} ${p.rep === null ? 'afk' : ''} ${p.moi ? 'me' : ''}">
+                                    <span class="rk">${i + 1}</span>
+                                    <span class="nm">${p.n}</span>
+                                    <span class="rep">${tag(p.rep)} ${p.rep === null ? 'Pas de réponse' : REPONSES[p.rep]}</span>
+                                    ${coeurs(p.v)}
+                                    <span class="sc">${pts(p.pts)}</span>
+                                </div>`).join('')}
+                        </div>
                     </div>`
             },
         ];
@@ -574,34 +583,36 @@
             <section>
                 <div class="proto-head"><span class="proto-num">${p.num}</span><span class="proto-name">${p.nom}</span></div>
                 <div class="ecran revealed s1 ${p.id}">
-                    ${p.corps || ''}
+                    ${p.corps}
                     ${PANEL}
-                    <aside class="aside">${p.aside || TOPS[0].aside}</aside>
+                    <aside class="aside">${TOPS[0].aside}</aside>
                 </div>
                 <p class="proto-note">${p.note}</p>
             </section>`).join('');
 
+        // Anneau composé aux couleurs des repères
+        (() => {
+            const a = document.getElementById('anneau');
+            if (!a) return;
+            const parts = [...PAR_REP.map((g, i) => ({ n: g.length, c: `var(--r${i})` })), { n: SANS.length, c: 'rgba(255,255,255,.18)' }];
+            let acc = 0;
+            const stops = parts.map(p => {
+                const de = acc / TOTAL * 360;
+                acc += p.n;
+                return `${p.c} ${de}deg ${acc / TOTAL * 360}deg`;
+            });
+            a.style.background = `conic-gradient(${stops.join(',')})`;
+        })();
+
         // ══════════════════ Interactions ══════════════════
         document.addEventListener('click', e => {
             const ecran = e.target.closest('.ecran');
-
-            if (e.target.closest('[data-ouvre]')) {
-                ecran.querySelector('.voile')?.classList.add('on');
-                ecran.querySelector('.tiroir')?.classList.add('on');
-            }
-            if (e.target.closest('[data-ferme]')) {
-                ecran.querySelector('.voile')?.classList.remove('on');
-                ecran.querySelector('.tiroir')?.classList.remove('on');
-            }
-            if (e.target.closest('[data-deplie]')) {
-                const d = ecran.querySelector('.depli');
-                const ouvert = d.classList.toggle('on');
-                e.target.textContent = ouvert ? 'Replier' : `Voir les ${JOUEURS.length - 5} autres`;
-            }
+            if (!ecran) return;
+            if (e.target.closest('[data-ouvre]')) ecran.querySelector('.voile')?.classList.add('on');
+            if (e.target.closest('[data-ferme]')) ecran.querySelector('.voile')?.classList.remove('on');
             if (e.target.classList.contains('voile')) e.target.classList.remove('on');
         });
 
-        // Bascule chrono en cours / résultats
         document.querySelectorAll('.barre button').forEach(b => {
             b.addEventListener('click', () => {
                 const fin = b.dataset.etat === 'fin';
