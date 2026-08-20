@@ -2323,6 +2323,8 @@ function revealAnswers(correctAnswer) {
 
             playersDetails.push({
                 socketId: socketId,
+                twitchId: player.twitchId,
+                correctAnswers: player.correctAnswers || 0,
                 username: player.username,
                 lives: player.lives,
                 points: player.points || 0,
@@ -2439,6 +2441,8 @@ function revealAnswers(correctAnswer) {
 
             playersDetails.push({
                 socketId: socketId,
+                twitchId: player.twitchId,
+                correctAnswers: player.correctAnswers || 0,
                 username: player.username,
                 lives: player.lives,
                 points: player.points || 0,

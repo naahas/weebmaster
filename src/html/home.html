@@ -1019,6 +1019,38 @@
 
                         <p class="v2q-question">{{ currentQuestion.question }}</p>
 
+                        <!-- Classement, à l'arrivée des résultats — vu de tous -->
+                        <aside class="v2q-top" v-if="showResults && lobbyMode !== 'bombanime'">
+                            <div class="v2q-top-t">Top 5</div>
+                            <div class="v2q-top-row" v-for="(p, i) in topPlayers" :key="p.twitchId || p.username"
+                                 :class="{ me: p.twitchId === twitchId }">
+                                <span class="rk">{{ i + 1 }}</span>
+                                <span class="col">
+                                    <span class="nm">{{ p.username }}</span>
+                                    <span class="sub">
+                                        <span class="v2q-top-hp" v-if="gameMode === 'lives'">
+                                            <i v-for="n in gameLives" :key="n" :class="{ off: n > p.lives }">
+                                                <svg viewBox="0 0 24 24" stroke-linejoin="round"><path d="M12 20.6s-7-4.3-9-8.4A5 5 0 0 1 12 6.6a5 5 0 0 1 9 5.6c-2 4.1-9 8.4-9 8.4z"/></svg>
+                                            </i>
+                                        </span>
+                                        <span class="v2q-tag" :class="tagClass(p)">{{ tagSymbol(p) }}</span>
+                                    </span>
+                                </span>
+                                <span class="sc">{{ formatScore(scoreOf(p)) }}</span>
+                            </div>
+                            <div class="v2q-top-me" v-if="myRank > 5">
+                                Tu es <b>{{ myRank }}<sup>e</sup></b> sur {{ rankedPlayers.length }}
+                            </div>
+                        </aside>
+
+                        <!-- Détail de la question : l'hôte seul y a accès -->
+                        <button class="v2q-stats-btn" v-if="isHost && showResults && lobbyMode !== 'bombanime'"
+                                @click="showQuestionStats = true" title="Détail de la question" aria-label="Détail de la question">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>
+                            </svg>
+                        </button>
+
                         <div class="v2q-answers" :class="{ six: currentQuestion.answers.length > 4 }">
                             <button v-for="(answer, index) in currentQuestion.answers" :key="index"
                                     class="v2q-answer"
@@ -1341,6 +1373,60 @@
             </div>
         </div>
 
+
+        <!-- 🆕 v2 — Détail de la question (hôte) -->
+        <div class="v2q-sheet-veil" v-if="showQuestionStats" @click.self="showQuestionStats = false">
+            <div class="v2q-sheet">
+                <div class="v2q-sheet-head">
+                    <div>
+                        <h3>Question {{ currentQuestionNumber }}</h3>
+                        <p>{{ currentQuestion.serie }} · {{ currentQuestion.difficulty }} · {{ rankedPlayers.length }} joueurs</p>
+                    </div>
+                    <button class="v2q-sheet-close" @click="showQuestionStats = false">Fermer</button>
+                </div>
+
+                <div class="v2q-keys">
+                    <div class="v2q-key or"><b>{{ questionResults.stats.correct }}</b><span>Bonnes réponses</span></div>
+                    <div class="v2q-key"><b>{{ successRate }}<small>%</small></b><span>de réussite</span></div>
+                    <div class="v2q-key"><b>{{ questionResults.stats.afk }}</b><span>Sans réponse</span></div>
+                    <div class="v2q-key" v-if="questionResults.fastestPlayer">
+                        <b>{{ fastestTime }}<small>s</small></b><span>Plus rapide</span>
+                    </div>
+                </div>
+
+                <div class="v2q-fastest" v-if="questionResults.fastestPlayer">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M13 2L4.1 12.9a1 1 0 0 0 .8 1.6H11l-1 7.5 8.9-10.9a1 1 0 0 0-.8-1.6H12z"/>
+                    </svg>
+                    <span>Premier à trouver</span>
+                    <b>{{ questionResults.fastestPlayer.username }}</b>
+                    <em>{{ fastestTime }}s</em>
+                </div>
+
+                <div class="v2q-ring-wrap">
+                    <div class="v2q-ring" :style="{ background: ringGradient }">
+                        <div class="v2q-ring-c">
+                            <div>
+                                <b>{{ successRate }}%</b>
+                                <span>de réussite</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="v2q-ring-leg">
+                        <div class="li" v-for="a in answerBreakdown" :key="a.i" :class="{ juste: a.juste }">
+                            <span class="pt" :style="{ background: a.color }"></span>
+                            <span class="lbl">{{ a.label }}</span>
+                            <span class="n">{{ a.count }}</span>
+                        </div>
+                        <div class="li">
+                            <span class="pt" style="background: rgba(255,255,255,0.22)"></span>
+                            <span class="lbl muet">Sans réponse</span>
+                            <span class="n">{{ questionResults.stats.afk }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- 🆕 v2 — Bonus en jetons toujours visibles -->
         <div class="v2-bonus" v-if="gameInProgress && !gameEnded && questionShown && lobbyMode !== 'bombanime' && bonusEnabled">

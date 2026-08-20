@@ -107,7 +107,9 @@
         .a.ok .pct { color: #6ee7b7; }
 
         /* ══════ Apparition à la fin du chrono ══════ */
-        .aside { width: 16.5rem; flex: 0 0 auto; align-self: center; }
+        /* Le classement s'aligne sur le centre du panel, pas du bloc :
+           le numéro de question posé au-dessus décalait tout vers le bas. */
+        .aside { width: 16.5rem; flex: 0 0 auto; align-self: center; margin-top: 2.4rem; }
         .ecran:not(.revealed) .aside,
         .ecran:not(.revealed) .stat-ic { opacity: 0; pointer-events: none; }
         .aside, .stat-ic { transition: opacity .4s ease, transform .5s cubic-bezier(.2,.85,.3,1); }
@@ -396,7 +398,7 @@
                     ${RANG}`
             },
             {
-                id: 's2', num: 'S2', nom: 'Typographique',
+                id: 's2', num: 'S2', nom: 'Typographique ✅ retenu',
                 note: "Aucun filet, aucun fond : le rang devient un <b>grand chiffre en filigrane</b> et l'air fait la séparation. Les cœurs et la réponse passent en seconde ligne, en petit. Le plus élégant, mais il demande plus de hauteur.",
                 aside: `
                     <div class="aside-t">Top 5</div>
@@ -405,7 +407,7 @@
                             <span class="rk">${i + 1}</span>
                             <span class="col">
                                 <span class="nm">${p.n}</span>
-                                <span class="sub">${coeurs(p.v)} ${tag(p.rep)} ${p.rep === null ? 'sans réponse' : REPONSES[p.rep]}</span>
+                                <span class="sub">${coeurs(p.v)} ${tag(p.rep)}</span>
                             </span>
                             <span class="sc">${pts(p.pts)}</span>
                         </div>`).join('')}
@@ -524,13 +526,19 @@
                     </div>`
             },
             {
-                id: 'm3', num: 'M3', nom: 'Anneau &amp; légende',
+                id: 'm3', num: 'M3', nom: 'Anneau &amp; légende ✅ retenu',
                 note: "Un anneau fin composé aux couleurs des repères, le taux de réussite au centre, et la légende en lignes nues à côté. <b>La lecture la plus immédiate</b> de la répartition — c'est l'héritier du camembert d'avant, débarrassé de ses aplats verts et rouges.",
                 corps: `
                     ${ICONE}
                     <div class="voile">
                         <div class="feuille">
                             ${TETE(CLES)}
+                            <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1.5rem;padding:.7rem .9rem;font-size:.72rem;color:var(--txt2);background:rgba(255,215,0,.06);border-left:.14rem solid rgba(255,215,0,.6);border-radius:0 .5rem .5rem 0">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.95rem;height:.95rem;color:var(--neon)"><path d="M13 2L4.1 12.9a1 1 0 0 0 .8 1.6H11l-1 7.5 8.9-10.9a1 1 0 0 0-.8-1.6H12z"/></svg>
+                                <span>Premier à trouver</span>
+                                <b style="font-size:.86rem;font-weight:600;color:var(--txt)">Tanuki118</b>
+                                <em style="margin-left:auto;font-style:normal;font-family:'Bebas Neue';font-size:1.1rem;color:var(--neon)">2,4s</em>
+                            </div>
                             <div class="m3-wrap">
                                 <div class="anneau" id="anneau">
                                     <div class="anneau-c">

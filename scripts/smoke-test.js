@@ -87,8 +87,8 @@ async function scenarioClassic() {
     check('question reçue', !!q, q ? `${q.d.answers?.length} réponses` : 'aucune');
 
     if (q) {
-        p1.sock.emit('submit-answer', { twitchId: p1.id, answerIndex: 0 });
-        p2.sock.emit('submit-answer', { twitchId: p2.id, answerIndex: 1 });
+        p1.sock.emit('submit-answer', { twitchId: p1.id, answer: 1 });
+        p2.sock.emit('submit-answer', { twitchId: p2.id, answer: 2 });
         await wait(500);
         const st = await get('/game/state');
         check('réponses enregistrées', st.players.some(p => p.hasAnswered));

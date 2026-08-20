@@ -167,6 +167,8 @@ createApp({
             pointsDelta: 0,       // gain affiché brièvement au-dessus du compteur
             pointsPulse: false,
             speedBonus: true,     // +500 points au plus rapide, en mode points
+            showQuestionStats: false,  // feuille de détail de la question (hôte)
+            answerColors: ['#ffd24a', '#7fb4ff', '#6ee7b7', '#d8b4fe', '#fca5a5', '#fdba74'],
             booting: true,        // tant que l'état serveur n'est pas connu, on n'affiche aucun écran
             questionShown: false, // passe à vrai quand le premier panel de question est visible
 
@@ -586,6 +588,66 @@ createApp({
             return this.comboBarHeight;
         },
 
+        // ── Classement de fin de question ──
+        // En points on trie sur le score, en vies sur les vies puis les bonnes réponses.
+        rankedPlayers() {
+            const liste = (this.questionResults.players || []).slice();
+            if (this.gameMode === 'points') {
+                liste.sort((a, b) => (b.points || 0) - (a.points || 0) || (b.correctAnswers || 0) - (a.correctAnswers || 0));
+            } else {
+                liste.sort((a, b) => (b.lives || 0) - (a.lives || 0) || (b.correctAnswers || 0) - (a.correctAnswers || 0));
+            }
+            return liste;
+        },
+
+        topPlayers() {
+            return this.rankedPlayers.slice(0, 5);
+        },
+
+        myRank() {
+            const i = this.rankedPlayers.findIndex(p => p.twitchId === this.twitchId);
+            return i === -1 ? 0 : i + 1;
+        },
+
+        successRate() {
+            const s = this.questionResults.stats || {};
+            const total = (s.correct || 0) + (s.wrong || 0) + (s.afk || 0);
+            return total ? Math.round((s.correct || 0) / total * 100) : 0;
+        },
+
+        fastestTime() {
+            const f = this.questionResults.fastestPlayer;
+            return f ? (f.time / 1000).toFixed(1).replace('.', ',') : '';
+        },
+
+        // Répartition par réponse, dans les couleurs des repères du panel
+        answerBreakdown() {
+            if (!this.currentQuestion) return [];
+            const joueurs = this.questionResults.players || [];
+            return this.currentQuestion.answers.map((texte, i) => ({
+                i,
+                label: texte,
+                color: this.answerColors[i],
+                count: joueurs.filter(p => p.selectedAnswer === texte).length,
+                juste: this.questionResults.correctAnswer === i + 1
+            }));
+        },
+
+        // Anneau composé : une part par réponse, plus les absents en gris
+        ringGradient() {
+            const parts = this.answerBreakdown.map(a => ({ n: a.count, c: a.color }));
+            parts.push({ n: (this.questionResults.stats || {}).afk || 0, c: 'rgba(255,255,255,0.18)' });
+            const total = parts.reduce((s, p) => s + p.n, 0);
+            if (!total) return 'rgba(255,255,255,0.08)';
+            let acc = 0;
+            const stops = parts.map(p => {
+                const de = acc / total * 360;
+                acc += p.n;
+                return `${p.c} ${de}deg ${acc / total * 360}deg`;
+            });
+            return `conic-gradient(${stops.join(',')})`;
+        },
+
         comboLevelDisplay() {
             return this.comboLevel >= 3 ? 'MAX' : this.comboLevel.toString();
         },
@@ -984,6 +1046,31 @@ createApp({
             if (this.questionShown) return;
             clearTimeout(this._chromeTimer);
             this._chromeTimer = setTimeout(() => { this.questionShown = true; }, 800);
+        },
+
+        // Le repère de la réponse choisie : la couleur suffit, le libellé serait trop long
+        answerIndexOf(p) {
+            if (!p || !p.selectedAnswer || !this.currentQuestion) return -1;
+            return this.currentQuestion.answers.indexOf(p.selectedAnswer);
+        },
+
+        tagSymbol(p) {
+            const i = this.answerIndexOf(p);
+            return i === -1 ? '×' : this.answerMarks[i];
+        },
+
+        tagClass(p) {
+            const i = this.answerIndexOf(p);
+            if (i === -1) return 'afk';
+            return ['m' + i, this.questionResults.correctAnswer === i + 1 ? 'juste' : ''];
+        },
+
+        scoreOf(p) {
+            return this.gameMode === 'points' ? (p.points || 0) : (p.correctAnswers || 0);
+        },
+
+        formatScore(n) {
+            return (n || 0).toLocaleString('fr-FR');
         },
 
         // Part des joueurs ayant choisi cette réponse (affichée aux résultats)
@@ -1876,6 +1963,7 @@ createApp({
             // 🔒 BUG FIX 1: Empêcher l'affichage des questions si non inscrit au lobby
             this.socket.on('new-question', (question) => {
                 this.answerCounts = {};
+                this.showQuestionStats = false;
                 this.clearSeal();
                 this.revealQuestionChrome();
                 if (!this.hasJoined) {

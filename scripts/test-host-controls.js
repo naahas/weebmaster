@@ -18,6 +18,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
         socks.push({ s, id, nom, vu: [] });
         s.on('new-question', (d) => socks.find(x => x.s === s).vu.push(d));
         s.on('game-started', (d) => { socks.find(x => x.s === s).depart = d; });
+        s.on('question-results', (d) => { socks.find(x => x.s === s).resultats = d; });
     }
     await wait(300);
     socks.forEach(({ s, id, nom }, i) => s.emit('join-lobby', { twitchId: id, username: nom, isHost: i === 0 }));
@@ -53,9 +54,27 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     check('délai de lancement maîtrisé', delai < 1800, delai + ' ms');
 
     // les joueurs répondent, puis l'hôte enchaîne comme depuis la barre de contrôle
-    socks.forEach(({ s, id }) => s.emit('submit-answer', { twitchId: id, answerIndex: 0 }));
+    // Deux réponses différentes : l'une des deux peut être la bonne
+    socks.forEach(({ s, id }, i) => s.emit('submit-answer', { twitchId: id, answer: i + 1 }));
     // on attend la fin du chrono : le serveur refuse d avancer pendant la question
     await wait(11000);
+
+    // Le classement de fin de question a besoin de reconnaître chaque joueur
+    // et de compter ses bonnes réponses : sans ça le top 5 ne peut pas se construire.
+    const res = socks[0].resultats;
+    check('résultats de question reçus', !!res);
+    check('joueurs identifiables dans le classement',
+        !!res && res.players.length > 0 && res.players.every(p => p.twitchId && p.correctAnswers !== undefined),
+        res ? res.players.length + ' joueur(s)' : '');
+    check('réponses bien enregistrées', !!res && res.players.some(p => p.selectedAnswer),
+        res ? res.players.map(p => p.selectedAnswer || '—').join(' / ') : '');
+    // La bonne réponse est tirée au hasard : on vérifie la cohérence, pas une valeur
+    // La bonne réponse est tirée au hasard : on vérifie la cohérence, pas une valeur
+    const aTrouve = !!res && res.stats.correct > 0;
+    check("plus rapide désigné dès que quelqu'un trouve",
+        !!res && (!aTrouve || !!res.fastestPlayer),
+        res && res.fastestPlayer ? res.fastestPlayer.username + ' en ' + res.fastestPlayer.time + ' ms'
+                                 : 'personne n a trouvé cette fois');
 
     const auto = await post('/admin/toggle-auto-mode', {});
     check('bascule du mode auto', auto.success === true, 'auto=' + auto.autoMode);
