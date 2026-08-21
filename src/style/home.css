@@ -19327,7 +19327,7 @@ body.modal-open {
 .v2q-top-t::after { content: ''; flex: 1; height: 0.06rem; background: rgba(255, 255, 255, 0.1); }
 
 /* Lignes nues : ni fond ni filet, l'air suffit à séparer */
-.v2q-top-row { display: flex; align-items: baseline; gap: 0.8rem; padding: 0.5rem 0; }
+.v2q-top-row { display: flex; align-items: baseline; gap: 0.8rem; padding: 0.66rem 0; }
 
 .v2q-top-row .rk {
     width: 1.6rem;
@@ -19577,7 +19577,7 @@ body.modal-open {
 .v2q-top-fast .nm { flex: 1; min-width: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .v2q-top-fast em { font-style: normal; font-family: 'Bebas Neue', 'Russo One', sans-serif; font-size: 1rem; color: var(--neon-primary); }
 
-.v2q-top-me { margin-top: 0.9rem; }
+.v2q-top-me { margin-top: 1.45rem; }
 
 /* Bebas Neue ne dessine que des capitales : les unités reprennent la police du texte */
 .v2q-top-fast em small,
