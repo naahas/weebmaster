@@ -1045,7 +1045,7 @@
                                     <path d="M13 2L4.1 12.9a1 1 0 0 0 .8 1.6H11l-1 7.5 8.9-10.9a1 1 0 0 0-.8-1.6H12z"/>
                                 </svg>
                                 <span class="nm">{{ questionResults.fastestPlayer.username }}</span>
-                                <em>{{ fastestTime }}s</em>
+                                <em>{{ fastestTime }}<small>s</small></em>
                             </div>
 
                             <div class="v2q-top-me" v-if="myRank > 5">
@@ -1410,7 +1410,7 @@
                     </svg>
                     <span>Plus rapide</span>
                     <b>{{ questionResults.fastestPlayer.username }}</b>
-                    <em>{{ fastestTime }}s</em>
+                    <em>{{ fastestTime }}<small>s</small></em>
                 </div>
 
                 <div class="v2q-ring-wrap">

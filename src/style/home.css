@@ -19578,3 +19578,19 @@ body.modal-open {
 .v2q-top-fast em { font-style: normal; font-family: 'Bebas Neue', 'Russo One', sans-serif; font-size: 1rem; color: var(--neon-primary); }
 
 .v2q-top-me { margin-top: 0.9rem; }
+
+/* Bebas Neue ne dessine que des capitales : les unités reprennent la police du texte */
+.v2q-top-fast em small,
+.v2q-fastest em small,
+.v2q-key b small {
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: lowercase;
+    color: var(--text-secondary);
+}
+
+.v2q-key b small { font-size: 0.9rem; }
+
+/* Le rang du joueur se centre sous le classement */
+.v2q-top-me { text-align: center; }
