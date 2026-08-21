@@ -19703,3 +19703,67 @@ body.modal-open {
     .v2q-ring-c b { font-size: 2.2rem; }
     .v2q-ring-leg { min-width: 100%; }
 }
+
+/* ============================================
+   🆕 v2 — PASSE MOBILE, 2e tour
+   ============================================ */
+
+/* L'ancien système de bonus mobile (jauge circulaire + menu en arc) doublonnait
+   avec les jetons v2 et venait se poser par-dessus, en bas à droite. */
+.bonus-gauge-mobile,
+.bonus-arc-menu {
+    display: none !important;
+}
+
+/* Pas de survol au doigt : sans ça la carte touchée reste allumée */
+@media (hover: none) {
+    .v2-choice:hover { transform: none; box-shadow: 0 1.2rem 3rem rgba(255, 170, 0, 0); }
+    .v2-choice:hover .v2-choice-glow { opacity: 0; }
+    .v2-choice:hover::after { left: -60%; }
+    .v2-choice:hover .v2-choice-arrow { opacity: 0.35; }
+    .v2-choice-join:hover { border-color: rgba(255, 255, 255, 0.09); box-shadow: none; }
+}
+
+@media (max-width: 768px) {
+
+    /* ── Le salon invité : la sortie tombait sur le texte d'attente ── */
+    .v2-room-leave {
+        top: auto;
+        bottom: clamp(1rem, 3vh, 2rem);
+        transform: none;
+    }
+    .v2-room-leave:hover { transform: none; }
+
+    /* ── Choix du mode : la description passait sous le personnage ── */
+    .v2-mode-preview-desc { max-width: 100%; padding-right: 7.5rem; }
+    .v2-mode-preview-name { padding-right: 6rem; }
+    .v2-mode-char { max-width: 38%; opacity: 0.45; }
+
+    /* ── En jeu : le contenu dépasse la fenêtre aux résultats ──
+       Le body est figé (position: fixed) : c'est la section de jeu
+       qui doit défiler, sinon le classement passe sous les commandes. */
+    .game-section:not(.no-animation) {
+        height: 100vh;
+        max-height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .game-section:not(.no-animation)::-webkit-scrollbar { width: 0; }
+
+    .game-section:not(.no-animation) .question-container-wrapper {
+        padding: 3.4rem 0 9.5rem;
+    }
+
+    /* Des réponses plus compactes : c'est là qu'on gagne le plus de hauteur */
+    .v2q-answer { padding: 1.05rem 2.4rem 1.05rem 0.85rem; }
+    .v2q-answers { gap: 0.55rem; }
+    .v2q-question { font-size: 1.02rem; margin-bottom: 1.4rem; }
+    .v2q-panel { padding: 2.3rem 1.1rem 1.3rem; }
+    .v2q-badges { margin: 0.6rem 0 1.4rem; }
+
+    /* Le classement garde de l'air sous lui, au-dessus des commandes */
+    .v2q-top { margin-top: 1.9rem; }
+}
