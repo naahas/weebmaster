@@ -1027,25 +1027,35 @@
                                 <span class="rk">{{ i + 1 }}</span>
                                 <span class="col">
                                     <span class="nm">{{ p.username }}</span>
-                                    <span class="sub">
-                                        <span class="v2q-top-hp" v-if="gameMode === 'lives'">
+                                    <span class="sub" v-if="gameMode === 'lives'">
+                                        <span class="v2q-top-hp">
                                             <i v-for="n in gameLives" :key="n" :class="{ off: n > p.lives }">
                                                 <svg viewBox="0 0 24 24" stroke-linejoin="round"><path d="M12 20.6s-7-4.3-9-8.4A5 5 0 0 1 12 6.6a5 5 0 0 1 9 5.6c-2 4.1-9 8.4-9 8.4z"/></svg>
                                             </i>
                                         </span>
-                                        <span class="v2q-tag" :class="tagClass(p)">{{ tagSymbol(p) }}</span>
                                     </span>
                                 </span>
-                                <span class="sc">{{ formatScore(scoreOf(p)) }}</span>
+                                <span class="sc" v-if="gameMode === 'points'">{{ formatScore(p.points) }}</span>
+                                <span class="v2q-tag big" v-else :class="tagClass(p)">{{ tagSymbol(p) }}</span>
                             </div>
+
+                            <!-- Le plus rapide intéresse tout le monde, pas seulement l'hôte -->
+                            <div class="v2q-top-fast" v-if="questionResults.fastestPlayer">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M13 2L4.1 12.9a1 1 0 0 0 .8 1.6H11l-1 7.5 8.9-10.9a1 1 0 0 0-.8-1.6H12z"/>
+                                </svg>
+                                <span class="nm">{{ questionResults.fastestPlayer.username }}</span>
+                                <em>{{ fastestTime }}s</em>
+                            </div>
+
                             <div class="v2q-top-me" v-if="myRank > 5">
-                                Tu es <b>{{ myRank }}<sup>e</sup></b> sur {{ rankedPlayers.length }}
+                                Tu es <b>{{ myRank }}<sup>e</sup></b>
                             </div>
                         </aside>
 
                         <!-- Détail de la question : l'hôte seul y a accès -->
                         <button class="v2q-stats-btn" v-if="isHost && showResults && lobbyMode !== 'bombanime'"
-                                @click="showQuestionStats = true" title="Détail de la question" aria-label="Détail de la question">
+                                @click="openQuestionStats" title="Détail de la question" aria-label="Détail de la question">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>
                             </svg>
@@ -1387,7 +1397,7 @@
 
                 <div class="v2q-keys">
                     <div class="v2q-key or"><b>{{ questionResults.stats.correct }}</b><span>Bonnes réponses</span></div>
-                    <div class="v2q-key"><b>{{ successRate }}<small>%</small></b><span>de réussite</span></div>
+                    <div class="v2q-key"><b>{{ questionResults.stats.wrong }}</b><span>Mauvaises</span></div>
                     <div class="v2q-key"><b>{{ questionResults.stats.afk }}</b><span>Sans réponse</span></div>
                     <div class="v2q-key" v-if="questionResults.fastestPlayer">
                         <b>{{ fastestTime }}<small>s</small></b><span>Plus rapide</span>
@@ -1398,7 +1408,7 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M13 2L4.1 12.9a1 1 0 0 0 .8 1.6H11l-1 7.5 8.9-10.9a1 1 0 0 0-.8-1.6H12z"/>
                     </svg>
-                    <span>Premier à trouver</span>
+                    <span>Plus rapide</span>
                     <b>{{ questionResults.fastestPlayer.username }}</b>
                     <em>{{ fastestTime }}s</em>
                 </div>
@@ -1406,10 +1416,7 @@
                 <div class="v2q-ring-wrap">
                     <div class="v2q-ring" :style="{ background: ringGradient }">
                         <div class="v2q-ring-c">
-                            <div>
-                                <b>{{ successRate }}%</b>
-                                <span>de réussite</span>
-                            </div>
+                            <b>{{ sweptRate }}<small>%</small></b>
                         </div>
                     </div>
                     <div class="v2q-ring-leg">

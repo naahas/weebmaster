@@ -168,6 +168,7 @@ createApp({
             pointsPulse: false,
             speedBonus: true,     // +500 points au plus rapide, en mode points
             showQuestionStats: false,  // feuille de détail de la question (hôte)
+            ringSweep: 0,              // 0 → 1 : remplissage de l'anneau à l'ouverture
             answerColors: ['#ffd24a', '#7fb4ff', '#6ee7b7', '#d8b4fe', '#fca5a5', '#fdba74'],
             booting: true,        // tant que l'état serveur n'est pas connu, on n'affiche aucun écran
             questionShown: false, // passe à vrai quand le premier panel de question est visible
@@ -615,6 +616,11 @@ createApp({
             return total ? Math.round((s.correct || 0) / total * 100) : 0;
         },
 
+        // Le chiffre du centre suit le tracé de l'anneau
+        sweptRate() {
+            return Math.round(this.successRate * this.ringSweep);
+        },
+
         fastestTime() {
             const f = this.questionResults.fastestPlayer;
             return f ? (f.time / 1000).toFixed(1).replace('.', ',') : '';
@@ -638,13 +644,21 @@ createApp({
             const parts = this.answerBreakdown.map(a => ({ n: a.count, c: a.color }));
             parts.push({ n: (this.questionResults.stats || {}).afk || 0, c: 'rgba(255,255,255,0.18)' });
             const total = parts.reduce((s, p) => s + p.n, 0);
-            if (!total) return 'rgba(255,255,255,0.08)';
+            const vide = 'rgba(255,255,255,0.07)';
+            if (!total) return vide;
+
+            // Le balayage dessine l'anneau à l'ouverture ; au-delà, c'est du vide
+            const arc = 360 * this.ringSweep;
             let acc = 0;
-            const stops = parts.map(p => {
+            const stops = [];
+            for (const p of parts) {
                 const de = acc / total * 360;
                 acc += p.n;
-                return `${p.c} ${de}deg ${acc / total * 360}deg`;
-            });
+                const a = acc / total * 360;
+                if (de >= arc) break;
+                stops.push(`${p.c} ${de}deg ${Math.min(a, arc)}deg`);
+            }
+            if (arc < 360) stops.push(`${vide} ${arc}deg 360deg`);
             return `conic-gradient(${stops.join(',')})`;
         },
 
@@ -1046,6 +1060,25 @@ createApp({
             if (this.questionShown) return;
             clearTimeout(this._chromeTimer);
             this._chromeTimer = setTimeout(() => { this.questionShown = true; }, 800);
+        },
+
+        // L'anneau se trace d'un trait à l'ouverture de la feuille
+        sweepRing() {
+            cancelAnimationFrame(this._ringRaf);
+            this.ringSweep = 0;
+            const debut = performance.now();
+            const duree = 650;
+            const pas = (t) => {
+                const p = Math.min(1, (t - debut) / duree);
+                this.ringSweep = 1 - Math.pow(1 - p, 3);   // sortie douce
+                if (p < 1) this._ringRaf = requestAnimationFrame(pas);
+            };
+            this._ringRaf = requestAnimationFrame(pas);
+        },
+
+        openQuestionStats() {
+            this.showQuestionStats = true;
+            this.$nextTick(() => this.sweepRing());
         },
 
         // Le repère de la réponse choisie : la couleur suffit, le libellé serait trop long
