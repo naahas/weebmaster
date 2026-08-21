@@ -985,6 +985,9 @@
                         Question {{ currentQuestionNumber }}<em v-if="isHost && currentQuestion.totalQuestions"> / {{ currentQuestion.totalQuestions }}</em>
                     </div>
 
+                    <!-- La scène épouse le panel : le classement et le bouton s'y accrochent,
+                         et repassent en flux sous lui sur les petits écrans. -->
+                    <div class="v2q-stage">
                     <div class="v2q-panel" :class="{ revealed: showResults }">
 
                         <!-- Arête vivante : la jauge de combo occupe le bord haut du panel -->
@@ -1018,6 +1021,25 @@
                         </div>
 
                         <p class="v2q-question">{{ currentQuestion.question }}</p>
+
+                        <div class="v2q-answers" :class="{ six: currentQuestion.answers.length > 4 }">
+                            <button v-for="(answer, index) in currentQuestion.answers" :key="index"
+                                    class="v2q-answer"
+                                    :class="{
+                                        selected: selectedAnswer === index + 1,
+                                        dim: selectedAnswer && selectedAnswer !== index + 1 && !showResults,
+                                        correct: showResults && questionResults.correctAnswer === index + 1,
+                                        wrong: showResults && questionResults.correctAnswer !== index + 1
+                                    }"
+                                    :disabled="hasAnswered || playerLives === 0 || showResults"
+                                    @click="selectAnswer(index + 1, $event)">
+                                <span class="v2q-mark" :class="'m' + index" aria-hidden="true">{{ answerMarks[index] }}</span>
+                                <span class="v2q-answer-text">{{ answer }}</span>
+                                <span class="v2q-answer-pct" v-if="showResults">{{ answerPercent(index + 1) }}%</span>
+                            </button>
+                        </div>
+
+                    </div>
 
                         <!-- Classement, à l'arrivée des résultats — vu de tous -->
                         <aside class="v2q-top" v-if="showResults && lobbyMode !== 'bombanime'">
@@ -1060,23 +1082,6 @@
                                 <path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>
                             </svg>
                         </button>
-
-                        <div class="v2q-answers" :class="{ six: currentQuestion.answers.length > 4 }">
-                            <button v-for="(answer, index) in currentQuestion.answers" :key="index"
-                                    class="v2q-answer"
-                                    :class="{
-                                        selected: selectedAnswer === index + 1,
-                                        dim: selectedAnswer && selectedAnswer !== index + 1 && !showResults,
-                                        correct: showResults && questionResults.correctAnswer === index + 1,
-                                        wrong: showResults && questionResults.correctAnswer !== index + 1
-                                    }"
-                                    :disabled="hasAnswered || playerLives === 0 || showResults"
-                                    @click="selectAnswer(index + 1, $event)">
-                                <span class="v2q-mark" :class="'m' + index" aria-hidden="true">{{ answerMarks[index] }}</span>
-                                <span class="v2q-answer-text">{{ answer }}</span>
-                                <span class="v2q-answer-pct" v-if="showResults">{{ answerPercent(index + 1) }}%</span>
-                            </button>
-                        </div>
 
                     </div>
 
