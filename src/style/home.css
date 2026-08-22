@@ -10879,3 +10879,39 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     .v2-notifs { top: 0.7rem; width: min(20rem, 86vw); }
     .v2-notif { padding: 0.55rem 0.75rem; font-size: 0.72rem; }
 }
+
+/* ============================================
+   🆕 v2 — SALON DE L'HÔTE SUR MOBILE : CARTE D'EN-TÊTE
+   Le haut du salon forme un bloc encadré, nettement séparé des réglages.
+   ============================================ */
+@media (max-width: 768px) {
+    .v2-room-layout:not(.guest) {
+        /* De l'air sous la barre du haut, et entre la carte et les réglages */
+        padding-top: 2.7rem;
+        gap: 2rem;
+    }
+
+    .v2-room-layout:not(.guest) .v2-room-main {
+        width: 100%;
+        padding: 1.2rem 0.9rem 1.3rem;
+        gap: 1.15rem;
+        background: rgba(255, 255, 255, 0.025);
+        border: 0.06rem solid rgba(255, 255, 255, 0.08);
+        border-radius: 0.9rem;
+    }
+
+    /* Le lancement passe sous le code, sur toute la largeur */
+    .v2-room-code-row {
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        gap: 1rem;
+    }
+
+    .v2-room-code-block { width: 100%; align-items: center; }
+    .v2-start { width: 100%; justify-content: center; }
+    .v2-room-players-head { justify-content: center; }
+
+    /* Les joueurs respirent avant le bas de la carte */
+    .v2-room-players { padding-bottom: 0.3rem; }
+}
