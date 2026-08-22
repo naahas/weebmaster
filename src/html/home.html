@@ -977,6 +977,8 @@
                                     <path d="M12 1.6l2.7 7.7 7.7 2.7-7.7 2.7-2.7 7.7-2.7-7.7L1.6 12l7.7-2.7z"/>
                                 </svg>
                                 <span class="v2-hud-pts-delta" v-if="pointsDelta">+{{ pointsDelta }}</span>
+                                <!-- Points x2 : le seul bonus qui n'avait aucun signe visible -->
+                                <span class="v2-hud-x2" v-if="activeBonusEffect === 'doublex2'">×2</span>
                             </span>
                         </span>
                     </div>

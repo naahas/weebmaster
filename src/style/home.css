@@ -10477,7 +10477,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     display: flex;
     align-items: baseline;
     gap: 0.6rem;
-    padding: 0.42rem 0;
+    padding: 0.72rem 0;
     font-size: 0.72rem;
 }
 
@@ -10934,14 +10934,11 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
    Les règles d'origine visaient .answer-btn, disparue avec la v1.
    ============================================ */
 .v2q-answer.bonus-5050-hidden {
-    opacity: 0.12;
+    opacity: 0.2;
     pointer-events: none;
     filter: grayscale(1);
     transition: opacity 0.4s ease, filter 0.4s ease;
 }
-
-.v2q-answer.bonus-5050-hidden .v2q-answer-text,
-.v2q-answer.bonus-5050-hidden .v2q-mark { visibility: hidden; }
 
 .v2q-answer.bonus-revealed {
     border-color: rgba(255, 215, 0, 0.7);
@@ -10969,4 +10966,20 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     left: auto !important;
     right: clamp(0.8rem, 2vw, 1.6rem) !important;
     bottom: clamp(0.8rem, 2vw, 1.6rem) !important;
+}
+
+/* Points x2 en cours : un marqueur qui bat à côté du score */
+.v2-hud-x2 {
+    margin-left: 0.15rem;
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 1.15rem;
+    line-height: 1;
+    color: #7ef7c0;
+    text-shadow: 0 0 0.7rem rgba(110, 231, 183, 0.8);
+    animation: v2X2Bat 1.1s ease-in-out infinite;
+}
+
+@keyframes v2X2Bat {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.45; transform: scale(0.9); }
 }

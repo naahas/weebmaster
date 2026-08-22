@@ -2389,12 +2389,14 @@ createApp({
                     this.hasJoined = false;
                     return;
                 }
-                // Une partie a démarré entre-temps : le refus revient sous l'input
-                if (this.homeScreen === 'join' && data.message &&
+                // Refus de rejoindre : le message revient sous le champ de code plutôt
+                // qu'en bandeau. Si le joueur ne cherchait pas à entrer, on n'affiche rien.
+                if (data.message &&
                     (data.message.includes('en cours') || data.message.includes('Aucun salon'))) {
-                    this.signalJoinError(data.message);
                     this.pendingJoinCode = null;
                     this.hasJoined = false;
+                    this.gameInProgress = false;
+                    if (this.homeScreen === 'join') this.signalJoinError(data.message);
                     return;
                 }
                 // 🆕 Si canSpectate = true, le joueur n'est plus dans la partie
