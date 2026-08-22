@@ -20189,8 +20189,8 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     .v2-choice {
         flex: 1 1 0;
         min-width: 0;
-        aspect-ratio: 6 / 5;
-        clip-path: polygon(0 0, 100% 0, 100% 84%, 86% 100%, 0 100%);
+        aspect-ratio: 4 / 3;
+        clip-path: polygon(0 0, 100% 0, 100% 82%, 85% 100%, 0 100%);
     }
 
     .v2-choice-body { inset: 0.75rem 0.8rem 0.8rem; }
@@ -20198,7 +20198,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     .v2-choice-kicker { font-size: 0.5rem; letter-spacing: 0.16em; }
 
     .v2-choice-title {
-        font-size: clamp(1.25rem, 6.2vw, 1.7rem);
+        font-size: clamp(1.1rem, 5.4vw, 1.5rem);
         line-height: 0.95;
         /* « Rejoindre » ne tient pas en un mot sur une demi-largeur */
         word-break: break-word;
@@ -20206,4 +20206,10 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     }
 
     .v2-choice-arrow { right: 0.8rem; bottom: 0.9rem; font-size: 1.2rem; }
+}
+
+/* Le bloc d'accueil monte : centré, il laissait un grand vide sous les cartes */
+@media (max-width: 768px) {
+    .v2-hub { align-items: flex-start; padding-top: 14vh; }
+    .v2-hub-left { gap: clamp(0.9rem, 2.2vh, 1.5rem); }
 }

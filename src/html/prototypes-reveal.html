@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShonenMaster — Prototypes de révélation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="icon.png">
+    <style>
+        :root { --neon: #FFD700; --accent: #FF8C00; --txt: #fff; --txt2: #a0a0a0; --argent: #cfd4e0; --bronze: #d19a63; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: radial-gradient(120% 90% at 50% 0%, #14100a 0%, #0c0c0e 45%, #08080a 100%);
+            background-attachment: fixed;
+            color: var(--txt);
+            font-family: 'Poppins', sans-serif;
+            padding: 2.5rem clamp(1rem, 4vw, 3rem) 6rem;
+        }
+
+        .nav { max-width: 80rem; margin: 0 auto 2rem; display: flex; gap: .6rem; flex-wrap: wrap; }
+        .nav a {
+            padding: .45rem .9rem; font-size: .78rem; font-weight: 600; text-decoration: none;
+            color: var(--txt2); background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08); border-radius: 2rem; transition: .2s;
+        }
+        .nav a:hover, .nav a.on { color: var(--neon); border-color: rgba(255,215,0,.4); }
+
+        .head { max-width: 80rem; margin: 0 auto 1.4rem; }
+        .head h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: .03em; }
+        .head p { color: var(--txt2); font-size: .9rem; max-width: 56rem; line-height: 1.65; }
+        .head b { color: var(--neon); font-weight: 600; }
+
+        .barre { max-width: 80rem; margin: 0 auto 2.5rem; }
+        .barre button {
+            padding: .5rem 1.1rem; font-family: inherit; font-size: .72rem; font-weight: 700;
+            letter-spacing: .06em; text-transform: uppercase; color: #14100a;
+            background: linear-gradient(135deg, #ffe066, var(--accent));
+            border: none; border-radius: 2rem; cursor: pointer;
+        }
+
+        .protos { max-width: 80rem; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(32rem, 1fr)); gap: 2.6rem; }
+        .proto-head { display: flex; align-items: baseline; gap: .8rem; margin-bottom: .9rem; }
+        .proto-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--neon); }
+        .proto-name { font-size: 1rem; font-weight: 700; }
+        .rejouer {
+            margin-left: auto; padding: .3rem .8rem; font-family: inherit; font-size: .62rem; font-weight: 700;
+            letter-spacing: .1em; text-transform: uppercase; color: var(--txt2);
+            background: none; border: 1px solid rgba(255,255,255,.14); border-radius: 2rem; cursor: pointer;
+        }
+        .rejouer:hover { color: var(--neon); border-color: rgba(255,215,0,.45); }
+        .proto-note { font-size: .76rem; color: var(--txt2); line-height: 1.6; margin: 1rem .2rem 0; }
+        .proto-note b { color: #d8d8d8; font-weight: 600; }
+
+        .cadre {
+            position: relative; overflow: hidden;
+            aspect-ratio: 16 / 10;
+            border: 1px solid rgba(255,255,255,.07); border-radius: 1rem;
+            background: radial-gradient(120% 90% at 50% 0%, #14100a 0%, #0c0c0e 45%, #08080a 100%);
+        }
+        .scene { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.6rem; }
+
+        .titre {
+            display: flex; align-items: center; gap: .7rem; margin-bottom: 1.3rem;
+            font-family: 'Space Grotesk'; font-size: .56rem; font-weight: 700;
+            letter-spacing: .28em; text-transform: uppercase; color: var(--txt2);
+        }
+        .titre::before, .titre::after { content: ''; width: 1.8rem; height: 1px; background: linear-gradient(90deg, transparent, rgba(240,192,64,.55)); }
+        .titre::after { background: linear-gradient(90deg, rgba(240,192,64,.55), transparent); }
+
+        /* ══════ Ligne de classement, base commune ══════ */
+        .liste { width: min(26rem, 100%); }
+        .li {
+            display: flex; align-items: center; gap: .9rem; padding: .55rem 0;
+            opacity: 0;
+        }
+        .li + .li { border-top: 1px solid rgba(255,255,255,.055); }
+        .li .rk { width: 1.6rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: rgba(255,255,255,.16); }
+        .li .nm { flex: 1; font-size: .88rem; font-weight: 600; }
+        .li .sc { font-family: 'Bebas Neue', sans-serif; font-size: 1.05rem; color: var(--txt2); font-variant-numeric: tabular-nums; }
+        .li.or { padding: .85rem 0; }
+        .li.or .rk { color: var(--neon); font-size: 2.3rem; }
+        .li.or .nm { font-size: 1.5rem; color: var(--neon); font-family: 'Bebas Neue', sans-serif; letter-spacing: .02em; }
+        .li.or .sc { font-size: 1.8rem; color: var(--neon); }
+
+        .li.vu { opacity: 1; }
+
+        /* Entrées : les places arrivent par le bas, le vainqueur par un choc */
+        .monte { animation: monte .55s cubic-bezier(.2,.85,.3,1) both; }
+        @keyframes monte { from { opacity: 0; transform: translateY(1.2rem); } to { opacity: 1; transform: none; } }
+
+        .choc { animation: choc .7s cubic-bezier(.2,1.4,.35,1) both; }
+        @keyframes choc {
+            0%   { opacity: 0; transform: scale(1.5); filter: blur(.3rem); }
+            55%  { opacity: 1; transform: scale(.97); filter: blur(0); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Éclat doré derrière le vainqueur */
+        .eclat {
+            position: absolute; left: 50%; top: 50%; width: 22rem; height: 22rem;
+            transform: translate(-50%,-50%) scale(.2); opacity: 0;
+            background: radial-gradient(circle, rgba(255,200,60,.35), transparent 62%);
+            pointer-events: none;
+            animation: eclat .9s cubic-bezier(.2,.8,.3,1) both;
+        }
+        @keyframes eclat { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.2); } 35% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%,-50%) scale(1.5); } }
+
+        /* Confettis */
+        .confetti {
+            position: absolute; top: -1.5rem; width: .35rem; height: .7rem; border-radius: .08rem;
+            pointer-events: none;
+            animation: tombe var(--d) cubic-bezier(.25,.6,.4,1) forwards;
+        }
+        @keyframes tombe {
+            0%   { opacity: 1; transform: translate(0,0) rotate(0); }
+            100% { opacity: 0; transform: translate(var(--dx), 115%) rotate(var(--rot)); }
+        }
+
+        /* ══════ R2 — chiffre géant ══════ */
+        .geant {
+            position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none;
+            font-family: 'Bebas Neue', sans-serif; font-size: 16rem; line-height: 1;
+            color: rgba(255,255,255,.07);
+            animation: geant .85s cubic-bezier(.2,.8,.3,1) both;
+        }
+        .geant.or { color: rgba(255,215,0,.14); }
+        @keyframes geant {
+            0%   { opacity: 0; transform: scale(1.6); }
+            30%  { opacity: 1; transform: scale(1); }
+            75%  { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(.9); }
+        }
+
+        /* ══════ R3 — cartes retournées ══════ */
+        .cartes { display: flex; gap: .8rem; align-items: flex-end; }
+        .carte { width: 8rem; perspective: 40rem; }
+        .carte .face {
+            position: relative; height: 8.5rem; border-radius: .7rem;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .3rem;
+            background: linear-gradient(165deg, rgba(24,22,17,.98), rgba(14,14,16,.98));
+            border: 1px solid rgba(255,255,255,.09);
+            transform: rotateY(180deg); opacity: .35;
+            transition: transform .6s cubic-bezier(.3,.9,.3,1), opacity .3s, border-color .4s, box-shadow .4s;
+            transform-style: preserve-3d;
+        }
+        .carte.vu .face { transform: none; opacity: 1; }
+        .carte .rk { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: rgba(255,255,255,.28); }
+        .carte .nm { font-size: .8rem; font-weight: 600; text-align: center; padding: 0 .4rem; }
+        .carte .sc { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; color: var(--txt2); }
+        .carte.p1 { width: 10rem; }
+        .carte.p1 .face { height: 10.5rem; }
+        .carte.p1.vu .face { border-color: rgba(255,215,0,.5); box-shadow: 0 0 2.5rem rgba(255,190,40,.22); }
+        .carte.p1 .rk { color: var(--neon); font-size: 2.2rem; }
+        .carte.p1 .nm { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--neon); }
+        .carte.p1 .sc { font-size: 1.3rem; color: var(--neon); }
+
+        /* ══════ R4 — projecteur ══════ */
+        .r4 .scene { justify-content: flex-end; padding-bottom: 2.2rem; }
+        .faisceau {
+            position: absolute; top: -12%; left: 50%; width: 16rem; height: 90%;
+            transform: translateX(-50%);
+            background: linear-gradient(180deg, rgba(255,215,0,.16), transparent 72%);
+            clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%);
+            opacity: 0; pointer-events: none;
+            animation: faisceau .8s ease both;
+        }
+        @keyframes faisceau { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: .55; } }
+        .r4 .liste { position: relative; z-index: 2; }
+        .r4 .li.or { justify-content: center; }
+        .r4 .li.or .nm { text-align: center; }
+
+        @media (max-width: 700px) {
+            .protos { grid-template-columns: 1fr; }
+            .cadre { aspect-ratio: 4 / 5; }
+            .carte { width: 5.5rem; } .carte .face { height: 6.5rem; }
+            .carte.p1 { width: 7rem; } .carte.p1 .face { height: 8rem; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="nav">
+        <a href="/prototypes">Mise en page</a>
+        <a href="/prototypes/jeu">Écran de jeu</a>
+        <a href="/prototypes/effets">Effets de clic</a>
+        <a href="/prototypes/timer">Timer</a>
+        <a href="/prototypes/vies">Vies</a>
+        <a href="/prototypes/hud">HUD</a>
+        <a href="/prototypes/coeurs">Cœurs &amp; numéro</a>
+        <a href="/prototypes/stats">Classement</a>
+        <a href="/prototypes/podium">Fin de partie</a>
+        <a href="/prototypes/reveal" class="on">Révélation</a>
+        <a href="/">← Le site</a>
+    </div>
+
+    <div class="head">
+        <h1>Prototypes — révélation du podium</h1>
+        <p>
+            Quatre façons d'amener le <b>classement final</b> retenu, en dévoilant les places à rebours :
+            <b>3<sup>e</sup>, puis 2<sup>e</sup>, puis le vainqueur</b>, avec confettis. Chaque cadre se rejoue
+            avec son bouton, ou tous d'un coup avec celui du haut.
+        </p>
+    </div>
+
+    <div class="barre"><button id="tout">Tout rejouer</button></div>
+
+    <div class="protos" id="protos"></div>
+
+    <script>
+        const J = [
+            { n: 'Tanuki118', p: 4200 }, { n: 'KenshinX', p: 3850 }, { n: 'Sakura_92', p: 3410 },
+            { n: 'GonFreecss', p: 2980 }, { n: 'Levi_Acker', p: 2640 },
+        ];
+        const pts = (n) => n.toLocaleString('fr-FR');
+        const COULEURS = ['#FFD700', '#FF8C00', '#ffffff', '#7fb4ff', '#6ee7b7', '#d8b4fe'];
+
+        const PROTOS = [
+            {
+                id: 'r1', num: 'R1', nom: 'Montée en ligne',
+                note: "Les places montent une à une depuis le bas, puis le vainqueur <b>surgit en grand</b> avec un éclat doré et les confettis. Le plus proche du classement retenu — c'est la même liste, simplement mise en scène. Sobre et sûr."
+            },
+            {
+                id: 'r2', num: 'R2', nom: 'Chiffre géant',
+                note: "Avant chaque place, son <b>rang emplit l'écran en filigrane</b> puis s'efface pour laisser la ligne. Ça installe un rythme de décompte : 3… 2… 1. Le plus théâtral sans rien coûter en lisibilité."
+            },
+            {
+                id: 'r3', num: 'R3', nom: 'Cartes retournées',
+                note: "Trois cartes face cachée se retournent dans l'ordre, la première plus grande que les autres. <b>Le suspense est physique</b> — on attend le retournement. Mais on quitte le vocabulaire des lignes nues du reste du jeu."
+            },
+            {
+                id: 'r4', num: 'R4', nom: 'Projecteur',
+                note: "L'écran reste noir, un faisceau descend sur chaque place à son tour et s'élargit sur le vainqueur. <b>Le plus cinématographique</b>, et celui qui rend le mieux en vertical — au prix d'un écran très sombre pendant deux secondes."
+            },
+        ];
+
+        document.getElementById('protos').innerHTML = PROTOS.map(p => `
+            <section>
+                <div class="proto-head">
+                    <span class="proto-num">${p.num}</span><span class="proto-name">${p.nom}</span>
+                    <button class="rejouer" data-id="${p.id}">Rejouer</button>
+                </div>
+                <div class="cadre ${p.id}" id="${p.id}"></div>
+                <p class="proto-note">${p.note}</p>
+            </section>`).join('');
+
+        // ══════════════ Confettis ══════════════
+        function confettis(cadre, n = 70) {
+            for (let i = 0; i < n; i++) {
+                const c = document.createElement('span');
+                c.className = 'confetti';
+                c.style.left = (Math.random() * 100) + '%';
+                c.style.background = COULEURS[(Math.random() * COULEURS.length) | 0];
+                c.style.setProperty('--dx', ((Math.random() - 0.5) * 12) + 'rem');
+                c.style.setProperty('--rot', ((Math.random() - 0.5) * 1200) + 'deg');
+                c.style.setProperty('--d', (1.6 + Math.random() * 1.4).toFixed(2) + 's');
+                c.style.animationDelay = (Math.random() * 0.5).toFixed(2) + 's';
+                if (Math.random() > 0.6) { c.style.width = '.5rem'; c.style.height = '.5rem'; c.style.borderRadius = '50%'; }
+                cadre.appendChild(c);
+                setTimeout(() => c.remove(), 3600);
+            }
+        }
+
+        const attendre = (ms) => new Promise(r => setTimeout(r, ms));
+        const ligne = (rang, j, or) => `
+            <div class="li ${or ? 'or' : ''}">
+                <span class="rk">${rang}</span>
+                <span class="nm">${j.n}</span>
+                <span class="sc">${pts(j.p)}</span>
+            </div>`;
+
+        // ══════════════ Les quatre mises en scène ══════════════
+        const JEUX = {
+            async r1(cadre) {
+                cadre.innerHTML = `<div class="scene"><span class="titre">Classement final</span><div class="liste"></div></div>`;
+                const liste = cadre.querySelector('.liste');
+                for (const [i, rang] of [3, 2].entries()) {
+                    await attendre(i === 0 ? 400 : 900);
+                    liste.insertAdjacentHTML('afterbegin', ligne(rang, J[rang - 1], false));
+                    liste.firstElementChild.classList.add('vu', 'monte');
+                }
+                await attendre(1000);
+                liste.insertAdjacentHTML('afterbegin', ligne(1, J[0], true));
+                liste.firstElementChild.classList.add('vu', 'choc');
+                cadre.insertAdjacentHTML('beforeend', '<span class="eclat"></span>');
+                confettis(cadre);
+            },
+
+            async r2(cadre) {
+                cadre.innerHTML = `<div class="scene"><span class="titre">Classement final</span><div class="liste"></div></div>`;
+                const liste = cadre.querySelector('.liste');
+                for (const rang of [3, 2, 1]) {
+                    await attendre(rang === 3 ? 300 : 500);
+                    const g = document.createElement('div');
+                    g.className = 'geant' + (rang === 1 ? ' or' : '');
+                    g.textContent = rang;
+                    cadre.appendChild(g);
+                    await attendre(620);
+                    liste.insertAdjacentHTML('afterbegin', ligne(rang, J[rang - 1], rang === 1));
+                    liste.firstElementChild.classList.add('vu', rang === 1 ? 'choc' : 'monte');
+                    if (rang === 1) { cadre.insertAdjacentHTML('beforeend', '<span class="eclat"></span>'); confettis(cadre); }
+                    setTimeout(() => g.remove(), 400);
+                }
+            },
+
+            async r3(cadre) {
+                cadre.innerHTML = `
+                    <div class="scene">
+                        <span class="titre">Classement final</span>
+                        <div class="cartes">
+                            <div class="carte p2"><div class="face"><span class="rk">2</span><span class="nm">${J[1].n}</span><span class="sc">${pts(J[1].p)}</span></div></div>
+                            <div class="carte p1"><div class="face"><span class="rk">1</span><span class="nm">${J[0].n}</span><span class="sc">${pts(J[0].p)}</span></div></div>
+                            <div class="carte p3"><div class="face"><span class="rk">3</span><span class="nm">${J[2].n}</span><span class="sc">${pts(J[2].p)}</span></div></div>
+                        </div>
+                    </div>`;
+                await attendre(450);
+                cadre.querySelector('.p3').classList.add('vu');
+                await attendre(850);
+                cadre.querySelector('.p2').classList.add('vu');
+                await attendre(950);
+                cadre.querySelector('.p1').classList.add('vu');
+                cadre.insertAdjacentHTML('beforeend', '<span class="eclat"></span>');
+                confettis(cadre);
+            },
+
+            async r4(cadre) {
+                cadre.innerHTML = `<div class="scene"><div class="liste"></div></div>`;
+                const liste = cadre.querySelector('.liste');
+                for (const [i, rang] of [3, 2].entries()) {
+                    await attendre(i === 0 ? 400 : 900);
+                    const f = document.createElement('span');
+                    f.className = 'faisceau';
+                    cadre.appendChild(f);
+                    liste.insertAdjacentHTML('afterbegin', ligne(rang, J[rang - 1], false));
+                    liste.firstElementChild.classList.add('vu', 'monte');
+                    setTimeout(() => f.remove(), 900);
+                }
+                await attendre(1000);
+                cadre.insertAdjacentHTML('beforeend', '<span class="faisceau" style="width:34rem"></span>');
+                liste.insertAdjacentHTML('afterbegin', ligne(1, J[0], true));
+                liste.firstElementChild.classList.add('vu', 'choc');
+                confettis(cadre);
+            },
+        };
+
+        function jouer(id) {
+            const cadre = document.getElementById(id);
+            cadre.innerHTML = '';
+            JEUX[id](cadre);
+        }
+
+        document.addEventListener('click', e => {
+            const id = e.target.dataset.id;
+            if (id) jouer(id);
+        });
+        document.getElementById('tout').addEventListener('click', () => PROTOS.forEach(p => jouer(p.id)));
+
+        PROTOS.forEach(p => jouer(p.id));
+    </script>
+</body>
+
+</html>
