@@ -1494,6 +1494,9 @@ createApp({
                 if (this.pendingJoinCode === code && !this.joinError) {
                     this.hasJoined = true;
                     this.roomCode = code;
+                    // Une fois entré, l'accueil derrière repasse au hub : quand le salon
+                    // se fermera, on ne retombera pas sur l'écran du code.
+                    this.homeScreen = 'hub';
                     localStorage.setItem('roomCode', code);
                     localStorage.setItem('hasJoinedLobby', 'true');
                     localStorage.setItem('lobbyTwitchId', this.twitchId);
@@ -2106,6 +2109,11 @@ createApp({
                 // Reset COMPLET de l'état du jeu
                 this.isGameActive = false;
                 this.gameInProgress = false;
+                // L'écran du code était resté sélectionné depuis l'entrée dans le salon
+                this.homeScreen = 'hub';
+                this.joinCode = '';
+                this.joinStep = 'code';
+                this.joinError = '';
                 this.gameStartedOnServer = false; // 🆕 Reset flag
                 this.gameEnded = false;
                 this.hasJoined = false;
