@@ -20004,3 +20004,138 @@ body.v2-sheet-open .v2-hud {
     pointer-events: none;
     transition: opacity 0.2s ease;
 }
+
+/* ============================================
+   🆕 v2 — SIGNALEMENT D'UNE QUESTION
+   ============================================ */
+
+/* Le drapeau se range sous le bouton de détail, du même côté du panel */
+.v2q-report-btn {
+    position: absolute;
+    right: calc(100% + 3.4rem);
+    top: calc(50% + 3.7rem);
+    transform: translateY(-50%);
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    padding: 0;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.035);
+    border: 0.06rem solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: color 0.25s ease, background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+    animation: v2qStatsIn 0.85s cubic-bezier(0.16, 0.9, 0.25, 1) 0.18s both;
+}
+
+.v2q-report-btn svg { width: 1.25rem; height: 1.25rem; }
+
+.v2q-report-btn:hover:not(:disabled) {
+    color: #ff9b6b;
+    background: rgba(255, 140, 60, 0.09);
+    border-color: rgba(255, 140, 60, 0.45);
+    transform: translateY(-50%) scale(1.06);
+}
+
+.v2q-report-btn.fait { color: rgba(255, 155, 107, 0.55); border-color: rgba(255, 140, 60, 0.3); cursor: default; }
+
+/* ── La modale ── */
+.v2-report-veil {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: grid;
+    place-items: center;
+    padding: 1.5rem;
+    background: rgba(5, 5, 7, 0.9);
+}
+
+.v2-report {
+    width: min(28rem, 100%);
+    max-height: 90vh;
+    overflow: auto;
+    padding: 1.5rem 1.4rem 1.3rem;
+    background: linear-gradient(170deg, rgba(20, 19, 15, 0.99), rgba(11, 11, 13, 0.99));
+    border: 0.06rem solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    animation: v2qSheetIn 0.32s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.v2-report-head { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.9rem; }
+.v2-report-head h3 { font-family: 'Bebas Neue', 'Russo One', sans-serif; font-size: 1.45rem; letter-spacing: 0.03em; }
+.v2-report-head .v2q-sheet-close { margin-left: auto; }
+
+.v2-report-q {
+    margin-bottom: 1.1rem;
+    padding-left: 0.75rem;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    border-left: 0.12rem solid rgba(255, 255, 255, 0.14);
+}
+
+.v2-report-list { display: flex; flex-direction: column; gap: 0.35rem; }
+
+.v2-report-opt {
+    padding: 0.7rem 0.85rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-align: left;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.03);
+    border: 0.06rem solid rgba(255, 255, 255, 0.07);
+    border-radius: 0.55rem;
+    cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.v2-report-opt:hover { color: var(--text-primary); border-color: rgba(255, 255, 255, 0.2); }
+
+.v2-report-opt.on {
+    color: var(--text-primary);
+    background: rgba(255, 140, 60, 0.12);
+    border-color: rgba(255, 140, 60, 0.5);
+}
+
+.v2-report-row { display: flex; gap: 0.6rem; margin-top: 1.2rem; }
+
+.v2-report-send {
+    flex: 1;
+    padding: 0.7rem 0.9rem;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #ffd9c4;
+    background: rgba(255, 140, 60, 0.16);
+    border: 0.06rem solid rgba(255, 140, 60, 0.5);
+    border-radius: 0.6rem;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.v2-report-send:hover:not(:disabled) { background: rgba(255, 140, 60, 0.26); border-color: rgba(255, 140, 60, 0.75); }
+.v2-report-send:disabled { opacity: 0.4; cursor: default; }
+
+/* Sur petit écran, le drapeau rejoint la rangée du haut, après le classement */
+@media (max-width: 1200px) {
+    .v2q-report-btn {
+        position: fixed;
+        top: 0.9rem;
+        left: 7.9rem;
+        right: auto;
+        transform: none;
+        animation: none;
+    }
+    .v2q-report-btn:hover:not(:disabled) { transform: scale(1.06); }
+}
+
+@media (max-width: 768px) {
+    .v2q-report-btn { width: 2.7rem; height: 2.7rem; left: 7.3rem; }
+    .v2q-report-btn svg { width: 1.1rem; height: 1.1rem; }
+}
+
+/* Le drapeau disparaît aussi derrière un calque */
+body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }

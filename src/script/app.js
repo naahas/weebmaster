@@ -167,6 +167,19 @@ createApp({
             speedBonus: true,     // +500 points au plus rapide, en mode points
             showQuestionStats: false,  // feuille de détail de la question (hôte)
             showTopSheet: false,       // classement en calque, sur petit écran
+            showReport: false,         // modale de signalement d'une question
+            reportReason: '',
+            reportBusy: false,
+            questionReported: false,   // un seul signalement par question
+            reportReasons: [
+                { v: 'Augmenter difficulté', l: 'Augmenter la difficulté' },
+                { v: 'Baisser difficulté', l: 'Baisser la difficulté' },
+                { v: 'Corriger question / reponses', l: 'Corriger la question ou les réponses' },
+                { v: 'Changer bonne réponse', l: 'Changer la bonne réponse' },
+                { v: 'Reformuler', l: 'Reformuler la question' },
+                { v: 'Doublon', l: 'Enlever un doublon' },
+                { v: 'Marquer spoil', l: 'Marquer comme spoil' },
+            ],
             confirmAction: null,       // 'close' (hôte) ou 'leave' (invité)
             ringSweep: 0,              // 0 → 1 : remplissage de l'anneau à l'ouverture
             answerColors: ['#ffd24a', '#7fb4ff', '#6ee7b7', '#d8b4fe', '#fca5a5', '#fdba74'],
@@ -1080,6 +1093,38 @@ createApp({
         },
 
         // Contrôles de l'hôte pendant la partie (ex-panel /admin)
+        openReport() {
+            if (this.questionReported) return;
+            this.reportReason = '';
+            this.showReport = true;
+        },
+
+        async sendReport() {
+            if (!this.reportReason || !this.currentQuestion || this.reportBusy) return;
+            this.reportBusy = true;
+            try {
+                const res = await fetch('/admin/report-question', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        questionId: this.currentQuestion.questionId,
+                        questionText: this.currentQuestion.question,
+                        difficulty: this.currentQuestion.difficulty,
+                        reason: this.reportReason,
+                    }),
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                this.questionReported = true;
+                this.showReport = false;
+                this.showNotification('Question signalée, merci', 'success');
+            } catch (e) {
+                this.showNotification("Le signalement n'a pas pu être envoyé", 'error');
+            } finally {
+                this.reportBusy = false;
+            }
+        },
+
         marquerCalque(ouvert) {
             document.body.classList.toggle('v2-sheet-open', !!ouvert);
         },
@@ -2049,6 +2094,8 @@ createApp({
                 this.answerCounts = {};
                 this.showQuestionStats = false;
                 this.showTopSheet = false;
+                this.showReport = false;
+                this.questionReported = false;
                 this.clearSeal();
                 this.revealQuestionChrome();
                 if (!this.hasJoined) {

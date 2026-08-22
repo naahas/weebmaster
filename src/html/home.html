@@ -82,7 +82,6 @@
                             spellcheck="false">
                         <div class="v2-pseudo-error" v-if="pseudoError">{{ pseudoError }}</div>
                         <div class="v2-pseudo-actions">
-                            <button class="v2-btn v2-btn-ghost v2-btn-sm" @click="rerollPseudo">Au hasard</button>
                             <button class="v2-btn v2-btn-primary v2-btn-sm" @click="setPseudo">Valider</button>
                         </div>
                     </div>
@@ -484,21 +483,6 @@
                 </div>
             </div>
 
-
-            <!-- État: Spectateur (partie en cours mais pas rejoint) -->
-            <div class="content-section"
-                v-if="gameStartedOnServer && !gameInProgress && isGameActive && isAuthenticated && !gameEnded">
-                <div class="info-card spectator-card">
-                    <div class="spectator-icon">⏳</div>
-                    <h2>Partie en cours</h2>
-                    <p>Une partie est actuellement en cours.</p>
-                    <p class="small-text">Veuillez patienter jusqu'à la prochaine partie pour rejoindre le jeu.</p>
-                </div>
-
-                <button class="btn-secondary" @click="logout">
-                    Déconnexion
-                </button>
-            </div>
 
             <!-- État: Partie en cours -->
             <!-- 🆕 v2 — Contrôles de l'hôte pendant la partie (remplacent /admin) -->
@@ -1104,6 +1088,19 @@
                             </svg>
                         </button>
 
+                        <!-- Signalement d'une question. Réservé à l'hôte : ouvrir aux joueurs
+                             remplirait la table de motifs de dépit après une mauvaise réponse.
+                             Pour l'ouvrir à tous, retirer « isHost && » ci-dessous. -->
+                        <button class="v2q-report-btn" v-if="isHost && showResults && lobbyMode !== 'bombanime'"
+                                :class="{ fait: questionReported }"
+                                @click="openReport" :disabled="questionReported"
+                                :title="questionReported ? 'Question déjà signalée' : 'Signaler cette question'"
+                                aria-label="Signaler cette question">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 21V4M4 4h11l-1.6 3.4L15 11H4"/>
+                            </svg>
+                        </button>
+
                         <!-- Détail de la question : l'hôte seul y a accès -->
                         <button class="v2q-stats-btn" v-if="isHost && showResults && lobbyMode !== 'bombanime'"
                                 @click="openQuestionStats" title="Détail de la question" aria-label="Détail de la question">
@@ -1417,6 +1414,31 @@
             </div>
         </div>
 
+
+        <!-- 🆕 v2 — Signalement d'une question -->
+        <div class="v2-report-veil" v-if="showReport" @click.self="showReport = false">
+            <div class="v2-report">
+                <div class="v2-report-head">
+                    <h3>Signaler la question</h3>
+                    <button class="v2q-sheet-close" @click="showReport = false">Fermer</button>
+                </div>
+
+                <p class="v2-report-q" v-if="currentQuestion">{{ currentQuestion.question }}</p>
+
+                <div class="v2-report-list">
+                    <button v-for="m in reportReasons" :key="m.v"
+                            class="v2-report-opt" :class="{ on: reportReason === m.v }"
+                            @click="reportReason = m.v">{{ m.l }}</button>
+                </div>
+
+                <div class="v2-report-row">
+                    <button class="v2-confirm-no" @click="showReport = false">Annuler</button>
+                    <button class="v2-report-send" :disabled="!reportReason || reportBusy" @click="sendReport">
+                        {{ reportBusy ? 'Envoi…' : 'Signaler' }}
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <!-- 🆕 v2 — Confirmation avant de fermer le salon ou de le quitter -->
         <div class="v2-confirm-veil" v-if="confirmAction" @click.self="confirmAction = null">
