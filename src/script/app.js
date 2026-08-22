@@ -1340,6 +1340,33 @@ createApp({
             localStorage.setItem('lastMode', id);
         },
 
+        // Un appui sur l'un des deux choix : une onde part du point touché et le
+        // bloc s'enfonce, puis on navigue. Le court délai laisse voir l'effet,
+        // qui disparaîtrait aussitôt avec le changement d'écran.
+        pressChoice(event, quoi) {
+            const b = event.currentTarget;
+            if (b) {
+                const r = b.getBoundingClientRect();
+                const onde = document.createElement('span');
+                onde.className = 'v2-choice-ripple';
+                onde.style.left = (event.clientX ? event.clientX - r.left : r.width / 2) + 'px';
+                onde.style.top = (event.clientY ? event.clientY - r.top : r.height / 2) + 'px';
+                b.appendChild(onde);
+                setTimeout(() => onde.remove(), 700);
+
+                if (b.animate) {
+                    b.animate(
+                        [{ transform: 'scale(1)' }, { transform: 'scale(0.972)', offset: 0.4 }, { transform: 'scale(1)' }],
+                        { duration: 280, easing: 'cubic-bezier(0.2, 0.9, 0.3, 1)' }
+                    );
+                }
+            }
+            setTimeout(() => {
+                if (quoi === 'create') this.goToModes();
+                else this.openJoin();
+            }, 190);
+        },
+
         goToModes() {
             this.createError = '';
             this.homeScreen = 'modes';

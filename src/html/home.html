@@ -117,7 +117,7 @@
                             class="v2-choice v2-choice-create"
                             :class="{ dimmed: hubHover === 'join' }"
                             @mouseenter="hubHover = 'create'" @mouseleave="hubHover = null"
-                            @click="goToModes">
+                            @click="pressChoice($event, 'create')">
                             <span class="v2-choice-glow"></span>
                             <div class="v2-choice-body">
                                 <span class="v2-choice-kicker">Hôte</span>
@@ -130,7 +130,7 @@
                             class="v2-choice v2-choice-join"
                             :class="{ dimmed: hubHover === 'create' }"
                             @mouseenter="hubHover = 'join'" @mouseleave="hubHover = null"
-                            @click="openJoin">
+                            @click="pressChoice($event, 'join')">
                             <span class="v2-choice-glow"></span>
                             <div class="v2-choice-body">
                                 <span class="v2-choice-kicker">Invité</span>
