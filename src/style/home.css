@@ -20659,7 +20659,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     position: relative;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.7rem;
     font-size: 0.82rem;
     color: var(--text-secondary);
 }
@@ -20736,4 +20736,9 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     .v2-end-me { width: min(27rem, 100%); }
     .v2-end-row { padding-left: 0.7rem; padding-right: 0.7rem; }
     .v2-end-me { padding-left: 0.7rem; padding-right: 0.7rem; }
+}
+
+/* L'accueil mobile s'en tient au titre, aux deux choix et aux chiffres */
+@media (max-width: 768px) {
+    .v2-recent { display: none; }
 }
