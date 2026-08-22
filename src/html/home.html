@@ -213,7 +213,7 @@
                     </button>
 
                     <div class="v2-join-box">
-                        <template v-if="joinStep === 'code'">
+                        <template>
                             <span class="v2-join-label">Code du salon</span>
                             <input
                                 type="text"
@@ -230,14 +230,6 @@
                             <p class="v2-join-err" :class="{ vu: joinError }">{{ joinError }}</p>
                         </template>
 
-                        <template v-else>
-                            <span class="v2-join-label">Ton camp</span>
-                            <div class="v2-team-choice">
-                                <button class="v2-team v2-team-1" @click="joinRoom(1)">{{ teamNames[1] }}</button>
-                                <button class="v2-team v2-team-2" @click="joinRoom(2)">{{ teamNames[2] }}</button>
-                            </div>
-                            <div class="v2-modal-error" v-if="joinError">{{ joinError }}</div>
-                        </template>
                     </div>
                 </section>
             </div>
@@ -301,20 +293,7 @@
                         </div>
 
                         <!-- Équipes (mode Rivalité) -->
-                        <div class="v2-teams" v-if="lobbyMode === 'rivalry'">
-                            <button class="v2-team-pick team-1"
-                                    :class="{ picked: selectedTeam === 1 }"
-                                    @click="selectAndJoinTeam(1, $event)">
-                                <span class="v2-team-name">{{ teamNames[1] }}</span>
-                                <span class="v2-team-count">{{ teamCounts[1] }}</span>
-                            </button>
-                            <button class="v2-team-pick team-2"
-                                    :class="{ picked: selectedTeam === 2 }"
-                                    @click="selectAndJoinTeam(2, $event)">
-                                <span class="v2-team-name">{{ teamNames[2] }}</span>
-                                <span class="v2-team-count">{{ teamCounts[2] }}</span>
-                            </button>
-                        </div>
+                        <!-- Le choix du camp appartient à l'hôte : voir la liste des joueurs -->
 
                         <!-- L'invité voit une confirmation, pas la liste des autres -->
                         <div class="v2-room-guest" v-if="!isHost">
@@ -341,16 +320,29 @@
                                 <span class="v2-room-players-label">
                                     joueur<span v-if="playerCount > 1">s</span> dans le salon<span v-if="maxPlayers && lobbyMode === 'bombanime'"> · {{ maxPlayers }} max</span>
                                 </span>
+                                <button class="v2-shuffle" v-if="lobbyMode === 'rivalry' && playerCount > 1"
+                                        @click="shuffleTeams" :disabled="shuffleBusy" title="Répartir au hasard">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M16 3h5v5"/><path d="M4 20L21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/>
+                                    </svg>
+                                    Mélanger
+                                </button>
                             </div>
                             <div class="v2-room-players-grid" v-if="lobbyPlayers.length">
+                                <span class="v2-room-player-wrap" v-for="p in lobbyPlayers" :key="p.twitchId">
                                 <button class="v2-room-player"
-                                     v-for="p in lobbyPlayers"
-                                     :key="p.twitchId"
                                      :class="['team-' + (p.team || 0), { me: p.twitchId === twitchId, kickable: isHost && p.twitchId !== twitchId }]"
                                      :title="isHost && p.twitchId !== twitchId ? 'Exclure ' + p.username : null"
                                      @click="isHost && p.twitchId !== twitchId ? hostKick(p.twitchId) : null">
                                     <span class="v2-room-player-name">{{ p.username }}</span>
                                 </button>
+                                <span class="v2-room-player-teams" v-if="isHost && lobbyMode === 'rivalry'">
+                                    <button v-for="t in [1, 2]" :key="t"
+                                            class="v2-team-dot" :class="['team-' + t, { on: p.team === t }]"
+                                            @click.stop="setPlayerTeam(p.twitchId, p.team === t ? null : t)"
+                                            :title="teamNames[t]">{{ teamNames[t].charAt(0) }}</button>
+                                </span>
+                                </span>
                             </div>
                             <div class="v2-room-empty" v-else>
                                 Partage le code pour que tes joueurs te rejoignent
@@ -376,6 +368,17 @@
                                         <button v-for="o in [{v:'lives',l:'Vies'},{v:'points',l:'Points'}]" :key="o.v"
                                                 class="v2-set-opt" :class="{ on: gameMode === o.v }"
                                                 @click="applySetting('/admin/set-mode', { mode: o.v }, () => gameMode = o.v)">{{ o.l }}</button>
+                                    </span>
+                                </div>
+
+                                <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>
+                                    <span class="v2-set-label">Équipes</span>
+                                    <span class="v2-set-value">{{ lobbyMode === 'rivalry' ? 'Deux camps' : 'Chacun pour soi' }}</span>
+                                    <span class="v2-set-opts">
+                                        <button v-for="o in [{v:false,l:'Solo'},{v:true,l:'Équipes'}]" :key="String(o.v)"
+                                                class="v2-set-opt" :class="{ on: (lobbyMode === 'rivalry') === o.v }"
+                                                @click="setTeams(o.v)">{{ o.l }}</button>
                                     </span>
                                 </div>
 

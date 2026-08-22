@@ -1737,6 +1737,90 @@ app.post('/admin/set-questions', (req, res) => {
     res.json({ success: true, questionsCount: gameState.questionsCount });
 });
 
+// 🆕 v2 — Passer le salon en équipes, ou revenir en solo.
+// Classique et Rivalité sont le même quiz : seul le décompte diffère. On bascule
+// donc en cours de salon plutôt que d'imposer le choix à la création.
+app.post('/admin/set-teams', (req, res) => {
+    if (!gameState.isActive) {
+        return res.status(400).json({ error: 'Aucun salon ouvert' });
+    }
+    if (gameState.inProgress) {
+        return res.status(400).json({ error: 'Partie déjà en cours' });
+    }
+    if (gameState.lobbyMode === 'bombanime') {
+        return res.status(400).json({ error: 'Sans objet en BombAnime' });
+    }
+
+    const enEquipes = req.body && req.body.enabled === true;
+    gameState.lobbyMode = enEquipes ? 'rivalry' : 'classic';
+
+    // Dans les deux sens, chacun repart sans camp : en entrant en équipes il faut
+    // choisir, et en sortant un camp resté collé fausserait les comptes.
+    gameState.players.forEach(p => { p.team = null; });
+    gameState.teamScores = { 1: 0, 2: 0 };
+    updateTeamCounts();
+
+    console.log(`👥 Salon en ${enEquipes ? 'équipes' : 'solo'}`);
+
+    io.emit('teams-toggled', {
+        lobbyMode: gameState.lobbyMode,
+        teamNames: gameState.teamNames,
+    });
+    broadcastLobbyUpdate();
+
+    res.json({ success: true, lobbyMode: gameState.lobbyMode });
+});
+
+// 🆕 v2 — L'hôte attribue les camps. Un joueur ne choisit plus le sien.
+app.post('/admin/set-player-team', (req, res) => {
+    if (!gameState.isActive) return res.status(400).json({ error: 'Aucun salon ouvert' });
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie déjà en cours' });
+
+    const { twitchId, team } = req.body || {};
+    if (!twitchId) return res.status(400).json({ error: 'Joueur manquant' });
+
+    const camp = team === 1 || team === 2 ? team : null;
+    let trouve = null;
+    for (const [socketId, p] of gameState.players.entries()) {
+        if (p.twitchId === twitchId) { p.team = camp; trouve = { socketId, p }; break; }
+    }
+    if (!trouve) return res.status(404).json({ error: 'Joueur introuvable' });
+
+    updateTeamCounts();
+    // Le joueur concerné en est informé, les autres voient la liste bouger
+    const sock = io.sockets.sockets.get(trouve.socketId);
+    if (sock) sock.emit('team-changed', { newTeam: camp });
+    broadcastLobbyUpdate();
+
+    res.json({ success: true, twitchId, team: camp });
+});
+
+// 🆕 v2 — Répartition au hasard, équilibrée en nombre
+app.post('/admin/shuffle-teams', (req, res) => {
+    if (!gameState.isActive) return res.status(400).json({ error: 'Aucun salon ouvert' });
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie déjà en cours' });
+    if (gameState.lobbyMode !== 'rivalry') return res.status(400).json({ error: "Le salon n'est pas en équipes" });
+
+    const entrees = Array.from(gameState.players.entries());
+    // Mélange de Fisher-Yates : un tri au hasard biaiserait la répartition
+    for (let i = entrees.length - 1; i > 0; i--) {
+        const k = Math.floor(Math.random() * (i + 1));
+        [entrees[i], entrees[k]] = [entrees[k], entrees[i]];
+    }
+    // Une distribution en alternance garantit l'écart minimal entre les camps
+    entrees.forEach(([socketId, p], i) => {
+        p.team = (i % 2) + 1;
+        const sock = io.sockets.sockets.get(socketId);
+        if (sock) sock.emit('team-changed', { newTeam: p.team });
+    });
+
+    updateTeamCounts();
+    broadcastLobbyUpdate();
+
+    console.log(`🔀 Camps mélangés : ${gameState.teamCounts[1]} contre ${gameState.teamCounts[2]}`);
+    res.json({ success: true, teamCounts: gameState.teamCounts });
+});
+
 // 🆕 Route pour activer/désactiver le bonus rapidité (mode points uniquement)
 app.post('/admin/set-speed-bonus', (req, res) => {
 
@@ -5123,10 +5207,7 @@ io.on('connection', (socket) => {
             }
         }
         
-        // 🆕 En mode rivalité, vérifier qu'une équipe est fournie (AVANT réservation)
-        if (gameState.lobbyMode === 'rivalry' && !data.team) {
-            return socket.emit('error', { message: 'Vous devez choisir une équipe' });
-        }
+        // En v2 c'est l'hôte qui répartit : on entre sans camp, il l'attribue ensuite.
         
         // 🔒 Réserver la place AVANT les opérations async
         pendingJoins.add(data.twitchId);

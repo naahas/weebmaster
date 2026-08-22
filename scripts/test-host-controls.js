@@ -43,6 +43,22 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     intrus.close();
     await wait(300);
 
+    // Solo et équipes ne sont qu'un réglage du même quiz
+    const enEquipes = await post('/admin/set-teams', { enabled: true });
+    check('passage en équipes', enEquipes.lobbyMode === 'rivalry', enEquipes.lobbyMode);
+    const enSolo = await post('/admin/set-teams', { enabled: false });
+    check('retour en solo', enSolo.lobbyMode === 'classic', enSolo.lobbyMode);
+
+    // L'hôte répartit : attribution nominative puis mélange équilibré
+    await post('/admin/set-teams', { enabled: true });
+    const place = await post('/admin/set-player-team', { twitchId: 'p2', team: 2 });
+    check('camp attribué par l hôte', place.success === true && place.team === 2, 'team=' + place.team);
+    const melange = await post('/admin/shuffle-teams', {});
+    const ecart = melange.teamCounts ? Math.abs(melange.teamCounts[1] - melange.teamCounts[2]) : 99;
+    check('mélange équilibré', melange.success === true && ecart <= 1,
+        melange.teamCounts ? melange.teamCounts[1] + ' contre ' + melange.teamCounts[2] : 'aucun');
+    await post('/admin/set-teams', { enabled: false });
+
     const start = await post('/admin/start-game', {});
     check('partie démarrée', start.success === true);
     await wait(400);

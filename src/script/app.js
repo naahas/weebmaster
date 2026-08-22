@@ -21,10 +21,8 @@ createApp({
             modes: [
                 // `plain: true` = illustration sans fond transparent : elle est alors
                 // cadrée dans le panneau au lieu de flotter comme un personnage détouré.
-                { id: 'classic',   name: 'Classique', kind: 'Solo',   players: '∞',  img: 'lambo2.png',
-                  desc: "Quiz QCM. Vies ou points, difficulté et séries au choix." },
-                { id: 'rivalry',   name: 'Rivalité',  kind: 'Équipe', players: '∞',  img: 'lambo2.png',
-                  desc: "Deux équipes, un seul quiz. Le camp le plus fort l'emporte." },
+                { id: 'classic',   name: 'Quiz',      kind: 'Solo ou équipes', players: '∞',  img: 'lambo2.png',
+                  desc: "Quiz QCM. Solo ou en deux camps, vies ou points, séries au choix." },
                 { id: 'bombanime', name: 'BombAnime', kind: 'Solo',   players: '13', img: 'lambo2.png',
                   desc: "La bombe tourne. Cite un perso avant qu'elle explose." },
                 // 🧪 Modes fictifs : uniquement pour juger la mise en page à l'échelle
@@ -186,6 +184,8 @@ createApp({
             ringSweep: 0,              // 0 → 1 : remplissage de l'anneau à l'ouverture
             answerColors: ['#ffd24a', '#7fb4ff', '#6ee7b7', '#d8b4fe', '#fca5a5', '#fdba74'],
             notifs: [],           // messages passagers, en haut de l'écran
+            teamsBusy: false,     // bascule solo / équipes en cours
+            shuffleBusy: false,
             tabConflict: false,   // un autre onglet du même navigateur tient déjà la partie
             booting: true,        // tant que l'état serveur n'est pas connu, on n'affiche aucun écran
             questionShown: false, // passe à vrai quand le premier panel de question est visible
@@ -1469,12 +1469,7 @@ createApp({
                 return;
             }
 
-            // Rivalité : il faut un camp avant de rejoindre
-            if (this.lobbyMode === 'rivalry' && !team) {
-                this.joinError = '';
-                this.joinStep = 'team';
-                return;
-            }
+            // En v2 on entre sans camp : c'est l'hôte qui répartit ensuite.
 
             if (team) this.selectedTeam = team;
             sessionStorage.removeItem('wasKicked');
@@ -1527,6 +1522,59 @@ createApp({
                 this.hostError = 'Erreur de connexion au serveur.';
             } finally {
                 this.startingGame = false;
+            }
+        },
+
+        // Passer le salon en équipes ou revenir en solo, sans le refermer
+        async setTeams(enabled) {
+            if (this.teamsBusy) return;
+            this.teamsBusy = true;
+            this.hostError = '';
+            try {
+                const res = await fetch('/admin/set-teams', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled }),
+                });
+                const data = await res.json();
+                if (data.error) this.hostError = data.error;
+                else this.lobbyMode = data.lobbyMode;
+            } catch (e) {
+                this.hostError = 'Erreur de connexion';
+            } finally {
+                this.teamsBusy = false;
+            }
+        },
+
+        // L'hôte place un joueur dans un camp, ou l'en retire
+        async setPlayerTeam(twitchId, team) {
+            this.hostError = '';
+            try {
+                const res = await fetch('/admin/set-player-team', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ twitchId, team }),
+                });
+                const data = await res.json();
+                if (data.error) this.hostError = data.error;
+            } catch (e) {
+                this.hostError = 'Erreur de connexion';
+            }
+        },
+
+        // Répartition au hasard, à un joueur près
+        async shuffleTeams() {
+            if (this.shuffleBusy) return;
+            this.shuffleBusy = true;
+            this.hostError = '';
+            try {
+                const res = await fetch('/admin/shuffle-teams', { method: 'POST' });
+                const data = await res.json();
+                if (data.error) this.hostError = data.error;
+            } catch (e) {
+                this.hostError = 'Erreur de connexion';
+            } finally {
+                setTimeout(() => { this.shuffleBusy = false; }, 400);
             }
         },
 
@@ -2210,6 +2258,15 @@ createApp({
                 } else {
                     console.log('⏳ Partie en cours - Vous êtes spectateur');
                 }
+            });
+
+            // Le salon vient de passer en équipes, ou d'en sortir
+            this.socket.on('teams-toggled', (data) => {
+                this.lobbyMode = data.lobbyMode;
+                if (data.teamNames) this.teamNames = data.teamNames;
+                // Le camp précédent ne vaut plus rien : il faut rechoisir
+                this.selectedTeam = null;
+                localStorage.removeItem('selectedTeam');
             });
 
             this.socket.on('lobby-update', (data) => {
@@ -3386,32 +3443,6 @@ createApp({
             
             // Sauvegarder dans localStorage
             localStorage.setItem('selectedTeam', team);
-        },
-        
-        // Sélectionner une équipe ET rejoindre le lobby (nouveau modal V9)
-        selectAndJoinTeam(team, event) {
-            // Bloquer si déjà dans le lobby
-            if (this.hasJoined) return;
-
-            // 🎯 Feedback tactile : son + particules + ripple
-            this.playSound(this.clickSound);
-            if (event) this.spawnClickParticles(event);
-
-            // Ripple effect sur la card cliquée
-            if (event && event.currentTarget) {
-                const card = event.currentTarget;
-                card.classList.remove('just-selected');
-                // Force reflow pour que la classe se re-applique et redéclenche l'animation
-                void card.offsetWidth;
-                card.classList.add('just-selected');
-            }
-
-            // Sélectionner l'équipe
-            this.selectedTeam = team;
-            localStorage.setItem('selectedTeam', team);
-
-            // Rejoindre automatiquement le lobby
-            this.joinLobby();
         },
         
         // Note: Les fonctions de cooldown d'équipe ont été supprimées
