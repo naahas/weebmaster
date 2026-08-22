@@ -20185,7 +20185,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 
 /* Le bloc d'accueil monte : centré, il laissait un grand vide sous les cartes */
 @media (max-width: 768px) {
-    .v2-hub { align-items: flex-start; padding-top: 14vh; }
+    .v2-hub { justify-content: flex-start; align-items: center; padding-top: 12vh; }
     .v2-hub-left { gap: clamp(0.9rem, 2.2vh, 1.5rem); }
 }
 

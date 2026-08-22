@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShonenMaster — Prototypes de boutons mobiles</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="icon.png">
+    <style>
+        :root { --neon: #FFD700; --accent: #FF8C00; --txt: #fff; --txt2: #a0a0a0; --bleu: #8ca0ff; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: radial-gradient(120% 90% at 50% 0%, #14100a 0%, #0c0c0e 45%, #08080a 100%);
+            background-attachment: fixed;
+            color: var(--txt);
+            font-family: 'Poppins', sans-serif;
+            padding: 2.5rem clamp(1rem, 4vw, 3rem) 6rem;
+        }
+
+        .nav { max-width: 80rem; margin: 0 auto 2rem; display: flex; gap: .6rem; flex-wrap: wrap; }
+        .nav a {
+            padding: .45rem .9rem; font-size: .78rem; font-weight: 600; text-decoration: none;
+            color: var(--txt2); background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08); border-radius: 2rem; transition: .2s;
+        }
+        .nav a:hover, .nav a.on { color: var(--neon); border-color: rgba(255,215,0,.4); }
+
+        .head { max-width: 80rem; margin: 0 auto 2.5rem; }
+        .head h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: .03em; }
+        .head p { color: var(--txt2); font-size: .9rem; max-width: 54rem; line-height: 1.65; }
+        .head b { color: var(--neon); font-weight: 600; }
+
+        .protos { max-width: 80rem; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); gap: 2.4rem; }
+        .proto-head { display: flex; align-items: baseline; gap: .8rem; margin-bottom: .9rem; }
+        .proto-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--neon); }
+        .proto-name { font-size: .95rem; font-weight: 700; }
+        .proto-note { font-size: .74rem; color: var(--txt2); line-height: 1.55; margin: .9rem .2rem 0; }
+        .proto-note b { color: #d8d8d8; font-weight: 600; }
+        .mesure { font-size: .6rem; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,215,0,.5); margin-top: .4rem; display: block; }
+
+        /* Un téléphone en 402 px de large, à l'échelle réelle */
+        .tel {
+            position: relative; overflow: hidden;
+            width: 100%; max-width: 22rem; margin: 0 auto;
+            aspect-ratio: 402 / 700;
+            border: 1px solid rgba(255,255,255,.08); border-radius: 1.1rem;
+            background: radial-gradient(120% 90% at 50% 0%, #14100a 0%, #0c0c0e 45%, #08080a 100%);
+        }
+        .ecran { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; padding: 2.6rem 1rem 1rem; }
+
+        .sm { position: absolute; top: .9rem; left: 1rem; font-family: 'Bebas Neue'; font-size: 1.1rem; color: var(--neon); }
+        .puce {
+            position: absolute; top: .8rem; right: 1rem; display: flex; align-items: center; gap: .35rem;
+            padding: .3rem .7rem; font-size: .62rem; font-weight: 600;
+            background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.09); border-radius: 2rem;
+        }
+        .puce i { width: .35rem; height: .35rem; border-radius: 50%; background: #10b981; }
+
+        .titre { font-family: 'Bebas Neue'; font-size: 2rem; letter-spacing: .01em; margin-top: 3.2rem; }
+        .titre span { color: var(--neon); }
+        .stats { display: flex; gap: 1.1rem; margin: .7rem 0 1.5rem; }
+        .st { text-align: center; }
+        .st b { display: block; font-family: 'Bebas Neue'; font-size: 1.1rem; color: var(--neon); }
+        .st span { font-size: .45rem; letter-spacing: .12em; text-transform: uppercase; color: var(--txt2); }
+
+        .zone { width: 100%; }
+
+        /* ══════════════ B1 — Deux cartes basses ══════════════ */
+        .b1 .duo { display: flex; gap: .7rem; }
+        .b1 .c {
+            position: relative; overflow: hidden; flex: 1; aspect-ratio: 3 / 2;
+            border-radius: .6rem; border: 1px solid rgba(255,255,255,.09);
+            background: linear-gradient(135deg, #17150f, #101012);
+            clip-path: polygon(0 0, 100% 0, 100% 82%, 85% 100%, 0 100%);
+        }
+        .b1 .c.h { background: linear-gradient(135deg, rgba(120,90,10,.5), #101012); }
+        .b1 .c.i { background: linear-gradient(135deg, rgba(45,50,110,.5), #101012); }
+        .b1 .k { position: absolute; top: .55rem; left: .65rem; font-size: .48rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--neon); }
+        .b1 .c.i .k { color: var(--bleu); }
+        .b1 .t { position: absolute; bottom: .6rem; left: .65rem; font-family: 'Bebas Neue'; font-size: 1.25rem; }
+
+        /* ══════════════ B2 — Barres pleines largeur ══════════════ */
+        .b2 .col { display: flex; flex-direction: column; gap: .55rem; }
+        .b2 .b {
+            display: flex; align-items: center; gap: .7rem;
+            padding: .95rem 1rem; border-radius: .7rem;
+            border: 1px solid rgba(255,255,255,.09);
+            background: linear-gradient(100deg, rgba(120,90,10,.35), rgba(16,16,18,.9));
+        }
+        .b2 .b.i { background: linear-gradient(100deg, rgba(45,50,110,.35), rgba(16,16,18,.9)); }
+        .b2 .ic { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: .45rem; background: rgba(255,215,0,.12); color: var(--neon); }
+        .b2 .b.i .ic { background: rgba(140,160,255,.12); color: var(--bleu); }
+        .b2 .ic svg { width: 1rem; height: 1rem; }
+        .b2 .txt { flex: 1; }
+        .b2 .t { display: block; font-family: 'Bebas Neue'; font-size: 1.15rem; line-height: 1; }
+        .b2 .k { font-size: .5rem; letter-spacing: .14em; text-transform: uppercase; color: var(--txt2); }
+        .b2 .fl { color: rgba(255,255,255,.3); font-size: 1rem; }
+
+        /* ══════════════ B3 — Bouton plein + lien ══════════════ */
+        .b3 .plein {
+            display: block; width: 100%; padding: 1rem; text-align: center;
+            font-family: 'Bebas Neue'; font-size: 1.5rem; letter-spacing: .03em; color: #14100a;
+            background: linear-gradient(135deg, #ffe066, var(--accent));
+            border: none; border-radius: 2.5rem;
+        }
+        .b3 .lien {
+            display: block; width: 100%; margin-top: .8rem; padding: .7rem; text-align: center;
+            font-size: .78rem; font-weight: 600; letter-spacing: .04em; color: var(--txt2);
+            background: none; border: 1px solid rgba(255,255,255,.12); border-radius: 2.5rem;
+        }
+        .b3 .lien b { color: var(--txt); }
+
+        /* ══════════════ B4 — Segments accolés ══════════════ */
+        .b4 .seg {
+            display: flex; width: 100%; border-radius: .8rem; overflow: hidden;
+            border: 1px solid rgba(255,255,255,.1);
+        }
+        .b4 .s {
+            flex: 1; padding: 1rem .6rem; text-align: center;
+            background: rgba(255,255,255,.03);
+        }
+        .b4 .s + .s { border-left: 1px solid rgba(255,255,255,.1); }
+        .b4 .s.h { background: linear-gradient(180deg, rgba(255,215,0,.14), rgba(255,255,255,.02)); }
+        .b4 .s.i { background: linear-gradient(180deg, rgba(140,160,255,.12), rgba(255,255,255,.02)); }
+        .b4 .k { display: block; font-size: .46rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--neon); margin-bottom: .2rem; }
+        .b4 .s.i .k { color: var(--bleu); }
+        .b4 .t { font-family: 'Bebas Neue'; font-size: 1.3rem; }
+
+        /* ══════════════ B5 — Pastilles rondes ══════════════ */
+        .b5 .duo { display: flex; gap: 1.6rem; justify-content: center; }
+        .b5 .p { text-align: center; }
+        .b5 .rond {
+            display: grid; place-items: center; width: 4.6rem; height: 4.6rem; margin: 0 auto .5rem;
+            border-radius: 50%; border: 1px solid rgba(255,215,0,.4);
+            background: radial-gradient(circle at 50% 30%, rgba(255,215,0,.16), rgba(255,255,255,.02));
+            color: var(--neon);
+        }
+        .b5 .p.i .rond { border-color: rgba(140,160,255,.4); background: radial-gradient(circle at 50% 30%, rgba(140,160,255,.16), rgba(255,255,255,.02)); color: var(--bleu); }
+        .b5 .rond svg { width: 1.5rem; height: 1.5rem; }
+        .b5 .t { font-family: 'Bebas Neue'; font-size: 1.05rem; }
+        .b5 .k { display: block; font-size: .45rem; letter-spacing: .14em; text-transform: uppercase; color: var(--txt2); }
+
+        /* ══════════════ B6 — Deux carrés compacts ══════════════ */
+        .b6 .duo { display: flex; gap: .65rem; }
+        .b6 .c {
+            flex: 1; aspect-ratio: 1 / 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: .45rem;
+            border-radius: .8rem; border: 1px solid rgba(255,255,255,.09);
+            background: linear-gradient(160deg, rgba(120,90,10,.34), rgba(16,16,18,.92));
+        }
+        .b6 .c.i { background: linear-gradient(160deg, rgba(45,50,110,.34), rgba(16,16,18,.92)); }
+        .b6 .c svg { width: 1.4rem; height: 1.4rem; color: var(--neon); }
+        .b6 .c.i svg { color: var(--bleu); }
+        .b6 .t { font-family: 'Bebas Neue'; font-size: 1.2rem; }
+        .b6 .k { font-size: .45rem; letter-spacing: .14em; text-transform: uppercase; color: var(--txt2); }
+    </style>
+</head>
+
+<body>
+    <div class="nav">
+        <a href="/prototypes">Mise en page</a>
+        <a href="/prototypes/boutons">Boutons</a>
+        <a href="/prototypes/boutons-mobile" class="on">Boutons mobiles</a>
+        <a href="/prototypes/jeu">Écran de jeu</a>
+        <a href="/prototypes/stats">Classement</a>
+        <a href="/prototypes/podium">Fin de partie</a>
+        <a href="/prototypes/reveal">Révélation</a>
+        <a href="/">← Le site</a>
+    </div>
+
+    <div class="head">
+        <h1>Prototypes — boutons mobiles</h1>
+        <p>
+            Six façons d'amener <b>Créer</b> et <b>Rejoindre</b> sur l'accueil mobile, toutes montrées dans un
+            téléphone de <b>402 px</b> à l'échelle. La hauteur occupée est indiquée sous chaque cadre : c'est
+            le critère qui t'intéresse.
+        </p>
+    </div>
+
+    <div class="protos" id="protos"></div>
+
+    <script>
+        const CREER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>';
+        const REJOINDRE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg>';
+
+        const ZONES = {
+            b1: `<div class="duo">
+                    <div class="c h"><span class="k">Hôte</span><span class="t">Créer</span></div>
+                    <div class="c i"><span class="k">Invité</span><span class="t">Rejoindre</span></div>
+                 </div>`,
+
+            b2: `<div class="col">
+                    <div class="b"><span class="ic">${CREER}</span><span class="txt"><span class="t">Créer un salon</span><span class="k">Hôte</span></span><span class="fl">›</span></div>
+                    <div class="b i"><span class="ic">${REJOINDRE}</span><span class="txt"><span class="t">Rejoindre</span><span class="k">Invité · avec un code</span></span><span class="fl">›</span></div>
+                 </div>`,
+
+            b3: `<button class="plein">Créer un salon</button>
+                 <button class="lien">J'ai un code — <b>Rejoindre</b></button>`,
+
+            b4: `<div class="seg">
+                    <div class="s h"><span class="k">Hôte</span><span class="t">Créer</span></div>
+                    <div class="s i"><span class="k">Invité</span><span class="t">Rejoindre</span></div>
+                 </div>`,
+
+            b5: `<div class="duo">
+                    <div class="p"><span class="rond">${CREER}</span><span class="t">Créer</span><span class="k">Hôte</span></div>
+                    <div class="p i"><span class="rond">${REJOINDRE}</span><span class="t">Rejoindre</span><span class="k">Invité</span></div>
+                 </div>`,
+
+            b6: `<div class="duo">
+                    <div class="c">${CREER}<span class="t">Créer</span><span class="k">Hôte</span></div>
+                    <div class="c i">${REJOINDRE}<span class="t">Rejoindre</span><span class="k">Invité</span></div>
+                 </div>`,
+        };
+
+        const PROTOS = [
+            { id: 'b1', num: 'B1', nom: 'Cartes basses', h: '≈ 120 px', note: "L'existant, simplement aplati en 3/2 au lieu de 4/3. <b>Le changement le plus léger</b> — on garde le biseau et les teintes — mais deux blocs colorés restent lourds pour un écran de téléphone." },
+            { id: 'b2', num: 'B2', nom: 'Barres pleine largeur', h: '≈ 130 px', note: "Deux rangées avec icône, titre et sous-titre. <b>La plus lisible et la plus explicite</b> : « avec un code » lève l'ambiguïté pour qui découvre. Le pouce tombe dessus sans viser." },
+            { id: 'b3', num: 'B3', nom: 'Bouton plein + lien', h: '≈ 105 px', note: "Un seul vrai bouton, l'autre en second plan. <b>Assume que créer est l'action principale</b> — c'est vrai pour un streamer, moins pour ses viewers qui, eux, rejoignent." },
+            { id: 'b4', num: 'B4', nom: 'Segments accolés', h: '≈ 70 px', note: "Deux moitiés d'un même bloc, sans séparation. <b>De loin le plus compact</b>, et ça se lit comme un choix binaire. En revanche il ressemble à un sélecteur, pas à deux actions." },
+            { id: 'b5', num: 'B5', nom: 'Pastilles rondes', h: '≈ 105 px', note: "Deux ronds cerclés avec leur libellé dessous. <b>Le plus aéré</b> et le plus proche du reste du jeu, où tout est rond. Mais une cible ronde de 4,6 rem est plus petite qu'elle n'en a l'air." },
+            { id: 'b6', num: 'B6', nom: 'Carrés compacts', h: '≈ 165 px', note: "Deux carrés à icône centrée. <b>Équilibré et net</b>, mais un carré parfait reste haut sur un écran étroit — c'est le plus encombrant des six." },
+        ];
+
+        document.getElementById('protos').innerHTML = PROTOS.map(p => `
+            <section>
+                <div class="proto-head"><span class="proto-num">${p.num}</span><span class="proto-name">${p.nom}</span></div>
+                <div class="tel ${p.id}">
+                    <div class="ecran">
+                        <span class="sm">SM</span>
+                        <span class="puce"><i></i>sqQSs</span>
+                        <div class="titre">SHONEN<span>MASTER</span></div>
+                        <div class="stats">
+                            <div class="st"><b>2</b><span>En ligne</span></div>
+                            <div class="st"><b>0</b><span>Salons</span></div>
+                            <div class="st"><b>983</b><span>Questions</span></div>
+                            <div class="st"><b>0</b><span>Parties</span></div>
+                        </div>
+                        <div class="zone">${ZONES[p.id]}</div>
+                    </div>
+                </div>
+                <span class="mesure">Hauteur occupée : ${p.h}</span>
+                <p class="proto-note">${p.note}</p>
+            </section>`).join('');
+    </script>
+</body>
+
+</html>
