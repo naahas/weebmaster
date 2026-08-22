@@ -3424,28 +3424,6 @@ createApp({
             console.log(`📤 Réponse envoyée: ${answerIndex}, bonus: ${this.activeBonusEffect}`);
         },
 
-        // Sélection carte FizzBuzz
-        selectFizzbuzzCard(cardIndex, event) {
-            if (this.hasAnswered || this.playerLives === 0) return;
-
-            this.selectedAnswer = cardIndex;
-            this._lastClickTime = Date.now();
-
-            this.playShockwaveSound();
-
-            if (event) {
-                this.spawnClickParticles(event);
-                this.playClickFlashOverlay(event.currentTarget);
-            }
-
-            this.socket.emit('submit-answer', {
-                answer: cardIndex,
-                bonusActive: null
-            });
-
-            console.log(`📤 Carte FizzBuzz sélectionnée: ${cardIndex}`);
-        },
-
         // Le compteur monte progressivement jusqu'au nouveau score
         tweenPoints(de, vers, duree) {
             cancelAnimationFrame(this._ptsRaf);
@@ -3608,80 +3586,6 @@ createApp({
         clearSeal() {
             if (this._sceau) { this._sceau.remove(); this._sceau = null; }
             document.querySelectorAll('.v2q-seal, .v2q-shock').forEach(n => n.remove());
-        },
-
-        // 💥 Crée un clone overlay de la card pour jouer l'animation
-        // sans être perturbé par les re-renders Vue ou les changements de classe
-        playClickFlashOverlay(originalCard) {
-            if (!originalCard) return;
-            const rect = originalCard.getBoundingClientRect();
-            
-            // Récupérer le texte de la card pour l'inclure dans le clone
-            const textEl = originalCard.querySelector('.answer-text');
-            const answerText = textEl ? textEl.textContent : '';
-            
-            // Clone visuel FIDÈLE qui MASQUE l'original pendant l'animation
-            // + transform visible (rebond) sans toucher à l'original
-            const clone = document.createElement('div');
-            clone.className = 'click-flash-overlay';
-            clone.style.cssText = `
-                position: fixed;
-                left: ${rect.left}px;
-                top: ${rect.top}px;
-                width: ${rect.width}px;
-                height: ${rect.height}px;
-                pointer-events: none;
-                z-index: 9998;
-                border-radius: 1rem 1.5rem 1.25rem 1.375rem / 1.375rem 1.25rem 1.5rem 1.125rem;
-                background: linear-gradient(145deg, #2a2a2a 0%, #1f1f1f 100%);
-                border: 0.125rem solid rgba(255, 232, 138, 0.9);
-                animation: clickFlashImpactOverlay 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-                transform-origin: center;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 1.25rem 2rem;
-                box-sizing: border-box;
-                overflow: hidden;
-            `;
-            // Ajouter le texte identique
-            const textSpan = document.createElement('span');
-            textSpan.textContent = answerText;
-            textSpan.style.cssText = `
-                font-size: 1rem;
-                font-weight: 500;
-                color: rgba(255, 255, 255, 0.88);
-                text-align: center;
-                font-family: 'Poppins', sans-serif;
-                text-shadow: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.3);
-            `;
-            clone.appendChild(textSpan);
-            document.body.appendChild(clone);
-            
-            // Anneau qui se propage
-            const ring = document.createElement('div');
-            ring.className = 'click-flash-overlay-ring';
-            ring.style.cssText = `
-                position: fixed;
-                left: ${rect.left - 2}px;
-                top: ${rect.top - 2}px;
-                width: ${rect.width + 4}px;
-                height: ${rect.height + 4}px;
-                pointer-events: none;
-                z-index: 9997;
-                border-radius: 1rem 1.5rem 1.25rem 1.375rem / 1.375rem 1.25rem 1.5rem 1.125rem;
-                border: 3px solid rgba(245, 212, 66, 0.9);
-                opacity: 0;
-                animation: clickFlashOverlayRing 0.65s ease-out forwards;
-                transform-origin: center;
-                background: transparent;
-            `;
-            document.body.appendChild(ring);
-            
-            setTimeout(() => {
-                clone.remove();
-                ring.remove();
-            }, 700);
         },
 
         // 💥 Son "Shockwave 3D" — généré via Web Audio API (pas de fichier MP3)
