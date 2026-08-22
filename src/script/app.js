@@ -2037,7 +2037,6 @@ createApp({
                 });
 
                 console.log(`✅ Joueur restauré - Mode: ${data.gameMode}`);
-                this.showNotification('Reconnecté à la partie !', 'success');
             });
 
 
@@ -2211,7 +2210,6 @@ createApp({
                         console.log('🎯 Défis reçus:', this.challenges.map(c => c.name).join(', '));
                     }
 
-                    this.showNotification(`La partie commence avec ${data.totalPlayers} joueurs !`, 'success');
                 } else {
                     console.log('⏳ Partie en cours - Vous êtes spectateur');
                 }
@@ -2304,7 +2302,6 @@ createApp({
                 const myResult = results.players?.find(p => p.username === this.username);
 
                 if (myResult && myResult.shieldUsed) {
-                    this.showNotification('🛡️ Bouclier utilisé ! Vous êtes protégé !', 'success');
                     this.showShieldProtectionEffect();
                 }
 
@@ -2520,7 +2517,6 @@ createApp({
             // 🆕 Bonus rapidité reçu (+500 pts) - Notification uniquement
             this.socket.on('speed-bonus', (data) => {
                 console.log(`⚡ Bonus rapidité: +${data.points} pts`);
-                this.showNotification(`⚡ Bonus rapidité ! +${data.points} pts`, 'success');
                 // Les points sont déjà inclus dans question-results, pas besoin de les mettre à jour ici
             });
 
@@ -2621,7 +2617,6 @@ createApp({
                     data.completedChallenges.forEach(({ challengeId, reward }) => {
                         const challenge = this.challenges.find(c => c.id === challengeId);
                         if (challenge) {
-                            this.showNotification(`🎯 Défi "${challenge.name}" complété ! +1 ${this.getBonusName(reward)}`, 'success');
                         }
                     });
                 }
@@ -2738,7 +2733,6 @@ createApp({
                 // Phase 4: Prêt à jouer
                 setTimeout(() => {
                     this.bombanime.introPhase = 'ready';
-                    this.showNotification(`💣 BombAnime démarre ! Série: ${data.serie}`, 'success');
                 }, totalPlayers * playerRevealDelay + 1200);
                 
                 // Fin de l'intro (le serveur enverra bombanime-turn-start après ~3s)
@@ -2893,7 +2887,6 @@ createApp({
                             if (challenge) {
                                 this.bombanime.challengeJustCompleted = challenge.id;
                                 const rewardText = cc.reward === 'extraLife' ? '❤️ +1 Vie' : '🎁 Perso Gratuit';
-                                this.showNotification(`🎯 Défi complété: ${challenge.name} → ${rewardText}`, 'success');
                                 
                                 setTimeout(() => {
                                     this.bombanime.challengeJustCompleted = null;
@@ -3035,9 +3028,7 @@ createApp({
                 if (data.playerTwitchId === this.twitchId) {
                     this.playerLives = data.livesRemaining;
                     if (data.isEliminated) {
-                        this.showNotification('💀 Vous êtes éliminé !', 'error');
                     } else {
-                        this.showNotification('💥 -1 vie !', 'error');
                     }
                 }
                 
@@ -3113,7 +3104,6 @@ createApp({
                     }, 850);
                     
                     // Notification
-                    this.showNotification('🎉 Alphabet complet ! +1 vie', 'success');
                 }
             });
             
@@ -3265,9 +3255,7 @@ createApp({
                 
                 // Notification
                 if (data.wasWasted) {
-                    this.showNotification(`❤️ Vie extra gâchée - Tu étais déjà au max !`, 'warning');
                 } else {
-                    this.showNotification(`❤️ +1 Vie ! (${data.newLives} vies)`, 'success');
                 }
                 // L'animation est déclenchée par bombanime-player-lives-updated
             });
@@ -3376,7 +3364,6 @@ createApp({
                         // Sauvegarder dans localStorage seulement après confirmation
                         localStorage.setItem('hasJoinedLobby', 'true');
                         localStorage.setItem('lobbyTwitchId', this.twitchId);
-                        this.showNotification('Vous avez rejoint la partie !', 'success');
                     }
                 }, 400);
             } else {
@@ -3387,7 +3374,6 @@ createApp({
                 if (this.lobbyMode === 'rivalry' && this.selectedTeam) {
                     localStorage.setItem('selectedTeam', this.selectedTeam);
                 }
-                this.showNotification('Vous avez rejoint le lobby !', 'success');
             }
         },
         
