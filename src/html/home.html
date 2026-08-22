@@ -1348,6 +1348,15 @@
             </div>
         </div>
 
+        <!-- 🆕 v2 — Messages passagers -->
+        <div class="v2-notifs">
+            <transition-group name="v2-notif">
+                <div class="v2-notif" v-for="n in notifs" :key="n.id" :class="'t-' + n.type">
+                    {{ n.message }}
+                </div>
+            </transition-group>
+        </div>
+
         <!-- 🆕 v2 — Un seul onglet actif à la fois -->
         <div class="v2-tab-veil" v-if="tabConflict">
             <div class="v2-tab-card">

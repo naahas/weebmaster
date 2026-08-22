@@ -185,6 +185,7 @@ createApp({
             confirmAction: null,       // 'close' (hôte) ou 'leave' (invité)
             ringSweep: 0,              // 0 → 1 : remplissage de l'anneau à l'ouverture
             answerColors: ['#ffd24a', '#7fb4ff', '#6ee7b7', '#d8b4fe', '#fca5a5', '#fdba74'],
+            notifs: [],           // messages passagers, en haut de l'écran
             tabConflict: false,   // un autre onglet du même navigateur tient déjà la partie
             booting: true,        // tant que l'état serveur n'est pas connu, on n'affiche aucun écran
             questionShown: false, // passe à vrai quand le premier panel de question est visible
@@ -308,6 +309,11 @@ createApp({
 
             twitchAvatarUrl: null,
         };
+    },
+
+    created() {
+        // Hors de data : un simple compteur n a pas à être réactif
+        this._notifSeq = 0;
     },
 
     async mounted() {
@@ -3971,9 +3977,18 @@ createApp({
         },
 
         // ========== Notifications ==========
+        // Neutralisée depuis la v1, elle n'écrivait plus que dans la console :
+        // vingt-six appels ne donnaient donc aucun retour au joueur.
         showNotification(message, type = 'info') {
-            // 🔇 Notifications désactivées - Log uniquement en console
-            console.log(`[${type.toUpperCase()}] ${message}`);
+            if (!message) return;
+            const n = { id: ++this._notifSeq, message, type };
+            this.notifs.push(n);
+            // Trois à l'écran au plus : au-delà, les plus anciens cèdent la place
+            if (this.notifs.length > 3) this.notifs.shift();
+            setTimeout(() => {
+                const i = this.notifs.indexOf(n);
+                if (i !== -1) this.notifs.splice(i, 1);
+            }, 3200);
         },
 
 

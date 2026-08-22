@@ -10829,3 +10829,53 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     font-size: 0.72rem !important;
     color: rgba(255, 255, 255, 0.4) !important;
 }
+
+/* ============================================
+   🆕 v2 — MESSAGES PASSAGERS
+   La fonction existait déjà et était appelée 26 fois : il ne manquait
+   que de quoi les afficher.
+   ============================================ */
+.v2-notifs {
+    position: fixed;
+    top: clamp(0.9rem, 2.5vh, 2rem);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1500;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    width: min(24rem, 92vw);
+    pointer-events: none;
+}
+
+.v2-notif {
+    width: 100%;
+    padding: 0.65rem 0.9rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    line-height: 1.4;
+    text-align: center;
+    color: var(--text-primary);
+    background: rgba(16, 15, 12, 0.95);
+    border: 0.06rem solid rgba(255, 255, 255, 0.1);
+    border-top: 0.12rem solid rgba(255, 255, 255, 0.25);
+    border-radius: 0.55rem;
+    box-shadow: 0 0.6rem 1.6rem rgba(0, 0, 0, 0.5);
+}
+
+.v2-notif.t-success { border-top-color: #10b981; }
+.v2-notif.t-error   { border-top-color: #ef4444; }
+.v2-notif.t-warning { border-top-color: var(--accent-color); }
+.v2-notif.t-info    { border-top-color: rgba(255, 215, 0, 0.6); }
+
+.v2-notif-enter-active { transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.2, 0.85, 0.3, 1); }
+.v2-notif-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; position: absolute; }
+.v2-notif-enter-from { opacity: 0; transform: translateY(-0.7rem); }
+.v2-notif-leave-to   { opacity: 0; transform: translateY(-0.4rem); }
+.v2-notif-move { transition: transform 0.28s cubic-bezier(0.2, 0.85, 0.3, 1); }
+
+@media (max-width: 768px) {
+    .v2-notifs { top: 0.7rem; width: min(20rem, 86vw); }
+    .v2-notif { padding: 0.55rem 0.75rem; font-size: 0.72rem; }
+}
