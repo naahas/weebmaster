@@ -20185,8 +20185,28 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 
 /* Le bloc d'accueil monte : centré, il laissait un grand vide sous les cartes */
 @media (max-width: 768px) {
-    .v2-hub { justify-content: flex-start; align-items: center; padding-top: 12vh; }
-    .v2-hub-left { gap: clamp(0.9rem, 2.2vh, 1.5rem); }
+    /* Sur mobile, le titre et les deux boutons forment un bloc centré, et les
+       chiffres descendent tout en bas. « display: contents » dissout le conteneur
+       de gauche pour que ses enfants se rangent directement dans la colonne. */
+    .v2-hub { justify-content: center; align-items: center; padding-top: 0; }
+    .v2-hub-left { display: contents; }
+
+    .v2-hero-title { order: 1; }
+    .v2-choices { order: 2; width: 100%; }
+    .v2-recent { order: 3; }
+
+    .v2-bigstats {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: clamp(1rem, 3vh, 2rem);
+        z-index: 4;
+        justify-content: center;
+        gap: 1.2rem;
+    }
+
+    /* De la place réservée sous le contenu pour les chiffres épinglés */
+    .v2-home { padding-bottom: 5rem; }
 }
 
 /* ============================================
