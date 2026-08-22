@@ -20753,7 +20753,8 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     display: grid;
     place-items: center;
     padding: 1.5rem;
-    background: rgba(5, 5, 7, 0.94);
+    /* Opaque : l'onglet en retrait ne laisse rien voir de la partie */
+    background: radial-gradient(120% 90% at 50% 0%, #14100a 0%, #0c0c0e 45%, #08080a 100%);
 }
 
 .v2-tab-card {
