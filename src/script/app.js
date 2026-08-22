@@ -1184,6 +1184,24 @@ createApp({
             this.hasJoined = false;
             this.selectedTeam = null;
             this.roomCode = null;
+
+            // Partir en pleine partie laissait l'écran de jeu à l'affiche, figé :
+            // on démonte tout ce que game-deactivated démonterait.
+            this.gameInProgress = false;
+            this.gameStartedOnServer = false;
+            this.gameEnded = false;
+            this.currentQuestion = null;
+            this.currentQuestionNumber = 0;
+            this.selectedAnswer = null;
+            this.hasAnswered = false;
+            this.showResults = false;
+            this.questionShown = false;
+            this.showTopSheet = false;
+            this.showQuestionStats = false;
+            this.stopTimer();
+            this.clearSeal();
+            this.resetComboSystem();
+            document.body.classList.remove('game-active');
             localStorage.removeItem('hasJoinedLobby');
             localStorage.removeItem('lobbyTwitchId');
             localStorage.removeItem('selectedTeam');
