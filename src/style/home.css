@@ -10915,3 +10915,16 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     /* Les joueurs respirent avant le bas de la carte */
     .v2-room-players { padding-bottom: 0.3rem; }
 }
+
+/* Refus de connexion : un mot sous le champ, en plus de la secousse */
+.v2-join-err {
+    min-height: 1.1rem;
+    margin-top: 0.7rem;
+    font-size: 0.76rem;
+    color: #ff8a8a;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.v2-join-err.vu { opacity: 1; }

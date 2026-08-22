@@ -1546,10 +1546,26 @@ createApp({
                     body: JSON.stringify({}),
                 });
             } catch (e) { /* le serveur émet game-deactivated de toute façon */ }
+            this.quitterSalonLocalement();
+        },
+
+        // Tout ce qui rattache le navigateur à un salon, remis à zéro d'un bloc.
+        // Sans hasJoined ni isGameActive, on retombait sur l'écran d'attente de
+        // l'invité, et la création suivante était refusée pour un salon déjà fermé.
+        quitterSalonLocalement() {
             this.isHost = false;
             this.roomCode = null;
+            this.hasJoined = false;
+            this.isGameActive = false;
+            this.shouldRejoinLobby = false;
+            this.selectedTeam = null;
+            this.homeScreen = 'hub';
             localStorage.removeItem('isHost');
             localStorage.removeItem('roomCode');
+            localStorage.removeItem('hasJoinedLobby');
+            localStorage.removeItem('lobbyTwitchId');
+            localStorage.removeItem('selectedTeam');
+            this.loadHomeStats();
         },
 
         setPseudo() {
@@ -2076,7 +2092,6 @@ createApp({
                     }, 500);
                 }
                 
-                this.showNotification('Le jeu est maintenant actif ! 🎮', 'success');
             });
 
             // 🆕 Écouter les mises à jour de configuration
@@ -2138,7 +2153,6 @@ createApp({
                 sessionStorage.removeItem('bombanimeInProgress');
                 sessionStorage.removeItem('bombanimeSuggestionUsed');
 
-                this.showNotification('Le jeu a été désactivé', 'info');
             });
 
             this.socket.on('game-started', (data) => {
@@ -2385,6 +2399,14 @@ createApp({
                 // 🆕 v2 : code de salon refusé → on reste sur la modale
                 if (data.badCode) {
                     this.signalJoinError(data.message || 'Code de salon invalide');
+                    this.pendingJoinCode = null;
+                    this.hasJoined = false;
+                    return;
+                }
+                // Une partie a démarré entre-temps : le refus revient sous l'input
+                if (this.homeScreen === 'join' && data.message &&
+                    (data.message.includes('en cours') || data.message.includes('Aucun salon'))) {
+                    this.signalJoinError(data.message);
                     this.pendingJoinCode = null;
                     this.hasJoined = false;
                     return;
@@ -3737,18 +3759,23 @@ createApp({
             localStorage.removeItem('lobbyTwitchId');
 
             // 🆕 v2 : on quitte le salon et on revient à l'accueil
-            this.isHost = false;
-            this.roomCode = null;
-            // Sans ça on retombait sur l'écran de saisie du code, resté sélectionné
-            this.homeScreen = 'hub';
+            // L'hôte referme aussi le salon côté serveur : sinon il restait ouvert
+            // sans personne dedans, et bloquait la création de la suivante.
+            const etaitHote = this.isHost;
             this.joinCode = '';
             this.joinStep = 'code';
-            localStorage.removeItem('isHost');
-            localStorage.removeItem('roomCode');
-            this.loadHomeStats();
+            this.quitterSalonLocalement();
 
-            // 🆕 Demander l'état actuel du serveur pour rafraîchir le compteur
-            this.refreshGameState();
+            if (etaitHote) {
+                fetch('/admin/toggle-game', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({}),
+                }).catch(() => { /* le serveur diffuse game-deactivated de toute façon */ })
+                  .finally(() => this.refreshGameState());
+            } else {
+                this.refreshGameState();
+            }
         },
 
         // ============================================

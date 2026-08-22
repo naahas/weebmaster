@@ -87,6 +87,18 @@ async function scenarioClassic() {
     check('question reçue', !!q, q ? `${q.d.answers?.length} réponses` : 'aucune');
 
     if (q) {
+        // Une partie lancée doit refuser tout nouvel arrivant
+        const retardataire = io(BASE);
+        await new Promise(r => retardataire.on('connect', r));
+        let refus = null;
+        retardataire.on('error', (d) => { refus = d && d.message; });
+        retardataire.emit('register-authenticated', { twitchId: 'late', username: 'Retard' });
+        await wait(200);
+        retardataire.emit('join-lobby', { twitchId: 'late', username: 'Retard', code });
+        for (let i = 0; i < 20 && !refus; i++) await wait(50);
+        check('partie lancée : arrivée refusée', !!refus && /en cours/i.test(refus), refus || 'aucun refus');
+        retardataire.close();
+
         p1.sock.emit('submit-answer', { twitchId: p1.id, answer: 1 });
         p2.sock.emit('submit-answer', { twitchId: p2.id, answer: 2 });
         await wait(500);
