@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShonenMaster — Prototypes du salon mobile</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="icon.png">
+    <style>
+        :root { --neon: #FFD700; --accent: #FF8C00; --txt: #fff; --txt2: #a0a0a0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: radial-gradient(120% 90% at 50% 0%, #14100a 0%, #0c0c0e 45%, #08080a 100%);
+            background-attachment: fixed;
+            color: var(--txt);
+            font-family: 'Poppins', sans-serif;
+            padding: 2.5rem clamp(1rem, 4vw, 3rem) 6rem;
+        }
+
+        .nav { max-width: 82rem; margin: 0 auto 2rem; display: flex; gap: .6rem; flex-wrap: wrap; }
+        .nav a {
+            padding: .45rem .9rem; font-size: .78rem; font-weight: 600; text-decoration: none;
+            color: var(--txt2); background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08); border-radius: 2rem; transition: .2s;
+        }
+        .nav a:hover, .nav a.on { color: var(--neon); border-color: rgba(255,215,0,.4); }
+
+        .head { max-width: 82rem; margin: 0 auto 2.5rem; }
+        .head h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: .03em; }
+        .head p { color: var(--txt2); font-size: .9rem; max-width: 54rem; line-height: 1.65; }
+        .head b { color: var(--neon); font-weight: 600; }
+
+        .protos { max-width: 82rem; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: 2.4rem; }
+        .proto-head { display: flex; align-items: baseline; gap: .8rem; margin-bottom: .9rem; }
+        .proto-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--neon); }
+        .proto-name { font-size: .95rem; font-weight: 700; }
+        .proto-note { font-size: .74rem; color: var(--txt2); line-height: 1.55; margin: .9rem .2rem 0; }
+        .proto-note b { color: #d8d8d8; font-weight: 600; }
+
+        /* Téléphone de 402 px, à l'échelle */
+        .tel {
+            position: relative; overflow: hidden;
+            width: 100%; max-width: 23rem; margin: 0 auto;
+            aspect-ratio: 402 / 760;
+            border: 1px solid rgba(255,255,255,.08); border-radius: 1.1rem;
+            background: radial-gradient(120% 90% at 50% 0%, #14100a 0%, #0c0c0e 45%, #08080a 100%);
+        }
+        .ecran { position: absolute; inset: 0; padding: 2.9rem .9rem .9rem; overflow: hidden; }
+
+        .sm { position: absolute; top: .8rem; left: .9rem; font-family: 'Bebas Neue'; font-size: 1.1rem; color: var(--neon); }
+        .coin { position: absolute; top: .7rem; right: .9rem; display: flex; align-items: center; gap: .4rem; }
+        .sortie { display: grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; border: 1px solid rgba(239,68,68,.4); color: #e06a6a; font-size: .6rem; }
+        .badge { padding: .28rem .6rem; font-size: .52rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--neon); border: 1px solid rgba(240,192,64,.45); border-radius: 2rem; }
+
+        /* ══════ Briques communes ══════ */
+        .lbl { font-size: .5rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--txt2); }
+        .code { display: flex; gap: .3rem; }
+        .code i {
+            display: grid; place-items: center; width: 2.1rem; height: 2.4rem;
+            font-family: 'Bebas Neue'; font-size: 1.3rem; font-style: normal; color: var(--neon);
+            background: rgba(255,215,0,.07); border: 1px solid rgba(255,215,0,.35); border-radius: .4rem;
+        }
+        .code.mini i { width: 1.5rem; height: 1.75rem; font-size: 1rem; }
+        .demarrer {
+            display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
+            padding: .7rem 1.5rem; font-family: 'Poppins'; font-size: .82rem; font-weight: 700;
+            color: #14100a; background: linear-gradient(135deg, #ffe066, var(--accent));
+            border: none; border-radius: 2rem;
+        }
+        .demarrer.plein { width: 100%; }
+        .demarrer svg { width: .8rem; height: .8rem; }
+        .compte { font-size: .72rem; color: var(--txt2); }
+        .compte b { font-family: 'Bebas Neue'; font-size: 1.05rem; color: var(--neon); margin-right: .2rem; }
+        .joueurs { display: flex; gap: .4rem; flex-wrap: wrap; }
+        .jo { padding: .4rem .8rem; font-size: .78rem; font-weight: 600; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); border-radius: 2rem; }
+        .jo.moi { border-color: rgba(255,215,0,.5); color: var(--neon); }
+
+        /* Réglages, en aperçu */
+        .reglages { margin-top: 1rem; padding: .7rem; background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.06); border-radius: .7rem; }
+        .reglages .t { font-size: .48rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--txt2); margin-bottom: .5rem; }
+        .set { display: flex; align-items: center; gap: .5rem; padding: .55rem .6rem; margin-bottom: .3rem; background: rgba(255,255,255,.025); border: 1px solid rgba(255,255,255,.05); border-radius: .5rem; }
+        .set .n { flex: 1; font-size: .58rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--txt2); }
+        .set .v { font-size: .72rem; font-weight: 700; color: var(--neon); }
+
+        .haut { display: flex; flex-direction: column; }
+
+        /* ══════ Variantes ══════ */
+        .c { align-items: center; text-align: center; }
+        .c .joueurs { justify-content: center; }
+
+        .l4 .carte { padding: 1rem .9rem; background: rgba(255,255,255,.025); border: 1px solid rgba(255,255,255,.08); border-radius: .8rem; }
+        .l3 .ligne { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+        .l6 .duo { display: flex; align-items: flex-end; justify-content: space-between; width: 100%; gap: .8rem; }
+        .l6 .col { display: flex; flex-direction: column; align-items: center; gap: .3rem; }
+    </style>
+</head>
+
+<body>
+    <div class="nav">
+        <a href="/prototypes">Mise en page</a>
+        <a href="/prototypes/boutons-mobile">Boutons mobiles</a>
+        <a href="/prototypes/lobby-mobile" class="on">Salon mobile</a>
+        <a href="/prototypes/parametres">Paramètres</a>
+        <a href="/prototypes/jeu">Écran de jeu</a>
+        <a href="/prototypes/podium">Fin de partie</a>
+        <a href="/">← Le site</a>
+    </div>
+
+    <div class="head">
+        <h1>Prototypes — salon de l'hôte, mobile</h1>
+        <p>
+            Six dispositions pour le haut du salon : <b>code, bouton de lancement et joueurs présents</b>.
+            Les réglages restent tels quels en dessous. Chaque cadre est un téléphone de <b>402 px</b> à l'échelle.
+        </p>
+    </div>
+
+    <div class="protos" id="protos"></div>
+
+    <script>
+        const PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+        const CODE = (mini) => `<span class="code${mini ? ' mini' : ''}"><i>C</i><i>V</i><i>G</i><i>B</i></span>`;
+        const JOUEURS = `<span class="joueurs"><span class="jo moi">sqQSs</span><span class="jo">aaaa</span></span>`;
+        const COMPTE = `<span class="compte"><b>2</b>joueurs dans le salon</span>`;
+        const REGLAGES = `
+            <div class="reglages">
+                <div class="t">Réglages</div>
+                <div class="set"><span class="n">Format</span><span class="v">Vies</span></div>
+                <div class="set"><span class="n">Vies</span><span class="v">3</span></div>
+                <div class="set"><span class="n">Temps</span><span class="v">10s</span></div>
+                <div class="set"><span class="n">Réponses</span><span class="v">4</span></div>
+            </div>`;
+
+        const HAUTS = {
+            l1: `<div class="haut c" style="gap:.55rem">
+                    <span class="lbl">Code du salon</span>
+                    ${CODE()}
+                    <button class="demarrer" style="margin-top:.5rem">${PLAY}Démarrer</button>
+                    <span style="height:.4rem"></span>
+                    ${COMPTE}
+                    ${JOUEURS}
+                 </div>`,
+
+            l2: `<div class="haut c" style="gap:.55rem">
+                    <span class="lbl">Code du salon</span>
+                    ${CODE()}
+                    <span style="height:.3rem"></span>
+                    ${COMPTE}
+                    ${JOUEURS}
+                    <button class="demarrer plein" style="margin-top:.8rem">${PLAY}Démarrer la partie</button>
+                 </div>`,
+
+            l3: `<div class="haut" style="gap:.7rem">
+                    <div class="ligne">
+                        <span style="display:flex;flex-direction:column;gap:.35rem">
+                            <span class="lbl">Code</span>
+                            ${CODE(true)}
+                        </span>
+                        <span style="text-align:right">${COMPTE}</span>
+                    </div>
+                    ${JOUEURS}
+                    <button class="demarrer plein">${PLAY}Démarrer la partie</button>
+                 </div>`,
+
+            l4: `<div class="carte haut c" style="gap:.55rem">
+                    <span class="lbl">Code du salon</span>
+                    ${CODE()}
+                    ${COMPTE}
+                    ${JOUEURS}
+                    <button class="demarrer plein" style="margin-top:.6rem">${PLAY}Démarrer</button>
+                 </div>`,
+
+            l5: `<div class="haut c" style="gap:.6rem">
+                    ${COMPTE}
+                    ${JOUEURS}
+                    <button class="demarrer plein" style="margin-top:.7rem">${PLAY}Démarrer la partie</button>
+                    <span style="display:flex;align-items:center;gap:.5rem;margin-top:.6rem">
+                        <span class="lbl">Code</span>${CODE(true)}
+                    </span>
+                 </div>`,
+
+            l6: `<div class="haut" style="gap:.8rem">
+                    <div class="duo">
+                        <span class="col"><span class="lbl">Code du salon</span>${CODE(true)}</span>
+                        <span class="col"><span class="lbl">Présents</span><span class="compte"><b>2</b></span></span>
+                    </div>
+                    ${JOUEURS}
+                    <button class="demarrer plein">${PLAY}Démarrer la partie</button>
+                 </div>`,
+        };
+
+        const PROTOS = [
+            { id: 'l1', num: 'L1', nom: 'Tout centré', note: "L'existant, simplement recentré. <b>Le changement le plus léger</b> — rien ne bouge, tout s'aligne sur l'axe. Le bouton garde sa largeur naturelle." },
+            { id: 'l2', num: 'L2', nom: 'Code puis action', note: "Centré, avec le lancement <b>en pleine largeur tout en bas</b> du bloc : la dernière chose qu'on lit est celle sur laquelle on appuie. Le libellé complet tient enfin." },
+            { id: 'l3', num: 'L3', nom: 'Ligne d\'en-tête', note: "Code à gauche, affluence à droite sur une même ligne, puis les joueurs et le bouton pleine largeur. <b>Le plus compact</b> — deux fois moins de hauteur que L1." },
+            { id: 'l4', num: 'L4', nom: 'Carte d\'en-tête', note: "Tout le haut dans une carte encadrée, ce qui le sépare nettement des réglages. <b>Structure la page en deux blocs</b>, au prix d'un cadre de plus." },
+            { id: 'l5', num: 'L5', nom: 'Action d\'abord', note: "L'ordre est inversé : joueurs, bouton, puis le code en petit. <b>Assume que le code a déjà été partagé</b> quand l'hôte revient sur cet écran — vrai la plupart du temps." },
+            { id: 'l6', num: 'L6', nom: 'Deux colonnes', note: "Code et affluence côte à côte, chacun sous son intitulé. <b>Très lisible</b> et symétrique, mais le code y est plus petit — moins facile à dicter à voix haute." },
+        ];
+
+        document.getElementById('protos').innerHTML = PROTOS.map(p => `
+            <section>
+                <div class="proto-head"><span class="proto-num">${p.num}</span><span class="proto-name">${p.nom}</span></div>
+                <div class="tel ${p.id}">
+                    <div class="ecran">
+                        <span class="sm">SM</span>
+                        <span class="coin"><span class="sortie">⏻</span><span class="badge">Classique</span></span>
+                        ${HAUTS[p.id]}
+                        ${REGLAGES}
+                    </div>
+                </div>
+                <p class="proto-note">${p.note}</p>
+            </section>`).join('');
+    </script>
+</body>
+
+</html>

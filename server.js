@@ -895,6 +895,10 @@ app.get('/prototypes/jeu', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-jeu.html');
 });
 
+app.get('/prototypes/lobby-mobile', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-lobby-mobile.html');
+});
+
 app.get('/prototypes/boutons-mobile', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-boutons-mobile.html');
 });
