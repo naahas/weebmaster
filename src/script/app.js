@@ -1910,19 +1910,8 @@ createApp({
                 } else if (bonusType === 'reveal') {
                     console.log('🎨 Restauration visuelle Joker');
                     this.applyReveal();
-                } else if (bonusType === 'shield') {
-                    console.log('🎨 Restauration visuelle Shield');
-                    const hud = document.querySelector('.player-hud');
-                    if (hud) {
-                        hud.classList.add('shield-protected');
-                    }
-                } else if (bonusType === 'doublex2') {
-                    console.log('🎨 Restauration visuelle x2');
-                    // 🔥 AJOUTER ICI : Pulse doré du HUD
-                    const hud = document.querySelector('.player-hud');
-                    if (hud) {
-                        hud.classList.add('x2-protected');
-                    }
+                } else if (bonusType === 'shield' || bonusType === 'doublex2') {
+                    this.marquerJeton(bonusType);
                 }
             }, 100);
         },
@@ -4117,10 +4106,7 @@ createApp({
             } else if (bonusType === 'doublex2') {
                 // 🔥 MODIFIER ICI : Ajouter le pulse doré
                 console.log('💰 Points x2 activé pour cette question');
-                const hud = document.querySelector('.player-hud');
-                if (hud) {
-                    hud.classList.add('x2-protected');
-                }
+                this.marquerJeton('doublex2');
             }
         },
 
@@ -4171,7 +4157,7 @@ createApp({
             // Appliquer
             setTimeout(() => {
                 toHide.forEach(index => {
-                    const btn = document.querySelector(`.answer-btn:nth-child(${index})`);
+                    const btn = document.querySelector(`.v2q-answer:nth-child(${index})`);
                     if (btn) {
                         btn.classList.add('bonus-5050-hidden');
                         console.log(`   ✅ Réponse ${index} masquée`);
@@ -4199,7 +4185,7 @@ createApp({
             // Masquer TOUTES les mauvaises réponses
             setTimeout(() => {
                 for (let i = 1; i <= totalAnswers; i++) {
-                    const btn = document.querySelector(`.answer-btn:nth-child(${i})`);
+                    const btn = document.querySelector(`.v2q-answer:nth-child(${i})`);
                     if (btn) {
                         if (i !== correctIndex) {
                             btn.classList.add('bonus-5050-hidden');
@@ -4212,13 +4198,12 @@ createApp({
         },
 
         applyShield() {
-            console.log(`🛡️ Bouclier activé ! Protection contre la prochaine perte de vie`);
+            this.marquerJeton('shield');
+        },
 
-            // 🔥 Ajouter le pulse SANS timeout (reste jusqu'à la fin)
-            const hud = document.querySelector('.player-hud');
-            if (hud) {
-                hud.classList.add('shield-protected');
-            }
+        // Le bonus actif se signale sur son propre jeton, seul repère qui reste
+        marquerJeton(type) {
+            this.activeBonusEffect = type;
         },
 
         // 🆕 Afficher l'animation Shield
@@ -4246,17 +4231,12 @@ createApp({
 
         resetBonusEffects() {
             // Retirer tous les effets visuels
-            document.querySelectorAll('.answer-btn').forEach(btn => {
+            document.querySelectorAll('.v2q-answer').forEach(btn => {
                 btn.classList.remove('bonus-5050-hidden', 'bonus-revealed');
             });
 
+            // Le jeton allumé s'éteint avec l'effet
             this.activeBonusEffect = null;
-
-            // Retirer les pulses du HUD
-            const hud = document.querySelector('.player-hud');
-            if (hud) {
-                hud.classList.remove('shield-protected', 'x2-protected'); // 🔥 AJOUTER x2-protected
-            }
         },
 
         // 🔥 REFONTE: Reset avec bonusInventory

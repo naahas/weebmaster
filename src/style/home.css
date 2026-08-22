@@ -10928,3 +10928,45 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 }
 
 .v2-join-err.vu { opacity: 1; }
+
+/* ============================================
+   🆕 v2 — EFFETS DES BONUS SUR LES RÉPONSES
+   Les règles d'origine visaient .answer-btn, disparue avec la v1.
+   ============================================ */
+.v2q-answer.bonus-5050-hidden {
+    opacity: 0.12;
+    pointer-events: none;
+    filter: grayscale(1);
+    transition: opacity 0.4s ease, filter 0.4s ease;
+}
+
+.v2q-answer.bonus-5050-hidden .v2q-answer-text,
+.v2q-answer.bonus-5050-hidden .v2q-mark { visibility: hidden; }
+
+.v2q-answer.bonus-revealed {
+    border-color: rgba(255, 215, 0, 0.7);
+    box-shadow: 0 0 1.4rem rgba(255, 190, 40, 0.28);
+}
+
+/* Le jeton d'un bonus en cours reste allumé */
+.v2-token.actif {
+    border-color: var(--neon-primary);
+    background: rgba(255, 215, 0, 0.16);
+    box-shadow: 0 0 1.2rem rgba(255, 190, 40, 0.4);
+}
+
+@media (max-width: 768px) {
+    /* La sortie se fait plus discrète, des deux côtés */
+    .v2-hoststop { width: 2.4rem; height: 2.4rem; }
+    .v2-hoststop svg { width: 1rem; height: 1rem; }
+}
+
+.v2-hoststop { width: 2.6rem; height: 2.6rem; }
+.v2-hoststop svg { width: 1.1rem; height: 1.1rem; }
+
+/* Côté invité, la place à droite est libre : les défis y descendent */
+.challenges-mobile-icon.droite {
+    left: auto !important;
+    right: clamp(0.8rem, 2vw, 1.6rem) !important;
+    bottom: clamp(0.8rem, 2vw, 1.6rem) !important;
+}

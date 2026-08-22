@@ -1455,7 +1455,7 @@
             </button>
 
             <button class="v2-token"
-                    :class="[getBonusState(gameMode === 'lives' ? 'shield' : 'doublex2'), { vide: !bonusInventory[gameMode === 'lives' ? 'shield' : 'doublex2'], off: !canUseBonus() }]"
+                    :class="[getBonusState(gameMode === 'lives' ? 'shield' : 'doublex2'), { vide: !bonusInventory[gameMode === 'lives' ? 'shield' : 'doublex2'], off: !canUseBonus(), actif: activeBonusEffect === (gameMode === 'lives' ? 'shield' : 'doublex2') }]"
                     :disabled="!bonusInventory[gameMode === 'lives' ? 'shield' : 'doublex2'] || !canUseBonus()"
                     @click="useBonusStrip(gameMode === 'lives' ? 'shield' : 'doublex2')"
                     :title="gameMode === 'lives' ? 'Bouclier — protège une vie' : 'Points x2 sur cette question'">
@@ -1588,7 +1588,7 @@
 
 
         <!-- 🆕 DÉFIS MOBILE - Icône en bas gauche (pas en FizzBuzz) -->
-        <div class="challenges-mobile-icon" v-if="gameInProgress && !gameEnded && challenges.length > 0 && lobbyMode !== 'bombanime' && bonusEnabled" 
+        <div class="challenges-mobile-icon" :class="{ droite: !isHost }" v-if="gameInProgress && !gameEnded && challenges.length > 0 && lobbyMode !== 'bombanime' && bonusEnabled" 
              @click="showChallengesMobile = !showChallengesMobile">
             <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
