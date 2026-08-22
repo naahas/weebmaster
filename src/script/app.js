@@ -101,8 +101,6 @@ createApp({
 
 
             playerPoints: 0,
-            pointsAnimation: false,
-            pointsGained: 0,
 
             // État du jeu
             isGameActive: false,
@@ -1418,14 +1416,6 @@ createApp({
 
         },
 
-        // ========== Leaderboard ==========
-        triggerPointsAnimation() {
-            this.pointsAnimation = true;
-            setTimeout(() => {
-                this.pointsAnimation = false;
-            }, 1500);
-        },
-
         // ========== Restauration d'état ==========
         async _resyncServerState() {
             try {
@@ -2095,9 +2085,7 @@ createApp({
 
                         const finalPoints = this.activeBonusEffect === 'doublex2' ? pointsEarned * 2 : pointsEarned;
 
-                        this.pointsGained = finalPoints;
                         this.playerPoints += finalPoints;
-                        this.triggerPointsAnimation();
                     }
                 } else {
                     // Mode Vie
