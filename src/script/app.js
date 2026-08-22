@@ -168,6 +168,8 @@ createApp({
             pointsPulse: false,
             speedBonus: true,     // +500 points au plus rapide, en mode points
             showQuestionStats: false,  // feuille de détail de la question (hôte)
+            showTopSheet: false,       // classement en calque, sur petit écran
+            confirmAction: null,       // 'close' (hôte) ou 'leave' (invité)
             ringSweep: 0,              // 0 → 1 : remplissage de l'anneau à l'ouverture
             answerColors: ['#ffd24a', '#7fb4ff', '#6ee7b7', '#d8b4fe', '#fca5a5', '#fdba74'],
             booting: true,        // tant que l'état serveur n'est pas connu, on n'affiche aucun écran
@@ -660,6 +662,27 @@ createApp({
             }
             if (arc < 360) stops.push(`${vide} ${arc}deg 360deg`);
             return `conic-gradient(${stops.join(',')})`;
+        },
+
+        confirmTitle() {
+            if (this.confirmAction === 'leave') return this.gameInProgress ? 'Quitter la partie ?' : 'Quitter le salon ?';
+            return this.gameInProgress ? 'Arrêter la partie ?' : 'Fermer le salon ?';
+        },
+
+        confirmText() {
+            if (this.confirmAction === 'leave') {
+                return this.gameInProgress
+                    ? 'Tu sors de la partie en cours. Tu pourras revenir avec le code du salon.'
+                    : 'Tu quittes le salon. Tu pourras y revenir avec son code.';
+            }
+            return this.gameInProgress
+                ? "La partie s'arrête tout de suite et tout le monde est renvoyé à l'accueil."
+                : 'Le salon est fermé et les joueurs présents en sont sortis.';
+        },
+
+        confirmLabel() {
+            if (this.confirmAction === 'leave') return 'Quitter';
+            return this.gameInProgress ? 'Arrêter' : 'Fermer';
         },
 
         comboLevelDisplay() {
@@ -1273,7 +1296,18 @@ createApp({
             }
         },
 
+        askCloseRoom() { this.confirmAction = 'close'; },
+        askLeaveRoom() { this.confirmAction = 'leave'; },
+
+        confirmProceed() {
+            const action = this.confirmAction;
+            this.confirmAction = null;
+            if (action === 'close') this.hostCloseRoom();
+            else if (action === 'leave') this.leaveRoom();
+        },
+
         async hostCloseRoom() {
+            this.confirmAction = null;
             try {
                 await fetch('/admin/toggle-game', {
                     method: 'POST',
@@ -1997,6 +2031,7 @@ createApp({
             this.socket.on('new-question', (question) => {
                 this.answerCounts = {};
                 this.showQuestionStats = false;
+                this.showTopSheet = false;
                 this.clearSeal();
                 this.revealQuestionChrome();
                 if (!this.hasJoined) {
