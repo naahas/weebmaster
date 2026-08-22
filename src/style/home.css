@@ -19441,7 +19441,8 @@ body.modal-open {
     display: grid;
     place-items: center;
     padding: 1.5rem;
-    background: rgba(6, 6, 8, 0.78);
+    background: rgba(5, 5, 7, 0.9);
+    backdrop-filter: blur(0.15rem);
 }
 
 .v2q-sheet {
@@ -19851,7 +19852,8 @@ body.modal-open {
         inset: 0;
         z-index: 900;
         padding: 1.5rem;
-        background: rgba(6, 6, 8, 0.8);
+        background: rgba(5, 5, 7, 0.9);
+        backdrop-filter: blur(0.15rem);
     }
 
     .v2q-top-veil.open { display: grid; place-items: center; }
@@ -19989,4 +19991,16 @@ body.modal-open {
 
     /* Les jetons rejoignent la rangée du bas */
     .v2-bonus { bottom: 0.9rem; }
+}
+
+/* Un calque ouvert : tout le décor fixé à la racine s'efface derrière lui */
+body.v2-sheet-open .challenges-mobile-icon,
+body.v2-sheet-open .v2-bonus,
+body.v2-sheet-open .v2-hostbar,
+body.v2-sheet-open .v2-hoststop,
+body.v2-sheet-open .v2q-timer-m,
+body.v2-sheet-open .v2-hud {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
 }

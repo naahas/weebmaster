@@ -730,6 +730,11 @@ createApp({
     },
 
     watch: {
+        // Un calque ouvert efface les icônes fixées à la racine : leur z-index
+        // les placerait sinon au-dessus du voile, qui vit dans le panel.
+        showTopSheet(ouvert) { this.marquerCalque(ouvert || this.showQuestionStats); },
+        showQuestionStats(ouvert) { this.marquerCalque(ouvert || this.showTopSheet); },
+
         // Points gagnés : le compteur rattrape le score en s'animant, le gain s'envole
         playerPoints(neuf, ancien) {
             if (neuf === ancien) return;
@@ -1075,6 +1080,10 @@ createApp({
         },
 
         // Contrôles de l'hôte pendant la partie (ex-panel /admin)
+        marquerCalque(ouvert) {
+            document.body.classList.toggle('v2-sheet-open', !!ouvert);
+        },
+
         // Cœurs et jetons rejoignent le panel au lieu de le précéder.
         // Le retard reprend le délai de .v2q-enter-active : les deux vont de pair.
         revealQuestionChrome() {
