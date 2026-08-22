@@ -557,6 +557,10 @@ function broadcastLobbyUpdate() {
     
     io.emit('lobby-update', {
         playerCount: gameState.players.size,
+        // Joueurs encore en lice : sert de compteur pendant la partie
+        alivePlayers: gameState.inProgress && gameState.mode === 'lives'
+            ? getAlivePlayers().length
+            : gameState.players.size,
         lives: gameState.lives,
         livesIcon: gameState.livesIcon,
         questionTime: gameState.questionTime,
@@ -5231,6 +5235,16 @@ io.on('connection', (socket) => {
             addLog('leave', { username: data.username, playerColor });
 
             broadcastLobbyUpdate();
+
+            // Même règle que pour une exclusion : s'il ne reste plus personne
+            // à affronter, la partie s'arrête au lieu de tourner à vide.
+            if (gameState.inProgress && gameState.mode === 'lives') {
+                const restants = getAlivePlayers();
+                if (restants.length <= 1) {
+                    console.log(`🏁 Fin de partie après un départ - Restants: ${restants.length}`);
+                    endGame(restants.length === 1 ? restants[0] : null);
+                }
+            }
         }
     });
 
