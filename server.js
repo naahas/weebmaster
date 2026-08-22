@@ -2977,6 +2977,9 @@ async function endGameByPoints() {
             // Stocker les twitchId
             gameState.isTiebreaker = true;
             gameState.tiebreakerPlayers = winners.map(w => w.twitchId);
+            // La partie n'est plus en train de se terminer : elle se prolonge.
+            // Sans ça l'hôte se heurtait à « Partie en cours de finalisation ».
+            gameState.endingGame = false;
 
             addLog('tiebreaker', { playerCount: winners.length });
 
@@ -3054,7 +3057,7 @@ async function sendTiebreakerQuestion() {
             question: question.question,
             answers: finalAnswers.map(a => a.text),
             serie: question.serie,
-            difficulty: 'TIEBREAKER - EXTREME',
+            difficulty: 'extreme',
             timeLimit: gameState.questionTime,
             isTiebreaker: true,
             proof_url: question.proof_url || null

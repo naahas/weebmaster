@@ -10983,3 +10983,19 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     0%, 100% { opacity: 1; transform: scale(1); }
     50%      { opacity: 0.45; transform: scale(0.9); }
 }
+
+/* Question de départage : la mention bat à côté du numéro, côté hôte */
+.v2q-qnum-tb {
+    padding-left: 0.75rem;
+    margin-left: 0.15rem;
+    border-left: 0.06rem solid rgba(255, 255, 255, 0.2);
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: #fff;
+    animation: v2TbBat 1.2s ease-in-out infinite;
+}
+
+@keyframes v2TbBat {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.35; }
+}

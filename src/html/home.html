@@ -999,7 +999,8 @@
                     <div class="v2q-block" v-if="currentQuestion" :key="currentQuestionNumber">
 
                     <div class="v2q-qnum">
-                        Question {{ currentQuestionNumber }}<em v-if="isHost && currentQuestion.totalQuestions"> / {{ currentQuestion.totalQuestions }}</em>
+                        Question {{ currentQuestionNumber }}<em v-if="isHost && currentQuestion.totalQuestions && !currentQuestion.isTiebreaker"> / {{ currentQuestion.totalQuestions }}</em>
+                        <b class="v2q-qnum-tb" v-if="isHost && currentQuestion.isTiebreaker">Tiebreaker</b>
                     </div>
 
                     <!-- La scène épouse le panel : le classement et le bouton s'y accrochent,
