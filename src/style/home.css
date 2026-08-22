@@ -18247,7 +18247,9 @@ body.modal-open {
 .v2-room-layout.guest {
     grid-template-columns: minmax(0, 1fr);
     justify-items: center;
-    padding: clamp(2rem, 12vh, 7rem) clamp(1rem, 3vw, 3rem) 0;
+    align-items: center;
+    align-content: center;
+    padding: 0 clamp(1rem, 3vw, 3rem);
 }
 
 .v2-room-layout.guest .v2-room-main { align-items: center; text-align: center; }
@@ -20723,4 +20725,15 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     .v2-room-guest-mark svg { width: 1.35rem; height: 1.35rem; }
     .v2-mode-badge { padding: 0.34rem 0.75rem; font-size: 0.6rem; }
     .v2-room-code-mini { padding: 0.3rem 0.55rem; font-size: 0.72rem; letter-spacing: 0.16em; }
+}
+
+/* Le compteur respire : la police du chiffre a des approches serrées */
+.v2-room-guest-count b { margin-right: 0.22rem; }
+
+@media (max-width: 768px) {
+    /* Le classement final touchait les bords : on lui rend des marges */
+    .v2-end-list,
+    .v2-end-me { width: min(27rem, 100%); }
+    .v2-end-row { padding-left: 0.7rem; padding-right: 0.7rem; }
+    .v2-end-me { padding-left: 0.7rem; padding-right: 0.7rem; }
 }
