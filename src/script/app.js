@@ -1149,10 +1149,9 @@ createApp({
             return 4;
         },
 
+        // Le mode Vies affiche des cœurs : ce calcul ne sert plus qu'aux points
         endScore(p) {
-            if (p.points !== undefined) return (p.points || 0).toLocaleString('fr-FR');
-            const vies = p.lives !== undefined ? p.lives : 0;
-            return vies + (vies > 1 ? ' vies' : ' vie');
+            return (p.points || 0).toLocaleString('fr-FR');
         },
 
         // Enchaînement de la révélation, avec les éclats et les confettis
@@ -3746,6 +3745,10 @@ createApp({
             // 🆕 v2 : on quitte le salon et on revient à l'accueil
             this.isHost = false;
             this.roomCode = null;
+            // Sans ça on retombait sur l'écran de saisie du code, resté sélectionné
+            this.homeScreen = 'hub';
+            this.joinCode = '';
+            this.joinStep = 'code';
             sessionStorage.removeItem('isHost');
             sessionStorage.removeItem('roomCode');
             this.loadHomeStats();

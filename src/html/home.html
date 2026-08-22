@@ -1131,7 +1131,12 @@
                         <span class="v2-end-sweep"></span>
                         <span class="rk">{{ p.rank }}</span>
                         <span class="nm">{{ p.username }}</span>
-                        <span class="sc">{{ endScore(p) }}</span>
+                        <span class="sc" v-if="p.points !== undefined">{{ endScore(p) }}</span>
+                        <span class="v2-end-hp" v-else>
+                            <i v-for="n in gameLives" :key="n" :class="{ off: n > (p.lives || 0) }">
+                                <svg viewBox="0 0 24 24" stroke-linejoin="round"><path d="M12 20.6s-7-4.3-9-8.4A5 5 0 0 1 12 6.6a5 5 0 0 1 9 5.6c-2 4.1-9 8.4-9 8.4z"/></svg>
+                            </i>
+                        </span>
                     </div>
                 </div>
 
