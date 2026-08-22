@@ -112,7 +112,6 @@ createApp({
 
             // Lobby
             playerCount: 0,
-            alivePlayers: 0,      // joueurs encore en lice, affiché pendant la partie
             hasJoined: false,
             
             // Mode Rivalité
@@ -1983,7 +1982,6 @@ createApp({
 
             this.socket.on('lobby-update', (data) => {
                 this.playerCount = data.playerCount;
-                if (data.alivePlayers !== undefined) this.alivePlayers = data.alivePlayers;
                 if (data.players) this.lobbyPlayers = data.players;
                 // 🆕 Mettre à jour les paramètres si fournis
                 if (data.lives) this.gameLives = data.lives;
@@ -2053,7 +2051,6 @@ createApp({
 
             this.socket.on('question-results', (results) => {
                 this.stopTimer();
-                if (results.remainingPlayers !== undefined) this.alivePlayers = results.remainingPlayers;
                 this.clearSeal();
                 this.questionResults = results;
                 this.showResults = true;

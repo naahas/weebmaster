@@ -557,10 +557,6 @@ function broadcastLobbyUpdate() {
     
     io.emit('lobby-update', {
         playerCount: gameState.players.size,
-        // Joueurs encore en lice : sert de compteur pendant la partie
-        alivePlayers: gameState.inProgress && gameState.mode === 'lives'
-            ? getAlivePlayers().length
-            : gameState.players.size,
         lives: gameState.lives,
         livesIcon: gameState.livesIcon,
         questionTime: gameState.questionTime,

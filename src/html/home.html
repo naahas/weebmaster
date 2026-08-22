@@ -987,6 +987,18 @@
                         </span>
                     </div>
 
+                    <!-- Chrono du petit écran : il occupe l'angle haut gauche pendant la
+                         question, puis cède la place au bouton de détail à la révélation. -->
+                    <div class="v2q-timer-m" v-if="currentQuestion && !showResults"
+                         :class="{ warning: timerWarning }">
+                        <svg viewBox="0 0 80 80">
+                            <circle class="bg" cx="40" cy="40" r="34"></circle>
+                            <circle class="fg" cx="40" cy="40" r="34"
+                                    :style="{ strokeDashoffset: 213.6 - (213.6 * timerProgress / 100) }"></circle>
+                        </svg>
+                        <span class="n">{{ timeRemaining }}</span>
+                    </div>
+
                     <transition name="v2q" mode="out-in">
                     <div class="v2q-block" v-if="currentQuestion" :key="currentQuestionNumber">
 
@@ -1441,9 +1453,6 @@
                     <div class="v2q-key" v-if="questionResults.fastestPlayer">
                         <b>{{ fastestTime }}<small>s</small></b><span>Plus rapide</span>
                     </div>
-                    <div class="v2q-key" v-if="gameMode === 'lives'">
-                        <b>{{ alivePlayers }}</b><span>Encore en lice</span>
-                    </div>
                 </div>
 
                 <div class="v2q-fastest" v-if="questionResults.fastestPlayer">
@@ -1478,7 +1487,7 @@
         </div>
 
         <!-- 🆕 v2 — Bonus en jetons toujours visibles -->
-        <div class="v2-bonus" v-if="gameInProgress && !gameEnded && questionShown && lobbyMode !== 'bombanime' && bonusEnabled">
+        <div class="v2-bonus" v-if="gameInProgress && !gameEnded && questionShown && !showResults && lobbyMode !== 'bombanime' && bonusEnabled">
             <button class="v2-token"
                     :class="[getBonusState('5050'), { vide: !bonusInventory['5050'], off: !canUseBonus() }]"
                     :disabled="!bonusInventory['5050'] || !canUseBonus()"
