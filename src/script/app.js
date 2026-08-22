@@ -215,22 +215,19 @@ createApp({
             tipKey: 0,
             tipIndex: 0,
             tipInterval: null,
+            // Les astuces parlant de profils, badges, titres et classement décrivaient
+            // des fonctions retirées en v2 : elles ont été enlevées.
             lobbyTips: [
-                "Récoltez des bonus en répondant correctement et en complétant des défis !",
+                "Récolte des bonus en répondant juste et en complétant des défis",
                 "Chaque bonus n'est utilisable que 2 fois maximum par partie",
-                "Actuellement, Dragon Ball est la série qui comptabilise le plus de questions",
-                "Sauf indication contraire, chaque question porte sur la version manga de la série",
-                "Des avatars et des titres sont disponibles dans votre profil",
-                "Plus vous participez à des parties, plus vous débloquerez de badges",
-                "Les titres et avatars d'un joueur sont visibles dans le classement et en live",
-                "Des événements inter-communautaires comme des duels et tournois sont en préparation",
-                "Un classement détaillé des joueurs est accessible depuis l'écran d'accueil",
-                "Vous pouvez signaler des bugs ou suggérer des améliorations",
-                "Vous pourrez bientôt proposer vos propres questions qui seront évaluées",
-                "Trois défis sont disponibles chaque partie, complétez-les pour gagner des bonus",
-                "Les défis se renouvellent à chaque nouvelle partie",
-                "En mode points, la difficulté des questions détermine les points gagnés",
-                "Aucune question ne porte sur des Manwas ou Mebtoons",
+                "Trois défis sont proposés à chaque partie, et ils se renouvellent",
+                "Dragon Ball est la série qui compte le plus de questions",
+                "Sauf mention contraire, chaque question porte sur la version manga",
+                "En mode points, la difficulté de la question détermine les points gagnés",
+                "En mode points, le premier à trouver décroche un bonus de rapidité",
+                "L'hôte peut signaler une question douteuse à la fin de chaque manche",
+                "Aucune question ne porte sur des manhwas ou des webtoons",
+                "Le code du salon suffit à inviter quelqu'un : aucun compte n'est nécessaire",
             ],
 
 

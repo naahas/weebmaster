@@ -16933,30 +16933,6 @@ body.modal-open {
     background: linear-gradient(transparent, rgba(255, 255, 255, 0.14), transparent);
 }
 
-.v2-ticker {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    animation: v2Rise 1s 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-
-.v2-ticker-item {
-    display: flex;
-    align-items: center;
-    gap: 0.45rem;
-    padding: 0.3rem 0.7rem;
-    font-size: 0.7rem;
-    color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.03);
-    border: 0.06rem solid rgba(255, 255, 255, 0.06);
-    border-radius: 2rem;
-}
-
-.v2-ticker-mode { font-weight: 700; color: var(--neon-primary); }
-.v2-ticker-mode.mode-rivalry { color: #a78bfa; }
-.v2-ticker-mode.mode-bombanime { color: #4ade80; }
-.v2-ticker-players { opacity: 0.6; }
 
 /* ── Écran 2 : créer / rejoindre ──────────── */
 .v2-hub {
@@ -17498,7 +17474,7 @@ body.modal-open {
         padding: 0;
     }
     .v2-hub-left { align-items: center; text-align: center; }
-    .v2-bigstats, .v2-ticker { justify-content: center; }
+    .v2-bigstats { justify-content: center; }
     .v2-bigstat { align-items: center; }
     .v2-choices { width: min(26rem, 92vw); }
 }
@@ -17514,7 +17490,6 @@ body.modal-open {
     .v2-mode-preview { min-height: 15rem; }
     .v2-bigstats { gap: 1rem; }
     .v2-bigstat-sep { display: none; }
-    .v2-ticker { display: none; }
 }
 
 /* ── Modale : changer de pseudo ────────────── */
@@ -20438,4 +20413,98 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 @media (max-width: 768px) {
     .v2-end-hp i { width: 0.9rem; height: 0.9rem; }
     .v2-end-row.or .v2-end-hp i { width: 1.2rem; height: 1.2rem; }
+}
+
+/* ============================================
+   🆕 v2 — DERNIÈRES PARTIES
+   Une colonne sobre sur le bord gauche : mode et affluence, rien d'autre.
+   ============================================ */
+.v2-recent {
+    position: fixed;
+    left: clamp(1.4rem, 3vw, 3rem);
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 3;
+    width: 11rem;
+    pointer-events: none;
+    animation: v2Rise 1s 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.v2-recent-t {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-bottom: 0.7rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.5rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.32);
+}
+
+.v2-recent-t::after { content: ''; flex: 1; height: 0.06rem; background: rgba(255, 255, 255, 0.08); }
+
+.v2-recent-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding: 0.42rem 0;
+    font-size: 0.72rem;
+}
+
+.v2-recent-row + .v2-recent-row { border-top: 0.06rem solid rgba(255, 255, 255, 0.045); }
+
+.v2-recent-row .mode {
+    flex: 1;
+    min-width: 0;
+    font-weight: 600;
+    color: rgba(255, 215, 0, 0.7);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.v2-recent-row .mode.mode-rivalry { color: rgba(167, 139, 250, 0.75); }
+.v2-recent-row .mode.mode-bombanime { color: rgba(74, 222, 128, 0.75); }
+
+/* L'affluence, en chiffre discret suivi d'une silhouette */
+.v2-recent-row .nb {
+    position: relative;
+    padding-right: 0.85rem;
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 0.95rem;
+    font-variant-numeric: tabular-nums;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.v2-recent-row .nb::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0.12rem;
+    width: 0.5rem;
+    height: 0.62rem;
+    background: currentColor;
+    opacity: 0.55;
+    -webkit-mask: radial-gradient(circle at 50% 26%, #000 26%, transparent 27%) top / 100% 55% no-repeat,
+                  radial-gradient(ellipse at 50% 100%, #000 52%, transparent 53%) bottom / 100% 48% no-repeat;
+    mask: radial-gradient(circle at 50% 26%, #000 26%, transparent 27%) top / 100% 55% no-repeat,
+          radial-gradient(ellipse at 50% 100%, #000 52%, transparent 53%) bottom / 100% 48% no-repeat;
+}
+
+/* Sous 1200 px la colonne ne tient plus à côté du titre : elle passe en flux */
+@media (max-width: 1200px) {
+    .v2-recent {
+        position: static;
+        transform: none;
+        width: min(24rem, 100%);
+        margin: 1.6rem auto 0;
+        animation: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .v2-recent { margin-top: 1.3rem; }
+    .v2-recent-row { padding: 0.36rem 0; font-size: 0.7rem; }
 }

@@ -201,6 +201,8 @@ async function loadRecentGamesFromDb() {
         gamesPlayedTotal = count || recentGames.length;
         console.log(`📊 ${recentGames.length} partie(s) récente(s) chargée(s), ${gamesPlayedTotal} au total`);
     } catch (e) {
+        // Silencieux jusqu'ici : on ne voyait pas que la table manquait
+        console.log('ℹ️ Historique des parties indisponible (' + e.message + ') — mémoire seule');
         gameHistoryTableOk = false;
     }
 }

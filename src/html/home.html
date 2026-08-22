@@ -115,13 +115,6 @@
                             </div>
                         </div>
     
-                        <div class="v2-ticker" v-if="homeStats.recentGames && homeStats.recentGames.length">
-                            <div class="v2-ticker-item" v-for="(g, i) in homeStats.recentGames.slice(0, 3)" :key="i">
-                                <span class="v2-ticker-mode" :class="'mode-' + g.mode">{{ g.modeLabel }}</span>
-                                <span v-if="g.winnerName">{{ g.winnerName }}</span>
-                                <span class="v2-ticker-players">{{ g.playersCount }}j</span>
-                            </div>
-                        </div>
                     </div>
 
                     <div class="v2-choices">
@@ -205,6 +198,15 @@
                         </div>
                     </div>
                 </section>
+
+                <!-- Dernières parties : mode et affluence, rien de plus -->
+                <aside class="v2-recent" v-if="homeScreen === 'hub' && homeStats.recentGames && homeStats.recentGames.length">
+                    <span class="v2-recent-t">Dernières parties</span>
+                    <div class="v2-recent-row" v-for="(g, i) in homeStats.recentGames.slice(0, 5)" :key="i">
+                        <span class="mode" :class="'mode-' + g.mode">{{ g.modeLabel }}</span>
+                        <span class="nb">{{ g.playersCount }}</span>
+                    </div>
+                </aside>
 
                 <!-- ── Écran 4 : rejoindre ─────────────────── -->
                 <section class="v2-join-screen" v-else-if="homeScreen === 'join'">
