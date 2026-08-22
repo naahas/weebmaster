@@ -1374,7 +1374,7 @@ app.post('/admin/set-answers', (req, res) => {
 app.post('/admin/start-game', async (req, res) => {
 
     if (gameState.inProgress) {
-        return res.status(400).json({ error: 'Une partie est déjà en cours' });
+        return res.status(400).json({ error: 'Partie déjà en cours' });
     }
 
     const totalPlayers = gameState.players.size;
@@ -5082,7 +5082,7 @@ io.on('connection', (socket) => {
         }
 
         if (gameState.inProgress) {
-            return socket.emit('error', { message: 'Une partie est déjà en cours' });
+            return socket.emit('error', { message: 'Partie déjà en cours' });
         }
 
         // 🔑 Vérification du code de salon (l'hôte le transmet, il n'a rien à saisir)
@@ -5429,7 +5429,7 @@ io.on('connection', (socket) => {
             broadcastLobbyUpdate();
         } else {
             socket.emit('error', {
-                message: 'Vous ne pouvez pas rejoindre une partie en cours',
+                message: 'Partie déjà en cours',
                 canSpectate: true
             });
         }
