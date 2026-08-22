@@ -167,6 +167,7 @@ createApp({
             speedBonus: true,     // +500 points au plus rapide, en mode points
             showQuestionStats: false,  // feuille de détail de la question (hôte)
             showTopSheet: false,       // classement en calque, sur petit écran
+            endStep: 0,                // 0→4 : avancement de la révélation finale
             showReport: false,         // modale de signalement d'une question
             reportPicked: [],          // plusieurs motifs peuvent se cumuler
             reportBusy: false,
@@ -550,7 +551,7 @@ createApp({
         },
 
         // 🆕 Mon classement (pour afficher si hors top 3)
-        myRank() {
+        myEndRank() {
             if (!this.gameEndData || !this.gameEndData.playersData) return null;
             
             const allPlayers = this.gameEndData.playersData || [];
@@ -619,7 +620,7 @@ createApp({
             return this.rankedPlayers.slice(0, 5);
         },
 
-        myRank() {
+        myLiveRank() {
             const i = this.rankedPlayers.findIndex(p => p.twitchId === this.twitchId);
             return i === -1 ? 0 : i + 1;
         },
@@ -695,6 +696,11 @@ createApp({
         confirmLabel() {
             if (this.confirmAction === 'leave') return 'Quitter';
             return this.gameInProgress ? 'Arrêter' : 'Fermer';
+        },
+
+        // Six places au plus : au-delà, la liste déborderait en vertical
+        endRows() {
+            return this.podiumPlayers.slice(0, 6);
         },
 
         comboLevelDisplay() {
@@ -1132,6 +1138,60 @@ createApp({
                 setTimeout(() => { this.reportError = false; }, 2500);
             } finally {
                 this.reportBusy = false;
+            }
+        },
+
+        // Le 3e apparaît d'abord, puis le 2e, puis le vainqueur, puis le reste
+        endSlot(rang) {
+            if (rang === 3) return 1;
+            if (rang === 2) return 2;
+            if (rang === 1) return 3;
+            return 4;
+        },
+
+        endScore(p) {
+            if (p.points !== undefined) return (p.points || 0).toLocaleString('fr-FR');
+            const vies = p.lives !== undefined ? p.lives : 0;
+            return vies + (vies > 1 ? ' vies' : ' vie');
+        },
+
+        // Enchaînement de la révélation, avec les éclats et les confettis
+        startEndReveal() {
+            clearTimeout(this._endT1); clearTimeout(this._endT2);
+            clearTimeout(this._endT3); clearTimeout(this._endT4);
+            this.endStep = 0;
+            this._endT1 = setTimeout(() => { this.endStep = 1; }, 500);
+            this._endT2 = setTimeout(() => { this.endStep = 2; }, 1400);
+            this._endT3 = setTimeout(() => {
+                this.endStep = 3;
+                this.$nextTick(() => this.celebrerVainqueur());
+            }, 2400);
+            this._endT4 = setTimeout(() => { this.endStep = 4; }, 3300);
+        },
+
+        celebrerVainqueur() {
+            const zone = document.querySelector('.v2-end');
+            if (!zone) return;
+
+            const eclat = document.createElement('span');
+            eclat.className = 'v2-end-eclat';
+            zone.appendChild(eclat);
+            setTimeout(() => eclat.remove(), 1100);
+
+            const couleurs = ['#FFD700', '#FF8C00', '#ffffff', '#7fb4ff', '#6ee7b7', '#d8b4fe'];
+            const nb = window.innerWidth < 768 ? 45 : 80;
+            for (let i = 0; i < nb; i++) {
+                const c = document.createElement('span');
+                c.className = 'v2-end-confetti';
+                c.style.left = (Math.random() * 100) + '%';
+                c.style.background = couleurs[(Math.random() * couleurs.length) | 0];
+                c.style.setProperty('--dx', ((Math.random() - 0.5) * 14) + 'rem');
+                c.style.setProperty('--rot', ((Math.random() - 0.5) * 1200) + 'deg');
+                c.style.setProperty('--d', (1.7 + Math.random() * 1.5).toFixed(2) + 's');
+                c.style.animationDelay = (Math.random() * 0.5).toFixed(2) + 's';
+                if (Math.random() > 0.6) { c.style.width = '0.5rem'; c.style.height = '0.5rem'; c.style.borderRadius = '50%'; }
+                zone.appendChild(c);
+                setTimeout(() => c.remove(), 3800);
             }
         },
 
@@ -2222,7 +2282,7 @@ createApp({
 
                 // 🆕 Initialiser les animations du winner
                 this.$nextTick(() => {
-                    this.initWinnerAnimations();
+                    this.startEndReveal();
                 });
 
                 // 🆕 Nettoyer localStorage car la partie est terminée

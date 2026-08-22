@@ -20213,3 +20213,216 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     .v2-hub { align-items: flex-start; padding-top: 14vh; }
     .v2-hub-left { gap: clamp(0.9rem, 2.2vh, 1.5rem); }
 }
+
+/* ============================================
+   🆕 v2 — ÉCRAN DE FIN
+   Le classement se dévoile à rebours. Toutes les lignes existent dès le départ :
+   seule leur visibilité change, si bien que le titre ne bouge jamais.
+   ============================================ */
+.v2-end {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.2rem;
+}
+
+.v2-end-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.6rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    animation: v2Rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.v2-end-title::before,
+.v2-end-title::after {
+    content: '';
+    width: 2rem;
+    height: 0.06rem;
+    background: linear-gradient(90deg, transparent, rgba(240, 192, 64, 0.55));
+}
+
+.v2-end-title::after { background: linear-gradient(90deg, rgba(240, 192, 64, 0.55), transparent); }
+
+.v2-end-list { width: min(27rem, 100%); }
+
+.v2-end-row {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.6rem 0.2rem;
+    opacity: 0;
+    transform: translateY(1.2rem);
+    transition: opacity 0.5s cubic-bezier(0.2, 0.85, 0.3, 1), transform 0.5s cubic-bezier(0.2, 0.85, 0.3, 1);
+}
+
+.v2-end-row + .v2-end-row { border-top: 0.06rem solid rgba(255, 255, 255, 0.055); }
+
+.v2-end-row .rk {
+    width: 1.7rem;
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 1.6rem;
+    color: rgba(255, 255, 255, 0.16);
+}
+
+.v2-end-row .nm {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.92rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.v2-end-row .sc {
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* La place dévoilée entre par le bas */
+.v2-end-row.vu { opacity: 1; transform: none; }
+
+/* Un balayage de lumière traverse la ligne au moment où elle paraît */
+.v2-end-sweep {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 45%;
+    background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.16), transparent);
+    transform: translateX(-120%);
+    pointer-events: none;
+}
+
+.v2-end-row.vu .v2-end-sweep { animation: v2EndSweep 0.9s cubic-bezier(0.3, 0.8, 0.2, 1) 0.1s both; }
+
+@keyframes v2EndSweep {
+    to { transform: translateX(320%); }
+}
+
+/* Le vainqueur : plus grand, doré, et il encaisse son entrée */
+.v2-end-row.or { padding: 0.95rem 0.2rem; }
+.v2-end-row.or .rk { font-size: 2.5rem; color: var(--neon-primary); text-shadow: 0 0 1rem rgba(255, 215, 0, 0.45); }
+
+.v2-end-row.or .nm {
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 1.65rem;
+    letter-spacing: 0.02em;
+    color: var(--neon-primary);
+}
+
+.v2-end-row.or .sc { font-size: 1.9rem; color: var(--neon-primary); }
+.v2-end-row.or .v2-end-sweep { background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.32), transparent); }
+
+.v2-end-row.or.vu { animation: v2EndChoc 0.7s cubic-bezier(0.2, 1.4, 0.35, 1) both; }
+
+@keyframes v2EndChoc {
+    0%   { opacity: 0; transform: scale(1.35); }
+    55%  { opacity: 1; transform: scale(0.98); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* Éclat doré au moment du vainqueur */
+.v2-end-eclat {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 24rem;
+    height: 24rem;
+    background: radial-gradient(circle, rgba(255, 200, 60, 0.32), transparent 62%);
+    pointer-events: none;
+    animation: v2EndEclat 1s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+@keyframes v2EndEclat {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
+    35%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+}
+
+/* Confettis */
+.v2-end-confetti {
+    position: absolute;
+    top: -1.5rem;
+    width: 0.35rem;
+    height: 0.7rem;
+    border-radius: 0.08rem;
+    pointer-events: none;
+    animation: v2EndTombe var(--d) cubic-bezier(0.25, 0.6, 0.4, 1) forwards;
+}
+
+@keyframes v2EndTombe {
+    0%   { opacity: 1; transform: translate(0, 0) rotate(0); }
+    100% { opacity: 0; transform: translate(var(--dx), 110vh) rotate(var(--rot)); }
+}
+
+/* Rang personnel et actions : ils arrivent en dernier */
+.v2-end-me,
+.v2-end-actions {
+    opacity: 0;
+    transform: translateY(0.6rem);
+    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.2, 0.85, 0.3, 1);
+}
+
+.v2-end-me.vu,
+.v2-end-actions.vu { opacity: 1; transform: none; }
+
+.v2-end-me {
+    width: min(27rem, 100%);
+    margin-top: 0.9rem;
+    padding-top: 0.8rem;
+    border-top: 0.06rem solid rgba(255, 215, 0, 0.25);
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.v2-end-me b { font-family: 'Bebas Neue', 'Russo One', sans-serif; font-size: 1.2rem; color: var(--neon-primary); }
+
+.v2-end-actions { margin-top: 1.8rem; }
+
+.v2-end-btn {
+    padding: 0.7rem 1.8rem;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #14100a;
+    background: linear-gradient(135deg, #ffe066, var(--accent-color));
+    border: none;
+    border-radius: 2rem;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.25s ease;
+}
+
+.v2-end-btn:hover { transform: translateY(-0.12rem); box-shadow: 0 0.5rem 1.4rem rgba(255, 175, 0, 0.35); }
+
+@media (max-width: 768px) {
+    .v2-end { padding: 1.5rem 0.9rem; }
+    .v2-end-title { margin-bottom: 1.2rem; font-size: 0.55rem; letter-spacing: 0.22em; }
+    .v2-end-title::before, .v2-end-title::after { width: 1.4rem; }
+    .v2-end-row { gap: 0.7rem; padding: 0.5rem 0.1rem; }
+    .v2-end-row .rk { width: 1.4rem; font-size: 1.35rem; }
+    .v2-end-row .nm { font-size: 0.85rem; }
+    .v2-end-row .sc { font-size: 1rem; }
+    .v2-end-row.or { padding: 0.8rem 0.1rem; }
+    .v2-end-row.or .rk { font-size: 2rem; }
+    .v2-end-row.or .nm { font-size: 1.35rem; }
+    .v2-end-row.or .sc { font-size: 1.5rem; }
+    .v2-end-eclat { width: 17rem; height: 17rem; }
+    .v2-end-actions { margin-top: 1.4rem; }
+}

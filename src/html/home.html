@@ -1074,8 +1074,8 @@
                                 <em>{{ fastestTime }}<small>s</small></em>
                             </div>
 
-                            <div class="v2q-top-me" v-if="myRank > 5">
-                                Tu es <b>{{ myRank }}<sup>e</sup></b>
+                            <div class="v2q-top-me" v-if="myLiveRank > 5">
+                                Tu es <b>{{ myLiveRank }}<sup>e</sup></b>
                             </div>
                         </aside>
                         </div>
@@ -1118,147 +1118,29 @@
             </div>
 
             <!-- ============================================
-            ÉCRAN DE FIN - NOUVEAU PODIUM DESIGN
+            ÉCRAN DE FIN — Classement final dévoilé à rebours
             ============================================ -->
-            <div class="content-section gameover-section" v-if="gameEnded && podiumPlayers.length > 0">
-                <!-- Particules de fond -->
-                <div class="winner-particles" id="winnerParticles"></div>
-                
-                <!-- Explosions aléatoires -->
-                <div class="bg-explosions" id="bgExplosions"></div>
+            <div class="v2-end" v-if="gameEnded && podiumPlayers.length > 0">
+                <span class="v2-end-title">Classement final</span>
 
-                <div class="winner-container fs-winner-root" :class="{ 'fs-team-mode': podiumPlayers[0] && podiumPlayers[0].isTeam }">
-                    <div class="fs-beam"></div>
-                    <div class="fs-star fs-star-1"></div>
-                    <div class="fs-star fs-star-2"></div>
-                    <div class="fs-star fs-star-3"></div>
-                    <div class="fs-star fs-star-4"></div>
-                    <div class="fs-star fs-star-5"></div>
-                    <div class="fs-star fs-star-6"></div>
-                    <div class="fs-star fs-star-7"></div>
-
-                    <div class="fs-main" id="fsMainGrid">
-
-                        <div class="fs-chals">
-                            <div class="fs-chal fs-chal-2" v-if="podiumPlayers[1]">
-                                <div class="fs-chal-rank">02</div>
-                                <div class="fs-chal-avatar">
-                                    <img :src="podiumPlayers[1].avatarUrl || 'novice.png'" :alt="podiumPlayers[1].username">
-                                </div>
-                                <div class="fs-chal-info">
-                                    <div class="fs-chal-name">{{ podiumPlayers[1].isTeam ? podiumPlayers[1].username : podiumPlayers[1].username }}</div>
-                                    <div class="fs-chal-meta">
-                                        <template v-if="gameEndData.gameMode === 'lives' || gameEndData.gameMode === 'rivalry-lives'">
-                                            <svg class="icon" viewBox="0 0 24 24" fill="#e24b4a"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                                            {{ podiumPlayers[1].lives }}
-                                            <template v-if="podiumPlayers[1].correctAnswers !== undefined">
-                                                <span class="sep">·</span>
-                                                <svg class="icon" viewBox="0 0 24 24" fill="rgba(255,255,255,0.55)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
-                                                {{ podiumPlayers[1].correctAnswers }}
-                                            </template>
-                                        </template>
-                                        <template v-else>
-                                            {{ (podiumPlayers[1].points || 0).toLocaleString() }} pts
-                                        </template>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="fs-chal fs-chal-3" v-if="podiumPlayers[2]">
-                                <div class="fs-chal-rank">03</div>
-                                <div class="fs-chal-avatar">
-                                    <img :src="podiumPlayers[2].avatarUrl || 'novice.png'" :alt="podiumPlayers[2].username">
-                                </div>
-                                <div class="fs-chal-info">
-                                    <div class="fs-chal-name">{{ podiumPlayers[2].username }}</div>
-                                    <div class="fs-chal-meta">
-                                        <template v-if="gameEndData.gameMode === 'lives' || gameEndData.gameMode === 'rivalry-lives'">
-                                            <svg class="icon" viewBox="0 0 24 24" fill="#e24b4a"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                                            {{ podiumPlayers[2].lives }}
-                                            <template v-if="podiumPlayers[2].correctAnswers !== undefined">
-                                                <span class="sep">·</span>
-                                                <svg class="icon" viewBox="0 0 24 24" fill="rgba(255,255,255,0.55)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
-                                                {{ podiumPlayers[2].correctAnswers }}
-                                            </template>
-                                        </template>
-                                        <template v-else>
-                                            {{ (podiumPlayers[2].points || 0).toLocaleString() }} pts
-                                        </template>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="fs-you" id="fsYouRank" v-if="myRank && myRank.rank > 3">
-                                <div class="fs-you-rank">#{{ myRank.rank }}</div>
-                                <div class="fs-you-avatar">
-                                    <img :src="myRank.avatarUrl || 'novice.png'" :alt="username">
-                                </div>
-                                <div class="fs-you-info">
-                                    <div class="fs-you-lbl">Votre rang</div>
-                                    <div class="fs-you-name">{{ username }}</div>
-                                    <div class="fs-you-stats">
-                                        <template v-if="gameEndData.gameMode === 'lives' || gameEndData.gameMode === 'rivalry-lives'">
-                                            <svg class="icon" viewBox="0 0 24 24" fill="#e24b4a"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                                            {{ myRank.lives || 0 }}
-                                            <template v-if="myRank.correctAnswers !== undefined">
-                                                <span class="sep">·</span>
-                                                <svg class="icon" viewBox="0 0 24 24" fill="rgba(255,255,255,0.55)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
-                                                {{ myRank.correctAnswers }}
-                                            </template>
-                                        </template>
-                                        <template v-else>
-                                            {{ (myRank.points || 0).toLocaleString() }} pts
-                                        </template>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="fs-hero" v-if="podiumPlayers[0]">
-                            <div class="fs-avatar-frame" id="fsAvatarFrame" :class="{ 'team-card': podiumPlayers[0].isTeam, 'team-1': podiumPlayers[0].team === 1, 'team-2': podiumPlayers[0].team === 2 }">
-                                <div class="fs-crown-bar" id="fsCrownBar">
-                                    <img src="couronne.png" alt="couronne" onerror="this.style.display='none'">
-                                </div>
-                                <div class="fs-avatar-glow"></div>
-                                <div class="fs-avatar-ring"></div>
-                                <div class="fs-avatar-mask"></div>
-                                <div class="fs-shockwave" id="fsShockwave"></div>
-                                <div class="fs-avatar-inner">
-                                    <img :src="podiumPlayers[0].avatarUrl || 'novice.png'" :alt="podiumPlayers[0].username">
-                                </div>
-                                <div class="fs-particles" id="fsParticles"></div>
-                                <div class="fs-burst" id="fsBurst"></div>
-                            </div>
-                            <div class="fs-name">{{ podiumPlayers[0].username }}</div>
-                            <div class="fs-master-tag">is the <span class="fs-master-word">Master</span></div>
-                            <div class="fs-stats">
-                                <div class="fs-stat" v-if="gameEndData.gameMode === 'lives' || gameEndData.gameMode === 'rivalry-lives'">
-                                    <div class="fs-stat-v">
-                                        <svg class="fs-stat-icon" viewBox="0 0 24 24" fill="#e24b4a"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                                        {{ podiumPlayers[0].lives }}
-                                    </div>
-                                    <div class="fs-stat-l">{{ podiumPlayers[0].isTeam ? 'Vies équipe' : 'Vies' }}</div>
-                                </div>
-                                <div class="fs-stat" v-if="podiumPlayers[0].correctAnswers !== undefined">
-                                    <div class="fs-stat-v fs-stat-v-m">
-                                        <svg class="fs-stat-icon" viewBox="0 0 24 24" fill="rgba(255,255,255,0.8)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
-                                        {{ podiumPlayers[0].correctAnswers }}
-                                    </div>
-                                    <div class="fs-stat-l">Bonnes</div>
-                                </div>
-                                <div class="fs-stat" v-if="gameEndData.gameMode === 'points' || gameEndData.gameMode === 'rivalry-points'">
-                                    <div class="fs-stat-v">
-                                        {{ (podiumPlayers[0].points || 0).toLocaleString() }}
-                                    </div>
-                                    <div class="fs-stat-l">{{ podiumPlayers[0].isTeam ? 'Points équipe' : 'Points' }}</div>
-                                </div>
-                            </div>
-                            <div class="fs-champ-action">
-                                <button class="btn-winner-back" @click="backToHome">Retour</button>
-                            </div>
-                        </div>
-
+                <!-- Toutes les lignes sont posées dès le départ, seule leur visibilité
+                     change : le titre et la mise en page ne bougent donc jamais. -->
+                <div class="v2-end-list">
+                    <div class="v2-end-row" v-for="p in endRows" :key="p.rank"
+                         :class="{ or: p.rank === 1, vu: endStep >= endSlot(p.rank) }">
+                        <span class="v2-end-sweep"></span>
+                        <span class="rk">{{ p.rank }}</span>
+                        <span class="nm">{{ p.username }}</span>
+                        <span class="sc">{{ endScore(p) }}</span>
                     </div>
+                </div>
+
+                <div class="v2-end-me" :class="{ vu: endStep >= 4 }" v-if="myEndRank && myEndRank.rank > 3">
+                    Tu termines <b>{{ myEndRank.rank }}<sup>e</sup></b>
+                </div>
+
+                <div class="v2-end-actions" :class="{ vu: endStep >= 4 }">
+                    <button class="v2-end-btn" @click="backToHome">Retour</button>
                 </div>
             </div>
         </div>
