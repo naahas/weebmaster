@@ -992,7 +992,6 @@
 
                     <div class="v2q-qnum">
                         Question {{ currentQuestionNumber }}<em v-if="isHost && currentQuestion.totalQuestions"> / {{ currentQuestion.totalQuestions }}</em>
-                        <b class="v2q-qnum-alive" v-if="gameMode === 'lives' && alivePlayers > 0">{{ alivePlayers }} en lice</b>
                     </div>
 
                     <!-- La scène épouse le panel : le classement et le bouton s'y accrochent,
@@ -1441,6 +1440,9 @@
                     <div class="v2q-key"><b>{{ questionResults.stats.afk }}</b><span>Sans réponse</span></div>
                     <div class="v2q-key" v-if="questionResults.fastestPlayer">
                         <b>{{ fastestTime }}<small>s</small></b><span>Plus rapide</span>
+                    </div>
+                    <div class="v2q-key" v-if="gameMode === 'lives'">
+                        <b>{{ alivePlayers }}</b><span>Encore en lice</span>
                     </div>
                 </div>
 

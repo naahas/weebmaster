@@ -5236,15 +5236,8 @@ io.on('connection', (socket) => {
 
             broadcastLobbyUpdate();
 
-            // Même règle que pour une exclusion : s'il ne reste plus personne
-            // à affronter, la partie s'arrête au lieu de tourner à vide.
-            if (gameState.inProgress && gameState.mode === 'lives') {
-                const restants = getAlivePlayers();
-                if (restants.length <= 1) {
-                    console.log(`🏁 Fin de partie après un départ - Restants: ${restants.length}`);
-                    endGame(restants.length === 1 ? restants[0] : null);
-                }
-            }
+            // Un départ n'interrompt pas la partie : celui qui reste continue seul.
+            // Il voit le nombre de joueurs encore en lice dans le détail de la question.
         }
     });
 

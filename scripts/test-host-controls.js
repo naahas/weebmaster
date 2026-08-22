@@ -85,15 +85,13 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     await wait(2500);
     check('question 2 reçue', socks[0].vu.length >= 2, socks[0].vu.length + ' question(s)');
 
-    // Un départ volontaire doit terminer la partie s'il ne reste qu'un joueur,
-    // exactement comme une exclusion. Sinon elle tournait à vide.
-    let finie = false;
-    socks[0].s.on('game-ended', () => { finie = true; });
+    // Un départ n'interrompt pas la partie : celui qui reste joue seul,
+    // et le compte des joueurs restants suit.
     socks[1].s.emit('leave-lobby', { twitchId: socks[1].id, username: socks[1].nom });
     await wait(1200);
     const etat = await fetch(BASE + '/game/state').then(r => r.json());
-    check('la partie se termine quand il ne reste qu un joueur', finie || etat.inProgress === false,
-        'inProgress=' + etat.inProgress);
+    check('la partie continue après un départ', etat.inProgress === true, 'inProgress=' + etat.inProgress);
+    check('le compte des joueurs suit', etat.playerCount === 1, 'playerCount=' + etat.playerCount);
 
     await post('/admin/toggle-game', {});
     socks.forEach(({ s }) => s.close());

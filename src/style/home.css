@@ -19927,12 +19927,3 @@ body.modal-open {
     .v2q-top { padding: 1.3rem 1.1rem 1.1rem; }
 }
 
-/* Combien de joueurs restent en lice, dans la ligne du numéro de question */
-.v2q-qnum-alive {
-    padding-left: 0.75rem;
-    margin-left: 0.15rem;
-    border-left: 0.06rem solid rgba(255, 255, 255, 0.14);
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    color: var(--text-secondary);
-}
