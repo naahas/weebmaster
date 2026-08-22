@@ -4,10 +4,15 @@
 
 require('dotenv').config();
 const express = require('express');
+const compression = require('compression');
 const { Server } = require('socket.io');
 const { db, supabase, SERIES_FILTERS, getFilterSeries } = require('./dbs');
 
 const app = express();
+
+// Rien n'était compressé : le CSS et le script partaient bruts, soit près d'un
+// méga-octet de texte à chaque première visite.
+app.use(compression());
 const PORT = process.env.PORT || 7000;
 
 let lastRefreshPlayersTime = 0;
@@ -397,14 +402,19 @@ app.get('/game/state', (req, res) => {
 // ============================================
 // Fichiers statiques (APRÈS les routes API)
 // ============================================
+// Le code (html, css, js) garde une revalidation par ETag : un déploiement doit
+// être vu tout de suite, et le 304 ne coûte que quelques octets.
 app.use(express.static('src/html'));
 app.use(express.static('src/style'));
-app.use(express.static('src/sound'));
-app.use(express.static('src/img'));
-app.use(express.static('src/img/questionpic'));
-app.use(express.static('src/img/avatarpic'));
-app.use(express.static('src/img/avatar'));
 app.use(express.static('src/script'));
+
+// Sons et images ne changent pas sans changer de nom : ils peuvent rester en cache
+const MEDIA = { maxAge: '7d' };
+app.use(express.static('src/sound', MEDIA));
+app.use(express.static('src/img', MEDIA));
+app.use(express.static('src/img/questionpic', MEDIA));
+app.use(express.static('src/img/avatarpic', MEDIA));
+app.use(express.static('src/img/avatar', MEDIA));
 
 
 
