@@ -20189,16 +20189,16 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     .v2-choice {
         flex: 1 1 0;
         min-width: 0;
-        aspect-ratio: 3 / 4;
-        clip-path: polygon(0 0, 100% 0, 100% 88%, 88% 100%, 0 100%);
+        aspect-ratio: 6 / 5;
+        clip-path: polygon(0 0, 100% 0, 100% 84%, 86% 100%, 0 100%);
     }
 
-    .v2-choice-body { inset: 0.9rem 0.9rem 1rem; }
+    .v2-choice-body { inset: 0.75rem 0.8rem 0.8rem; }
 
-    .v2-choice-kicker { font-size: 0.55rem; letter-spacing: 0.18em; }
+    .v2-choice-kicker { font-size: 0.5rem; letter-spacing: 0.16em; }
 
     .v2-choice-title {
-        font-size: clamp(1.5rem, 8vw, 2.1rem);
+        font-size: clamp(1.25rem, 6.2vw, 1.7rem);
         line-height: 0.95;
         /* « Rejoindre » ne tient pas en un mot sur une demi-largeur */
         word-break: break-word;
