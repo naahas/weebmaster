@@ -221,6 +221,7 @@
                             <input
                                 type="text"
                                 class="v2-code-input" :class="{ ko: joinShake }"
+                                ref="codeInput"
                                 v-model="joinCode"
                                 @keyup.enter="joinRoom"
                                 placeholder="····"
@@ -1431,10 +1432,13 @@
                     </button>
                 </div>
 
+                <p class="v2-report-err" v-if="reportError">Le signalement n'a pas pu être envoyé.</p>
+
                 <div class="v2-report-row">
                     <button class="v2-confirm-no" @click="showReport = false">Annuler</button>
-                    <button class="v2-report-send" :disabled="!reportPicked.length || reportBusy" @click="sendReport">
-                        {{ reportBusy ? 'Envoi…' : 'Signaler' }}
+                    <button class="v2-report-send" :class="{ fait: reportDone }"
+                            :disabled="!reportPicked.length || reportBusy || reportDone" @click="sendReport">
+                        {{ reportDone ? 'Signalé ✓' : (reportBusy ? 'Envoi…' : 'Signaler') }}
                     </button>
                 </div>
             </div>

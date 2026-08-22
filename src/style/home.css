@@ -20164,3 +20164,7 @@ body.v2-sheet-open .v2-hud {
 
 /* Le drapeau disparaît aussi derrière un calque */
 body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
+
+/* Retour visuel du signalement : les notifications de la v1 ne font plus rien */
+.v2-report-send.fait { color: #b9f5d8; background: rgba(16, 185, 129, 0.18); border-color: rgba(16, 185, 129, 0.6); opacity: 1; }
+.v2-report-err { margin-top: 0.9rem; font-size: 0.74rem; color: #ff8a8a; text-align: center; }

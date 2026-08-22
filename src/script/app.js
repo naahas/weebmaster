@@ -170,6 +170,8 @@ createApp({
             showReport: false,         // modale de signalement d'une question
             reportPicked: [],          // plusieurs motifs peuvent se cumuler
             reportBusy: false,
+            reportDone: false,         // confirmation affichée avant la fermeture
+            reportError: false,
             reportReasons: [
                 { v: 'Augmenter difficulté', l: 'Augmenter la difficulté' },
                 { v: 'Baisser difficulté', l: 'Baisser la difficulté' },
@@ -1094,6 +1096,7 @@ createApp({
         // Contrôles de l'hôte pendant la partie (ex-panel /admin)
         openReport() {
             this.reportPicked = [];
+            this.reportDone = false;
             this.showReport = true;
         },
 
@@ -1121,10 +1124,12 @@ createApp({
                 });
                 const data = await res.json();
                 if (data.error) throw new Error(data.error);
-                this.showReport = false;
-                this.showNotification('Question signalée, merci', 'success');
+                // La modale affiche la confirmation un instant avant de se retirer
+                this.reportDone = true;
+                setTimeout(() => { this.showReport = false; this.reportDone = false; }, 900);
             } catch (e) {
-                this.showNotification("Le signalement n'a pas pu être envoyé", 'error');
+                this.reportError = true;
+                setTimeout(() => { this.reportError = false; }, 2500);
             } finally {
                 this.reportBusy = false;
             }
@@ -1299,6 +1304,8 @@ createApp({
             this.joinStep = 'code';
             this.joinCode = '';
             this.homeScreen = 'join';
+            // Le curseur se pose tout de suite : sur mobile le clavier s'ouvre avec
+            this.$nextTick(() => this.$refs.codeInput && this.$refs.codeInput.focus());
         },
 
         joinRoom(team) {
