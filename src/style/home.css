@@ -20153,35 +20153,6 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     .v2-choice.dimmed { opacity: 1; transform: none; }
 }
 
-@media (max-width: 768px) {
-    .v2-choices {
-        flex-direction: row;
-        width: 100%;
-        gap: 0.7rem;
-    }
-
-    /* Deux cartes verticales de largeur égale plutôt que deux bandeaux */
-    .v2-choice {
-        flex: 1 1 0;
-        min-width: 0;
-        aspect-ratio: 4 / 3;
-        clip-path: polygon(0 0, 100% 0, 100% 82%, 85% 100%, 0 100%);
-    }
-
-    .v2-choice-body { inset: 0.75rem 0.8rem 0.8rem; }
-
-    .v2-choice-kicker { font-size: 0.5rem; letter-spacing: 0.16em; }
-
-    .v2-choice-title {
-        font-size: clamp(1.1rem, 5.4vw, 1.5rem);
-        line-height: 0.95;
-        /* « Rejoindre » ne tient pas en un mot sur une demi-largeur */
-        word-break: break-word;
-        hyphens: auto;
-    }
-
-    .v2-choice-arrow { right: 0.8rem; bottom: 0.9rem; font-size: 1.2rem; }
-}
 
 /* Le bloc d'accueil monte : centré, il laissait un grand vide sous les cartes */
 @media (max-width: 768px) {
@@ -20527,4 +20498,66 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 @media (max-width: 768px) {
     .v2-recent { margin-top: 1.3rem; }
     .v2-recent-row { padding: 0.36rem 0; font-size: 0.7rem; }
+}
+
+/* ============================================
+   🆕 v2 — ACCUEIL MOBILE : SEGMENTS ACCOLÉS
+   Les deux cartes deviennent les deux moitiés d'un même bloc.
+   ============================================ */
+@media (max-width: 768px) {
+
+    /* L'animation d'entrée du conteneur crée un référentiel le temps qu'elle
+       tourne : les chiffres en position fixe s'y accrochaient au lieu de la
+       fenêtre, et ne descendaient pas jusqu'en bas. */
+    .v2-hub { animation: none; }
+
+    .v2-bigstats { bottom: 0.55rem; }
+    .v2-home { padding-bottom: 4rem; }
+
+    .v2-choices {
+        flex-direction: row;
+        gap: 0;
+        width: 100%;
+        border: 0.06rem solid rgba(255, 255, 255, 0.1);
+        border-radius: 0.8rem;
+        overflow: hidden;
+    }
+
+    .v2-choice {
+        flex: 1 1 0;
+        min-width: 0;
+        aspect-ratio: auto;
+        padding: 0.95rem 0.6rem;
+        border: none;
+        border-radius: 0;
+        clip-path: none;
+        box-shadow: none;
+        background: linear-gradient(180deg, rgba(255, 215, 0, 0.13), rgba(255, 255, 255, 0.015));
+    }
+
+    .v2-choice-join { background: linear-gradient(180deg, rgba(140, 160, 255, 0.12), rgba(255, 255, 255, 0.015)); }
+    .v2-choice + .v2-choice { border-left: 0.06rem solid rgba(255, 255, 255, 0.1); }
+
+    /* Le corps quitte le placement absolu : tout se centre dans le segment */
+    .v2-choice-body {
+        position: static;
+        inset: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.18rem;
+        text-align: center;
+    }
+
+    .v2-choice-kicker { font-size: 0.46rem; letter-spacing: 0.18em; }
+    .v2-choice-join .v2-choice-kicker { color: #8ca0ff; }
+    .v2-choice-title { font-size: clamp(1.1rem, 5.6vw, 1.4rem); line-height: 1; }
+
+    /* Ni flèche ni halo : ils n'ont plus de place ni d'utilité au doigt */
+    .v2-choice-arrow,
+    .v2-choice-glow { display: none; }
+
+    .v2-choice:active { background: linear-gradient(180deg, rgba(255, 215, 0, 0.22), rgba(255, 255, 255, 0.03)); }
+    .v2-choice-join:active { background: linear-gradient(180deg, rgba(140, 160, 255, 0.22), rgba(255, 255, 255, 0.03)); }
 }
