@@ -20167,17 +20167,27 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     .v2-recent { order: 3; }
 
     .v2-bigstats {
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: clamp(1rem, 3vh, 2rem);
-        z-index: 4;
+        order: 3;
+        flex-wrap: wrap;
         justify-content: center;
-        gap: 1.2rem;
+        width: min(19rem, 88%);
+        margin: 0 auto;
+        gap: 0.35rem 1.1rem;
     }
 
-    /* De la place réservée sous le contenu pour les chiffres épinglés */
-    .v2-home { padding-bottom: 5rem; }
+    /* Un filet dégradé sépare les chiffres des boutons, sur toute leur largeur */
+    .v2-bigstats::before {
+        content: '';
+        flex: 0 0 100%;
+        height: 0.06rem;
+        margin-bottom: 0.35rem;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent);
+    }
+
+    /* Sans cette ligne, chaque chiffre occupe un quart de la largeur et ils
+       paraissent très écartés : ici ils ne prennent que leur place. */
+    .v2-bigstat { flex: 0 0 auto; }
+    .v2-bigstat-sep { display: none; }
 }
 
 /* ============================================
@@ -20511,8 +20521,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
        fenêtre, et ne descendaient pas jusqu'en bas. */
     .v2-hub { animation: none; }
 
-    .v2-bigstats { bottom: 1.5rem; gap: 0.5rem 0.9rem; }
-    .v2-home { padding-bottom: 4.5rem; }
+    .v2-home { padding-bottom: 1.5rem; }
 
     .v2-choices {
         flex-direction: row;
