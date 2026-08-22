@@ -339,7 +339,8 @@ createApp({
         this.initParticles();
         this.initCursorDust();
         this.initSocket();
-        this.initTabGuard();
+        await this.initTabGuard();
+        if (!this.tabConflict) this.socket.connect();
         
         // 🆕 Restaurer l'équipe sélectionnée après refresh
         const savedTeam = localStorage.getItem('selectedTeam');
@@ -353,6 +354,9 @@ createApp({
         }
 
         document.addEventListener('visibilitychange', () => {
+            // Un onglet mis en retrait ne doit surtout pas rouvrir sa socket :
+            // il relancerait le va-et-vient avec l'onglet actif.
+            if (this.tabConflict) return;
             if (document.visibilityState === 'visible') {
                 console.log('📱 Onglet redevenu visible - vérification état...');
 
@@ -1197,7 +1201,7 @@ createApp({
         // Le serveur n'accepte qu'une socket par joueur : un second onglet ferait
         // tomber le premier, qui se reconnecterait et ferait tomber le second.
         // On tranche donc côté client : un onglet joue, les autres attendent.
-        initTabGuard() {
+        async initTabGuard() {
             if (typeof BroadcastChannel === 'undefined') return;
             this._tabId = Math.random().toString(36).slice(2);
             this._canal = new BroadcastChannel('shonenmaster');
@@ -1210,29 +1214,41 @@ createApp({
                 if (m.type === 'bonjour' && !this.tabConflict) {
                     this._canal.postMessage({ type: 'occupe', de: this._tabId });
                 }
-                // Quelqu'un d'autre tient déjà la partie
-                if (m.type === 'occupe' && !this.tabConflict) this.cederOnglet();
-                // Un autre onglet vient de réclamer la main
-                if (m.type === 'reprise' && !this.tabConflict) this.cederOnglet();
+                // Quelqu'un d'autre tient déjà la partie : on se met en retrait
+                if (m.type === 'occupe') { this._libre = false; if (!this.tabConflict) this.cederOnglet(); }
+                // L'onglet actif se ferme : on regarde s'il reste quelqu'un
+                if (m.type === 'depart' && this.tabConflict) this.reprendreSiLibre();
             };
 
+            // En partant, l'onglet actif libère la place pour ceux qui attendent
+            window.addEventListener('pagehide', () => {
+                if (!this.tabConflict && this._canal) {
+                    this._canal.postMessage({ type: 'depart', de: this._tabId });
+                }
+            });
+
             this._canal.postMessage({ type: 'bonjour', de: this._tabId });
+            // Court délai d'écoute : s'il y a déjà un onglet actif, il répond ici
+            await new Promise(r => setTimeout(r, 220));
         },
 
         cederOnglet() {
             this.tabConflict = true;
-            // Sans socket, le serveur ne voit qu'un seul joueur
+            // Le serveur ne voit qu'une socket par joueur : ni doublon, ni
+            // va-et-vient entre deux onglets qui se reprennent l'entrée.
             if (this.socket && this.socket.connected) this.socket.disconnect();
         },
 
-        claimTab() {
-            this.tabConflict = false;
-            if (this._canal) this._canal.postMessage({ type: 'reprise', de: this._tabId });
-            // On refait le chemin d'une reconnexion : réenregistrement, resync,
-            // et retour dans le salon si on y était.
-            if (this.hasJoined) this.shouldRejoinLobby = true;
-            if (this.socket && !this.socket.connected) this.socket.connect();
-            this.restoreGameState();
+        // L'autre onglet s'est fermé : si plus personne ne répond, on recharge.
+        // Un rechargement complet vaut mieux qu'une reprise à chaud — l'état
+        // repart propre, sans reconnexion partielle à rattraper.
+        reprendreSiLibre() {
+            this._libre = true;
+            this._canal.postMessage({ type: 'bonjour', de: this._tabId });
+            clearTimeout(this._timerLibre);
+            this._timerLibre = setTimeout(() => {
+                if (this._libre) window.location.reload();
+            }, 400);
         },
 
         marquerCalque(ouvert) {
@@ -1891,7 +1907,7 @@ createApp({
 
         // ========== Socket.IO ==========
         initSocket() {
-            this.socket = io();
+            this.socket = io({ autoConnect: false });
             
             this.socket.on('connect', () => {
 

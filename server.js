@@ -14,7 +14,10 @@ let lastRefreshPlayersTime = 0;
 const REFRESH_COOLDOWN_MS = 20000;
 
 let connectionsByIP = new Map();
-const MAX_CONNECTIONS_PER_IP = 5;
+// Plusieurs joueurs derrière la même box partagent une seule IP publique :
+// une limite à 5 excluait le sixième d'un groupe d'amis. Réglable par variable
+// d'environnement si un abus se présentait.
+const MAX_CONNECTIONS_PER_IP = parseInt(process.env.MAX_CONNECTIONS_PER_IP, 10) || 16;
 
 let activityLogs = [];
 let lastGlobalWinner = null;
@@ -4991,8 +4994,10 @@ io.on('connection', (socket) => {
     const currentConnections = connectionsByIP.get(ip) || 0;
 
     if (currentConnections >= MAX_CONNECTIONS_PER_IP) {
-        console.log(`⚠️ Connexion refusée - Trop de connexions depuis ${ip}`);
-        socket.disconnect(true);
+        console.log(`⚠️ Connexion refusée - Trop de connexions depuis ${ip} (${currentConnections})`);
+        // Le client était coupé sans un mot : il restait à attendre dans le vide
+        socket.emit('error', { message: 'Trop de connexions depuis ce réseau' });
+        setTimeout(() => socket.disconnect(true), 100);
         return;
     }
 

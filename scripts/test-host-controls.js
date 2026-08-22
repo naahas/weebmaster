@@ -31,10 +31,14 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     intrus.on('kicked', () => { exclu = true; });
     intrus.emit('register-authenticated', { twitchId: 'p3', username: 'Intrus' });
     await wait(300);
+    let dansLeSalon = false;
+    intrus.on('lobby-update', (d) => {
+        if ((d.players || []).some(p => p.twitchId === 'p3')) dansLeSalon = true;
+    });
     intrus.emit('join-lobby', { twitchId: 'p3', username: 'Intrus' });
-    await wait(500);
+    for (let i = 0; i < 40 && !dansLeSalon; i++) await wait(50);
     socks[0].s.emit('kick-player', { twitchId: 'p3' });
-    await wait(600);
+    for (let i = 0; i < 20 && !exclu; i++) await wait(50);
     check("exclusion par identifiant seul", exclu === true);
     intrus.close();
     await wait(300);
