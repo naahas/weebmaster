@@ -74,9 +74,9 @@ createApp({
             joinCode: '',
             joinShake: false,
             joinError: '',
-            roomCode: sessionStorage.getItem('roomCode') || null,
+            roomCode: localStorage.getItem('roomCode') || null,
             codeCopied: false,
-            isHost: sessionStorage.getItem('isHost') === 'true',
+            isHost: localStorage.getItem('isHost') === 'true',
             startingGame: false,
             hostError: '',
 
@@ -185,6 +185,7 @@ createApp({
             confirmAction: null,       // 'close' (hôte) ou 'leave' (invité)
             ringSweep: 0,              // 0 → 1 : remplissage de l'anneau à l'ouverture
             answerColors: ['#ffd24a', '#7fb4ff', '#6ee7b7', '#d8b4fe', '#fca5a5', '#fdba74'],
+            tabConflict: false,   // un autre onglet du même navigateur tient déjà la partie
             booting: true,        // tant que l'état serveur n'est pas connu, on n'affiche aucun écran
             questionShown: false, // passe à vrai quand le premier panel de question est visible
 
@@ -338,6 +339,7 @@ createApp({
         this.initParticles();
         this.initCursorDust();
         this.initSocket();
+        this.initTabGuard();
         
         // 🆕 Restaurer l'équipe sélectionnée après refresh
         const savedTeam = localStorage.getItem('selectedTeam');
@@ -1024,7 +1026,7 @@ createApp({
                 }
 
                 this.isHost = true;
-                sessionStorage.setItem('isHost', 'true');
+                localStorage.setItem('isHost', 'true');
                 this.lobbyMode = this.selectedMode;
                 await this.fetchRoomCode();
 
@@ -1052,7 +1054,7 @@ createApp({
                 const data = await res.json();
                 if (data.roomCode) {
                     this.roomCode = data.roomCode;
-                    sessionStorage.setItem('roomCode', data.roomCode);
+                    localStorage.setItem('roomCode', data.roomCode);
                 }
             } catch (e) { /* le code reste affiché vide, sans bloquer */ }
         },
@@ -1191,6 +1193,48 @@ createApp({
             }
         },
 
+        // ── Un seul onglet actif ──
+        // Le serveur n'accepte qu'une socket par joueur : un second onglet ferait
+        // tomber le premier, qui se reconnecterait et ferait tomber le second.
+        // On tranche donc côté client : un onglet joue, les autres attendent.
+        initTabGuard() {
+            if (typeof BroadcastChannel === 'undefined') return;
+            this._tabId = Math.random().toString(36).slice(2);
+            this._canal = new BroadcastChannel('shonenmaster');
+
+            this._canal.onmessage = (e) => {
+                const m = e.data || {};
+                if (m.de === this._tabId) return;
+
+                // Un nouvel onglet se signale : si on tient la partie, on le lui dit
+                if (m.type === 'bonjour' && !this.tabConflict) {
+                    this._canal.postMessage({ type: 'occupe', de: this._tabId });
+                }
+                // Quelqu'un d'autre tient déjà la partie
+                if (m.type === 'occupe' && !this.tabConflict) this.cederOnglet();
+                // Un autre onglet vient de réclamer la main
+                if (m.type === 'reprise' && !this.tabConflict) this.cederOnglet();
+            };
+
+            this._canal.postMessage({ type: 'bonjour', de: this._tabId });
+        },
+
+        cederOnglet() {
+            this.tabConflict = true;
+            // Sans socket, le serveur ne voit qu'un seul joueur
+            if (this.socket && this.socket.connected) this.socket.disconnect();
+        },
+
+        claimTab() {
+            this.tabConflict = false;
+            if (this._canal) this._canal.postMessage({ type: 'reprise', de: this._tabId });
+            // On refait le chemin d'une reconnexion : réenregistrement, resync,
+            // et retour dans le salon si on y était.
+            if (this.hasJoined) this.shouldRejoinLobby = true;
+            if (this.socket && !this.socket.connected) this.socket.connect();
+            this.restoreGameState();
+        },
+
         marquerCalque(ouvert) {
             document.body.classList.toggle('v2-sheet-open', !!ouvert);
         },
@@ -1323,7 +1367,7 @@ createApp({
             localStorage.removeItem('hasJoinedLobby');
             localStorage.removeItem('lobbyTwitchId');
             localStorage.removeItem('selectedTeam');
-            sessionStorage.removeItem('roomCode');
+            localStorage.removeItem('roomCode');
             this.homeScreen = 'hub';
             this.loadHomeStats();
         },
@@ -1428,7 +1472,7 @@ createApp({
                 if (this.pendingJoinCode === code && !this.joinError) {
                     this.hasJoined = true;
                     this.roomCode = code;
-                    sessionStorage.setItem('roomCode', code);
+                    localStorage.setItem('roomCode', code);
                     localStorage.setItem('hasJoinedLobby', 'true');
                     localStorage.setItem('lobbyTwitchId', this.twitchId);
                 }
@@ -1482,8 +1526,8 @@ createApp({
             } catch (e) { /* le serveur émet game-deactivated de toute façon */ }
             this.isHost = false;
             this.roomCode = null;
-            sessionStorage.removeItem('isHost');
-            sessionStorage.removeItem('roomCode');
+            localStorage.removeItem('isHost');
+            localStorage.removeItem('roomCode');
         },
 
         setPseudo() {
@@ -1678,8 +1722,8 @@ createApp({
                     this.roomCode = null;
                     this.selectedTeam = null;
                     this.homeScreen = 'hub';
-                    sessionStorage.removeItem('isHost');
-                    sessionStorage.removeItem('roomCode');
+                    localStorage.removeItem('isHost');
+                    localStorage.removeItem('roomCode');
 
                     console.log('🧹 État local nettoyé (aucun salon actif)');
                     return;
@@ -3773,8 +3817,8 @@ createApp({
             this.homeScreen = 'hub';
             this.joinCode = '';
             this.joinStep = 'code';
-            sessionStorage.removeItem('isHost');
-            sessionStorage.removeItem('roomCode');
+            localStorage.removeItem('isHost');
+            localStorage.removeItem('roomCode');
             this.loadHomeStats();
 
             // 🆕 Demander l'état actuel du serveur pour rafraîchir le compteur

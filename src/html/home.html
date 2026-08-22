@@ -1348,6 +1348,20 @@
             </div>
         </div>
 
+        <!-- 🆕 v2 — Un seul onglet actif à la fois -->
+        <div class="v2-tab-veil" v-if="tabConflict">
+            <div class="v2-tab-card">
+                <span class="v2-tab-mark">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="5" width="13" height="14" rx="1.5"/><path d="M8 5V3h13v14h-2"/>
+                    </svg>
+                </span>
+                <h3>Déjà ouvert ailleurs</h3>
+                <p>ShonenMaster tourne dans un autre onglet. Deux onglets ne peuvent pas jouer avec le même pseudo.</p>
+                <button class="v2-tab-btn" @click="claimTab">Jouer dans cet onglet</button>
+            </div>
+        </div>
+
         <!-- 🆕 v2 — Confirmation avant de fermer le salon ou de le quitter -->
         <div class="v2-confirm-veil" v-if="confirmAction" @click.self="confirmAction = null">
             <div class="v2-confirm">
