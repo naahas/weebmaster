@@ -20362,7 +20362,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 
 .v2-end-me b { font-family: 'Bebas Neue', 'Russo One', sans-serif; font-size: 1.2rem; color: var(--neon-primary); }
 
-.v2-end-actions { margin-top: 1.8rem; }
+.v2-end-actions { margin-top: 3.2rem; }
 
 .v2-end-btn {
     padding: 0.7rem 1.8rem;
@@ -20393,7 +20393,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     .v2-end-row.or .nm { font-size: 1.35rem; }
     .v2-end-row.or .sc { font-size: 1.5rem; }
     .v2-end-eclat { width: 17rem; height: 17rem; }
-    .v2-end-actions { margin-top: 1.4rem; }
+    .v2-end-actions { margin-top: 2.6rem; }
 }
 
 /* Cœurs du classement final, en mode Vies */
@@ -20582,4 +20582,145 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 
 @keyframes v2ChoiceWave {
     to { transform: scale(34); opacity: 0; }
+}
+
+/* ============================================
+   🆕 v2 — SALON CÔTÉ INVITÉ
+   Il n'a pas besoin de la liste : une confirmation suffit.
+   ============================================ */
+.v2-room-guest {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1rem 0;
+}
+
+.v2-room-guest-halo {
+    position: absolute;
+    top: 1.5rem;
+    left: 50%;
+    width: 20rem;
+    height: 20rem;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(255, 190, 40, 0.1), transparent 62%);
+    pointer-events: none;
+}
+
+.v2-room-guest-mark {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 3.6rem;
+    height: 3.6rem;
+    margin-bottom: 1.1rem;
+    color: var(--neon-primary);
+    border: 0.09rem solid rgba(255, 215, 0, 0.45);
+    border-radius: 50%;
+    background: rgba(255, 215, 0, 0.07);
+    animation: v2GuestIn 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+.v2-room-guest-mark::after {
+    content: '';
+    position: absolute;
+    inset: -0.35rem;
+    border: 0.06rem solid rgba(255, 215, 0, 0.28);
+    border-radius: 50%;
+    animation: v2GuestPulse 2.6s ease-out infinite;
+}
+
+@keyframes v2GuestIn {
+    from { opacity: 0; transform: scale(0.5); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes v2GuestPulse {
+    0%   { opacity: 0.8; transform: scale(1); }
+    70%  { opacity: 0; transform: scale(1.45); }
+    100% { opacity: 0; transform: scale(1.45); }
+}
+
+.v2-room-guest-mark svg { width: 1.6rem; height: 1.6rem; }
+
+.v2-room-guest-title {
+    position: relative;
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    margin-bottom: 0.7rem;
+}
+
+.v2-room-guest-wait {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+}
+
+.v2-room-guest-count {
+    position: relative;
+    margin-top: 1.4rem;
+    padding-top: 1.1rem;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
+.v2-room-guest-count::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 6rem;
+    height: 0.06rem;
+    transform: translateX(-50%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent);
+}
+
+.v2-room-guest-count b {
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 1.25rem;
+    color: var(--neon-primary);
+}
+
+/* Le code, en petit, à gauche du badge de mode */
+.v2-room-code-mini {
+    padding: 0.36rem 0.7rem;
+    font-family: 'Space Grotesk', monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-indent: 0.22em;
+    color: var(--neon-primary);
+    background: rgba(255, 215, 0, 0.07);
+    border: 0.06rem solid rgba(255, 215, 0, 0.3);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.v2-room-code-mini:hover { background: rgba(255, 215, 0, 0.14); border-color: rgba(255, 215, 0, 0.55); }
+
+/* Un badge de mode plus discret, sur les deux formats */
+.v2-mode-badge { padding: 0.42rem 0.9rem; font-size: 0.66rem; }
+.v2-mode-badge-dot { width: 0.38rem; height: 0.38rem; }
+
+/* Logo de l'écran de fin */
+.v2-end-logo { position: absolute; top: clamp(0.9rem, 2vh, 1.6rem); left: clamp(1rem, 2.5vw, 2.2rem); }
+
+@media (max-width: 768px) {
+    /* Ces conteneurs sont animés en transform : tant que l'animation vit, ils
+       servent de référentiel et les éléments fixés ne descendent pas au bord. */
+    .v2-join-screen,
+    .v2-modes-screen { animation: none; }
+
+    .v2-room-guest-title { font-size: 1.7rem; }
+    .v2-room-guest-mark { width: 3.1rem; height: 3.1rem; }
+    .v2-room-guest-mark svg { width: 1.35rem; height: 1.35rem; }
+    .v2-mode-badge { padding: 0.34rem 0.75rem; font-size: 0.6rem; }
+    .v2-room-code-mini { padding: 0.3rem 0.55rem; font-size: 0.72rem; letter-spacing: 0.16em; }
 }

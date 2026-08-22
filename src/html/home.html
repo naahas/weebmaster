@@ -252,6 +252,9 @@
                         <span class="v2-logo-ring"></span>
                     </button>
                     <div class="v2-room-topright">
+                        <button class="v2-room-code-mini" v-if="!isHost && roomCode" @click="copyRoomCode" title="Copier le code">
+                            {{ roomCode }}
+                        </button>
                         <button class="v2-room-close" v-if="isHost" @click="askCloseRoom" title="Fermer le salon" aria-label="Fermer le salon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h8"/>
@@ -277,7 +280,7 @@
                     <!-- ── Colonne principale ── -->
                     <section class="v2-room-main">
 
-                        <div class="v2-room-code-block" v-if="roomCode">
+                        <div class="v2-room-code-block" v-if="isHost && roomCode">
                             <span class="v2-room-code-label">Code du salon</span>
                             <div class="v2-room-code-row">
                                 <button class="v2-room-code" @click="copyRoomCode" title="Copier le code">
@@ -311,8 +314,26 @@
                             </button>
                         </div>
 
+                        <!-- L'invité voit une confirmation, pas la liste des autres -->
+                        <div class="v2-room-guest" v-if="!isHost">
+                            <span class="v2-room-guest-halo"></span>
+                            <span class="v2-room-guest-mark">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 6L9 17l-5-5"/>
+                                </svg>
+                            </span>
+                            <h2 class="v2-room-guest-title">Tu es dans la partie</h2>
+                            <p class="v2-room-guest-wait">
+                                <span class="v2-live-dot"></span>
+                                En attente du lancement par l'hôte…
+                            </p>
+                            <p class="v2-room-guest-count">
+                                <b>{{ playerCount }}</b> joueur<span v-if="playerCount > 1">s</span> dans le salon
+                            </p>
+                        </div>
+
                         <!-- Joueurs présents -->
-                        <div class="v2-room-players">
+                        <div class="v2-room-players" v-else>
                             <div class="v2-room-players-head">
                                 <span class="v2-room-players-count">{{ playerCount }}</span>
                                 <span class="v2-room-players-label">
@@ -332,12 +353,6 @@
                             <div class="v2-room-empty" v-else>
                                 Partage le code pour que tes joueurs te rejoignent
                             </div>
-                        </div>
-
-                        <!-- Actions -->
-                        <div class="v2-room-waiting" v-if="!isHost">
-                            <span class="v2-live-dot"></span>
-                            En attente du lancement par l'hôte…
                         </div>
 
                         <div class="v2-action-error" v-if="hostError">{{ hostError }}</div>
@@ -1118,6 +1133,11 @@
             ÉCRAN DE FIN — Classement final dévoilé à rebours
             ============================================ -->
             <div class="v2-end" v-if="gameEnded && podiumPlayers.length > 0">
+                <button class="v2-logo v2-end-logo" @click="reloadHome" title="Accueil">
+                    <span class="v2-logo-text">SM</span>
+                    <span class="v2-logo-ring"></span>
+                </button>
+
                 <span class="v2-end-title">Classement final</span>
 
                 <!-- Toutes les lignes sont posées dès le départ, seule leur visibilité
