@@ -880,6 +880,10 @@ app.get('/prototypes/jeu', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-jeu.html');
 });
 
+app.get('/prototypes/podium', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-podium.html');
+});
+
 app.get('/prototypes/stats', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-stats.html');
 });

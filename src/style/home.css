@@ -19615,7 +19615,6 @@ body.modal-open {
 @media (max-width: 768px) {
 
     /* ── Accueil ───────────────────────────── */
-    .v2-choice { aspect-ratio: 16 / 5; }
     .v2-bigstats { flex-wrap: wrap; justify-content: center; gap: 0.9rem 1.4rem; }
     .v2-bigstat-num { font-size: 1.5rem; }
     .v2-bigstat-lbl { font-size: 0.5rem; letter-spacing: 0.1em; }
@@ -20168,3 +20167,43 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 /* Retour visuel du signalement : les notifications de la v1 ne font plus rien */
 .v2-report-send.fait { color: #b9f5d8; background: rgba(16, 185, 129, 0.18); border-color: rgba(16, 185, 129, 0.6); opacity: 1; }
 .v2-report-err { margin-top: 0.9rem; font-size: 0.74rem; color: #ff8a8a; text-align: center; }
+
+/* ============================================
+   🆕 v2 — LES DEUX CARTES CÔTE À CÔTE SUR MOBILE
+   ============================================ */
+
+/* Au doigt, un simple appui déclenche mouseenter et n'en sort jamais :
+   l'autre carte restait donc grisée après le premier contact. */
+@media (hover: none) {
+    .v2-choice.dimmed { opacity: 1; transform: none; }
+}
+
+@media (max-width: 768px) {
+    .v2-choices {
+        flex-direction: row;
+        width: 100%;
+        gap: 0.7rem;
+    }
+
+    /* Deux cartes verticales de largeur égale plutôt que deux bandeaux */
+    .v2-choice {
+        flex: 1 1 0;
+        min-width: 0;
+        aspect-ratio: 3 / 4;
+        clip-path: polygon(0 0, 100% 0, 100% 88%, 88% 100%, 0 100%);
+    }
+
+    .v2-choice-body { inset: 0.9rem 0.9rem 1rem; }
+
+    .v2-choice-kicker { font-size: 0.55rem; letter-spacing: 0.18em; }
+
+    .v2-choice-title {
+        font-size: clamp(1.5rem, 8vw, 2.1rem);
+        line-height: 0.95;
+        /* « Rejoindre » ne tient pas en un mot sur une demi-largeur */
+        word-break: break-word;
+        hyphens: auto;
+    }
+
+    .v2-choice-arrow { right: 0.8rem; bottom: 0.9rem; font-size: 1.2rem; }
+}
