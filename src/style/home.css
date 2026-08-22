@@ -20020,9 +20020,9 @@ body.v2-sheet-open .v2-hud {
     width: 3rem;
     height: 3rem;
     padding: 0;
-    color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.035);
-    border: 0.06rem solid rgba(255, 255, 255, 0.1);
+    color: #e06a6a;
+    background: rgba(239, 68, 68, 0.08);
+    border: 0.06rem solid rgba(239, 68, 68, 0.32);
     border-radius: 50%;
     cursor: pointer;
     transition: color 0.25s ease, background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
@@ -20031,14 +20031,12 @@ body.v2-sheet-open .v2-hud {
 
 .v2q-report-btn svg { width: 1.25rem; height: 1.25rem; }
 
-.v2q-report-btn:hover:not(:disabled) {
-    color: #ff9b6b;
-    background: rgba(255, 140, 60, 0.09);
-    border-color: rgba(255, 140, 60, 0.45);
+.v2q-report-btn:hover {
+    color: #ff8a8a;
+    background: rgba(239, 68, 68, 0.18);
+    border-color: rgba(239, 68, 68, 0.6);
     transform: translateY(-50%) scale(1.06);
 }
-
-.v2q-report-btn.fait { color: rgba(255, 155, 107, 0.55); border-color: rgba(255, 140, 60, 0.3); cursor: default; }
 
 /* ── La modale ── */
 .v2-report-veil {
@@ -20093,10 +20091,37 @@ body.v2-sheet-open .v2-hud {
 
 .v2-report-opt:hover { color: var(--text-primary); border-color: rgba(255, 255, 255, 0.2); }
 
+.v2-report-opt { display: flex; align-items: center; gap: 0.6rem; }
+
+/* Case à cocher : plusieurs motifs peuvent partir ensemble */
+.v2-report-tick {
+    position: relative;
+    flex: 0 0 auto;
+    width: 0.95rem;
+    height: 0.95rem;
+    border: 0.06rem solid rgba(255, 255, 255, 0.22);
+    border-radius: 0.25rem;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
 .v2-report-opt.on {
     color: var(--text-primary);
-    background: rgba(255, 140, 60, 0.12);
-    border-color: rgba(255, 140, 60, 0.5);
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.45);
+}
+
+.v2-report-opt.on .v2-report-tick { background: #e06a6a; border-color: #e06a6a; }
+
+.v2-report-opt.on .v2-report-tick::after {
+    content: '';
+    position: absolute;
+    left: 0.29rem;
+    top: 0.1rem;
+    width: 0.2rem;
+    height: 0.44rem;
+    border: solid #14100a;
+    border-width: 0 0.12rem 0.12rem 0;
+    transform: rotate(45deg);
 }
 
 .v2-report-row { display: flex; gap: 0.6rem; margin-top: 1.2rem; }
@@ -20108,15 +20133,15 @@ body.v2-sheet-open .v2-hud {
     font-size: 0.78rem;
     font-weight: 700;
     letter-spacing: 0.04em;
-    color: #ffd9c4;
-    background: rgba(255, 140, 60, 0.16);
-    border: 0.06rem solid rgba(255, 140, 60, 0.5);
+    color: #ffd7d7;
+    background: rgba(239, 68, 68, 0.16);
+    border: 0.06rem solid rgba(239, 68, 68, 0.5);
     border-radius: 0.6rem;
     cursor: pointer;
     transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
 }
 
-.v2-report-send:hover:not(:disabled) { background: rgba(255, 140, 60, 0.26); border-color: rgba(255, 140, 60, 0.75); }
+.v2-report-send:hover:not(:disabled) { background: rgba(239, 68, 68, 0.26); border-color: rgba(239, 68, 68, 0.75); }
 .v2-report-send:disabled { opacity: 0.4; cursor: default; }
 
 /* Sur petit écran, le drapeau rejoint la rangée du haut, après le classement */
@@ -20129,7 +20154,7 @@ body.v2-sheet-open .v2-hud {
         transform: none;
         animation: none;
     }
-    .v2q-report-btn:hover:not(:disabled) { transform: scale(1.06); }
+    .v2q-report-btn:hover { transform: scale(1.06); }
 }
 
 @media (max-width: 768px) {

@@ -168,9 +168,8 @@ createApp({
             showQuestionStats: false,  // feuille de détail de la question (hôte)
             showTopSheet: false,       // classement en calque, sur petit écran
             showReport: false,         // modale de signalement d'une question
-            reportReason: '',
+            reportPicked: [],          // plusieurs motifs peuvent se cumuler
             reportBusy: false,
-            questionReported: false,   // un seul signalement par question
             reportReasons: [
                 { v: 'Augmenter difficulté', l: 'Augmenter la difficulté' },
                 { v: 'Baisser difficulté', l: 'Baisser la difficulté' },
@@ -1094,13 +1093,18 @@ createApp({
 
         // Contrôles de l'hôte pendant la partie (ex-panel /admin)
         openReport() {
-            if (this.questionReported) return;
-            this.reportReason = '';
+            this.reportPicked = [];
             this.showReport = true;
         },
 
+        toggleReason(v) {
+            const i = this.reportPicked.indexOf(v);
+            if (i === -1) this.reportPicked.push(v);
+            else this.reportPicked.splice(i, 1);
+        },
+
         async sendReport() {
-            if (!this.reportReason || !this.currentQuestion || this.reportBusy) return;
+            if (!this.reportPicked.length || !this.currentQuestion || this.reportBusy) return;
             this.reportBusy = true;
             try {
                 const res = await fetch('/admin/report-question', {
@@ -1110,12 +1114,13 @@ createApp({
                         questionId: this.currentQuestion.questionId,
                         questionText: this.currentQuestion.question,
                         difficulty: this.currentQuestion.difficulty,
-                        reason: this.reportReason,
+                        // La colonne est un texte libre : on joint les motifs par une
+                        // barre, qui n'apparaît dans aucun d'eux.
+                        reason: this.reportPicked.join(' | '),
                     }),
                 });
                 const data = await res.json();
                 if (data.error) throw new Error(data.error);
-                this.questionReported = true;
                 this.showReport = false;
                 this.showNotification('Question signalée, merci', 'success');
             } catch (e) {
@@ -2095,7 +2100,6 @@ createApp({
                 this.showQuestionStats = false;
                 this.showTopSheet = false;
                 this.showReport = false;
-                this.questionReported = false;
                 this.clearSeal();
                 this.revealQuestionChrome();
                 if (!this.hasJoined) {

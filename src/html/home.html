@@ -1092,9 +1092,7 @@
                              remplirait la table de motifs de dépit après une mauvaise réponse.
                              Pour l'ouvrir à tous, retirer « isHost && » ci-dessous. -->
                         <button class="v2q-report-btn" v-if="isHost && showResults && lobbyMode !== 'bombanime'"
-                                :class="{ fait: questionReported }"
-                                @click="openReport" :disabled="questionReported"
-                                :title="questionReported ? 'Question déjà signalée' : 'Signaler cette question'"
+                                @click="openReport" title="Signaler cette question"
                                 aria-label="Signaler cette question">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M4 21V4M4 4h11l-1.6 3.4L15 11H4"/>
@@ -1427,13 +1425,15 @@
 
                 <div class="v2-report-list">
                     <button v-for="m in reportReasons" :key="m.v"
-                            class="v2-report-opt" :class="{ on: reportReason === m.v }"
-                            @click="reportReason = m.v">{{ m.l }}</button>
+                            class="v2-report-opt" :class="{ on: reportPicked.includes(m.v) }"
+                            @click="toggleReason(m.v)">
+                        <span class="v2-report-tick" aria-hidden="true"></span>{{ m.l }}
+                    </button>
                 </div>
 
                 <div class="v2-report-row">
                     <button class="v2-confirm-no" @click="showReport = false">Annuler</button>
-                    <button class="v2-report-send" :disabled="!reportReason || reportBusy" @click="sendReport">
+                    <button class="v2-report-send" :disabled="!reportPicked.length || reportBusy" @click="sendReport">
                         {{ reportBusy ? 'Envoi…' : 'Signaler' }}
                     </button>
                 </div>
