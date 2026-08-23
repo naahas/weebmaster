@@ -1102,7 +1102,7 @@
                         </aside>
 
                         <aside class="v2q-top" v-else-if="panneauLateral === 'top'">
-                            <div class="v2q-top-t">Top 5</div>
+                            <div class="v2q-top-t">Top 3</div>
                             <div class="v2q-top-row" v-for="(p, i) in topPlayers" :key="p.twitchId || p.username"
                                  :class="{ me: p.twitchId === twitchId }">
                                 <span class="rk">{{ i + 1 }}</span>
@@ -1129,8 +1129,14 @@
                                 <em>{{ fastestTime }}<small>s</small></em>
                             </div>
 
-                            <div class="v2q-top-me" v-if="myLiveRank > 5">
+                            <div class="v2q-top-me" v-if="myLiveRank > 3">
                                 Tu es <b>{{ myLiveRank }}<sup>e</sup></b>
+                                <span class="v2q-moi-d" v-if="rangDelta > 0">
+                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 5l7 9h-14z"/></svg>{{ rangDelta }}
+                                </span>
+                                <span class="v2q-moi-d bas" v-else-if="rangDelta < 0">
+                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 19l-7-9h14z"/></svg>{{ -rangDelta }}
+                                </span>
                             </div>
                         </aside>
 
@@ -1159,8 +1165,10 @@
 
                         <!-- En mode vies, savoir combien tiennent encore change la donne -->
                         <div class="v2q-alive" v-if="showResults && gameMode === 'lives' && !isHost && encoreEnVie !== null">
-                            <span class="pt"></span>
-                            <b>{{ encoreEnVie }}</b> joueur<span v-if="encoreEnVie > 1">s</span> en vie
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="3.4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9"/>
+                            </svg>
+                            <b>{{ encoreEnVie }}</b>{{ encoreEnVie > 1 ? ' joueurs en vie' : ' joueur en vie' }}
                         </div>
 
                         <!-- Ouverture du classement quand il ne tient pas à côté du panel -->

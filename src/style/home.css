@@ -9335,6 +9335,8 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2q-tag.afk { color: rgba(255, 255, 255, 0.22); box-shadow: inset 0 0 0 0.06rem rgba(255, 255, 255, 0.14); }
 .v2q-tag.juste { box-shadow: inset 0 0 0 0.06rem currentColor, 0 0 0.5rem -0.05rem currentColor; }
 
+.v2q-top-me .v2q-moi-d { margin-left: 0.4rem; }
+
 .v2q-top-me {
     margin-top: 1rem;
     padding-top: 0.8rem;
@@ -11504,8 +11506,8 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.42rem;
-    margin-top: 1.1rem;
+    gap: 0.45rem;
+    margin-top: 2.1rem;
     font-size: 0.72rem;
     color: rgba(255, 255, 255, 0.4);
     animation: v2AliveIn 0.4s ease both;
@@ -11524,16 +11526,14 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     color: var(--neon-primary);
 }
 
-.v2q-alive .pt {
-    width: 0.35rem;
-    height: 0.35rem;
-    border-radius: 50%;
-    background: #7ef7c0;
-    box-shadow: 0 0 0.5rem rgba(110, 231, 183, 0.7);
+.v2q-alive svg {
+    width: 0.9rem;
+    height: 0.9rem;
+    color: rgba(255, 255, 255, 0.3);
 }
 
 @media (max-width: 768px) {
     .v2q-spectateur { margin-top: 0.8rem; font-size: 0.6rem; }
-    .v2q-alive { margin-top: 0.85rem; font-size: 0.66rem; }
+    .v2q-alive { margin-top: 1.5rem; font-size: 0.66rem; }
     .v2q-alive b { font-size: 1rem; }
 }

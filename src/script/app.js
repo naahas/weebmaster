@@ -634,7 +634,7 @@ createApp({
         },
 
         topPlayers() {
-            return this.rankedPlayers.slice(0, 5);
+            return this.rankedPlayers.slice(0, 3);
         },
 
         myLiveRank() {
