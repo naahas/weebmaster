@@ -51,19 +51,17 @@ createApp({
             difficultyMode: 'croissante',
             serieFilter: 'overall',
             noSpoil: false,
-            showSeries: false,    // le tiroir de choix de série est-il ouvert
             serieStats: null,     // combien de séries derrière Overall et Mainstream
-            // Les trois ensembles ouvrent la marche, les séries suivent.
-            // Vignettes en WebP 360×480 (src/img/series), réexportées depuis la
-            // source déposée à côté : les originaux pesaient 3,7 Mo à eux seuls.
+            // Sept choix de même poids : le tiroir les range en grille plutôt
+            // qu'en ligne, sinon leurs largeurs suivaient celles des libellés.
             serieCartes: [
-                { id: 'overall',     name: 'Overall',    compte: true, img: 'series/overall.webp' },
-                { id: 'mainstream',  name: 'Mainstream', compte: true, img: 'series/mainstream.webp' },
-                { id: 'big3',        name: 'Big 3',                    img: 'series/big3.webp' },
-                { id: 'onepiece',    name: 'One Piece',   img: 'series/onepiece.webp' },
-                { id: 'naruto',      name: 'Naruto',      img: 'series/naruto.webp' },
-                { id: 'dragonball',  name: 'Dragon Ball', img: 'series/dragonball.webp' },
-                { id: 'bleach',      name: 'Bleach',      img: 'series/bleach.webp' },
+                { id: 'overall',    name: 'Overall',     compte: true, large: true },
+                { id: 'mainstream', name: 'Mainstream',  compte: true },
+                { id: 'big3',       name: 'Big 3' },
+                { id: 'onepiece',   name: 'One Piece' },
+                { id: 'naruto',     name: 'Naruto' },
+                { id: 'dragonball', name: 'Dragon Ball' },
+                { id: 'bleach',     name: 'Bleach' },
             ],
             bombanimeSeries: ['Naruto', 'OnePiece', 'Dbz', 'Bleach', 'Hxh', 'Snk', 'DemonSlayer', 'JujutsuKaisen', 'FairyTail', 'Mha', 'BlackClover', 'Jojo'],
             homeScreen: 'hub',    // hub | modes | join
@@ -1126,15 +1124,14 @@ createApp({
 
         // Tous les réglages passent par la même route POST, avec application
         // optimiste côté client et retour arrière si le serveur refuse.
-        // Le décompte vient de la base : on le demande une fois, sans bloquer
-        // l'ouverture du tiroir — les sous-titres apparaissent quand ils arrivent.
-        async ouvrirSeries() {
-            this.showSeries = true;
-            if (this.serieStats) return;
+        // Le décompte vient de la base : demandé une fois, au premier survol
+        async chargerSerieStats() {
+            if (this.serieStats || this._serieStatsEnCours) return;
+            this._serieStatsEnCours = true;
             try {
                 const res = await this.hostFetch('/admin/serie-stats');
                 if (res.ok) this.serieStats = await res.json();
-            } catch (e) { /* pas de sous-titre, le tiroir reste utilisable */ }
+            } catch (e) { /* pas de décompte, les boutons restent utilisables */ }
         },
 
         sousTitreSerie(carte) {
@@ -1144,12 +1141,6 @@ createApp({
         },
 
         // Le tiroir se referme dès le choix fait : une seule série à la fois
-        choisirSerie(id) {
-            if (id === this.serieFilter) { this.showSeries = false; return; }
-            this.applySetting('/admin/set-serie-filter', { filter: id }, () => this.serieFilter = id);
-            this.showSeries = false;
-        },
-
         // Toute requête /admin passe par ici : elle joint le jeton d'hôte
         hostFetch(url, options = {}) {
             const entetes = Object.assign({}, options.headers, { 'X-Host-Token': this.hostToken });
@@ -1693,7 +1684,6 @@ createApp({
 
             const calques = [
                 ['confirmAction', null],
-                ['showSeries', false],
                 ['campDetail', null],
                 ['showReport', false],
                 ['showQuestionStats', false],

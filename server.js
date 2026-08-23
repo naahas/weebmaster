@@ -412,12 +412,6 @@ app.use(express.static('src/script'));
 // Sons et images ne changent pas sans changer de nom : ils peuvent rester en cache
 const MEDIA = { maxAge: '7d' };
 app.use(express.static('src/sound', MEDIA));
-// ⚠️ Avant src/img, qui contient ce dossier et le servirait le premier.
-// Les vignettes gardent le même nom quand on change l'image : avec sept jours
-// de cache, le navigateur continuait de servir l'ancienne. Une revalidation
-// suffit — un 304 sur 26 Ko ne coûte rien.
-app.use('/series', express.static('src/img/series', { maxAge: 0 }));
-
 app.use(express.static('src/img', MEDIA));
 app.use(express.static('src/img/questionpic', MEDIA));
 app.use(express.static('src/img/avatarpic', MEDIA));
