@@ -521,6 +521,19 @@ function updateTeamCounts() {
 }
 
 // 🆕 Calculer les scores d'équipe (vies restantes ou points totaux)
+// Camp le moins peuplé, tiré au sort en cas d'égalité pour ne pas
+// remplir toujours le même en premier.
+function campLeMoinsFourni() {
+    let a = 0, b = 0;
+    for (const p of gameState.players.values()) {
+        if (p.team === 1) a++;
+        else if (p.team === 2) b++;
+    }
+    if (a < b) return 1;
+    if (b < a) return 2;
+    return Math.random() < 0.5 ? 1 : 2;
+}
+
 function updateTeamScores() {
     gameState.teamScores = { 1: 0, 2: 0 };
     
@@ -1754,9 +1767,14 @@ app.post('/admin/set-teams', (req, res) => {
     const enEquipes = req.body && req.body.enabled === true;
     gameState.lobbyMode = enEquipes ? 'rivalry' : 'classic';
 
-    // Dans les deux sens, chacun repart sans camp : en entrant en équipes il faut
-    // choisir, et en sortant un camp resté collé fausserait les comptes.
-    gameState.players.forEach(p => { p.team = null; });
+    // En sortant, un camp resté collé fausserait les comptes. En entrant, on
+    // répartit tout de suite en alternance plutôt que de laisser tout le monde sans camp.
+    if (enEquipes) {
+        let i = 0;
+        gameState.players.forEach(p => { p.team = (i++ % 2) + 1; });
+    } else {
+        gameState.players.forEach(p => { p.team = null; });
+    }
     gameState.teamScores = { 1: 0, 2: 0 };
     updateTeamCounts();
 
@@ -5260,7 +5278,7 @@ io.on('connection', (socket) => {
             lives: gameState.lives,
             correctAnswers: 0,
             avatarUrl: 'novice.png',
-            team: gameState.lobbyMode === 'rivalry' ? data.team : null,
+            team: gameState.lobbyMode === 'rivalry' ? campLeMoinsFourni() : null,
             isAdmin: data.isAdmin || false
         });
 

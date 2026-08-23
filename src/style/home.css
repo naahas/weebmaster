@@ -11008,36 +11008,6 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 
 .v2-room-player-teams { display: inline-flex; gap: 0.2rem; }
 
-.v2-team-dot {
-    display: grid;
-    place-items: center;
-    width: 1.5rem;
-    height: 1.5rem;
-    padding: 0;
-    font-family: 'Bebas Neue', 'Russo One', sans-serif;
-    font-size: 0.82rem;
-    color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.04);
-    border: 0.06rem solid rgba(255, 255, 255, 0.12);
-    border-radius: 50%;
-    cursor: pointer;
-    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
-}
-
-.v2-team-dot:hover { transform: translateY(-0.1rem); color: var(--text-primary); }
-
-.v2-team-dot.team-1.on {
-    color: #14100a;
-    background: #7fb4ff;
-    border-color: #7fb4ff;
-}
-
-.v2-team-dot.team-2.on {
-    color: #14100a;
-    background: var(--neon-primary);
-    border-color: var(--neon-primary);
-}
-
 /* Répartir au hasard */
 .v2-shuffle {
     display: inline-flex;
@@ -11064,4 +11034,68 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 @media (max-width: 768px) {
     .v2-shuffle { margin-left: 0.5rem; padding: 0.28rem 0.6rem; font-size: 0.6rem; }
     .v2-team-dot { width: 1.35rem; height: 1.35rem; font-size: 0.74rem; }
+}
+
+/* Sélecteur de camp : un segment glissant plutôt que deux boutons */
+.v2-team-switch {
+    position: relative;
+    display: inline-flex;
+    padding: 0.14rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 0.06rem solid rgba(255, 255, 255, 0.1);
+    border-radius: 2rem;
+}
+
+.v2-team-switch-glide {
+    position: absolute;
+    top: 0.14rem;
+    bottom: 0.14rem;
+    width: 1.55rem;
+    border-radius: 2rem;
+    transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.25, 1), background 0.28s ease, opacity 0.2s ease;
+}
+
+/* Personne dans un camp : le curseur s'efface */
+.v2-team-switch-glide.pos-0 { opacity: 0; transform: translateX(0); }
+.v2-team-switch-glide.pos-1 { opacity: 1; transform: translateX(0.14rem); background: #7fb4ff; }
+.v2-team-switch-glide.pos-2 { opacity: 1; transform: translateX(1.69rem); background: var(--neon-primary); }
+
+.v2-team-half {
+    position: relative;
+    z-index: 2;
+    width: 1.55rem;
+    height: 1.35rem;
+    padding: 0;
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 0.82rem;
+    line-height: 1;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    border-radius: 2rem;
+    cursor: pointer;
+    transition: color 0.25s ease;
+}
+
+.v2-team-half:hover { color: var(--text-primary); }
+.v2-team-half.on { color: #14100a; }
+
+/* Le camp se lit d'un coup d'œil sur la pastille du joueur */
+.v2-room-player-team {
+    display: inline-block;
+    width: 0.42rem;
+    height: 0.42rem;
+    margin-right: 0.5rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    vertical-align: middle;
+}
+
+.v2-room-player-team.team-1 { background: #7fb4ff; box-shadow: 0 0 0.4rem rgba(127, 180, 255, 0.6); }
+.v2-room-player-team.team-2 { background: var(--neon-primary); box-shadow: 0 0 0.4rem rgba(255, 215, 0, 0.6); }
+
+@media (max-width: 768px) {
+    .v2-team-half { width: 1.4rem; height: 1.2rem; font-size: 0.74rem; }
+    .v2-team-switch-glide { width: 1.4rem; }
+    .v2-team-switch-glide.pos-2 { transform: translateX(1.54rem); }
 }

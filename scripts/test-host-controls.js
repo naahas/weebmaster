@@ -51,6 +51,9 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
     // L'hôte répartit : attribution nominative puis mélange équilibré
     await post('/admin/set-teams', { enabled: true });
+    const apresBascule = await fetch(BASE + '/game/state').then(r => r.json());
+    const sansCamp = (apresBascule.players || []).filter(p => !p.team).length;
+    check('personne ne reste sans camp au passage en équipes', sansCamp === 0, sansCamp + ' sans camp');
     const place = await post('/admin/set-player-team', { twitchId: 'p2', team: 2 });
     check('camp attribué par l hôte', place.success === true && place.team === 2, 'team=' + place.team);
     const melange = await post('/admin/shuffle-teams', {});
