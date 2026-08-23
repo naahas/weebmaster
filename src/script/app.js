@@ -1064,7 +1064,7 @@ createApp({
 
             try {
                 if (this.isGameActive) {
-                    this.createError = 'Un salon est déjà ouvert — rejoins-le avec son code.';
+                    this.createError = "Tu es déjà dans un salon — quitte-le avant d'en ouvrir un autre.";
                     return;
                 }
 
@@ -1087,7 +1087,18 @@ createApp({
                 this.isHost = true;
                 localStorage.setItem('isHost', 'true');
                 this.lobbyMode = this.selectedMode;
-                await this.fetchRoomCode();
+
+                // Le salon existe : plus besoin d'attendre une diffusion pour l'afficher
+                this.isGameActive = true;
+                this.homeScreen = 'hub';
+                this._lastActivationTime = Date.now();
+
+                if (data.roomCode) {
+                    this.roomCode = data.roomCode;
+                    localStorage.setItem('roomCode', data.roomCode);
+                } else {
+                    await this.fetchRoomCode();
+                }
 
                 // En Rivalité l'hôte choisit d'abord son camp dans le salon
                 if (this.selectedMode !== 'rivalry') {
@@ -1586,6 +1597,8 @@ createApp({
             setTimeout(() => {
                 if (this.pendingJoinCode === code && !this.joinError) {
                     this.hasJoined = true;
+                    this.isGameActive = true;
+                    this._lastActivationTime = Date.now();
                     this.roomCode = code;
                     // Une fois entré, l'accueil derrière repasse au hub : quand le salon
                     // se fermera, on ne retombera pas sur l'écran du code.
@@ -2199,57 +2212,6 @@ createApp({
 
 
             // Événements du serveur
-            this.socket.on('game-activated', (data) => {
-                this.isGameActive = true;
-                // 🔧 Reset hasJoined — c'est un NOUVEAU lobby, personne n'a rejoint
-                this.hasJoined = false;
-                this.playerCount = 0;
-                localStorage.removeItem('hasJoinedLobby');
-                localStorage.removeItem('lobbyTwitchId');
-                // 🆕 Mettre à jour les paramètres si fournis
-                if (data && data.lives) this.gameLives = data.lives;
-                if (data && data.questionTime) this.gameTime = data.questionTime;
-                // 🆕 Mode Rivalité / BombAnime
-                if (data && data.lobbyMode) {
-                    this.lobbyMode = data.lobbyMode;
-                    if (data.lobbyMode === 'rivalry') {
-                        // Restaurer l'équipe sélectionnée si elle existe
-                        const savedTeam = localStorage.getItem('selectedTeam');
-                        if (savedTeam) {
-                            this.selectedTeam = parseInt(savedTeam);
-                        }
-                    } else if (data.lobbyMode === 'bombanime') {
-                        // Mode BombAnime - initialiser les vies et la série
-                        this.playerLives = data.lives || 2;
-                        this.bombanime.serie = data.bombanimeSerie || 'Naruto';
-                        this.bombanime.timer = data.bombanimeTimer || 8;
-                        console.log('💣 Mode BombAnime activé:', this.bombanime.serie);
-                    }
-                }
-                if (data && data.teamNames) this.teamNames = data.teamNames;
-                
-                // 🎮 Bonus activés
-                if (data && data.bonusEnabled !== undefined) {
-                    this.bonusEnabled = data.bonusEnabled;
-                }
-                
-                // 🔒 Timestamp pour éviter race condition avec game-deactivated
-                this._lastActivationTime = Date.now();
-                
-                // 🔒 Re-sync safety: re-confirmer le mode après un court délai
-                // (protège contre game-deactivated qui arriverait après game-activated)
-                if (data && data.lobbyMode && data.lobbyMode !== 'classic') {
-                    const expectedMode = data.lobbyMode;
-                    setTimeout(() => {
-                        if (this.isGameActive && this.lobbyMode !== expectedMode) {
-                            console.log(`⚠️ Race condition détectée: lobbyMode=${this.lobbyMode}, expected=${expectedMode} → correction`);
-                            this.lobbyMode = expectedMode;
-                        }
-                    }, 500);
-                }
-                
-            });
-
             // 🆕 Écouter les mises à jour de configuration
             this.socket.on('game-config-updated', (data) => {
                 this.gameLives = data.lives;
@@ -2265,9 +2227,9 @@ createApp({
                     this.bombanime.timerInterval = null;
                 }
                 
-                // 🔒 Protection race condition: ignorer si game-activated ou resync récent
+                // 🔒 Protection race condition: ignorer si ouverture ou resync récents
                 if (this._lastActivationTime && (Date.now() - this._lastActivationTime < 2000)) {
-                    console.log('⚠️ game-deactivated ignoré (game-activated récent, race condition)');
+                    console.log('⚠️ game-deactivated ignoré (ouverture récente, race condition)');
                     return;
                 }
                 
