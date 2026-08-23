@@ -1557,11 +1557,6 @@ createApp({
                 this.signalJoinError('Code à 4 caractères');
                 return;
             }
-            if (!this.isGameActive) {
-                this.signalJoinError('Aucun salon ouvert pour le moment');
-                return;
-            }
-
             // En v2 on entre sans camp : c'est l'hôte qui répartit ensuite.
 
             if (team) this.selectedTeam = team;

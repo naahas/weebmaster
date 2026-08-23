@@ -237,9 +237,9 @@ function generateRoomCode(length = 4) {
 }
 
 // Émet game-ended et enregistre la partie dans l'historique.
-// Toutes les fins de partie passent par ici — ne pas appeler io.emit('game-ended') directement.
+// Toutes les fins de partie passent par ici — ne pas diffuser 'game-ended' directement.
 function emitGameEnded(gameState, payload) {
-    io.emit('game-ended', payload);
+    diffuser(gameState, 'game-ended', payload);
     recordFinishedGame({
         mode: gameState.lobbyMode,
         playersCount: gameState.initialPlayerCount || (payload.playersData || []).length,
@@ -249,7 +249,7 @@ function emitGameEnded(gameState, payload) {
 }
 
 function emitBombanimeGameEnded(gameState, payload) {
-    io.emit('bombanime-game-ended', payload);
+    diffuser(gameState, 'bombanime-game-ended', payload);
     recordFinishedGame({
         mode: 'bombanime',
         playersCount: gameState.initialPlayerCount || (payload.ranking || []).length,
@@ -411,6 +411,14 @@ app.use(express.static('src/img/avatar', MEDIA));
 
 
 
+
+// Toute diffusion passe par ici : une partie ne parle qu'aux sockets de sa
+// room. Les sockets y entrent en rejoignant le salon (socket.join).
+function diffuser(gameState, evt, payload) {
+    if (!gameState || !gameState.roomCode) return;
+    if (payload === undefined) io.to(gameState.roomCode).emit(evt);
+    else io.to(gameState.roomCode).emit(evt, payload);
+}
 
 // ============================================
 // État du jeu
@@ -590,7 +598,7 @@ function broadcastLobbyUpdate(gameState) {
     const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : Infinity;
     const isLobbyFull = isBombanimeMode && gameState.players.size >= maxPlayers;
     
-    io.emit('lobby-update', {
+    diffuser(gameState, 'lobby-update', {
         playerCount: gameState.players.size,
         lives: gameState.lives,
         livesIcon: gameState.livesIcon,
@@ -1087,7 +1095,7 @@ app.post('/admin/toggle-game', async (req, res) => {
             gameState.rivalryEndGameTimeout = null;
         }
 
-        io.emit('game-activated', {
+        diffuser(gameState, 'game-activated', {
             lives: gameState.lives,
             questionTime: gameState.questionTime,
             lobbyMode: gameState.lobbyMode,
@@ -1159,7 +1167,7 @@ app.post('/admin/toggle-game', async (req, res) => {
         // Le salon fermé, le jeton ne vaut plus rien
         gameState.hostToken = null;
 
-        io.emit('game-deactivated');
+        diffuser(gameState, 'game-deactivated');
     }
 
     // Le jeton ne part qu'ici, dans la réponse à celui qui vient d'ouvrir
@@ -1184,7 +1192,7 @@ app.post('/admin/bombanime/update-serie', (req, res) => {
     console.log(`💣 Série BombAnime mise à jour: ${serie} (${BOMBANIME_CHARACTERS[serie].length} personnages)`);
     
     // Notifier les joueurs du changement de série
-    io.emit('bombanime-serie-updated', { 
+    diffuser(gameState, 'bombanime-serie-updated', { 
         serie: serie,
         characterCount: BOMBANIME_CHARACTERS[serie].length 
     });
@@ -1210,9 +1218,9 @@ app.post('/admin/bombanime/close-lobby', (req, res) => {
     gameState.players.clear();
     
     // Notifier les clients
-    io.emit('game-deactivated');
-    io.emit('bombanime-lobby-closed');
-    io.emit('collect-state', { active: false });
+    diffuser(gameState, 'game-deactivated');
+    diffuser(gameState, 'bombanime-lobby-closed');
+    diffuser(gameState, 'collect-state', { active: false });
     
     console.log('🔒 Lobby fermé (BombAnime/Collect reset)');
     res.json({ success: true });
@@ -1346,7 +1354,7 @@ app.post('/admin/update-settings', (req, res) => {
     console.log(`⚙️ Paramètres mis à jour: ${gameState.lives}❤️ - ${gameState.questionTime}s`);
 
     // Notifier tous les clients des nouveaux paramètres
-    io.emit('game-config-updated', {
+    diffuser(gameState, 'game-config-updated', {
         lives: gameState.lives,
         questionTime: gameState.questionTime
     });
@@ -1390,7 +1398,7 @@ app.post('/admin/set-time', (req, res) => {
     console.log(`⚙️ Temps par question mis à jour: ${gameState.questionTime}s`);
 
     // Notifier tous les clients du nouveau temps
-    io.emit('game-config-updated', {
+    diffuser(gameState, 'game-config-updated', {
         lives: gameState.lives,
         questionTime: gameState.questionTime
     });
@@ -1407,7 +1415,7 @@ app.post('/admin/set-answers', (req, res) => {
     console.log(`⚙️ Nombre de réponses mis à jour: ${gameState.answersCount}`);
 
     // Notifier tous les clients du nouveau paramètre
-    io.emit('game-config-updated', {
+    diffuser(gameState, 'game-config-updated', {
         lives: gameState.lives,
         questionTime: gameState.questionTime,
         answersCount: gameState.answersCount
@@ -1686,7 +1694,7 @@ app.post('/admin/start-game', async (req, res) => {
                 });
 
                 // Envoyer la question aux joueurs
-                io.emit('new-question', questionData);
+                diffuser(gameState, 'new-question', questionData);
 
                 // Timer pour révéler les réponses
                 setTimeout(() => {
@@ -1746,7 +1754,7 @@ app.post('/admin/set-mode', (req, res) => {
         console.log(`✅ ${gameState.players.size} joueur(s) mis à jour pour le mode ${mode}`);
     }
 
-    io.emit('game-config-updated', {
+    diffuser(gameState, 'game-config-updated', {
         mode: gameState.mode,
         lives: gameState.lives,
         questionTime: gameState.questionTime,
@@ -1772,7 +1780,7 @@ app.post('/admin/set-questions', (req, res) => {
     gameState.questionsCount = parseInt(questions);
     console.log(`⚙️ Nombre de questions mis à jour: ${gameState.questionsCount}`);
 
-    io.emit('game-config-updated', {
+    diffuser(gameState, 'game-config-updated', {
         mode: gameState.mode,
         lives: gameState.lives,
         questionTime: gameState.questionTime,
@@ -1813,7 +1821,7 @@ app.post('/admin/set-teams', (req, res) => {
 
     console.log(`👥 Salon en ${enEquipes ? 'équipes' : 'solo'}`);
 
-    io.emit('teams-toggled', {
+    diffuser(gameState, 'teams-toggled', {
         lobbyMode: gameState.lobbyMode,
         teamNames: gameState.teamNames,
     });
@@ -1918,7 +1926,7 @@ app.post('/admin/set-difficulty-mode', (req, res) => {
     gameState.lastDifficulty = null; // Reset
     console.log(`⚙️ Mode de difficulté changé: ${mode}`);
 
-    io.emit('game-config-updated', {
+    diffuser(gameState, 'game-config-updated', {
         mode: gameState.mode,
         lives: gameState.lives,
         questionTime: gameState.questionTime,
@@ -1945,7 +1953,7 @@ app.post('/admin/set-no-spoil', (req, res) => {
     gameState.noSpoil = enabled === true;
     console.log(`🚫 Filtre anti-spoil: ${gameState.noSpoil ? 'Activé (masqué)' : 'Désactivé (autorisé)'}`);
 
-    io.emit('game-config-updated', {
+    diffuser(gameState, 'game-config-updated', {
         mode: gameState.mode,
         lives: gameState.lives,
         questionTime: gameState.questionTime,
@@ -2028,7 +2036,7 @@ app.post('/admin/set-serie-filter', (req, res) => {
     gameState.serieFilter = filter;
     console.log(`⚙️ Filtre série changé: ${filter}`);
 
-    io.emit('game-config-updated', {
+    diffuser(gameState, 'game-config-updated', {
         mode: gameState.mode,
         lives: gameState.lives,
         questionTime: gameState.questionTime,
@@ -2056,7 +2064,7 @@ app.post('/admin/toggle-auto-mode', (req, res) => {
         console.log('⏹️ Timeout auto-mode annulé');
     }
 
-    io.emit('game-config-updated', {
+    diffuser(gameState, 'game-config-updated', {
         mode: gameState.mode,
         lives: gameState.lives,
         questionTime: gameState.questionTime,
@@ -2177,12 +2185,12 @@ app.post('/admin/trigger-auto-next', (req, res) => {
             gameState.answers.clear();
 
             // Émettre l'event de préparation pour l'animation
-            io.emit('prepare-next-question');
+            diffuser(gameState, 'prepare-next-question');
 
             // Attendre 400ms pour l'animation de fermeture
             await new Promise(resolve => setTimeout(resolve, 400));
 
-            io.emit('new-question', questionData);
+            diffuser(gameState, 'new-question', questionData);
 
             setTimeout(() => {
                 if (gameState.inProgress) {
@@ -2409,7 +2417,7 @@ app.post('/admin/next-question', async (req, res) => {
         });
 
 
-        io.emit('new-question', questionData);
+        diffuser(gameState, 'new-question', questionData);
 
         setTimeout(() => {
             if (gameState.inProgress) {
@@ -2764,7 +2772,7 @@ function revealAnswers(gameState, correctAnswer) {
     gameState.showResults = true;
     gameState.lastQuestionResults = resultsData;
 
-    io.emit('question-results', resultsData);
+    diffuser(gameState, 'question-results', resultsData);
 
     // Vérifier fin de partie selon le mode
     if (gameState.mode === 'lives') {
@@ -2924,10 +2932,10 @@ function revealAnswers(gameState, correctAnswer) {
                 });
 
                 // 🔥 Animation de fermeture avant la nouvelle question
-                io.emit('prepare-next-question');
+                diffuser(gameState, 'prepare-next-question');
                 await new Promise(resolve => setTimeout(resolve, 400));
 
-                io.emit('new-question', questionData);
+                diffuser(gameState, 'new-question', questionData);
 
                 setTimeout(() => {
                     if (gameState.inProgress) {
@@ -3028,7 +3036,7 @@ function revealTiebreakerAnswers(gameState, correctAnswer) {
     gameState.showResults = true;
     gameState.lastQuestionResults = resultsData;
 
-    io.emit('question-results', resultsData);
+    diffuser(gameState, 'question-results', resultsData);
 
     console.log(`⚔️ Résultats tiebreaker: ${stats.correct} bonne(s) réponse(s), ${stats.wrong} mauvaise(s), ${stats.afk} AFK`);
 
@@ -3124,7 +3132,7 @@ async function endGameByPoints(gameState) {
 
             addLog(gameState, 'tiebreaker', { playerCount: winners.length });
 
-            io.emit('tiebreaker-announced', {
+            diffuser(gameState, 'tiebreaker-announced', {
                 tiebreakerPlayers: winners.map(w => ({
                     twitchId: w.twitchId,
                     username: w.username,
@@ -3221,7 +3229,7 @@ async function sendTiebreakerQuestion(gameState) {
         });
 
         // Envoyer la question à TOUS les joueurs
-        io.emit('new-question', questionData);
+        diffuser(gameState, 'new-question', questionData);
 
         // 🔥 FIX: Attendre la fin du timer PUIS révéler
         setTimeout(() => {
@@ -3326,7 +3334,7 @@ async function checkTiebreakerWinner(gameState) {
 
         gameState.tiebreakerPlayers = stillTied.map(p => p.twitchId);
 
-        io.emit('tiebreaker-continues', {
+        diffuser(gameState, 'tiebreaker-continues', {
             tiebreakerPlayers: stillTied.map(p => ({
                 twitchId: p.twitchId,
                 username: p.username,
@@ -3429,7 +3437,7 @@ async function sendRivalryTiebreakerQuestion(gameState) {
         });
 
         // Envoyer la question à TOUS les joueurs
-        io.emit('new-question', questionData);
+        diffuser(gameState, 'new-question', questionData);
 
         // 🆕 Annuler l'ancien timeout de révélation si existant
         if (gameState.rivalryRevealTimeout) {
@@ -3500,7 +3508,7 @@ async function revealRivalryTiebreakerAnswers(gameState, correctAnswer) {
     updateTeamScores(gameState);
 
     // Envoyer les résultats
-    io.emit('question-results', {
+    diffuser(gameState, 'question-results', {
         correctAnswer,
         players: results.players,
         stats: results.stats,
@@ -3620,7 +3628,7 @@ async function checkRivalryTiebreakerWinner(gameState) {
         // ⚖️ ENCORE ÉGALITÉ
         console.log(`⚖️ Toujours égalité: ${team1Score} - ${team2Score}`);
 
-        io.emit('tiebreaker-continues', {
+        diffuser(gameState, 'tiebreaker-continues', {
             mode: 'rivalry',
             team1Score,
             team2Score,
@@ -3863,7 +3871,7 @@ async function endGame(gameState, winner) {
         if (!winner) {
             console.log('🔒 Fermeture automatique du lobby (aucun gagnant)');
             gameState.isActive = false;
-            io.emit('game-deactivated');
+            diffuser(gameState, 'game-deactivated');
         }
 
     } catch (error) {
@@ -3973,7 +3981,7 @@ async function endGameRivalryPoints(gameState) {
             
             addLog(gameState, 'tiebreaker', { mode: 'rivalry', score: team1Points, playerCount: gameState.players.size });
             
-            io.emit('tiebreaker-announced', {
+            diffuser(gameState, 'tiebreaker-announced', {
                 mode: 'rivalry',
                 team1Score: team1Points,
                 team2Score: team2Points,
@@ -4321,7 +4329,7 @@ app.post('/admin/set-lives-icon', (req, res) => {
     gameState.livesIcon = icon;
 
     // Broadcast aux clients
-    io.emit('lobby-update', {
+    diffuser(gameState, 'lobby-update', {
         livesIcon: icon
     });
 
@@ -4654,7 +4662,7 @@ function startBombanimeTurn(gameState, twitchId) {
     console.log(`💣 Tour de ${player.username} (${gameState.bombanime.timer}s) [turnId=${currentTurnId}]`);
     
     // Envoyer l'état à tous les clients
-    io.emit('bombanime-turn-start', {
+    diffuser(gameState, 'bombanime-turn-start', {
         currentPlayerTwitchId: twitchId,
         currentPlayerUsername: player.username,
         timer: gameState.bombanime.timer,
@@ -4706,7 +4714,7 @@ function bombExplode(gameState, twitchId) {
     }
     
     // Envoyer l'événement d'explosion
-    io.emit('bombanime-explosion', {
+    diffuser(gameState, 'bombanime-explosion', {
         playerTwitchId: twitchId,
         playerUsername: player.username,
         livesRemaining: player.lives,
@@ -4774,7 +4782,7 @@ function submitBombanimeName(gameState, socketId, name) {
     if (!validation.valid) {
         console.log(`❌ Nom invalide: "${name}" - ${validation.reason}`);
         
-        io.emit('bombanime-name-rejected', {
+        diffuser(gameState, 'bombanime-name-rejected', {
             playerTwitchId: player.twitchId,
             name: name,
             reason: validation.reason
@@ -4829,7 +4837,7 @@ function submitBombanimeName(gameState, socketId, name) {
                 console.log(`🎉 ${player.username} a complété l'alphabet mais déjà au max (${player.lives}/${maxLives})`);
             }
             
-            io.emit('bombanime-alphabet-complete', {
+            diffuser(gameState, 'bombanime-alphabet-complete', {
                 playerTwitchId: player.twitchId,
                 playerUsername: player.username,
                 newLives: player.lives
@@ -4871,7 +4879,7 @@ function submitBombanimeName(gameState, socketId, name) {
     // const characterImage = getCharacterImage(normalizedName, gameState.bombanime.serie);
     
     // Envoyer la confirmation avec le prochain joueur
-    io.emit('bombanime-name-accepted', {
+    diffuser(gameState, 'bombanime-name-accepted', {
         playerTwitchId: player.twitchId,
         playerUsername: player.username,
         name: normalizedName,
@@ -4983,7 +4991,7 @@ async function startBombanimeGame(gameState) {
     });
     
     // Envoyer l'événement de démarrage
-    io.emit('bombanime-game-started', {
+    diffuser(gameState, 'bombanime-game-started', {
         serie: gameState.bombanime.serie,
         timer: gameState.bombanime.timer,
         playersOrder: gameState.bombanime.playersOrder,
@@ -5321,6 +5329,10 @@ io.on('connection', (socket) => {
             return socket.emit('error', { message: 'La partie vient de démarrer' });
         }
 
+        // Sans ça, la socket n'entendrait aucune diffusion : elles visent la room
+        socket.join(gameState.roomCode);
+        socket.data.roomCode = gameState.roomCode;
+
         gameState.players.set(socket.id, {
             socketId: socket.id,
             twitchId: data.twitchId,
@@ -5436,6 +5448,10 @@ io.on('connection', (socket) => {
         if (!gameState.isActive) {
             return socket.emit('error', { message: 'Aucune partie active' });
         }
+
+        // La socket est neuve : elle doit rentrer dans la room pour entendre la suite
+        socket.join(gameState.roomCode);
+        socket.data.roomCode = gameState.roomCode;
 
         let existingPlayer = null;
         let oldSocketId = null;
@@ -5580,13 +5596,13 @@ io.on('connection', (socket) => {
         gameState.liveAnswers.set(socket.id, data.answer);
         throttledUpdateLiveAnswerStats(gameState);
 
-        io.emit('answer-submitted', {
+        diffuser(gameState, 'answer-submitted', {
             socketId: socket.id,
             answeredCount: gameState.answers.size,
             totalPlayers: gameState.players.size
         });
 
-        io.emit('player-answered', {
+        diffuser(gameState, 'player-answered', {
             username: player.username,
             answeredCount: gameState.answers.size,
             totalPlayers: gameState.players.size
@@ -5737,7 +5753,7 @@ io.on('connection', (socket) => {
         }
         
         // Notifier tout le monde de la mise à jour des vies
-        io.emit('bombanime-player-lives-updated', {
+        diffuser(gameState, 'bombanime-player-lives-updated', {
             playerTwitchId: player.twitchId,
             playerUsername: player.username,
             lives: player.lives,
@@ -6088,7 +6104,7 @@ function resetGameState(gameState) {
 
     // 🔥 COMMENTER CES LIGNES
     // gameState.isActive = false;
-    // io.emit('game-deactivated');
+    // diffuser(gameState, 'game-deactivated');
     // console.log('🔒 Lobby fermé automatiquement après la fin de partie');
 
     // 🆕 Annuler le timeout auto mode si actif
@@ -6114,7 +6130,7 @@ function updateLiveAnswerStats(gameState) {
         answerCounts[answerIndex]++;
     });
 
-    io.emit('live-answer-stats', {
+    diffuser(gameState, 'live-answer-stats', {
         answerCounts: answerCounts,
         answeredCount: gameState.liveAnswers.size,
         totalPlayers: gameState.players.size
@@ -6161,13 +6177,13 @@ function addLog(gameState, type, data) {
         gameState.activityLogs.shift();
     }
 
-    io.emit('activity-log', log);
+    diffuser(gameState, 'activity-log', log);
 }
 
 function resetLogs(gameState) {
     gameState.activityLogs = [];
     gameState.playerColors = {};
-    io.emit('logs-reset');
+    diffuser(gameState, 'logs-reset');
 }
 
 function assignPlayerColor(gameState, username) {
