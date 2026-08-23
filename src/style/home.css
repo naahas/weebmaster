@@ -11592,7 +11592,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.22rem;
+    gap: 0.1rem;
     padding: 0.5rem 0.4rem;
     font-size: 0.63rem;
     font-weight: 700;
@@ -11608,8 +11608,10 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 
 .v2-serie-carte:not(.soon):hover .nm { opacity: 0.25; }
 
-/* Le décompte des séries, sous le nom */
+/* Le décompte des séries, sous le nom, séparé par un court filet */
 .v2-serie-carte .nm em {
+    position: relative;
+    padding-top: 0.4rem;
     font-style: normal;
     font-size: 0.52rem;
     font-weight: 700;
@@ -11617,6 +11619,17 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     text-transform: uppercase;
     color: var(--neon-primary);
     text-shadow: 0 0.1rem 0.5rem rgba(0, 0, 0, 0.9);
+}
+
+.v2-serie-carte .nm em::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 1.5rem;
+    height: 0.06rem;
+    margin-left: -0.75rem;
+    background: rgba(255, 255, 255, 0.28);
 }
 
 .v2-serie-carte:not(.soon):hover { border-color: rgba(255, 215, 0, 0.5); transform: translateY(-0.18rem); }
