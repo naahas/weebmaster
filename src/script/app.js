@@ -41,6 +41,7 @@ createApp({
             hoverMode: null,   // survol temporaire ; le clic verrouille selectedMode
             showSettings: true,
             autoMode: false,
+            rejouerBusy: false,
             autoDelai: 5000,      // annoncé par le serveur avec les résultats
             autoCompte: 0,        // 1 → 0 : ce qu'il reste avant la question suivante
             nextQuestionBusy: false,
@@ -1763,6 +1764,40 @@ createApp({
             else this.askLeaveRoom();
         },
 
+        // L'hôte relance une manche : le salon et ses joueurs ne bougent pas
+        async hostRejouer() {
+            if (this.rejouerBusy) return;
+            this.rejouerBusy = true;
+            try {
+                const res = await this.hostFetch('/admin/replay', { method: 'POST' });
+                const data = await res.json();
+                if (data.error) this.hostError = data.error;
+                else this.revenirAuSalon();
+            } catch (e) {
+                this.hostError = 'Erreur de connexion';
+            } finally {
+                setTimeout(() => { this.rejouerBusy = false; }, 500);
+            }
+        },
+
+        // Remet les écrans au salon sans toucher au salon lui-même
+        revenirAuSalon() {
+            this.gameEnded = false;
+            this.gameInProgress = false;
+            this.gameEndData = null;
+            this.currentQuestion = null;
+            this.currentQuestionNumber = 0;
+            this.questionShown = false;
+            this.showResults = false;
+            this.selectedAnswer = null;
+            this.hasAnswered = false;
+            this.questionResults = { players: [], stats: {} };
+            this.endStep = 0;
+            this.arreterCompteAuto();
+            this.resetComboSystem();
+            document.body.classList.remove('game-active');
+        },
+
         askCloseRoom() { this.confirmAction = 'close'; },
         askLeaveRoom() { this.confirmAction = 'leave'; },
 
@@ -2249,6 +2284,11 @@ createApp({
                 this.gameLives = data.lives;
                 this.gameTime = data.questionTime;
                 console.log(`⚙️ Paramètres mis à jour: ${data.lives}❤️ - ${data.questionTime}s`);
+            });
+
+            // L'hôte relance : tout le monde revient au salon, personne n'en sort
+            this.socket.on('retour-au-salon', () => {
+                this.revenirAuSalon();
             });
 
             this.socket.on('game-deactivated', () => {

@@ -11813,3 +11813,16 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     stroke-dasharray: 125.66;
     filter: drop-shadow(0 0 0.25rem rgba(110, 231, 183, 0.6));
 }
+
+/* Fin de partie : relancer prime, quitter reste possible en dessous */
+.v2-end-actions { flex-direction: column; align-items: center; gap: 0.7rem; }
+
+.v2-end-btn.fantome {
+    padding: 0.55rem 1.4rem;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    background: none;
+    box-shadow: none;
+}
+
+.v2-end-btn.fantome:hover { color: var(--text-primary); background: rgba(255, 255, 255, 0.06); }

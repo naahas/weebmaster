@@ -369,6 +369,7 @@ app.get('/game/state', (req, res) => {
 
     res.json({
         isActive: gameState.isActive,
+        roomCode: gameState.roomCode,
         inProgress: gameState.inProgress,
         currentQuestionIndex: gameState.currentQuestionIndex,
         playerCount: gameState.players.size,
@@ -1540,8 +1541,9 @@ app.post('/admin/start-game', async (req, res) => {
     }
 
     try {
-        // 📝 Historique des questions : local à la partie (v2 : plus de streamerId)
-        gameState.usedQuestionIds = [];
+        // 📝 Historique des questions : il court sur tout le salon, pas sur une
+        // seule manche. Tant que l'hôte enchaîne, une question déjà servie ne
+        // revient pas. Il repart à zéro quand le salon ferme.
 
         gameState.inProgress = true;
         gameState.currentGameId = null;
@@ -2312,6 +2314,26 @@ app.get('/admin/refresh-cooldown', (req, res) => {
             remainingTime: 0
         });
     }
+});
+
+// 🔁 Relancer une manche dans le même salon, avec les mêmes joueurs.
+// Le salon n'est jamais refermé : seuls les écrans reviennent au lobby.
+app.post('/admin/replay', (req, res) => {
+    const gameState = req.room;
+
+    if (gameState.inProgress) {
+        return res.status(400).json({ error: 'Une partie est déjà en cours' });
+    }
+
+    gameState.winnerScreenData = null;
+    resetGameState(gameState);
+    resetBombanimeState(gameState);
+
+    console.log(`🔁 Salon ${gameState.roomCode} : retour au lobby pour une nouvelle manche`);
+    diffuser(gameState, 'retour-au-salon');
+    broadcastLobbyUpdate(gameState);
+
+    res.json({ success: true, playerCount: gameState.players.size });
 });
 
 // Route pour reset manuel de l'historique des questions
@@ -6173,7 +6195,9 @@ function resetGameState(gameState) {
     gameState.questionStartTime = null;
     gameState.gameStartTime = null;
     gameState.initialPlayerCount = 0; // 🆕 Reset du compteur initial
-    gameState.players.clear();
+    // Les joueurs restent dans le salon : c'est ce qui permet d'enchaîner une
+    // manche sans re-partager le code. start-game remet leurs vies, points,
+    // bonus et défis à neuf.
     gameState.answers.clear();
     gameState.pendingJoins.clear(); // 🔓 Reset les réservations
     gameState.isTiebreaker = false;

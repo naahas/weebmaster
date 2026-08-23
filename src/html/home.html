@@ -1265,7 +1265,9 @@
                 </div>
 
                 <div class="v2-end-actions" :class="{ vu: endStep >= 4 }">
-                    <button class="v2-end-btn" @click="backToHome">Retour</button>
+                    <button class="v2-end-btn" v-if="isHost" :disabled="rejouerBusy"
+                            @click="hostRejouer">Rejouer</button>
+                    <button class="v2-end-btn fantome" @click="backToHome">Retour</button>
                 </div>
             </div>
         </div>
