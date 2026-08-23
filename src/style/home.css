@@ -11505,7 +11505,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     position: absolute;
     /* Détaché du haut et du bas : à pleine hauteur il écrasait l'écran */
     inset: 11vh auto 11vh 0;
-    width: min(27rem, 70vw);
+    width: min(23rem, 62vw);
     display: flex;
     flex-direction: column;
     padding: 1.5rem 1.4rem 1.3rem;
@@ -11548,8 +11548,8 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 
 .v2-serie-grille {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(5.7rem, 1fr));
-    gap: 0.55rem;
+    grid-template-columns: repeat(auto-fill, minmax(4.6rem, 1fr));
+    gap: 0.5rem;
 }
 
 .v2-serie-carte {
@@ -11593,8 +11593,8 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     align-items: center;
     justify-content: center;
     gap: 0.1rem;
-    padding: 0.5rem 0.4rem;
-    font-size: 0.63rem;
+    padding: 0.4rem 0.3rem;
+    font-size: 0.56rem;
     font-weight: 700;
     letter-spacing: 0.07em;
     line-height: 1.3;
@@ -11611,9 +11611,9 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 /* Le décompte des séries, sous le nom, séparé par un court filet */
 .v2-serie-carte .nm em {
     position: relative;
-    padding-top: 0.4rem;
+    padding-top: 0.32rem;
     font-style: normal;
-    font-size: 0.52rem;
+    font-size: 0.46rem;
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -11626,9 +11626,9 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     position: absolute;
     top: 0;
     left: 50%;
-    width: 1.5rem;
+    width: 1.2rem;
     height: 0.06rem;
-    margin-left: -0.75rem;
+    margin-left: -0.6rem;
     background: rgba(255, 255, 255, 0.28);
 }
 
@@ -11642,11 +11642,11 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 
 .v2-serie-carte .coche {
     position: absolute;
-    top: 0.4rem;
-    right: 0.4rem;
-    width: 1.25rem;
-    height: 1.25rem;
-    padding: 0.25rem;
+    top: 0.3rem;
+    right: 0.3rem;
+    width: 1.05rem;
+    height: 1.05rem;
+    padding: 0.22rem;
     color: #14100a;
     background: var(--neon-primary);
     border-radius: 50%;
@@ -11670,6 +11670,6 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
         border-bottom: 0.06rem solid rgba(255, 255, 255, 0.07);
     }
 
-    .v2-serie-grille { grid-template-columns: repeat(auto-fill, minmax(5.2rem, 1fr)); gap: 0.45rem; }
-    .v2-serie-carte .nm { font-size: 0.58rem; padding: 0.4rem 0.3rem; }
+    .v2-serie-grille { grid-template-columns: repeat(auto-fill, minmax(4.4rem, 1fr)); gap: 0.45rem; }
+    .v2-serie-carte .nm { font-size: 0.54rem; padding: 0.35rem 0.25rem; }
 }
