@@ -143,7 +143,7 @@ app.set('trust proxy', 1);
 // ============================================
 
 // Historique des parties : en mémoire d'abord (aucune dépendance), persisté dans
-// la table `game_history` si elle existe. Voir PLAN-V2.md pour le SQL de création.
+// la table `game_history` si elle existe. SQL de création : docs/game-history.sql
 const recentGames = [];
 let gamesPlayedTotal = 0;   // parties terminées (depuis la base si game_history existe)
 const RECENT_GAMES_MAX = 8;
