@@ -7073,7 +7073,7 @@ body.game-active:has(.poll-game-container) #particles-js {
 
 .v2-choice {
     position: relative;
-    flex: 1;
+    flex: 0 0 auto;
     aspect-ratio: 16 / 6;
     padding: 0;
     overflow: hidden;
