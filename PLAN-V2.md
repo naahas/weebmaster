@@ -19,7 +19,7 @@ Objectif < 10 secondes. Sans compte ni progression, rien d'autre ne rattrape une
 
 | Élément | Volume | Sort |
 |---|---|---|
-| `server.js` | 11 352 lignes, 81 routes, 1330 refs à `gameState`, 86 `io.emit` | refacto lourd |
+| `server.js` | 6 167 lignes, 62 routes, `io.emit` × 52 | refacto lourd |
 | `server-ascension.js` | 1 682 lignes | supprimé |
 | `server-poll.js` | 684 lignes | supprimé |
 | `dbs.js` | 1 226 lignes, 12 tables | réduit aux questions |
@@ -124,7 +124,7 @@ function createRoom(hostSocket, opts) {
 
 1. Chaque fonction de jeu prend `room` en premier paramètre ; `gameState.` → `room.` (1330 occurrences,
    mécanique une fois les signatures posées)
-2. `io.emit(evt, payload)` → `emitRoom(room, evt, payload)` = `io.to(room.code).emit(...)` (86 occurrences)
+2. `io.emit(evt, payload)` → `emitRoom(room, evt, payload)` = `io.to(room.code).emit(...)` (52 occurrences)
 3. `socket.join(room.code)` à l'entrée, `socket.data.roomCode` pour retrouver la room, helper `getRoom(socket)`
 4. `socket.emit(...)` (58 occurrences) reste inchangé — déjà ciblé sur un joueur
 

@@ -3,7 +3,7 @@
 Party-games anime **multijoueur temps réel**, en parties privées.
 
 **Modèle produit (v2) :** n'importe qui crée une partie, personne n'a de compte. Le créateur est
-l'*hôte* et pilote la partie depuis `/admin` ; les joueurs saisissent un pseudo et rejoignent.
+l'*hôte* et pilote la partie depuis `/` ; les joueurs saisissent un pseudo et rejoignent.
 Cibles : streamers Twitch **et TikTok**, et groupes d'amis en vocal.
 
 Domaine prod : `shonenmaster.com`. Auteur : Adem (`naahas`).
@@ -11,16 +11,22 @@ Domaine prod : `shonenmaster.com`. Auteur : Adem (`naahas`).
 ⚠️ **Cette branche est la refonte v2.** `main` porte encore la v1 (comptes Twitch, 7 modes,
 progression). Voir [PLAN-V2.md](PLAN-V2.md) pour l'état d'avancement et la suite.
 
-État : **phase 1 terminée** (suppression). Phase 2 (multi-room) à faire — aujourd'hui le serveur
-n'héberge toujours qu'**une seule partie à la fois**.
+État : **phase 1 terminée** (suppression), refonte du mode Classique terminée (écran de jeu, salon,
+camps, classement final, passe mobile). Phase 2 (multi-room) à faire — aujourd'hui le serveur
+n'héberge toujours qu'**une seule partie à la fois**, et BombAnime est encore intégralement en v1.
+
+⚠️ **Les routes `/admin/*` n'ont aucune authentification.** La page `/admin` a disparu mais ses
+40 routes sont restées ouvertes : n'importe qui peut ouvrir, démarrer ou arrêter la partie en cours
+avec un simple POST. À régler en phase 2 (jeton d'hôte lié au code de room). Le site ne peut pas
+être public avant.
 
 ## Stack
 
 - **Backend** : Node.js + Express 4 + Socket.io 4 (`server.js`, point d'entrée, `npm start` → nodemon)
 - **DB** : Supabase (Postgres) — ne stocke plus que les **questions** et les suggestions BombAnime
 - **Identité** : pseudo invité en `localStorage` (`playerId` + `pseudo`). Plus d'OAuth, plus de session serveur.
-- **Frontend joueur** : Vue 3 via CDN (`vue.global.js`), un seul gros composant (`src/script/app.js`)
-- **Frontend hôte** : JS vanilla (`src/script/admin.js` + `admin-bombanime.js`)
+- **Frontend** : Vue 3 via CDN (`vue.global.js`), un seul gros composant (`src/script/app.js`) —
+  hôte et joueurs partagent la même page, seul `isHost` change ce qui s'affiche
 - **Déploiement** : Render (Procfile `web: node server.js`)
 - **Tests** : `npm run check` (le template Vue compile-t-il), `npm run smoke` (cycle de jeu complet),
   `npm run test:host` (contrôles de l hôte, camps, rafraîchissement) et `npm run test:tie` (départage
@@ -30,15 +36,17 @@ n'héberge toujours qu'**une seule partie à la fois**.
 ## Arborescence
 
 ```
-server.js              5.9k lignes — serveur + modes classic / rivalry / bombanime
+server.js              6.2k lignes — serveur + modes classic / rivalry / bombanime
 dbs.js                 client Supabase : questions + suggestions BombAnime uniquement
 character-variants.js  BombAnime : groupes d'alias par perso (citer « Kakarot » bloque « Goku »)
 bombdata.json          persos BombAnime par série ; bombimages.json : images (URLs imgur)
-scripts/smoke-test.js  test de bout en bout (npm run smoke)
+scripts/smoke-test.js         cycle de jeu complet (npm run smoke)
+scripts/test-host-controls.js contrôles de l'hôte, camps, rafraîchissement (npm run test:host)
+scripts/test-departage.js     égalité puis départage, solo et camps (npm run test:tie)
 docs/ASCENSION.md      conception du mode Ascension, mis de côté (branche archive/ascension)
-src/html/              home (joueur), admin (hôte), question (back-office questions)
-src/script/            app.js (joueur), admin.js + admin-bombanime.js
-src/style/             home*.css, admin*.css
+src/html/              home (le jeu), question (back-office questions), prototypes-*.html
+src/script/            app.js — le seul script du jeu
+src/style/             home.css, home-bombanime.css
 src/img/               avatars, questionpic
 ```
 
@@ -48,9 +56,15 @@ src/img/               avatars, questionpic
 
 | lobbyMode   | Nom UI    | Principe |
 |-------------|-----------|----------|
-| `classic`   | Classic   | Quiz QCM, mode `lives` (vies) ou `points` (score + bonus rapidité) |
-| `rivalry`   | Rivalité  | Même quiz en 2 équipes, scores/vies d'équipe, tiebreaker dédié |
+| `classic`   | Classique | Quiz QCM en solo. Réglage **Mode** : `lives` (vies) ou `points` (score + bonus rapidité) |
+| `rivalry`   | Classique | Le même quiz en deux camps. Ce n'est **pas un mode à part** : c'est le réglage **Format** du quiz |
 | `bombanime` | BombAnime | Bombe tournante : citer un perso d'une série, alphabet à compléter, défis + bonus |
+
+⚠️ `classic` et `rivalry` sont **un seul mode pour le joueur**. Le réglage *Format* (Solo / Équipe)
+bascule `lobbyMode` de l'un à l'autre en cours de salon (`POST /admin/set-teams`). Le badge de mode
+affiche « Classique » dans les deux cas. C'est l'hôte qui attribue les camps (pastille sur chaque
+joueur, ou *Mélanger*) ; un joueur ne choisit jamais le sien, et un nouvel arrivant tombe dans le
+camp le moins fourni.
 
 Modes retirés en v2 (code en git sur le tag `v1-final`) : Trace (survie), Collect, Poll, Ascension.
 Ascension est documenté dans docs/ASCENSION.md et conservé sur la branche `archive/ascension`.
@@ -74,8 +88,10 @@ veille du projet Supabase free tier.
 ## Accès
 
 - `/` : le jeu (saisie du pseudo puis lobby).
-- `/admin` : le panel de l'hôte, **ouvert sans mot de passe** en v2 — le contrôle d'accès reviendra
-  en phase 2 sous forme de code de room + rôle host.
+- `/admin/*` : plus aucune page, mais **40 routes HTTP non authentifiées** que le client de l'hôte
+  appelle (ouvrir/fermer le salon, réglages, démarrer, question suivante, camps, exclure). Le
+  contrôle d'accès viendra en phase 2 sous forme de code de room + jeton d'hôte.
+- `/prototypes/*` : pages de travail sur le visuel (boutons, timer, cœurs, HUD, podium, icônes…).
 - `/question` : back-office des questions, protégé par `QUESTION_ADMIN_CODE`.
 
 ## Variables d'environnement (`.env`, non versionné)
@@ -102,10 +118,14 @@ Les variables Twitch, `SESSION_SECRET`, `ADMIN_PASSWORD` et `MASTER_ADMIN_PASSWO
 ## Points d'attention
 
 - `MIN_PLAYERS_FOR_STATS` et consorts ont disparu avec les stats : plus de seuil de joueurs.
-- Gros fichiers (`admin.js` 9.5k lignes, `home.css` 17k, `server.js` 5.9k) : cibler via grep/offset,
+- Gros fichiers (`home.css` 11.5k lignes, `server.js` 6.2k, `app.js` 4.9k) : cibler via grep/offset,
   ne jamais relire en entier.
-- `admin.js` contient encore des branches mortes sur les modes supprimés (inoffensives, jamais
-  atteintes). Elles disparaîtront avec la refonte du panel en phase 2.
-- Valider une modif : `npm run check`, puis `npm start` + `npm run smoke`, et ouvrir `/` dans le navigateur.
+- Valider une modif : `npm run check`, puis `npm start` et les trois suites, et ouvrir `/` dans le
+  navigateur.
+- ⚠️ `transform` sur un ancêtre crée un bloc conteneur et casse le `position: fixed` de ses
+  descendants. C'est l'erreur qui revient le plus souvent sur ce projet.
+- ⚠️ Une reconnexion socket passe par `register-authenticated` (qui rebranche l'entrée du joueur sur
+  la nouvelle socket) **puis** `join-lobby`. Ne jamais déconnecter « l'ancienne » socket sans
+  vérifier qu'elle n'est pas la socket courante.
 - ⚠️ `home.html` est un template Vue inline : un `v-else` séparé de son `v-if` par un autre
   élément casse toute la page (écran blanc). `npm run check` attrape ce cas.
