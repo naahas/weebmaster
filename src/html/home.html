@@ -317,6 +317,11 @@
                                 <span class="v2-room-players-label">
                                     joueur<span v-if="playerCount > 1">s</span> dans le salon<span v-if="maxPlayers && lobbyMode === 'bombanime'"> · {{ maxPlayers }} max</span>
                                 </span>
+                                <span class="v2-camps-compte" v-if="lobbyMode === 'rivalry'">
+                                    <span v-for="c in campsDuSalon" :key="c.team" :class="'team-' + c.team">
+                                        <i></i>{{ c.nom }}<b>{{ c.n }}</b>
+                                    </span>
+                                </span>
                                 <button class="v2-shuffle" v-if="lobbyMode === 'rivalry' && playerCount > 1"
                                         @click="shuffleTeams" :disabled="shuffleBusy" title="Répartir au hasard">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1127,29 +1132,12 @@
                             <div class="v2q-top-t">Ta course</div>
 
                             <div class="v2q-moi-rang">
-                                <b>{{ mesStats.rang }}<sup>{{ mesStats.rang === 1 ? 'er' : 'e' }}</sup></b>
-                                <span>sur {{ mesStats.total }}</span>
-                            </div>
-
-                            <div class="v2q-moi-l">
-                                <span class="lbl">Cette question</span>
-                                <span class="val juste" v-if="mesStats.juste">Trouvée<em v-if="mesStats.temps">{{ mesStats.temps }}s</em></span>
-                                <span class="val rate" v-else-if="mesStats.rate">Manquée</span>
-                                <span class="val muet" v-else>Sans réponse</span>
-                            </div>
-
-                            <div class="v2q-moi-l">
-                                <span class="lbl">Bonnes réponses</span>
-                                <span class="val">{{ mesStats.bonnes }}</span>
-                            </div>
-
-                            <div class="v2q-moi-l">
-                                <span class="lbl">{{ gameMode === 'points' ? 'Score' : 'Vies' }}</span>
-                                <span class="val" v-if="gameMode === 'points'">{{ formatScore(mesStats.points) }}</span>
-                                <span class="v2q-top-hp" v-else>
-                                    <i v-for="n in gameLives" :key="n" :class="{ off: n > (mesStats.lives || 0) }">
-                                        <svg viewBox="0 0 24 24" stroke-linejoin="round"><path d="M12 20.6s-7-4.3-9-8.4A5 5 0 0 1 12 6.6a5 5 0 0 1 9 5.6c-2 4.1-9 8.4-9 8.4z"/></svg>
-                                    </i>
+                                <span class="pos">Tu es <b>{{ mesStats.rang }}<sup>{{ mesStats.rang === 1 ? 'er' : 'e' }}</sup></b></span>
+                                <span class="v2q-moi-d" v-if="mesStats.delta > 0">
+                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 5l7 9h-14z"/></svg>{{ mesStats.delta }}
+                                </span>
+                                <span class="v2q-moi-d bas" v-else-if="mesStats.delta < 0">
+                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 19l-7-9h14z"/></svg>{{ -mesStats.delta }}
                                 </span>
                             </div>
 
@@ -1493,7 +1481,6 @@
                          :class="{ moi: m.twitchId === twitchId }">
                         <span class="rk">{{ m.rang }}</span>
                         <span class="nm">{{ m.username }}</span>
-                        <span class="bn">{{ m.bonnes }}<em>bonnes</em></span>
                         <span class="sc" v-if="trioEnPoints">{{ formatScore(m.points) }}</span>
                         <span class="v2-end-hp" v-else>
                             <i v-for="n in gameLives" :key="n" :class="{ off: n > m.lives }">
@@ -1540,6 +1527,7 @@
                          :class="['team-' + c.team, { tete: c.tete }]">
                         <span class="hd">
                             <span class="nm">{{ c.nom }}</span>
+                            <span class="tiret">—</span>
                             <span class="sc" v-if="gameMode === 'points'">{{ formatScore(c.score) }}</span>
                             <span class="sc" v-else>{{ c.score }}<em>en vie</em></span>
                         </span>

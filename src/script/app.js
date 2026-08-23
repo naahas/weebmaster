@@ -118,6 +118,7 @@ createApp({
             campsAvant: { 1: 0, 2: 0 }, // score des camps avant la question qui vient de tomber
             campsProg: 1,               // avancement du remplissage des barres (0 → 1)
             campDetail: null,           // camp dont on regarde le détail au classement final
+            rangDelta: 0,               // places gagnées (+) ou perdues (-) à la dernière question
             teamCooldownActive: false,
             teamCooldownSeconds: 0,
             teamCooldownInterval: null,
@@ -451,6 +452,12 @@ createApp({
             return c;
         },
 
+        // Les deux camps du salon, pour que l'hôte voie l'équilibre avant de lancer
+        campsDuSalon() {
+            const c = this.campsRemplis;
+            return [1, 2].map(t => ({ team: t, nom: this.teamNames[t], n: c[t] }));
+        },
+
         startTitle() {
             if (this.playerCount < 2) return 'Il faut au moins 2 joueurs';
             if (this.lobbyMode === 'rivalry') {
@@ -674,21 +681,12 @@ createApp({
             return (this.questionResults.players || []).find(p => p.twitchId === this.twitchId) || null;
         },
 
-        // Le joueur ne voit plus le classement : il voit sa propre course
+        // Le joueur ne voit plus le classement : il voit sa propre place, et
+        // de combien elle a bougé. Le reste lui apprendrait celle des autres.
         mesStats() {
             const moi = this.moiEnJeu;
             if (!moi) return null;
-            return {
-                rang: this.myLiveRank,
-                total: this.rankedPlayers.length,
-                bonnes: moi.correctAnswers || 0,
-                juste: moi.isCorrect === true || moi.status === 'correct',
-                // Le bouclier encaisse la perte mais la réponse reste fausse
-                rate: moi.status === 'wrong' || moi.status === 'wrong-shielded',
-                temps: moi.responseTime ? (moi.responseTime / 1000).toFixed(1).replace('.', ',') : null,
-                points: moi.points || 0,
-                lives: moi.lives,
-            };
+            return { rang: this.myLiveRank, delta: this.rangDelta };
         },
 
         successRate() {
@@ -2346,6 +2344,19 @@ createApp({
                     return;
                 }
                 
+                // Le salon vient de fermer alors qu'on lit encore le classement
+                // final : on le garde à l'écran, le bouton Retour fera le reste.
+                if (this.gameEnded) {
+                    this.isGameActive = false;
+                    this.gameInProgress = false;
+                    this.hasJoined = false;
+                    this.joinCode = '';
+                    this.homeScreen = 'hub';
+                    localStorage.removeItem('hasJoinedLobby');
+                    localStorage.removeItem('lobbyTwitchId');
+                    return;
+                }
+
                 // Reset COMPLET de l'état du jeu
                 this.isGameActive = false;
                 this.gameInProgress = false;
@@ -2538,7 +2549,11 @@ createApp({
             this.socket.on('question-results', (results) => {
                 this.stopTimer();
                 this.clearSeal();
+                // Lu avant puis après l'affectation : le classement se recalcule
+                // sur les nouveaux résultats dès qu'ils sont posés.
+                const rangAvant = this.myLiveRank;
                 this.questionResults = results;
+                this.rangDelta = rangAvant ? rangAvant - this.myLiveRank : 0;
                 this.showResults = true;
                 
                 // 🆕 Mettre à jour les scores d'équipe en mode Rivalité

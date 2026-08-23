@@ -8049,8 +8049,9 @@ body.game-active:has(.poll-game-container) #particles-js {
     gap: 0.9rem;
     /* La pastille de camp déborde en haut : sans cette marge elle se ferait
        rogner par le défilement. */
-    padding-top: 0.4rem;
+    padding: 0.5rem 0.6rem 0.2rem 0;
     max-height: clamp(21rem, 56vh, 33rem);
+    overflow-x: hidden;
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 215, 0, 0.3) transparent;
@@ -11284,69 +11285,42 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 .v2q-moi-rang {
     display: flex;
     align-items: baseline;
-    gap: 0.55rem;
-    padding: 0.9rem 0 1rem;
-    border-bottom: 0.06rem solid rgba(255, 255, 255, 0.055);
+    gap: 0.6rem;
+    padding: 1rem 0 1.1rem;
+}
+
+.v2q-moi-rang .pos {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.55);
 }
 
 .v2q-moi-rang b {
     font-family: 'Bebas Neue', 'Russo One', sans-serif;
-    font-size: 2.7rem;
+    font-size: 2.5rem;
     line-height: 0.85;
     font-weight: 400;
     color: var(--neon-primary);
     text-shadow: 0 0 1.4rem rgba(255, 190, 40, 0.3);
+    vertical-align: -0.12em;
+    margin-left: 0.2rem;
 }
 
-.v2q-moi-rang b sup { font-size: 0.42em; margin-left: 0.05em; }
+.v2q-moi-rang b sup { font-size: 0.4em; margin-left: 0.05em; vertical-align: super; }
 
-.v2q-moi-rang span {
-    font-size: 0.72rem;
-    color: var(--text-secondary);
-}
-
-.v2q-moi-l {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.62rem 0;
-}
-
-.v2q-moi-l + .v2q-moi-l { border-top: 0.06rem solid rgba(255, 255, 255, 0.04); }
-
-.v2q-moi-l .lbl {
-    font-size: 0.72rem;
-    color: rgba(255, 255, 255, 0.42);
-}
-
-.v2q-moi-l .val {
+/* Le déplacement depuis la question précédente, discret par principe */
+.v2q-moi-d {
     display: inline-flex;
-    align-items: baseline;
-    gap: 0.4rem;
+    align-items: center;
+    gap: 0.1rem;
     font-family: 'Bebas Neue', 'Russo One', sans-serif;
-    font-size: 1.1rem;
-    font-variant-numeric: tabular-nums;
-    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.78rem;
+    color: #7ef7c0;
 }
 
-.v2q-moi-l .val.juste { color: #7ef7c0; }
-.v2q-moi-l .val.rate { color: #ff6b81; }
-.v2q-moi-l .val.muet { color: rgba(255, 255, 255, 0.28); }
+.v2q-moi-d.bas { color: #ff6b81; }
+.v2q-moi-d svg { width: 0.55rem; height: 0.55rem; }
 
-.v2q-moi-l .val em {
-    font-family: 'Poppins', sans-serif;
-    font-style: normal;
-    font-size: 0.62rem;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.35);
-}
 
-@media (max-width: 768px) {
-    .v2q-moi-rang { padding: 0.7rem 0 0.8rem; }
-    .v2q-moi-rang b { font-size: 2.2rem; }
-    .v2q-moi-l { padding: 0.5rem 0; }
-}
 
 /* ============================================
    🆕 v2 — PASTILLE DE CAMP
@@ -11511,26 +11485,6 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     color: rgba(255, 255, 255, 0.3);
 }
 
-.v2-camp-row .bn {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0.25rem;
-    flex: none;
-    font-family: 'Bebas Neue', 'Russo One', sans-serif;
-    font-size: 0.95rem;
-    color: rgba(255, 255, 255, 0.45);
-}
-
-.v2-camp-row .bn em {
-    font-family: 'Poppins', sans-serif;
-    font-style: normal;
-    font-size: 0.5rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.25);
-}
-
 .v2-camp-row .sc {
     width: 4.2rem;
     flex: none;
@@ -11561,6 +11515,50 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     .v2-camp-head .ttl { font-size: 1.15rem; }
     .v2-camp-row { gap: 0.5rem; padding: 0.5rem 0; }
     .v2-camp-row .nm { font-size: 0.78rem; }
-    .v2-camp-row .bn { display: none; }
     .v2-camp-row .sc { width: 3.4rem; font-size: 1rem; }
+}
+
+/* Combien de joueurs de chaque côté, avant même de lancer */
+.v2-camps-compte {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-left: 0.9rem;
+}
+
+.v2-camps-compte > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.v2-camps-compte i { width: 0.35rem; height: 0.35rem; border-radius: 50%; }
+.v2-camps-compte .team-1 i { background: #7fb4ff; }
+.v2-camps-compte .team-2 i { background: var(--neon-primary); }
+
+.v2-camps-compte b {
+    margin-left: 0.1rem;
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1;
+}
+
+.v2-camps-compte .team-1 b { color: #7fb4ff; }
+.v2-camps-compte .team-2 b { color: var(--neon-primary); }
+
+/* Le tiret qui sépare un camp de son décompte */
+.v2q-camp-bar .tiret { color: rgba(255, 255, 255, 0.2); font-size: 0.72rem; }
+
+@media (max-width: 768px) {
+    .v2-camps-compte { margin-left: 0.5rem; gap: 0.55rem; }
+    .v2-camps-compte > span { font-size: 0.58rem; }
+    .v2-camps-compte b { font-size: 0.85rem; }
+    .v2q-moi-rang { padding: 0.8rem 0 0.9rem; }
+    .v2q-moi-rang b { font-size: 2.05rem; }
 }
