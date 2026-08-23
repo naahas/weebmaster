@@ -8110,8 +8110,6 @@ body.game-active:has(.poll-game-container) #particles-js {
     line-height: 1.2;
 }
 
-.v2-set-opts.grille .v2-set-opt.large { grid-column: 1 / -1; }
-
 /* Le décompte des séries, sous le libellé */
 .v2-set-opt em {
     font-style: normal;
@@ -8127,6 +8125,13 @@ body.game-active:has(.poll-game-container) #particles-js {
     opacity: 1;
     pointer-events: auto;
     transform: translateY(-50%) scale(1);
+}
+
+/* Le choix est fait : le tiroir se retire, même si le curseur est resté dessus */
+.v2-set.opts-fermes:hover .v2-set-opts {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-50%) scale(0.97);
 }
 
 .v2-set-opt {

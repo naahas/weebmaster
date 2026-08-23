@@ -52,10 +52,11 @@ createApp({
             serieFilter: 'overall',
             noSpoil: false,
             serieStats: null,     // combien de séries derrière Overall et Mainstream
+            serieChoisie: false,  // ferme le tiroir après un choix, jusqu'à ce qu'on ressorte
             // Sept choix de même poids : le tiroir les range en grille plutôt
             // qu'en ligne, sinon leurs largeurs suivaient celles des libellés.
             serieCartes: [
-                { id: 'overall',    name: 'Overall',     compte: true, large: true },
+                { id: 'overall',    name: 'Overall',     compte: true },
                 { id: 'mainstream', name: 'Mainstream',  compte: true },
                 { id: 'big3',       name: 'Big 3' },
                 { id: 'onepiece',   name: 'One Piece' },
@@ -1124,6 +1125,14 @@ createApp({
 
         // Tous les réglages passent par la même route POST, avec application
         // optimiste côté client et retour arrière si le serveur refuse.
+        // Le tiroir s'ouvre au survol : sans ça il resterait ouvert sous le
+        // curseur après le choix, comme si rien n'avait été pris en compte.
+        choisirSerie(id) {
+            this.serieChoisie = true;
+            if (id === this.serieFilter) return;
+            this.applySetting('/admin/set-serie-filter', { filter: id }, () => this.serieFilter = id);
+        },
+
         // Le décompte vient de la base : demandé une fois, au premier survol
         async chargerSerieStats() {
             if (this.serieStats || this._serieStatsEnCours) return;

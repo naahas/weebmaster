@@ -440,14 +440,15 @@
                                     </span>
                                 </div>
 
-                                <div class="v2-set" @mouseenter="chargerSerieStats">
+                                <div class="v2-set" :class="{ 'opts-fermes': serieChoisie }"
+                                     @mouseenter="chargerSerieStats" @mouseleave="serieChoisie = false">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
                                     <span class="v2-set-label">Série</span>
                                     <span class="v2-set-value">{{ serieFilterName }}</span>
                                     <span class="v2-set-opts grille">
                                         <button v-for="s in serieCartes" :key="s.id"
-                                                class="v2-set-opt" :class="{ on: serieFilter === s.id, large: s.large }"
-                                                @click="applySetting('/admin/set-serie-filter', { filter: s.id }, () => serieFilter = s.id)">
+                                                class="v2-set-opt" :class="{ on: serieFilter === s.id }"
+                                                @click="choisirSerie(s.id)">
                                             {{ s.name }}<em v-if="sousTitreSerie(s)">{{ sousTitreSerie(s) }}</em>
                                         </button>
                                     </span>
