@@ -215,26 +215,6 @@ createApp({
             needsReconnect: false,
             shouldRejoinLobby: false,
 
-            // Lobby Tips
-            currentTip: '',
-            tipKey: 0,
-            tipIndex: 0,
-            tipInterval: null,
-            // Les astuces parlant de profils, badges, titres et classement décrivaient
-            // des fonctions retirées en v2 : elles ont été enlevées.
-            lobbyTips: [
-                "Récolte des bonus en répondant juste et en complétant des défis",
-                "Chaque bonus n'est utilisable que 2 fois maximum par partie",
-                "Trois défis sont proposés à chaque partie, et ils se renouvellent",
-                "Dragon Ball est la série qui compte le plus de questions",
-                "Sauf mention contraire, chaque question porte sur la version manga",
-                "En mode points, la difficulté de la question détermine les points gagnés",
-                "En mode points, le premier à trouver décroche un bonus de rapidité",
-                "L'hôte peut signaler une question douteuse à la fin de chaque manche",
-                "Aucune question ne porte sur des manhwas ou des webtoons",
-                "Le code du salon suffit à inviter quelqu'un : aucun compte n'est nécessaire",
-            ],
-
 
             comboLevel: 0,              // Niveau actuel (0, 1, 2, 3)
             comboProgress: 0,           // Nombre de bonnes réponses
@@ -355,11 +335,6 @@ createApp({
         const savedTeam = localStorage.getItem('selectedTeam');
         if (savedTeam) {
             this.selectedTeam = parseInt(savedTeam);
-        }
-
-        // 🆕 Démarrer les tips si connecté et pas en partie
-        if (this.isAuthenticated && !this.gameInProgress) {
-            this.startTipsRotation();
         }
 
         document.addEventListener('visibilitychange', () => {
@@ -953,17 +928,6 @@ createApp({
             this._timerVie = setTimeout(() => { this.lifeLost = null; }, 700);
         },
 
-        gameInProgress(newVal, oldVal) {
-            if (this.isAuthenticated) {
-                if (newVal) {
-                    // Partie commence → arrêter les tips
-                    this.stopTipsRotation();
-                } else if (oldVal && !newVal) {
-                    // Partie termine → redémarrer les tips
-                    this.startTipsRotation();
-                }
-            }
-        },
     },
 
     // 💥 Re-injecter les effets crack/shatter après chaque re-render Vue
@@ -975,44 +939,6 @@ createApp({
     },
 
     methods: {
-
-        // ============================================
-        // LOBBY TIPS
-        // ============================================
-        startTipsRotation() {
-            // Mélanger les tips aléatoirement
-            this.shuffleTips();
-            
-            // Afficher le premier tip
-            this.showNextTip();
-            
-            // Rotation toutes les 7 secondes
-            this.tipInterval = setInterval(() => {
-                this.showNextTip();
-            }, 7000);
-        },
-
-        stopTipsRotation() {
-            if (this.tipInterval) {
-                clearInterval(this.tipInterval);
-                this.tipInterval = null;
-            }
-            this.currentTip = '';
-        },
-
-        showNextTip() {
-            this.currentTip = this.lobbyTips[this.tipIndex];
-            this.tipKey++; // Force Vue à recréer l'élément pour relancer l'animation
-            this.tipIndex = (this.tipIndex + 1) % this.lobbyTips.length;
-        },
-
-        shuffleTips() {
-            // Mélange Fisher-Yates
-            for (let i = this.lobbyTips.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [this.lobbyTips[i], this.lobbyTips[j]] = [this.lobbyTips[j], this.lobbyTips[i]];
-            }
-        },
 
         // Notification de kick désactivée
         showKickNotification() {

@@ -1259,14 +1259,6 @@
         </div>
 
 
-        <!-- Tips informatifs (PC uniquement, visible si connecté et pas en jeu) -->
-        <div class="lobby-tips-container" v-if="isAuthenticated && !gameInProgress && !gameEnded && currentTip && homeScreen === 'hub'">
-            <div class="lobby-tip" :key="tipKey">
-                <span class="tip-icon">💡</span>
-                <span class="tip-text">{{ currentTip }}</span>
-            </div>
-        </div>
-
         <!-- 🆕 Bouton Instagram (visible uniquement avant connexion) -->
         <a href="https://www.instagram.com/naahas__" target="_blank" class="instagram-btn"
             v-if="!isAuthenticated && !gameInProgress">
