@@ -117,6 +117,7 @@ createApp({
             teamScores: { 1: 0, 2: 0 }, // 🆕 Vies restantes ou points totaux par équipe
             campsAvant: { 1: 0, 2: 0 }, // score des camps avant la question qui vient de tomber
             campsProg: 1,               // avancement du remplissage des barres (0 → 1)
+            campDetail: null,           // camp dont on regarde le détail au classement final
             teamCooldownActive: false,
             teamCooldownSeconds: 0,
             teamCooldownInterval: null,
@@ -839,6 +840,31 @@ createApp({
             return !!this.gameEndData && this.gameEndData.gameMode === 'rivalry-points';
         },
 
+        // Tous les joueurs d'un camp, pour le détail ouvert depuis le podium
+        campDetailListe() {
+            if (!this.campDetail || !this.gameEndData) return [];
+            const parPoints = this.trioEnPoints;
+            return (this.gameEndData.playersData || [])
+                .filter(p => p.team === this.campDetail)
+                .sort((a, b) => parPoints
+                    ? (b.points || 0) - (a.points || 0)
+                    : (b.lives || 0) - (a.lives || 0) || (b.correctAnswers || 0) - (a.correctAnswers || 0))
+                .map((p, i) => ({
+                    rang: i + 1,
+                    username: p.username,
+                    twitchId: p.twitchId,
+                    points: p.points || 0,
+                    lives: p.lives || 0,
+                    bonnes: p.correctAnswers || 0,
+                }));
+        },
+
+        campDetailNom() {
+            if (!this.campDetail) return '';
+            const noms = (this.gameEndData && this.gameEndData.teamNames) || this.teamNames;
+            return noms[this.campDetail];
+        },
+
         estFinEnCamps() {
             const m = this.gameEndData && this.gameEndData.gameMode;
             return m === 'rivalry-lives' || m === 'rivalry-points';
@@ -1288,6 +1314,8 @@ createApp({
         },
 
         // Le 3e apparaît d'abord, puis le 2e, puis le vainqueur, puis le reste
+        ouvrirCamp(team) { this.campDetail = team; },
+
         // Le trio d'un camp, accroché sous sa ligne au classement final
         crewOf(team) {
             const c = this.campsPodium.find(x => x.team === team);

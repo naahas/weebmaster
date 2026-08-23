@@ -8026,7 +8026,7 @@ body.game-active:has(.poll-game-container) #particles-js {
     display: flex;
     align-items: baseline;
     gap: 0.5rem;
-    margin-bottom: 1.3rem;
+    margin-bottom: 2.1rem;
 }
 
 .v2-room-players-count {
@@ -8046,8 +8046,11 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-room-players-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.65rem;
-    max-height: clamp(17rem, 44vh, 26rem);
+    gap: 0.9rem;
+    /* La pastille de camp déborde en haut : sans cette marge elle se ferait
+       rogner par le défilement. */
+    padding-top: 0.4rem;
+    max-height: clamp(21rem, 56vh, 33rem);
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 215, 0, 0.3) transparent;
@@ -8075,8 +8078,17 @@ body.game-active:has(.poll-game-container) #particles-js {
 }
 
 .v2-room-player.me { border-color: rgba(255, 215, 0, 0.5); background: rgba(255, 215, 0, 0.08); }
-.v2-room-player.team-1 { border-color: rgba(96, 165, 250, 0.4); }
-.v2-room-player.team-2 { border-color: rgba(255, 215, 0, 0.4); }
+.v2-room-player.team-1 {
+    border-color: rgba(127, 180, 255, 0.45);
+    background: rgba(127, 180, 255, 0.15);
+    color: #dbeafe;
+}
+
+.v2-room-player.team-2 {
+    border-color: rgba(255, 215, 0, 0.45);
+    background: rgba(255, 215, 0, 0.15);
+    color: #ffeeae;
+}
 
 /* L'hôte exclut un joueur en cliquant son pseudo */
 .v2-room-player.kickable { cursor: pointer; }
@@ -11004,9 +11016,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
    🆕 v2 — RÉPARTITION DES CAMPS PAR L'HÔTE
    Le joueur ne choisit plus : deux pastilles par ligne, plus un mélange.
    ============================================ */
-.v2-room-player-wrap { display: inline-flex; align-items: center; gap: 0.35rem; }
-
-.v2-room-player-teams { display: inline-flex; gap: 0.2rem; }
+.v2-room-player-wrap { position: relative; display: inline-flex; align-items: center; }
 
 /* Répartir au hasard */
 .v2-shuffle {
@@ -11033,72 +11043,9 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 
 @media (max-width: 768px) {
     .v2-shuffle { margin-left: 0.5rem; padding: 0.28rem 0.6rem; font-size: 0.6rem; }
-    .v2-team-dot { width: 1.35rem; height: 1.35rem; font-size: 0.74rem; }
 }
 
-/* Sélecteur de camp : un segment glissant plutôt que deux boutons */
-.v2-team-switch {
-    position: relative;
-    display: inline-flex;
-    padding: 0.14rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 0.06rem solid rgba(255, 255, 255, 0.1);
-    border-radius: 2rem;
-}
 
-.v2-team-switch-glide {
-    position: absolute;
-    top: 0.14rem;
-    bottom: 0.14rem;
-    width: 1.55rem;
-    border-radius: 2rem;
-    transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.25, 1), background 0.28s ease, opacity 0.2s ease;
-}
-
-/* Personne dans un camp : le curseur s'efface */
-.v2-team-switch-glide.pos-0 { opacity: 0; transform: translateX(0); }
-.v2-team-switch-glide.pos-1 { opacity: 1; transform: translateX(0.14rem); background: #7fb4ff; }
-.v2-team-switch-glide.pos-2 { opacity: 1; transform: translateX(1.69rem); background: var(--neon-primary); }
-
-.v2-team-half {
-    position: relative;
-    z-index: 2;
-    width: 1.55rem;
-    height: 1.35rem;
-    padding: 0;
-    font-family: 'Bebas Neue', 'Russo One', sans-serif;
-    font-size: 0.82rem;
-    line-height: 1;
-    color: var(--text-secondary);
-    background: none;
-    border: none;
-    border-radius: 2rem;
-    cursor: pointer;
-    transition: color 0.25s ease;
-}
-
-.v2-team-half:hover { color: var(--text-primary); }
-.v2-team-half.on { color: #14100a; }
-
-/* Le camp se lit d'un coup d'œil sur la pastille du joueur */
-.v2-room-player-team {
-    display: inline-block;
-    width: 0.42rem;
-    height: 0.42rem;
-    margin-right: 0.5rem;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.18);
-    vertical-align: middle;
-}
-
-.v2-room-player-team.team-1 { background: #7fb4ff; box-shadow: 0 0 0.4rem rgba(127, 180, 255, 0.6); }
-.v2-room-player-team.team-2 { background: var(--neon-primary); box-shadow: 0 0 0.4rem rgba(255, 215, 0, 0.6); }
-
-@media (max-width: 768px) {
-    .v2-team-half { width: 1.4rem; height: 1.2rem; font-size: 0.74rem; }
-    .v2-team-switch-glide { width: 1.4rem; }
-    .v2-team-switch-glide.pos-2 { transform: translateX(1.54rem); }
-}
 
 /* ============================================
    🆕 v2 — LES CAMPS, DU HUD AU PODIUM
@@ -11142,16 +11089,6 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     font-size: 0.8rem;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.72);
-}
-
-.v2q-camp.mien .nm::after {
-    content: 'ton camp';
-    margin-left: 0.45rem;
-    font-size: 0.54rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.32);
 }
 
 .v2q-camp .sc,
@@ -11212,7 +11149,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 .v2q-camps-bars {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1.1rem;
+    gap: 2.4rem;
     margin: 0 0 1.3rem;
     padding: 1rem 1.1rem;
     border-radius: 0.9rem;
@@ -11223,8 +11160,10 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 .v2q-camp-bar .hd {
     display: flex;
     align-items: baseline;
-    justify-content: space-between;
-    gap: 1.1rem;
+    /* Collés à gauche : en les repoussant aux extrémités, le score d'un camp
+       venait toucher le nom du camp voisin. */
+    justify-content: flex-start;
+    gap: 0.75rem;
     margin-bottom: 0.55rem;
 }
 
@@ -11255,7 +11194,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 
 /* Le trio d'un camp, glissé sous la ligne de son équipe */
 .v2-end-crew {
-    padding: 0.2rem 0 0.7rem 2.6rem;
+    padding: 0.2rem 0 1.6rem 2.6rem;
     opacity: 0;
     transform: translateY(0.5rem);
     transition: opacity 0.5s ease 0.12s, transform 0.5s cubic-bezier(0.2, 0.9, 0.25, 1) 0.12s;
@@ -11407,4 +11346,221 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     .v2q-moi-rang { padding: 0.7rem 0 0.8rem; }
     .v2q-moi-rang b { font-size: 2.2rem; }
     .v2q-moi-l { padding: 0.5rem 0; }
+}
+
+/* ============================================
+   🆕 v2 — PASTILLE DE CAMP
+   Un seul geste : elle bascule le joueur d'un camp à l'autre.
+   ============================================ */
+.v2-team-flag {
+    position: absolute;
+    top: -0.42rem;
+    right: -0.42rem;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.65rem;
+    height: 1.65rem;
+    padding: 0;
+    border: 0.14rem solid #0b0b0d;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.25s ease, color 0.25s ease, transform 0.2s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+.v2-team-flag svg { width: 0.85rem; height: 0.85rem; }
+.v2-team-flag:hover { transform: scale(1.14); }
+.v2-team-flag:active { transform: scale(0.94); }
+
+.v2-team-flag.team-0 { background: rgba(255, 255, 255, 0.14); color: rgba(255, 255, 255, 0.45); }
+
+.v2-team-flag.team-1 {
+    background: #7fb4ff;
+    color: #0a1424;
+    box-shadow: 0 0 0.7rem rgba(127, 180, 255, 0.55);
+}
+
+.v2-team-flag.team-2 {
+    background: var(--neon-primary);
+    color: #14100a;
+    box-shadow: 0 0 0.7rem rgba(255, 215, 0, 0.5);
+}
+
+/* Le survol d'exclusion ne doit pas repeindre la pastille */
+.v2-room-player-wrap:has(.v2-room-player.kickable:hover) .v2-team-flag { opacity: 0.35; }
+
+/* ============================================
+   🆕 v2 — DÉTAIL D'UN CAMP AU CLASSEMENT FINAL
+   ============================================ */
+.v2-end-detail {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.85rem;
+    height: 1.85rem;
+    margin-left: 0.9rem;
+    flex: none;
+    color: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.04);
+    border: 0.06rem solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.v2-end-detail svg { width: 0.9rem; height: 0.9rem; }
+
+.v2-end-detail:hover {
+    color: var(--neon-primary);
+    border-color: rgba(255, 215, 0, 0.45);
+    background: rgba(255, 215, 0, 0.08);
+}
+
+.v2-camp-veil {
+    position: fixed;
+    inset: 0;
+    z-index: 1400;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.2rem;
+    background: rgba(6, 6, 8, 0.78);
+    backdrop-filter: blur(0.5rem);
+    animation: v2CampVeil 0.25s ease both;
+}
+
+@keyframes v2CampVeil { from { opacity: 0; } to { opacity: 1; } }
+
+.v2-camp-sheet {
+    width: min(30rem, 100%);
+    max-height: 82vh;
+    overflow-y: auto;
+    padding: 1.5rem 1.6rem 1.3rem;
+    background: linear-gradient(165deg, rgba(22, 20, 16, 0.99), rgba(13, 13, 15, 0.99));
+    border: 0.06rem solid rgba(255, 255, 255, 0.09);
+    border-radius: 1.1rem;
+    animation: v2CampSheet 0.32s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+
+@keyframes v2CampSheet {
+    from { opacity: 0; transform: translateY(1.1rem) scale(0.97); }
+    to   { opacity: 1; transform: none; }
+}
+
+.v2-camp-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.9rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 0.06rem solid rgba(255, 255, 255, 0.07);
+}
+
+.v2-camp-head .ttl {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 1.35rem;
+    letter-spacing: 0.04em;
+}
+
+.v2-camp-head .ttl i { width: 0.45rem; height: 0.45rem; border-radius: 50%; background: currentColor; }
+.v2-camp-sheet.team-1 .ttl { color: #7fb4ff; }
+.v2-camp-sheet.team-2 .ttl { color: var(--neon-primary); }
+
+.v2-camp-row {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.62rem 0;
+}
+
+.v2-camp-row + .v2-camp-row { border-top: 0.06rem solid rgba(255, 255, 255, 0.045); }
+
+.v2-camp-row .rk {
+    width: 1.1rem;
+    flex: none;
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.25);
+}
+
+.v2-camp-row:first-child .rk { color: rgba(255, 255, 255, 0.55); }
+
+.v2-camp-row .nm {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.v2-camp-row.moi .nm { color: #fff; font-weight: 600; }
+.v2-camp-row.moi .nm::after {
+    content: 'toi';
+    margin-left: 0.4rem;
+    font-size: 0.52rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.v2-camp-row .bn {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.25rem;
+    flex: none;
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.v2-camp-row .bn em {
+    font-family: 'Poppins', sans-serif;
+    font-style: normal;
+    font-size: 0.5rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.25);
+}
+
+.v2-camp-row .sc {
+    width: 4.2rem;
+    flex: none;
+    text-align: right;
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 1.1rem;
+    font-variant-numeric: tabular-nums;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.v2-camp-vide {
+    padding: 1.4rem 0;
+    text-align: center;
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.25);
+}
+
+@media (max-width: 768px) {
+    .v2-room-players-grid { max-height: clamp(15rem, 42vh, 24rem); }
+    .v2-team-flag { width: 1.45rem; height: 1.45rem; top: -0.35rem; right: -0.35rem; }
+    .v2-team-flag svg { width: 0.75rem; height: 0.75rem; }
+
+    /* Deux colonnes se coupaient les noms de camp */
+    .v2q-camps-bars { gap: 1rem; }
+
+    .v2-end-detail { width: 1.65rem; height: 1.65rem; margin-left: 0.6rem; }
+    .v2-camp-sheet { padding: 1.2rem 1.1rem 1rem; max-height: 86vh; }
+    .v2-camp-head .ttl { font-size: 1.15rem; }
+    .v2-camp-row { gap: 0.5rem; padding: 0.5rem 0; }
+    .v2-camp-row .nm { font-size: 0.78rem; }
+    .v2-camp-row .bn { display: none; }
+    .v2-camp-row .sc { width: 3.4rem; font-size: 1rem; }
 }

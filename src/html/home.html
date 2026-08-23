@@ -331,16 +331,17 @@
                                      :class="['team-' + (p.team || 0), { me: p.twitchId === twitchId, kickable: isHost && p.twitchId !== twitchId }]"
                                      :title="isHost && p.twitchId !== twitchId ? 'Exclure ' + p.username : null"
                                      @click="isHost && p.twitchId !== twitchId ? hostKick(p.twitchId) : null">
-                                    <span class="v2-room-player-team" v-if="lobbyMode === 'rivalry'" :class="'team-' + (p.team || 0)"></span>
                                     <span class="v2-room-player-name">{{ p.username }}</span>
                                 </button>
-                                <span class="v2-team-switch" v-if="isHost && lobbyMode === 'rivalry'">
-                                    <span class="v2-team-switch-glide" :class="'pos-' + (p.team || 0)"></span>
-                                    <button v-for="t in [1, 2]" :key="t"
-                                            class="v2-team-half" :class="['team-' + t, { on: p.team === t }]"
-                                            @click.stop="setPlayerTeam(p.twitchId, t)"
-                                            :title="teamNames[t]">{{ t === 1 ? 'A' : 'B' }}</button>
-                                </span>
+                                <!-- Un seul geste : la pastille bascule le joueur d'un camp à l'autre -->
+                                <button class="v2-team-flag" v-if="isHost && lobbyMode === 'rivalry'"
+                                        :class="'team-' + (p.team || 0)"
+                                        @click.stop="setPlayerTeam(p.twitchId, p.team === 1 ? 2 : 1)"
+                                        :title="'Basculer vers ' + teamNames[p.team === 1 ? 2 : 1]">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M16 21v-1.8a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21"/><circle cx="9" cy="7" r="3.4"/><path d="M22 21v-1.8a4 4 0 0 0-3-3.9M16 3.3a4 4 0 0 1 0 7.6"/>
+                                    </svg>
+                                </button>
                                 </span>
                             </div>
                             <div class="v2-room-empty" v-else>
@@ -1228,6 +1229,12 @@
                                 <svg viewBox="0 0 24 24" stroke-linejoin="round"><path d="M12 20.6s-7-4.3-9-8.4A5 5 0 0 1 12 6.6a5 5 0 0 1 9 5.6c-2 4.1-9 8.4-9 8.4z"/></svg>
                             </i>
                         </span>
+                        <button class="v2-end-detail" v-if="p.isTeam" @click="ouvrirCamp(p.team)"
+                                :title="'Voir tout ' + p.username" aria-label="Détail du camp">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="3.2"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/>
+                            </svg>
+                        </button>
                     </div>
 
                     <!-- Le camp gagne, mais on distingue ceux qui l'ont porté -->
@@ -1474,6 +1481,31 @@
         </div>
 
         <!-- 🆕 v2 — Détail de la question (hôte) -->
+        <!-- Détail d'un camp, ouvert depuis le classement final -->
+        <div class="v2-camp-veil" v-if="campDetail" @click.self="campDetail = null">
+            <div class="v2-camp-sheet" :class="'team-' + campDetail">
+                <div class="v2-camp-head">
+                    <span class="ttl"><i></i>{{ campDetailNom }}</span>
+                    <button class="v2q-sheet-close" @click="campDetail = null">Fermer</button>
+                </div>
+                <div class="v2-camp-list">
+                    <div class="v2-camp-row" v-for="m in campDetailListe" :key="m.twitchId || m.username"
+                         :class="{ moi: m.twitchId === twitchId }">
+                        <span class="rk">{{ m.rang }}</span>
+                        <span class="nm">{{ m.username }}</span>
+                        <span class="bn">{{ m.bonnes }}<em>bonnes</em></span>
+                        <span class="sc" v-if="trioEnPoints">{{ formatScore(m.points) }}</span>
+                        <span class="v2-end-hp" v-else>
+                            <i v-for="n in gameLives" :key="n" :class="{ off: n > m.lives }">
+                                <svg viewBox="0 0 24 24" stroke-linejoin="round"><path d="M12 20.6s-7-4.3-9-8.4A5 5 0 0 1 12 6.6a5 5 0 0 1 9 5.6c-2 4.1-9 8.4-9 8.4z"/></svg>
+                            </i>
+                        </span>
+                    </div>
+                    <div class="v2-camp-vide" v-if="!campDetailListe.length">Personne dans ce camp</div>
+                </div>
+            </div>
+        </div>
+
         <div class="v2q-sheet-veil" v-if="showQuestionStats" @click.self="showQuestionStats = false">
             <div class="v2q-sheet">
                 <div class="v2q-sheet-head">
