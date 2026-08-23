@@ -246,7 +246,7 @@ function generateRoomCode(length = 4) {
 
 // Émet game-ended et enregistre la partie dans l'historique.
 // Toutes les fins de partie passent par ici — ne pas appeler io.emit('game-ended') directement.
-function emitGameEnded(payload) {
+function emitGameEnded(gameState, payload) {
     io.emit('game-ended', payload);
     recordFinishedGame({
         mode: gameState.lobbyMode,
@@ -256,7 +256,7 @@ function emitGameEnded(payload) {
     });
 }
 
-function emitBombanimeGameEnded(payload) {
+function emitBombanimeGameEnded(gameState, payload) {
     io.emit('bombanime-game-ended', payload);
     recordFinishedGame({
         mode: 'bombanime',
@@ -289,8 +289,8 @@ app.get('/game/state', (req, res) => {
     
     // 🆕 Mettre à jour les compteurs d'équipe
     if (gameState.lobbyMode === 'rivalry') {
-        updateTeamCounts();
-        updateTeamScores(); // 🆕 Calculer les scores d'équipe
+        updateTeamCounts(gameState);
+        updateTeamScores(gameState); // 🆕 Calculer les scores d'équipe
     }
     
     // 💣🎴 Vérifier si le lobby BombAnime/Collect est plein
@@ -390,7 +390,7 @@ app.get('/game/state', (req, res) => {
             timer: gameState.bombanime.timer,
             currentPlayerTwitchId: gameState.bombanime.currentPlayerTwitchId,
             playersOrder: gameState.bombanime.playersOrder,
-            playersData: gameState.bombanime.active ? getBombanimePlayersData() : [],
+            playersData: gameState.bombanime.active ? getBombanimePlayersData(gameState) : [],
             usedNamesCount: gameState.bombanime.usedNames.size,
             direction: gameState.bombanime.bombDirection,
             timeRemaining: gameState.bombanime.turnStartTime ? 
@@ -516,7 +516,7 @@ const gameState = {
 // 🆕 HELPER - BROADCAST LOBBY UPDATE
 // ============================================
 
-function updateTeamCounts() {
+function updateTeamCounts(gameState) {
     gameState.teamCounts = { 1: 0, 2: 0 };
     for (const player of gameState.players.values()) {
         if (player.team === 1) gameState.teamCounts[1]++;
@@ -527,7 +527,7 @@ function updateTeamCounts() {
 // 🆕 Calculer les scores d'équipe (vies restantes ou points totaux)
 // Camp le moins peuplé, tiré au sort en cas d'égalité pour ne pas
 // remplir toujours le même en premier.
-function campLeMoinsFourni() {
+function campLeMoinsFourni(gameState) {
     let a = 0, b = 0;
     for (const p of gameState.players.values()) {
         if (p.team === 1) a++;
@@ -538,7 +538,7 @@ function campLeMoinsFourni() {
     return Math.random() < 0.5 ? 1 : 2;
 }
 
-function updateTeamScores() {
+function updateTeamScores(gameState) {
     gameState.teamScores = { 1: 0, 2: 0 };
     
     for (const player of gameState.players.values()) {
@@ -557,10 +557,10 @@ function updateTeamScores() {
 }
 
 // 🆕 Vérifier si une équipe a gagné (mode rivalité)
-function checkRivalryWinner() {
+function checkRivalryWinner(gameState) {
     if (gameState.lobbyMode !== 'rivalry') return null;
     
-    updateTeamScores();
+    updateTeamScores(gameState);
     
     if (gameState.mode === 'lives') {
         // En mode vie : une équipe gagne si l'autre a 0 vies
@@ -576,10 +576,10 @@ function checkRivalryWinner() {
     return null;
 }
 
-function broadcastLobbyUpdate() {
+function broadcastLobbyUpdate(gameState) {
     // Mettre à jour les compteurs d'équipe
     if (gameState.lobbyMode === 'rivalry') {
-        updateTeamCounts();
+        updateTeamCounts(gameState);
     }
     
     // 💣🎴 Vérifier si le lobby BombAnime/Collect est plein
@@ -638,7 +638,7 @@ const CHALLENGE_POOLS = {
 };
 
 // Générer les 3 défis pour une partie
-function generateChallenges() {
+function generateChallenges(gameState) {
     const challenges = [];
     
     // 1. Tirer un défi 50/50
@@ -667,7 +667,7 @@ function generateChallenges() {
 }
 
 // Initialiser la progression des défis pour un joueur
-function initPlayerChallenges(socketId) {
+function initPlayerChallenges(gameState, socketId) {
     const progress = {
         challenges: {},
         currentStreak: 0,
@@ -687,7 +687,7 @@ function initPlayerChallenges(socketId) {
 }
 
 // Vérifier et mettre à jour les défis après une réponse
-function checkChallenges(socketId, answerData) {
+function checkChallenges(gameState, socketId, answerData) {
     const playerProgress = gameState.playerChallenges.get(socketId);
     if (!playerProgress) return [];
     
@@ -783,7 +783,7 @@ function checkChallenges(socketId, answerData) {
 }
 
 // Obtenir l'état des défis pour un joueur (pour envoi au client)
-function getPlayerChallengesState(socketId) {
+function getPlayerChallengesState(gameState, socketId) {
     const playerProgress = gameState.playerChallenges.get(socketId);
     if (!playerProgress) return [];
     
@@ -808,13 +808,13 @@ const authenticatedUsers = new Map();
 // ============================================
 
 // 🆕 Vérifie si on doit appliquer le cooldown de série
-function shouldApplySerieCooldown() {
+function shouldApplySerieCooldown(gameState) {
     return gameState.serieFilter === 'overall' || gameState.serieFilter === 'mainstream';
 }
 
 // 🆕 Ajoute une série à l'historique récent (garde les 5 dernières)
-function addToRecentSeries(serie) {
-    if (!shouldApplySerieCooldown()) return;
+function addToRecentSeries(gameState, serie) {
+    if (!shouldApplySerieCooldown(gameState)) return;
 
     gameState.recentSeries.push(serie);
     if (gameState.recentSeries.length > 5) {
@@ -824,7 +824,7 @@ function addToRecentSeries(serie) {
 }
 
 
-function getDifficultyForQuestion(questionNumber) {
+function getDifficultyForQuestion(gameState, questionNumber) {
     if (gameState.difficultyMode === 'aleatoire') {
         // 🆕 MODE ALÉATOIRE PONDÉRÉ - sqrt des tailles de pool pour un entre-deux équilibré
         // Poids approximatifs basés sur les pools (recalculés dynamiquement serait mieux mais ça suffit)
@@ -881,11 +881,11 @@ function getDifficultyForQuestion(questionNumber) {
     }
 }
 
-function getAlivePlayers() {
+function getAlivePlayers(gameState) {
     return Array.from(gameState.players.values()).filter(p => p.lives > 0);
 }
 
-function getEliminatedCount() {
+function getEliminatedCount(gameState) {
     return Array.from(gameState.players.values()).filter(p => p.lives === 0).length;
 }
 
@@ -1049,7 +1049,7 @@ app.post('/admin/toggle-game', async (req, res) => {
         
         console.log(`🎮 Mode: ${gameState.lobbyMode}${gameState.lobbyMode === 'rivalry' ? ` (${gameState.teamNames[1]} vs ${gameState.teamNames[2]})` : ''}${gameState.lobbyMode === 'bombanime' ? ` (${gameState.bombanime.serie})` : ''}`);
 
-        resetLogs();
+        resetLogs(gameState);
 
         // Reset la grille des joueurs à l'ouverture du lobby
         gameState.players.clear();
@@ -1150,7 +1150,7 @@ app.post('/admin/toggle-game', async (req, res) => {
         }
         
         // 💣 Reset BombAnime
-        resetBombanimeState();
+        resetBombanimeState(gameState);
         
 
         // Le salon fermé, le jeton ne vaut plus rien
@@ -1197,7 +1197,7 @@ app.post('/admin/bombanime/close-lobby', (req, res) => {
     gameState.inProgress = false;
     
     // Reset BombAnime
-    resetBombanimeState();
+    resetBombanimeState(gameState);
     
     
     // Reset winnerScreenData
@@ -1370,7 +1370,7 @@ app.post('/admin/set-lives', (req, res) => {
         });
 
         // Notifier l'admin pour rafraîchir la grille joueurs
-        broadcastLobbyUpdate();
+        broadcastLobbyUpdate(gameState);
 
         console.log(`✅ Vies mises à jour pour ${gameState.players.size} joueur(s) dans le lobby`);
     }
@@ -1466,7 +1466,7 @@ app.post('/admin/start-game', async (req, res) => {
         }
         
         try {
-            const result = await startBombanimeGame();
+            const result = await startBombanimeGame(gameState);
             if (result.success) {
                 return res.json({ success: true, mode: 'bombanime' });
             } else {
@@ -1538,14 +1538,14 @@ app.post('/admin/start-game', async (req, res) => {
         }
 
         const playerCount = gameState.players.size;
-        addLog('game-start', { playerCount });
+        addLog(gameState, 'game-start', { playerCount });
 
         gameState.playerBonuses.clear();
         console.log('🔄 Bonus reset pour nouvelle partie');
 
         // 🆕 Générer les défis pour cette partie (seulement si bonus activés)
         if (gameState.bonusEnabled) {
-            gameState.activeChallenges = generateChallenges();
+            gameState.activeChallenges = generateChallenges(gameState);
             gameState.playerChallenges.clear();
             console.log('🎯 Défis initialisés pour la partie');
         } else {
@@ -1572,7 +1572,7 @@ app.post('/admin/start-game', async (req, res) => {
                 });
 
                 // 🆕 Initialiser les défis du joueur
-                initPlayerChallenges(socketId);
+                initPlayerChallenges(gameState, socketId);
             }
         });
 
@@ -1588,7 +1588,7 @@ app.post('/admin/start-game', async (req, res) => {
                     isParticipating: true,
                     gameMode: gameState.mode,
                     questionsCount: gameState.mode === 'points' ? gameState.questionsCount : null,
-                    challenges: getPlayerChallengesState(socketId), // 🆕 Envoyer les défis
+                    challenges: getPlayerChallengesState(gameState, socketId), // 🆕 Envoyer les défis
                     // 🆕 Mode Rivalité
                     lobbyMode: gameState.lobbyMode,
                     teamNames: gameState.teamNames,
@@ -1614,13 +1614,13 @@ app.post('/admin/start-game', async (req, res) => {
             try {
                 gameState.currentQuestionIndex = 1;
 
-                const difficulty = getDifficultyForQuestion(1);
+                const difficulty = getDifficultyForQuestion(gameState, 1);
                 const questions = await db.getRandomQuestions(
                     difficulty,
                     1,
                     gameState.usedQuestionIds,
                     gameState.serieFilter,
-                    shouldApplySerieCooldown() ? gameState.recentSeries : [],
+                    shouldApplySerieCooldown(gameState) ? gameState.recentSeries : [],
                     gameState.noSpoil  // 🚫 Filtre anti-spoil
                 );
 
@@ -1630,7 +1630,7 @@ app.post('/admin/start-game', async (req, res) => {
                 }
 
                 const question = questions[0];
-                addToRecentSeries(question.serie);
+                addToRecentSeries(gameState, question.serie);
                 gameState.usedQuestionIds.push(question.id);
 
                 console.log(`📌 Question 1 - Difficulté: ${difficulty}`);
@@ -1676,7 +1676,7 @@ app.post('/admin/start-game', async (req, res) => {
                 gameState.answers.clear();
                 gameState.liveAnswers.clear();
 
-                addLog('question', {
+                addLog(gameState, 'question', {
                     questionNumber: 1,
                     difficulty: difficulty,
                     series: question.serie
@@ -1688,7 +1688,7 @@ app.post('/admin/start-game', async (req, res) => {
                 // Timer pour révéler les réponses
                 setTimeout(() => {
                     if (gameState.inProgress) {
-                        revealAnswers(newCorrectIndex);
+                        revealAnswers(gameState, newCorrectIndex);
                     }
                 }, gameState.questionTime * 1000);
 
@@ -1751,7 +1751,7 @@ app.post('/admin/set-mode', (req, res) => {
         questionsCount: gameState.questionsCount
     });
 
-    broadcastLobbyUpdate();
+    broadcastLobbyUpdate(gameState);
 
     res.json({ success: true, mode: gameState.mode });
 });
@@ -1806,7 +1806,7 @@ app.post('/admin/set-teams', (req, res) => {
         if (sock) sock.emit('team-changed', { newTeam: p.team });
     });
     gameState.teamScores = { 1: 0, 2: 0 };
-    updateTeamCounts();
+    updateTeamCounts(gameState);
 
     console.log(`👥 Salon en ${enEquipes ? 'équipes' : 'solo'}`);
 
@@ -1814,7 +1814,7 @@ app.post('/admin/set-teams', (req, res) => {
         lobbyMode: gameState.lobbyMode,
         teamNames: gameState.teamNames,
     });
-    broadcastLobbyUpdate();
+    broadcastLobbyUpdate(gameState);
 
     res.json({ success: true, lobbyMode: gameState.lobbyMode });
 });
@@ -1834,11 +1834,11 @@ app.post('/admin/set-player-team', (req, res) => {
     }
     if (!trouve) return res.status(404).json({ error: 'Joueur introuvable' });
 
-    updateTeamCounts();
+    updateTeamCounts(gameState);
     // Le joueur concerné en est informé, les autres voient la liste bouger
     const sock = io.sockets.sockets.get(trouve.socketId);
     if (sock) sock.emit('team-changed', { newTeam: camp });
-    broadcastLobbyUpdate();
+    broadcastLobbyUpdate(gameState);
 
     res.json({ success: true, twitchId, team: camp });
 });
@@ -1862,8 +1862,8 @@ app.post('/admin/shuffle-teams', (req, res) => {
         if (sock) sock.emit('team-changed', { newTeam: p.team });
     });
 
-    updateTeamCounts();
-    broadcastLobbyUpdate();
+    updateTeamCounts(gameState);
+    broadcastLobbyUpdate(gameState);
 
     console.log(`🔀 Camps mélangés : ${gameState.teamCounts[1]} contre ${gameState.teamCounts[2]}`);
     res.json({
@@ -2102,24 +2102,24 @@ app.post('/admin/trigger-auto-next', (req, res) => {
 
             // 🔥 FIX TIEBREAKER
             if (gameState.isTiebreaker) {
-                await sendTiebreakerQuestion();
+                await sendTiebreakerQuestion(gameState);
                 return;
             }
 
             gameState.currentQuestionIndex++;
 
             if (gameState.mode === 'points' && gameState.currentQuestionIndex > gameState.questionsCount) {
-                endGameByPoints();
+                endGameByPoints(gameState);
                 return;
             }
 
-            const difficulty = getDifficultyForQuestion(gameState.currentQuestionIndex);
+            const difficulty = getDifficultyForQuestion(gameState, gameState.currentQuestionIndex);
             const questions = await db.getRandomQuestions(
                 difficulty,
                 1,
                 gameState.usedQuestionIds,
                 gameState.serieFilter,
-                shouldApplySerieCooldown() ? gameState.recentSeries : [],  // 🆕
+                shouldApplySerieCooldown(gameState) ? gameState.recentSeries : [],  // 🆕
                 gameState.noSpoil  // 🚫 Filtre anti-spoil
             );
 
@@ -2130,7 +2130,7 @@ app.post('/admin/trigger-auto-next', (req, res) => {
             }
 
             const question = questions[0];
-            addToRecentSeries(question.serie);
+            addToRecentSeries(gameState, question.serie);
             gameState.usedQuestionIds.push(question.id);
 
             const allAnswers = [
@@ -2183,7 +2183,7 @@ app.post('/admin/trigger-auto-next', (req, res) => {
 
             setTimeout(() => {
                 if (gameState.inProgress) {
-                    revealAnswers(newCorrectIndex);
+                    revealAnswers(gameState, newCorrectIndex);
                 }
             }, gameState.questionTime * 1000);
 
@@ -2304,14 +2304,14 @@ app.post('/admin/next-question', async (req, res) => {
         // 🔥 FIX TIEBREAKER: Si tiebreaker, lancer une question EXTREME
         if (gameState.isTiebreaker) {
             console.log('⚔️ Admin lance une question de départage');
-            await sendTiebreakerQuestion();
+            await sendTiebreakerQuestion(gameState);
             return res.json({ success: true, tiebreaker: true });
         }
         
         // 🆕 RIVALRY TIEBREAKER: Si tiebreaker rivalry, lancer une question de départage
         if (gameState.isRivalryTiebreaker) {
             console.log('⚔️ Admin lance une question de départage Rivalry');
-            await sendRivalryTiebreakerQuestion();
+            await sendRivalryTiebreakerQuestion(gameState);
             return res.json({ success: true, rivalryTiebreaker: true });
         }
 
@@ -2321,11 +2321,11 @@ app.post('/admin/next-question', async (req, res) => {
         // Vérifier si on a atteint le nombre max de questions en mode Points
         if (gameState.mode === 'points' && gameState.currentQuestionIndex > gameState.questionsCount) {
             // Fin de partie - déterminer le gagnant par points
-            endGameByPoints();
+            endGameByPoints(gameState);
             return res.json({ success: true, gameEnded: true });
         }
 
-        const difficulty = getDifficultyForQuestion(gameState.currentQuestionIndex);
+        const difficulty = getDifficultyForQuestion(gameState, gameState.currentQuestionIndex);
 
         // 🔥 DEBUG: Afficher le filtre utilisé
         console.log(`🔍 Filtre série actif: ${gameState.serieFilter}`);
@@ -2335,7 +2335,7 @@ app.post('/admin/next-question', async (req, res) => {
             1,
             gameState.usedQuestionIds,
             gameState.serieFilter,
-            shouldApplySerieCooldown() ? gameState.recentSeries : [],  // 🆕
+            shouldApplySerieCooldown(gameState) ? gameState.recentSeries : [],  // 🆕
             gameState.noSpoil  // 🚫 Filtre anti-spoil
         );
 
@@ -2345,7 +2345,7 @@ app.post('/admin/next-question', async (req, res) => {
         }
 
         const question = questions[0];
-        addToRecentSeries(question.serie);
+        addToRecentSeries(gameState, question.serie);
 
         // 🔥 DEBUG: Afficher la série de la question retournée
         console.log(`📌 Question série: ${question.serie}, difficulté: ${difficulty}`);
@@ -2397,9 +2397,9 @@ app.post('/admin/next-question', async (req, res) => {
         gameState.lastQuestionResults = null;
         gameState.answers.clear();
         gameState.liveAnswers.clear();
-        updateLiveAnswerStats();
+        updateLiveAnswerStats(gameState);
 
-        addLog('question', {
+        addLog(gameState, 'question', {
             questionNumber: gameState.currentQuestionIndex,
             difficulty: difficulty,
             series: question.serie
@@ -2410,7 +2410,7 @@ app.post('/admin/next-question', async (req, res) => {
 
         setTimeout(() => {
             if (gameState.inProgress) {
-                revealAnswers(newCorrectIndex);
+                revealAnswers(gameState, newCorrectIndex);
             }
         }, gameState.questionTime * 1000);
 
@@ -2435,7 +2435,7 @@ function getQuestionDistribution(totalQuestions) {
 }
 
 // Fonction pour révéler les réponses
-function revealAnswers(correctAnswer) {
+function revealAnswers(gameState, correctAnswer) {
     // 🆕 Si tiebreaker rivalry en cours, ne pas interférer
     if (gameState.isRivalryTiebreaker) {
         console.log('⚠️ revealAnswers ignoré : tiebreaker rivalry en cours');
@@ -2454,7 +2454,7 @@ function revealAnswers(correctAnswer) {
 
     // 🔥 FIX: Si tiebreaker, utiliser la fonction dédiée
     if (gameState.isTiebreaker) {
-        revealTiebreakerAnswers(correctAnswer);
+        revealTiebreakerAnswers(gameState, correctAnswer);
         return;
     }
 
@@ -2484,7 +2484,7 @@ function revealAnswers(correctAnswer) {
                 status = 'correct';
 
                 // 🆕 Incrémenter le combo
-                updatePlayerCombo(socketId);
+                updatePlayerCombo(gameState, socketId);
             } else {
                 stats.wrong++;
                 status = 'wrong';
@@ -2507,7 +2507,7 @@ function revealAnswers(correctAnswer) {
         });
     } else {
         // Mode Vie - Logique originale
-        const alivePlayers = getAlivePlayers();
+        const alivePlayers = getAlivePlayers(gameState);
         const allHaveOneLife = alivePlayers.every(p => p.lives === 1);
         let allWillLose = false;
 
@@ -2556,7 +2556,7 @@ function revealAnswers(correctAnswer) {
                         player.lives--;
                         if (player.lives === 0) {
                             eliminatedThisRound++;
-                            addLog('eliminated', {
+                            addLog(gameState, 'eliminated', {
                                 username: player.username,
                                 playerColor: playerColors[player.username]
                             });
@@ -2578,7 +2578,7 @@ function revealAnswers(correctAnswer) {
                     console.log(`🛡️ Shield retiré (bonne réponse, non utilisé)`);
                 }
 
-                updatePlayerCombo(socketId);
+                updatePlayerCombo(gameState, socketId);
 
             } else {
                 stats.wrong++;
@@ -2592,7 +2592,7 @@ function revealAnswers(correctAnswer) {
                         player.lives--;
                         if (player.lives === 0) {
                             eliminatedThisRound++;
-                            addLog('eliminated', {
+                            addLog(gameState, 'eliminated', {
                                 username: player.username,
                                 playerColor: playerColors[player.username]
                             });
@@ -2629,7 +2629,7 @@ function revealAnswers(correctAnswer) {
 
     const alivePlayersAfter = gameState.mode === 'points'
         ? Array.from(gameState.players.values())
-        : getAlivePlayers();
+        : getAlivePlayers(gameState);
 
     const playersData = Array.from(gameState.players.values()).map(player => ({
         twitchId: player.twitchId,
@@ -2703,7 +2703,7 @@ function revealAnswers(correctAnswer) {
             isFirst: fastestPlayer && fastestPlayer.socketId === p.socketId
         };
         
-        const completedChallenges = checkChallenges(p.socketId, answerData);
+        const completedChallenges = checkChallenges(gameState, p.socketId, answerData);
         
         // Si des défis sont complétés, ajouter les bonus à l'inventaire
         if (completedChallenges.length > 0) {
@@ -2730,7 +2730,7 @@ function revealAnswers(correctAnswer) {
         const socket = io.sockets.sockets.get(p.socketId);
         if (socket) {
             socket.emit('challenges-updated', {
-                challenges: getPlayerChallengesState(p.socketId),
+                challenges: getPlayerChallengesState(gameState, p.socketId),
                 completedChallenges: completedChallenges
             });
         }
@@ -2738,7 +2738,7 @@ function revealAnswers(correctAnswer) {
 
     // 🆕 Mettre à jour les scores d'équipe en mode Rivalité
     if (gameState.lobbyMode === 'rivalry') {
-        updateTeamScores();
+        updateTeamScores(gameState);
     }
 
     const resultsData = {
@@ -2766,19 +2766,19 @@ function revealAnswers(correctAnswer) {
     // Vérifier fin de partie selon le mode
     if (gameState.mode === 'lives') {
         // Recalculer les joueurs en vie APRÈS les mises à jour
-        const currentAlivePlayers = getAlivePlayers();
+        const currentAlivePlayers = getAlivePlayers(gameState);
         console.log(`🔍 Joueurs en vie après cette question: ${currentAlivePlayers.length}`);
 
         // 🆕 MODE RIVALITÉ : Vérifier si une équipe est éliminée
         if (gameState.lobbyMode === 'rivalry') {
-            const rivalryWinner = checkRivalryWinner();
+            const rivalryWinner = checkRivalryWinner(gameState);
             if (rivalryWinner && rivalryWinner !== 'draw') {
                 console.log(`🏆 Fin de partie Rivalité - Équipe gagnante: Team ${rivalryWinner} (${gameState.teamNames[rivalryWinner]})`);
-                endGameRivalry(rivalryWinner);
+                endGameRivalry(gameState, rivalryWinner);
                 return;
             } else if (rivalryWinner === 'draw') {
                 console.log(`⚖️ Égalité en mode Rivalité - Les deux équipes éliminées`);
-                endGameRivalry('draw');
+                endGameRivalry(gameState, 'draw');
                 return;
             }
         } else {
@@ -2787,7 +2787,7 @@ function revealAnswers(correctAnswer) {
                 // 0 ou 1 joueur restant = fin de partie
                 const winner = currentAlivePlayers.length === 1 ? currentAlivePlayers[0] : null;
                 console.log(`🏁 Fin de partie mode vie - Gagnant: ${winner ? winner.username : 'Aucun'}`);
-                endGame(winner);
+                endGame(gameState, winner);
                 return; // 🔥 IMPORTANT: Arrêter ici pour ne pas continuer avec le mode auto
             }
         }
@@ -2796,14 +2796,14 @@ function revealAnswers(correctAnswer) {
         if (gameState.lobbyMode === 'rivalry') {
             gameState.endingGame = true;  // 🆕 Bloque /admin/next-question pendant le délai
             gameState.rivalryEndGameTimeout = setTimeout(() => {
-                endGameRivalryPoints();
+                endGameRivalryPoints(gameState);
             }, 100); // 🔥 FIX: Afficher le winner directement (comme en classique)
             return; // 🆕 IMPORTANT: Arrêter pour ne pas continuer avec le mode auto
         } else {
             // Terminer automatiquement après la dernière question
             gameState.endingGame = true;  // 🆕 Bloque /admin/next-question pendant le délai
             setTimeout(() => {
-                endGameByPoints();
+                endGameByPoints(gameState);
             }, 100);
         }
     }
@@ -2834,7 +2834,7 @@ function revealAnswers(correctAnswer) {
 
             // 🔥 FIX TIEBREAKER: Si tiebreaker, lancer une question EXTREME
             if (gameState.isTiebreaker) {
-                await sendTiebreakerQuestion();
+                await sendTiebreakerQuestion(gameState);
                 return;
             }
 
@@ -2843,12 +2843,12 @@ function revealAnswers(correctAnswer) {
 
             // Vérifier si on a atteint le nombre max de questions en mode Points
             if (gameState.mode === 'points' && gameState.currentQuestionIndex > gameState.questionsCount) {
-                endGameByPoints();
+                endGameByPoints(gameState);
                 return;
             }
 
             try {
-                const difficulty = getDifficultyForQuestion(gameState.currentQuestionIndex);
+                const difficulty = getDifficultyForQuestion(gameState, gameState.currentQuestionIndex);
 
                 // 🔥 FIX: AJOUTER gameState.serieFilter (c'était probablement déjà là, mais vérifie bien)
                 console.log(`🔍 [Mode Auto Timer] Filtre série: ${gameState.serieFilter}`); // 🔥 NOUVEAU LOG
@@ -2858,7 +2858,7 @@ function revealAnswers(correctAnswer) {
                     1,
                     gameState.usedQuestionIds,
                     gameState.serieFilter,
-                    shouldApplySerieCooldown() ? gameState.recentSeries : [],  // 🆕
+                    shouldApplySerieCooldown(gameState) ? gameState.recentSeries : [],  // 🆕
                     gameState.noSpoil  // 🚫 Filtre anti-spoil
                 );
 
@@ -2868,7 +2868,7 @@ function revealAnswers(correctAnswer) {
                 }
 
                 const question = questions[0];
-                addToRecentSeries(question.serie);
+                addToRecentSeries(gameState, question.serie);
                 gameState.usedQuestionIds.push(question.id);
 
                 console.log(`📌 Question ${gameState.currentQuestionIndex}/${gameState.mode === 'points' ? gameState.questionsCount : '∞'} - Difficulté: ${difficulty}`);
@@ -2914,7 +2914,7 @@ function revealAnswers(correctAnswer) {
                 gameState.lastQuestionResults = null;
                 gameState.answers.clear();
 
-                addLog('question', {
+                addLog(gameState, 'question', {
                     questionNumber: gameState.currentQuestionIndex,
                     difficulty: difficulty,
                     series: question.serie
@@ -2928,7 +2928,7 @@ function revealAnswers(correctAnswer) {
 
                 setTimeout(() => {
                     if (gameState.inProgress) {
-                        revealAnswers(newCorrectIndex);
+                        revealAnswers(gameState, newCorrectIndex);
                     }
                 }, gameState.questionTime * 1000);
 
@@ -2954,7 +2954,7 @@ function getPointsForDifficulty(difficulty) {
 }
 
 // 🔥 FIX TIEBREAKER: Fonction dédiée pour révéler les résultats du tiebreaker
-function revealTiebreakerAnswers(correctAnswer) {
+function revealTiebreakerAnswers(gameState, correctAnswer) {
     console.log('⚔️ Révélation résultats tiebreaker');
 
     const stats = {
@@ -3031,13 +3031,13 @@ function revealTiebreakerAnswers(correctAnswer) {
 
     // 🔥 FIX: Vérifier IMMÉDIATEMENT le gagnant
     setTimeout(async () => {
-        await checkTiebreakerWinner();
+        await checkTiebreakerWinner(gameState);
     }, 100);
 }
 
 
 // Fonction pour terminer une partie en mode Points
-async function endGameByPoints() {
+async function endGameByPoints(gameState) {
     const duration = Math.floor((Date.now() - gameState.gameStartTime) / 1000);
 
     try {
@@ -3055,7 +3055,7 @@ async function endGameByPoints() {
             lastGlobalWinner = winner.twitchId;
 
             if (winner && winner.points > 0) {
-                addLog('game-end', { winner: winner.username });
+                addLog(gameState, 'game-end', { winner: winner.username });
 
                 const rewardsData = null;
 
@@ -3074,10 +3074,10 @@ async function endGameByPoints() {
                     avatarUrl: player.avatarUrl || null
                 }));
 
-                const { playersData, topPlayers } = await generateGameEndedData();
+                const { playersData, topPlayers } = await generateGameEndedData(gameState);
                 
                 // 🔥 Sauvegarder les données de la dernière question AVANT le reset
-                const lastQuestionPlayers = getLastQuestionPlayersData();
+                const lastQuestionPlayers = getLastQuestionPlayersData(gameState);
 
                 winnerScreenData = {
                     winner: winnerData,
@@ -3092,7 +3092,7 @@ async function endGameByPoints() {
                     rewardsData
                 };
 
-                emitGameEnded({
+                emitGameEnded(gameState, {
                     winner: winnerData,
                     podium: podium,
                     duration,
@@ -3105,7 +3105,7 @@ async function endGameByPoints() {
                 });
 
                 // Reset complet
-                resetGameState();
+                resetGameState(gameState);
             }
         }
         // CAS 2: ÉGALITÉ → QUESTION DE DÉPARTAGE
@@ -3119,7 +3119,7 @@ async function endGameByPoints() {
             // Sans ça l'hôte se heurtait à « Partie en cours de finalisation ».
             gameState.endingGame = false;
 
-            addLog('tiebreaker', { playerCount: winners.length });
+            addLog(gameState, 'tiebreaker', { playerCount: winners.length });
 
             io.emit('tiebreaker-announced', {
                 tiebreakerPlayers: winners.map(w => ({
@@ -3140,7 +3140,7 @@ async function endGameByPoints() {
 
 
 // FONCTION: Envoyer une question de départage (EXTREME)
-async function sendTiebreakerQuestion() {
+async function sendTiebreakerQuestion(gameState) {
     try {
         gameState.currentQuestionIndex++;
 
@@ -3152,7 +3152,7 @@ async function sendTiebreakerQuestion() {
             1,
             gameState.usedQuestionIds,
             gameState.serieFilter,
-            shouldApplySerieCooldown() ? gameState.recentSeries : [],  // 🆕
+            shouldApplySerieCooldown(gameState) ? gameState.recentSeries : [],  // 🆕
             gameState.noSpoil  // 🚫 Filtre anti-spoil
         );
 
@@ -3160,12 +3160,12 @@ async function sendTiebreakerQuestion() {
         if (questions.length === 0) {
             console.error('❌ Aucune question extreme disponible pour tiebreaker');
             // Fallback: terminer avec égalité
-            await endGameWithTie();
+            await endGameWithTie(gameState);
             return;
         }
 
         const question = questions[0];
-        addToRecentSeries(question.serie);
+        addToRecentSeries(gameState, question.serie);
         gameState.usedQuestionIds.push(question.id);
 
         console.log(`⚔️ Question de départage ${gameState.currentQuestionIndex} - Difficulté: EXTREME`);
@@ -3211,7 +3211,7 @@ async function sendTiebreakerQuestion() {
         gameState.lastQuestionResults = null;
         gameState.answers.clear();
 
-        addLog('question', {
+        addLog(gameState, 'question', {
             questionNumber: gameState.currentQuestionIndex,
             difficulty: 'TIEBREAKER - EXTREME',
             series: question.serie
@@ -3223,7 +3223,7 @@ async function sendTiebreakerQuestion() {
         // 🔥 FIX: Attendre la fin du timer PUIS révéler
         setTimeout(() => {
             if (gameState.inProgress && gameState.isTiebreaker) {
-                revealTiebreakerAnswers(newCorrectIndex);
+                revealTiebreakerAnswers(gameState, newCorrectIndex);
             }
         }, gameState.questionTime * 1000);
 
@@ -3233,7 +3233,7 @@ async function sendTiebreakerQuestion() {
 }
 
 // 🔥 FIX TIEBREAKER: Fonction pour vérifier si on a un gagnant
-async function checkTiebreakerWinner() {
+async function checkTiebreakerWinner(gameState) {
     console.log('🔍 Vérification gagnant tiebreaker...');
 
     // 🆕 FIX: Récupérer TOUS les joueurs et les trier par points
@@ -3281,10 +3281,10 @@ async function checkTiebreakerWinner() {
                 avatarUrl: player.avatarUrl || null
             }));
 
-            const { playersData, topPlayers } = await generateGameEndedData();
+            const { playersData, topPlayers } = await generateGameEndedData(gameState);
             
             // 🔥 Sauvegarder les données de la dernière question AVANT le reset
-            const lastQuestionPlayers = getLastQuestionPlayersData();
+            const lastQuestionPlayers = getLastQuestionPlayersData(gameState);
 
             winnerScreenData = {
                 winner: winnerData,
@@ -3299,7 +3299,7 @@ async function checkTiebreakerWinner() {
             };
 
 
-            emitGameEnded({
+            emitGameEnded(gameState, {
                 winner: winnerData,
                 podium: podium,
                 duration,
@@ -3311,7 +3311,7 @@ async function checkTiebreakerWinner() {
             });
 
             // Reset complet
-            resetGameState();
+            resetGameState(gameState);
 
             console.log('✅ Partie terminée après tiebreaker');
         } catch (error) {
@@ -3337,7 +3337,7 @@ async function checkTiebreakerWinner() {
 }
 
 // 🆕 RIVALRY TIEBREAKER: Envoyer une question de départage entre équipes
-async function sendRivalryTiebreakerQuestion() {
+async function sendRivalryTiebreakerQuestion(gameState) {
     try {
         gameState.currentQuestionIndex++;
 
@@ -3356,19 +3356,19 @@ async function sendRivalryTiebreakerQuestion() {
             1,
             gameState.usedQuestionIds,
             gameState.serieFilter,
-            shouldApplySerieCooldown() ? gameState.recentSeries : [],
+            shouldApplySerieCooldown(gameState) ? gameState.recentSeries : [],
             gameState.noSpoil  // 🚫 Filtre anti-spoil
         );
 
         if (questions.length === 0) {
             console.error('❌ Aucune question disponible pour tiebreaker rivalry');
             // Fallback: terminer avec égalité
-            await endRivalryWithTie();
+            await endRivalryWithTie(gameState);
             return;
         }
 
         const question = questions[0];
-        addToRecentSeries(question.serie);
+        addToRecentSeries(gameState, question.serie);
         gameState.usedQuestionIds.push(question.id);
 
         console.log(`⚔️ Question de départage Rivalry #${gameState.currentQuestionIndex} - Difficulté: ${difficulty.toUpperCase()}`);
@@ -3419,7 +3419,7 @@ async function sendRivalryTiebreakerQuestion() {
         gameState.lastQuestionResults = null;
         gameState.answers.clear();
 
-        addLog('question', {
+        addLog(gameState, 'question', {
             questionNumber: gameState.currentQuestionIndex,
             difficulty: `DÉPARTAGE - ${difficulty.toUpperCase()}`,
             series: question.serie
@@ -3436,7 +3436,7 @@ async function sendRivalryTiebreakerQuestion() {
         // Attendre la fin du timer PUIS révéler et vérifier
         gameState.rivalryRevealTimeout = setTimeout(() => {
             if (gameState.inProgress && gameState.isRivalryTiebreaker) {
-                revealRivalryTiebreakerAnswers(newCorrectIndex);
+                revealRivalryTiebreakerAnswers(gameState, newCorrectIndex);
             }
         }, gameState.questionTime * 1000);
 
@@ -3446,7 +3446,7 @@ async function sendRivalryTiebreakerQuestion() {
 }
 
 // 🆕 RIVALRY TIEBREAKER: Révéler les réponses et calculer les scores
-async function revealRivalryTiebreakerAnswers(correctAnswer) {
+async function revealRivalryTiebreakerAnswers(gameState, correctAnswer) {
     console.log('⚔️ Révélation résultats tiebreaker Rivalry');
     
     // 🆕 Marquer qu'on est en phase de résultats
@@ -3494,7 +3494,7 @@ async function revealRivalryTiebreakerAnswers(correctAnswer) {
     });
 
     // Recalculer les scores d'équipe
-    updateTeamScores();
+    updateTeamScores(gameState);
 
     // Envoyer les résultats
     io.emit('question-results', {
@@ -3508,11 +3508,11 @@ async function revealRivalryTiebreakerAnswers(correctAnswer) {
     console.log(`⚔️ Scores après tiebreaker: Team A = ${gameState.teamScores[1]}, Team B = ${gameState.teamScores[2]}`);
 
     // Vérifier si on a un gagnant
-    await checkRivalryTiebreakerWinner();
+    await checkRivalryTiebreakerWinner(gameState);
 }
 
 // 🆕 RIVALRY TIEBREAKER: Vérifier si une équipe a pris l'avantage
-async function checkRivalryTiebreakerWinner() {
+async function checkRivalryTiebreakerWinner(gameState) {
     const team1Score = gameState.teamScores[1];
     const team2Score = gameState.teamScores[2];
 
@@ -3554,7 +3554,7 @@ async function checkRivalryTiebreakerWinner() {
             isDraw: false
         };
 
-        addLog('game-end', { winner: teamData.teamName, mode: 'rivalry-points-tiebreaker' });
+        addLog(gameState, 'game-end', { winner: teamData.teamName, mode: 'rivalry-points-tiebreaker' });
 
         // 🔥 Préparer les données AVANT les appels DB
         const playersData = Array.from(gameState.players.values()).map(p => ({
@@ -3587,7 +3587,7 @@ async function checkRivalryTiebreakerWinner() {
         }
         
         // 🔥 Sauvegarder les données de la dernière question AVANT le reset
-        const lastQuestionPlayers = getLastQuestionPlayersData();
+        const lastQuestionPlayers = getLastQuestionPlayersData(gameState);
 
         // 🔥 ÉMETTRE game-ended IMMÉDIATEMENT
         const gameEndedPayload = {
@@ -3608,10 +3608,10 @@ async function checkRivalryTiebreakerWinner() {
             livesIcon: gameState.livesIcon
         };
 
-        emitGameEnded(gameEndedPayload);
+        emitGameEnded(gameState, gameEndedPayload);
         console.log('📡 game-ended émis pour rivalry-points-tiebreaker');
 
-        resetGameState();
+        resetGameState(gameState);
 
     } else {
         // ⚖️ ENCORE ÉGALITÉ
@@ -3633,7 +3633,7 @@ async function checkRivalryTiebreakerWinner() {
             }
             gameState.rivalryTiebreakerTimeout = setTimeout(async () => {
                 if (gameState.inProgress && gameState.isRivalryTiebreaker) {
-                    await sendRivalryTiebreakerQuestion();
+                    await sendRivalryTiebreakerQuestion(gameState);
                 }
             }, 3000);
         } else {
@@ -3643,7 +3643,7 @@ async function checkRivalryTiebreakerWinner() {
 }
 
 // 🆕 RIVALRY: Terminer avec égalité (fallback si plus de questions)
-async function endRivalryWithTie() {
+async function endRivalryWithTie(gameState) {
     const duration = Math.floor((Date.now() - gameState.gameStartTime) / 1000);
     
     const teamData = {
@@ -3653,7 +3653,7 @@ async function endRivalryWithTie() {
         isDraw: true
     };
 
-    addLog('game-end', { winner: 'Égalité', mode: 'rivalry-points' });
+    addLog(gameState, 'game-end', { winner: 'Égalité', mode: 'rivalry-points' });
     console.log(`🏆 Mode Rivalité terminé en ÉGALITÉ: ${gameState.teamScores[1]} - ${gameState.teamScores[2]}`);
 
     const playersData = Array.from(gameState.players.values()).map(p => ({
@@ -3685,7 +3685,7 @@ async function endRivalryWithTie() {
     }
 
     // 🔥 Sauvegarder les données de la dernière question AVANT le reset
-    const lastQuestionPlayers = getLastQuestionPlayersData();
+    const lastQuestionPlayers = getLastQuestionPlayersData(gameState);
 
     const gameEndedPayload = {
         winner: teamData,
@@ -3705,15 +3705,15 @@ async function endRivalryWithTie() {
         livesIcon: gameState.livesIcon
     };
 
-    emitGameEnded(gameEndedPayload);
+    emitGameEnded(gameState, gameEndedPayload);
     console.log('📡 game-ended émis pour rivalry-points (égalité)');
 
-    resetGameState();
+    resetGameState(gameState);
 }
 
 
 // FONCTION: Terminer avec égalité (fallback si plus de questions)
-async function endGameWithTie() {
+async function endGameWithTie(gameState) {
     const duration = Math.floor((Date.now() - gameState.gameStartTime) / 1000);
 
     const sortedPlayers = Array.from(gameState.players.values())
@@ -3741,10 +3741,10 @@ async function endGameWithTie() {
         avatarUrl: player.avatarUrl || null
     }));
 
-    const { playersData, topPlayers } = await generateGameEndedData();
+    const { playersData, topPlayers } = await generateGameEndedData(gameState);
     
     // 🔥 Sauvegarder les données de la dernière question AVANT le reset
-    const lastQuestionPlayers = getLastQuestionPlayersData();
+    const lastQuestionPlayers = getLastQuestionPlayersData(gameState);
 
     winnerScreenData = {
         winner: winnerData,
@@ -3760,7 +3760,7 @@ async function endGameWithTie() {
     };
 
 
-    emitGameEnded({
+    emitGameEnded(gameState, {
         winner: winnerData,
         podium: podium,
         duration,
@@ -3772,11 +3772,11 @@ async function endGameWithTie() {
         rewardsData
     });
 
-    resetGameState();
+    resetGameState(gameState);
 }
 
 // 🔥 Helper: Extraire les données de la dernière question pour l'écran winner (hover)
-function getLastQuestionPlayersData() {
+function getLastQuestionPlayersData(gameState) {
     if (!gameState.lastQuestionResults || !gameState.lastQuestionResults.players) return null;
     return gameState.lastQuestionResults.players.map(p => ({
         username: p.username,
@@ -3788,7 +3788,7 @@ function getLastQuestionPlayersData() {
 }
 
 // Terminer la partie
-async function endGame(winner) {
+async function endGame(gameState, winner) {
     const duration = Math.floor((Date.now() - gameState.gameStartTime) / 1000);
 
     try {
@@ -3797,7 +3797,7 @@ async function endGame(winner) {
 
         if (winner) {
             lastGlobalWinner = winner.twitchId;
-            addLog('game-end', { winner: winner.username });
+            addLog(gameState, 'game-end', { winner: winner.username });
 
             winnerData = {
                 username: winner.username,
@@ -3807,7 +3807,7 @@ async function endGame(winner) {
         } else {
             // 🆕 Cas aucun gagnant - terminer la partie en DB quand même
             console.log('💀 Fin de partie sans gagnant');
-            addLog('game-end', { winner: 'Aucun' });
+            addLog(gameState, 'game-end', { winner: 'Aucun' });
         }
 
         const playersData = Array.from(gameState.players.values()).map(p => ({
@@ -3823,7 +3823,7 @@ async function endGame(winner) {
 
 
         // 🔥 Sauvegarder les données de la dernière question AVANT le reset
-        const lastQuestionPlayers = getLastQuestionPlayersData();
+        const lastQuestionPlayers = getLastQuestionPlayersData(gameState);
 
         // 🔥 Stocker pour restauration
         winnerScreenData = {
@@ -3841,7 +3841,7 @@ async function endGame(winner) {
 
         // 🆕 N'envoyer game-ended que s'il y a un gagnant
         if (winner) {
-            emitGameEnded({
+            emitGameEnded(gameState, {
                 winner: winnerData,
                 duration,
                 totalQuestions: gameState.currentQuestionIndex,
@@ -3854,7 +3854,7 @@ async function endGame(winner) {
         }
 
         // Reset
-        resetGameState();
+        resetGameState(gameState);
 
         // 🆕 Si aucun gagnant, fermer le lobby automatiquement
         if (!winner) {
@@ -3866,16 +3866,16 @@ async function endGame(winner) {
     } catch (error) {
         console.error('❌ Erreur fin de partie:', error);
         // 🆕 Reset même en cas d'erreur pour débloquer
-        resetGameState();
+        resetGameState(gameState);
     }
 }
 
 // 🆕 Fin de partie mode Rivalité (vie)
-async function endGameRivalry(winningTeam) {
+async function endGameRivalry(gameState, winningTeam) {
     const duration = Math.floor((Date.now() - gameState.gameStartTime) / 1000);
     
     try {
-        updateTeamScores();
+        updateTeamScores(gameState);
         
         const teamData = {
             team: winningTeam === 'draw' ? null : winningTeam,
@@ -3885,7 +3885,7 @@ async function endGameRivalry(winningTeam) {
         };
         
         // Log
-        addLog('game-end', { winner: teamData.teamName, mode: 'rivalry' });
+        addLog(gameState, 'game-end', { winner: teamData.teamName, mode: 'rivalry' });
         console.log(`🏆 Mode Rivalité terminé - ${teamData.teamName} gagne avec ${teamData.livesRemaining} vies`);
         
         // 🔥 Préparer les données AVANT les appels DB
@@ -3914,7 +3914,7 @@ async function endGameRivalry(winningTeam) {
         }
         
         // 🔥 Sauvegarder les données de la dernière question AVANT le reset
-        const lastQuestionPlayers = getLastQuestionPlayersData();
+        const lastQuestionPlayers = getLastQuestionPlayersData(gameState);
         
         const rewardsData = null;
 
@@ -3936,24 +3936,24 @@ async function endGameRivalry(winningTeam) {
             livesIcon: gameState.livesIcon
         };
         
-        emitGameEnded(gameEndedPayload);
+        emitGameEnded(gameState, gameEndedPayload);
         console.log('📡 game-ended émis pour rivalry-lives');
         
         
-        resetGameState();
+        resetGameState(gameState);
         
     } catch (error) {
         console.error('❌ Erreur fin de partie Rivalité:', error);
-        resetGameState();
+        resetGameState(gameState);
     }
 }
 
 // 🆕 Fin de partie mode Rivalité (points)
-async function endGameRivalryPoints() {
+async function endGameRivalryPoints(gameState) {
     const duration = Math.floor((Date.now() - gameState.gameStartTime) / 1000);
     
     try {
-        updateTeamScores();
+        updateTeamScores(gameState);
         
         const team1Points = gameState.teamScores[1];
         const team2Points = gameState.teamScores[2];
@@ -3968,7 +3968,7 @@ async function endGameRivalryPoints() {
             // ne partait jamais. Même correctif qu'en solo.
             gameState.endingGame = false;
             
-            addLog('tiebreaker', { mode: 'rivalry', score: team1Points, playerCount: gameState.players.size });
+            addLog(gameState, 'tiebreaker', { mode: 'rivalry', score: team1Points, playerCount: gameState.players.size });
             
             io.emit('tiebreaker-announced', {
                 mode: 'rivalry',
@@ -3986,7 +3986,7 @@ async function endGameRivalryPoints() {
                 }
                 gameState.rivalryTiebreakerTimeout = setTimeout(async () => {
                     if (gameState.inProgress && gameState.isRivalryTiebreaker) {
-                        await sendRivalryTiebreakerQuestion();
+                        await sendRivalryTiebreakerQuestion(gameState);
                     }
                 }, 3000);
             } else {
@@ -4011,7 +4011,7 @@ async function endGameRivalryPoints() {
         };
         
         // Log
-        addLog('game-end', { winner: teamData.teamName, mode: 'rivalry-points' });
+        addLog(gameState, 'game-end', { winner: teamData.teamName, mode: 'rivalry-points' });
         console.log(`🏆 Mode Rivalité (points) terminé - ${teamData.teamName} gagne avec ${teamData.points} points`);
         
         // 🔥 Préparer les données AVANT les appels DB (pas de dépendance DB)
@@ -4046,7 +4046,7 @@ async function endGameRivalryPoints() {
         }
         
         // 🔥 Sauvegarder les données de la dernière question AVANT le reset
-        const lastQuestionPlayers = getLastQuestionPlayersData();
+        const lastQuestionPlayers = getLastQuestionPlayersData(gameState);
         
         const rewardsData = null;
 
@@ -4069,15 +4069,15 @@ async function endGameRivalryPoints() {
             livesIcon: gameState.livesIcon
         };
         
-        emitGameEnded(gameEndedPayload);
+        emitGameEnded(gameState, gameEndedPayload);
         console.log('📡 game-ended émis pour rivalry-points');
         
         
-        resetGameState();
+        resetGameState(gameState);
         
     } catch (error) {
         console.error('❌ Erreur fin de partie Rivalité (points):', error);
-        resetGameState();
+        resetGameState(gameState);
     }
 }
 
@@ -4352,7 +4352,7 @@ const server = app.listen(PORT, () => {
 // ============================================
 
 // Valider un nom de personnage
-function validateBombanimeCharacter(name, serie) {
+function validateBombanimeCharacter(gameState, name, serie) {
     if (!name || !serie) return { valid: false, reason: 'invalid_input' };
     
     const characters = BOMBANIME_CHARACTERS[serie];
@@ -4399,7 +4399,7 @@ function getAllLetters(name) {
 }
 
 // Vérifier si un joueur a complété l'alphabet
-function checkAlphabetComplete(twitchId) {
+function checkAlphabetComplete(gameState, twitchId) {
     const alphabet = gameState.bombanime.playerAlphabets.get(twitchId);
     if (!alphabet) return false;
     return alphabet.size >= 26;
@@ -4451,7 +4451,7 @@ function generateBombanimeChallenges() {
 }
 
 // Initialiser la progression des défis pour un joueur BombAnime
-function initBombanimePlayerChallenges(twitchId) {
+function initBombanimePlayerChallenges(gameState, twitchId) {
     const progress = {
         challenges: {},
         lettersGiven: new Map() // Map<letter, count> pour tracker les lettres données
@@ -4479,7 +4479,7 @@ function initBombanimePlayerChallenges(twitchId) {
 }
 
 // Vérifier et mettre à jour les défis BombAnime après une réponse valide
-function checkBombanimeChallenges(twitchId, characterName) {
+function checkBombanimeChallenges(gameState, twitchId, characterName) {
     const playerProgress = gameState.bombanime.playerChallenges.get(twitchId);
     if (!playerProgress) return [];
     
@@ -4521,7 +4521,7 @@ function checkBombanimeChallenges(twitchId, characterName) {
 }
 
 // Obtenir l'état des défis BombAnime pour un joueur (pour envoi au client)
-function getBombanimePlayerChallengesState(twitchId) {
+function getBombanimePlayerChallengesState(gameState, twitchId) {
     const playerProgress = gameState.bombanime.playerChallenges.get(twitchId);
     if (!playerProgress) return [];
     
@@ -4541,12 +4541,12 @@ function getBombanimePlayerChallengesState(twitchId) {
 }
 
 // Obtenir les bonus BombAnime d'un joueur
-function getBombanimePlayerBonuses(twitchId) {
+function getBombanimePlayerBonuses(gameState, twitchId) {
     return gameState.bombanime.playerBonuses.get(twitchId) || { freeCharacter: 0, extraLife: 0 };
 }
 
 // Obtenir un personnage aléatoire non utilisé pour le bonus perso gratuit
-function getRandomUnusedCharacter(serie) {
+function getRandomUnusedCharacter(gameState, serie) {
     const characters = BOMBANIME_CHARACTERS[serie];
     if (!characters) return null;
     
@@ -4562,13 +4562,13 @@ function getRandomUnusedCharacter(serie) {
 }
 
 // Obtenir les joueurs BombAnime encore en vie
-function getAliveBombanimePlayers() {
+function getAliveBombanimePlayers(gameState) {
     return Array.from(gameState.players.values()).filter(p => p.lives > 0);
 }
 
 // Passer au joueur suivant dans le cercle
-function getNextBombanimePlayer() {
-    const alivePlayers = getAliveBombanimePlayers();
+function getNextBombanimePlayer(gameState) {
+    const alivePlayers = getAliveBombanimePlayers(gameState);
     if (alivePlayers.length <= 1) return null;
     
     const currentTwitchId = gameState.bombanime.currentPlayerTwitchId;
@@ -4595,7 +4595,7 @@ function getNextBombanimePlayer() {
 }
 
 // Démarrer le tour d'un joueur BombAnime
-function startBombanimeTurn(twitchId) {
+function startBombanimeTurn(gameState, twitchId) {
     if (!gameState.bombanime.active) return;
     
     // Annuler le timeout précédent
@@ -4613,19 +4613,19 @@ function startBombanimeTurn(twitchId) {
         // Temporairement setter le currentPlayerTwitchId pour que getNextBombanimePlayer fonctionne
         gameState.bombanime.currentPlayerTwitchId = twitchId;
         
-        const alivePlayers = getAliveBombanimePlayers();
+        const alivePlayers = getAliveBombanimePlayers(gameState);
         if (alivePlayers.length <= 1) {
             // Fin de partie ou aucun joueur
             if (alivePlayers.length === 1) {
-                endBombanimeGame(alivePlayers[0]);
+                endBombanimeGame(gameState, alivePlayers[0]);
             } else {
-                endBombanimeGame(null);
+                endBombanimeGame(gameState, null);
             }
             return;
         }
         
         // Essayer de trouver le prochain joueur vivant
-        const nextTwitchId = getNextBombanimePlayer();
+        const nextTwitchId = getNextBombanimePlayer(gameState);
         if (nextTwitchId) {
             console.log(`🔄 Joueur de remplacement trouvé: ${nextTwitchId}`);
             player = Array.from(gameState.players.values()).find(p => p.twitchId === nextTwitchId);
@@ -4666,12 +4666,12 @@ function startBombanimeTurn(twitchId) {
             console.log(`⏱️ Explosion annulée [turnId changé: ${currentTurnId} -> ${gameState.bombanime.turnId}]`);
             return;
         }
-        bombExplode(twitchId);
+        bombExplode(gameState, twitchId);
     }, gameState.bombanime.timer * 1000);
 }
 
 // La bombe explose sur un joueur
-function bombExplode(twitchId) {
+function bombExplode(gameState, twitchId) {
     if (!gameState.bombanime.active) return;
     
     // IMPORTANT: Vérifier que c'est toujours le tour de ce joueur
@@ -4697,7 +4697,7 @@ function bombExplode(twitchId) {
         gameState.bombanime.eliminatedPlayers.push({
             twitchId: player.twitchId,
             username: player.username,
-            rank: getAliveBombanimePlayers().length + 1
+            rank: getAliveBombanimePlayers(gameState).length + 1
         });
         console.log(`☠️ ${player.username} ÉLIMINÉ!`);
     }
@@ -4708,44 +4708,44 @@ function bombExplode(twitchId) {
         playerUsername: player.username,
         livesRemaining: player.lives,
         isEliminated: isEliminated,
-        playersData: getBombanimePlayersData(),
+        playersData: getBombanimePlayersData(gameState),
         // Debug
         debugElapsedMs: elapsedMs,
         debugTurnId: gameState.bombanime.turnId
     });
     
     // Vérifier si la partie est terminée
-    const alivePlayers = getAliveBombanimePlayers();
+    const alivePlayers = getAliveBombanimePlayers(gameState);
     if (alivePlayers.length <= 1) {
-        endBombanimeGame(alivePlayers[0] || null);
+        endBombanimeGame(gameState, alivePlayers[0] || null);
         return;
     }
     
     // Pause puis passer au joueur suivant
     gameState.bombanime.isPaused = true;
     setTimeout(() => {
-        const nextPlayerTwitchId = getNextBombanimePlayer();
+        const nextPlayerTwitchId = getNextBombanimePlayer(gameState);
         if (nextPlayerTwitchId) {
-            startBombanimeTurn(nextPlayerTwitchId);
+            startBombanimeTurn(gameState, nextPlayerTwitchId);
         } else {
             // 🔥 FIX: Safety net - si getNextBombanimePlayer retourne null mais il reste des joueurs
-            const remainingPlayers = getAliveBombanimePlayers();
+            const remainingPlayers = getAliveBombanimePlayers(gameState);
             if (remainingPlayers.length > 1) {
                 // Prendre un joueur vivant différent du joueur qui vient d'exploser
                 const fallback = remainingPlayers.find(p => p.twitchId !== twitchId) || remainingPlayers[0];
                 console.log(`⚠️ getNextBombanimePlayer null mais ${remainingPlayers.length} joueurs vivants - fallback sur ${fallback.username}`);
-                startBombanimeTurn(fallback.twitchId);
+                startBombanimeTurn(gameState, fallback.twitchId);
             } else if (remainingPlayers.length === 1) {
-                endBombanimeGame(remainingPlayers[0]);
+                endBombanimeGame(gameState, remainingPlayers[0]);
             } else {
-                endBombanimeGame(null);
+                endBombanimeGame(gameState, null);
             }
         }
     }, 100); // Passage de tour pendant le shake
 }
 
 // Soumettre un nom BombAnime
-function submitBombanimeName(socketId, name) {
+function submitBombanimeName(gameState, socketId, name) {
     if (!gameState.bombanime.active) return { success: false, reason: 'game_not_active' };
     
     const player = gameState.players.get(socketId);
@@ -4766,7 +4766,7 @@ function submitBombanimeName(socketId, name) {
     }
     
     // Valider le nom
-    const validation = validateBombanimeCharacter(name, gameState.bombanime.serie);
+    const validation = validateBombanimeCharacter(gameState, name, gameState.bombanime.serie);
     
     if (!validation.valid) {
         console.log(`❌ Nom invalide: "${name}" - ${validation.reason}`);
@@ -4813,7 +4813,7 @@ function submitBombanimeName(socketId, name) {
         }
         
         // Vérifier si l'alphabet est complet
-        if (checkAlphabetComplete(player.twitchId)) {
+        if (checkAlphabetComplete(gameState, player.twitchId)) {
             // Reset l'alphabet du joueur (toujours, même si au max de vies)
             gameState.bombanime.playerAlphabets.set(player.twitchId, new Set());
             
@@ -4843,7 +4843,7 @@ function submitBombanimeName(socketId, name) {
     gameState.bombanime.turnId++; // Invalide l'ancien timeout immédiatement
     
     // Calculer le prochain joueur
-    const nextPlayerTwitchId = getNextBombanimePlayer();
+    const nextPlayerTwitchId = getNextBombanimePlayer(gameState);
     
     // Changer le joueur actuel
     if (nextPlayerTwitchId) {
@@ -4854,9 +4854,9 @@ function submitBombanimeName(socketId, name) {
     gameState.bombanime.playerLastAnswers.set(player.twitchId, normalizedName);
     
     // 🎯 Vérifier les défis BombAnime
-    const completedChallenges = checkBombanimeChallenges(player.twitchId, normalizedName);
-    const playerChallengesState = getBombanimePlayerChallengesState(player.twitchId);
-    const playerBonuses = getBombanimePlayerBonuses(player.twitchId);
+    const completedChallenges = checkBombanimeChallenges(gameState, player.twitchId, normalizedName);
+    const playerChallengesState = getBombanimePlayerChallengesState(gameState, player.twitchId);
+    const playerBonuses = getBombanimePlayerBonuses(gameState, player.twitchId);
     
     // Calculer le temps restant au moment de la validation (pour debug)
     const debugElapsedMs = Date.now() - gameState.bombanime.turnStartTime;
@@ -4875,7 +4875,7 @@ function submitBombanimeName(socketId, name) {
         // characterImage: characterImage, // 🖼️ DÉSACTIVÉ temporairement
         newLetters: getAllLetters(normalizedName),
         alphabet: Array.from(gameState.bombanime.playerAlphabets.get(player.twitchId) || []),
-        playersData: getBombanimePlayersData(),
+        playersData: getBombanimePlayersData(gameState),
         nextPlayerTwitchId: nextPlayerTwitchId,  // Pour rotation immédiate de la bombe
         // 🎯 Défis et bonus
         challenges: playerChallengesState,
@@ -4889,7 +4889,7 @@ function submitBombanimeName(socketId, name) {
     // Démarrer le tour du prochain joueur (avec son nouveau timer)
     setTimeout(() => {
         if (nextPlayerTwitchId) {
-            startBombanimeTurn(nextPlayerTwitchId);
+            startBombanimeTurn(gameState, nextPlayerTwitchId);
         }
     }, 30); // 30ms - quasi-instantané
     
@@ -4897,7 +4897,7 @@ function submitBombanimeName(socketId, name) {
 }
 
 // Obtenir les données des joueurs BombAnime pour l'affichage
-function getBombanimePlayersData() {
+function getBombanimePlayersData(gameState) {
     const playersData = [];
     
     gameState.bombanime.playersOrder.forEach((twitchId, index) => {
@@ -4921,7 +4921,7 @@ function getBombanimePlayersData() {
 }
 
 // Démarrer une partie BombAnime
-async function startBombanimeGame() {
+async function startBombanimeGame(gameState) {
     const players = Array.from(gameState.players.values());
     
     if (players.length < BOMBANIME_CONFIG.MIN_PLAYERS) {
@@ -4962,7 +4962,7 @@ async function startBombanimeGame() {
     
     // Initialiser les défis et bonus pour chaque joueur
     players.forEach(player => {
-        initBombanimePlayerChallenges(player.twitchId);
+        initBombanimePlayerChallenges(gameState, player.twitchId);
     });
     
     // Marquer la partie comme en cours
@@ -4984,7 +4984,7 @@ async function startBombanimeGame() {
         serie: gameState.bombanime.serie,
         timer: gameState.bombanime.timer,
         playersOrder: gameState.bombanime.playersOrder,
-        playersData: getBombanimePlayersData(),
+        playersData: getBombanimePlayersData(gameState),
         totalCharacters: BOMBANIME_CHARACTERS[gameState.bombanime.serie]?.length || 0,
         // 🎯 Défis BombAnime
         challenges: gameState.bombanime.challenges.map(c => ({
@@ -5009,10 +5009,10 @@ async function startBombanimeGame() {
             return;
         }
         
-        const alivePlayers = getAliveBombanimePlayers();
+        const alivePlayers = getAliveBombanimePlayers(gameState);
         if (alivePlayers.length < BOMBANIME_CONFIG.MIN_PLAYERS) {
             console.log('⚠️ Plus assez de joueurs vivants pour démarrer le premier tour');
-            endBombanimeGame(alivePlayers[0] || null);
+            endBombanimeGame(gameState, alivePlayers[0] || null);
             return;
         }
         
@@ -5025,14 +5025,14 @@ async function startBombanimeGame() {
             firstPlayer = alivePlayers[0].twitchId;
         }
         
-        startBombanimeTurn(firstPlayer);
+        startBombanimeTurn(gameState, firstPlayer);
     }, 3000); // 3s avant le premier tour
     
     return { success: true };
 }
 
 // Terminer une partie BombAnime
-async function endBombanimeGame(winner) {
+async function endBombanimeGame(gameState, winner) {
     if (!gameState.bombanime.active) return;
     
     // Annuler le timeout
@@ -5087,7 +5087,7 @@ async function endBombanimeGame(winner) {
 
     // 🚀 Émettre le winner IMMÉDIATEMENT pour un affichage instantané
     // Les rewards seront envoyés dans un second event quand calculés
-    emitBombanimeGameEnded({
+    emitBombanimeGameEnded(gameState, {
         winner: winner ? {
             twitchId: winner.twitchId,
             username: winner.username,
@@ -5112,12 +5112,12 @@ async function endBombanimeGame(winner) {
 
 
     // Reset
-    resetBombanimeState();
-    resetGameState();
+    resetBombanimeState(gameState);
+    resetGameState(gameState);
 }
 
 // Reset l'état BombAnime
-function resetBombanimeState() {
+function resetBombanimeState(gameState) {
     if (gameState.bombanime.turnTimeout) {
         clearTimeout(gameState.bombanime.turnTimeout);
     }
@@ -5209,7 +5209,7 @@ io.on('connection', (socket) => {
                     
                     
                     console.log(`🔄 Auto-remap: ${data.username} ${oldSocketId} → ${socket.id}`);
-                    broadcastLobbyUpdate();
+                    broadcastLobbyUpdate(gameState);
                     break;
                 }
             }
@@ -5327,17 +5327,17 @@ io.on('connection', (socket) => {
             avatarUrl: 'novice.png',
             // Après un refresh on reprend son camp : le retirer au hasard
             // ferait sauter les joueurs d'un côté à l'autre à chaque rechargement.
-            team: gameState.lobbyMode === 'rivalry' ? (campPrecedent || campLeMoinsFourni()) : null,
+            team: gameState.lobbyMode === 'rivalry' ? (campPrecedent || campLeMoinsFourni(gameState)) : null,
             isAdmin: data.isAdmin || false
         });
 
-        const playerColor = assignPlayerColor(data.username);
-        addLog('join', { username: data.username, playerColor });
+        const playerColor = assignPlayerColor(gameState, data.username);
+        addLog(gameState, 'join', { username: data.username, playerColor });
 
         console.log(`✅ ${data.username} a rejoint le lobby${data.team ? ` (Team ${data.team})` : ''}`);
 
         // 🆕 Utiliser la fonction helper
-        broadcastLobbyUpdate();
+        broadcastLobbyUpdate(gameState);
         
         } finally {
             // 🔓 Libérer la réservation
@@ -5354,9 +5354,9 @@ io.on('connection', (socket) => {
             console.log(`👋 ${data.username} a quitté le lobby`);
 
             const playerColor = playerColors[data.username];
-            addLog('leave', { username: data.username, playerColor });
+            addLog(gameState, 'leave', { username: data.username, playerColor });
 
-            broadcastLobbyUpdate();
+            broadcastLobbyUpdate(gameState);
 
             // Un départ n'interrompt pas la partie : celui qui reste continue seul.
             // Il voit le nombre de joueurs encore en lice dans le détail de la question.
@@ -5407,20 +5407,20 @@ io.on('connection', (socket) => {
 
             // Log pour les admins
             const playerColor = playerColors[username];
-            addLog('kick', { username, playerColor });
+            addLog(gameState, 'kick', { username, playerColor });
 
             // Mettre à jour le lobby/game pour tout le monde
-            broadcastLobbyUpdate();
+            broadcastLobbyUpdate(gameState);
 
             // 🆕 Vérifier si la partie doit se terminer après le kick
             if (gameState.inProgress && gameState.mode === 'lives') {
-                const currentAlivePlayers = getAlivePlayers();
+                const currentAlivePlayers = getAlivePlayers(gameState);
                 console.log(`🔍 Joueurs en vie après kick: ${currentAlivePlayers.length}`);
                 
                 if (currentAlivePlayers.length <= 1) {
                     const winner = currentAlivePlayers.length === 1 ? currentAlivePlayers[0] : null;
                     console.log(`🏁 Fin de partie après kick - Gagnant: ${winner ? winner.username : 'Aucun'}`);
-                    endGame(winner);
+                    endGame(gameState, winner);
                 }
             }
         } else {
@@ -5489,7 +5489,7 @@ io.on('connection', (socket) => {
 
             // 🆕 Initialiser les défis SEULEMENT si pas transférés (nouveau joueur mid-game)
             if (!gameState.playerChallenges.has(socket.id) && gameState.activeChallenges.length > 0) {
-                initPlayerChallenges(socket.id);
+                initPlayerChallenges(gameState, socket.id);
                 console.log(`🎯 Nouveaux défis initialisés pour joueur reconnecté`);
             }
 
@@ -5504,7 +5504,7 @@ io.on('connection', (socket) => {
                     comboProgress: gameState.playerBonuses.get(socket.id).comboProgress,
                     bonusInventory: gameState.playerBonuses.get(socket.id).bonusInventory
                 } : null,
-                challenges: getPlayerChallengesState(socket.id), // 🆕 Envoyer les défis
+                challenges: getPlayerChallengesState(gameState, socket.id), // 🆕 Envoyer les défis
                 bonusEnabled: gameState.bonusEnabled // 🎮 Bonus activés
             };
 
@@ -5518,14 +5518,14 @@ io.on('connection', (socket) => {
             socket.emit('player-restored', restorationData);
 
             // 🔄 Log "reconnect" seulement si "disconnect" avait été affiché
-            const playerColor = playerColors[data.username] || assignPlayerColor(data.username);
+            const playerColor = playerColors[data.username] || assignPlayerColor(gameState, data.username);
             if (existingPlayer.disconnectLogged) {
-                addLog('reconnect', { username: data.username, playerColor });
+                addLog(gameState, 'reconnect', { username: data.username, playerColor });
                 delete existingPlayer.disconnectLogged;
             }
 
             // Mise à jour lobby
-            broadcastLobbyUpdate();
+            broadcastLobbyUpdate(gameState);
         } else {
             socket.emit('error', {
                 message: 'Partie déjà en cours',
@@ -5566,7 +5566,7 @@ io.on('connection', (socket) => {
         });
 
         if (player) {
-            addLog('answer', {
+            addLog(gameState, 'answer', {
                 username: player.username,
                 playerColor: playerColors[player.username]
             });
@@ -5575,7 +5575,7 @@ io.on('connection', (socket) => {
         socket.emit('answer-recorded');
 
         gameState.liveAnswers.set(socket.id, data.answer);
-        throttledUpdateLiveAnswerStats();
+        throttledUpdateLiveAnswerStats(gameState);
 
         io.emit('answer-submitted', {
             socketId: socket.id,
@@ -5601,7 +5601,7 @@ io.on('connection', (socket) => {
         const { bonusType } = data;
 
         // Vérifier et utiliser le bonus
-        const success = usePlayerBonus(socket.id, bonusType);
+        const success = usePlayerBonus(gameState, socket.id, bonusType);
 
         if (success) {
             console.log(`✅ Bonus "${bonusType}" utilisé par ${player.username}`);
@@ -5610,16 +5610,16 @@ io.on('connection', (socket) => {
             const playerColor = playerColors[player.username];
             switch (bonusType) {
                 case '5050':
-                    addLog('bonus-5050', { username: player.username, playerColor });
+                    addLog(gameState, 'bonus-5050', { username: player.username, playerColor });
                     break;
                 case 'reveal':
-                    addLog('bonus-joker', { username: player.username, playerColor });
+                    addLog(gameState, 'bonus-joker', { username: player.username, playerColor });
                     break;
                 case 'shield':
-                    addLog('bonus-shield', { username: player.username, playerColor });
+                    addLog(gameState, 'bonus-shield', { username: player.username, playerColor });
                     break;
                 case 'doublex2':
-                    addLog('bonus-x2', { username: player.username, playerColor });
+                    addLog(gameState, 'bonus-x2', { username: player.username, playerColor });
                     break;
             }
 
@@ -5659,7 +5659,7 @@ io.on('connection', (socket) => {
     socket.on('bombanime-submit-name', (data) => {
         if (!gameState.bombanime.active) return;
         
-        const result = submitBombanimeName(socket.id, data.name);
+        const result = submitBombanimeName(gameState, socket.id, data.name);
         
         if (!result.success) {
             // L'erreur est déjà envoyée dans submitBombanimeName
@@ -5687,7 +5687,7 @@ io.on('connection', (socket) => {
         }
         
         // Obtenir un personnage aléatoire non utilisé
-        const freeChar = getRandomUnusedCharacter(gameState.bombanime.serie);
+        const freeChar = getRandomUnusedCharacter(gameState, gameState.bombanime.serie);
         if (!freeChar) {
             socket.emit('bombanime-bonus-error', { error: 'no_character_available' });
             return;
@@ -5738,7 +5738,7 @@ io.on('connection', (socket) => {
             playerTwitchId: player.twitchId,
             playerUsername: player.username,
             lives: player.lives,
-            playersData: getBombanimePlayersData()
+            playersData: getBombanimePlayersData(gameState)
         });
         
         // Envoyer confirmation au joueur
@@ -5823,8 +5823,8 @@ io.on('connection', (socket) => {
             [];
         
         // 🎯 Récupérer les défis et bonus du joueur
-        const myChallenges = player ? getBombanimePlayerChallengesState(player.twitchId) : [];
-        const myBonuses = player ? getBombanimePlayerBonuses(player.twitchId) : { freeCharacter: 0, extraLife: 0 };
+        const myChallenges = player ? getBombanimePlayerChallengesState(gameState, player.twitchId) : [];
+        const myBonuses = player ? getBombanimePlayerBonuses(gameState, player.twitchId) : { freeCharacter: 0, extraLife: 0 };
         
         socket.emit('bombanime-state', {
             active: true,
@@ -5832,7 +5832,7 @@ io.on('connection', (socket) => {
             timer: gameState.bombanime.timer,
             currentPlayerTwitchId: gameState.bombanime.currentPlayerTwitchId,
             playersOrder: gameState.bombanime.playersOrder,
-            playersData: getBombanimePlayersData(),
+            playersData: getBombanimePlayersData(gameState),
             myAlphabet: myAlphabet,
             usedNamesCount: gameState.bombanime.usedNames.size,
             direction: gameState.bombanime.bombDirection,
@@ -5864,7 +5864,7 @@ io.on('connection', (socket) => {
             const playerColor = playerColors[player.username];
             // 🔄 Délai avant d'afficher le log "disconnect" (évite le spam lors de changement d'onglet)
             player.pendingDisconnectLog = setTimeout(() => {
-                addLog('disconnect', { username: player.username, playerColor });
+                addLog(gameState, 'disconnect', { username: player.username, playerColor });
                 player.disconnectLogged = true;
                 delete player.pendingDisconnectLog;
             }, 3000); // 3 secondes
@@ -5909,7 +5909,7 @@ io.on('connection', (socket) => {
                             console.log(`🗑️ ${player.username} supprimé du lobby (timeout 5s)`);
                             gameState.players.delete(socket.id);
                             gameState.answers.delete(socket.id);
-                            broadcastLobbyUpdate();
+                            broadcastLobbyUpdate(gameState);
                         }
                     }, 5000);
                 }
@@ -5928,7 +5928,7 @@ io.on('connection', (socket) => {
 const COMBO_THRESHOLDS = [3, 8, 14]; // Lvl1, Lvl2, Lvl3
 
 // Mise à jour du combo d'un joueur (bonne réponse)
-function updatePlayerCombo(socketId) {
+function updatePlayerCombo(gameState, socketId) {
     const bonusData = gameState.playerBonuses.get(socketId);
     if (!bonusData) return;
 
@@ -5981,7 +5981,7 @@ function updatePlayerCombo(socketId) {
 }
 
 // Reset du combo d'un joueur (mauvaise réponse ou AFK)
-function resetPlayerCombo(socketId) {
+function resetPlayerCombo(gameState, socketId) {
     const bonusData = gameState.playerBonuses.get(socketId);
     if (!bonusData) return;
 
@@ -5999,7 +5999,7 @@ function resetPlayerCombo(socketId) {
 }
 
 // Utilisation d'un bonus - 🔥 REFONTE: Décrémenter l'inventaire
-function usePlayerBonus(socketId, bonusType) {
+function usePlayerBonus(gameState, socketId, bonusType) {
     const bonusData = gameState.playerBonuses.get(socketId);
     if (!bonusData) return false;
 
@@ -6017,7 +6017,7 @@ function usePlayerBonus(socketId, bonusType) {
 }
 
 // Reset des bonus et défis en fin de partie
-function resetAllBonuses() {
+function resetAllBonuses(gameState) {
     gameState.playerBonuses.clear();
     gameState.activeChallenges = [];
     gameState.playerChallenges.clear();
@@ -6026,7 +6026,7 @@ function resetAllBonuses() {
 
 
 // FONCTION: Générer les données communes pour game-ended
-async function generateGameEndedData() {
+async function generateGameEndedData(gameState) {
     const playersData = Array.from(gameState.players.values()).map(p => ({
         twitchId: p.twitchId,
         username: p.username,
@@ -6044,7 +6044,7 @@ async function generateGameEndedData() {
 
 
 // FONCTION: Reset complet de l'état du jeu
-function resetGameState() {
+function resetGameState(gameState) {
     gameState.inProgress = false;
     gameState.endingGame = false; // 🆕 Reset du flag de finalisation
     gameState.currentGameId = null;
@@ -6080,7 +6080,7 @@ function resetGameState() {
         player.activeShield = false;
     });
 
-    resetAllBonuses();
+    resetAllBonuses(gameState);
 
 
     // 🔥 COMMENTER CES LIGNES
@@ -6101,7 +6101,7 @@ function resetGameState() {
 
 
 
-function updateLiveAnswerStats() {
+function updateLiveAnswerStats(gameState) {
     const answerCounts = {};
 
     gameState.liveAnswers.forEach((answerIndex) => {
@@ -6119,13 +6119,13 @@ function updateLiveAnswerStats() {
 }
 
 // 🆕 Version throttlée - appeler celle-ci à la place
-function throttledUpdateLiveAnswerStats() {
+function throttledUpdateLiveAnswerStats(gameState) {
     const now = Date.now();
 
     // Si assez de temps s'est écoulé, envoyer immédiatement
     if (now - lastStatsUpdate >= STATS_THROTTLE_MS) {
         lastStatsUpdate = now;
-        updateLiveAnswerStats();
+        updateLiveAnswerStats(gameState);
         pendingStatsUpdate = false;
     }
     // Sinon, programmer un envoi différé (si pas déjà programmé)
@@ -6135,7 +6135,7 @@ function throttledUpdateLiveAnswerStats() {
 
         setTimeout(() => {
             lastStatsUpdate = Date.now();
-            updateLiveAnswerStats();
+            updateLiveAnswerStats(gameState);
             pendingStatsUpdate = false;
         }, delay);
     }
@@ -6145,7 +6145,7 @@ function throttledUpdateLiveAnswerStats() {
 
 
 
-function addLog(type, data) {
+function addLog(gameState, type, data) {
     const log = {
         id: Date.now() + Math.random(),
         type: type,
@@ -6161,13 +6161,13 @@ function addLog(type, data) {
     io.emit('activity-log', log);
 }
 
-function resetLogs() {
+function resetLogs(gameState) {
     activityLogs = [];
     playerColors = {};
     io.emit('logs-reset');
 }
 
-function assignPlayerColor(username) {
+function assignPlayerColor(gameState, username) {
     if (!playerColors[username]) {
         const usedColors = Object.values(playerColors);
         const availableColors = PLAYER_COLORS.filter(c => !usedColors.includes(c));
