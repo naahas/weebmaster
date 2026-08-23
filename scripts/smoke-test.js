@@ -203,8 +203,12 @@ async function scenarioHomeStats() {
     const stats = await get('/api/home-stats');
     check('questions comptées', stats.questionsCount > 0, stats.questionsCount + ' questions');
     check('salons actifs cohérents', typeof stats.activeRooms === 'number', 'activeRooms=' + stats.activeRooms);
-    check('historique alimenté par les parties jouées', Array.isArray(stats.recentGames) && stats.recentGames.length > 0,
-        (stats.recentGames || []).map(g => g.modeLabel).join(', ') || 'vide');
+    // Les parties du smoke tiennent à deux joueurs : elles doivent être écartées
+    check('historique lisible', Array.isArray(stats.recentGames),
+        (stats.recentGames || []).length + ' partie(s) retenue(s)');
+    const petites = (stats.recentGames || []).filter(g => g.playersCount < 15);
+    check('les parties à moins de 15 joueurs sont écartées', petites.length === 0,
+        petites.length ? petites.map(g => g.playersCount + 'j').join(', ') : 'aucune');
 }
 
 (async () => {

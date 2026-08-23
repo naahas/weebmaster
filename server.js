@@ -143,6 +143,11 @@ app.set('trust proxy', 1);
 const recentGames = [];
 let gamesPlayedTotal = 0;   // parties terminées (depuis la base si game_history existe)
 const RECENT_GAMES_MAX = 8;
+
+// Les parties à deux ou trois ne disent rien de l'activité du site : elles
+// viennent d'un test ou d'un essai entre amis. Seules celles qui ont rassemblé
+// du monde sont comptées et affichées.
+const MIN_JOUEURS_HISTORIQUE = parseInt(process.env.MIN_JOUEURS_HISTORIQUE, 10) || 15;
 let gameHistoryTableOk = null; // null = pas encore testé, false = table absente
 
 let questionsCountCache = { value: null, at: 0 };
@@ -159,6 +164,11 @@ async function recordFinishedGame({ mode, playersCount, winnerName, duration }) 
         duration: duration || 0,
         endedAt: new Date().toISOString(),
     };
+
+    if (entry.playersCount < MIN_JOUEURS_HISTORIQUE) {
+        console.log(`📊 Partie non retenue : ${entry.playersCount} joueur(s), minimum ${MIN_JOUEURS_HISTORIQUE}`);
+        return;
+    }
 
     gamesPlayedTotal++;
     recentGames.unshift(entry);
@@ -188,6 +198,7 @@ async function loadRecentGamesFromDb() {
         const { data, error } = await supabase
             .from('game_history')
             .select('mode, players_count, winner_name, duration, created_at')
+            .gte('players_count', MIN_JOUEURS_HISTORIQUE)
             .order('created_at', { ascending: false })
             .limit(RECENT_GAMES_MAX);
         if (error) throw error;
@@ -202,7 +213,9 @@ async function loadRecentGamesFromDb() {
             duration: g.duration || 0,
             endedAt: g.created_at,
         }));
-        const { count } = await supabase.from('game_history').select('id', { count: 'exact', head: true });
+        const { count } = await supabase.from('game_history')
+            .select('id', { count: 'exact', head: true })
+            .gte('players_count', MIN_JOUEURS_HISTORIQUE);
         gamesPlayedTotal = count || recentGames.length;
         console.log(`📊 ${recentGames.length} partie(s) récente(s) chargée(s), ${gamesPlayedTotal} au total`);
     } catch (e) {
