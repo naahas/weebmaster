@@ -10355,7 +10355,14 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     z-index: 3;
     width: 11rem;
     pointer-events: none;
-    animation: v2Rise 1s 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    /* Pas v2Rise : il se termine sur transform: none, ce qui effacerait le
+       centrage porté par le même transform. */
+    animation: v2RiseCentre 1s 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes v2RiseCentre {
+    from { opacity: 0; transform: translateY(calc(-50% + 1.2rem)); }
+    to   { opacity: 1; transform: translateY(-50%); }
 }
 
 .v2-recent-t {
