@@ -1973,8 +1973,9 @@ app.get('/admin/serie-stats', async (req, res) => {
         // 🔥 AUTOMATIQUE: Générer les stats pour chaque filtre dans SERIES_FILTERS
         for (const [filterId, filterConfig] of Object.entries(SERIES_FILTERS)) {
             if (filterId === 'overall') {
-                stats.tout = {
+                stats.overall = {
                     count: allQuestions.length,
+                    series: totalSeries,
                     subtitle: `${totalSeries} séries`
                 };
             } else if (filterId === 'mainstream') {
@@ -1985,6 +1986,7 @@ app.get('/admin/serie-stats', async (req, res) => {
                 );
                 stats.mainstream = {
                     count: mainstreamSeriesWithQuestions.size,
+                    series: mainstreamSeriesWithQuestions.size,
                     subtitle: `${mainstreamSeriesWithQuestions.size} séries`
                 };
             } else {

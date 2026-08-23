@@ -9736,7 +9736,7 @@ body.game-active:has(.poll-game-container) #particles-js {
         width: min(22rem, 100%);
         max-width: none;
         margin: 0;
-        padding: 1.5rem 1.4rem 1.3rem;
+        padding: 1.3rem 1.2rem;
         background: linear-gradient(170deg, rgba(20, 19, 15, 0.99), rgba(11, 11, 13, 0.99));
         border: 0.06rem solid rgba(255, 255, 255, 0.1);
         border-radius: 1rem;
@@ -11492,8 +11492,9 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     position: fixed;
     inset: 0;
     z-index: 1400;
-    background: rgba(6, 6, 8, 0.72);
-    backdrop-filter: blur(0.4rem);
+    /* Pas de backdrop-filter : sur toute la surface de l'écran, il coûtait
+       plus cher que tout le reste du tiroir réuni. */
+    background: rgba(6, 6, 8, 0.8);
     animation: v2SerieVeil 0.25s ease both;
 }
 
@@ -11522,27 +11523,33 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     to   { transform: none; }
 }
 
-.v2-serie-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding-bottom: 1rem;
-    margin-bottom: 1.1rem;
-    border-bottom: 0.06rem solid rgba(255, 255, 255, 0.07);
-}
+/* Sur grand écran on se passe d'en-tête : un clic à côté ou Échap referme */
+.v2-serie-head { display: none; }
 
 .v2-serie-head .ttl {
     font-family: 'Bebas Neue', 'Russo One', sans-serif;
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     letter-spacing: 0.05em;
     color: var(--neon-primary);
 }
 
+/* Une barre de défilement discrète, dans les tons du site */
+.v2-serie-panel { scrollbar-width: thin; scrollbar-color: rgba(255, 215, 0, 0.35) transparent; }
+.v2-serie-panel::-webkit-scrollbar { width: 0.4rem; }
+.v2-serie-panel::-webkit-scrollbar-track { background: transparent; }
+
+.v2-serie-panel::-webkit-scrollbar-thumb {
+    background: rgba(255, 215, 0, 0.28);
+    border-radius: 2rem;
+    transition: background 0.2s ease;
+}
+
+.v2-serie-panel::-webkit-scrollbar-thumb:hover { background: rgba(255, 215, 0, 0.55); }
+
 .v2-serie-grille {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(7.2rem, 1fr));
-    gap: 0.65rem;
+    grid-template-columns: repeat(auto-fill, minmax(6.4rem, 1fr));
+    gap: 0.6rem;
 }
 
 .v2-serie-carte {
@@ -11566,40 +11573,47 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     transition: transform 0.45s cubic-bezier(0.2, 0.9, 0.25, 1), filter 0.3s ease;
 }
 
-/* L'ombre porte le nom : sans elle, illisible sur les vignettes claires */
+/* La vignette est assombrie au repos pour que le nom se détache, et
+   s'éclaircit au survol. C'est une opacité, pas un filtre : le compositeur
+   la gère seul, sans repeindre l'image. */
 .v2-serie-ombre {
     position: absolute;
-    inset: 40% 0 0 0;
-    background: linear-gradient(180deg, transparent, rgba(6, 6, 8, 0.92));
+    inset: 0;
+    background: linear-gradient(180deg, rgba(6, 6, 8, 0.5), rgba(6, 6, 8, 0.82));
+    transition: opacity 0.25s ease;
 }
+
+.v2-serie-carte:not(.soon):hover .v2-serie-ombre { opacity: 0.45; }
 
 .v2-serie-carte .nm {
     position: absolute;
-    left: 0.55rem;
-    right: 0.55rem;
-    bottom: 0.55rem;
+    inset: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.1rem;
-    font-size: 0.72rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.22rem;
+    padding: 0.5rem 0.45rem;
+    font-size: 0.74rem;
     font-weight: 700;
-    line-height: 1.2;
-    text-align: left;
+    line-height: 1.25;
+    text-align: center;
     color: #fff;
-    text-shadow: 0 0.1rem 0.5rem rgba(0, 0, 0, 0.8);
+    text-shadow: 0 0.1rem 0.6rem rgba(0, 0, 0, 0.9);
 }
 
-/* Les trois ensembles disent ce qu'ils recouvrent */
+/* Le décompte des séries, sous le nom */
 .v2-serie-carte .nm em {
     font-style: normal;
-    font-size: 0.56rem;
-    font-weight: 600;
-    line-height: 1.25;
-    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--neon-primary);
+    text-shadow: 0 0.1rem 0.5rem rgba(0, 0, 0, 0.9);
 }
 
-.v2-serie-carte:not(.soon):hover { border-color: rgba(255, 215, 0, 0.5); transform: translateY(-0.2rem); }
-.v2-serie-carte:not(.soon):hover img { transform: scale(1.06); }
+.v2-serie-carte:not(.soon):hover { border-color: rgba(255, 215, 0, 0.5); transform: translateY(-0.18rem); }
+.v2-serie-carte:not(.soon):hover img { transform: scale(1.05); }
 
 .v2-serie-carte.on {
     border-color: var(--neon-primary);
@@ -11608,21 +11622,22 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 
 .v2-serie-carte .coche {
     position: absolute;
-    top: 0.45rem;
-    right: 0.45rem;
-    width: 1.5rem;
-    height: 1.5rem;
-    padding: 0.3rem;
+    top: 0.4rem;
+    right: 0.4rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    padding: 0.25rem;
     color: #14100a;
     background: var(--neon-primary);
     border-radius: 50%;
 }
 
 /* Pas encore jouable : la vignette reste visible, mais éteinte */
+/* La désaturation est cuite dans la vignette à l'export : un filter CSS
+   sur six images forçait autant de couches de composition à l'ouverture. */
 .v2-serie-carte.soon { cursor: default; }
-.v2-serie-carte.soon img { filter: grayscale(1) brightness(0.45); }
-
-.v2-serie-carte.soon .nm { color: rgba(255, 255, 255, 0.45); }
+.v2-serie-carte.soon .v2-serie-ombre { background: linear-gradient(180deg, rgba(6, 6, 8, 0.72), rgba(6, 6, 8, 0.9)); }
+.v2-serie-carte.soon .nm { color: rgba(255, 255, 255, 0.42); }
 
 .v2-serie-carte .bientot {
     position: absolute;
@@ -11645,7 +11660,17 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
         width: 94vw;
         padding: 1.2rem 1rem 1.1rem;
     }
-    .v2-serie-head .ttl { font-size: 1.3rem; }
-    .v2-serie-grille { grid-template-columns: repeat(auto-fill, minmax(6.6rem, 1fr)); gap: 0.55rem; }
-    .v2-serie-carte .nm { font-size: 0.65rem; }
+    /* Sur petit écran, il n'y a pas de « à côté » où cliquer : l'en-tête revient */
+    .v2-serie-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding-bottom: 0.9rem;
+        margin-bottom: 1rem;
+        border-bottom: 0.06rem solid rgba(255, 255, 255, 0.07);
+    }
+
+    .v2-serie-grille { grid-template-columns: repeat(auto-fill, minmax(5.8rem, 1fr)); gap: 0.5rem; }
+    .v2-serie-carte .nm { font-size: 0.66rem; padding: 0.4rem 0.35rem; }
 }

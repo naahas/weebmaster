@@ -52,14 +52,15 @@ createApp({
             serieFilter: 'overall',
             noSpoil: false,
             showSeries: false,    // le tiroir de choix de série est-il ouvert
+            serieStats: null,     // combien de séries derrière Overall et Mainstream
             // Une seule liste : les trois ensembles ouvrent la marche, les séries
             // suivent. 'soon' = la vignette est prête, le filtre serveur non.
             // Vignettes en WebP 360×480 (src/img/series) : les sources d'origine
             // pesaient 3,7 Mo à elles seules et faisaient ramer l'ouverture.
             serieCartes: [
-                { id: 'overall',     name: 'Overall',    sub: 'Toutes les séries',        img: 'series/overall.webp' },
-                { id: 'mainstream',  name: 'Mainstream', sub: 'Les grands titres',        img: 'series/mainstream.webp' },
-                { id: 'big3',        name: 'Big 3',      sub: 'One Piece · Naruto · Bleach', img: 'series/big3.webp' },
+                { id: 'overall',     name: 'Overall',    compte: true, img: 'series/overall.webp' },
+                { id: 'mainstream',  name: 'Mainstream', compte: true, img: 'series/mainstream.webp' },
+                { id: 'big3',        name: 'Big 3',                    img: 'series/big3.webp' },
                 { id: 'onepiece',    name: 'One Piece',   img: 'series/onepiece.webp' },
                 { id: 'naruto',      name: 'Naruto',      img: 'series/naruto.webp' },
                 { id: 'dragonball',  name: 'Dragon Ball', img: 'series/dragonball.webp' },
@@ -1132,6 +1133,23 @@ createApp({
 
         // Tous les réglages passent par la même route POST, avec application
         // optimiste côté client et retour arrière si le serveur refuse.
+        // Le décompte vient de la base : on le demande une fois, sans bloquer
+        // l'ouverture du tiroir — les sous-titres apparaissent quand ils arrivent.
+        async ouvrirSeries() {
+            this.showSeries = true;
+            if (this.serieStats) return;
+            try {
+                const res = await this.hostFetch('/admin/serie-stats');
+                if (res.ok) this.serieStats = await res.json();
+            } catch (e) { /* pas de sous-titre, le tiroir reste utilisable */ }
+        },
+
+        sousTitreSerie(carte) {
+            if (!carte.compte || !this.serieStats) return '';
+            const n = (this.serieStats[carte.id] || {}).series;
+            return n ? '+' + n + ' séries' : '';
+        },
+
         // Le tiroir se referme dès le choix fait : une seule série à la fois
         choisirSerie(id) {
             if (id === this.serieFilter) { this.showSeries = false; return; }
