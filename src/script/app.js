@@ -1471,6 +1471,14 @@ createApp({
                 const res = await this.hostFetch('/admin/toggle-auto-mode', { method: 'POST' });
                 const data = await res.json();
                 if (data.autoMode !== undefined) this.autoMode = data.autoMode;
+
+                // Le serveur arme l'enchaînement à la révélation d'une question.
+                // Activé pendant les résultats — le moment naturel — il n'avait
+                // donc rien à armer et restait inerte jusqu'à la question suivante,
+                // qui n'arrivait jamais. On l'amorce ici.
+                if (this.autoMode && this.showResults) {
+                    await this.hostFetch('/admin/trigger-auto-next', { method: 'POST' });
+                }
             } catch (e) {
                 this.hostError = 'Erreur de connexion';
             }

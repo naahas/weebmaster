@@ -143,7 +143,24 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
     const auto = await post('/admin/toggle-auto-mode', {});
     check('bascule du mode auto', auto.success === true, 'auto=' + auto.autoMode);
+
+    // Le serveur arme l enchainement a la revelation. Active pendant les
+    // resultats — le moment ou l hote y pense — il faut l amorcer, sinon il
+    // attend une question suivante qui ne viendra jamais.
+    const avantAuto = socks[0].vu.length;
+    const amorce = await post('/admin/trigger-auto-next', {});
+    check("le mode auto s amorce pendant les resultats", amorce.success !== false,
+        amorce.reason || 'arme');
+    for (let k = 0; k < 60 && socks[0].vu.length === avantAuto; k++) await wait(100);
+    check('il enchaine bien tout seul', socks[0].vu.length > avantAuto,
+        socks[0].vu.length + ' question(s)');
+
     await post('/admin/toggle-auto-mode', {});   // on repasse en manuel
+    for (let k = 0; k < 150; k++) {
+        const e = await fetch(BASE + '/game/state?code=' + roomCode).then(r => r.json());
+        if (e.showResults) break;
+        await wait(100);
+    }
 
     const suivante = await post('/admin/next-question', {});
     check('question suivante déclenchée', !suivante.error, JSON.stringify(suivante).slice(0, 70));
