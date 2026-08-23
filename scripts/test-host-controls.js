@@ -60,6 +60,13 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     const ecart = melange.teamCounts ? Math.abs(melange.teamCounts[1] - melange.teamCounts[2]) : 99;
     check('mélange équilibré', melange.success === true && ecart <= 1,
         melange.teamCounts ? melange.teamCounts[1] + ' contre ' + melange.teamCounts[2] : 'aucun');
+    // Un camp vide fait échouer le démarrage : le bouton est grisé côté hôte,
+    // mais le serveur reste la dernière barrière.
+    const tous = await fetch(BASE + '/game/state').then(r => r.json());
+    for (const p of tous.players || []) await post('/admin/set-player-team', { twitchId: p.twitchId, team: 1 });
+    const refus = await post('/admin/start-game', {});
+    check('un camp vide bloque le démarrage', refus.errorType === 'empty_team', refus.error || 'aucune erreur');
+
     await post('/admin/set-teams', { enabled: false });
 
     const start = await post('/admin/start-game', {});

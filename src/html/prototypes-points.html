@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShonenMaster — Prototypes icône de points</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="icon.png">
+    <style>
+        :root { --neon: #FFD700; --accent: #FF8C00; --txt: #fff; --txt2: #a0a0a0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: radial-gradient(120% 90% at 50% 0%, #14100a 0%, #0c0c0e 45%, #08080a 100%);
+            background-attachment: fixed;
+            color: var(--txt);
+            font-family: 'Poppins', sans-serif;
+            padding: 2.5rem clamp(1rem, 4vw, 3rem) 6rem;
+        }
+
+        .nav { max-width: 74rem; margin: 0 auto 2rem; display: flex; gap: .6rem; flex-wrap: wrap; }
+        .nav a {
+            padding: .45rem .9rem; font-size: .78rem; font-weight: 600; text-decoration: none;
+            color: var(--txt2); background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08); border-radius: 2rem; transition: .2s;
+        }
+        .nav a:hover, .nav a.on { color: var(--neon); border-color: rgba(255,215,0,.4); }
+
+        .head { max-width: 74rem; margin: 0 auto 2.5rem; }
+        .head h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: .03em; }
+        .head p { color: var(--txt2); font-size: .9rem; max-width: 52rem; line-height: 1.6; }
+        .head b { color: var(--neon); font-weight: 600; }
+
+        .protos {
+            max-width: 74rem; margin: 0 auto;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: 2.2rem;
+        }
+
+        .proto-head { display: flex; align-items: baseline; gap: .8rem; margin-bottom: .9rem; }
+        .proto-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--neon); }
+        .proto-name { font-size: .95rem; font-weight: 700; }
+        .proto-note { font-size: .72rem; color: var(--txt2); line-height: 1.55; margin: .8rem .2rem 0; }
+
+        /* Le HUD tel qu'il apparaît en jeu : angle haut droit, fond du site */
+        .ecran {
+            position: relative; overflow: hidden;
+            height: 11rem; padding: 1.15rem 1.3rem;
+            border: 1px solid rgba(255,255,255,.07); border-radius: 1rem;
+            background: radial-gradient(120% 90% at 50% 0%, #14100a 0%, #0c0c0e 45%, #08080a 100%);
+        }
+        .coin { position: absolute; top: 1.15rem; right: 1.3rem; display: flex; align-items: center; }
+
+        .hud {
+            display: inline-flex; align-items: center; gap: .45rem;
+            font-family: 'Bebas Neue', 'Russo One', sans-serif;
+            font-size: 2rem; line-height: 1; color: var(--neon);
+            text-shadow: 0 0 1.2rem rgba(255,190,40,.35);
+            font-variant-numeric: tabular-nums;
+        }
+        .hud .delta {
+            margin-left: .1rem; font-size: .95rem; color: #7ef7c0;
+            text-shadow: 0 0 .7rem rgba(110,231,183,.7);
+        }
+
+        .ic { width: 1.5rem; height: 1.5rem; flex: none; }
+
+        /* Le gros plan, pour juger le dessin seul */
+        .zoom {
+            position: absolute; left: 1.3rem; bottom: 1.1rem;
+            display: flex; align-items: flex-end; gap: 1.1rem;
+        }
+        .zoom .ic { width: 3.4rem; height: 3.4rem; }
+        .zoom .ic.mini { width: 1rem; height: 1rem; }
+        .zoom .lbl { font-size: .6rem; color: rgba(255,255,255,.25); letter-spacing: .12em; text-transform: uppercase; }
+
+        /* 1 · Étoile actuelle */
+        .ic-etoile { fill: var(--neon); }
+
+        /* 2 · Éclat à quatre branches concaves */
+        .ic-eclat { fill: url(#gEclat); }
+
+        /* 3 · Cristal facetté */
+        .ic-cristal .face-a { fill: #ffe479; }
+        .ic-cristal .face-b { fill: #ffb300; }
+        .ic-cristal .face-c { fill: #e08b00; }
+
+        /* 4 · Sceau frappé */
+        .ic-sceau .anneau { fill: none; stroke: var(--neon); stroke-width: 1.7; }
+        .ic-sceau .noyau { fill: var(--neon); }
+
+        /* 5 · Chevron d'ascension */
+        .ic-chevron { fill: none; stroke: url(#gChevron); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+
+        /* 6 · Shuriken */
+        .ic-shuriken .lame { fill: var(--neon); }
+        .ic-shuriken .oeil { fill: #0c0c0e; }
+
+        @keyframes tourne { to { transform: rotate(360deg); } }
+        .ecran:hover .ic-shuriken { animation: tourne 3.5s linear infinite; transform-origin: 50% 50%; }
+
+        @keyframes bat { 0%,100% { transform: scale(1); } 50% { transform: scale(1.14); } }
+        .ecran:hover .ic-eclat { animation: bat 1.4s ease-in-out infinite; transform-origin: 50% 50%; }
+
+        .sur-fond { max-width: 74rem; margin: 3rem auto 0; }
+        .sur-fond h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; margin-bottom: .3rem; }
+        .sur-fond p { color: var(--txt2); font-size: .8rem; margin-bottom: 1.4rem; }
+        .rangee {
+            display: flex; flex-wrap: wrap; gap: 2.4rem; align-items: center;
+            padding: 1.6rem 1.8rem; border: 1px solid rgba(255,255,255,.07); border-radius: 1rem;
+            background: rgba(255,255,255,.015);
+        }
+        .rangee .cell { display: flex; flex-direction: column; align-items: center; gap: .55rem; }
+        .rangee .cell span.lg { font-size: .62rem; color: rgba(255,255,255,.3); letter-spacing: .1em; text-transform: uppercase; }
+        .rangee .petit { display: inline-flex; align-items: center; gap: .3rem; font-family: 'Bebas Neue', sans-serif; font-size: 1rem; color: var(--neon); }
+        .rangee .petit .ic { width: .8rem; height: .8rem; }
+    </style>
+</head>
+
+<body>
+    <!-- Les dégradés sont déclarés une fois pour toute la page -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <defs>
+            <linearGradient id="gEclat" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#fff3b0"/>
+                <stop offset="55%" stop-color="#ffd700"/>
+                <stop offset="100%" stop-color="#ff9800"/>
+            </linearGradient>
+            <linearGradient id="gChevron" x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0%" stop-color="#ff8c00"/>
+                <stop offset="100%" stop-color="#ffe066"/>
+            </linearGradient>
+        </defs>
+    </svg>
+
+    <div class="nav">
+        <a href="/prototypes">Mise en page</a>
+        <a href="/prototypes/boutons">Boutons</a>
+        <a href="/prototypes/boutons-mobile">Boutons mobiles</a>
+        <a href="/prototypes/lobby-mobile">Salon mobile</a>
+        <a href="/prototypes/modes">Modes — grilles</a>
+        <a href="/prototypes/modes-2">Modes — originales</a>
+        <a href="/prototypes/parametres">Paramètres</a>
+        <a href="/prototypes/lancer">Lancer la partie</a>
+        <a href="/prototypes/jeu">Écran de jeu</a>
+        <a href="/prototypes/effets">Effets de clic</a>
+        <a href="/prototypes/timer">Timer</a>
+        <a href="/prototypes/vies">Vies</a>
+        <a href="/prototypes/hud">HUD</a>
+        <a href="/prototypes/coeurs">Cœurs &amp; numéro</a>
+        <a href="/prototypes/points" class="on">Icône de points</a>
+        <a href="/prototypes/stats">Classement</a>
+        <a href="/prototypes/podium">Fin de partie</a>
+        <a href="/prototypes/reveal">Révélation</a>
+        <a href="/">← Le site</a>
+    </div>
+
+    <div class="head">
+        <h1>Icône de points</h1>
+        <p>
+            Le HUD porte aujourd'hui une <b>étoile à quatre branches toute simple</b>. Six remplaçantes,
+            vues à la taille réelle du HUD puis en gros plan. Le dessin doit tenir à
+            <b>1,5 rem comme à 0,8 rem</b> (classement, trio des camps, podium) : c'est le vrai filtre.
+            Survolez un cadre pour voir les deux propositions animées.
+        </p>
+    </div>
+
+    <div class="protos">
+
+        <!-- 1 -->
+        <div>
+            <div class="proto-head"><span class="proto-num">1</span><span class="proto-name">Étoile — l'actuelle</span></div>
+            <div class="ecran">
+                <div class="coin">
+                    <span class="hud">
+                        12 400
+                        <svg class="ic ic-etoile" viewBox="0 0 24 24"><path d="M12 1.6l2.7 7.7 7.7 2.7-7.7 2.7-2.7 7.7-2.7-7.7L1.6 12l7.7-2.7z"/></svg>
+                        <span class="delta">+500</span>
+                    </span>
+                </div>
+                <div class="zoom">
+                    <svg class="ic ic-etoile" viewBox="0 0 24 24"><path d="M12 1.6l2.7 7.7 7.7 2.7-7.7 2.7-2.7 7.7-2.7-7.7L1.6 12l7.7-2.7z"/></svg>
+                    <svg class="ic mini ic-etoile" viewBox="0 0 24 24"><path d="M12 1.6l2.7 7.7 7.7 2.7-7.7 2.7-2.7 7.7-2.7-7.7L1.6 12l7.7-2.7z"/></svg>
+                    <span class="lbl">Référence</span>
+                </div>
+            </div>
+            <p class="proto-note">Lisible, mais plate et sans caractère : rien ne la rattache à l'univers du site.</p>
+        </div>
+
+        <!-- 2 -->
+        <div>
+            <div class="proto-head"><span class="proto-num">2</span><span class="proto-name">Éclat</span></div>
+            <div class="ecran">
+                <div class="coin">
+                    <span class="hud">
+                        12 400
+                        <svg class="ic ic-eclat" viewBox="0 0 24 24"><path d="M12 0.8c.5 4.6 1.9 7.3 4.2 8.6 1.5.9 3.8 1.5 7 2.6-3.2 1.1-5.5 1.7-7 2.6-2.3 1.3-3.7 4-4.2 8.6-.5-4.6-1.9-7.3-4.2-8.6-1.5-.9-3.8-1.5-7-2.6 3.2-1.1 5.5-1.7 7-2.6C10.1 8.1 11.5 5.4 12 .8z"/></svg>
+                        <span class="delta">+500</span>
+                    </span>
+                </div>
+                <div class="zoom">
+                    <svg class="ic ic-eclat" viewBox="0 0 24 24"><path d="M12 0.8c.5 4.6 1.9 7.3 4.2 8.6 1.5.9 3.8 1.5 7 2.6-3.2 1.1-5.5 1.7-7 2.6-2.3 1.3-3.7 4-4.2 8.6-.5-4.6-1.9-7.3-4.2-8.6-1.5-.9-3.8-1.5-7-2.6 3.2-1.1 5.5-1.7 7-2.6C10.1 8.1 11.5 5.4 12 .8z"/></svg>
+                    <svg class="ic mini ic-eclat" viewBox="0 0 24 24"><path d="M12 0.8c.5 4.6 1.9 7.3 4.2 8.6 1.5.9 3.8 1.5 7 2.6-3.2 1.1-5.5 1.7-7 2.6-2.3 1.3-3.7 4-4.2 8.6-.5-4.6-1.9-7.3-4.2-8.6-1.5-.9-3.8-1.5-7-2.6 3.2-1.1 5.5-1.7 7-2.6C10.1 8.1 11.5 5.4 12 .8z"/></svg>
+                    <span class="lbl">Survol = pulsation</span>
+                </div>
+            </div>
+            <p class="proto-note">Branches concaves et dégradé chaud : la même idée que l'étoile, mais taillée. Elle pulse quand des points tombent.</p>
+        </div>
+
+        <!-- 3 -->
+        <div>
+            <div class="proto-head"><span class="proto-num">3</span><span class="proto-name">Cristal</span></div>
+            <div class="ecran">
+                <div class="coin">
+                    <span class="hud">
+                        12 400
+                        <svg class="ic ic-cristal" viewBox="0 0 24 24">
+                            <path class="face-a" d="M12 1.5L4 8.6 12 22.5z"/>
+                            <path class="face-b" d="M12 1.5l8 7.1-8 13.9z"/>
+                            <path class="face-c" d="M4 8.6h16l-8 3.6z"/>
+                        </svg>
+                        <span class="delta">+500</span>
+                    </span>
+                </div>
+                <div class="zoom">
+                    <svg class="ic ic-cristal" viewBox="0 0 24 24">
+                        <path class="face-a" d="M12 1.5L4 8.6 12 22.5z"/>
+                        <path class="face-b" d="M12 1.5l8 7.1-8 13.9z"/>
+                        <path class="face-c" d="M4 8.6h16l-8 3.6z"/>
+                    </svg>
+                    <svg class="ic mini ic-cristal" viewBox="0 0 24 24">
+                        <path class="face-a" d="M12 1.5L4 8.6 12 22.5z"/>
+                        <path class="face-b" d="M12 1.5l8 7.1-8 13.9z"/>
+                        <path class="face-c" d="M4 8.6h16l-8 3.6z"/>
+                    </svg>
+                    <span class="lbl">Trois faces</span>
+                </div>
+            </div>
+            <p class="proto-note">Une gemme à trois faces : le volume vient du découpage, pas d'un dégradé. Tient très bien en petit.</p>
+        </div>
+
+        <!-- 4 -->
+        <div>
+            <div class="proto-head"><span class="proto-num">4</span><span class="proto-name">Sceau</span></div>
+            <div class="ecran">
+                <div class="coin">
+                    <span class="hud">
+                        12 400
+                        <svg class="ic ic-sceau" viewBox="0 0 24 24">
+                            <circle class="anneau" cx="12" cy="12" r="9.2"/>
+                            <path class="noyau" d="M12 5.6l1.8 4.6 4.6 1.8-4.6 1.8-1.8 4.6-1.8-4.6L5.6 12l4.6-1.8z"/>
+                        </svg>
+                        <span class="delta">+500</span>
+                    </span>
+                </div>
+                <div class="zoom">
+                    <svg class="ic ic-sceau" viewBox="0 0 24 24">
+                        <circle class="anneau" cx="12" cy="12" r="9.2"/>
+                        <path class="noyau" d="M12 5.6l1.8 4.6 4.6 1.8-4.6 1.8-1.8 4.6-1.8-4.6L5.6 12l4.6-1.8z"/>
+                    </svg>
+                    <svg class="ic mini ic-sceau" viewBox="0 0 24 24">
+                        <circle class="anneau" cx="12" cy="12" r="9.2"/>
+                        <path class="noyau" d="M12 5.6l1.8 4.6 4.6 1.8-4.6 1.8-1.8 4.6-1.8-4.6L5.6 12l4.6-1.8z"/>
+                    </svg>
+                    <span class="lbl">Anneau + noyau</span>
+                </div>
+            </div>
+            <p class="proto-note">Reprend le sceau ninja du panel de question : une même famille visuelle d'un bout à l'autre du jeu. Le trait fin peut se refermer en dessous de 0,8 rem.</p>
+        </div>
+
+        <!-- 5 -->
+        <div>
+            <div class="proto-head"><span class="proto-num">5</span><span class="proto-name">Chevron</span></div>
+            <div class="ecran">
+                <div class="coin">
+                    <span class="hud">
+                        12 400
+                        <svg class="ic ic-chevron" viewBox="0 0 24 24"><path d="M4 13.5L12 5l8 8.5M4 19.5L12 11l8 8.5"/></svg>
+                        <span class="delta">+500</span>
+                    </span>
+                </div>
+                <div class="zoom">
+                    <svg class="ic ic-chevron" viewBox="0 0 24 24"><path d="M4 13.5L12 5l8 8.5M4 19.5L12 11l8 8.5"/></svg>
+                    <svg class="ic mini ic-chevron" viewBox="0 0 24 24"><path d="M4 13.5L12 5l8 8.5M4 19.5L12 11l8 8.5"/></svg>
+                    <span class="lbl">Ascension</span>
+                </div>
+            </div>
+            <p class="proto-note">Deux chevrons empilés : ça dit « ça monte » plutôt que « c'est une récompense ». Le plus sobre du lot.</p>
+        </div>
+
+        <!-- 6 -->
+        <div>
+            <div class="proto-head"><span class="proto-num">6</span><span class="proto-name">Shuriken</span></div>
+            <div class="ecran">
+                <div class="coin">
+                    <span class="hud">
+                        12 400
+                        <svg class="ic ic-shuriken" viewBox="0 0 24 24">
+                            <path class="lame" d="M12 1.2l3.1 7.7 7.7 3.1-7.7 3.1-3.1 7.7-3.1-7.7L1.2 12l7.7-3.1z"/>
+                            <circle class="oeil" cx="12" cy="12" r="2.1"/>
+                        </svg>
+                        <span class="delta">+500</span>
+                    </span>
+                </div>
+                <div class="zoom">
+                    <svg class="ic ic-shuriken" viewBox="0 0 24 24">
+                        <path class="lame" d="M12 1.2l3.1 7.7 7.7 3.1-7.7 3.1-3.1 7.7-3.1-7.7L1.2 12l7.7-3.1z"/>
+                        <circle class="oeil" cx="12" cy="12" r="2.1"/>
+                    </svg>
+                    <svg class="ic mini ic-shuriken" viewBox="0 0 24 24">
+                        <path class="lame" d="M12 1.2l3.1 7.7 7.7 3.1-7.7 3.1-3.1 7.7-3.1-7.7L1.2 12l7.7-3.1z"/>
+                        <circle class="oeil" cx="12" cy="12" r="2.1"/>
+                    </svg>
+                    <span class="lbl">Survol = rotation</span>
+                </div>
+            </div>
+            <p class="proto-note">L'étoile percée d'un œil : le plus « anime » des six, et il tourne quand le score bouge. Attention au trou qui se bouche en très petit.</p>
+        </div>
+
+    </div>
+
+    <div class="sur-fond">
+        <h2>À la taille du classement</h2>
+        <p>Les six dessins à 0,8 rem, là où ils servent vraiment : lignes du Top 5, trio des camps, podium.</p>
+        <div class="rangee">
+            <div class="cell">
+                <span class="petit">2 400 <svg class="ic ic-etoile" viewBox="0 0 24 24"><path d="M12 1.6l2.7 7.7 7.7 2.7-7.7 2.7-2.7 7.7-2.7-7.7L1.6 12l7.7-2.7z"/></svg></span>
+                <span class="lg">1 · Étoile</span>
+            </div>
+            <div class="cell">
+                <span class="petit">2 400 <svg class="ic ic-eclat" viewBox="0 0 24 24"><path d="M12 0.8c.5 4.6 1.9 7.3 4.2 8.6 1.5.9 3.8 1.5 7 2.6-3.2 1.1-5.5 1.7-7 2.6-2.3 1.3-3.7 4-4.2 8.6-.5-4.6-1.9-7.3-4.2-8.6-1.5-.9-3.8-1.5-7-2.6 3.2-1.1 5.5-1.7 7-2.6C10.1 8.1 11.5 5.4 12 .8z"/></svg></span>
+                <span class="lg">2 · Éclat</span>
+            </div>
+            <div class="cell">
+                <span class="petit">2 400 <svg class="ic ic-cristal" viewBox="0 0 24 24"><path class="face-a" d="M12 1.5L4 8.6 12 22.5z"/><path class="face-b" d="M12 1.5l8 7.1-8 13.9z"/><path class="face-c" d="M4 8.6h16l-8 3.6z"/></svg></span>
+                <span class="lg">3 · Cristal</span>
+            </div>
+            <div class="cell">
+                <span class="petit">2 400 <svg class="ic ic-sceau" viewBox="0 0 24 24"><circle class="anneau" cx="12" cy="12" r="9.2"/><path class="noyau" d="M12 5.6l1.8 4.6 4.6 1.8-4.6 1.8-1.8 4.6-1.8-4.6L5.6 12l4.6-1.8z"/></svg></span>
+                <span class="lg">4 · Sceau</span>
+            </div>
+            <div class="cell">
+                <span class="petit">2 400 <svg class="ic ic-chevron" viewBox="0 0 24 24"><path d="M4 13.5L12 5l8 8.5M4 19.5L12 11l8 8.5"/></svg></span>
+                <span class="lg">5 · Chevron</span>
+            </div>
+            <div class="cell">
+                <span class="petit">2 400 <svg class="ic ic-shuriken" viewBox="0 0 24 24"><path class="lame" d="M12 1.2l3.1 7.7 7.7 3.1-7.7 3.1-3.1 7.7-3.1-7.7L1.2 12l7.7-3.1z"/><circle class="oeil" cx="12" cy="12" r="2.1"/></svg></span>
+                <span class="lg">6 · Shuriken</span>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

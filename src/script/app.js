@@ -115,6 +115,8 @@ createApp({
             teamNames: { 1: 'Team A', 2: 'Team B' },
             teamCounts: { 1: 0, 2: 0 },
             teamScores: { 1: 0, 2: 0 }, // 🆕 Vies restantes ou points totaux par équipe
+            campsAvant: { 1: 0, 2: 0 }, // score des camps avant la question qui vient de tomber
+            campsProg: 1,               // avancement du remplissage des barres (0 → 1)
             teamCooldownActive: false,
             teamCooldownSeconds: 0,
             teamCooldownInterval: null,
@@ -433,7 +435,28 @@ createApp({
 
         // Le serveur refuse en dessous de 2 joueurs : on grise plutot que d avertir
         canStart() {
-            return this.playerCount >= 2;
+            if (this.playerCount < 2) return false;
+            // En camps, un côté vide fait échouer le démarrage côté serveur
+            if (this.lobbyMode === 'rivalry') {
+                const c = this.campsRemplis;
+                if (!c[1] || !c[2]) return false;
+            }
+            return true;
+        },
+
+        campsRemplis() {
+            const c = { 1: 0, 2: 0 };
+            (this.lobbyPlayers || []).forEach(p => { if (p.team === 1 || p.team === 2) c[p.team]++; });
+            return c;
+        },
+
+        startTitle() {
+            if (this.playerCount < 2) return 'Il faut au moins 2 joueurs';
+            if (this.lobbyMode === 'rivalry') {
+                const c = this.campsRemplis;
+                if (!c[1] || !c[2]) return 'Chaque camp doit avoir au moins un joueur';
+            }
+            return 'Démarrer la partie';
         },
 
         modeLabel() {
@@ -735,20 +758,35 @@ createApp({
         campsClasses() {
             const s = (this.questionResults && this.questionResults.teamScores) || this.teamScores || {};
             const total = (s[1] || 0) + (s[2] || 0);
-            const camps = [1, 2].map(t => ({
-                team: t,
-                nom: this.teamNames[t],
-                score: s[t] || 0,
-                part: total ? Math.round((s[t] || 0) / total * 100) : 50,
-            })).sort((a, b) => b.score - a.score);
-            camps.forEach((c, i) => { c.tete = i === 0 && camps[0].score !== camps[1].score; });
+            const p = this.campsProg;
+            // Le classement suit le score final : sans ça les deux camps
+            // permuteraient en plein milieu du remplissage.
+            const camps = [1, 2].map(t => {
+                const cible = s[t] || 0;
+                const avant = this.campsAvant[t] || 0;
+                return {
+                    team: t,
+                    nom: this.teamNames[t],
+                    fin: cible,
+                    score: Math.round(avant + (cible - avant) * p),
+                    part: (total ? (cible / total * 100) : 50) * p,
+                };
+            }).sort((a, b) => b.fin - a.fin);
+            camps.forEach((c, i) => { c.tete = i === 0 && camps[0].fin !== camps[1].fin; });
             return camps;
+        },
+
+        // Le joueur ne voit que son camp : les deux scores côte à côte
+        // en diraient trop sur l'issue. L'hôte, lui, arbitre.
+        campsAffiches() {
+            if (this.isHost || !this.monCamp) return this.campsClasses;
+            return this.campsClasses.filter(c => c.team === this.monCamp);
         },
 
         // Fin de partie en camps : les trois meilleurs de chaque côté
         campsPodium() {
             if (!this.gameEndData || !this.estFinEnCamps) return [];
-            const parPoints = this.gameEndData.gameMode === 'rivalry-points';
+            const parPoints = this.trioEnPoints;
             const tous = this.gameEndData.playersData || [];
             const scores = this.gameEndData.teamScores || {};
             const noms = this.gameEndData.teamNames || this.teamNames;
@@ -761,16 +799,20 @@ createApp({
                     .filter(p => p.team === t)
                     .sort((a, b) => parPoints
                         ? (b.points || 0) - (a.points || 0)
-                        : (b.correctAnswers || 0) - (a.correctAnswers || 0) || (b.lives || 0) - (a.lives || 0))
+                        : (b.lives || 0) - (a.lives || 0) || (b.correctAnswers || 0) - (a.correctAnswers || 0))
                     .slice(0, 3)
                     .map((p, i) => ({
                         rang: i + 1,
                         username: p.username,
                         twitchId: p.twitchId,
-                        valeur: parPoints ? this.formatScore(p.points || 0) : (p.correctAnswers || 0),
-                        unite: parPoints ? '' : 'bonnes',
+                        valeur: parPoints ? this.formatScore(p.points || 0) : (p.lives || 0),
                     })),
             })).sort((a, b) => b.score - a.score);
+        },
+
+        // Aux points on affiche le score, aux vies le nombre de coeurs restants
+        trioEnPoints() {
+            return !!this.gameEndData && this.gameEndData.gameMode === 'rivalry-points';
         },
 
         estFinEnCamps() {
@@ -1222,6 +1264,12 @@ createApp({
         },
 
         // Le 3e apparaît d'abord, puis le 2e, puis le vainqueur, puis le reste
+        // Le trio d'un camp, accroché sous sa ligne au classement final
+        crewOf(team) {
+            const c = this.campsPodium.find(x => x.team === team);
+            return c ? c.joueurs : [];
+        },
+
         endSlot(rang) {
             if (rang === 3) return 1;
             if (rang === 2) return 2;
@@ -1352,6 +1400,22 @@ createApp({
                 if (p < 1) this._ringRaf = requestAnimationFrame(pas);
             };
             this._ringRaf = requestAnimationFrame(pas);
+        },
+
+        // Les barres de camp se remplissent pendant que les scores grimpent
+        remplirCamps(nouveaux) {
+            cancelAnimationFrame(this._campsRaf);
+            this.campsAvant = { ...this.teamScores };
+            this.teamScores = { 1: nouveaux[1] || 0, 2: nouveaux[2] || 0 };
+            this.campsProg = 0;
+            const debut = performance.now();
+            const duree = 700;
+            const pas = (t) => {
+                const p = Math.min(1, (t - debut) / duree);
+                this.campsProg = 1 - Math.pow(1 - p, 3);   // sortie douce
+                if (p < 1) this._campsRaf = requestAnimationFrame(pas);
+            };
+            this._campsRaf = requestAnimationFrame(pas);
         },
 
         openQuestionStats() {
@@ -2276,6 +2340,13 @@ createApp({
                     this.lobbyMode = data.lobbyMode;
                 }
 
+                // Une nouvelle partie repart de zéro : sans ça les barres de camp
+                // se rempliraient à partir du score de la partie précédente.
+                cancelAnimationFrame(this._campsRaf);
+                this.teamScores = { 1: 0, 2: 0 };
+                this.campsAvant = { 1: 0, 2: 0 };
+                this.campsProg = 1;
+
                 // Modes ayant leur propre handler dédié → on ignore game-started générique
                 if (this.lobbyMode === 'bombanime') {
                     console.log('🎮 game-started ignoré en mode BombAnime');
@@ -2381,7 +2452,6 @@ createApp({
                     this.selectedTeam = data.newTeam;
                     localStorage.setItem('selectedTeam', data.newTeam);
                     console.log(`🔄 [ADMIN] Équipe changée: Team ${oldTeam} → Team ${data.newTeam}`);
-                    this.showNotification(`Tu as été déplacé dans ${this.teamNames[data.newTeam]}`, 'info');
                 }
             });
 
@@ -2416,8 +2486,8 @@ createApp({
                 
                 // 🆕 Mettre à jour les scores d'équipe en mode Rivalité
                 if (results.lobbyMode === 'rivalry' && results.teamScores) {
-                    this.teamScores = results.teamScores;
                     if (results.teamNames) this.teamNames = results.teamNames;
+                    this.remplirCamps(results.teamScores);
                 }
 
                 // 🔥 Déplacer myResult ici pour être accessible partout

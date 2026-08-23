@@ -281,7 +281,7 @@
                                 <button class="v2-start" v-if="isHost"
                                         :class="{ busy: startingGame }"
                                         @click="hostStartGame" :disabled="startingGame || !canStart"
-                                        :title="canStart ? 'Démarrer la partie' : 'Il faut au moins 2 joueurs'">
+                                        :title="startTitle">
                                     <svg class="v2-start-ic" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                                     <span class="v2-start-txt">{{ startingGame ? 'Lancement…' : 'Démarrer' }}</span>
                                 </button>
@@ -1071,8 +1071,8 @@
                         <div class="v2q-top-veil" :class="{ open: showTopSheet }" @click.self="showTopSheet = false">
                         <!-- En camps, seul le score des deux équipes compte -->
                         <aside class="v2q-top" v-if="classementVisible && lobbyMode === 'rivalry'">
-                            <div class="v2q-top-t">Score des camps</div>
-                            <div class="v2q-camp" v-for="c in campsClasses" :key="c.team"
+                            <div class="v2q-top-t">{{ isHost ? 'Score des camps' : 'Ton camp' }}</div>
+                            <div class="v2q-camp" v-for="c in campsAffiches" :key="c.team"
                                  :class="['team-' + c.team, { mien: c.team === monCamp, tete: c.tete }]">
                                 <span class="nm">{{ c.nom }}</span>
                                 <span class="sc" v-if="gameMode === 'points'">{{ formatScore(c.score) }}</span>
@@ -1193,8 +1193,9 @@
                 <!-- Toutes les lignes sont posées dès le départ, seule leur visibilité
                      change : le titre et la mise en page ne bougent donc jamais. -->
                 <div class="v2-end-list">
-                    <div class="v2-end-row" v-for="p in endRows" :key="p.rank"
-                         :class="{ or: p.rank === 1, vu: endStep >= endSlot(p.rank) }">
+                    <template v-for="p in endRows" :key="p.rank">
+                    <div class="v2-end-row"
+                         :class="{ or: p.rank === 1, vu: endStep >= endSlot(p.rank), team: p.isTeam }">
                         <span class="v2-end-sweep"></span>
                         <span class="rk">{{ p.rank }}</span>
                         <span class="nm">{{ p.username }}</span>
@@ -1206,20 +1207,22 @@
                             </i>
                         </span>
                     </div>
-                </div>
 
-                <!-- Le camp gagne, mais on distingue quand même ceux qui l'ont porté -->
-                <div class="v2-end-camps" :class="{ vu: endStep >= 4 }" v-if="estFinEnCamps">
-                    <div class="v2-end-camp" v-for="c in campsPodium" :key="c.team" :class="'team-' + c.team">
-                        <span class="ttl"><i></i>{{ c.nom }}</span>
-                        <div class="v2-end-camp-row" v-for="p in c.joueurs" :key="p.twitchId || p.username"
-                             :class="{ moi: p.twitchId === twitchId }">
-                            <span class="rk">{{ p.rang }}</span>
-                            <span class="nm">{{ p.username }}</span>
-                            <span class="sc">{{ p.valeur }}<em v-if="p.unite"> {{ p.unite }}</em></span>
-                        </div>
-                        <div class="v2-end-camp-vide" v-if="!c.joueurs.length">Personne</div>
+                    <!-- Le camp gagne, mais on distingue ceux qui l'ont porté -->
+                    <div class="v2-end-crew" v-if="p.isTeam"
+                         :class="['team-' + p.team, { vu: endStep >= endSlot(p.rank) }]">
+                        <span class="v2-end-crew-row" v-for="m in crewOf(p.team)" :key="m.twitchId || m.username"
+                              :class="{ moi: m.twitchId === twitchId }">
+                            <span class="rk">{{ m.rang }}</span>
+                            <span class="nm">{{ m.username }}</span>
+                            <span class="sc">
+                                {{ m.valeur }}
+                                <svg v-if="!trioEnPoints" viewBox="0 0 24 24" stroke-linejoin="round"><path d="M12 20.6s-7-4.3-9-8.4A5 5 0 0 1 12 6.6a5 5 0 0 1 9 5.6c-2 4.1-9 8.4-9 8.4z"/></svg>
+                            </span>
+                        </span>
+                        <span class="v2-end-crew-vide" v-if="!crewOf(p.team).length">Personne</span>
                     </div>
+                    </template>
                 </div>
 
                 <div class="v2-end-me" :class="{ vu: endStep >= 4 }" v-if="myEndRank && myEndRank.rank > 3 && !estFinEnCamps">

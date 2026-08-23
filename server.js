@@ -928,6 +928,10 @@ app.get('/prototypes/stats', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-stats.html');
 });
 
+app.get('/prototypes/points', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-points.html');
+});
+
 app.get('/prototypes/coeurs', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-coeurs.html');
 });

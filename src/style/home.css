@@ -11109,7 +11109,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    margin-right: 0.75rem;
+    margin-right: 1.35rem;
     padding: 0.32rem 0.7rem;
     font-size: 0.66rem;
     font-weight: 700;
@@ -11190,7 +11190,8 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     display: block;
     height: 100%;
     border-radius: 2rem;
-    transition: width 0.6s cubic-bezier(0.2, 0.9, 0.25, 1);
+    /* Le remplissage est piloté image par image : une transition CSS
+       par-dessus amortirait le mouvement au lieu de l'aider. */
 }
 
 .v2q-camp.team-1 .sc,
@@ -11237,117 +11238,17 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 .v2q-camp-bar .sc { font-size: 1.5rem; }
 .v2q-camp-bar:not(.tete) .sc { opacity: 0.72; }
 
-/* Podium : les meilleurs de chaque camp, sous le classement des équipes */
-.v2-end-camps {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.6rem;
-    width: min(38rem, 92vw);
-    margin: 1.6rem auto 0;
-    opacity: 0;
-    transform: translateY(0.6rem);
-    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.2, 0.9, 0.25, 1);
-}
-
-.v2-end-camps.vu { opacity: 1; transform: none; }
-
-.v2-end-camp .ttl {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding-bottom: 0.5rem;
-    margin-bottom: 0.35rem;
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    border-bottom: 0.06rem solid rgba(255, 255, 255, 0.07);
-}
-
-.v2-end-camp .ttl i { width: 0.35rem; height: 0.35rem; border-radius: 50%; background: currentColor; }
-.v2-end-camp.team-1 .ttl { color: #7fb4ff; }
-.v2-end-camp.team-2 .ttl { color: var(--neon-primary); }
-
-.v2-end-camp-row {
-    display: flex;
-    align-items: baseline;
-    gap: 0.55rem;
-    padding: 0.42rem 0;
-    font-size: 0.78rem;
-}
-
-.v2-end-camp-row .rk {
-    width: 0.9rem;
-    flex: none;
-    font-family: 'Bebas Neue', 'Russo One', sans-serif;
-    font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.3);
-}
-
-.v2-end-camp-row:first-of-type .rk { color: rgba(255, 255, 255, 0.6); }
-
-.v2-end-camp-row .nm {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: rgba(255, 255, 255, 0.82);
-}
-
-.v2-end-camp-row.moi .nm { color: #fff; font-weight: 600; }
-.v2-end-camp-row.moi .nm::after {
-    content: 'toi';
-    margin-left: 0.4rem;
-    font-size: 0.52rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.3);
-}
-
-.v2-end-camp-row .sc {
-    flex: none;
-    font-family: 'Bebas Neue', 'Russo One', sans-serif;
-    font-size: 0.95rem;
-    font-variant-numeric: tabular-nums;
-    color: rgba(255, 255, 255, 0.6);
-}
-
-.v2-end-camp-row .sc em {
-    margin-left: 0.2rem;
-    font-family: 'Poppins', sans-serif;
-    font-style: normal;
-    font-size: 0.52rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.28);
-}
-
-.v2-end-camp-vide {
-    padding: 0.5rem 0;
-    font-size: 0.72rem;
-    color: rgba(255, 255, 255, 0.25);
-}
-
 @media (max-width: 768px) {
-    .v2-hud-team { margin-right: 0.45rem; padding: 0.26rem 0.55rem; font-size: 0.58rem; }
+    .v2-hud-team { margin-right: 0.85rem; padding: 0.26rem 0.55rem; font-size: 0.58rem; }
     .v2q-camp .sc { font-size: 1.55rem; }
 
     /* Les deux camps l'un sous l'autre : à deux colonnes, les noms se coupent */
     .v2q-camps-bars { grid-template-columns: 1fr; gap: 0.9rem; padding: 0.85rem 0.9rem; }
     .v2q-camp-bar .sc { font-size: 1.3rem; }
 
-    .v2-end-camps {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-        width: min(22rem, 88vw);
-        margin-top: 1.1rem;
-    }
-
-    .v2-end-camp-row { padding: 0.34rem 0; font-size: 0.72rem; }
-    .v2-end-camp-row .sc { font-size: 0.85rem; }
+    .v2-end-crew { padding: 0.15rem 0 0.5rem 1.9rem; }
+    .v2-end-crew-row { font-size: 0.68rem; }
+    .v2-end-crew-row .sc { font-size: 0.8rem; }
 }
 
 /* Dernière question : le classement se tait plutôt que de laisser un trou */
@@ -11384,3 +11285,87 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 @media (max-width: 768px) {
     .v2q-top-secret { padding: 1.2rem 0.6rem 1rem; }
 }
+
+/* Le trio d'un camp, glissé sous la ligne de son équipe */
+.v2-end-crew {
+    padding: 0.2rem 0 0.7rem 2.6rem;
+    opacity: 0;
+    transform: translateY(0.5rem);
+    transition: opacity 0.5s ease 0.12s, transform 0.5s cubic-bezier(0.2, 0.9, 0.25, 1) 0.12s;
+}
+
+.v2-end-crew.vu { opacity: 1; transform: none; }
+
+.v2-end-crew-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    padding: 0.2rem 0 0.2rem 0.7rem;
+    font-size: 0.74rem;
+    border-left: 0.09rem solid;
+}
+
+.v2-end-crew.team-1 .v2-end-crew-row { border-left-color: rgba(127, 180, 255, 0.3); }
+.v2-end-crew.team-2 .v2-end-crew-row { border-left-color: rgba(255, 215, 0, 0.3); }
+.v2-end-crew-row:first-of-type { border-left-color: currentColor; }
+.v2-end-crew.team-1 .v2-end-crew-row:first-of-type { border-left-color: #7fb4ff; }
+.v2-end-crew.team-2 .v2-end-crew-row:first-of-type { border-left-color: var(--neon-primary); }
+
+.v2-end-crew-row .rk {
+    width: 0.8rem;
+    flex: none;
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.22);
+}
+
+.v2-end-crew-row:first-of-type .rk { color: rgba(255, 255, 255, 0.5); }
+
+.v2-end-crew-row .nm {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: rgba(255, 255, 255, 0.68);
+}
+
+.v2-end-crew-row.moi .nm { color: #fff; font-weight: 600; }
+.v2-end-crew-row.moi .nm::after {
+    content: 'toi';
+    margin-left: 0.4rem;
+    font-size: 0.5rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.28);
+}
+
+.v2-end-crew-row .sc {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.22rem;
+    flex: none;
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 0.92rem;
+    font-variant-numeric: tabular-nums;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.v2-end-crew-row .sc svg {
+    width: 0.6rem;
+    height: 0.6rem;
+    fill: rgba(255, 90, 110, 0.75);
+    stroke: none;
+}
+
+.v2-end-crew-vide {
+    display: block;
+    padding-left: 0.7rem;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.22);
+    border-left: 0.09rem solid rgba(255, 255, 255, 0.08);
+}
+
+/* La ligne d'un camp porte son trio : plus de filet entre les deux */
+.v2-end-crew + .v2-end-row { border-top: 0.06rem solid rgba(255, 255, 255, 0.055); }
