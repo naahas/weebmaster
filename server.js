@@ -16,7 +16,6 @@ const app = express();
 app.use(compression());
 const PORT = process.env.PORT || 7000;
 
-let lastRefreshPlayersTime = 0;
 const REFRESH_COOLDOWN_MS = 20000;
 
 let connectionsByIP = new Map();
@@ -25,18 +24,12 @@ let connectionsByIP = new Map();
 // d'environnement si un abus se présentait.
 const MAX_CONNECTIONS_PER_IP = parseInt(process.env.MAX_CONNECTIONS_PER_IP, 10) || 16;
 
-let activityLogs = [];
-let lastGlobalWinner = null;
 
 
-let winnerScreenData = null;
 
 const MAX_LOGS = 30;
-let playerColors = {}; // Associer chaque joueur à une couleur
 
-let lastStatsUpdate = 0;
 const STATS_THROTTLE_MS = 500; // Max 2 updates par seconde
-let pendingStatsUpdate = false;
 
 
 const PLAYER_COLORS = [
@@ -123,7 +116,6 @@ const BOMBANIME_CONFIG = {
 
 
 // 💣 Set pour réserver les places pendant le traitement async (évite les race conditions)
-const pendingJoins = new Set();
 
 
 // SERIES_FILTERS importé depuis dbs.js
@@ -324,7 +316,7 @@ app.get('/game/state', (req, res) => {
             title: player.title || 'Novice courageux',
             lives: gameState.mode === 'lives' ? player.lives : null,
             points: gameState.mode === 'points' ? (player.points || 0) : null,
-            isLastGlobalWinner: player.twitchId === lastGlobalWinner,
+            isLastGlobalWinner: player.twitchId === gameState.lastGlobalWinner,
             correctAnswers: player.correctAnswers,
             hasAnswered: !!playerAnswer,
             selectedAnswerIndex: playerAnswer?.answer || null,
@@ -365,8 +357,8 @@ app.get('/game/state', (req, res) => {
         speedBonus: gameState.speedBonus, // ⚡ +500 au plus rapide (mode points)
         isTiebreaker: gameState.isTiebreaker,
         liveAnswerCounts: answerCounts,
-        showingWinner: !!winnerScreenData,
-        winnerScreenData: winnerScreenData,
+        showingWinner: !!gameState.winnerScreenData,
+        winnerScreenData: gameState.winnerScreenData,
         livesIcon: gameState.livesIcon,
         answeredCount: gameState.liveAnswers.size,
         autoMode: gameState.autoMode,
@@ -424,6 +416,17 @@ app.use(express.static('src/img/avatar', MEDIA));
 // État du jeu
 // ============================================
 const gameState = {
+    // Ces sept-là étaient des variables de module. Elles décrivent pourtant une
+    // partie précise : à plusieurs rooms, elles se seraient marché dessus.
+    winnerScreenData: null,     // l'écran de victoire à rejouer pour qui arrive après
+    activityLogs: [],           // le journal de la partie
+    playerColors: {},           // une couleur par pseudo, le temps de la partie
+    lastGlobalWinner: null,     // le vainqueur de la partie précédente, pour son liseré
+    pendingJoins: new Set(),    // jointures en cours, contre les doubles arrivées
+    lastStatsUpdate: 0,         // limitation du débit des stats en direct
+    pendingStatsUpdate: false,
+    lastRefreshPlayersTime: 0,  // délai entre deux rafraîchissements de la liste
+
     isActive: false,
     inProgress: false,
     currentGameId: null,
@@ -607,7 +610,7 @@ function broadcastLobbyUpdate(gameState) {
             title: p.title || 'Novice courageux',
             avatarUrl: p.avatarUrl,
             team: p.team || null,
-            isLastGlobalWinner: p.twitchId === lastGlobalWinner,
+            isLastGlobalWinner: p.twitchId === gameState.lastGlobalWinner,
         }))
     });
 }
@@ -1003,7 +1006,7 @@ app.get('/admin/game-state', (req, res) => {
             twitch_id: p.twitchId,
             twitchId: p.twitchId,
             title: p.title || 'Novice courageux',
-            isChampion: p.twitchId === lastGlobalWinner
+            isChampion: p.twitchId === gameState.lastGlobalWinner
         })),
         playerCount: gameState.players.size,
         lobbyMode: gameState.lobbyMode,
@@ -1025,9 +1028,9 @@ app.post('/admin/toggle-game', async (req, res) => {
         gameState.hostToken = randomUUID();
         console.log(`✅ Jeu activé - Lobby ouvert (code ${gameState.roomCode})`);
 
-        // 🔥 FIX: Clear le winnerScreenData pour éviter les données stale
+        // 🔥 FIX: Clear le gameState.winnerScreenData pour éviter les données stale
         // (ex: après BombAnime le winner screen data persiste car closeBombanimeWinner n'appelle pas le serveur)
-        winnerScreenData = null;
+        gameState.winnerScreenData = null;
         
         // 🆕 Récupérer le mode et les noms d'équipe depuis la requête
         const { lobbyMode, teamNames, bombanimeSerie, bombanimeTimer, bombanimeLives } = req.body || {};
@@ -1054,7 +1057,7 @@ app.post('/admin/toggle-game', async (req, res) => {
         // Reset la grille des joueurs à l'ouverture du lobby
         gameState.players.clear();
         gameState.answers.clear();
-        pendingJoins.clear(); // 🔓 Reset les réservations
+        gameState.pendingJoins.clear(); // 🔓 Reset les réservations
         gameState.currentQuestionIndex = 0;
         gameState.currentQuestion = null;
         gameState.showResults = false;
@@ -1103,7 +1106,7 @@ app.post('/admin/toggle-game', async (req, res) => {
             console.log('⚠️ Partie en cours annulée');
         }
 
-        winnerScreenData = null;
+        gameState.winnerScreenData = null;
         gameState.inProgress = false;
         gameState.currentGameId = null;
         gameState.currentQuestionIndex = 0;
@@ -1112,7 +1115,7 @@ app.post('/admin/toggle-game', async (req, res) => {
         gameState.lastQuestionResults = null;
         gameState.players.clear();
         gameState.answers.clear();
-        pendingJoins.clear(); // 🔓 Reset les réservations
+        gameState.pendingJoins.clear(); // 🔓 Reset les réservations
         gameState.questionStartTime = null;
         gameState.gameStartTime = null;
 
@@ -1200,8 +1203,8 @@ app.post('/admin/bombanime/close-lobby', (req, res) => {
     resetBombanimeState(gameState);
     
     
-    // Reset winnerScreenData
-    winnerScreenData = null;
+    // Reset gameState.winnerScreenData
+    gameState.winnerScreenData = null;
     
     // Vider les joueurs
     gameState.players.clear();
@@ -2201,7 +2204,7 @@ app.post('/admin/refresh-players', (req, res) => {
 
     try {
         const now = Date.now();
-        const timeSinceLastRefresh = now - lastRefreshPlayersTime;
+        const timeSinceLastRefresh = now - gameState.lastRefreshPlayersTime;
 
         // 🔥 Vérifier le cooldown côté serveur
         if (timeSinceLastRefresh < REFRESH_COOLDOWN_MS) {
@@ -2227,7 +2230,7 @@ app.post('/admin/refresh-players', (req, res) => {
         });
 
         // 🔥 Mettre à jour le timestamp
-        lastRefreshPlayersTime = now;
+        gameState.lastRefreshPlayersTime = now;
 
         console.log(`🔄 Refresh forcé envoyé à ${refreshedCount} utilisateur(s) authentifié(s)`);
 
@@ -2246,7 +2249,7 @@ app.post('/admin/refresh-players', (req, res) => {
 app.get('/admin/refresh-cooldown', (req, res) => {
 
     const now = Date.now();
-    const timeSinceLastRefresh = now - lastRefreshPlayersTime;
+    const timeSinceLastRefresh = now - gameState.lastRefreshPlayersTime;
 
     if (timeSinceLastRefresh < REFRESH_COOLDOWN_MS) {
         const remainingTime = Math.ceil((REFRESH_COOLDOWN_MS - timeSinceLastRefresh) / 1000);
@@ -2558,7 +2561,7 @@ function revealAnswers(gameState, correctAnswer) {
                             eliminatedThisRound++;
                             addLog(gameState, 'eliminated', {
                                 username: player.username,
-                                playerColor: playerColors[player.username]
+                                playerColor: gameState.playerColors[player.username]
                             });
                         }
                         status = 'afk';
@@ -2594,7 +2597,7 @@ function revealAnswers(gameState, correctAnswer) {
                             eliminatedThisRound++;
                             addLog(gameState, 'eliminated', {
                                 username: player.username,
-                                playerColor: playerColors[player.username]
+                                playerColor: gameState.playerColors[player.username]
                             });
                         }
                         status = 'wrong';
@@ -2637,7 +2640,7 @@ function revealAnswers(gameState, correctAnswer) {
         lives: player.lives,
         correctAnswers: player.correctAnswers,
         points: player.points || 0,
-        isLastGlobalWinner: player.twitchId === lastGlobalWinner,
+        isLastGlobalWinner: player.twitchId === gameState.lastGlobalWinner,
         team: player.team || null, // 🆕 Équipe du joueur
         avatarUrl: player.avatarUrl || null
     }));
@@ -3008,7 +3011,7 @@ function revealTiebreakerAnswers(gameState, correctAnswer) {
         twitchId: player.twitchId,
         username: player.username,
         points: player.points || 0,
-        isLastGlobalWinner: player.twitchId === lastGlobalWinner,
+        isLastGlobalWinner: player.twitchId === gameState.lastGlobalWinner,
         avatarUrl: player.avatarUrl || null
     }));
 
@@ -3052,7 +3055,7 @@ async function endGameByPoints(gameState) {
         // CAS 1: UN SEUL GAGNANT
         if (winners.length === 1) {
             const winner = winners[0];
-            lastGlobalWinner = winner.twitchId;
+            gameState.lastGlobalWinner = winner.twitchId;
 
             if (winner && winner.points > 0) {
                 addLog(gameState, 'game-end', { winner: winner.username });
@@ -3079,7 +3082,7 @@ async function endGameByPoints(gameState) {
                 // 🔥 Sauvegarder les données de la dernière question AVANT le reset
                 const lastQuestionPlayers = getLastQuestionPlayersData(gameState);
 
-                winnerScreenData = {
+                gameState.winnerScreenData = {
                     winner: winnerData,
                     podium: podium,
                     duration,
@@ -3286,7 +3289,7 @@ async function checkTiebreakerWinner(gameState) {
             // 🔥 Sauvegarder les données de la dernière question AVANT le reset
             const lastQuestionPlayers = getLastQuestionPlayersData(gameState);
 
-            winnerScreenData = {
+            gameState.winnerScreenData = {
                 winner: winnerData,
                 podium: podium,
                 duration,
@@ -3603,7 +3606,7 @@ async function checkRivalryTiebreakerWinner(gameState) {
             lastQuestionPlayers
         };
 
-        winnerScreenData = {
+        gameState.winnerScreenData = {
             ...gameEndedPayload,
             livesIcon: gameState.livesIcon
         };
@@ -3700,7 +3703,7 @@ async function endRivalryWithTie(gameState) {
         lastQuestionPlayers
     };
 
-    winnerScreenData = {
+    gameState.winnerScreenData = {
         ...gameEndedPayload,
         livesIcon: gameState.livesIcon
     };
@@ -3746,7 +3749,7 @@ async function endGameWithTie(gameState) {
     // 🔥 Sauvegarder les données de la dernière question AVANT le reset
     const lastQuestionPlayers = getLastQuestionPlayersData(gameState);
 
-    winnerScreenData = {
+    gameState.winnerScreenData = {
         winner: winnerData,
         podium: podium,
         duration,
@@ -3796,7 +3799,7 @@ async function endGame(gameState, winner) {
         let rewardsData = null;
 
         if (winner) {
-            lastGlobalWinner = winner.twitchId;
+            gameState.lastGlobalWinner = winner.twitchId;
             addLog(gameState, 'game-end', { winner: winner.username });
 
             winnerData = {
@@ -3815,7 +3818,7 @@ async function endGame(gameState, winner) {
             username: p.username,
             lives: p.lives,
             correctAnswers: p.correctAnswers,
-            isLastGlobalWinner: p.twitchId === lastGlobalWinner,
+            isLastGlobalWinner: p.twitchId === gameState.lastGlobalWinner,
             avatarUrl: p.avatarUrl || null
         }));
 
@@ -3826,7 +3829,7 @@ async function endGame(gameState, winner) {
         const lastQuestionPlayers = getLastQuestionPlayersData(gameState);
 
         // 🔥 Stocker pour restauration
-        winnerScreenData = {
+        gameState.winnerScreenData = {
             winner: winnerData,
             duration,
             totalQuestions: gameState.currentQuestionIndex,
@@ -3931,7 +3934,7 @@ async function endGameRivalry(gameState, winningTeam) {
             rewardsData
         };
         
-        winnerScreenData = {
+        gameState.winnerScreenData = {
             ...gameEndedPayload,
             livesIcon: gameState.livesIcon
         };
@@ -4064,7 +4067,7 @@ async function endGameRivalryPoints(gameState) {
             rewardsData
         };
         
-        winnerScreenData = {
+        gameState.winnerScreenData = {
             ...gameEndedPayload,
             livesIcon: gameState.livesIcon
         };
@@ -5071,7 +5074,7 @@ async function endBombanimeGame(gameState, winner) {
     });
     
     // Stocker pour l'écran de fin
-    winnerScreenData = {
+    gameState.winnerScreenData = {
         winner: winner ? {
             twitchId: winner.twitchId,
             username: winner.username,
@@ -5238,7 +5241,7 @@ io.on('connection', (socket) => {
         }
         
         // 🔒 Vérifier si ce joueur est déjà en cours de traitement (anti-spam)
-        if (pendingJoins.has(data.twitchId)) {
+        if (gameState.pendingJoins.has(data.twitchId)) {
             console.log(`⏳ ${data.username} déjà en cours de traitement`);
             return socket.emit('error', { message: 'Connexion en cours...' });
         }
@@ -5259,9 +5262,9 @@ io.on('connection', (socket) => {
         // 💣🎴 En mode BombAnime/Collect, vérifier la limite avec les places réservées
         if (gameState.lobbyMode === 'bombanime' && !isReconnection) {
             const maxPlayers = BOMBANIME_CONFIG.MAX_PLAYERS;
-            const currentCount = gameState.players.size + pendingJoins.size;
+            const currentCount = gameState.players.size + gameState.pendingJoins.size;
             if (currentCount >= maxPlayers) {
-                console.log(`🚫 Lobby plein: ${gameState.players.size} joueurs + ${pendingJoins.size} en attente >= ${maxPlayers}`);
+                console.log(`🚫 Lobby plein: ${gameState.players.size} joueurs + ${gameState.pendingJoins.size} en attente >= ${maxPlayers}`);
                 return socket.emit('error', { message: `Le lobby est plein (maximum ${maxPlayers} joueurs)` });
             }
         }
@@ -5269,8 +5272,8 @@ io.on('connection', (socket) => {
         // En v2 c'est l'hôte qui répartit : on entre sans camp, il l'attribue ensuite.
         
         // 🔒 Réserver la place AVANT les opérations async
-        pendingJoins.add(data.twitchId);
-        console.log(`🔒 Place réservée pour ${data.username} (pending: ${pendingJoins.size})`);
+        gameState.pendingJoins.add(data.twitchId);
+        console.log(`🔒 Place réservée pour ${data.username} (pending: ${gameState.pendingJoins.size})`);
         
         try {
             if (isReconnection) {
@@ -5280,7 +5283,7 @@ io.on('connection', (socket) => {
                 // bloquer la reconnexion pour ne pas écraser l'admin
                 if (existingPlayer && existingPlayer.isAdmin && !data.isAdmin) {
                     console.log(`🚫 ${data.username} tente de remplacer l'admin-joueur - bloqué`);
-                    pendingJoins.delete(data.twitchId);
+                    gameState.pendingJoins.delete(data.twitchId);
                     return socket.emit('error', { message: 'Ce compte est déjà utilisé par le streamer' });
                 }
                 
@@ -5314,7 +5317,7 @@ io.on('connection', (socket) => {
         // (race condition: admin clique Démarrer pendant que le DB call était en cours)
         if (gameState.inProgress) {
             console.log(`⚠️ ${data.username} - join annulé: partie démarrée pendant le traitement`);
-            pendingJoins.delete(data.twitchId);
+            gameState.pendingJoins.delete(data.twitchId);
             return socket.emit('error', { message: 'La partie vient de démarrer' });
         }
 
@@ -5341,8 +5344,8 @@ io.on('connection', (socket) => {
         
         } finally {
             // 🔓 Libérer la réservation
-            pendingJoins.delete(data.twitchId);
-            console.log(`🔓 Place libérée pour ${data.username} (pending: ${pendingJoins.size})`);
+            gameState.pendingJoins.delete(data.twitchId);
+            console.log(`🔓 Place libérée pour ${data.username} (pending: ${gameState.pendingJoins.size})`);
         }
     });
     
@@ -5353,7 +5356,7 @@ io.on('connection', (socket) => {
             gameState.answers.delete(socket.id);
             console.log(`👋 ${data.username} a quitté le lobby`);
 
-            const playerColor = playerColors[data.username];
+            const playerColor = gameState.playerColors[data.username];
             addLog(gameState, 'leave', { username: data.username, playerColor });
 
             broadcastLobbyUpdate(gameState);
@@ -5406,7 +5409,7 @@ io.on('connection', (socket) => {
             }
 
             // Log pour les admins
-            const playerColor = playerColors[username];
+            const playerColor = gameState.playerColors[username];
             addLog(gameState, 'kick', { username, playerColor });
 
             // Mettre à jour le lobby/game pour tout le monde
@@ -5518,7 +5521,7 @@ io.on('connection', (socket) => {
             socket.emit('player-restored', restorationData);
 
             // 🔄 Log "reconnect" seulement si "disconnect" avait été affiché
-            const playerColor = playerColors[data.username] || assignPlayerColor(gameState, data.username);
+            const playerColor = gameState.playerColors[data.username] || assignPlayerColor(gameState, data.username);
             if (existingPlayer.disconnectLogged) {
                 addLog(gameState, 'reconnect', { username: data.username, playerColor });
                 delete existingPlayer.disconnectLogged;
@@ -5568,7 +5571,7 @@ io.on('connection', (socket) => {
         if (player) {
             addLog(gameState, 'answer', {
                 username: player.username,
-                playerColor: playerColors[player.username]
+                playerColor: gameState.playerColors[player.username]
             });
         }
 
@@ -5607,7 +5610,7 @@ io.on('connection', (socket) => {
             console.log(`✅ Bonus "${bonusType}" utilisé par ${player.username}`);
 
             // LOGS D'ACTIVITÉ
-            const playerColor = playerColors[player.username];
+            const playerColor = gameState.playerColors[player.username];
             switch (bonusType) {
                 case '5050':
                     addLog(gameState, 'bonus-5050', { username: player.username, playerColor });
@@ -5861,7 +5864,7 @@ io.on('connection', (socket) => {
         const player = gameState.players.get(socket.id);
 
         if (player) {
-            const playerColor = playerColors[player.username];
+            const playerColor = gameState.playerColors[player.username];
             // 🔄 Délai avant d'afficher le log "disconnect" (évite le spam lors de changement d'onglet)
             player.pendingDisconnectLog = setTimeout(() => {
                 addLog(gameState, 'disconnect', { username: player.username, playerColor });
@@ -6033,7 +6036,7 @@ async function generateGameEndedData(gameState) {
         lives: p.lives,
         points: p.points || 0,
         correctAnswers: p.correctAnswers,
-        isLastGlobalWinner: p.twitchId === lastGlobalWinner,
+        isLastGlobalWinner: p.twitchId === gameState.lastGlobalWinner,
         team: p.team || null // 🆕 Inclure l'équipe pour mode Rivalité
     }));
 
@@ -6057,7 +6060,7 @@ function resetGameState(gameState) {
     gameState.initialPlayerCount = 0; // 🆕 Reset du compteur initial
     gameState.players.clear();
     gameState.answers.clear();
-    pendingJoins.clear(); // 🔓 Reset les réservations
+    gameState.pendingJoins.clear(); // 🔓 Reset les réservations
     gameState.isTiebreaker = false;
     gameState.tiebreakerPlayers = [];
     gameState.isRivalryTiebreaker = false; // 🆕 Reset tiebreaker Rivalry
@@ -6123,20 +6126,20 @@ function throttledUpdateLiveAnswerStats(gameState) {
     const now = Date.now();
 
     // Si assez de temps s'est écoulé, envoyer immédiatement
-    if (now - lastStatsUpdate >= STATS_THROTTLE_MS) {
-        lastStatsUpdate = now;
+    if (now - gameState.lastStatsUpdate >= STATS_THROTTLE_MS) {
+        gameState.lastStatsUpdate = now;
         updateLiveAnswerStats(gameState);
-        pendingStatsUpdate = false;
+        gameState.pendingStatsUpdate = false;
     }
     // Sinon, programmer un envoi différé (si pas déjà programmé)
-    else if (!pendingStatsUpdate) {
-        pendingStatsUpdate = true;
-        const delay = STATS_THROTTLE_MS - (now - lastStatsUpdate);
+    else if (!gameState.pendingStatsUpdate) {
+        gameState.pendingStatsUpdate = true;
+        const delay = STATS_THROTTLE_MS - (now - gameState.lastStatsUpdate);
 
         setTimeout(() => {
-            lastStatsUpdate = Date.now();
+            gameState.lastStatsUpdate = Date.now();
             updateLiveAnswerStats(gameState);
-            pendingStatsUpdate = false;
+            gameState.pendingStatsUpdate = false;
         }, delay);
     }
 }
@@ -6153,29 +6156,29 @@ function addLog(gameState, type, data) {
         timestamp: Date.now()
     };
 
-    activityLogs.push(log);
-    if (activityLogs.length > MAX_LOGS) {
-        activityLogs.shift();
+    gameState.activityLogs.push(log);
+    if (gameState.activityLogs.length > MAX_LOGS) {
+        gameState.activityLogs.shift();
     }
 
     io.emit('activity-log', log);
 }
 
 function resetLogs(gameState) {
-    activityLogs = [];
-    playerColors = {};
+    gameState.activityLogs = [];
+    gameState.playerColors = {};
     io.emit('logs-reset');
 }
 
 function assignPlayerColor(gameState, username) {
-    if (!playerColors[username]) {
-        const usedColors = Object.values(playerColors);
+    if (!gameState.playerColors[username]) {
+        const usedColors = Object.values(gameState.playerColors);
         const availableColors = PLAYER_COLORS.filter(c => !usedColors.includes(c));
-        playerColors[username] = availableColors.length > 0
+        gameState.playerColors[username] = availableColors.length > 0
             ? availableColors[0]
-            : PLAYER_COLORS[Object.keys(playerColors).length % PLAYER_COLORS.length];
+            : PLAYER_COLORS[Object.keys(gameState.playerColors).length % PLAYER_COLORS.length];
     }
-    return playerColors[username];
+    return gameState.playerColors[username];
 }
 
 
