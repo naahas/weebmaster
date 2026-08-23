@@ -13,7 +13,8 @@
     "test:rooms": "node scripts/test-rooms.js",
     "test:charge": "node scripts/test-charge.js",
     "test:mixte": "node scripts/test-mixte.js",
-    "test:rejouer": "node scripts/test-rejouer.js"
+    "test:rejouer": "node scripts/test-rejouer.js",
+    "test:historique": "node scripts/test-historique.js"
   },
   "keywords": [
     "quiz",
