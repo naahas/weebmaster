@@ -1274,13 +1274,14 @@ createApp({
             clearTimeout(this._endT1); clearTimeout(this._endT2);
             clearTimeout(this._endT3); clearTimeout(this._endT4);
             this.endStep = 0;
+            // 0,3 s de plus entre chaque place : le suspense tenait trop court
             this._endT1 = setTimeout(() => { this.endStep = 1; }, 500);
-            this._endT2 = setTimeout(() => { this.endStep = 2; }, 1400);
+            this._endT2 = setTimeout(() => { this.endStep = 2; }, 1700);
             this._endT3 = setTimeout(() => {
                 this.endStep = 3;
                 this.$nextTick(() => this.celebrerVainqueur());
-            }, 2400);
-            this._endT4 = setTimeout(() => { this.endStep = 4; }, 3300);
+            }, 3000);
+            this._endT4 = setTimeout(() => { this.endStep = 4; }, 4200);
         },
 
         celebrerVainqueur() {
