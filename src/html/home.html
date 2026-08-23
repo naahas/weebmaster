@@ -366,17 +366,6 @@
                             <!-- Quiz : Classique & Rivalité -->
                             <template v-if="lobbyMode !== 'bombanime'">
                                 <div class="v2-set">
-                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
-                                    <span class="v2-set-label">Mode</span>
-                                    <span class="v2-set-value">{{ gameMode === 'lives' ? 'Vies' : 'Points' }}</span>
-                                    <span class="v2-set-opts">
-                                        <button v-for="o in [{v:'lives',l:'Vies'},{v:'points',l:'Points'}]" :key="o.v"
-                                                class="v2-set-opt" :class="{ on: gameMode === o.v }"
-                                                @click="applySetting('/admin/set-mode', { mode: o.v }, () => gameMode = o.v)">{{ o.l }}</button>
-                                    </span>
-                                </div>
-
-                                <div class="v2-set">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>
                                     <span class="v2-set-label">Format</span>
                                     <span class="v2-set-value">{{ lobbyMode === 'rivalry' ? 'Équipe' : 'Solo' }}</span>
@@ -384,6 +373,17 @@
                                         <button v-for="o in [{v:false,l:'Solo'},{v:true,l:'Équipe'}]" :key="String(o.v)"
                                                 class="v2-set-opt" :class="{ on: (lobbyMode === 'rivalry') === o.v }"
                                                 @click="setTeams(o.v)">{{ o.l }}</button>
+                                    </span>
+                                </div>
+
+                                <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+                                    <span class="v2-set-label">Mode</span>
+                                    <span class="v2-set-value">{{ gameMode === 'lives' ? 'Vies' : 'Points' }}</span>
+                                    <span class="v2-set-opts">
+                                        <button v-for="o in [{v:'lives',l:'Vies'},{v:'points',l:'Points'}]" :key="o.v"
+                                                class="v2-set-opt" :class="{ on: gameMode === o.v }"
+                                                @click="applySetting('/admin/set-mode', { mode: o.v }, () => gameMode = o.v)">{{ o.l }}</button>
                                     </span>
                                 </div>
 
