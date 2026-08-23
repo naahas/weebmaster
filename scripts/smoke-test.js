@@ -17,13 +17,20 @@ const BASE = 'http://localhost:' + (process.env.TEST_PORT || process.env.PORT ||
 const log = (...a) => console.log(...a);
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
+// Les routes /admin sont réservées à l'hôte : on garde le jeton que
+// l'ouverture du salon nous remet, et on le joint ensuite à chaque appel.
+let hostToken = '';
+
 const post = (path, body) => fetch(BASE + path, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Host-Token': hostToken },
     body: JSON.stringify(body || {}),
-}).then(r => r.json().then(j => ({ status: r.status, body: j })));
+}).then(r => r.json().then(j => {
+    if (j && j.hostToken) hostToken = j.hostToken;
+    return { status: r.status, body: j };
+}));
 
-const get = (path) => fetch(BASE + path).then(r => r.json());
+const get = (path) => fetch(BASE + path, { headers: { 'X-Host-Token': hostToken } }).then(r => r.json());
 
 let failures = 0;
 function check(label, ok, extra) {
@@ -107,7 +114,7 @@ async function scenarioClassic() {
     }
 
     await post('/admin/toggle-game', {});
-    const final = await get('/admin/game-state');
+    const final = await get('/game/state');
     check('lobby refermé', final.isActive === false);
 
     p1.sock.close();
@@ -194,7 +201,7 @@ async function scenarioHomeStats() {
 
 (async () => {
     try {
-        await get('/admin/game-state');
+        await get('/api/home-stats');
     } catch (e) {
         log(`❌ Serveur injoignable sur ${BASE} — lance "npm start" d'abord.`);
         process.exit(1);

@@ -1,7 +1,14 @@
 // Vérifie que l'hôte peut enchaîner les questions depuis / (sans /admin)
 const { io } = require('socket.io-client');
 const BASE = 'http://localhost:' + (process.env.TEST_PORT || process.env.PORT || 7000);
-const post = (p, b) => fetch(BASE + p, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b || {}) }).then(r => r.json());
+// Les routes /admin sont réservées à l'hôte : on retient le jeton remis à
+// l'ouverture du salon et on le joint à tous les appels suivants.
+let hostToken = '';
+const post = (p, b) => fetch(BASE + p, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Host-Token': hostToken },
+    body: JSON.stringify(b || {}),
+}).then(r => r.json()).then(j => { if (j && j.hostToken) hostToken = j.hostToken; return j; });
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
 (async () => {
@@ -37,7 +44,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     });
     intrus.emit('join-lobby', { twitchId: 'p3', username: 'Intrus' });
     for (let i = 0; i < 40 && !dansLeSalon; i++) await wait(50);
-    socks[0].s.emit('kick-player', { twitchId: 'p3' });
+    socks[0].s.emit('kick-player', { twitchId: 'p3', hostToken });
     for (let i = 0; i < 20 && !exclu; i++) await wait(50);
     check("exclusion par identifiant seul", exclu === true);
     intrus.close();

@@ -5,6 +5,7 @@
 require('dotenv').config();
 const express = require('express');
 const compression = require('compression');
+const { randomUUID } = require('crypto');
 const { Server } = require('socket.io');
 const { db, supabase, SERIES_FILTERS, getFilterSeries } = require('./dbs');
 
@@ -473,6 +474,9 @@ const gameState = {
     // 🆕 Mode Rivalité
     lobbyMode: 'classic', // 'classic' | 'rivalry' | 'bombanime'
     roomCode: null,       // 🔑 code du salon ouvert (phase 2 : cle de la Map des rooms)
+    // Tiré à l'ouverture du salon et connu du seul créateur : c'est lui qui
+    // distingue l'hôte de n'importe quel visiteur sur les routes /admin.
+    hostToken: null,
     teamNames: { 1: 'Team A', 2: 'Team B' },
     teamCounts: { 1: 0, 2: 0 },
     teamScores: { 1: 0, 2: 0 }, // Vies restantes ou points totaux par équipe
@@ -968,6 +972,22 @@ app.get('/', (req, res) => {
 // Routes de contrôle (appelées par l'hôte depuis /)
 // ============================================
 
+// ════════════════════════════════════════════
+// 🔐 RÉSERVÉ À L'HÔTE
+// Ces routes pilotaient le panel /admin, qui n'existe plus. Sans contrôle,
+// n'importe quel visiteur pouvait fermer ou saboter la partie en cours —
+// il n'y en a qu'une sur tout le serveur.
+// ════════════════════════════════════════════
+app.use('/admin', (req, res, next) => {
+    // Ouvrir un salon, c'est précisément ce qu'on fait avant d'avoir un jeton
+    if (req.path === '/toggle-game' && !gameState.isActive) return next();
+
+    if (!gameState.hostToken || req.get('X-Host-Token') !== gameState.hostToken) {
+        return res.status(403).json({ error: "Réservé à l'hôte du salon" });
+    }
+    next();
+});
+
 app.get('/admin/game-state', (req, res) => {
     // 💣🎴 Vérifier si le lobby BombAnime/Collect est plein
     const isBombanimeMode = gameState.lobbyMode === 'bombanime';
@@ -1001,6 +1021,8 @@ app.post('/admin/toggle-game', async (req, res) => {
         // 🔑 Code de salon : généré à l'ouverture, vérifié à chaque jointure.
         // Phase 2 : ce code deviendra la clé de la Map des rooms.
         gameState.roomCode = generateRoomCode();
+        // Seul celui qui ouvre le salon reçoit ce jeton : il en fait l'hôte
+        gameState.hostToken = randomUUID();
         console.log(`✅ Jeu activé - Lobby ouvert (code ${gameState.roomCode})`);
 
         // 🔥 FIX: Clear le winnerScreenData pour éviter les données stale
@@ -1131,10 +1153,14 @@ app.post('/admin/toggle-game', async (req, res) => {
         resetBombanimeState();
         
 
+        // Le salon fermé, le jeton ne vaut plus rien
+        gameState.hostToken = null;
+
         io.emit('game-deactivated');
     }
 
-    res.json({ isActive: gameState.isActive });
+    // Le jeton ne part qu'ici, dans la réponse à celui qui vient d'ouvrir
+    res.json({ isActive: gameState.isActive, hostToken: gameState.hostToken });
 });
 
 // 💣 Mettre à jour la série BombAnime
@@ -5337,6 +5363,12 @@ io.on('connection', (socket) => {
 
     // 🆕 Kick un joueur manuellement (depuis l'admin)
     socket.on('kick-player', (data) => {
+        // Seul événement socket réservé à l'hôte : il porte donc le jeton,
+        // le garde-fou HTTP ne protégeant que les routes /admin.
+        if (!gameState.hostToken || !data || data.hostToken !== gameState.hostToken) {
+            return socket.emit('error', { message: "Réservé à l'hôte du salon" });
+        }
+
         const { username, twitchId } = data || {};
         // L'appel peut ne porter que l'identifiant : exiger le pseudo bloquait tout kick
         if (!username && !twitchId) return;

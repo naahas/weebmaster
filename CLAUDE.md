@@ -15,10 +15,9 @@ progression). Voir [PLAN-V2.md](PLAN-V2.md) pour l'état d'avancement et la suit
 camps, classement final, passe mobile). Phase 2 (multi-room) à faire — aujourd'hui le serveur
 n'héberge toujours qu'**une seule partie à la fois**, et BombAnime est encore intégralement en v1.
 
-⚠️ **Les routes `/admin/*` n'ont aucune authentification.** La page `/admin` a disparu mais ses
-40 routes sont restées ouvertes : n'importe qui peut ouvrir, démarrer ou arrêter la partie en cours
-avec un simple POST. À régler en phase 2 (jeton d'hôte lié au code de room). Le site ne peut pas
-être public avant.
+Les routes `/admin/*` sont **réservées à l'hôte** : l'ouverture d'un salon tire un jeton
+(`gameState.hostToken`) remis au seul créateur, qu'un middleware monté sur `/admin` exige ensuite en
+en-tête `X-Host-Token`. En phase 2 le jeton passera dans la room, le middleware ne bougera pas.
 
 ## Stack
 
@@ -28,9 +27,10 @@ avec un simple POST. À régler en phase 2 (jeton d'hôte lié au code de room).
 - **Frontend** : Vue 3 via CDN (`vue.global.js`), un seul gros composant (`src/script/app.js`) —
   hôte et joueurs partagent la même page, seul `isHost` change ce qui s'affiche
 - **Déploiement** : Render (Procfile `web: node server.js`)
-- **Tests** : `npm run check` (le template Vue compile-t-il), `npm run smoke` (cycle de jeu complet),
-  `npm run test:host` (contrôles de l hôte, camps, rafraîchissement) et `npm run test:tie` (départage
-  solo et en camps, ~1 min) — les trois derniers exigent le serveur lancé à côté
+- **Tests** : `npm run check` (le template Vue compile-t-il), puis, serveur lancé à côté :
+  `npm run smoke` (cycle de jeu complet), `npm run test:host` (contrôles de l'hôte, camps,
+  rafraîchissement), `npm run test:tie` (départage solo et en camps, ~1 min) et `npm run test:hote`
+  (les routes /admin sont-elles bien fermées aux visiteurs)
 - Pas de build, pas de bundler. Les fichiers sont servis en statique tels quels.
 
 ## Arborescence
@@ -43,6 +43,7 @@ bombdata.json          persos BombAnime par série ; bombimages.json : images (U
 scripts/smoke-test.js         cycle de jeu complet (npm run smoke)
 scripts/test-host-controls.js contrôles de l'hôte, camps, rafraîchissement (npm run test:host)
 scripts/test-departage.js     égalité puis départage, solo et camps (npm run test:tie)
+scripts/test-hote.js          les routes /admin sont-elles fermées aux visiteurs (npm run test:hote)
 docs/ASCENSION.md      conception du mode Ascension, mis de côté (branche archive/ascension)
 src/html/              home (le jeu), question (back-office questions), prototypes-*.html
 src/script/            app.js — le seul script du jeu
@@ -88,9 +89,9 @@ veille du projet Supabase free tier.
 ## Accès
 
 - `/` : le jeu (saisie du pseudo puis lobby).
-- `/admin/*` : plus aucune page, mais **40 routes HTTP non authentifiées** que le client de l'hôte
-  appelle (ouvrir/fermer le salon, réglages, démarrer, question suivante, camps, exclure). Le
-  contrôle d'accès viendra en phase 2 sous forme de code de room + jeton d'hôte.
+- `/admin/*` : plus aucune page, mais les routes HTTP que le client de l'hôte appelle (réglages,
+  démarrer, question suivante, camps, exclure). **Toutes exigent le jeton d'hôte**, sauf l'ouverture
+  d'un salon — c'est elle qui le crée. L'événement socket `kick-player` le porte aussi.
 - `/prototypes/*` : pages de travail sur le visuel (boutons, timer, cœurs, HUD, podium, icônes…).
 - `/question` : back-office des questions, protégé par `QUESTION_ADMIN_CODE`.
 

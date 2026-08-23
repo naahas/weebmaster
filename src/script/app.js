@@ -211,6 +211,9 @@ createApp({
             // Reconnexion
             needsReconnect: false,
             shouldRejoinLobby: false,
+            // Remis par le serveur à l'ouverture du salon : il prouve qu'on en
+            // est l'hôte sur les routes /admin, qui n'ont pas d'autre garde-fou.
+            hostToken: localStorage.getItem('hostToken') || '',
 
 
             comboLevel: 0,              // Niveau actuel (0, 1, 2, 3)
@@ -1074,6 +1077,8 @@ createApp({
                     return;
                 }
 
+                this.hostToken = data.hostToken || '';
+                localStorage.setItem('hostToken', this.hostToken);
                 this.isHost = true;
                 localStorage.setItem('isHost', 'true');
                 this.lobbyMode = this.selectedMode;
@@ -1099,7 +1104,7 @@ createApp({
 
         async fetchRoomCode() {
             try {
-                const res = await fetch('/admin/game-state');
+                const res = await this.hostFetch('/admin/game-state');
                 const data = await res.json();
                 if (data.roomCode) {
                     this.roomCode = data.roomCode;
@@ -1115,6 +1120,12 @@ createApp({
 
         // Tous les réglages passent par la même route POST, avec application
         // optimiste côté client et retour arrière si le serveur refuse.
+        // Toute requête /admin passe par ici : elle joint le jeton d'hôte
+        hostFetch(url, options = {}) {
+            const entetes = Object.assign({}, options.headers, { 'X-Host-Token': this.hostToken });
+            return fetch(url, Object.assign({}, options, { headers: entetes }));
+        },
+
         async applySetting(url, payload, apply) {
             const avant = JSON.parse(JSON.stringify({
                 gameMode: this.gameMode, gameLives: this.gameLives, gameTime: this.gameTime,
@@ -1126,7 +1137,7 @@ createApp({
             this.hostError = '';
 
             try {
-                const res = await fetch(url, {
+                const res = await this.hostFetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload),
@@ -1156,7 +1167,7 @@ createApp({
             if (!this.reportPicked.length || !this.currentQuestion || this.reportBusy) return;
             this.reportBusy = true;
             try {
-                const res = await fetch('/admin/report-question', {
+                const res = await this.hostFetch('/admin/report-question', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1386,7 +1397,7 @@ createApp({
             this.showResults = false;
 
             try {
-                const res = await fetch('/admin/next-question', { method: 'POST' });
+                const res = await this.hostFetch('/admin/next-question', { method: 'POST' });
                 const data = await res.json();
                 if (data.error) {
                     this.hostError = data.error;
@@ -1406,7 +1417,7 @@ createApp({
         async hostToggleAuto() {
             this.hostError = '';
             try {
-                const res = await fetch('/admin/toggle-auto-mode', { method: 'POST' });
+                const res = await this.hostFetch('/admin/toggle-auto-mode', { method: 'POST' });
                 const data = await res.json();
                 if (data.autoMode !== undefined) this.autoMode = data.autoMode;
             } catch (e) {
@@ -1450,7 +1461,7 @@ createApp({
         hostKick(twitchId) {
             if (!this.socket) return;
             const cible = this.lobbyPlayers.find(p => p.twitchId === twitchId);
-            this.socket.emit('kick-player', { twitchId, username: cible ? cible.username : undefined });
+            this.socket.emit('kick-player', { twitchId, username: cible ? cible.username : undefined, hostToken: this.hostToken });
         },
 
         lockMode(id) {
@@ -1563,7 +1574,7 @@ createApp({
             this.startingGame = true;
             this.hostError = '';
             try {
-                const res = await fetch('/admin/start-game', {
+                const res = await this.hostFetch('/admin/start-game', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({}),
@@ -1583,7 +1594,7 @@ createApp({
             this.teamsBusy = true;
             this.hostError = '';
             try {
-                const res = await fetch('/admin/set-teams', {
+                const res = await this.hostFetch('/admin/set-teams', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ enabled }),
@@ -1602,7 +1613,7 @@ createApp({
         async setPlayerTeam(twitchId, team) {
             this.hostError = '';
             try {
-                const res = await fetch('/admin/set-player-team', {
+                const res = await this.hostFetch('/admin/set-player-team', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ twitchId, team }),
@@ -1630,7 +1641,7 @@ createApp({
             this.shuffleBusy = true;
             this.hostError = '';
             try {
-                const res = await fetch('/admin/shuffle-teams', { method: 'POST' });
+                const res = await this.hostFetch('/admin/shuffle-teams', { method: 'POST' });
                 const data = await res.json();
                 if (data.error) this.hostError = data.error;
                 else this.appliquerCamps(data.teams);
@@ -1654,7 +1665,7 @@ createApp({
         async hostCloseRoom() {
             this.confirmAction = null;
             try {
-                await fetch('/admin/toggle-game', {
+                await this.hostFetch('/admin/toggle-game', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({}),
@@ -1675,6 +1686,8 @@ createApp({
             this.selectedTeam = null;
             this.homeScreen = 'hub';
             localStorage.removeItem('isHost');
+            localStorage.removeItem('hostToken');
+            this.hostToken = '';
             localStorage.removeItem('roomCode');
             localStorage.removeItem('hasJoinedLobby');
             localStorage.removeItem('lobbyTwitchId');
@@ -1851,6 +1864,8 @@ createApp({
                     this.selectedTeam = null;
                     this.homeScreen = 'hub';
                     localStorage.removeItem('isHost');
+            localStorage.removeItem('hostToken');
+            this.hostToken = '';
                     localStorage.removeItem('roomCode');
 
                     console.log('🧹 État local nettoyé (aucun salon actif)');
@@ -3749,7 +3764,7 @@ createApp({
             this.quitterSalonLocalement();
 
             if (etaitHote) {
-                fetch('/admin/toggle-game', {
+                this.hostFetch('/admin/toggle-game', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({}),

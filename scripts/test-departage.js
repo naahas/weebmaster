@@ -2,7 +2,13 @@
 // Deux joueurs qui répondent toujours juste finissent forcément à égalité parfaite.
 const { io } = require('socket.io-client');
 const BASE = 'http://localhost:' + (process.env.TEST_PORT || process.env.PORT || 7000);
-const post = (p, b) => fetch(BASE + p, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b || {}) }).then(r => r.json());
+// Les routes /admin sont réservées à l'hôte : on suit le jeton du salon.
+let hostToken = '';
+const post = (p, b) => fetch(BASE + p, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Host-Token': hostToken },
+    body: JSON.stringify(b || {}),
+}).then(r => r.json()).then(j => { if (j && j.hostToken) hostToken = j.hostToken; return j; });
 const etat = () => fetch(BASE + '/game/state').then(r => r.json());
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -67,6 +73,11 @@ async function manche(enCamps) {
     check(`elle est marquée comme départage (${nom})`, !!(derniere && derniere.isTiebreaker));
 
     socks.forEach(({ s }) => s.close());
+    // Remettre les reglages AVANT de fermer : le jeton meurt avec le salon
+    await post('/admin/set-mode', { mode: 'lives' });
+    await post('/admin/set-time', { time: 10 });
+    await post('/admin/set-speed-bonus', { enabled: true });
+    await post('/admin/set-bonus-enabled', { enabled: true });
     await post('/admin/toggle-game', {});
     await wait(400);
 }
@@ -74,13 +85,6 @@ async function manche(enCamps) {
 (async () => {
     await manche(false);
     await manche(true);
-
-    // Le test tord les réglages du serveur : on les remet comme il les trouve,
-    // sinon les suites lancées après lui héritent d'une seconde par question.
-    await post('/admin/set-mode', { mode: 'lives' });
-    await post('/admin/set-time', { time: 10 });
-    await post('/admin/set-speed-bonus', { enabled: true });
-    await post('/admin/set-bonus-enabled', { enabled: true });
     console.log(ko ? `\n${ko} échec(s)` : '\n✨ Le départage repart dans les deux formats');
     process.exit(ko ? 1 : 0);
 })();
