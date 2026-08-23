@@ -11486,28 +11486,13 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 /* Éliminé : les réponses restent lisibles mais hors de portée */
 .v2q-answers.spectateur { opacity: 0.42; filter: grayscale(0.5); }
 
-.v2q-spectateur {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.42rem;
-    margin-top: 1rem;
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.32);
-}
-
-.v2q-spectateur svg { width: 0.85rem; height: 0.85rem; }
-
 /* Combien tiennent encore : discret, sous le panel */
 .v2q-alive {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.45rem;
-    margin-top: 2.1rem;
+    margin-top: 3.1rem;
     font-size: 0.72rem;
     color: rgba(255, 255, 255, 0.4);
     animation: v2AliveIn 0.4s ease both;
@@ -11533,7 +11518,21 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 }
 
 @media (max-width: 768px) {
-    .v2q-spectateur { margin-top: 0.8rem; font-size: 0.6rem; }
-    .v2q-alive { margin-top: 1.5rem; font-size: 0.66rem; }
+    .v2q-alive { margin-top: 2.3rem; font-size: 0.66rem; }
     .v2q-alive b { font-size: 1rem; }
+}
+
+/* Éliminé : la mention prend la place du décompte des survivants */
+.v2q-alive.spectateur {
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.v2q-alive.spectateur svg { width: 0.85rem; height: 0.85rem; }
+
+@media (max-width: 768px) {
+    .v2q-alive.spectateur { font-size: 0.6rem; }
 }
