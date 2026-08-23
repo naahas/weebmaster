@@ -440,16 +440,16 @@
                                     </span>
                                 </div>
 
-                                <div class="v2-set">
+                                <!-- Le choix de la série ouvre un tiroir : les vignettes ne
+                                     tiennent pas dans la colonne des réglages. -->
+                                <button class="v2-set v2-set-porte" @click="showSeries = true">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    <span class="v2-set-label">Séries</span>
+                                    <span class="v2-set-label">Série</span>
                                     <span class="v2-set-value">{{ serieFilterName }}</span>
-                                    <span class="v2-set-opts wrap">
-                                        <button v-for="f in serieFilters" :key="f.id"
-                                                class="v2-set-opt" :class="{ on: serieFilter === f.id }"
-                                                @click="applySetting('/admin/set-serie-filter', { filter: f.id }, () => serieFilter = f.id)">{{ f.name }}</button>
-                                    </span>
-                                </div>
+                                    <svg class="v2-set-fleche" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M9 6l6 6-6 6"/>
+                                    </svg>
+                                </button>
 
                                 <div class="v2-set static">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M17.9 17.9A10 10 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.1-5.9M9.9 4.2A9 9 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.2 3.2"/><path d="M1 1l22 22"/></svg>
@@ -1471,6 +1471,41 @@
         </div>
 
         <!-- 🆕 v2 — Détail de la question (hôte) -->
+        <!-- Choix de la série : un tiroir qui entre par la gauche -->
+        <div class="v2-serie-veil" v-if="showSeries" @click.self="showSeries = false">
+            <aside class="v2-serie-panel">
+                <div class="v2-serie-head">
+                    <span class="ttl">Série</span>
+                    <button class="v2q-sheet-close" @click="showSeries = false">Fermer</button>
+                </div>
+
+                <div class="v2-serie-groupes">
+                    <button v-for="g in serieGroupes" :key="g.id"
+                            class="v2-serie-groupe" :class="{ on: serieFilter === g.id }"
+                            @click="choisirSerie(g.id)">
+                        <span class="nm">{{ g.name }}</span>
+                        <span class="ds">{{ g.desc }}</span>
+                    </button>
+                </div>
+
+                <div class="v2-serie-sep"><span>Une seule série</span></div>
+
+                <div class="v2-serie-grille">
+                    <button v-for="s in serieCartes" :key="s.id"
+                            class="v2-serie-carte" :class="{ on: serieFilter === s.id, soon: s.soon }"
+                            :disabled="s.soon" @click="choisirSerie(s.id)">
+                        <img :src="s.img" :alt="s.name" loading="lazy">
+                        <span class="v2-serie-ombre"></span>
+                        <span class="nm">{{ s.name }}</span>
+                        <span class="bientot" v-if="s.soon">Bientôt</span>
+                        <svg class="coche" v-if="serieFilter === s.id" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 6L9 17l-5-5"/>
+                        </svg>
+                    </button>
+                </div>
+            </aside>
+        </div>
+
         <!-- Détail d'un camp, ouvert depuis le classement final -->
         <div class="v2-camp-veil" v-if="campDetail" @click.self="campDetail = null">
             <div class="v2-camp-sheet" :class="'team-' + campDetail">

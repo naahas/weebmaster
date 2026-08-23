@@ -8055,7 +8055,7 @@ body.game-active:has(.poll-game-container) #particles-js {
 }
 
 .v2-set-label {
-    font-size: 0.63rem;
+    font-size: 0.7rem;
     font-weight: 700;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -8065,7 +8065,7 @@ body.game-active:has(.poll-game-container) #particles-js {
 
 .v2-set-value {
     margin-left: auto;
-    font-size: 0.85rem;
+    font-size: 0.92rem;
     font-weight: 700;
     color: var(--neon-primary);
     white-space: nowrap;
@@ -8102,9 +8102,9 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-set-opt {
     flex: 1 1 auto;
     min-width: 1.9rem;
-    padding: 0.62rem 0.6rem;
+    padding: 0.66rem 0.6rem;
     font-family: inherit;
-    font-size: 0.73rem;
+    font-size: 0.79rem;
     font-weight: 600;
     color: var(--text-secondary);
     background: rgba(255, 255, 255, 0.05);
@@ -11460,4 +11460,228 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 
 @media (max-width: 768px) {
     .v2q-alive.spectateur { font-size: 0.6rem; }
+}
+
+/* ============================================
+   🆕 v2 — CHOIX DE LA SÉRIE
+   Les vignettes ne tiennent pas dans la colonne des réglages :
+   la ligne devient une porte, le choix se fait dans un tiroir.
+   ============================================ */
+
+.v2-set-porte {
+    width: 100%;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.v2-set-porte:hover { border-color: rgba(255, 215, 0, 0.3); background: rgba(255, 255, 255, 0.045); }
+
+.v2-set-fleche {
+    width: 0.9rem;
+    height: 0.9rem;
+    flex: none;
+    margin-left: 0.5rem;
+    color: rgba(255, 255, 255, 0.25);
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.v2-set-porte:hover .v2-set-fleche { transform: translateX(0.15rem); color: var(--neon-primary); }
+
+.v2-serie-veil {
+    position: fixed;
+    inset: 0;
+    z-index: 1400;
+    background: rgba(6, 6, 8, 0.72);
+    backdrop-filter: blur(0.4rem);
+    animation: v2SerieVeil 0.25s ease both;
+}
+
+@keyframes v2SerieVeil { from { opacity: 0; } to { opacity: 1; } }
+
+/* Le tiroir entre par la gauche, comme avant */
+.v2-serie-panel {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: min(30rem, 92vw);
+    display: flex;
+    flex-direction: column;
+    padding: 1.6rem 1.5rem 1.4rem;
+    overflow-y: auto;
+    background: linear-gradient(150deg, rgba(24, 21, 16, 0.99), rgba(12, 12, 14, 0.99));
+    border-right: 0.06rem solid rgba(255, 255, 255, 0.08);
+    box-shadow: 1rem 0 3rem rgba(0, 0, 0, 0.55);
+    animation: v2SerieEntre 0.34s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+
+@keyframes v2SerieEntre {
+    from { transform: translateX(-100%); }
+    to   { transform: none; }
+}
+
+.v2-serie-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    margin-bottom: 1.1rem;
+    border-bottom: 0.06rem solid rgba(255, 255, 255, 0.07);
+}
+
+.v2-serie-head .ttl {
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.05em;
+    color: var(--neon-primary);
+}
+
+/* Les ensembles : pas de vignette, c'est du texte */
+.v2-serie-groupes { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.v2-serie-groupe {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.75rem 0.95rem;
+    font-family: inherit;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.03);
+    border: 0.06rem solid rgba(255, 255, 255, 0.07);
+    border-radius: 0.55rem;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.v2-serie-groupe .nm { font-size: 0.88rem; font-weight: 700; color: var(--text-primary); }
+.v2-serie-groupe .ds { font-size: 0.68rem; color: rgba(255, 255, 255, 0.35); }
+
+.v2-serie-groupe:hover { border-color: rgba(255, 215, 0, 0.35); background: rgba(255, 255, 255, 0.055); }
+
+.v2-serie-groupe.on {
+    border-color: var(--neon-primary);
+    background: rgba(255, 215, 0, 0.1);
+}
+
+.v2-serie-groupe.on .nm { color: var(--neon-primary); }
+
+/* Le filet qui sépare les ensembles des séries */
+.v2-serie-sep {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin: 1.3rem 0 0.9rem;
+}
+
+.v2-serie-sep::before,
+.v2-serie-sep::after {
+    content: '';
+    flex: 1;
+    height: 0.06rem;
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.v2-serie-sep span {
+    font-size: 0.56rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.28);
+    white-space: nowrap;
+}
+
+.v2-serie-grille {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+    gap: 0.7rem;
+}
+
+.v2-serie-carte {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    padding: 0;
+    overflow: hidden;
+    border: 0.06rem solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.6rem;
+    background: #0e0e10;
+    cursor: pointer;
+    transition: border-color 0.25s ease, transform 0.25s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+.v2-serie-carte img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.45s cubic-bezier(0.2, 0.9, 0.25, 1), filter 0.3s ease;
+}
+
+/* L'ombre porte le nom : sans elle, illisible sur les vignettes claires */
+.v2-serie-ombre {
+    position: absolute;
+    inset: 40% 0 0 0;
+    background: linear-gradient(180deg, transparent, rgba(6, 6, 8, 0.92));
+}
+
+.v2-serie-carte .nm {
+    position: absolute;
+    left: 0.55rem;
+    right: 0.55rem;
+    bottom: 0.55rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: left;
+    color: #fff;
+    text-shadow: 0 0.1rem 0.5rem rgba(0, 0, 0, 0.8);
+}
+
+.v2-serie-carte:not(.soon):hover { border-color: rgba(255, 215, 0, 0.5); transform: translateY(-0.2rem); }
+.v2-serie-carte:not(.soon):hover img { transform: scale(1.06); }
+
+.v2-serie-carte.on {
+    border-color: var(--neon-primary);
+    box-shadow: 0 0 0 0.12rem rgba(255, 215, 0, 0.3), 0 0.6rem 1.6rem rgba(255, 190, 40, 0.2);
+}
+
+.v2-serie-carte .coche {
+    position: absolute;
+    top: 0.45rem;
+    right: 0.45rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0.3rem;
+    color: #14100a;
+    background: var(--neon-primary);
+    border-radius: 50%;
+}
+
+/* Pas encore jouable : la vignette reste visible, mais éteinte */
+.v2-serie-carte.soon { cursor: default; }
+.v2-serie-carte.soon img { filter: grayscale(1) brightness(0.45); }
+
+.v2-serie-carte.soon .nm { color: rgba(255, 255, 255, 0.45); }
+
+.v2-serie-carte .bientot {
+    position: absolute;
+    top: 0.45rem;
+    left: 0.45rem;
+    padding: 0.16rem 0.42rem;
+    font-size: 0.5rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.55);
+    background: rgba(0, 0, 0, 0.6);
+    border: 0.06rem solid rgba(255, 255, 255, 0.14);
+    border-radius: 2rem;
+}
+
+@media (max-width: 768px) {
+    .v2-serie-panel { width: 100%; padding: 1.2rem 1rem 1.1rem; }
+    .v2-serie-head .ttl { font-size: 1.3rem; }
+    .v2-serie-grille { grid-template-columns: repeat(auto-fill, minmax(6.6rem, 1fr)); gap: 0.55rem; }
+    .v2-serie-carte .nm { font-size: 0.65rem; }
+    .v2-serie-groupe { padding: 0.65rem 0.8rem; }
 }

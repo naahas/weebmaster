@@ -51,14 +51,26 @@ createApp({
             difficultyMode: 'croissante',
             serieFilter: 'tout',
             noSpoil: false,
-            serieFilters: [
-                { id: 'tout', name: 'Tout' },
-                { id: 'big3', name: 'Big 3' },
-                { id: 'mainstream', name: 'Mainstream' },
-                { id: 'onepiece', name: 'One Piece' },
-                { id: 'naruto', name: 'Naruto' },
-                { id: 'dragonball', name: 'Dragon Ball' },
-                { id: 'bleach', name: 'Bleach' },
+            showSeries: false,    // le tiroir de choix de série est-il ouvert
+            // Les trois premiers ne sont pas des séries mais des ensembles :
+            // ils ouvrent le tiroir, sans vignette.
+            serieGroupes: [
+                { id: 'tout', name: 'Tout', desc: 'Toutes les séries' },
+                { id: 'big3', name: 'Big 3', desc: 'One Piece · Naruto · Bleach' },
+                { id: 'mainstream', name: 'Mainstream', desc: 'Les grands titres' },
+            ],
+            // 'soon' = la vignette est là, le filtre serveur n'existe pas encore
+            serieCartes: [
+                { id: 'onepiece',    name: 'One Piece',   img: 'questionpic/onepiece.png' },
+                { id: 'naruto',      name: 'Naruto',      img: 'questionpic/naruto2.png' },
+                { id: 'dragonball',  name: 'Dragon Ball', img: 'questionpic/dragonball.png' },
+                { id: 'bleach',      name: 'Bleach',      img: 'questionpic/bleach.png' },
+                { id: 'jjk',         name: 'Jujutsu Kaisen', img: 'questionpic/jjk.png', soon: true },
+                { id: 'snk',         name: "L'Attaque des Titans", img: 'questionpic/snk.png', soon: true },
+                { id: 'blackclover', name: 'Black Clover', img: 'questionpic/blackclover.png', soon: true },
+                { id: 'jojo',        name: 'JoJo',        img: 'questionpic/jojo.png', soon: true },
+                { id: 'tokyoghoul',  name: 'Tokyo Ghoul', img: 'questionpic/tokyoghoul.png', soon: true },
+                { id: 'tokyorev',    name: 'Tokyo Revengers', img: 'questionpic/tokyorevengers.png', soon: true },
             ],
             bombanimeSeries: ['Naruto', 'OnePiece', 'Dbz', 'Bleach', 'Hxh', 'Snk', 'DemonSlayer', 'JujutsuKaisen', 'FairyTail', 'Mha', 'BlackClover', 'Jojo'],
             homeScreen: 'hub',    // hub | modes | join
@@ -406,7 +418,7 @@ createApp({
         // Le survol prévisualise, le clic verrouille : en sortant de la liste on
         // revient au mode verrouillé.
         serieFilterName() {
-            const f = this.serieFilters.find(x => x.id === this.serieFilter);
+            const f = [...this.serieGroupes, ...this.serieCartes].find(x => x.id === this.serieFilter);
             return f ? f.name : 'Tout';
         },
 
@@ -1120,6 +1132,13 @@ createApp({
 
         // Tous les réglages passent par la même route POST, avec application
         // optimiste côté client et retour arrière si le serveur refuse.
+        // Le tiroir se referme dès le choix fait : une seule série à la fois
+        choisirSerie(id) {
+            if (id === this.serieFilter) { this.showSeries = false; return; }
+            this.applySetting('/admin/set-serie-filter', { filter: id }, () => this.serieFilter = id);
+            this.showSeries = false;
+        },
+
         // Toute requête /admin passe par ici : elle joint le jeton d'hôte
         hostFetch(url, options = {}) {
             const entetes = Object.assign({}, options.headers, { 'X-Host-Token': this.hostToken });
