@@ -1070,7 +1070,7 @@
                              il devient un calque ouvert par le bouton « Top ». -->
                         <div class="v2q-top-veil" :class="{ open: showTopSheet }" @click.self="showTopSheet = false">
                         <!-- En camps, seul le score des deux équipes compte -->
-                        <aside class="v2q-top" v-if="showResults && lobbyMode === 'rivalry'">
+                        <aside class="v2q-top" v-if="classementVisible && lobbyMode === 'rivalry'">
                             <div class="v2q-top-t">Score des camps</div>
                             <div class="v2q-camp" v-for="c in campsClasses" :key="c.team"
                                  :class="['team-' + c.team, { mien: c.team === monCamp, tete: c.tete }]">
@@ -1089,7 +1089,7 @@
                             </div>
                         </aside>
 
-                        <aside class="v2q-top" v-else-if="showResults && lobbyMode !== 'bombanime'">
+                        <aside class="v2q-top" v-else-if="classementVisible">
                             <div class="v2q-top-t">Top 5</div>
                             <div class="v2q-top-row" v-for="(p, i) in topPlayers" :key="p.twitchId || p.username"
                                  :class="{ me: p.twitchId === twitchId }">
@@ -1119,6 +1119,25 @@
 
                             <div class="v2q-top-me" v-if="myLiveRank > 5">
                                 Tu es <b>{{ myLiveRank }}<sup>e</sup></b>
+                            </div>
+                        </aside>
+
+                        <aside class="v2q-top" v-else-if="showResults && lobbyMode !== 'bombanime'">
+                            <div class="v2q-top-t">Classement</div>
+                            <div class="v2q-top-secret">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/>
+                                </svg>
+                                <b>Dernière question</b>
+                                <span>Le classement se dévoile à la fin.</span>
+                            </div>
+
+                            <div class="v2q-top-fast" v-if="questionResults.fastestPlayer">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M13 2L4.1 12.9a1 1 0 0 0 .8 1.6H11l-1 7.5 8.9-10.9a1 1 0 0 0-.8-1.6H12z"/>
+                                </svg>
+                                <span class="nm">{{ questionResults.fastestPlayer.username }}</span>
+                                <em>{{ fastestTime }}<small>s</small></em>
                             </div>
                         </aside>
                         </div>

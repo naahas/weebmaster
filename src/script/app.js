@@ -724,6 +724,13 @@ createApp({
             return this.selectedTeam || null;
         },
 
+        // Sur la dernière question, le classement donnerait le podium avant l'heure.
+        // L'hôte le garde : c'est lui qui déclenche la fin, rien ne lui est caché.
+        classementVisible() {
+            if (!this.showResults || this.lobbyMode === 'bombanime') return false;
+            return !(this.questionResults.isLastQuestion && !this.isHost);
+        },
+
         // Les deux camps, du mieux placé au moins bien, avec leur part relative
         campsClasses() {
             const s = (this.questionResults && this.questionResults.teamScores) || this.teamScores || {};
