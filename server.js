@@ -22,7 +22,11 @@ let connectionsByIP = new Map();
 // Plusieurs joueurs derrière la même box partagent une seule IP publique :
 // une limite à 5 excluait le sixième d'un groupe d'amis. Réglable par variable
 // d'environnement si un abus se présentait.
-const MAX_CONNECTIONS_PER_IP = parseInt(process.env.MAX_CONNECTIONS_PER_IP, 10) || 16;
+// Ce plafond vise un client qui ouvrirait des sockets en boucle, pas une salle
+// de classe. Les opérateurs mobiles passent leurs abonnés derrière une même IP
+// (CGNAT) : à 16, la moitié du public d'un live TikTok se serait fait refuser
+// sans comprendre pourquoi.
+const MAX_CONNECTIONS_PER_IP = parseInt(process.env.MAX_CONNECTIONS_PER_IP, 10) || 100;
 
 
 
@@ -450,7 +454,36 @@ function roomDeSocket(socket) {
     return roomParCode(socket.data && socket.data.roomCode);
 }
 
+// Rien n'empêchait d'ouvrir des salons en boucle. Le plafond est un garde-fou
+// contre l'abus, pas un objectif : à cinquante salons pleins on aurait déjà
+// changé d'hébergement.
+const MAX_ROOMS = parseInt(process.env.MAX_ROOMS, 10) || 50;
+
+// Avant de refuser, on récupère les salons que plus personne n'occupe : sinon
+// cinquante ouvertures abandonnées bloqueraient le site dix minutes durant.
+// ⚠️ Un salon qui vient d'ouvrir est vide : son hôte n'a pas encore eu le temps
+// d'y entrer. Le récupérer serait lui prendre son salon sous les pieds.
+const AGE_MINIMUM_RECUPERATION = 60 * 1000;
+
+function libererSalonsVides() {
+    const maintenant = Date.now();
+    let n = 0;
+    for (const r of [...rooms.values()]) {
+        if (r.players.size || r.inProgress) continue;
+        if (maintenant - r.creeA < AGE_MINIMUM_RECUPERATION) continue;
+        fermerRoom(r);
+        n++;
+    }
+    if (n) console.log(`🧹 ${n} salon(s) abandonné(s) libéré(s) pour faire de la place`);
+    return n;
+}
+
 function creerRoom() {
+    if (rooms.size >= MAX_ROOMS) {
+        libererSalonsVides();
+        if (rooms.size >= MAX_ROOMS) return null;
+    }
+
     const gameState = etatNeuf();
     gameState.roomCode = generateRoomCode();
     gameState.hostToken = randomUUID();
@@ -1115,6 +1148,11 @@ app.post('/admin/toggle-game', async (req, res) => {
     }
 
     const gameState = creerRoom();
+    if (!gameState) {
+        return res.status(503).json({
+            error: 'Trop de salons ouverts en ce moment — réessaie dans un instant.',
+        });
+    }
 
     // 🆕 Récupérer le mode et les noms d'équipe depuis la requête
     const { lobbyMode, teamNames, bombanimeSerie, bombanimeTimer, bombanimeLives } = req.body || {};

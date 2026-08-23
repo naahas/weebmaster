@@ -12,25 +12,34 @@ Domaine prod : `shonenmaster.com`. Auteur : Adem (`naahas`).
 progression). Voir [PLAN-V2.md](PLAN-V2.md) pour l'état d'avancement et la suite.
 
 État : **phase 1 terminée** (suppression), refonte du mode Classique terminée (écran de jeu, salon,
-camps, classement final, passe mobile). Phase 2 (multi-room) à faire — aujourd'hui le serveur
-n'héberge toujours qu'**une seule partie à la fois**, et BombAnime est encore intégralement en v1.
+camps, classement final, passe mobile), **phase 2 terminée** : le serveur héberge autant de salons
+qu'on veut, chacun indépendant. Reste **BombAnime**, encore intégralement en v1, et le renommage
+`twitchId` → `playerId`.
 
 Les routes `/admin/*` sont **réservées à l'hôte** : l'ouverture d'un salon tire un jeton
 (`gameState.hostToken`) remis au seul créateur, qu'un middleware monté sur `/admin` exige ensuite en
-en-tête `X-Host-Token`. En phase 2 le jeton passera dans la room, le middleware ne bougera pas.
+en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware pose `req.room`.
 
 ## Stack
 
 - **Backend** : Node.js + Express 4 + Socket.io 4 (`server.js`, point d'entrée, `npm start` → nodemon)
-- **DB** : Supabase (Postgres) — ne stocke plus que les **questions** et les suggestions BombAnime
+- **DB** : Supabase (Postgres) — ne stocke plus que les **questions**, les suggestions BombAnime et
+  l'historique des parties (`game_history`, SQL dans `docs/game-history.sql`). Les questions sont
+  **chargées en mémoire au démarrage** (`assurerBanque` dans `dbs.js`) : une requête par question
+  et par salon ne tenait pas à plusieurs parties. Le back-office `/question` invalide ce cache.
 - **Identité** : pseudo invité en `localStorage` (`playerId` + `pseudo`). Plus d'OAuth, plus de session serveur.
 - **Frontend** : Vue 3 via CDN (`vue.global.js`), un seul gros composant (`src/script/app.js`) —
   hôte et joueurs partagent la même page, seul `isHost` change ce qui s'affiche
-- **Déploiement** : Render (Procfile `web: node server.js`)
+- **Déploiement** : Heroku, plan Basic, **un seul dyno web** (Procfile `web: node server.js`,
+  Node épinglé en 20.x). ⚠️ Les salons vivent dans la mémoire du processus, sans adaptateur Redis :
+  passer à deux dynos donnerait deux ensembles de salons qui s'ignorent. Et le recyclage quotidien
+  du dyno tue les parties en cours — c'est architectural, aucun plan n'y change rien.
 - **Tests** : `npm run check` (le template Vue compile-t-il), puis, serveur lancé à côté :
   `npm run smoke` (cycle de jeu complet), `npm run test:host` (contrôles de l'hôte, camps,
-  rafraîchissement), `npm run test:tie` (départage solo et en camps, ~1 min) et `npm run test:hote`
-  (les routes /admin sont-elles bien fermées aux visiteurs)
+  rafraîchissement), `npm run test:tie` (départage solo et en camps, ~1 min), `npm run test:hote`
+  (les routes /admin sont-elles fermées aux visiteurs), `npm run test:rooms` (deux salons
+  simultanés, plafond) et `npm run test:mixte` (quiz et BombAnime en parallèle).
+  `npm run test:charge` mesure la tenue à N salons (`SALONS=15 JOUEURS=12`), il ne vérifie rien.
 - Pas de build, pas de bundler. Les fichiers sont servis en statique tels quels.
 
 ## Arborescence
@@ -99,6 +108,9 @@ veille du projet Supabase free tier.
 
 `NODE_ENV`, `PORT` (7000), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `QUESTION_ADMIN_CODE`.
 
+Facultatives : `MAX_CONNECTIONS_PER_IP` (100 par défaut — les opérateurs mobiles placent leurs
+abonnés derrière une même IP, un plafond bas couperait la moitié d'un public) et `MAX_ROOMS` (50).
+
 Les variables Twitch, `SESSION_SECRET`, `ADMIN_PASSWORD` et `MASTER_ADMIN_PASSWORD` ne servent plus.
 
 ## Conventions du code
@@ -107,12 +119,20 @@ Les variables Twitch, `SESSION_SECRET`, `ADMIN_PASSWORD` et `MASTER_ADMIN_PASSWO
   de code sont en anglais/franglais (`lobbyMode`, `playerBonuses`, `usedNames`).
 - Sections délimitées par des bannières `// ====` / `// ═══` avec emoji. S'en servir pour naviguer
   dans `server.js` et `app.js` (grep `^// [^=═]`).
-- État serveur : un unique objet `gameState` global, avec un sous-objet `gameState.bombanime`.
-  **Une seule partie à la fois sur tout le serveur** — c'est ce que la phase 2 doit lever.
+- État serveur : une `Map` `rooms`, du code de salon vers son état. `etatNeuf()` en fabrique un,
+  `creerRoom()` / `fermerRoom()` l'ouvrent et le referment. Chaque point d'entrée résout le sien :
+  `req.room` pour les routes `/admin`, `roomDeSocket(socket)` pour les événements, `roomParCode()`
+  pour la jointure et `/game/state?code=`. Les fonctions de jeu reçoivent l'état en **premier
+  paramètre**, toujours nommé `gameState`.
+- Toute diffusion passe par `diffuser(gameState, evt, payload)` → `io.to(roomCode)`. **Ne jamais
+  appeler `io.emit` directement** : le message partirait à tous les salons.
+- Un salon vide se referme après dix minutes ; à `MAX_ROOMS` (50), les salons abandonnés depuis
+  plus d'une minute sont récupérés d'abord. Le délai protège un salon qui vient d'ouvrir : son hôte
+  n'y est pas encore entré.
 - `Map`/`Set` pour les états volatils (joueurs, réponses, timers) → jamais sérialisables tels quels,
   toujours convertir avant un `emit`.
 - Les joueurs sont identifiés par `twitchId` **et** `socket.id` (volatile). ⚠️ `twitchId` porte
-  désormais le `playerId` invité : le nom du champ est un reste de la v1, renommage prévu en phase 2.
+  désormais le `playerId` invité : le nom du champ est un reste de la v1, renommage encore à faire.
 - Le serveur est **autoritaire** : toute validation de réponse se fait côté serveur, le client
   n'affiche que le résultat.
 

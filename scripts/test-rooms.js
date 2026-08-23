@@ -95,6 +95,26 @@ async function joueur(id, nom, code) {
     check('le salon B vit toujours', eb4.isActive === true && eb4.playerCount === 2,
         eb4.playerCount + ' joueur(s)');
 
+    // ── Le plafond de salons tient, et se libère tout seul ──
+    const ouverts = [];
+    let refus = null;
+    for (let i = 0; i < 60; i++) {
+        const r = await post('/admin/toggle-game', null, { lobbyMode: 'classic' });
+        if (r.status === 503) { refus = r; break; }
+        ouverts.push(r.body.hostToken);
+    }
+    check('le nombre de salons est plafonné', refus !== null,
+        refus ? ouverts.length + ' ouverts puis refus' : 'aucun refus après 60 tentatives');
+
+    // Un salon fermé rend sa place immédiatement
+    if (ouverts.length) {
+        await post('/admin/toggle-game', ouverts.pop(), {});
+        const apres = await post('/admin/toggle-game', null, { lobbyMode: 'classic' });
+        check('un salon fermé rend sa place', apres.status !== 503, 'HTTP ' + apres.status);
+        if (apres.body && apres.body.hostToken) ouverts.push(apres.body.hostToken);
+    }
+    for (const t of ouverts) await post('/admin/toggle-game', t, {});
+
     await post('/admin/toggle-game', b.hostToken, {});
     [a1, a2, b1, b2].forEach(p => p.s.close());
     await wait(300);
