@@ -1773,12 +1773,12 @@ app.post('/admin/set-teams', (req, res) => {
 
     // En sortant, un camp resté collé fausserait les comptes. En entrant, on
     // répartit tout de suite en alternance plutôt que de laisser tout le monde sans camp.
-    if (enEquipes) {
-        let i = 0;
-        gameState.players.forEach(p => { p.team = (i++ % 2) + 1; });
-    } else {
-        gameState.players.forEach(p => { p.team = null; });
-    }
+    let i = 0;
+    gameState.players.forEach((p, socketId) => {
+        p.team = enEquipes ? (i++ % 2) + 1 : null;
+        const sock = io.sockets.sockets.get(socketId);
+        if (sock) sock.emit('team-changed', { newTeam: p.team });
+    });
     gameState.teamScores = { 1: 0, 2: 0 };
     updateTeamCounts();
 
@@ -1840,7 +1840,11 @@ app.post('/admin/shuffle-teams', (req, res) => {
     broadcastLobbyUpdate();
 
     console.log(`🔀 Camps mélangés : ${gameState.teamCounts[1]} contre ${gameState.teamCounts[2]}`);
-    res.json({ success: true, teamCounts: gameState.teamCounts });
+    res.json({
+        success: true,
+        teamCounts: gameState.teamCounts,
+        teams: entrees.map(([, p]) => ({ twitchId: p.twitchId, team: p.team })),
+    });
 });
 
 // 🆕 Route pour activer/désactiver le bonus rapidité (mode points uniquement)
@@ -5211,10 +5215,12 @@ io.on('connection', (socket) => {
         // 🔥 Vérifier si le joueur est déjà dans le lobby (reconnexion)
         let isReconnection = false;
         let existingSocketId = null;
+        let campPrecedent = null;
         for (const [socketId, player] of gameState.players.entries()) {
             if (player.twitchId === data.twitchId) {
                 isReconnection = true;
                 existingSocketId = socketId;
+                campPrecedent = player.team || null;
                 break;
             }
         }
@@ -5259,10 +5265,16 @@ io.on('connection', (socket) => {
                 gameState.players.delete(existingSocketId);
                 gameState.answers.delete(existingSocketId);
 
-                // Déconnecter l'ancien socket (sans envoyer kicked pour éviter de reset le localStorage)
-                const oldSocket = io.sockets.sockets.get(existingSocketId);
-                if (oldSocket) {
-                    oldSocket.disconnect(true);
+                // Déconnecter l'ancien socket (sans envoyer kicked pour éviter de reset le localStorage).
+                // ⚠️ 'register-authenticated' a pu déjà rebrancher l'entrée sur la socket
+                // courante : sans ce garde-fou on coupait la connexion qu'on vient
+                // d'accepter, et le joueur restait sourd aux diffusions pendant
+                // toute la reconnexion automatique.
+                if (existingSocketId !== socket.id) {
+                    const oldSocket = io.sockets.sockets.get(existingSocketId);
+                    if (oldSocket) {
+                        oldSocket.disconnect(true);
+                    }
                 }
             }
 
@@ -5282,7 +5294,9 @@ io.on('connection', (socket) => {
             lives: gameState.lives,
             correctAnswers: 0,
             avatarUrl: 'novice.png',
-            team: gameState.lobbyMode === 'rivalry' ? campLeMoinsFourni() : null,
+            // Après un refresh on reprend son camp : le retirer au hasard
+            // ferait sauter les joueurs d'un côté à l'autre à chaque rechargement.
+            team: gameState.lobbyMode === 'rivalry' ? (campPrecedent || campLeMoinsFourni()) : null,
             isAdmin: data.isAdmin || false
         });
 

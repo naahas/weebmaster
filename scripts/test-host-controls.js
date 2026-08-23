@@ -60,6 +60,32 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     const ecart = melange.teamCounts ? Math.abs(melange.teamCounts[1] - melange.teamCounts[2]) : 99;
     check('mélange équilibré', melange.success === true && ecart <= 1,
         melange.teamCounts ? melange.teamCounts[1] + ' contre ' + melange.teamCounts[2] : 'aucun');
+    // Un rafraîchissement de page ne doit ni sortir du salon ni changer de camp
+    const avantRefresh = await fetch(BASE + '/game/state').then(r => r.json());
+    const campAvant = (avantRefresh.players.find(p => p.twitchId === 'p2') || {}).team;
+    socks[1].s.disconnect();
+    await wait(150);
+    const revenu = io(BASE);
+    await new Promise(r => revenu.on('connect', r));
+    revenu.emit('register-authenticated', { twitchId: 'p2', username: 'Joueur2' });
+    await wait(150);
+    revenu.emit('join-lobby', { twitchId: 'p2', username: 'Joueur2' });
+    await wait(400);
+    const apresRefresh = await fetch(BASE + '/game/state').then(r => r.json());
+    const rentre = apresRefresh.players.find(p => p.twitchId === 'p2');
+    check('le camp survit à un rafraîchissement', !!rentre && rentre.team === campAvant,
+        campAvant + ' → ' + (rentre ? rentre.team : 'sorti du salon'));
+
+    // La socket qui vient de rejoindre doit rester en ligne : coupée, elle
+    // manquait toutes les diffusions jusqu'à sa reconnexion automatique.
+    let diffusionRecue = false;
+    revenu.on('lobby-update', () => { diffusionRecue = true; });
+    check('la socket revenue reste connectée', revenu.connected === true);
+    await post('/admin/set-player-team', { twitchId: 'p2', team: campAvant === 1 ? 2 : 1 });
+    for (let i = 0; i < 20 && !diffusionRecue; i++) await wait(50);
+    check('elle reçoit bien les diffusions du salon', diffusionRecue === true);
+    socks[1].s = revenu;
+
     // Un camp vide fait échouer le démarrage : le bouton est grisé côté hôte,
     // mais le serveur reste la dernière barrière.
     const tous = await fetch(BASE + '/game/state').then(r => r.json());

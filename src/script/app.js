@@ -1690,10 +1690,20 @@ createApp({
                     body: JSON.stringify({ twitchId, team }),
                 });
                 const data = await res.json();
-                if (data.error) this.hostError = data.error;
+                if (data.error) { this.hostError = data.error; return; }
+                this.appliquerCamps([{ twitchId: data.twitchId, team: data.team }]);
             } catch (e) {
                 this.hostError = 'Erreur de connexion';
             }
+        },
+
+        // Recopie une répartition dans la liste affichée
+        appliquerCamps(couples) {
+            (couples || []).forEach(({ twitchId, team }) => {
+                const cible = this.lobbyPlayers.find(p => p.twitchId === twitchId);
+                if (cible) cible.team = team;
+                if (twitchId === this.twitchId) this.selectedTeam = team;
+            });
         },
 
         // Répartition au hasard, à un joueur près
@@ -1705,6 +1715,7 @@ createApp({
                 const res = await fetch('/admin/shuffle-teams', { method: 'POST' });
                 const data = await res.json();
                 if (data.error) this.hostError = data.error;
+                else this.appliquerCamps(data.teams);
             } catch (e) {
                 this.hostError = 'Erreur de connexion';
             } finally {
@@ -2129,22 +2140,17 @@ createApp({
 
                 // 🆕 Re-joindre le lobby si l'état a été restauré (sauf si kick)
                 const wasKicked = sessionStorage.getItem('wasKicked');
+                // Reste de la v1 : le joueur choisissait son camp, donc pas de camp
+                // sauvegardé = pas de rejointure. En v2 c'est l'hôte qui répartit, et
+                // ce garde-fou faisait sortir du salon quiconque rafraîchissait sa page
+                // en mode équipes — l'hôte compris.
                 if (this.shouldRejoinLobby && this.isGameActive && !this.gameInProgress && !wasKicked) {
-                    // En mode rivalité, vérifier qu'on a une équipe
-                    if (this.lobbyMode === 'rivalry' && !this.selectedTeam) {
-                        console.log('⚠️ Mode Rivalité mais pas d\'équipe sauvegardée - pas de rejoin auto');
-                        this.shouldRejoinLobby = false;
-                        this.hasJoined = false;
-                        localStorage.removeItem('hasJoinedLobby');
-                    } else {
-                        this.socket.emit('join-lobby', {
-                            twitchId: this.twitchId,
-                            username: this.username,
-                            team: this.lobbyMode === 'rivalry' ? this.selectedTeam : null
-                        });
-                        this.shouldRejoinLobby = false;
-                        console.log(`✅ Re-jointure automatique du lobby après refresh${this.selectedTeam ? ` (Team ${this.selectedTeam})` : ''}`);
-                    }
+                    this.socket.emit('join-lobby', {
+                        twitchId: this.twitchId,
+                        username: this.username,
+                    });
+                    this.shouldRejoinLobby = false;
+                    console.log('✅ Re-jointure automatique du lobby après refresh');
                 } else if (wasKicked) {
                     console.log('🚫 Rejoin auto bloqué - joueur kick');
                     this.shouldRejoinLobby = false;
@@ -2404,9 +2410,11 @@ createApp({
             this.socket.on('teams-toggled', (data) => {
                 this.lobbyMode = data.lobbyMode;
                 if (data.teamNames) this.teamNames = data.teamNames;
-                // Le camp précédent ne vaut plus rien : il faut rechoisir
-                this.selectedTeam = null;
-                localStorage.removeItem('selectedTeam');
+                // Le camp arrive juste après, par 'team-changed' : rien à deviner ici
+                if (data.lobbyMode !== 'rivalry') {
+                    this.selectedTeam = null;
+                    localStorage.removeItem('selectedTeam');
+                }
             });
 
             this.socket.on('lobby-update', (data) => {
@@ -2447,12 +2455,9 @@ createApp({
             
             // 🆕 L'admin a changé notre équipe
             this.socket.on('team-changed', (data) => {
-                if (data.newTeam) {
-                    const oldTeam = this.selectedTeam;
-                    this.selectedTeam = data.newTeam;
-                    localStorage.setItem('selectedTeam', data.newTeam);
-                    console.log(`🔄 [ADMIN] Équipe changée: Team ${oldTeam} → Team ${data.newTeam}`);
-                }
+                this.selectedTeam = data.newTeam || null;
+                if (data.newTeam) localStorage.setItem('selectedTeam', data.newTeam);
+                else localStorage.removeItem('selectedTeam');
             });
 
             // 🔒 BUG FIX 1: Empêcher l'affichage des questions si non inscrit au lobby
