@@ -1483,15 +1483,14 @@
 
                 <div class="v2-serie-grille">
                     <button v-for="s in serieCartes" :key="s.id"
-                            class="v2-serie-carte" :class="{ on: serieFilter === s.id, soon: s.soon }"
-                            :disabled="s.soon" @click="choisirSerie(s.id)">
+                            class="v2-serie-carte" :class="{ on: serieFilter === s.id }"
+                            @click="choisirSerie(s.id)">
                         <img :src="s.img" :alt="s.name" loading="lazy" decoding="async">
                         <span class="v2-serie-ombre"></span>
                         <span class="nm">
                             {{ s.name }}
                             <em v-if="sousTitreSerie(s)">{{ sousTitreSerie(s) }}</em>
                         </span>
-                        <span class="bientot" v-if="s.soon">Bientôt</span>
                         <svg class="coche" v-if="serieFilter === s.id" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M20 6L9 17l-5-5"/>
                         </svg>

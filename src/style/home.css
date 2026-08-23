@@ -11583,7 +11583,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     transition: opacity 0.25s ease;
 }
 
-.v2-serie-carte:not(.soon):hover .v2-serie-ombre { opacity: 0.45; }
+.v2-serie-carte:hover .v2-serie-ombre { opacity: 0.45; }
 
 .v2-serie-carte .nm {
     position: absolute;
@@ -11606,7 +11606,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     transition: opacity 0.25s ease;
 }
 
-.v2-serie-carte:not(.soon):hover .nm { opacity: 0.25; }
+.v2-serie-carte:hover .nm { opacity: 0.25; }
 
 /* Le décompte des séries, sous le nom, séparé par un court filet */
 .v2-serie-carte .nm em {
@@ -11632,8 +11632,8 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     background: rgba(255, 255, 255, 0.28);
 }
 
-.v2-serie-carte:not(.soon):hover { border-color: rgba(255, 215, 0, 0.5); transform: translateY(-0.18rem); }
-.v2-serie-carte:not(.soon):hover img { transform: scale(1.05); }
+.v2-serie-carte:hover { border-color: rgba(255, 215, 0, 0.5); transform: translateY(-0.18rem); }
+.v2-serie-carte:hover img { transform: scale(1.05); }
 
 .v2-serie-carte.on {
     border-color: var(--neon-primary);
@@ -11653,27 +11653,6 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 }
 
 /* Pas encore jouable : la vignette reste visible, mais éteinte */
-/* La désaturation est cuite dans la vignette à l'export : un filter CSS
-   sur six images forçait autant de couches de composition à l'ouverture. */
-.v2-serie-carte.soon { cursor: default; }
-.v2-serie-carte.soon .v2-serie-ombre { background: linear-gradient(180deg, rgba(6, 6, 8, 0.72), rgba(6, 6, 8, 0.9)); }
-.v2-serie-carte.soon .nm { color: rgba(255, 255, 255, 0.42); }
-
-.v2-serie-carte .bientot {
-    position: absolute;
-    top: 0.45rem;
-    left: 0.45rem;
-    padding: 0.16rem 0.42rem;
-    font-size: 0.5rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.55);
-    background: rgba(0, 0, 0, 0.6);
-    border: 0.06rem solid rgba(255, 255, 255, 0.14);
-    border-radius: 2rem;
-}
-
 @media (max-width: 768px) {
     .v2-serie-panel {
         inset: 6vh auto 6vh 0;

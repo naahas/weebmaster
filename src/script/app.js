@@ -53,10 +53,9 @@ createApp({
             noSpoil: false,
             showSeries: false,    // le tiroir de choix de série est-il ouvert
             serieStats: null,     // combien de séries derrière Overall et Mainstream
-            // Une seule liste : les trois ensembles ouvrent la marche, les séries
-            // suivent. 'soon' = la vignette est prête, le filtre serveur non.
-            // Vignettes en WebP 360×480 (src/img/series) : les sources d'origine
-            // pesaient 3,7 Mo à elles seules et faisaient ramer l'ouverture.
+            // Les trois ensembles ouvrent la marche, les séries suivent.
+            // Vignettes en WebP 360×480 (src/img/series), réexportées depuis la
+            // source déposée à côté : les originaux pesaient 3,7 Mo à eux seuls.
             serieCartes: [
                 { id: 'overall',     name: 'Overall',    compte: true, img: 'series/overall.webp' },
                 { id: 'mainstream',  name: 'Mainstream', compte: true, img: 'series/mainstream.webp' },
@@ -65,12 +64,6 @@ createApp({
                 { id: 'naruto',      name: 'Naruto',      img: 'series/naruto.webp' },
                 { id: 'dragonball',  name: 'Dragon Ball', img: 'series/dragonball.webp' },
                 { id: 'bleach',      name: 'Bleach',      img: 'series/bleach.webp' },
-                { id: 'jjk',         name: 'Jujutsu Kaisen', img: 'series/jjk.webp', soon: true },
-                { id: 'snk',         name: "L'Attaque des Titans", img: 'series/snk.webp', soon: true },
-                { id: 'blackclover', name: 'Black Clover', img: 'series/blackclover.webp', soon: true },
-                { id: 'jojo',        name: 'JoJo',        img: 'series/jojo.webp', soon: true },
-                { id: 'tokyoghoul',  name: 'Tokyo Ghoul', img: 'series/tokyoghoul.webp', soon: true },
-                { id: 'tokyorev',    name: 'Tokyo Revengers', img: 'series/tokyorevengers.webp', soon: true },
             ],
             bombanimeSeries: ['Naruto', 'OnePiece', 'Dbz', 'Bleach', 'Hxh', 'Snk', 'DemonSlayer', 'JujutsuKaisen', 'FairyTail', 'Mha', 'BlackClover', 'Jojo'],
             homeScreen: 'hub',    // hub | modes | join
