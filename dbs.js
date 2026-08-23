@@ -20,8 +20,8 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 // 🎯 FILTRES SÉRIES CENTRALISÉS
 // ============================================
 const SERIES_FILTERS = {
-    tout: {
-        name: 'Tout',
+    overall: {
+        name: 'Overall',
         icon: '🌐',
         series: []
     },
@@ -81,14 +81,14 @@ const db = {
         return data;
     },
 
-    async getAvailableQuestionsCount(serieFilter = 'tout', excludeIds = []) {
+    async getAvailableQuestionsCount(serieFilter = 'overall', excludeIds = []) {
         let query = supabase
             .from('questions')
             .select('id', { count: 'exact' });
 
         const series = getFilterSeries(serieFilter);
 
-        if (serieFilter !== 'tout' && series.length > 0) {
+        if (serieFilter !== 'overall' && series.length > 0) {
             if (series.length === 1) {
                 query = query.eq('serie', series[0]);
             } else {
@@ -109,7 +109,7 @@ const db = {
     },
 
     // 🆕 MODIFIÉ: Éviter les questions en double + Filtre série + Fallback
-    async getRandomQuestions(difficulty, count = 1, excludeIds = [], serieFilter = 'tout', excludeSeries = [], noSpoil = false) {
+    async getRandomQuestions(difficulty, count = 1, excludeIds = [], serieFilter = 'overall', excludeSeries = [], noSpoil = false) {
         let query = supabase
             .from('questions')
             .select('*')
@@ -121,7 +121,7 @@ const db = {
         const series = getFilterSeries(serieFilter);
 
         // Appliquer le filtre si ce n'est pas "tout"
-        if (serieFilter !== 'tout' && series.length > 0) {
+        if (serieFilter !== 'overall' && series.length > 0) {
             if (series.length === 1) {
                 query = query.eq('serie', series[0]);
             } else {

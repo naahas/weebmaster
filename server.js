@@ -413,6 +413,7 @@ app.use(express.static('src/script'));
 const MEDIA = { maxAge: '7d' };
 app.use(express.static('src/sound', MEDIA));
 app.use(express.static('src/img', MEDIA));
+app.use(express.static('src/img/series', MEDIA));
 app.use(express.static('src/img/questionpic', MEDIA));
 app.use(express.static('src/img/avatarpic', MEDIA));
 app.use(express.static('src/img/avatar', MEDIA));
@@ -466,7 +467,7 @@ const gameState = {
     
     initialPlayerCount: 0, // Nombre de joueurs au début de la partie
 
-    serieFilter: 'tout',
+    serieFilter: 'overall',
     noSpoil: false, // 🚫 Filtre anti-spoil (exclure les questions spoil)
 
     playerBonuses: new Map(),
@@ -655,7 +656,7 @@ function generateChallenges() {
     let poolShield = [...CHALLENGE_POOLS['shield']];
     
     // Option A : Exclure series7 si filtre ≠ overall/mainstream
-    if (gameState.serieFilter !== 'tout' && gameState.serieFilter !== 'mainstream') {
+    if (gameState.serieFilter !== 'overall' && gameState.serieFilter !== 'mainstream') {
         poolShield = poolShield.filter(c => c.id !== 'series7');
     }
     
@@ -809,7 +810,7 @@ const authenticatedUsers = new Map();
 
 // 🆕 Vérifie si on doit appliquer le cooldown de série
 function shouldApplySerieCooldown() {
-    return gameState.serieFilter === 'tout' || gameState.serieFilter === 'mainstream';
+    return gameState.serieFilter === 'overall' || gameState.serieFilter === 'mainstream';
 }
 
 // 🆕 Ajoute une série à l'historique récent (garde les 5 dernières)
@@ -1971,7 +1972,7 @@ app.get('/admin/serie-stats', async (req, res) => {
 
         // 🔥 AUTOMATIQUE: Générer les stats pour chaque filtre dans SERIES_FILTERS
         for (const [filterId, filterConfig] of Object.entries(SERIES_FILTERS)) {
-            if (filterId === 'tout') {
+            if (filterId === 'overall') {
                 stats.tout = {
                     count: allQuestions.length,
                     subtitle: `${totalSeries} séries`

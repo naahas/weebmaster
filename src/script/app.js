@@ -49,28 +49,27 @@ createApp({
             answersCount: 4,
             questionsCount: 20,
             difficultyMode: 'croissante',
-            serieFilter: 'tout',
+            serieFilter: 'overall',
             noSpoil: false,
             showSeries: false,    // le tiroir de choix de série est-il ouvert
-            // Les trois premiers ne sont pas des séries mais des ensembles :
-            // ils ouvrent le tiroir, sans vignette.
-            serieGroupes: [
-                { id: 'tout', name: 'Tout', desc: 'Toutes les séries' },
-                { id: 'big3', name: 'Big 3', desc: 'One Piece · Naruto · Bleach' },
-                { id: 'mainstream', name: 'Mainstream', desc: 'Les grands titres' },
-            ],
-            // 'soon' = la vignette est là, le filtre serveur n'existe pas encore
+            // Une seule liste : les trois ensembles ouvrent la marche, les séries
+            // suivent. 'soon' = la vignette est prête, le filtre serveur non.
+            // Vignettes en WebP 360×480 (src/img/series) : les sources d'origine
+            // pesaient 3,7 Mo à elles seules et faisaient ramer l'ouverture.
             serieCartes: [
-                { id: 'onepiece',    name: 'One Piece',   img: 'questionpic/onepiece.png' },
-                { id: 'naruto',      name: 'Naruto',      img: 'questionpic/naruto2.png' },
-                { id: 'dragonball',  name: 'Dragon Ball', img: 'questionpic/dragonball.png' },
-                { id: 'bleach',      name: 'Bleach',      img: 'questionpic/bleach.png' },
-                { id: 'jjk',         name: 'Jujutsu Kaisen', img: 'questionpic/jjk.png', soon: true },
-                { id: 'snk',         name: "L'Attaque des Titans", img: 'questionpic/snk.png', soon: true },
-                { id: 'blackclover', name: 'Black Clover', img: 'questionpic/blackclover.png', soon: true },
-                { id: 'jojo',        name: 'JoJo',        img: 'questionpic/jojo.png', soon: true },
-                { id: 'tokyoghoul',  name: 'Tokyo Ghoul', img: 'questionpic/tokyoghoul.png', soon: true },
-                { id: 'tokyorev',    name: 'Tokyo Revengers', img: 'questionpic/tokyorevengers.png', soon: true },
+                { id: 'overall',     name: 'Overall',    sub: 'Toutes les séries',        img: 'series/overall.webp' },
+                { id: 'mainstream',  name: 'Mainstream', sub: 'Les grands titres',        img: 'series/mainstream.webp' },
+                { id: 'big3',        name: 'Big 3',      sub: 'One Piece · Naruto · Bleach', img: 'series/big3.webp' },
+                { id: 'onepiece',    name: 'One Piece',   img: 'series/onepiece.webp' },
+                { id: 'naruto',      name: 'Naruto',      img: 'series/naruto.webp' },
+                { id: 'dragonball',  name: 'Dragon Ball', img: 'series/dragonball.webp' },
+                { id: 'bleach',      name: 'Bleach',      img: 'series/bleach.webp' },
+                { id: 'jjk',         name: 'Jujutsu Kaisen', img: 'series/jjk.webp', soon: true },
+                { id: 'snk',         name: "L'Attaque des Titans", img: 'series/snk.webp', soon: true },
+                { id: 'blackclover', name: 'Black Clover', img: 'series/blackclover.webp', soon: true },
+                { id: 'jojo',        name: 'JoJo',        img: 'series/jojo.webp', soon: true },
+                { id: 'tokyoghoul',  name: 'Tokyo Ghoul', img: 'series/tokyoghoul.webp', soon: true },
+                { id: 'tokyorev',    name: 'Tokyo Revengers', img: 'series/tokyorevengers.webp', soon: true },
             ],
             bombanimeSeries: ['Naruto', 'OnePiece', 'Dbz', 'Bleach', 'Hxh', 'Snk', 'DemonSlayer', 'JujutsuKaisen', 'FairyTail', 'Mha', 'BlackClover', 'Jojo'],
             homeScreen: 'hub',    // hub | modes | join
@@ -418,7 +417,7 @@ createApp({
         // Le survol prévisualise, le clic verrouille : en sortant de la liste on
         // revient au mode verrouillé.
         serieFilterName() {
-            const f = [...this.serieGroupes, ...this.serieCartes].find(x => x.id === this.serieFilter);
+            const f = this.serieCartes.find(x => x.id === this.serieFilter);
             return f ? f.name : 'Tout';
         },
 

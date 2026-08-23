@@ -11502,14 +11502,17 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 /* Le tiroir entre par la gauche, comme avant */
 .v2-serie-panel {
     position: absolute;
-    inset: 0 auto 0 0;
-    width: min(30rem, 92vw);
+    /* Détaché du haut et du bas : à pleine hauteur il écrasait l'écran */
+    inset: 11vh auto 11vh 0;
+    width: min(27rem, 70vw);
     display: flex;
     flex-direction: column;
-    padding: 1.6rem 1.5rem 1.4rem;
+    padding: 1.5rem 1.4rem 1.3rem;
     overflow-y: auto;
     background: linear-gradient(150deg, rgba(24, 21, 16, 0.99), rgba(12, 12, 14, 0.99));
-    border-right: 0.06rem solid rgba(255, 255, 255, 0.08);
+    border: 0.06rem solid rgba(255, 255, 255, 0.08);
+    border-left: none;
+    border-radius: 0 1rem 1rem 0;
     box-shadow: 1rem 0 3rem rgba(0, 0, 0, 0.55);
     animation: v2SerieEntre 0.34s cubic-bezier(0.2, 0.9, 0.25, 1) both;
 }
@@ -11536,64 +11539,10 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     color: var(--neon-primary);
 }
 
-/* Les ensembles : pas de vignette, c'est du texte */
-.v2-serie-groupes { display: flex; flex-direction: column; gap: 0.5rem; }
-
-.v2-serie-groupe {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-    padding: 0.75rem 0.95rem;
-    font-family: inherit;
-    text-align: left;
-    background: rgba(255, 255, 255, 0.03);
-    border: 0.06rem solid rgba(255, 255, 255, 0.07);
-    border-radius: 0.55rem;
-    cursor: pointer;
-    transition: border-color 0.2s ease, background 0.2s ease;
-}
-
-.v2-serie-groupe .nm { font-size: 0.88rem; font-weight: 700; color: var(--text-primary); }
-.v2-serie-groupe .ds { font-size: 0.68rem; color: rgba(255, 255, 255, 0.35); }
-
-.v2-serie-groupe:hover { border-color: rgba(255, 215, 0, 0.35); background: rgba(255, 255, 255, 0.055); }
-
-.v2-serie-groupe.on {
-    border-color: var(--neon-primary);
-    background: rgba(255, 215, 0, 0.1);
-}
-
-.v2-serie-groupe.on .nm { color: var(--neon-primary); }
-
-/* Le filet qui sépare les ensembles des séries */
-.v2-serie-sep {
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-    margin: 1.3rem 0 0.9rem;
-}
-
-.v2-serie-sep::before,
-.v2-serie-sep::after {
-    content: '';
-    flex: 1;
-    height: 0.06rem;
-    background: rgba(255, 255, 255, 0.07);
-}
-
-.v2-serie-sep span {
-    font-size: 0.56rem;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.28);
-    white-space: nowrap;
-}
-
 .v2-serie-grille {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
-    gap: 0.7rem;
+    grid-template-columns: repeat(auto-fill, minmax(7.2rem, 1fr));
+    gap: 0.65rem;
 }
 
 .v2-serie-carte {
@@ -11629,12 +11578,24 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     left: 0.55rem;
     right: 0.55rem;
     bottom: 0.55rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
     font-size: 0.72rem;
     font-weight: 700;
     line-height: 1.2;
     text-align: left;
     color: #fff;
     text-shadow: 0 0.1rem 0.5rem rgba(0, 0, 0, 0.8);
+}
+
+/* Les trois ensembles disent ce qu'ils recouvrent */
+.v2-serie-carte .nm em {
+    font-style: normal;
+    font-size: 0.56rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: rgba(255, 255, 255, 0.55);
 }
 
 .v2-serie-carte:not(.soon):hover { border-color: rgba(255, 215, 0, 0.5); transform: translateY(-0.2rem); }
@@ -11679,9 +11640,12 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 }
 
 @media (max-width: 768px) {
-    .v2-serie-panel { width: 100%; padding: 1.2rem 1rem 1.1rem; }
+    .v2-serie-panel {
+        inset: 6vh auto 6vh 0;
+        width: 94vw;
+        padding: 1.2rem 1rem 1.1rem;
+    }
     .v2-serie-head .ttl { font-size: 1.3rem; }
     .v2-serie-grille { grid-template-columns: repeat(auto-fill, minmax(6.6rem, 1fr)); gap: 0.55rem; }
     .v2-serie-carte .nm { font-size: 0.65rem; }
-    .v2-serie-groupe { padding: 0.65rem 0.8rem; }
 }
