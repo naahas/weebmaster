@@ -10,7 +10,8 @@
     "test:host": "node scripts/test-host-controls.js",
     "test:tie": "node scripts/test-departage.js",
     "test:hote": "node scripts/test-hote.js",
-    "test:rooms": "node scripts/test-rooms.js"
+    "test:rooms": "node scripts/test-rooms.js",
+    "test:charge": "node scripts/test-charge.js"
   },
   "keywords": [
     "quiz",

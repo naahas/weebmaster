@@ -19,6 +19,41 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 // ============================================
 // 🎯 FILTRES SÉRIES CENTRALISÉS
 // ============================================
+// ============================================
+// Banque de questions en mémoire
+// ============================================
+// Chaque question tirée déclenchait une requête Supabase qui rapatriait toutes
+// les questions de la difficulté. À quinze parties en parallèle, c'était une
+// requête par seconde et une demi-seconde d'attente avant chaque question.
+// Le corpus tient en mémoire : on le charge une fois, on le relit sur place.
+let banque = null;
+let banqueChargeeA = 0;
+let chargementEnCours = null;
+const BANQUE_TTL = 10 * 60 * 1000;
+
+async function chargerBanque(supabase) {
+    const { data, error } = await supabase.from('questions').select('*');
+    if (error) throw error;
+    banque = data || [];
+    banqueChargeeA = Date.now();
+    console.log(`📚 Banque de questions chargée : ${banque.length} questions`);
+    return banque;
+}
+
+// Une seule requête même si dix parties la demandent en même temps
+async function assurerBanque(supabase) {
+    if (banque && Date.now() - banqueChargeeA < BANQUE_TTL) return banque;
+    if (!chargementEnCours) {
+        chargementEnCours = chargerBanque(supabase).finally(() => { chargementEnCours = null; });
+    }
+    return chargementEnCours;
+}
+
+// Le back-office vient de toucher au corpus : la copie en mémoire est périmée
+function invaliderBanque() {
+    banqueChargeeA = 0;
+}
+
 const SERIES_FILTERS = {
     overall: {
         name: 'Overall',
@@ -82,65 +117,29 @@ const db = {
     },
 
     async getAvailableQuestionsCount(serieFilter = 'overall', excludeIds = []) {
-        let query = supabase
-            .from('questions')
-            .select('id', { count: 'exact' });
-
+        const toutes = await assurerBanque(supabase);
         const series = getFilterSeries(serieFilter);
+        const filtree = serieFilter !== 'overall' && series.length > 0 ? new Set(series) : null;
 
-        if (serieFilter !== 'overall' && series.length > 0) {
-            if (series.length === 1) {
-                query = query.eq('serie', series[0]);
-            } else {
-                query = query.in('serie', series);
-            }
-        }
+        const dansLeFiltre = toutes.filter(q => !filtree || filtree.has(q.serie));
+        if (excludeIds.length === 0) return dansLeFiltre.length;
 
-        const { data, error, count } = await query;
-
-        if (error) throw error;
-
-        if (excludeIds.length === 0) {
-            return count || 0;
-        }
-
-        const excludedInThisFilter = data.filter(q => excludeIds.includes(q.id)).length;
-        return (count || 0) - excludedInThisFilter;
+        const exclus = new Set(excludeIds);
+        return dansLeFiltre.filter(q => !exclus.has(q.id)).length;
     },
 
     // 🆕 MODIFIÉ: Éviter les questions en double + Filtre série + Fallback
     async getRandomQuestions(difficulty, count = 1, excludeIds = [], serieFilter = 'overall', excludeSeries = [], noSpoil = false) {
-        let query = supabase
-            .from('questions')
-            .select('*')
-            .eq('difficulty', difficulty);
-
-        console.log(`🔍 [DBS] Filtre série reçu: "${serieFilter}"`);
-
-        // 🔥 Utiliser SERIES_FILTERS centralisé
+        const toutes = await assurerBanque(supabase);
         const series = getFilterSeries(serieFilter);
+        const filtree = serieFilter !== 'overall' && series.length > 0
+            ? new Set(series) : null;
 
-        // Appliquer le filtre si ce n'est pas "tout"
-        if (serieFilter !== 'overall' && series.length > 0) {
-            if (series.length === 1) {
-                query = query.eq('serie', series[0]);
-            } else {
-                query = query.in('serie', series);
-            }
-            console.log(`🔍 [DBS] Filtre ${serieFilter} appliqué`);
-        } else {
-            console.log('🔍 [DBS] Aucun filtre (tout)');
-        }
-
-        // 🚫 Filtre anti-spoil
-        if (noSpoil) {
-            query = query.eq('is_spoil', false);
-            console.log('🚫 [DBS] Filtre anti-spoil activé');
-        }
-
-        const { data: questions, error } = await query;
-
-        if (error) throw error;
+        // Le tri en place plus bas mordrait sur la banque : on travaille sur une copie
+        const questions = toutes.filter(q =>
+            q.difficulty === difficulty &&
+            (!filtree || filtree.has(q.serie)) &&
+            (!noSpoil || q.is_spoil === false));
 
         // Système de fallback (reste identique)
         if (!questions || questions.length === 0) {
@@ -206,13 +205,11 @@ const db = {
     },
 
     async getAllQuestions() {
-        const { data, error } = await supabase
-            .from('questions')
-            .select('*');
-
-        if (error) throw error;
-        return data;
+        return assurerBanque(supabase);
     },
+
+    // Le back-office a modifié le corpus : la copie en mémoire ne vaut plus rien
+    invaliderBanque,
 
     // ========== BOMBANIME SUGGESTIONS ==========
     async createSuggestion({ type, anime, characterName, variantOf, details, submittedBy }) {
@@ -337,4 +334,4 @@ function getFallbackDifficulties(difficulty) {
     return fallback;
 };
 
-module.exports = { supabase, db, SERIES_FILTERS, getFilterSeries };
+module.exports = { supabase, db, SERIES_FILTERS, getFilterSeries, invaliderBanque };

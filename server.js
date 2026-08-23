@@ -7,7 +7,7 @@ const express = require('express');
 const compression = require('compression');
 const { randomUUID } = require('crypto');
 const { Server } = require('socket.io');
-const { db, supabase, SERIES_FILTERS, getFilterSeries } = require('./dbs');
+const { db, supabase, SERIES_FILTERS, getFilterSeries, invaliderBanque } = require('./dbs');
 
 const app = express();
 
@@ -4085,6 +4085,8 @@ app.get('/question', (req, res) => {
 // API ajout question - avec code spécifique
 
 app.post('/api/add-question', async (req, res) => {
+    // Le corpus change : la banque en mémoire doit être relue
+    invaliderBanque();
     const { adminCode, question, answers, correctAnswer, serie, difficulty, proof_url, is_spoil } = req.body;
 
     // Vérifier le code (spécifique OU master)
@@ -4122,6 +4124,8 @@ app.post('/api/add-question', async (req, res) => {
 
 // 🆕 Modifier une question
 app.post('/api/update-question', async (req, res) => {
+    // Le corpus change : la banque en mémoire doit être relue
+    invaliderBanque();
     const { adminCode, id, question, answers, correctAnswer, serie, difficulty, proof_url, is_spoil } = req.body;
 
     // Vérifier le code
@@ -4160,6 +4164,8 @@ app.post('/api/update-question', async (req, res) => {
 
 // 🚫 Toggle le statut spoil d'une question
 app.post('/api/toggle-spoil', async (req, res) => {
+    // Le corpus change : la banque en mémoire doit être relue
+    invaliderBanque();
     const { adminCode, id, is_spoil } = req.body;
 
     if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
@@ -4185,6 +4191,8 @@ app.post('/api/toggle-spoil', async (req, res) => {
 
 // 🆕 Supprimer une question
 app.post('/api/delete-question', async (req, res) => {
+    // Le corpus change : la banque en mémoire doit être relue
+    invaliderBanque();
     const { adminCode, id } = req.body;
 
     // Vérifier le code
@@ -4337,6 +4345,7 @@ const server = app.listen(PORT, () => {
     `);
 
     loadRecentGamesFromDb();
+    db.getAllQuestions().catch(() => { /* elle se chargera à la première partie */ });
 
 });
 
