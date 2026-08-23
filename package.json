@@ -11,7 +11,8 @@
     "test:tie": "node scripts/test-departage.js",
     "test:hote": "node scripts/test-hote.js",
     "test:rooms": "node scripts/test-rooms.js",
-    "test:charge": "node scripts/test-charge.js"
+    "test:charge": "node scripts/test-charge.js",
+    "test:mixte": "node scripts/test-mixte.js"
   },
   "keywords": [
     "quiz",
