@@ -659,6 +659,37 @@ createApp({
             return i === -1 ? 0 : i + 1;
         },
 
+        // Ce que porte le panneau de droite : les camps, le classement de
+        // l'hôte, ou la course du joueur. Rien s'il n'y a rien à montrer.
+        panneauLateral() {
+            if (!this.showResults || this.lobbyMode === 'bombanime') return null;
+            if (this.lobbyMode === 'rivalry') return 'camps';
+            if (this.isHost) return 'top';
+            return this.mesStats ? 'moi' : null;
+        },
+
+        // Ma ligne dans les résultats de la question qui vient de tomber
+        moiEnJeu() {
+            return (this.questionResults.players || []).find(p => p.twitchId === this.twitchId) || null;
+        },
+
+        // Le joueur ne voit plus le classement : il voit sa propre course
+        mesStats() {
+            const moi = this.moiEnJeu;
+            if (!moi) return null;
+            return {
+                rang: this.myLiveRank,
+                total: this.rankedPlayers.length,
+                bonnes: moi.correctAnswers || 0,
+                juste: moi.isCorrect === true || moi.status === 'correct',
+                // Le bouclier encaisse la perte mais la réponse reste fausse
+                rate: moi.status === 'wrong' || moi.status === 'wrong-shielded',
+                temps: moi.responseTime ? (moi.responseTime / 1000).toFixed(1).replace('.', ',') : null,
+                points: moi.points || 0,
+                lives: moi.lives,
+            };
+        },
+
         successRate() {
             const s = this.questionResults.stats || {};
             const total = (s.correct || 0) + (s.wrong || 0) + (s.afk || 0);
@@ -745,13 +776,6 @@ createApp({
                 if (moi && moi.team) return moi.team;
             }
             return this.selectedTeam || null;
-        },
-
-        // Sur la dernière question, le classement donnerait le podium avant l'heure.
-        // L'hôte le garde : c'est lui qui déclenche la fin, rien ne lui est caché.
-        classementVisible() {
-            if (!this.showResults || this.lobbyMode === 'bombanime') return false;
-            return !(this.questionResults.isLastQuestion && !this.isHost);
         },
 
         // Les deux camps, du mieux placé au moins bien, avec leur part relative

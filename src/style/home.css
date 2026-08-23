@@ -11161,7 +11161,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     font-variant-numeric: tabular-nums;
 }
 
-.v2q-camp .sc { display: block; margin: 0.2rem 0 0.55rem; font-size: 1.85rem; }
+.v2q-camp .sc { display: block; margin: 0.55rem 0 0.6rem; font-size: 1.85rem; }
 
 .v2q-camp .sc em,
 .v2q-camp-bar .sc em,
@@ -11224,8 +11224,8 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: 0.6rem;
-    margin-bottom: 0.5rem;
+    gap: 1.1rem;
+    margin-bottom: 0.55rem;
 }
 
 .v2q-camp-bar .nm {
@@ -11251,40 +11251,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     .v2-end-crew-row .sc { font-size: 0.8rem; }
 }
 
-/* Dernière question : le classement se tait plutôt que de laisser un trou */
-.v2q-top-secret {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 1.6rem 0.8rem 1.4rem;
-    text-align: center;
-}
 
-.v2q-top-secret svg {
-    width: 1.4rem;
-    height: 1.4rem;
-    margin-bottom: 0.15rem;
-    color: rgba(255, 255, 255, 0.22);
-}
-
-.v2q-top-secret b {
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--neon-primary);
-}
-
-.v2q-top-secret span {
-    font-size: 0.72rem;
-    line-height: 1.4;
-    color: rgba(255, 255, 255, 0.35);
-}
-
-@media (max-width: 768px) {
-    .v2q-top-secret { padding: 1.2rem 0.6rem 1rem; }
-}
 
 /* Le trio d'un camp, glissé sous la ligne de son équipe */
 .v2-end-crew {
@@ -11369,3 +11336,75 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 
 /* La ligne d'un camp porte son trio : plus de filet entre les deux */
 .v2-end-crew + .v2-end-row { border-top: 0.06rem solid rgba(255, 255, 255, 0.055); }
+
+/* ============================================
+   🆕 v2 — LA COURSE DU JOUEUR
+   Le classement reste à l'hôte : le joueur suit la sienne.
+   ============================================ */
+
+.v2q-moi-rang {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    padding: 0.9rem 0 1rem;
+    border-bottom: 0.06rem solid rgba(255, 255, 255, 0.055);
+}
+
+.v2q-moi-rang b {
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 2.7rem;
+    line-height: 0.85;
+    font-weight: 400;
+    color: var(--neon-primary);
+    text-shadow: 0 0 1.4rem rgba(255, 190, 40, 0.3);
+}
+
+.v2q-moi-rang b sup { font-size: 0.42em; margin-left: 0.05em; }
+
+.v2q-moi-rang span {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+
+.v2q-moi-l {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.62rem 0;
+}
+
+.v2q-moi-l + .v2q-moi-l { border-top: 0.06rem solid rgba(255, 255, 255, 0.04); }
+
+.v2q-moi-l .lbl {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.42);
+}
+
+.v2q-moi-l .val {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 1.1rem;
+    font-variant-numeric: tabular-nums;
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.v2q-moi-l .val.juste { color: #7ef7c0; }
+.v2q-moi-l .val.rate { color: #ff6b81; }
+.v2q-moi-l .val.muet { color: rgba(255, 255, 255, 0.28); }
+
+.v2q-moi-l .val em {
+    font-family: 'Poppins', sans-serif;
+    font-style: normal;
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.35);
+}
+
+@media (max-width: 768px) {
+    .v2q-moi-rang { padding: 0.7rem 0 0.8rem; }
+    .v2q-moi-rang b { font-size: 2.2rem; }
+    .v2q-moi-l { padding: 0.5rem 0; }
+}

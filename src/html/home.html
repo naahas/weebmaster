@@ -1070,7 +1070,7 @@
                              il devient un calque ouvert par le bouton « Top ». -->
                         <div class="v2q-top-veil" :class="{ open: showTopSheet }" @click.self="showTopSheet = false">
                         <!-- En camps, seul le score des deux équipes compte -->
-                        <aside class="v2q-top" v-if="classementVisible && lobbyMode === 'rivalry'">
+                        <aside class="v2q-top" v-if="panneauLateral === 'camps'">
                             <div class="v2q-top-t">{{ isHost ? 'Score des camps' : 'Ton camp' }}</div>
                             <div class="v2q-camp" v-for="c in campsAffiches" :key="c.team"
                                  :class="['team-' + c.team, { mien: c.team === monCamp, tete: c.tete }]">
@@ -1089,7 +1089,7 @@
                             </div>
                         </aside>
 
-                        <aside class="v2q-top" v-else-if="classementVisible">
+                        <aside class="v2q-top" v-else-if="panneauLateral === 'top'">
                             <div class="v2q-top-t">Top 5</div>
                             <div class="v2q-top-row" v-for="(p, i) in topPlayers" :key="p.twitchId || p.username"
                                  :class="{ me: p.twitchId === twitchId }">
@@ -1122,14 +1122,34 @@
                             </div>
                         </aside>
 
-                        <aside class="v2q-top" v-else-if="showResults && lobbyMode !== 'bombanime'">
-                            <div class="v2q-top-t">Classement</div>
-                            <div class="v2q-top-secret">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/>
-                                </svg>
-                                <b>Dernière question</b>
-                                <span>Le classement se dévoile à la fin.</span>
+                        <aside class="v2q-top" v-else-if="panneauLateral === 'moi'">
+                            <div class="v2q-top-t">Ta course</div>
+
+                            <div class="v2q-moi-rang">
+                                <b>{{ mesStats.rang }}<sup>{{ mesStats.rang === 1 ? 'er' : 'e' }}</sup></b>
+                                <span>sur {{ mesStats.total }}</span>
+                            </div>
+
+                            <div class="v2q-moi-l">
+                                <span class="lbl">Cette question</span>
+                                <span class="val juste" v-if="mesStats.juste">Trouvée<em v-if="mesStats.temps">{{ mesStats.temps }}s</em></span>
+                                <span class="val rate" v-else-if="mesStats.rate">Manquée</span>
+                                <span class="val muet" v-else>Sans réponse</span>
+                            </div>
+
+                            <div class="v2q-moi-l">
+                                <span class="lbl">Bonnes réponses</span>
+                                <span class="val">{{ mesStats.bonnes }}</span>
+                            </div>
+
+                            <div class="v2q-moi-l">
+                                <span class="lbl">{{ gameMode === 'points' ? 'Score' : 'Vies' }}</span>
+                                <span class="val" v-if="gameMode === 'points'">{{ formatScore(mesStats.points) }}</span>
+                                <span class="v2q-top-hp" v-else>
+                                    <i v-for="n in gameLives" :key="n" :class="{ off: n > (mesStats.lives || 0) }">
+                                        <svg viewBox="0 0 24 24" stroke-linejoin="round"><path d="M12 20.6s-7-4.3-9-8.4A5 5 0 0 1 12 6.6a5 5 0 0 1 9 5.6c-2 4.1-9 8.4-9 8.4z"/></svg>
+                                    </i>
+                                </span>
                             </div>
 
                             <div class="v2q-top-fast" v-if="questionResults.fastestPlayer">
@@ -1144,8 +1164,10 @@
 
                         <!-- Ouverture du classement quand il ne tient pas à côté du panel -->
                         <button class="v2q-top-btn" :class="{ decale: isHost }"
-                                v-if="showResults && lobbyMode !== 'bombanime'"
-                                @click="showTopSheet = !showTopSheet" title="Classement" aria-label="Classement">
+                                v-if="panneauLateral"
+                                @click="showTopSheet = !showTopSheet"
+                                :title="panneauLateral === 'moi' ? 'Ta course' : 'Classement'"
+                                :aria-label="panneauLateral === 'moi' ? 'Ta course' : 'Classement'">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M8 21h8M12 17v4M6 4h12v5a6 6 0 0 1-12 0z"/><path d="M18 5h3v2a4 4 0 0 1-3.2 3.9M6 5H3v2a4 4 0 0 0 3.2 3.9"/>
                             </svg>

@@ -3370,8 +3370,13 @@ async function sendRivalryTiebreakerQuestion() {
             question: question.question,
             answers: finalAnswers.map(a => a.text),
             serie: question.serie,
-            difficulty: `DÉPARTAGE - ${difficulty.toUpperCase()}`,
+            // La difficulté brute, pas un libellé : le barème des points s'appuie
+            // dessus, et le panel affiche ce badge tel quel.
+            difficulty: difficulty,
             timeLimit: gameState.questionTime,
+            // Le panel n'a qu'un seul repère de départage : sans lui, la mention
+            // n'apparaissait jamais en mode camps.
+            isTiebreaker: true,
             isRivalryTiebreaker: true,
             proof_url: question.proof_url || null
         };
@@ -3930,6 +3935,10 @@ async function endGameRivalryPoints() {
             console.log(`⚖️ ÉGALITÉ RIVALRY: ${team1Points} - ${team2Points} → Question de départage !`);
             
             gameState.isRivalryTiebreaker = true;
+            // La partie se prolonge au lieu de se terminer : sans ça l'hôte
+            // se heurtait à « Partie en cours de finalisation » et le départage
+            // ne partait jamais. Même correctif qu'en solo.
+            gameState.endingGame = false;
             
             addLog('tiebreaker', { mode: 'rivalry', score: team1Points, playerCount: gameState.players.size });
             

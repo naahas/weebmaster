@@ -22,7 +22,9 @@ n'héberge toujours qu'**une seule partie à la fois**.
 - **Frontend joueur** : Vue 3 via CDN (`vue.global.js`), un seul gros composant (`src/script/app.js`)
 - **Frontend hôte** : JS vanilla (`src/script/admin.js` + `admin-bombanime.js`)
 - **Déploiement** : Render (Procfile `web: node server.js`)
-- **Tests** : `npm run check` (le template Vue compile-t-il) et `npm run smoke` (cycle de jeu complet, serveur lancé à côté)
+- **Tests** : `npm run check` (le template Vue compile-t-il), `npm run smoke` (cycle de jeu complet),
+  `npm run test:host` (contrôles de l hôte, camps, rafraîchissement) et `npm run test:tie` (départage
+  solo et en camps, ~1 min) — les trois derniers exigent le serveur lancé à côté
 - Pas de build, pas de bundler. Les fichiers sont servis en statique tels quels.
 
 ## Arborescence
