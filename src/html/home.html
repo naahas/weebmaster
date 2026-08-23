@@ -503,15 +503,20 @@
             <!-- Commandes de l'hôte : enchaînement en bas à droite, arrêt en bas à gauche -->
             <div class="v2-hostbar" v-if="isHost && gameInProgress && !gameEnded && lobbyMode !== 'bombanime'">
                 <button class="v2q-cmd-btn"
-                        @click="hostNextQuestion" :disabled="nextQuestionBusy || !showResults"
-                        :title="showResults ? 'Question suivante' : 'Disponible à la fin de la question'">
+                        @click="hostNextQuestion" :disabled="nextQuestionBusy || !showResults || autoMode"
+                        :title="autoMode ? 'Le mode auto enchaîne tout seul' : (showResults ? 'Question suivante' : 'Disponible à la fin de la question')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M5 4l10 8-10 8z"/><path d="M19 5v14"/>
                     </svg>
                 </button>
 
                 <button class="v2q-cmd-btn toggle" :class="{ on: autoMode }" @click="hostToggleAuto"
-                        title="Enchaîner les questions automatiquement">
+                        :title="autoMode ? 'Enchaînement automatique actif' : 'Enchaîner les questions automatiquement'">
+                    <!-- L'anneau se vide pendant l'attente de la question suivante -->
+                    <svg class="v2q-auto-ring" v-if="autoCompte > 0" viewBox="0 0 44 44" aria-hidden="true">
+                        <circle class="fg" cx="22" cy="22" r="20"
+                                :style="{ strokeDashoffset: 125.66 * (1 - autoCompte) }"></circle>
+                    </svg>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/>
                     </svg>

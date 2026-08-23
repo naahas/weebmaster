@@ -41,6 +41,8 @@ createApp({
             hoverMode: null,   // survol temporaire ; le clic verrouille selectedMode
             showSettings: true,
             autoMode: false,
+            autoDelai: 5000,      // annoncé par le serveur avec les résultats
+            autoCompte: 0,        // 1 → 0 : ce qu'il reste avant la question suivante
             nextQuestionBusy: false,
             answerCounts: {},
             // Repères des réponses : une forme et une couleur, pas de lettre
@@ -1465,12 +1467,33 @@ createApp({
             }
         },
 
+        // L'anneau autour du bouton se vide pendant l'attente : sans lui, l'hôte
+        // ne sait pas si le mode auto a pris ni quand la question arrive.
+        lancerCompteAuto() {
+            cancelAnimationFrame(this._autoRaf);
+            const duree = this.autoDelai || 5000;
+            const debut = performance.now();
+            const pas = (t) => {
+                const reste = 1 - (t - debut) / duree;
+                this.autoCompte = Math.max(0, reste);
+                if (reste > 0) this._autoRaf = requestAnimationFrame(pas);
+            };
+            this._autoRaf = requestAnimationFrame(pas);
+        },
+
+        arreterCompteAuto() {
+            cancelAnimationFrame(this._autoRaf);
+            this.autoCompte = 0;
+        },
+
         async hostToggleAuto() {
             this.hostError = '';
             try {
                 const res = await this.hostFetch('/admin/toggle-auto-mode', { method: 'POST' });
                 const data = await res.json();
                 if (data.autoMode !== undefined) this.autoMode = data.autoMode;
+                if (data.autoDelai) this.autoDelai = data.autoDelai;
+                if (!this.autoMode) this.arreterCompteAuto();
 
                 // Le serveur arme l'enchaînement à la révélation d'une question.
                 // Activé pendant les résultats — le moment naturel — il n'avait
@@ -1478,6 +1501,7 @@ createApp({
                 // qui n'arrivait jamais. On l'amorce ici.
                 if (this.autoMode && this.showResults) {
                     await this.hostFetch('/admin/trigger-auto-next', { method: 'POST' });
+                    this.lancerCompteAuto();
                 }
             } catch (e) {
                 this.hostError = 'Erreur de connexion';
@@ -2420,6 +2444,7 @@ createApp({
 
             // 🔒 BUG FIX 1: Empêcher l'affichage des questions si non inscrit au lobby
             this.socket.on('new-question', (question) => {
+                this.arreterCompteAuto();
                 this.answerCounts = {};
                 this.showQuestionStats = false;
                 this.showTopSheet = false;
@@ -2446,6 +2471,9 @@ createApp({
                 this.clearSeal();
                 // Lu avant puis après l'affectation : le classement se recalcule
                 // sur les nouveaux résultats dès qu'ils sont posés.
+                if (results.autoDelai) this.autoDelai = results.autoDelai;
+                if (this.autoMode && this.isHost) this.lancerCompteAuto();
+
                 const rangAvant = this.myLiveRank;
                 this.questionResults = results;
                 this.rangDelta = rangAvant ? rangAvant - this.myLiveRank : 0;

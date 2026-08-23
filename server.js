@@ -144,6 +144,15 @@ const recentGames = [];
 let gamesPlayedTotal = 0;   // parties terminées (depuis la base si game_history existe)
 const RECENT_GAMES_MAX = 8;
 
+// Délai entre la révélation d'une question et la suivante, en mode auto.
+// Les deux minuteries valaient déjà 5 s, mais logs et commentaires annonçaient
+// 3 s : l'anneau de décompte affiché à l'hôte doit suivre la vraie valeur.
+const AUTO_DELAI_MS = parseInt(process.env.AUTO_DELAI_MS, 10) || 5000;
+
+// Sursis laissé à un joueur qui se déconnecte du salon : le temps d'un
+// rafraîchissement de page. Sans rapport avec le délai du mode auto.
+const DELAI_RETRAIT_JOUEUR_MS = 5000;
+
 // Les parties à deux ou trois ne disent rien de l'activité du site : elles
 // viennent d'un test ou d'un essai entre amis. Seules celles qui ont rassemblé
 // du monde sont comptées et affichées.
@@ -2103,7 +2112,7 @@ app.post('/admin/toggle-auto-mode', (req, res) => {
         autoMode: gameState.autoMode
     });
 
-    res.json({ success: true, autoMode: gameState.autoMode });
+    res.json({ success: true, autoMode: gameState.autoMode, autoDelai: AUTO_DELAI_MS });
 });
 
 // Route pour forcer le déclenchement du mode auto (si activé pendant résultats)
@@ -2231,7 +2240,7 @@ app.post('/admin/trigger-auto-next', (req, res) => {
         } catch (error) {
             console.error('❌ Erreur trigger auto:', error);
         }
-    }, 5000);
+    }, AUTO_DELAI_MS);
 
     res.json({ success: true });
 });
@@ -2801,6 +2810,8 @@ function revealAnswers(gameState, correctAnswer) {
         teamNames: gameState.lobbyMode === 'rivalry' ? gameState.teamNames : null,
         // 🆕 Flag dernière question (mode points) → client désactive le bouton "Suivant"
         isLastQuestion: gameState.mode === 'points' && gameState.currentQuestionIndex >= gameState.questionsCount,
+        // De quoi dessiner le décompte du mode auto chez l'hôte
+        autoDelai: AUTO_DELAI_MS,
     };
 
     gameState.showResults = true;
@@ -2862,7 +2873,7 @@ function revealAnswers(gameState, correctAnswer) {
             return;
         }
         
-        console.log('⏱️ Mode Auto : Question suivante dans 3s...');
+        console.log(`⏱️ Mode Auto : Question suivante dans ${AUTO_DELAI_MS / 1000}s...`);
 
         // Annuler le timeout précédent si existant
         if (gameState.autoModeTimeout) {
@@ -2980,7 +2991,7 @@ function revealAnswers(gameState, correctAnswer) {
             } catch (error) {
                 console.error('❌ Erreur mode auto:', error);
             }
-        }, 5000); // 3 secondes
+        }, AUTO_DELAI_MS);
     }
 }
 
@@ -6013,12 +6024,12 @@ io.on('connection', (socket) => {
                         // Vérifier que le joueur n'a pas re-rejoint entre temps
                         const stillExists = gameState.players.get(socket.id);
                         if (stillExists && stillExists.pendingRemoval) {
-                            console.log(`🗑️ ${player.username} supprimé du lobby (timeout 5s)`);
+                            console.log(`🗑️ ${player.username} supprimé du lobby (timeout ${DELAI_RETRAIT_JOUEUR_MS / 1000}s)`);
                             gameState.players.delete(socket.id);
                             gameState.answers.delete(socket.id);
                             broadcastLobbyUpdate(gameState);
                         }
-                    }, 5000);
+                    }, DELAI_RETRAIT_JOUEUR_MS);
                 }
             }
         }
