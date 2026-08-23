@@ -20,6 +20,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
 // Les routes /admin sont réservées à l'hôte : on garde le jeton que
 // l'ouverture du salon nous remet, et on le joint ensuite à chaque appel.
 let hostToken = '';
+let roomCode = '';
 
 const post = (path, body) => fetch(BASE + path, {
     method: 'POST',
@@ -27,10 +28,17 @@ const post = (path, body) => fetch(BASE + path, {
     body: JSON.stringify(body || {}),
 }).then(r => r.json().then(j => {
     if (j && j.hostToken) hostToken = j.hostToken;
+    if (j && j.roomCode) roomCode = j.roomCode;
     return { status: r.status, body: j };
 }));
 
 const get = (path) => fetch(BASE + path, { headers: { 'X-Host-Token': hostToken } }).then(r => r.json());
+
+// Ouvre un salon neuf, en refermant celui qu'on tiendrait encore
+const ouvrirSalon = async (config) => {
+    if (hostToken) { await post('/admin/toggle-game', {}); hostToken = ''; roomCode = ''; }
+    return post('/admin/toggle-game', config || {});
+};
 
 let failures = 0;
 function check(label, ok, extra) {
@@ -61,7 +69,7 @@ function makePlayer(id, name) {
 async function scenarioClassic() {
     log('\n── Mode Classic ──');
 
-    const toggle = await post('/admin/toggle-game', { lobbyMode: 'classic' });
+    const toggle = await ouvrirSalon({ lobbyMode: 'classic' });
     check('ouverture du lobby', toggle.status === 200 && toggle.body.isActive === true);
 
     const lobby = await get('/admin/game-state');
@@ -109,12 +117,12 @@ async function scenarioClassic() {
         p1.sock.emit('submit-answer', { twitchId: p1.id, answer: 1 });
         p2.sock.emit('submit-answer', { twitchId: p2.id, answer: 2 });
         await wait(500);
-        const st = await get('/game/state');
+        const st = await get('/game/state?code=' + roomCode);
         check('réponses enregistrées', st.players.some(p => p.hasAnswered));
     }
 
     await post('/admin/toggle-game', {});
-    const final = await get('/game/state');
+    const final = await get('/game/state?code=' + roomCode);
     check('lobby refermé', final.isActive === false);
 
     p1.sock.close();
@@ -125,7 +133,7 @@ async function scenarioClassic() {
 async function scenarioBombanime() {
     log('\n── Mode BombAnime ──');
 
-    const toggle = await post('/admin/toggle-game', {
+    const toggle = await ouvrirSalon({
         lobbyMode: 'bombanime', bombanimeSerie: 'Naruto', bombanimeTimer: 8, bombanimeLives: 2,
     });
     check('ouverture du lobby BombAnime', toggle.status === 200 && toggle.body.isActive === true);
@@ -133,8 +141,8 @@ async function scenarioBombanime() {
     const p1 = await makePlayer('smoke-b1', 'Bomb1');
     const p2 = await makePlayer('smoke-b2', 'Bomb2');
     await wait(300);
-    p1.sock.emit('join-lobby', { twitchId: p1.id, username: p1.name });
-    p2.sock.emit('join-lobby', { twitchId: p2.id, username: p2.name });
+    p1.sock.emit('join-lobby', { twitchId: p1.id, username: p1.name, code: roomCode });
+    p2.sock.emit('join-lobby', { twitchId: p2.id, username: p2.name, code: roomCode });
     await wait(600);
 
     const start = await post('/admin/start-game', {});
@@ -167,15 +175,15 @@ async function scenarioBombanime() {
 async function scenarioGameEnd() {
     log('\n── Fin de partie & historique ──');
 
-    await post('/admin/toggle-game', {
+    await ouvrirSalon({
         lobbyMode: 'bombanime', bombanimeSerie: 'Naruto', bombanimeTimer: 1, bombanimeLives: 1,
     });
 
     const p1 = await makePlayer('smoke-e1', 'Express1');
     const p2 = await makePlayer('smoke-e2', 'Express2');
     await wait(300);
-    p1.sock.emit('join-lobby', { twitchId: p1.id, username: p1.name });
-    p2.sock.emit('join-lobby', { twitchId: p2.id, username: p2.name });
+    p1.sock.emit('join-lobby', { twitchId: p1.id, username: p1.name, code: roomCode });
+    p2.sock.emit('join-lobby', { twitchId: p2.id, username: p2.name, code: roomCode });
     await wait(600);
 
     await post('/admin/start-game', {});

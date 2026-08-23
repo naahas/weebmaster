@@ -4,7 +4,10 @@
 const { io } = require('socket.io-client');
 const BASE = 'http://localhost:' + (process.env.TEST_PORT || process.env.PORT || 7000);
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
-const etat = () => fetch(BASE + '/game/state').then(r => r.json());
+
+// L'état d'un salon ne se lit qu'avec son code
+let roomCode = '';
+const etat = () => fetch(BASE + '/game/state?code=' + roomCode).then(r => r.json());
 
 // L'intrus n'a aucun jeton : c'est tout l'objet du test
 const sansJeton = (p, b) => fetch(BASE + p, {
@@ -23,17 +26,11 @@ const avecJeton = (p, jeton, b) => fetch(BASE + p, {
     let ko = 0;
     const check = (l, ok, extra) => { console.log(`${ok ? '✅' : '❌'} ${l}${extra ? ' → ' + extra : ''}`); if (!ok) ko++; };
 
-    // Repartir d'un serveur au repos
-    let e = await etat();
-    if (e.isActive) {
-        const r = await sansJeton('/admin/toggle-game', {});
-        if (r.status === 403) { console.log('⚠️ un salon traîne, relance le serveur'); process.exit(1); }
-    }
-
     // ── Ouvrir reste libre : c'est ce qui crée le jeton ──
     const ouverture = await sansJeton('/admin/toggle-game', { lobbyMode: 'classic' });
     check("l'ouverture d'un salon reste accessible", ouverture.body.isActive === true);
     const jeton = ouverture.body.hostToken;
+    roomCode = ouverture.body.roomCode;
     check("le créateur repart avec un jeton", typeof jeton === 'string' && jeton.length >= 16,
         jeton ? jeton.slice(0, 8) + '…' : 'aucun');
 
@@ -41,7 +38,6 @@ const avecJeton = (p, jeton, b) => fetch(BASE + p, {
 
     // ── Tout le reste est fermé ──
     const routes = [
-        ['/admin/toggle-game', {}],
         ['/admin/start-game', {}],
         ['/admin/next-question', {}],
         ['/admin/set-mode', { mode: 'points' }],
@@ -65,8 +61,14 @@ const avecJeton = (p, jeton, b) => fetch(BASE + p, {
     check("le mode n'a pas bougé", apres.mode === avantMode, avantMode + ' → ' + apres.mode);
 
     // ── Un mauvais jeton ne vaut pas mieux ──
+    // Un jeton inventé n'ouvre pas un salon : il est simplement refusé.
+    // On compare au décompte du moment : d'autres suites peuvent en tenir.
+    const avantFaux = (await fetch(BASE + '/api/home-stats').then(r => r.json())).activeRooms;
     const faux = await avecJeton('/admin/toggle-game', 'pas-le-bon-jeton', {});
     check('un jeton inventé est refusé', faux.status === 403, 'HTTP ' + faux.status);
+    const apresFaux = await fetch(BASE + '/api/home-stats').then(r => r.json());
+    check("il n'a pas créé de salon au passage", apresFaux.activeRooms === avantFaux,
+        avantFaux + ' → ' + apresFaux.activeRooms + ' salon(s)');
 
     // ── L'hôte, lui, passe ──
     const modeOk = await avecJeton('/admin/set-mode', jeton, { mode: 'points' });
@@ -77,7 +79,7 @@ const avecJeton = (p, jeton, b) => fetch(BASE + p, {
     await new Promise(r => hote.on('connect', r));
     hote.emit('register-authenticated', { twitchId: 'h1', username: 'Hote' });
     await wait(150);
-    hote.emit('join-lobby', { twitchId: 'h1', username: 'Hote' });
+    hote.emit('join-lobby', { twitchId: 'h1', username: 'Hote', code: roomCode });
 
     const cible = io(BASE);
     await new Promise(r => cible.on('connect', r));
@@ -85,7 +87,7 @@ const avecJeton = (p, jeton, b) => fetch(BASE + p, {
     cible.on('kicked', () => { exclu = true; });
     cible.emit('register-authenticated', { twitchId: 'p2', username: 'Cible' });
     await wait(150);
-    cible.emit('join-lobby', { twitchId: 'p2', username: 'Cible' });
+    cible.emit('join-lobby', { twitchId: 'p2', username: 'Cible', code: roomCode });
     await wait(500);
 
     // La cible tente de s'exclure elle-même... puis d'exclure l'hôte

@@ -4,12 +4,14 @@ const { io } = require('socket.io-client');
 const BASE = 'http://localhost:' + (process.env.TEST_PORT || process.env.PORT || 7000);
 // Les routes /admin sont réservées à l'hôte : on suit le jeton du salon.
 let hostToken = '';
+let roomCode = '';
 const post = (p, b) => fetch(BASE + p, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Host-Token': hostToken },
     body: JSON.stringify(b || {}),
-}).then(r => r.json()).then(j => { if (j && j.hostToken) hostToken = j.hostToken; return j; });
-const etat = () => fetch(BASE + '/game/state').then(r => r.json());
+}).then(r => r.json()).then(j => { if (j && j.hostToken) hostToken = j.hostToken;
+    if (j && j.roomCode) roomCode = j.roomCode; return j; });
+const etat = () => fetch(BASE + '/game/state?code=' + roomCode).then(r => r.json());
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
 let ko = 0;
@@ -17,8 +19,8 @@ const check = (l, ok, extra) => { console.log(`${ok ? '✅' : '❌'} ${l}${extra
 
 async function manche(enCamps) {
     const nom = enCamps ? 'camps' : 'solo';
-    let e = await etat();
-    if (e.isActive) await post('/admin/toggle-game', {});
+    // Le jeton meurt avec le salon : le garder ferait refuser l'ouverture suivante
+    if (hostToken) { await post('/admin/toggle-game', {}); hostToken = ''; roomCode = ''; }
     await post('/admin/toggle-game', { lobbyMode: 'classic' });
     await post('/admin/set-mode', { mode: 'points' });
     await post('/admin/set-questions', { questions: 15 });
@@ -39,7 +41,7 @@ async function manche(enCamps) {
         s.on('game-ended', (d) => { suivi.fin = d; });
         socks.push(suivi);
         await wait(120);
-        s.emit('join-lobby', { twitchId: id, username: pseudo });
+        s.emit('join-lobby', { twitchId: id, username: pseudo, code: roomCode });
     }
     await wait(400);
     if (enCamps) { await post('/admin/set-teams', { enabled: true }); await wait(250); }

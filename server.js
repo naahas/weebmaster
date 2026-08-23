@@ -262,8 +262,8 @@ function emitBombanimeGameEnded(gameState, payload) {
 app.get('/api/home-stats', async (req, res) => {
     res.json({
         playersOnline: io ? io.engine.clientsCount : 0,
-        activeRooms: gameState.isActive ? 1 : 0,   // phase 2 : rooms.size
-        inGame: gameState.inProgress ? gameState.players.size : 0,
+        activeRooms: rooms.size,
+        inGame: [...rooms.values()].reduce((n, r) => n + (r.inProgress ? r.players.size : 0), 0),
         questionsCount: await getQuestionsCount(),
         gamesPlayed: gamesPlayedTotal,
         recentGames,
@@ -271,8 +271,14 @@ app.get('/api/home-stats', async (req, res) => {
 });
 
 
-// Route pour obtenir l'état actuel du jeu (pour reconnexion)
+// L'état d'un salon, pour se remettre en phase après un rechargement.
+// Le code est la seule clé : sans lui, il n'y a rien à raconter.
 app.get('/game/state', (req, res) => {
+    const gameState = roomParCode(req.query.code) || roomParJeton(req.get('X-Host-Token'));
+    if (!gameState) {
+        return res.json({ isActive: false, inProgress: false, playerCount: 0, players: [] });
+    }
+
     let timeRemaining = null;
     if (gameState.questionStartTime && gameState.inProgress) {
         const elapsed = Math.floor((Date.now() - gameState.questionStartTime) / 1000);
@@ -421,9 +427,71 @@ function diffuser(gameState, evt, payload) {
 }
 
 // ============================================
-// État du jeu
+// Les salons
 // ============================================
-const gameState = {
+// Une room = une partie complète et indépendante, rangée sous son code.
+// Tout ce qui décrit une partie vit ici : rien d'autre au niveau du module.
+const rooms = new Map();
+
+function roomParCode(code) {
+    if (!code) return null;
+    return rooms.get(String(code).trim().toUpperCase()) || null;
+}
+
+// L'hôte ne se reconnaît qu'à son jeton : il est tiré à la création du salon
+// et n'est renvoyé qu'à son créateur.
+function roomParJeton(jeton) {
+    if (!jeton) return null;
+    for (const r of rooms.values()) if (r.hostToken === jeton) return r;
+    return null;
+}
+
+function roomDeSocket(socket) {
+    return roomParCode(socket.data && socket.data.roomCode);
+}
+
+function creerRoom() {
+    const gameState = etatNeuf();
+    gameState.roomCode = generateRoomCode();
+    gameState.hostToken = randomUUID();
+    gameState.isActive = true;
+    gameState.creeA = Date.now();
+    rooms.set(gameState.roomCode, gameState);
+    console.log(`✅ Salon ouvert : ${gameState.roomCode} (${rooms.size} au total)`);
+    return gameState;
+}
+
+// Un salon vide ne s'annonce nulle part : sans ménage, il resterait en
+// mémoire pour toujours. On laisse un délai de grâce — le temps qu'un hôte
+// qui rafraîchit sa page revienne.
+const GRACE_SALON_VIDE = 10 * 60 * 1000;
+
+setInterval(() => {
+    const maintenant = Date.now();
+    for (const r of [...rooms.values()]) {
+        if (r.players.size > 0) { r.videDepuis = null; continue; }
+        if (!r.videDepuis) { r.videDepuis = maintenant; continue; }
+        if (maintenant - r.videDepuis > GRACE_SALON_VIDE) {
+            console.log(`🧹 Salon ${r.roomCode} vide depuis 10 min — fermé`);
+            fermerRoom(r);
+        }
+    }
+}, 60 * 1000);
+
+function fermerRoom(gameState) {
+    if (!gameState) return;
+    // Les minuteries d'une partie fermée continueraient de tourner dans le vide
+    for (const t of ['rivalryTiebreakerTimeout', 'rivalryRevealTimeout',
+                     'rivalryEndGameTimeout', 'autoModeTimeout']) {
+        if (gameState[t]) clearTimeout(gameState[t]);
+    }
+    if (gameState.bombanime && gameState.bombanime.turnTimeout) clearTimeout(gameState.bombanime.turnTimeout);
+    rooms.delete(gameState.roomCode);
+    console.log(`❌ Salon fermé : ${gameState.roomCode} (${rooms.size} restant(s))`);
+}
+
+function etatNeuf() {
+    return {
     // Ces sept-là étaient des variables de module. Elles décrivent pourtant une
     // partie précise : à plusieurs rooms, elles se seraient marché dessus.
     winnerScreenData: null,     // l'écran de victoire à rejouer pour qui arrive après
@@ -520,8 +588,9 @@ const gameState = {
         challenges: [],             // Les 2 défis [{id, letter, target, reward, name, description}]
         playerChallenges: new Map(), // Map<twitchId, {challenges: {id: {progress, target, completed}}, lettersGiven: Map}>
         playerBonuses: new Map()    // Map<twitchId, {freeCharacter: 0, extraLife: 0}>
-    },
-};
+        },
+    };
+}
 
 // ============================================
 // 🆕 HELPER - BROADCAST LOBBY UPDATE
@@ -990,16 +1059,22 @@ app.get('/', (req, res) => {
 // il n'y en a qu'une sur tout le serveur.
 // ════════════════════════════════════════════
 app.use('/admin', (req, res, next) => {
-    // Ouvrir un salon, c'est précisément ce qu'on fait avant d'avoir un jeton
-    if (req.path === '/toggle-game' && !gameState.isActive) return next();
+    // Le jeton désigne l'hôte ET son salon : plus besoin de le chercher ensuite
+    req.room = roomParJeton(req.get('X-Host-Token'));
 
-    if (!gameState.hostToken || req.get('X-Host-Token') !== gameState.hostToken) {
+    // Ouvrir un salon, c'est précisément ce qu'on fait avant d'avoir un jeton.
+    // Mais un jeton présenté et non reconnu reste une erreur : sans ce test,
+    // l'hôte dont le salon a disparu en ouvrait un neuf en cliquant « fermer ».
+    if (req.path === '/toggle-game' && !req.get('X-Host-Token')) return next();
+
+    if (!req.room) {
         return res.status(403).json({ error: "Réservé à l'hôte du salon" });
     }
     next();
 });
 
 app.get('/admin/game-state', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
     // 💣🎴 Vérifier si le lobby BombAnime/Collect est plein
     const isBombanimeMode = gameState.lobbyMode === 'bombanime';
     const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : Infinity;
@@ -1023,159 +1098,45 @@ app.get('/admin/game-state', (req, res) => {
     });
 });
 
-// Activer/désactiver le jeu
+// Ouvrir ou fermer un salon.
+// Sans jeton : on en crée un et son créateur en devient l'hôte.
+// Avec jeton : on ferme le sien, et lui seul.
 app.post('/admin/toggle-game', async (req, res) => {
-
-    gameState.isActive = !gameState.isActive;
-
-    if (gameState.isActive) {
-        // 🔑 Code de salon : généré à l'ouverture, vérifié à chaque jointure.
-        // Phase 2 : ce code deviendra la clé de la Map des rooms.
-        gameState.roomCode = generateRoomCode();
-        // Seul celui qui ouvre le salon reçoit ce jeton : il en fait l'hôte
-        gameState.hostToken = randomUUID();
-        console.log(`✅ Jeu activé - Lobby ouvert (code ${gameState.roomCode})`);
-
-        // 🔥 FIX: Clear le gameState.winnerScreenData pour éviter les données stale
-        // (ex: après BombAnime le winner screen data persiste car closeBombanimeWinner n'appelle pas le serveur)
-        gameState.winnerScreenData = null;
-        
-        // 🆕 Récupérer le mode et les noms d'équipe depuis la requête
-        const { lobbyMode, teamNames, bombanimeSerie, bombanimeTimer, bombanimeLives } = req.body || {};
-        gameState.lobbyMode = lobbyMode || 'classic';
-        if (teamNames) {
-            gameState.teamNames = teamNames;
-        } else {
-            gameState.teamNames = { 1: 'Team A', 2: 'Team B' };
-        }
-        gameState.teamCounts = { 1: 0, 2: 0 };
-        
-        // 💣 Configuration BombAnime
-        if (lobbyMode === 'bombanime') {
-            gameState.bombanime.serie = bombanimeSerie || 'Naruto';
-            gameState.bombanime.timer = bombanimeTimer || BOMBANIME_CONFIG.DEFAULT_TIMER;
-            gameState.bombanime.lives = bombanimeLives || BOMBANIME_CONFIG.DEFAULT_LIVES;
-            console.log(`💣 BombAnime configuré: ${gameState.bombanime.serie} - ${gameState.bombanime.timer}s - ${gameState.bombanime.lives} vies`);
-        }
-        
-        console.log(`🎮 Mode: ${gameState.lobbyMode}${gameState.lobbyMode === 'rivalry' ? ` (${gameState.teamNames[1]} vs ${gameState.teamNames[2]})` : ''}${gameState.lobbyMode === 'bombanime' ? ` (${gameState.bombanime.serie})` : ''}`);
-
-        resetLogs(gameState);
-
-        // Reset la grille des joueurs à l'ouverture du lobby
-        gameState.players.clear();
-        gameState.answers.clear();
-        gameState.pendingJoins.clear(); // 🔓 Reset les réservations
-        gameState.currentQuestionIndex = 0;
-        gameState.currentQuestion = null;
-        gameState.showResults = false;
-        gameState.lastQuestionResults = null;
-        gameState.questionStartTime = null;
-        gameState.gameStartTime = null;
-        gameState.inProgress = false;
-        gameState.currentGameId = null;
-        gameState.livesIcon = 'heart';
-
-        // 🔥 NOUVEAU: Reset tiebreaker
-        gameState.isTiebreaker = false;
-        gameState.tiebreakerPlayers = [];
-        gameState.isRivalryTiebreaker = false; // 🔥 FIX: Reset rivalry tiebreaker aussi
-        
-        // 🔥 FIX: Annuler les timeouts stale d'une partie précédente
-        if (gameState.rivalryTiebreakerTimeout) {
-            clearTimeout(gameState.rivalryTiebreakerTimeout);
-            gameState.rivalryTiebreakerTimeout = null;
-        }
-        if (gameState.rivalryRevealTimeout) {
-            clearTimeout(gameState.rivalryRevealTimeout);
-            gameState.rivalryRevealTimeout = null;
-        }
-        if (gameState.rivalryEndGameTimeout) {
-            clearTimeout(gameState.rivalryEndGameTimeout);
-            gameState.rivalryEndGameTimeout = null;
-        }
-
-        diffuser(gameState, 'game-activated', {
-            lives: gameState.lives,
-            questionTime: gameState.questionTime,
-            lobbyMode: gameState.lobbyMode,
-            teamNames: gameState.teamNames,
-            noSpoil: gameState.noSpoil, // 🚫 Filtre anti-spoil
-            bonusEnabled: gameState.bonusEnabled, // 🎮 Bonus activés
-            // 💣 Données BombAnime
-            bombanimeSerie: gameState.bombanime.serie,
-            bombanimeTimer: gameState.bombanime.timer
-        });
-    } else {
-        console.log('❌ Jeu désactivé');
-
-        // Reset complet de l'état si une partie était en cours
-        if (gameState.inProgress) {
-            console.log('⚠️ Partie en cours annulée');
-        }
-
-        gameState.winnerScreenData = null;
-        gameState.inProgress = false;
-        gameState.currentGameId = null;
-        gameState.currentQuestionIndex = 0;
-        gameState.currentQuestion = null;
-        gameState.showResults = false;
-        gameState.lastQuestionResults = null;
-        gameState.players.clear();
-        gameState.answers.clear();
-        gameState.pendingJoins.clear(); // 🔓 Reset les réservations
-        gameState.questionStartTime = null;
-        gameState.gameStartTime = null;
-
-        gameState.playerBonuses.clear();
-        
-        // 🆕 Reset mode Rivalité
-        gameState.lobbyMode = 'classic';
-        gameState.teamNames = { 1: 'Team A', 2: 'Team B' };
-        gameState.teamCounts = { 1: 0, 2: 0 };
-        
-        // 🚫 Reset anti-spoil
-        gameState.noSpoil = false;
-        
-        // 🔥 FIX: Reset tiebreaker flags
-        gameState.isTiebreaker = false;
-        gameState.tiebreakerPlayers = [];
-        gameState.isRivalryTiebreaker = false;
-        
-        // 🔥 FIX: Annuler les timeouts stale
-        if (gameState.autoModeTimeout) {
-            clearTimeout(gameState.autoModeTimeout);
-            gameState.autoModeTimeout = null;
-        }
-        if (gameState.rivalryTiebreakerTimeout) {
-            clearTimeout(gameState.rivalryTiebreakerTimeout);
-            gameState.rivalryTiebreakerTimeout = null;
-        }
-        if (gameState.rivalryRevealTimeout) {
-            clearTimeout(gameState.rivalryRevealTimeout);
-            gameState.rivalryRevealTimeout = null;
-        }
-        if (gameState.rivalryEndGameTimeout) {
-            clearTimeout(gameState.rivalryEndGameTimeout);
-            gameState.rivalryEndGameTimeout = null;
-        }
-        
-        // 💣 Reset BombAnime
-        resetBombanimeState(gameState);
-        
-
-        // Le salon fermé, le jeton ne vaut plus rien
-        gameState.hostToken = null;
-
+    if (req.room) {
+        const gameState = req.room;
+        console.log(`❌ Salon ${gameState.roomCode} fermé par son hôte`);
         diffuser(gameState, 'game-deactivated');
+        for (const s of io.sockets.adapter.rooms.get(gameState.roomCode) || []) {
+            const sock = io.sockets.sockets.get(s);
+            if (sock) { sock.leave(gameState.roomCode); sock.data.roomCode = null; }
+        }
+        fermerRoom(gameState);
+        return res.json({ isActive: false });
     }
 
+    const gameState = creerRoom();
+
+    // 🆕 Récupérer le mode et les noms d'équipe depuis la requête
+    const { lobbyMode, teamNames, bombanimeSerie, bombanimeTimer, bombanimeLives } = req.body || {};
+    gameState.lobbyMode = lobbyMode || 'classic';
+    if (teamNames) gameState.teamNames = teamNames;
+
+    // 💣 Configuration BombAnime
+    if (lobbyMode === 'bombanime') {
+        gameState.bombanime.serie = bombanimeSerie || 'Naruto';
+        gameState.bombanime.timer = bombanimeTimer || BOMBANIME_CONFIG.DEFAULT_TIMER;
+        gameState.bombanime.lives = bombanimeLives || BOMBANIME_CONFIG.DEFAULT_LIVES;
+    }
+
+    console.log(`🎮 Mode: ${gameState.lobbyMode}${gameState.lobbyMode === 'bombanime' ? ` (${gameState.bombanime.serie})` : ''}`);
+
     // Le jeton ne part qu'ici, dans la réponse à celui qui vient d'ouvrir
-    res.json({ isActive: gameState.isActive, hostToken: gameState.hostToken });
+    res.json({ isActive: true, roomCode: gameState.roomCode, hostToken: gameState.hostToken });
 });
 
 // 💣 Mettre à jour la série BombAnime
 app.post('/admin/bombanime/update-serie', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
     
     const { serie } = req.body;
     
@@ -1202,6 +1163,7 @@ app.post('/admin/bombanime/update-serie', (req, res) => {
 
 // 💣 Fermer le lobby BombAnime spécifiquement
 app.post('/admin/bombanime/close-lobby', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
     
     // Fermer le lobby
     gameState.isActive = false;
@@ -1341,6 +1303,7 @@ app.get('/admin/bombanime/animes', (req, res) => {
 
 // Mettre à jour les paramètres du jeu (vies et temps)
 app.post('/admin/update-settings', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
 
     const { lives, timePerQuestion } = req.body;
 
@@ -1368,6 +1331,7 @@ app.post('/admin/update-settings', (req, res) => {
 
 // Route séparée pour changer les vies
 app.post('/admin/set-lives', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
 
     const { lives } = req.body;
     gameState.lives = parseInt(lives);
@@ -1391,6 +1355,7 @@ app.post('/admin/set-lives', (req, res) => {
 
 // Route séparée pour changer le temps par question
 app.post('/admin/set-time', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
 
     const { time } = req.body;
     gameState.questionTime = parseInt(time);
@@ -1408,6 +1373,7 @@ app.post('/admin/set-time', (req, res) => {
 
 // Route séparée pour changer le nombre de réponses
 app.post('/admin/set-answers', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
 
     const { answers } = req.body;
     gameState.answersCount = parseInt(answers);
@@ -1426,6 +1392,7 @@ app.post('/admin/set-answers', (req, res) => {
 
 // Démarrer une partie
 app.post('/admin/start-game', async (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
 
     if (gameState.inProgress) {
         return res.status(400).json({ error: 'Partie déjà en cours' });
@@ -1719,6 +1686,7 @@ app.post('/admin/start-game', async (req, res) => {
 
 // Route pour changer le mode de jeu
 app.post('/admin/set-mode', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
 
     // Bloquer si une partie est en cours
     if (gameState.inProgress) {
@@ -1769,6 +1737,7 @@ app.post('/admin/set-mode', (req, res) => {
 
 // Route pour changer le nombre de questions (Mode Points)
 app.post('/admin/set-questions', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
 
     const { questions } = req.body;
     const validCounts = [15, 20, 25, 30, 35, 40, 45, 50];
@@ -1795,6 +1764,7 @@ app.post('/admin/set-questions', (req, res) => {
 // Classique et Rivalité sont le même quiz : seul le décompte diffère. On bascule
 // donc en cours de salon plutôt que d'imposer le choix à la création.
 app.post('/admin/set-teams', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
     if (!gameState.isActive) {
         return res.status(400).json({ error: 'Aucun salon ouvert' });
     }
@@ -1832,6 +1802,7 @@ app.post('/admin/set-teams', (req, res) => {
 
 // 🆕 v2 — L'hôte attribue les camps. Un joueur ne choisit plus le sien.
 app.post('/admin/set-player-team', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
     if (!gameState.isActive) return res.status(400).json({ error: 'Aucun salon ouvert' });
     if (gameState.inProgress) return res.status(400).json({ error: 'Partie déjà en cours' });
 
@@ -1856,6 +1827,7 @@ app.post('/admin/set-player-team', (req, res) => {
 
 // 🆕 v2 — Répartition au hasard, équilibrée en nombre
 app.post('/admin/shuffle-teams', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
     if (!gameState.isActive) return res.status(400).json({ error: 'Aucun salon ouvert' });
     if (gameState.inProgress) return res.status(400).json({ error: 'Partie déjà en cours' });
     if (gameState.lobbyMode !== 'rivalry') return res.status(400).json({ error: "Le salon n'est pas en équipes" });
@@ -1886,6 +1858,7 @@ app.post('/admin/shuffle-teams', (req, res) => {
 
 // 🆕 Route pour activer/désactiver le bonus rapidité (mode points uniquement)
 app.post('/admin/set-speed-bonus', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
 
     const { enabled } = req.body;
     gameState.speedBonus = enabled === true;
@@ -1896,6 +1869,7 @@ app.post('/admin/set-speed-bonus', (req, res) => {
 
 // 🎮 Route pour activer/désactiver les bonus (jauge combo, bonus, défis)
 app.post('/admin/set-bonus-enabled', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
 
     const { enabled } = req.body;
     gameState.bonusEnabled = enabled === true;
@@ -1907,6 +1881,7 @@ app.post('/admin/set-bonus-enabled', (req, res) => {
 
 // Route pour changer le mode de difficulté
 app.post('/admin/set-difficulty-mode', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
 
     // Bloquer si une partie est en cours
     if (gameState.inProgress) {
@@ -1941,6 +1916,7 @@ app.post('/admin/set-difficulty-mode', (req, res) => {
 
 // 🚫 Route pour activer/désactiver le filtre anti-spoil
 app.post('/admin/set-no-spoil', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
 
     if (gameState.inProgress) {
         return res.status(400).json({
@@ -2017,6 +1993,7 @@ app.get('/admin/serie-stats', async (req, res) => {
 
 // Route pour changer le filtre série
 app.post('/admin/set-serie-filter', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
 
     // Bloquer si une partie est en cours
     if (gameState.inProgress) {
@@ -2053,6 +2030,7 @@ app.post('/admin/set-serie-filter', (req, res) => {
 
 // Route pour toggle le mode auto
 app.post('/admin/toggle-auto-mode', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
 
     gameState.autoMode = !gameState.autoMode;
     console.log(`⚙️ Mode Auto ${gameState.autoMode ? 'activé' : 'désactivé'}`);
@@ -2079,6 +2057,7 @@ app.post('/admin/toggle-auto-mode', (req, res) => {
 
 // Route pour forcer le déclenchement du mode auto (si activé pendant résultats)
 app.post('/admin/trigger-auto-next', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
 
     // Vérifier que le mode auto est activé et qu'une partie est en cours
     if (!gameState.autoMode || !gameState.inProgress) {
@@ -2209,6 +2188,7 @@ app.post('/admin/trigger-auto-next', (req, res) => {
 
 // Route pour forcer le refresh de tous les joueurs AUTHENTIFIÉS
 app.post('/admin/refresh-players', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
 
     try {
         const now = Date.now();
@@ -2255,6 +2235,7 @@ app.post('/admin/refresh-players', (req, res) => {
 
 // Route pour vérifier le cooldown restant
 app.get('/admin/refresh-cooldown', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
 
     const now = Date.now();
     const timeSinceLastRefresh = now - gameState.lastRefreshPlayersTime;
@@ -2275,6 +2256,7 @@ app.get('/admin/refresh-cooldown', (req, res) => {
 
 // Route pour reset manuel de l'historique des questions
 app.post('/admin/reset-questions-history', async (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
 
     try {
         gameState.usedQuestionIds = [];
@@ -2288,6 +2270,7 @@ app.post('/admin/reset-questions-history', async (req, res) => {
 
 // Passer à la question suivante
 app.post('/admin/next-question', async (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
 
     if (!gameState.inProgress) {
         return res.status(400).json({ error: 'Aucune partie en cours' });
@@ -4318,6 +4301,7 @@ app.post('/admin/report-question', async (req, res) => {
 
 // POST /admin/set-lives-icon
 app.post('/admin/set-lives-icon', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
 
     const { icon } = req.body;
     const validIcons = ['heart', 'dragonball', 'flame', 'sharingan', 'katana', 'shuriken', 'konoha', 'alchemy', 'curse', 'kunai', 'star4'];
@@ -5182,7 +5166,15 @@ io.on('connection', (socket) => {
         });
         
         // 🔥 FIX: Auto-remap socket.id if player already in gameState.players with old socket
-        if (data.twitchId && gameState.isActive) {
+        // La socket est neuve : on ignore encore sa room. On la retrouve par le
+        // joueur lui-même, présent dans un salon ou dans aucun.
+        const gameState = roomDeSocket(socket) ||
+            (data.twitchId ? [...rooms.values()].find(r =>
+                [...r.players.values()].some(p => p.twitchId === data.twitchId)) : null);
+
+        if (data.twitchId && gameState && gameState.isActive) {
+            socket.data.roomCode = gameState.roomCode;
+            socket.join(gameState.roomCode);
             for (const [oldSocketId, player] of gameState.players.entries()) {
                 if (player.twitchId === data.twitchId && oldSocketId !== socket.id) {
                     // Transfer player entry to new socket.id
@@ -5232,8 +5224,13 @@ io.on('connection', (socket) => {
 
     // Rejoindre le lobby
     socket.on('join-lobby', async (data) => {
-        if (!gameState.isActive) {
-            return socket.emit('error', { message: 'Aucun salon ouvert' });
+        // Le code fait foi : c'est la seule chose qu'un arrivant connaisse.
+        // L'hôte, lui, a déjà sa room et repasse par ici pour y entrer aussi.
+        // Le code fait foi. L'hôte peut aussi se présenter avec son jeton :
+        // il tient déjà le salon, il n'a pas à ressaisir son propre code.
+        const gameState = roomParCode(data.code) || roomParJeton(data.hostToken);
+        if (!gameState || !gameState.isActive) {
+            return socket.emit('error', { message: 'Code de salon invalide', badCode: true });
         }
 
         if (gameState.inProgress) {
@@ -5362,6 +5359,9 @@ io.on('connection', (socket) => {
     });
     
     socket.on('leave-lobby', (data) => {
+        // La socket dit sa room : sans elle, cet événement ne concerne personne
+        const gameState = roomDeSocket(socket);
+        if (!gameState) return socket.emit('error', { message: 'Salon introuvable' });
         const player = gameState.players.get(socket.id);
         if (player) {
             gameState.players.delete(socket.id);
@@ -5380,6 +5380,9 @@ io.on('connection', (socket) => {
 
     // 🆕 Kick un joueur manuellement (depuis l'admin)
     socket.on('kick-player', (data) => {
+        // La socket dit sa room : sans elle, cet événement ne concerne personne
+        const gameState = roomDeSocket(socket);
+        if (!gameState) return socket.emit('error', { message: 'Salon introuvable' });
         // Seul événement socket réservé à l'hôte : il porte donc le jeton,
         // le garde-fou HTTP ne protégeant que les routes /admin.
         if (!gameState.hostToken || !data || data.hostToken !== gameState.hostToken) {
@@ -5445,7 +5448,8 @@ io.on('connection', (socket) => {
 
     // Reconnexion d'un joueur (nouveau événement)
     socket.on('reconnect-player', (data) => {
-        if (!gameState.isActive) {
+        const gameState = roomDeSocket(socket) || roomParCode(data && data.code);
+        if (!gameState || !gameState.isActive) {
             return socket.emit('error', { message: 'Aucune partie active' });
         }
 
@@ -5556,6 +5560,9 @@ io.on('connection', (socket) => {
 
     // Répondre à une question
     socket.on('submit-answer', (data) => {
+        // La socket dit sa room : sans elle, cet événement ne concerne personne
+        const gameState = roomDeSocket(socket);
+        if (!gameState) return socket.emit('error', { message: 'Salon introuvable' });
         if (!gameState.inProgress) return;
 
         const player = gameState.players.get(socket.id);
@@ -5612,6 +5619,9 @@ io.on('connection', (socket) => {
 
     // 🆕 Utilisation d'un bonus
     socket.on('use-bonus', (data) => {
+        // La socket dit sa room : sans elle, cet événement ne concerne personne
+        const gameState = roomDeSocket(socket);
+        if (!gameState) return socket.emit('error', { message: 'Salon introuvable' });
         if (!gameState.inProgress) return;
 
         const player = gameState.players.get(socket.id);
@@ -5676,6 +5686,9 @@ io.on('connection', (socket) => {
     
     // Soumettre un nom de personnage
     socket.on('bombanime-submit-name', (data) => {
+        // La socket dit sa room : sans elle, cet événement ne concerne personne
+        const gameState = roomDeSocket(socket);
+        if (!gameState) return socket.emit('error', { message: 'Salon introuvable' });
         if (!gameState.bombanime.active) return;
         
         const result = submitBombanimeName(gameState, socket.id, data.name);
@@ -5687,6 +5700,9 @@ io.on('connection', (socket) => {
     
     // 🎯 Utiliser le bonus "Perso Gratuit" - donne un personnage aléatoire non utilisé
     socket.on('bombanime-use-free-character', () => {
+        // La socket dit sa room : sans elle, cet événement ne concerne personne
+        const gameState = roomDeSocket(socket);
+        if (!gameState) return socket.emit('error', { message: 'Salon introuvable' });
         if (!gameState.bombanime.active) return;
         
         const player = gameState.players.get(socket.id);
@@ -5726,6 +5742,9 @@ io.on('connection', (socket) => {
     
     // 🎯 Utiliser le bonus "Vie Extra" - ajoute une vie (max 2)
     socket.on('bombanime-use-extra-life', () => {
+        // La socket dit sa room : sans elle, cet événement ne concerne personne
+        const gameState = roomDeSocket(socket);
+        if (!gameState) return socket.emit('error', { message: 'Salon introuvable' });
         if (!gameState.bombanime.active) return;
         
         const player = gameState.players.get(socket.id);
@@ -5770,6 +5789,9 @@ io.on('connection', (socket) => {
     
     // Broadcaster ce que le joueur tape en temps réel
     socket.on('bombanime-typing', (data) => {
+        // La socket dit sa room : sans elle, cet événement ne concerne personne
+        const gameState = roomDeSocket(socket);
+        if (!gameState) return;
         if (!gameState.bombanime.active) return;
         
         const player = gameState.players.get(socket.id);
@@ -5787,6 +5809,9 @@ io.on('connection', (socket) => {
     
     // Demander l'état actuel du jeu BombAnime (pour reconnexion)
     socket.on('bombanime-get-state', () => {
+        // La socket dit sa room : sans elle, cet événement ne concerne personne
+        const gameState = roomDeSocket(socket);
+        if (!gameState) return socket.emit('error', { message: 'Salon introuvable' });
         if (!gameState.bombanime.active) {
             socket.emit('bombanime-state', { active: false });
             return;
@@ -5868,6 +5893,9 @@ io.on('connection', (socket) => {
     // 🧪 Outil de mise au point : peupler le salon pour juger l'affichage
     // Déconnexion
     socket.on('disconnect', () => {
+        // La socket dit sa room : sans elle, cet événement ne concerne personne
+        const gameState = roomDeSocket(socket);
+        if (!gameState) return;
         const ip = socket.handshake.headers['x-forwarded-for']?.split(',')[0] || socket.handshake.address;
         const currentConnections = connectionsByIP.get(ip) || 1;
         if (currentConnections <= 1) {

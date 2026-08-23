@@ -1095,6 +1095,8 @@ createApp({
                         twitchId: this.twitchId,
                         username: this.username,
                         isHost: true,
+                        code: this.roomCode,
+                        hostToken: this.hostToken,
                     });
                     this.hasJoined = true;
                     localStorage.setItem('hasJoinedLobby', 'true');
@@ -1150,6 +1152,14 @@ createApp({
         },
 
         // Le tiroir se referme dès le choix fait : une seule série à la fois
+        // L'état d'un salon se demande avec son code. Sans code ni jeton, le
+        // serveur répond « aucun salon » — c'est le cas d'un visiteur qui arrive.
+        fetchEtatSalon() {
+            const code = this.roomCode || localStorage.getItem('roomCode') || '';
+            return fetch('/game/state' + (code ? '?code=' + encodeURIComponent(code) : ''),
+                         this.hostToken ? { headers: { 'X-Host-Token': this.hostToken } } : undefined);
+        },
+
         // Toute requête /admin passe par ici : elle joint le jeton d'hôte
         hostFetch(url, options = {}) {
             const entetes = Object.assign({}, options.headers, { 'X-Host-Token': this.hostToken });
@@ -1810,7 +1820,7 @@ createApp({
         // ========== Restauration d'état ==========
         async _resyncServerState() {
             try {
-                const response = await fetch('/game/state');
+                const response = await this.fetchEtatSalon();
                 const state = await response.json();
                 
                 // Resync lobbyMode — source of truth = serveur
@@ -1857,7 +1867,7 @@ createApp({
 
         async restoreGameState() {
             try {
-                const response = await fetch('/game/state');
+                const response = await this.fetchEtatSalon();
                 const state = await response.json();
 
                 this.isGameActive = state.isActive;
@@ -2113,6 +2123,8 @@ createApp({
                     this.socket.emit('join-lobby', {
                         twitchId: this.twitchId,
                         username: this.username,
+                        code: this.roomCode,
+                        hostToken: this.hostToken,
                     });
                     this.shouldRejoinLobby = false;
                     console.log('✅ Re-jointure automatique du lobby après refresh');
@@ -3836,7 +3848,7 @@ createApp({
         // ============================================
         async refreshGameState() {
             try {
-                const response = await fetch('/game/state');
+                const response = await this.fetchEtatSalon();
                 const state = await response.json();
 
                 this.isGameActive = state.isActive;

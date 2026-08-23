@@ -4,11 +4,13 @@ const BASE = 'http://localhost:' + (process.env.TEST_PORT || process.env.PORT ||
 // Les routes /admin sont réservées à l'hôte : on retient le jeton remis à
 // l'ouverture du salon et on le joint à tous les appels suivants.
 let hostToken = '';
+let roomCode = '';
 const post = (p, b) => fetch(BASE + p, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Host-Token': hostToken },
     body: JSON.stringify(b || {}),
-}).then(r => r.json()).then(j => { if (j && j.hostToken) hostToken = j.hostToken; return j; });
+}).then(r => r.json()).then(j => { if (j && j.hostToken) hostToken = j.hostToken;
+    if (j && j.roomCode) roomCode = j.roomCode; return j; });
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
 (async () => {
@@ -28,7 +30,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
         s.on('question-results', (d) => { socks.find(x => x.s === s).resultats = d; });
     }
     await wait(300);
-    socks.forEach(({ s, id, nom }, i) => s.emit('join-lobby', { twitchId: id, username: nom, isHost: i === 0 }));
+    socks.forEach(({ s, id, nom }, i) => s.emit('join-lobby', { twitchId: id, username: nom, isHost: i === 0, code: roomCode }));
     await wait(500);
 
     // Exclusion d'un joueur : l'hôte n'envoie que l'identifiant depuis la liste du salon
@@ -42,7 +44,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     intrus.on('lobby-update', (d) => {
         if ((d.players || []).some(p => p.twitchId === 'p3')) dansLeSalon = true;
     });
-    intrus.emit('join-lobby', { twitchId: 'p3', username: 'Intrus' });
+    intrus.emit('join-lobby', { twitchId: 'p3', username: 'Intrus', code: roomCode });
     for (let i = 0; i < 40 && !dansLeSalon; i++) await wait(50);
     socks[0].s.emit('kick-player', { twitchId: 'p3', hostToken });
     for (let i = 0; i < 20 && !exclu; i++) await wait(50);
@@ -58,7 +60,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
     // L'hôte répartit : attribution nominative puis mélange équilibré
     await post('/admin/set-teams', { enabled: true });
-    const apresBascule = await fetch(BASE + '/game/state').then(r => r.json());
+    const apresBascule = await fetch(BASE + '/game/state?code=' + roomCode).then(r => r.json());
     const sansCamp = (apresBascule.players || []).filter(p => !p.team).length;
     check('personne ne reste sans camp au passage en équipes', sansCamp === 0, sansCamp + ' sans camp');
     const place = await post('/admin/set-player-team', { twitchId: 'p2', team: 2 });
@@ -68,7 +70,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     check('mélange équilibré', melange.success === true && ecart <= 1,
         melange.teamCounts ? melange.teamCounts[1] + ' contre ' + melange.teamCounts[2] : 'aucun');
     // Un rafraîchissement de page ne doit ni sortir du salon ni changer de camp
-    const avantRefresh = await fetch(BASE + '/game/state').then(r => r.json());
+    const avantRefresh = await fetch(BASE + '/game/state?code=' + roomCode).then(r => r.json());
     const campAvant = (avantRefresh.players.find(p => p.twitchId === 'p2') || {}).team;
     socks[1].s.disconnect();
     await wait(150);
@@ -76,9 +78,9 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     await new Promise(r => revenu.on('connect', r));
     revenu.emit('register-authenticated', { twitchId: 'p2', username: 'Joueur2' });
     await wait(150);
-    revenu.emit('join-lobby', { twitchId: 'p2', username: 'Joueur2' });
+    revenu.emit('join-lobby', { twitchId: 'p2', username: 'Joueur2', code: roomCode });
     await wait(400);
-    const apresRefresh = await fetch(BASE + '/game/state').then(r => r.json());
+    const apresRefresh = await fetch(BASE + '/game/state?code=' + roomCode).then(r => r.json());
     const rentre = apresRefresh.players.find(p => p.twitchId === 'p2');
     check('le camp survit à un rafraîchissement', !!rentre && rentre.team === campAvant,
         campAvant + ' → ' + (rentre ? rentre.team : 'sorti du salon'));
@@ -95,7 +97,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
     // Un camp vide fait échouer le démarrage : le bouton est grisé côté hôte,
     // mais le serveur reste la dernière barrière.
-    const tous = await fetch(BASE + '/game/state').then(r => r.json());
+    const tous = await fetch(BASE + '/game/state?code=' + roomCode).then(r => r.json());
     for (const p of tous.players || []) await post('/admin/set-player-team', { twitchId: p.twitchId, team: 1 });
     const refus = await post('/admin/start-game', {});
     check('un camp vide bloque le démarrage', refus.errorType === 'empty_team', refus.error || 'aucune erreur');
@@ -152,7 +154,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     // et le compte des joueurs restants suit.
     socks[1].s.emit('leave-lobby', { twitchId: socks[1].id, username: socks[1].nom });
     await wait(1200);
-    const etat = await fetch(BASE + '/game/state').then(r => r.json());
+    const etat = await fetch(BASE + '/game/state?code=' + roomCode).then(r => r.json());
     check('la partie continue après un départ', etat.inProgress === true, 'inProgress=' + etat.inProgress);
     check('le compte des joueurs suit', etat.playerCount === 1, 'playerCount=' + etat.playerCount);
 

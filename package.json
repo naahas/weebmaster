@@ -9,7 +9,8 @@
     "check": "node scripts/check-template.js",
     "test:host": "node scripts/test-host-controls.js",
     "test:tie": "node scripts/test-departage.js",
-    "test:hote": "node scripts/test-hote.js"
+    "test:hote": "node scripts/test-hote.js",
+    "test:rooms": "node scripts/test-rooms.js"
   },
   "keywords": [
     "quiz",
