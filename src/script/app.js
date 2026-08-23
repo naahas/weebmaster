@@ -119,9 +119,6 @@ createApp({
             campsProg: 1,               // avancement du remplissage des barres (0 → 1)
             campDetail: null,           // camp dont on regarde le détail au classement final
             rangDelta: 0,               // places gagnées (+) ou perdues (-) à la dernière question
-            teamCooldownActive: false,
-            teamCooldownSeconds: 0,
-            teamCooldownInterval: null,
             
             // 💣 BombAnime - Lobby plein
             isLobbyFull: false,
@@ -461,33 +458,13 @@ createApp({
             return this.bombanime.suggestionLines.some(l => (l || '').trim().length > 0);
         },
 
-        // Au moins 1 streamer est en live
-        formattedPlayerPoints() {
-            return this.playerPoints.toLocaleString('fr-FR');
-        },
 
         // Le compteur du HUD suit la valeur animée, pas le score brut
         formattedPoints() {
             return this.displayedPoints.toLocaleString('fr-FR');
         },
 
-        // Timer circulaire FizzBuzz (stroke-dashoffset)
-        fizzbuzzTimerOffset() {
-            // Circumference = 2 * PI * r = 2 * 3.14159 * 45 ≈ 283
-            const circumference = 283;
-            const progress = this.timerProgress / 100;
-            return circumference * (1 - progress);
-        },
 
-        isWinner() {
-            if (!this.gameEndData.winner) return false;
-
-            if (this.gameEndData.winner.tie) {
-                return this.gameEndData.winner.winners.some(w => w.username === this.username);
-            }
-
-            return this.gameEndData.winner.username === this.username;
-        },
 
         livesModePodium() {
             if (!this.gameEndData || this.gameEndData.gameMode !== 'lives') return [];
@@ -561,11 +538,6 @@ createApp({
             return [];
         },
         
-        // 🆕 Vérifier si c'est un mode rivalité
-        isRivalryMode() {
-            if (!this.gameEndData) return false;
-            return this.gameEndData.gameMode === 'rivalry-lives' || this.gameEndData.gameMode === 'rivalry-points';
-        },
 
         // 🆕 Mon classement (pour afficher si hors top 3)
         myEndRank() {
@@ -859,9 +831,6 @@ createApp({
             return this.podiumPlayers.slice(0, 6);
         },
 
-        comboLevelDisplay() {
-            return this.comboLevel >= 3 ? 'MAX' : this.comboLevel.toString();
-        },
 
         // 🔥 REFONTE: Vérifie si au moins un bonus disponible
         hasUnusedBonuses() {
@@ -873,30 +842,6 @@ createApp({
             return Object.values(this.bonusInventory).reduce((sum, count) => sum + count, 0);
         },
 
-        // 🔥 REFONTE: Liste avec compteurs individuels
-        bonusList() {
-            const thirdBonusId = this.gameMode === 'lives' ? 'shield' : 'doublex2';
-            return [
-                {
-                    id: '5050',
-                    name: '50/50',
-                    desc: 'Élimine 50% des mauvaises réponses',
-                    count: this.bonusInventory['5050'] || 0
-                },
-                {
-                    id: 'reveal',
-                    name: 'Joker',
-                    desc: 'Affiche la bonne réponse',
-                    count: this.bonusInventory['reveal'] || 0
-                },
-                {
-                    id: thirdBonusId,
-                    name: this.gameMode === 'lives' ? 'Bouclier' : 'Points x2',
-                    desc: this.gameMode === 'lives' ? 'Protège contre une perte de vie' : 'Double les points de cette question',
-                    count: this.bonusInventory[thirdBonusId] || 0
-                }
-            ];
-        },
 
         gaugeCircleOffset() {
             const circumference = 188; // 2π × 30
@@ -1048,10 +993,6 @@ createApp({
             return word + Math.floor(10 + Math.random() * 990);
         },
 
-        rerollPseudo() {
-            this.pseudoInput = this.randomPseudo();
-            this.pseudoError = '';
-        },
 
         cancelPseudoEdit() {
             this.editingPseudo = false;
@@ -1196,14 +1137,6 @@ createApp({
                 Object.assign(this, avant);
                 this.hostError = e.message;
             }
-        },
-
-        addFakePlayers(count) {
-            if (this.socket) this.socket.emit('dev-add-fake-players', { count });
-        },
-
-        clearFakePlayers() {
-            if (this.socket) this.socket.emit('dev-clear-fake-players');
         },
 
         // Contrôles de l'hôte pendant la partie (ex-panel /admin)
@@ -1428,9 +1361,6 @@ createApp({
             return ['m' + i, this.questionResults.correctAnswer === i + 1 ? 'juste' : ''];
         },
 
-        scoreOf(p) {
-            return this.gameMode === 'points' ? (p.points || 0) : (p.correctAnswers || 0);
-        },
 
         formatScore(n) {
             return (n || 0).toLocaleString('fr-FR');
@@ -1791,29 +1721,6 @@ createApp({
             }
         },
 
-        // ========== Profil & Badges ==========
-        rippleEffect(event) {
-            const card = event.currentTarget;
-            const ripple = document.createElement('div');
-            ripple.className = 'ripple';
-
-            const rect = card.getBoundingClientRect();
-            const size = Math.max(rect.width, rect.height);
-            ripple.style.width = ripple.style.height = size + 'px';
-            ripple.style.left = event.clientX - rect.left - size / 2 + 'px';
-            ripple.style.top = event.clientY - rect.top - size / 2 + 'px';
-
-            card.appendChild(ripple);
-
-            anime({
-                targets: ripple,
-                scale: [0, 2],
-                opacity: [1, 0],
-                duration: 600,
-                easing: 'easeOutExpo',
-                complete: () => ripple.remove()
-            });
-        },
 
         showShieldProtectionEffect() {
             // Créer uniquement la vague (pas d'overlay)
@@ -1934,8 +1841,7 @@ createApp({
                     localStorage.removeItem('hasJoinedLobby');
                     localStorage.removeItem('lobbyTwitchId');
                     localStorage.removeItem('selectedTeam');
-                    localStorage.removeItem('teamCooldownEnd');
-
+        
                     // 🔧 Le salon n'existe plus (serveur redémarré, salon fermé) : sans ce
                     // reset, un ancien isHost/roomCode cachait à la fois l'accueil et le
                     // salon, et la page restait vide.
@@ -2328,8 +2234,7 @@ createApp({
                 localStorage.removeItem('hasJoinedLobby');
                 localStorage.removeItem('lobbyTwitchId');
                 localStorage.removeItem('selectedTeam');
-                localStorage.removeItem('teamCooldownEnd');
-                sessionStorage.removeItem('wasKicked'); // 🆕 Clear kick flag pour prochaine partie
+                    sessionStorage.removeItem('wasKicked'); // 🆕 Clear kick flag pour prochaine partie
                 
                 // 💣 Reset BombAnime
                 this.cleanupBombanimeEffects();
@@ -2433,8 +2338,7 @@ createApp({
                         this.selectedTeam = null;
                         this.teamCounts = { 1: 0, 2: 0 };
                         localStorage.removeItem('selectedTeam');
-                        localStorage.removeItem('teamCooldownEnd');
-                    }
+                                }
                 }
                 if (data.teamNames) this.teamNames = data.teamNames;
                 if (data.teamCounts) this.teamCounts = data.teamCounts;
@@ -2560,8 +2464,7 @@ createApp({
                     localStorage.removeItem('hasJoinedLobby');
                     localStorage.removeItem('lobbyTwitchId');
                     localStorage.removeItem('selectedTeam');
-                    localStorage.removeItem('teamCooldownEnd');
-                    return;
+                            return;
                 }
                 
                 // 🆕 Ne pas afficher le podium si le joueur n'a pas participé
@@ -2592,8 +2495,7 @@ createApp({
                 localStorage.removeItem('hasJoinedLobby');
                 localStorage.removeItem('lobbyTwitchId');
                 localStorage.removeItem('selectedTeam');
-                localStorage.removeItem('teamCooldownEnd');
-            });
+                });
 
             this.socket.on('error', (data) => {
                 // 🆕 v2 : code de salon refusé → on reste sur la modale
@@ -2625,8 +2527,7 @@ createApp({
                     localStorage.removeItem('hasJoinedLobby');
                     localStorage.removeItem('lobbyTwitchId');
                     localStorage.removeItem('selectedTeam');
-                    localStorage.removeItem('teamCooldownEnd');
-                }
+                        }
                 
                 // 💣🎴 Lobby BombAnime/Collect plein
                 if (data.message && data.message.includes('plein')) {
@@ -2698,11 +2599,6 @@ createApp({
             });
 
 
-            this.socket.on('settings-updated', (data) => {
-                this.gameLives = data.lives;
-                this.gameTime = data.timePerQuestion;
-                console.log(`⚙️ Paramètres mis à jour: ${data.lives} vies, ${data.timePerQuestion}s`);
-            });
 
             // 🔄 Forcer le refresh par l'admin
             this.socket.on('force-refresh', () => {
@@ -2720,10 +2616,6 @@ createApp({
 
 
             // 🆕 Bonus débloqué
-            this.socket.on('bonus-unlocked', (data) => {
-                console.log(`🎁 Nouveau bonus débloqué: ${data.bonusType} (Lvl${data.level})`);
-                this.animateLevelUp();
-            });
 
             // 🆕 Bonus rapidité reçu (+500 pts) - Notification uniquement
             this.socket.on('speed-bonus', (data) => {
@@ -2835,10 +2727,6 @@ createApp({
 
 
             // Statut live des streamers partenaires
-            this.socket.on('partners-live-status', (liveStatus) => {
-                this.streamersLive = liveStatus;
-                console.log('📡 Statut live reçu:', liveStatus);
-            });
 
             // ============================================
             // 💣 BOMBANIME - Socket Handlers
@@ -3537,68 +3425,7 @@ createApp({
             }, 3000);
         },
 
-        // ========== Lobby ==========
-        joinLobby() {
-            if (!this.isAuthenticated) {
-                this.showNotification('Vous devez être connecté !', 'error');
-                return;
-            }
-            
-            // 🎴 Bloquer si en cooldown
-            if (this.joinCooldown) {
-                return;
-            }
-            
-            // En mode rivalité, vérifier qu'une équipe est sélectionnée
-            if (this.lobbyMode === 'rivalry' && !this.selectedTeam) {
-                this.showNotification('Choisissez une équipe !', 'error');
-                return;
-            }
-
-            // 🆕 Clear le flag kick pour permettre le rejoin
-            sessionStorage.removeItem('wasKicked');
-
-            this.socket.emit('join-lobby', {
-                twitchId: this.twitchId,
-                username: this.username,
-                team: this.lobbyMode === 'rivalry' ? this.selectedTeam : null
-            });
-
-            // 🎴💣 En mode Collect/BombAnime, attendre confirmation avant d'afficher "rejoint"
-            if (this.lobbyMode === 'bombanime') {
-                this.joinPending = true;
-                // Confirmer après 400ms si pas d'erreur reçue
-                setTimeout(() => {
-                    if (this.joinPending && !this.lobbyShakeError) {
-                        this.hasJoined = true;
-                        this.joinPending = false;
-                        // Sauvegarder dans localStorage seulement après confirmation
-                        localStorage.setItem('hasJoinedLobby', 'true');
-                        localStorage.setItem('lobbyTwitchId', this.twitchId);
-                    }
-                }, 400);
-            } else {
-                this.hasJoined = true;
-                // 🆕 Sauvegarder l'état dans localStorage
-                localStorage.setItem('hasJoinedLobby', 'true');
-                localStorage.setItem('lobbyTwitchId', this.twitchId);
-                if (this.lobbyMode === 'rivalry' && this.selectedTeam) {
-                    localStorage.setItem('selectedTeam', this.selectedTeam);
-                }
-            }
-        },
         
-        // Sélectionner une équipe (mode Rivalité)
-        selectTeam(team) {
-            // Bloquer si déjà dans le lobby
-            if (this.hasJoined) return;
-            if (this.selectedTeam === team) return;
-            
-            this.selectedTeam = team;
-            
-            // Sauvegarder dans localStorage
-            localStorage.setItem('selectedTeam', team);
-        },
         
         // Note: Les fonctions de cooldown d'équipe ont été supprimées
         // Le joueur choisit son équipe une seule fois avant de rejoindre
@@ -3890,22 +3717,7 @@ createApp({
             }
         },
 
-        // ========== Résultats ==========
-        getBarHeight(value) {
-            const max = Math.max(
-                this.questionResults.stats.correct,
-                this.questionResults.stats.wrong,
-                this.questionResults.stats.afk
-            );
-            if (max === 0) return '0%';
-            return ((value / max) * 100) + '%';
-        },
 
-        getLifeBarWidth(count) {
-            const total = Object.values(this.questionResults.stats.livesDistribution).reduce((a, b) => a + b, 0);
-            if (total === 0) return '0%';
-            return ((count / total) * 100) + '%';
-        },
 
         // ========== Game Over ==========
         backToHome() {
@@ -4115,14 +3927,6 @@ createApp({
             console.log('🔙 Retour au menu principal');
         },
 
-        // ========== Thème ==========
-        toggleTheme() {
-            this.isDark = !this.isDark;
-            document.body.classList.toggle('light-theme', !this.isDark);
-            localStorage.setItem('theme', this.isDark ? 'dark' : 'light');
-
-            this.initParticles();
-        },
 
         loadTheme() {
             const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -4246,14 +4050,6 @@ createApp({
             }
         },
 
-        // 🆕 GESTION DES BONUS
-        toggleBonusModal() {
-            if (!this.currentQuestion || this.hasAnswered) {
-                console.log('⚠️ Impossible d\'ouvrir les bonus en dehors d\'une question');
-                return;
-            }
-            this.showBonusModal = !this.showBonusModal;
-        },
 
         closeBonusModal() {
             this.showBonusModal = false;
@@ -4401,28 +4197,6 @@ createApp({
             this.activeBonusEffect = type;
         },
 
-        // 🆕 Afficher l'animation Shield
-        showShieldAnimation() {
-            // Créer un overlay d'effet Shield
-            const overlay = document.createElement('div');
-            overlay.className = 'shield-overlay-effect';
-            document.body.appendChild(overlay);
-
-            // Animation de pulsation
-            setTimeout(() => {
-                overlay.classList.add('active');
-            }, 10);
-
-            // Retirer après 2 secondes
-            setTimeout(() => {
-                overlay.classList.remove('active');
-                setTimeout(() => {
-                    document.body.removeChild(overlay);
-                }, 500);
-            }, 2000);
-
-
-        },
 
         resetBonusEffects() {
             // Retirer tous les effets visuels
@@ -4500,306 +4274,10 @@ createApp({
         },
 
 
-        confettiStyle(index) {
-            const colors = ['#FFD700', '#FFA500', '#FF8C00', '#00ff88', '#3b82f6'];
-            const randomColor = colors[Math.floor(Math.random() * colors.length)];
-            const randomX = Math.random() * 100;
-            const randomDelay = Math.random() * 2;
-            const randomDuration = 2 + Math.random() * 2;
 
-            return {
-                left: randomX + '%',
-                backgroundColor: randomColor,
-                animationDelay: randomDelay + 's',
-                animationDuration: randomDuration + 's'
-            };
-        },
 
-        // 🆕 Initialiser les animations du podium winner
-        initWinnerAnimations() {
-            // 🆕 Animation winner V3 - JS natif équivalent GSAP
-            this._fsWinnerTimers = this._fsWinnerTimers || [];
-            this._fsWinnerTimers.forEach(t => clearTimeout(t));
-            this._fsWinnerTimers = [];
 
-            const beam = document.querySelector('.fs-beam');
-            const stars = document.querySelectorAll('.fs-star');
 
-            // Beam fade in
-            if (beam) {
-                beam.animate(
-                    [{ opacity: 0 }, { opacity: 1 }],
-                    { duration: 1200, fill: 'forwards', easing: 'ease-out' }
-                );
-            }
-
-            // Stars twinkle (stagger + infinite)
-            stars.forEach((star, i) => {
-                const t = setTimeout(() => {
-                    star.animate(
-                        [{ opacity: 0 }, { opacity: 0.4 }],
-                        { duration: 800, fill: 'forwards', easing: 'ease-out' }
-                    );
-                    star.animate(
-                        [{ opacity: 0.2 }, { opacity: 0.6 }, { opacity: 0.2 }],
-                        { duration: 2000, delay: 800, iterations: Infinity, easing: 'ease-in-out' }
-                    );
-                }, 300 + i * 80);
-                this._fsWinnerTimers.push(t);
-            });
-
-            // 3ème à 900ms
-            this._fsWinnerTimers.push(setTimeout(() => {
-                const el = document.querySelector('.fs-chal-3');
-                if (el) this._fsAnimateIn(el, { x: -40, scale: 0.9, duration: 600, easing: 'back-out' });
-            }, 900));
-
-            // 2ème à 1700ms
-            this._fsWinnerTimers.push(setTimeout(() => {
-                const el = document.querySelector('.fs-chal-2');
-                if (el) this._fsAnimateIn(el, { x: -40, scale: 0.9, duration: 600, easing: 'back-out' });
-            }, 1700));
-
-            // Champion à 2900ms
-            const champTime = 2900;
-
-            // Avatar frame pop
-            this._fsWinnerTimers.push(setTimeout(() => {
-                const frame = document.getElementById('fsAvatarFrame');
-                if (!frame) return;
-
-                frame.animate(
-                    [
-                        { opacity: 0, transform: 'scale(0.2) rotate(-180deg)' },
-                        { opacity: 1, transform: 'scale(1.18) rotate(0deg)', offset: 0.7 },
-                        { opacity: 1, transform: 'scale(1) rotate(0deg)' }
-                    ],
-                    { duration: 1250, fill: 'forwards', easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }
-                );
-            }, champTime));
-
-            // Shockwave à champ+300ms
-            this._fsWinnerTimers.push(setTimeout(() => {
-                const sw = document.getElementById('fsShockwave');
-                if (!sw) return;
-                sw.animate(
-                    [
-                        { opacity: 0.9, transform: 'translate(-50%, -50%) scale(1)' },
-                        { opacity: 0, transform: 'translate(-50%, -50%) scale(2.8)' }
-                    ],
-                    { duration: 900, fill: 'forwards', easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }
-                );
-            }, champTime + 300));
-
-            // Burst particles à champ+300ms
-            this._fsWinnerTimers.push(setTimeout(() => {
-                this._fsExplodeChampion();
-            }, champTime + 300));
-
-            // Ring fade in à champ+550ms
-            this._fsWinnerTimers.push(setTimeout(() => {
-                const ring = document.querySelector('.fs-avatar-ring');
-                if (ring) ring.animate(
-                    [{ opacity: 0 }, { opacity: 0.9 }],
-                    { duration: 600, fill: 'forwards', easing: 'ease-out' }
-                );
-            }, champTime + 550));
-
-            // Glow pulse à champ+550ms puis infinie
-            this._fsWinnerTimers.push(setTimeout(() => {
-                const glow = document.querySelector('.fs-avatar-glow');
-                if (!glow) return;
-                glow.animate(
-                    [{ opacity: 0 }, { opacity: 0.55 }],
-                    { duration: 700, fill: 'forwards', easing: 'ease-out' }
-                );
-                setTimeout(() => {
-                    glow.animate(
-                        [
-                            { opacity: 0.55, transform: 'scale(1)' },
-                            { opacity: 0.8, transform: 'scale(1.05)' },
-                            { opacity: 0.55, transform: 'scale(1)' }
-                        ],
-                        { duration: 2200, iterations: Infinity, easing: 'ease-in-out' }
-                    );
-                }, 700);
-            }, champTime + 550));
-
-            // Couronne à champ+450ms
-            this._fsWinnerTimers.push(setTimeout(() => {
-                const crown = document.getElementById('fsCrownBar');
-                if (!crown) return;
-                crown.animate(
-                    [
-                        { opacity: 0, transform: 'translateX(-50%) rotate(-30deg) scale(0.6) translateY(-40px)' },
-                        { opacity: 1, transform: 'translateX(-50%) rotate(-12deg) scale(1) translateY(0)' }
-                    ],
-                    { duration: 750, fill: 'forwards', easing: 'cubic-bezier(0.34, 1.8, 0.64, 1)' }
-                );
-                // Swing infini après
-                setTimeout(() => {
-                    crown.animate(
-                        [
-                            { transform: 'translateX(-50%) rotate(-12deg)' },
-                            { transform: 'translateX(-50%) rotate(-15deg)' },
-                            { transform: 'translateX(-50%) rotate(-12deg)' }
-                        ],
-                        { duration: 3500, iterations: Infinity, easing: 'ease-in-out' }
-                    );
-                }, 850);
-            }, champTime + 450));
-
-            // Nom champion à champ+750ms
-            this._fsWinnerTimers.push(setTimeout(() => {
-                const name = document.querySelector('.fs-name');
-                if (name) this._fsAnimateIn(name, { y: 20, scale: 0.95, duration: 600, easing: 'ease-out' });
-            }, champTime + 750));
-
-            // "is the Master" à champ+950ms
-            this._fsWinnerTimers.push(setTimeout(() => {
-                const tag = document.querySelector('.fs-master-tag');
-                if (tag) this._fsAnimateIn(tag, { y: 8, duration: 700, easing: 'ease-out' });
-            }, champTime + 950));
-
-            // Stats à champ+1000ms
-            this._fsWinnerTimers.push(setTimeout(() => {
-                const stats = document.querySelector('.fs-stats');
-                if (stats) this._fsAnimateIn(stats, { y: 12, duration: 550, easing: 'ease-out' });
-            }, champTime + 1000));
-
-            // Votre rang à champ+1100ms
-            this._fsWinnerTimers.push(setTimeout(() => {
-                const you = document.getElementById('fsYouRank');
-                if (you) this._fsAnimateIn(you, { x: -30, duration: 600, easing: 'ease-out' });
-            }, champTime + 1100));
-
-            // Bouton Retour à champ+1200ms
-            this._fsWinnerTimers.push(setTimeout(() => {
-                const btn = document.querySelector('.fs-champ-action');
-                if (btn) this._fsAnimateIn(btn, { y: 10, duration: 500, easing: 'ease-out' });
-            }, champTime + 1200));
-
-            // Particules orbitales à champ+800ms
-            this._fsWinnerTimers.push(setTimeout(() => {
-                this._fsAnimateOrbitals();
-            }, champTime + 800));
-
-            // Reward bar à champ+1400ms (après le champion reveal)
-            this._fsWinnerTimers.push(setTimeout(() => {
-                const reward = document.querySelector('.reward-anim');
-                if (reward) {
-                    reward.classList.add('visible');
-                }
-            }, champTime + 1400));
-        },
-
-        _fsAnimateIn(el, { x = 0, y = 0, scale = 1, duration = 500, easing = 'ease-out' } = {}) {
-            if (!el) return;
-            const fromTransform = [];
-            if (x !== 0) fromTransform.push(`translateX(${x}px)`);
-            if (y !== 0) fromTransform.push(`translateY(${y}px)`);
-            if (scale !== 1) fromTransform.push(`scale(${scale})`);
-
-            const easingMap = {
-                'back-out': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
-                'ease-out': 'cubic-bezier(0.22, 1, 0.36, 1)'
-            };
-
-            el.animate(
-                [
-                    { opacity: 0, transform: fromTransform.join(' ') || 'none' },
-                    { opacity: 1, transform: 'translateX(0) translateY(0) scale(1)' }
-                ],
-                { duration, fill: 'forwards', easing: easingMap[easing] || easing }
-            );
-        },
-
-        _fsExplodeChampion() {
-            const burst = document.getElementById('fsBurst');
-            if (!burst) return;
-            burst.innerHTML = '';
-
-            const NUM = 36;
-            const colors = ['#f5d442', '#ffe88a', '#fff8dc', '#daa520', '#fff'];
-
-            for (let i = 0; i < NUM; i++) {
-                const p = document.createElement('div');
-                p.className = 'fs-burst-particle';
-                const size = 2 + Math.random() * 4;
-                const col = colors[Math.floor(Math.random() * colors.length)];
-                p.style.width = size + 'px';
-                p.style.height = size + 'px';
-                p.style.background = col;
-                p.style.boxShadow = `0 0 ${4 + Math.random() * 5}px ${col}`;
-
-                const angle = (Math.PI * 2 / NUM) * i + (Math.random() - 0.5) * 0.3;
-                const dist = 120 + Math.random() * 100;
-                const dur = 700 + Math.random() * 500;
-
-                burst.appendChild(p);
-
-                const anim = p.animate(
-                    [
-                        { opacity: 1, transform: 'translate(0, 0) scale(1.5)' },
-                        { opacity: 0, transform: `translate(${Math.cos(angle) * dist}px, ${Math.sin(angle) * dist}px) scale(0)` }
-                    ],
-                    { duration: dur, fill: 'forwards', easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }
-                );
-                anim.onfinish = () => p.remove();
-            }
-        },
-
-        _fsAnimateOrbitals() {
-            const container = document.getElementById('fsParticles');
-            if (!container) return;
-            container.innerHTML = '';
-
-            const NUM = 14;
-            const colors = ['#f5d442', '#ffe88a', '#fff8dc', '#daa520'];
-            this._fsOrbitalAnims = [];
-
-            for (let i = 0; i < NUM; i++) {
-                const p = document.createElement('div');
-                p.className = 'fs-particle';
-                const size = 2 + Math.random() * 3;
-                const col = colors[Math.floor(Math.random() * colors.length)];
-                p.style.width = size + 'px';
-                p.style.height = size + 'px';
-                p.style.background = col;
-                p.style.boxShadow = `0 0 ${4 + Math.random() * 4}px ${col}`;
-                container.appendChild(p);
-
-                const baseAngle = (Math.PI * 2 / NUM) * i;
-                const radius = 95 + Math.random() * 25;
-                const speed = 8000 + Math.random() * 6000;
-                const direction = Math.random() > 0.5 ? 1 : -1;
-                const delay = Math.random() * 3000;
-
-                // Construction du keyframes orbital
-                const keyframes = [];
-                const steps = 24;
-                for (let s = 0; s <= steps; s++) {
-                    const progress = s / steps;
-                    const angle = baseAngle + direction * Math.PI * 2 * progress;
-                    const x = Math.cos(angle) * radius;
-                    const y = Math.sin(angle) * radius;
-                    keyframes.push({
-                        transform: `translate(-50%, -50%) translate(${x}px, ${y}px)`,
-                        opacity: s === 0 ? 0 : (0.3 + 0.5 * Math.abs(Math.sin(progress * Math.PI * 2)))
-                    });
-                }
-
-                const t = setTimeout(() => {
-                    const anim = p.animate(keyframes, {
-                        duration: speed,
-                        iterations: Infinity,
-                        easing: 'linear'
-                    });
-                    this._fsOrbitalAnims.push(anim);
-                }, delay);
-                this._fsWinnerTimers.push(t);
-            }
-        },
 
 
 
@@ -4844,47 +4322,6 @@ createApp({
             }
         },
 
-        spawnClickParticles(event) {
-            const x = event.clientX;
-            const y = event.clientY;
-
-            const particleCount = 12;
-
-            for (let i = 0; i < particleCount; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'click-particle';
-
-                // Direction complètement aléatoire
-                const angle = Math.random() * Math.PI * 2;
-                const distance = 80 + Math.random() * 120; // 🔥 Très loin : 80-200px
-                const offsetX = Math.cos(angle) * distance;
-                const offsetY = Math.sin(angle) * distance;
-
-                // Taille aléatoire
-                const size = 4 + Math.random() * 6;
-
-                // Position de départ éparpillée
-                const startOffsetX = (Math.random() - 0.5) * 40;
-                const startOffsetY = (Math.random() - 0.5) * 20;
-
-                particle.style.left = (x + startOffsetX) + 'px';
-                particle.style.top = (y + startOffsetY) + 'px';
-                particle.style.width = size + 'px';
-                particle.style.height = size + 'px';
-                particle.style.setProperty('--x', offsetX + 'px');
-                particle.style.setProperty('--y', offsetY + 'px');
-
-                // 🔥 Durée plus longue : 0.7s à 1.1s
-                const duration = 0.7 + Math.random() * 0.4;
-                particle.style.animationDuration = duration + 's';
-
-                document.body.appendChild(particle);
-
-                setTimeout(() => {
-                    particle.remove();
-                }, duration * 1000);
-            }
-        },
 
         initSounds() {
             this.clickSound = new Audio('click.mp3');
@@ -5111,11 +4548,6 @@ createApp({
             this.bombanime.showBonusesModal = false; // Fermer l'autre
         },
         
-        // 🎯 Toggle modal bonus (mobile)
-        toggleBombanimeBonusesModal() {
-            this.bombanime.showBonusesModal = !this.bombanime.showBonusesModal;
-            this.bombanime.showChallengesModal = false; // Fermer l'autre
-        },
         
         // 🎯 Vérifier si le joueur a des bonus BombAnime disponibles
         hasBombanimeBonuses() {
@@ -5246,10 +4678,6 @@ createApp({
             }
         },
         
-        // Obtenir ma position dans le cercle
-        getBombanimeMyPosition() {
-            return this.bombanime.playersOrder.indexOf(this.twitchId);
-        },
         
         // 🖼️ Flash image personnage sur la bombe
         showBombanimeCharacterFlash(imageUrl, characterName) {
@@ -5273,10 +4701,6 @@ createApp({
             setTimeout(() => flash.remove(), 850);
         },
         
-        // 🖼️ Toggle images personnages
-        toggleCharacterImages() {
-            this.bombanime.showCharacterImages = !this.bombanime.showCharacterImages;
-        },
         
         // Calculer la taille du cercle selon le nombre de joueurs
         getBombanimeCircleSize() {
@@ -5368,11 +4792,6 @@ createApp({
             };
         },
         
-        // Déterminer si le texte de réponse doit être au-dessus (pour éviter chevauchements)
-        isAnswerAbove(index, total) {
-            // Pas utilisé pour l'instant, toujours en dessous
-            return false;
-        },
         
         // Calculer la taille de l'hexagone selon le nombre de joueurs
         getBombanimeHexSize() {
@@ -5451,11 +4870,6 @@ createApp({
             return result;
         },
         
-        // Calculer la position d'un joueur dans le cercle (en degrés)
-        getBombanimePlayerAngle(index, total) {
-            const offsetAngle = 180 / total;
-            return ((index / total) * 360) - 90 + offsetAngle;
-        },
         
         // Vérifier si une lettre est dans mon alphabet
         hasLetter(letter) {

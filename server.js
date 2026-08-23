@@ -4915,12 +4915,6 @@ async function startBombanimeGame() {
     gameState.bombanime.bombDirection = 1;
     gameState.bombanime.lastValidName = null;
     
-    // Donner des lastAnswers par défaut aux fake players (utilise le fakeCharacterName stocké)
-    players.forEach(player => {
-        if (player.isFake && player.fakeCharacterName) {
-            gameState.bombanime.playerLastAnswers.set(player.twitchId, player.fakeCharacterName);
-        }
-    });
     gameState.bombanime.turnId = 0; // Reset l'identifiant de tour
     
     // Mélanger les joueurs pour l'ordre du cercle
@@ -5235,7 +5229,7 @@ io.on('connection', (socket) => {
         }
         
         // 💣🎴 En mode BombAnime/Collect, vérifier la limite avec les places réservées
-        if ((gameState.lobbyMode === 'bombanime' || gameState.lobbyMode === 'collect') && !isReconnection) {
+        if (gameState.lobbyMode === 'bombanime' && !isReconnection) {
             const maxPlayers = BOMBANIME_CONFIG.MAX_PLAYERS;
             const currentCount = gameState.players.size + pendingJoins.size;
             if (currentCount >= maxPlayers) {
@@ -5324,64 +5318,6 @@ io.on('connection', (socket) => {
         }
     });
     
-    // 🆕 Changer d'équipe (mode Rivalité)
-    socket.on('change-team', (data) => {
-        if (gameState.lobbyMode !== 'rivalry') return;
-        if (gameState.inProgress) return;
-        
-        const player = gameState.players.get(socket.id);
-        if (!player) return;
-        
-        const oldTeam = player.team;
-        player.team = data.team;
-        
-        console.log(`🔄 ${player.username} change d'équipe: Team ${oldTeam} → Team ${data.team}`);
-        
-        // Mettre à jour tous les clients
-        broadcastLobbyUpdate();
-    });
-    
-    // 🆕 Admin change l'équipe d'un joueur
-    socket.on('admin-change-team', (data) => {
-        if (gameState.lobbyMode !== 'rivalry') return;
-        if (gameState.inProgress) return;
-        
-        const { twitchId, username, newTeam } = data;
-        if (!newTeam) return;
-        
-        // Trouver le joueur par twitchId ou username
-        let targetSocketId = null;
-        let targetPlayer = null;
-        
-        for (const [socketId, player] of gameState.players.entries()) {
-            if ((twitchId && player.twitchId === twitchId) || 
-                (username && player.username === username)) {
-                targetSocketId = socketId;
-                targetPlayer = player;
-                break;
-            }
-        }
-        
-        if (targetPlayer) {
-            const oldTeam = targetPlayer.team;
-            targetPlayer.team = newTeam;
-            
-            console.log(`🔄 [ADMIN] ${targetPlayer.username} changé: Team ${oldTeam} → Team ${newTeam}`);
-            
-            // Notifier le joueur concerné de son changement d'équipe
-            const targetSocket = io.sockets.sockets.get(targetSocketId);
-            if (targetSocket) {
-                targetSocket.emit('team-changed', { newTeam: newTeam });
-            }
-            
-            // Mettre à jour tous les clients
-            broadcastLobbyUpdate();
-        } else {
-            console.log(`⚠️ [ADMIN] Joueur non trouvé: twitchId=${twitchId}, username=${username}`);
-        }
-    });
-
-    // Quitter le lobby
     socket.on('leave-lobby', (data) => {
         const player = gameState.players.get(socket.id);
         if (player) {
@@ -5877,136 +5813,6 @@ io.on('connection', (socket) => {
     
     // 🆕 TEMPORAIRE: Ajouter un joueur fictif pour les tests
     // 🧪 Outil de mise au point : peupler le salon pour juger l'affichage
-    socket.on('dev-add-fake-players', (data) => {
-        if (gameState.inProgress || !gameState.isActive) return;
-
-        const count = Math.min(Math.max(parseInt(data && data.count) || 0, 0), 60);
-        const prenoms = ['Kitsune', 'Shinobi', 'Senpai', 'Hokage', 'Samurai', 'Ronin', 'Yokai', 'Nakama',
-                         'Katana', 'Ramen', 'Kaiju', 'Otaku', 'Sensei', 'Onigiri', 'Mecha', 'Tanuki',
-                         'Bushido', 'Shogun', 'Kunai', 'Sakura', 'Tengu', 'Oni', 'Haki', 'Zanpakuto'];
-
-        for (let i = 0; i < count; i++) {
-            const id = 'fake_' + Date.now() + '_' + i;
-            const nom = prenoms[Math.floor(Math.random() * prenoms.length)] + Math.floor(10 + Math.random() * 990);
-            gameState.players.set(id, {
-                socketId: id,
-                twitchId: id,
-                username: nom,
-                lives: gameState.lives,
-                points: 0,
-                correctAnswers: 0,
-                avatarUrl: 'novice.png',
-                team: gameState.lobbyMode === 'rivalry' ? (i % 2 === 0 ? 1 : 2) : null,
-                isFake: true,
-            });
-        }
-
-        if (gameState.lobbyMode === 'rivalry') updateTeamCounts();
-        console.log(`🧪 ${count} joueur(s) fictif(s) ajouté(s) — total ${gameState.players.size}`);
-        broadcastLobbyUpdate();
-    });
-
-    socket.on('dev-clear-fake-players', () => {
-        if (gameState.inProgress) return;
-        let retires = 0;
-        for (const [id, p] of gameState.players.entries()) {
-            if (p.isFake) { gameState.players.delete(id); retires++; }
-        }
-        if (gameState.lobbyMode === 'rivalry') updateTeamCounts();
-        console.log(`🧪 ${retires} joueur(s) fictif(s) retiré(s)`);
-        broadcastLobbyUpdate();
-    });
-
-    socket.on('bombanime-add-fake-player', () => {
-        if (gameState.inProgress) {
-            console.log('❌ Impossible d\'ajouter un joueur fictif en cours de partie');
-            return;
-        }
-        
-        // Pseudos réalistes style Twitch
-        const fakeNames = [
-            'xNarutoFan_99', 'SakuraChan_', 'OnePieceLover', 'ZoroSlash42',
-            'LuffyGumGum', 'SasukeDark_', 'KakashiSensei', 'HinataShy',
-            'GaaraOfSand', 'ItachiLegend', 'MadaraGod_', 'TobiramaH2O'
-        ];
-        
-        // Noms de personnages longs pour tester le rendu (max 15 chars)
-        const fakeCharacterNames = [
-            'SASUKE UCHIHA', 'MONKEY D LUFFY', 'RORONOA ZORO', 'PORTGAS D ACE',
-            'TRAFALGAR LAW', 'VINSMOKE SANJI', 'NICO ROBIN', 'DOFLAMINGO',
-            'KATAKURI', 'UZUMAKI NARUTO', 'KAKASHI HATAKE', 'MADARA UCHIHA'
-        ];
-        
-        // Trouver un nom non utilisé
-        const usedNames = Array.from(gameState.players.values()).map(p => p.username);
-        const availableIndex = fakeNames.findIndex(name => !usedNames.includes(name));
-        
-        if (availableIndex === -1) {
-            console.log('❌ Plus de noms fictifs disponibles');
-            return;
-        }
-        
-        if (gameState.players.size >= 13) {
-            console.log('❌ Maximum 13 joueurs atteint');
-            return;
-        }
-        
-        const availableName = fakeNames[availableIndex];
-        const fakeCharacterName = fakeCharacterNames[availableIndex] || 'PERSONNAGE';
-        
-        const fakeId = 'fake-' + Date.now();
-        const fakeTwitchId = 'fake-twitch-' + Date.now();
-        
-        const fakePlayer = {
-            socketId: fakeId,
-            odemonId: fakeId,
-            odemonAvatar: '/default-avatar.png',
-            odemonBgColor: '#333',
-            odemonBgUrl: null,
-            odemonGradient: 'none',
-            odemonEmoji: null,
-            twitchId: fakeTwitchId,
-            username: availableName,
-            lives: gameState.bombanime.lives || BOMBANIME_CONFIG.DEFAULT_LIVES,
-            points: 0,
-            correctAnswers: 0,
-            wrongAnswers: 0,
-            answered: false,
-            hasAnsweredFirst: false,
-            hasUsedBonus: false,
-            usedBonuses: [],
-            team: null,
-            joinedAt: Date.now(),
-            isFake: true,
-            fakeCharacterName: fakeCharacterName
-        };
-        
-        gameState.players.set(fakeId, fakePlayer);
-        
-        console.log(`🤖 Joueur fictif ajouté: ${availableName} avec réponse "${fakeCharacterName}" (Total: ${gameState.players.size})`);
-        
-        // Notifier tous les clients
-        io.emit('player-joined', {
-            odemonId: fakeId,
-            odemonAvatar: fakePlayer.odemonAvatar,
-            odemonBgColor: fakePlayer.odemonBgColor,
-            odemonBgUrl: fakePlayer.odemonBgUrl,
-            odemonGradient: fakePlayer.odemonGradient,
-            odemonEmoji: fakePlayer.odemonEmoji,
-            twitchId: fakeTwitchId,
-            username: availableName,
-            lives: fakePlayer.lives,
-            points: 0,
-            correctAnswers: 0,
-            wrongAnswers: 0,
-            team: null,
-            isFake: true,
-            fakeCharacterName: fakeCharacterName
-        });
-        
-        io.emit('player-count', gameState.players.size);
-    });
-
     // Déconnexion
     socket.on('disconnect', () => {
         const ip = socket.handshake.headers['x-forwarded-for']?.split(',')[0] || socket.handshake.address;

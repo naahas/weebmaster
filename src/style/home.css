@@ -7439,32 +7439,6 @@ body.game-active:has(.poll-game-container) #particles-js {
     box-shadow: 0 0 0 0.22rem rgba(255, 215, 0, 0.13);
 }
 
-.v2-modal-error {
-    font-size: 0.74rem;
-    font-weight: 600;
-    color: var(--error-color);
-}
-
-.v2-team-choice { display: flex; gap: 0.6rem; width: 100%; }
-
-.v2-team {
-    flex: 1;
-    padding: 1.2rem 0.6rem;
-    font-family: inherit;
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.03);
-    border: 0.09rem solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.6rem;
-    cursor: pointer;
-    transition: border-color 0.2s ease, transform 0.2s ease;
-}
-
-.v2-team:hover { transform: translateY(-0.15rem); }
-.v2-team-1:hover { border-color: #60a5fa; }
-.v2-team-2:hover { border-color: var(--neon-primary); }
-
 /* ── Boutons ──────────────────────────────── */
 .v2-btn {
     padding: 0.8rem 1.7rem;
@@ -7921,31 +7895,6 @@ body.game-active:has(.poll-game-container) #particles-js {
 
 .v2-room-copied.show { opacity: 1; transform: none; }
 
-/* Équipes */
-.v2-teams { display: flex; gap: 0.7rem; width: 100%; max-width: 26rem; }
-
-.v2-team-pick {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.6rem;
-    padding: 0.85rem 1rem;
-    font-family: inherit;
-    cursor: pointer;
-    background: rgba(255, 255, 255, 0.03);
-    border: 0.09rem solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.6rem;
-    transition: transform 0.22s ease, border-color 0.25s ease, background 0.25s ease;
-}
-
-.v2-team-name { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); }
-.v2-team-count { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--text-secondary); }
-
-.v2-team-pick:hover { transform: translateY(-0.12rem); }
-.v2-team-pick.team-1:hover, .v2-team-pick.team-1.picked { border-color: #60a5fa; background: rgba(96, 165, 250, 0.1); }
-.v2-team-pick.team-2:hover, .v2-team-pick.team-2.picked { border-color: var(--neon-primary); background: rgba(255, 215, 0, 0.09); }
-
 /* Joueurs */
 .v2-room-players { width: 100%; max-width: 52rem; }
 
@@ -8220,7 +8169,6 @@ body.game-active:has(.poll-game-container) #particles-js {
     .v2-settings { order: 2; }
     .v2-room-players { max-width: none; }
     .v2-room-players-grid { justify-content: center; }
-    .v2-teams { max-width: none; }
     .v2-settings { max-height: none; }
 }
 
@@ -8289,7 +8237,6 @@ body.game-active:has(.poll-game-container) #particles-js {
 
 .v2-room-layout.guest .v2-room-main { align-items: center; text-align: center; }
 .v2-room-layout.guest .v2-room-players-grid { justify-content: center; }
-.v2-room-layout.guest .v2-teams { justify-content: center; }
 
 /* Curseur de réglage (temps, nombre de questions) */
 .v2-range {
@@ -8443,20 +8390,6 @@ body.game-active:has(.poll-game-container) #particles-js {
     border: 0.06rem solid rgba(255, 255, 255, 0.1);
     border-radius: 2.5rem;
     box-shadow: 0 0.8rem 2rem rgba(0, 0, 0, 0.5);
-}
-
-
-/* Bascule du mode auto */
-.v2-hostbar-btn.toggle {
-    color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.06);
-}
-
-.v2-hostbar-btn.toggle:hover { color: var(--text-primary); }
-
-.v2-hostbar-btn.toggle.on {
-    color: #14100a;
-    background: linear-gradient(135deg, #6ee7b7, #10b981);
 }
 
 
@@ -8727,14 +8660,6 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2q-answer.correct .v2q-answer-pct { color: var(--success-color); }
 .v2q-answer.wrong { opacity: 0.4; }
 .v2q-answer.wrong.selected { opacity: 0.75; border-color: rgba(239, 68, 68, 0.5); background: rgba(239, 68, 68, 0.1); }
-
-/* Pied du panel */
-
-
-.v2q-status.ok { color: var(--success-color); }
-.v2q-status.team { padding: 0.25rem 0.8rem; border-radius: 2rem; background: rgba(255, 255, 255, 0.05); }
-.v2q-status.team.team-1 { color: #7fb4ff; }
-.v2q-status.team.team-2 { color: var(--neon-primary); }
 
 @media (max-width: 768px) {
     .v2q-panel { padding: 2.2rem 1rem 1.2rem; }
