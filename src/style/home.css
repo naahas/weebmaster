@@ -10355,11 +10355,12 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     .v2-end { padding: 1.5rem 0.9rem; }
     .v2-end-title { margin-bottom: 1.2rem; font-size: 0.55rem; letter-spacing: 0.22em; }
     .v2-end-title::before, .v2-end-title::after { width: 1.4rem; }
-    .v2-end-row { gap: 0.7rem; padding: 0.5rem 0.1rem; }
+    .v2-end-list { width: 100%; padding: 0 0.4rem; }
+    .v2-end-row { gap: 0.7rem; padding: 0.5rem 0.9rem; }
     .v2-end-row .rk { width: 1.4rem; font-size: 1.35rem; }
     .v2-end-row .nm { font-size: 0.85rem; }
     .v2-end-row .sc { font-size: 1rem; }
-    .v2-end-row.or { padding: 0.8rem 0.1rem; }
+    .v2-end-row.or { padding: 0.8rem 0.9rem; }
     .v2-end-row.or .rk { font-size: 2rem; }
     .v2-end-row.or .nm { font-size: 1.35rem; }
     .v2-end-row.or .sc { font-size: 1.5rem; }
@@ -11175,7 +11176,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 .v2-end-crew-row .sc {
     display: inline-flex;
     align-items: center;
-    gap: 0.22rem;
+    gap: 0.45rem;
     flex: none;
     font-family: 'Bebas Neue', 'Russo One', sans-serif;
     font-size: 0.92rem;
@@ -11184,8 +11185,8 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 }
 
 .v2-end-crew-row .sc svg {
-    width: 0.6rem;
-    height: 0.6rem;
+    width: 0.8rem;
+    height: 0.8rem;
     fill: rgba(255, 90, 110, 0.75);
     stroke: none;
 }
@@ -11474,4 +11475,65 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     .v2-camps-compte b { font-size: 0.85rem; }
     .v2q-moi-rang { padding: 0.8rem 0 0.9rem; }
     .v2q-moi-rang b { font-size: 2.05rem; }
+}
+
+/* ============================================
+   🆕 v2 — SPECTATEUR ET SURVIVANTS
+   ============================================ */
+
+/* Éliminé : les réponses restent lisibles mais hors de portée */
+.v2q-answers.spectateur { opacity: 0.42; filter: grayscale(0.5); }
+
+.v2q-spectateur {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.42rem;
+    margin-top: 1rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.32);
+}
+
+.v2q-spectateur svg { width: 0.85rem; height: 0.85rem; }
+
+/* Combien tiennent encore : discret, sous le panel */
+.v2q-alive {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.42rem;
+    margin-top: 1.1rem;
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.4);
+    animation: v2AliveIn 0.4s ease both;
+}
+
+@keyframes v2AliveIn {
+    from { opacity: 0; transform: translateY(0.3rem); }
+    to   { opacity: 1; transform: none; }
+}
+
+.v2q-alive b {
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 400;
+    line-height: 1;
+    color: var(--neon-primary);
+}
+
+.v2q-alive .pt {
+    width: 0.35rem;
+    height: 0.35rem;
+    border-radius: 50%;
+    background: #7ef7c0;
+    box-shadow: 0 0 0.5rem rgba(110, 231, 183, 0.7);
+}
+
+@media (max-width: 768px) {
+    .v2q-spectateur { margin-top: 0.8rem; font-size: 0.6rem; }
+    .v2q-alive { margin-top: 0.85rem; font-size: 0.66rem; }
+    .v2q-alive b { font-size: 1rem; }
 }
