@@ -966,6 +966,10 @@
                          l'ancien s'efface, le nouveau remonte. -->
                     <!-- HUD de partie : le panel ne porte plus que la question -->
                     <div class="v2-hud" v-if="questionShown">
+                        <!-- En camps, l'appartenance prime sur tout le reste -->
+                        <span class="v2-hud-team" v-if="monCamp" :class="'team-' + monCamp">
+                            <i></i>{{ teamNames[monCamp] }}
+                        </span>
                         <span class="v2-hud-etat">
                             <span class="v2q-lives" v-if="gameMode === 'lives'">
                                 <i v-for="n in gameLives" :key="n"
@@ -1065,7 +1069,27 @@
                              Le voile ne fait rien sur grand écran ; en dessous de 1200 px
                              il devient un calque ouvert par le bouton « Top ». -->
                         <div class="v2q-top-veil" :class="{ open: showTopSheet }" @click.self="showTopSheet = false">
-                        <aside class="v2q-top" v-if="showResults && lobbyMode !== 'bombanime'">
+                        <!-- En camps, seul le score des deux équipes compte -->
+                        <aside class="v2q-top" v-if="showResults && lobbyMode === 'rivalry'">
+                            <div class="v2q-top-t">Score des camps</div>
+                            <div class="v2q-camp" v-for="c in campsClasses" :key="c.team"
+                                 :class="['team-' + c.team, { mien: c.team === monCamp, tete: c.tete }]">
+                                <span class="nm">{{ c.nom }}</span>
+                                <span class="sc" v-if="gameMode === 'points'">{{ formatScore(c.score) }}</span>
+                                <span class="sc" v-else>{{ c.score }}<em>en vie</em></span>
+                                <span class="jauge"><i :style="{ width: c.part + '%' }"></i></span>
+                            </div>
+
+                            <div class="v2q-top-fast" v-if="questionResults.fastestPlayer">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M13 2L4.1 12.9a1 1 0 0 0 .8 1.6H11l-1 7.5 8.9-10.9a1 1 0 0 0-.8-1.6H12z"/>
+                                </svg>
+                                <span class="nm">{{ questionResults.fastestPlayer.username }}</span>
+                                <em>{{ fastestTime }}<small>s</small></em>
+                            </div>
+                        </aside>
+
+                        <aside class="v2q-top" v-else-if="showResults && lobbyMode !== 'bombanime'">
                             <div class="v2q-top-t">Top 5</div>
                             <div class="v2q-top-row" v-for="(p, i) in topPlayers" :key="p.twitchId || p.username"
                                  :class="{ me: p.twitchId === twitchId }">
@@ -1156,6 +1180,7 @@
                         <span class="rk">{{ p.rank }}</span>
                         <span class="nm">{{ p.username }}</span>
                         <span class="sc" v-if="p.points !== undefined">{{ endScore(p) }}</span>
+                        <span class="sc" v-else-if="p.isTeam">{{ p.lives || 0 }}<em> en vie</em></span>
                         <span class="v2-end-hp" v-else>
                             <i v-for="n in gameLives" :key="n" :class="{ off: n > (p.lives || 0) }">
                                 <svg viewBox="0 0 24 24" stroke-linejoin="round"><path d="M12 20.6s-7-4.3-9-8.4A5 5 0 0 1 12 6.6a5 5 0 0 1 9 5.6c-2 4.1-9 8.4-9 8.4z"/></svg>
@@ -1164,7 +1189,21 @@
                     </div>
                 </div>
 
-                <div class="v2-end-me" :class="{ vu: endStep >= 4 }" v-if="myEndRank && myEndRank.rank > 3">
+                <!-- Le camp gagne, mais on distingue quand même ceux qui l'ont porté -->
+                <div class="v2-end-camps" :class="{ vu: endStep >= 4 }" v-if="estFinEnCamps">
+                    <div class="v2-end-camp" v-for="c in campsPodium" :key="c.team" :class="'team-' + c.team">
+                        <span class="ttl"><i></i>{{ c.nom }}</span>
+                        <div class="v2-end-camp-row" v-for="p in c.joueurs" :key="p.twitchId || p.username"
+                             :class="{ moi: p.twitchId === twitchId }">
+                            <span class="rk">{{ p.rang }}</span>
+                            <span class="nm">{{ p.username }}</span>
+                            <span class="sc">{{ p.valeur }}<em v-if="p.unite"> {{ p.unite }}</em></span>
+                        </div>
+                        <div class="v2-end-camp-vide" v-if="!c.joueurs.length">Personne</div>
+                    </div>
+                </div>
+
+                <div class="v2-end-me" :class="{ vu: endStep >= 4 }" v-if="myEndRank && myEndRank.rank > 3 && !estFinEnCamps">
                     Tu termines <b>{{ myEndRank.rank }}<sup>e</sup></b>
                 </div>
 
@@ -1417,6 +1456,19 @@
                     <span>Plus rapide</span>
                     <b>{{ questionResults.fastestPlayer.username }}</b>
                     <em>{{ fastestTime }}<small>s</small></em>
+                </div>
+
+                <!-- En camps, l'hôte compare les deux côtés d'un coup d'oeil -->
+                <div class="v2q-camps-bars" v-if="lobbyMode === 'rivalry'">
+                    <div class="v2q-camp-bar" v-for="c in campsClasses" :key="c.team"
+                         :class="['team-' + c.team, { tete: c.tete }]">
+                        <span class="hd">
+                            <span class="nm">{{ c.nom }}</span>
+                            <span class="sc" v-if="gameMode === 'points'">{{ formatScore(c.score) }}</span>
+                            <span class="sc" v-else>{{ c.score }}<em>en vie</em></span>
+                        </span>
+                        <span class="rail"><i :style="{ width: c.part + '%' }"></i></span>
+                    </div>
                 </div>
 
                 <div class="v2q-ring-wrap">

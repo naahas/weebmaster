@@ -21,7 +21,7 @@ createApp({
             modes: [
                 // `plain: true` = illustration sans fond transparent : elle est alors
                 // cadrée dans le panneau au lieu de flotter comme un personnage détouré.
-                { id: 'classic',   name: 'Quiz',      kind: 'Solo ou équipes', players: '∞',  img: 'lambo2.png',
+                { id: 'classic',   name: 'Classique', kind: 'Solo ou équipes', players: '∞',  img: 'lambo2.png',
                   desc: "Quiz QCM. Solo ou en deux camps, vies ou points, séries au choix." },
                 { id: 'bombanime', name: 'BombAnime', kind: 'Solo',   players: '13', img: 'lambo2.png',
                   desc: "La bombe tourne. Cite un perso avant qu'elle explose." },
@@ -437,8 +437,11 @@ createApp({
         },
 
         modeLabel() {
+            // 'rivalry' n'est plus un mode mais un réglage du quiz : le badge ne
+            // le trouvait pas dans la liste et retombait sur « Salon ».
+            if (this.lobbyMode === 'rivalry') return 'Classique';
             const m = this.modes.find(x => x.id === this.lobbyMode);
-            return m ? m.name : 'Salon';
+            return m ? m.name : 'Classique';
         },
 
         currentMode() {
@@ -704,6 +707,68 @@ createApp({
         confirmLabel() {
             if (this.confirmAction === 'leave') return 'Quitter';
             return this.gameInProgress ? 'Arrêter' : 'Fermer';
+        },
+
+        // Le camp du joueur : la liste du salon fait foi, la valeur locale dépanne
+        monCamp() {
+            if (this.lobbyMode !== 'rivalry') return null;
+            // En jeu la liste du salon peut dater : les résultats font alors foi
+            const listes = [
+                (this.questionResults && this.questionResults.playersData) || [],
+                this.lobbyPlayers || [],
+            ];
+            for (const l of listes) {
+                const moi = l.find(p => p.twitchId === this.twitchId);
+                if (moi && moi.team) return moi.team;
+            }
+            return this.selectedTeam || null;
+        },
+
+        // Les deux camps, du mieux placé au moins bien, avec leur part relative
+        campsClasses() {
+            const s = (this.questionResults && this.questionResults.teamScores) || this.teamScores || {};
+            const total = (s[1] || 0) + (s[2] || 0);
+            const camps = [1, 2].map(t => ({
+                team: t,
+                nom: this.teamNames[t],
+                score: s[t] || 0,
+                part: total ? Math.round((s[t] || 0) / total * 100) : 50,
+            })).sort((a, b) => b.score - a.score);
+            camps.forEach((c, i) => { c.tete = i === 0 && camps[0].score !== camps[1].score; });
+            return camps;
+        },
+
+        // Fin de partie en camps : les trois meilleurs de chaque côté
+        campsPodium() {
+            if (!this.gameEndData || !this.estFinEnCamps) return [];
+            const parPoints = this.gameEndData.gameMode === 'rivalry-points';
+            const tous = this.gameEndData.playersData || [];
+            const scores = this.gameEndData.teamScores || {};
+            const noms = this.gameEndData.teamNames || this.teamNames;
+
+            return [1, 2].map(t => ({
+                team: t,
+                nom: noms[t],
+                score: scores[t] || 0,
+                joueurs: tous
+                    .filter(p => p.team === t)
+                    .sort((a, b) => parPoints
+                        ? (b.points || 0) - (a.points || 0)
+                        : (b.correctAnswers || 0) - (a.correctAnswers || 0) || (b.lives || 0) - (a.lives || 0))
+                    .slice(0, 3)
+                    .map((p, i) => ({
+                        rang: i + 1,
+                        username: p.username,
+                        twitchId: p.twitchId,
+                        valeur: parPoints ? this.formatScore(p.points || 0) : (p.correctAnswers || 0),
+                        unite: parPoints ? '' : 'bonnes',
+                    })),
+            })).sort((a, b) => b.score - a.score);
+        },
+
+        estFinEnCamps() {
+            const m = this.gameEndData && this.gameEndData.gameMode;
+            return m === 'rivalry-lives' || m === 'rivalry-points';
         },
 
         // Six places au plus : au-delà, la liste déborderait en vertical
@@ -2501,6 +2566,12 @@ createApp({
                     return; // Ne pas afficher la notification
                 }
                 
+                if (data.message === 'Aucune partie active') {
+                    this.hasJoined = false;
+                    this.gameInProgress = false;
+                    return;
+                }
+
                 this.showNotification(data.message, 'error');
             });
 
