@@ -213,23 +213,20 @@
                     </button>
 
                     <div class="v2-join-box">
-                        <template>
-                            <span class="v2-join-label">Code du salon</span>
-                            <input
-                                type="text"
-                                class="v2-code-input" :class="{ ko: joinShake }"
-                                @input="joinError = ''"
-                                ref="codeInput"
-                                v-model="joinCode"
-                                @keyup.enter="joinRoom"
-                                placeholder="····"
-                                maxlength="4"
-                                autocomplete="off"
-                                spellcheck="false">
-                            <button class="v2-btn v2-btn-primary v2-btn-lg" @click="joinRoom">Rejoindre</button>
-                            <p class="v2-join-err" :class="{ vu: joinError }">{{ joinError }}</p>
-                        </template>
-
+                        <span class="v2-join-label">Code du salon</span>
+                        <input
+                            type="text"
+                            class="v2-code-input" :class="{ ko: joinShake }"
+                            @input="joinError = ''"
+                            ref="codeInput"
+                            v-model="joinCode"
+                            @keyup.enter="joinRoom"
+                            placeholder="····"
+                            maxlength="4"
+                            autocomplete="off"
+                            spellcheck="false">
+                        <button class="v2-btn v2-btn-primary v2-btn-lg" @click="joinRoom">Rejoindre</button>
+                        <p class="v2-join-err" :class="{ vu: joinError }">{{ joinError }}</p>
                     </div>
                 </section>
             </div>

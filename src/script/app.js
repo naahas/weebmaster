@@ -68,7 +68,6 @@ createApp({
             homeStatsTimer: null,
             creatingRoom: false,
             createError: '',
-            joinStep: 'code',
             joinCode: '',
             joinShake: false,
             joinError: '',
@@ -1450,7 +1449,6 @@ createApp({
 
         openJoin() {
             this.joinError = '';
-            this.joinStep = 'code';
             this.joinCode = '';
             this.homeScreen = 'join';
             // Le curseur se pose tout de suite : sur mobile le clavier s'ouvre avec
@@ -2160,7 +2158,6 @@ createApp({
                 // L'écran du code était resté sélectionné depuis l'entrée dans le salon
                 this.homeScreen = 'hub';
                 this.joinCode = '';
-                this.joinStep = 'code';
                 this.joinError = '';
                 this.gameStartedOnServer = false; // 🆕 Reset flag
                 this.gameEnded = false;
@@ -3779,7 +3776,6 @@ createApp({
             // sans personne dedans, et bloquait la création de la suivante.
             const etaitHote = this.isHost;
             this.joinCode = '';
-            this.joinStep = 'code';
             this.quitterSalonLocalement();
 
             if (etaitHote) {
