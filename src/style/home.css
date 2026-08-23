@@ -11796,16 +11796,16 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 /* Décompte du mode auto : un anneau sobre autour du bouton */
 .v2q-cmd-btn.toggle { position: relative; overflow: visible; }
 
-.v2q-auto-ring {
+.v2q-cmd-btn .v2q-auto-ring {
     position: absolute;
-    inset: -0.28rem;
-    width: auto;
-    height: auto;
+    inset: -0.3rem;
+    width: calc(100% + 0.6rem);
+    height: calc(100% + 0.6rem);
     pointer-events: none;
     transform: rotate(-90deg);
 }
 
-.v2q-auto-ring .fg {
+.v2q-cmd-btn .v2q-auto-ring .fg {
     fill: none;
     stroke: #6ee7b7;
     stroke-width: 2.2;
