@@ -323,6 +323,7 @@ createApp({
                 e.preventDefault();
                 this.toggleSound();
             }
+            if (e.key === 'Escape') this.surEchap();
         });
 
         setTimeout(() => {
@@ -1668,6 +1669,38 @@ createApp({
             } finally {
                 setTimeout(() => { this.shuffleBusy = false; }, 400);
             }
+        },
+
+        // Échap referme d'abord ce qui est ouvert par-dessus ; s'il ne reste
+        // que le salon, il vaut le bouton quitter (ou fermer, pour l'hôte).
+        surEchap() {
+            if (this.tabConflict) return;
+
+            // On tape dans un champ : Echap y annule la saisie, rien de plus
+            const actif = document.activeElement;
+            if (actif && /^(INPUT|TEXTAREA)$/.test(actif.tagName)) { actif.blur(); return; }
+
+            const calques = [
+                ['confirmAction', null],
+                ['showSeries', false],
+                ['campDetail', null],
+                ['showReport', false],
+                ['showQuestionStats', false],
+                ['showTopSheet', false],
+            ];
+            for (const [champ, ferme] of calques) {
+                if (this[champ]) {
+                    this[champ] = ferme;
+                    return;
+                }
+            }
+
+            // Le salon, hors partie : Échap revient à cliquer sur quitter
+            const dansLeSalon = !this.booting && (this.hasJoined || this.isHost) &&
+                                this.isGameActive && !this.gameInProgress && !this.gameEnded;
+            if (!dansLeSalon) return;
+            if (this.isHost) this.askCloseRoom();
+            else this.askLeaveRoom();
         },
 
         askCloseRoom() { this.confirmAction = 'close'; },
