@@ -2612,10 +2612,9 @@ createApp({
                     this.startEndReveal();
                 });
 
-                // 🆕 Nettoyer localStorage car la partie est terminée
-                localStorage.removeItem('hasJoinedLobby');
-                localStorage.removeItem('lobbyTwitchId');
-                localStorage.removeItem('selectedTeam');
+                // ⚠️ On ne touche pas à hasJoinedLobby : le joueur reste dans le
+                // salon après la partie, et l'hôte peut relancer. C'est le
+                // départ volontaire ou la fermeture du salon qui les efface.
                 });
 
             this.socket.on('error', (data) => {
