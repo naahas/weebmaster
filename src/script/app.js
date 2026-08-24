@@ -285,14 +285,11 @@ createApp({
                 usedNamesCount: 0,
                 // Alphabet personnel
                 myAlphabet: [],
-                alphabetLetters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
                 // Animations
                 justAddedLetters: [],
                 heartCompleting: false,
                 heartPulse: false,
                 mobileAlphabetPulse: false, // 📱 Animation bouton alphabet mobile
-                showLifeGained: false,
-                showLifeGainedAnimation: false, // 🎯 Animation bonus vie extra
                 successPlayerTwitchId: null,
                 lifeGainedPlayerTwitchId: null,
                 // Debug
@@ -2150,8 +2147,6 @@ createApp({
                     }
                 }
                 
-                // 🎴 Nettoyer Collect si le serveur n'est pas en mode Collect
-
                 if (state.inProgress && this.hasJoined) {
                         this.gameInProgress = true;
                 } else {
@@ -2564,7 +2559,7 @@ createApp({
                 if (data.teamNames) this.teamNames = data.teamNames;
                 if (data.teamCounts) this.teamCounts = data.teamCounts;
                 
-                // 💣 BombAnime / 🎴 Collect - Lobby plein
+                // 💣 BombAnime — lobby plein
                 if (data.lobbyMode === 'bombanime') {
                     this.isLobbyFull = data.isLobbyFull || false;
                     this.maxPlayers = data.maxPlayers || 13;
@@ -2753,7 +2748,7 @@ createApp({
                     localStorage.removeItem('selectedTeam');
                         }
                 
-                // 💣🎴 Lobby BombAnime/Collect plein
+                // 💣 Lobby BombAnime plein
                 if (data.message && data.message.includes('plein')) {
                     this.hasJoined = false; // Le joueur n'a PAS rejoint
                     this.joinPending = false; // Annuler le pending
@@ -2761,7 +2756,7 @@ createApp({
                     localStorage.removeItem('hasJoinedLobby');
                     localStorage.removeItem('lobbyTwitchId');
                     
-                    // 🎴💣 Animation shake + cooldown 3s (pour les deux modes)
+                    // 💣 Secousse puis trois secondes avant de réessayer
                     this.lobbyShakeError = true;
                     this.joinCooldown = true;
                     

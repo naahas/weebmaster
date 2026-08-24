@@ -319,7 +319,7 @@ app.get('/game/state', (req, res) => {
         updateTeamScores(gameState); // 🆕 Calculer les scores d'équipe
     }
     
-    // 💣🎴 Vérifier si le lobby BombAnime/Collect est plein
+    // 💣 Vérifier si le lobby BombAnime est plein
     const isBombanimeMode = gameState.lobbyMode === 'bombanime';
     const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : Infinity;
     const isLobbyFull = isBombanimeMode && gameState.players.size >= maxPlayers;
@@ -728,7 +728,7 @@ function broadcastLobbyUpdate(gameState) {
         updateTeamCounts(gameState);
     }
     
-    // 💣🎴 Vérifier si le lobby BombAnime/Collect est plein
+    // 💣 Vérifier si le lobby BombAnime est plein
     const isBombanimeMode = gameState.lobbyMode === 'bombanime';
     const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : Infinity;
     const isLobbyFull = isBombanimeMode && gameState.players.size >= maxPlayers;
@@ -742,7 +742,7 @@ function broadcastLobbyUpdate(gameState) {
         lobbyMode: gameState.lobbyMode,
         teamNames: gameState.teamNames,
         teamCounts: gameState.teamCounts,
-        // BombAnime/Collect - Lobby plein
+        // BombAnime - Lobby plein
         maxPlayers: maxPlayers,
         isLobbyFull: isLobbyFull,
         // Liste des joueurs
@@ -1145,7 +1145,7 @@ app.use('/admin', (req, res, next) => {
 
 app.get('/admin/game-state', (req, res) => {
     const gameState = req.room;   // posée par le garde-fou d'hôte
-    // 💣🎴 Vérifier si le lobby BombAnime/Collect est plein
+    // 💣 Vérifier si le lobby BombAnime est plein
     const isBombanimeMode = gameState.lobbyMode === 'bombanime';
     const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : Infinity;
     const isLobbyFull = isBombanimeMode && gameState.players.size >= maxPlayers;
@@ -1287,9 +1287,8 @@ app.post('/admin/bombanime/close-lobby', (req, res) => {
     // Notifier les clients
     diffuser(gameState, 'game-deactivated');
     diffuser(gameState, 'bombanime-lobby-closed');
-    diffuser(gameState, 'collect-state', { active: false });
     
-    console.log('🔒 Lobby fermé (BombAnime/Collect reset)');
+    console.log('🔒 Lobby BombAnime fermé');
     res.json({ success: true });
 });
 
@@ -5404,7 +5403,7 @@ io.on('connection', (socket) => {
             }
         }
         
-        // 💣🎴 En mode BombAnime/Collect, vérifier la limite avec les places réservées
+        // 💣 En BombAnime, vérifier la limite avec les places réservées
         if (gameState.lobbyMode === 'bombanime' && !isReconnection) {
             const maxPlayers = BOMBANIME_CONFIG.MAX_PLAYERS;
             const currentCount = gameState.players.size + gameState.pendingJoins.size;
