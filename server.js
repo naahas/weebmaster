@@ -112,7 +112,7 @@ function getCharacterImage(name, serie) {
 // Configuration BombAnime
 const BOMBANIME_CONFIG = {
     MIN_PLAYERS: 2,
-    MAX_PLAYERS: 20,
+    MAX_PLAYERS: 15,
     DEFAULT_LIVES: 2,
     DEFAULT_TIMER: 8,
     MIN_TIMER: 5,

@@ -157,7 +157,7 @@ createApp({
             
             // 💣 BombAnime - Lobby plein
             isLobbyFull: false,
-            maxPlayers: 20,
+            maxPlayers: 15,
             lobbyFullError: false,
             joinCooldown: false,
 
@@ -2605,7 +2605,7 @@ createApp({
                 // 💣 BombAnime — lobby plein
                 if (data.lobbyMode === 'bombanime') {
                     this.isLobbyFull = data.isLobbyFull || false;
-                    this.maxPlayers = data.maxPlayers || 20;
+                    this.maxPlayers = data.maxPlayers || 15;
                     // Reset l'erreur si le lobby n'est plus plein
                     if (!data.isLobbyFull && this.lobbyFullError) {
                         this.lobbyFullError = false;

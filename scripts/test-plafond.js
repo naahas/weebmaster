@@ -1,4 +1,6 @@
-// Vingt joueurs en BombAnime : le plafond, le refus au-delà, et le démarrage.
+// Le plafond de BombAnime : remplissage, refus du joueur de trop, démarrage.
+// Une seule valeur à changer ici quand le plafond bouge.
+const PLAFOND = 15;
 const { io } = require('socket.io-client');
 const BASE = 'http://localhost:' + (process.env.TEST_PORT || process.env.PORT || 7000);
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
@@ -23,22 +25,24 @@ const check = (l, ok, extra) => { console.log(`${ok ? '✅' : '❌'} ${l}${extra
 
     const s = io(BASE);
     await new Promise(r => s.on('connect', r));
-    s.emit('register-authenticated', { twitchId: 'hote20', username: 'Hote' });
+    s.emit('register-authenticated', { twitchId: 'hotePlafond', username: 'Hote' });
     await wait(150);
-    s.emit('join-lobby', { twitchId: 'hote20', username: 'Hote', isHost: true, code, hostToken: jeton });
+    s.emit('join-lobby', { twitchId: 'hotePlafond', username: 'Hote', isHost: true, code, hostToken: jeton });
     await wait(400);
 
     let e = await etat();
-    check('le plafond annoncé est bien vingt', e.maxPlayers === 20, e.maxPlayers);
+    check('le plafond annoncé est celui attendu', e.maxPlayers === PLAFOND,
+        e.maxPlayers + ' (attendu ' + PLAFOND + ')');
 
-    // On demande trente bots : le serveur ne doit en accepter que dix-neuf
-    s.emit('dev-add-bots', { count: 30, hostToken: jeton });
+    // On en demande bien plus que la place : le serveur s'arrête au plafond
+    s.emit('dev-add-bots', { count: PLAFOND + 15, hostToken: jeton });
     await wait(700);
     e = await etat();
-    check('le salon se remplit jusqu au plafond', e.playerCount === 20, e.playerCount + ' joueur(s)');
+    check('le salon se remplit jusqu au plafond', e.playerCount === PLAFOND,
+        e.playerCount + ' joueur(s)');
     check('le salon se déclare plein', e.isLobbyFull === true, 'isLobbyFull=' + e.isLobbyFull);
 
-    // Un vingt-et-unième doit être refusé
+    // Le joueur de trop doit être refusé
     const tard = io(BASE);
     await new Promise(r => tard.on('connect', r));
     let refus = '';
@@ -48,17 +52,17 @@ const check = (l, ok, extra) => { console.log(`${ok ? '✅' : '❌'} ${l}${extra
     tard.emit('join-lobby', { twitchId: 'tardif', username: 'Tardif', code });
     await wait(600);
     e = await etat();
-    check('le vingt-et-unième est refusé', e.playerCount === 20 && /plein/i.test(refus),
+    check('le joueur de trop est refusé', e.playerCount === PLAFOND && /plein/i.test(refus),
         e.playerCount + ' joueur(s), message « ' + refus + ' »');
 
     const depart = await post('/admin/start-game', {});
-    check('la manche démarre à vingt', depart.body.success === true, depart.body.error || 'ok');
+    check('la manche démarre au complet', depart.body.success === true, depart.body.error || 'ok');
 
     await wait(400);
     await post('/admin/toggle-game', {});
     s.close(); tard.close();
     await wait(300);
 
-    console.log(ko ? `\n${ko} échec(s)` : '\n✨ BombAnime tient vingt joueurs');
+    console.log(ko ? `\n${ko} échec(s)` : `\n✨ BombAnime tient ses ${PLAFOND} joueurs`);
     process.exit(ko ? 1 : 0);
 })();
