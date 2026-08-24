@@ -73,6 +73,9 @@ createApp({
             // Douze seulement étaient proposées : les neuf autres existaient en
             // données sans que personne puisse les choisir.
             bombanimeSeries: [
+                { id: 'Prota', nom: 'Protagonistes' },
+                { id: 'Manganime', nom: 'Manganime' },
+                { id: 'Studio', nom: 'Studios' },
                 { id: 'Naruto', nom: 'Naruto' },
                 { id: 'OnePiece', nom: 'One Piece' },
                 { id: 'Dbz', nom: 'Dragon Ball' },
@@ -91,9 +94,6 @@ createApp({
                 { id: 'Gintama', nom: 'Gintama' },
                 { id: 'Pokemon', nom: 'Pokémon' },
                 { id: 'Reborn', nom: 'Reborn' },
-                { id: 'Prota', nom: 'Protagonistes' },
-                { id: 'Studio', nom: 'Studios' },
-                { id: 'Manganime', nom: 'Manganime' },
             ],
             homeScreen: 'hub',    // hub | modes | join
             editingPseudo: false,
