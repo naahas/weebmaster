@@ -1935,6 +1935,17 @@ createApp({
             // Sans ça, le badge de mode gardait « BombAnime » sur l'accueil
             this.lobbyMode = 'classic';
             sessionStorage.removeItem('bombanimeInProgress');
+            sessionStorage.removeItem('bombanimeSuggestionUsed');
+            // La partie elle-même : « gameInProgress » se relit de sessionStorage
+            // au démarrage, et tant qu'il vaut vrai l'accueil reste masqué
+            // derrière un écran de jeu sans joueurs.
+            this.gameInProgress = false;
+            this.gameStartedOnServer = false;
+            this.gameEnded = false;
+            this.gameEndData = null;
+            this.bombanime.active = false;
+            this.bombanime.playersData = [];
+            document.body.classList.remove('game-active');
             this.isHost = false;
             this.roomCode = null;
             this.hasJoined = false;
@@ -2134,23 +2145,12 @@ createApp({
                 this.gameStartedOnServer = state.inProgress;
 
                 if (!state.isActive) {
-                    localStorage.removeItem('hasJoinedLobby');
-                    localStorage.removeItem('lobbyTwitchId');
-                    localStorage.removeItem('selectedTeam');
-        
-                    // 🔧 Le salon n'existe plus (serveur redémarré, salon fermé) : sans ce
-                    // reset, un ancien isHost/roomCode cachait à la fois l'accueil et le
-                    // salon, et la page restait vide.
-                    this.hasJoined = false;
-                    this.isHost = false;
-                    this.roomCode = null;
-                    this.selectedTeam = null;
-                    this.homeScreen = 'hub';
-                    localStorage.removeItem('isHost');
-            localStorage.removeItem('hostToken');
-            this.hostToken = '';
-                    localStorage.removeItem('roomCode');
-
+                    // 🔧 Le salon n'existe plus : serveur redémarré, salon fermé, ou
+                    // dyno recyclé en pleine partie. Un ancien isHost/roomCode cachait
+                    // à la fois l'accueil et le salon, et la page restait vide ; un
+                    // ancien « bombanimeInProgress » faisait pire, en affichant un
+                    // écran de jeu sans aucun joueur dedans. On efface tout.
+                    this.quitterSalonLocalement();
                     console.log('🧹 État local nettoyé (aucun salon actif)');
                     return;
                 }
