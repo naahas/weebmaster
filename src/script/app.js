@@ -4083,11 +4083,17 @@ createApp({
         injectShatterEffect(hex) {
             if (hex.querySelector('.shatter-container')) return;
             const c = document.createElement('div'); c.className = 'shatter-container';
+            // Les fragments étaient posés à 35 px du bord, soit le centre d'un
+            // hexagone de 70 px — la seule taille qu'il ait jamais eue. Depuis
+            // qu'elle varie avec le nombre de joueurs, la gerbe partait du coin.
+            const echelle = (hex.offsetWidth || 70) / 70;
             for (let i = 0; i < 14; i++) {
                 const s = document.createElement('div'); s.className = 'shatter-shard';
-                const a = (Math.PI*2*i)/14+(Math.random()-0.5)*0.4, d = 10+Math.random()*20;
-                const fd = 40+Math.random()*60, sx = Math.cos(a)*fd, sy = Math.sin(a)*fd;
-                s.style.cssText = `left:${35+Math.cos(a)*d-8}px;top:${35+Math.sin(a)*d-5}px;width:${8+Math.random()*12}px;height:${5+Math.random()*10}px;`+
+                const a = (Math.PI*2*i)/14+(Math.random()-0.5)*0.4, d = (10+Math.random()*20)*echelle;
+                const fd = (40+Math.random()*60)*echelle, sx = Math.cos(a)*fd, sy = Math.sin(a)*fd;
+                const lg = (8+Math.random()*12)*echelle, ht = (5+Math.random()*10)*echelle;
+                s.style.cssText = `left:calc(50% + ${(Math.cos(a)*d).toFixed(1)}px);top:calc(50% + ${(Math.sin(a)*d).toFixed(1)}px);`+
+                    `margin-left:${(-lg/2).toFixed(1)}px;margin-top:${(-ht/2).toFixed(1)}px;width:${lg.toFixed(1)}px;height:${ht.toFixed(1)}px;`+
                     `clip-path:polygon(${Math.random()*30}% ${Math.random()*20}%,${60+Math.random()*40}% ${Math.random()*30}%,${70+Math.random()*30}% ${60+Math.random()*40}%,${Math.random()*40}% ${70+Math.random()*30}%);`+
                     `--sx:${sx}px;--sy:${sy}px;--sr:${(Math.random()-0.5)*180}deg;--sd:${(i*0.02).toFixed(2)}s;--dur:${(0.8+Math.random()*0.6).toFixed(2)}s;`+
                     `background:linear-gradient(${Math.random()*360}deg,rgba(${~~(30+Math.random()*20)},${~~(20+Math.random()*15)},${~~(40+Math.random()*20)},0.9),rgba(${~~(50+Math.random()*30)},${~~(25+Math.random()*15)},${~~(30+Math.random()*20)},0.7));`;

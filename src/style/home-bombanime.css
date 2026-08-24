@@ -600,6 +600,22 @@
     stroke: rgba(255, 255, 255, 0.02);
 }
 
+/* Un anneau intact autour d'un hexagone fissuré ferait lire la pastille comme
+   indemne — et il survivrait à l'élimination en contour flottant. Il accuse
+   donc le coup, sauf pendant le tour du joueur : là, l'or prime. */
+.bombanime-player-slot.cracked:not(.active) .player-hex svg.hex-anneau polygon {
+    stroke: rgba(255, 255, 255, 0.05);
+}
+
+.bombanime-player-slot.shattering .player-hex svg.hex-anneau {
+    animation: anneau-se-defait 0.5s ease-out forwards;
+}
+
+@keyframes anneau-se-defait {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.35); }
+}
+
 .player-avatar {
     position: absolute;
     left: 50%;
