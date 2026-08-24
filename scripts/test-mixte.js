@@ -17,11 +17,12 @@ const check = (l, ok, extra) => { console.log(`${ok ? '✅' : '❌'} ${l}${extra
 async function joueur(id, nom, code) {
     const s = io(BASE, { transports: ['websocket'] });
     await new Promise(r => s.on('connect', r));
-    const vu = { questions: [], tours: [], explosions: [], departs: [], erreurs: [] };
+    const vu = { questions: [], tours: [], explosions: [], departs: [], erreurs: [], acceptes: [] };
     s.on('new-question', (q) => vu.questions.push(q));
     s.on('bombanime-turn-start', (d) => vu.tours.push(d));
     s.on('bombanime-explosion', (d) => vu.explosions.push(d));
     s.on('bombanime-game-started', (d) => vu.departs.push(d));
+    s.on('bombanime-name-accepted', (d) => vu.acceptes.push(d));
     s.on('game-started', (d) => vu.departs.push(d));
     s.on('error', (e) => vu.erreurs.push(e.message));
     s.emit('register-authenticated', { twitchId: id, username: nom });
@@ -34,9 +35,9 @@ async function joueur(id, nom, code) {
     const PLAN = [
         { mode: 'classic',   n: 8,  nom: 'Quiz A' },
         { mode: 'classic',   n: 10, nom: 'Quiz B' },
-        { mode: 'bombanime', n: 5,  nom: 'Bomb A' },
-        { mode: 'bombanime', n: 7,  nom: 'Bomb B' },
-        { mode: 'bombanime', n: 9,  nom: 'Bomb C' },
+        { mode: 'bombanime', n: 5,  nom: 'Bomb A', serie: 'Naruto',   timer: 6,  vies: 1 },
+        { mode: 'bombanime', n: 7,  nom: 'Bomb B', serie: 'Naruto',   timer: 10, vies: 2 },
+        { mode: 'bombanime', n: 9,  nom: 'Bomb C', serie: 'OnePiece', timer: 8,  vies: 2 },
     ];
     console.log(`\n🎯 ${PLAN.length} salons : ${PLAN.map(p => p.nom + ' (' + p.n + ')').join(', ')}\n`);
 
@@ -44,7 +45,10 @@ async function joueur(id, nom, code) {
     const salons = [];
     for (const p of PLAN) {
         const r = await post('/admin/toggle-game', null, {
-            lobbyMode: p.mode, bombanimeSerie: 'Naruto', bombanimeTimer: 8, bombanimeLives: 2,
+            lobbyMode: p.mode,
+            bombanimeSerie: p.serie || 'Naruto',
+            bombanimeTimer: p.timer || 8,
+            bombanimeLives: p.vies || 2,
         });
         if (!r.roomCode) { console.log(`❌ ${p.nom} non ouvert`); process.exit(1); }
         salons.push({ ...p, code: r.roomCode, jeton: r.hostToken, joueurs: [] });
@@ -68,6 +72,15 @@ async function joueur(id, nom, code) {
     check('les modes ne se mélangent pas', etats.every((e, i) => e.lobbyMode === salons[i].mode),
         etats.map(e => e.lobbyMode).join(' '));
 
+    // Série, durée du tour et vies vivent dans l'état du salon : trois parties
+    // simultanées ne doivent pas se voler leurs réglages.
+    const bombes = salons.map((s, i) => ({ s, e: etats[i] })).filter(x => x.s.mode === 'bombanime');
+    check('chaque salon BombAnime garde ses réglages',
+        bombes.every(({ s, e }) => e.bombanime.serie === s.serie
+            && e.bombanime.timer === s.timer && e.bombanime.lives === s.vies),
+        bombes.map(({ s, e }) => s.nom + '=' + e.bombanime.serie + '/'
+            + e.bombanime.timer + 's/' + e.bombanime.lives + 'v').join(' '));
+
     // ── Tout démarre en même temps ──
     await Promise.all(salons.map(s => post('/admin/start-game', s.jeton, {})));
     await wait(6000);
@@ -90,6 +103,21 @@ async function joueur(id, nom, code) {
         const aNous = designe && s.joueurs.some(j => j.id === designe.currentPlayerTwitchId);
         check(`${s.nom} : la bombe désigne un des siens`, !!aNous,
             designe ? designe.currentPlayerUsername : 'personne');
+    }
+
+    // ── Le même personnage doit passer dans deux salons à la fois ──
+    // Les noms déjà cités sont mémorisés par salon. S'ils étaient partagés, le
+    // second salon refuserait « NARUTO » sous prétexte qu'il a déjà servi.
+    const surNaruto = salons.filter(x => x.mode === 'bombanime' && x.serie === 'Naruto');
+    // Tout le monde le tente : seul celui dont c'est le tour sera écouté, ce qui
+    // évite de courir après le joueur désigné du moment.
+    for (const s of surNaruto) {
+        s.joueurs.forEach(j => j.s.emit('bombanime-submit-name', { name: 'NARUTO' }));
+    }
+    await wait(1200);
+    for (const s of surNaruto) {
+        const pris = s.joueurs.reduce((n, j) => n + j.vu.acceptes.length, 0);
+        check(`${s.nom} : « NARUTO » est accepté chez lui`, pris > 0, pris + ' acceptation(s)');
     }
 
     // ── Les bombes explosent chacune chez soi ──

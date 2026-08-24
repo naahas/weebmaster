@@ -3599,7 +3599,7 @@ createApp({
                     if (input) input.focus();
                 });
                 
-                this.showNotification(`🎁 Perso gratuit: ${data.character} - Appuie sur Entrée !`, 'info');
+                // Pas de bandeau : le nom s'écrit déjà tout seul dans le champ
             });
             
             // 🎯 BONUS BOMBANIME - Vie extra utilisée
@@ -3614,10 +3614,6 @@ createApp({
                     this.bombanime.bonuses = data.bonusesRemaining;
                 }
                 
-                // Notification
-                if (data.wasWasted) {
-                } else {
-                }
                 // L'animation est déclenchée par bombanime-player-lives-updated
             });
             
@@ -3657,7 +3653,10 @@ createApp({
                         message = 'Plus de personnages disponibles !';
                         break;
                 }
-                this.showNotification(`❌ ${message}`, 'error');
+                // Le refus reste dans la console : le bouton est déjà grisé
+                // quand le bonus n'est pas disponible, un bandeau en plus
+                // couvrirait le cercle au pire moment.
+                console.log('❌ ' + message);
             });
             
         },
@@ -4756,14 +4755,8 @@ createApp({
         
         // 🎯 Utiliser le bonus "Perso Gratuit"
         useBombanimeFreeCharacter() {
-            if (!this.bombanime.isMyTurn) {
-                this.showNotification('❌ Ce n\'est pas ton tour !', 'error');
-                return;
-            }
-            if (!this.bombanime.bonuses || this.bombanime.bonuses.freeCharacter <= 0) {
-                this.showNotification('❌ Tu n\'as pas ce bonus !', 'error');
-                return;
-            }
+            if (!this.bombanime.isMyTurn) return;
+            if (!this.bombanime.bonuses || this.bombanime.bonuses.freeCharacter <= 0) return;
             
             console.log('🎁 Utilisation bonus Perso Gratuit');
             this.socket.emit('bombanime-use-free-character');
@@ -4771,10 +4764,7 @@ createApp({
         
         // 🎯 Utiliser le bonus "Vie Extra"
         useBombanimeExtraLife() {
-            if (!this.bombanime.bonuses || this.bombanime.bonuses.extraLife <= 0) {
-                this.showNotification('❌ Tu n\'as pas ce bonus !', 'error');
-                return;
-            }
+            if (!this.bombanime.bonuses || this.bombanime.bonuses.extraLife <= 0) return;
             
             console.log('❤️ Utilisation bonus Vie Extra');
             this.socket.emit('bombanime-use-extra-life');

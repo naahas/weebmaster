@@ -1006,7 +1006,8 @@
 
 .player-lock {
     position: absolute;
-    right: -38px;
+    /* Deux pixels de plus vers l'extérieur : il mordait sur la pastille */
+    right: -40px;
     top: 50%;
     transform: translateY(-50%) rotate(8deg);
     opacity: 0;
@@ -2856,7 +2857,7 @@
     
     /* Cadenas */
     .player-lock {
-        right: -34px;
+        right: -36px;
     }
     
     .player-lock svg {
@@ -2946,7 +2947,7 @@
     }
     
     .player-lock {
-        right: -22px;
+        right: -24px;
     }
     
     .player-lock svg {
@@ -3101,7 +3102,7 @@
 
     /* Cadenas */
     .player-lock {
-        right: -36px;
+        right: -38px;
     }
 
     .player-lock svg {
