@@ -1051,6 +1051,13 @@ function getAlivePlayers(gameState) {
 
 
 // 🧪 Page de travail : prototypes de mise en page de l'accueil
+// Les pages de prototypes sont des pages de travail : elles n ont rien a faire
+// sur le site public. Une seule garde suffit, montee avant toutes leurs routes.
+app.use('/prototypes', (req, res, next) => {
+    if (process.env.NODE_ENV === 'production') return res.status(404).send('Introuvable');
+    next();
+});
+
 app.get('/prototypes', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes.html');
 });
