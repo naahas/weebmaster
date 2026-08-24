@@ -6347,6 +6347,19 @@ process.on('unhandledRejection', (error) => {
 });
 
 
+// Un port déjà occupé est le cas le plus banal en développement : un serveur
+// oublié dans un autre terminal. Une trace de vingt lignes n'aide personne.
+server.on('error', (err) => {
+    if (err.code !== 'EADDRINUSE') throw err;
+    console.error(`
+❌ Le port ${PORT} est déjà pris — un autre serveur tourne sans doute déjà.`);
+    console.error('   Pour voir lequel :  netstat -ano | findstr :' + PORT);
+    console.error('   Pour le fermer   :  taskkill /F /PID <numéro>');
+    console.error(`   Ou lancer ailleurs :  PORT=7001 npm start
+`);
+    process.exit(1);
+});
+
 process.on('uncaughtException', (error) => {
     console.error('❌ Uncaught exception:', error);
     process.exit(1);
