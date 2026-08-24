@@ -9690,23 +9690,34 @@ body.game-active:has(.poll-game-container) #particles-js {
        d'une ligne compte six fois ici, donc l'interligne autant que la taille
        du texte — et la pastille de repère fixait un plancher qu'aucun rognage
        de marge ne pouvait franchir. */
-    .v2q-answers.six { gap: 0.3rem; }
+    .v2q-answers.six { gap: 0.25rem; }
 
     .v2q-answers.six .v2q-answer {
-        padding: 0.5rem 1.45rem 0.5rem 0.55rem;
-        gap: 0.5rem;
-        border-radius: 0.5rem;
+        padding: 0.4rem 1.35rem 0.4rem 0.5rem;
+        gap: 0.45rem;
+        border-radius: 0.45rem;
     }
 
     .v2q-answers.six .v2q-mark {
-        width: 1.35rem;
-        height: 1.35rem;
-        font-size: 0.6rem;
-        border-radius: 0.32rem;
+        width: 1.15rem;
+        height: 1.15rem;
+        font-size: 0.55rem;
+        border-radius: 0.28rem;
     }
 
-    .v2q-answers.six .v2q-answer-text { font-size: 0.8rem; line-height: 1.25; }
-    .v2q-answers.six .v2q-answer-pct { right: 0.5rem; font-size: 0.78rem; }
+    .v2q-answers.six .v2q-answer-text { font-size: 0.76rem; line-height: 1.2; }
+    .v2q-answers.six .v2q-answer-pct { right: 0.45rem; font-size: 0.72rem; }
+
+    /* Le panneau garde ses marges de question à quatre réponses alors qu'il
+       n'y a plus rien à en faire. :has() ne vise que les questions à six :
+       si le navigateur ne le connaît pas, elles gardent simplement l'ancienne
+       mise en page. */
+    .v2q-panel:has(.v2q-answers.six) { padding: 1.7rem 0.85rem 0.9rem; }
+    .v2q-panel:has(.v2q-answers.six) .v2q-badges { margin: 0.35rem 0 0.8rem; }
+    .v2q-panel:has(.v2q-answers.six) .v2q-question {
+        font-size: 0.94rem;
+        margin-bottom: 0.85rem;
+    }
     .v2q-question { font-size: 1.02rem; margin-bottom: 1.4rem; }
     .v2q-panel { padding: 2.3rem 1.1rem 1.3rem; }
     .v2q-badges { margin: 0.6rem 0 1.4rem; }
