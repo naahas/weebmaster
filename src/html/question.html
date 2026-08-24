@@ -109,6 +109,110 @@
         }
 
         /* Tabs */
+        /* ── Suggestions des joueurs ── */
+        .sug-badge {
+            display: inline-grid;
+            place-items: center;
+            min-width: 1.15rem;
+            height: 1.15rem;
+            margin-left: 0.35rem;
+            padding: 0 0.3rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #14100a;
+            background: #ffd24a;
+            border-radius: 1rem;
+        }
+
+        .sug-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.6rem;
+            margin-bottom: 1rem;
+        }
+
+        .sug-filtres { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+
+        .sug-f, .sug-refresh {
+            padding: 0.4rem 0.85rem;
+            font-family: inherit;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            border-radius: 2rem;
+            cursor: pointer;
+        }
+
+        .sug-f:hover, .sug-refresh:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+        .sug-f.active { color: #14100a; background: linear-gradient(135deg, #ffe066, #ffd24a); }
+
+        .sug-carte {
+            padding: 0.85rem 1rem;
+            margin-bottom: 0.5rem;
+            background: rgba(255, 255, 255, 0.035);
+            border-left: 0.2rem solid rgba(255, 255, 255, 0.12);
+            border-radius: 0.5rem;
+        }
+
+        .sug-carte.statut-approved { border-left-color: #6ee7b7; }
+        .sug-carte.statut-rejected { border-left-color: #ff6b6b; opacity: 0.6; }
+        .sug-carte.statut-pending  { border-left-color: #ffd24a; }
+
+        .sug-haut {
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-bottom: 0.35rem;
+        }
+
+        .sug-nom { font-size: 1rem; font-weight: 700; color: #fff; }
+        .sug-serie { font-size: 0.75rem; color: rgba(255, 210, 74, 0.75); }
+        .sug-etat {
+            margin-left: auto;
+            font-size: 0.65rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.35);
+        }
+
+        .sug-bas {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+
+        .sug-meta { font-size: 0.72rem; color: rgba(255, 255, 255, 0.4); }
+        .sug-actions { margin-left: auto; display: flex; gap: 0.35rem; }
+
+        .sug-actions button {
+            padding: 0.3rem 0.7rem;
+            font-family: inherit;
+            font-size: 0.72rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 2rem;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.75);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .sug-ok:hover  { color: #14100a; background: #6ee7b7; }
+        .sug-no:hover  { color: #fff;    background: rgba(255, 107, 107, 0.8); }
+        .sug-del:hover { color: #fff;    background: rgba(255, 255, 255, 0.18); }
+
+        .sug-vide {
+            padding: 2rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.35);
+        }
+
         .tabs {
             display: flex;
             gap: 8px;
@@ -1108,6 +1212,7 @@
                 <div class="tabs">
                     <button class="tab-btn active" onclick="switchTab('add')">+ Ajouter</button>
                     <button class="tab-btn" onclick="switchTab('list')">📋 Liste</button>
+                    <button class="tab-btn" onclick="switchTab('suggestions')">🎌 Suggestions <span id="sugBadge" class="sug-badge" hidden>0</span></button>
                 </div>
 
                 <!-- Tab: Ajouter -->
@@ -1213,6 +1318,20 @@
                 </div>
 
                 <!-- Tab: Liste -->
+                <!-- Onglet : ce que les joueurs proposent -->
+                <div class="tab-content" id="tabSuggestions">
+                    <div class="sug-bar">
+                        <div class="sug-filtres">
+                            <button class="sug-f active" data-statut="pending" onclick="filtrerSuggestions('pending')">En attente</button>
+                            <button class="sug-f" data-statut="approved" onclick="filtrerSuggestions('approved')">Acceptées</button>
+                            <button class="sug-f" data-statut="rejected" onclick="filtrerSuggestions('rejected')">Refusées</button>
+                            <button class="sug-f" data-statut="all" onclick="filtrerSuggestions('all')">Toutes</button>
+                        </div>
+                        <button class="sug-refresh" onclick="chargerSuggestions()">Rafraîchir</button>
+                    </div>
+                    <div id="sugListe"></div>
+                </div>
+
                 <div class="tab-content" id="tabList">
                     <!-- Header actions -->
                     <div class="list-header-top">
@@ -1443,7 +1562,101 @@
                 document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
                 document.getElementById('tabList').classList.add('active');
                 loadQuestions();
+            } else if (tab === 'suggestions') {
+                document.querySelector('.tab-btn:nth-child(3)').classList.add('active');
+                document.getElementById('tabSuggestions').classList.add('active');
+                chargerSuggestions();
             }
+        }
+
+        // ============================================
+        // 🎌 SUGGESTIONS DES JOUEURS
+        // ============================================
+        let sugStatut = 'pending';
+
+        function filtrerSuggestions(statut) {
+            sugStatut = statut;
+            document.querySelectorAll('.sug-f').forEach(b => {
+                b.classList.toggle('active', b.dataset.statut === statut);
+            });
+            chargerSuggestions();
+        }
+
+        function quandSug(iso) {
+            if (!iso) return '';
+            const s = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+            if (s < 60) return "à l'instant";
+            const m = Math.round(s / 60);
+            if (m < 60) return 'il y a ' + m + ' min';
+            const hh = Math.round(m / 60);
+            if (hh < 24) return 'il y a ' + hh + ' h';
+            return 'il y a ' + Math.round(hh / 24) + ' j';
+        }
+
+        async function chargerSuggestions() {
+            const zone = document.getElementById('sugListe');
+            zone.innerHTML = '<div class="loading-state"><div class="loading-spinner"></div></div>';
+            try {
+                const r = await fetch('/api/suggestions?status=' + sugStatut +
+                                      '&adminCode=' + encodeURIComponent(adminCode));
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                const { suggestions, counts } = await r.json();
+
+                // Le badge de l'onglet ne compte que ce qui attend une décision
+                const badge = document.getElementById('sugBadge');
+                const attente = (counts && counts.pending) || 0;
+                badge.textContent = attente;
+                badge.hidden = attente === 0;
+
+                if (!suggestions.length) {
+                    zone.innerHTML = '<div class="sug-vide">Rien à relire ici.</div>';
+                    return;
+                }
+
+                zone.innerHTML = suggestions.map(s => `
+                    <div class="sug-carte statut-${s.status}" data-id="${s.id}">
+                        <div class="sug-haut">
+                            <span class="sug-nom">${(s.character_name || '').replace(/</g, '&lt;')}</span>
+                            <span class="sug-serie">${(s.anime || '').replace(/</g, '&lt;')}</span>
+                            <span class="sug-etat">${({ pending: 'en attente', approved: 'acceptée', rejected: 'refusée' })[s.status] || s.status}</span>
+                        </div>
+                        <div class="sug-bas">
+                            <span class="sug-meta">proposé par ${(s.submitted_by || 'anonyme').replace(/</g, '&lt;')} · ${quandSug(s.created_at)}</span>
+                            <span class="sug-actions">
+                                <button class="sug-ok" onclick="statuerSuggestion(${s.id}, 'approved')">Accepter</button>
+                                <button class="sug-no" onclick="statuerSuggestion(${s.id}, 'rejected')">Refuser</button>
+                                <button class="sug-del" onclick="supprimerSuggestion(${s.id})">Supprimer</button>
+                            </span>
+                        </div>
+                    </div>`).join('');
+            } catch (e) {
+                zone.innerHTML = '<div class="sug-vide">Lecture impossible (' + e.message + ').</div>';
+            }
+        }
+
+        async function statuerSuggestion(id, status) {
+            try {
+                const r = await fetch('/api/suggestion-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, status, adminCode }),
+                });
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                chargerSuggestions();
+            } catch (e) { alert('Échec : ' + e.message); }
+        }
+
+        async function supprimerSuggestion(id) {
+            if (!confirm('Supprimer cette suggestion ?')) return;
+            try {
+                const r = await fetch('/api/delete-suggestion', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, adminCode }),
+                });
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                chargerSuggestions();
+            } catch (e) { alert('Échec : ' + e.message); }
         }
 
         // Charger les questions
@@ -1459,9 +1672,18 @@
 
             try {
                 // Charger questions, séries et questions utilisées en parallèle
-                const [questionsRes, seriesRes, usedRes] = await Promise.all([
+                // La troisième requête visait /api/used-questions, disparue avec la
+                // progression de la v1. La phase 1 a coupé ici, en plein milieu de
+                // l'appel : le Promise.all n'était plus refermé, et une erreur de
+                // syntaxe dans un script en ligne condamne tout le bloc — plus rien
+                // ne se chargeait sur cette page, pas même la saisie du code.
+                const [questionsRes, seriesRes] = await Promise.all([
                     fetch(`/api/questions?adminCode=${encodeURIComponent(adminCode)}`),
                     fetch(`/api/series?adminCode=${encodeURIComponent(adminCode)}`),
+                ]);
+
+                const questionsData = await questionsRes.json();
+                const seriesData = await seriesRes.json();
 
                 if (questionsData.success) {
                     allQuestions = questionsData.questions;

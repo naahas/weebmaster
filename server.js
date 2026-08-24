@@ -1346,53 +1346,6 @@ app.post('/bombanime/player-suggestion', async (req, res) => {
     }
 });
 
-// Récupérer les suggestions
-app.get('/admin/bombanime/suggestions', async (req, res) => {
-    
-    try {
-        const { status } = req.query;
-        const suggestions = await db.getSuggestions(status || null);
-        const counts = await db.getSuggestionsCount();
-        
-        res.json({ suggestions, counts });
-    } catch (error) {
-        console.error('Erreur récupération suggestions:', error);
-        res.status(500).json({ error: 'Erreur serveur' });
-    }
-});
-
-// Mettre à jour le statut d'une suggestion
-app.post('/admin/bombanime/suggestion/:id/status', async (req, res) => {
-    
-    try {
-        const { id } = req.params;
-        const { status, adminNotes } = req.body;
-        
-        if (!['pending', 'approved', 'rejected'].includes(status)) {
-            return res.status(400).json({ error: 'Statut invalide' });
-        }
-        
-        const suggestion = await db.updateSuggestionStatus(parseInt(id), status, adminNotes);
-        res.json({ success: true, suggestion });
-    } catch (error) {
-        console.error('Erreur mise à jour suggestion:', error);
-        res.status(500).json({ error: 'Erreur serveur' });
-    }
-});
-
-// Supprimer une suggestion
-app.delete('/admin/bombanime/suggestion/:id', async (req, res) => {
-    
-    try {
-        const { id } = req.params;
-        await db.deleteSuggestion(parseInt(id));
-        res.json({ success: true });
-    } catch (error) {
-        console.error('Erreur suppression suggestion:', error);
-        res.status(500).json({ error: 'Erreur serveur' });
-    }
-});
-
 // Route séparée pour changer les vies
 app.post('/admin/set-lives', (req, res) => {
     const gameState = req.room;   // posée par le garde-fou d'hôte
@@ -4010,6 +3963,60 @@ app.get('/question', (req, res) => {
 });
 
 // API ajout question - avec code spécifique
+
+// ============================================
+// 🎌 SUGGESTIONS BOMBANIME — relecture depuis /question
+// Elles vivaient sous /admin, donc derrière le jeton d'hôte : un jeton de
+// salon de jeu, que le back-office n'a jamais. Personne ne pouvait donc les
+// relire autrement qu'en ouvrant Supabase.
+// ============================================
+const codeBackOffice = (req, res) => {
+    const code = req.body?.adminCode || req.query?.adminCode;
+    if (code !== process.env.QUESTION_ADMIN_CODE) {
+        res.status(401).json({ error: 'Code invalide' });
+        return false;
+    }
+    return true;
+};
+
+app.get('/api/suggestions', async (req, res) => {
+    if (!codeBackOffice(req, res)) return;
+    try {
+        const { status } = req.query;
+        const suggestions = await db.getSuggestions(status && status !== 'all' ? status : null);
+        const counts = await db.getSuggestionsCount();
+        res.json({ suggestions, counts });
+    } catch (e) {
+        console.error('Erreur lecture des suggestions:', e);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+app.post('/api/suggestion-status', async (req, res) => {
+    if (!codeBackOffice(req, res)) return;
+    const { id, status } = req.body;
+    if (!['pending', 'approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ error: 'Statut invalide' });
+    }
+    try {
+        const suggestion = await db.updateSuggestionStatus(parseInt(id, 10), status, null);
+        res.json({ success: true, suggestion });
+    } catch (e) {
+        console.error('Erreur mise à jour suggestion:', e);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+app.post('/api/delete-suggestion', async (req, res) => {
+    if (!codeBackOffice(req, res)) return;
+    try {
+        await db.deleteSuggestion(parseInt(req.body.id, 10));
+        res.json({ success: true });
+    } catch (e) {
+        console.error('Erreur suppression suggestion:', e);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
 
 app.post('/api/add-question', async (req, res) => {
     // Le corpus change : la banque en mémoire doit être relue
