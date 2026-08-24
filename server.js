@@ -520,19 +520,25 @@ function creerRoom() {
 // Un salon vide ne s'annonce nulle part : sans ménage, il resterait en
 // mémoire pour toujours. On laisse un délai de grâce — le temps qu'un hôte
 // qui rafraîchit sa page revienne.
-const GRACE_SALON_VIDE = 10 * 60 * 1000;
+const GRACE_SALON_VIDE = parseInt(process.env.GRACE_SALON_VIDE, 10) || 10 * 60 * 1000;
 
 setInterval(() => {
     const maintenant = Date.now();
     for (const r of [...rooms.values()]) {
-        if (r.players.size > 0) { r.videDepuis = null; continue; }
+        // Une partie dont plus personne n'est connecté est abandonnée, même si
+        // ses joueurs restent inscrits en attendant un retour.
+        const joueurs = [...r.players.values()];
+        const desert = joueurs.length === 0 ||
+            joueurs.every(p => p.disconnectedAt && maintenant - p.disconnectedAt > GRACE_SALON_VIDE);
+
+        if (!desert) { r.videDepuis = null; continue; }
         if (!r.videDepuis) { r.videDepuis = maintenant; continue; }
         if (maintenant - r.videDepuis > GRACE_SALON_VIDE) {
-            console.log(`🧹 Salon ${r.roomCode} vide depuis 10 min — fermé`);
+            console.log(`🧹 Salon ${r.roomCode} sans personne depuis 10 min — fermé`);
             fermerRoom(r);
         }
     }
-}, 60 * 1000);
+}, Math.min(60 * 1000, Math.max(1000, GRACE_SALON_VIDE)));
 
 function fermerRoom(gameState) {
     if (!gameState) return;
