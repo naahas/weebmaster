@@ -358,7 +358,7 @@
         }
 
         .pastille .pseudo {
-            font-size: 0.76rem;
+            font-size: 0.84rem;
             font-weight: 700;
             letter-spacing: 0.01em;
             color: rgba(255, 255, 255, 0.55);
@@ -377,8 +377,8 @@
 
         .porte img {
             display: block;
-            width: var(--taille, 72px);
-            height: var(--taille, 72px);
+            width: var(--taille, 88px);
+            height: var(--taille, 88px);
             object-fit: cover;
         }
 
@@ -417,8 +417,8 @@
         .coeurs { display: flex; gap: 0.15rem; }
 
         .coeurs svg {
-            width: 0.75rem;
-            height: 0.75rem;
+            width: 0.95rem;
+            height: 0.95rem;
             fill: var(--hp);
             filter: drop-shadow(0 0 0.2rem rgba(255, 77, 94, 0.6));
             transition: fill 0.3s ease, filter 0.3s ease;
@@ -451,12 +451,13 @@
         /* B4 — pastille sombre accrochée au coin */
         .b4 .coeurs {
             position: absolute;
-            right: -0.25rem;
-            bottom: -0.1rem;
-            padding: 0.2rem 0.35rem;
+            right: -0.35rem;
+            bottom: -0.15rem;
+            gap: 0.2rem;
+            padding: 0.28rem 0.45rem;
             background: rgba(10, 10, 12, 0.94);
             border-radius: 1rem;
-            box-shadow: 0 0.2rem 0.6rem rgba(0, 0, 0, 0.6);
+            box-shadow: 0 0.25rem 0.7rem rgba(0, 0, 0, 0.65);
         }
 
         /* B5 — deux fentes verticales sur le flanc gauche */
@@ -480,6 +481,67 @@
 
         .b5 .coeurs i.vide { background: rgba(255, 255, 255, 0.12); box-shadow: none; }
 
+        /* ══════ Les anneaux ══════
+           Le SVG déborde de 12 % de chaque côté et son viewBox fait 124 unités :
+           une unité vaut donc 1 % de la pastille, et un rayon de 50 tombe pile
+           sur le bord de l'image. */
+        .anneaux {
+            position: absolute;
+            inset: -12%;
+            overflow: visible;
+            pointer-events: none;
+        }
+
+        .anneaux circle {
+            fill: none;
+            transition: stroke 0.35s ease, opacity 0.35s ease, stroke-width 0.35s ease;
+        }
+
+        .anneaux .int { stroke: rgba(255, 255, 255, 0.16); stroke-width: 2.5; }
+        .anneaux .ext { stroke: rgba(255, 255, 255, 0.07); stroke-width: 1.5; }
+
+        .actif .anneaux .int,
+        .pastille.actif .anneaux .int {
+            stroke: var(--neon);
+            stroke-width: 3;
+        }
+
+        .actif .anneaux .ext,
+        .pastille.actif .anneaux .ext { stroke: rgba(255, 215, 0, 0.38); }
+
+        .moi .anneaux .int { stroke: rgba(255, 255, 255, 0.5); }
+
+        /* C2 — l'anneau externe se scinde en tirets, qui tournent au tour */
+        .c2 .anneaux .ext {
+            stroke-dasharray: 5 9;
+            stroke-linecap: round;
+            transform-origin: 50% 50%;
+        }
+
+        .c2.actif .anneaux .ext {
+            stroke: var(--neon);
+            stroke-width: 2.5;
+            animation: tourne 16s linear infinite;
+        }
+
+        @keyframes tourne { to { transform: rotate(360deg); } }
+
+        /* C3 — l'anneau externe porte le temps qui reste */
+        .c3 .anneaux .piste { stroke: rgba(255, 255, 255, 0.06); stroke-width: 3; }
+
+        .c3 .anneaux .ext {
+            stroke: #ff8c00;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-dasharray: 376.99;
+            stroke-dashoffset: calc(376.99 * (1 - var(--reste, 0.62)));
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+            transition: stroke-dashoffset 0.2s linear;
+        }
+
+        .c3.attente .anneaux .ext { opacity: 0.15; }
+
         .rangee {
             display: flex;
             flex-wrap: wrap;
@@ -501,9 +563,11 @@
     <div class="tete">
         <h1>BombAnime — la saisie et les pastilles</h1>
         <p>
-            Deux pièces isolées de l'écran de jeu, à comparer côte à côte. Tous les champs de saisie
-            sont sans bordure, comme aujourd'hui. Toutes les pastilles portent le pseudo en dessous,
-            sauf la première qui rappelle l'existant. Les réglages du haut s'appliquent à tout.
+            Deux pièces isolées de l'écran de jeu, à comparer côte à côte. Les réglages du haut
+            s'appliquent à tout. <b>Tranché :</b> le champ de saisie reste celui d'aujourd'hui —
+            la section A n'est gardée que pour mémoire. La pastille part sur <b>B4</b>, ronde,
+            pseudo dessous et cœurs groupés dans un coin ; la section C la décline agrandie,
+            avec trois anneaux à départager.
         </p>
     </div>
 
@@ -538,8 +602,12 @@
             </div>
         </div>
         <div class="reglage">
+            <span>Tour restant</span>
+            <input type="range" id="reste" min="0" max="100" value="62">
+        </div>
+        <div class="reglage">
             <span>Taille</span>
-            <input type="range" id="taille" min="48" max="110" value="72">
+            <input type="range" id="taille" min="48" max="140" value="88">
         </div>
     </div>
 
@@ -734,10 +802,83 @@
             <div class="carte">
                 <div class="carte-tete">
                     <span class="carte-nom">Le cercle complet</span>
-                    <span class="carte-note">La variante choisie,<br>répétée cinq fois</span>
+                    <span class="carte-note">B4 avec l'anneau C1,<br>répété cinq fois</span>
                 </div>
-                <div class="scene haute">
+                <div class="scene haute b4 c1">
                     <div class="rangee" id="rangee"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ══════════ C · B4 en détail ══════════ -->
+    <div class="section" id="secC">
+        <h2>C · B4, agrandi et cerclé</h2>
+        <p>
+            La pastille ronde retenue, un cran plus grosse, cœurs compris. Trois façons de poser
+            l'anneau double : le curseur « Tour restant » ne sert qu'à la troisième.
+        </p>
+        <div class="grille pastilles">
+
+            <div class="carte">
+                <div class="carte-tete">
+                    <span class="carte-nom">C1 · Anneau double</span>
+                    <span class="carte-note">Un fil épais collé à l'avatar,<br>un fil fin en retrait</span>
+                </div>
+                <div class="scene haute b4 c1">
+                    <div class="pastille">
+                        <div class="porte">
+                            <svg class="anneaux" viewBox="0 0 124 124">
+                                <circle class="ext" cx="62" cy="62" r="60"/>
+                                <circle class="int" cx="62" cy="62" r="54"/>
+                            </svg>
+                            <img class="rond" src="/novice.png" alt="">
+                            <div class="coeurs"></div>
+                        </div>
+                        <span class="pseudo">Senpai850</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="carte">
+                <div class="carte-tete">
+                    <span class="carte-nom">C2 · Anneau segmenté</span>
+                    <span class="carte-note">Le fil externe se scinde<br>et tourne quand c'est ton tour</span>
+                </div>
+                <div class="scene haute b4 c2">
+                    <div class="pastille">
+                        <div class="porte">
+                            <svg class="anneaux" viewBox="0 0 124 124">
+                                <circle class="ext" cx="62" cy="62" r="60"/>
+                                <circle class="int" cx="62" cy="62" r="54"/>
+                            </svg>
+                            <img class="rond" src="/novice.png" alt="">
+                            <div class="coeurs"></div>
+                        </div>
+                        <span class="pseudo">Senpai850</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="carte">
+                <div class="carte-tete">
+                    <span class="carte-nom">C3 · Anneau-minuteur</span>
+                    <span class="carte-note">Le fil externe se vide<br>au rythme de la mèche</span>
+                </div>
+                <div class="scene haute b4 c3">
+                    <div class="pastille">
+                        <div class="porte">
+                            <svg class="anneaux" viewBox="0 0 124 124">
+                                <circle class="piste" cx="62" cy="62" r="60"/>
+                                <circle class="ext" cx="62" cy="62" r="60"/>
+                                <circle class="int" cx="62" cy="62" r="54"/>
+                            </svg>
+                            <img class="rond" src="/novice.png" alt="">
+                            <div class="coeurs"></div>
+                        </div>
+                        <span class="pseudo">Senpai850</span>
+                    </div>
                 </div>
             </div>
 
@@ -763,6 +904,7 @@
 
         document.getElementById('texte').addEventListener('input', rendre);
         document.getElementById('taille').addEventListener('input', rendre);
+        document.getElementById('reste').addEventListener('input', rendre);
 
         // ══════════ Les cœurs d'une pastille ══════════
         function remplirCoeurs(zone, vies, fentes) {
@@ -798,6 +940,7 @@
         function rendre() {
             const texte = document.getElementById('texte').value;
             const taille = document.getElementById('taille').value + 'px';
+            const reste = document.getElementById('reste').value / 100;
 
             // A · les champs
             document.querySelectorAll('#secA .scene').forEach(scene => {
@@ -809,12 +952,14 @@
 
             // A5 · la mèche se consume, sauf hors tour où elle s'éteint
             const meche = document.querySelector('.a5 .meche i');
-            if (meche) meche.style.setProperty('--reste', etats.etat === 'attente' ? 1 : 0.62);
+            if (meche) meche.style.setProperty('--reste', etats.etat === 'attente' ? 1 : reste);
 
             // B · les pastilles
-            document.querySelectorAll('#secB .scene').forEach(scene => {
-                scene.classList.remove('actif', 'moi', 'mort');
+            document.querySelectorAll('#secB .scene, #secC .scene').forEach(scene => {
+                scene.classList.remove('actif', 'moi', 'mort', 'attente');
                 if (etats.pose !== 'repos') scene.classList.add(etats.pose);
+                else scene.classList.add('attente');
+                scene.style.setProperty('--reste', reste);
                 scene.querySelectorAll('.porte img').forEach(img => {
                     img.style.setProperty('--taille', taille);
                 });
@@ -834,10 +979,13 @@
             bloc.dataset.vies = i % 3 === 0 ? 1 : 2;
             bloc.innerHTML = `
                 <div class="porte">
-                    <img class="hexa" src="/novice.png" alt="">
-                    <svg class="contour" viewBox="0 0 100 100"><polygon points="50,2 97,26 97,74 50,98 3,74 3,26"/></svg>
+                    <svg class="anneaux" viewBox="0 0 124 124">
+                        <circle class="ext" cx="62" cy="62" r="60"/>
+                        <circle class="int" cx="62" cy="62" r="54"/>
+                    </svg>
+                    <img class="rond" src="/novice.png" alt="">
+                    <div class="coeurs"></div>
                 </div>
-                <div class="coeurs"></div>
                 <span class="pseudo">${nom}</span>`;
             rangee.appendChild(bloc);
         });
