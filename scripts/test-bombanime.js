@@ -61,9 +61,9 @@ const check = (l, ok, extra) => { console.log(`${ok ? '✅' : '❌'} ${l}${extra
         const vu = { fins: 0, salon: 0 };
         s.on('bombanime-game-ended', () => { vu.fins++; });
         s.on('retour-au-salon', () => { vu.salon++; });
-        s.emit('register-authenticated', { twitchId: id, username: nom });
+        s.emit('register-authenticated', { playerId: id, username: nom });
         await wait(120);
-        s.emit('join-lobby', { twitchId: id, username: nom, code });
+        s.emit('join-lobby', { playerId: id, username: nom, code });
         socks.push({ s, id, vu });
     }
     await wait(700);

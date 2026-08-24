@@ -44,9 +44,9 @@ const pct = (t, p) => t.length ? t.slice().sort((a, b) => a - b)[Math.min(t.leng
                 s.recues++;
                 if (s.envoyeA) s.latences.push(Date.now() - s.envoyeA);
             });
-            sock.emit('register-authenticated', { twitchId: id, username: 'J' + id });
+            sock.emit('register-authenticated', { playerId: id, username: 'J' + id });
             await wait(30);
-            sock.emit('join-lobby', { twitchId: id, username: 'J' + id, code: s.code });
+            sock.emit('join-lobby', { playerId: id, username: 'J' + id, code: s.code });
             s.joueurs.push({ sock, id });
         })
     )));
@@ -68,7 +68,7 @@ const pct = (t, p) => t.length ? t.slice().sort((a, b) => a - b)[Math.min(t.leng
     // ── Les joueurs répondent, on enchaîne ──
     for (let q = 2; q <= QUESTIONS; q++) {
         salons.forEach(s => s.joueurs.forEach(({ sock, id }) =>
-            sock.emit('submit-answer', { twitchId: id, answer: 1 + (q % 4) })));
+            sock.emit('submit-answer', { playerId: id, answer: 1 + (q % 4) })));
         await wait(11000);   // la question court 10 s
 
         const tq = Date.now();

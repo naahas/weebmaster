@@ -331,17 +331,17 @@
                                 </button>
                             </div>
                             <div class="v2-room-players-grid" v-if="lobbyPlayers.length">
-                                <span class="v2-room-player-wrap" v-for="p in lobbyPlayers" :key="p.twitchId">
+                                <span class="v2-room-player-wrap" v-for="p in lobbyPlayers" :key="p.playerId">
                                 <button class="v2-room-player"
-                                     :class="['team-' + (p.team || 0), { me: p.twitchId === twitchId, kickable: isHost && p.twitchId !== twitchId }]"
-                                     :title="isHost && p.twitchId !== twitchId ? 'Exclure ' + p.username : null"
-                                     @click="isHost && p.twitchId !== twitchId ? hostKick(p.twitchId) : null">
+                                     :class="['team-' + (p.team || 0), { me: p.playerId === playerId, kickable: isHost && p.playerId !== playerId }]"
+                                     :title="isHost && p.playerId !== playerId ? 'Exclure ' + p.username : null"
+                                     @click="isHost && p.playerId !== playerId ? hostKick(p.playerId) : null">
                                     <span class="v2-room-player-name">{{ p.username }}</span>
                                 </button>
                                 <!-- Un seul geste : la pastille bascule le joueur d'un camp à l'autre -->
                                 <button class="v2-team-flag" v-if="isHost && lobbyMode === 'rivalry'"
                                         :class="'team-' + (p.team || 0)"
-                                        @click.stop="setPlayerTeam(p.twitchId, p.team === 1 ? 2 : 1)"
+                                        @click.stop="setPlayerTeam(p.playerId, p.team === 1 ? 2 : 1)"
                                         :title="'Basculer vers ' + teamNames[p.team === 1 ? 2 : 1]">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M16 21v-1.8a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21"/><circle cx="9" cy="7" r="3.4"/><path d="M22 21v-1.8a4 4 0 0 0-3-3.9M16 3.3a4 4 0 0 1 0 7.6"/>
@@ -617,18 +617,18 @@
                             <!-- Joueurs en cercle -->
                             <div 
                                 v-for="(player, index) in bombanime.playersData" 
-                                :key="player.twitchId"
+                                :key="player.playerId"
                                 class="bombanime-player-slot"
-                                :data-twitch-id="player.twitchId"
+                                :data-player-id="player.playerId"
                                 :data-player-count="bombanime.playersData.length"
                                 :class="{ 
-                                    'active': player.twitchId === bombanime.currentPlayerTwitchId,
+                                    'active': player.playerId === bombanime.currentPlayerId,
                                     'eliminated': !player.isAlive,
-                                    'is-me': player.twitchId === twitchId,
-                                    'success': player.twitchId === bombanime.successPlayerTwitchId,
+                                    'is-me': player.playerId === playerId,
+                                    'success': player.playerId === bombanime.successPlayerId,
                                     'intro-hidden': bombanime.introPhase === 'players' && index >= bombanime.introPlayersRevealed,
                                     'intro-reveal': bombanime.introPhase === 'players' && index < bombanime.introPlayersRevealed,
-                                    'life-gained': bombanime.lifeGainedPlayerTwitchId === player.twitchId
+                                    'life-gained': bombanime.lifeGainedPlayerId === player.playerId
                                 }"
                                 :style="getBombanimePlayerStyle(index, bombanime.playersData.length)"
                             >
@@ -661,12 +661,12 @@
                                     </div>
                                     <!-- Badge cœurs -->
                                     <div class="player-lives">
-                                        <svg v-for="n in 2" :key="'heart-' + player.twitchId + '-' + n + '-' + player.lives" class="player-life" :class="{ lost: n > player.lives }" viewBox="0 0 24 24">
+                                        <svg v-for="n in 2" :key="'heart-' + player.playerId + '-' + n + '-' + player.lives" class="player-life" :class="{ lost: n > player.lives }" viewBox="0 0 24 24">
                                             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                                         </svg>
                                     </div>
                                     <!-- Cadenas (déjà utilisé) -->
-                                    <div class="player-lock" :id="'lock-' + player.twitchId">
+                                    <div class="player-lock" :id="'lock-' + player.playerId">
                                         <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
                                     </div>
                                     <!-- Particules alphabet complet -->
@@ -689,12 +689,12 @@
                                 
                                 <!-- Réponse en-dessous -->
                                 <div class="player-answer" 
-                                     :class="{ 'typing': player.twitchId === bombanime.currentPlayerTwitchId }"
+                                     :class="{ 'typing': player.playerId === bombanime.currentPlayerId }"
                                      :style="{ fontSize: getAnswerFontSize() }"
-                                     v-if="player.twitchId === bombanime.currentPlayerTwitchId 
+                                     v-if="player.playerId === bombanime.currentPlayerId 
                                            ? (player.currentTyping !== null ? player.currentTyping : player.lastAnswer)
                                            : player.lastAnswer">
-                                    {{ player.twitchId === bombanime.currentPlayerTwitchId 
+                                    {{ player.playerId === bombanime.currentPlayerId 
                                        ? (player.currentTyping !== null ? player.currentTyping : player.lastAnswer)
                                        : player.lastAnswer }}
                                 </div>
@@ -1122,8 +1122,8 @@
 
                         <aside class="v2q-top" v-else-if="panneauLateral === 'top'">
                             <div class="v2q-top-t">Top 3</div>
-                            <div class="v2q-top-row" v-for="(p, i) in topPlayers" :key="p.twitchId || p.username"
-                                 :class="{ me: p.twitchId === twitchId }">
+                            <div class="v2q-top-row" v-for="(p, i) in topPlayers" :key="p.playerId || p.username"
+                                 :class="{ me: p.playerId === playerId }">
                                 <span class="rk">{{ i + 1 }}</span>
                                 <span class="col">
                                     <span class="nm">{{ p.username }}</span>
@@ -1268,8 +1268,8 @@
                     <!-- Le camp gagne, mais on distingue ceux qui l'ont porté -->
                     <div class="v2-end-crew" v-if="p.isTeam"
                          :class="['team-' + p.team, { vu: endStep >= endSlot(p.rank) }]">
-                        <span class="v2-end-crew-row" v-for="m in crewOf(p.team)" :key="m.twitchId || m.username"
-                              :class="{ moi: m.twitchId === twitchId }">
+                        <span class="v2-end-crew-row" v-for="m in crewOf(p.team)" :key="m.playerId || m.username"
+                              :class="{ moi: m.playerId === playerId }">
                             <span class="rk">{{ m.rang }}</span>
                             <span class="nm">{{ m.username }}</span>
                             <span class="sc">
@@ -1534,8 +1534,8 @@
                     <button class="v2q-sheet-close" @click="campDetail = null">Fermer</button>
                 </div>
                 <div class="v2-camp-list">
-                    <div class="v2-camp-row" v-for="m in campDetailListe" :key="m.twitchId || m.username"
-                         :class="{ moi: m.twitchId === twitchId }">
+                    <div class="v2-camp-row" v-for="m in campDetailListe" :key="m.playerId || m.username"
+                         :class="{ moi: m.playerId === playerId }">
                         <span class="rk">{{ m.rang }}</span>
                         <span class="nm">{{ m.username }}</span>
                         <span class="sc" v-if="trioEnPoints">{{ formatScore(m.points) }}</span>

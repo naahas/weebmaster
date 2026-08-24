@@ -25,9 +25,9 @@ async function joueur(id, nom, code) {
     s.on('bombanime-name-accepted', (d) => vu.acceptes.push(d));
     s.on('game-started', (d) => vu.departs.push(d));
     s.on('error', (e) => vu.erreurs.push(e.message));
-    s.emit('register-authenticated', { twitchId: id, username: nom });
+    s.emit('register-authenticated', { playerId: id, username: nom });
     await wait(60);
-    s.emit('join-lobby', { twitchId: id, username: nom, code });
+    s.emit('join-lobby', { playerId: id, username: nom, code });
     return { s, id, nom, vu };
 }
 
@@ -100,7 +100,7 @@ async function joueur(id, nom, code) {
         check(`${s.nom} : la bombe tourne`, t === s.n, t + '/' + s.n);
         // Le joueur désigné doit appartenir à ce salon, pas à un autre
         const designe = s.joueurs[0].vu.tours[0];
-        const aNous = designe && s.joueurs.some(j => j.id === designe.currentPlayerTwitchId);
+        const aNous = designe && s.joueurs.some(j => j.id === designe.currentPlayerId);
         check(`${s.nom} : la bombe désigne un des siens`, !!aNous,
             designe ? designe.currentPlayerUsername : 'personne');
     }

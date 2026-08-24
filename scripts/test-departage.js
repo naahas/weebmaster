@@ -34,14 +34,14 @@ async function manche(enCamps) {
     for (const [id, pseudo] of [['t1', 'Un'], ['t2', 'Deux']]) {
         const s = io(BASE);
         await new Promise(r => s.on('connect', r));
-        s.emit('register-authenticated', { twitchId: id, username: pseudo });
+        s.emit('register-authenticated', { playerId: id, username: pseudo });
         const suivi = { s, id, questions: [], departage: false, fin: null };
         s.on('new-question', (q) => suivi.questions.push(q));
         s.on('tiebreaker-announced', () => { suivi.departage = true; });
         s.on('game-ended', (d) => { suivi.fin = d; });
         socks.push(suivi);
         await wait(120);
-        s.emit('join-lobby', { twitchId: id, username: pseudo, code: roomCode });
+        s.emit('join-lobby', { playerId: id, username: pseudo, code: roomCode });
     }
     await wait(400);
     if (enCamps) { await post('/admin/set-teams', { enabled: true }); await wait(250); }
@@ -54,7 +54,7 @@ async function manche(enCamps) {
         const q = socks[0].questions[n - 1];
         if (!q) break;
         const bonne = (q.answers || []).indexOf(q.correctAnswer) + 1;
-        socks.forEach(({ s, id }) => s.emit('submit-answer', { twitchId: id, answer: bonne || 1 }));
+        socks.forEach(({ s, id }) => s.emit('submit-answer', { playerId: id, answer: bonne || 1 }));
         await wait(1600);
         if (socks[0].departage || socks[0].fin) break;
         if (n < 15) await post('/admin/next-question', {});

@@ -13,8 +13,7 @@ progression). Voir [PLAN-V2.md](PLAN-V2.md) pour l'état d'avancement et la suit
 
 État : **phase 1 terminée** (suppression), refonte du mode Classique terminée (écran de jeu, salon,
 camps, classement final, passe mobile), **phase 2 terminée** : le serveur héberge autant de salons
-qu'on veut, chacun indépendant. Reste **BombAnime**, encore intégralement en v1, et le renommage
-`twitchId` → `playerId`.
+qu'on veut, chacun indépendant. Reste la passe visuelle mobile de **BombAnime**.
 
 Les routes `/admin/*` sont **réservées à l'hôte** : l'ouverture d'un salon tire un jeton
 (`gameState.hostToken`) remis au seul créateur, qu'un middleware monté sur `/admin` exige ensuite en
@@ -137,14 +136,15 @@ Les variables Twitch, `SESSION_SECRET`, `ADMIN_PASSWORD` et `MASTER_ADMIN_PASSWO
   n'y est pas encore entré.
 - `Map`/`Set` pour les états volatils (joueurs, réponses, timers) → jamais sérialisables tels quels,
   toujours convertir avant un `emit`.
-- Les joueurs sont identifiés par `twitchId` **et** `socket.id` (volatile). ⚠️ `twitchId` porte
-  désormais le `playerId` invité : le nom du champ est un reste de la v1, renommage encore à faire.
+- Les joueurs sont identifiés par `playerId` (pseudo invité) **et** `socket.id` (volatile).
 - Le serveur est **autoritaire** : toute validation de réponse se fait côté serveur, le client
   n'affiche que le résultat.
 
 ## Points d'attention
 
-- `MIN_PLAYERS_FOR_STATS` et consorts ont disparu avec les stats : plus de seuil de joueurs.
+- Une partie n entre dans l historique de l accueil qu au-dessus d un seuil de joueurs :
+  `MIN_JOUEURS_HISTORIQUE` (15) au quiz, `MIN_JOUEURS_HISTORIQUE_BOMB` (5) en BombAnime, qui
+  plafonne justement à 15 et n aurait sinon retenu que les salons complets.
 - Gros fichiers (`home.css` 11.5k lignes, `server.js` 6.2k, `app.js` 4.9k) : cibler via grep/offset,
   ne jamais relire en entier.
 - Valider une modif : `npm run check`, puis `npm start` et les trois suites, et ouvrir `/` dans le

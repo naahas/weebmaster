@@ -77,27 +77,27 @@ const avecJeton = (p, jeton, b) => fetch(BASE + p, {
     // ── L'exclusion passe par la socket : même règle ──
     const hote = io(BASE);
     await new Promise(r => hote.on('connect', r));
-    hote.emit('register-authenticated', { twitchId: 'h1', username: 'Hote' });
+    hote.emit('register-authenticated', { playerId: 'h1', username: 'Hote' });
     await wait(150);
-    hote.emit('join-lobby', { twitchId: 'h1', username: 'Hote', code: roomCode });
+    hote.emit('join-lobby', { playerId: 'h1', username: 'Hote', code: roomCode });
 
     const cible = io(BASE);
     await new Promise(r => cible.on('connect', r));
     let exclu = false;
     cible.on('kicked', () => { exclu = true; });
-    cible.emit('register-authenticated', { twitchId: 'p2', username: 'Cible' });
+    cible.emit('register-authenticated', { playerId: 'p2', username: 'Cible' });
     await wait(150);
-    cible.emit('join-lobby', { twitchId: 'p2', username: 'Cible', code: roomCode });
+    cible.emit('join-lobby', { playerId: 'p2', username: 'Cible', code: roomCode });
     await wait(500);
 
     // La cible tente de s'exclure elle-même... puis d'exclure l'hôte
-    cible.emit('kick-player', { twitchId: 'h1' });
+    cible.emit('kick-player', { playerId: 'h1' });
     await wait(500);
     const pendant = await etat();
     check("une exclusion sans jeton ne passe pas", pendant.playerCount === 2 && !exclu,
         'playerCount=' + pendant.playerCount);
 
-    hote.emit('kick-player', { twitchId: 'p2', hostToken: jeton });
+    hote.emit('kick-player', { playerId: 'p2', hostToken: jeton });
     for (let i = 0; i < 20 && !exclu; i++) await wait(50);
     check("l'hôte exclut bien avec son jeton", exclu === true);
 

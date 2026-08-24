@@ -23,14 +23,14 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     for (const [id, nom] of [['h1', 'Hote'], ['p2', 'Joueur2']]) {
         const s = io(BASE);
         await new Promise(r => s.on('connect', r));
-        s.emit('register-authenticated', { twitchId: id, username: nom });
+        s.emit('register-authenticated', { playerId: id, username: nom });
         socks.push({ s, id, nom, vu: [] });
         s.on('new-question', (d) => socks.find(x => x.s === s).vu.push(d));
         s.on('game-started', (d) => { socks.find(x => x.s === s).depart = d; });
         s.on('question-results', (d) => { socks.find(x => x.s === s).resultats = d; });
     }
     await wait(300);
-    socks.forEach(({ s, id, nom }, i) => s.emit('join-lobby', { twitchId: id, username: nom, isHost: i === 0, code: roomCode }));
+    socks.forEach(({ s, id, nom }, i) => s.emit('join-lobby', { playerId: id, username: nom, isHost: i === 0, code: roomCode }));
     await wait(500);
 
     // Exclusion d'un joueur : l'hôte n'envoie que l'identifiant depuis la liste du salon
@@ -38,15 +38,15 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     await new Promise(r => intrus.on('connect', r));
     let exclu = false;
     intrus.on('kicked', () => { exclu = true; });
-    intrus.emit('register-authenticated', { twitchId: 'p3', username: 'Intrus' });
+    intrus.emit('register-authenticated', { playerId: 'p3', username: 'Intrus' });
     await wait(300);
     let dansLeSalon = false;
     intrus.on('lobby-update', (d) => {
-        if ((d.players || []).some(p => p.twitchId === 'p3')) dansLeSalon = true;
+        if ((d.players || []).some(p => p.playerId === 'p3')) dansLeSalon = true;
     });
-    intrus.emit('join-lobby', { twitchId: 'p3', username: 'Intrus', code: roomCode });
+    intrus.emit('join-lobby', { playerId: 'p3', username: 'Intrus', code: roomCode });
     for (let i = 0; i < 40 && !dansLeSalon; i++) await wait(50);
-    socks[0].s.emit('kick-player', { twitchId: 'p3', hostToken });
+    socks[0].s.emit('kick-player', { playerId: 'p3', hostToken });
     for (let i = 0; i < 20 && !exclu; i++) await wait(50);
     check("exclusion par identifiant seul", exclu === true);
     intrus.close();
@@ -63,7 +63,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     const apresBascule = await fetch(BASE + '/game/state?code=' + roomCode).then(r => r.json());
     const sansCamp = (apresBascule.players || []).filter(p => !p.team).length;
     check('personne ne reste sans camp au passage en équipes', sansCamp === 0, sansCamp + ' sans camp');
-    const place = await post('/admin/set-player-team', { twitchId: 'p2', team: 2 });
+    const place = await post('/admin/set-player-team', { playerId: 'p2', team: 2 });
     check('camp attribué par l hôte', place.success === true && place.team === 2, 'team=' + place.team);
     const melange = await post('/admin/shuffle-teams', {});
     const ecart = melange.teamCounts ? Math.abs(melange.teamCounts[1] - melange.teamCounts[2]) : 99;
@@ -71,17 +71,17 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
         melange.teamCounts ? melange.teamCounts[1] + ' contre ' + melange.teamCounts[2] : 'aucun');
     // Un rafraîchissement de page ne doit ni sortir du salon ni changer de camp
     const avantRefresh = await fetch(BASE + '/game/state?code=' + roomCode).then(r => r.json());
-    const campAvant = (avantRefresh.players.find(p => p.twitchId === 'p2') || {}).team;
+    const campAvant = (avantRefresh.players.find(p => p.playerId === 'p2') || {}).team;
     socks[1].s.disconnect();
     await wait(150);
     const revenu = io(BASE);
     await new Promise(r => revenu.on('connect', r));
-    revenu.emit('register-authenticated', { twitchId: 'p2', username: 'Joueur2' });
+    revenu.emit('register-authenticated', { playerId: 'p2', username: 'Joueur2' });
     await wait(150);
-    revenu.emit('join-lobby', { twitchId: 'p2', username: 'Joueur2', code: roomCode });
+    revenu.emit('join-lobby', { playerId: 'p2', username: 'Joueur2', code: roomCode });
     await wait(400);
     const apresRefresh = await fetch(BASE + '/game/state?code=' + roomCode).then(r => r.json());
-    const rentre = apresRefresh.players.find(p => p.twitchId === 'p2');
+    const rentre = apresRefresh.players.find(p => p.playerId === 'p2');
     check('le camp survit à un rafraîchissement', !!rentre && rentre.team === campAvant,
         campAvant + ' → ' + (rentre ? rentre.team : 'sorti du salon'));
 
@@ -90,7 +90,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     let diffusionRecue = false;
     revenu.on('lobby-update', () => { diffusionRecue = true; });
     check('la socket revenue reste connectée', revenu.connected === true);
-    await post('/admin/set-player-team', { twitchId: 'p2', team: campAvant === 1 ? 2 : 1 });
+    await post('/admin/set-player-team', { playerId: 'p2', team: campAvant === 1 ? 2 : 1 });
     for (let i = 0; i < 20 && !diffusionRecue; i++) await wait(50);
     check('elle reçoit bien les diffusions du salon', diffusionRecue === true);
     socks[1].s = revenu;
@@ -98,7 +98,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     // Un camp vide fait échouer le démarrage : le bouton est grisé côté hôte,
     // mais le serveur reste la dernière barrière.
     const tous = await fetch(BASE + '/game/state?code=' + roomCode).then(r => r.json());
-    for (const p of tous.players || []) await post('/admin/set-player-team', { twitchId: p.twitchId, team: 1 });
+    for (const p of tous.players || []) await post('/admin/set-player-team', { playerId: p.playerId, team: 1 });
     const refus = await post('/admin/start-game', {});
     check('un camp vide bloque le démarrage', refus.errorType === 'empty_team', refus.error || 'aucune erreur');
 
@@ -120,7 +120,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
     // les joueurs répondent, puis l'hôte enchaîne comme depuis la barre de contrôle
     // Deux réponses différentes : l'une des deux peut être la bonne
-    socks.forEach(({ s, id }, i) => s.emit('submit-answer', { twitchId: id, answer: i + 1 }));
+    socks.forEach(({ s, id }, i) => s.emit('submit-answer', { playerId: id, answer: i + 1 }));
     // on attend la fin du chrono : le serveur refuse d avancer pendant la question
     await wait(11000);
 
@@ -129,7 +129,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     const res = socks[0].resultats;
     check('résultats de question reçus', !!res);
     check('joueurs identifiables dans le classement',
-        !!res && res.players.length > 0 && res.players.every(p => p.twitchId && p.correctAnswers !== undefined),
+        !!res && res.players.length > 0 && res.players.every(p => p.playerId && p.correctAnswers !== undefined),
         res ? res.players.length + ' joueur(s)' : '');
     check('réponses bien enregistrées', !!res && res.players.some(p => p.selectedAnswer),
         res ? res.players.map(p => p.selectedAnswer || '—').join(' / ') : '');
@@ -169,7 +169,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
     // Un départ n'interrompt pas la partie : celui qui reste joue seul,
     // et le compte des joueurs restants suit.
-    socks[1].s.emit('leave-lobby', { twitchId: socks[1].id, username: socks[1].nom });
+    socks[1].s.emit('leave-lobby', { playerId: socks[1].id, username: socks[1].nom });
     await wait(1200);
     const etat = await fetch(BASE + '/game/state?code=' + roomCode).then(r => r.json());
     check('la partie continue après un départ', etat.inProgress === true, 'inProgress=' + etat.inProgress);

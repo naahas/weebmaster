@@ -33,9 +33,9 @@ const check = (l, ok, extra) => { console.log(`${ok ? '✅' : '❌'} ${l}${extra
     for (const [id, n] of [['ab1', 'Un'], ['ab2', 'Deux']]) {
         const s = io(BASE);
         await new Promise(res => s.on('connect', res));
-        s.emit('register-authenticated', { twitchId: id, username: n });
+        s.emit('register-authenticated', { playerId: id, username: n });
         await wait(120);
-        s.emit('join-lobby', { twitchId: id, username: n, code: r.roomCode });
+        s.emit('join-lobby', { playerId: id, username: n, code: r.roomCode });
         socks.push(s);
     }
     await wait(600);

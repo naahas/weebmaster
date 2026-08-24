@@ -11,7 +11,7 @@ createApp({
             isAuthenticated: false,
             showBonusArcMobile: false,
             username: '',
-            twitchId: '',
+            playerId: '',
             pseudoInput: '',
             pseudoError: '',
             joinPending: false,
@@ -232,11 +232,6 @@ createApp({
                 duration: 0
             },
 
-            // Reward animation
-            rewardAnimData: null,
-            rewardAnimVisible: false,
-            rewardTimers: [],
-
             // Thème
             isDark: true,
 
@@ -280,7 +275,7 @@ createApp({
                 timerInterval: null,
                 playersOrder: [],
                 playersData: [],
-                currentPlayerTwitchId: null,
+                currentPlayerId: null,
                 isMyTurn: false,
                 inputValue: '',
                 lastValidName: null,
@@ -293,8 +288,8 @@ createApp({
                 heartCompleting: false,
                 heartPulse: false,
                 mobileAlphabetPulse: false, // 📱 Animation bouton alphabet mobile
-                successPlayerTwitchId: null,
-                lifeGainedPlayerTwitchId: null,
+                successPlayerId: null,
+                lifeGainedPlayerId: null,
                 // Debug
                 debugInfo: null,
                 debugMs: null, // 🆕 Timer en millisecondes pour debug
@@ -323,7 +318,6 @@ createApp({
 
 
 
-            twitchAvatarUrl: null,
         };
     },
 
@@ -388,7 +382,7 @@ createApp({
 
                 if (this.gameInProgress && this.hasJoined && this.isAuthenticated) {
                     this.socket.emit('reconnect-player', {
-                        twitchId: this.twitchId,
+                        playerId: this.playerId,
                         username: this.username
                     });
                 }
@@ -594,7 +588,7 @@ createApp({
             }
             
             // Trouver ma position
-            const myIndex = sorted.findIndex(p => p.twitchId === this.twitchId || p.username === this.username);
+            const myIndex = sorted.findIndex(p => p.playerId === this.playerId || p.username === this.username);
             
             if (myIndex === -1) return null;
             
@@ -647,7 +641,7 @@ createApp({
         },
 
         myLiveRank() {
-            const i = this.rankedPlayers.findIndex(p => p.twitchId === this.twitchId);
+            const i = this.rankedPlayers.findIndex(p => p.playerId === this.playerId);
             return i === -1 ? 0 : i + 1;
         },
 
@@ -667,7 +661,7 @@ createApp({
 
         // Ma ligne dans les résultats de la question qui vient de tomber
         moiEnJeu() {
-            return (this.questionResults.players || []).find(p => p.twitchId === this.twitchId) || null;
+            return (this.questionResults.players || []).find(p => p.playerId === this.playerId) || null;
         },
 
         // Le joueur ne voit plus le classement : il voit sa propre place, et
@@ -760,7 +754,7 @@ createApp({
                 this.lobbyPlayers || [],
             ];
             for (const l of listes) {
-                const moi = l.find(p => p.twitchId === this.twitchId);
+                const moi = l.find(p => p.playerId === this.playerId);
                 if (moi && moi.team) return moi.team;
             }
             return this.selectedTeam || null;
@@ -816,7 +810,7 @@ createApp({
                     .map((p, i) => ({
                         rang: i + 1,
                         username: p.username,
-                        twitchId: p.twitchId,
+                        playerId: p.playerId,
                         valeur: parPoints ? this.formatScore(p.points || 0) : (p.lives || 0),
                     })),
             })).sort((a, b) => b.score - a.score);
@@ -839,7 +833,7 @@ createApp({
                 .map((p, i) => ({
                     rang: i + 1,
                     username: p.username,
-                    twitchId: p.twitchId,
+                    playerId: p.playerId,
                     points: p.points || 0,
                     lives: p.lives || 0,
                     bonnes: p.correctAnswers || 0,
@@ -977,7 +971,7 @@ createApp({
 
         // ========== Authentification ==========
         // 🆕 v2 : identité invité stockée en localStorage (plus de compte, plus d'OAuth).
-        // `twitchId` garde son nom sur le fil socket pour l'instant — renommage en playerId en phase 2.
+        // `playerId` garde son nom sur le fil socket pour l'instant — renommage en playerId en phase 2.
         // 🆕 v2 : identité invité. Un pseudo est attribué automatiquement à l'arrivée —
         // le joueur peut le changer d'un clic en haut à droite, jamais bloqué par un formulaire.
         async checkAuth() {
@@ -993,7 +987,7 @@ createApp({
                 localStorage.setItem('pseudo', name);
             }
 
-            this.twitchId = playerId;
+            this.playerId = playerId;
             this.username = name;
             this.pseudoInput = name;
             this.isAuthenticated = true;
@@ -1001,7 +995,7 @@ createApp({
 
             if (this.socket && this.socket.connected) {
                 this.socket.emit('register-authenticated', {
-                    twitchId: this.twitchId,
+                    playerId: this.playerId,
                     username: this.username
                 });
             }
@@ -1131,7 +1125,7 @@ createApp({
                 // En Rivalité l'hôte choisit d'abord son camp dans le salon
                 if (this.selectedMode !== 'rivalry') {
                     this.socket.emit('join-lobby', {
-                        twitchId: this.twitchId,
+                        playerId: this.playerId,
                         username: this.username,
                         isHost: true,
                         code: this.roomCode,
@@ -1139,7 +1133,7 @@ createApp({
                     });
                     this.hasJoined = true;
                     localStorage.setItem('hasJoinedLobby', 'true');
-                    localStorage.setItem('lobbyTwitchId', this.twitchId);
+                    localStorage.setItem('lobbyPlayerId', this.playerId);
                 }
             } catch (e) {
                 this.createError = 'Erreur de connexion au serveur.';
@@ -1568,7 +1562,7 @@ createApp({
 
         leaveRoom() {
             if (this.socket) {
-                this.socket.emit('leave-lobby', { twitchId: this.twitchId, username: this.username });
+                this.socket.emit('leave-lobby', { playerId: this.playerId, username: this.username });
             }
             this.hasJoined = false;
             this.selectedTeam = null;
@@ -1592,17 +1586,17 @@ createApp({
             this.resetComboSystem();
             document.body.classList.remove('game-active');
             localStorage.removeItem('hasJoinedLobby');
-            localStorage.removeItem('lobbyTwitchId');
+            localStorage.removeItem('lobbyPlayerId');
             localStorage.removeItem('selectedTeam');
             localStorage.removeItem('roomCode');
             this.homeScreen = 'hub';
             this.loadHomeStats();
         },
 
-        hostKick(twitchId) {
+        hostKick(playerId) {
             if (!this.socket) return;
-            const cible = this.lobbyPlayers.find(p => p.twitchId === twitchId);
-            this.socket.emit('kick-player', { twitchId, username: cible ? cible.username : undefined, hostToken: this.hostToken });
+            const cible = this.lobbyPlayers.find(p => p.playerId === playerId);
+            this.socket.emit('kick-player', { playerId, username: cible ? cible.username : undefined, hostToken: this.hostToken });
         },
 
         lockMode(id) {
@@ -1675,7 +1669,7 @@ createApp({
             this.joinError = '';
 
             this.socket.emit('join-lobby', {
-                twitchId: this.twitchId,
+                playerId: this.playerId,
                 username: this.username,
                 code,
                 team: this.lobbyMode === 'rivalry' ? this.selectedTeam : null,
@@ -1695,7 +1689,7 @@ createApp({
                     this.homeScreen = 'hub';
                     localStorage.setItem('roomCode', code);
                     localStorage.setItem('hasJoinedLobby', 'true');
-                    localStorage.setItem('lobbyTwitchId', this.twitchId);
+                    localStorage.setItem('lobbyPlayerId', this.playerId);
                 }
             }, 450);
         },
@@ -1748,17 +1742,17 @@ createApp({
         },
 
         // L'hôte place un joueur dans un camp, ou l'en retire
-        async setPlayerTeam(twitchId, team) {
+        async setPlayerTeam(playerId, team) {
             this.hostError = '';
             try {
                 const res = await this.hostFetch('/admin/set-player-team', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ twitchId, team }),
+                    body: JSON.stringify({ playerId, team }),
                 });
                 const data = await res.json();
                 if (data.error) { this.hostError = data.error; return; }
-                this.appliquerCamps([{ twitchId: data.twitchId, team: data.team }]);
+                this.appliquerCamps([{ playerId: data.playerId, team: data.team }]);
             } catch (e) {
                 this.hostError = 'Erreur de connexion';
             }
@@ -1766,10 +1760,10 @@ createApp({
 
         // Recopie une répartition dans la liste affichée
         appliquerCamps(couples) {
-            (couples || []).forEach(({ twitchId, team }) => {
-                const cible = this.lobbyPlayers.find(p => p.twitchId === twitchId);
+            (couples || []).forEach(({ playerId, team }) => {
+                const cible = this.lobbyPlayers.find(p => p.playerId === playerId);
                 if (cible) cible.team = team;
-                if (twitchId === this.twitchId) this.selectedTeam = team;
+                if (playerId === this.playerId) this.selectedTeam = team;
             });
         },
 
@@ -1862,7 +1856,7 @@ createApp({
             Object.assign(this.bombanime, {
                 active: false,
                 playersData: [],
-                currentPlayerTwitchId: null,
+                currentPlayerId: null,
                 myAlphabet: [],
                 usedNamesCount: 0,
                 inputValue: '',
@@ -1870,8 +1864,8 @@ createApp({
                 heartCompleting: false,
                 heartPulse: false,
                 mobileAlphabetPulse: false,
-                successPlayerTwitchId: null,
-                lifeGainedPlayerTwitchId: null,
+                successPlayerId: null,
+                lifeGainedPlayerId: null,
                 introPhase: null,
                 introPlayersRevealed: 0,
                 bombPointingUp: true,
@@ -1958,7 +1952,7 @@ createApp({
             this.hostToken = '';
             localStorage.removeItem('roomCode');
             localStorage.removeItem('hasJoinedLobby');
-            localStorage.removeItem('lobbyTwitchId');
+            localStorage.removeItem('lobbyPlayerId');
             localStorage.removeItem('selectedTeam');
             this.loadHomeStats();
         },
@@ -1989,14 +1983,14 @@ createApp({
             }
             localStorage.setItem('pseudo', name);
 
-            this.twitchId = playerId;
+            this.playerId = playerId;
             this.username = name;
             this.isAuthenticated = true;
             this.editingPseudo = false;
 
             if (this.socket && this.socket.connected) {
                 this.socket.emit('register-authenticated', {
-                    twitchId: this.twitchId,
+                    playerId: this.playerId,
                     username: this.username
                 });
             }
@@ -2057,7 +2051,7 @@ createApp({
                     if (classicLikeMode) {
                         console.log('🔧 Resync: partie en cours serveur mais client bloqué en lobby → reconnect-player');
                         this.socket.emit('reconnect-player', {
-                            twitchId: this.twitchId,
+                            playerId: this.playerId,
                             username: this.username
                         });
                     }
@@ -2089,7 +2083,7 @@ createApp({
                     const finalistes = state.winnerScreenData.playersData
                                     || state.winnerScreenData.ranking || [];
                     const moi = this.isHost || finalistes
-                        .some(p => p.twitchId === this.twitchId || p.username === this.username);
+                        .some(p => p.playerId === this.playerId || p.username === this.username);
                     if (moi) {
                         this.gameEnded = true;
                         this.gameEndData = state.winnerScreenData;
@@ -2166,11 +2160,11 @@ createApp({
 
                 if (this.isAuthenticated) {
                     const savedLobbyState = localStorage.getItem('hasJoinedLobby');
-                    const savedTwitchId = localStorage.getItem('lobbyTwitchId');
+                    const savedPlayerId = localStorage.getItem('lobbyPlayerId');
 
-                    if (savedLobbyState === 'true' && savedTwitchId === this.twitchId) {
+                    if (savedLobbyState === 'true' && savedPlayerId === this.playerId) {
                         // Vérifier que le joueur est réellement dans la liste du serveur
-                        const isInPlayerList = state.players && state.players.some(p => p.twitchId === this.twitchId);
+                        const isInPlayerList = state.players && state.players.some(p => p.playerId === this.playerId);
                         
                         if (isInPlayerList || state.inProgress) {
                             this.hasJoined = true;
@@ -2179,7 +2173,7 @@ createApp({
                             // State périmé d'un ancien lobby - nettoyer
                             console.log('🧹 hasJoined périmé - joueur absent du lobby serveur');
                             localStorage.removeItem('hasJoinedLobby');
-                            localStorage.removeItem('lobbyTwitchId');
+                            localStorage.removeItem('lobbyPlayerId');
                             localStorage.removeItem('selectedTeam');
                             this.hasJoined = false;
                         }
@@ -2198,7 +2192,7 @@ createApp({
 
                 // 🔥 CORRECTION: Restaurer les points/vies selon le mode
                 if (state.inProgress && this.hasJoined) {
-                    const currentPlayer = state.players?.find(p => p.twitchId === this.twitchId);
+                    const currentPlayer = state.players?.find(p => p.playerId === this.playerId);
 
                     if (currentPlayer) {
                         if (state.mode === 'points') {
@@ -2262,14 +2256,14 @@ createApp({
             // 🆕 Notifier le serveur qu'on quitte le lobby
             if (this.hasJoined && this.socket) {
                 this.socket.emit('leave-lobby', {
-                    twitchId: this.twitchId,
+                    playerId: this.playerId,
                     username: this.username
                 });
             }
 
             // Nettoyer le localStorage pour éjecter du lobby
             localStorage.removeItem('hasJoinedLobby');
-            localStorage.removeItem('lobbyTwitchId');
+            localStorage.removeItem('lobbyPlayerId');
 
             // 🆕 v2 : on garde le playerId (identité stable) mais on repasse par l'écran pseudo
             this.isAuthenticated = false;
@@ -2310,7 +2304,7 @@ createApp({
 
                 if (this.isAuthenticated) {
                     this.socket.emit('register-authenticated', {
-                        twitchId: this.twitchId,
+                        playerId: this.playerId,
                         username: this.username
                     });
                     console.log('✅ Authentification enregistrée auprès du serveur');
@@ -2322,7 +2316,7 @@ createApp({
 
                 if (this.needsReconnect && this.gameInProgress) {
                     this.socket.emit('reconnect-player', {
-                        twitchId: this.twitchId,
+                        playerId: this.playerId,
                         username: this.username
                     });
                     this.needsReconnect = false;
@@ -2336,7 +2330,7 @@ createApp({
                 // en mode équipes — l'hôte compris.
                 if (this.shouldRejoinLobby && this.isGameActive && !this.gameInProgress && !wasKicked) {
                     this.socket.emit('join-lobby', {
-                        twitchId: this.twitchId,
+                        playerId: this.playerId,
                         username: this.username,
                         code: this.roomCode,
                         hostToken: this.hostToken,
@@ -2456,7 +2450,7 @@ createApp({
                     this.joinCode = '';
                     this.homeScreen = 'hub';
                     localStorage.removeItem('hasJoinedLobby');
-                    localStorage.removeItem('lobbyTwitchId');
+                    localStorage.removeItem('lobbyPlayerId');
                     return;
                 }
 
@@ -2491,7 +2485,7 @@ createApp({
 
                 // Nettoyer localStorage et sessionStorage
                 localStorage.removeItem('hasJoinedLobby');
-                localStorage.removeItem('lobbyTwitchId');
+                localStorage.removeItem('lobbyPlayerId');
                 localStorage.removeItem('selectedTeam');
                     sessionStorage.removeItem('wasKicked'); // 🆕 Clear kick flag pour prochaine partie
                 
@@ -2686,7 +2680,7 @@ createApp({
                     }
                 } else {
                     // Mode Vie
-                    const myPlayerData = results.playersData?.find(p => p.twitchId === this.twitchId);
+                    const myPlayerData = results.playersData?.find(p => p.playerId === this.playerId);
 
                     if (myPlayerData) {
                         this.playerLives = myPlayerData.lives;
@@ -2725,7 +2719,7 @@ createApp({
                     this.gameStartedOnServer = false;
                     // Nettoyer localStorage car la partie est terminée
                     localStorage.removeItem('hasJoinedLobby');
-                    localStorage.removeItem('lobbyTwitchId');
+                    localStorage.removeItem('lobbyPlayerId');
                     localStorage.removeItem('selectedTeam');
                             return;
                 }
@@ -2733,7 +2727,7 @@ createApp({
                 // 🆕 Ne pas afficher le podium si le joueur n'a pas participé
                 // Vérifier si le joueur est dans playersData
                 const isParticipant = data.playersData && data.playersData.some(p => 
-                    p.twitchId === this.twitchId || p.username === this.username
+                    p.playerId === this.playerId || p.username === this.username
                 );
                 
                 if (!isParticipant) {
@@ -2787,7 +2781,7 @@ createApp({
                     this.isGameActive = true;
                     // Nettoyer localStorage
                     localStorage.removeItem('hasJoinedLobby');
-                    localStorage.removeItem('lobbyTwitchId');
+                    localStorage.removeItem('lobbyPlayerId');
                     localStorage.removeItem('selectedTeam');
                         }
                 
@@ -2797,7 +2791,7 @@ createApp({
                     this.joinPending = false; // Annuler le pending
                     // Nettoyer localStorage car le join a échoué
                     localStorage.removeItem('hasJoinedLobby');
-                    localStorage.removeItem('lobbyTwitchId');
+                    localStorage.removeItem('lobbyPlayerId');
                     
                     // 💣 Secousse puis trois secondes avant de réessayer
                     this.lobbyShakeError = true;
@@ -2854,7 +2848,7 @@ createApp({
                 
                 // 🆕 Clear le localStorage pour reset l'état "dans la partie"
                 localStorage.removeItem('hasJoinedLobby');
-                localStorage.removeItem('lobbyTwitchId');
+                localStorage.removeItem('lobbyPlayerId');
                 
                 // Afficher une notification discrète en bas
                 this.showKickNotification();
@@ -3011,7 +3005,7 @@ createApp({
                 // Important: définir introPhase AVANT playersData pour éviter le flash
                 this.bombanime.introPhase = 'players';
                 this.bombanime.introPlayersRevealed = 0;
-                this.bombanime.currentPlayerTwitchId = null;
+                this.bombanime.currentPlayerId = null;
                 this.bombanime.bombPointingUp = true; // Bombe vers le haut jusqu'au premier tour
                 this.bombanime.isMyTurn = false; // 🆕 Reset isMyTurn pour éviter l'input activé au mauvais moment
                 
@@ -3061,7 +3055,7 @@ createApp({
                 sessionStorage.setItem('bombanimeInProgress', 'true');
                 
                 // Initialiser les vies du joueur depuis playersData
-                const myData = data.playersData.find(p => p.twitchId === this.twitchId);
+                const myData = data.playersData.find(p => p.playerId === this.playerId);
                 if (myData) {
                     this.playerLives = myData.lives;
                 }
@@ -3108,7 +3102,7 @@ createApp({
                 // 🔥 Détecter si c'est le premier tour (bombe qui passe de haut → joueur)
                 const isFirstTurn = this.bombanime.bombPointingUp;
                 
-                this.bombanime.currentPlayerTwitchId = data.currentPlayerTwitchId;
+                this.bombanime.currentPlayerId = data.currentPlayerId;
                 this.bombanime.bombPointingUp = false; // La bombe tourne vers le joueur
                 this.bombanime.timeRemaining = data.timer;
                 this.bombanime.lastError = null;
@@ -3129,7 +3123,7 @@ createApp({
                 
                 // 🆕 Attendre que l'intro soit terminée ET la bombe ait tourné avant d'activer isMyTurn
                 const activateTurn = () => {
-                    this.bombanime.isMyTurn = data.currentPlayerTwitchId === this.twitchId;
+                    this.bombanime.isMyTurn = data.currentPlayerId === this.playerId;
                     
                     // 🎌 Fermer le modal suggestion si c'est mon tour
                     if (this.bombanime.isMyTurn && this.bombanime.showSuggestionModal) {
@@ -3180,7 +3174,7 @@ createApp({
                 this.playSound(this.sounds.bombanimePass);
                 
                 // DEBUG: Afficher le temps restant
-                if (data.playerTwitchId === this.twitchId && data.debugTimeRemainingMs !== undefined) {
+                if (data.playerId === this.playerId && data.debugTimeRemainingMs !== undefined) {
                     const timeRemainingSec = (data.debugTimeRemainingMs / 1000).toFixed(3);
                     this.bombanime.debugInfo = `✅ Réponse à ${timeRemainingSec}s restants (turnId=${data.debugTurnId})`;
                     console.log(`🔍 DEBUG: ${this.bombanime.debugInfo}`);
@@ -3193,9 +3187,9 @@ createApp({
                 }
                 
                 // Animation de succès visible par TOUS sur le joueur qui vient de répondre
-                this.bombanime.successPlayerTwitchId = data.playerTwitchId;
+                this.bombanime.successPlayerId = data.playerId;
                 setTimeout(() => {
-                    this.bombanime.successPlayerTwitchId = null;
+                    this.bombanime.successPlayerId = null;
                 }, 500);
                 
                 this.bombanime.playersData = [...data.playersData];
@@ -3207,12 +3201,12 @@ createApp({
                 this.updateBombanimeEffects();
                 
                 // Tourner la bombe IMMÉDIATEMENT vers le prochain joueur
-                if (data.nextPlayerTwitchId) {
-                    this.bombanime.currentPlayerTwitchId = data.nextPlayerTwitchId;
+                if (data.nextPlayerId) {
+                    this.bombanime.currentPlayerId = data.nextPlayerId;
                 }
                 
                 // Mettre à jour mon alphabet et animer les nouvelles lettres si c'était ma réponse
-                if (data.playerTwitchId === this.twitchId) {
+                if (data.playerId === this.playerId) {
                     // Trouver les nouvelles lettres (pas encore dans myAlphabet)
                     const oldAlphabet = new Set(this.bombanime.myAlphabet);
                     const newLetters = (data.newLetters || []).filter(l => !oldAlphabet.has(l));
@@ -3272,7 +3266,7 @@ createApp({
                     // 🔊 Son "déjà utilisé"
                     this.playSound(this.sounds.bombanimeUsed);
                     
-                    const lock = document.getElementById('lock-' + this.bombanime.currentPlayerTwitchId);
+                    const lock = document.getElementById('lock-' + this.bombanime.currentPlayerId);
                     
                     if (playerSlot) {
                         playerSlot.classList.add('already-used');
@@ -3285,7 +3279,7 @@ createApp({
                     }
                     
                     // Clear l'input seulement si c'est moi
-                    if (data.playerTwitchId === this.twitchId) {
+                    if (data.playerId === this.playerId) {
                         this.bombanime.inputValue = '';
                     }
                 } else if (data.reason === 'character_not_found') {
@@ -3299,7 +3293,7 @@ createApp({
                     }
                     
                     // Clear l'input et shake seulement si c'est moi
-                    if (data.playerTwitchId === this.twitchId) {
+                    if (data.playerId === this.playerId) {
                         const input = document.getElementById('bombanimeInput');
                         if (input) {
                             input.classList.add('shake-error');
@@ -3314,7 +3308,7 @@ createApp({
                         setTimeout(() => playerSlot.classList.remove('shake-error'), 400);
                     }
                     
-                    if (data.playerTwitchId === this.twitchId) {
+                    if (data.playerId === this.playerId) {
                         this.bombanime.lastError = data.reason;
                         
                         // Feedback visuel sur l'input
@@ -3330,7 +3324,7 @@ createApp({
             // Écouter les frappes en temps réel des autres joueurs
             this.socket.on('bombanime-typing', (data) => {
                 // Mettre à jour le currentTyping du joueur
-                const player = this.bombanime.playersData.find(p => p.twitchId === data.playerTwitchId);
+                const player = this.bombanime.playersData.find(p => p.playerId === data.playerId);
                 if (player) {
                     player.currentTyping = data.text;
                     this.$forceUpdate();
@@ -3345,13 +3339,13 @@ createApp({
                 this.playSound(this.sounds.bombanimeExplosion);
                 
                 // 🆕 Garder la tentative de réponse du joueur qui explose
-                const explodingPlayer = this.bombanime.playersData.find(p => p.twitchId === data.playerTwitchId);
+                const explodingPlayer = this.bombanime.playersData.find(p => p.playerId === data.playerId);
                 if (explodingPlayer && explodingPlayer.currentTyping) {
                     explodingPlayer.lastAnswer = explodingPlayer.currentTyping;
                 }
                 
                 // 🆕 Désactiver immédiatement l'input si c'est mon tour qui explose
-                if (data.playerTwitchId === this.twitchId) {
+                if (data.playerId === this.playerId) {
                     this.bombanime.isMyTurn = false;
                     this.bombanime.inputValue = '';
                     // Défocuser l'input
@@ -3360,7 +3354,7 @@ createApp({
                 }
                 
                 // DEBUG: Afficher l'explosion avec timing
-                if (data.playerTwitchId === this.twitchId) {
+                if (data.playerId === this.playerId) {
                     const elapsedSec = data.debugElapsedMs ? (data.debugElapsedMs / 1000).toFixed(3) : '?';
                     this.bombanime.debugInfo = `💥 EXPLOSION après ${elapsedSec}s (turnId=${data.debugTurnId})`;
                     console.log(`🔍 DEBUG: ${this.bombanime.debugInfo}`);
@@ -3376,7 +3370,7 @@ createApp({
                 
                 // 🆕 Animation de shake sur le joueur qui explose (avec délai)
                 setTimeout(() => {
-                    const playerSlot = document.querySelector(`.bombanime-player-slot[data-twitch-id="${data.playerTwitchId}"]`);
+                    const playerSlot = document.querySelector(`.bombanime-player-slot[data-player-id="${data.playerId}"]`);
                     if (playerSlot) {
                         playerSlot.classList.add('exploding');
                         setTimeout(() => {
@@ -3386,7 +3380,7 @@ createApp({
                 }, 50); // Délai minimal
                 
                 // Notification immédiate si c'est moi
-                if (data.playerTwitchId === this.twitchId) {
+                if (data.playerId === this.playerId) {
                     this.playerLives = data.livesRemaining;
                     if (data.isEliminated) {
                     } else {
@@ -3402,7 +3396,7 @@ createApp({
                     
                     // Restaurer la tentative de réponse
                     if (attemptedAnswer) {
-                        const player = this.bombanime.playersData.find(p => p.twitchId === data.playerTwitchId);
+                        const player = this.bombanime.playersData.find(p => p.playerId === data.playerId);
                         if (player) {
                             player.lastAnswer = attemptedAnswer;
                         }
@@ -3420,7 +3414,7 @@ createApp({
                 
                 // Animation alphabet visible par TOUS sur l'hexagone du joueur
                 this.$nextTick(() => {
-                    const playerSlot = document.querySelector(`.bombanime-player-slot[data-twitch-id="${data.playerTwitchId}"]`);
+                    const playerSlot = document.querySelector(`.bombanime-player-slot[data-player-id="${data.playerId}"]`);
                     if (playerSlot) {
                         playerSlot.classList.add('alphabet-complete');
                         
@@ -3432,15 +3426,15 @@ createApp({
                 
                 // 🎯 Animation gain de vie via Vue (réactive)
                 setTimeout(() => {
-                    this.bombanime.lifeGainedPlayerTwitchId = data.playerTwitchId;
+                    this.bombanime.lifeGainedPlayerId = data.playerId;
                     
                     setTimeout(() => {
-                        this.bombanime.lifeGainedPlayerTwitchId = null;
+                        this.bombanime.lifeGainedPlayerId = null;
                     }, 800);
                 }, 200);
                 
                 // Mettre à jour les vies dans playersData pour tous
-                const player = this.bombanime.playersData.find(p => p.twitchId === data.playerTwitchId);
+                const player = this.bombanime.playersData.find(p => p.playerId === data.playerId);
                 if (player) {
                     setTimeout(() => {
                         player.lives = data.newLives;
@@ -3449,7 +3443,7 @@ createApp({
                     }, 400);
                 }
                 
-                if (data.playerTwitchId === this.twitchId) {
+                if (data.playerId === this.playerId) {
                     // Déclencher l'animation spectaculaire du cœur (pour moi)
                     this.bombanime.heartCompleting = true;
                     
@@ -3494,11 +3488,9 @@ createApp({
                     duration: data.duration,
                     gameMode: 'bombanime',
                     serie: data.serie,
-                    namesUsed: data.namesUsed,
-                    rewardsData: data.rewardsData
+                    namesUsed: data.namesUsed
                 };
 
-                // 🎁 Si les rewards sont déjà présents (cas normal classique/rivalité), déclencher
             });
 
             
@@ -3506,7 +3498,7 @@ createApp({
                 console.log('💣 État BombAnime reçu:', data);
                 if (data.active) {
                     // 🆕 Vérifier si le joueur fait partie de la partie
-                    const myData = data.playersData.find(p => p.twitchId === this.twitchId);
+                    const myData = data.playersData.find(p => p.playerId === this.playerId);
                     
                     // 🆕 Si le joueur n'est pas dans la partie, mode spectateur
                     if (!myData) {
@@ -3522,13 +3514,13 @@ createApp({
                     this.bombanime.suggestionUsed = sessionStorage.getItem('bombanimeSuggestionUsed') === 'true';
                     this.bombanime.timer = data.timer;
                     this.bombanime.timeRemaining = data.timeRemaining || data.timer;
-                    this.bombanime.currentPlayerTwitchId = data.currentPlayerTwitchId;
+                    this.bombanime.currentPlayerId = data.currentPlayerId;
                     this.bombanime.bombPointingUp = false; // 🆕 Partie en cours, bombe vers le joueur
                     this.bombanime.playersOrder = [...data.playersOrder];
                     this.bombanime.playersData = [...data.playersData];
                     this.bombanime.myAlphabet = data.myAlphabet || [];
                     this.bombanime.usedNamesCount = data.usedNamesCount || 0;
-                    this.bombanime.isMyTurn = data.currentPlayerTwitchId === this.twitchId;
+                    this.bombanime.isMyTurn = data.currentPlayerId === this.playerId;
                     
                     // Mettre à jour l'état global
                     this.gameInProgress = true;
@@ -3623,7 +3615,7 @@ createApp({
                 this.bombanime.playersData = [...data.playersData];
                 
                 // Si c'est moi, mettre à jour mes vies
-                if (data.playerTwitchId === this.twitchId) {
+                if (data.playerId === this.playerId) {
                     this.playerLives = data.lives;
                 }
                 
@@ -3631,10 +3623,10 @@ createApp({
                 this.updateBombanimeEffects();
                 
                 // 🎯 Déclencher l'animation via Vue (réactive)
-                this.bombanime.lifeGainedPlayerTwitchId = data.playerTwitchId;
+                this.bombanime.lifeGainedPlayerId = data.playerId;
                 
                 setTimeout(() => {
-                    this.bombanime.lifeGainedPlayerTwitchId = null;
+                    this.bombanime.lifeGainedPlayerId = null;
                 }, 800);
             });
             
@@ -3993,14 +3985,8 @@ createApp({
             // Reset le système de combo
             this.resetComboSystem();
 
-            // 🎁 Cleanup reward animation
-            this.rewardTimers.forEach(t => clearTimeout(t));
-            this.rewardTimers = [];
-            this.rewardAnimData = null;
-            this.rewardAnimVisible = false;
-
             localStorage.removeItem('hasJoinedLobby');
-            localStorage.removeItem('lobbyTwitchId');
+            localStorage.removeItem('lobbyPlayerId');
 
             // 🆕 v2 : on quitte le salon et on revient à l'accueil
             // L'hôte referme aussi le salon côté serveur : sinon il restait ouvert
@@ -4025,9 +4011,7 @@ createApp({
             }
         },
 
-        // ============================================
-        // 🎁 REWARD ANIMATION
-        // ============================================
+        // Relire l etat du salon aupres du serveur
         async refreshGameState() {
             try {
                 const response = await this.fetchEtatSalon();
@@ -4113,7 +4097,7 @@ createApp({
             if (!this.bombanime.active) return;
             this.$nextTick(() => {
                 this.bombanime.playersData.forEach(p => {
-                    const slot = document.querySelector(`.bombanime-player-slot[data-twitch-id="${p.twitchId}"]`);
+                    const slot = document.querySelector(`.bombanime-player-slot[data-player-id="${p.playerId}"]`);
                     if (!slot) return;
                     const hex = slot.querySelector('.player-hex');
                     if (!hex) return;
@@ -4727,7 +4711,7 @@ createApp({
             if (!this.bombanime.isMyTurn) return;
             
             // Mettre à jour localement aussi pour que le joueur voie sa propre frappe
-            const myPlayer = this.bombanime.playersData.find(p => p.twitchId === this.twitchId);
+            const myPlayer = this.bombanime.playersData.find(p => p.playerId === this.playerId);
             if (myPlayer) {
                 myPlayer.currentTyping = this.bombanime.inputValue.toUpperCase();
                 this.$forceUpdate();
@@ -4859,7 +4843,7 @@ createApp({
             this.bombanime.suggestionResultType = '';
 
             const serie = this.bombanime.serie || 'Unknown';
-            const submittedBy = this.twitchUsername || this.twitchId || 'Joueur';
+            const submittedBy = this.username || this.playerId || 'Joueur';
             let successCount = 0;
             let errorCount = 0;
 
@@ -5106,7 +5090,7 @@ createApp({
             }
             
             const currentIndex = this.bombanime.playersData.findIndex(
-                p => p.twitchId === this.bombanime.currentPlayerTwitchId
+                p => p.playerId === this.bombanime.currentPlayerId
             );
             if (currentIndex === -1) {
                 // 🔥 FIX: Retourner le dernier angle valide au lieu de 0
@@ -5168,9 +5152,9 @@ createApp({
             return serieNames[this.bombanime.serie] || this.bombanime.serie;
         },
         
-        // Obtenir les données d'un joueur par twitchId
-        getBombanimePlayer(twitchId) {
-            return this.bombanime.playersData.find(p => p.twitchId === twitchId);
+        // Obtenir les données d'un joueur par playerId
+        getBombanimePlayer(playerId) {
+            return this.bombanime.playersData.find(p => p.playerId === playerId);
         },
         
         // Calculer le pourcentage de remplissage du cœur alphabet

@@ -25,9 +25,9 @@ const check = (l, ok, extra) => { console.log(`${ok ? '✅' : '❌'} ${l}${extra
 
     const s = io(BASE);
     await new Promise(r => s.on('connect', r));
-    s.emit('register-authenticated', { twitchId: 'hotePlafond', username: 'Hote' });
+    s.emit('register-authenticated', { playerId: 'hotePlafond', username: 'Hote' });
     await wait(150);
-    s.emit('join-lobby', { twitchId: 'hotePlafond', username: 'Hote', isHost: true, code, hostToken: jeton });
+    s.emit('join-lobby', { playerId: 'hotePlafond', username: 'Hote', isHost: true, code, hostToken: jeton });
     await wait(400);
 
     let e = await etat();
@@ -47,9 +47,9 @@ const check = (l, ok, extra) => { console.log(`${ok ? '✅' : '❌'} ${l}${extra
     await new Promise(r => tard.on('connect', r));
     let refus = '';
     tard.on('error', (d) => { refus = d.message || ''; });
-    tard.emit('register-authenticated', { twitchId: 'tardif', username: 'Tardif' });
+    tard.emit('register-authenticated', { playerId: 'tardif', username: 'Tardif' });
     await wait(150);
-    tard.emit('join-lobby', { twitchId: 'tardif', username: 'Tardif', code });
+    tard.emit('join-lobby', { playerId: 'tardif', username: 'Tardif', code });
     await wait(600);
     e = await etat();
     check('le joueur de trop est refusé', e.playerCount === PLAFOND && /plein/i.test(refus),

@@ -22,7 +22,7 @@ async function jouerUneManche(socks) {
     for (let q = 0; q < 30; q++) {
         // Chacun tente une option différente : sans réponse, tout le monde
         // finit à zéro et le départage ne se tranche jamais.
-        socks.forEach(({ s, id }, i) => s.emit('submit-answer', { twitchId: id, answer: i + 1 }));
+        socks.forEach(({ s, id }, i) => s.emit('submit-answer', { playerId: id, answer: i + 1 }));
 
         for (let i = 0; i < 40; i++) {
             const e = await etat();
@@ -52,9 +52,9 @@ const check = (l, ok, extra) => { console.log(`${ok ? '✅' : '❌'} ${l}${extra
         const vu = { questions: [], salon: 0 };
         s.on('new-question', (q) => vu.questions.push(q.questionId));
         s.on('retour-au-salon', () => { vu.salon++; });
-        s.emit('register-authenticated', { twitchId: id, username: nom });
+        s.emit('register-authenticated', { playerId: id, username: nom });
         await wait(120);
-        s.emit('join-lobby', { twitchId: id, username: nom, code });
+        s.emit('join-lobby', { playerId: id, username: nom, code });
         socks.push({ s, id, vu });
     }
     await wait(600);

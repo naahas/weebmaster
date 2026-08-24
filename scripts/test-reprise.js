@@ -23,9 +23,9 @@ async function brancher(id, nom, code, hostToken) {
     const vu = { questions: [], erreurs: [] };
     s.on('new-question', (q) => vu.questions.push(q.questionNumber));
     s.on('error', (e) => vu.erreurs.push(e.message));
-    s.emit('register-authenticated', { twitchId: id, username: nom });
+    s.emit('register-authenticated', { playerId: id, username: nom });
     await wait(120);
-    s.emit('join-lobby', Object.assign({ twitchId: id, username: nom, code }, hostToken ? { isHost: true, hostToken } : {}));
+    s.emit('join-lobby', Object.assign({ playerId: id, username: nom, code }, hostToken ? { isHost: true, hostToken } : {}));
     return { s, id, nom, vu };
 }
 
@@ -33,7 +33,7 @@ async function brancher(id, nom, code, hostToken) {
 async function manche(code, jeton, joueurs) {
     await post('/admin/start-game', jeton, {});
     for (let q = 0; q < 30; q++) {
-        joueurs.forEach(({ s, id }, i) => s.emit('submit-answer', { twitchId: id, answer: (i % 4) + 1 }));
+        joueurs.forEach(({ s, id }, i) => s.emit('submit-answer', { playerId: id, answer: (i % 4) + 1 }));
         for (let i = 0; i < 40; i++) {
             const e = await etat(code);
             if (!e.inProgress) return;

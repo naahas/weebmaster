@@ -58,7 +58,7 @@ function makePlayer(id, name) {
         const timer = setTimeout(() => reject(new Error('connexion socket impossible')), 8000);
         sock.on('connect', () => {
             clearTimeout(timer);
-            sock.emit('register-authenticated', { twitchId: id, username: name });
+            sock.emit('register-authenticated', { playerId: id, username: name });
             resolve({ sock, seen, id, name });
         });
         sock.on('connect_error', (e) => { clearTimeout(timer); reject(e); });
@@ -81,13 +81,13 @@ async function scenarioClassic() {
     await wait(300);
 
     // Un mauvais code doit être refusé
-    p1.sock.emit('join-lobby', { twitchId: p1.id, username: p1.name, code: 'ZZZZ' });
+    p1.sock.emit('join-lobby', { playerId: p1.id, username: p1.name, code: 'ZZZZ' });
     await wait(400);
     const refused = p1.seen.find(e => e.evt === 'error' && e.d.badCode);
     check('mauvais code refusé', !!refused, refused ? refused.d.message : 'aucune erreur reçue');
 
-    p1.sock.emit('join-lobby', { twitchId: p1.id, username: p1.name, code });
-    p2.sock.emit('join-lobby', { twitchId: p2.id, username: p2.name, code });
+    p1.sock.emit('join-lobby', { playerId: p1.id, username: p1.name, code });
+    p2.sock.emit('join-lobby', { playerId: p2.id, username: p2.name, code });
     await wait(600);
 
     const state = await get('/admin/game-state');
@@ -107,15 +107,15 @@ async function scenarioClassic() {
         await new Promise(r => retardataire.on('connect', r));
         let refus = null;
         retardataire.on('error', (d) => { refus = d && d.message; });
-        retardataire.emit('register-authenticated', { twitchId: 'late', username: 'Retard' });
+        retardataire.emit('register-authenticated', { playerId: 'late', username: 'Retard' });
         await wait(200);
-        retardataire.emit('join-lobby', { twitchId: 'late', username: 'Retard', code });
+        retardataire.emit('join-lobby', { playerId: 'late', username: 'Retard', code });
         for (let i = 0; i < 20 && !refus; i++) await wait(50);
         check('partie lancée : arrivée refusée', !!refus && /en cours/i.test(refus), refus || 'aucun refus');
         retardataire.close();
 
-        p1.sock.emit('submit-answer', { twitchId: p1.id, answer: 1 });
-        p2.sock.emit('submit-answer', { twitchId: p2.id, answer: 2 });
+        p1.sock.emit('submit-answer', { playerId: p1.id, answer: 1 });
+        p2.sock.emit('submit-answer', { playerId: p2.id, answer: 2 });
         await wait(500);
         const st = await get('/game/state?code=' + roomCode);
         check('réponses enregistrées', st.players.some(p => p.hasAnswered));
@@ -141,8 +141,8 @@ async function scenarioBombanime() {
     const p1 = await makePlayer('smoke-b1', 'Bomb1');
     const p2 = await makePlayer('smoke-b2', 'Bomb2');
     await wait(300);
-    p1.sock.emit('join-lobby', { twitchId: p1.id, username: p1.name, code: roomCode });
-    p2.sock.emit('join-lobby', { twitchId: p2.id, username: p2.name, code: roomCode });
+    p1.sock.emit('join-lobby', { playerId: p1.id, username: p1.name, code: roomCode });
+    p2.sock.emit('join-lobby', { playerId: p2.id, username: p2.name, code: roomCode });
     await wait(600);
 
     const start = await post('/admin/start-game', {});
@@ -157,14 +157,18 @@ async function scenarioBombanime() {
     check('premier tour distribué', !!turn, turn ? 'joueur ' + turn.d.currentPlayerUsername : '');
 
     if (turn) {
-        const active = [p1, p2].find(p => p.id === turn.d.currentPlayerTwitchId);
+        const active = [p1, p2].find(p => p.id === turn.d.currentPlayerId);
         if (active) active.sock.emit('bombanime-submit-name', { name: 'NARUTO' });
         await wait(700);
         const accepted = [...p1.seen, ...p2.seen].find(e => e.evt === 'bombanime-name-accepted');
         check('nom de personnage validé', !!accepted, accepted ? accepted.d.name : '');
     }
 
-    await post('/admin/bombanime/close-lobby', {});
+    // Un salon se referme par la même porte que les autres : la route
+    // /admin/bombanime/close-lobby doublait celle-ci et ne servait qu ici.
+    await post('/admin/toggle-game', {});
+    const ferme = await get('/game/state?code=' + roomCode);
+    check('lobby BombAnime refermé', ferme.isActive === false);
     p1.sock.close();
     p2.sock.close();
     await wait(400);
@@ -182,8 +186,8 @@ async function scenarioGameEnd() {
     const p1 = await makePlayer('smoke-e1', 'Express1');
     const p2 = await makePlayer('smoke-e2', 'Express2');
     await wait(300);
-    p1.sock.emit('join-lobby', { twitchId: p1.id, username: p1.name, code: roomCode });
-    p2.sock.emit('join-lobby', { twitchId: p2.id, username: p2.name, code: roomCode });
+    p1.sock.emit('join-lobby', { playerId: p1.id, username: p1.name, code: roomCode });
+    p2.sock.emit('join-lobby', { playerId: p2.id, username: p2.name, code: roomCode });
     await wait(600);
 
     await post('/admin/start-game', {});
@@ -203,12 +207,15 @@ async function scenarioHomeStats() {
     const stats = await get('/api/home-stats');
     check('questions comptées', stats.questionsCount > 0, stats.questionsCount + ' questions');
     check('salons actifs cohérents', typeof stats.activeRooms === 'number', 'activeRooms=' + stats.activeRooms);
-    // Les parties du smoke tiennent à deux joueurs : elles doivent être écartées
+    // Les parties du smoke tiennent à deux joueurs : elles doivent être écartées.
+    // Le seuil dépend du mode : quinze au quiz, cinq en BombAnime, qui plafonne
+    // justement à quinze et n aurait sinon retenu que les salons complets.
     check('historique lisible', Array.isArray(stats.recentGames),
         (stats.recentGames || []).length + ' partie(s) retenue(s)');
-    const petites = (stats.recentGames || []).filter(g => g.playersCount < 15);
-    check('les parties à moins de 15 joueurs sont écartées', petites.length === 0,
-        petites.length ? petites.map(g => g.playersCount + 'j').join(', ') : 'aucune');
+    const seuil = (m) => (m === 'bombanime' ? 5 : 15);
+    const petites = (stats.recentGames || []).filter(g => g.playersCount < seuil(g.mode));
+    check('les parties sous le seuil de leur mode sont écartées', petites.length === 0,
+        petites.length ? petites.map(g => g.mode + ' ' + g.playersCount + 'j').join(', ') : 'aucune');
 }
 
 (async () => {

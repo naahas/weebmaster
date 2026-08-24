@@ -25,9 +25,9 @@ async function joueur(id, nom, code) {
     s.on('game-deactivated', () => vu.fins.push('ferme'));
     s.on('error', (e) => vu.erreurs.push(e.message));
     s.on('game-started', (d) => vu.departs.push(d));
-    s.emit('register-authenticated', { twitchId: id, username: nom });
+    s.emit('register-authenticated', { playerId: id, username: nom });
     await wait(120);
-    s.emit('join-lobby', { twitchId: id, username: nom, code });
+    s.emit('join-lobby', { playerId: id, username: nom, code });
     return { s, id, nom, vu };
 }
 

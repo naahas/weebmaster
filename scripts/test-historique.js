@@ -32,9 +32,9 @@ async function ouvrirSalon(nom) {
         const vu = [];
         s.on('new-question', (q) => vu.push(q.questionId));
         const id = nom + k;
-        s.emit('register-authenticated', { twitchId: id, username: id });
+        s.emit('register-authenticated', { playerId: id, username: id });
         await wait(100);
-        s.emit('join-lobby', { twitchId: id, username: id, code: r.roomCode });
+        s.emit('join-lobby', { playerId: id, username: id, code: r.roomCode });
         joueurs.push({ s, id, vu });
     }
     await wait(500);
@@ -46,7 +46,7 @@ async function ouvrirSalon(nom) {
 async function manche(salon) {
     await post('/admin/start-game', salon.jeton, {});
     for (let q = 0; q < 30; q++) {
-        salon.joueurs.forEach(({ s, id }, i) => s.emit('submit-answer', { twitchId: id, answer: i + 1 }));
+        salon.joueurs.forEach(({ s, id }, i) => s.emit('submit-answer', { playerId: id, answer: i + 1 }));
         for (let i = 0; i < 40; i++) {
             const e = await etat(salon.code);
             if (!e.inProgress) return;
