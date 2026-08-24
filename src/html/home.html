@@ -201,6 +201,7 @@
                     <span class="v2-recent-t">Dernières parties</span>
                     <div class="v2-recent-row" v-for="(g, i) in homeStats.recentGames.slice(0, 5)" :key="i">
                         <span class="mode" :class="'mode-' + g.mode">{{ g.modeLabel }}</span>
+                        <span class="quand">{{ tempsRelatif(g.endedAt) }}</span>
                         <span class="nb">{{ g.playersCount }}</span>
                     </div>
                 </aside>

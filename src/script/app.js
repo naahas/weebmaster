@@ -1054,6 +1054,22 @@ createApp({
             }, { passive: true });
         },
 
+        // « il y a 3 min ». Les stats se rechargent toutes les vingt secondes,
+        // l'étiquette se remet donc à jour d'elle-même.
+        tempsRelatif(iso) {
+            if (!iso) return '';
+            const t = new Date(iso).getTime();
+            if (!isFinite(t)) return '';
+            const s = Math.max(0, Math.round((Date.now() - t) / 1000));
+            if (s < 60) return "à l'instant";
+            const min = Math.round(s / 60);
+            if (min < 60) return 'il y a ' + min + ' min';
+            const h = Math.round(min / 60);
+            if (h < 24) return 'il y a ' + h + ' h';
+            const j = Math.round(h / 24);
+            return 'il y a ' + j + ' j';
+        },
+
         async loadHomeStats() {
             try {
                 const res = await fetch('/api/home-stats');
@@ -1926,6 +1942,10 @@ createApp({
         // Sans hasJoined ni isGameActive, on retombait sur l'écran d'attente de
         // l'invité, et la création suivante était refusée pour un salon déjà fermé.
         quitterSalonLocalement() {
+            // Le sceau de la réponse vit sur <body>, hors de la vue : quitter
+            // l'écran ne l'emporte pas. Répondre puis partir le laissait posé
+            // sur l'accueil jusqu'au rechargement.
+            this.clearSeal();
             // Sans ça, le badge de mode gardait « BombAnime » sur l'accueil
             this.lobbyMode = 'classic';
             sessionStorage.removeItem('bombanimeInProgress');
@@ -2410,6 +2430,7 @@ createApp({
             });
 
             this.socket.on('game-deactivated', () => {
+                this.clearSeal();
                 // 🔊 Toujours couper le tictac, même si le reste est ignoré
                 this.stopBombTicking();
                 if (this.bombanime.timerInterval) {

@@ -8870,11 +8870,13 @@ body.game-active:has(.poll-game-container) #particles-js {
    🆕 v2 — CORRECTIFS DU PANEL DE JEU
    ============================================ */
 
-/* Le sceau tient jusqu'à la fin du temps : plus de fondu final */
+/* Le sceau tient jusqu'à la fin du temps : plus de fondu final. Il reste posé
+   à l'écran, donc il doit se faire oublier — il prenait la place d'une réponse. */
 .v2q-seal {
-    width: 2.05rem;
-    height: 2.05rem;
-    font-size: 1rem;
+    width: 1.6rem;
+    height: 1.6rem;
+    font-size: 0.78rem;
+    border-width: 0.1rem;
     animation: v2qSealHold 0.45s cubic-bezier(0.2, 1.5, 0.4, 1) forwards;
 }
 
@@ -10477,6 +10479,14 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 .v2-recent-row .mode.mode-bombanime { color: rgba(74, 222, 128, 0.75); }
 
 /* L'affluence, en chiffre discret suivi d'une silhouette */
+/* Depuis quand : discret, il ne doit pas concurrencer le mode */
+.v2-recent-row .quand {
+    flex: 0 0 auto;
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.26);
+    white-space: nowrap;
+}
+
 .v2-recent-row .nb {
     position: relative;
     padding-right: 0.85rem;

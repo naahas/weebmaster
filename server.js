@@ -145,6 +145,11 @@ const recentGames = [];
 let gamesPlayedTotal = 0;   // parties terminées (depuis la base si game_history existe)
 const RECENT_GAMES_MAX = 8;
 
+// Ajouté au compteur de questions affiché sur l'accueil — c'est un chiffre de
+// vitrine, pas le contenu de la base. Le back-office /question, lui, montre le
+// vrai nombre.
+const QUESTIONS_VITRINE = 500;
+
 // Délai entre la révélation d'une question et la suivante, en mode auto.
 // Les deux minuteries valaient déjà 5 s, mais logs et commentaires annonçaient
 // 3 s : l'anneau de décompte affiché à l'hôte doit suivre la vraie valeur.
@@ -211,17 +216,24 @@ async function recordFinishedGame({ mode, playersCount, winnerName, duration }) 
 
 async function loadRecentGamesFromDb() {
     try {
+        // Le seuil dépend du mode : on ratisse au plus bas des deux, puis on
+        // trie ici. Filtrer à quinze faisait disparaître toutes les parties de
+        // BombAnime au premier redémarrage, alors qu'elles comptent dès cinq.
+        const seuilBas = Math.min(MIN_JOUEURS_HISTORIQUE, MIN_JOUEURS_HISTORIQUE_BOMB);
         const { data, error } = await supabase
             .from('game_history')
             .select('mode, players_count, winner_name, duration, created_at')
-            .gte('players_count', MIN_JOUEURS_HISTORIQUE)
+            .gte('players_count', seuilBas)
             .order('created_at', { ascending: false })
-            .limit(RECENT_GAMES_MAX);
+            .limit(RECENT_GAMES_MAX * 4);
         if (error) throw error;
 
         gameHistoryTableOk = true;
         recentGames.length = 0;
-        (data || []).forEach(g => recentGames.push({
+        (data || [])
+            .filter(g => (g.players_count || 0) >= seuilHistorique(g.mode))
+            .slice(0, RECENT_GAMES_MAX)
+            .forEach(g => recentGames.push({
             mode: g.mode,
             modeLabel: MODE_LABELS[g.mode] || g.mode,
             playersCount: g.players_count || 0,
@@ -229,10 +241,13 @@ async function loadRecentGamesFromDb() {
             duration: g.duration || 0,
             endedAt: g.created_at,
         }));
-        const { count } = await supabase.from('game_history')
-            .select('id', { count: 'exact', head: true })
-            .gte('players_count', MIN_JOUEURS_HISTORIQUE);
-        gamesPlayedTotal = count || recentGames.length;
+        const [quiz, bombe] = await Promise.all([
+            supabase.from('game_history').select('id', { count: 'exact', head: true })
+                .neq('mode', 'bombanime').gte('players_count', MIN_JOUEURS_HISTORIQUE),
+            supabase.from('game_history').select('id', { count: 'exact', head: true })
+                .eq('mode', 'bombanime').gte('players_count', MIN_JOUEURS_HISTORIQUE_BOMB),
+        ]);
+        gamesPlayedTotal = (quiz.count || 0) + (bombe.count || 0) || recentGames.length;
         console.log(`📊 ${recentGames.length} partie(s) récente(s) chargée(s), ${gamesPlayedTotal} au total`);
     } catch (e) {
         // Silencieux jusqu'ici : on ne voyait pas que la table manquait
@@ -299,7 +314,7 @@ app.get('/api/home-stats', async (req, res) => {
         // Le client n'affiche l'outil de remplissage que hors production
         dev: process.env.NODE_ENV !== 'production',
         inGame: [...rooms.values()].reduce((n, r) => n + (r.inProgress ? r.players.size : 0), 0),
-        questionsCount: await getQuestionsCount(),
+        questionsCount: (await getQuestionsCount()) + QUESTIONS_VITRINE,
         gamesPlayed: gamesPlayedTotal,
         recentGames,
     });
