@@ -477,29 +477,17 @@
                             </template>
                             <!-- BombAnime -->
                             <template v-else>
-                <!-- La série d'abord : c'est elle qui définit la partie -->
-                                <div class="v2-set" :class="{ 'opts-fermes': serieChoisie }"
-                                     @mouseleave="serieChoisie = false">
+                                <!-- Vingt et une séries : le tiroir habituel déborderait de la
+                                     colonne, qui rogne ce qui dépasse. Un panneau posé à côté,
+                                     ouvert au clic, s'en affranchit. -->
+                                <button class="v2-set v2-set-porte" @click="ouvrirSeriesBomb">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><circle cx="12" cy="14" r="7"/><path d="M16 5l2-2M14 6l1.5-3"/></svg>
                                     <span class="v2-set-label">Série</span>
                                     <span class="v2-set-value">{{ nomSerie(bombanime.serie) }}</span>
-                                    <span class="v2-set-opts grille">
-                                        <button v-for="s in bombanimeSeries" :key="s.id"
-                                                class="v2-set-opt" :class="{ on: bombanime.serie === s.id }"
-                                                @click="serieChoisie = true; applySetting('/admin/bombanime/update-serie', { serie: s.id }, () => bombanime.serie = s.id)">{{ s.nom }}</button>
-                                    </span>
-                                </div>
-
-                                <div class="v2-set">
-                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-                                    <span class="v2-set-label">Temps</span>
-                                    <span class="v2-set-value">{{ bombanime.timer }}s</span>
-                                    <span class="v2-set-opts">
-                                        <button v-for="t in [5, 6, 7, 8, 9, 10]" :key="t"
-                                                class="v2-set-opt" :class="{ on: bombanime.timer === t }"
-                                                @click="applySetting('/admin/bombanime/set-timer', { timer: t }, () => bombanime.timer = t)">{{ t }}s</button>
-                                    </span>
-                                </div>
+                                    <svg class="v2-set-fleche" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M9 6l6 6-6 6"/>
+                                    </svg>
+                                </button>
 
                                 <div class="v2-set">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21.2l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
@@ -510,6 +498,16 @@
                                                 class="v2-set-opt" :class="{ on: bombanime.lives === v }"
                                                 @click="applySetting('/admin/bombanime/set-lives', { lives: v }, () => bombanime.lives = v)">{{ v }}</button>
                                     </span>
+                                </div>
+
+                                <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                                    <span class="v2-set-label">Temps</span>
+                                    <input class="v2-range" type="range" min="5" max="10" step="1"
+                                           :value="bombanime.timer"
+                                           @input="bombanime.timer = parseInt($event.target.value)"
+                                           @change="applySetting('/admin/bombanime/set-timer', { timer: bombanime.timer }, () => {})">
+                                    <span class="v2-set-value num">{{ bombanime.timer }}s</span>
                                 </div>
                             </template>
 
@@ -1503,6 +1501,22 @@
         </div>
 
         <!-- 🆕 v2 — Détail de la question (hôte) -->
+        <!-- Choix de la série BombAnime : posé à la racine, sinon la colonne
+             des réglages le rognerait. Sa position est calculée à l'ouverture. -->
+        <div class="v2-bserie-veil" v-if="seriesBombOuvertes" @click.self="seriesBombOuvertes = false">
+            <div class="v2-bserie" :style="{ top: seriesBombPos.top + 'px', left: seriesBombPos.left + 'px' }">
+                <div class="v2-bserie-head">
+                    <span>Série</span>
+                    <button @click="seriesBombOuvertes = false">Fermer</button>
+                </div>
+                <div class="v2-bserie-grille">
+                    <button v-for="s in bombanimeSeries" :key="s.id"
+                            class="v2-bserie-opt" :class="{ on: bombanime.serie === s.id }"
+                            @click="choisirSerieBomb(s.id)">{{ s.nom }}</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Détail d'un camp, ouvert depuis le classement final -->
         <div class="v2-camp-veil" v-if="campDetail" @click.self="campDetail = null">
             <div class="v2-camp-sheet" :class="'team-' + campDetail">

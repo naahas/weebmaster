@@ -56,6 +56,8 @@ createApp({
             noSpoil: false,
             serieStats: null,     // combien de séries derrière Overall et Mainstream
             serieChoisie: false,  // ferme le tiroir après un choix, jusqu'à ce qu'on ressorte
+            seriesBombOuvertes: false,
+            seriesBombPos: { top: 0, left: 0 },
             // Sept choix de même poids : le tiroir les range en grille plutôt
             // qu'en ligne, sinon leurs largeurs suivaient celles des libellés.
             serieCartes: [
@@ -1158,6 +1160,24 @@ createApp({
 
         // Tous les réglages passent par la même route POST, avec application
         // optimiste côté client et retour arrière si le serveur refuse.
+        // Le panneau vit à la racine : sa place se calcule depuis la ligne cliquée
+        ouvrirSeriesBomb(e) {
+            const r = e.currentTarget.getBoundingClientRect();
+            const largeur = 20 * 16;                     // la largeur du panneau, en pixels
+            const hauteur = Math.min(window.innerHeight * 0.6, 26 * 16);
+            this.seriesBombPos = {
+                left: Math.min(r.right + 12, window.innerWidth - largeur - 12),
+                top: Math.max(12, Math.min(r.top, window.innerHeight - hauteur - 12)),
+            };
+            this.seriesBombOuvertes = true;
+        },
+
+        choisirSerieBomb(id) {
+            this.seriesBombOuvertes = false;
+            if (id === this.bombanime.serie) return;
+            this.applySetting('/admin/bombanime/update-serie', { serie: id }, () => this.bombanime.serie = id);
+        },
+
         // Le tiroir s'ouvre au survol : sans ça il resterait ouvert sous le
         // curseur après le choix, comme si rien n'avait été pris en compte.
         choisirSerie(id) {
@@ -1767,6 +1787,7 @@ createApp({
 
             const calques = [
                 ['confirmAction', null],
+                ['seriesBombOuvertes', false],
                 ['campDetail', null],
                 ['showReport', false],
                 ['showQuestionStats', false],
