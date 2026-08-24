@@ -489,6 +489,14 @@
    se décline sur les quatre.
    ============================================ */
 .bombanime-player-slot .player-name {
+    /* Hors du flux : sans ça le bloc mesurait pseudo + hexagone + réponse, et
+       le translate(-50%,-50%) centrait ce total. L'hexagone tombait sous le
+       point visé par la mèche, qui semblait pointer à côté du joueur. */
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 0.25rem;
     font-size: 0.9rem;
     color: rgba(255,255,255,0.35);
     font-weight: 500;

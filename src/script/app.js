@@ -23,7 +23,7 @@ createApp({
                 // cadrée dans le panneau au lieu de flotter comme un personnage détouré.
                 { id: 'classic',   name: 'Classique', kind: 'Solo ou équipes', players: '∞',  img: 'lambo2.png',
                   desc: "Quiz QCM. Solo ou en deux camps, vies ou points, séries au choix." },
-                { id: 'bombanime', name: 'BombAnime', kind: 'Solo',   players: '13', img: 'lambo2.png',
+                { id: 'bombanime', name: 'BombAnime', kind: 'Solo',   players: '15', img: 'lambo2.png',
                   desc: "La bombe tourne. Cite un perso avant qu'elle explose." },
                 // 🧪 Modes fictifs : uniquement pour juger la mise en page à l'échelle
                 { id: 'ascension', name: 'Ascension', kind: 'Solo',   players: '∞',  img: 'lambo2.png', soon: true,
@@ -4940,9 +4940,9 @@ createApp({
             const total = this.bombanime.playersData.length;
             const screenWidth = window.innerWidth;
             
-            // Mobile - plus gros qu'avant
+            // Sur téléphone elle mangeait le centre du cercle
             if (screenWidth <= 480) {
-                return Math.min(52, Math.max(40, 34 + (total * 1.2)));
+                return Math.min(44, Math.max(32, 27 + (total * 1.0)));
             }
             // Tablette
             if (screenWidth <= 768) {
