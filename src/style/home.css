@@ -11636,3 +11636,26 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
         to   { opacity: 1; transform: translate(-50%, -50%); }
     }
 }
+
+/* Une ligne de réglage qui ouvre un panneau plutôt qu'un tiroir.
+   Ses règles étaient parties avec le tiroir du quiz : sans elles, la flèche
+   s'affichait à la taille naturelle du SVG. */
+.v2-set-porte {
+    width: 100%;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.v2-set-porte:hover { border-color: rgba(255, 215, 0, 0.3); background: rgba(255, 255, 255, 0.045); }
+
+.v2-set .v2-set-fleche {
+    width: 0.9rem;
+    height: 0.9rem;
+    flex: none;
+    margin-left: 0.5rem;
+    color: rgba(255, 255, 255, 0.25);
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.v2-set-porte:hover .v2-set-fleche { transform: translateX(0.15rem); color: var(--neon-primary); }
