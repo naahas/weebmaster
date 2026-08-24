@@ -2925,7 +2925,9 @@
 @media (max-width: 480px) {
     .bombanime-player-slot .player-name {
         font-size: 0.6rem;
-        max-width: 100px;
+        /* 100 px laissaient deux pseudos voisins se toucher et se lire d'un
+           bloc : « Ramen599Hokage234 ». Ils s'abrègent maintenant. */
+        max-width: 62px;
     }
     
     .player-lives {

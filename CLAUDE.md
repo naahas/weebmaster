@@ -40,7 +40,8 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   (les routes /admin sont-elles fermées aux visiteurs), `npm run test:rooms` (deux salons
   simultanés, plafond), `npm run test:mixte` (quiz et BombAnime en parallèle),
   `npm run test:rejouer` (deux manches d affilée sans répétition de question),
-  `npm run test:historique` (chaque salon a sa propre mémoire), `npm run test:bomb` (réglages
+  `npm run test:historique` (chaque salon a sa propre mémoire), `npm run test:plafond` (vingt joueurs
+  en BombAnime : remplissage, refus du vingt et unième), `npm run test:bomb` (réglages
   BombAnime et enchaînement des manches), `npm run test:reprise`
   (l hôte revient après une coupure ; relance en équipes) et `npm run test:abandon`
   (un salon déserté se libère — à lancer avec `GRACE_SALON_VIDE=3000` des deux côtés).
@@ -73,7 +74,7 @@ src/img/               avatars, questionpic
 |-------------|-----------|----------|
 | `classic`   | Classique | Quiz QCM en solo. Réglage **Mode** : `lives` (vies) ou `points` (score + bonus rapidité) |
 | `rivalry`   | Classique | Le même quiz en deux camps. Ce n'est **pas un mode à part** : c'est le réglage **Format** du quiz |
-| `bombanime` | BombAnime | Bombe tournante : citer un perso d'une série, alphabet à compléter, défis + bonus. Réglages du salon : **série** (21 au choix), **temps du tour** (5–10 s, 8 par défaut), **vies** (1 ou 2, 2 par défaut) |
+| `bombanime` | BombAnime | Bombe tournante : citer un perso d'une série, alphabet à compléter, défis + bonus. Réglages du salon : **série** (21 au choix), **temps du tour** (5–10 s, 8 par défaut), **vies** (1 ou 2, 2 par défaut) ; vingt joueurs au plus |
 
 ⚠️ `classic` et `rivalry` sont **un seul mode pour le joueur**. Le réglage *Format* (Solo / Équipe)
 bascule `lobbyMode` de l'un à l'autre en cours de salon (`POST /admin/set-teams`). Le badge de mode

@@ -157,7 +157,7 @@ createApp({
             
             // 💣 BombAnime - Lobby plein
             isLobbyFull: false,
-            maxPlayers: 13,
+            maxPlayers: 20,
             lobbyFullError: false,
             joinCooldown: false,
 
@@ -2605,7 +2605,7 @@ createApp({
                 // 💣 BombAnime — lobby plein
                 if (data.lobbyMode === 'bombanime') {
                     this.isLobbyFull = data.isLobbyFull || false;
-                    this.maxPlayers = data.maxPlayers || 13;
+                    this.maxPlayers = data.maxPlayers || 20;
                     // Reset l'erreur si le lobby n'est plus plein
                     if (!data.isLobbyFull && this.lobbyFullError) {
                         this.lobbyFullError = false;
@@ -4967,13 +4967,16 @@ createApp({
             // Desktop (aligné avec admin)
             const baseSize = 500;
             const perPlayer = 22;
-            const size = baseSize + (playerCount * perPlayer);
-            
+            let size = baseSize + (playerCount * perPlayer);
+
             // 2K+ : agrandir proportionnellement
-            if (screenWidth >= 2560) {
-                return Math.round(size * 1.3);
-            }
-            return size;
+            if (screenWidth >= 2560) size = Math.round(size * 1.3);
+
+            // Le cercle n'était borné que par la largeur, et seulement sur
+            // mobile. À vingt joueurs il dépassait la hauteur d'un portable :
+            // les pastilles du haut et du bas sortaient de l'écran, pseudo et
+            // réponse compris.
+            return Math.min(size, Math.max(380, screenHeight - 20));
         },
         
         // Calculer la taille de la bombe selon le nombre de joueurs
@@ -4998,6 +5001,14 @@ createApp({
             return size;
         },
         
+        // Marge entre le bord du cercle et le centre des pastilles. Sur petit
+        // écran le cercle est borné par la largeur : réserver un hexagone entier
+        // tout autour y laissait une couronne vide large comme une pastille,
+        // alors qu'une demi-pastille suffit à la contenir.
+        margeDuCercle(hexSize) {
+            return window.innerWidth <= 768 ? (hexSize / 2) + 8 : hexSize + 20;
+        },
+
         // Calculer le style de position d'un joueur
         getBombanimePlayerStyle(index, total) {
             const circleSize = this.getBombanimeCircleSize();
@@ -5014,7 +5025,7 @@ createApp({
             // Mobile + peu de joueurs: rapprocher de la bombe
             if (screenWidth <= 480 && total <= 2) minDistanceFromBomb = 65;
             else if (screenWidth <= 768 && total <= 2) minDistanceFromBomb = 65;
-            const baseRadius = (circleSize / 2) - hexSize - 20;
+            const baseRadius = (circleSize / 2) - this.margeDuCercle(hexSize);
             const radius = Math.max(baseRadius, (bombSize / 2) + hexSize + minDistanceFromBomb);
             
             // Vrai cercle complet avec décalage pour éviter joueur pile en bas
@@ -5037,28 +5048,33 @@ createApp({
         getBombanimeHexSize() {
             const playerCount = this.bombanime.playersData.length;
             const screenWidth = window.innerWidth;
-            
-            // Mobile - plus petit pour laisser de l'espace
+            let size;
+
+            // Mobile — l'écran est étroit mais très haut : l'avatar restait
+            // minuscule alors que la place existait tout autour du cercle.
             if (screenWidth <= 480) {
-                const baseSize = 55;
-                const reduction = 2.0;
-                return Math.max(34, baseSize - (playerCount * reduction));
+                size = Math.max(44, 62 - (playerCount * 1.2));
             }
             // Tablette
-            if (screenWidth <= 768) {
-                const baseSize = 74;
-                const reduction = 2.5;
-                return Math.max(46, baseSize - (playerCount * reduction));
+            else if (screenWidth <= 768) {
+                size = Math.max(56, 84 - (playerCount * 2.2));
             }
             // Desktop
-            const baseSize = 120;
-            const reduction = 4.0;
-            const size = Math.max(66, baseSize - (playerCount * reduction));
-            // 2K+
-            if (screenWidth >= 2560) {
-                return Math.round(size * 1.25);
+            else {
+                size = Math.max(66, 120 - (playerCount * 4.0));
+                // 2K+
+                if (screenWidth >= 2560) size = Math.round(size * 1.25);
             }
-            return size;
+
+            // Garde-fou : deux pastilles voisines ne doivent pas se toucher.
+            // Le barème ci-dessus ne connaît que le nombre de joueurs ; quand la
+            // fenêtre est basse, c'est la place restante sur le cercle qui
+            // commande. Le quart d'écart laisse respirer les pseudos.
+            if (!playerCount) return size;
+            const rayon = (this.getBombanimeCircleSize() / 2) - this.margeDuCercle(size);
+            if (rayon <= 0) return size;
+            const place = (2 * Math.PI * rayon) / playerCount / 1.25;
+            return Math.max(30, Math.min(size, place));
         },
         
         // Calculer la taille de la police des réponses selon le nombre de joueurs
