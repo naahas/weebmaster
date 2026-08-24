@@ -1323,9 +1323,9 @@
    ============================================ */
 .input-zone {
     position: fixed;
-    /* 1,5 % du bas, c'était une quinzaine de pixels sur un écran de portable :
-       le champ touchait le bord. */
-    bottom: 5%;
+    /* 1,5 % du bas, c'était une quinzaine de pixels sur un écran de portable ;
+       à 5 %, le cercle venait le frôler dès dix-sept joueurs. */
+    bottom: 3%;
     left: 50%;
     transform: translateX(-50%);
     z-index: 100;
@@ -2122,19 +2122,6 @@
     padding: 0 4px;
 }
 
-/* Mobile: dans la toolbar */
-.mobile-toolbar-btn.suggestion {
-    background: linear-gradient(135deg, rgba(220, 60, 50, 0.15), rgba(200, 50, 40, 0.08));
-    border-color: rgba(220, 60, 50, 0.25);
-}
-.mobile-toolbar-btn.suggestion svg {
-    width: 18px;
-    height: 18px;
-    fill: none;
-    stroke: rgba(220, 60, 50, 0.7);
-    stroke-width: 2;
-}
-
 /* ============================================
    🎌 PROPOSER UN PERSONNAGE
    Une feuille sobre : un en-tête, des lignes, deux actions. Rien d'autre.
@@ -2841,6 +2828,12 @@
         height: 13px;
     }
     
+    /* Le cercle remonte de 5 rem sur ordinateur pour dégager le champ. Sur
+       téléphone, la barre d'outils occupe déjà le haut : il piquait du nez. */
+    .bombanime-circle {
+        margin-top: -1.5rem;
+    }
+
     /* Input zone */
     .input-zone {
         bottom: 8%;
@@ -3075,7 +3068,7 @@
 
     /* Input zone - remonté et agrandi */
     .input-zone {
-        bottom: 5%;
+        bottom: 4%;
     }
 
     .game-input {

@@ -859,18 +859,8 @@
                     
                     <!-- 📱 Mobile : Boutons intégrés (2 icônes) -->
                     <div class="bombanime-mobile-toolbar" v-if="bombanime.playersData.length > 0 && isMobile" :class="{ 'intro-hidden': bombanime.introPhase === 'players' }">
-                        <!-- Bouton Suggestion (1x par partie) -->
-                        <button 
-                            class="mobile-toolbar-btn suggestion"
-                            v-if="!bombanime.suggestionUsed && !bombanime.isMyTurn"
-                            @click="openPlayerSuggestion"
-                        >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
-                                <line x1="4" y1="22" x2="4" y2="15"/>
-                            </svg>
-                        </button>
-                        
+                        <!-- Proposer un personnage a quitté la partie : c'est désormais
+                             l'affaire de l'hôte, sur l'écran de victoire. -->
                         <!-- Bouton Alphabet -->
                         <button 
                             class="mobile-toolbar-btn alphabet"
@@ -1378,7 +1368,7 @@
                             Retour
                         </button>
                         <button class="winner-suggest-btn"
-                            v-if="!bombanime.suggestionUsed"
+                            v-if="isHost && !bombanime.suggestionUsed"
                             @click="openPlayerSuggestion"
                             aria-label="Proposer un personnage manquant"
                             title="Proposer un personnage manquant">

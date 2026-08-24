@@ -4948,7 +4948,7 @@ createApp({
             
             // Mobile portrait - cercle plus grand pour espacer les joueurs
             if (screenWidth <= 480) {
-                const baseSize = playerCount <= 2 ? 190 : 280;
+                const baseSize = playerCount <= 3 ? 250 : 280;
                 const perPlayer = 18;
                 return Math.min(screenWidth - 40, baseSize + (playerCount * perPlayer));
             }
@@ -5026,7 +5026,16 @@ createApp({
             if (screenWidth <= 480 && total <= 2) minDistanceFromBomb = 65;
             else if (screenWidth <= 768 && total <= 2) minDistanceFromBomb = 65;
             const baseRadius = (circleSize / 2) - this.margeDuCercle(hexSize);
-            const radius = Math.max(baseRadius, (bombSize / 2) + hexSize + minDistanceFromBomb);
+            let radius = Math.max(baseRadius, (bombSize / 2) + hexSize + minDistanceFromBomb);
+
+            // Sur petit écran, l'écart minimal à la bombe l'emportait sur le
+            // cercle et sortait les pastilles des extrémités de l'écran. À six
+            // joueurs surtout : le décalage d'un demi-segment en place deux pile
+            // à l'horizontale, là où la place manque le plus.
+            if (screenWidth <= 768) {
+                const demiPlace = Math.min(circleSize, screenWidth - 24) / 2;
+                radius = Math.min(radius, demiPlace - (hexSize / 2) - 6);
+            }
             
             // Vrai cercle complet avec décalage pour éviter joueur pile en bas
             // Offset d'un demi-segment pour décaler tous les joueurs
