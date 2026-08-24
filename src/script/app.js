@@ -5034,20 +5034,20 @@ createApp({
             
             // Mobile - plus petit pour laisser de l'espace
             if (screenWidth <= 480) {
-                const baseSize = 48;
-                const reduction = 1.8;
-                return Math.max(30, baseSize - (playerCount * reduction));
+                const baseSize = 55;
+                const reduction = 2.0;
+                return Math.max(34, baseSize - (playerCount * reduction));
             }
             // Tablette
             if (screenWidth <= 768) {
-                const baseSize = 65;
-                const reduction = 2.2;
-                return Math.max(40, baseSize - (playerCount * reduction));
+                const baseSize = 74;
+                const reduction = 2.5;
+                return Math.max(46, baseSize - (playerCount * reduction));
             }
             // Desktop
-            const baseSize = 105;
-            const reduction = 3.5;
-            const size = Math.max(58, baseSize - (playerCount * reduction));
+            const baseSize = 120;
+            const reduction = 4.0;
+            const size = Math.max(66, baseSize - (playerCount * reduction));
             // 2K+
             if (screenWidth >= 2560) {
                 return Math.round(size * 1.25);

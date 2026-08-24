@@ -1088,6 +1088,10 @@ app.get('/prototypes/bombanime-2', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-bombanime2.html');
 });
 
+app.get('/prototypes/bombanime-effets', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-bombanime-effets.html');
+});
+
 app.get('/prototypes/points', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-points.html');
 });

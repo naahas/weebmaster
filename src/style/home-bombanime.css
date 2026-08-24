@@ -560,6 +560,46 @@
     stroke: rgba(255,255,255,0.03);
 }
 
+/* ── Double bordure ──
+   Un second hexagone, concentrique et 18 % plus large. Il a son propre SVG :
+   agrandir le viewBox du premier aurait déplacé l'avatar et tous les effets
+   calés sur ses pourcentages. Chaque règle porte donc .hex-anneau, sans quoi
+   les sélecteurs d'état de l'hexagone principal l'emporteraient. */
+.player-hex svg.hex-anneau {
+    position: absolute;
+    top: -9%;
+    left: -9%;
+    width: 118%;
+    height: 118%;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.bombanime-player-slot .player-hex svg.hex-anneau { filter: none; }
+
+.player-hex svg.hex-anneau polygon {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.06);
+    stroke-width: 1.6;
+    transition: stroke 0.25s ease;
+}
+
+.bombanime-player-slot.active .player-hex svg.hex-anneau polygon {
+    stroke: rgba(240, 192, 64, 0.45);
+}
+
+.bombanime-player-slot.is-me .player-hex svg.hex-anneau polygon {
+    stroke: rgba(240, 192, 64, 0.22);
+}
+
+.bombanime-player-slot.active.is-me .player-hex svg.hex-anneau polygon {
+    stroke: rgba(240, 192, 64, 0.55);
+}
+
+.bombanime-player-slot.eliminated .player-hex svg.hex-anneau polygon {
+    stroke: rgba(255, 255, 255, 0.02);
+}
+
 .player-avatar {
     position: absolute;
     left: 50%;
@@ -606,23 +646,26 @@
     box-shadow: 0 0 20px rgba(125, 206, 160, 0.6);
 }
 
-/* Hearts Badge */
+/* Les cœurs se rangent dans l'encoche basse droite de l'hexagone : l'axe
+   vertical est pris par le pseudo au-dessus et la réponse en dessous. */
 .player-lives {
     position: absolute;
-    bottom: -8px;
-    left: 50%;
-    transform: translateX(-50%);
+    right: -8%;
+    bottom: 2%;
+    left: auto;
+    transform: none;
     display: flex;
-    gap: 2px;
-    background: rgba(0,0,0,0.85);
+    gap: 3px;
+    background: rgba(0, 0, 0, 0.88);
     padding: 3px 6px;
-    border-radius: 10px;
+    border-radius: 1rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
     z-index: 5;
 }
 
 .player-life {
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
     fill: #ef4444;
     transition: all 0.2s ease;
     transform-origin: center;
@@ -2773,13 +2816,13 @@
     
     /* Vies plus petites */
     .player-lives {
-        bottom: -12px;
         gap: 2px;
+        padding: 2px 5px;
     }
-    
+
     .player-life {
-        width: 12px;
-        height: 12px;
+        width: 13px;
+        height: 13px;
     }
     
     /* Input zone */
@@ -2870,12 +2913,12 @@
     }
     
     .player-lives {
-        bottom: -10px;
+        padding: 2px 4px;
     }
-    
+
     .player-life {
-        width: 10px;
-        height: 10px;
+        width: 11px;
+        height: 11px;
     }
     
     .game-input {
@@ -2974,8 +3017,8 @@
     }
     
     .player-life {
-        width: 9px;
-        height: 9px;
+        width: 10px;
+        height: 10px;
     }
     
     .input-zone {
@@ -3003,13 +3046,13 @@
     }
 
     .player-lives {
-        bottom: -12px;
-        gap: 3px;
+        gap: 4px;
+        padding: 4px 8px;
     }
 
     .player-life {
-        width: 16px;
-        height: 16px;
+        width: 18px;
+        height: 18px;
     }
 
     /* Input zone - remonté et agrandi */
