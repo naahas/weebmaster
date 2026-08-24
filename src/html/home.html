@@ -1155,8 +1155,7 @@
                         </aside>
                         </div>
 
-                        <!-- Sous le panel : le sort du joueur passe avant le décompte.
-                             Éliminé, il n'a plus besoin de savoir combien tiennent encore. -->
+                        <!-- Sous le panel : le sort du joueur, et rien d'autre -->
                         <div class="v2q-alive spectateur" v-if="estSpectateur">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M1.5 12S5 5.5 12 5.5 22.5 12 22.5 12 19 18.5 12 18.5 1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/>
@@ -1164,12 +1163,6 @@
                             Tu es spectateur
                         </div>
 
-                        <div class="v2q-alive" v-else-if="showResults && gameMode === 'lives' && !isHost && encoreEnVie !== null">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="3.4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9"/>
-                            </svg>
-                            <b>{{ encoreEnVie }}</b>{{ encoreEnVie > 1 ? ' joueurs en vie' : ' joueur en vie' }}
-                        </div>
 
                         <!-- Ouverture du classement quand il ne tient pas à côté du panel -->
                         <button class="v2q-top-btn" :class="{ decale: isHost }"

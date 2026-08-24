@@ -630,12 +630,6 @@ createApp({
             return this.gameMode === 'lives' && this.hasJoined && this.playerLives <= 0;
         },
 
-        // Combien tiennent encore debout, à l'arrivée des résultats
-        encoreEnVie() {
-            const r = this.questionResults.remainingPlayers;
-            return typeof r === 'number' ? r : null;
-        },
-
         // Ce que porte le panneau de droite : les camps, le classement de
         // l'hôte, ou la course du joueur. Rien s'il n'y a rien à montrer.
         panneauLateral() {
