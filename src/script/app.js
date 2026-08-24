@@ -1897,6 +1897,9 @@ createApp({
         // Sans hasJoined ni isGameActive, on retombait sur l'écran d'attente de
         // l'invité, et la création suivante était refusée pour un salon déjà fermé.
         quitterSalonLocalement() {
+            // Sans ça, le badge de mode gardait « BombAnime » sur l'accueil
+            this.lobbyMode = 'classic';
+            sessionStorage.removeItem('bombanimeInProgress');
             this.isHost = false;
             this.roomCode = null;
             this.hasJoined = false;
@@ -4104,46 +4107,12 @@ createApp({
         },
         
         // Retour au menu principal après fin de partie BombAnime
+        // Quitter une partie de BombAnime : même geste que le « Retour » du quiz.
+        // Elle nettoyait l'écran mais laissait le salon ouvert derrière l'hôte,
+        // qui bloquait ensuite la création du suivant.
         returnToLobby() {
-            this.cleanupBombanimeEffects();
-            this._lastValidFuseAngle = 0;
-            // Reset l'état BombAnime
-            this.bombanime.active = false;
-            this.bombanime.playersData = [];
-            this.bombanime.currentPlayerTwitchId = null;
-            this.bombanime.myAlphabet = [];
-            this.bombanime.usedNamesCount = 0;
-            this.bombanime.inputValue = '';
-            this.bombanime.justAddedLetters = [];
-            this.bombanime.heartCompleting = false;
-            this.bombanime.heartPulse = false;
-            this.bombanime.mobileAlphabetPulse = false;
-            this.bombanime.successPlayerTwitchId = null;
-            this.bombanime.lifeGainedPlayerTwitchId = null;
-            this.bombanime.debugInfo = null;
-            this.bombanime.introPhase = null;
-            this.bombanime.introPlayersRevealed = 0;
-            this.bombanime.bombPointingUp = true; // 🆕 Reset pour la prochaine partie
-            this.bombanime.suggestionUsed = false;
-            this.bombanime.showSuggestionModal = false;
-            this.bombanime.suggestionName = '';
-            sessionStorage.removeItem('bombanimeSuggestionUsed');
-            
-            // Reset l'état global
-            this.gameInProgress = false;
-            this.gameEnded = false;
-            this.gameEndData = null;
-            this.hasJoined = false;
-            this.lobbyMode = 'classic';
-            
-            // Supprimer du localStorage et sessionStorage
-            localStorage.removeItem('hasJoinedLobby');
-            sessionStorage.removeItem('bombanimeInProgress');
-            
-            // 🔥 FIX: Rafraîchir l'état serveur (le lobby est peut-être fermé)
-            this.refreshGameState();
-            
-            console.log('🔙 Retour au menu principal');
+            this.revenirAuSalonBomb();
+            this.backToHome();
         },
 
 

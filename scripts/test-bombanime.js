@@ -19,6 +19,7 @@ let ko = 0;
 const check = (l, ok, extra) => { console.log(`${ok ? '✅' : '❌'} ${l}${extra ? ' → ' + extra : ''}`); if (!ok) ko++; };
 
 (async () => {
+    const salonsAvant = (await fetch(BASE + '/api/home-stats').then(r => r.json())).activeRooms;
     await post('/admin/toggle-game', { lobbyMode: 'bombanime' });
 
     // ── Les valeurs par défaut ──
@@ -91,8 +92,16 @@ const check = (l, ok, extra) => { console.log(`${ok ? '✅' : '❌'} ${l}${extra
         redemarrage.body.error || 'ok');
 
     await wait(500);
+
+    // ── Le « Retour » de l'hôte referme bien le salon ──
+    const ferme = await post('/admin/toggle-game', {});
+    check("le « Retour » de l'hôte ferme le salon", ferme.body.isActive === false,
+        'isActive=' + ferme.body.isActive);
+    const vide = await fetch(BASE + '/api/home-stats').then(r => r.json());
+    check("il ne reste pas de salon fantôme", vide.activeRooms === salonsAvant,
+        salonsAvant + ' → ' + vide.activeRooms + ' salon(s)');
+
     socks.forEach(s => s.s.close());
-    await post('/admin/toggle-game', {});
     await wait(300);
 
     console.log(ko ? `\n${ko} échec(s)` : '\n✨ BombAnime se règle depuis le salon et enchaîne les manches');

@@ -224,6 +224,9 @@ async function scenarioHomeStats() {
     await scenarioGameEnd();
     await scenarioHomeStats();
 
+    // Ne rien laisser derriere soi : le dernier scenario gardait son salon ouvert
+    if (hostToken) await post('/admin/toggle-game', {});
+
     log(failures ? `\n${failures} échec(s)` : '\n✨ Tout est vert');
     process.exit(failures ? 1 : 0);
 })();

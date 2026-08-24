@@ -6032,9 +6032,9 @@ io.on('connection', (socket) => {
     // 🧪 Outil de mise au point : peupler le salon pour juger l'affichage
     // Déconnexion
     socket.on('disconnect', () => {
-        // La socket dit sa room : sans elle, cet événement ne concerne personne
-        const gameState = roomDeSocket(socket);
-        if (!gameState) return;
+        // Le décompte par IP d'abord : il vaut pour toute socket, même pour
+        // qui n'a jamais rejoint de salon. Le placer après la résolution de
+        // room laissait fuir une unité par visiteur de passage.
         const ip = socket.handshake.headers['x-forwarded-for']?.split(',')[0] || socket.handshake.address;
         const currentConnections = connectionsByIP.get(ip) || 1;
         if (currentConnections <= 1) {
@@ -6043,6 +6043,9 @@ io.on('connection', (socket) => {
             connectionsByIP.set(ip, currentConnections - 1);
         }
 
+        // Le reste ne concerne que les sockets attachées à un salon
+        const gameState = roomDeSocket(socket);
+        if (!gameState) return;
 
         const player = gameState.players.get(socket.id);
 
