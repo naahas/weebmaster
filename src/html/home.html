@@ -510,7 +510,9 @@
                     </svg>
                 </button>
 
-                <button class="v2q-cmd-btn toggle" :class="{ on: autoMode }" @click="hostToggleAuto"
+                <!-- Pas d'enchaînement automatique sur petit écran : l'hôte y suit
+                     déjà mal la partie, et le bouton mange la place des commandes -->
+                <button class="v2q-cmd-btn toggle" v-if="!isMobile" :class="{ on: autoMode }" @click="hostToggleAuto"
                         :title="autoMode ? 'Enchaînement automatique actif' : 'Enchaîner les questions automatiquement'">
                     <!-- L'anneau se vide pendant l'attente de la question suivante -->
                     <svg class="v2q-auto-ring" v-if="autoCompte > 0" viewBox="0 0 44 44" aria-hidden="true">

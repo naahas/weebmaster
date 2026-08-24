@@ -1957,6 +1957,20 @@ createApp({
                 if (state.mode) {
                     this.gameMode = state.mode;
                 }
+
+                // Le classement final survit à un rafraîchissement : le serveur
+                // le garde tant que l'hôte n'a ni relancé ni refermé le salon.
+                if (state.showingWinner && state.winnerScreenData) {
+                    const moi = (state.winnerScreenData.playersData || [])
+                        .some(p => p.twitchId === this.twitchId || p.username === this.username);
+                    if (moi) {
+                        this.gameEnded = true;
+                        this.gameEndData = state.winnerScreenData;
+                        this.gameInProgress = false;
+                        this.gameStartedOnServer = false;
+                        this.$nextTick(() => this.startEndReveal());
+                    }
+                }
                 
                 // 🆕 Restaurer le mode Rivalité
                 if (state.lobbyMode) {
