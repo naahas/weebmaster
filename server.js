@@ -1084,6 +1084,10 @@ app.get('/prototypes/bombanime', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-bombanime.html');
 });
 
+app.get('/prototypes/bombanime-2', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-bombanime2.html');
+});
+
 app.get('/prototypes/points', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-points.html');
 });
@@ -2374,6 +2378,7 @@ app.post('/admin/replay', (req, res) => {
     }
 
     gameState.winnerScreenData = null;
+    gameState.isActive = true;   // une manche précédente a pu le refermer
     resetGameState(gameState);
     resetBombanimeState(gameState);
 
@@ -5237,9 +5242,9 @@ async function endBombanimeGame(gameState, winner) {
         rewardsData: null // Sera envoyé dans bombanime-rewards-ready
     });
 
-    // Désactiver le lobby silencieusement après fin de partie bombanime
-    gameState.isActive = false;
-    console.log('🔒 Lobby désactivé automatiquement après fin BombAnime');
+    // Le salon reste ouvert, comme au quiz : c'est lui qui porte le classement
+    // final, le bouton Rejouer et le retour de ceux qui rafraîchissent. Le
+    // fermer ici effaçait le jeton d'hôte dès le premier rechargement.
 
     const sortedPlayers = ranking.map(r => ({
         twitchId: r.twitchId,
@@ -5502,7 +5507,7 @@ io.on('connection', (socket) => {
     socket.on('leave-lobby', (data) => {
         // La socket dit sa room : sans elle, cet événement ne concerne personne
         const gameState = roomDeSocket(socket);
-        if (!gameState) return socket.emit('error', { message: 'Salon introuvable' });
+        if (!gameState) return;
         const player = gameState.players.get(socket.id);
         if (player) {
             gameState.players.delete(socket.id);
@@ -5574,7 +5579,7 @@ io.on('connection', (socket) => {
     socket.on('kick-player', (data) => {
         // La socket dit sa room : sans elle, cet événement ne concerne personne
         const gameState = roomDeSocket(socket);
-        if (!gameState) return socket.emit('error', { message: 'Salon introuvable' });
+        if (!gameState) return;
         // Seul événement socket réservé à l'hôte : il porte donc le jeton,
         // le garde-fou HTTP ne protégeant que les routes /admin.
         if (!gameState.hostToken || !data || data.hostToken !== gameState.hostToken) {
@@ -5754,7 +5759,7 @@ io.on('connection', (socket) => {
     socket.on('submit-answer', (data) => {
         // La socket dit sa room : sans elle, cet événement ne concerne personne
         const gameState = roomDeSocket(socket);
-        if (!gameState) return socket.emit('error', { message: 'Salon introuvable' });
+        if (!gameState) return;
         if (!gameState.inProgress) return;
 
         const player = gameState.players.get(socket.id);
@@ -5813,7 +5818,7 @@ io.on('connection', (socket) => {
     socket.on('use-bonus', (data) => {
         // La socket dit sa room : sans elle, cet événement ne concerne personne
         const gameState = roomDeSocket(socket);
-        if (!gameState) return socket.emit('error', { message: 'Salon introuvable' });
+        if (!gameState) return;
         if (!gameState.inProgress) return;
 
         const player = gameState.players.get(socket.id);
@@ -5880,7 +5885,7 @@ io.on('connection', (socket) => {
     socket.on('bombanime-submit-name', (data) => {
         // La socket dit sa room : sans elle, cet événement ne concerne personne
         const gameState = roomDeSocket(socket);
-        if (!gameState) return socket.emit('error', { message: 'Salon introuvable' });
+        if (!gameState) return;
         if (!gameState.bombanime.active) return;
         
         const result = submitBombanimeName(gameState, socket.id, data.name);
@@ -5894,7 +5899,7 @@ io.on('connection', (socket) => {
     socket.on('bombanime-use-free-character', () => {
         // La socket dit sa room : sans elle, cet événement ne concerne personne
         const gameState = roomDeSocket(socket);
-        if (!gameState) return socket.emit('error', { message: 'Salon introuvable' });
+        if (!gameState) return;
         if (!gameState.bombanime.active) return;
         
         const player = gameState.players.get(socket.id);
@@ -5936,7 +5941,7 @@ io.on('connection', (socket) => {
     socket.on('bombanime-use-extra-life', () => {
         // La socket dit sa room : sans elle, cet événement ne concerne personne
         const gameState = roomDeSocket(socket);
-        if (!gameState) return socket.emit('error', { message: 'Salon introuvable' });
+        if (!gameState) return;
         if (!gameState.bombanime.active) return;
         
         const player = gameState.players.get(socket.id);
@@ -6003,7 +6008,7 @@ io.on('connection', (socket) => {
     socket.on('bombanime-get-state', () => {
         // La socket dit sa room : sans elle, cet événement ne concerne personne
         const gameState = roomDeSocket(socket);
-        if (!gameState) return socket.emit('error', { message: 'Salon introuvable' });
+        if (!gameState) return;
         if (!gameState.bombanime.active) {
             socket.emit('bombanime-state', { active: false });
             return;

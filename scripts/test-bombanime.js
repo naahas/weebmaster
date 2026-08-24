@@ -75,6 +75,21 @@ const check = (l, ok, extra) => { console.log(`${ok ? '✅' : '❌'} ${l}${extra
     for (let i = 0; i < 60 && socks[0].vu.fins === 0; i++) await wait(400);
     check('la partie se termine sur explosion', socks[0].vu.fins > 0);
 
+    const apresFin = await etat();
+    check('le salon reste ouvert après la partie', apresFin.isActive === true,
+        'isActive=' + apresFin.isActive);
+    check('le podium survit au rafraîchissement',
+        apresFin.showingWinner === true &&
+        !!apresFin.winnerScreenData &&
+        apresFin.winnerScreenData.gameMode === 'bombanime',
+        apresFin.showingWinner ? 'gameMode=' + (apresFin.winnerScreenData || {}).gameMode : 'aucun podium');
+    check('le classement est complet', ((apresFin.winnerScreenData || {}).ranking || []).length === 2,
+        ((apresFin.winnerScreenData || {}).ranking || []).length + ' place(s)');
+
+    // Sans jeton, personne ne relance la partie d'un autre
+    const sansJeton = await fetch(BASE + '/admin/replay', { method: 'POST' }).then(r => r.status);
+    check("la relance exige le jeton d'hôte", sansJeton === 403, 'HTTP ' + sansJeton);
+
     const relance = await post('/admin/replay', {});
     check('la relance est acceptée', relance.status === 200, relance.body.error || 'ok');
     check('les joueurs sont restés', relance.body.playerCount === 2,
@@ -83,6 +98,10 @@ const check = (l, ok, extra) => { console.log(`${ok ? '✅' : '❌'} ${l}${extra
 
     const apres = await etat();
     check('le salon est toujours en BombAnime', apres.lobbyMode === 'bombanime', apres.lobbyMode);
+    check('la relance efface le podium', apres.showingWinner === false,
+        'showingWinner=' + apres.showingWinner);
+    check('le salon est rouvert pour la manche suivante', apres.isActive === true,
+        'isActive=' + apres.isActive);
     check('les réglages ont survécu à la manche',
         apres.bombanime.serie === 'DemonSlayer' && apres.bombanime.timer === 5,
         `${apres.bombanime.serie} · ${apres.bombanime.timer}s`);
@@ -90,6 +109,27 @@ const check = (l, ok, extra) => { console.log(`${ok ? '✅' : '❌'} ${l}${extra
     const redemarrage = await post('/admin/start-game', {});
     check('une seconde manche peut partir', redemarrage.body.success === true,
         redemarrage.body.error || 'ok');
+
+    await wait(500);
+
+    // ── Trois manches d'affilée : l'usage réel du bouton Rejouer ──
+    const pendant = await post('/admin/replay', {});
+    check('pas de relance en pleine partie', pendant.status === 400, 'HTTP ' + pendant.status);
+
+    socks.forEach(s => { s.vu.fins = 0; s.vu.salon = 0; });
+    for (let i = 0; i < 60 && socks[0].vu.fins === 0; i++) await wait(400);
+    check('la deuxième manche se termine aussi', socks[0].vu.fins > 0);
+
+    const relance2 = await post('/admin/replay', {});
+    check('deuxième relance acceptée', relance2.status === 200, relance2.body.error || 'ok');
+    check('personne n\'a été perdu en route', relance2.body.playerCount === 2,
+        relance2.body.playerCount + ' joueur(s)');
+    check('tout le monde revient au salon une seconde fois',
+        socks.every(s => s.vu.salon === 1));
+
+    const troisieme = await post('/admin/start-game', {});
+    check('une troisième manche peut partir', troisieme.body.success === true,
+        troisieme.body.error || 'ok');
 
     await wait(500);
 

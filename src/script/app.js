@@ -2072,7 +2072,12 @@ createApp({
                 // Le classement final survit à un rafraîchissement : le serveur
                 // le garde tant que l'hôte n'a ni relancé ni refermé le salon.
                 if (state.showingWinner && state.winnerScreenData) {
-                    const moi = (state.winnerScreenData.playersData || [])
+                    // Le quiz range ses joueurs dans « playersData », BombAnime
+                    // dans « ranking » : sans les deux, l'écran de victoire de la
+                    // bombe s'évaporait au rechargement.
+                    const finalistes = state.winnerScreenData.playersData
+                                    || state.winnerScreenData.ranking || [];
+                    const moi = this.isHost || finalistes
                         .some(p => p.twitchId === this.twitchId || p.username === this.username);
                     if (moi) {
                         this.gameEnded = true;
@@ -4001,14 +4006,18 @@ createApp({
             // 🆕 v2 : on quitte le salon et on revient à l'accueil
             // L'hôte referme aussi le salon côté serveur : sinon il restait ouvert
             // sans personne dedans, et bloquait la création de la suivante.
+            // Le jeton se lit avant le ménage : quitterSalonLocalement l'efface,
+            // et /admin/toggle-game sans jeton n'est plus une fermeture mais une
+            // ouverture — chaque retour d'hôte laissait un salon fantôme derrière.
             const etaitHote = this.isHost;
+            const jetonHote = this.hostToken;
             this.joinCode = '';
             this.quitterSalonLocalement();
 
-            if (etaitHote) {
-                this.hostFetch('/admin/toggle-game', {
+            if (etaitHote && jetonHote) {
+                fetch('/admin/toggle-game', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-Host-Token': jetonHote },
                     body: JSON.stringify({}),
                 }).catch(() => { /* le serveur diffuse game-deactivated de toute façon */ })
                   .finally(() => this.refreshGameState());

@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShonenMaster — BombAnime : saisie et pastilles</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/icon.png">
+    <style>
+        :root {
+            --neon: #FFD700;
+            --or: #f0c040;
+            --txt: #fff;
+            --txt2: #9a9aa2;
+            --txt3: #5c5c66;
+            --hp: #ff4d5e;
+            --fond: #08080a;
+            --carte: #101013;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--fond);
+            color: var(--txt);
+            min-height: 100vh;
+            padding: 2rem 1.5rem 6rem;
+        }
+
+        /* ══════════ En-tête ══════════ */
+        .tete { max-width: 76rem; margin: 0 auto 2rem; }
+
+        .tete h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.6rem;
+            letter-spacing: 0.04em;
+            line-height: 1;
+        }
+
+        .tete p {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--txt2);
+            max-width: 44rem;
+            line-height: 1.6;
+        }
+
+        /* ══════════ Barre de réglages ══════════ */
+        .barre {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            max-width: 76rem;
+            margin: 0 auto 2.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 1.4rem;
+            padding: 0.9rem 1.2rem;
+            background: rgba(16, 16, 19, 0.94);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 0.9rem;
+        }
+
+        .reglage { display: flex; align-items: center; gap: 0.55rem; }
+
+        .reglage > span {
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--txt3);
+        }
+
+        .choix { display: flex; gap: 0.2rem; }
+
+        .choix button {
+            padding: 0.35rem 0.7rem;
+            font-family: inherit;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--txt2);
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            border-radius: 0.4rem;
+            cursor: pointer;
+            transition: color 0.18s ease, background 0.18s ease;
+        }
+
+        .choix button:hover { color: var(--txt); background: rgba(255, 255, 255, 0.1); }
+
+        .choix button.on {
+            color: #14100a;
+            background: linear-gradient(135deg, #ffe066, var(--neon));
+        }
+
+        .barre input[type="range"] { width: 8rem; accent-color: var(--neon); }
+        .barre input[type="text"] {
+            width: 10rem;
+            padding: 0.35rem 0.6rem;
+            font-family: inherit;
+            font-size: 0.78rem;
+            color: var(--txt);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid transparent;
+            border-radius: 0.4rem;
+            outline: none;
+        }
+        .barre input[type="text"]:focus { border-color: rgba(240, 192, 64, 0.45); }
+
+        /* ══════════ Sections ══════════ */
+        .section { max-width: 76rem; margin: 0 auto 3.5rem; }
+
+        .section > h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.6rem;
+            letter-spacing: 0.06em;
+            margin-bottom: 0.3rem;
+        }
+
+        .section > p {
+            font-size: 0.8rem;
+            color: var(--txt2);
+            margin-bottom: 1.6rem;
+            line-height: 1.6;
+        }
+
+        .grille { display: grid; gap: 1.1rem; }
+        .grille.saisie { grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr)); }
+        .grille.pastilles { grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+
+        .carte {
+            display: flex;
+            flex-direction: column;
+            background: var(--carte);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 0.9rem;
+            overflow: hidden;
+        }
+
+        .carte-tete {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 0.7rem;
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .carte-nom { font-size: 0.85rem; font-weight: 700; }
+
+        .carte-note {
+            font-size: 0.66rem;
+            color: var(--txt3);
+            text-align: right;
+            line-height: 1.4;
+        }
+
+        .scene {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 11rem;
+            padding: 2rem 1.2rem;
+            background:
+                radial-gradient(60% 80% at 50% 50%, rgba(255, 215, 0, 0.03), transparent 70%),
+                #060608;
+        }
+
+        .scene.haute { min-height: 15rem; }
+
+        /* ══════════════════════════════════════════
+           A · LE CHAMP DE SAISIE — tous sans bordure
+           ══════════════════════════════════════════ */
+        .champ {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 22rem;
+        }
+
+        .champ input {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            font-family: inherit;
+            font-size: 1.15rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-align: center;
+            text-transform: uppercase;
+            color: rgba(255, 250, 235, 0.96);
+            background: transparent;
+            border: none;
+            outline: none;
+        }
+
+        .champ input::placeholder {
+            font-size: 0.78rem;
+            font-weight: 400;
+            letter-spacing: 0.18em;
+            color: rgba(240, 192, 64, 0.3);
+        }
+
+        /* Hors tour : tout s'éteint, sans rien barrer */
+        .etat-attente .champ input { color: rgba(255, 250, 235, 0.28); }
+        .etat-attente .champ input::placeholder { color: rgba(255, 255, 255, 0.12); }
+
+        /* ── A1 · Trait vivant ── */
+        .a1 .trait {
+            position: relative;
+            width: 62%;
+            height: 2px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.08);
+            transition: background 0.3s ease;
+        }
+
+        .a1 .trait::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            border-radius: 2px;
+            background: linear-gradient(90deg, transparent, var(--or), transparent);
+            box-shadow: 0 0 0.9rem rgba(240, 192, 64, 0.75);
+            transform: scaleX(0);
+            transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.25, 1);
+        }
+
+        .etat-actif .a1 .trait::after { transform: scaleX(1); }
+        .etat-erreur .a1 .trait::after {
+            transform: scaleX(1);
+            background: linear-gradient(90deg, transparent, var(--hp), transparent);
+            box-shadow: 0 0 0.9rem rgba(255, 77, 94, 0.75);
+        }
+
+        /* ── A2 · Halo ── */
+        .a2 .halo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 18rem;
+            height: 6rem;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: radial-gradient(ellipse at center, rgba(240, 192, 64, 0.16), transparent 68%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+        }
+
+        .etat-actif .a2 .halo { opacity: 1; animation: respire 2.6s ease-in-out infinite; }
+        .etat-erreur .a2 .halo {
+            opacity: 1;
+            background: radial-gradient(ellipse at center, rgba(255, 77, 94, 0.2), transparent 68%);
+        }
+
+        @keyframes respire {
+            0%, 100% { opacity: 0.65; transform: translate(-50%, -50%) scale(1); }
+            50%      { opacity: 1;    transform: translate(-50%, -50%) scale(1.06); }
+        }
+
+        .a2 .champ input { position: relative; z-index: 1; }
+
+        /* ── A3 · Chevrons ── */
+        .a3 .champ { flex-direction: row; align-items: center; justify-content: center; gap: 0.2rem; }
+        .a3 .champ input { width: auto; flex: 1; min-width: 0; }
+
+        .a3 .chevron {
+            font-size: 1.3rem;
+            font-weight: 300;
+            color: rgba(240, 192, 64, 0.25);
+            transition: color 0.3s ease, transform 0.35s cubic-bezier(0.2, 0.9, 0.25, 1);
+        }
+
+        .etat-actif .a3 .chevron { color: var(--or); }
+        .etat-actif .a3 .chevron.g { transform: translateX(-0.3rem); }
+        .etat-actif .a3 .chevron.d { transform: translateX(0.3rem); }
+        .etat-erreur .a3 .chevron { color: var(--hp); }
+
+        /* ── A4 · Socle ── */
+        .a4 .socle {
+            position: relative;
+            width: 100%;
+            border-radius: 1.6rem;
+            background: rgba(255, 255, 255, 0.028);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transition: background 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .etat-actif .a4 .socle {
+            background: rgba(240, 192, 64, 0.06);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08),
+                        0 0 2rem rgba(240, 192, 64, 0.16);
+        }
+
+        .etat-erreur .a4 .socle {
+            background: rgba(255, 77, 94, 0.08);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06),
+                        0 0 2rem rgba(255, 77, 94, 0.2);
+        }
+
+        /* ── A5 · Mèche ── */
+        .a5 .meche {
+            position: relative;
+            width: 72%;
+            height: 3px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.06);
+            overflow: hidden;
+        }
+
+        .a5 .meche i {
+            position: absolute;
+            inset: 0;
+            display: block;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #ff8c00, var(--neon));
+            box-shadow: 0 0 0.8rem rgba(255, 180, 40, 0.6);
+            transform-origin: left center;
+            transform: scaleX(var(--reste, 1));
+            transition: transform 0.2s linear;
+        }
+
+        .a5 .meche i::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: -0.15rem;
+            width: 0.55rem;
+            height: 0.55rem;
+            transform: translateY(-50%);
+            border-radius: 50%;
+            background: #fff3c4;
+            box-shadow: 0 0 0.7rem 0.15rem rgba(255, 200, 60, 0.9);
+        }
+
+        .etat-attente .a5 .meche i { opacity: 0.15; box-shadow: none; }
+        .etat-attente .a5 .meche i::after { display: none; }
+
+        /* ══════════════════════════════════════════
+           B · LA PASTILLE JOUEUR
+           ══════════════════════════════════════════ */
+        .pastille {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.45rem;
+            transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.25, 1);
+        }
+
+        .pastille .pseudo {
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            color: rgba(255, 255, 255, 0.55);
+            white-space: nowrap;
+            transition: color 0.3s ease;
+        }
+
+        .actif .pastille .pseudo,
+        .pastille.actif .pseudo { color: var(--or); }
+        .moi   .pastille .pseudo { color: rgba(255, 255, 255, 0.92); }
+        .mort  .pastille { opacity: 0.3; filter: grayscale(1); }
+        .actif .pastille,
+        .pastille.actif { transform: scale(1.08); }
+
+        .porte { position: relative; }
+
+        .porte img {
+            display: block;
+            width: var(--taille, 72px);
+            height: var(--taille, 72px);
+            object-fit: cover;
+        }
+
+        .hexa { clip-path: polygon(50% 2%, 97% 26%, 97% 74%, 50% 98%, 3% 74%, 3% 26%); }
+        .rond { border-radius: 50%; }
+        .ecusson { border-radius: 28%; }
+
+        /* Le contour, dessiné par-dessus l'image */
+        .contour {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .contour:not(.jauge) polygon,
+        .contour circle,
+        .contour rect {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.14);
+            stroke-width: 3;
+            transition: stroke 0.3s ease;
+        }
+
+        .actif .contour:not(.jauge) polygon,
+        .actif .contour circle,
+        .actif .contour rect,
+        .pastille.actif .contour:not(.jauge) polygon { stroke: var(--neon); }
+
+        .actif .porte,
+        .pastille.actif .porte { filter: drop-shadow(0 0 0.75rem rgba(255, 215, 0, 0.5)); }
+        .moi .contour:not(.jauge) polygon,
+        .moi .contour circle,
+        .moi .contour rect { stroke: rgba(255, 255, 255, 0.5); }
+
+        /* ── Les cœurs, selon la variante ── */
+        .coeurs { display: flex; gap: 0.15rem; }
+
+        .coeurs svg {
+            width: 0.75rem;
+            height: 0.75rem;
+            fill: var(--hp);
+            filter: drop-shadow(0 0 0.2rem rgba(255, 77, 94, 0.6));
+            transition: fill 0.3s ease, filter 0.3s ease;
+        }
+
+        .coeurs svg.vide { fill: rgba(255, 255, 255, 0.12); filter: none; }
+
+        /* B1 — les cœurs chevauchent le bas, le pseudo est au-dessus (l'actuel) */
+        .b1 .coeurs {
+            position: absolute;
+            bottom: -0.3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.12rem 0.3rem;
+            background: rgba(8, 8, 10, 0.85);
+            border-radius: 1rem;
+        }
+
+        /* B2 — les cœurs sur leur propre ligne, entre l'avatar et le pseudo */
+        .b2 .coeurs { margin-top: 0.1rem; }
+
+        /* B3 — plus de cœurs : le contour se scinde en autant d'arcs que de vies */
+        .b3 .jauge polygon {
+            fill: none;
+            stroke-width: 5;
+            stroke-linecap: round;
+            transition: stroke-dasharray 0.4s ease, stroke 0.3s ease;
+        }
+
+        /* B4 — pastille sombre accrochée au coin */
+        .b4 .coeurs {
+            position: absolute;
+            right: -0.25rem;
+            bottom: -0.1rem;
+            padding: 0.2rem 0.35rem;
+            background: rgba(10, 10, 12, 0.94);
+            border-radius: 1rem;
+            box-shadow: 0 0.2rem 0.6rem rgba(0, 0, 0, 0.6);
+        }
+
+        /* B5 — deux fentes verticales sur le flanc gauche */
+        .b5 .coeurs {
+            position: absolute;
+            left: -0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .b5 .coeurs i {
+            display: block;
+            width: 0.22rem;
+            height: 0.9rem;
+            border-radius: 1rem;
+            background: var(--hp);
+            box-shadow: 0 0 0.35rem rgba(255, 77, 94, 0.7);
+        }
+
+        .b5 .coeurs i.vide { background: rgba(255, 255, 255, 0.12); box-shadow: none; }
+
+        .rangee {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 2.2rem;
+        }
+
+        .vide-note {
+            font-size: 0.72rem;
+            color: var(--txt3);
+            text-align: center;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="tete">
+        <h1>BombAnime — la saisie et les pastilles</h1>
+        <p>
+            Deux pièces isolées de l'écran de jeu, à comparer côte à côte. Tous les champs de saisie
+            sont sans bordure, comme aujourd'hui. Toutes les pastilles portent le pseudo en dessous,
+            sauf la première qui rappelle l'existant. Les réglages du haut s'appliquent à tout.
+        </p>
+    </div>
+
+    <div class="barre">
+        <div class="reglage">
+            <span>État</span>
+            <div class="choix" data-groupe="etat">
+                <button data-val="actif" class="on">À toi</button>
+                <button data-val="attente">Pas ton tour</button>
+                <button data-val="erreur">Refusé</button>
+            </div>
+        </div>
+        <div class="reglage">
+            <span>Texte</span>
+            <input type="text" id="texte" value="KONAN" maxlength="18">
+        </div>
+        <div class="reglage">
+            <span>Vies</span>
+            <div class="choix" data-groupe="vies">
+                <button data-val="2" class="on">2</button>
+                <button data-val="1">1</button>
+                <button data-val="0">0</button>
+            </div>
+        </div>
+        <div class="reglage">
+            <span>Pastille</span>
+            <div class="choix" data-groupe="pose">
+                <button data-val="repos" class="on">Repos</button>
+                <button data-val="actif">Son tour</button>
+                <button data-val="moi">C'est moi</button>
+                <button data-val="mort">Éliminé</button>
+            </div>
+        </div>
+        <div class="reglage">
+            <span>Taille</span>
+            <input type="range" id="taille" min="48" max="110" value="72">
+        </div>
+    </div>
+
+    <!-- ══════════ A · Le champ de saisie ══════════ -->
+    <div class="section" id="secA">
+        <h2>A · Le champ de saisie</h2>
+        <p>
+            Aujourd'hui : un trait gris qui se remplit d'or au focus. Cinq façons de garder l'idée
+            — du texte nu, rien qui l'enferme — en la rendant plus lisible d'un coup d'œil.
+        </p>
+        <div class="grille saisie">
+
+            <div class="carte">
+                <div class="carte-tete">
+                    <span class="carte-nom">A1 · Trait vivant</span>
+                    <span class="carte-note">Le trait actuel, mais il<br>naît du centre et diffuse</span>
+                </div>
+                <div class="scene a1">
+                    <div class="champ">
+                        <input type="text" placeholder="NARUTO">
+                        <div class="trait"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="carte">
+                <div class="carte-tete">
+                    <span class="carte-nom">A2 · Halo</span>
+                    <span class="carte-note">Aucun trait : une lueur<br>qui respire derrière le mot</span>
+                </div>
+                <div class="scene a2">
+                    <div class="champ">
+                        <div class="halo"></div>
+                        <input type="text" placeholder="NARUTO">
+                    </div>
+                </div>
+            </div>
+
+            <div class="carte">
+                <div class="carte-tete">
+                    <span class="carte-nom">A3 · Chevrons</span>
+                    <span class="carte-note">Deux repères qui s'écartent<br>quand la main passe à toi</span>
+                </div>
+                <div class="scene a3">
+                    <div class="champ">
+                        <span class="chevron g">‹</span>
+                        <input type="text" placeholder="NARUTO">
+                        <span class="chevron d">›</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="carte">
+                <div class="carte-tete">
+                    <span class="carte-nom">A4 · Socle</span>
+                    <span class="carte-note">Une plaque très douce,<br>sans arête ni contour</span>
+                </div>
+                <div class="scene a4">
+                    <div class="champ">
+                        <div class="socle">
+                            <input type="text" placeholder="NARUTO">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="carte">
+                <div class="carte-tete">
+                    <span class="carte-nom">A5 · Mèche</span>
+                    <span class="carte-note">Le trait devient la mèche :<br>il se consume avec le tour</span>
+                </div>
+                <div class="scene a5">
+                    <div class="champ">
+                        <input type="text" placeholder="NARUTO">
+                        <div class="meche"><i></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="carte">
+                <div class="carte-tete">
+                    <span class="carte-nom">Note</span>
+                    <span class="carte-note">&nbsp;</span>
+                </div>
+                <div class="scene">
+                    <p class="vide-note">
+                        A5 double le compte à rebours déjà porté<br>par la mèche de la bombe.<br>
+                        À ne prendre que si le timer central<br>devient trop discret.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ══════════ B · La pastille joueur ══════════ -->
+    <div class="section" id="secB">
+        <h2>B · La pastille joueur</h2>
+        <p>
+            Quinze de ces pastilles tournent autour de la bombe : ce qui compte, c'est de lire d'un
+            coup qui joue et combien de vies il reste, sans avoir à s'approcher.
+        </p>
+        <div class="grille pastilles" id="grillePastilles">
+
+            <div class="carte">
+                <div class="carte-tete">
+                    <span class="carte-nom">B1 · Actuel</span>
+                    <span class="carte-note">Pseudo au-dessus,<br>cœurs à cheval sur le bas</span>
+                </div>
+                <div class="scene haute b1">
+                    <div class="pastille">
+                        <span class="pseudo">Senpai850</span>
+                        <div class="porte">
+                            <img class="hexa" src="/novice.png" alt="">
+                            <svg class="contour" viewBox="0 0 100 100"><polygon points="50,2 97,26 97,74 50,98 3,74 3,26"/></svg>
+                            <div class="coeurs"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="carte">
+                <div class="carte-tete">
+                    <span class="carte-nom">B2 · Hexagone, pseudo dessous</span>
+                    <span class="carte-note">Trois étages nets :<br>avatar, cœurs, pseudo</span>
+                </div>
+                <div class="scene haute b2">
+                    <div class="pastille">
+                        <div class="porte">
+                            <img class="hexa" src="/novice.png" alt="">
+                            <svg class="contour" viewBox="0 0 100 100"><polygon points="50,2 97,26 97,74 50,98 3,74 3,26"/></svg>
+                        </div>
+                        <div class="coeurs"></div>
+                        <span class="pseudo">Senpai850</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="carte">
+                <div class="carte-tete">
+                    <span class="carte-nom">B3 · Contour-jauge</span>
+                    <span class="carte-note">Plus de cœurs du tout :<br>le contour se vide</span>
+                </div>
+                <div class="scene haute b3">
+                    <div class="pastille">
+                        <div class="porte">
+                            <img class="hexa" src="/novice.png" alt="">
+                            <svg class="contour jauge" viewBox="0 0 100 100">
+                                <polygon points="50,2 97,26 97,74 50,98 3,74 3,26" stroke="rgba(255,255,255,0.08)" stroke-width="5"/>
+                                <polygon class="reste" points="50,2 97,26 97,74 50,98 3,74 3,26" stroke="#ff4d5e" stroke-width="5"/>
+                            </svg>
+                        </div>
+                        <span class="pseudo">Senpai850</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="carte">
+                <div class="carte-tete">
+                    <span class="carte-nom">B4 · Rond & pastille</span>
+                    <span class="carte-note">Cœurs groupés dans un coin,<br>l'avatar reste dégagé</span>
+                </div>
+                <div class="scene haute b4">
+                    <div class="pastille">
+                        <div class="porte">
+                            <img class="rond" src="/novice.png" alt="">
+                            <svg class="contour" viewBox="0 0 100 100"><circle cx="50" cy="50" r="47"/></svg>
+                            <div class="coeurs"></div>
+                        </div>
+                        <span class="pseudo">Senpai850</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="carte">
+                <div class="carte-tete">
+                    <span class="carte-nom">B5 · Écusson</span>
+                    <span class="carte-note">Vies en fentes sur le flanc,<br>lisibles même en tout petit</span>
+                </div>
+                <div class="scene haute b5">
+                    <div class="pastille">
+                        <div class="porte">
+                            <img class="ecusson" src="/novice.png" alt="">
+                            <svg class="contour" viewBox="0 0 100 100"><rect x="2" y="2" width="96" height="96" rx="27"/></svg>
+                            <div class="coeurs"></div>
+                        </div>
+                        <span class="pseudo">Senpai850</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="carte">
+                <div class="carte-tete">
+                    <span class="carte-nom">Le cercle complet</span>
+                    <span class="carte-note">La variante choisie,<br>répétée cinq fois</span>
+                </div>
+                <div class="scene haute">
+                    <div class="rangee" id="rangee"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // ══════════ Réglages partagés ══════════
+        const etats = { etat: 'actif', vies: 2, pose: 'repos' };
+
+        const COEUR = '<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
+
+        document.querySelectorAll('.choix').forEach(groupe => {
+            groupe.addEventListener('click', e => {
+                const bouton = e.target.closest('button');
+                if (!bouton) return;
+                groupe.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === bouton));
+                const nom = groupe.dataset.groupe;
+                etats[nom] = nom === 'vies' ? parseInt(bouton.dataset.val, 10) : bouton.dataset.val;
+                rendre();
+            });
+        });
+
+        document.getElementById('texte').addEventListener('input', rendre);
+        document.getElementById('taille').addEventListener('input', rendre);
+
+        // ══════════ Les cœurs d'une pastille ══════════
+        function remplirCoeurs(zone, vies, fentes) {
+            // Une pastille peut fixer ses propres vies (la rangée du bas le fait)
+            const propres = zone.closest('[data-vies]');
+            if (propres) vies = parseInt(propres.dataset.vies, 10);
+            zone.innerHTML = '';
+            for (let i = 1; i <= 2; i++) {
+                if (fentes) {
+                    const i2 = document.createElement('i');
+                    if (i > vies) i2.className = 'vide';
+                    zone.appendChild(i2);
+                } else {
+                    zone.insertAdjacentHTML('beforeend', COEUR);
+                    if (i > vies) zone.lastElementChild.classList.add('vide');
+                }
+            }
+        }
+
+        // Le contour-jauge : le périmètre de l'hexagone se coupe en deux arcs
+        function majJauge(svg, vies) {
+            const reste = svg.querySelector('.reste');
+            if (!reste) return;
+            const perimetre = reste.getTotalLength();
+            const part = perimetre / 2;
+            // Un trou de 4 unités entre les deux arcs, pour qu'on les distingue
+            if (vies >= 2)      reste.setAttribute('stroke-dasharray', `${part - 4} 4 ${part - 4} 4`);
+            else if (vies === 1) reste.setAttribute('stroke-dasharray', `${part - 4} ${perimetre}`);
+            else                 reste.setAttribute('stroke-dasharray', `0 ${perimetre}`);
+        }
+
+        // ══════════ Rendu ══════════
+        function rendre() {
+            const texte = document.getElementById('texte').value;
+            const taille = document.getElementById('taille').value + 'px';
+
+            // A · les champs
+            document.querySelectorAll('#secA .scene').forEach(scene => {
+                scene.classList.remove('etat-actif', 'etat-attente', 'etat-erreur');
+                scene.classList.add('etat-' + etats.etat);
+                const champ = scene.querySelector('input');
+                if (champ) champ.value = etats.etat === 'attente' ? '' : texte;
+            });
+
+            // A5 · la mèche se consume, sauf hors tour où elle s'éteint
+            const meche = document.querySelector('.a5 .meche i');
+            if (meche) meche.style.setProperty('--reste', etats.etat === 'attente' ? 1 : 0.62);
+
+            // B · les pastilles
+            document.querySelectorAll('#secB .scene').forEach(scene => {
+                scene.classList.remove('actif', 'moi', 'mort');
+                if (etats.pose !== 'repos') scene.classList.add(etats.pose);
+                scene.querySelectorAll('.porte img').forEach(img => {
+                    img.style.setProperty('--taille', taille);
+                });
+                scene.querySelectorAll('.coeurs').forEach(zone => {
+                    remplirCoeurs(zone, etats.vies, zone.closest('.b5') !== null);
+                });
+                scene.querySelectorAll('.jauge').forEach(svg => majJauge(svg, etats.vies));
+            });
+        }
+
+        // ══════════ Le cercle complet, pour juger à l'échelle ══════════
+        const NOMS = ['Kitsune632', 'Hokage260', 'Senpai850', 'Ronin656', 'Yokai768'];
+        const rangee = document.getElementById('rangee');
+        NOMS.forEach((nom, i) => {
+            const bloc = document.createElement('div');
+            bloc.className = 'pastille' + (i === 2 ? ' actif' : '');
+            bloc.dataset.vies = i % 3 === 0 ? 1 : 2;
+            bloc.innerHTML = `
+                <div class="porte">
+                    <img class="hexa" src="/novice.png" alt="">
+                    <svg class="contour" viewBox="0 0 100 100"><polygon points="50,2 97,26 97,74 50,98 3,74 3,26"/></svg>
+                </div>
+                <div class="coeurs"></div>
+                <span class="pseudo">${nom}</span>`;
+            rangee.appendChild(bloc);
+        });
+
+        rendre();
+    </script>
+</body>
+
+</html>
