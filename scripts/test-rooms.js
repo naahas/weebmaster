@@ -18,12 +18,13 @@ const check = (l, ok, extra) => { console.log(`${ok ? '✅' : '❌'} ${l}${extra
 async function joueur(id, nom, code) {
     const s = io(BASE);
     await new Promise(r => s.on('connect', r));
-    const vu = { questions: [], lobby: [], fins: [], erreurs: [] };
+    const vu = { questions: [], lobby: [], fins: [], erreurs: [], departs: [] };
     s.on('new-question', (q) => vu.questions.push(q));
     s.on('lobby-update', (d) => vu.lobby.push(d));
     s.on('game-ended', (d) => vu.fins.push(d));
     s.on('game-deactivated', () => vu.fins.push('ferme'));
     s.on('error', (e) => vu.erreurs.push(e.message));
+    s.on('game-started', (d) => vu.departs.push(d));
     s.emit('register-authenticated', { twitchId: id, username: nom });
     await wait(120);
     s.emit('join-lobby', { twitchId: id, username: nom, code });
@@ -82,6 +83,11 @@ async function joueur(id, nom, code) {
         a1.vu.questions.length + ' question(s)');
     check("ceux de B n'entendent rien", b1.vu.questions.length === avantB,
         b1.vu.questions.length + ' question(s)');
+
+    check("le demarrage de A ne s annonce pas dans B", b1.vu.departs.length === 0,
+        b1.vu.departs.length + ' annonce(s) recue(s)');
+    check('les joueurs de A ont bien ete prevenus', a1.vu.departs.length === 1,
+        a1.vu.departs.length + ' annonce(s)');
 
     const eb3 = await etat(b.roomCode);
     check('le salon B est toujours au repos', eb3.inProgress === false);

@@ -1618,8 +1618,11 @@ app.post('/admin/start-game', async (req, res) => {
 
         console.log(`🎮 Partie démarrée (Mode: ${gameState.mode.toUpperCase()}) - ${totalPlayers} joueurs - Filtre: ${gameState.serieFilter}`);
 
-        io.sockets.sockets.forEach((socket) => {
-            const socketId = socket.id;
+        // Les sockets de ce salon, et elles seules : io.sockets.sockets couvre
+        // tout le serveur, et annonçait donc ce démarrage aux autres parties.
+        for (const socketId of io.sockets.adapter.rooms.get(gameState.roomCode) || []) {
+            const socket = io.sockets.sockets.get(socketId);
+            if (!socket) continue;
             const player = gameState.players.get(socketId);
 
             if (player) {
@@ -1646,7 +1649,7 @@ app.post('/admin/start-game', async (req, res) => {
                     bonusEnabled: gameState.bonusEnabled // 🎮 Bonus activés
                 });
             }
-        });
+        }
 
         // La première question part immédiatement : l'écran « c'est parti » n'existe plus.
         // On garde un souffle de 250 ms, le temps que les clients traitent game-started.
