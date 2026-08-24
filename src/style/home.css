@@ -36,6 +36,9 @@ body {
     color: var(--text-primary);
     overflow: hidden;
     height: 100vh;
+    /* iOS compte 100vh barres masquees : le bas du document passait sous la
+       barre de Safari. 100svh est la hauteur reellement visible. */
+    height: 100svh;
     position: fixed;
     /* Garde ça pour bloquer le scroll */
     width: 100%;
@@ -70,6 +73,7 @@ body {
     position: relative;
     z-index: 1;
     min-height: 100vh;
+    min-height: 100svh;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1651,6 +1655,7 @@ body {
     body {
         overflow: hidden;
         height: 100vh;
+        height: 100svh;
     }
 
     /* Main container */
@@ -2537,6 +2542,7 @@ body {
     left: 0;
     width: 100vw;
     height: 100vh;
+    height: 100svh;
     background: radial-gradient(circle at center,
             rgba(59, 130, 246, 0.3) 0%,
             rgba(59, 130, 246, 0.1) 30%,
@@ -2754,6 +2760,7 @@ body {
     left: 0;
     width: 100vw;
     height: 100vh;
+    height: 100svh;
     background: radial-gradient(circle at center,
             rgba(59, 130, 246, 0.3) 0%,
             rgba(59, 130, 246, 0.1) 30%,
@@ -3392,6 +3399,7 @@ body {
         left: 0;
         width: 100vw;
         height: 100vh;
+        height: 100svh;
         background: rgba(0, 0, 0, 0.4);
         /* 🔥 Plus léger */
         /* 🔥 SUPPRIMÉ: backdrop-filter: blur() */
@@ -5540,6 +5548,7 @@ body.game-active:has(.poll-game-container) #particles-js {
         left: 0;
         width: 100vw;
         height: 100vh;
+        height: 100svh;
         background: rgba(0, 0, 0, 0.7);
         display: flex;
         align-items: center;
@@ -8946,6 +8955,7 @@ body.game-active:has(.poll-game-container) #particles-js {
     grid-template-rows: 1fr;
     align-content: center;
     min-height: 100vh;
+    min-height: 100svh;
     margin-top: 0;
 }
 
@@ -9669,6 +9679,8 @@ body.game-active:has(.poll-game-container) #particles-js {
     .game-section:not(.no-animation) {
         height: 100vh;
         max-height: 100vh;
+        height: 100svh;
+        max-height: 100svh;
         overflow-y: auto;
         overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
@@ -9859,6 +9871,9 @@ body.game-active:has(.poll-game-container) #particles-js {
     .game-section:not(.no-animation) .question-container-wrapper {
         justify-content: center;
         min-height: 100vh;
+        /* Centre sur ce qu'on voit, pas sur la fenetre barres masquees :
+           sinon le panel descend sous la barre du navigateur. */
+        min-height: 100svh;
         padding: 4.2rem 0 7.5rem;
     }
 
