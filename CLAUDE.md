@@ -39,7 +39,8 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   (les routes /admin sont-elles fermées aux visiteurs), `npm run test:rooms` (deux salons
   simultanés, plafond), `npm run test:mixte` (quiz et BombAnime en parallèle),
   `npm run test:rejouer` (deux manches d affilée sans répétition de question),
-  `npm run test:historique` (chaque salon a sa propre mémoire), `npm run test:plafond` (le plafond
+  `npm run test:historique` (chaque salon a sa propre mémoire), `npm run test:depart` (quitter BombAnime en pleine
+  partie), `npm run test:plafond` (le plafond
   de BombAnime : remplissage, refus du joueur de trop), `npm run test:bomb` (réglages
   BombAnime et enchaînement des manches), `npm run test:reprise`
   (l hôte revient après une coupure ; relance en équipes) et `npm run test:abandon`

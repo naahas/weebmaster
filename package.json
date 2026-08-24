@@ -18,7 +18,8 @@
     "test:abandon": "node scripts/test-abandon.js",
     "test:reprise": "node scripts/test-reprise.js",
     "test:bomb": "node scripts/test-bombanime.js",
-    "test:plafond": "node scripts/test-plafond.js"
+    "test:plafond": "node scripts/test-plafond.js",
+    "test:depart": "node scripts/test-depart-bomb.js"
   },
   "keywords": [
     "quiz",

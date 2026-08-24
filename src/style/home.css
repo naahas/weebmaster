@@ -46,6 +46,18 @@ body {
 }
 
 /* 🆕 PERMETTRE le pull-to-refresh mais bloquer le scroll horizontal */
+/* ============================================
+   GRANDS ECRANS
+   Le dessin de la v2 est en rem : c est donc la racine qu on agrandit, et
+   panneaux, textes et marges suivent ensemble. En dessous de 2000 px on ne
+   touche a rien — c est la taille sur laquelle tout a ete regle.
+   0,83 vw vaut 16 px a 1920 : la proportion d un ecran de portable est donc
+   conservee au-dela, jusqu a un plafond de 26 px pour les tres grands.
+   ============================================ */
+@media (min-width: 2000px) {
+    html { font-size: clamp(16px, 0.83vw, 26px); }
+}
+
 html,
 body {
     overscroll-behavior-x: none;

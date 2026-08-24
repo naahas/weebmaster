@@ -5229,6 +5229,42 @@ io.on('connection', (socket) => {
         if (!gameState) return;
         const player = gameState.players.get(socket.id);
         if (player) {
+            // En pleine partie de BombAnime, le retirer redistribuerait les
+            // places du cercle au milieu d'un tour et la mèche pointerait à
+            // côté. Il y reste, éteint : le moteur sait déjà sauter un joueur
+            // sans vies, ici comme pour la fin de partie.
+            if (gameState.inProgress && gameState.lobbyMode === 'bombanime' && player.lives > 0) {
+                player.lives = 0;
+                player.parti = true;
+                gameState.bombanime.eliminatedPlayers.push({
+                    playerId: player.playerId,
+                    username: player.username,
+                    rank: getAliveBombanimePlayers(gameState).length + 1,
+                });
+                console.log(`👋 ${player.username} a quitté la partie — il reste dans le cercle`);
+
+                diffuser(gameState, 'bombanime-player-lives-updated', {
+                    playerId: player.playerId,
+                    playerUsername: player.username,
+                    lives: 0,
+                    playersData: getBombanimePlayersData(gameState),
+                });
+
+                const restants = getAliveBombanimePlayers(gameState);
+                if (restants.length <= 1) {
+                    endBombanimeGame(gameState, restants[0] || null);
+                    return;
+                }
+
+                // S'il avait la bombe, elle passe au suivant sans attendre
+                // l'explosion : plus personne ne peut répondre pour lui.
+                if (gameState.bombanime.currentPlayerId === player.playerId) {
+                    const suivant = getNextBombanimePlayer(gameState);
+                    if (suivant) startBombanimeTurn(gameState, suivant);
+                }
+                return;
+            }
+
             gameState.players.delete(socket.id);
             gameState.answers.delete(socket.id);
             console.log(`👋 ${data.username} a quitté le lobby`);
