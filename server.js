@@ -115,6 +115,8 @@ const BOMBANIME_CONFIG = {
     MAX_PLAYERS: 13,
     DEFAULT_LIVES: 2,
     DEFAULT_TIMER: 8,
+    MIN_TIMER: 5,
+    MAX_TIMER: 10,
     ALPHABET_BONUS_LIVES: 1
 };
 
@@ -413,6 +415,7 @@ app.get('/game/state', (req, res) => {
             active: gameState.bombanime.active,
             serie: gameState.bombanime.serie,
             timer: gameState.bombanime.timer,
+            lives: gameState.bombanime.lives,
             currentPlayerTwitchId: gameState.bombanime.currentPlayerTwitchId,
             playersOrder: gameState.bombanime.playersOrder,
             playersData: gameState.bombanime.active ? getBombanimePlayersData(gameState) : [],
@@ -633,6 +636,7 @@ function etatNeuf() {
         active: false,              // Mode BombAnime actif
         serie: 'Naruto',            // Série sélectionnée
         timer: 8,                   // Timer par défaut (secondes)
+        lives: 2,                   // Vies par joueur
         playersOrder: [],           // Ordre des joueurs (twitchIds) dans le cercle
         currentPlayerIndex: 0,      // Index du joueur actuel dans playersOrder
         currentPlayerTwitchId: null,// TwitchId du joueur qui doit jouer
@@ -1203,6 +1207,36 @@ app.post('/admin/toggle-game', async (req, res) => {
 
     // Le jeton ne part qu'ici, dans la réponse à celui qui vient d'ouvrir
     res.json({ isActive: true, roomCode: gameState.roomCode, hostToken: gameState.hostToken });
+});
+
+// 💣 Durée du tour, entre 5 et 10 secondes
+app.post('/admin/bombanime/set-timer', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+
+    const t = parseInt(req.body && req.body.timer, 10);
+    if (!(t >= BOMBANIME_CONFIG.MIN_TIMER && t <= BOMBANIME_CONFIG.MAX_TIMER)) {
+        return res.status(400).json({ error: 'Durée invalide' });
+    }
+
+    gameState.bombanime.timer = t;
+    console.log(`💣 Timer BombAnime : ${t}s`);
+    diffuser(gameState, 'bombanime-config-updated', { timer: t, lives: gameState.bombanime.lives });
+    res.json({ success: true, timer: t });
+});
+
+// 💣 Une ou deux vies
+app.post('/admin/bombanime/set-lives', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+
+    const v = parseInt(req.body && req.body.lives, 10);
+    if (v !== 1 && v !== 2) return res.status(400).json({ error: 'Nombre de vies invalide' });
+
+    gameState.bombanime.lives = v;
+    console.log(`💣 Vies BombAnime : ${v}`);
+    diffuser(gameState, 'bombanime-config-updated', { timer: gameState.bombanime.timer, lives: v });
+    res.json({ success: true, lives: v });
 });
 
 // 💣 Mettre à jour la série BombAnime

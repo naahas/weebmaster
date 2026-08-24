@@ -477,17 +477,40 @@
                             </template>
                             <!-- BombAnime -->
                             <template v-else>
-                                <div class="v2-set">
+                <!-- La série d'abord : c'est elle qui définit la partie -->
+                                <div class="v2-set" :class="{ 'opts-fermes': serieChoisie }"
+                                     @mouseleave="serieChoisie = false">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><circle cx="12" cy="14" r="7"/><path d="M16 5l2-2M14 6l1.5-3"/></svg>
                                     <span class="v2-set-label">Série</span>
-                                    <span class="v2-set-value">{{ bombanime.serie }}</span>
-                                    <span class="v2-set-opts wrap">
-                                        <button v-for="s in bombanimeSeries" :key="s"
-                                                class="v2-set-opt" :class="{ on: bombanime.serie === s }"
-                                                @click="applySetting('/admin/bombanime/update-serie', { serie: s }, () => bombanime.serie = s)">{{ s }}</button>
+                                    <span class="v2-set-value">{{ nomSerie(bombanime.serie) }}</span>
+                                    <span class="v2-set-opts grille">
+                                        <button v-for="s in bombanimeSeries" :key="s.id"
+                                                class="v2-set-opt" :class="{ on: bombanime.serie === s.id }"
+                                                @click="serieChoisie = true; applySetting('/admin/bombanime/update-serie', { serie: s.id }, () => bombanime.serie = s.id)">{{ s.nom }}</button>
                                     </span>
                                 </div>
-                                <div class="v2-set-note">Le timer et les vies se règlent à l'ouverture du salon.</div>
+
+                                <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                                    <span class="v2-set-label">Temps</span>
+                                    <span class="v2-set-value">{{ bombanime.timer }}s</span>
+                                    <span class="v2-set-opts">
+                                        <button v-for="t in [5, 6, 7, 8, 9, 10]" :key="t"
+                                                class="v2-set-opt" :class="{ on: bombanime.timer === t }"
+                                                @click="applySetting('/admin/bombanime/set-timer', { timer: t }, () => bombanime.timer = t)">{{ t }}s</button>
+                                    </span>
+                                </div>
+
+                                <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21.2l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+                                    <span class="v2-set-label">Vies</span>
+                                    <span class="v2-set-value">{{ bombanime.lives }}</span>
+                                    <span class="v2-set-opts">
+                                        <button v-for="v in [1, 2]" :key="v"
+                                                class="v2-set-opt" :class="{ on: bombanime.lives === v }"
+                                                @click="applySetting('/admin/bombanime/set-lives', { lives: v }, () => bombanime.lives = v)">{{ v }}</button>
+                                    </span>
+                                </div>
                             </template>
 
 
@@ -1332,6 +1355,10 @@
                 
                 <!-- Actions: Retour + Signaler -->
                 <div class="winner-actions-row">
+                    <button class="winner-replay-btn" v-if="isHost" :disabled="rejouerBusy"
+                            @click="hostRejouerBomb">
+                        Rejouer
+                    </button>
                     <button class="winner-back-btn" @click="returnToLobby">
                         Retour
                     </button>

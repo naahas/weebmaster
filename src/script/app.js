@@ -67,7 +67,32 @@ createApp({
                 { id: 'dragonball', name: 'Dragon Ball' },
                 { id: 'bleach',     name: 'Bleach' },
             ],
-            bombanimeSeries: ['Naruto', 'OnePiece', 'Dbz', 'Bleach', 'Hxh', 'Snk', 'DemonSlayer', 'JujutsuKaisen', 'FairyTail', 'Mha', 'BlackClover', 'Jojo'],
+            // Les vingt et une séries de bombdata.json, avec leur vrai nom.
+            // Douze seulement étaient proposées : les neuf autres existaient en
+            // données sans que personne puisse les choisir.
+            bombanimeSeries: [
+                { id: 'Naruto', nom: 'Naruto' },
+                { id: 'OnePiece', nom: 'One Piece' },
+                { id: 'Dbz', nom: 'Dragon Ball' },
+                { id: 'Bleach', nom: 'Bleach' },
+                { id: 'Hxh', nom: 'Hunter x Hunter' },
+                { id: 'Snk', nom: 'Shingeki no Kyojin' },
+                { id: 'DemonSlayer', nom: 'Demon Slayer' },
+                { id: 'JujutsuKaisen', nom: 'Jujutsu Kaisen' },
+                { id: 'FairyTail', nom: 'Fairy Tail' },
+                { id: 'Mha', nom: 'My Hero Academia' },
+                { id: 'BlackClover', nom: 'Black Clover' },
+                { id: 'Jojo', nom: 'JoJo' },
+                { id: 'ChainsawMan', nom: 'Chainsaw Man' },
+                { id: 'DeathNote', nom: 'Death Note' },
+                { id: 'Fma', nom: 'Fullmetal Alchemist' },
+                { id: 'Gintama', nom: 'Gintama' },
+                { id: 'Pokemon', nom: 'Pokémon' },
+                { id: 'Reborn', nom: 'Reborn' },
+                { id: 'Prota', nom: 'Protagonistes' },
+                { id: 'Studio', nom: 'Studios' },
+                { id: 'Manganime', nom: 'Manganime' },
+            ],
             homeScreen: 'hub',    // hub | modes | join
             editingPseudo: false,
             hubHover: null,
@@ -247,6 +272,7 @@ createApp({
                 active: false,
                 serie: 'Naruto',
                 timer: 8,
+                lives: 2,
                 timeRemaining: 8,
                 timerInterval: null,
                 playersOrder: [],
@@ -1243,6 +1269,12 @@ createApp({
         // Le 3e apparaît d'abord, puis le 2e, puis le vainqueur, puis le reste
         ouvrirCamp(team) { this.campDetail = team; },
 
+        // Le nom lisible d'une série BombAnime, à partir de son identifiant
+        nomSerie(id) {
+            const s = this.bombanimeSeries.find(x => x.id === id);
+            return s ? s.nom : id;
+        },
+
         // Le trio d'un camp, accroché sous sa ligne au classement final
         crewOf(team) {
             const c = this.campsPodium.find(x => x.team === team);
@@ -1774,6 +1806,56 @@ createApp({
             }
         },
 
+        // Relancer une manche de BombAnime : même salon, mêmes joueurs
+        async hostRejouerBomb() {
+            if (this.rejouerBusy) return;
+            this.rejouerBusy = true;
+            try {
+                const res = await this.hostFetch('/admin/replay', { method: 'POST' });
+                const data = await res.json();
+                if (data.error) this.hostError = data.error;
+                else this.revenirAuSalonBomb();
+            } catch (e) {
+                this.hostError = 'Erreur de connexion';
+            } finally {
+                setTimeout(() => { this.rejouerBusy = false; }, 500);
+            }
+        },
+
+        // Le pendant de revenirAuSalon pour BombAnime : on efface la partie,
+        // pas l'appartenance au salon.
+        revenirAuSalonBomb() {
+            this.cleanupBombanimeEffects();
+            this._lastValidFuseAngle = 0;
+            Object.assign(this.bombanime, {
+                active: false,
+                playersData: [],
+                currentPlayerTwitchId: null,
+                myAlphabet: [],
+                usedNamesCount: 0,
+                inputValue: '',
+                justAddedLetters: [],
+                heartCompleting: false,
+                heartPulse: false,
+                mobileAlphabetPulse: false,
+                successPlayerTwitchId: null,
+                lifeGainedPlayerTwitchId: null,
+                introPhase: null,
+                introPlayersRevealed: 0,
+                bombPointingUp: true,
+                suggestionUsed: false,
+                showSuggestionModal: false,
+                suggestionName: '',
+            });
+            sessionStorage.removeItem('bombanimeSuggestionUsed');
+            sessionStorage.removeItem('bombanimeInProgress');
+
+            this.gameEnded = false;
+            this.gameInProgress = false;
+            this.gameEndData = null;
+            document.body.classList.remove('game-active');
+        },
+
         // Remet les écrans au salon sans toucher au salon lui-même
         revenirAuSalon() {
             this.gameEnded = false;
@@ -1966,6 +2048,13 @@ createApp({
                     }
                 }
                 
+                // Les réglages BombAnime reviennent avec l'état du salon
+                if (state.bombanime) {
+                    if (state.bombanime.serie) this.bombanime.serie = state.bombanime.serie;
+                    if (state.bombanime.timer) this.bombanime.timer = state.bombanime.timer;
+                    if (state.bombanime.lives) this.bombanime.lives = state.bombanime.lives;
+                }
+
                 // 🆕 Restaurer le mode Rivalité
                 if (state.lobbyMode) {
                     this.lobbyMode = state.lobbyMode;
@@ -2296,7 +2385,14 @@ createApp({
 
             // L'hôte relance : tout le monde revient au salon, personne n'en sort
             this.socket.on('retour-au-salon', () => {
-                this.revenirAuSalon();
+                if (this.lobbyMode === 'bombanime') this.revenirAuSalonBomb();
+                else this.revenirAuSalon();
+            });
+
+            // L'hôte a touché au timer ou aux vies : tout le salon suit
+            this.socket.on('bombanime-config-updated', (data) => {
+                if (data.timer) this.bombanime.timer = data.timer;
+                if (data.lives) this.bombanime.lives = data.lives;
             });
 
             this.socket.on('game-deactivated', () => {
