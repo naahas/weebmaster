@@ -112,7 +112,7 @@ function getCharacterImage(name, serie) {
 // Configuration BombAnime
 const BOMBANIME_CONFIG = {
     MIN_PLAYERS: 2,
-    MAX_PLAYERS: 13,
+    MAX_PLAYERS: 15,
     DEFAULT_LIVES: 2,
     DEFAULT_TIMER: 8,
     MIN_TIMER: 5,
@@ -291,6 +291,8 @@ app.get('/api/home-stats', async (req, res) => {
     res.json({
         playersOnline: io ? io.engine.clientsCount : 0,
         activeRooms: rooms.size,
+        // Le client n'affiche l'outil de remplissage que hors production
+        dev: process.env.NODE_ENV !== 'production',
         inGame: [...rooms.values()].reduce((n, r) => n + (r.inProgress ? r.players.size : 0), 0),
         questionsCount: await getQuestionsCount(),
         gamesPlayed: gamesPlayedTotal,
@@ -5518,6 +5520,57 @@ io.on('connection', (socket) => {
     });
 
     // 🆕 Kick un joueur manuellement (depuis l'admin)
+    // 🧪 Outil de mise au point : peupler un salon sans ouvrir quinze onglets.
+    // Réservé au développement — en production, n'importe quel hôte pourrait
+    // sinon gonfler son salon de joueurs fantômes.
+    socket.on('dev-add-bots', (data) => {
+        if (process.env.NODE_ENV === 'production') return;
+        const gameState = roomDeSocket(socket);
+        if (!gameState || gameState.inProgress) return;
+        if (!gameState.hostToken || !data || data.hostToken !== gameState.hostToken) return;
+
+        const plafond = gameState.lobbyMode === 'bombanime' ? BOMBANIME_CONFIG.MAX_PLAYERS : 60;
+        const place = Math.max(0, plafond - gameState.players.size);
+        const combien = Math.min(parseInt(data.count, 10) || 0, place);
+
+        const prenoms = ['Kitsune', 'Shinobi', 'Senpai', 'Hokage', 'Ronin', 'Yokai', 'Nakama',
+                         'Katana', 'Ramen', 'Kaiju', 'Otaku', 'Sensei', 'Onigiri', 'Tanuki', 'Oni'];
+
+        for (let i = 0; i < combien; i++) {
+            const id = 'bot_' + Date.now() + '_' + i;
+            gameState.players.set(id, {
+                socketId: id,
+                twitchId: id,
+                username: prenoms[i % prenoms.length] + Math.floor(10 + Math.random() * 990),
+                lives: gameState.lobbyMode === 'bombanime' ? gameState.bombanime.lives : gameState.lives,
+                points: 0,
+                correctAnswers: 0,
+                avatarUrl: 'novice.png',
+                team: gameState.lobbyMode === 'rivalry' ? campLeMoinsFourni(gameState) : null,
+                estBot: true,
+            });
+        }
+
+        if (gameState.lobbyMode === 'rivalry') updateTeamCounts(gameState);
+        console.log(`🧪 ${combien} bot(s) ajouté(s) — ${gameState.players.size} joueur(s)`);
+        broadcastLobbyUpdate(gameState);
+    });
+
+    socket.on('dev-clear-bots', (data) => {
+        if (process.env.NODE_ENV === 'production') return;
+        const gameState = roomDeSocket(socket);
+        if (!gameState || gameState.inProgress) return;
+        if (!gameState.hostToken || !data || data.hostToken !== gameState.hostToken) return;
+
+        let n = 0;
+        for (const [id, p] of gameState.players.entries()) {
+            if (p.estBot) { gameState.players.delete(id); n++; }
+        }
+        if (gameState.lobbyMode === 'rivalry') updateTeamCounts(gameState);
+        console.log(`🧪 ${n} bot(s) retiré(s)`);
+        broadcastLobbyUpdate(gameState);
+    });
+
     socket.on('kick-player', (data) => {
         // La socket dit sa room : sans elle, cet événement ne concerne personne
         const gameState = roomDeSocket(socket);

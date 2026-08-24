@@ -56,6 +56,7 @@ createApp({
             noSpoil: false,
             serieStats: null,     // combien de séries derrière Overall et Mainstream
             serieChoisie: false,  // ferme le tiroir après un choix, jusqu'à ce qu'on ressorte
+            estDev: false,        // vrai hors production : débloque l'outil de remplissage
             seriesBombOuvertes: false,
             seriesBombPos: { top: 0, left: 0 },
             // Sept choix de même poids : le tiroir les range en grille plutôt
@@ -1062,7 +1063,12 @@ createApp({
         async loadHomeStats() {
             try {
                 const res = await fetch('/api/home-stats');
-                if (res.ok) this.homeStats = await res.json();
+                if (res.ok) {
+                    this.homeStats = await res.json();
+                    // Le serveur dit s'il tourne hors production : l'outil de
+                    // remplissage n'apparaît que dans ce cas.
+                    this.estDev = !!this.homeStats.dev;
+                }
             } catch (e) { /* silencieux : l'accueil reste utilisable sans les stats */ }
         },
 
@@ -1160,6 +1166,14 @@ createApp({
 
         // Tous les réglages passent par la même route POST, avec application
         // optimiste côté client et retour arrière si le serveur refuse.
+        ajouterBots(n) {
+            if (this.socket) this.socket.emit('dev-add-bots', { count: n, hostToken: this.hostToken });
+        },
+
+        viderBots() {
+            if (this.socket) this.socket.emit('dev-clear-bots', { hostToken: this.hostToken });
+        },
+
         // Le panneau vit à la racine : sa place se calcule depuis la ligne cliquée
         ouvrirSeriesBomb(e) {
             const r = e.currentTarget.getBoundingClientRect();
@@ -4979,7 +4993,9 @@ createApp({
             // Radius aligné avec admin.js
             const bombSize = this.getBombSize();
             const screenWidth = window.innerWidth;
-            let minDistanceFromBomb = 60 + (13 - total) * 5;
+            // Borné : au-delà de treize joueurs la formule passait sous zéro et
+            // ramenait tout le monde contre la bombe.
+            let minDistanceFromBomb = Math.max(35, 60 + (13 - total) * 5);
             // Mobile + peu de joueurs: rapprocher de la bombe
             if (screenWidth <= 480 && total <= 2) minDistanceFromBomb = 65;
             else if (screenWidth <= 768 && total <= 2) minDistanceFromBomb = 65;
