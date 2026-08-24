@@ -1,9 +1,19 @@
 /* ============================================
-   💣 BOMBANIME - Player Styles
+   💣 BOMBANIME — FEUILLE DE STYLE DU MODE
+   ============================================
+   L'ordre du fichier est l'ordre de la cascade : ne pas déplacer un bloc sans
+   vérifier ce qu'il écrasait. Sommaire, dans l'ordre :
+
+     LE PLATEAU · CONTRÔLE DU SON · ÉCRAN DE VICTOIRE · CERCLE DE JOUEURS
+     LA PASTILLE DU JOUEUR · ANIMATION SUCCÈS · FISSURE · ÉCLATEMENT
+     ALPHABET COMPLÉTÉ · LE CADENAS · LA BOMBE · CHAMP DE SAISIE
+     PANNEAU ALPHABET · PANNEAU DÉFIS · GAIN DE VIE · BARRE MOBILE
+     PROPOSER UN PERSONNAGE · MODALES MOBILES · RESPONSIVE · MEDIA QUERIES
+     FLASH DU PERSONNAGE
    ============================================ */
 
 /* ============================================
-   💣 BOMBANIME - Styles v22 (Exact prototype)
+   LE PLATEAU
    ============================================ */
 
 /* Container principal */
@@ -17,7 +27,9 @@
     z-index: 50;
 }
 
-/* 🔊 Contrôle du son */
+/* ============================================
+   CONTRÔLE DU SON
+   ============================================ */
 .sound-control {
     position: fixed;
     top: 20px;
@@ -470,6 +482,12 @@
     }
 }
 
+/* ============================================
+   LA PASTILLE DU JOUEUR
+   Pseudo au-dessus, hexagone à double bordure, avatar, cœurs dans l'encoche
+   basse droite, réponse en dessous. Chaque état (actif, c'est moi, éliminé)
+   se décline sur les quatre.
+   ============================================ */
 .bombanime-player-slot .player-name {
     font-size: 0.9rem;
     color: rgba(255,255,255,0.35);
@@ -941,7 +959,10 @@
 .bombanime-player-slot.shattering .player-hex-container { overflow: visible; }
 .bombanime-player-slot.shattering .player-hex { overflow: visible; }
 
-/* Alphabet complet - Animation visible par tous */
+/* ============================================
+   ALPHABET COMPLÉTÉ
+   Le joueur a placé ses 26 lettres : il gagne une vie.
+   ============================================ */
 .bombanime-player-slot.alphabet-complete {
     z-index: 100;
 }
@@ -1004,6 +1025,10 @@
 .alphabet-particle:nth-child(5) { top: 50%; left: 50%; --px: 0px; --py: -38px; animation-delay: 20ms; }
 .alphabet-particle:nth-child(6) { top: 50%; left: 50%; --px: -38px; --py: -10px; animation-delay: 100ms; }
 
+/* ============================================
+   LE CADENAS
+   Signale un personnage déjà cité par quelqu'un.
+   ============================================ */
 .player-lock {
     position: absolute;
     /* Deux pixels de plus vers l'extérieur : il mordait sur la pastille */
@@ -2770,6 +2795,7 @@
    ============================================ */
 
 /* Tablette */
+/* ── Tablette ── */
 @media (max-width: 1024px) {
     .alphabet-panel {
         right: 1.5rem;
@@ -2789,6 +2815,7 @@
 }
 
 /* Mobile */
+/* ── Petite tablette et téléphone en paysage ── */
 @media (max-width: 768px) {
     /* Contrôle son en haut à gauche */
     .sound-control {
@@ -2916,6 +2943,7 @@
 }
 
 /* Mobile petit */
+/* ── Téléphone ── */
 @media (max-width: 480px) {
     .bombanime-player-slot .player-name {
         font-size: 0.6rem;
@@ -3023,6 +3051,7 @@
 }
 
 /* Paysage mobile */
+/* ── Écran bas, en paysage ── */
 @media (max-height: 500px) and (orientation: landscape) {
     .bombanime-player-slot .player-name {
         font-size: 0.55rem;
@@ -3051,6 +3080,7 @@
 }
 
 /* 2K / QHD (2560x1440) - Bombanime scaling */
+/* ── Écran 2K et au-delà ── */
 @media (min-width: 2560px) {
     .bombanime-player-slot .player-name {
         font-size: 1.15rem;
