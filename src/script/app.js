@@ -2252,24 +2252,6 @@ createApp({
             }
         },
 
-        async logout() {
-            // 🆕 Notifier le serveur qu'on quitte le lobby
-            if (this.hasJoined && this.socket) {
-                this.socket.emit('leave-lobby', {
-                    playerId: this.playerId,
-                    username: this.username
-                });
-            }
-
-            // Nettoyer le localStorage pour éjecter du lobby
-            localStorage.removeItem('hasJoinedLobby');
-            localStorage.removeItem('lobbyPlayerId');
-
-            // 🆕 v2 : on garde le playerId (identité stable) mais on repasse par l'écran pseudo
-            this.isAuthenticated = false;
-            this.hasJoined = false;
-            window.location.reload();
-        },
 
 
         restoreBonusEffects(data) {

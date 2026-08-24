@@ -31,7 +31,6 @@ const MAX_CONNECTIONS_PER_IP = parseInt(process.env.MAX_CONNECTIONS_PER_IP, 10) 
 
 
 
-const MAX_LOGS = 30;
 
 const STATS_THROTTLE_MS = 500; // Max 2 updates par seconde
 
@@ -402,7 +401,6 @@ app.get('/game/state', (req, res) => {
         liveAnswerCounts: answerCounts,
         showingWinner: !!gameState.winnerScreenData,
         winnerScreenData: gameState.winnerScreenData,
-        livesIcon: gameState.livesIcon,
         answeredCount: gameState.liveAnswers.size,
         autoMode: gameState.autoMode,
         // 🆕 Mode Rivalité
@@ -568,8 +566,6 @@ function etatNeuf() {
     // Ces sept-là étaient des variables de module. Elles décrivent pourtant une
     // partie précise : à plusieurs rooms, elles se seraient marché dessus.
     winnerScreenData: null,     // l'écran de victoire à rejouer pour qui arrive après
-    activityLogs: [],           // le journal de la partie
-    playerColors: {},           // une couleur par pseudo, le temps de la partie
     lastGlobalWinner: null,     // le vainqueur de la partie précédente, pour son liseré
     pendingJoins: new Set(),    // jointures en cours, contre les doubles arrivées
     lastStatsUpdate: 0,         // limitation du débit des stats en direct
@@ -586,7 +582,6 @@ function etatNeuf() {
     answers: new Map(),
     gameStartTime: null,
     showResults: false,
-    livesIcon: 'heart',
     lastQuestionResults: null,
 
     recentSeries: [],
@@ -744,7 +739,6 @@ function broadcastLobbyUpdate(gameState) {
     diffuser(gameState, 'lobby-update', {
         playerCount: gameState.players.size,
         lives: gameState.lives,
-        livesIcon: gameState.livesIcon,
         questionTime: gameState.questionTime,
         // Mode Rivalité
         lobbyMode: gameState.lobbyMode,
@@ -1037,10 +1031,6 @@ function getDifficultyForQuestion(gameState, questionNumber) {
 
 function getAlivePlayers(gameState) {
     return Array.from(gameState.players.values()).filter(p => p.lives > 0);
-}
-
-function getEliminatedCount(gameState) {
-    return Array.from(gameState.players.values()).filter(p => p.lives === 0).length;
 }
 
 
@@ -1381,45 +1371,6 @@ app.delete('/admin/bombanime/suggestion/:id', async (req, res) => {
     }
 });
 
-// Récupérer la liste des animes disponibles pour les suggestions
-app.get('/admin/bombanime/animes', (req, res) => {
-    
-    const animes = Object.keys(BOMBANIME_CHARACTERS).map(key => ({
-        key,
-        count: BOMBANIME_CHARACTERS[key].length
-    }));
-    
-    res.json({ animes });
-});
-
-// Mettre à jour les paramètres du jeu (vies et temps)
-app.post('/admin/update-settings', (req, res) => {
-    const gameState = req.room;   // posée par le garde-fou d'hôte
-
-    const { lives, timePerQuestion } = req.body;
-
-    if (lives) {
-        gameState.lives = parseInt(lives);
-    }
-    if (timePerQuestion) {
-        gameState.questionTime = parseInt(timePerQuestion);
-    }
-
-    console.log(`⚙️ Paramètres mis à jour: ${gameState.lives}❤️ - ${gameState.questionTime}s`);
-
-    // Notifier tous les clients des nouveaux paramètres
-    diffuser(gameState, 'game-config-updated', {
-        lives: gameState.lives,
-        questionTime: gameState.questionTime
-    });
-
-    res.json({
-        success: true,
-        lives: gameState.lives,
-        questionTime: gameState.questionTime
-    });
-});
-
 // Route séparée pour changer les vies
 app.post('/admin/set-lives', (req, res) => {
     const gameState = req.room;   // posée par le garde-fou d'hôte
@@ -1608,7 +1559,6 @@ app.post('/admin/start-game', async (req, res) => {
         }
 
         const playerCount = gameState.players.size;
-        addLog(gameState, 'game-start', { playerCount });
 
         gameState.playerBonuses.clear();
         console.log('🔄 Bonus reset pour nouvelle partie');
@@ -1749,11 +1699,6 @@ app.post('/admin/start-game', async (req, res) => {
                 gameState.answers.clear();
                 gameState.liveAnswers.clear();
 
-                addLog(gameState, 'question', {
-                    questionNumber: 1,
-                    difficulty: difficulty,
-                    series: question.serie
-                });
 
                 // Envoyer la question aux joueurs
                 diffuser(gameState, 'new-question', questionData);
@@ -2259,7 +2204,6 @@ app.post('/admin/trigger-auto-next', (req, res) => {
             gameState.answers.clear();
 
             // Émettre l'event de préparation pour l'animation
-            diffuser(gameState, 'prepare-next-question');
 
             // Attendre 400ms pour l'animation de fermeture
             await new Promise(resolve => setTimeout(resolve, 400));
@@ -2278,75 +2222,6 @@ app.post('/admin/trigger-auto-next', (req, res) => {
     }, AUTO_DELAI_MS);
 
     res.json({ success: true });
-});
-
-
-// Route pour forcer le refresh de tous les joueurs AUTHENTIFIÉS
-app.post('/admin/refresh-players', (req, res) => {
-    const gameState = req.room;   // posée par le garde-fou d'hôte
-
-    try {
-        const now = Date.now();
-        const timeSinceLastRefresh = now - gameState.lastRefreshPlayersTime;
-
-        // 🔥 Vérifier le cooldown côté serveur
-        if (timeSinceLastRefresh < REFRESH_COOLDOWN_MS) {
-            const remainingTime = Math.ceil((REFRESH_COOLDOWN_MS - timeSinceLastRefresh) / 1000);
-            return res.status(429).json({
-                error: 'Cooldown actif',
-                remainingTime: remainingTime,
-                onCooldown: true
-            });
-        }
-
-        let refreshedCount = 0;
-
-        // 🔥 NOUVEAU : Parcourir TOUS les utilisateurs authentifiés (pas seulement ceux dans le lobby)
-        authenticatedUsers.forEach((user, socketId) => {
-            const socket = io.sockets.sockets.get(socketId);
-            if (socket) {
-                // 🔥 Envoyer uniquement à ce joueur authentifié
-                socket.emit('force-refresh');
-                refreshedCount++;
-                console.log(`🔄 Refresh envoyé à ${user.username}`);
-            }
-        });
-
-        // 🔥 Mettre à jour le timestamp
-        gameState.lastRefreshPlayersTime = now;
-
-        console.log(`🔄 Refresh forcé envoyé à ${refreshedCount} utilisateur(s) authentifié(s)`);
-
-        res.json({
-            success: true,
-            playersRefreshed: refreshedCount
-        });
-    } catch (error) {
-        console.error('❌ Erreur refresh joueurs:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-
-// Route pour vérifier le cooldown restant
-app.get('/admin/refresh-cooldown', (req, res) => {
-    const gameState = req.room;   // posée par le garde-fou d'hôte
-
-    const now = Date.now();
-    const timeSinceLastRefresh = now - gameState.lastRefreshPlayersTime;
-
-    if (timeSinceLastRefresh < REFRESH_COOLDOWN_MS) {
-        const remainingTime = Math.ceil((REFRESH_COOLDOWN_MS - timeSinceLastRefresh) / 1000);
-        res.json({
-            onCooldown: true,
-            remainingTime: remainingTime
-        });
-    } else {
-        res.json({
-            onCooldown: false,
-            remainingTime: 0
-        });
-    }
 });
 
 // 🔁 Relancer une manche dans le même salon, avec les mêmes joueurs.
@@ -2368,20 +2243,6 @@ app.post('/admin/replay', (req, res) => {
     broadcastLobbyUpdate(gameState);
 
     res.json({ success: true, playerCount: gameState.players.size });
-});
-
-// Route pour reset manuel de l'historique des questions
-app.post('/admin/reset-questions-history', async (req, res) => {
-    const gameState = req.room;   // posée par le garde-fou d'hôte
-
-    try {
-        gameState.usedQuestionIds = [];
-        console.log('🔄 Historique des questions réinitialisé manuellement');
-        res.json({ success: true, message: 'Historique réinitialisé' });
-    } catch (error) {
-        console.error('❌ Erreur reset questions:', error);
-        res.status(500).json({ error: error.message });
-    }
 });
 
 // Passer à la question suivante
@@ -2509,11 +2370,6 @@ app.post('/admin/next-question', async (req, res) => {
         gameState.liveAnswers.clear();
         updateLiveAnswerStats(gameState);
 
-        addLog(gameState, 'question', {
-            questionNumber: gameState.currentQuestionIndex,
-            difficulty: difficulty,
-            series: question.serie
-        });
 
 
         diffuser(gameState, 'new-question', questionData);
@@ -2666,10 +2522,6 @@ function revealAnswers(gameState, correctAnswer) {
                         player.lives--;
                         if (player.lives === 0) {
                             eliminatedThisRound++;
-                            addLog(gameState, 'eliminated', {
-                                username: player.username,
-                                playerColor: gameState.playerColors[player.username]
-                            });
                         }
                         status = 'afk';
                     }
@@ -2702,10 +2554,6 @@ function revealAnswers(gameState, correctAnswer) {
                         player.lives--;
                         if (player.lives === 0) {
                             eliminatedThisRound++;
-                            addLog(gameState, 'eliminated', {
-                                username: player.username,
-                                playerColor: gameState.playerColors[player.username]
-                            });
                         }
                         status = 'wrong';
                     }
@@ -3026,14 +2874,8 @@ function revealAnswers(gameState, correctAnswer) {
                 gameState.lastQuestionResults = null;
                 gameState.answers.clear();
 
-                addLog(gameState, 'question', {
-                    questionNumber: gameState.currentQuestionIndex,
-                    difficulty: difficulty,
-                    series: question.serie
-                });
 
                 // 🔥 Animation de fermeture avant la nouvelle question
-                diffuser(gameState, 'prepare-next-question');
                 await new Promise(resolve => setTimeout(resolve, 400));
 
                 diffuser(gameState, 'new-question', questionData);
@@ -3167,7 +3009,6 @@ async function endGameByPoints(gameState) {
             gameState.lastGlobalWinner = winner.playerId;
 
             if (winner && winner.points > 0) {
-                addLog(gameState, 'game-end', { winner: winner.username });
 
 
                 const winnerData = {
@@ -3198,7 +3039,6 @@ async function endGameByPoints(gameState) {
                     gameMode: 'points',
                     playersData,
                     topPlayers,
-                    livesIcon: gameState.livesIcon,
                     lastQuestionPlayers
                 };
 
@@ -3228,7 +3068,6 @@ async function endGameByPoints(gameState) {
             // Sans ça l'hôte se heurtait à « Partie en cours de finalisation ».
             gameState.endingGame = false;
 
-            addLog(gameState, 'tiebreaker', { playerCount: winners.length });
 
             diffuser(gameState, 'tiebreaker-announced', {
                 tiebreakerPlayers: winners.map(w => ({
@@ -3320,11 +3159,6 @@ async function sendTiebreakerQuestion(gameState) {
         gameState.lastQuestionResults = null;
         gameState.answers.clear();
 
-        addLog(gameState, 'question', {
-            questionNumber: gameState.currentQuestionIndex,
-            difficulty: 'TIEBREAKER - EXTREME',
-            series: question.serie
-        });
 
         // Envoyer la question à TOUS les joueurs
         diffuser(gameState, 'new-question', questionData);
@@ -3403,7 +3237,6 @@ async function checkTiebreakerWinner(gameState) {
                 gameMode: 'points',
                 playersData,
                 topPlayers,
-                livesIcon: gameState.livesIcon,
                 lastQuestionPlayers
             };
 
@@ -3432,14 +3265,6 @@ async function checkTiebreakerWinner(gameState) {
 
         gameState.tiebreakerPlayers = stillTied.map(p => p.playerId);
 
-        diffuser(gameState, 'tiebreaker-continues', {
-            tiebreakerPlayers: stillTied.map(p => ({
-                playerId: p.playerId,
-                username: p.username,
-                points: p.points
-            })),
-            message: '⚖️ Encore égalité ! Cliquez sur "Question suivante"'
-        });
 
         console.log('⚠️ En attente que l\'admin lance la prochaine question de départage...');
     }
@@ -3528,11 +3353,6 @@ async function sendRivalryTiebreakerQuestion(gameState) {
         gameState.lastQuestionResults = null;
         gameState.answers.clear();
 
-        addLog(gameState, 'question', {
-            questionNumber: gameState.currentQuestionIndex,
-            difficulty: `DÉPARTAGE - ${difficulty.toUpperCase()}`,
-            series: question.serie
-        });
 
         // Envoyer la question à TOUS les joueurs
         diffuser(gameState, 'new-question', questionData);
@@ -3663,7 +3483,6 @@ async function checkRivalryTiebreakerWinner(gameState) {
             isDraw: false
         };
 
-        addLog(gameState, 'game-end', { winner: teamData.teamName, mode: 'rivalry-points-tiebreaker' });
 
         // 🔥 Préparer les données AVANT les appels DB
         const playersData = Array.from(gameState.players.values()).map(p => ({
@@ -3714,7 +3533,6 @@ async function checkRivalryTiebreakerWinner(gameState) {
 
         gameState.winnerScreenData = {
             ...gameEndedPayload,
-            livesIcon: gameState.livesIcon
         };
 
         emitGameEnded(gameState, gameEndedPayload);
@@ -3726,13 +3544,6 @@ async function checkRivalryTiebreakerWinner(gameState) {
         // ⚖️ ENCORE ÉGALITÉ
         console.log(`⚖️ Toujours égalité: ${team1Score} - ${team2Score}`);
 
-        diffuser(gameState, 'tiebreaker-continues', {
-            mode: 'rivalry',
-            team1Score,
-            team2Score,
-            teamNames: gameState.teamNames,
-            message: '⚖️ Encore égalité ! Cliquez sur "Question suivante"'
-        });
 
         // 🆕 Si mode auto activé, lancer automatiquement après 3s
         if (gameState.autoMode) {
@@ -3762,7 +3573,6 @@ async function endRivalryWithTie(gameState) {
         isDraw: true
     };
 
-    addLog(gameState, 'game-end', { winner: 'Égalité', mode: 'rivalry-points' });
     console.log(`🏆 Mode Rivalité terminé en ÉGALITÉ: ${gameState.teamScores[1]} - ${gameState.teamScores[2]}`);
 
     const playersData = Array.from(gameState.players.values()).map(p => ({
@@ -3811,7 +3621,6 @@ async function endRivalryWithTie(gameState) {
 
     gameState.winnerScreenData = {
         ...gameEndedPayload,
-        livesIcon: gameState.livesIcon
     };
 
     emitGameEnded(gameState, gameEndedPayload);
@@ -3862,7 +3671,6 @@ async function endGameWithTie(gameState) {
         gameMode: 'points',
         playersData,
         topPlayers,
-        livesIcon: gameState.livesIcon,
         lastQuestionPlayers
     };
 
@@ -3902,7 +3710,6 @@ async function endGame(gameState, winner) {
 
         if (winner) {
             gameState.lastGlobalWinner = winner.playerId;
-            addLog(gameState, 'game-end', { winner: winner.username });
 
             winnerData = {
                 username: winner.username,
@@ -3912,7 +3719,6 @@ async function endGame(gameState, winner) {
         } else {
             // 🆕 Cas aucun gagnant - terminer la partie en DB quand même
             console.log('💀 Fin de partie sans gagnant');
-            addLog(gameState, 'game-end', { winner: 'Aucun' });
         }
 
         const playersData = Array.from(gameState.players.values()).map(p => ({
@@ -3938,7 +3744,6 @@ async function endGame(gameState, winner) {
             gameMode: 'lives',
             playersData: playersData,
             topPlayers,
-            livesIcon: gameState.livesIcon,
             lastQuestionPlayers
         };
 
@@ -3988,7 +3793,6 @@ async function endGameRivalry(gameState, winningTeam) {
         };
         
         // Log
-        addLog(gameState, 'game-end', { winner: teamData.teamName, mode: 'rivalry' });
         console.log(`🏆 Mode Rivalité terminé - ${teamData.teamName} gagne avec ${teamData.livesRemaining} vies`);
         
         // 🔥 Préparer les données AVANT les appels DB
@@ -4034,7 +3838,6 @@ async function endGameRivalry(gameState, winningTeam) {
         
         gameState.winnerScreenData = {
             ...gameEndedPayload,
-            livesIcon: gameState.livesIcon
         };
         
         emitGameEnded(gameState, gameEndedPayload);
@@ -4069,7 +3872,6 @@ async function endGameRivalryPoints(gameState) {
             // ne partait jamais. Même correctif qu'en solo.
             gameState.endingGame = false;
             
-            addLog(gameState, 'tiebreaker', { mode: 'rivalry', score: team1Points, playerCount: gameState.players.size });
             
             diffuser(gameState, 'tiebreaker-announced', {
                 mode: 'rivalry',
@@ -4112,7 +3914,6 @@ async function endGameRivalryPoints(gameState) {
         };
         
         // Log
-        addLog(gameState, 'game-end', { winner: teamData.teamName, mode: 'rivalry-points' });
         console.log(`🏆 Mode Rivalité (points) terminé - ${teamData.teamName} gagne avec ${teamData.points} points`);
         
         // 🔥 Préparer les données AVANT les appels DB (pas de dépendance DB)
@@ -4165,7 +3966,6 @@ async function endGameRivalryPoints(gameState) {
         
         gameState.winnerScreenData = {
             ...gameEndedPayload,
-            livesIcon: gameState.livesIcon
         };
         
         emitGameEnded(gameState, gameEndedPayload);
@@ -4263,33 +4063,6 @@ app.post('/api/update-question', async (req, res) => {
     } catch (error) {
         console.error('Erreur modification question:', error);
         res.status(500).json({ error: 'Erreur lors de la modification' });
-    }
-});
-
-
-// 🚫 Toggle le statut spoil d'une question
-app.post('/api/toggle-spoil', async (req, res) => {
-    // Le corpus change : la banque en mémoire doit être relue
-    invaliderBanque();
-    const { adminCode, id, is_spoil } = req.body;
-
-    if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
-        return res.status(401).json({ error: 'Code invalide' });
-    }
-
-    try {
-        const { data, error } = await supabase
-            .from('questions')
-            .update({ is_spoil: is_spoil === true })
-            .eq('id', id);
-
-        if (error) throw error;
-
-        console.log(`🚫 Question ${id} → spoil: ${is_spoil}`);
-        res.json({ success: true });
-    } catch (error) {
-        console.error('Erreur toggle spoil:', error);
-        res.status(500).json({ error: 'Erreur lors du toggle spoil' });
     }
 });
 
@@ -4412,29 +4185,6 @@ app.post('/admin/report-question', async (req, res) => {
 });
 
 
-// POST /admin/set-lives-icon
-app.post('/admin/set-lives-icon', (req, res) => {
-    const gameState = req.room;   // posée par le garde-fou d'hôte
-
-    const { icon } = req.body;
-    const validIcons = ['heart', 'dragonball', 'flame', 'sharingan', 'katana', 'shuriken', 'konoha', 'alchemy', 'curse', 'kunai', 'star4'];
-
-    if (!validIcons.includes(icon)) {
-        return res.status(400).json({ error: 'Invalid icon' });
-    }
-
-    gameState.livesIcon = icon;
-
-    // Broadcast aux clients
-    diffuser(gameState, 'lobby-update', {
-        livesIcon: icon
-    });
-
-    console.log(`🎨 Icône de vies changée: ${icon}`);
-    res.json({ success: true, icon });
-});
-
-
 // ============================================
 // Socket.IO
 // ============================================
@@ -4480,18 +4230,6 @@ function validateBombanimeCharacter(gameState, name, serie) {
     }
     
     return { valid: true, normalizedName };
-}
-
-// Obtenir la première lettre d'un nom (pour l'alphabet)
-function getFirstLetter(name) {
-    if (!name) return null;
-    const normalized = name.trim().toUpperCase();
-    const firstChar = normalized.charAt(0);
-    // Vérifier que c'est une lettre A-Z
-    if (/^[A-Z]$/.test(firstChar)) {
-        return firstChar;
-    }
-    return null;
 }
 
 // Extraire toutes les lettres uniques d'un nom (A-Z seulement)
@@ -5315,10 +5053,6 @@ io.on('connection', (socket) => {
                         clearTimeout(player.pendingRemoval);
                         delete player.pendingRemoval;
                     }
-                    if (player.pendingDisconnectLog) {
-                        clearTimeout(player.pendingDisconnectLog);
-                        delete player.pendingDisconnectLog;
-                    }
                     delete player.disconnectedAt;
                     delete player.disconnectedSocketId;
                     
@@ -5455,9 +5189,6 @@ io.on('connection', (socket) => {
             isAdmin: data.isAdmin || false
         });
 
-        const playerColor = assignPlayerColor(gameState, data.username);
-        addLog(gameState, 'join', { username: data.username, playerColor });
-
         console.log(`✅ ${data.username} a rejoint le lobby${data.team ? ` (Team ${data.team})` : ''}`);
 
         // 🆕 Utiliser la fonction helper
@@ -5479,9 +5210,6 @@ io.on('connection', (socket) => {
             gameState.players.delete(socket.id);
             gameState.answers.delete(socket.id);
             console.log(`👋 ${data.username} a quitté le lobby`);
-
-            const playerColor = gameState.playerColors[data.username];
-            addLog(gameState, 'leave', { username: data.username, playerColor });
 
             broadcastLobbyUpdate(gameState);
 
@@ -5586,9 +5314,6 @@ io.on('connection', (socket) => {
                 // 🆕 Ne pas déconnecter le socket pour que le joueur reçoive les événements (game-started, etc.)
             }
 
-            // Log pour les admins
-            const playerColor = gameState.playerColors[username];
-            addLog(gameState, 'kick', { username, playerColor });
 
             // Mettre à jour le lobby/game pour tout le monde
             broadcastLobbyUpdate(gameState);
@@ -5666,10 +5391,6 @@ io.on('connection', (socket) => {
             delete existingPlayer.disconnectedSocketId;
 
             // 🔄 Annuler le log "disconnect" en attente si présent
-            if (existingPlayer.pendingDisconnectLog) {
-                clearTimeout(existingPlayer.pendingDisconnectLog);
-                delete existingPlayer.pendingDisconnectLog;
-            }
 
             console.log(`🔄 ${data.username} reconnecté - Mode: ${gameState.mode}, Points: ${existingPlayer.points || 0}, Vies: ${existingPlayer.lives}`);
 
@@ -5703,12 +5424,6 @@ io.on('connection', (socket) => {
 
             socket.emit('player-restored', restorationData);
 
-            // 🔄 Log "reconnect" seulement si "disconnect" avait été affiché
-            const playerColor = gameState.playerColors[data.username] || assignPlayerColor(gameState, data.username);
-            if (existingPlayer.disconnectLogged) {
-                addLog(gameState, 'reconnect', { username: data.username, playerColor });
-                delete existingPlayer.disconnectLogged;
-            }
 
             // Mise à jour lobby
             broadcastLobbyUpdate(gameState);
@@ -5755,10 +5470,6 @@ io.on('connection', (socket) => {
         });
 
         if (player) {
-            addLog(gameState, 'answer', {
-                username: player.username,
-                playerColor: gameState.playerColors[player.username]
-            });
         }
 
         socket.emit('answer-recorded');
@@ -5766,11 +5477,6 @@ io.on('connection', (socket) => {
         gameState.liveAnswers.set(socket.id, data.answer);
         throttledUpdateLiveAnswerStats(gameState);
 
-        diffuser(gameState, 'answer-submitted', {
-            socketId: socket.id,
-            answeredCount: gameState.answers.size,
-            totalPlayers: gameState.players.size
-        });
 
         diffuser(gameState, 'player-answered', {
             username: player.username,
@@ -5797,23 +5503,6 @@ io.on('connection', (socket) => {
 
         if (success) {
             console.log(`✅ Bonus "${bonusType}" utilisé par ${player.username}`);
-
-            // LOGS D'ACTIVITÉ
-            const playerColor = gameState.playerColors[player.username];
-            switch (bonusType) {
-                case '5050':
-                    addLog(gameState, 'bonus-5050', { username: player.username, playerColor });
-                    break;
-                case 'reveal':
-                    addLog(gameState, 'bonus-joker', { username: player.username, playerColor });
-                    break;
-                case 'shield':
-                    addLog(gameState, 'bonus-shield', { username: player.username, playerColor });
-                    break;
-                case 'doublex2':
-                    addLog(gameState, 'bonus-x2', { username: player.username, playerColor });
-                    break;
-            }
 
             // 🔥 NOUVEAU: Stocker le Shield dans les données du joueur
             if (bonusType === 'shield') {
@@ -6073,16 +5762,6 @@ io.on('connection', (socket) => {
 
         const player = gameState.players.get(socket.id);
 
-        if (player) {
-            const playerColor = gameState.playerColors[player.username];
-            // 🔄 Délai avant d'afficher le log "disconnect" (évite le spam lors de changement d'onglet)
-            player.pendingDisconnectLog = setTimeout(() => {
-                addLog(gameState, 'disconnect', { username: player.username, playerColor });
-                player.disconnectLogged = true;
-                delete player.pendingDisconnectLog;
-            }, 3000); // 3 secondes
-        }
-
         // 🔥 Retirer du tracker d'authentification
         if (authenticatedUsers.has(socket.id)) {
             const user = authenticatedUsers.get(socket.id);
@@ -6190,24 +5869,6 @@ function updatePlayerCombo(gameState, socketId) {
             bonusInventory: bonusData.bonusInventory
         });
         console.log(`📡 combo-updated envoyé: level=${bonusData.comboLevel}, progress=${bonusData.comboProgress}, inventory=${JSON.stringify(bonusData.bonusInventory)}`);
-    }
-}
-
-// Reset du combo d'un joueur (mauvaise réponse ou AFK)
-function resetPlayerCombo(gameState, socketId) {
-    const bonusData = gameState.playerBonuses.get(socketId);
-    if (!bonusData) return;
-
-    // Reset uniquement la progression, pas le niveau ni les bonus
-    // (on garde les bonus débloqués pour toute la partie)
-
-    const socket = io.sockets.sockets.get(socketId);
-    if (socket) {
-        socket.emit('combo-updated', {
-            comboLevel: bonusData.comboLevel,
-            comboProgress: bonusData.comboProgress,
-            bonusInventory: bonusData.bonusInventory
-        });
     }
 }
 
@@ -6354,43 +6015,6 @@ function throttledUpdateLiveAnswerStats(gameState) {
             gameState.pendingStatsUpdate = false;
         }, delay);
     }
-}
-
-
-
-
-
-function addLog(gameState, type, data) {
-    const log = {
-        id: Date.now() + Math.random(),
-        type: type,
-        data: data,
-        timestamp: Date.now()
-    };
-
-    gameState.activityLogs.push(log);
-    if (gameState.activityLogs.length > MAX_LOGS) {
-        gameState.activityLogs.shift();
-    }
-
-    diffuser(gameState, 'activity-log', log);
-}
-
-function resetLogs(gameState) {
-    gameState.activityLogs = [];
-    gameState.playerColors = {};
-    diffuser(gameState, 'logs-reset');
-}
-
-function assignPlayerColor(gameState, username) {
-    if (!gameState.playerColors[username]) {
-        const usedColors = Object.values(gameState.playerColors);
-        const availableColors = PLAYER_COLORS.filter(c => !usedColors.includes(c));
-        gameState.playerColors[username] = availableColors.length > 0
-            ? availableColors[0]
-            : PLAYER_COLORS[Object.keys(gameState.playerColors).length % PLAYER_COLORS.length];
-    }
-    return gameState.playerColors[username];
 }
 
 
