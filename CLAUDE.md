@@ -38,7 +38,11 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   `npm run smoke` (cycle de jeu complet), `npm run test:host` (contrôles de l'hôte, camps,
   rafraîchissement), `npm run test:tie` (départage solo et en camps, ~1 min), `npm run test:hote`
   (les routes /admin sont-elles fermées aux visiteurs), `npm run test:rooms` (deux salons
-  simultanés, plafond) et `npm run test:mixte` (quiz et BombAnime en parallèle).
+  simultanés, plafond), `npm run test:mixte` (quiz et BombAnime en parallèle),
+  `npm run test:rejouer` (deux manches d affilée sans répétition de question),
+  `npm run test:historique` (chaque salon a sa propre mémoire), `npm run test:reprise`
+  (l hôte revient après une coupure ; relance en équipes) et `npm run test:abandon`
+  (un salon déserté se libère — à lancer avec `GRACE_SALON_VIDE=3000` des deux côtés).
   `npm run test:charge` mesure la tenue à N salons (`SALONS=15 JOUEURS=12`), il ne vérifie rien.
 - Pas de build, pas de bundler. Les fichiers sont servis en statique tels quels.
 
