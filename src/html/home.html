@@ -173,7 +173,9 @@
                         <div class="v2-mode-preview" :class="['mode-' + currentMode.id, { 'plain-mode': currentMode.plain }]">
                             <div class="v2-mode-preview-shade"></div>
                             <!-- personnage détouré, au premier plan et débordant du cadre -->
-                            <transition name="v2-fade">
+                            <!-- type="transition" : sans lui, Vue mesure la plus longue
+                                 durée trouvée sur l'image, soit les 7 s du flottement -->
+                            <transition name="v2-fade" type="transition">
                                 <img class="v2-mode-char" :class="{ plain: currentMode.plain }" :key="currentMode.id"
                                      :src="currentMode.img" :alt="currentMode.name" draggable="false">
                             </transition>

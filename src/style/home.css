@@ -7318,10 +7318,25 @@ body.game-active:has(.poll-game-container) #particles-js {
     animation: v2CharFloat 7s ease-in-out infinite;
 }
 
-@keyframes v2CharIn {
-    from { opacity: 0; transform: translateY(1.2rem) scale(0.97); }
-    to   { opacity: 1; transform: none; }
+/* ============================================
+   FONDU DU PERSONNAGE ENTRE DEUX MODES
+   Le template déclarait « v2-fade » mais aucune règle ne portait ce nom. Vue
+   cherche alors une durée sur l'élément pour savoir quand retirer l'ancien :
+   elle ne trouvait que l'animation de flottement, en boucle sur sept secondes,
+   et gardait donc les deux personnages superposés tout ce temps à chaque
+   changement de mode. Le flottement est coupé le temps du croisement, sans
+   quoi il garderait la main sur transform.
+   ============================================ */
+.v2-fade-enter-active,
+.v2-fade-leave-active {
+    animation: none;
+    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.2, 0.85, 0.3, 1);
 }
+
+.v2-fade-leave-active { pointer-events: none; }
+
+.v2-fade-enter-from { opacity: 0; transform: translateY(0.9rem) scale(0.97); }
+.v2-fade-leave-to   { opacity: 0; transform: translateY(-0.5rem) scale(0.99); }
 
 @keyframes v2CharFloat {
     0%, 100% { transform: translateY(0); }
