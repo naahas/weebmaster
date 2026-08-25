@@ -588,7 +588,7 @@
             <!-- État: Partie en cours -->
             <!-- 🆕 v2 — Contrôles de l'hôte pendant la partie (remplacent /admin) -->
             <!-- Commandes de l'hôte : enchaînement en bas à droite, arrêt en bas à gauche -->
-            <div class="v2-hostbar" v-if="isHost && gameInProgress && !gameEnded && lobbyMode !== 'bombanime'">
+            <div class="v2-hostbar" v-if="isHost && gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'rush'">
                 <button class="v2q-cmd-btn"
                         @click="hostNextQuestion" :disabled="nextQuestionBusy || !showResults || autoMode"
                         :title="autoMode ? 'Le mode auto enchaîne tout seul' : (showResults ? 'Question suivante' : 'Disponible à la fin de la question')">
@@ -644,16 +644,16 @@
 
                         <!-- Chrono de la manche, en anneau au-dessus de tout -->
                         <div class="rush-chrono" :class="{ urgence: rush.reste <= 10 }">
-                            <svg viewBox="0 0 44 44">
-                                <circle class="fond" cx="22" cy="22" r="20"/>
-                                <circle class="jauge" cx="22" cy="22" r="20"
-                                        :style="{ strokeDashoffset: 125.6 - 125.6 * (rush.reste / rush.duree) }"/>
+                            <svg viewBox="0 0 120 120">
+                                <circle class="fond" cx="60" cy="60" r="54"/>
+                                <circle class="jauge" cx="60" cy="60" r="54"
+                                        :style="{ strokeDashoffset: 339.3 - 339.3 * (rush.reste / rush.duree) }"/>
                             </svg>
-                            <span>{{ rush.reste }}</span>
+                            <span class="rush-chrono-n">{{ rush.reste }}</span>
                         </div>
 
                         <!-- Le classement, discret et masquable -->
-                        <div class="rush-top" v-if="rush.classement.length > 1" :class="{ replie: rush.topMasque }">
+                        <div class="rush-top gauche" v-if="rush.classement.length > 1" :class="{ replie: rush.topMasque }">
                             <button class="rush-top-oeil" @click="rush.topMasque = !rush.topMasque"
                                     :title="rush.topMasque ? 'Afficher le classement' : 'Masquer'">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -672,7 +672,13 @@
                             </ol>
                         </div>
 
-                        <!-- Le portrait : c'est tout ce que le serveur envoie -->
+                        <!-- Le portrait, encadré par la série et le record -->
+                        <div class="rush-rang">
+                            <div class="rush-serie" :class="{ bat: rush.serie > 0, monte: rush.pulse }">
+                                <span class="v">{{ rush.serie }}</span>
+                                <span class="l">série</span>
+                            </div>
+
                         <div class="rush-scene">
                             <transition name="rush-carte" mode="out-in">
                                 <div class="rush-carte" :key="rush.portrait ? rush.portrait.img : 'fin'"
@@ -687,12 +693,6 @@
                             </transition>
                         </div>
 
-                        <!-- La série en cours, et le record du tour -->
-                        <div class="rush-compteurs">
-                            <div class="rush-serie" :class="{ bat: rush.serie > 0 }">
-                                <span class="v">{{ rush.serie }}</span>
-                                <span class="l">série</span>
-                            </div>
                             <div class="rush-record">
                                 <span class="v">{{ rush.record }}</span>
                                 <span class="l">record</span>
@@ -704,11 +704,17 @@
                             <input type="text" class="rush-input" id="rushInput"
                                    v-model="rush.texte"
                                    @input="envoyerSaisieRush"
-                                   :placeholder="rush.portrait ? 'Qui est-ce ?' : ''"
+                                   :placeholder="rush.portrait ? 'GUESS' : ''"
                                    :disabled="!rush.portrait"
                                    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-                            <button class="rush-passer" @click="passerRush" :disabled="!rush.portrait">
-                                Passer
+                            <!-- Posé hors du flux : sinon il décale le champ, qui ne serait
+                                 plus aligné sur le portrait. -->
+                            <button class="rush-passer" @click="passerRush" :disabled="!rush.portrait"
+                                    title="Passer ce personnage — la série repart de zéro">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                     stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M5 4l10 8-10 8V4z"/><path d="M19 5v14"/>
+                                </svg>
                             </button>
                         </div>
                     </div>

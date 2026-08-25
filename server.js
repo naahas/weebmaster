@@ -5951,6 +5951,36 @@ io.on('connection', (socket) => {
         }
     });
 
+    // Reprendre une manche en cours apres un rafraichissement. Le serveur
+    // garde le curseur de chacun : il n y a rien a reconstituer, seulement a
+    // renvoyer. Sans ca, recharger la page laissait un ecran vide jusqu a la
+    // fin du chrono.
+    socket.on('rush-get-state', () => {
+        const gameState = roomDeSocket(socket);
+        if (!gameState) return;
+        const joueur = gameState.players.get(socket.id);
+        if (!joueur) return;
+
+        if (!gameState.rush.active || !gameState.rush.joueurs.has(joueur.playerId)) {
+            return socket.emit('rush-reprise', { enCours: false });
+        }
+
+        const etat = gameState.rush.joueurs.get(joueur.playerId);
+        socket.emit('rush-reprise', {
+            enCours: true,
+            duree: gameState.rush.duree,
+            limite: gameState.rush.tempsParPerso,
+            finA: gameState.rush.finA,
+            portrait: rushPortrait(gameState, joueur.playerId),
+            serie: etat.serie,
+            record: etat.record,
+            classement: rushClassement(gameState),
+        });
+        // La limite du portrait courant repart : le joueur etait absent, on ne
+        // va pas lui compter le temps de son rechargement.
+        rushArmerLimite(gameState, joueur.playerId);
+    });
+
     // Passer volontairement : la série casse, mais on n'attend pas la limite
     socket.on('rush-passer', () => {
         const gameState = roomDeSocket(socket);

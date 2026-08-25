@@ -33,6 +33,7 @@ createApp({
                 flash: null,        // 'juste' | 'passe', le temps de l'animation
                 topMasque: false,
                 fini: false,
+                pulse: false,       // le battement du compteur, le temps d'une frappe
                 _tic: null,
                 _flashT: null,
             },
@@ -1949,6 +1950,18 @@ createApp({
             this.rush._tic = null;
         },
 
+        // Le compteur bat a chaque bonne reponse. On retire la classe avant de
+        // la remettre, sinon deux bonnes reponses rapprochees ne rejoueraient
+        // l animation qu une fois.
+        battreSerieRush() {
+            this.rush.pulse = false;
+            clearTimeout(this._rushPulseT);
+            requestAnimationFrame(() => {
+                this.rush.pulse = true;
+                this._rushPulseT = setTimeout(() => { this.rush.pulse = false; }, 340);
+            });
+        },
+
         // Un éclat bref sur la carte, puis on efface : sans ça la classe
         // resterait et la carte suivante naîtrait déjà colorée.
         flashRush(type) {
@@ -2222,6 +2235,22 @@ createApp({
                     }
                 }
                 
+                // ⚡ Rush : une manche en cours doit se retrouver telle quelle.
+                // Le serveur garde le curseur de chacun, il suffit de le lui
+                // demander — sinon un rafraîchissement laissait un écran vide.
+                if (state.lobbyMode === 'rush') {
+                    if (state.rush) {
+                        Object.assign(this.rush, {
+                            duree: state.rush.duree,
+                            limite: state.rush.limite,
+                            filtre: state.rush.filtre,
+                            sequencePartagee: state.rush.sequencePartagee,
+                            filtres: state.rush.filtres || [],
+                        });
+                    }
+                    if (state.inProgress && this.socket) this.socket.emit('rush-get-state');
+                }
+
                 // Les réglages BombAnime reviennent avec l'état du salon
                 if (state.bombanime) {
                     if (state.bombanime.serie) this.bombanime.serie = state.bombanime.serie;
@@ -3593,6 +3622,7 @@ createApp({
             });
 
             this.socket.on('rush-portrait', (data) => {
+                const avantSerie = this.rush.serie;
                 // Le champ se vide dès qu'un portrait est validé : le joueur
                 // enchaîne sans avoir à effacer ce qu'il vient de taper.
                 this.rush.texte = '';
@@ -3600,8 +3630,16 @@ createApp({
                 this.rush.serie = data.serie;
                 this.rush.record = data.record;
                 if (data.limite !== undefined) this.rush.limite = data.limite;
-                if (data.reussi === true) this.flashRush('juste');
-                else if (data.reussi === false) this.flashRush('passe');
+                if (data.reussi === true) {
+                    this.flashRush('juste');
+                    this.playSound(this.sounds.rushJuste);
+                    this.battreSerieRush();
+                } else if (data.reussi === false) {
+                    this.flashRush('passe');
+                    // Casser une série de plusieurs, ce n'est pas passer un
+                    // portrait qu'on ne connaissait pas : le son le dit.
+                    this.playSound(avantSerie > 1 ? this.sounds.rushCasse : this.sounds.rushPasse);
+                }
                 if (!data.portrait) this.rush.fini = true;
             });
 
@@ -3618,6 +3656,26 @@ createApp({
                 this.gameStartedOnServer = false;
                 this.gameEndData = data;
                 this.$nextTick(() => this.startEndReveal());
+            });
+
+            // La réponse à « rush-get-state » : on se replace où on en était
+            this.socket.on('rush-reprise', (data) => {
+                if (!data || !data.enCours) return;
+                Object.assign(this.rush, {
+                    duree: data.duree, limite: data.limite,
+                    portrait: data.portrait, texte: '',
+                    serie: data.serie, record: data.record,
+                    classement: data.classement || [], fini: false, flash: null,
+                });
+                this.gameInProgress = true;
+                this.gameEnded = false;
+                this.lobbyMode = 'rush';
+                document.body.classList.add('game-active');
+                this.lancerChronoRush(data.finA);
+                this.$nextTick(() => {
+                    const champ = document.getElementById('rushInput');
+                    if (champ) champ.focus();
+                });
             });
 
             this.socket.on('rush-config', (data) => {
@@ -4717,6 +4775,12 @@ createApp({
                 bombanimeUsed: this.createPreloadedSound('lock1.mp3'),
                 bombanimeExplosion: this.createPreloadedSound('explode.mp3'),
                 bombanimePlayerTurn: this.createPreloadedSound('playerturn.mp3'),
+                // ⚡ Rush : un son par verdict. Ils sont courts exprès — à un
+                // portrait toutes les deux secondes, le moindre traînage
+                // se chevaucherait avec le suivant.
+                rushJuste: this.createPreloadedSound('pickup.mp3'),
+                rushPasse: this.createPreloadedSound('slash3.mp3'),
+                rushCasse: this.createPreloadedSound('wrong.mp3'),
             };
             
             // 💣 Son tictac en boucle (instance unique, pas cloné)

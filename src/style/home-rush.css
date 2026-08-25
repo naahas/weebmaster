@@ -22,13 +22,13 @@
 /* ══════════ Le chrono de la manche ══════════ */
 .rush-chrono {
     position: fixed;
-    top: clamp(0.9rem, 2.5vh, 1.7rem);
+    top: clamp(0.7rem, 2vh, 1.4rem);
     left: 50%;
     transform: translateX(-50%);
     display: grid;
     place-items: center;
-    width: 3.4rem;
-    height: 3.4rem;
+    width: clamp(4.6rem, 9vh, 6rem);
+    height: clamp(4.6rem, 9vh, 6rem);
     z-index: 60;
 }
 
@@ -42,7 +42,7 @@
 
 .rush-chrono circle {
     fill: none;
-    stroke-width: 2.4;
+    stroke-width: 5;
 }
 
 .rush-chrono .fond { stroke: rgba(255, 255, 255, 0.07); }
@@ -50,21 +50,32 @@
 .rush-chrono .jauge {
     stroke: var(--neon-primary, #ffd700);
     stroke-linecap: round;
-    stroke-dasharray: 125.6;              /* 2 π 20 */
+    stroke-dasharray: 339.3;              /* 2 π 54 */
+    filter: drop-shadow(0 0 0.5rem rgba(255, 215, 0, 0.45));
     transition: stroke-dashoffset 0.25s linear, stroke 0.4s ease;
 }
 
-.rush-chrono span {
+.rush-chrono-n {
     position: relative;
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.35rem;
-    color: rgba(255, 255, 255, 0.82);
+    font-size: clamp(2rem, 4.4vh, 2.7rem);
+    line-height: 1;
+    color: #fff;
     font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 1.2rem rgba(255, 215, 0, 0.4);
+    transition: color 0.4s ease, text-shadow 0.4s ease;
 }
 
 /* Les dix dernières secondes : le halo bat, sans clignoter */
-.rush-chrono.urgence .jauge { stroke: #ff5a6e; }
-.rush-chrono.urgence span { color: #ff8a97; }
+.rush-chrono.urgence .jauge {
+    stroke: #ff5a6e;
+    filter: drop-shadow(0 0 0.7rem rgba(255, 90, 110, 0.6));
+}
+
+.rush-chrono.urgence .rush-chrono-n {
+    color: #ff8a97;
+    text-shadow: 0 0 1.4rem rgba(255, 90, 110, 0.55);
+}
 .rush-chrono.urgence { animation: rushBat 1s ease-in-out infinite; }
 
 @keyframes rushBat {
@@ -73,11 +84,21 @@
 }
 
 /* ══════════ Le portrait ══════════ */
+/* La série à gauche, le portrait au centre, le record à droite. Les deux
+   compteurs ont la même largeur pour que le portrait reste centré à l'écran. */
+.rush-rang {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(1rem, 4vw, 2.4rem);
+}
+
 .rush-scene {
     display: grid;
     place-items: center;
-    width: min(20rem, 74vw);
-    height: min(20rem, 42vh);
+    width: min(26rem, 62vw);
+    height: min(26rem, 50vh);
+    flex: 0 0 auto;
 }
 
 .rush-carte {
@@ -163,13 +184,8 @@
 .rush-carte-leave-to     { opacity: 0; transform: translateY(-0.5rem) scale(0.99); }
 
 /* ══════════ La série et le record ══════════ */
-.rush-compteurs {
-    display: flex;
-    align-items: flex-end;
-    gap: clamp(1.4rem, 5vw, 2.6rem);
-}
-
 .rush-serie, .rush-record {
+    flex: 0 0 clamp(3.4rem, 9vw, 5.2rem);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -178,23 +194,36 @@
 
 .rush-serie .v {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(2.6rem, 9vw, 3.6rem);
-    color: rgba(255, 255, 255, 0.9);
+    font-size: clamp(2.8rem, 8vw, 4rem);
+    color: rgba(255, 255, 255, 0.35);
     font-variant-numeric: tabular-nums;
-    transition: color 0.3s ease;
+    transition: color 0.3s ease, text-shadow 0.3s ease;
 }
 
 .rush-serie.bat .v {
     color: var(--neon-primary, #ffd700);
-    text-shadow: 0 0 1.6rem rgba(255, 215, 0, 0.35);
+    text-shadow: 0 0 1.8rem rgba(255, 215, 0, 0.4);
 }
 
+/* Le battement d'une bonne réponse : bref, sinon il déborde sur la suivante */
+.rush-serie.monte .v { animation: rushMonte 0.34s cubic-bezier(0.2, 1.6, 0.4, 1); }
+
+@keyframes rushMonte {
+    0%   { transform: scale(1); }
+    45%  { transform: scale(1.35); }
+    100% { transform: scale(1); }
+}
+
+/* Le record en bleu froid : c'est un acquis, pas la course en cours */
 .rush-record .v {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(1.5rem, 5vw, 2rem);
-    color: rgba(255, 255, 255, 0.42);
+    font-size: clamp(2.2rem, 6.5vw, 3rem);
+    color: #7fb4ff;
     font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 1.4rem rgba(127, 180, 255, 0.22);
 }
+
+.rush-record .l { color: rgba(127, 180, 255, 0.4); }
 
 .rush-serie .l, .rush-record .l {
     margin-top: 0.3rem;
@@ -206,11 +235,13 @@
 }
 
 /* ══════════ La saisie ══════════ */
+/* Le champ fait exactement la largeur du portrait : le bouton « passer » est
+   posé hors du flux, sinon il décalerait l'un par rapport à l'autre. */
 .rush-saisie {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    width: min(22rem, 86vw);
+    width: min(26rem, 62vw);
 }
 
 /* Sans bordure, comme le champ de BombAnime : le texte seul, souligné */
@@ -246,28 +277,33 @@
 }
 
 .rush-passer {
-    flex: 0 0 auto;
-    padding: 0.7rem 1rem;
-    font-family: inherit;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: rgba(255, 255, 255, 0.45);
+    position: absolute;
+    left: calc(100% + 0.7rem);
+    top: 50%;
+    transform: translateY(-50%);
+    display: grid;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    padding: 0;
+    color: rgba(255, 255, 255, 0.35);
     background: rgba(255, 255, 255, 0.05);
     border: none;
-    border-radius: 2rem;
+    border-radius: 50%;
     cursor: pointer;
     transition: color 0.2s ease, background 0.2s ease;
 }
 
-.rush-passer:hover:not(:disabled) { color: #fff; background: rgba(255, 255, 255, 0.11); }
-.rush-passer:disabled { opacity: 0.35; cursor: default; }
+.rush-passer svg { width: 1rem; height: 1rem; }
+.rush-passer:hover:not(:disabled) { color: #fff; background: rgba(255, 255, 255, 0.12); }
+.rush-passer:disabled { opacity: 0.3; cursor: default; }
 
 /* ══════════ Le classement, discret ══════════ */
 .rush-top {
     position: fixed;
     top: clamp(0.9rem, 2.5vh, 1.7rem);
-    right: clamp(0.9rem, 2.5vw, 1.7rem);
+    right: auto;
+    left: clamp(0.9rem, 2.5vw, 1.7rem);
     z-index: 60;
     display: flex;
     align-items: flex-start;
@@ -302,18 +338,18 @@
 
 .rush-top ol {
     margin: 0;
-    padding: 0 0.2rem 0 0;
+    padding: 0 0.3rem 0 0;
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 0.22rem;
+    gap: 0.5rem;
 }
 
 .rush-top li {
     display: flex;
     align-items: baseline;
-    gap: 0.45rem;
-    font-size: 0.72rem;
+    gap: 0.7rem;
+    font-size: 0.78rem;
     color: rgba(255, 255, 255, 0.55);
 }
 
@@ -338,12 +374,18 @@
 /* ══════════ Téléphone ══════════ */
 @media (max-width: 600px) {
     .rush { gap: 0.7rem; padding: 4rem 0.8rem 1.4rem; }
-    .rush-scene { width: 80vw; height: 34vh; }
+    /* Sur telephone les trois de front ecraseraient le portrait : les
+       compteurs passent sous lui, de part et d autre. */
+    .rush-rang { flex-wrap: wrap; gap: 0.6rem 1.6rem; }
+    .rush-scene { order: -1; flex-basis: 100%; width: 78vw; height: 32vh; margin: 0 auto; }
+    .rush-serie, .rush-record { flex: 0 0 auto; }
+    .rush-saisie { width: 78vw; }
+    .rush-passer { left: auto; right: -3rem; }
     .rush-chrono { width: 2.9rem; height: 2.9rem; }
     .rush-chrono span { font-size: 1.15rem; }
     .rush-top { top: 0.7rem; right: 0.7rem; padding: 0.4rem 0.45rem; }
     .rush-top .n { max-width: 4.5rem; }
-    .rush-saisie { width: 92vw; }
+
 }
 
 /* ============================================

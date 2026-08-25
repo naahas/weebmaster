@@ -108,6 +108,24 @@ const persoParImage = (img) => data.personnages.find(p => p.img === img);
     check('passer remet la série à zéro', apresPasse.serie === 0, 'série ' + apresPasse.serie);
     check('le record du tour est conservé', apresPasse.record === 3, 'record ' + apresPasse.record);
 
+    // ── La reprise apres un rafraichissement ──
+    // Le joueur recharge sa page : il doit retrouver son portrait, sa serie et
+    // son record la ou il les avait laisses.
+    let reprise = null;
+    a.s.on('rush-reprise', (d) => { reprise = d; });
+    a.s.emit('rush-get-state');
+    await wait(400);
+    check('une manche en cours se reprend', reprise && reprise.enCours === true);
+    check('elle rend le portrait courant',
+        reprise && reprise.portrait &&
+        reprise.portrait.img === a.vu.portraits[a.vu.portraits.length - 1].portrait.img,
+        reprise && reprise.portrait ? reprise.portrait.img : 'aucun');
+    check('elle rend la serie et le record',
+        reprise && reprise.serie === apresPasse.serie && reprise.record === apresPasse.record,
+        reprise ? 'serie ' + reprise.serie + ', record ' + reprise.record : '');
+    check('elle rend l heure de fin', reprise && reprise.finA > Date.now(),
+        reprise ? Math.round((reprise.finA - Date.now()) / 1000) + 's restantes' : '');
+
     // ── Aucun portrait ne revient deux fois ──
     const vus = a.vu.portraits.filter(p => p.portrait).map(p => p.portrait.img);
     check('aucun portrait ne se répète dans la manche', new Set(vus).size === vus.length,
