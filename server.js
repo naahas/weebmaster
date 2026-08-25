@@ -1148,6 +1148,10 @@ app.get('/prototypes/bombanime', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-bombanime.html');
 });
 
+app.get('/prototypes/rush-timer', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-rush-timer.html');
+});
+
 app.get('/prototypes/bombanime-2', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-bombanime2.html');
 });

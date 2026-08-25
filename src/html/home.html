@@ -653,18 +653,15 @@
                         </div>
 
                         <!-- Le classement, discret et masquable -->
-                        <div class="rush-top gauche" v-if="rush.classement.length > 1" :class="{ replie: rush.topMasque }">
-                            <button class="rush-top-oeil" @click="rush.topMasque = !rush.topMasque"
-                                    :title="rush.topMasque ? 'Afficher le classement' : 'Masquer'">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                    <path v-if="!rush.topMasque" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                    <circle v-if="!rush.topMasque" cx="12" cy="12" r="3"/>
-                                    <path v-else d="M17.9 18A10.1 10.1 0 0 1 12 20c-7 0-11-8-11-8a18.4 18.4 0 0 1 5.1-6M9.9 4.2A10.1 10.1 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.2 3.2M1 1l22 22"/>
-                                </svg>
-                            </button>
-                            <ol v-if="!rush.topMasque">
+                        <!-- Un clic n'importe où dessus l'efface presque entièrement ;
+                             il reste visible juste assez pour qu'on sache le rappeler. -->
+                        <div class="rush-top" v-if="rush.classement.length > 1"
+                             :class="{ replie: rush.topMasque }"
+                             @click="rush.topMasque = !rush.topMasque"
+                             :title="rush.topMasque ? 'Afficher le classement' : 'Masquer le classement'">
+                            <ol>
                                 <li v-for="(j, i) in rush.classement.slice(0, 3)" :key="j.playerId"
-                                    :class="{ moi: j.playerId === playerId }">
+                                    :class="{ moi: j.playerId === playerId, tete: i === 0 }">
                                     <span class="r">{{ i + 1 }}</span>
                                     <span class="n">{{ j.username }}</span>
                                     <span class="s">{{ j.record }}</span>
@@ -684,7 +681,6 @@
                                 <div class="rush-carte" :key="rush.portrait ? rush.portrait.img : 'fin'"
                                      :class="{ juste: rush.flash === 'juste', passe: rush.flash === 'passe' }">
                                     <img v-if="rush.portrait" :src="'/rushpic/' + rush.portrait.img" alt="" draggable="false">
-                                    <span class="rush-anime" v-if="rush.portrait">{{ rush.portrait.anime }}</span>
                                     <!-- La limite par portrait, en trait sous la carte -->
                                     <span class="rush-limite" v-if="rush.limite && rush.portrait"
                                           :key="'l' + rush.portrait.img"
