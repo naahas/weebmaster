@@ -1,263 +1,337 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShonenMaster — Rush : le cadre du portrait</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/png" href="/icon.png">
-    <style>
-        :root {
-            --neon: #FFD700;
-            --or: #f0c040;
-            --txt: #fff;
-            --txt2: #9a9aa2;
-            --txt3: #5c5c66;
-            --fond: #08080b;
-            --carte: #101013;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rush — cadres et minuteur</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   Les 308 portraits font 225 x 350. La boîte prend ce format : le
+   cadre épouse donc l'image au pixel, sans bande ni rognage — c'est
+   ce qui manquait à la première série de prototypes.
+   ════════════════════════════════════════════════════════════════ */
+* { box-sizing: border-box; }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    margin: 0;
+    padding: 2.5rem 1.5rem 5rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #fff;
+    background: radial-gradient(70% 55% at 50% 0%, #16161d, #08080b 70%);
+    min-height: 100vh;
+}
 
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: var(--fond);
-            color: var(--txt);
-            min-height: 100vh;
-            padding: 2rem 1.5rem 6rem;
-        }
+h1 {
+    margin: 0 0 0.4rem;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 0.06em;
+}
 
-        .tete { max-width: 78rem; margin: 0 auto 2rem; }
-        .tete h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: .04em; line-height: 1; }
-        .tete p { margin-top: .5rem; font-size: .85rem; color: var(--txt2); max-width: 48rem; line-height: 1.6; }
+.sous {
+    margin: 0 0 2.2rem;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.42);
+    max-width: 46rem;
+    line-height: 1.55;
+}
 
-        .barre {
-            position: sticky; top: 0; z-index: 50;
-            max-width: 78rem; margin: 0 auto 2.5rem;
-            display: flex; flex-wrap: wrap; align-items: center; gap: 1.4rem;
-            padding: .9rem 1.2rem;
-            background: rgba(16,16,19,.94); backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,.07); border-radius: .9rem;
-        }
-        .reglage { display: flex; align-items: center; gap: .55rem; }
-        .reglage > span { font-size: .62rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--txt3); }
-        .choix { display: flex; gap: .2rem; }
-        .choix button {
-            padding: .35rem .7rem; font-family: inherit; font-size: .72rem; font-weight: 600;
-            color: var(--txt2); background: rgba(255,255,255,.05); border: none;
-            border-radius: .4rem; cursor: pointer;
-        }
-        .choix button.on { color: #14100a; background: linear-gradient(135deg,#ffe066,var(--neon)); }
-        .barre input[type="range"] { width: 9rem; accent-color: var(--neon); }
+.barre {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.2rem;
+    margin-bottom: 2.6rem;
+    padding: 0.9rem 1.1rem;
+    border: 0.06rem solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.7rem;
+    background: rgba(255, 255, 255, 0.02);
+}
 
-        .grille {
-            max-width: 78rem; margin: 0 auto;
-            display: grid; gap: 1.1rem;
-            grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
-        }
+.barre label { font-size: 0.78rem; color: rgba(255, 255, 255, 0.5); }
 
-        .carte-p { display: flex; flex-direction: column; background: var(--carte);
-                   border: 1px solid rgba(255,255,255,.06); border-radius: .9rem; overflow: hidden; }
-        .carte-tete { display: flex; align-items: baseline; justify-content: space-between;
-                      gap: .7rem; padding: .85rem 1rem; border-bottom: 1px solid rgba(255,255,255,.05); }
-        .carte-nom { font-size: .85rem; font-weight: 700; }
-        .carte-note { font-size: .66rem; color: var(--txt3); text-align: right; line-height: 1.4; }
+.barre select, .barre button {
+    font: inherit;
+    font-size: 0.82rem;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.07);
+    border: 0.06rem solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.4rem;
+    padding: 0.35rem 0.6rem;
+    cursor: pointer;
+}
 
-        .scene {
-            flex: 1; display: grid; place-items: center; padding: 2.8rem 1.2rem;
-            background: radial-gradient(60% 70% at 50% 45%, rgba(255,215,0,.03), transparent 70%), #060608;
-        }
+.barre button:hover { background: rgba(255, 215, 0, 0.16); border-color: rgba(255, 215, 0, 0.4); }
 
-        /* ══════════ Le portrait, commun à toutes les variantes ══════════ */
-        .p { position: relative; width: var(--t, 13rem); height: var(--t, 13rem); }
-        .p img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: inherit; }
+.grille {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: 3rem 2.2rem;
+}
 
-        /* Le rail du minuteur, identique partout : il ne fait pas partie du cadre */
-        .rail { width: var(--t, 13rem); height: .22rem; margin-top: .8rem;
-                background: rgba(255,255,255,.06); border-radius: 2rem; overflow: hidden; }
-        .rail i { display: block; height: 100%; width: 62%; border-radius: 2rem;
-                  background: linear-gradient(90deg,#ff8c00,var(--neon)); box-shadow: 0 0 .6rem rgba(255,190,40,.5); }
-        .bloc { display: flex; flex-direction: column; align-items: center; }
+.cas { display: flex; flex-direction: column; align-items: center; gap: 0.9rem; }
 
-        /* ── A · Actuel : un simple liseré ── */
-        .a { border-radius: 1.1rem; overflow: hidden;
-             box-shadow: 0 1.4rem 3.4rem rgba(0,0,0,.55), inset 0 0 0 .06rem rgba(255,255,255,.07); }
+.titre {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.34);
+    text-align: center;
+}
 
-        /* ── B · Double filet, écho de la pastille BombAnime ── */
-        .b { border-radius: 1.1rem; }
-        .b img { border-radius: 1.1rem; }
-        .b::before, .b::after {
-            content: ''; position: absolute; border-radius: inherit; pointer-events: none;
-        }
-        .b::before { inset: 0; box-shadow: inset 0 0 0 .12rem rgba(240,192,64,.75); }
-        .b::after  { inset: -.42rem; border-radius: 1.5rem; box-shadow: inset 0 0 0 .06rem rgba(240,192,64,.25); }
+.titre em {
+    display: block;
+    margin-top: 0.25rem;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 0.7rem;
+    letter-spacing: 0;
+    text-transform: none;
+    color: rgba(255, 255, 255, 0.24);
+}
 
-        /* ── C · Coins coupés, façon carte tech ── */
-        .c { --coupe: 1.5rem;
-             clip-path: polygon(var(--coupe) 0, 100% 0, 100% calc(100% - var(--coupe)), calc(100% - var(--coupe)) 100%, 0 100%, 0 var(--coupe));
-             background: linear-gradient(135deg, rgba(240,192,64,.9), rgba(240,192,64,.15));
-             padding: .11rem; }
-        .c .interieur { width: 100%; height: 100%; --coupe: 1.42rem;
-             clip-path: polygon(var(--coupe) 0, 100% 0, 100% calc(100% - var(--coupe)), calc(100% - var(--coupe)) 100%, 0 100%, 0 var(--coupe));
-             background: #0c0c0f; }
-        .c img { border-radius: 0; }
+/* La boîte au format exact du fichier */
+.boite {
+    position: relative;
+    width: 13.5rem;
+    aspect-ratio: 225 / 350;
+    flex: 0 0 auto;
+}
 
-        /* ── D · Équerres aux quatre coins ── */
-        .d { border-radius: .5rem; }
-        .d img { border-radius: .5rem; }
-        .d i { position: absolute; width: 2.2rem; height: 2.2rem; border: .14rem solid rgba(240,192,64,.85); pointer-events: none; }
-        .d i:nth-child(2) { top: -.35rem; left: -.35rem; border-right: 0; border-bottom: 0; border-radius: .5rem 0 0 0; }
-        .d i:nth-child(3) { top: -.35rem; right: -.35rem; border-left: 0; border-bottom: 0; border-radius: 0 .5rem 0 0; }
-        .d i:nth-child(4) { bottom: -.35rem; right: -.35rem; border-left: 0; border-top: 0; border-radius: 0 0 .5rem 0; }
-        .d i:nth-child(5) { bottom: -.35rem; left: -.35rem; border-right: 0; border-top: 0; border-radius: 0 0 0 .5rem; }
+.boite img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0.5rem;
+}
 
-        /* ── E · Passe-partout, façon photo encadrée ── */
-        .e { border-radius: .7rem; padding: .75rem; background: #14131a;
-             box-shadow: 0 1.4rem 3.4rem rgba(0,0,0,.6), inset 0 0 0 .06rem rgba(255,255,255,.08); }
-        .e img { border-radius: .35rem; box-shadow: 0 .2rem .8rem rgba(0,0,0,.5); }
+/* Le tracé du minuteur, commun aux variantes qui font le tour */
+.tour { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
 
-        /* ── F · Halo dégradé, sans trait ── */
-        .f { border-radius: 1.3rem; }
-        .f img { border-radius: 1.3rem; }
-        .f::before {
-            content: ''; position: absolute; inset: -.9rem; border-radius: 2rem; z-index: -1;
-            background: radial-gradient(closest-side, rgba(255,190,40,.28), transparent 78%);
-            filter: blur(.2rem);
-        }
+.tour rect {
+    fill: none;
+    stroke-linecap: round;
+    stroke-dasharray: 100;
+    stroke-dashoffset: 0;
+    animation: vide var(--t, 8s) linear infinite;
+}
 
-        /* ── G · Filet asymétrique : deux côtés seulement ── */
-        .g { border-radius: .2rem 1.4rem .2rem 1.4rem; overflow: hidden;
-             box-shadow: inset 0 0 0 .06rem rgba(255,255,255,.06); }
-        .g img { border-radius: inherit; }
-        .g::after {
-            content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-            border-top: .16rem solid rgba(240,192,64,.9);
-            border-left: .16rem solid rgba(240,192,64,.9);
-            border-right: .16rem solid rgba(240,192,64,.12);
-            border-bottom: .16rem solid rgba(240,192,64,.12);
-        }
+@keyframes vide { to { stroke-dashoffset: 100; } }
 
-        /* ── H · Socle : le portrait posé sur une base lumineuse ── */
-        .h { border-radius: 1.1rem 1.1rem .3rem .3rem; overflow: hidden;
-             box-shadow: inset 0 0 0 .06rem rgba(255,255,255,.07); }
-        .h img { border-radius: inherit; }
-        .h::after {
-            content: ''; position: absolute; left: 12%; right: 12%; bottom: -.18rem; height: .22rem;
-            border-radius: 2rem; background: linear-gradient(90deg, transparent, var(--neon), transparent);
-            box-shadow: 0 0 1.1rem rgba(255,215,0,.7);
-        }
-    </style>
+/* Les minuteurs en trait droit */
+.rail {
+    position: absolute;
+    overflow: hidden;
+    border-radius: 2rem;
+    background: rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+}
+
+.rail i {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 2rem;
+    background: linear-gradient(90deg, #ff8c00, #ffd700);
+    box-shadow: 0 0 0.5rem rgba(255, 190, 40, 0.55);
+    transform-origin: left center;
+    animation: draine var(--t, 8s) linear infinite;
+}
+
+@keyframes draine { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+/* ── A · Filet double, minuteur sur le filet extérieur ── */
+.a img { border-radius: 0.35rem; }
+
+.a::before, .a::after {
+    content: '';
+    position: absolute;
+    border-radius: 0.45rem;
+    pointer-events: none;
+}
+
+.a::before { inset: -0.28rem; border: 0.06rem solid rgba(255, 215, 0, 0.3); }
+.a::after  { inset: -0.06rem; border: 0.06rem solid rgba(255, 255, 255, 0.12); }
+.a .tour { inset: -0.28rem; }
+.a .tour rect { stroke: #ffd700; stroke-width: 2; filter: drop-shadow(0 0 3px rgba(255, 200, 60, 0.7)); }
+
+/* ── B · Passe-partout, minuteur dans la marge du bas ── */
+.b {
+    padding: 0.75rem 0.75rem 1.5rem;
+    border-radius: 0.6rem;
+    background: linear-gradient(165deg, #1c1a17, #100f12);
+    box-shadow: 0 1rem 2.4rem rgba(0, 0, 0, 0.5), inset 0 0 0 0.06rem rgba(255, 255, 255, 0.07);
+}
+
+.b img { border-radius: 0.2rem; box-shadow: 0 0 0 0.06rem rgba(0, 0, 0, 0.6), 0 0.3rem 0.9rem rgba(0, 0, 0, 0.45); }
+.b .rail { left: 0.75rem; right: 0.75rem; bottom: 0.62rem; height: 0.16rem; }
+
+/* ── C · Équerres aux coins, elles s'éteignent ── */
+.c img { border-radius: 0.25rem; }
+
+.c span.eq {
+    position: absolute;
+    width: 1.5rem;
+    height: 1.5rem;
+    pointer-events: none;
+    animation: retracte var(--t, 8s) linear infinite;
+}
+
+.c span.eq::before, .c span.eq::after {
+    content: '';
+    position: absolute;
+    background: #ffd700;
+    box-shadow: 0 0 0.4rem rgba(255, 200, 60, 0.6);
+}
+
+.c span.eq::before { width: 100%; height: 0.11rem; }
+.c span.eq::after  { width: 0.11rem; height: 100%; }
+.c .h-g { top: -0.3rem; left: -0.3rem; }
+.c .h-d { top: -0.3rem; right: -0.3rem; transform: scaleX(-1); }
+.c .b-g { bottom: -0.3rem; left: -0.3rem; transform: scaleY(-1); }
+.c .b-d { bottom: -0.3rem; right: -0.3rem; transform: scale(-1); }
+
+@keyframes retracte { from { opacity: 1; } to { opacity: 0.12; } }
+
+/* ── D · Liseré fin et halo, minuteur sur le liseré ── */
+.d img { border-radius: 0.4rem; }
+
+.d::before {
+    content: '';
+    position: absolute;
+    inset: -0.1rem;
+    border-radius: 0.5rem;
+    border: 0.06rem solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 0 1.6rem rgba(255, 190, 60, 0.16), 0 0 3.5rem rgba(255, 160, 40, 0.09);
+    pointer-events: none;
+}
+
+.d .tour { inset: -0.1rem; }
+.d .tour rect { stroke: #fff; stroke-width: 1.6; filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.6)); }
+
+/* ── E · Cartouche bas, minuteur dedans ── */
+.e {
+    padding: 0.4rem 0.4rem 1.9rem;
+    border-radius: 0.5rem;
+    background: #131217;
+    box-shadow: inset 0 0 0 0.06rem rgba(255, 255, 255, 0.09);
+}
+
+.e img { border-radius: 0.25rem; }
+
+.e .plaque {
+    position: absolute;
+    left: 0.4rem;
+    right: 0.4rem;
+    bottom: 0.4rem;
+    height: 1.15rem;
+    border-radius: 0.2rem;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent);
+    pointer-events: none;
+}
+
+.e .rail { left: 0.75rem; right: 0.75rem; bottom: 0.88rem; height: 0.18rem; }
+
+/* ── F · Rail intérieur en haut, dans la marge du cadre ── */
+.f {
+    padding: 0.95rem 0.45rem 0.45rem;
+    border-radius: 0.5rem;
+    background: #131217;
+    box-shadow: inset 0 0 0 0.06rem rgba(255, 255, 255, 0.09);
+}
+
+.f img { border-radius: 0.25rem; }
+.f .rail { left: 0.7rem; right: 0.7rem; top: 0.4rem; height: 0.16rem; }
+</style>
 </head>
-
 <body>
-    <div class="tete">
-        <h1>Rush — le cadre du portrait</h1>
-        <p>
-            Le minuteur a quitté l'image : c'est désormais un rail posé dessous, identique dans
-            toutes les variantes ci-dessous. Reste à habiller la photo. Huit cadres, à juger sur
-            trois fonds différents — un cadre doré se comporte autrement sur un ciel clair que sur
-            une scène sombre.
-        </p>
-    </div>
 
-    <div class="barre">
-        <div class="reglage">
-            <span>Image</span>
-            <div class="choix" data-groupe="img">
-                <button data-img="sakura.png" class="on">Fond clair</button>
-                <button data-img="ichigo.png">Ciel</button>
-                <button data-img="aizen.png">Sombre</button>
-            </div>
-        </div>
-        <div class="reglage">
-            <span>Taille</span>
-            <input type="range" id="taille" min="9" max="20" value="13">
-            <span id="tval" style="color:var(--neon);font-family:'Bebas Neue';font-size:1.1rem">13</span>
-        </div>
-        <div class="reglage">
-            <span>Rail</span>
-            <div class="choix" data-groupe="rail">
-                <button data-rail="1" class="on">Visible</button>
-                <button data-rail="0">Masqué</button>
-            </div>
-        </div>
-    </div>
+<h1>Rush — cadres et minuteur</h1>
+<p class="sous">
+    La boîte a le format exact des fichiers (225&nbsp;×&nbsp;350) : le cadre épouse l'image au pixel,
+    ce qui manquait à la première série. Chaque variante propose aussi un endroit différent pour le
+    minuteur du portrait — le trait vertical à droite ne convenait pas.
+</p>
 
-    <div class="grille" id="grille"></div>
+<div class="barre">
+    <label for="perso">Portrait</label>
+    <select id="perso"></select>
+    <label for="duree">Durée</label>
+    <select id="duree">
+        <option value="5">5 s</option>
+        <option value="8" selected>8 s</option>
+        <option value="10">10 s</option>
+    </select>
+    <button id="relancer">Relancer les minuteurs</button>
+</div>
 
-    <script>
-        let image = 'sakura.png';
-        let rail = true;
-        let taille = 13;
+<div class="grille" id="grille"></div>
 
-        const VARIANTES = [
-            ['a', 'A · Actuel', "Un liseré blanc à 7 %<br>et une ombre portée"],
-            ['b', 'B · Double filet', "Deux traits dorés concentriques,<br>écho de la pastille BombAnime"],
-            ['c', 'C · Coins coupés', "Deux angles rognés en biais,<br>bordure en dégradé"],
-            ['d', 'D · Équerres', "Quatre coins seulement :<br>le cadre est suggéré"],
-            ['e', 'E · Passe-partout', "La photo est posée dans<br>une marge, comme un tirage"],
-            ['f', 'F · Halo', "Aucun trait : une lueur<br>chaude derrière l'image"],
-            ['g', 'G · Filet asymétrique', "Deux côtés marqués, deux<br>estompés, coins opposés arrondis"],
-            ['h', 'H · Socle', "Une barre de lumière sous<br>l'image, qui la fait flotter"],
-        ];
+<script>
+var PORTRAITS = ['luffy', 'gojo', 'naruto', 'levi', 'ichigo', 'zoro', 'asta'];
 
-        const interieur = (cle) => cle === 'c'
-            ? `<div class="interieur"><img src="/rushpic/${image}" alt=""></div>`
-            : `<img src="/rushpic/${image}" alt="">`;
+// Le tracé qui fait le tour : pathLength = 100 rend le décompte indépendant de
+// la taille, un seul jeu de valeurs suffit à toutes les tailles d'écran.
+var tour = '<svg class="tour" viewBox="0 0 100 156" preserveAspectRatio="none">'
+         + '<rect x="1" y="1" width="98" height="154" rx="4" pathLength="100"></rect></svg>';
 
-        const equerres = (cle) => cle === 'd' ? '<i></i><i></i><i></i><i></i>' : '';
+var CAS = [
+    { c: 'a', t: 'A · Filet double',   d: 'le minuteur fait le tour du filet extérieur', in: tour },
+    { c: 'b', t: 'B · Passe-partout',  d: 'minuteur dans la marge basse', in: '<span class="rail"><i></i></span>' },
+    { c: 'c', t: 'C · Équerres',  d: 'les quatre coins s’éteignent',
+      in: '<span class="eq h-g"></span><span class="eq h-d"></span><span class="eq b-g"></span><span class="eq b-d"></span>' },
+    { c: 'd', t: 'D · Liseré et halo', d: 'le minuteur fait le tour du liseré', in: tour },
+    { c: 'e', t: 'E · Cartouche bas',  d: 'minuteur dans le bandeau',
+      in: '<span class="plaque"></span><span class="rail"><i></i></span>' },
+    { c: 'f', t: 'F · Rail en haut',   d: 'minuteur dans la marge haute', in: '<span class="rail"><i></i></span>' }
+];
 
-        function construire() {
-            const grille = document.getElementById('grille');
-            grille.innerHTML = '';
-            for (const [cle, nom, note] of VARIANTES) {
-                const c = document.createElement('div');
-                c.className = 'carte-p';
-                c.innerHTML = `
-                    <div class="carte-tete">
-                        <span class="carte-nom">${nom}</span>
-                        <span class="carte-note">${note}</span>
-                    </div>
-                    <div class="scene">
-                        <div class="bloc">
-                            <div class="p ${cle}">${interieur(cle)}${equerres(cle)}</div>
-                            ${rail ? '<div class="rail"><i></i></div>' : ''}
-                        </div>
-                    </div>`;
-                grille.appendChild(c);
-            }
-            appliquerTaille();
-        }
+var grille = document.getElementById('grille');
+var selPerso = document.getElementById('perso');
+var selDuree = document.getElementById('duree');
 
-        function appliquerTaille() {
-            document.querySelectorAll('.p, .rail').forEach(e => {
-                e.style.setProperty('--t', taille + 'rem');
-            });
-        }
+PORTRAITS.forEach(function (p) {
+    var o = document.createElement('option');
+    o.value = p;
+    o.textContent = p;
+    selPerso.appendChild(o);
+});
 
-        document.querySelectorAll('.choix').forEach(g => {
-            g.addEventListener('click', e => {
-                const b = e.target.closest('button');
-                if (!b) return;
-                g.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
-                if (g.dataset.groupe === 'img') image = b.dataset.img;
-                else rail = b.dataset.rail === '1';
-                construire();
-            });
-        });
+function peindre() {
+    var img = selPerso.value;
+    grille.innerHTML = CAS.map(function (k) {
+        return '<div class="cas"><div class="boite ' + k.c + '">'
+             + '<img src="/rushpic/' + img + '.png" alt="" draggable="false">'
+             + k.in + '</div>'
+             + '<span class="titre">' + k.t + '<em>' + k.d + '</em></span></div>';
+    }).join('');
+    appliquerDuree();
+}
 
-        const curseur = document.getElementById('taille');
-        curseur.addEventListener('input', () => {
-            taille = parseInt(curseur.value, 10);
-            document.getElementById('tval').textContent = taille;
-            appliquerTaille();
-        });
+function appliquerDuree() {
+    var t = selDuree.value + 's';
+    document.querySelectorAll('.boite').forEach(function (b) { b.style.setProperty('--t', t); });
+}
 
-        construire();
-    </script>
+// Redémarrer une animation CSS demande de la retirer puis de la remettre : une
+// simple relecture du style ne suffit pas à la rembobiner.
+function relancer() {
+    document.querySelectorAll('.tour rect, .rail i, .eq').forEach(function (el) {
+        var a = el.style.animationName;
+        el.style.animationName = 'none';
+        void el.offsetWidth;
+        el.style.animationName = a || '';
+    });
+}
+
+selPerso.addEventListener('change', peindre);
+selDuree.addEventListener('change', function () { appliquerDuree(); relancer(); });
+document.getElementById('relancer').addEventListener('click', relancer);
+
+peindre();
+</script>
 </body>
-
 </html>

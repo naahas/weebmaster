@@ -1983,6 +1983,16 @@ createApp({
 
         passerRush() {
             if (this.socket && this.rush.portrait) this.socket.emit('rush-passer');
+            // Cliquer sur le bouton retire le curseur du champ : sans ça, il
+            // fallait recliquer dedans avant de pouvoir taper le nom suivant.
+            this.focusRush();
+        },
+
+        focusRush() {
+            this.$nextTick(() => {
+                const champ = document.getElementById('rushInput');
+                if (champ) champ.focus();
+            });
         },
 
         // Le décompte tourne côté client : le serveur donne l'heure de fin, on
@@ -2012,10 +2022,7 @@ createApp({
 
             this._rushIntroA = setTimeout(() => {
                 this.rush.intro = null;
-                this.$nextTick(() => {
-                    const champ = document.getElementById('rushInput');
-                    if (champ) champ.focus();
-                });
+                this.focusRush();
             }, 1000);
         },
 
@@ -2322,7 +2329,8 @@ createApp({
                             filtres: state.rush.filtres || [],
                         });
                     }
-                    if (state.inProgress && this.socket) this.socket.emit('rush-get-state');
+                    // La reprise se demande à la connexion de la socket, pas ici :
+                    // this.socket est encore nul à ce stade.
                 }
 
                 // Les réglages BombAnime reviennent avec l'état du salon
@@ -2560,6 +2568,17 @@ createApp({
                 if (this.lobbyMode === 'bombanime') {
                     this.socket.emit('bombanime-get-state');
                     console.log('💣 Demande état BombAnime après connexion');
+                }
+
+                // ⚡ Idem pour Rush. C'est ici et pas dans restoreGameState : au
+                // moment où l'état du salon est lu, la socket n'existe pas encore
+                // (initSocket vient après), et surtout le serveur ne saurait pas
+                // à quel joueur répondre tant que register-authenticated n'a pas
+                // rebranché l'entrée sur la nouvelle socket. Le serveur répond
+                // « enCours: false » si rien ne tourne, le client l'ignore.
+                if (this.lobbyMode === 'rush') {
+                    this.socket.emit('rush-get-state');
+                    console.log('⚡ Demande état Rush après connexion');
                 }
                 
             });
@@ -3744,10 +3763,7 @@ createApp({
                 this.rush.intro = null;      // on reprend en pleine manche : pas d'entrée
                 document.body.classList.add('game-active');
                 this.lancerChronoRush(data.finA);
-                this.$nextTick(() => {
-                    const champ = document.getElementById('rushInput');
-                    if (champ) champ.focus();
-                });
+                this.focusRush();
             });
 
             this.socket.on('rush-config', (data) => {

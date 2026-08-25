@@ -126,6 +126,30 @@ const persoParImage = (img) => data.personnages.find(p => p.img === img);
     check('elle rend l heure de fin', reprise && reprise.finA > Date.now(),
         reprise ? Math.round((reprise.finA - Date.now()) / 1000) + 's restantes' : '');
 
+    // ── Un vrai rafraichissement : socket neuve, comme le navigateur ──
+    // Le test ci-dessus reutilisait la socket ouverte, qui etait deja rattachee
+    // au salon : il ne pouvait donc pas voir qu apres un F5 la reprise n etait
+    // jamais demandee. On rejoue ici la sequence exacte du client au chargement.
+    a.s.disconnect();
+    await wait(300);
+    const neuve = io(BASE, { transports: ['websocket'] });
+    await new Promise(r => neuve.on('connect', r));
+    let repriseF5 = null;
+    neuve.on('rush-reprise', (d) => { repriseF5 = d; });
+    neuve.emit('register-authenticated', { playerId: a.id, username: a.nom });
+    neuve.emit('rush-get-state');
+    await wait(600);
+    check('apres un F5, la socket neuve retrouve la manche',
+        repriseF5 && repriseF5.enCours === true,
+        repriseF5 ? 'enCours ' + repriseF5.enCours : 'aucune reponse');
+    check('apres un F5, le portrait et le record sont les memes',
+        repriseF5 && repriseF5.portrait && repriseF5.record === apresPasse.record,
+        repriseF5 && repriseF5.portrait ? repriseF5.portrait.img + ', record ' + repriseF5.record : '');
+    a.s = neuve;
+    a.s.on('rush-portrait', (x) => a.vu.portraits.push(x));
+    a.s.on('rush-classement', (x) => a.vu.classements.push(x));
+    a.s.on('rush-game-ended', (x) => a.vu.fins.push(x));
+
     // ── Aucun portrait ne revient deux fois ──
     const vus = a.vu.portraits.filter(p => p.portrait).map(p => p.portrait.img);
     check('aucun portrait ne se répète dans la manche', new Set(vus).size === vus.length,
