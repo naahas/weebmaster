@@ -640,15 +640,13 @@
                      ⚡ RUSH — reconnaître le plus de personnages d'affilée
                      ============================================ -->
                 <template v-if="lobbyMode === 'rush' && !gameEnded">
-                    <div class="rush" v-if="rush.portrait || rush.fini">
+                    <div class="rush" v-if="rush.portrait || rush.fini"
+                         :class="{ 'en-entree': rush.intro !== null }">
 
-                        <!-- Chrono de la manche, en anneau au-dessus de tout -->
-                        <div class="rush-chrono" :class="{ urgence: rush.reste <= 10 }">
-                            <svg viewBox="0 0 120 120">
-                                <circle class="fond" cx="60" cy="60" r="54"/>
-                                <circle class="jauge" cx="60" cy="60" r="54"
-                                        :style="{ strokeDashoffset: 339.3 - 339.3 * (rush.reste / rush.duree) }"/>
-                            </svg>
+                        <!-- Le chrono de la manche : rien qu'un nombre. Il naît au
+                             centre de l'écran puis rejoint son coin. -->
+                        <div class="rush-chrono"
+                             :class="{ urgence: rush.reste <= 10, entree: rush.intro === 'centre' }">
                             <span class="rush-chrono-n">{{ rush.reste }}</span>
                         </div>
 
@@ -660,7 +658,7 @@
                              @click="rush.topMasque = !rush.topMasque"
                              :title="rush.topMasque ? 'Afficher le classement' : 'Masquer le classement'">
                             <ol>
-                                <li v-for="(j, i) in rush.classement.slice(0, 3)" :key="j.playerId"
+                                <li v-for="(j, i) in rush.classement.slice(0, 5)" :key="j.playerId"
                                     :class="{ moi: j.playerId === playerId, tete: i === 0 }">
                                     <span class="r">{{ i + 1 }}</span>
                                     <span class="n">{{ j.username }}</span>

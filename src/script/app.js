@@ -34,6 +34,7 @@ createApp({
                 topMasque: false,
                 fini: false,
                 pulse: false,       // le battement du compteur, le temps d'une frappe
+                intro: null,        // 'centre' puis 'vol', le temps de la chorégraphie d'entrée
                 _tic: null,
                 _flashT: null,
             },
@@ -1884,6 +1885,9 @@ createApp({
         // Remet les écrans au salon sans toucher au salon lui-même
         revenirAuSalonRush() {
             this.arreterChronoRush();
+            clearTimeout(this._rushIntroA);
+            clearTimeout(this._rushIntroB);
+            this.rush.intro = null;
             Object.assign(this.rush, {
                 portrait: null, texte: '', serie: 0, record: 0,
                 classement: [], fini: false, flash: null, reste: 0,
@@ -1948,6 +1952,27 @@ createApp({
         arreterChronoRush() {
             clearInterval(this.rush._tic);
             this.rush._tic = null;
+        },
+
+        // L'entrée de manche : le chrono naît en grand au centre, rejoint son
+        // coin, et le reste du jeu apparaît derrière lui. Les durées suivent
+        // celles du CSS — les changer d'un seul côté désynchroniserait tout.
+        jouerEntreeRush() {
+            clearTimeout(this._rushIntroA);
+            clearTimeout(this._rushIntroB);
+            this.rush.intro = 'centre';
+
+            // Il reste au centre le temps qu'on le voie, puis il s'envole
+            this._rushIntroA = setTimeout(() => { this.rush.intro = 'vol'; }, 950);
+
+            // Une fois posé, le jeu entre et la saisie prend la main
+            this._rushIntroB = setTimeout(() => {
+                this.rush.intro = null;
+                this.$nextTick(() => {
+                    const champ = document.getElementById('rushInput');
+                    if (champ) champ.focus();
+                });
+            }, 1850);
         },
 
         // Le compteur bat a chaque bonne reponse. On retire la classe avant de
@@ -3615,10 +3640,7 @@ createApp({
                 this.lobbyMode = 'rush';
                 document.body.classList.add('game-active');
                 this.lancerChronoRush(data.finA);
-                this.$nextTick(() => {
-                    const champ = document.getElementById('rushInput');
-                    if (champ) champ.focus();
-                });
+                this.jouerEntreeRush();
             });
 
             this.socket.on('rush-portrait', (data) => {
@@ -3670,6 +3692,7 @@ createApp({
                 this.gameInProgress = true;
                 this.gameEnded = false;
                 this.lobbyMode = 'rush';
+                this.rush.intro = null;      // on reprend en pleine manche : pas d'entrée
                 document.body.classList.add('game-active');
                 this.lancerChronoRush(data.finA);
                 this.$nextTick(() => {
