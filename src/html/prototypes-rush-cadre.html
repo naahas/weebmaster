@@ -16,7 +16,6 @@
             --txt: #fff;
             --txt2: #9a9aa2;
             --txt3: #5c5c66;
-            --hp: #ff5a6e;
             --fond: #08080b;
             --carte: #101013;
         }
@@ -32,38 +31,27 @@
         }
 
         .tete { max-width: 78rem; margin: 0 auto 2rem; }
-        .tete h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: 0.04em; line-height: 1; }
-        .tete p { margin-top: 0.5rem; font-size: 0.85rem; color: var(--txt2); max-width: 48rem; line-height: 1.6; }
+        .tete h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: .04em; line-height: 1; }
+        .tete p { margin-top: .5rem; font-size: .85rem; color: var(--txt2); max-width: 48rem; line-height: 1.6; }
 
         .barre {
             position: sticky; top: 0; z-index: 50;
             max-width: 78rem; margin: 0 auto 2.5rem;
             display: flex; flex-wrap: wrap; align-items: center; gap: 1.4rem;
-            padding: 0.9rem 1.2rem;
-            background: rgba(16, 16, 19, 0.94);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.07);
-            border-radius: 0.9rem;
+            padding: .9rem 1.2rem;
+            background: rgba(16,16,19,.94); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,.07); border-radius: .9rem;
         }
-
-        .reglage { display: flex; align-items: center; gap: 0.55rem; }
-        .reglage > span {
-            font-size: 0.62rem; font-weight: 700; letter-spacing: 0.16em;
-            text-transform: uppercase; color: var(--txt3);
-        }
-        .barre input[type="range"] { width: 11rem; accent-color: var(--neon); }
-        .gros {
-            padding: 0.5rem 1.1rem; font-family: inherit; font-size: 0.75rem; font-weight: 700;
-            color: #14100a; background: linear-gradient(135deg, #ffe066, var(--neon));
-            border: none; border-radius: 2rem; cursor: pointer;
-        }
-        .choix { display: flex; gap: 0.2rem; }
+        .reglage { display: flex; align-items: center; gap: .55rem; }
+        .reglage > span { font-size: .62rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--txt3); }
+        .choix { display: flex; gap: .2rem; }
         .choix button {
-            padding: 0.35rem 0.7rem; font-family: inherit; font-size: 0.72rem; font-weight: 600;
+            padding: .35rem .7rem; font-family: inherit; font-size: .72rem; font-weight: 600;
             color: var(--txt2); background: rgba(255,255,255,.05); border: none;
-            border-radius: 0.4rem; cursor: pointer;
+            border-radius: .4rem; cursor: pointer;
         }
-        .choix button.on { color: #14100a; background: linear-gradient(135deg, #ffe066, var(--neon)); }
+        .choix button.on { color: #14100a; background: linear-gradient(135deg,#ffe066,var(--neon)); }
+        .barre input[type="range"] { width: 9rem; accent-color: var(--neon); }
 
         .grille {
             max-width: 78rem; margin: 0 auto;
@@ -71,91 +59,96 @@
             grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
         }
 
-        .carte-p {
-            display: flex; flex-direction: column;
-            background: var(--carte);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 0.9rem; overflow: hidden;
-        }
-
-        .carte-tete {
-            display: flex; align-items: baseline; justify-content: space-between;
-            gap: 0.7rem; padding: 0.85rem 1rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .carte-nom { font-size: 0.85rem; font-weight: 700; }
-        .carte-note { font-size: 0.66rem; color: var(--txt3); text-align: right; line-height: 1.4; }
+        .carte-p { display: flex; flex-direction: column; background: var(--carte);
+                   border: 1px solid rgba(255,255,255,.06); border-radius: .9rem; overflow: hidden; }
+        .carte-tete { display: flex; align-items: baseline; justify-content: space-between;
+                      gap: .7rem; padding: .85rem 1rem; border-bottom: 1px solid rgba(255,255,255,.05); }
+        .carte-nom { font-size: .85rem; font-weight: 700; }
+        .carte-note { font-size: .66rem; color: var(--txt3); text-align: right; line-height: 1.4; }
 
         .scene {
-            flex: 1; display: grid; place-items: center;
-            padding: 2.4rem 1.2rem;
+            flex: 1; display: grid; place-items: center; padding: 2.8rem 1.2rem;
             background: radial-gradient(60% 70% at 50% 45%, rgba(255,215,0,.03), transparent 70%), #060608;
         }
 
-        /* ══════════ La carte commune ══════════ */
-        .p {
-            position: relative;
-            width: 13rem; height: 13rem;
-            border-radius: 1.1rem;
-            background: linear-gradient(165deg, rgba(26,24,20,.9), rgba(12,12,15,.9));
-            display: grid; place-items: center;
+        /* ══════════ Le portrait, commun à toutes les variantes ══════════ */
+        .p { position: relative; width: var(--t, 13rem); height: var(--t, 13rem); }
+        .p img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: inherit; }
+
+        /* Le rail du minuteur, identique partout : il ne fait pas partie du cadre */
+        .rail { width: var(--t, 13rem); height: .22rem; margin-top: .8rem;
+                background: rgba(255,255,255,.06); border-radius: 2rem; overflow: hidden; }
+        .rail i { display: block; height: 100%; width: 62%; border-radius: 2rem;
+                  background: linear-gradient(90deg,#ff8c00,var(--neon)); box-shadow: 0 0 .6rem rgba(255,190,40,.5); }
+        .bloc { display: flex; flex-direction: column; align-items: center; }
+
+        /* ── A · Actuel : un simple liseré ── */
+        .a { border-radius: 1.1rem; overflow: hidden;
+             box-shadow: 0 1.4rem 3.4rem rgba(0,0,0,.55), inset 0 0 0 .06rem rgba(255,255,255,.07); }
+
+        /* ── B · Double filet, écho de la pastille BombAnime ── */
+        .b { border-radius: 1.1rem; }
+        .b img { border-radius: 1.1rem; }
+        .b::before, .b::after {
+            content: ''; position: absolute; border-radius: inherit; pointer-events: none;
         }
-        .p img {
-            width: 100%; height: 100%; object-fit: contain;
-            border-radius: 1.1rem;
+        .b::before { inset: 0; box-shadow: inset 0 0 0 .12rem rgba(240,192,64,.75); }
+        .b::after  { inset: -.42rem; border-radius: 1.5rem; box-shadow: inset 0 0 0 .06rem rgba(240,192,64,.25); }
+
+        /* ── C · Coins coupés, façon carte tech ── */
+        .c { --coupe: 1.5rem;
+             clip-path: polygon(var(--coupe) 0, 100% 0, 100% calc(100% - var(--coupe)), calc(100% - var(--coupe)) 100%, 0 100%, 0 var(--coupe));
+             background: linear-gradient(135deg, rgba(240,192,64,.9), rgba(240,192,64,.15));
+             padding: .11rem; }
+        .c .interieur { width: 100%; height: 100%; --coupe: 1.42rem;
+             clip-path: polygon(var(--coupe) 0, 100% 0, 100% calc(100% - var(--coupe)), calc(100% - var(--coupe)) 100%, 0 100%, 0 var(--coupe));
+             background: #0c0c0f; }
+        .c img { border-radius: 0; }
+
+        /* ── D · Équerres aux quatre coins ── */
+        .d { border-radius: .5rem; }
+        .d img { border-radius: .5rem; }
+        .d i { position: absolute; width: 2.2rem; height: 2.2rem; border: .14rem solid rgba(240,192,64,.85); pointer-events: none; }
+        .d i:nth-child(2) { top: -.35rem; left: -.35rem; border-right: 0; border-bottom: 0; border-radius: .5rem 0 0 0; }
+        .d i:nth-child(3) { top: -.35rem; right: -.35rem; border-left: 0; border-bottom: 0; border-radius: 0 .5rem 0 0; }
+        .d i:nth-child(4) { bottom: -.35rem; right: -.35rem; border-left: 0; border-top: 0; border-radius: 0 0 .5rem 0; }
+        .d i:nth-child(5) { bottom: -.35rem; left: -.35rem; border-right: 0; border-top: 0; border-radius: 0 0 0 .5rem; }
+
+        /* ── E · Passe-partout, façon photo encadrée ── */
+        .e { border-radius: .7rem; padding: .75rem; background: #14131a;
+             box-shadow: 0 1.4rem 3.4rem rgba(0,0,0,.6), inset 0 0 0 .06rem rgba(255,255,255,.08); }
+        .e img { border-radius: .35rem; box-shadow: 0 .2rem .8rem rgba(0,0,0,.5); }
+
+        /* ── F · Halo dégradé, sans trait ── */
+        .f { border-radius: 1.3rem; }
+        .f img { border-radius: 1.3rem; }
+        .f::before {
+            content: ''; position: absolute; inset: -.9rem; border-radius: 2rem; z-index: -1;
+            background: radial-gradient(closest-side, rgba(255,190,40,.28), transparent 78%);
+            filter: blur(.2rem);
         }
 
-        /* A — l'actuel : un trait sous l'image, dans la carte */
-        .a { overflow: hidden; box-shadow: inset 0 0 0 .06rem rgba(255,255,255,.07); }
-        .a .meche {
-            position: absolute; left: 0; bottom: 0; height: .18rem; width: 100%;
-            background: linear-gradient(90deg, #ff8c00, var(--neon));
-            transform-origin: left center; transition: transform .2s linear;
+        /* ── G · Filet asymétrique : deux côtés seulement ── */
+        .g { border-radius: .2rem 1.4rem .2rem 1.4rem; overflow: hidden;
+             box-shadow: inset 0 0 0 .06rem rgba(255,255,255,.06); }
+        .g img { border-radius: inherit; }
+        .g::after {
+            content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+            border-top: .16rem solid rgba(240,192,64,.9);
+            border-left: .16rem solid rgba(240,192,64,.9);
+            border-right: .16rem solid rgba(240,192,64,.12);
+            border-bottom: .16rem solid rgba(240,192,64,.12);
         }
 
-        /* B — le cadre lui-même se vide */
-        .b { box-shadow: inset 0 0 0 .06rem rgba(255,255,255,.06); }
-        .b svg { position: absolute; inset: -.2rem; width: calc(100% + .4rem); height: calc(100% + .4rem); overflow: visible; }
-        .b rect {
-            fill: none; stroke: var(--neon); stroke-width: 3; stroke-linecap: round;
-            filter: drop-shadow(0 0 .4rem rgba(255,215,0,.5));
-            transition: stroke-dashoffset .2s linear, stroke .4s ease;
+        /* ── H · Socle : le portrait posé sur une base lumineuse ── */
+        .h { border-radius: 1.1rem 1.1rem .3rem .3rem; overflow: hidden;
+             box-shadow: inset 0 0 0 .06rem rgba(255,255,255,.07); }
+        .h img { border-radius: inherit; }
+        .h::after {
+            content: ''; position: absolute; left: 12%; right: 12%; bottom: -.18rem; height: .22rem;
+            border-radius: 2rem; background: linear-gradient(90deg, transparent, var(--neon), transparent);
+            box-shadow: 0 0 1.1rem rgba(255,215,0,.7);
         }
-        .b.rouge rect { stroke: var(--hp); filter: drop-shadow(0 0 .5rem rgba(255,90,110,.6)); }
-
-        /* C — quatre équerres qui se rétractent */
-        .c { box-shadow: inset 0 0 0 .06rem rgba(255,255,255,.06); }
-        .c i {
-            position: absolute; width: 2.4rem; height: 2.4rem;
-            border: .16rem solid var(--neon);
-            transition: opacity .3s ease, border-color .4s ease;
-            filter: drop-shadow(0 0 .35rem rgba(255,215,0,.45));
-        }
-        .c i:nth-child(1) { top: -.2rem; left: -.2rem; border-right: 0; border-bottom: 0; border-radius: 1.1rem 0 0 0; }
-        .c i:nth-child(2) { top: -.2rem; right: -.2rem; border-left: 0; border-bottom: 0; border-radius: 0 1.1rem 0 0; }
-        .c i:nth-child(3) { bottom: -.2rem; right: -.2rem; border-left: 0; border-top: 0; border-radius: 0 0 1.1rem 0; }
-        .c i:nth-child(4) { bottom: -.2rem; left: -.2rem; border-right: 0; border-top: 0; border-radius: 0 0 0 1.1rem; }
-        .c.rouge i { border-color: var(--hp); }
-
-        /* D — un halo autour de la carte, qui se resserre */
-        .d { box-shadow: inset 0 0 0 .06rem rgba(255,255,255,.07); transition: box-shadow .25s linear; }
-
-        /* E — une barre au-dessus, hors de l'image */
-        .e-wrap { display: flex; flex-direction: column; gap: .6rem; align-items: center; }
-        .e-rail { width: 13rem; height: .3rem; background: rgba(255,255,255,.07); border-radius: 2rem; overflow: hidden; }
-        .e-rempli {
-            height: 100%; border-radius: 2rem;
-            background: linear-gradient(90deg, #ff8c00, var(--neon));
-            box-shadow: 0 0 .7rem rgba(255,190,40,.55);
-            transform-origin: left center; transition: transform .2s linear, background .4s ease;
-        }
-        .e-wrap.rouge .e-rempli { background: linear-gradient(90deg,#ff2d55,var(--hp)); }
-        .e .p, .e { box-shadow: inset 0 0 0 .06rem rgba(255,255,255,.07); }
-
-        /* F — le cadre se colore progressivement du vert au rouge */
-        .f { transition: box-shadow .3s linear; }
-
-        .vide-note { font-size: .72rem; color: var(--txt3); text-align: center; line-height: 1.6; }
     </style>
 </head>
 
@@ -163,25 +156,32 @@
     <div class="tete">
         <h1>Rush — le cadre du portrait</h1>
         <p>
-            Le trait actuel est posé <em>dans</em> l'image : sur un fond clair, il disparaît. Six
-            façons de sortir le minuteur de la photo, ou de le rendre lisible quoi qu'elle contienne.
-            Le curseur fait défiler le temps du portrait ; le bouton déroule un tour complet.
+            Le minuteur a quitté l'image : c'est désormais un rail posé dessous, identique dans
+            toutes les variantes ci-dessous. Reste à habiller la photo. Huit cadres, à juger sur
+            trois fonds différents — un cadre doré se comporte autrement sur un ciel clair que sur
+            une scène sombre.
         </p>
     </div>
 
     <div class="barre">
-        <button class="gros" id="rejouer">Dérouler un tour</button>
         <div class="reglage">
-            <span>Temps restant</span>
-            <input type="range" id="temps" min="0" max="100" value="62">
-            <span id="pct" style="color:var(--neon);font-family:'Bebas Neue';font-size:1.2rem">62%</span>
-        </div>
-        <div class="reglage">
-            <span>Fond de l'image</span>
+            <span>Image</span>
             <div class="choix" data-groupe="img">
-                <button data-img="sakura.png" class="on">Clair</button>
+                <button data-img="sakura.png" class="on">Fond clair</button>
                 <button data-img="ichigo.png">Ciel</button>
                 <button data-img="aizen.png">Sombre</button>
+            </div>
+        </div>
+        <div class="reglage">
+            <span>Taille</span>
+            <input type="range" id="taille" min="9" max="20" value="13">
+            <span id="tval" style="color:var(--neon);font-family:'Bebas Neue';font-size:1.1rem">13</span>
+        </div>
+        <div class="reglage">
+            <span>Rail</span>
+            <div class="choix" data-groupe="rail">
+                <button data-rail="1" class="on">Visible</button>
+                <button data-rail="0">Masqué</button>
             </div>
         </div>
     </div>
@@ -189,33 +189,29 @@
     <div class="grille" id="grille"></div>
 
     <script>
-        const SEUIL = 0.25;                 // en dessous, le minuteur passe au rouge
         let image = 'sakura.png';
+        let rail = true;
+        let taille = 13;
 
         const VARIANTES = [
-            ['a', 'A · Trait dans l’image', "L'actuel : invisible dès que<br>le bas de la photo est clair"],
-            ['b', 'B · Le cadre se vide', "Le contour fait le tour et<br>recule — jamais sur l'image"],
-            ['c', 'C · Équerres', "Quatre coins qui s'éteignent<br>l'un après l'autre"],
-            ['d', 'D · Halo', "Une lueur autour de la carte,<br>qui se resserre et rougit"],
-            ['e', 'E · Barre au-dessus', "Hors du cadre : rien ne peut<br>la masquer, jamais"],
-            ['f', 'F · Cadre coloré', "Le contour passe du doré<br>au rouge sans rien perdre"],
+            ['a', 'A · Actuel', "Un liseré blanc à 7 %<br>et une ombre portée"],
+            ['b', 'B · Double filet', "Deux traits dorés concentriques,<br>écho de la pastille BombAnime"],
+            ['c', 'C · Coins coupés', "Deux angles rognés en biais,<br>bordure en dégradé"],
+            ['d', 'D · Équerres', "Quatre coins seulement :<br>le cadre est suggéré"],
+            ['e', 'E · Passe-partout', "La photo est posée dans<br>une marge, comme un tirage"],
+            ['f', 'F · Halo', "Aucun trait : une lueur<br>chaude derrière l'image"],
+            ['g', 'G · Filet asymétrique', "Deux côtés marqués, deux<br>estompés, coins opposés arrondis"],
+            ['h', 'H · Socle', "Une barre de lumière sous<br>l'image, qui la fait flotter"],
         ];
 
-        const gabarits = {
-            a: () => `<div class="p a"><img src="/rushpic/${image}" alt=""><span class="meche"></span></div>`,
-            b: () => `<div class="p b"><img src="/rushpic/${image}" alt="">
-                        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-                            <rect x="1.5" y="1.5" width="97" height="97" rx="9"/>
-                        </svg></div>`,
-            c: () => `<div class="p c"><img src="/rushpic/${image}" alt=""><i></i><i></i><i></i><i></i></div>`,
-            d: () => `<div class="p d"><img src="/rushpic/${image}" alt=""></div>`,
-            e: () => `<div class="e-wrap"><div class="e-rail"><div class="e-rempli"></div></div>
-                        <div class="p e"><img src="/rushpic/${image}" alt=""></div></div>`,
-            f: () => `<div class="p f"><img src="/rushpic/${image}" alt=""></div>`,
-        };
+        const interieur = (cle) => cle === 'c'
+            ? `<div class="interieur"><img src="/rushpic/${image}" alt=""></div>`
+            : `<img src="/rushpic/${image}" alt="">`;
 
-        const grille = document.getElementById('grille');
+        const equerres = (cle) => cle === 'd' ? '<i></i><i></i><i></i><i></i>' : '';
+
         function construire() {
+            const grille = document.getElementById('grille');
             grille.innerHTML = '';
             for (const [cle, nom, note] of VARIANTES) {
                 const c = document.createElement('div');
@@ -225,82 +221,39 @@
                         <span class="carte-nom">${nom}</span>
                         <span class="carte-note">${note}</span>
                     </div>
-                    <div class="scene" data-cle="${cle}">${gabarits[cle]()}</div>`;
+                    <div class="scene">
+                        <div class="bloc">
+                            <div class="p ${cle}">${interieur(cle)}${equerres(cle)}</div>
+                            ${rail ? '<div class="rail"><i></i></div>' : ''}
+                        </div>
+                    </div>`;
                 grille.appendChild(c);
             }
-            rendre();
+            appliquerTaille();
         }
 
-        const temps = document.getElementById('temps');
-        const pct = document.getElementById('pct');
-
-        function rendre() {
-            const part = parseInt(temps.value, 10) / 100;   // 1 au départ, 0 à la fin
-            const urgent = part <= SEUIL;
-            pct.textContent = Math.round(part * 100) + '%';
-
-            document.querySelectorAll('.scene').forEach(scene => {
-                const cle = scene.dataset.cle;
-                const boite = scene.querySelector('.p') || scene.firstElementChild;
-                const racine = scene.firstElementChild;
-                racine.classList.toggle('rouge', urgent);
-                boite.classList.toggle('rouge', urgent);
-
-                if (cle === 'a') {
-                    boite.querySelector('.meche').style.transform = 'scaleX(' + part + ')';
-                } else if (cle === 'b') {
-                    // Le périmètre du rectangle arrondi, en unités de viewBox
-                    const r = boite.querySelector('rect');
-                    const p = r.getTotalLength ? r.getTotalLength() : 388;
-                    r.style.strokeDasharray = p;
-                    r.style.strokeDashoffset = p * (1 - part);
-                } else if (cle === 'c') {
-                    // Quatre équerres : chacune couvre un quart du temps
-                    const coins = boite.querySelectorAll('i');
-                    coins.forEach((c, i) => {
-                        const seuil = (coins.length - i - 1) / coins.length;
-                        c.style.opacity = part > seuil ? 1 : 0.06;
-                    });
-                } else if (cle === 'd') {
-                    const rayon = (0.4 + part * 1.6).toFixed(2);
-                    const couleur = urgent ? '255,90,110' : '255,215,0';
-                    boite.style.boxShadow = 'inset 0 0 0 .06rem rgba(255,255,255,.07), 0 0 ' +
-                        rayon + 'rem rgba(' + couleur + ',' + (0.15 + part * 0.5).toFixed(2) + ')';
-                } else if (cle === 'e') {
-                    scene.querySelector('.e-rempli').style.transform = 'scaleX(' + part + ')';
-                } else if (cle === 'f') {
-                    // Du doré au rouge, continûment : la couleur EST le minuteur
-                    const t = 1 - part;
-                    const r = Math.round(255), g = Math.round(215 - 130 * t), b = Math.round(0 + 90 * t);
-                    boite.style.boxShadow = 'inset 0 0 0 0.16rem rgba(' + r + ',' + g + ',' + b + ',' +
-                        (0.45 + t * 0.5).toFixed(2) + '), 0 0 1.2rem rgba(' + r + ',' + g + ',' + b + ',0.25)';
-                }
+        function appliquerTaille() {
+            document.querySelectorAll('.p, .rail').forEach(e => {
+                e.style.setProperty('--t', taille + 'rem');
             });
         }
-
-        temps.addEventListener('input', rendre);
 
         document.querySelectorAll('.choix').forEach(g => {
             g.addEventListener('click', e => {
                 const b = e.target.closest('button');
                 if (!b) return;
                 g.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
-                image = b.dataset.img;
+                if (g.dataset.groupe === 'img') image = b.dataset.img;
+                else rail = b.dataset.rail === '1';
                 construire();
             });
         });
 
-        let course = null;
-        document.getElementById('rejouer').addEventListener('click', () => {
-            clearInterval(course);
-            let v = 100;
-            temps.value = v; rendre();
-            course = setInterval(() => {
-                v -= 2;
-                temps.value = Math.max(0, v);
-                rendre();
-                if (v <= 0) clearInterval(course);
-            }, 90);
+        const curseur = document.getElementById('taille');
+        curseur.addEventListener('input', () => {
+            taille = parseInt(curseur.value, 10);
+            document.getElementById('tval').textContent = taille;
+            appliquerTaille();
         });
 
         construire();

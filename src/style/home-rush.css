@@ -79,6 +79,7 @@
     flex-direction: column;
     align-items: center;
     gap: clamp(0.7rem, 2vh, 1.2rem);
+    width: min(23rem, 56vw);
 }
 
 .rush-compteurs {
@@ -138,14 +139,24 @@
     50%      { transform: scale(1.025) translateY(-0.3rem); }
 }
 
-/* La limite par portrait : un trait qui se vide sous la carte */
-.rush-limite {
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    height: 0.18rem;
+/* Le minuteur du portrait : un rail sous la carte, à sa largeur. Posé dans
+   l'image, il disparaissait dès que le bas de la photo était clair. */
+.rush-limite-rail {
     width: 100%;
+    height: 0.22rem;
+    margin-top: 0.8rem;
+    border-radius: 2rem;
+    background: rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+}
+
+.rush-limite {
+    display: block;
+    height: 100%;
+    width: 100%;
+    border-radius: 2rem;
     background: linear-gradient(90deg, #ff8c00, var(--neon-primary, #ffd700));
+    box-shadow: 0 0 0.6rem rgba(255, 190, 40, 0.5);
     transform-origin: left center;
     animation-name: rushMeche;
     animation-timing-function: linear;

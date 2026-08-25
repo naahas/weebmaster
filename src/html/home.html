@@ -685,12 +685,16 @@
                                 <div class="rush-carte" :key="rush.portrait ? rush.portrait.img : 'fin'"
                                      :class="{ juste: rush.flash === 'juste', passe: rush.flash === 'passe' }">
                                     <img v-if="rush.portrait" :src="'/rushpic/' + rush.portrait.img" alt="" draggable="false">
-                                    <!-- La limite par portrait, en trait sous la carte -->
-                                    <span class="rush-limite" v-if="rush.limite && rush.portrait"
-                                          :key="'l' + rush.portrait.img"
-                                          :style="{ animationDuration: rush.limite + 's' }"></span>
                                 </div>
                             </transition>
+                        </div>
+
+                        <!-- Le minuteur du portrait, posé sous la carte et non dedans :
+                             dans l'image, un fond clair l'avalait. -->
+                        <div class="rush-limite-rail" v-if="rush.limite">
+                            <span class="rush-limite" v-if="rush.portrait"
+                                  :key="'l' + rush.portrait.img"
+                                  :style="{ animationDuration: rush.limite + 's' }"></span>
                         </div>
                         </div>
 
