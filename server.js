@@ -185,13 +185,13 @@ const DELAI_RETRAIT_JOUEUR_MS = 5000;
 const MIN_JOUEURS_HISTORIQUE = parseInt(process.env.MIN_JOUEURS_HISTORIQUE, 10) || 15;
 const MIN_JOUEURS_HISTORIQUE_BOMB = parseInt(process.env.MIN_JOUEURS_HISTORIQUE_BOMB, 10) || 5;
 const seuilHistorique = (mode) =>
-    mode === 'bombanime' ? MIN_JOUEURS_HISTORIQUE_BOMB : MIN_JOUEURS_HISTORIQUE;
+    (mode === 'bombanime' || mode === 'rush') ? MIN_JOUEURS_HISTORIQUE_BOMB : MIN_JOUEURS_HISTORIQUE;
 let gameHistoryTableOk = null; // null = pas encore testé, false = table absente
 
 let questionsCountCache = { value: null, at: 0 };
 const QUESTIONS_COUNT_TTL = 5 * 60 * 1000;
 
-const MODE_LABELS = { classic: 'Classique', rivalry: 'Rivalité', bombanime: 'BombAnime' };
+const MODE_LABELS = { classic: 'Classique', rivalry: 'Rivalité', bombanime: 'BombAnime', rush: 'Rush' };
 
 async function recordFinishedGame({ mode, playersCount, winnerName, duration }) {
     const entry = {

@@ -17,12 +17,34 @@ createApp({
             joinPending: false,
             lobbyShakeError: false,
 
+            // ⚡ RUSH
+            rush: {
+                duree: 60,
+                limite: 8,          // secondes par portrait, 0 = sans limite
+                filtre: 'overall',
+                sequencePartagee: true,
+                filtres: [],        // annoncés par le serveur avec leur effectif
+                portrait: null,     // { img, anime, position }
+                texte: '',
+                serie: 0,
+                record: 0,
+                classement: [],
+                reste: 0,           // secondes restantes, décomptées localement
+                flash: null,        // 'juste' | 'passe', le temps de l'animation
+                topMasque: false,
+                fini: false,
+                _tic: null,
+                _flashT: null,
+            },
+
             // 🆕 v2 — Accueil : choix du mode, création / jointure de salon
             modes: [
                 // `plain: true` = illustration sans fond transparent : elle est alors
                 // cadrée dans le panneau au lieu de flotter comme un personnage détouré.
                 { id: 'classic',   name: 'Classique', kind: 'Solo ou équipes', players: '∞',  img: 'kenshin.png',
                   desc: "Quiz QCM. Solo ou en deux camps, vies ou points, séries au choix." },
+                { id: 'rush',      name: 'Rush',      kind: 'Solo',   players: '∞',  img: 'lambo2.png',
+                  desc: "Un portrait, un nom. La plus longue serie gagne." },
                 { id: 'bombanime', name: 'BombAnime', kind: 'Solo',   players: '15', img: 'lambo2.png',
                   desc: "La bombe tourne. Cite un perso avant qu'elle explose." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
@@ -1839,6 +1861,102 @@ createApp({
             }
         },
 
+        // ============================================
+        // ⚡ RUSH
+        // ============================================
+        // Relancer une manche : même salon, mêmes joueurs, séquence renouvelée
+        async hostRejouerRush() {
+            if (this.rejouerBusy) return;
+            this.rejouerBusy = true;
+            try {
+                const res = await this.hostFetch('/admin/replay', { method: 'POST' });
+                const data = await res.json();
+                if (data.error) this.hostError = data.error;
+                else this.revenirAuSalonRush();
+            } catch (e) {
+                this.hostError = 'Erreur de connexion';
+            } finally {
+                setTimeout(() => { this.rejouerBusy = false; }, 500);
+            }
+        },
+
+        // Remet les écrans au salon sans toucher au salon lui-même
+        revenirAuSalonRush() {
+            this.arreterChronoRush();
+            Object.assign(this.rush, {
+                portrait: null, texte: '', serie: 0, record: 0,
+                classement: [], fini: false, flash: null, reste: 0,
+            });
+            this.gameEnded = false;
+            this.gameInProgress = false;
+            this.gameEndData = null;
+            document.body.classList.remove('game-active');
+        },
+
+        quitterRush() {
+            this.revenirAuSalonRush();
+            this.backToHome();
+        },
+
+        // La glissière va de 0 à 12, mais le serveur refuse 1 à 4 : on saute
+        // ce creux plutôt que de laisser proposer une valeur invalide.
+        corrigerLimiteRush(valeur) {
+            const v = parseInt(valeur, 10) || 0;
+            if (v === 0) return 0;
+            return Math.min(12, Math.max(5, v));
+        },
+
+        nomFiltreRush(id) {
+            const f = (this.rush.filtres || []).find(x => x.id === id);
+            return f ? f.label : 'Tout';
+        },
+
+        // Pas de touche Entrée : on envoie à chaque frappe et le serveur ne
+        // répond que si ça correspond. Le débit est bridé pour ne pas inonder
+        // la socket quand quelqu'un tape vite.
+        envoyerSaisieRush() {
+            const texte = this.rush.texte;
+            if (!texte || !this.socket) return;
+            const maintenant = Date.now();
+            if (this._rushDernierEnvoi && maintenant - this._rushDernierEnvoi < 60) {
+                clearTimeout(this._rushRetard);
+                this._rushRetard = setTimeout(() => this.envoyerSaisieRush(), 70);
+                return;
+            }
+            this._rushDernierEnvoi = maintenant;
+            this.socket.emit('rush-saisie', { texte });
+        },
+
+        passerRush() {
+            if (this.socket && this.rush.portrait) this.socket.emit('rush-passer');
+        },
+
+        // Le décompte tourne côté client : le serveur donne l'heure de fin, on
+        // n'a pas besoin d'un message par seconde pour trente joueurs.
+        lancerChronoRush(finA) {
+            clearInterval(this.rush._tic);
+            const tic = () => {
+                const reste = Math.max(0, Math.ceil((finA - Date.now()) / 1000));
+                this.rush.reste = reste;
+                if (reste <= 0) clearInterval(this.rush._tic);
+            };
+            tic();
+            this.rush._tic = setInterval(tic, 250);
+        },
+
+        arreterChronoRush() {
+            clearInterval(this.rush._tic);
+            this.rush._tic = null;
+        },
+
+        // Un éclat bref sur la carte, puis on efface : sans ça la classe
+        // resterait et la carte suivante naîtrait déjà colorée.
+        flashRush(type) {
+            this.rush.flash = type;
+            clearTimeout(this.rush._flashT);
+            this.rush._flashT = setTimeout(() => { this.rush.flash = null; }, 320);
+        },
+
         // Relancer une manche de BombAnime : même salon, mêmes joueurs
         async hostRejouerBomb() {
             if (this.rejouerBusy) return;
@@ -3456,6 +3574,56 @@ createApp({
                 }
             });
             
+            // ⚡ RUSH
+            this.socket.on('rush-game-started', (data) => {
+                Object.assign(this.rush, {
+                    duree: data.duree, limite: data.limite, filtre: data.filtre,
+                    portrait: null, texte: '', serie: 0, record: 0,
+                    classement: data.classement || [], fini: false, flash: null,
+                });
+                this.gameInProgress = true;
+                this.gameEnded = false;
+                this.lobbyMode = 'rush';
+                document.body.classList.add('game-active');
+                this.lancerChronoRush(data.finA);
+                this.$nextTick(() => {
+                    const champ = document.getElementById('rushInput');
+                    if (champ) champ.focus();
+                });
+            });
+
+            this.socket.on('rush-portrait', (data) => {
+                // Le champ se vide dès qu'un portrait est validé : le joueur
+                // enchaîne sans avoir à effacer ce qu'il vient de taper.
+                this.rush.texte = '';
+                this.rush.portrait = data.portrait;
+                this.rush.serie = data.serie;
+                this.rush.record = data.record;
+                if (data.limite !== undefined) this.rush.limite = data.limite;
+                if (data.reussi === true) this.flashRush('juste');
+                else if (data.reussi === false) this.flashRush('passe');
+                if (!data.portrait) this.rush.fini = true;
+            });
+
+            this.socket.on('rush-classement', (data) => {
+                this.rush.classement = data.classement || [];
+            });
+
+            this.socket.on('rush-game-ended', (data) => {
+                this.arreterChronoRush();
+                this.rush.portrait = null;
+                this.rush.texte = '';
+                this.gameEnded = true;
+                this.gameInProgress = false;
+                this.gameStartedOnServer = false;
+                this.gameEndData = data;
+                this.$nextTick(() => this.startEndReveal());
+            });
+
+            this.socket.on('rush-config', (data) => {
+                Object.assign(this.rush, data);
+            });
+
             this.socket.on('bombanime-game-ended', (data) => {
                 this.stopBombTicking();
                 console.log('🏆 BombAnime terminé:', data);

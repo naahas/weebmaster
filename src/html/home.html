@@ -9,6 +9,7 @@
         content="Le meilleur quiz d'Anime/Manga en temps réel ! Affronte d'autres utilisateurs, grimpe le classement et deviens le ShonenMaster ultime.">
     <link rel="stylesheet" href="home.css">
     <link rel="stylesheet" href="home-bombanime.css">
+    <link rel="stylesheet" href="home-rush.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Russo+One&family=Space+Grotesk:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap"
@@ -367,7 +368,7 @@
                         <div class="v2-settings-body">
 
                             <!-- Quiz : Classique & Rivalité -->
-                            <template v-if="lobbyMode !== 'bombanime'">
+                            <template v-if="lobbyMode === 'classic' || lobbyMode === 'rivalry'">
                                 <div class="v2-set">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>
                                     <span class="v2-set-label">Format</span>
@@ -478,6 +479,56 @@
                                             @click="applySetting('/admin/set-bonus-enabled', { enabled: !bonusEnabled }, () => bonusEnabled = !bonusEnabled)"><span></span></button>
                                 </div>
                             </template>
+                            <!-- ⚡ Rush -->
+                            <template v-else-if="lobbyMode === 'rush'">
+                                <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                                    <span class="v2-set-label">Durée</span>
+                                    <span class="v2-set-value">{{ rush.duree }}s</span>
+                                    <span class="v2-set-opts">
+                                        <button v-for="d in [30, 60, 90]" :key="d"
+                                                class="v2-set-opt" :class="{ on: rush.duree === d }"
+                                                @click="applySetting('/admin/rush/set-duree', { duree: d }, () => rush.duree = d)">{{ d }}</button>
+                                    </span>
+                                </div>
+
+                                <!-- Zéro retire la limite : le chrono global suffit alors -->
+                                <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"/></svg>
+                                    <span class="v2-set-label">Par perso</span>
+                                    <input class="v2-range" type="range" min="0" max="12" step="1"
+                                           :value="rush.limite"
+                                           @input="rush.limite = corrigerLimiteRush($event.target.value)"
+                                           @change="applySetting('/admin/rush/set-limite', { limite: rush.limite }, () => {})">
+                                    <span class="v2-set-value num">{{ rush.limite ? rush.limite + 's' : '∞' }}</span>
+                                </div>
+
+                                <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><circle cx="12" cy="14" r="7"/><path d="M16 5l2-2M14 6l1.5-3"/></svg>
+                                    <span class="v2-set-label">Filtre</span>
+                                    <span class="v2-set-value">{{ nomFiltreRush(rush.filtre) }}</span>
+                                    <span class="v2-set-opts">
+                                        <button v-for="f in rush.filtres" :key="f.id"
+                                                class="v2-set-opt" :class="{ on: rush.filtre === f.id }"
+                                                :title="f.compte + ' personnages'"
+                                                @click="applySetting('/admin/rush/set-filtre', { filtre: f.id }, () => rush.filtre = f.id)">{{ f.label }}</button>
+                                    </span>
+                                </div>
+
+                                <!-- Chacun avance à son rythme : avec une séquence commune, celui
+                                     qui voit l'écran d'un autre découvre ses portraits en avance. -->
+                                <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+                                    <span class="v2-set-label">Séquence</span>
+                                    <span class="v2-set-value">{{ rush.sequencePartagee ? 'Commune' : 'Propre' }}</span>
+                                    <span class="v2-set-opts">
+                                        <button v-for="o in [{ v: true, t: 'Commune' }, { v: false, t: 'Propre' }]" :key="o.t"
+                                                class="v2-set-opt" :class="{ on: rush.sequencePartagee === o.v }"
+                                                @click="applySetting('/admin/rush/set-sequence', { partagee: o.v }, () => rush.sequencePartagee = o.v)">{{ o.t }}</button>
+                                    </span>
+                                </div>
+                            </template>
+
                             <!-- BombAnime -->
                             <template v-else>
                                 <!-- Vingt et une séries : le tiroir habituel déborderait de la
@@ -584,6 +635,84 @@
                  :class="{ 'no-animation': lobbyMode === 'bombanime' }"
                  v-if="gameInProgress && isAuthenticated && !gameEnded">
                 
+
+                <!-- ============================================
+                     ⚡ RUSH — reconnaître le plus de personnages d'affilée
+                     ============================================ -->
+                <template v-if="lobbyMode === 'rush' && !gameEnded">
+                    <div class="rush" v-if="rush.portrait || rush.fini">
+
+                        <!-- Chrono de la manche, en anneau au-dessus de tout -->
+                        <div class="rush-chrono" :class="{ urgence: rush.reste <= 10 }">
+                            <svg viewBox="0 0 44 44">
+                                <circle class="fond" cx="22" cy="22" r="20"/>
+                                <circle class="jauge" cx="22" cy="22" r="20"
+                                        :style="{ strokeDashoffset: 125.6 - 125.6 * (rush.reste / rush.duree) }"/>
+                            </svg>
+                            <span>{{ rush.reste }}</span>
+                        </div>
+
+                        <!-- Le classement, discret et masquable -->
+                        <div class="rush-top" v-if="rush.classement.length > 1" :class="{ replie: rush.topMasque }">
+                            <button class="rush-top-oeil" @click="rush.topMasque = !rush.topMasque"
+                                    :title="rush.topMasque ? 'Afficher le classement' : 'Masquer'">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path v-if="!rush.topMasque" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle v-if="!rush.topMasque" cx="12" cy="12" r="3"/>
+                                    <path v-else d="M17.9 18A10.1 10.1 0 0 1 12 20c-7 0-11-8-11-8a18.4 18.4 0 0 1 5.1-6M9.9 4.2A10.1 10.1 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.2 3.2M1 1l22 22"/>
+                                </svg>
+                            </button>
+                            <ol v-if="!rush.topMasque">
+                                <li v-for="(j, i) in rush.classement.slice(0, 3)" :key="j.playerId"
+                                    :class="{ moi: j.playerId === playerId }">
+                                    <span class="r">{{ i + 1 }}</span>
+                                    <span class="n">{{ j.username }}</span>
+                                    <span class="s">{{ j.record }}</span>
+                                </li>
+                            </ol>
+                        </div>
+
+                        <!-- Le portrait : c'est tout ce que le serveur envoie -->
+                        <div class="rush-scene">
+                            <transition name="rush-carte" mode="out-in">
+                                <div class="rush-carte" :key="rush.portrait ? rush.portrait.img : 'fin'"
+                                     :class="{ juste: rush.flash === 'juste', passe: rush.flash === 'passe' }">
+                                    <img v-if="rush.portrait" :src="'/rushpic/' + rush.portrait.img" alt="" draggable="false">
+                                    <span class="rush-anime" v-if="rush.portrait">{{ rush.portrait.anime }}</span>
+                                    <!-- La limite par portrait, en trait sous la carte -->
+                                    <span class="rush-limite" v-if="rush.limite && rush.portrait"
+                                          :key="'l' + rush.portrait.img"
+                                          :style="{ animationDuration: rush.limite + 's' }"></span>
+                                </div>
+                            </transition>
+                        </div>
+
+                        <!-- La série en cours, et le record du tour -->
+                        <div class="rush-compteurs">
+                            <div class="rush-serie" :class="{ bat: rush.serie > 0 }">
+                                <span class="v">{{ rush.serie }}</span>
+                                <span class="l">série</span>
+                            </div>
+                            <div class="rush-record">
+                                <span class="v">{{ rush.record }}</span>
+                                <span class="l">record</span>
+                            </div>
+                        </div>
+
+                        <!-- La saisie : aucune touche à presser, le nom se valide seul -->
+                        <div class="rush-saisie">
+                            <input type="text" class="rush-input" id="rushInput"
+                                   v-model="rush.texte"
+                                   @input="envoyerSaisieRush"
+                                   :placeholder="rush.portrait ? 'Qui est-ce ?' : ''"
+                                   :disabled="!rush.portrait"
+                                   autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                            <button class="rush-passer" @click="passerRush" :disabled="!rush.portrait">
+                                Passer
+                            </button>
+                        </div>
+                    </div>
+                </template>
                 <!-- ============================================
                      MODE BOMBANIME - Interface de jeu
                      ============================================ -->
@@ -1319,6 +1448,32 @@
 
         <!-- 🆕 SYSTÈME DE COMBO & BONUS -->
 
+
+        <!-- ============================================
+             ⚡ RUSH — classement de fin de manche
+             ============================================ -->
+        <div class="rush-fin" v-if="gameEnded && gameEndData && gameEndData.gameMode === 'rush'">
+            <div class="rush-fin-boite">
+                <span class="rush-fin-titre">Meilleures séries</span>
+
+                <ol class="rush-fin-liste">
+                    <li v-for="(j, i) in gameEndData.classement" :key="j.playerId"
+                        :class="{ moi: j.playerId === playerId, premier: i === 0 }"
+                        :style="{ animationDelay: (i * 0.09) + 's' }">
+                        <span class="rang">{{ i + 1 }}</span>
+                        <span class="nom">{{ j.username }}</span>
+                        <span class="detail">{{ j.trouves }} trouvé<span v-if="j.trouves > 1">s</span></span>
+                        <span class="record">{{ j.record }}</span>
+                    </li>
+                </ol>
+
+                <div class="rush-fin-actions">
+                    <button class="winner-replay-btn" v-if="isHost" :disabled="rejouerBusy"
+                            @click="hostRejouerRush">Rejouer</button>
+                    <button class="winner-back-btn" @click="quitterRush">Retour</button>
+                </div>
+            </div>
+        </div>
         <!-- ============================================
              ÉCRAN DE FIN BOMBANIME
              ============================================ -->

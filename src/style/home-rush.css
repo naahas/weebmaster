@@ -1,0 +1,437 @@
+/* ============================================
+   ⚡ RUSH — feuille de style du mode
+   Un portrait, un champ, deux nombres. Tout le reste est du silence : le
+   joueur a soixante secondes, rien ne doit lui prendre l'œil.
+   ============================================ */
+
+.rush {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(0.9rem, 2.2vh, 1.6rem);
+    padding: 4.5rem 1rem 2rem;
+    background:
+        radial-gradient(58% 46% at 50% 42%, rgba(255, 200, 60, 0.05), transparent 72%),
+        #08080b;
+}
+
+/* ══════════ Le chrono de la manche ══════════ */
+.rush-chrono {
+    position: fixed;
+    top: clamp(0.9rem, 2.5vh, 1.7rem);
+    left: 50%;
+    transform: translateX(-50%);
+    display: grid;
+    place-items: center;
+    width: 3.4rem;
+    height: 3.4rem;
+    z-index: 60;
+}
+
+.rush-chrono svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.rush-chrono circle {
+    fill: none;
+    stroke-width: 2.4;
+}
+
+.rush-chrono .fond { stroke: rgba(255, 255, 255, 0.07); }
+
+.rush-chrono .jauge {
+    stroke: var(--neon-primary, #ffd700);
+    stroke-linecap: round;
+    stroke-dasharray: 125.6;              /* 2 π 20 */
+    transition: stroke-dashoffset 0.25s linear, stroke 0.4s ease;
+}
+
+.rush-chrono span {
+    position: relative;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.35rem;
+    color: rgba(255, 255, 255, 0.82);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Les dix dernières secondes : le halo bat, sans clignoter */
+.rush-chrono.urgence .jauge { stroke: #ff5a6e; }
+.rush-chrono.urgence span { color: #ff8a97; }
+.rush-chrono.urgence { animation: rushBat 1s ease-in-out infinite; }
+
+@keyframes rushBat {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50%      { transform: translateX(-50%) scale(1.07); }
+}
+
+/* ══════════ Le portrait ══════════ */
+.rush-scene {
+    display: grid;
+    place-items: center;
+    width: min(20rem, 74vw);
+    height: min(20rem, 42vh);
+}
+
+.rush-carte {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    border-radius: 1.1rem;
+    background: linear-gradient(165deg, rgba(26, 24, 20, 0.9), rgba(12, 12, 15, 0.9));
+    box-shadow: 0 1.4rem 3.4rem rgba(0, 0, 0, 0.55),
+                inset 0 0 0 0.06rem rgba(255, 255, 255, 0.07);
+    overflow: hidden;
+}
+
+.rush-carte img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    /* Le portrait respire : très lent, il ne distrait pas de la saisie */
+    animation: rushFlotte 9s ease-in-out infinite;
+}
+
+@keyframes rushFlotte {
+    0%, 100% { transform: scale(1) translateY(0); }
+    50%      { transform: scale(1.025) translateY(-0.3rem); }
+}
+
+/* L'anime, en bas de carte : un indice, pas une réponse */
+.rush-anime {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 1.6rem 0.7rem 0.55rem;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.4);
+    background: linear-gradient(to top, rgba(6, 6, 8, 0.92), transparent);
+}
+
+/* La limite par portrait : un trait qui se vide sous la carte */
+.rush-limite {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 0.18rem;
+    width: 100%;
+    background: linear-gradient(90deg, #ff8c00, var(--neon-primary, #ffd700));
+    transform-origin: left center;
+    animation-name: rushMeche;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+
+@keyframes rushMeche {
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(0); }
+}
+
+/* Les deux verdicts : un éclat vert quand ça passe, un repli quand on saute */
+.rush-carte.juste { animation: rushJuste 0.32s cubic-bezier(0.2, 0.9, 0.25, 1); }
+.rush-carte.passe { animation: rushPasse 0.32s ease; }
+
+@keyframes rushJuste {
+    0%   { box-shadow: 0 1.4rem 3.4rem rgba(0, 0, 0, 0.55), inset 0 0 0 0.06rem rgba(110, 231, 183, 0.9); }
+    40%  { box-shadow: 0 1.4rem 3.4rem rgba(0, 0, 0, 0.55), inset 0 0 0 0.22rem rgba(110, 231, 183, 0.75); }
+    100% { box-shadow: 0 1.4rem 3.4rem rgba(0, 0, 0, 0.55), inset 0 0 0 0.06rem rgba(255, 255, 255, 0.07); }
+}
+
+@keyframes rushPasse {
+    0%   { box-shadow: 0 1.4rem 3.4rem rgba(0, 0, 0, 0.55), inset 0 0 0 0.06rem rgba(255, 90, 110, 0.85); }
+    100% { box-shadow: 0 1.4rem 3.4rem rgba(0, 0, 0, 0.55), inset 0 0 0 0.06rem rgba(255, 255, 255, 0.07); }
+}
+
+/* Le remplacement d'un portrait par le suivant */
+.rush-carte-enter-active { transition: opacity 0.16s ease, transform 0.24s cubic-bezier(0.2, 0.9, 0.25, 1); }
+.rush-carte-leave-active { transition: opacity 0.12s ease, transform 0.16s ease; }
+.rush-carte-enter-from   { opacity: 0; transform: translateY(0.7rem) scale(0.97); }
+.rush-carte-leave-to     { opacity: 0; transform: translateY(-0.5rem) scale(0.99); }
+
+/* ══════════ La série et le record ══════════ */
+.rush-compteurs {
+    display: flex;
+    align-items: flex-end;
+    gap: clamp(1.4rem, 5vw, 2.6rem);
+}
+
+.rush-serie, .rush-record {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1;
+}
+
+.rush-serie .v {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.6rem, 9vw, 3.6rem);
+    color: rgba(255, 255, 255, 0.9);
+    font-variant-numeric: tabular-nums;
+    transition: color 0.3s ease;
+}
+
+.rush-serie.bat .v {
+    color: var(--neon-primary, #ffd700);
+    text-shadow: 0 0 1.6rem rgba(255, 215, 0, 0.35);
+}
+
+.rush-record .v {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(1.5rem, 5vw, 2rem);
+    color: rgba(255, 255, 255, 0.42);
+    font-variant-numeric: tabular-nums;
+}
+
+.rush-serie .l, .rush-record .l {
+    margin-top: 0.3rem;
+    font-size: 0.56rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.28);
+}
+
+/* ══════════ La saisie ══════════ */
+.rush-saisie {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: min(22rem, 86vw);
+}
+
+/* Sans bordure, comme le champ de BombAnime : le texte seul, souligné */
+.rush-input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.85rem 0.9rem;
+    font-family: inherit;
+    font-size: 1.05rem;
+    font-weight: 600;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(255, 250, 235, 0.96);
+    background: rgba(255, 255, 255, 0.035);
+    border: none;
+    border-bottom: 0.12rem solid rgba(255, 215, 0, 0.35);
+    border-radius: 0.5rem 0.5rem 0 0;
+    outline: none;
+    transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+.rush-input:focus {
+    background: rgba(255, 255, 255, 0.06);
+    border-bottom-color: var(--neon-primary, #ffd700);
+}
+
+.rush-input::placeholder {
+    font-size: 0.82rem;
+    font-weight: 400;
+    letter-spacing: 0.14em;
+    color: rgba(255, 215, 0, 0.28);
+}
+
+.rush-passer {
+    flex: 0 0 auto;
+    padding: 0.7rem 1rem;
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    border-radius: 2rem;
+    cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease;
+}
+
+.rush-passer:hover:not(:disabled) { color: #fff; background: rgba(255, 255, 255, 0.11); }
+.rush-passer:disabled { opacity: 0.35; cursor: default; }
+
+/* ══════════ Le classement, discret ══════════ */
+.rush-top {
+    position: fixed;
+    top: clamp(0.9rem, 2.5vh, 1.7rem);
+    right: clamp(0.9rem, 2.5vw, 1.7rem);
+    z-index: 60;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    padding: 0.5rem 0.6rem;
+    background: rgba(10, 10, 13, 0.45);
+    border: 0.06rem solid rgba(255, 255, 255, 0.06);
+    border-radius: 0.7rem;
+    backdrop-filter: blur(6px);
+    transition: background 0.3s ease, opacity 0.3s ease;
+    opacity: 0.72;
+}
+
+.rush-top:hover { opacity: 1; }
+.rush-top.replie { padding: 0.35rem; }
+
+.rush-top-oeil {
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    color: rgba(255, 255, 255, 0.35);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.rush-top-oeil:hover { color: rgba(255, 255, 255, 0.8); }
+.rush-top-oeil svg { width: 0.95rem; height: 0.95rem; }
+
+.rush-top ol {
+    margin: 0;
+    padding: 0 0.2rem 0 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.22rem;
+}
+
+.rush-top li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.rush-top li.moi { color: var(--neon-primary, #ffd700); }
+.rush-top .r { width: 0.7rem; font-weight: 700; color: rgba(255, 255, 255, 0.3); }
+.rush-top li.moi .r { color: rgba(255, 215, 0, 0.6); }
+
+.rush-top .n {
+    max-width: 6.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rush-top .s {
+    margin-left: auto;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.95rem;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ══════════ Téléphone ══════════ */
+@media (max-width: 600px) {
+    .rush { gap: 0.7rem; padding: 4rem 0.8rem 1.4rem; }
+    .rush-scene { width: 80vw; height: 34vh; }
+    .rush-chrono { width: 2.9rem; height: 2.9rem; }
+    .rush-chrono span { font-size: 1.15rem; }
+    .rush-top { top: 0.7rem; right: 0.7rem; padding: 0.4rem 0.45rem; }
+    .rush-top .n { max-width: 4.5rem; }
+    .rush-saisie { width: 92vw; }
+}
+
+/* ============================================
+   ⚡ RUSH — classement de fin de manche
+   ============================================ */
+.rush-fin {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: grid;
+    place-items: center;
+    padding: 1.2rem;
+    background: radial-gradient(60% 50% at 50% 40%, rgba(255, 200, 60, 0.05), transparent 70%), #08080b;
+}
+
+.rush-fin-boite {
+    width: min(26rem, 92vw);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.2rem;
+}
+
+.rush-fin-titre {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.32);
+}
+
+.rush-fin-liste {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.rush-fin-liste li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.7rem;
+    padding: 0.7rem 0.2rem;
+    border-bottom: 0.06rem solid rgba(255, 255, 255, 0.05);
+    /* Les places tombent une à une, du premier au dernier */
+    animation: rushRang 0.45s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+
+@keyframes rushRang {
+    from { opacity: 0; transform: translateY(0.6rem); }
+    to   { opacity: 1; transform: none; }
+}
+
+.rush-fin-liste .rang {
+    width: 1.2rem;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.28);
+}
+
+.rush-fin-liste .nom {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.rush-fin-liste .detail { font-size: 0.7rem; color: rgba(255, 255, 255, 0.28); }
+
+.rush-fin-liste .record {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    color: rgba(255, 255, 255, 0.55);
+    font-variant-numeric: tabular-nums;
+}
+
+.rush-fin-liste li.premier .rang,
+.rush-fin-liste li.premier .record { color: var(--neon-primary, #ffd700); }
+.rush-fin-liste li.premier .nom { color: #fff; }
+.rush-fin-liste li.moi .nom { color: var(--neon-primary, #ffd700); }
+
+.rush-fin-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.7rem;
+    margin-top: 0.4rem;
+}
