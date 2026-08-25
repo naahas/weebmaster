@@ -109,6 +109,24 @@ function getCharacterImage(name, serie) {
 }
 
 // Configuration BombAnime
+// ⚡ RUSH — 308 portraits, leurs alias, et les filtres d'anime
+const RUSH_DATA = require('./rushdata.json');
+const RUSH_PERSOS = RUSH_DATA.personnages;
+const RUSH_FILTRES = RUSH_DATA.filtres;
+
+const RUSH_CONFIG = {
+    MIN_PLAYERS: 1,             // jouable seul : c'est une course contre soi
+    MAX_PLAYERS: 30,
+    DUREES: [30, 60, 90],       // durée de la manche, en secondes
+    DUREE_DEFAUT: 60,
+    PERSO_DEFAUT: 8,            // secondes par personnage, 0 = sans limite
+    PERSO_MIN: 5,
+    PERSO_MAX: 12,
+    // Un joueur rapide enchaîne une quarantaine de portraits : on en prépare
+    // largement plus, car celui qui échoue souvent avance encore plus vite.
+    LONGUEUR_SEQUENCE: 120,
+};
+
 const BOMBANIME_CONFIG = {
     MIN_PLAYERS: 2,
     MAX_PLAYERS: 15,
@@ -432,6 +450,15 @@ app.get('/game/state', (req, res) => {
                 .map(p => ({ playerId: p.playerId, username: p.username }))
             : [],
         // 💣 Mode BombAnime
+        rush: gameState.lobbyMode === 'rush' ? {
+            duree: gameState.rush.duree,
+            limite: gameState.rush.tempsParPerso,
+            filtre: gameState.rush.filtre,
+            sequencePartagee: gameState.rush.sequencePartagee,
+            filtres: Object.entries(RUSH_FILTRES).map(([id, f]) => ({
+                id, label: f.label, compte: f.compte,
+            })),
+        } : null,
         bombanime: gameState.lobbyMode === 'bombanime' ? {
             active: gameState.bombanime.active,
             serie: gameState.bombanime.serie,
@@ -572,6 +599,11 @@ function fermerRoom(gameState) {
         if (gameState[t]) clearTimeout(gameState[t]);
     }
     if (gameState.bombanime && gameState.bombanime.turnTimeout) clearTimeout(gameState.bombanime.turnTimeout);
+    // Rush en porte une par joueur, plus celle de fin de manche
+    if (gameState.rush) {
+        if (gameState.rush.timeoutFin) clearTimeout(gameState.rush.timeoutFin);
+        for (const t of gameState.rush.timeoutsPerso.values()) clearTimeout(t);
+    }
     rooms.delete(gameState.roomCode);
     console.log(`❌ Salon fermé : ${gameState.roomCode} (${rooms.size} restant(s))`);
 }
@@ -650,6 +682,20 @@ function etatNeuf() {
     // ============================================
     // 💣 BOMBANIME - État du mode
     // ============================================
+    rush: {
+        active: false,
+        duree: RUSH_CONFIG.DUREE_DEFAUT,          // secondes de jeu
+        tempsParPerso: RUSH_CONFIG.PERSO_DEFAUT,  // 0 = pas de limite par portrait
+        filtre: 'overall',                        // cle dans RUSH_FILTRES
+        sequencePartagee: true,                   // meme ordre pour tous, sinon le classement ne compare rien
+        sequence: [],                             // les portraits de la manche, dans l ordre
+        sequencesJoueur: new Map(),               // Map<playerId, string[]> quand chacun a la sienne
+        joueurs: new Map(),                       // Map<playerId, {curseur, serie, record, trouves, rates}>
+        finA: null,                               // horodatage de fin de manche
+        timeoutFin: null,
+        timeoutsPerso: new Map(),                 // Map<playerId, Timeout> pour la limite par portrait
+        dejaVus: [],                              // portraits deja servis dans ce salon
+    },
     bombanime: {
         active: false,              // Mode BombAnime actif
         serie: 'Naruto',            // Série sélectionnée
@@ -1234,6 +1280,51 @@ app.post('/admin/toggle-game', async (req, res) => {
     res.json({ isActive: true, roomCode: gameState.roomCode, hostToken: gameState.hostToken });
 });
 
+// ============================================
+// ⚡ RUSH — réglages du salon
+// ============================================
+app.post('/admin/rush/set-duree', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+    const d = parseInt(req.body && req.body.duree, 10);
+    if (!RUSH_CONFIG.DUREES.includes(d)) return res.status(400).json({ error: 'Durée invalide' });
+    gameState.rush.duree = d;
+    diffuser(gameState, 'rush-config', { duree: d });
+    res.json({ success: true, duree: d });
+});
+
+app.post('/admin/rush/set-limite', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+    const t = parseInt(req.body && req.body.limite, 10);
+    // Zéro veut dire « pas de limite par portrait » : le chrono global suffit
+    const ok = t === 0 || (t >= RUSH_CONFIG.PERSO_MIN && t <= RUSH_CONFIG.PERSO_MAX);
+    if (!ok) return res.status(400).json({ error: 'Limite invalide' });
+    gameState.rush.tempsParPerso = t;
+    diffuser(gameState, 'rush-config', { limite: t });
+    res.json({ success: true, limite: t });
+});
+
+app.post('/admin/rush/set-filtre', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+    const f = req.body && req.body.filtre;
+    if (!RUSH_FILTRES[f]) return res.status(400).json({ error: 'Filtre inconnu' });
+    gameState.rush.filtre = f;
+    gameState.rush.dejaVus = [];   // on change de lot : la mémoire du salon n'a plus d'objet
+    diffuser(gameState, 'rush-config', { filtre: f });
+    res.json({ success: true, filtre: f });
+});
+
+app.post('/admin/rush/set-sequence', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+    const partagee = !!(req.body && req.body.partagee);
+    gameState.rush.sequencePartagee = partagee;
+    diffuser(gameState, 'rush-config', { sequencePartagee: partagee });
+    res.json({ success: true, sequencePartagee: partagee });
+});
+
 // 💣 Durée du tour, entre 5 et 10 secondes
 app.post('/admin/bombanime/set-timer', (req, res) => {
     const gameState = req.room;
@@ -1423,6 +1514,13 @@ app.post('/admin/start-game', async (req, res) => {
         });
     }
     
+    // ⚡ MODE RUSH — chacun court de son côté, donc jouable même seul
+    if (gameState.lobbyMode === 'rush') {
+        const r = demarrerRush(gameState);
+        if (!r.success) return res.status(400).json({ success: false, error: r.error });
+        return res.json({ success: true, mode: 'rush', duree: gameState.rush.duree });
+    }
+
     // 🆕 Minimum 2 joueurs pour lancer une partie
     if (totalPlayers < 2) {
         return res.status(400).json({
@@ -2212,6 +2310,7 @@ app.post('/admin/replay', (req, res) => {
     gameState.isActive = true;   // une manche précédente a pu le refermer
     resetGameState(gameState);
     resetBombanimeState(gameState);
+    resetRushState(gameState);
 
     console.log(`🔁 Salon ${gameState.roomCode} : retour au lobby pour une nouvelle manche`);
     diffuser(gameState, 'retour-au-salon');
@@ -4990,6 +5089,232 @@ async function endBombanimeGame(gameState, winner) {
     resetGameState(gameState);
 }
 
+
+// ============================================
+// ⚡ RUSH — reconnaitre le plus de personnages d affilee
+// ============================================
+// Chacun avance a son rythme dans une sequence commune : la liste est la meme
+// pour tous, seul le curseur differe. Un portrait rate n est donc pas retire de
+// la liste, il est seulement depasse par celui qui l a rate.
+
+// « MONKEY D. LUFFY » et « monkey d luffy » sont le meme nom.
+function rushNormaliser(texte) {
+    return String(texte || '')
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')   // accents
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '');                          // ponctuation, espaces
+}
+
+// Toutes les ecritures acceptees pour un personnage
+function rushFormes(perso) {
+    return [perso.nom, ...(perso.alias || [])].map(rushNormaliser).filter(Boolean);
+}
+
+// Tirage sans remise a l echelle du salon : on ne resert un portrait que
+// lorsque tout le lot a defile.
+function rushPiocher(gameState, combien) {
+    const filtre = RUSH_FILTRES[gameState.rush.filtre] || RUSH_FILTRES.overall;
+    const lot = filtre.animes.length
+        ? RUSH_PERSOS.filter(p => filtre.animes.includes(p.anime))
+        : RUSH_PERSOS;
+
+    const tire = [];
+    let restants = lot.filter(p => !gameState.rush.dejaVus.includes(p.id));
+
+    for (let i = 0; i < combien; i++) {
+        if (!restants.length) {                      // lot epuise : on recharge
+            gameState.rush.dejaVus = [];
+            restants = lot.slice();
+        }
+        const k = Math.floor(Math.random() * restants.length);
+        const perso = restants.splice(k, 1)[0];
+        gameState.rush.dejaVus.push(perso.id);
+        tire.push(perso.id);
+    }
+    return tire;
+}
+
+function rushPersoParId(id) {
+    return RUSH_PERSOS.find(p => p.id === id) || null;
+}
+
+// Ce que le joueur doit voir : le portrait, jamais le nom.
+function rushPortrait(gameState, playerId) {
+    const etat = gameState.rush.joueurs.get(playerId);
+    if (!etat) return null;
+    const sequence = gameState.rush.sequencePartagee
+        ? gameState.rush.sequence
+        : (gameState.rush.sequencesJoueur.get(playerId) || []);
+    const id = sequence[etat.curseur];
+    if (!id) return null;
+    const perso = rushPersoParId(id);
+    return perso ? { img: perso.img, anime: perso.anime, position: etat.curseur } : null;
+}
+
+function rushClassement(gameState) {
+    return [...gameState.rush.joueurs.entries()]
+        .map(([playerId, e]) => {
+            const joueur = [...gameState.players.values()].find(p => p.playerId === playerId);
+            return {
+                playerId,
+                username: joueur ? joueur.username : '?',
+                record: e.record,
+                serie: e.serie,
+                trouves: e.trouves,
+            };
+        })
+        .sort((a, b) => b.record - a.record || b.trouves - a.trouves);
+}
+
+// Envoie a un seul joueur : chacun a son propre portrait a l ecran.
+function rushVersJoueur(gameState, playerId, evt, payload) {
+    for (const socketId of io.sockets.adapter.rooms.get(gameState.roomCode) || []) {
+        const joueur = gameState.players.get(socketId);
+        if (joueur && joueur.playerId === playerId) {
+            const sock = io.sockets.sockets.get(socketId);
+            if (sock) sock.emit(evt, payload);
+        }
+    }
+}
+
+// La limite par portrait : depasse, la serie casse et on avance.
+function rushArmerLimite(gameState, playerId) {
+    const ancien = gameState.rush.timeoutsPerso.get(playerId);
+    if (ancien) clearTimeout(ancien);
+    if (!gameState.rush.tempsParPerso) return;
+
+    const t = setTimeout(() => {
+        if (!gameState.rush.active) return;
+        rushAvancer(gameState, playerId, false);
+    }, gameState.rush.tempsParPerso * 1000);
+    gameState.rush.timeoutsPerso.set(playerId, t);
+}
+
+// Avance d un portrait. « reussi » decide du sort de la serie en cours.
+function rushAvancer(gameState, playerId, reussi) {
+    const etat = gameState.rush.joueurs.get(playerId);
+    if (!etat) return;
+
+    if (reussi) {
+        etat.serie++;
+        etat.trouves++;
+        if (etat.serie > etat.record) etat.record = etat.serie;
+    } else {
+        etat.serie = 0;
+        etat.rates++;
+    }
+    etat.curseur++;
+
+    const portrait = rushPortrait(gameState, playerId);
+    rushVersJoueur(gameState, playerId, 'rush-portrait', {
+        portrait,
+        serie: etat.serie,
+        record: etat.record,
+        reussi,
+        limite: gameState.rush.tempsParPerso,
+    });
+
+    // Le classement bouge a chaque bonne reponse : c est lui qui fait la course
+    diffuser(gameState, 'rush-classement', { classement: rushClassement(gameState) });
+
+    if (portrait) rushArmerLimite(gameState, playerId);
+}
+
+function demarrerRush(gameState) {
+    const joueurs = [...gameState.players.values()];
+    if (joueurs.length < RUSH_CONFIG.MIN_PLAYERS) {
+        return { success: false, error: 'Il faut au moins un joueur' };
+    }
+
+    gameState.rush.active = true;
+    gameState.rush.joueurs = new Map();
+    gameState.rush.sequencesJoueur = new Map();
+    gameState.rush.sequence = rushPiocher(gameState, RUSH_CONFIG.LONGUEUR_SEQUENCE);
+
+    for (const joueur of joueurs) {
+        gameState.rush.joueurs.set(joueur.playerId, {
+            curseur: 0, serie: 0, record: 0, trouves: 0, rates: 0,
+        });
+        if (!gameState.rush.sequencePartagee) {
+            gameState.rush.sequencesJoueur.set(joueur.playerId,
+                rushPiocher(gameState, RUSH_CONFIG.LONGUEUR_SEQUENCE));
+        }
+    }
+
+    gameState.inProgress = true;
+    gameState.initialPlayerCount = joueurs.length;
+    gameState.rush.finA = Date.now() + gameState.rush.duree * 1000;
+
+    diffuser(gameState, 'rush-game-started', {
+        duree: gameState.rush.duree,
+        finA: gameState.rush.finA,
+        limite: gameState.rush.tempsParPerso,
+        filtre: gameState.rush.filtre,
+        classement: rushClassement(gameState),
+    });
+
+    // Chacun recoit son premier portrait, et sa limite demarre
+    for (const joueur of joueurs) {
+        const portrait = rushPortrait(gameState, joueur.playerId);
+        rushVersJoueur(gameState, joueur.playerId, 'rush-portrait', {
+            portrait, serie: 0, record: 0, reussi: null,
+            limite: gameState.rush.tempsParPerso,
+        });
+        rushArmerLimite(gameState, joueur.playerId);
+    }
+
+    if (gameState.rush.timeoutFin) clearTimeout(gameState.rush.timeoutFin);
+    gameState.rush.timeoutFin = setTimeout(() => terminerRush(gameState),
+        gameState.rush.duree * 1000);
+
+    console.log(`⚡ Rush lance dans ${gameState.roomCode} : ${joueurs.length} joueur(s), ${gameState.rush.duree}s, filtre ${gameState.rush.filtre}`);
+    return { success: true };
+}
+
+function terminerRush(gameState) {
+    if (!gameState.rush.active) return;
+    gameState.rush.active = false;
+
+    if (gameState.rush.timeoutFin) clearTimeout(gameState.rush.timeoutFin);
+    gameState.rush.timeoutFin = null;
+    for (const t of gameState.rush.timeoutsPerso.values()) clearTimeout(t);
+    gameState.rush.timeoutsPerso = new Map();
+
+    const classement = rushClassement(gameState);
+    const gagnant = classement[0] || null;
+
+    gameState.winnerScreenData = {
+        gameMode: 'rush',
+        winner: gagnant ? { username: gagnant.username, record: gagnant.record } : null,
+        classement,
+        duree: gameState.rush.duree,
+        filtre: gameState.rush.filtre,
+    };
+
+    diffuser(gameState, 'rush-game-ended', gameState.winnerScreenData);
+    recordFinishedGame({
+        mode: 'rush',
+        playersCount: gameState.initialPlayerCount || classement.length,
+        winnerName: gagnant ? gagnant.username : null,
+        duration: gameState.rush.duree,
+    });
+
+    gameState.inProgress = false;
+    console.log(`⚡ Rush termine dans ${gameState.roomCode} : ${gagnant ? gagnant.username + ' avec ' + gagnant.record : 'personne'}`);
+}
+
+function resetRushState(gameState) {
+    if (gameState.rush.timeoutFin) clearTimeout(gameState.rush.timeoutFin);
+    for (const t of gameState.rush.timeoutsPerso.values()) clearTimeout(t);
+    gameState.rush.active = false;
+    gameState.rush.sequence = [];
+    gameState.rush.sequencesJoueur = new Map();
+    gameState.rush.joueurs = new Map();
+    gameState.rush.timeoutsPerso = new Map();
+    gameState.rush.timeoutFin = null;
+    gameState.rush.finA = null;
+}
+
 // Reset l'état BombAnime
 function resetBombanimeState(gameState) {
     if (gameState.bombanime.turnTimeout) {
@@ -5601,6 +5926,40 @@ io.on('connection', (socket) => {
     // 💣 BOMBANIME - Socket Handlers
     // ============================================
     
+    // ⚡ RUSH — la saisie se valide sans touche Entrée : le client envoie ce
+    // qui est tapé, le serveur ne répond que si ça correspond. Il n'y a donc
+    // jamais de « mauvaise réponse », seulement des portraits passés.
+    socket.on('rush-saisie', (data) => {
+        const gameState = roomDeSocket(socket);
+        if (!gameState || !gameState.rush.active) return;
+        const joueur = gameState.players.get(socket.id);
+        if (!joueur) return;
+
+        const portrait = rushPortrait(gameState, joueur.playerId);
+        if (!portrait) return;
+
+        const etat = gameState.rush.joueurs.get(joueur.playerId);
+        const sequence = gameState.rush.sequencePartagee
+            ? gameState.rush.sequence
+            : (gameState.rush.sequencesJoueur.get(joueur.playerId) || []);
+        const perso = rushPersoParId(sequence[etat.curseur]);
+        if (!perso) return;
+
+        const tape = rushNormaliser(data && data.texte);
+        if (tape && rushFormes(perso).includes(tape)) {
+            rushAvancer(gameState, joueur.playerId, true);
+        }
+    });
+
+    // Passer volontairement : la série casse, mais on n'attend pas la limite
+    socket.on('rush-passer', () => {
+        const gameState = roomDeSocket(socket);
+        if (!gameState || !gameState.rush.active) return;
+        const joueur = gameState.players.get(socket.id);
+        if (!joueur) return;
+        rushAvancer(gameState, joueur.playerId, false);
+    });
+
     // Soumettre un nom de personnage
     socket.on('bombanime-submit-name', (data) => {
         // La socket dit sa room : sans elle, cet événement ne concerne personne

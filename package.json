@@ -19,7 +19,8 @@
     "test:reprise": "node scripts/test-reprise.js",
     "test:bomb": "node scripts/test-bombanime.js",
     "test:plafond": "node scripts/test-plafond.js",
-    "test:depart": "node scripts/test-depart-bomb.js"
+    "test:depart": "node scripts/test-depart-bomb.js",
+    "test:rush": "node scripts/test-rush.js"
   },
   "keywords": [
     "quiz",
