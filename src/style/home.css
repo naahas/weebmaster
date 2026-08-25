@@ -7807,6 +7807,15 @@ body.game-active:has(.poll-game-container) #particles-js {
    la faire flotter — sinon on verrait un rectangle photo au milieu du vide. */
 .v2-mode-preview.plain-mode { overflow: hidden; }
 
+/* Kenshin est cadre carre (2048x2048) la ou Lambo est en portrait : a
+   « contain », c est donc sa largeur qui borne l echelle, et il rendait plus
+   petit sans jamais depasser. On lui laisse plus de large et plus de haut — il
+   grandit vers le haut, l image restant calee sur le bas du panneau. */
+.v2-mode-preview.mode-classic .v2-mode-char {
+    height: 135%;
+    max-width: 78%;
+}
+
 .v2-mode-char.plain {
     right: 0;
     bottom: 0;
