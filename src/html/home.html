@@ -667,11 +667,17 @@
                             </ol>
                         </div>
 
-                        <!-- Le portrait, encadré par la série et le record -->
+                        <!-- La série et le record au-dessus, le portrait dessous -->
                         <div class="rush-rang">
-                            <div class="rush-serie" :class="{ bat: rush.serie > 0, monte: rush.pulse }">
-                                <span class="v">{{ rush.serie }}</span>
-                                <span class="l">série</span>
+                            <div class="rush-compteurs">
+                                <div class="rush-serie" :class="{ bat: rush.serie > 0, monte: rush.pulse }">
+                                    <span class="v">{{ rush.serie }}</span>
+                                    <span class="l">série</span>
+                                </div>
+                                <div class="rush-record">
+                                    <span class="v">{{ rush.record }}</span>
+                                    <span class="l">record</span>
+                                </div>
                             </div>
 
                         <div class="rush-scene">
@@ -686,11 +692,6 @@
                                 </div>
                             </transition>
                         </div>
-
-                            <div class="rush-record">
-                                <span class="v">{{ rush.record }}</span>
-                                <span class="l">record</span>
-                            </div>
                         </div>
 
                         <!-- La saisie : aucune touche à presser, le nom se valide seul -->
