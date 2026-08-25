@@ -12,8 +12,9 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: clamp(0.9rem, 2.2vh, 1.6rem);
-    padding: 4.5rem 1rem 2rem;
+    gap: clamp(1.4rem, 3vh, 2.2rem);
+    /* Le bas plus lourd que le haut : l'ensemble remonte dans l'écran */
+    padding: 3.5rem 1rem 6rem;
     background:
         radial-gradient(58% 46% at 50% 42%, rgba(255, 200, 60, 0.05), transparent 72%),
         #08080b;
@@ -78,8 +79,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: clamp(0.7rem, 2vh, 1.2rem);
-    width: min(23rem, 56vw);
+    gap: clamp(1.6rem, 4vh, 2.6rem);
 }
 
 .rush-compteurs {
@@ -105,11 +105,25 @@
     transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.2, 0.9, 0.25, 1);
 }
 
+/* Les 308 portraits font tous 225 x 350. Une carte carrée les déformait ou
+   les bordait de noir : elle prend leur format, ils la remplissent alors
+   exactement, sans rognage ni bande. */
+.rush {
+    --carte-h: min(24rem, 46vh);
+    --carte-l: calc(var(--carte-h) * 225 / 350);
+}
+
+.rush-plateau {
+    display: flex;
+    align-items: stretch;
+    gap: 0.85rem;
+}
+
 .rush-scene {
     display: grid;
     place-items: center;
-    width: min(23rem, 56vw);
-    height: min(23rem, 45vh);
+    width: var(--carte-l);
+    height: var(--carte-h);
     flex: 0 0 auto;
 }
 
@@ -129,7 +143,9 @@
 .rush-carte img {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    /* La carte ayant le format du fichier, « cover » ne rogne rien : il garantit
+       seulement qu'aucun demi-pixel d'arrondi ne laisse un liseré. */
+    object-fit: cover;
     /* Le portrait respire : très lent, il ne distrait pas de la saisie */
     animation: rushFlotte 9s ease-in-out infinite;
 }
@@ -142,30 +158,31 @@
 /* Le minuteur du portrait : un rail sous la carte, à sa largeur. Posé dans
    l'image, il disparaissait dès que le bas de la photo était clair. */
 .rush-limite-rail {
-    width: 100%;
-    height: 0.22rem;
-    margin-top: 0.8rem;
+    flex: 0 0 auto;
+    width: 0.26rem;
+    align-self: stretch;
     border-radius: 2rem;
     background: rgba(255, 255, 255, 0.06);
     overflow: hidden;
 }
 
+/* Elle se vide du haut vers le bas, comme un sablier */
 .rush-limite {
     display: block;
-    height: 100%;
     width: 100%;
+    height: 100%;
     border-radius: 2rem;
-    background: linear-gradient(90deg, #ff8c00, var(--neon-primary, #ffd700));
+    background: linear-gradient(180deg, var(--neon-primary, #ffd700), #ff8c00);
     box-shadow: 0 0 0.6rem rgba(255, 190, 40, 0.5);
-    transform-origin: left center;
+    transform-origin: center top;
     animation-name: rushMeche;
     animation-timing-function: linear;
     animation-fill-mode: forwards;
 }
 
 @keyframes rushMeche {
-    from { transform: scaleX(1); }
-    to   { transform: scaleX(0); }
+    from { transform: scaleY(1); }
+    to   { transform: scaleY(0); }
 }
 
 /* Les deux verdicts : un éclat vert quand ça passe, un repli quand on saute */
@@ -248,8 +265,8 @@
     position: relative;
     display: flex;
     align-items: center;
-    width: min(19rem, 46vw);
-    margin-top: 0.7rem;
+    width: calc(var(--carte-l) + 1.1rem);
+    margin-top: 0.2rem;
 }
 
 /* Sans bordure, comme le champ de BombAnime : le texte seul, souligné */
@@ -286,25 +303,31 @@
 
 .rush-passer {
     position: absolute;
-    left: calc(100% + 0.7rem);
+    left: calc(100% + 0.8rem);
     top: 50%;
     transform: translateY(-50%);
     display: grid;
     place-items: center;
-    width: 2.4rem;
-    height: 2.4rem;
+    width: 2.6rem;
+    height: 2.6rem;
     padding: 0;
-    color: rgba(255, 255, 255, 0.35);
-    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 215, 0, 0.75);
+    background: rgba(255, 215, 0, 0.09);
     border: none;
     border-radius: 50%;
     cursor: pointer;
-    transition: color 0.2s ease, background 0.2s ease;
+    transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease;
 }
 
-.rush-passer svg { width: 1rem; height: 1rem; }
-.rush-passer:hover:not(:disabled) { color: #fff; background: rgba(255, 255, 255, 0.12); }
-.rush-passer:disabled { opacity: 0.3; cursor: default; }
+.rush-passer svg { width: 1.1rem; height: 1.1rem; }
+
+.rush-passer:hover:not(:disabled) {
+    color: #14100a;
+    background: var(--neon-primary, #ffd700);
+    transform: translateY(-50%) scale(1.06);
+}
+
+.rush-passer:disabled { opacity: 0.35; cursor: default; }
 
 /* ══════════ Le classement, discret ══════════ */
 /* Aucun cadre, aucun bouton : trois lignes posées sur le fond. Un clic
@@ -386,8 +409,8 @@
 /* ══════════ Téléphone ══════════ */
 @media (max-width: 600px) {
     .rush { gap: 0.7rem; padding: 4rem 0.8rem 1.4rem; }
+    .rush { --carte-h: 42vh; }
     .rush-compteurs { gap: 2.4rem; }
-    .rush-scene { width: 74vw; height: 32vh; }
     .rush-saisie { width: 78vw; }
     .rush-passer { left: auto; right: -3rem; }
     .rush-chrono { --chrono-haut: 0.8rem; --chrono-droite: 1rem; }
