@@ -1886,7 +1886,6 @@ createApp({
         revenirAuSalonRush() {
             this.arreterChronoRush();
             clearTimeout(this._rushIntroA);
-            clearTimeout(this._rushIntroB);
             this.rush.intro = null;
             Object.assign(this.rush, {
                 portrait: null, texte: '', serie: 0, record: 0,
@@ -1954,25 +1953,20 @@ createApp({
             this.rush._tic = null;
         },
 
-        // L'entrée de manche : le chrono naît en grand au centre, rejoint son
-        // coin, et le reste du jeu apparaît derrière lui. Les durées suivent
-        // celles du CSS — les changer d'un seul côté désynchroniserait tout.
+        // L'entrée de manche tient en deux temps : le chrono paraît seul, puis
+        // le jeu entier apparaît une seconde plus tard. Une seconde d'avance
+        // suffit à annoncer le départ sans faire attendre.
         jouerEntreeRush() {
             clearTimeout(this._rushIntroA);
-            clearTimeout(this._rushIntroB);
-            this.rush.intro = 'centre';
+            this.rush.intro = 'chrono';
 
-            // Il reste au centre le temps qu'on le voie, puis il s'envole
-            this._rushIntroA = setTimeout(() => { this.rush.intro = 'vol'; }, 950);
-
-            // Une fois posé, le jeu entre et la saisie prend la main
-            this._rushIntroB = setTimeout(() => {
+            this._rushIntroA = setTimeout(() => {
                 this.rush.intro = null;
                 this.$nextTick(() => {
                     const champ = document.getElementById('rushInput');
                     if (champ) champ.focus();
                 });
-            }, 1850);
+            }, 1000);
         },
 
         // Le compteur bat a chaque bonne reponse. On retire la classe avant de

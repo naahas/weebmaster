@@ -20,9 +20,7 @@
 }
 
 /* ══════════ Le chrono de la manche ══════════ */
-/* Le chrono vit dans son coin, en haut à droite. Sa position est fixe : c'est
-   la transformation qui le déplace, donc l'aller au centre et le retour se
-   jouent sur la même propriété, sans relayout. */
+/* Le chrono vit dans son coin, en haut à droite. */
 .rush-chrono {
     position: fixed;
     top: var(--chrono-haut, 1.4rem);
@@ -31,17 +29,20 @@
     display: grid;
     place-items: center;
     z-index: 70;
-    transform: none;
-    transition: transform 0.9s cubic-bezier(0.22, 0.9, 0.25, 1);
 }
 
-/* L'entrée : il naît au milieu de l'écran, trois fois plus gros. Le calcul
-   ramène son centre sur celui de la fenêtre — 50 % désignant sa propre
-   largeur, il reste juste quel que soit le nombre de chiffres. */
-.rush-chrono.entree {
-    transform: translate(calc(-50vw + 50% + var(--chrono-droite, 2rem)),
-                         calc(50vh - 50% - var(--chrono-haut, 1.4rem)))
-               scale(2.8);
+/* Il paraît une seconde avant le reste : une frappe brève, puis il se pose.
+   L'éclat vient d'un halo qui se rétracte, pas d'un clignotement — on veut
+   annoncer le départ, pas éblouir. */
+.rush-chrono.parait .rush-chrono-n {
+    animation: rushChronoParait 0.75s cubic-bezier(0.16, 1.1, 0.3, 1) both;
+}
+
+@keyframes rushChronoParait {
+    0%   { opacity: 0; transform: scale(2.1); text-shadow: 0 0 4rem rgba(255, 215, 0, 0.9); }
+    45%  { opacity: 1; transform: scale(0.94); text-shadow: 0 0 2.6rem rgba(255, 215, 0, 0.7); }
+    70%  { transform: scale(1.04); }
+    100% { opacity: 1; transform: scale(1); text-shadow: 0 0 1.8rem rgba(255, 215, 0, 0.35); }
 }
 
 .rush-chrono-n {
@@ -58,8 +59,8 @@
 
 /* Les dix dernières secondes : le halo bat, sans clignoter */
 /* Le souffle des dix dernieres secondes porte sur le chiffre, pas sur le bloc :
-   celui-ci garde sa transformation pour le vol d entree, les deux se
-   marcheraient dessus. La jauge en anneau a disparu avec le SVG. */
+   celui-ci n a plus de transformation propre, mais garder les deux separes
+   evite qu un futur effet sur le bloc ecrase le souffle. */
 .rush-chrono.urgence .rush-chrono-n {
     color: #ff8a97;
     text-shadow: 0 0 2rem rgba(255, 90, 110, 0.5);
@@ -81,26 +82,21 @@
     gap: clamp(1rem, 4vw, 2.4rem);
 }
 
-/* Pendant l'entrée, le jeu attend en retrait : il apparaît une fois le chrono
-   posé dans son coin. */
+/* Le chrono paraît seul une seconde ; le jeu entre ensuite d'un bloc, sans
+   décalage entre ses éléments — c'est un mode nerveux, il démarre net. */
 .rush.en-entree .rush-rang,
 .rush.en-entree .rush-saisie,
 .rush.en-entree .rush-top {
     opacity: 0;
-    transform: translateY(0.9rem);
+    transform: scale(0.97);
     pointer-events: none;
 }
 
 .rush .rush-rang,
 .rush .rush-saisie,
 .rush .rush-top {
-    transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.2, 0.9, 0.25, 1);
+    transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.2, 0.9, 0.25, 1);
 }
-
-/* Chacun entre à son tour : le portrait, puis la saisie, puis le classement */
-.rush .rush-rang   { transition-delay: 0.05s; }
-.rush .rush-saisie { transition-delay: 0.16s; }
-.rush .rush-top    { transition-delay: 0.27s; }
 
 .rush-scene {
     display: grid;

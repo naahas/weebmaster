@@ -643,10 +643,10 @@
                     <div class="rush" v-if="rush.portrait || rush.fini"
                          :class="{ 'en-entree': rush.intro !== null }">
 
-                        <!-- Le chrono de la manche : rien qu'un nombre. Il naît au
-                             centre de l'écran puis rejoint son coin. -->
+                        <!-- Le chrono de la manche : rien qu'un nombre. Il paraît une
+                             seconde avant le reste, pour qu'on sache que ça démarre. -->
                         <div class="rush-chrono"
-                             :class="{ urgence: rush.reste <= 10, entree: rush.intro === 'centre' }">
+                             :class="{ urgence: rush.reste <= 10, parait: rush.intro === 'chrono' }">
                             <span class="rush-chrono-n">{{ rush.reste }}</span>
                         </div>
 
