@@ -7348,16 +7348,18 @@ body.game-active:has(.poll-game-container) #particles-js {
    changement de mode. Le flottement est coupé le temps du croisement, sans
    quoi il garderait la main sur transform.
    ============================================ */
-.v2-fade-enter-active,
+/* Un simple fondu, sans echelle : la mise a l echelle donnait l impression que
+   le personnage sortant grandissait avant de disparaitre. Le sortant part plus
+   vite que l entrant n arrive, pour qu ils ne se chevauchent pas longtemps. */
+.v2-fade-enter-active { transition: opacity 0.3s ease; }
+
 .v2-fade-leave-active {
-    animation: none;
-    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.2, 0.85, 0.3, 1);
+    transition: opacity 0.18s ease;
+    pointer-events: none;
 }
 
-.v2-fade-leave-active { pointer-events: none; }
-
-.v2-fade-enter-from { opacity: 0; transform: translateY(0.9rem) scale(0.97); }
-.v2-fade-leave-to   { opacity: 0; transform: translateY(-0.5rem) scale(0.99); }
+.v2-fade-enter-from,
+.v2-fade-leave-to { opacity: 0; }
 
 @keyframes v2CharFloat {
     0%, 100% { transform: translateY(0); }
@@ -7814,6 +7816,10 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-mode-preview.mode-classic .v2-mode-char {
     height: 135%;
     max-width: 78%;
+    /* Le cadrage carre laisse du vide de chaque cote : cale a droite, le
+       personnage se retrouvait quand meme au milieu, a mordre sur le texte.
+       Le panneau laisse deborder, on l en sort donc un peu. */
+    right: -10%;
 }
 
 .v2-mode-char.plain {
