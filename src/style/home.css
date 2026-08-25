@@ -7811,15 +7811,20 @@ body.game-active:has(.poll-game-container) #particles-js {
 
 /* Kenshin est cadre carre (2048x2048) la ou Lambo est en portrait : a
    « contain », c est donc sa largeur qui borne l echelle, et il rendait plus
-   petit sans jamais depasser. On lui laisse plus de large et plus de haut — il
-   grandit vers le haut, l image restant calee sur le bas du panneau. */
-.v2-mode-preview.mode-classic .v2-mode-char {
-    height: 135%;
-    max-width: 78%;
-    /* Le cadrage carre laisse du vide de chaque cote : cale a droite, le
-       personnage se retrouvait quand meme au milieu, a mordre sur le texte.
-       Le panneau laisse deborder, on l en sort donc un peu. */
-    right: -10%;
+   petit sans jamais depasser. Le cadrage carre laisse en outre du vide de
+   chaque cote, si bien qu une image calee a droite se retrouve au milieu.
+
+   La regle vise l image et non le panneau : la classe du parent bascule des
+   le changement de mode, et l image sortante perdait donc sa taille en plein
+   fondu — on la voyait retrecir vers le bas gauche avant de disparaitre.
+   Elle ne vaut que sur grand ecran, sinon elle ecraserait les reprises
+   mobiles, qui sont moins specifiques. */
+@media (min-width: 769px) {
+    .v2-mode-char.char-classic {
+        height: 135%;
+        max-width: 78%;
+        right: -10%;
+    }
 }
 
 .v2-mode-char.plain {

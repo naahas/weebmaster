@@ -176,7 +176,7 @@
                             <!-- type="transition" : sans lui, Vue mesure la plus longue
                                  durée trouvée sur l'image, soit les 7 s du flottement -->
                             <transition name="v2-fade" type="transition">
-                                <img class="v2-mode-char" :class="{ plain: currentMode.plain }" :key="currentMode.id"
+                                <img class="v2-mode-char" :class="['char-' + currentMode.id, { plain: currentMode.plain }]" :key="currentMode.id"
                                      :src="currentMode.img" :alt="currentMode.name" draggable="false">
                             </transition>
                             <div class="v2-mode-particles" aria-hidden="true">
