@@ -25,17 +25,8 @@ createApp({
                   desc: "Quiz QCM. Solo ou en deux camps, vies ou points, séries au choix." },
                 { id: 'bombanime', name: 'BombAnime', kind: 'Solo',   players: '15', img: 'lambo2.png',
                   desc: "La bombe tourne. Cite un perso avant qu'elle explose." },
-                // 🧪 Modes fictifs : uniquement pour juger la mise en page à l'échelle
-                { id: 'ascension', name: 'Ascension', kind: 'Solo',   players: '∞',  img: 'lambo2.png', soon: true,
-                  desc: "Grimpe la tour, un mini-jeu différent à chaque étage." },
-                { id: 'duel',      name: 'Duel',      kind: '1 v 1',  players: '2',  img: 'lambo2.png', soon: true,
-                  desc: "Face à face en une manche. Un seul survivant." },
-                { id: 'tournoi',   name: 'Tournoi',   kind: 'Bracket', players: '32', img: 'lambo2.png', soon: true,
-                  desc: "Élimination directe jusqu'à la finale." },
-                { id: 'blindtest', name: 'Blind test', kind: 'Solo',  players: '∞',  img: 'lambo2.png', soon: true,
-                  desc: "Reconnais l'opening en quelques secondes." },
-                { id: 'chrono',    name: 'Chrono',    kind: 'Solo',   players: '∞',  img: 'lambo2.png', soon: true,
-                  desc: "Le plus de bonnes réponses en soixante secondes." },
+                // Les modes a venir se rajoutent ici avec « soon: true » : le badge
+                // « bientot » et le bouton verrouille sont deja cables pour eux.
             ],
             selectedMode: localStorage.getItem('lastMode') || 'classic',
             hoverMode: null,   // survol temporaire ; le clic verrouille selectedMode
