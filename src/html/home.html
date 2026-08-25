@@ -1463,10 +1463,13 @@
             <div class="rush-fin-boite">
                 <span class="rush-fin-titre">Meilleures séries</span>
 
+                <!-- Les cinq places sont posées dès le départ, seule leur visibilité
+                     change : la boîte ne bouge donc jamais pendant la révélation. -->
                 <ol class="rush-fin-liste">
-                    <li v-for="(j, i) in gameEndData.classement" :key="j.playerId"
-                        :class="{ moi: j.playerId === playerId, premier: i === 0 }"
-                        :style="{ animationDelay: (i * 0.09) + 's' }">
+                    <li v-for="(j, i) in rushPlaces" :key="j.playerId"
+                        :class="{ moi: j.playerId === playerId, premier: i === 0,
+                                  vu: endStep >= rushEndSlot(i) }">
+                        <span class="rush-fin-sweep"></span>
                         <span class="rang">{{ i + 1 }}</span>
                         <span class="nom">{{ j.username }}</span>
                         <span class="detail">{{ j.trouves }} trouvé<span v-if="j.trouves > 1">s</span></span>
@@ -1474,7 +1477,13 @@
                     </li>
                 </ol>
 
-                <div class="rush-fin-actions">
+                <!-- Au-delà de la cinquième place on ne s'affiche plus : on le dit -->
+                <div class="rush-fin-moi" :class="{ vu: endStep > rushPlaces.length }"
+                     v-if="monRangRush > rushPlaces.length">
+                    Tu termines <b>{{ monRangRush }}<sup>e</sup></b>
+                </div>
+
+                <div class="rush-fin-actions" :class="{ vu: endStep > rushPlaces.length }">
                     <button class="winner-replay-btn" v-if="isHost" :disabled="rejouerBusy"
                             @click="hostRejouerRush">Rejouer</button>
                     <button class="winner-back-btn" @click="quitterRush">Retour</button>

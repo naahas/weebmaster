@@ -871,6 +871,19 @@ createApp({
             return this.podiumPlayers.slice(0, 6);
         },
 
+        // Rush : le classement peut compter trente joueurs, on n'en montre que cinq
+        rushPlaces() {
+            if (!this.gameEndData || this.gameEndData.gameMode !== 'rush') return [];
+            return (this.gameEndData.classement || []).slice(0, 5);
+        },
+
+        monRangRush() {
+            if (!this.gameEndData || this.gameEndData.gameMode !== 'rush') return 0;
+            const i = (this.gameEndData.classement || [])
+                .findIndex(j => j.playerId === this.playerId);
+            return i < 0 ? 0 : i + 1;
+        },
+
 
         // 🔥 REFONTE: Vérifie si au moins un bonus disponible
         hasUnusedBonuses() {
@@ -1364,8 +1377,43 @@ createApp({
             this._endT4 = setTimeout(() => { this.endStep = 4; }, 4200);
         },
 
-        celebrerVainqueur() {
-            const zone = document.querySelector('.v2-end');
+        // L'écran de fin diffère d'un mode à l'autre : la fête, elle, est la même
+        // ── Rush : la révélation du classement ──
+        // Elle monte de la dernière place vers la première, et le pas s'allonge
+        // à l'approche du podium : les places de queue défilent, le vainqueur
+        // se fait attendre. Le dernier pas découvre le rappel et les boutons.
+        startRushReveal() {
+            this.arreterRevealRush();
+            this.endStep = 0;
+            const n = this.rushPlaces.length;
+            // Classement vide (tout le monde est parti) : rien a devoiler, mais les
+            // boutons doivent rester atteignables.
+            if (!n) { this.endStep = 1; return; }
+
+            let t = 450;
+            for (let pas = 1; pas <= n; pas++) {
+                const place = n - pas + 1;
+                this._rushReveal.push(setTimeout(() => {
+                    this.endStep = pas;
+                    if (place === 1) this.$nextTick(() => this.celebrerVainqueur('.rush-fin'));
+                }, t));
+                t += place <= 3 ? 950 : 700;
+            }
+            this._rushReveal.push(setTimeout(() => { this.endStep = n + 1; }, t));
+        },
+
+        arreterRevealRush() {
+            (this._rushReveal || []).forEach(clearTimeout);
+            this._rushReveal = [];
+        },
+
+        // La place dévoilée au pas « n - i » : le dernier d'abord, le premier en dernier
+        rushEndSlot(i) {
+            return this.rushPlaces.length - i;
+        },
+
+        celebrerVainqueur(selecteur = '.v2-end') {
+            const zone = document.querySelector(selecteur);
             if (!zone) return;
 
             const eclat = document.createElement('span');
@@ -1885,6 +1933,8 @@ createApp({
         // Remet les écrans au salon sans toucher au salon lui-même
         revenirAuSalonRush() {
             this.arreterChronoRush();
+            this.arreterRevealRush();
+            this.endStep = 0;
             clearTimeout(this._rushIntroA);
             this.rush.intro = null;
             Object.assign(this.rush, {
@@ -2238,19 +2288,24 @@ createApp({
                 // Le classement final survit à un rafraîchissement : le serveur
                 // le garde tant que l'hôte n'a ni relancé ni refermé le salon.
                 if (state.showingWinner && state.winnerScreenData) {
-                    // Le quiz range ses joueurs dans « playersData », BombAnime
-                    // dans « ranking » : sans les deux, l'écran de victoire de la
-                    // bombe s'évaporait au rechargement.
-                    const finalistes = state.winnerScreenData.playersData
-                                    || state.winnerScreenData.ranking || [];
+                    // Chaque mode nomme sa liste autrement : le quiz « playersData »,
+                    // BombAnime « ranking », Rush « classement ». Sans les trois,
+                    // l'écran de victoire s'évaporait au rechargement.
+                    const fin = state.winnerScreenData;
+                    const finalistes = fin.playersData || fin.ranking || fin.classement || [];
                     const moi = this.isHost || finalistes
                         .some(p => p.playerId === this.playerId || p.username === this.username);
                     if (moi) {
                         this.gameEnded = true;
-                        this.gameEndData = state.winnerScreenData;
+                        this.gameEndData = fin;
                         this.gameInProgress = false;
                         this.gameStartedOnServer = false;
-                        this.$nextTick(() => this.startEndReveal());
+                        // Rush dévoile cinq places, le quiz trois : les deux
+                        // révélations ne comptent pas le même nombre de pas.
+                        this.$nextTick(() => {
+                            if (fin.gameMode === 'rush') this.startRushReveal();
+                            else this.startEndReveal();
+                        });
                     }
                 }
                 
@@ -3671,7 +3726,7 @@ createApp({
                 this.gameInProgress = false;
                 this.gameStartedOnServer = false;
                 this.gameEndData = data;
-                this.$nextTick(() => this.startEndReveal());
+                this.$nextTick(() => this.startRushReveal());
             });
 
             // La réponse à « rush-get-state » : on se replace où on en était

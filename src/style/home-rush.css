@@ -459,19 +459,39 @@
     list-style: none;
 }
 
+/* Chaque place attend son tour, mais occupe sa hauteur dès le départ : la
+   boîte garde la même taille du premier au dernier dévoilement. */
 .rush-fin-liste li {
+    position: relative;
     display: flex;
     align-items: baseline;
     gap: 0.7rem;
     padding: 0.7rem 0.2rem;
     border-bottom: 0.06rem solid rgba(255, 255, 255, 0.05);
-    /* Les places tombent une à une, du premier au dernier */
-    animation: rushRang 0.45s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+    opacity: 0;
+    transform: translateY(0.55rem);
+    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.2, 0.9, 0.25, 1);
 }
 
-@keyframes rushRang {
-    from { opacity: 0; transform: translateY(0.6rem); }
-    to   { opacity: 1; transform: none; }
+.rush-fin-liste li.vu { opacity: 1; transform: none; }
+
+/* Un trait de lumière balaie la ligne au moment où elle paraît */
+.rush-fin-sweep {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.09), transparent);
+    opacity: 0;
+}
+
+.rush-fin-liste li.vu .rush-fin-sweep {
+    animation: rushFinSweep 0.85s cubic-bezier(0.3, 0.8, 0.2, 1) 0.1s both;
+}
+
+@keyframes rushFinSweep {
+    0%   { opacity: 0; transform: translateX(-100%); }
+    30%  { opacity: 1; }
+    100% { opacity: 0; transform: translateX(100%); }
 }
 
 .rush-fin-liste .rang {
@@ -500,10 +520,35 @@
     font-variant-numeric: tabular-nums;
 }
 
+/* La première place, dévoilée en dernier, tombe plus lourdement que les autres */
+.rush-fin-liste li.premier { padding: 0.95rem 0.2rem; }
+.rush-fin-liste li.premier .rang { font-size: 1.7rem; text-shadow: 0 0 0.9rem rgba(255, 215, 0, 0.45); }
+.rush-fin-liste li.premier .record { font-size: 2.1rem; }
 .rush-fin-liste li.premier .rang,
 .rush-fin-liste li.premier .record { color: var(--neon-primary, #ffd700); }
-.rush-fin-liste li.premier .nom { color: #fff; }
+.rush-fin-liste li.premier .nom { color: #fff; font-size: 1.1rem; }
 .rush-fin-liste li.moi .nom { color: var(--neon-primary, #ffd700); }
+
+.rush-fin-liste li.premier.vu { animation: rushFinChoc 0.7s cubic-bezier(0.2, 1.4, 0.35, 1) both; }
+
+@keyframes rushFinChoc {
+    0%   { opacity: 0; transform: scale(0.9); }
+    60%  { opacity: 1; transform: scale(1.03); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.rush-fin-liste li.premier .rush-fin-sweep {
+    background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.3), transparent);
+}
+
+/* Au-delà du top 5 on ne se voit pas : ce rappel arrive avec les boutons */
+.rush-fin-moi {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.rush-fin-moi b { color: var(--neon-primary, #ffd700); font-weight: 700; }
+.rush-fin-moi sup { font-size: 0.6em; }
 
 .rush-fin-actions {
     display: flex;
@@ -511,4 +556,20 @@
     align-items: center;
     gap: 0.7rem;
     margin-top: 0.4rem;
+}
+
+/* Rien ne s'offre au clic tant que le classement n'est pas entièrement dit */
+.rush-fin-moi,
+.rush-fin-actions {
+    opacity: 0;
+    transform: translateY(0.5rem);
+    pointer-events: none;
+    transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+.rush-fin-moi.vu,
+.rush-fin-actions.vu {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
 }
