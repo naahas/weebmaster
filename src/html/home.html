@@ -680,23 +680,22 @@
                                 </div>
                             </div>
 
-                        <!-- La carte, et le minuteur dressé contre son flanc droit.
-                             Dans l'image, un fond clair l'avalait. -->
-                        <div class="rush-plateau">
-                            <div class="rush-scene">
-                                <transition name="rush-carte" mode="out-in">
-                                    <div class="rush-carte" :key="rush.portrait ? rush.portrait.img : 'fin'"
-                                         :class="{ juste: rush.flash === 'juste', passe: rush.flash === 'passe' }">
+                        <!-- Le portrait dans son cadre : un filet fin, et un bandeau
+                             en bas qui porte le minuteur du tour. Posé dans l'image,
+                             un fond clair l'avalait ; à droite, il distrayait. -->
+                        <div class="rush-scene">
+                            <transition name="rush-carte" mode="out-in">
+                                <div class="rush-carte" :key="rush.portrait ? rush.portrait.img : 'fin'"
+                                     :class="{ juste: rush.flash === 'juste', passe: rush.flash === 'passe' }">
+                                    <span class="rush-vitre">
                                         <img v-if="rush.portrait" :src="'/rushpic/' + rush.portrait.img" alt="" draggable="false">
-                                    </div>
-                                </transition>
-                            </div>
-
-                            <div class="rush-limite-rail" v-if="rush.limite">
-                                <span class="rush-limite" v-if="rush.portrait"
-                                      :key="'l' + rush.portrait.img"
-                                      :style="{ animationDuration: rush.limite + 's' }"></span>
-                            </div>
+                                    </span>
+                                    <span class="rush-cartouche"></span>
+                                    <span class="rush-limite-rail" v-if="rush.limite && rush.portrait">
+                                        <i class="rush-limite" :style="{ animationDuration: rush.limite + 's' }"></i>
+                                    </span>
+                                </div>
+                            </transition>
                         </div>
                         </div>
 

@@ -105,49 +105,69 @@
     transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.2, 0.9, 0.25, 1);
 }
 
-/* Les 308 portraits font tous 225 x 350. Une carte carrée les déformait ou
-   les bordait de noir : elle prend leur format, ils la remplissent alors
-   exactement, sans rognage ni bande. */
+/* Les 308 portraits font tous 225 x 350. La vitre prend ce format, le cadre
+   l'entoure d'un filet fin, et le bandeau du bas porte le minuteur du tour.
+   Toutes les tailles descendent de --carte-h : elle seule se règle. */
 .rush {
-    --carte-h: min(24rem, 46vh);
+    --carte-h: min(23rem, 44vh);
     --carte-l: calc(var(--carte-h) * 225 / 350);
+    --cadre: 0.4rem;        /* le filet, sur trois côtés */
+    --cartouche: 1.9rem;    /* le bandeau du bas */
 }
 
-.rush-plateau {
-    display: flex;
-    align-items: stretch;
-    gap: 0.85rem;
-}
-
+/* La scène garde la taille du cadre même pendant le remplacement d'un
+   portrait : sans elle, la page sauterait à chaque changement. */
 .rush-scene {
     display: grid;
     place-items: center;
-    width: var(--carte-l);
-    height: var(--carte-h);
+    width: calc(var(--carte-l) + var(--cadre) * 2);
+    height: calc(var(--carte-h) + var(--cadre) + var(--cartouche));
     flex: 0 0 auto;
 }
 
 .rush-carte {
+    --porte: 0 1.2rem 3rem rgba(0, 0, 0, 0.5);
+    --filet: inset 0 0 0 0.06rem rgba(255, 255, 255, 0.09);
     position: relative;
-    display: grid;
-    place-items: center;
     width: 100%;
     height: 100%;
-    border-radius: 1.1rem;
-    background: linear-gradient(165deg, rgba(26, 24, 20, 0.9), rgba(12, 12, 15, 0.9));
-    box-shadow: 0 1.4rem 3.4rem rgba(0, 0, 0, 0.55),
-                inset 0 0 0 0.06rem rgba(255, 255, 255, 0.07);
+    padding: var(--cadre) var(--cadre) var(--cartouche);
+    border-radius: 0.55rem;
+    background: #131217;
+    box-shadow: var(--porte), var(--filet);
+}
+
+/* La vitre rogne le portrait : sans elle, sa respiration déborderait sur le
+   cadre et viendrait recouvrir le bandeau. */
+.rush-vitre {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 0.28rem;
     overflow: hidden;
 }
 
 .rush-carte img {
+    display: block;
     width: 100%;
     height: 100%;
-    /* La carte ayant le format du fichier, « cover » ne rogne rien : il garantit
+    /* La vitre ayant le format du fichier, « cover » ne rogne rien : il garantit
        seulement qu'aucun demi-pixel d'arrondi ne laisse un liseré. */
     object-fit: cover;
     /* Le portrait respire : très lent, il ne distrait pas de la saisie */
     animation: rushFlotte 9s ease-in-out infinite;
+}
+
+/* Le bandeau, simple dégradé : il ne porte aucun texte, seulement le minuteur */
+.rush-cartouche {
+    position: absolute;
+    left: var(--cadre);
+    right: var(--cadre);
+    bottom: var(--cadre);
+    height: 1.15rem;
+    border-radius: 0.2rem;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent);
+    pointer-events: none;
 }
 
 @keyframes rushFlotte {
@@ -155,49 +175,54 @@
     50%      { transform: scale(1.025) translateY(-0.3rem); }
 }
 
-/* Le minuteur du portrait : un rail sous la carte, à sa largeur. Posé dans
-   l'image, il disparaissait dès que le bas de la photo était clair. */
+/* Le minuteur vit dans le bandeau : jamais sur la photo, dont le bas peut
+   être clair, et jamais à côté d'elle, où il tirait l'œil de travers. */
 .rush-limite-rail {
-    flex: 0 0 auto;
-    width: 0.26rem;
-    align-self: stretch;
+    position: absolute;
+    left: calc(var(--cadre) + 0.35rem);
+    right: calc(var(--cadre) + 0.35rem);
+    bottom: 0.88rem;
+    height: 0.18rem;
     border-radius: 2rem;
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.08);
     overflow: hidden;
+    pointer-events: none;
 }
 
-/* Elle se vide du haut vers le bas, comme un sablier */
 .rush-limite {
     display: block;
     width: 100%;
     height: 100%;
     border-radius: 2rem;
-    background: linear-gradient(180deg, var(--neon-primary, #ffd700), #ff8c00);
-    box-shadow: 0 0 0.6rem rgba(255, 190, 40, 0.5);
-    transform-origin: center top;
+    background: linear-gradient(90deg, #ff8c00, var(--neon-primary, #ffd700));
+    box-shadow: 0 0 0.5rem rgba(255, 190, 40, 0.55);
+    transform-origin: left center;
     animation-name: rushMeche;
     animation-timing-function: linear;
     animation-fill-mode: forwards;
 }
 
 @keyframes rushMeche {
-    from { transform: scaleY(1); }
-    to   { transform: scaleY(0); }
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(0); }
 }
 
 /* Les deux verdicts : un éclat vert quand ça passe, un repli quand on saute */
 .rush-carte.juste { animation: rushJuste 0.32s cubic-bezier(0.2, 0.9, 0.25, 1); }
 .rush-carte.passe { animation: rushPasse 0.32s ease; }
 
+/* Le filet du cadre s'allume : vert quand le nom tombe, rouge quand on passe.
+   Les images repartent de --porte et --filet, pour rester d'accord avec le
+   repos du cadre si sa profondeur change un jour. */
 @keyframes rushJuste {
-    0%   { box-shadow: 0 1.4rem 3.4rem rgba(0, 0, 0, 0.55), inset 0 0 0 0.06rem rgba(110, 231, 183, 0.9); }
-    40%  { box-shadow: 0 1.4rem 3.4rem rgba(0, 0, 0, 0.55), inset 0 0 0 0.22rem rgba(110, 231, 183, 0.75); }
-    100% { box-shadow: 0 1.4rem 3.4rem rgba(0, 0, 0, 0.55), inset 0 0 0 0.06rem rgba(255, 255, 255, 0.07); }
+    0%   { box-shadow: var(--porte), inset 0 0 0 0.06rem rgba(110, 231, 183, 0.9); }
+    40%  { box-shadow: var(--porte), inset 0 0 0 0.22rem rgba(110, 231, 183, 0.75); }
+    100% { box-shadow: var(--porte), var(--filet); }
 }
 
 @keyframes rushPasse {
-    0%   { box-shadow: 0 1.4rem 3.4rem rgba(0, 0, 0, 0.55), inset 0 0 0 0.06rem rgba(255, 90, 110, 0.85); }
-    100% { box-shadow: 0 1.4rem 3.4rem rgba(0, 0, 0, 0.55), inset 0 0 0 0.06rem rgba(255, 255, 255, 0.07); }
+    0%   { box-shadow: var(--porte), inset 0 0 0 0.06rem rgba(255, 90, 110, 0.85); }
+    100% { box-shadow: var(--porte), var(--filet); }
 }
 
 /* Le remplacement d'un portrait par le suivant */
@@ -265,7 +290,7 @@
     position: relative;
     display: flex;
     align-items: center;
-    width: calc(var(--carte-l) + 1.1rem);
+    width: calc(var(--carte-l) + var(--cadre) * 2);
     margin-top: 0.2rem;
 }
 
@@ -409,7 +434,7 @@
 /* ══════════ Téléphone ══════════ */
 @media (max-width: 600px) {
     .rush { gap: 0.7rem; padding: 4rem 0.8rem 1.4rem; }
-    .rush { --carte-h: 42vh; }
+    .rush { --carte-h: 40vh; }
     .rush-compteurs { gap: 2.4rem; }
     .rush-saisie { width: 78vw; }
     .rush-passer { left: auto; right: -3rem; }
