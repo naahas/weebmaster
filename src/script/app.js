@@ -21,7 +21,7 @@ createApp({
             modes: [
                 // `plain: true` = illustration sans fond transparent : elle est alors
                 // cadrée dans le panneau au lieu de flotter comme un personnage détouré.
-                { id: 'classic',   name: 'Classique', kind: 'Solo ou équipes', players: '∞',  img: 'lambo2.png',
+                { id: 'classic',   name: 'Classique', kind: 'Solo ou équipes', players: '∞',  img: 'kenshin.png',
                   desc: "Quiz QCM. Solo ou en deux camps, vies ou points, séries au choix." },
                 { id: 'bombanime', name: 'BombAnime', kind: 'Solo',   players: '15', img: 'lambo2.png',
                   desc: "La bombe tourne. Cite un perso avant qu'elle explose." },
