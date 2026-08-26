@@ -47,7 +47,7 @@ createApp({
                   desc: "Quiz QCM. Solo ou en deux camps, vies ou points, séries au choix." },
                 { id: 'rush',      name: 'Rush',      kind: 'Solo',   players: '∞',  img: 'tengen.png',
                   desc: "Un portrait, un nom. La plus longue serie gagne." },
-                { id: 'bombanime', name: 'BombAnime', kind: 'Solo',   players: '15', img: 'lambo2.png',
+                { id: 'bombanime', name: 'BombAnime', kind: 'Solo',   players: '15', img: 'lambo3.png',
                   desc: "La bombe tourne. Cite un perso avant qu'elle explose." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.
