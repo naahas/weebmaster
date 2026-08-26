@@ -7846,7 +7846,7 @@ body.game-active:has(.poll-game-container) #particles-js {
     /* Tengen est le plus elance : cale a droite comme les autres, il serrait
        le bord. On l ecarte, « right » se comptant depuis la droite du panneau. */
     .v2-mode-char.char-rush {
-        right: 7%;
+        right: 13%;
     }
 }
 
