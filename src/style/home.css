@@ -7827,13 +7827,13 @@ body.game-active:has(.poll-game-container) #particles-js {
     }
 
     /* Lambo est le plus trapu des trois (0,84 contre 1,00 et 0,57) : a hauteur
-       egale il reclame plus de largeur, sa borne mord donc en premier et il
-       paraissait plus grand que les deux autres. Les deux bornes baissent
-       ensemble pour qu il retrecisse quelle que soit celle qui l arrete.
+       egale il reclame plus de largeur, sa borne de largeur mord donc en
+       premier. Les deux bornes bougent ensemble, sans quoi le reglage n aurait
+       d effet que sur celle qui l arrete — laquelle depend de l image posee.
        Meme precaution que ci-dessus : la regle vise l image, pas le panneau. */
     .v2-mode-char.char-bombanime {
-        height: 108%;
-        max-width: 57%;
+        height: 114%;
+        max-width: 60%;
     }
 }
 
