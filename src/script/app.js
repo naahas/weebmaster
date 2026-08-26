@@ -442,6 +442,12 @@ createApp({
 
         // 📱 Listener resize pour le responsive
         window.addEventListener('resize', this.handleResize);
+
+        // Le panneau des réglages défile : les icônes d'aide, posées en absolu
+        // sur la fenêtre, doivent suivre. « capture » les attrape quel que soit
+        // l'élément qui défile, le panneau n'existant pas encore ici.
+        this._suivreInfos = () => this.placerInfosReglages();
+        window.addEventListener('scroll', this._suivreInfos, true);
         this.handleResize(); // Appel initial
 
     },
@@ -958,6 +964,7 @@ createApp({
             clearTimeout(this._crackTimer);
             this._crackTimer = setTimeout(() => this.updateBombanimeEffects(), 15);
         }
+        this.placerInfosReglages();
     },
 
     methods: {
@@ -5016,8 +5023,37 @@ createApp({
         },
         
         // 📱 Gestion du responsive
+        // ── Les « ! » d'aide, hors du panneau ──
+        // Le panneau des réglages et son corps coupent tous deux ce qui dépasse
+        // (« overflow: hidden » et « overflow-y: auto ») : rien ne peut en sortir
+        // par la droite. Seul « position: fixed » y échappe, aucun ancêtre ne
+        // portant de « transform » — mais il faut alors placer chaque icône à la
+        // main, en face de sa ligne. C'est le prix d'une icône réellement dehors.
+        placerInfosReglages() {
+            const icones = document.querySelectorAll('.v2-set-info');
+            if (!icones.length) return;
+
+            for (const icone of icones) {
+                const ligne = icone.closest('.v2-set');
+                if (!ligne) continue;
+                const r = ligne.getBoundingClientRect();
+                if (!r.height) continue;
+
+                // Le corps défile : une ligne sortie de sa zone ne doit pas
+                // laisser son icône flotter devant le reste de la page.
+                const corps = ligne.closest('.v2-settings-body');
+                const c = corps ? corps.getBoundingClientRect() : null;
+                const dedans = !c || (r.top >= c.top - 2 && r.bottom <= c.bottom + 2);
+
+                icone.style.visibility = dedans ? 'visible' : 'hidden';
+                icone.style.top = (r.top + r.height / 2) + 'px';
+                icone.style.left = (r.right + 12) + 'px';
+            }
+        },
+
         handleResize() {
             this.isMobile = window.innerWidth <= 768;
+            this.$nextTick(() => this.placerInfosReglages());
             // Fermer l'alphabet mobile si on passe en desktop
             if (!this.isMobile) {
                 this.isMobileAlphabetOpen = false;
