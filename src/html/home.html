@@ -493,14 +493,20 @@
                                 </div>
 
                                 <!-- Zéro retire la limite : le chrono global suffit alors -->
-                                <div class="v2-set">
+                                <div class="v2-set avec-info">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"/></svg>
-                                    <span class="v2-set-label">Par perso</span>
+                                    <span class="v2-set-label">Timer perso</span>
                                     <input class="v2-range" type="range" min="0" max="12" step="1"
                                            :value="rush.limite"
                                            @input="rush.limite = corrigerLimiteRush($event.target.value)"
                                            @change="applySetting('/admin/rush/set-limite', { limite: rush.limite }, () => {})">
-                                    <span class="v2-set-value num">{{ rush.limite ? rush.limite + 's' : '∞' }}</span>
+                                    <span class="v2-set-value num">{{ rush.limite ? rush.limite + 's' : 'Aucun' }}</span>
+                                    <span class="v2-set-info" tabindex="0">!
+                                        <span class="v2-set-bulle">Le temps laissé sur chaque portrait. Passé
+                                            ce délai la série casse et le suivant arrive. Tout à gauche, plus
+                                            aucune limite : on reste sur un portrait jusqu'au bout de la manche
+                                            si on veut, seul le chrono général y met fin.</span>
+                                    </span>
                                 </div>
 
                                 <div class="v2-set">
@@ -517,10 +523,16 @@
 
                                 <!-- Chacun avance à son rythme : avec une séquence commune, celui
                                      qui voit l'écran d'un autre découvre ses portraits en avance. -->
-                                <div class="v2-set">
+                                <div class="v2-set avec-info">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
                                     <span class="v2-set-label">Séquence</span>
                                     <span class="v2-set-value">{{ rush.sequencePartagee ? 'Commune' : 'Propre' }}</span>
+                                    <span class="v2-set-info" tabindex="0">!
+                                        <span class="v2-set-bulle"><b>Commune</b> : tout le monde reçoit les
+                                            mêmes portraits, dans le même ordre — à comparer, mais qui voit
+                                            l'écran d'un voisin devine ce qui l'attend.<br><b>Propre</b> :
+                                            chacun la sienne, tirée au hasard.</span>
+                                    </span>
                                     <span class="v2-set-opts">
                                         <button v-for="o in [{ v: true, t: 'Commune' }, { v: false, t: 'Propre' }]" :key="o.t"
                                                 class="v2-set-opt" :class="{ on: rush.sequencePartagee === o.v }"

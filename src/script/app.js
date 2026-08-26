@@ -1131,6 +1131,28 @@ createApp({
         },
 
         // L'hôte ouvre un salon dans le mode sélectionné, puis le rejoint.
+        // Les filtres viennent de « /game/state », que le client ne lit qu'au
+        // chargement de la page — donc avant que le salon existe, pour l'hôte qui
+        // vient de l'ouvrir. Sa liste restait vide et la ligne Filtre paraissait
+        // cassée. On les redemande une fois le code du salon connu.
+        async chargerReglagesRush() {
+            try {
+                const r = await this.fetchEtatSalon();
+                const etat = await r.json();
+                if (etat && etat.rush) {
+                    Object.assign(this.rush, {
+                        duree: etat.rush.duree,
+                        limite: etat.rush.limite,
+                        filtre: etat.rush.filtre,
+                        sequencePartagee: etat.rush.sequencePartagee,
+                        filtres: etat.rush.filtres || [],
+                    });
+                }
+            } catch (e) {
+                console.warn('⚠️ Réglages Rush non chargés :', e);
+            }
+        },
+
         // ── Mesure temporaire : le mot de passe du mode Classique ──
         validerMdp() {
             if (!this.mdpSalon.trim()) return;
@@ -1223,6 +1245,9 @@ createApp({
                 } else {
                     await this.fetchRoomCode();
                 }
+
+                // Le salon a un code : ses réglages sont enfin consultables
+                if (this.selectedMode === 'rush') await this.chargerReglagesRush();
 
                 // En Rivalité l'hôte choisit d'abord son camp dans le salon
                 if (this.selectedMode !== 'rivalry') {
