@@ -1265,6 +1265,26 @@ app.post('/admin/toggle-game', async (req, res) => {
         return res.json({ isActive: false });
     }
 
+    // ── Mesure temporaire ──
+    // Le mode Classique ne s'ouvre qu'avec le mot de passe de l'ancien panneau
+    // d'administration. Le contrôle vient AVANT creerRoom : un refus ne doit
+    // pas laisser derrière lui un salon fantôme que personne ne viendrait
+    // fermer. Pour lever la mesure, supprimer ce bloc et la demande côté
+    // client (« demandeMdp » dans app.js).
+    const modeDemande = (req.body && req.body.lobbyMode) || 'classic';
+    if (modeDemande === 'classic' || modeDemande === 'rivalry') {
+        const attendu = process.env.ADMIN_PASSWORD;
+        if (!attendu) {
+            // Faute de mot de passe configuré, on ferme plutôt que d'ouvrir :
+            // une variable oubliée au déploiement annulerait sinon la mesure
+            // sans que rien ne le signale.
+            return res.status(503).json({ error: 'Le mode Classique est momentanément fermé.' });
+        }
+        if (String((req.body && req.body.motDePasse) || '') !== attendu) {
+            return res.status(403).json({ error: 'Mot de passe incorrect.' });
+        }
+    }
+
     const gameState = creerRoom();
     if (!gameState) {
         return res.status(503).json({

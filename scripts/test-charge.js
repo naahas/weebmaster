@@ -5,6 +5,7 @@
 //   SALONS=25 JOUEURS=15 node scripts/test-charge.js
 const { io } = require('socket.io-client');
 const BASE = 'http://localhost:' + (process.env.TEST_PORT || process.env.PORT || 7000);
+const MDP = require("./mdp-hote");   // mesure temporaire : ouverture du mode Classique
 const SALONS = parseInt(process.env.SALONS, 10) || 15;
 const JOUEURS = parseInt(process.env.JOUEURS, 10) || 12;
 const QUESTIONS = parseInt(process.env.QUESTIONS, 10) || 3;
@@ -13,7 +14,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
 const post = (p, jeton, b) => fetch(BASE + p, {
     method: 'POST',
     headers: Object.assign({ 'Content-Type': 'application/json' }, jeton ? { 'X-Host-Token': jeton } : {}),
-    body: JSON.stringify(b || {}),
+    body: JSON.stringify(Object.assign({ motDePasse: MDP }, b || {})),
 }).then(r => r.json().catch(() => ({})));
 
 const pct = (t, p) => t.length ? t.slice().sort((a, b) => a - b)[Math.min(t.length - 1, Math.floor(t.length * p))] : 0;

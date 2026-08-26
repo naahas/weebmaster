@@ -120,7 +120,21 @@ veille du projet Supabase free tier.
 Facultatives : `MAX_CONNECTIONS_PER_IP` (100 par défaut — les opérateurs mobiles placent leurs
 abonnés derrière une même IP, un plafond bas couperait la moitié d'un public) et `MAX_ROOMS` (50).
 
-Les variables Twitch, `SESSION_SECRET`, `ADMIN_PASSWORD` et `MASTER_ADMIN_PASSWORD` ne servent plus.
+`ADMIN_PASSWORD` (l'ancien panneau d'administration) resservait : voir la mesure temporaire
+ci-dessous. Les variables Twitch, `SESSION_SECRET` et `MASTER_ADMIN_PASSWORD` ne servent plus.
+
+## ⏳ Mesure temporaire — le mode Classique est sous mot de passe
+
+Ouvrir un salon **Classique** exige `ADMIN_PASSWORD` ; Rush et BombAnime restent libres. Le
+contrôle est dans `/admin/toggle-game`, **avant `creerRoom()`** — un refus ne doit pas laisser
+de salon fantôme. Sans la variable, l'ouverture est refusée plutôt qu'autorisée : une variable
+oubliée au déploiement annulerait sinon la mesure en silence.
+
+Les suites ouvrent des salons Classique : elles lisent le mot de passe via `scripts/mdp-hote.js`.
+`test:hote` ouvre en Rush, son objet étant le jeton d'hôte et non cette mesure.
+
+Pour lever la mesure, trois endroits : le garde dans `/admin/toggle-game`, `demandeMdp` dans
+`app.js` (+ le voile `v2-mdp-*` dans `home.html` et `home.css`), et `scripts/mdp-hote.js`.
 
 ## Conventions du code
 

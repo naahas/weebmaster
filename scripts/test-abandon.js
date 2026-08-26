@@ -6,13 +6,14 @@
 //   GRACE_SALON_VIDE=3000 node server.js
 const { io } = require('socket.io-client');
 const BASE = 'http://localhost:' + (process.env.TEST_PORT || process.env.PORT || 7000);
+const MDP = require("./mdp-hote");   // mesure temporaire : ouverture du mode Classique
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
 const GRACE = parseInt(process.env.GRACE_SALON_VIDE, 10) || 10 * 60 * 1000;
 
 const post = (p, jeton, b) => fetch(BASE + p, {
     method: 'POST',
     headers: Object.assign({ 'Content-Type': 'application/json' }, jeton ? { 'X-Host-Token': jeton } : {}),
-    body: JSON.stringify(b || {}),
+    body: JSON.stringify(Object.assign({ motDePasse: MDP }, b || {})),
 }).then(r => r.json().then(j => ({ status: r.status, body: j })));
 
 const etat = (code) => fetch(BASE + '/game/state?code=' + code).then(r => r.json());

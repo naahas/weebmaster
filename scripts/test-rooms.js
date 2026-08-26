@@ -2,12 +2,13 @@
 // Vérifie qu'ils ne se voient pas, ne s'entendent pas, et ne se pilotent pas.
 const { io } = require('socket.io-client');
 const BASE = 'http://localhost:' + (process.env.TEST_PORT || process.env.PORT || 7000);
+const MDP = require("./mdp-hote");   // mesure temporaire : ouverture du mode Classique
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
 const post = (p, jeton, b) => fetch(BASE + p, {
     method: 'POST',
     headers: Object.assign({ 'Content-Type': 'application/json' }, jeton ? { 'X-Host-Token': jeton } : {}),
-    body: JSON.stringify(b || {}),
+    body: JSON.stringify(Object.assign({ motDePasse: MDP }, b || {})),
 }).then(r => r.json().then(j => ({ status: r.status, body: j })));
 
 const etat = (code) => fetch(BASE + '/game/state?code=' + code).then(r => r.json());

@@ -3,13 +3,14 @@
 const PLAFOND = 15;
 const { io } = require('socket.io-client');
 const BASE = 'http://localhost:' + (process.env.TEST_PORT || process.env.PORT || 7000);
+const MDP = require("./mdp-hote");   // mesure temporaire : ouverture du mode Classique
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
 let jeton = '', code = '';
 const post = (p, b) => fetch(BASE + p, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Host-Token': jeton },
-    body: JSON.stringify(b || {}),
+    body: JSON.stringify(Object.assign({ motDePasse: MDP }, b || {})),
 }).then(r => r.json().then(j => {
     if (j.hostToken) jeton = j.hostToken;
     if (j.roomCode) code = j.roomCode;

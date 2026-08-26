@@ -11797,3 +11797,85 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 }
 
 .v2-set-porte:hover .v2-set-fleche { transform: translateX(0.15rem); color: var(--neon-primary); }
+
+/* ════════════════════════════════════════════════════════════
+   MESURE TEMPORAIRE — mot de passe du mode Classique
+   Tout est regroupé ici pour qu'un seul bloc parte le jour où
+   la mesure est levée.
+   ════════════════════════════════════════════════════════════ */
+.v2-mdp-voile {
+    position: fixed;
+    inset: 0;
+    z-index: 120;
+    display: grid;
+    place-items: center;
+    padding: 1.2rem;
+    background: rgba(6, 6, 9, 0.82);
+    backdrop-filter: blur(0.35rem);
+    animation: v2MdpParait 0.22s ease both;
+}
+
+@keyframes v2MdpParait {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.v2-mdp-boite {
+    background: rgba(255, 255, 255, 0.04);
+    animation: v2MdpMonte 0.28s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+
+@keyframes v2MdpMonte {
+    from { opacity: 0; transform: translateY(0.7rem) scale(0.98); }
+    to   { opacity: 1; transform: none; }
+}
+
+.v2-mdp-boite.ko { animation: v2MdpSecoue 0.4s ease; }
+
+@keyframes v2MdpSecoue {
+    0%, 100% { transform: translateX(0); }
+    20%      { transform: translateX(-0.5rem); }
+    45%      { transform: translateX(0.45rem); }
+    70%      { transform: translateX(-0.25rem); }
+}
+
+.v2-mdp-note {
+    margin: -0.35rem 0 0.2rem;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.42);
+}
+
+.v2-mdp-input {
+    width: 100%;
+    padding: 0.85rem 0.9rem;
+    font-family: 'Space Grotesk', monospace;
+    font-size: 1.15rem;
+    letter-spacing: 0.28em;
+    text-align: center;
+    color: rgba(255, 250, 235, 0.96);
+    background: rgba(255, 255, 255, 0.045);
+    border: 0.09rem solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    outline: none;
+    transition: border-color 0.25s ease, background 0.25s ease;
+}
+
+.v2-mdp-input:focus {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 215, 0, 0.45);
+}
+
+.v2-mdp-annuler {
+    padding: 0.3rem 0.6rem;
+    font: inherit;
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.38);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.v2-mdp-annuler:hover { color: rgba(255, 255, 255, 0.7); }

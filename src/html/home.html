@@ -1439,6 +1439,34 @@
         </div>
 
 
+        <!-- ============================================
+             MESURE TEMPORAIRE — mot de passe du mode Classique
+             Posé à la racine : un ancêtre porteur d'un « transform » créerait
+             un bloc conteneur et casserait le « position: fixed » du voile.
+             Pour lever la mesure : supprimer ce bloc, le garde dans
+             /admin/toggle-game et « demandeMdp » dans app.js.
+             ============================================ -->
+        <div class="v2-mdp-voile" v-if="demandeMdp" @click.self="annulerMdp">
+            <div class="v2-join-box v2-mdp-boite" :class="{ ko: mdpShake }">
+                <span class="v2-join-label">Mot de passe</span>
+                <p class="v2-mdp-note">Le mode Classique est momentanément réservé.</p>
+                <input
+                    type="password"
+                    class="v2-mdp-input"
+                    ref="mdpInput"
+                    v-model="mdpSalon"
+                    @input="mdpErreur = ''"
+                    @keyup.enter="validerMdp"
+                    placeholder="••••••••"
+                    autocomplete="off"
+                    spellcheck="false">
+                <button class="v2-btn v2-btn-primary v2-btn-lg" :disabled="!mdpSalon.trim() || creatingRoom"
+                        @click="validerMdp">{{ creatingRoom ? 'Ouverture…' : 'Ouvrir le salon' }}</button>
+                <button class="v2-mdp-annuler" @click="annulerMdp">Annuler</button>
+                <p class="v2-join-err" :class="{ vu: mdpErreur }">{{ mdpErreur }}</p>
+            </div>
+        </div>
+
         <!-- 🆕 Bouton Instagram (visible uniquement avant connexion) -->
         <a href="https://www.instagram.com/naahas__" target="_blank" class="instagram-btn"
             v-if="!isAuthenticated && !gameInProgress">

@@ -27,7 +27,9 @@ const avecJeton = (p, jeton, b) => fetch(BASE + p, {
     const check = (l, ok, extra) => { console.log(`${ok ? '✅' : '❌'} ${l}${extra ? ' → ' + extra : ''}`); if (!ok) ko++; };
 
     // ── Ouvrir reste libre : c'est ce qui crée le jeton ──
-    const ouverture = await sansJeton('/admin/toggle-game', { lobbyMode: 'classic' });
+    // En Rush, car le mode Classique est momentanément sous mot de passe :
+    // ce test-ci porte sur le jeton d'hôte, pas sur cette mesure.
+    const ouverture = await sansJeton('/admin/toggle-game', { lobbyMode: 'rush' });
     check("l'ouverture d'un salon reste accessible", ouverture.body.isActive === true);
     const jeton = ouverture.body.hostToken;
     roomCode = ouverture.body.roomCode;

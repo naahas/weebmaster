@@ -53,6 +53,12 @@ createApp({
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.
             ],
+            // Mesure temporaire : le mode Classique demande un mot de passe.
+            // Gardé en mémoire seulement — un rechargement le redemande.
+            demandeMdp: false,
+            mdpSalon: '',
+            mdpErreur: '',
+            mdpShake: false,
             selectedMode: localStorage.getItem('lastMode') || 'classic',
             hoverMode: null,   // survol temporaire ; le clic verrouille selectedMode
             showSettings: true,
@@ -872,6 +878,12 @@ createApp({
             return this.podiumPlayers.slice(0, 6);
         },
 
+        // Mesure temporaire : seul le quiz est fermé. « rivalry » ne s'ouvre
+        // jamais directement — c'est un réglage pris depuis un salon Classique.
+        modeSousMotDePasse() {
+            return this.currentMode.id === 'classic';
+        },
+
         // Rush : le classement peut compter trente joueurs, on n'en montre que cinq
         rushPlaces() {
             if (!this.gameEndData || this.gameEndData.gameMode !== 'rush') return [];
@@ -1119,9 +1131,34 @@ createApp({
         },
 
         // L'hôte ouvre un salon dans le mode sélectionné, puis le rejoint.
+        // ── Mesure temporaire : le mot de passe du mode Classique ──
+        validerMdp() {
+            if (!this.mdpSalon.trim()) return;
+            this.demandeMdp = false;
+            this.createRoom();
+        },
+
+        annulerMdp() {
+            this.demandeMdp = false;
+            this.mdpSalon = '';
+            this.mdpErreur = '';
+        },
+
         async createRoom() {
             if (this.currentMode.soon) {
                 this.createError = 'Ce mode arrive bientôt';
+                return;
+            }
+
+            // Mesure temporaire : sans le mot de passe, le serveur refuserait.
+            // Autant le demander ici plutôt que d'aller chercher un 403.
+            if (this.modeSousMotDePasse && !this.mdpSalon) {
+                this.mdpErreur = '';
+                this.demandeMdp = true;
+                this.$nextTick(() => {
+                    const c = this.$refs.mdpInput;
+                    if (c) c.focus();
+                });
                 return;
             }
 
@@ -1140,14 +1177,34 @@ createApp({
                 const res = await fetch('/admin/toggle-game', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ lobbyMode: this.selectedMode }),
+                    body: JSON.stringify({
+                        lobbyMode: this.selectedMode,
+                        motDePasse: this.mdpSalon || undefined,
+                    }),
                 });
                 const data = await res.json();
+
+                // Refus du mot de passe : on rouvre la demande plutôt que
+                // d'afficher une erreur générique sous le bouton.
+                if (res.status === 403 || (res.status === 503 && this.modeSousMotDePasse)) {
+                    this.mdpSalon = '';
+                    this.mdpErreur = data.error || 'Ouverture refusée.';
+                    this.demandeMdp = true;
+                    this.mdpShake = true;
+                    setTimeout(() => { this.mdpShake = false; }, 420);
+                    this.$nextTick(() => {
+                        const c = this.$refs.mdpInput;
+                        if (c) c.focus();
+                    });
+                    return;
+                }
 
                 if (!data.isActive) {
                     this.createError = "Le salon n'a pas pu être ouvert.";
                     return;
                 }
+
+                this.demandeMdp = false;
 
                 this.hostToken = data.hostToken || '';
                 localStorage.setItem('hostToken', this.hostToken);
