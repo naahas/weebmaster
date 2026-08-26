@@ -43,7 +43,7 @@ createApp({
             modes: [
                 // `plain: true` = illustration sans fond transparent : elle est alors
                 // cadrée dans le panneau au lieu de flotter comme un personnage détouré.
-                { id: 'classic',   name: 'Classique', kind: 'Solo ou équipes', players: '∞',  img: 'kenshin.png',
+                { id: 'classic',   name: 'Classique', kind: 'Solo ou équipes', players: '∞',  img: 'kenshin2.png',
                   desc: "Quiz QCM. Solo ou en deux camps, vies ou points, séries au choix." },
                 { id: 'rush',      name: 'Rush',      kind: 'Solo',   players: '∞',  img: 'tengen.png',
                   desc: "Un portrait, un nom. La plus longue serie gagne." },
