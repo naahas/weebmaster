@@ -4099,9 +4099,15 @@ app.get('/question', (req, res) => {
 // salon de jeu, que le back-office n'a jamais. Personne ne pouvait donc les
 // relire autrement qu'en ouvrant Supabase.
 // ============================================
+// ⚠️ Deux absences sont égales : `undefined === undefined`. Une comparaison
+// nue laissait donc passer toute requête sans code dès que la variable
+// n'était pas configurée — ce qui était le cas de MASTER_ADMIN_CODE, jamais
+// définie nulle part. D'où les deux gardes avant la comparaison : le code
+// attendu doit exister, et celui présenté doit être une chaîne non vide.
 const codeBackOffice = (req, res) => {
-    const code = req.body?.adminCode || req.query?.adminCode;
-    if (code !== process.env.QUESTION_ADMIN_CODE) {
+    const attendu = process.env.QUESTION_ADMIN_CODE;
+    const code = (req.body && req.body.adminCode) || (req.query && req.query.adminCode);
+    if (!attendu || typeof code !== 'string' || !code || code !== attendu) {
         res.status(401).json({ error: 'Code invalide' });
         return false;
     }
@@ -4150,12 +4156,9 @@ app.post('/api/delete-suggestion', async (req, res) => {
 app.post('/api/add-question', async (req, res) => {
     // Le corpus change : la banque en mémoire doit être relue
     invaliderBanque();
-    const { adminCode, question, answers, correctAnswer, serie, difficulty, proof_url, is_spoil } = req.body;
+    const { question, answers, correctAnswer, serie, difficulty, proof_url, is_spoil } = req.body;
 
-    // Vérifier le code (spécifique OU master)
-    if (adminCode !== process.env.QUESTION_ADMIN_CODE || adminCode === process.env.MASTER_ADMIN_CODE) {
-        return res.status(401).json({ error: 'Code invalide' });
-    }
+    if (!codeBackOffice(req, res)) return;
 
     try {
         const { data, error } = await supabase
@@ -4189,12 +4192,10 @@ app.post('/api/add-question', async (req, res) => {
 app.post('/api/update-question', async (req, res) => {
     // Le corpus change : la banque en mémoire doit être relue
     invaliderBanque();
-    const { adminCode, id, question, answers, correctAnswer, serie, difficulty, proof_url, is_spoil } = req.body;
+    const { id, question, answers, correctAnswer, serie, difficulty, proof_url, is_spoil } = req.body;
 
     // Vérifier le code
-    if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
-        return res.status(401).json({ error: 'Code invalide' });
-    }
+    if (!codeBackOffice(req, res)) return;
 
     try {
         const { data, error } = await supabase
@@ -4229,12 +4230,9 @@ app.post('/api/update-question', async (req, res) => {
 app.post('/api/delete-question', async (req, res) => {
     // Le corpus change : la banque en mémoire doit être relue
     invaliderBanque();
-    const { adminCode, id } = req.body;
+    const { id } = req.body;
 
-    // Vérifier le code
-    if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
-        return res.status(401).json({ error: 'Code invalide' });
-    }
+    if (!codeBackOffice(req, res)) return;
 
     try {
         const { data, error } = await supabase
@@ -4253,12 +4251,8 @@ app.post('/api/delete-question', async (req, res) => {
 
 // Récupérer toutes les questions (avec filtre optionnel)
 app.get('/api/questions', async (req, res) => {
-    const { adminCode } = req.query;
 
-    // Vérifier le code
-    if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
-        return res.status(401).json({ error: 'Code invalide' });
-    }
+    if (!codeBackOffice(req, res)) return;
 
     try {
         const { data, error } = await supabase
@@ -4277,11 +4271,7 @@ app.get('/api/questions', async (req, res) => {
 
 // Récupérer la liste des séries uniques
 app.get('/api/series', async (req, res) => {
-    const { adminCode } = req.query;
-
-    if (adminCode !== process.env.QUESTION_ADMIN_CODE && adminCode !== process.env.MASTER_ADMIN_CODE) {
-        return res.status(401).json({ error: 'Code invalide' });
-    }
+    if (!codeBackOffice(req, res)) return;
 
     try {
         const { data, error } = await supabase
@@ -4301,10 +4291,13 @@ app.get('/api/series', async (req, res) => {
 });
 
 
+// Le portail du back-office. Même règle que codeBackOffice, mais le champ
+// s'appelle « code » ici : on ne compare qu'entre chaînes non vides.
 app.post('/api/verify-question-code', (req, res) => {
-    const { code } = req.body;
+    const attendu = process.env.QUESTION_ADMIN_CODE;
+    const code = req.body && req.body.code;
 
-    if (code === process.env.QUESTION_ADMIN_CODE || code === process.env.MASTER_ADMIN_CODE) {
+    if (attendu && typeof code === 'string' && code && code === attendu) {
         res.json({ success: true });
     } else {
         res.status(401).json({ success: false });
