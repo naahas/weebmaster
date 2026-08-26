@@ -167,6 +167,19 @@ const persoParImage = (img) => data.personnages.find(p => p.img === img);
         dernierClassement && dernierClassement.classement[0].playerId === 'r1',
         dernierClassement ? dernierClassement.classement.map(c => c.username + ':' + c.record).join(' ') : '');
 
+    // ── Un partant garde sa place au classement ──
+    // Le pseudo est copie dans l etat Rush a l ouverture de la manche : sans
+    // lui, un joueur absent de la liste des presents ressortait en « ? ».
+    b.s.disconnect();
+    await wait(600);
+    a.s.emit('rush-passer');
+    await wait(500);
+    const apresDepart = a.vu.classements[a.vu.classements.length - 1];
+    const partant = apresDepart && apresDepart.classement.find(c => c.playerId === 'r2');
+    check('un joueur parti reste au classement, avec son pseudo',
+        partant && partant.username === 'Deux',
+        partant ? partant.username : 'absent du classement');
+
     // ── La fin de manche ──
     console.log('   (on attend la fin des 30 s…)');
     for (let i = 0; i < 80 && a.vu.fins.length === 0; i++) await wait(500);

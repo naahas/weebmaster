@@ -116,7 +116,9 @@ const RUSH_FILTRES = RUSH_DATA.filtres;
 
 const RUSH_CONFIG = {
     MIN_PLAYERS: 1,             // jouable seul : c'est une course contre soi
-    MAX_PLAYERS: 30,
+    // Pas de plafond : le mode est solo-simultane, personne n attend son tour.
+    // La constante MAX_PLAYERS vivait ici sans etre lue nulle part — elle
+    // laissait croire a une limite de trente qui n a jamais ete appliquee.
     DUREES: [30, 60, 90],       // durée de la manche, en secondes
     DUREE_DEFAUT: 60,
     PERSO_DEFAUT: 8,            // secondes par personnage, 0 = sans limite
@@ -5165,7 +5167,9 @@ function rushClassement(gameState) {
             const joueur = [...gameState.players.values()].find(p => p.playerId === playerId);
             return {
                 playerId,
-                username: joueur ? joueur.username : '?',
+                // Le present d abord — il peut avoir change de pseudo —, sinon
+                // celui retenu au depart. Un partant garde donc sa place et son nom.
+                username: (joueur && joueur.username) || e.username || 'Joueur',
                 record: e.record,
                 serie: e.serie,
                 trouves: e.trouves,
@@ -5248,6 +5252,9 @@ function demarrerRush(gameState) {
 
     for (const joueur of joueurs) {
         gameState.rush.joueurs.set(joueur.playerId, {
+            // Le pseudo est copie ici : un joueur qui part reste au classement
+            // avec son nom, alors que la liste des presents l a deja oublie.
+            username: joueur.username,
             curseur: 0, serie: 0, record: 0, trouves: 0, rates: 0, limiteA: null,
         });
         if (!gameState.rush.sequencePartagee) {
