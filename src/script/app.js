@@ -46,10 +46,10 @@ createApp({
                 // cadrée dans le panneau au lieu de flotter comme un personnage détouré.
                 { id: 'classic',   name: 'Classique', kind: 'Solo ou équipes', players: '∞',  img: 'kenshin2.png',
                   desc: "Quiz QCM. Solo ou en deux camps, vies ou points, séries au choix." },
-                { id: 'rush',      name: 'Rush',      kind: 'Solo',   players: '∞',  img: 'tengen2.png',
-                  desc: "Un portrait, un nom. La plus longue serie gagne." },
                 { id: 'bombanime', name: 'BombAnime', kind: 'Solo',   players: '15', img: 'lambo3.png',
                   desc: "La bombe tourne. Cite un perso avant qu'elle explose." },
+                { id: 'rush',      name: 'Rush',      kind: 'Solo',   players: '∞',  img: 'tengen2.png',
+                  desc: "Un portrait, un nom. La plus longue serie gagne." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.
             ],
