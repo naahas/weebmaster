@@ -964,7 +964,7 @@ createApp({
             clearTimeout(this._crackTimer);
             this._crackTimer = setTimeout(() => this.updateBombanimeEffects(), 15);
         }
-        this.placerInfosReglages();
+        this.suivreInfosReglages();
     },
 
     methods: {
@@ -5029,12 +5029,31 @@ createApp({
         // par la droite. Seul « position: fixed » y échappe, aucun ancêtre ne
         // portant de « transform » — mais il faut alors placer chaque icône à la
         // main, en face de sa ligne. C'est le prix d'une icône réellement dehors.
+        // Le panneau s'ouvre en s'animant : mesuré une seule fois, on obtient
+        // la position d'avant l'animation et les icônes restent en arrière. On
+        // suit donc le mouvement pendant une demi-seconde après chaque rendu.
+        suivreInfosReglages() {
+            if (this._suiviInfos) return;
+            const jusqua = 30;                    // ~0,5 s à 60 images par seconde
+            let n = 0;
+            const pas = () => {
+                this.placerInfosReglages();
+                if (++n < jusqua) {
+                    this._suiviInfos = requestAnimationFrame(pas);
+                } else {
+                    this._suiviInfos = null;
+                }
+            };
+            this._suiviInfos = requestAnimationFrame(pas);
+        },
+
         placerInfosReglages() {
-            const icones = document.querySelectorAll('.v2-set-info');
+            const icones = document.querySelectorAll('.v2-set-info[data-pour]');
             if (!icones.length) return;
 
             for (const icone of icones) {
-                const ligne = icone.closest('.v2-set');
+                const ligne = document.querySelector(
+                    '.v2-set[data-info="' + icone.dataset.pour + '"]');
                 if (!ligne) continue;
                 const r = ligne.getBoundingClientRect();
                 if (!r.height) continue;
@@ -5053,7 +5072,7 @@ createApp({
 
         handleResize() {
             this.isMobile = window.innerWidth <= 768;
-            this.$nextTick(() => this.placerInfosReglages());
+            this.$nextTick(() => this.suivreInfosReglages());
             // Fermer l'alphabet mobile si on passe en desktop
             if (!this.isMobile) {
                 this.isMobileAlphabetOpen = false;
