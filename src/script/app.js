@@ -442,12 +442,6 @@ createApp({
 
         // 📱 Listener resize pour le responsive
         window.addEventListener('resize', this.handleResize);
-
-        // Le panneau des réglages défile : les icônes d'aide, posées en absolu
-        // sur la fenêtre, doivent suivre. « capture » les attrape quel que soit
-        // l'élément qui défile, le panneau n'existant pas encore ici.
-        this._suivreInfos = () => this.placerInfosReglages();
-        window.addEventListener('scroll', this._suivreInfos, true);
         this.handleResize(); // Appel initial
 
     },
@@ -5029,27 +5023,27 @@ createApp({
         // par la droite. Seul « position: fixed » y échappe, aucun ancêtre ne
         // portant de « transform » — mais il faut alors placer chaque icône à la
         // main, en face de sa ligne. C'est le prix d'une icône réellement dehors.
-        // Le panneau s'ouvre en s'animant : mesuré une seule fois, on obtient
-        // la position d'avant l'animation et les icônes restent en arrière. On
-        // suit donc le mouvement pendant une demi-seconde après chaque rendu.
+        // Les icônes sont posées sur la fenêtre, la ligne qu'elles désignent vit
+        // dans la page : tout ce qui déplace l'une sans l'autre les décale —
+        // l'ouverture animée du panneau, un défilement, une police qui finit de
+        // charger, un redimensionnement. Plutôt que de rattraper chaque cas, on
+        // les recale à chaque image tant qu'elles sont à l'écran. Deux mesures
+        // par image sur un écran d'attente ne coûtent rien.
         suivreInfosReglages() {
             if (this._suiviInfos) return;
-            const jusqua = 30;                    // ~0,5 s à 60 images par seconde
-            let n = 0;
             const pas = () => {
-                this.placerInfosReglages();
-                if (++n < jusqua) {
-                    this._suiviInfos = requestAnimationFrame(pas);
-                } else {
+                if (!this.placerInfosReglages()) {   // plus d'icône : on s'arrête
                     this._suiviInfos = null;
+                    return;
                 }
+                this._suiviInfos = requestAnimationFrame(pas);
             };
             this._suiviInfos = requestAnimationFrame(pas);
         },
 
         placerInfosReglages() {
             const icones = document.querySelectorAll('.v2-set-info[data-pour]');
-            if (!icones.length) return;
+            if (!icones.length) return false;
 
             for (const icone of icones) {
                 const ligne = document.querySelector(
@@ -5068,6 +5062,7 @@ createApp({
                 icone.style.top = (r.top + r.height / 2) + 'px';
                 icone.style.left = (r.right + 12) + 'px';
             }
+            return true;
         },
 
         handleResize() {
