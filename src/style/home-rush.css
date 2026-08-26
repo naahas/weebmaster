@@ -442,8 +442,8 @@
            juste au-dessus du milieu, sans coller aux éléments fixés au coin.
            « auto » reste le filet si le clavier virtuel mange la saisie. */
         justify-content: center;
-        gap: 1.6rem;
-        padding: 4.6rem 0.8rem 8rem;
+        gap: 4.1rem;
+        padding: 4.6rem 0.8rem 5.5rem;
         overflow-y: auto;
     }
 
@@ -461,10 +461,11 @@
     /* Cinq places mangeaient le tiers de l'écran : on n'en montre que trois */
     .rush-top { top: 0.7rem; left: 0.7rem; max-width: 45vw; }
     .rush-top li:nth-child(n + 4) { display: none; }
-    .rush-top li { font-size: 0.74rem; gap: 0.5rem; }
-    .rush-top li + li { margin-top: 0.45rem; padding-top: 0.45rem; }
-    .rush-top .n { max-width: 4.6rem; }
-    .rush-top .s { font-size: 1.05rem; }
+    .rush-top li { font-size: 0.67rem; gap: 0.45rem; }
+    .rush-top li + li { margin-top: 0.4rem; padding-top: 0.4rem; }
+    .rush-top .r { font-size: 0.6rem; }
+    .rush-top .n { max-width: 4.2rem; }
+    .rush-top .s { font-size: 0.92rem; }
 
     .rush-chrono { --chrono-haut: 1.35rem; --chrono-droite: 1.7rem; }
     .rush-chrono-n { font-size: 2.05rem; }
@@ -489,7 +490,7 @@
    hauteur, et le classement se limite a deux places pour ne pas mordre
    dessus. */
 @media (max-width: 600px) and (max-height: 700px) {
-    .rush { --carte-h: 26vh; padding: 3.6rem 0.8rem 6rem; gap: 1.15rem; }
+    .rush { --carte-h: 26vh; padding: 3.6rem 0.8rem 4rem; gap: 3.2rem; }
     .rush-rang { gap: 1.15rem; }
     .rush-top { top: 0.6rem; }
     .rush-top li:nth-child(n + 3) { display: none; }
