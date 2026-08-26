@@ -145,6 +145,12 @@ const persoParImage = (img) => data.personnages.find(p => p.img === img);
     check('apres un F5, le portrait et le record sont les memes',
         repriseF5 && repriseF5.portrait && repriseF5.record === apresPasse.record,
         repriseF5 && repriseF5.portrait ? repriseF5.portrait.img + ', record ' + repriseF5.record : '');
+    // Le compte a rebours du portrait ne doit pas repartir de zero : sinon un
+    // rafraichissement bien place rallongeait un portrait difficile.
+    const restant = repriseF5 && repriseF5.limiteA ? repriseF5.limiteA - Date.now() : null;
+    check('apres un F5, la limite du portrait reprend ou elle en etait',
+        restant !== null && restant > 0 && restant < 9500,
+        restant === null ? 'aucune echeance transmise' : Math.round(restant) + ' ms restants sur 10000');
     a.s = neuve;
     a.s.on('rush-portrait', (x) => a.vu.portraits.push(x));
     a.s.on('rush-classement', (x) => a.vu.classements.push(x));

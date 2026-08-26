@@ -5186,11 +5186,18 @@ function rushVersJoueur(gameState, playerId, evt, payload) {
 }
 
 // La limite par portrait : depasse, la serie casse et on avance.
+// L echeance est retenue en clair, et pas seulement dans le setTimeout : un
+// joueur qui recharge doit retrouver le temps qu il lui restait.
 function rushArmerLimite(gameState, playerId) {
     const ancien = gameState.rush.timeoutsPerso.get(playerId);
     if (ancien) clearTimeout(ancien);
-    if (!gameState.rush.tempsParPerso) return;
+    const etat = gameState.rush.joueurs.get(playerId);
+    if (!gameState.rush.tempsParPerso) {
+        if (etat) etat.limiteA = null;
+        return;
+    }
 
+    if (etat) etat.limiteA = Date.now() + gameState.rush.tempsParPerso * 1000;
     const t = setTimeout(() => {
         if (!gameState.rush.active) return;
         rushAvancer(gameState, playerId, false);
@@ -5241,7 +5248,7 @@ function demarrerRush(gameState) {
 
     for (const joueur of joueurs) {
         gameState.rush.joueurs.set(joueur.playerId, {
-            curseur: 0, serie: 0, record: 0, trouves: 0, rates: 0,
+            curseur: 0, serie: 0, record: 0, trouves: 0, rates: 0, limiteA: null,
         });
         if (!gameState.rush.sequencePartagee) {
             gameState.rush.sequencesJoueur.set(joueur.playerId,
@@ -5983,10 +5990,12 @@ io.on('connection', (socket) => {
             serie: etat.serie,
             record: etat.record,
             classement: rushClassement(gameState),
+            limiteA: etat.limiteA || null,
         });
-        // La limite du portrait courant repart : le joueur etait absent, on ne
-        // va pas lui compter le temps de son rechargement.
-        rushArmerLimite(gameState, joueur.playerId);
+        // Le compte a rebours du portrait n est pas relance : le joueur reprend
+        // avec le temps qui lui restait. Le relancer donnait une limite neuve a
+        // chaque rechargement — un rafraichissement bien place suffisait a se
+        // rallonger un portrait difficile.
     });
 
     // Passer volontairement : la série casse, mais on n'attend pas la limite

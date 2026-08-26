@@ -30,6 +30,7 @@ createApp({
                 record: 0,
                 classement: [],
                 reste: 0,           // secondes restantes, décomptées localement
+                limiteA: 0,         // échéance du portrait courant, en ms epoch
                 flash: null,        // 'juste' | 'passe', le temps de l'animation
                 topMasque: false,
                 fini: false,
@@ -1981,6 +1982,18 @@ createApp({
             this.socket.emit('rush-saisie', { texte });
         },
 
+        // La barre du portrait repart d'où elle en était après un rechargement.
+        // Un délai négatif place l'animation à l'instant voulu : elle garde donc
+        // sa durée pleine, et seule sa position de départ change.
+        styleLimiteRush() {
+            const d = this.rush.limite;
+            if (!d) return {};
+            const ecoule = this.rush.limiteA
+                ? Math.min(d, Math.max(0, d - (this.rush.limiteA - Date.now()) / 1000))
+                : 0;
+            return { animationDuration: d + 's', animationDelay: (-ecoule).toFixed(2) + 's' };
+        },
+
         passerRush() {
             if (this.socket && this.rush.portrait) this.socket.emit('rush-passer');
             // Cliquer sur le bouton retire le curseur du champ : sans ça, il
@@ -3720,6 +3733,7 @@ createApp({
                 this.rush.serie = data.serie;
                 this.rush.record = data.record;
                 if (data.limite !== undefined) this.rush.limite = data.limite;
+                this.rush.limiteA = this.rush.limite ? Date.now() + this.rush.limite * 1000 : 0;
                 if (data.reussi === true) {
                     this.flashRush('juste');
                     this.playSound(this.sounds.rushJuste);
@@ -3756,6 +3770,7 @@ createApp({
                     portrait: data.portrait, texte: '',
                     serie: data.serie, record: data.record,
                     classement: data.classement || [], fini: false, flash: null,
+                    limiteA: data.limiteA || 0,
                 });
                 this.gameInProgress = true;
                 this.gameEnded = false;
