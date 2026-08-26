@@ -1449,20 +1449,22 @@
         <div class="v2-mdp-voile" v-if="demandeMdp" @click.self="annulerMdp">
             <div class="v2-join-box v2-mdp-boite" :class="{ ko: mdpShake }">
                 <span class="v2-join-label">Mode temporairement réservé</span>
+                <!-- Ni bouton d'envoi ni bouton d'annulation : Entrée valide,
+                     un clic hors de la boîte ou Échap ferme. -->
                 <input
                     type="password"
                     class="v2-mdp-input"
                     ref="mdpInput"
                     v-model="mdpSalon"
+                    :disabled="creatingRoom"
                     @input="mdpErreur = ''"
                     @keyup.enter="validerMdp"
                     placeholder="••••••••"
                     autocomplete="off"
                     spellcheck="false">
-                <!-- Pas de bouton pour sortir : un clic hors de la boîte, ou Échap, ferme -->
-                <button class="v2-btn v2-btn-primary v2-btn-lg" :disabled="!mdpSalon.trim() || creatingRoom"
-                        @click="validerMdp">{{ creatingRoom ? 'Ouverture…' : 'Ouvrir le salon' }}</button>
-                <p class="v2-join-err" :class="{ vu: mdpErreur }">{{ mdpErreur }}</p>
+                <!-- « v-if » et non une simple opacité : réservée en permanence,
+                     la ligne d'erreur creusait un vide sous le champ. -->
+                <p class="v2-join-err vu" v-if="mdpErreur">{{ mdpErreur }}</p>
             </div>
         </div>
 
