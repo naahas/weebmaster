@@ -8103,6 +8103,8 @@ body.game-active:has(.poll-game-container) #particles-js {
     gap: 0.5rem;
     padding: 0 0.85rem 1.1rem;
     overflow-y: auto;
+    /* Sans lui, « overflow-y: auto » rend l'axe horizontal defilant lui aussi */
+    overflow-x: hidden;
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 215, 0, 0.3) transparent;
 }
@@ -11902,10 +11904,13 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
    posée sous la dernière ligne serait coupée. */
 .v2-set-bulle {
     position: absolute;
-    right: -0.35rem;
+    /* Calee sur le bord, jamais au-dela : le corps des reglages defile, et un
+       element absolu deborde de son cadre meme invisible — c'est ce qui avait
+       fait apparaitre une barre de defilement horizontale. */
+    right: 0;
     bottom: calc(100% + 0.45rem);
     z-index: 8;
-    width: 15rem;
+    width: 13rem;
     padding: 0.6rem 0.7rem;
     font-size: 0.7rem;
     font-weight: 400;

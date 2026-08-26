@@ -500,12 +500,10 @@
                                            :value="rush.limite"
                                            @input="rush.limite = corrigerLimiteRush($event.target.value)"
                                            @change="applySetting('/admin/rush/set-limite', { limite: rush.limite }, () => {})">
-                                    <span class="v2-set-value num">{{ rush.limite ? rush.limite + 's' : 'Aucun' }}</span>
+                                    <span class="v2-set-value num">{{ rush.limite ? rush.limite + 's' : '∞' }}</span>
                                     <span class="v2-set-info" tabindex="0">!
-                                        <span class="v2-set-bulle">Le temps laissé sur chaque portrait. Passé
-                                            ce délai la série casse et le suivant arrive. Tout à gauche, plus
-                                            aucune limite : on reste sur un portrait jusqu'au bout de la manche
-                                            si on veut, seul le chrono général y met fin.</span>
+                                        <span class="v2-set-bulle">Temps par portrait. Dépassé, la série casse.
+                                            À l'infini, seul le chrono général arrête la manche.</span>
                                     </span>
                                 </div>
 
@@ -528,10 +526,9 @@
                                     <span class="v2-set-label">Séquence</span>
                                     <span class="v2-set-value">{{ rush.sequencePartagee ? 'Commune' : 'Propre' }}</span>
                                     <span class="v2-set-info" tabindex="0">!
-                                        <span class="v2-set-bulle"><b>Commune</b> : tout le monde reçoit les
-                                            mêmes portraits, dans le même ordre — à comparer, mais qui voit
-                                            l'écran d'un voisin devine ce qui l'attend.<br><b>Propre</b> :
-                                            chacun la sienne, tirée au hasard.</span>
+                                        <span class="v2-set-bulle"><b>Commune</b> : les mêmes portraits pour
+                                            tous, dans le même ordre.<br><b>Propre</b> : chacun la sienne, au
+                                            hasard.</span>
                                     </span>
                                     <span class="v2-set-opts">
                                         <button v-for="o in [{ v: true, t: 'Commune' }, { v: false, t: 'Propre' }]" :key="o.t"
