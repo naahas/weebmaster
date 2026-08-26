@@ -1937,6 +1937,7 @@ createApp({
                 ['showReport', false],
                 ['showQuestionStats', false],
                 ['showTopSheet', false],
+                ['demandeMdp', false],
             ];
             for (const [champ, ferme] of calques) {
                 if (this[champ]) {

@@ -11839,13 +11839,6 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     70%      { transform: translateX(-0.25rem); }
 }
 
-.v2-mdp-note {
-    margin: -0.35rem 0 0.2rem;
-    font-size: 0.78rem;
-    line-height: 1.45;
-    text-align: center;
-    color: rgba(255, 255, 255, 0.42);
-}
 
 .v2-mdp-input {
     width: 100%;
@@ -11867,15 +11860,4 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     border-color: rgba(255, 215, 0, 0.45);
 }
 
-.v2-mdp-annuler {
-    padding: 0.3rem 0.6rem;
-    font: inherit;
-    font-size: 0.78rem;
-    color: rgba(255, 255, 255, 0.38);
-    background: none;
-    border: none;
-    cursor: pointer;
-    transition: color 0.2s ease;
-}
 
-.v2-mdp-annuler:hover { color: rgba(255, 255, 255, 0.7); }

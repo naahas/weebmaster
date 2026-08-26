@@ -1448,8 +1448,7 @@
              ============================================ -->
         <div class="v2-mdp-voile" v-if="demandeMdp" @click.self="annulerMdp">
             <div class="v2-join-box v2-mdp-boite" :class="{ ko: mdpShake }">
-                <span class="v2-join-label">Mot de passe</span>
-                <p class="v2-mdp-note">Le mode Classique est momentanément réservé.</p>
+                <span class="v2-join-label">Mode temporairement réservé</span>
                 <input
                     type="password"
                     class="v2-mdp-input"
@@ -1460,9 +1459,9 @@
                     placeholder="••••••••"
                     autocomplete="off"
                     spellcheck="false">
+                <!-- Pas de bouton pour sortir : un clic hors de la boîte, ou Échap, ferme -->
                 <button class="v2-btn v2-btn-primary v2-btn-lg" :disabled="!mdpSalon.trim() || creatingRoom"
                         @click="validerMdp">{{ creatingRoom ? 'Ouverture…' : 'Ouvrir le salon' }}</button>
-                <button class="v2-mdp-annuler" @click="annulerMdp">Annuler</button>
                 <p class="v2-join-err" :class="{ vu: mdpErreur }">{{ mdpErreur }}</p>
             </div>
         </div>
