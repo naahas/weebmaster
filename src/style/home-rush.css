@@ -449,11 +449,14 @@
 
     .rush { --carte-h: 30vh; }
 
-    /* Le portrait passe devant, les compteurs sous lui : au-dessus, ils
-       tombaient en plein dans le classement, qui est fixé au coin. */
-    .rush-rang { flex-direction: column-reverse; gap: 0.9rem; }
+    /* Les compteurs repassent au-dessus du portrait, comme sur grand écran :
+       le bloc étant recentré, ils ne tombent plus dans le classement, qui
+       s'arrête bien plus haut. Plus petits qu'ailleurs — ici ils encadrent
+       une image étroite, pas un panneau. */
+    .rush-rang { gap: 0.9rem; }
     .rush-compteurs { gap: 2.8rem; }
-    .rush-serie .v, .rush-record .v { font-size: 2.1rem; }
+    .rush-serie .v, .rush-record .v { font-size: 1.85rem; }
+    .rush-serie .l, .rush-record .l { font-size: 0.44rem; }
 
     /* Cinq places mangeaient le tiers de l'écran : on n'en montre que trois */
     .rush-top { top: 0.7rem; left: 0.7rem; max-width: 45vw; }
