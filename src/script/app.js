@@ -5045,6 +5045,16 @@ createApp({
             const icones = document.querySelectorAll('.v2-set-info[data-pour]');
             if (!icones.length) return false;
 
+            // Le salon est le repère : « position: fixed » se laissait piéger par
+            // le « transform » que l'animation d'entrée pose sur la grille — un
+            // ancêtre transformé devient le bloc conteneur d'un descendant fixé,
+            // et les coordonnées de fenêtre ne veulent alors plus rien dire.
+            // Les icônes vivent donc hors de cette grille, calées sur le salon,
+            // qui est lui-même « fixed » et ne bouge jamais.
+            const salon = document.querySelector('.v2-room');
+            if (!salon) return false;
+            const s = salon.getBoundingClientRect();
+
             for (const icone of icones) {
                 const ligne = document.querySelector(
                     '.v2-set[data-info="' + icone.dataset.pour + '"]');
@@ -5059,8 +5069,10 @@ createApp({
                 const dedans = !c || (r.top >= c.top - 2 && r.bottom <= c.bottom + 2);
 
                 icone.style.visibility = dedans ? 'visible' : 'hidden';
-                icone.style.top = (r.top + r.height / 2) + 'px';
-                icone.style.left = (r.right + 12) + 'px';
+                // Coordonnées relatives au salon, et non à la fenêtre : c'est lui
+                // qui défile, donc l'icône suit son contenu d'elle-même.
+                icone.style.top = (r.top - s.top + salon.scrollTop + r.height / 2) + 'px';
+                icone.style.left = (r.right - s.left + salon.scrollLeft + 12) + 'px';
             }
             return true;
         },

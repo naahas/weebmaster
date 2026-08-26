@@ -11874,7 +11874,11 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
    « transform », qui en ferait un bloc conteneur — mais impose de placer
    l'icône à la main, en face de sa ligne : voir placerInfosReglages(). */
 .v2-set-info {
-    position: fixed;
+    /* « absolute » et non « fixed » : le repère est le salon, qui est lui-même
+       fixé et porte le défilement. L'icône suit donc son contenu sans qu'on
+       ait à la rattraper, et rien ne peut la piéger dans le bloc conteneur
+       d'un ancêtre transformé. */
+    position: absolute;
     z-index: 60;
     display: grid;
     place-items: center;

@@ -585,22 +585,23 @@
 
                     </aside>
 
-                    <!-- Les « ! » d'aide vivent hors du panneau, et hors de leur ligne :
-                         enfants de la ligne, ils la marquaient « survolée » en les
-                         approchant — le survol se propage dans le DOM, pas à l'écran.
-                         « data-info » les rattache à leur ligne, placerInfosReglages()
-                         fait le reste. -->
-                    <template v-if="isHost && lobbyMode === 'rush'">
-                        <span class="v2-set-info" data-pour="rush-timer" tabindex="0">!
-                            <span class="v2-set-bulle">Temps par portrait. Dépassé, la série casse.
-                                À l'infini, seul le chrono général arrête la manche.</span>
-                        </span>
-                        <span class="v2-set-info" data-pour="rush-sequence" tabindex="0">!
-                            <span class="v2-set-bulle"><b>Commune</b> : les mêmes portraits pour tous,
-                                dans le même ordre.<br><b>Propre</b> : chacun la sienne, au hasard.</span>
-                        </span>
-                    </template>
                 </div>
+
+                <!-- Les « ! » d'aide vivent hors du panneau et hors de la grille, et hors de leur ligne :
+                     enfants de la ligne, ils la marquaient « survolée » en les
+                     approchant — le survol se propage dans le DOM, pas à l'écran.
+                     « data-info » les rattache à leur ligne, placerInfosReglages()
+                     fait le reste. -->
+                <template v-if="isHost && lobbyMode === 'rush'">
+                    <span class="v2-set-info" data-pour="rush-timer" tabindex="0">!
+                        <span class="v2-set-bulle">Temps par portrait. Dépassé, la série casse.
+                            À l'infini, seul le chrono général arrête la manche.</span>
+                    </span>
+                    <span class="v2-set-info" data-pour="rush-sequence" tabindex="0">!
+                        <span class="v2-set-bulle"><b>Commune</b> : les mêmes portraits pour tous,
+                            dans le même ordre.<br><b>Propre</b> : chacun la sienne, au hasard.</span>
+                    </span>
+                </template>
             </div>
 
 
