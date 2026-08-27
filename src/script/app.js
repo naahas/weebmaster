@@ -1372,8 +1372,10 @@ createApp({
         // Sous trois lettres on n'envoie rien : « Ai » ou « Ed » tomberaient
         // juste par hasard avant qu'on ait fini d'écrire.
         saisirGuess(id, valeur) {
-            this.asc.saisies[id] = valeur;
-            const nom = (valeur || '').trim();
+            // Les capitales sont aussi dans l'état, pas seulement à l'écran :
+            // le champ affiche ce qu'il contient, et non une mise en forme.
+            this.asc.saisies[id] = String(valeur || '').toUpperCase();
+            const nom = this.asc.saisies[id].trim();
             if (nom.length < 3 || !this.socket || this.ascTrouve(id)) return;
 
             const maintenant = Date.now();

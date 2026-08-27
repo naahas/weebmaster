@@ -590,7 +590,7 @@
    vignettes tombaient sous les cinquante pixels. */
 .asc-jeu { max-width: min(46rem, 100vw - 20rem); }
 .asc-jeu.asc-cible,
-.asc-jeu.asc-intrus { max-width: min(64rem, 100vw - 14rem); }
+.asc-jeu.asc-intrus { max-width: min(52rem, 100vw - 16rem); }
 
 @media (max-width: 900px) {
     .asc-jeu { max-width: 100%; }
@@ -617,18 +617,23 @@
    raté. Ce qui change, c'est ce qu'on en fait — nommer, viser, débusquer. */
 
 /* ── Devine le perso ── */
+/* Les cinq sur une seule ligne : sur deux rangées, on perdait le fil de ce
+   qu'on avait déjà nommé. */
 .asc-portraits {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: center;
-    gap: clamp(0.5rem, 1.6vw, 1rem);
+    gap: clamp(0.4rem, 1.2vw, 0.8rem);
+    width: 100%;
 }
 
 .asc-portrait {
+    flex: 1 1 0;
+    min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
-    width: clamp(7rem, 15vw, 11rem);
+    gap: 0.45rem;
+    max-width: 9rem;
 }
 
 .asc-portrait img {
@@ -655,10 +660,14 @@
 
 .asc-nom {
     width: 100%;
-    padding: 0.4rem 0.35rem;
+    padding: 0.55rem 0.35rem;
     font-family: inherit;
-    font-size: 0.74rem;
+    font-size: 0.88rem;
     font-weight: 600;
+    letter-spacing: 0.03em;
+    /* Saisie en capitales : le nom se lit d'un bloc, et la casse n'a de
+       toute façon aucune importance pour le serveur. */
+    text-transform: uppercase;
     text-align: center;
     color: rgba(255, 250, 235, 0.95);
     background: rgba(255, 255, 255, 0.04);
@@ -707,16 +716,31 @@
     transition: box-shadow 0.25s ease, filter 0.25s ease;
 }
 
-.asc-vignette:hover:not(:disabled) { transform: translateY(-0.15rem); }
+.asc-vignette:hover:not(:disabled) { transform: translateY(-0.2rem); }
 .asc-vignette:hover:not(:disabled) img { box-shadow: 0 0 0 0.09rem rgba(140, 180, 255, 0.55); }
 
+/* Le clic s'enfonce vraiment : sans ce creux, on doutait d'avoir cliqué */
+.asc-vignette:active:not(:disabled) { transform: scale(0.93); }
+
+/* Trouvé : la vignette encaisse le coup puis s'éteint. Le sursaut n'est pas
+   décoratif — c'est lui qui dit « c'est bien celle-là » sans un mot. */
+.asc-vignette.trouve { animation: ascPris 0.45s cubic-bezier(0.2, 1.5, 0.35, 1); }
+
 .asc-vignette.trouve img {
-    box-shadow: 0 0 0 0.11rem rgba(110, 231, 183, 0.75);
-    filter: saturate(0.5) brightness(0.7);
+    box-shadow: 0 0 0 0.16rem rgba(110, 231, 183, 0.9),
+                0 0 1.4rem rgba(110, 231, 183, 0.35);
+    filter: saturate(0.5) brightness(0.65);
+}
+
+@keyframes ascPris {
+    0%   { transform: scale(0.9); }
+    45%  { transform: scale(1.08); }
+    100% { transform: scale(1); }
 }
 
 .asc-vignette.rate img {
-    box-shadow: 0 0 0 0.11rem rgba(255, 100, 100, 0.8);
+    box-shadow: 0 0 0 0.16rem rgba(255, 100, 100, 0.9),
+                0 0 1.4rem rgba(255, 90, 90, 0.3);
     animation: ascSecoue 0.4s ease;
 }
 
@@ -780,6 +804,8 @@
 
 @media (max-width: 900px) {
     .asc-grille { grid-template-columns: repeat(4, 1fr); }
+    .asc-portraits { flex-wrap: wrap; }
+    .asc-portrait { flex: 0 0 auto; width: clamp(4.4rem, 27vw, 6.5rem); }
     .asc-jeu.asc-cible,
     .asc-jeu.asc-intrus { max-width: 100%; }
     .asc-portrait { width: clamp(4.2rem, 26vw, 6rem); }
