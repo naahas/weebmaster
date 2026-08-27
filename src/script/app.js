@@ -18,6 +18,26 @@ createApp({
             lobbyShakeError: false,
 
             // ⚡ RUSH
+            // 🏔️ Ascension : une tour d'étages, chacun grimpe à son rythme.
+            // « etage » est l'étage courant du joueur, « tour » ce que fait
+            // l'ensemble — les deux ne se mélangent pas.
+            asc: {
+                etages: 15,          // réglage du salon
+                timer: 30,           // secondes par étage
+                barEtages: [10, 15, 20],
+                barTimers: [20, 30, 45],
+                enCours: false,
+                decompte: 0,         // avant le départ
+                etage: 0,            // l'étage où j'en suis
+                total: 15,
+                data: null,          // le contenu de l'étage courant
+                finA: 0,             // échéance de l'étage, en ms epoch
+                reste: 0,
+                progres: [],         // où en sont les autres
+                fini: false,
+                _tic: null,
+            },
+
             rush: {
                 duree: 60,
                 limite: 8,          // secondes par portrait, 0 = sans limite
@@ -50,6 +70,8 @@ createApp({
                   desc: "La bombe tourne. Cite un perso avant qu'elle explose." },
                 { id: 'rush',      name: 'Rush',      kind: 'Solo',   players: '∞',  img: 'tengen2.png',
                   desc: "Un portrait, un nom. La plus longue serie gagne." },
+                { id: 'ascension', name: 'Ascension', kind: 'Solo',   players: '∞',  img: 'tengen2.png',
+                  desc: "Une tour d'étages, chacun à son rythme. Le premier au sommet gagne." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.
             ],

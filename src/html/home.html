@@ -479,6 +479,31 @@
                                             @click="applySetting('/admin/set-bonus-enabled', { enabled: !bonusEnabled }, () => bonusEnabled = !bonusEnabled)"><span></span></button>
                                 </div>
                             </template>
+                            <!-- 🏔️ Ascension -->
+                            <template v-else-if="lobbyMode === 'ascension'">
+                                <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M4 20h16M7 20V9l5-5 5 5v11M10 20v-4h4v4"/></svg>
+                                    <span class="v2-set-label">Étages</span>
+                                    <span class="v2-set-value">{{ asc.etages }}</span>
+                                    <span class="v2-set-opts">
+                                        <button v-for="n in asc.barEtages" :key="n"
+                                                class="v2-set-opt" :class="{ on: asc.etages === n }"
+                                                @click="applySetting('/admin/ascension/set-etages', { etages: n }, () => asc.etages = n)">{{ n }}</button>
+                                    </span>
+                                </div>
+
+                                <div class="v2-set" data-info="asc-timer">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                                    <span class="v2-set-label">Par étage</span>
+                                    <span class="v2-set-value">{{ asc.timer }}s</span>
+                                    <span class="v2-set-opts">
+                                        <button v-for="t in asc.barTimers" :key="t"
+                                                class="v2-set-opt" :class="{ on: asc.timer === t }"
+                                                @click="applySetting('/admin/ascension/set-timer', { timer: t }, () => asc.timer = t)">{{ t }}</button>
+                                    </span>
+                                </div>
+                            </template>
+
                             <!-- ⚡ Rush -->
                             <template v-else-if="lobbyMode === 'rush'">
                                 <div class="v2-set">
@@ -592,6 +617,13 @@
                      approchant — le survol se propage dans le DOM, pas à l'écran.
                      « data-info » les rattache à leur ligne, placerInfosReglages()
                      fait le reste. -->
+                <template v-if="isHost && lobbyMode === 'ascension'">
+                    <span class="v2-set-info" data-pour="asc-timer" tabindex="0">!
+                        <span class="v2-set-bulle">Le temps laissé sur chaque étage. Dépassé,
+                            on reste où l'on est et l'étage recommence.</span>
+                    </span>
+                </template>
+
                 <template v-if="isHost && lobbyMode === 'rush'">
                     <span class="v2-set-info" data-pour="rush-timer" tabindex="0">!
                         <span class="v2-set-bulle">Temps par portrait. Dépassé, la série casse.
