@@ -593,10 +593,11 @@
 
                             <!-- 🧪 Peupler le salon sans ouvrir quinze onglets.
                                  Le serveur ne l'accepte qu'en dehors de la production.
-                                 Réservé au quiz : un bot ne tape pas un nom au Rush
-                                 ni ne cite un personnage à BombAnime, il y ferait
-                                 seulement nombre. -->
-                            <div class="v2-set" v-if="estDev && (lobbyMode === 'classic' || lobbyMode === 'rivalry')">
+                                 Réservé à Ascension : les bots y montent pour de bon,
+                                 leur minuteur d'étage les faisant avancer d'un cran à
+                                 chaque expiration. C'est le seul mode où ils remplissent
+                                 l'écran de façon utile — la tour se juge en mouvement. -->
+                            <div class="v2-set" v-if="estDev && lobbyMode === 'ascension'">
                                 <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9"/></svg>
                                 <span class="v2-set-label">Test</span>
                                 <span class="v2-set-value">{{ playerCount }}</span>
