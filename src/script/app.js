@@ -1273,11 +1273,13 @@ createApp({
             const par = {
                 guess: 'Nomme les ' + (d.totalToGuess || 5) + ' portraits',
                 target: "Clique sur les bons, dans l'ordre",
-                wordle: d.category === 'anime' ? 'Trouve le titre, lettre après lettre'
-                                               : 'Trouve le nom, lettre après lettre',
+                wordle: (d.category === 'anime' ? 'Trouve le titre, lettre après lettre'
+                                                : 'Trouve le nom, lettre après lettre')
+                        + (d.animeHint ? ' · ' + d.animeHint : ''),
                 order: "Remets les arcs de " + (d.anime || '') + " dans l'ordre",
                 match: 'Relie chaque paire',
-                scramble: 'Remets les lettres à leur place',
+                scramble: (d.category === 'anime' ? "Reconstitue le titre" : 'Reconstitue le nom du personnage')
+                          + (d.hint ? ' · ' + d.hint : ''),
             };
             return par[d.type] || '';
         },
@@ -5356,7 +5358,9 @@ createApp({
                 rushPasse: this.createPreloadedSound('slash3.mp3'),
                 rushCasse: this.createPreloadedSound('wrong.mp3'),
                 // 🏔️ Ascension : poser une lettre, se tromper, franchir un étage.
-                ascPose: this.createPreloadedSound('lock1.mp3'),
+                // Poser une lettre, c'est un geste de carte qu'on abat — pas un
+                // verrou qui claque, comme l'était le son emprunté à BombAnime.
+                ascPose: this.createPreloadedSound('dealing.mp3'),
                 ascRate: this.createPreloadedSound('wrong.mp3'),
                 ascEtage: this.createPreloadedSound('pickup.mp3'),
                 ascTic: this.createPreloadedSound('click.mp3'),

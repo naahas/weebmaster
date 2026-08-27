@@ -589,3 +589,19 @@
 @media (max-width: 900px) {
     .asc-jeu { max-width: 100%; }
 }
+
+/* La tour entre avec le reste, une fois le décompte fini. Elle paraît en
+   dernier — c'est le décor de la course, pas ce qu'on vient y faire. */
+.asc-tour { animation: ascTour 0.5s cubic-bezier(0.2, 0.95, 0.25, 1) 0.28s both; }
+
+@keyframes ascTour {
+    from { opacity: 0; transform: translateX(1.2rem); }
+    to   { opacity: 1; transform: none; }
+}
+
+@media (max-width: 900px) {
+    @keyframes ascTour {
+        from { opacity: 0; transform: translateY(-0.9rem); }
+        to   { opacity: 1; transform: none; }
+    }
+}

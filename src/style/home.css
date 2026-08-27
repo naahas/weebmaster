@@ -7861,9 +7861,9 @@ body.game-active:has(.poll-game-container) #particles-js {
        petite que les autres. On lui laisse presque toute la largeur du panneau,
        et elle deborde un peu par la droite comme Kenshin. */
     .v2-mode-char.char-ascension {
-        height: 125%;
-        max-width: 95%;
-        right: -6%;
+        height: 112%;
+        max-width: 82%;
+        right: -4%;
     }
 }
 

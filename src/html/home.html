@@ -742,9 +742,6 @@
                                 <!-- ── Anagramme ── -->
                                 <div class="asc-jeu asc-anagramme" v-else-if="asc.data.type === 'scramble'"
                                      :class="{ ko: asc.secousse }">
-                                    <span class="asc-quoi">{{ asc.data.category === 'anime' ? "Reconstitue le nom de l'anime" : 'Reconstitue le nom du personnage' }}</span>
-                                    <span class="asc-indice" v-if="asc.data.hint">{{ asc.data.hint }}</span>
-
                                     <div class="asc-fentes">
                                         <button class="asc-case" v-for="(f, k) in asc.fentes" :key="k"
                                                 :class="{ pleine: f, figee: asc.figees[k] }"
@@ -759,9 +756,6 @@
 
                                 <!-- ── Wordle ── -->
                                 <div class="asc-jeu asc-wordle" v-else-if="asc.data.type === 'wordle'">
-                                    <span class="asc-quoi">{{ asc.data.category === 'anime' ? "Devine l'anime" : 'Devine le personnage' }}</span>
-                                    <span class="asc-indice" v-if="asc.data.animeHint">{{ asc.data.animeHint }}</span>
-
                                     <!-- Les essais passés, du plus ancien au plus récent -->
                                     <div class="asc-ligne" v-for="(e, n) in asc.essais" :key="n">
                                         <span class="asc-case" v-for="(c, i) in casesWordle(e.mot, e.couleurs)" :key="i"
@@ -791,7 +785,6 @@
                                 </div>
                                 </transition>
                             </div>
-                        </template>
 
                         <!-- La tour : un fût plein, un étage par palier, et pour
                              chacun le nombre de grimpeurs qui s'y trouvent. Des
@@ -808,6 +801,7 @@
                                 <span class="asc-etg-nb" v-if="ascParPalier[e]">{{ ascParPalier[e].length }}</span>
                             </div>
                         </aside>
+                        </template>
                     </div>
                 </template>
 
