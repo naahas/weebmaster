@@ -7854,6 +7854,17 @@ body.game-active:has(.poll-game-container) #particles-js {
     .v2-mode-char.char-rush {
         right: 13%;
     }
+
+    /* Esdeath est la plus large des quatre (1,26 contre 1,00 / 0,84 / 0,56) :
+       une pose d'action tient en largeur, pas en hauteur. Sa borne de largeur
+       mordait donc bien avant celle de hauteur, et elle rendait deux fois plus
+       petite que les autres. On lui laisse presque toute la largeur du panneau,
+       et elle deborde un peu par la droite comme Kenshin. */
+    .v2-mode-char.char-ascension {
+        height: 125%;
+        max-width: 95%;
+        right: -6%;
+    }
 }
 
 .v2-mode-char.plain {
