@@ -584,7 +584,13 @@
 
 /* Le plateau ne doit pas courir sous la tour : c'est sa largeur qui l'en
    empêche, non un décalage — l'épreuve reste ainsi centrée sur l'écran. */
+/* La largeur est bornée pour que le plateau ne coure pas sous la tour —
+   c'est elle qui garde l'épreuve centrée, sans décalage. Les grilles de
+   vingt-quatre en réclament plus que cinq portraits : à 46 rem, leurs
+   vignettes tombaient sous les cinquante pixels. */
 .asc-jeu { max-width: min(46rem, 100vw - 20rem); }
+.asc-jeu.asc-cible,
+.asc-jeu.asc-intrus { max-width: min(64rem, 100vw - 14rem); }
 
 @media (max-width: 900px) {
     .asc-jeu { max-width: 100%; }
@@ -672,10 +678,12 @@
 }
 
 /* ── La grille des vingt-quatre ── */
+/* Six colonnes plutôt que huit : vingt-quatre portraits tiennent en quatre
+   rangées, et chaque vignette gagne un tiers de largeur. */
 .asc-grille {
     display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    gap: clamp(0.3rem, 0.8vw, 0.55rem);
+    grid-template-columns: repeat(6, 1fr);
+    gap: clamp(0.35rem, 0.9vw, 0.6rem);
     width: 100%;
 }
 
@@ -771,7 +779,9 @@
 .asc-compte i { font-style: normal; font-size: 1.1rem; color: rgba(255, 255, 255, 0.3); }
 
 @media (max-width: 900px) {
-    .asc-grille { grid-template-columns: repeat(6, 1fr); }
+    .asc-grille { grid-template-columns: repeat(4, 1fr); }
+    .asc-jeu.asc-cible,
+    .asc-jeu.asc-intrus { max-width: 100%; }
     .asc-portrait { width: clamp(4.2rem, 26vw, 6rem); }
     .asc-vise-n { font-size: 1.3rem; }
 }
