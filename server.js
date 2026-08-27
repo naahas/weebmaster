@@ -110,6 +110,15 @@ function getCharacterImage(name, serie) {
 
 // Configuration BombAnime
 // ⚡ RUSH — 308 portraits, leurs alias, et les filtres d'anime
+// 🏔️ Ascension : le moteur vit dans son propre fichier. Il ne connaît ni
+// Supabase ni les autres modes, et prend l'état du salon en paramètre.
+const ascension = require('./server-ascension.js');
+
+// Les barèmes que l'hôte peut choisir. Quinze étages à trente secondes font
+// une partie d'environ sept minutes pour qui ne bloque nulle part.
+const ASCENSION_ETAGES = [10, 15, 20];
+const ASCENSION_TIMERS = [20, 30, 45];
+
 const RUSH_DATA = require('./rushdata.json');
 const RUSH_PERSOS = RUSH_DATA.personnages;
 const RUSH_FILTRES = RUSH_DATA.filtres;
@@ -187,13 +196,14 @@ const DELAI_RETRAIT_JOUEUR_MS = 5000;
 const MIN_JOUEURS_HISTORIQUE = parseInt(process.env.MIN_JOUEURS_HISTORIQUE, 10) || 15;
 const MIN_JOUEURS_HISTORIQUE_BOMB = parseInt(process.env.MIN_JOUEURS_HISTORIQUE_BOMB, 10) || 5;
 const seuilHistorique = (mode) =>
-    (mode === 'bombanime' || mode === 'rush') ? MIN_JOUEURS_HISTORIQUE_BOMB : MIN_JOUEURS_HISTORIQUE;
+    (mode === 'bombanime' || mode === 'rush' || mode === 'ascension')
+        ? MIN_JOUEURS_HISTORIQUE_BOMB : MIN_JOUEURS_HISTORIQUE;
 let gameHistoryTableOk = null; // null = pas encore testé, false = table absente
 
 let questionsCountCache = { value: null, at: 0 };
 const QUESTIONS_COUNT_TTL = 5 * 60 * 1000;
 
-const MODE_LABELS = { classic: 'Classique', rivalry: 'Rivalité', bombanime: 'BombAnime', rush: 'Rush' };
+const MODE_LABELS = { classic: 'Classique', rivalry: 'Rivalité', bombanime: 'BombAnime', rush: 'Rush', ascension: 'Ascension' };
 
 async function recordFinishedGame({ mode, playersCount, winnerName, duration }) {
     const entry = {
@@ -452,6 +462,12 @@ app.get('/game/state', (req, res) => {
                 .map(p => ({ playerId: p.playerId, username: p.username }))
             : [],
         // 💣 Mode BombAnime
+        ascension: gameState.lobbyMode === 'ascension' ? {
+            active: gameState.ascension.active,
+            floors: gameState.ascension.floors,
+            timer: gameState.ascension.timer,
+            syncEpreuves: gameState.ascension.syncEpreuves,
+        } : null,
         rush: gameState.lobbyMode === 'rush' ? {
             duree: gameState.rush.duree,
             limite: gameState.rush.tempsParPerso,
@@ -684,6 +700,9 @@ function etatNeuf() {
     // ============================================
     // 💣 BOMBANIME - État du mode
     // ============================================
+    // 🏔️ Ascension : sa fabrique vit dans son module, l'état est isolé par salon
+    ascension: ascension.createAscensionState(),
+
     rush: {
         active: false,
         duree: RUSH_CONFIG.DUREE_DEFAUT,          // secondes de jeu
@@ -1311,6 +1330,29 @@ app.post('/admin/toggle-game', async (req, res) => {
 });
 
 // ============================================
+// 🏔️ ASCENSION — réglages du salon
+// ============================================
+app.post('/admin/ascension/set-etages', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+    const n = parseInt(req.body && req.body.etages, 10);
+    if (!ASCENSION_ETAGES.includes(n)) return res.status(400).json({ error: 'Nombre d\'étages invalide' });
+    gameState.ascension.floors = n;
+    diffuser(gameState, 'ascension-config', { floors: n });
+    res.json({ success: true, floors: n });
+});
+
+app.post('/admin/ascension/set-timer', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+    const t = parseInt(req.body && req.body.timer, 10);
+    if (!ASCENSION_TIMERS.includes(t)) return res.status(400).json({ error: 'Durée invalide' });
+    gameState.ascension.timer = t;
+    diffuser(gameState, 'ascension-config', { timer: t });
+    res.json({ success: true, timer: t });
+});
+
+// ============================================
 // ⚡ RUSH — réglages du salon
 // ============================================
 app.post('/admin/rush/set-duree', (req, res) => {
@@ -1544,6 +1586,20 @@ app.post('/admin/start-game', async (req, res) => {
         });
     }
     
+    // 🏔️ MODE ASCENSION — chacun gravit sa tour à son rythme, jouable seul
+    if (gameState.lobbyMode === 'ascension') {
+        const r = ascension.startAscensionGame(gameState, io);
+        if (!r || r.success === false) {
+            return res.status(400).json({ success: false, error: (r && r.error) || 'Démarrage impossible' });
+        }
+        return res.json({
+            success: true,
+            mode: 'ascension',
+            floors: gameState.ascension.floors,
+            timer: gameState.ascension.timer,
+        });
+    }
+
     // ⚡ MODE RUSH — chacun court de son côté, donc jouable même seul
     if (gameState.lobbyMode === 'rush') {
         const r = demarrerRush(gameState);
@@ -5990,6 +6046,11 @@ io.on('connection', (socket) => {
     // garde le curseur de chacun : il n y a rien a reconstituer, seulement a
     // renvoyer. Sans ca, recharger la page laissait un ecran vide jusqu a la
     // fin du chrono.
+    // 🏔️ Ascension : le moteur inscrit ses propres gestionnaires. Il reçoit de
+    // quoi retrouver le salon, et non le salon lui-même — une socket peut en
+    // changer, ses gestionnaires vivent aussi longtemps qu'elle.
+    ascension.registerAscensionSocketHandlers(io, socket, () => roomDeSocket(socket));
+
     socket.on('rush-get-state', () => {
         const gameState = roomDeSocket(socket);
         if (!gameState) return;

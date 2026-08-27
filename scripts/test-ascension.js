@@ -83,21 +83,38 @@ for (const [type, champs] of Object.entries(secrets)) {
 {
     const d = I.generateFloorData('intruder', {});
     const c = I.getFloorDataForClient(d);
-    const devines = (c.characters || []).filter(p => p.anime === c.targetAnime).map(p => p.id).sort();
-    const attendus = [...(d.targetIds || [])].sort();
+    // Le verdict porte sur la presence du champ, pas sur le tirage : selon la
+    // variante l'enonce demande ceux d'un anime ou ceux qui n'en sont pas, mais
+    // dans les deux cas le champ « anime » suffit a trancher sans jouer.
+    const porteurs = (c.characters || []).filter(p => 'anime' in p);
     check("« intruder » ne trahit pas ses cibles par le champ « anime »",
-        JSON.stringify(devines) !== JSON.stringify(attendus),
-        devines.length ? devines.length + ' cible(s) lisibles sans jouer' : 'champ absent');
+        porteurs.length === 0,
+        porteurs.length
+            ? porteurs.length + '/' + (c.characters || []).length + ' personnages annoncent leur anime'
+            : 'champ retiré');
+    void d;
 }
 
 // À « guess » on tape le nom du personnage : ni son identifiant ni le nom de
 // son image ne doivent le désigner.
 {
+    // On examine tous les personnages de l'étage, pas seulement le premier :
+    // sinon le verdict dépend du tirage et la suite clignote d'un lancement
+    // à l'autre.
     const c = I.getFloorDataForClient(I.generateFloorData('guess', {}));
-    const p = (c.characters || [])[0] || {};
-    const parlant = (v) => typeof v === 'string' && /[a-z]{4}/i.test(v.replace(/_ascension|\.png/g, ''));
-    check('« guess » ne trahit pas le nom par l identifiant', !parlant(p.id), p.id || '—');
-    check('« guess » ne trahit pas le nom par le fichier image', !parlant(p.img), p.img || '—');
+    const persos = c.characters || [];
+    const parlant = (v) => typeof v === 'string'
+        && /[a-z]{4}/i.test(v.replace(/_ascension|\.png/g, ''));
+
+    const idsParlants = persos.filter(p => parlant(p.id));
+    check("« guess » ne trahit pas le nom par l'identifiant",
+        idsParlants.length === 0,
+        idsParlants.length ? idsParlants.length + '/' + persos.length + ' — ex. ' + idsParlants[0].id : 'opaques');
+
+    const imgsParlantes = persos.filter(p => parlant(p.img));
+    check('« guess » ne trahit pas le nom par le fichier image',
+        imgsParlantes.length === 0,
+        imgsParlantes.length ? imgsParlantes.length + '/' + persos.length + ' — ex. ' + imgsParlantes[0].img : 'opaques');
 }
 
 console.log(ko ? `\n${ko} échec(s)` : "\n✨ Le moteur d'Ascension tient, et ne trahit rien");

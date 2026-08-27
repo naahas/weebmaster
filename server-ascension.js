@@ -574,9 +574,19 @@ function startAscensionGame(gameState, io, options = {}) {
     const ascension = gameState.ascension;
 
     ascension.active = true;
-    ascension.floors = options.floors || 15;
-    ascension.timer = options.timer || 60;
-    ascension.syncEpreuves = options.syncEpreuves !== undefined ? options.syncEpreuves : true;
+    // Les reglages du salon font foi : ce sont ceux que l hote a choisis, et
+    // ils vivent deja dans l etat. « options » ne sert qu a les forcer depuis
+    // un appel particulier — un test, par exemple. La v1 ecrasait tout par des
+    // valeurs en dur, heritage du panneau d administration qui les portait.
+    ascension.floors = options.floors || ascension.floors || 15;
+    ascension.timer = options.timer || ascension.timer || 30;
+    ascension.syncEpreuves = options.syncEpreuves !== undefined
+        ? options.syncEpreuves
+        : (ascension.syncEpreuves !== undefined ? ascension.syncEpreuves : true);
+
+    // Le salon entre en partie. La fin le remet a false ; sans ce pendant,
+    // rien ne fermait la jointure et le salon se disait libre en pleine montee.
+    gameState.inProgress = true;
     ascension.startedAt = Date.now();
     ascension.finishedPlayers = [];
     // 🆕 Callback exécuté à la fin de la partie (server.js l'utilise pour distribuer rewards + tracker stats)
@@ -1137,20 +1147,29 @@ function resetAscensionState(gameState) {
 
 // ═══ Socket handler registration ═══
 
-function registerAscensionSocketHandlers(io, socket, gameState) {
+// Le salon n est plus fige a l inscription : une socket peut changer de salon
+// pendant sa vie, et les gestionnaires vivent aussi longtemps qu elle. On le
+// resout donc a chaque evenement, comme partout ailleurs en v2.
+function registerAscensionSocketHandlers(io, socket, resoudreSalon) {
     socket.on('ascension-answer', (data) => {
+        const gameState = resoudreSalon();
+        if (!gameState) return;
         handleAscensionAnswer(gameState, io, socket, data);
     });
     
     // 🆕 Validation incrémentale d'une seule guess (mini-jeu Guess)
     // Le client envoie {characterId, name} — le serveur répond {correct, characterId}
     socket.on('ascension-check-guess', (data) => {
+        const gameState = resoudreSalon();
+        if (!gameState) return;
         handleAscensionCheckGuess(gameState, io, socket, data);
     });
 
     // 🆕 Bind admin / joueur via room par playerId (livraison fiable même au reconnect)
     //    Met aussi à jour pp.socketId + gameState.players pour les actions (resolvePlayerFromSocket).
     socket.on('ascension-admin-bind', (data) => {
+        const gameState = resoudreSalon();
+        if (!gameState) return;
         if (!data || !data.playerId) return;
         // Rejoint la room du playerId pour recevoir les ascension-floor-start et autres events ciblés
         socket.join((gameState.roomCode + ':asc:' + data.playerId));
@@ -1185,30 +1204,13 @@ function registerAscensionSocketHandlers(io, socket, gameState) {
         }
     });
 
-    // 🆕 Admin qui veut jouer une partie ascension sans s'être inscrit → ghost (invisible au classement)
-    socket.on('ascension-admin-ghost-join', (data) => {
-        console.log('👻 ghost-join reçu:', { socketId: socket.id, data, inProgress: gameState.inProgress, mode: gameState.lobbyMode });
-        if (gameState.inProgress) { console.log('👻 → bloqué: partie en cours'); return; }
-        if (gameState.lobbyMode !== 'ascension') { console.log('👻 → bloqué: pas mode ascension'); return; }
-        if (!data || !data.playerId) { console.log('👻 → bloqué: pas de playerId'); return; }
-        const already = Array.from(gameState.players.values()).some(p => p.playerId === data.playerId);
-        if (already) { console.log('👻 → bloqué: déjà inscrit'); return; }
-        gameState.players.set(socket.id, {
-            socketId: socket.id,
-            playerId: data.playerId,
-            username: data.username || 'Admin',
-            avatarUrl: data.avatarUrl || 'novice.png',
-            isGhost: true,
-            isAdmin: true,
-            colorIndex: 0,
-        });
-        socket.join((gameState.roomCode + ':asc:' + data.playerId));  // 🆕 join room dès l'ajout (pour livraison fiable)
-        console.log(`👻 Ghost admin ${data.username} ajouté + salon ${gameState.roomCode}:asc:${data.playerId} (size=${gameState.players.size})`);
-    });
+
 
     // 🆕 Joker Guess utilisé : valide côté serveur + révèle le nom (anti-triche : le name n'est jamais envoyé d'avance)
     //    Réponse : 'ascension-guess-joker-revealed' avec { characterId, name }
     socket.on('ascension-guess-joker-used', (data) => {
+        const gameState = resoudreSalon();
+        if (!gameState) return;
         const ascension = gameState.ascension;
         if (!ascension?.active) return;
         const player = gameState.players.get(socket.id);
@@ -1247,6 +1249,8 @@ function registerAscensionSocketHandlers(io, socket, gameState) {
     // Le client envoie {order: [arcId1, arcId2, ...]} après chaque drop
     // Le serveur ne répond QUE si l'ordre est correct → avance auto à l'étage suivant
     socket.on('ascension-check-order', (data) => {
+        const gameState = resoudreSalon();
+        if (!gameState) return;
         handleAscensionCheckOrder(gameState, io, socket, data);
     });
     
@@ -1255,34 +1259,46 @@ function registerAscensionSocketHandlers(io, socket, gameState) {
     //   {correct: bool, characterId, foundCount, totalTargets}
     // Quand foundCount === totalTargets, l'étage est validé et on avance.
     socket.on('ascension-check-intruder', (data) => {
+        const gameState = resoudreSalon();
+        if (!gameState) return;
         handleAscensionCheckIntruder(gameState, io, socket, data);
     });
 
     // 🆕 Validation d'une tentative Wordle. Client envoie {guess: 'NARUTO'}.
     // Serveur répond {guess, statuses: ['green','yellow','red',...], isCorrect}.
     socket.on('ascension-check-wordle', (data) => {
+        const gameState = resoudreSalon();
+        if (!gameState) return;
         handleAscensionCheckWordle(gameState, io, socket, data);
     });
 
     // 🆕 Validation des connexions Match (relie 2 colonnes). Client envoie {connections: [{leftId, rightId}, ...]}.
     // Serveur répond {results: [{leftId, rightId, correct}], allCorrect}.
     socket.on('ascension-check-match', (data) => {
+        const gameState = resoudreSalon();
+        if (!gameState) return;
         handleAscensionCheckMatch(gameState, io, socket, data);
     });
 
     // 🆕 Validation incrémentale d'un clic sur le mini-jeu Target (clique sur 5 persos d'affilée).
     // Client envoie {characterId}. Serveur tracke pp.targetProgress et reset à 0 sur erreur.
     socket.on('ascension-check-target', (data) => {
+        const gameState = resoudreSalon();
+        if (!gameState) return;
         handleAscensionCheckTarget(gameState, io, socket, data);
     });
 
     // 🆕 Validation d'une tentative Scramble (anagramme). Client envoie {guess: 'NARUTO'}.
     // Serveur compare au word et répond {correct, guess}.
     socket.on('ascension-check-scramble', (data) => {
+        const gameState = resoudreSalon();
+        if (!gameState) return;
         handleAscensionCheckScramble(gameState, io, socket, data);
     });
     
     socket.on('ascension-reconnect', (data) => {
+        const gameState = resoudreSalon();
+        if (!gameState) return;
         const ascension = gameState.ascension;
 
         // 🆕 Rejoint la room playerId pour recevoir les emits ciblés
