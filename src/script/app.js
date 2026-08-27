@@ -36,6 +36,17 @@ createApp({
                 progres: [],         // où en sont les autres
                 fini: false,
                 _tic: null,
+
+                // Anagramme : les lettres posées, celles qui restent en réserve,
+                // et celles que le serveur a déjà déclarées bien placées.
+                fentes: [],
+                reserve: [],
+                figees: [],
+                secousse: false,
+
+                // Wordle : les essais passés avec leurs couleurs, et celui en cours
+                essais: [],
+                mot: '',
             },
 
             rush: {
@@ -1253,6 +1264,93 @@ createApp({
         arreterChronoAsc() {
             if (this.asc._tic) clearInterval(this.asc._tic);
             this.asc._tic = null;
+        },
+
+        // ── Anagramme ──
+        // Les lettres se posent d'un clic plutôt qu'au glisser : c'est le même
+        // geste à la souris et au doigt, et il ne demande aucune précision.
+        prepararerScramble(d) {
+            const n = d.wordLength || (d.scrambled || []).length;
+            this.asc.fentes = Array.from({ length: n }, () => null);
+            this.asc.figees = Array.from({ length: n }, () => false);
+            this.asc.reserve = (d.scrambled || []).map((l, i) => ({ i, l }));
+        },
+
+        poserLettre(jeton) {
+            const k = this.asc.fentes.findIndex((f, i) => !f && !this.asc.figees[i]);
+            if (k < 0) return;
+            this.asc.fentes[k] = jeton;
+            this.asc.reserve = this.asc.reserve.filter(x => x.i !== jeton.i);
+            this.playSound(this.sounds.ascPose);
+            if (this.asc.fentes.every(Boolean)) this.envoyerScramble();
+        },
+
+        retirerLettre(k) {
+            // Une lettre déjà validée par le serveur ne se reprend pas
+            if (this.asc.figees[k] || !this.asc.fentes[k]) return;
+            this.asc.reserve.push(this.asc.fentes[k]);
+            this.asc.reserve.sort((a, b) => a.i - b.i);
+            this.asc.fentes[k] = null;
+        },
+
+        envoyerScramble() {
+            if (!this.socket) return;
+            this.socket.emit('ascension-check-scramble', {
+                guess: this.asc.fentes.map(f => (f ? f.l : '')).join(''),
+            });
+        },
+
+        // ── Wordle ──
+        // Le mot peut compter plusieurs parties : « groups » dit où couper.
+        // On raisonne toujours sur le mot sans espaces, comme le serveur.
+        prepararerWordle(d) {
+            this.asc.essais = [];
+            this.asc.mot = '';
+            this.$nextTick(() => {
+                const c = document.getElementById('ascWordle');
+                if (c) c.focus();
+            });
+        },
+
+        corrigerMotAsc(v) {
+            const n = (this.asc.data && this.asc.data.wordLength) || 0;
+            this.asc.mot = String(v || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, n);
+        },
+
+        envoyerWordle() {
+            const n = (this.asc.data && this.asc.data.wordLength) || 0;
+            if (!this.socket || this.asc.mot.length !== n) return;
+            this.socket.emit('ascension-check-wordle', { guess: this.asc.mot });
+        },
+
+        // Les cases d'une ligne, à partir d'un mot et de ses couleurs
+        casesWordle(mot, couleurs) {
+            const n = (this.asc.data && this.asc.data.wordLength) || 0;
+            return Array.from({ length: n }, (_, i) => ({
+                l: (mot || '')[i] || '',
+                c: couleurs ? couleurs[i] : null,
+            }));
+        },
+
+        // « groups » découpe l'affichage sans changer le mot : une coupure se
+        // marque après ces positions.
+        coupureApres(i) {
+            const g = (this.asc.data && this.asc.data.groups) || [];
+            const n = (this.asc.data && this.asc.data.wordLength) || 0;
+            // La fin du mot n'est pas une coupure : sinon la dernière case
+            // traînait une marge et la ligne paraissait décentrée.
+            if (i + 1 >= n) return false;
+            let somme = 0;
+            for (const t of g) {
+                somme += t;
+                if (somme === i + 1) return true;
+            }
+            return false;
+        },
+
+        secouerAsc() {
+            this.asc.secousse = true;
+            setTimeout(() => { this.asc.secousse = false; }, 420);
         },
 
         quitterAscLocalement() {
@@ -3951,6 +4049,45 @@ createApp({
                 this.asc.data = data.floorData;
                 if (data.playerProgress) this.asc.progres = data.playerProgress;
                 this.lancerChronoAsc(data.timerEndTime);
+
+                // Chaque type prépare son propre plateau
+                if (data.floorData && data.floorData.type === 'scramble') this.prepararerScramble(data.floorData);
+                if (data.floorData && data.floorData.type === 'wordle') this.prepararerWordle(data.floorData);
+            });
+
+            // L'anagramme : le serveur dit quelles lettres tombent juste.
+            // On fige celles-là et on rend les autres — sans cette aide, une
+            // anagramme de huit lettres ne se résout pas en trente secondes.
+            this.socket.on('ascension-scramble-result', (data) => {
+                if (!data || data.correct) return;
+                const bonnes = data.correctPositions || [];
+                for (let i = 0; i < this.asc.fentes.length; i++) {
+                    if (bonnes[i]) { this.asc.figees[i] = true; continue; }
+                    if (this.asc.fentes[i]) {
+                        this.asc.reserve.push(this.asc.fentes[i]);
+                        this.asc.fentes[i] = null;
+                    }
+                }
+                this.asc.reserve.sort((a, b) => a.i - b.i);
+                this.secouerAsc();
+                this.playSound(this.sounds.ascRate);
+            });
+
+            this.socket.on('ascension-wordle-result', (data) => {
+                if (!data) return;
+                if (!data.isCorrect) {
+                    this.asc.essais.push({ mot: data.guess, couleurs: data.statuses });
+                    this.asc.mot = '';
+                    this.playSound(this.sounds.ascPose);
+                    this.$nextTick(() => {
+                        const c = document.getElementById('ascWordle');
+                        if (c) c.focus();
+                    });
+                }
+            });
+
+            this.socket.on('ascension-answer-result', (data) => {
+                if (data && data.correct) this.playSound(this.sounds.ascEtage);
             });
 
             this.socket.on('ascension-progress', (data) => {
@@ -5135,6 +5272,10 @@ createApp({
                 rushJuste: this.createPreloadedSound('pickup.mp3'),
                 rushPasse: this.createPreloadedSound('slash3.mp3'),
                 rushCasse: this.createPreloadedSound('wrong.mp3'),
+                // 🏔️ Ascension : poser une lettre, se tromper, franchir un étage.
+                ascPose: this.createPreloadedSound('lock1.mp3'),
+                ascRate: this.createPreloadedSound('wrong.mp3'),
+                ascEtage: this.createPreloadedSound('pickup.mp3'),
             };
             
             // 💣 Son tictac en boucle (instance unique, pas cloné)

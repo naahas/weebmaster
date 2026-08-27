@@ -263,3 +263,133 @@
     .asc-etage b { font-size: 1.5rem; }
     .asc-chrono { font-size: 1.6rem; }
 }
+
+/* ══════════ Les épreuves ══════════
+   Un cadre commun : la consigne, l'indice, puis le plateau. Chaque type
+   remplit le plateau à sa façon, mais l'entrée en matière est la même —
+   à quinze étages, changer de repères à chaque fois serait épuisant. */
+.asc-jeu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.8rem, 2.5vh, 1.5rem);
+    width: 100%;
+    max-width: 46rem;
+}
+
+.asc-quoi {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.asc-indice {
+    margin-top: -0.6rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(140, 180, 255, 0.85);
+}
+
+.asc-jeu.ko { animation: ascSecoue 0.4s ease; }
+
+@keyframes ascSecoue {
+    0%, 100% { transform: translateX(0); }
+    20%      { transform: translateX(-0.5rem); }
+    45%      { transform: translateX(0.45rem); }
+    70%      { transform: translateX(-0.22rem); }
+}
+
+/* ── La case à lettre, commune aux deux épreuves ── */
+.asc-case {
+    display: grid;
+    place-items: center;
+    width: clamp(2rem, 5.5vw, 3rem);
+    height: clamp(2.4rem, 6.5vw, 3.4rem);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(1.2rem, 3vw, 1.8rem);
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.035);
+    border: 0.09rem solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.4rem;
+    padding: 0;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.asc-case.pleine { border-color: rgba(255, 255, 255, 0.28); }
+
+/* Une coupure marque la fin d'une partie du mot, sans rien changer au mot */
+.asc-case.coupe { margin-right: clamp(0.5rem, 2vw, 1.1rem); }
+
+/* ── Anagramme ── */
+.asc-fentes,
+.asc-reserve,
+.asc-ligne {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem;
+}
+
+.asc-fentes .asc-case { cursor: pointer; }
+
+/* Une lettre que le serveur a déclarée bien placée ne se reprend plus :
+   sans ce verrou, on défaisait par mégarde ce qu'on venait de trouver. */
+.asc-fentes .asc-case.figee {
+    color: #6ee7b7;
+    background: rgba(110, 231, 183, 0.1);
+    border-color: rgba(110, 231, 183, 0.5);
+    cursor: default;
+}
+
+.asc-reserve { margin-top: 0.3rem; }
+
+.asc-lettre {
+    display: grid;
+    place-items: center;
+    width: clamp(2rem, 5.5vw, 3rem);
+    height: clamp(2.4rem, 6.5vw, 3.4rem);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(1.2rem, 3vw, 1.8rem);
+    color: rgba(255, 250, 235, 0.95);
+    background: rgba(140, 180, 255, 0.12);
+    border: 0.09rem solid rgba(140, 180, 255, 0.3);
+    border-radius: 0.4rem;
+    cursor: pointer;
+    transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.asc-lettre:hover { background: rgba(140, 180, 255, 0.24); transform: translateY(-0.12rem); }
+.asc-lettre:active { transform: translateY(0); }
+
+/* ── Wordle ── */
+.asc-case.green  { color: #0b0b0e; background: #6ee7b7; border-color: #6ee7b7; }
+.asc-case.yellow { color: #0b0b0e; background: #fcd34d; border-color: #fcd34d; }
+.asc-case.red    { color: rgba(255, 255, 255, 0.35); background: rgba(255, 255, 255, 0.02); }
+
+.asc-ligne.vive { cursor: text; }
+
+/* Le curseur : la case qui attend la prochaine lettre */
+.asc-ligne.vive .asc-case.active {
+    border-color: var(--neon-primary, #ffd700);
+    box-shadow: 0 0 0.8rem rgba(255, 215, 0, 0.2);
+}
+
+/* Le champ existe vraiment mais ne se voit pas : c'est lui qui ouvre le
+   clavier des téléphones, qu'aucun écouteur de touches ne ferait paraître. */
+.asc-champ {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 1px;
+    height: 1px;
+}
+
+.asc-aide {
+    font-size: 0.64rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.22);
+}
