@@ -153,141 +153,124 @@
 }
 
 /* ══════════ La tour ══════════
-   Un palier par étage, le premier en bas. Elle occupe toute la hauteur et
-   se partage entre les étages : à vingt paliers ils restent lisibles, la
-   ligne de sol suffisant à les séparer. */
+   Un fût plein, un palier par étage, et sur chacun le nombre de grimpeurs
+   qui s'y trouvent. Des jetons nominatifs cessent de se lire au-delà d'une
+   poignée de joueurs ; un compte tient à cinquante comme à trois. */
 .asc-tour {
     position: absolute;
-    top: 3.4rem;
-    bottom: 1.2rem;
-    right: clamp(1rem, 3vw, 2.5rem);
+    top: 3.6rem;
+    bottom: 1.4rem;
+    right: clamp(1.2rem, 3.5vw, 3rem);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    width: clamp(8rem, 14vw, 11rem);
-    padding: 0.4rem 0;
+    width: 7.5rem;
 }
 
-.asc-palier {
+/* Le fût, en fond : il court d'un bout à l'autre de la colonne, les paliers
+   se posant dessus. Sa base est plus dense que son sommet — on part du sol. */
+.asc-fut {
+    position: absolute;
+    left: 2.2rem;
+    top: -0.2rem;
+    bottom: -0.2rem;
+    width: 2.6rem;
+    border-radius: 0.35rem 0.35rem 0 0;
+    background: linear-gradient(180deg,
+        rgba(140, 180, 255, 0.03),
+        rgba(140, 180, 255, 0.09));
+    box-shadow: inset 0 0 0 0.06rem rgba(255, 255, 255, 0.07);
+}
+
+.asc-etg {
     position: relative;
     flex: 1;
     min-height: 0;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0 0.3rem;
 }
 
-.asc-palier-n {
-    flex: 0 0 1.6rem;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 0.85rem;
+/* Le numéro, dehors et discret : c'est une graduation, pas une information */
+.asc-etg-n {
+    position: absolute;
+    left: 0;
+    width: 1.8rem;
     text-align: right;
-    color: rgba(255, 255, 255, 0.18);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.16);
     font-variant-numeric: tabular-nums;
     transition: color 0.3s ease;
 }
 
-/* Le sol du palier : un trait qui s'efface vers la droite, pour que la tour
-   ne ressemble pas à un tableau. */
-.asc-palier-sol {
+/* Le plancher du palier */
+.asc-etg-trait {
     position: absolute;
     left: 2.2rem;
-    right: 0;
+    width: 2.6rem;
     bottom: 0;
     height: 0.06rem;
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02));
+    background: rgba(255, 255, 255, 0.08);
     transition: background 0.3s ease;
 }
 
-.asc-palier.sommet .asc-palier-sol {
-    background: linear-gradient(90deg, rgba(255, 215, 0, 0.45), rgba(255, 215, 0, 0.05));
-}
-
-.asc-palier.sommet .asc-palier-n { color: rgba(255, 215, 0, 0.6); }
-
-/* Mon palier : c'est le seul repère qui compte quand on grimpe vite */
-.asc-palier.moi .asc-palier-n { color: #fff; }
-
-.asc-palier.moi .asc-palier-sol {
-    background: linear-gradient(90deg, rgba(140, 180, 255, 0.5), rgba(140, 180, 255, 0.04));
-    height: 0.1rem;
-}
-
-.asc-palier-gens {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    flex-wrap: wrap;
-    min-width: 0;
-}
-
-/* Le jeton d'un joueur. Il change de palier d'un mouvement, jamais d'un saut :
-   c'est ce glissement qui donne la course à voir. */
-.asc-jeton {
+/* Combien de monde ici. Le pastillage remplace les jetons : à cinquante
+   grimpeurs, cinquante initiales ne se lisaient plus. */
+.asc-etg-nb {
+    position: absolute;
+    left: 2.2rem;
+    width: 2.6rem;
     display: grid;
     place-items: center;
-    width: 1.35rem;
-    height: 1.35rem;
-    font-size: 0.62rem;
-    font-weight: 700;
+    height: 1.15rem;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.8rem;
     color: #0b0b0e;
-    background: rgba(255, 255, 255, 0.55);
-    border-radius: 50%;
-    animation: ascMonte 0.45s cubic-bezier(0.2, 1.2, 0.3, 1) both;
+    background: rgba(140, 180, 255, 0.85);
+    border-radius: 2rem;
+    transform: scale(0.82);
+    animation: ascCompte 0.4s cubic-bezier(0.2, 1.3, 0.35, 1) both;
 }
 
-@keyframes ascMonte {
-    from { opacity: 0; transform: translateY(0.9rem) scale(0.8); }
+@keyframes ascCompte {
+    from { opacity: 0; transform: scale(0.5); }
+    to   { opacity: 1; transform: scale(0.82); }
+}
+
+/* Le sommet : c'est là qu'on va, autant que ça se voie */
+.asc-etg.sommet .asc-etg-trait { background: rgba(255, 215, 0, 0.4); }
+.asc-etg.sommet .asc-etg-n { color: rgba(255, 215, 0, 0.55); }
+
+/* Ma place. Le seul repère qui compte quand on grimpe vite : elle porte un
+   mot plutôt qu'une couleur, pour qu'on la trouve sans avoir à chercher. */
+.asc-etg.moi .asc-etg-n { color: #fff; }
+
+.asc-etg.moi .asc-etg-trait {
+    height: 0.11rem;
+    background: var(--neon-primary, #ffd700);
+    box-shadow: 0 0 0.7rem rgba(255, 215, 0, 0.5);
+}
+
+.asc-etg.moi .asc-etg-nb {
+    color: #14100a;
+    background: var(--neon-primary, #ffd700);
+}
+
+.asc-etg-moi {
+    position: absolute;
+    left: 5.2rem;
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--neon-primary, #ffd700);
+    white-space: nowrap;
+    animation: ascVous 0.45s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+
+@keyframes ascVous {
+    from { opacity: 0; transform: translateX(-0.4rem); }
     to   { opacity: 1; transform: none; }
-}
-
-.asc-jeton.mien {
-    background: var(--neon-primary, #ffd700);
-    box-shadow: 0 0 0.7rem rgba(255, 215, 0, 0.55);
-}
-
-/* Les couleurs des autres, reprises des camps du quiz */
-.asc-jeton.c0 { background: #7fb4ff; }
-.asc-jeton.c1 { background: #6ee7b7; }
-.asc-jeton.c2 { background: #d8b4fe; }
-.asc-jeton.c3 { background: #fca5a5; }
-.asc-jeton.c4 { background: #fcd34d; }
-.asc-jeton.c5 { background: #f9a8d4; }
-.asc-jeton.mien.c0, .asc-jeton.mien.c1, .asc-jeton.mien.c2,
-.asc-jeton.mien.c3, .asc-jeton.mien.c4, .asc-jeton.mien.c5 {
-    background: var(--neon-primary, #ffd700);
-}
-
-/* ══════════ Téléphone ══════════
-   La tour passe au-dessus de l'épreuve, couchée : à cette largeur, une
-   colonne de vingt paliers ne laisserait rien pour jouer. */
-@media (max-width: 900px) {
-    .asc {
-        flex-direction: column;
-        justify-content: flex-start;
-        padding: 4.2rem 0.8rem 1.2rem;
-    }
-
-    .asc-tour {
-        flex-direction: row-reverse;
-        align-self: stretch;
-        width: auto;
-        height: 2.6rem;
-        margin: 0 0 1rem;
-        order: -1;
-    }
-
-    .asc-palier { flex-direction: column; gap: 0.15rem; padding: 0; }
-    .asc-palier-n { flex: 0 0 auto; font-size: 0.6rem; text-align: center; }
-    .asc-palier-sol { left: 0; right: 0; bottom: auto; top: 0; }
-    .asc-palier-gens { flex: 0 0 auto; justify-content: center; }
-    .asc-jeton { width: 1rem; height: 1rem; font-size: 0.5rem; }
-    .asc-epreuve { padding: 0; }
-    .asc-etage { top: 0.7rem; left: 0.8rem; }
-    .asc-etage b { font-size: 1.3rem; }
-    .asc-titre { font-size: 1.4rem; top: 0.75rem; }
 }
 
 /* ══════════ Les épreuves ══════════
@@ -418,4 +401,75 @@
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.22);
+}
+
+/* ══════════ Téléphone ══════════
+   La colonne se couche au-dessus de l'épreuve : debout, elle prendrait la
+   moitié de la largeur et il ne resterait rien pour jouer. Couchée, elle
+   garde ce qui compte — le nombre par étage, et où l'on se trouve. */
+@media (max-width: 900px) {
+    .asc {
+        flex-direction: column;
+        justify-content: flex-start;
+        padding: 3.6rem 0.8rem 1.2rem;
+    }
+
+    .asc-epreuve { padding: 0; }
+    .asc-etage { top: 0.7rem; left: 0.8rem; }
+    .asc-etage b { font-size: 1.3rem; }
+    .asc-titre { font-size: 1.4rem; top: 0.75rem; }
+
+    .asc-tour {
+        position: static;
+        flex-direction: row-reverse;
+        align-self: stretch;
+        width: auto;
+        height: 2.2rem;
+        margin: 0 0 1.2rem;
+        order: -1;
+    }
+
+    /* Couché, le fût devient un rail horizontal */
+    .asc-fut {
+        left: -0.2rem;
+        right: -0.2rem;
+        top: 50%;
+        bottom: auto;
+        width: auto;
+        height: 1.5rem;
+        transform: translateY(-50%);
+        border-radius: 0 0.35rem 0.35rem 0;
+    }
+
+    .asc-etg { flex-direction: column; justify-content: center; }
+    .asc-etg-n { position: static; width: auto; font-size: 0.55rem; text-align: center; }
+
+    .asc-etg-trait {
+        left: 0;
+        right: 0;
+        width: auto;
+        top: 0;
+        bottom: auto;
+        height: 100%;
+        border-left: 0.06rem solid rgba(255, 255, 255, 0.07);
+        background: none;
+    }
+
+    .asc-etg.moi .asc-etg-trait {
+        height: 100%;
+        background: rgba(255, 215, 0, 0.14);
+        border-left-color: rgba(255, 215, 0, 0.55);
+        box-shadow: none;
+    }
+
+    .asc-etg-nb {
+        position: static;
+        width: 1.1rem;
+        height: 1.1rem;
+        font-size: 0.62rem;
+        transform: scale(1);
+    }
+
+    /* Le mot ne tiendrait pas entre deux étages : la teinte du palier suffit */
+    .asc-etg-moi { display: none; }
 }

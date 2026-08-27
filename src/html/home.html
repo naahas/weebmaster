@@ -780,19 +780,20 @@
                             </div>
                         </template>
 
-                        <!-- La tour, à droite : un palier par étage, du sol au sommet.
-                             Chacun voit où en sont les autres — c'est elle qui fait la
-                             course, le jeu se jouant sans tour par tour. -->
+                        <!-- La tour : un fût plein, un étage par palier, et pour
+                             chacun le nombre de grimpeurs qui s'y trouvent. Des
+                             jetons nominatifs ne tiendraient pas à cinquante ;
+                             un compte se lit à n'importe quel effectif. -->
                         <aside class="asc-tour" v-if="asc.total">
-                            <div class="asc-palier" v-for="e in ascPaliers" :key="e"
-                                 :class="{ moi: e === ascMonEtage, sommet: e === asc.total, occupe: ascParPalier[e] }">
-                                <span class="asc-palier-n">{{ e }}</span>
-                                <span class="asc-palier-sol"></span>
-                                <span class="asc-palier-gens">
-                                    <span class="asc-jeton" v-for="j in (ascParPalier[e] || [])" :key="j.playerId"
-                                          :class="['c' + (j.colorIndex || 0), { mien: j.playerId === playerId }]"
-                                          :title="j.username">{{ (j.username || '?').charAt(0).toUpperCase() }}</span>
-                                </span>
+                            <span class="asc-fut"></span>
+
+                            <div class="asc-etg" v-for="e in ascPaliers" :key="e"
+                                 :class="{ moi: e === ascMonEtage, sommet: e === asc.total,
+                                           occupe: ascParPalier[e] }">
+                                <span class="asc-etg-n">{{ e }}</span>
+                                <span class="asc-etg-trait"></span>
+                                <span class="asc-etg-nb" v-if="ascParPalier[e]">{{ ascParPalier[e].length }}</span>
+                                <span class="asc-etg-moi" v-if="e === ascMonEtage">Vous</span>
                             </div>
                         </aside>
                     </div>
