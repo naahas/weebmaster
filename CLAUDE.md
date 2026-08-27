@@ -46,7 +46,8 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   ses cibles par le champ `anime`. Même famille que les portraits de Rush, à traiter ensemble),
   `npm run test:tour` (Ascension de bout en bout : salon, réglages, départ, premier étage),
   `npm run test:tour-reprise` (rafraîchissement en pleine montée),
-  `npm run test:tour-grilles` (les épreuves à portraits : guess, target, intruder — ~2 min), `npm run test:rush` (le mode Rush de bout en bout),
+  `npm run test:tour-grilles` (les épreuves à portraits : guess, target, intruder — ~2 min.
+  ⚠️ **intermittente** : ~1 lancement sur 3 échoue, cause non identifiée), `npm run test:rush` (le mode Rush de bout en bout),
   `npm run test:depart` (quitter BombAnime en pleine partie), `npm run test:plafond` (le plafond
   de BombAnime : remplissage, refus du joueur de trop), `npm run test:bomb` (réglages
   BombAnime et enchaînement des manches), `npm run test:reprise`

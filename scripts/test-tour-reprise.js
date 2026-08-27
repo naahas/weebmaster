@@ -43,6 +43,28 @@ const check = (l, ok, extra) => {
     await wait(400);
 
     await post('/admin/start-game', {});
+
+    // ── Recharger pendant le décompte d'entrée ──
+    // Il dure quatre secondes. Une reprise à cet instant doit rendre le
+    // décompte, et non le jeu : sinon on entre en piste avant les autres.
+    // On coupe d'abord l'ancienne socket : deux sockets pour un même joueur,
+    // et la seconde lui prend sa place — le serveur ne livre qu'à une.
+    await wait(900);
+    s.disconnect();
+    await wait(200);
+    const tot = io(BASE, { transports: ['websocket'] });
+    await new Promise(r => tot.on('connect', r));
+    let pendant = null;
+    tot.on('ascension-state', (d) => { pendant = d; });
+    tot.on('ascension-floor-start', (d) => etages.push(d));
+    tot.emit('register-authenticated', { playerId: 'g1', username: 'Grimpeur' });
+    tot.emit('ascension-reconnect', { playerId: 'g1' });
+    await wait(500);
+    const resteDecompte = pendant && pendant.countdownEndsAt
+        ? pendant.countdownEndsAt - Date.now() : 0;
+    check('recharger pendant le décompte rend le décompte',
+        resteDecompte > 0, Math.round(resteDecompte) + ' ms avant le départ');
+
     for (let i = 0; i < 40 && !etages.length; i++) await wait(250);
     check('la montée a commencé', etages.length > 0);
 
@@ -53,7 +75,7 @@ const check = (l, ok, extra) => {
     await wait(4000);
 
     // ── Le rafraîchissement : socket neuve, comme le navigateur ──
-    s.disconnect();
+    tot.disconnect();
     await wait(300);
     const neuve = io(BASE, { transports: ['websocket'] });
     await new Promise(r => neuve.on('connect', r));

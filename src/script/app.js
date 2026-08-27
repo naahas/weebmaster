@@ -1257,6 +1257,27 @@ createApp({
         },
 
         // ── 🏔️ Ascension ──
+        // Le décompte d'entrée. Il sonne à chaque nombre puis s'ouvre d'un coup :
+        // on doit pouvoir se tenir prêt sans regarder l'écran. Le départ et la
+        // reprise passent tous deux par ici — sinon, recharger pendant le
+        // décompte faisait paraître le jeu avant l'heure.
+        lancerDecompteAsc(finA) {
+            clearTimeout(this._ascDecompteT);
+            if (!finA) { this.asc.decompte = 0; return; }
+            let dernier = null;
+            const pas = () => {
+                const r = Math.max(0, Math.ceil((finA - Date.now()) / 1000));
+                if (r !== dernier) {
+                    if (r > 0) this.playSound(this.sounds.ascTic);
+                    else if (dernier !== null) this.playSound(this.sounds.ascPartir);
+                    dernier = r;
+                }
+                this.asc.decompte = r;
+                if (r > 0) this._ascDecompteT = setTimeout(pas, 120);
+            };
+            pas();
+        },
+
         // La jauge s'écoule d'une seule animation. Le style se calcule UNE FOIS,
         // à l'arrivée sur l'étage, et ne bouge plus : lié à une méthode, il était
         // refait à chaque rendu — donc quatre fois par seconde, le décompte
@@ -1318,6 +1339,10 @@ createApp({
             this.asc.faux = null;
             this.asc.cible = d.currentTarget || null;
             this.asc.avance = 0;
+            // On arrive prêt à écrire, sans avoir à viser un champ
+            if (d.type === 'guess' && (d.characters || []).length) {
+                this.champSuivantGuess(d.characters[d.characters.length - 1].id);
+            }
         },
 
         // Combien il en reste, pour les épreuves qui se comptent
@@ -1341,13 +1366,41 @@ createApp({
         },
 
         // ── Devine le perso ──
-        // On valide à la touche Entrée seulement : à chaque frappe, le serveur
-        // recevrait cinq fois plus de messages pour rien, et un nom juste tapé
-        // en passant serait validé avant qu'on ait fini de réfléchir.
-        envoyerGuess(id) {
-            const nom = (this.asc.saisies[id] || '').trim();
-            if (!nom || !this.socket || this.ascTrouve(id)) return;
+        // Le nom se valide en le tapant, sans touche Entrée : on enchaîne les
+        // cinq portraits d'un trait. La cadence est bridée comme au Rush —
+        // sinon chaque frappe partirait au serveur, cinq champs à la fois.
+        // Sous trois lettres on n'envoie rien : « Ai » ou « Ed » tomberaient
+        // juste par hasard avant qu'on ait fini d'écrire.
+        saisirGuess(id, valeur) {
+            this.asc.saisies[id] = valeur;
+            const nom = (valeur || '').trim();
+            if (nom.length < 3 || !this.socket || this.ascTrouve(id)) return;
+
+            const maintenant = Date.now();
+            if (this._ascDernierEnvoi && maintenant - this._ascDernierEnvoi < 70) {
+                clearTimeout(this._ascRetard);
+                this._ascRetard = setTimeout(() => this.saisirGuess(id, this.asc.saisies[id]), 80);
+                return;
+            }
+            this._ascDernierEnvoi = maintenant;
             this.socket.emit('ascension-check-guess', { characterId: id, name: nom });
+        },
+
+        // Le champ suivant prend la main dès qu'un portrait tombe : on ne
+        // clique pas cinq fois pour répondre cinq fois.
+        champSuivantGuess(id) {
+            const l = (this.asc.data && this.asc.data.characters) || [];
+            const k = l.findIndex(p => p.id === id);
+            for (let n = 1; n <= l.length; n++) {
+                const p = l[(k + n) % l.length];
+                if (p && !this.ascTrouve(p.id)) {
+                    this.$nextTick(() => {
+                        const c = document.getElementById('guess-' + p.id);
+                        if (c) c.focus();
+                    });
+                    return;
+                }
+            }
         },
 
         // ── Cible ──
@@ -1451,6 +1504,7 @@ createApp({
 
         quitterAscLocalement() {
             this.arreterChronoAsc();
+            clearTimeout(this._ascDecompteT);
             Object.assign(this.asc, {
                 enCours: false, decompte: 0, etage: 0,
                 data: null, finA: 0, reste: 0, progres: [], fini: false,
@@ -4138,20 +4192,7 @@ createApp({
                 document.body.classList.add('game-active');
 
                 // Le décompte d'entrée : le serveur donne l'heure du départ
-                // Le décompte sonne à chaque nombre, puis s'ouvre d'un coup :
-                // on doit pouvoir se tenir prêt sans regarder l'écran.
-                let dernier = null;
-                const versLeDepart = () => {
-                    const r = Math.max(0, Math.ceil((data.countdownEndsAt - Date.now()) / 1000));
-                    if (r !== dernier) {
-                        if (r > 0) this.playSound(this.sounds.ascTic);
-                        else if (dernier !== null) this.playSound(this.sounds.ascPartir);
-                        dernier = r;
-                    }
-                    this.asc.decompte = r;
-                    if (r > 0) setTimeout(versLeDepart, 120);
-                };
-                versLeDepart();
+                this.lancerDecompteAsc(data.countdownEndsAt);
             });
 
             this.socket.on('ascension-floor-start', (data) => {
@@ -4182,9 +4223,10 @@ createApp({
                     if (!this.ascTrouve(data.characterId)) this.asc.trouves.push(data.characterId);
                     this.asc.saisies[data.characterId] = '';
                     this.playSound(this.sounds.ascJuste);
-                } else {
-                    this.ascRater(data.characterId);
+                    this.champSuivantGuess(data.characterId);
                 }
+                // Un nom faux ne dit rien : on tape encore, la réponse viendra.
+                // Secouer à chaque lettre rendrait la saisie insupportable.
             });
 
             // Cible : le serveur renvoie la suivante, ou remet le compteur à zéro.
@@ -4253,9 +4295,15 @@ createApp({
             // reprend où il en était, et la tour retrouve tout le monde.
             this.socket.on('ascension-state', (data) => {
                 if (!data || !data.active) return;
+                // Le décompte peut courir encore : on recharge pendant les
+                // quatre secondes d'entrée, et le jeu ne doit pas paraître
+                // avant l'heure.
+                const reste = data.countdownEndsAt
+                    ? Math.max(0, Math.ceil((data.countdownEndsAt - Date.now()) / 1000)) : 0;
+
                 Object.assign(this.asc, {
                     enCours: true,
-                    decompte: 0,
+                    decompte: reste,
                     total: data.floors,
                     timer: data.timer,
                     etage: data.currentFloor || 0,
@@ -4267,6 +4315,8 @@ createApp({
                 this.gameEnded = false;
                 this.lobbyMode = 'ascension';
                 document.body.classList.add('game-active');
+
+                if (reste > 0) this.lancerDecompteAsc(data.countdownEndsAt);
 
                 this.lancerChronoAsc(data.floorTimerEndTime);
                 this.calerJaugeAsc();
