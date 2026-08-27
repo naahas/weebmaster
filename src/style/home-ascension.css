@@ -59,14 +59,25 @@
     z-index: 58;
 }
 
+/* Le fil se vide d'un seul geste. Piloté par la largeur, il avançait par
+   pas de 250 ms : une animation le rend continu, et un délai négatif la
+   place où il faut si l'on arrive en cours d'étage. */
 .asc-jauge-fil {
     display: block;
+    width: 100%;
     height: 100%;
+    transform-origin: left center;
     background: linear-gradient(90deg, rgba(140, 180, 255, 0.5), rgba(140, 180, 255, 0.95));
     box-shadow: 0 0 0.7rem rgba(140, 180, 255, 0.4);
-    /* Le décompte tombe quatre fois par seconde : la transition lisse les
-       paliers sans jamais retarder l'information. */
-    transition: width 0.26s linear, background 0.4s ease;
+    animation-name: ascCoule;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+    transition: background 0.4s ease, box-shadow 0.4s ease;
+}
+
+@keyframes ascCoule {
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(0); }
 }
 
 .asc-jauge.urgence .asc-jauge-fil {
@@ -87,47 +98,88 @@
 }
 
 .asc-etage-ic {
-    width: 1rem;
-    height: 1rem;
+    width: 1.25rem;
+    height: 1.25rem;
     align-self: center;
     margin-right: 0.1rem;
     color: rgba(140, 180, 255, 0.6);
 }
 
-.asc-etage b { font-size: 1.7rem; font-weight: 400; color: #fff; }
-.asc-etage i { font-style: normal; font-size: 0.95rem; color: rgba(255, 255, 255, 0.28); }
+.asc-etage b { font-size: 2.2rem; font-weight: 400; color: #fff; }
+.asc-etage i { font-style: normal; font-size: 1.2rem; color: rgba(255, 255, 255, 0.28); }
 
 /* Le nom de l'épreuve, en grand : c'est la seule chose à lire en arrivant
    sur un étage, autant qu'elle se prenne d'un coup d'œil. */
-.asc-titre {
+/* Le nom de l'épreuve et, sous lui, ce qu'elle demande. Un filet les
+   sépare sans les détacher : c'est un titre et sa légende, pas deux
+   informations. */
+.asc-entete {
     position: fixed;
-    top: clamp(0.8rem, 2.2vh, 1.5rem);
+    top: clamp(1.5rem, 3.6vh, 2.6rem);
     left: 50%;
     transform: translateX(-50%);
     z-index: 55;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(1.8rem, 4vw, 2.8rem);
-    letter-spacing: 0.06em;
-    color: #fff;
-    white-space: nowrap;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
     animation: ascTitre 0.5s cubic-bezier(0.2, 0.9, 0.25, 1) both;
 }
 
 @keyframes ascTitre {
-    from { opacity: 0; transform: translateX(-50%) translateY(-0.5rem); }
+    from { opacity: 0; transform: translateX(-50%) translateY(-0.6rem); }
     to   { opacity: 1; transform: translateX(-50%); }
+}
+
+.asc-titre {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    line-height: 1;
+    letter-spacing: 0.06em;
+    color: #fff;
+    white-space: nowrap;
+}
+
+/* Le filet : une pastille au milieu d'un trait qui s'efface aux deux bouts */
+.asc-filet {
+    position: relative;
+    width: clamp(5rem, 12vw, 9rem);
+    height: 0.06rem;
+    background: linear-gradient(90deg, transparent, rgba(140, 180, 255, 0.45), transparent);
+}
+
+.asc-filet::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0.28rem;
+    height: 0.28rem;
+    border-radius: 50%;
+    background: rgba(140, 180, 255, 0.8);
+    box-shadow: 0 0 0.5rem rgba(140, 180, 255, 0.6);
+    transform: translate(-50%, -50%);
+}
+
+.asc-soustitre {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.42);
 }
 
 /* ══════════ L'épreuve ══════════ */
 /* L'épreuve se centre sur l'écran entier. La tour est posée par-dessus,
    hors du flux : dans le flux elle poussait tout vers la gauche, et le jeu
    se jouait de travers. */
+/* L'épreuve se centre sur l'écran entier, sans marge : c'est sa largeur
+   maximale qui l'empêche de courir sous la tour, pas un décalage. */
 .asc-epreuve {
     width: 100%;
     display: grid;
     place-items: center;
     min-width: 0;
-    padding: 0 clamp(9rem, 18vw, 15rem) 0 0;
 }
 
 .asc-attente,
@@ -160,7 +212,7 @@
     position: absolute;
     top: 3.6rem;
     bottom: 1.4rem;
-    right: clamp(1.2rem, 3.5vw, 3rem);
+    right: 0.9rem;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -472,4 +524,51 @@
 
     /* Le mot ne tiendrait pas entre deux étages : la teinte du palier suffit */
     .asc-etg-moi { display: none; }
+}
+
+/* ══════════ L'arrivée sur un étage ══════════
+   Le fil du temps part le premier — c'est lui qui commande —, puis le nom,
+   puis le plateau. Trois temps très courts : on doit sentir l'ordre sans
+   attendre quoi que ce soit. */
+.asc-plan {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    animation: ascPlan 0.42s cubic-bezier(0.2, 0.95, 0.25, 1) 0.12s both;
+}
+
+@keyframes ascPlan {
+    from { opacity: 0; transform: translateY(1.1rem) scale(0.985); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* Le passage d'un étage au suivant : le plan sortant descend — on vient de
+   le quitter par le haut —, le suivant monte à sa place. */
+.asc-pas-enter-active { animation: ascPasEntre 0.4s cubic-bezier(0.2, 0.95, 0.25, 1) both; }
+.asc-pas-leave-active { animation: ascPasSort 0.22s ease both; }
+
+@keyframes ascPasEntre {
+    from { opacity: 0; transform: translateY(2.2rem); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes ascPasSort {
+    from { opacity: 1; transform: none; }
+    to   { opacity: 0; transform: translateY(-1.6rem); }
+}
+
+/* Les éléments d'une épreuve entrent l'un après l'autre, derrière le plan */
+.asc-jeu > * { animation: ascPlan 0.4s cubic-bezier(0.2, 0.95, 0.25, 1) both; }
+.asc-jeu > *:nth-child(1) { animation-delay: 0.20s; }
+.asc-jeu > *:nth-child(2) { animation-delay: 0.27s; }
+.asc-jeu > *:nth-child(3) { animation-delay: 0.34s; }
+.asc-jeu > *:nth-child(4) { animation-delay: 0.41s; }
+.asc-jeu > *:nth-child(n + 5) { animation-delay: 0.46s; }
+
+/* Le plateau ne doit pas courir sous la tour : c'est sa largeur qui l'en
+   empêche, non un décalage — l'épreuve reste ainsi centrée sur l'écran. */
+.asc-jeu { max-width: min(46rem, 100vw - 20rem); }
+
+@media (max-width: 900px) {
+    .asc-jeu { max-width: 100%; }
 }

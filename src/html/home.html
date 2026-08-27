@@ -709,8 +709,8 @@
                             <!-- Le temps qui reste, en trait sur l'arête haute de
                                  l'écran : toujours visible, jamais dans le chemin. -->
                             <div class="asc-jauge" :class="{ urgence: asc.reste <= 5 }">
-                                <span class="asc-jauge-fil"
-                                      :style="{ width: (asc.timer ? Math.max(0, asc.reste / asc.timer * 100) : 0) + '%' }"></span>
+                                <span class="asc-jauge-fil" v-if="asc.data" :key="asc.etage"
+                                      :style="styleJaugeAsc()"></span>
                             </div>
 
                             <!-- L'étage dans son coin, l'épreuve au milieu -->
@@ -722,10 +722,18 @@
                                 <b>{{ ascMonEtage }}</b><i>/ {{ asc.total }}</i>
                             </div>
 
-                            <div class="asc-titre" v-if="asc.data" :key="asc.data.type">{{ asc.data.label }}</div>
+                            <!-- Le nom de l'épreuve, et sous lui ce qu'elle demande.
+                                 Le filet les sépare sans les couper l'un de l'autre. -->
+                            <div class="asc-entete" v-if="asc.data" :key="asc.etage">
+                                <span class="asc-titre">{{ asc.data.label }}</span>
+                                <span class="asc-filet"></span>
+                                <span class="asc-soustitre">{{ ascSousTitre() }}</span>
+                            </div>
 
                             <!-- L'épreuve de l'étage : un écran par type -->
                             <div class="asc-epreuve">
+                                <transition name="asc-pas" mode="out-in">
+                                <div class="asc-plan" :key="asc.etage">
                                 <div class="asc-attente" v-if="!asc.data">On monte…</div>
 
                                 <!-- ── Anagramme ── -->
@@ -777,6 +785,8 @@
                                     <span class="asc-brouillon-t">{{ asc.data.type }}</span>
                                     <span class="asc-brouillon-s">écran à venir</span>
                                 </div>
+                                </div>
+                                </transition>
                             </div>
                         </template>
 

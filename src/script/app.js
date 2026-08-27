@@ -1247,6 +1247,37 @@ createApp({
         },
 
         // ── 🏔️ Ascension ──
+        // La jauge s'écoule d'une seule animation, et non par pas de 250 ms :
+        // un délai négatif la place à l'instant voulu, sa durée reste pleine.
+        // La reprise après coupure vient donc gratuitement.
+        styleJaugeAsc() {
+            const d = this.asc.timer || 0;
+            if (!d || !this.asc.finA) return {};
+            const ecoule = Math.min(d, Math.max(0, d - (this.asc.finA - Date.now()) / 1000));
+            return {
+                animationDuration: d + 's',
+                animationDelay: (-ecoule).toFixed(2) + 's',
+            };
+        },
+
+        // Une courte description sous le nom de l'épreuve. « intruder » a la
+        // sienne, que le serveur compose avec l'anime tiré.
+        ascSousTitre() {
+            const d = this.asc.data;
+            if (!d) return '';
+            if (d.instruction) return d.instruction;
+            const par = {
+                guess: 'Nomme les ' + (d.totalToGuess || 5) + ' portraits',
+                target: "Clique sur les bons, dans l'ordre",
+                wordle: d.category === 'anime' ? 'Trouve le titre, lettre après lettre'
+                                               : 'Trouve le nom, lettre après lettre',
+                order: "Remets les arcs de " + (d.anime || '') + " dans l'ordre",
+                match: 'Relie chaque paire',
+                scramble: 'Remets les lettres à leur place',
+            };
+            return par[d.type] || '';
+        },
+
         // Le décompte de l'étage tourne côté client : le serveur donne l'heure
         // de fin, inutile d'un message par seconde et par joueur.
         lancerChronoAsc(finA) {
@@ -4034,10 +4065,18 @@ createApp({
                 document.body.classList.add('game-active');
 
                 // Le décompte d'entrée : le serveur donne l'heure du départ
+                // Le décompte sonne à chaque nombre, puis s'ouvre d'un coup :
+                // on doit pouvoir se tenir prêt sans regarder l'écran.
+                let dernier = null;
                 const versLeDepart = () => {
                     const r = Math.max(0, Math.ceil((data.countdownEndsAt - Date.now()) / 1000));
+                    if (r !== dernier) {
+                        if (r > 0) this.playSound(this.sounds.ascTic);
+                        else if (dernier !== null) this.playSound(this.sounds.ascPartir);
+                        dernier = r;
+                    }
                     this.asc.decompte = r;
-                    if (r > 0) setTimeout(versLeDepart, 200);
+                    if (r > 0) setTimeout(versLeDepart, 120);
                 };
                 versLeDepart();
             });
@@ -4053,6 +4092,10 @@ createApp({
                 // Chaque type prépare son propre plateau
                 if (data.floorData && data.floorData.type === 'scramble') this.prepararerScramble(data.floorData);
                 if (data.floorData && data.floorData.type === 'wordle') this.prepararerWordle(data.floorData);
+
+                // Un pas de plus dans la tour : le son le dit avant l'image.
+                // Pas au tout premier étage, où le décompte vient de sonner.
+                if (data.floor > 0) this.playSound(this.sounds.ascPas);
             });
 
             // L'anagramme : le serveur dit quelles lettres tombent juste.
@@ -5276,6 +5319,9 @@ createApp({
                 ascPose: this.createPreloadedSound('lock1.mp3'),
                 ascRate: this.createPreloadedSound('wrong.mp3'),
                 ascEtage: this.createPreloadedSound('pickup.mp3'),
+                ascTic: this.createPreloadedSound('click.mp3'),
+                ascPartir: this.createPreloadedSound('boost.mp3'),
+                ascPas: this.createPreloadedSound('step.mp3'),
             };
             
             // 💣 Son tictac en boucle (instance unique, pas cloné)
