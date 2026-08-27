@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ascension — la tour</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   Six façons de montrer une tour. La question n'est pas de savoir
+   laquelle est la plus jolie à trois joueurs, mais laquelle tient
+   encore à cinquante — c'est pour ça que le nombre se règle.
+   ════════════════════════════════════════════════════════════════ */
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 2rem 1.5rem 4rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #fff;
+    background: radial-gradient(70% 55% at 50% 0%, #16161d, #08080b 70%);
+    min-height: 100vh;
+}
+
+h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
+
+.sous {
+    margin: 0 0 1.8rem;
+    max-width: 46rem;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.42);
+}
+
+.barre {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.1rem;
+    margin-bottom: 2rem;
+    padding: 0.85rem 1.1rem;
+    border: 0.06rem solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.7rem;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.barre label { font-size: 0.78rem; color: rgba(255, 255, 255, 0.5); }
+
+.barre select, .barre button {
+    font: inherit;
+    font-size: 0.82rem;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.07);
+    border: 0.06rem solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.4rem;
+    padding: 0.35rem 0.6rem;
+    cursor: pointer;
+}
+
+.barre button:hover { background: rgba(140, 180, 255, 0.18); border-color: rgba(140, 180, 255, 0.45); }
+
+.grille {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: 2.4rem 1.6rem;
+}
+
+.cas { display: flex; flex-direction: column; align-items: center; gap: 0.8rem; }
+
+.scene {
+    position: relative;
+    width: 100%;
+    height: 30rem;
+    border: 0.06rem solid rgba(255, 255, 255, 0.06);
+    border-radius: 0.7rem;
+    background: linear-gradient(180deg, rgba(140, 180, 255, 0.03), transparent 40%), #0b0b0f;
+    overflow: hidden;
+}
+
+.titre { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255, 255, 255, 0.34); text-align: center; }
+.titre em { display: block; margin-top: 0.25rem; font-style: normal; font-weight: 400; font-size: 0.7rem; letter-spacing: 0; text-transform: none; color: rgba(255, 255, 255, 0.24); }
+
+/* Le jeton, commun à toutes les pistes */
+.j {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 0.58rem;
+    font-weight: 700;
+    color: #0b0b0e;
+    border-radius: 50%;
+    transition: top 0.6s cubic-bezier(0.2, 0.9, 0.25, 1), left 0.4s ease;
+}
+
+.j.moi { box-shadow: 0 0 0 0.11rem #0b0b0f, 0 0 0.7rem rgba(255, 215, 0, 0.7); z-index: 5; }
+.plus { background: rgba(255, 255, 255, 0.14) !important; color: rgba(255, 255, 255, 0.7) !important; font-size: 0.5rem; }
+
+/* ══════ A · Rail fin ══════ */
+.a .rail { position: absolute; left: 2.6rem; top: 1rem; bottom: 1rem; width: 0.09rem; background: linear-gradient(180deg, rgba(255,215,0,.35), rgba(255,255,255,.07)); }
+.a .tick { position: absolute; left: 2.1rem; width: 1rem; height: 0.06rem; background: rgba(255, 255, 255, 0.1); }
+.a .num { position: absolute; left: 0.5rem; font-family: 'Bebas Neue', sans-serif; font-size: 0.7rem; color: rgba(255,255,255,.22); transform: translateY(-50%); }
+
+/* ══════ B · Colonne pleine ══════ */
+.b .fut { position: absolute; left: 50%; top: 1rem; bottom: 1rem; width: 3.4rem; transform: translateX(-50%); border-radius: 0.3rem 0.3rem 0 0; background: linear-gradient(180deg, rgba(140,180,255,.08), rgba(140,180,255,.02)); box-shadow: inset 0 0 0 0.06rem rgba(255,255,255,.07); }
+.b .etg { position: absolute; left: 50%; width: 3.4rem; height: 0.06rem; background: rgba(255,255,255,.08); transform: translateX(-50%); }
+
+/* ══════ C · Escalier ══════ */
+.c .marche { position: absolute; height: 0.09rem; background: linear-gradient(90deg, rgba(140,180,255,.5), rgba(140,180,255,.05)); border-radius: 2rem; }
+
+/* ══════ D · Silhouette ══════ */
+.d .sil { position: absolute; left: 50%; bottom: 1rem; top: 1rem; transform: translateX(-50%); width: 7rem; clip-path: polygon(28% 0, 72% 0, 100% 100%, 0 100%); background: linear-gradient(180deg, rgba(140,180,255,.14), rgba(140,180,255,.03)); }
+.d .fen { position: absolute; width: 0.34rem; height: 0.2rem; border-radius: 0.06rem; background: rgba(255,255,255,.07); transition: background 0.5s ease, box-shadow 0.5s ease; }
+.d .fen.on { background: rgba(255, 215, 0, 0.75); box-shadow: 0 0 0.4rem rgba(255,215,0,.5); }
+
+/* ══════ E · Ruban ══════ */
+.e .ruban { position: absolute; left: 50%; top: 1rem; bottom: 1rem; width: 0.5rem; transform: translateX(-50%); border-radius: 2rem; background: rgba(255,255,255,.05); overflow: hidden; }
+.e .foule { position: absolute; left: 50%; width: 1.6rem; transform: translateX(-50%); border-radius: 2rem; background: rgba(140,180,255,.5); }
+.e .tete { position: absolute; left: 55%; display: flex; align-items: center; gap: 0.3rem; font-size: 0.62rem; color: rgba(255,255,255,.7); transform: translateY(-50%); white-space: nowrap; }
+
+/* ══════ F · Cartes ══════ */
+.f .carte { position: absolute; left: 0.7rem; right: 0.7rem; display: flex; align-items: center; gap: 0.5rem; padding: 0.32rem 0.5rem; border-radius: 0.35rem; background: rgba(255,255,255,.035); font-size: 0.66rem; transition: top 0.6s cubic-bezier(0.2,0.9,0.25,1); }
+.f .carte.moi { background: rgba(255,215,0,.12); box-shadow: inset 0 0 0 0.06rem rgba(255,215,0,.35); }
+.f .carte .n { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: rgba(255,255,255,.75); }
+.f .carte .e { font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; color: #fff; }
+.f .barref { position: absolute; left: 0; bottom: 0; height: 0.09rem; border-radius: 2rem; background: rgba(140,180,255,.55); }
+</style>
+</head>
+<body>
+
+<h1>Ascension — la tour</h1>
+<p class="sous">
+    Six façons de montrer où en sont les grimpeurs. La vraie question n'est pas laquelle est la plus
+    belle à trois joueurs, mais laquelle tient encore à cinquante : change le nombre pour voir.
+    Les jetons se regroupent par palier au-delà d'un certain nombre, et le surplus devient un « +N ».
+</p>
+
+<div class="barre">
+    <label for="n">Grimpeurs</label>
+    <select id="n"><option>3</option><option selected>12</option><option>30</option><option>50</option></select>
+    <label for="e">Étages</label>
+    <select id="e"><option>10</option><option selected>15</option><option>20</option></select>
+    <button id="monter">Faire grimper</button>
+    <button id="rejouer">Rejouer depuis le sol</button>
+</div>
+
+<div class="grille" id="grille"></div>
+
+<script>
+var PRENOMS = ['Adem','Kitsune','Shinobi','Senpai','Hokage','Ronin','Yokai','Nakama','Katana','Ramen',
+               'Kaiju','Otaku','Sensei','Onigiri','Tanuki','Oni','Sakura','Kage','Yuki','Hoshi'];
+var COULEURS = ['#7fb4ff','#6ee7b7','#d8b4fe','#fca5a5','#fcd34d','#f9a8d4','#5eead4','#a5b4fc'];
+var MAX_PAR_PALIER = 4;   // au-delà, le surplus devient « +N »
+
+var joueurs = [], etages = 15;
+
+function semer() {
+    var n = parseInt(document.getElementById('n').value, 10);
+    etages = parseInt(document.getElementById('e').value, 10);
+    joueurs = [];
+    for (var i = 0; i < n; i++) {
+        joueurs.push({
+            id: i,
+            nom: PRENOMS[i % PRENOMS.length] + (i >= PRENOMS.length ? i : ''),
+            couleur: COULEURS[i % COULEURS.length],
+            etage: 0,
+            moi: i === 0,
+        });
+    }
+    peindre();
+}
+
+function grimper() {
+    for (var i = 0; i < joueurs.length; i++) {
+        if (Math.random() < 0.55) joueurs[i].etage = Math.min(etages, joueurs[i].etage + 1);
+    }
+    peindre();
+}
+
+// Regroupe par palier et coupe le surplus
+function parPalier() {
+    var carte = {};
+    for (var i = 0; i < joueurs.length; i++) {
+        var e = Math.min(etages, joueurs[i].etage + 1);
+        (carte[e] = carte[e] || []).push(joueurs[i]);
+    }
+    return carte;
+}
+
+function jeton(j, gauche, haut, decale) {
+    return '<span class="j' + (j.moi ? ' moi' : '') + '" style="background:' + j.couleur +
+           ';left:' + gauche + ';top:' + haut + ';margin-left:' + decale + 'px" title="' + j.nom + '">' +
+           j.nom.charAt(0) + '</span>';
+}
+
+function surplus(k, gauche, haut, decale) {
+    return '<span class="j plus" style="left:' + gauche + ';top:' + haut + ';margin-left:' + decale + 'px">+' + k + '</span>';
+}
+
+// La hauteur d'un étage dans la scène, en pourcentage : l'étage 1 en bas
+function hauteur(e) { return (100 - (e - 1) / Math.max(1, etages - 1) * 100); }
+
+var CAS = {
+    // ── A · Rail fin : un trait, des graduations, les jetons dessus ──
+    a: function () {
+        var h = '<span class="rail"></span>', c = parPalier(), e, i;
+        for (e = 1; e <= etages; e++) {
+            var y = 'calc(1rem + ' + hauteur(e) + '% * 0.92 - 0.03rem)';
+            h += '<span class="tick" style="top:' + y + '"></span>';
+            if (e === 1 || e === etages || e % 5 === 0) h += '<span class="num" style="top:' + y + '">' + e + '</span>';
+        }
+        for (e in c) {
+            var g = c[e], y2 = 'calc(1rem + ' + hauteur(+e) + '% * 0.92 - 0.62rem)';
+            for (i = 0; i < Math.min(g.length, MAX_PAR_PALIER); i++) h += jeton(g[i], '3.4rem', y2, i * 14);
+            if (g.length > MAX_PAR_PALIER) h += surplus(g.length - MAX_PAR_PALIER, '3.4rem', y2, MAX_PAR_PALIER * 14);
+        }
+        return h;
+    },
+
+    // ── B · Colonne pleine : un fût, les jetons dedans ──
+    b: function () {
+        var h = '<span class="fut"></span>', c = parPalier(), e, i;
+        for (e = 1; e <= etages; e++) h += '<span class="etg" style="top:calc(1rem + ' + hauteur(e) + '% * 0.92)"></span>';
+        for (e in c) {
+            var g = c[e], y = 'calc(1rem + ' + hauteur(+e) + '% * 0.92 - 0.62rem)';
+            var n = Math.min(g.length, 3);
+            for (i = 0; i < n; i++) h += jeton(g[i], '50%', y, -18 + i * 17);
+            if (g.length > 3) h += surplus(g.length - 3, '50%', y, -18 + 3 * 17);
+        }
+        return h;
+    },
+
+    // ── C · Escalier : les marches montent vers la droite ──
+    c: function () {
+        var h = '', c = parPalier(), e, i;
+        for (e = 1; e <= etages; e++) {
+            var x = 4 + (e - 1) / Math.max(1, etages - 1) * 55;
+            h += '<span class="marche" style="left:' + x + '%;width:32%;top:calc(1rem + ' + hauteur(e) + '% * 0.92)"></span>';
+        }
+        for (e in c) {
+            var g = c[e], x2 = (4 + (+e - 1) / Math.max(1, etages - 1) * 55) + '%';
+            var y = 'calc(1rem + ' + hauteur(+e) + '% * 0.92 - 1.4rem)';
+            for (i = 0; i < Math.min(g.length, MAX_PAR_PALIER); i++) h += jeton(g[i], x2, y, i * 14);
+            if (g.length > MAX_PAR_PALIER) h += surplus(g.length - MAX_PAR_PALIER, x2, y, MAX_PAR_PALIER * 14);
+        }
+        return h;
+    },
+
+    // ── D · Silhouette : une tour qui s'allume étage par étage ──
+    d: function () {
+        var h = '<span class="sil"></span>', c = parPalier(), e, i;
+        var atteint = 0;
+        for (i = 0; i < joueurs.length; i++) atteint = Math.max(atteint, joueurs[i].etage + 1);
+        for (e = 1; e <= etages; e++) {
+            for (var k = 0; k < 3; k++) {
+                var dx = (k - 1) * 0.75;
+                h += '<span class="fen' + (e <= atteint ? ' on' : '') +
+                     '" style="left:calc(50% + ' + dx + 'rem - 0.17rem);top:calc(1rem + ' + hauteur(e) + '% * 0.92 - 0.1rem)"></span>';
+            }
+        }
+        for (e in c) {
+            var g = c[e], y = 'calc(1rem + ' + hauteur(+e) + '% * 0.92 - 0.62rem)';
+            for (i = 0; i < Math.min(g.length, 3); i++) h += jeton(g[i], '50%', y, 26 + i * 14);
+            if (g.length > 3) h += surplus(g.length - 3, '50%', y, 26 + 3 * 14);
+        }
+        return h;
+    },
+
+    // ── E · Ruban : la foule en densité, les têtes nommées ──
+    e: function () {
+        var h = '<span class="ruban"></span>', c = parPalier(), e;
+        for (e in c) {
+            var g = c[e], y = 'calc(1rem + ' + hauteur(+e) + '% * 0.92 - 0.35rem)';
+            var ep = Math.min(1, g.length / 8);
+            h += '<span class="foule" style="top:' + y + ';height:0.7rem;opacity:' + (0.25 + ep * 0.7) + '"></span>';
+        }
+        var tri = joueurs.slice().sort(function (a, b) { return b.etage - a.etage; });
+        for (var i = 0; i < Math.min(3, tri.length); i++) {
+            var y2 = 'calc(1rem + ' + hauteur(Math.min(etages, tri[i].etage + 1)) + '% * 0.92)';
+            h += '<span class="tete" style="top:' + y2 + '"><span class="j" style="position:relative;background:' +
+                 tri[i].couleur + ';left:0;top:0"></span>' + tri[i].nom + '</span>';
+        }
+        var moi = joueurs[0];
+        if (moi) {
+            var ym = 'calc(1rem + ' + hauteur(Math.min(etages, moi.etage + 1)) + '% * 0.92 - 0.62rem)';
+            h += jeton(moi, '50%', ym, -10);
+        }
+        return h;
+    },
+
+    // ── F · Cartes : un classement qui se réordonne ──
+    f: function () {
+        var tri = joueurs.slice().sort(function (a, b) { return b.etage - a.etage; });
+        var montre = tri.slice(0, 8), h = '';
+        for (var i = 0; i < montre.length; i++) {
+            var j = montre[i];
+            h += '<span class="carte' + (j.moi ? ' moi' : '') + '" style="top:' + (0.7 + i * 2.1) + 'rem">' +
+                 '<span class="j" style="position:relative;left:0;top:0;background:' + j.couleur + '">' + j.nom.charAt(0) + '</span>' +
+                 '<span class="n">' + j.nom + '</span><span class="e">' + Math.min(etages, j.etage + 1) + '</span>' +
+                 '<span class="barref" style="width:' + (Math.min(etages, j.etage + 1) / etages * 100) + '%"></span></span>';
+        }
+        if (tri.length > 8) {
+            h += '<span class="carte" style="top:' + (0.7 + 8 * 2.1) + 'rem;justify-content:center">' +
+                 '<span class="n" style="text-align:center;color:rgba(255,255,255,.35)">et ' + (tri.length - 8) + ' autres</span></span>';
+        }
+        return h;
+    }
+};
+
+var LIBELLES = [
+    ['a', 'A · Rail fin', 'un trait gradué, les jetons dessus'],
+    ['b', 'B · Colonne', 'un fût plein, on grimpe dedans'],
+    ['c', 'C · Escalier', 'les marches montent vers la droite'],
+    ['d', 'D · Silhouette', "la tour s'allume étage par étage"],
+    ['e', 'E · Ruban', 'la foule en densité, les têtes nommées'],
+    ['f', 'F · Cartes', 'un classement qui se réordonne']
+];
+
+var grille = document.getElementById('grille');
+
+function peindre() {
+    grille.innerHTML = LIBELLES.map(function (l) {
+        return '<div class="cas"><div class="scene ' + l[0] + '">' + CAS[l[0]]() + '</div>' +
+               '<span class="titre">' + l[1] + '<em>' + l[2] + '</em></span></div>';
+    }).join('');
+}
+
+document.getElementById('n').addEventListener('change', semer);
+document.getElementById('e').addEventListener('change', semer);
+document.getElementById('monter').addEventListener('click', grimper);
+document.getElementById('rejouer').addEventListener('click', semer);
+
+semer();
+</script>
+</body>
+</html>
