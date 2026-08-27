@@ -41,6 +41,14 @@ createApp({
                 // et celles que le serveur a déjà déclarées bien placées.
                 styleJauge: {},   // calculé à l'arrivée sur l'étage, figé ensuite
 
+                // Les trois épreuves à portraits partagent le même vocabulaire :
+                // ce qui est trouvé, ce qui vient d'être raté, et où l'on en est.
+                trouves: [],     // identifiants déjà validés (guess, intruder)
+                saisies: {},     // le nom tapé sous chaque portrait (guess)
+                faux: null,      // le portrait qui vient d'être raté, le temps du flash
+                cible: null,     // ce qu'il faut cliquer maintenant (target)
+                avance: 0,       // combien de cibles d'affilée (target)
+
                 fentes: [],
                 reserve: [],
                 figees: [],
@@ -1301,6 +1309,57 @@ createApp({
         arreterChronoAsc() {
             if (this.asc._tic) clearInterval(this.asc._tic);
             this.asc._tic = null;
+        },
+
+        // ── Les trois épreuves à portraits ──
+        prepararerGrille(d, dejaTrouves) {
+            this.asc.trouves = (dejaTrouves || []).slice();
+            this.asc.saisies = {};
+            this.asc.faux = null;
+            this.asc.cible = d.currentTarget || null;
+            this.asc.avance = 0;
+        },
+
+        // Combien il en reste, pour les épreuves qui se comptent
+        ascReste() {
+            const d = this.asc.data;
+            if (!d) return 0;
+            const total = d.totalTargets || d.totalToGuess || 0;
+            return Math.max(0, total - this.asc.trouves.length);
+        },
+
+        ascTrouve(id) {
+            return this.asc.trouves.indexOf(id) >= 0;
+        },
+
+        // Le rouge ne dure que le temps de se faire comprendre
+        ascRater(id) {
+            this.asc.faux = id;
+            this.playSound(this.sounds.ascRate);
+            clearTimeout(this._ascFauxT);
+            this._ascFauxT = setTimeout(() => { this.asc.faux = null; }, 600);
+        },
+
+        // ── Devine le perso ──
+        // On valide à la touche Entrée seulement : à chaque frappe, le serveur
+        // recevrait cinq fois plus de messages pour rien, et un nom juste tapé
+        // en passant serait validé avant qu'on ait fini de réfléchir.
+        envoyerGuess(id) {
+            const nom = (this.asc.saisies[id] || '').trim();
+            if (!nom || !this.socket || this.ascTrouve(id)) return;
+            this.socket.emit('ascension-check-guess', { characterId: id, name: nom });
+        },
+
+        // ── Cible ──
+        cliquerCible(id) {
+            if (!this.socket) return;
+            this.socket.emit('ascension-check-target', { characterId: id });
+        },
+
+        // ── Intrus ──
+        cliquerIntrus(id) {
+            if (!this.socket || this.ascTrouve(id)) return;
+            this.socket.emit('ascension-check-intruder', { characterId: id });
         },
 
         // ── Anagramme ──
@@ -4105,12 +4164,54 @@ createApp({
                 this.calerJaugeAsc();
 
                 // Chaque type prépare son propre plateau
-                if (data.floorData && data.floorData.type === 'scramble') this.prepararerScramble(data.floorData);
-                if (data.floorData && data.floorData.type === 'wordle') this.prepararerWordle(data.floorData);
+                const f0 = data.floorData;
+                if (f0 && f0.type === 'scramble') this.prepararerScramble(f0);
+                if (f0 && f0.type === 'wordle') this.prepararerWordle(f0);
+                if (f0 && ['guess', 'target', 'intruder'].indexOf(f0.type) >= 0) this.prepararerGrille(f0);
 
                 // Un pas de plus dans la tour : le son le dit avant l'image.
                 // Pas au tout premier étage, où le décompte vient de sonner.
                 if (data.floor > 0) this.playSound(this.sounds.ascPas);
+            });
+
+            // Devine le perso : un portrait à la fois, chacun se verrouille
+            // dès qu'il tombe juste — on ne retape pas ce qu'on a trouvé.
+            this.socket.on('ascension-guess-result', (data) => {
+                if (!data || !data.characterId) return;
+                if (data.correct) {
+                    if (!this.ascTrouve(data.characterId)) this.asc.trouves.push(data.characterId);
+                    this.asc.saisies[data.characterId] = '';
+                    this.playSound(this.sounds.ascJuste);
+                } else {
+                    this.ascRater(data.characterId);
+                }
+            });
+
+            // Cible : le serveur renvoie la suivante, ou remet le compteur à zéro.
+            // C'est lui qui décide de la cible, jamais le client — sinon on
+            // pourrait deviner la suite en lisant la liste.
+            this.socket.on('ascension-target-result', (data) => {
+                if (!data) return;
+                this.asc.avance = data.progress || 0;
+                if (data.currentTarget) this.asc.cible = data.currentTarget;
+                if (data.correct) {
+                    this.asc.trouves.push(data.characterId);
+                    this.playSound(this.sounds.ascJuste);
+                } else {
+                    // Une erreur efface la série : la grille repart vierge
+                    this.asc.trouves = [];
+                    this.ascRater(data.characterId);
+                }
+            });
+
+            this.socket.on('ascension-intruder-result', (data) => {
+                if (!data) return;
+                if (data.correct) {
+                    if (!this.ascTrouve(data.characterId)) this.asc.trouves.push(data.characterId);
+                    if (!data.alreadyFound) this.playSound(this.sounds.ascJuste);
+                } else {
+                    this.ascRater(data.characterId);
+                }
             });
 
             // L'anagramme : le serveur dit quelles lettres tombent juste.
@@ -4173,6 +4274,10 @@ createApp({
                 const f = data.floorData;
                 if (f && f.type === 'scramble') this.prepararerScramble(f);
                 if (f && f.type === 'wordle') this.prepararerWordle(f);
+                // Le serveur garde les noms déjà trouvés : on ne les redemande pas
+                if (f && ['guess', 'target', 'intruder'].indexOf(f.type) >= 0) {
+                    this.prepararerGrille(f, data.myValidatedGuesses);
+                }
             });
 
             this.socket.on('ascension-progress', (data) => {
@@ -5363,6 +5468,7 @@ createApp({
                 ascPose: this.createPreloadedSound('dealing.mp3'),
                 ascRate: this.createPreloadedSound('wrong.mp3'),
                 ascEtage: this.createPreloadedSound('pickup.mp3'),
+                ascJuste: this.createPreloadedSound('pickup.mp3'),
                 ascTic: this.createPreloadedSound('click.mp3'),
                 ascPartir: this.createPreloadedSound('boost.mp3'),
                 ascPas: this.createPreloadedSound('step.mp3'),

@@ -605,3 +605,173 @@
         to   { opacity: 1; transform: none; }
     }
 }
+
+/* ══════════ Les trois épreuves à portraits ══════════
+   Elles partagent leur vocabulaire : une vignette, un état trouvé, un état
+   raté. Ce qui change, c'est ce qu'on en fait — nommer, viser, débusquer. */
+
+/* ── Devine le perso ── */
+.asc-portraits {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: clamp(0.5rem, 1.6vw, 1rem);
+}
+
+.asc-portrait {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    width: clamp(5.4rem, 11vw, 8rem);
+}
+
+.asc-portrait img {
+    width: 100%;
+    aspect-ratio: 225 / 350;
+    object-fit: cover;
+    border-radius: 0.4rem;
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: 0 0 0 0.06rem rgba(255, 255, 255, 0.08);
+    transition: box-shadow 0.3s ease, filter 0.3s ease;
+}
+
+/* Trouvé : le portrait s'éteint doucement, sa saisie se verrouille. Il reste
+   visible — on veut voir ce qu'on a déjà fait, pas le faire disparaître. */
+.asc-portrait.trouve img {
+    box-shadow: 0 0 0 0.11rem rgba(110, 231, 183, 0.7);
+    filter: saturate(0.55) brightness(0.75);
+}
+
+.asc-portrait.rate img {
+    box-shadow: 0 0 0 0.11rem rgba(255, 100, 100, 0.75);
+    animation: ascSecoue 0.4s ease;
+}
+
+.asc-nom {
+    width: 100%;
+    padding: 0.4rem 0.35rem;
+    font-family: inherit;
+    font-size: 0.74rem;
+    font-weight: 600;
+    text-align: center;
+    color: rgba(255, 250, 235, 0.95);
+    background: rgba(255, 255, 255, 0.04);
+    border: none;
+    border-bottom: 0.11rem solid rgba(140, 180, 255, 0.35);
+    border-radius: 0.3rem 0.3rem 0 0;
+    outline: none;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.asc-nom:focus { background: rgba(255, 255, 255, 0.07); border-bottom-color: rgba(140, 180, 255, 0.9); }
+
+.asc-nom:disabled {
+    color: #6ee7b7;
+    background: rgba(110, 231, 183, 0.08);
+    border-bottom-color: rgba(110, 231, 183, 0.5);
+}
+
+/* ── La grille des vingt-quatre ── */
+.asc-grille {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: clamp(0.3rem, 0.8vw, 0.55rem);
+    width: 100%;
+}
+
+.asc-vignette {
+    padding: 0;
+    border: none;
+    background: none;
+    border-radius: 0.35rem;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 0.18s ease;
+}
+
+.asc-vignette img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 225 / 350;
+    object-fit: cover;
+    border-radius: 0.35rem;
+    box-shadow: 0 0 0 0.06rem rgba(255, 255, 255, 0.07);
+    transition: box-shadow 0.25s ease, filter 0.25s ease;
+}
+
+.asc-vignette:hover:not(:disabled) { transform: translateY(-0.15rem); }
+.asc-vignette:hover:not(:disabled) img { box-shadow: 0 0 0 0.09rem rgba(140, 180, 255, 0.55); }
+
+.asc-vignette.trouve img {
+    box-shadow: 0 0 0 0.11rem rgba(110, 231, 183, 0.75);
+    filter: saturate(0.5) brightness(0.7);
+}
+
+.asc-vignette.rate img {
+    box-shadow: 0 0 0 0.11rem rgba(255, 100, 100, 0.8);
+    animation: ascSecoue 0.4s ease;
+}
+
+.asc-vignette:disabled { cursor: default; }
+
+/* ── Cible : ce qu'il faut viser, et où l'on en est ── */
+.asc-vise {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.asc-vise-l {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.32);
+}
+
+/* Le nom change à chaque réussite : il se renouvelle d'un mouvement, sinon
+   on ne verrait pas qu'on est passé au suivant. */
+.asc-vise-n {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(1.4rem, 3vw, 2.1rem);
+    color: var(--neon-primary, #ffd700);
+    letter-spacing: 0.04em;
+    animation: ascVise 0.35s cubic-bezier(0.2, 1.2, 0.35, 1) both;
+}
+
+@keyframes ascVise {
+    from { opacity: 0; transform: translateY(0.5rem) scale(0.94); }
+    to   { opacity: 1; transform: none; }
+}
+
+.asc-vise-pts { display: flex; gap: 0.28rem; }
+
+.asc-vise-pts i {
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.14);
+    transition: background 0.25s ease, box-shadow 0.25s ease;
+}
+
+.asc-vise-pts i.on {
+    background: #6ee7b7;
+    box-shadow: 0 0 0.45rem rgba(110, 231, 183, 0.6);
+}
+
+/* ── Intrus : le compte de ce qu'on a débusqué ── */
+.asc-compte {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+    font-family: 'Bebas Neue', sans-serif;
+}
+
+.asc-compte b { font-size: 2rem; font-weight: 400; color: #6ee7b7; }
+.asc-compte i { font-style: normal; font-size: 1.1rem; color: rgba(255, 255, 255, 0.3); }
+
+@media (max-width: 900px) {
+    .asc-grille { grid-template-columns: repeat(6, 1fr); }
+    .asc-portrait { width: clamp(4.2rem, 26vw, 6rem); }
+    .asc-vise-n { font-size: 1.3rem; }
+}

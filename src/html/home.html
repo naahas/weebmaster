@@ -739,6 +739,65 @@
                                 <div class="asc-plan" :key="asc.etage">
                                 <div class="asc-attente" v-if="!asc.data">On monte…</div>
 
+                                <!-- ── Devine le perso ── -->
+                                <!-- Chaque portrait porte sa propre saisie : on répond
+                                     dans l'ordre qu'on veut, et un nom trouvé se
+                                     verrouille pour qu'on ne le retape pas. -->
+                                <div class="asc-jeu asc-devine" v-else-if="asc.data.type === 'guess'">
+                                    <div class="asc-portraits">
+                                        <div class="asc-portrait" v-for="p in asc.data.characters" :key="p.id"
+                                             :class="{ trouve: ascTrouve(p.id), rate: asc.faux === p.id }">
+                                            <img :src="'/ascensionpic/' + p.img" alt="" draggable="false">
+                                            <input class="asc-nom" type="text"
+                                                   :value="asc.saisies[p.id] || ''"
+                                                   :disabled="ascTrouve(p.id)"
+                                                   :placeholder="ascTrouve(p.id) ? '' : '?'"
+                                                   @input="asc.saisies[p.id] = $event.target.value"
+                                                   @keyup.enter="envoyerGuess(p.id)"
+                                                   autocomplete="off" autocorrect="off" spellcheck="false">
+                                        </div>
+                                    </div>
+                                    <span class="asc-aide">{{ ascReste() }} restant<span v-if="ascReste() > 1">s</span> · Entrée pour valider</span>
+                                </div>
+
+                                <!-- ── Cible ── -->
+                                <!-- Le nom à chercher vient du serveur et change à chaque
+                                     réussite : le client ne connaît jamais la suite. -->
+                                <div class="asc-jeu asc-cible" v-else-if="asc.data.type === 'target'">
+                                    <div class="asc-vise">
+                                        <span class="asc-vise-l">Clique sur</span>
+                                        <span class="asc-vise-n" :key="asc.cible && asc.cible.id">{{ asc.cible ? asc.cible.name : '…' }}</span>
+                                        <span class="asc-vise-pts">
+                                            <i v-for="n in asc.data.totalTargets" :key="n"
+                                               :class="{ on: n <= asc.avance }"></i>
+                                        </span>
+                                    </div>
+
+                                    <div class="asc-grille">
+                                        <button class="asc-vignette" v-for="p in asc.data.characters" :key="p.id"
+                                                :class="{ trouve: ascTrouve(p.id), rate: asc.faux === p.id }"
+                                                @click="cliquerCible(p.id)">
+                                            <img :src="'/ascensionpic/' + p.img" alt="" draggable="false">
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- ── Intrus ── -->
+                                <div class="asc-jeu asc-intrus" v-else-if="asc.data.type === 'intruder'">
+                                    <div class="asc-compte">
+                                        <b>{{ asc.trouves.length }}</b><i>/ {{ asc.data.totalTargets }}</i>
+                                    </div>
+
+                                    <div class="asc-grille">
+                                        <button class="asc-vignette" v-for="p in asc.data.characters" :key="p.id"
+                                                :class="{ trouve: ascTrouve(p.id), rate: asc.faux === p.id }"
+                                                :disabled="ascTrouve(p.id)"
+                                                @click="cliquerIntrus(p.id)">
+                                            <img :src="'/ascensionpic/' + p.img" alt="" draggable="false">
+                                        </button>
+                                    </div>
+                                </div>
+
                                 <!-- ── Anagramme ── -->
                                 <div class="asc-jeu asc-anagramme" v-else-if="asc.data.type === 'scramble'"
                                      :class="{ ko: asc.secousse }">

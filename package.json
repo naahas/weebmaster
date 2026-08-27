@@ -24,7 +24,8 @@
     "test:backoffice": "node scripts/test-backoffice.js",
     "test:ascension": "node scripts/test-ascension.js",
     "test:tour": "node scripts/test-tour.js",
-    "test:tour-reprise": "node scripts/test-tour-reprise.js"
+    "test:tour-reprise": "node scripts/test-tour-reprise.js",
+    "test:tour-grilles": "node scripts/test-tour-grilles.js"
   },
   "keywords": [
     "quiz",
