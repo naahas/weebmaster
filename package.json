@@ -21,7 +21,8 @@
     "test:plafond": "node scripts/test-plafond.js",
     "test:depart": "node scripts/test-depart-bomb.js",
     "test:rush": "node scripts/test-rush.js",
-    "test:backoffice": "node scripts/test-backoffice.js"
+    "test:backoffice": "node scripts/test-backoffice.js",
+    "test:ascension": "node scripts/test-ascension.js"
   },
   "keywords": [
     "quiz",
