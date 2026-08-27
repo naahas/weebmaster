@@ -74,3 +74,33 @@ Sous-types de `match` : `char_anime`, `couples`, `techniques`, `weapons`, `rival
 - Le mode est **jouable en solo** — c'est le seul du lot. S'il fallait un jour un mode qui tourne sans
   streamer, c'est celui-là.
 - Point d'attention : 90 Mo d'images. À passer sur un CDN ou à recompresser avant de le réactiver.
+
+---
+
+## Le contrat client ↔ serveur (relevé au portage v2)
+
+Établi en interrogeant le moteur, pas la mémoire. `getFloorDataForClient()` retire
+systématiquement la réponse ; ce tableau donne ce qui reste.
+
+| Type | Le client reçoit | Il renvoie | Réponse |
+|---|---|---|---|
+| `guess` | `totalToGuess`, `characters[{id, img, anime}]` | `ascension-check-guess` `{characterId, name, source}` | `ascension-guess-result` |
+| `target` | `totalTargets`, `characters[{id, img, name, anime}]`, `currentTarget{id, name}` | `ascension-check-target` `{characterId}` | `ascension-target-result` |
+| `intruder` | `variant`, `targetAnime`, `instruction`, `totalTargets`, `characters[…]` | `ascension-check-intruder` `{characterId}` | `ascension-intruder-result` |
+| `wordle` | `wordLength`, `category`, `groups`, `animeHint` | `ascension-check-wordle` `{guess}` | `ascension-wordle-result` |
+| `order` | `anime`, `arcs[{id, name, img}]` | `ascension-check-order` `{order:[id…]}` | `ascension-order-result` |
+| `match` | `subtype`, `left[{id, name, img}]`, `right[{id, value}]` | `ascension-check-match` `{connections}` | `ascension-match-result` |
+| `scramble` | `wordLength`, `category`, `scrambled[…lettres]`, `hint` | `ascension-check-scramble` `{guess}` | `ascension-scramble-result` |
+
+Tous répondent **aussi** `ascension-answer-result` quand l'étage est validé.
+
+Événements de salon : `ascension-game-started`, `ascension-floor-start` (au seul
+joueur concerné, via le salon `<code>:asc:<playerId>`), `ascension-progress`,
+`ascension-game-end`, `ascension-config`.
+
+### ⚠️ Ce qui fuite encore, à traiter avec les portraits de Rush
+
+- `guess` : l'identifiant **et** le nom du fichier image donnent le nom cherché.
+- `intruder` : le champ `anime` de chaque personnage désigne les cibles.
+
+`npm run test:ascension` garde ces trois échecs rouges tant que ce n'est pas fait.
