@@ -39,6 +39,8 @@ createApp({
 
                 // Anagramme : les lettres posées, celles qui restent en réserve,
                 // et celles que le serveur a déjà déclarées bien placées.
+                styleJauge: {},   // calculé à l'arrivée sur l'étage, figé ensuite
+
                 fentes: [],
                 reserve: [],
                 figees: [],
@@ -1247,14 +1249,16 @@ createApp({
         },
 
         // ── 🏔️ Ascension ──
-        // La jauge s'écoule d'une seule animation, et non par pas de 250 ms :
-        // un délai négatif la place à l'instant voulu, sa durée reste pleine.
-        // La reprise après coupure vient donc gratuitement.
-        styleJaugeAsc() {
+        // La jauge s'écoule d'une seule animation. Le style se calcule UNE FOIS,
+        // à l'arrivée sur l'étage, et ne bouge plus : lié à une méthode, il était
+        // refait à chaque rendu — donc quatre fois par seconde, le décompte
+        // rafraîchissant la vue — et l'animation repartait de zéro à chaque fois.
+        // C'était la cause des sauts.
+        calerJaugeAsc() {
             const d = this.asc.timer || 0;
-            if (!d || !this.asc.finA) return {};
+            if (!d || !this.asc.finA) { this.asc.styleJauge = {}; return; }
             const ecoule = Math.min(d, Math.max(0, d - (this.asc.finA - Date.now()) / 1000));
-            return {
+            this.asc.styleJauge = {
                 animationDuration: d + 's',
                 animationDelay: (-ecoule).toFixed(2) + 's',
             };
@@ -4088,6 +4092,7 @@ createApp({
                 this.asc.data = data.floorData;
                 if (data.playerProgress) this.asc.progres = data.playerProgress;
                 this.lancerChronoAsc(data.timerEndTime);
+                this.calerJaugeAsc();
 
                 // Chaque type prépare son propre plateau
                 if (data.floorData && data.floorData.type === 'scramble') this.prepararerScramble(data.floorData);

@@ -115,7 +115,7 @@
    informations. */
 .asc-entete {
     position: fixed;
-    top: clamp(1.5rem, 3.6vh, 2.6rem);
+    top: clamp(2.1rem, 5vh, 3.4rem);
     left: 50%;
     transform: translateX(-50%);
     z-index: 55;
@@ -133,7 +133,7 @@
 
 .asc-titre {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-size: clamp(1.5rem, 3.2vw, 2.3rem);
     line-height: 1;
     letter-spacing: 0.06em;
     color: #fff;
@@ -216,7 +216,7 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    width: 7.5rem;
+    width: 4.9rem;
 }
 
 /* Le fût, en fond : il court d'un bout à l'autre de la colonne, les paliers
@@ -308,21 +308,27 @@
     background: var(--neon-primary, #ffd700);
 }
 
-.asc-etg-moi {
+/* Ma place se marque d'une pointe dans la marge des numéros, et non d'un
+   mot : « Vous » forçait la colonne à réserver sa largeur, ce qui poussait
+   tout le jeu vers la gauche. La pointe ne coûte rien. */
+.asc-etg.moi::before {
+    content: '';
     position: absolute;
-    left: 5.2rem;
-    font-size: 0.58rem;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--neon-primary, #ffd700);
-    white-space: nowrap;
-    animation: ascVous 0.45s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+    left: 1.9rem;
+    top: 50%;
+    width: 0;
+    height: 0;
+    border-top: 0.3rem solid transparent;
+    border-bottom: 0.3rem solid transparent;
+    border-left: 0.36rem solid var(--neon-primary, #ffd700);
+    transform: translateY(-50%);
+    filter: drop-shadow(0 0 0.35rem rgba(255, 215, 0, 0.6));
+    animation: ascRepere 0.45s cubic-bezier(0.2, 1.3, 0.35, 1) both;
 }
 
-@keyframes ascVous {
-    from { opacity: 0; transform: translateX(-0.4rem); }
-    to   { opacity: 1; transform: none; }
+@keyframes ascRepere {
+    from { opacity: 0; transform: translateY(-50%) translateX(-0.35rem); }
+    to   { opacity: 1; transform: translateY(-50%); }
 }
 
 /* ══════════ Les épreuves ══════════
@@ -522,8 +528,17 @@
         transform: scale(1);
     }
 
-    /* Le mot ne tiendrait pas entre deux étages : la teinte du palier suffit */
-    .asc-etg-moi { display: none; }
+    /* Couchée, la pointe se met à viser vers le haut */
+    .asc-etg.moi::before {
+        left: 50%;
+        top: auto;
+        bottom: -0.1rem;
+        border-left: 0.3rem solid transparent;
+        border-right: 0.3rem solid transparent;
+        border-bottom: 0.36rem solid var(--neon-primary, #ffd700);
+        border-top: none;
+        transform: translateX(-50%);
+    }
 }
 
 /* ══════════ L'arrivée sur un étage ══════════
