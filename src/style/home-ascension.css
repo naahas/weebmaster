@@ -47,63 +47,87 @@
 }
 
 /* ══════════ L'en-tête : où j'en suis, et le temps ══════════ */
-.asc-tete {
+/* Le temps, en trait sur l'arête haute. Un nombre attire l'œil à chaque
+   seconde ; un trait qui se vide se lit du coin de l'œil sans quitter le jeu. */
+.asc-jauge {
     position: fixed;
-    top: clamp(1.1rem, 3vh, 2rem);
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    align-items: center;
-    gap: clamp(1rem, 3vw, 2.2rem);
-    z-index: 55;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 0.16rem;
+    background: rgba(255, 255, 255, 0.05);
+    z-index: 58;
 }
 
+.asc-jauge-fil {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(140, 180, 255, 0.5), rgba(140, 180, 255, 0.95));
+    box-shadow: 0 0 0.7rem rgba(140, 180, 255, 0.4);
+    /* Le décompte tombe quatre fois par seconde : la transition lisse les
+       paliers sans jamais retarder l'information. */
+    transition: width 0.26s linear, background 0.4s ease;
+}
+
+.asc-jauge.urgence .asc-jauge-fil {
+    background: linear-gradient(90deg, rgba(255, 100, 100, 0.6), #ff5a5a);
+    box-shadow: 0 0 0.9rem rgba(255, 90, 90, 0.55);
+}
+
+/* L'étage dans son coin : c'est un repère, pas une annonce */
 .asc-etage {
+    position: fixed;
+    top: clamp(1rem, 2.6vh, 1.7rem);
+    left: clamp(1.1rem, 3vw, 2.2rem);
     display: flex;
     align-items: baseline;
-    gap: 0.4rem;
+    gap: 0.35rem;
+    z-index: 55;
     font-family: 'Bebas Neue', sans-serif;
 }
 
-.asc-etage em {
-    font-style: normal;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.32);
+.asc-etage-ic {
+    width: 1rem;
+    height: 1rem;
+    align-self: center;
+    margin-right: 0.1rem;
+    color: rgba(140, 180, 255, 0.6);
 }
 
-.asc-etage b { font-size: 2rem; font-weight: 400; color: #fff; }
-.asc-etage i { font-style: normal; font-size: 1.1rem; color: rgba(255, 255, 255, 0.3); }
+.asc-etage b { font-size: 1.7rem; font-weight: 400; color: #fff; }
+.asc-etage i { font-style: normal; font-size: 0.95rem; color: rgba(255, 255, 255, 0.28); }
 
-.asc-consigne {
-    font-size: 0.74rem;
-    font-weight: 600;
+/* Le nom de l'épreuve, en grand : c'est la seule chose à lire en arrivant
+   sur un étage, autant qu'elle se prenne d'un coup d'œil. */
+.asc-titre {
+    position: fixed;
+    top: clamp(0.8rem, 2.2vh, 1.5rem);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 55;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
     letter-spacing: 0.06em;
-    color: rgba(140, 180, 255, 0.85);
+    color: #fff;
+    white-space: nowrap;
+    animation: ascTitre 0.5s cubic-bezier(0.2, 0.9, 0.25, 1) both;
 }
 
-.asc-chrono {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 2rem;
-    color: rgba(255, 255, 255, 0.75);
-    font-variant-numeric: tabular-nums;
-    transition: color 0.3s ease, text-shadow 0.3s ease;
-}
-
-.asc-chrono.urgence {
-    color: #ff6b6b;
-    text-shadow: 0 0 1.4rem rgba(255, 90, 90, 0.5);
+@keyframes ascTitre {
+    from { opacity: 0; transform: translateX(-50%) translateY(-0.5rem); }
+    to   { opacity: 1; transform: translateX(-50%); }
 }
 
 /* ══════════ L'épreuve ══════════ */
+/* L'épreuve se centre sur l'écran entier. La tour est posée par-dessus,
+   hors du flux : dans le flux elle poussait tout vers la gauche, et le jeu
+   se jouait de travers. */
 .asc-epreuve {
-    flex: 1;
+    width: 100%;
     display: grid;
     place-items: center;
     min-width: 0;
+    padding: 0 clamp(9rem, 18vw, 15rem) 0 0;
 }
 
 .asc-attente,
@@ -133,13 +157,14 @@
    se partage entre les étages : à vingt paliers ils restent lisibles, la
    ligne de sol suffisant à les séparer. */
 .asc-tour {
-    flex: 0 0 auto;
-    align-self: stretch;
+    position: absolute;
+    top: 3.4rem;
+    bottom: 1.2rem;
+    right: clamp(1rem, 3vw, 2.5rem);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    width: clamp(9rem, 16vw, 13rem);
-    margin-left: clamp(1rem, 3vw, 2.5rem);
+    width: clamp(8rem, 14vw, 11rem);
     padding: 0.4rem 0;
 }
 
@@ -259,9 +284,10 @@
     .asc-palier-sol { left: 0; right: 0; bottom: auto; top: 0; }
     .asc-palier-gens { flex: 0 0 auto; justify-content: center; }
     .asc-jeton { width: 1rem; height: 1rem; font-size: 0.5rem; }
-    .asc-tete { gap: 0.9rem; }
-    .asc-etage b { font-size: 1.5rem; }
-    .asc-chrono { font-size: 1.6rem; }
+    .asc-epreuve { padding: 0; }
+    .asc-etage { top: 0.7rem; left: 0.8rem; }
+    .asc-etage b { font-size: 1.3rem; }
+    .asc-titre { font-size: 1.4rem; top: 0.75rem; }
 }
 
 /* ══════════ Les épreuves ══════════

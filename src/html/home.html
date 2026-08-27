@@ -642,7 +642,7 @@
             <!-- État: Partie en cours -->
             <!-- 🆕 v2 — Contrôles de l'hôte pendant la partie (remplacent /admin) -->
             <!-- Commandes de l'hôte : enchaînement en bas à droite, arrêt en bas à gauche -->
-            <div class="v2-hostbar" v-if="isHost && gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'rush'">
+            <div class="v2-hostbar" v-if="isHost && gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'rush' && lobbyMode !== 'ascension'">
                 <button class="v2q-cmd-btn"
                         @click="hostNextQuestion" :disabled="nextQuestionBusy || !showResults || autoMode"
                         :title="autoMode ? 'Le mode auto enchaîne tout seul' : (showResults ? 'Question suivante' : 'Disponible à la fin de la question')">
@@ -706,16 +706,23 @@
                         </div>
 
                         <template v-else>
-                            <!-- L'étage courant et le temps qu'il reste -->
-                            <div class="asc-tete">
-                                <span class="asc-etage">
-                                    <em>Étage</em>
-                                    <b>{{ ascMonEtage }}</b>
-                                    <i>/ {{ asc.total }}</i>
-                                </span>
-                                <span class="asc-consigne" v-if="asc.data">{{ asc.data.label }}</span>
-                                <span class="asc-chrono" :class="{ urgence: asc.reste <= 5 }">{{ asc.reste }}</span>
+                            <!-- Le temps qui reste, en trait sur l'arête haute de
+                                 l'écran : toujours visible, jamais dans le chemin. -->
+                            <div class="asc-jauge" :class="{ urgence: asc.reste <= 5 }">
+                                <span class="asc-jauge-fil"
+                                      :style="{ width: (asc.timer ? Math.max(0, asc.reste / asc.timer * 100) : 0) + '%' }"></span>
                             </div>
+
+                            <!-- L'étage dans son coin, l'épreuve au milieu -->
+                            <div class="asc-etage">
+                                <svg class="asc-etage-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 21h18"/><path d="M6 21V10l6-5 6 5v11"/><path d="M10 21v-5h4v5"/>
+                                </svg>
+                                <b>{{ ascMonEtage }}</b><i>/ {{ asc.total }}</i>
+                            </div>
+
+                            <div class="asc-titre" v-if="asc.data" :key="asc.data.type">{{ asc.data.label }}</div>
 
                             <!-- L'épreuve de l'étage : un écran par type -->
                             <div class="asc-epreuve">
