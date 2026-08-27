@@ -83,7 +83,7 @@ createApp({
                   desc: "La bombe tourne. Cite un perso avant qu'elle explose." },
                 { id: 'rush',      name: 'Rush',      kind: 'Solo',   players: '∞',  img: 'tengen2.png',
                   desc: "Un portrait, un nom. La plus longue serie gagne." },
-                { id: 'ascension', name: 'Ascension', kind: 'Solo',   players: '∞',  img: 'tengen2.png',
+                { id: 'ascension', name: 'Ascension', kind: 'Solo',   players: '∞',  img: 'esdeath.png',
                   desc: "Une tour d'étages, chacun à son rythme. Le premier au sommet gagne." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.
@@ -2921,6 +2921,14 @@ createApp({
                     this.socket.emit('rush-get-state');
                     console.log('⚡ Demande état Rush après connexion');
                 }
+
+                // 🏔️ Idem pour Ascension. Le serveur garde l'étage de chacun et
+                // l'heure de fin du minuteur : tout se retrouve, y compris la
+                // position dans la tour.
+                if (this.lobbyMode === 'ascension') {
+                    this.socket.emit('ascension-reconnect', { playerId: this.playerId });
+                    console.log('🏔️ Demande état Ascension après connexion');
+                }
                 
             });
 
@@ -4136,6 +4144,33 @@ createApp({
 
             this.socket.on('ascension-answer-result', (data) => {
                 if (data && data.correct) this.playSound(this.sounds.ascEtage);
+            });
+
+            // La reprise : on se replace à l'étage où l'on était, le minuteur
+            // reprend où il en était, et la tour retrouve tout le monde.
+            this.socket.on('ascension-state', (data) => {
+                if (!data || !data.active) return;
+                Object.assign(this.asc, {
+                    enCours: true,
+                    decompte: 0,
+                    total: data.floors,
+                    timer: data.timer,
+                    etage: data.currentFloor || 0,
+                    data: data.floorData || null,
+                    progres: data.playerProgress || [],
+                    fini: false,
+                });
+                this.gameInProgress = true;
+                this.gameEnded = false;
+                this.lobbyMode = 'ascension';
+                document.body.classList.add('game-active');
+
+                this.lancerChronoAsc(data.floorTimerEndTime);
+                this.calerJaugeAsc();
+
+                const f = data.floorData;
+                if (f && f.type === 'scramble') this.prepararerScramble(f);
+                if (f && f.type === 'wordle') this.prepararerWordle(f);
             });
 
             this.socket.on('ascension-progress', (data) => {

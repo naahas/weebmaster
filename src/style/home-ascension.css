@@ -133,7 +133,7 @@
 
 .asc-titre {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(1.5rem, 3.2vw, 2.3rem);
+    font-size: clamp(1.3rem, 2.7vw, 2rem);
     line-height: 1;
     letter-spacing: 0.06em;
     color: #fff;
@@ -246,7 +246,9 @@
 .asc-etg-n {
     position: absolute;
     left: 0;
-    width: 1.8rem;
+    /* Plus court que la marge : le reste sert d'écart entre le numéro et la
+       pointe, qui se collaient l'un à l'autre. */
+    width: 1.25rem;
     text-align: right;
     font-family: 'Bebas Neue', sans-serif;
     font-size: 0.78rem;

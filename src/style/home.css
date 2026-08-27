@@ -7761,7 +7761,8 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-mode-preview.mode-ascension { --mode-color: #7fb4ff; }
 .v2-mode-preview.mode-rivalry   { --mode-color: #a78bfa; }
 .v2-mode-preview.mode-bombanime { --mode-color: #4ade80; }
-.v2-mode-preview.mode-ascension { --mode-color: #f87171; }
+/* La v1 donnait du rouge à Ascension. La règle vivait après la nouvelle et
+   la recouvrait : c'est elle qui teintait le filet et les particules. */
 .v2-mode-preview.mode-duel      { --mode-color: #60a5fa; }
 .v2-mode-preview.mode-tournoi   { --mode-color: #fbbf24; }
 .v2-mode-preview.mode-blindtest { --mode-color: #f472b6; }

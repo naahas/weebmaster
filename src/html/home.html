@@ -178,8 +178,11 @@
                             <!-- type="transition" : sans lui, Vue mesure la plus longue
                                  durée trouvée sur l'image, soit les 7 s du flottement -->
                             <transition name="v2-fade" type="transition">
+                                <!-- Une illustration pas encore déposée ne doit pas laisser
+                                     une image cassée au milieu du panneau : elle s'efface. -->
                                 <img class="v2-mode-char" :class="['char-' + currentMode.id, { plain: currentMode.plain }]" :key="currentMode.id"
-                                     :src="currentMode.img" :alt="currentMode.name" draggable="false">
+                                     :src="currentMode.img" :alt="currentMode.name" draggable="false"
+                                     @error="$event.target.style.visibility = 'hidden'">
                             </transition>
                             <div class="v2-mode-particles" aria-hidden="true">
                                 <span v-for="n in 14" :key="n"></span>
