@@ -5072,7 +5072,7 @@ createApp({
                 // Coordonnées relatives au salon, et non à la fenêtre : c'est lui
                 // qui défile, donc l'icône suit son contenu d'elle-même.
                 icone.style.top = (r.top - s.top + salon.scrollTop + r.height / 2) + 'px';
-                icone.style.left = (r.right - s.left + salon.scrollLeft + 12) + 'px';
+                icone.style.left = (r.right - s.left + salon.scrollLeft + 24) + 'px';
             }
             return true;
         },
