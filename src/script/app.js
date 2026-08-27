@@ -53,6 +53,10 @@ createApp({
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.
             ],
+            // Les séries dont le visuel manque encore : une image qui échoue
+            // s'y inscrit et on ne la redemande plus de la manche.
+            visuelsManquants: {},
+
             // Mesure temporaire : le mode Classique demande un mot de passe.
             // Gardé en mémoire seulement — un rechargement le redemande.
             demandeMdp: false,
@@ -878,6 +882,19 @@ createApp({
             return this.podiumPlayers.slice(0, 6);
         },
 
+        // Le personnage qui accompagne la question. Il occupe la place que
+        // prendra le classement : les deux ne coexistent jamais, l'un s'efface
+        // quand l'autre arrive.
+        visuelSerie() {
+            if (this.lobbyMode === 'bombanime' || this.lobbyMode === 'rush') return null;
+            if (!this.questionShown || this.showResults) return null;
+            const serie = this.currentQuestion && this.currentQuestion.serie;
+            if (!serie) return null;
+            const nom = this.slugSerie(serie);
+            if (!nom || this.visuelsManquants[nom]) return null;
+            return nom;
+        },
+
         // Mesure temporaire : seul le quiz est fermé. « rivalry » ne s'ouvre
         // jamais directement — c'est un réglage pris depuis un salon Classique.
         modeSousMotDePasse() {
@@ -1152,6 +1169,23 @@ createApp({
             } catch (e) {
                 console.warn('⚠️ Réglages Rush non chargés :', e);
             }
+        },
+
+        // Le nom de fichier se déduit du nom de la série : ajouter un visuel,
+        // c'est déposer une image, sans rien déclarer nulle part.
+        slugSerie(serie) {
+            return String(serie)
+                .toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')   // accents
+                .replace(/['’]/g, '')                                // Jojo's → jojos
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+        },
+
+        // Pas encore de visuel pour cette série : on cesse de le demander
+        // plutôt que de laisser une image cassée à l'écran.
+        visuelIntrouvable(nom) {
+            this.visuelsManquants[nom] = true;
         },
 
         // ── Mesure temporaire : le mot de passe du mode Classique ──

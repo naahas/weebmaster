@@ -1254,6 +1254,18 @@
 
                     </div>
 
+                        <!-- Le personnage de la série, à la place même que prendra
+                             le classement : ils ne se croisent jamais, l'un entre
+                             quand l'autre sort. Rien ne s'affiche tant que le
+                             fichier n'existe pas. -->
+                        <transition name="v2q-perso">
+                            <img class="v2q-perso" v-if="visuelSerie"
+                                 :key="visuelSerie"
+                                 :src="'/serie/' + visuelSerie + '.png'"
+                                 @error="visuelIntrouvable(visuelSerie)"
+                                 alt="" draggable="false">
+                        </transition>
+
                         <!-- Classement, à l'arrivée des résultats — vu de tous.
                              Le voile ne fait rien sur grand écran ; en dessous de 1200 px
                              il devient un calque ouvert par le bouton « Top ». -->

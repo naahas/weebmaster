@@ -11940,3 +11940,50 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 @media (max-width: 768px) {
     .v2-set-info { display: none; }
 }
+
+/* ── Le personnage de la série, pendant la question ──
+   Il prend l'ancrage du classement, au pixel près : les deux occupent la même
+   place et ne s'y croisent jamais, l'un entrant quand l'autre sort. */
+.v2q-perso {
+    position: absolute;
+    left: calc(100% + 3.4rem);
+    top: 50%;
+    width: 16.5rem;
+    max-height: 22rem;
+    object-fit: contain;
+    object-position: center bottom;
+    transform: translateY(-50%);
+    pointer-events: none;
+    user-select: none;
+    filter: drop-shadow(0 1rem 2rem rgba(0, 0, 0, 0.55));
+    animation: v2qPersoFlotte 7s ease-in-out infinite;
+}
+
+/* Une respiration très lente : elle ne doit pas tirer l'œil hors de la question */
+@keyframes v2qPersoFlotte {
+    0%, 100% { transform: translateY(-50%); }
+    50%      { transform: translateY(calc(-50% - 0.45rem)); }
+}
+
+/* L'entrée et la sortie. « transform » servant déjà au centrage et à la
+   respiration, l'animation ne joue que sur l'échelle et l'opacité — les
+   mélanger reviendrait à effacer le centrage en plein vol. */
+.v2q-perso-enter-active { animation: v2qPersoEntre 0.45s cubic-bezier(0.2, 1.3, 0.35, 1) both; }
+.v2q-perso-leave-active { animation: v2qPersoSort 0.25s ease both; }
+
+@keyframes v2qPersoEntre {
+    0%   { opacity: 0; transform: translateY(-50%) scale(0.82); }
+    60%  { opacity: 1; transform: translateY(-50%) scale(1.04); }
+    100% { opacity: 1; transform: translateY(-50%) scale(1); }
+}
+
+@keyframes v2qPersoSort {
+    from { opacity: 1; transform: translateY(-50%) scale(1); }
+    to   { opacity: 0; transform: translateY(-50%) scale(0.94); }
+}
+
+/* Sous 1200 px le classement repasse en flux, sous le panneau : il n'y a plus
+   de marge à droite, le personnage n'a plus de place où paraître. */
+@media (max-width: 1200px) {
+    .v2q-perso { display: none; }
+}

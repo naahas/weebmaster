@@ -1,0 +1,85 @@
+Les visuels de serie du mode Classique
+======================================
+
+Un fichier par serie, depose ici. Le nom se deduit du nom de la serie :
+rien a declarer nulle part, le jeu le trouve tout seul. Une serie sans
+fichier n affiche simplement rien.
+
+Format attendu
+  PNG detoure (fond transparent), meme pose et meme cadrage pour tous.
+  Environ 600 x 800 px a la source ; affiche en 264 px de large.
+  Vise 60 Ko par fichier, sinon dis-le-moi et je compresse le lot.
+
+71 series :
+
+  ajin.png                      Ajin
+  alice-in-borderland.png       Alice in Borderland
+  bakuman.png                   Bakuman
+  beelzebub.png                 Beelzebub
+  berserk.png                   Berserk
+  black-clover.png              Black Clover
+  bleach.png                    Bleach
+  blue-exorcist.png             Blue Exorcist
+  blue-lock.png                 Blue Lock
+  boruto.png                    Boruto
+  chainsaw-man.png              Chainsaw Man
+  code-geass.png                Code Geass
+  dandadan.png                  DanDaDan
+  death-note.png                Death Note
+  demon-slayer.png              Demon Slayer
+  divers.png                    Divers
+  dr-stone.png                  Dr. Stone
+  dragon-ball.png               Dragon Ball
+  fairy-tail.png                Fairy Tail
+  fate-stay-night.png           Fate/stay night
+  fire-force.png                Fire Force
+  food-wars.png                 Food Wars
+  frieren.png                   Frieren
+  fullmetal-alchemist.png       Fullmetal Alchemist
+  gachiakuta.png                Gachiakuta
+  gantz.png                     Gantz
+  gintama.png                   Gintama
+  great-teacher-onizuka.png     Great Teacher Onizuka
+  green-blood.png               Green Blood
+  gunnm.png                     Gunnm
+  haikyuu.png                   Haikyuu
+  hajime-no-ippo.png            Hajime no Ippo
+  hokuto-no-ken.png             Hokuto no Ken
+  hunter-hunter.png             Hunter Hunter
+  i-am-a-hero.png               I am a Hero
+  jojos-bizarre-adventure.png   Jojo's Bizarre Adventure
+  jujutsu-kaisen.png            Jujutsu Kaisen
+  kagurabachi.png               Kagurabachi
+  katekyo-hitman-reborn.png     Katekyo Hitman Reborn
+  kuroko-no-basket.png          Kuroko no Basket
+  mashle.png                    Mashle
+  medaka-box.png                Medaka Box
+  monster.png                   Monster
+  my-hero-academia.png          My Hero Academia
+  nana.png                      Nana
+  nanatsu-no-taizai.png         Nanatsu no Taizai
+  naruto.png                    Naruto
+  one-piece.png                 One Piece
+  one-punch-man.png             One Punch Man
+  owari-no-seraph.png           Owari no Seraph
+  platinum-end.png              Platinum End
+  pokemon.png                   Pokemon
+  prisonnier-riku.png           Prisonnier Riku
+  prophecy.png                  Prophecy
+  riku-do.png                   Riku-do
+  saint-seiya.png               Saint Seiya
+  shingeki-no-kyojin.png        Shingeki no Kyojin
+  slam-dunk.png                 Slam Dunk
+  soul-eater.png                Soul Eater
+  spy-family.png                Spy Family
+  takopi-no-genzai.png          Takopi no Genzai
+  the-promised-neverland.png    The Promised Neverland
+  tokyo-ghoul.png               Tokyo Ghoul
+  tokyo-revengers.png           Tokyo Revengers
+  tomodachi-game.png            Tomodachi Game
+  uzumaki.png                   Uzumaki
+  vagabond.png                  Vagabond
+  valkyrie-apocalypse.png       Valkyrie Apocalypse
+  vinland-saga.png              Vinland Saga
+  yu-yu-hakusho.png             Yu Yu Hakusho
+  yugioh.png                    YuGiOh
