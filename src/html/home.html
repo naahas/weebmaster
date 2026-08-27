@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="home.css">
     <link rel="stylesheet" href="home-bombanime.css">
     <link rel="stylesheet" href="home-rush.css">
+    <link rel="stylesheet" href="home-ascension.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Russo+One&family=Space+Grotesk:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap"
@@ -691,6 +692,58 @@
                 <!-- ============================================
                      ⚡ RUSH — reconnaître le plus de personnages d'affilée
                      ============================================ -->
+                <!-- ============================================
+                     🏔️ ASCENSION — la tour, gravie chacun à son rythme
+                     ============================================ -->
+                <template v-if="lobbyMode === 'ascension' && !gameEnded">
+                    <div class="asc" v-if="asc.enCours || asc.decompte > 0">
+
+                        <!-- Le décompte d'entrée, seul à l'écran -->
+                        <div class="asc-depart" v-if="asc.decompte > 0">
+                            <span class="asc-depart-n" :key="asc.decompte">{{ asc.decompte }}</span>
+                            <span class="asc-depart-l">La tour s'ouvre</span>
+                        </div>
+
+                        <template v-else>
+                            <!-- L'étage courant et le temps qu'il reste -->
+                            <div class="asc-tete">
+                                <span class="asc-etage">
+                                    <em>Étage</em>
+                                    <b>{{ ascMonEtage }}</b>
+                                    <i>/ {{ asc.total }}</i>
+                                </span>
+                                <span class="asc-consigne" v-if="asc.data">{{ asc.data.label }}</span>
+                                <span class="asc-chrono" :class="{ urgence: asc.reste <= 5 }">{{ asc.reste }}</span>
+                            </div>
+
+                            <!-- L'épreuve de l'étage : un écran par type -->
+                            <div class="asc-epreuve">
+                                <div class="asc-attente" v-if="!asc.data">On monte…</div>
+                                <div class="asc-brouillon" v-else>
+                                    <span class="asc-brouillon-t">{{ asc.data.type }}</span>
+                                    <span class="asc-brouillon-s">écran à venir</span>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- La tour, à droite : un palier par étage, du sol au sommet.
+                             Chacun voit où en sont les autres — c'est elle qui fait la
+                             course, le jeu se jouant sans tour par tour. -->
+                        <aside class="asc-tour" v-if="asc.total">
+                            <div class="asc-palier" v-for="e in ascPaliers" :key="e"
+                                 :class="{ moi: e === ascMonEtage, sommet: e === asc.total, occupe: ascParPalier[e] }">
+                                <span class="asc-palier-n">{{ e }}</span>
+                                <span class="asc-palier-sol"></span>
+                                <span class="asc-palier-gens">
+                                    <span class="asc-jeton" v-for="j in (ascParPalier[e] || [])" :key="j.playerId"
+                                          :class="['c' + (j.colorIndex || 0), { mien: j.playerId === playerId }]"
+                                          :title="j.username">{{ (j.username || '?').charAt(0).toUpperCase() }}</span>
+                                </span>
+                            </div>
+                        </aside>
+                    </div>
+                </template>
+
                 <template v-if="lobbyMode === 'rush' && !gameEnded">
                     <div class="rush" v-if="rush.portrait || rush.fini"
                          :class="{ 'en-entree': rush.intro !== null }">

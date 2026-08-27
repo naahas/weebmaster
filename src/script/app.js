@@ -904,6 +904,31 @@ createApp({
             return this.podiumPlayers.slice(0, 6);
         },
 
+        // ── La tour ──
+        // Les paliers se dessinent du sommet vers le bas : l'étage 1 en bas,
+        // le dernier en haut. La liste est donc renversée pour l'affichage.
+        ascPaliers() {
+            const n = this.asc.total || this.asc.etages || 15;
+            return Array.from({ length: n }, (_, i) => n - i);
+        },
+
+        // Qui se trouve sur quel palier. Un joueur au sommet est rangé sur le
+        // dernier palier plutôt que dans le vide au-dessus.
+        ascParPalier() {
+            const n = this.asc.total || 15;
+            const carte = {};
+            for (const j of this.asc.progres || []) {
+                const e = Math.min(n, (j.floor || 0) + 1);
+                (carte[e] = carte[e] || []).push(j);
+            }
+            return carte;
+        },
+
+        // Ma place, pour la mettre en avant sans avoir à la chercher
+        ascMonEtage() {
+            return Math.min(this.asc.total || 15, (this.asc.etage || 0) + 1);
+        },
+
         // Le personnage qui accompagne la question. Il occupe la place que
         // prendra le classement : les deux ne coexistent jamais, l'un s'efface
         // quand l'autre arrive.
@@ -1208,6 +1233,36 @@ createApp({
         // plutôt que de laisser une image cassée à l'écran.
         visuelIntrouvable(nom) {
             this.visuelsManquants[nom] = true;
+        },
+
+        // ── 🏔️ Ascension ──
+        // Le décompte de l'étage tourne côté client : le serveur donne l'heure
+        // de fin, inutile d'un message par seconde et par joueur.
+        lancerChronoAsc(finA) {
+            this.arreterChronoAsc();
+            this.asc.finA = finA || 0;
+            const tic = () => {
+                const reste = Math.max(0, Math.ceil((this.asc.finA - Date.now()) / 1000));
+                this.asc.reste = reste;
+                if (reste <= 0) this.arreterChronoAsc();
+            };
+            tic();
+            this.asc._tic = setInterval(tic, 250);
+        },
+
+        arreterChronoAsc() {
+            if (this.asc._tic) clearInterval(this.asc._tic);
+            this.asc._tic = null;
+        },
+
+        quitterAscLocalement() {
+            this.arreterChronoAsc();
+            Object.assign(this.asc, {
+                enCours: false, decompte: 0, etage: 0,
+                data: null, finA: 0, reste: 0, progres: [], fini: false,
+            });
+            this.gameInProgress = false;
+            document.body.classList.remove('game-active');
         },
 
         // ── Mesure temporaire : le mot de passe du mode Classique ──
@@ -3862,6 +3917,62 @@ createApp({
                 document.body.classList.add('game-active');
                 this.lancerChronoRush(data.finA);
                 this.jouerEntreeRush();
+            });
+
+            // ── 🏔️ Ascension ──
+            this.socket.on('ascension-game-started', (data) => {
+                Object.assign(this.asc, {
+                    enCours: true,
+                    total: data.floors,
+                    timer: data.timer,
+                    etage: 0,
+                    data: null,
+                    fini: false,
+                    progres: data.players || [],
+                });
+                this.gameInProgress = true;
+                this.gameEnded = false;
+                this.lobbyMode = 'ascension';
+                document.body.classList.add('game-active');
+
+                // Le décompte d'entrée : le serveur donne l'heure du départ
+                const versLeDepart = () => {
+                    const r = Math.max(0, Math.ceil((data.countdownEndsAt - Date.now()) / 1000));
+                    this.asc.decompte = r;
+                    if (r > 0) setTimeout(versLeDepart, 200);
+                };
+                versLeDepart();
+            });
+
+            this.socket.on('ascension-floor-start', (data) => {
+                this.asc.decompte = 0;
+                this.asc.etage = data.floor;
+                this.asc.total = data.totalFloors;
+                this.asc.data = data.floorData;
+                if (data.playerProgress) this.asc.progres = data.playerProgress;
+                this.lancerChronoAsc(data.timerEndTime);
+            });
+
+            this.socket.on('ascension-progress', (data) => {
+                if (data && data.playerProgress) this.asc.progres = data.playerProgress;
+            });
+
+            this.socket.on('ascension-game-end', (data) => {
+                this.arreterChronoAsc();
+                this.asc.enCours = false;
+                this.asc.fini = true;
+                this.asc.data = null;
+                this.gameEnded = true;
+                this.gameInProgress = false;
+                this.gameStartedOnServer = false;
+                this.gameEndData = Object.assign({ gameMode: 'ascension' }, data || {});
+            });
+
+            // Les réglages, quand l'hôte les change depuis le salon
+            this.socket.on('ascension-config', (data) => {
+                if (!data) return;
+                if (data.floors !== undefined) this.asc.etages = data.floors;
+                if (data.timer !== undefined) this.asc.timer = data.timer;
             });
 
             this.socket.on('rush-portrait', (data) => {
