@@ -774,7 +774,10 @@ function advancePlayerToNextFloor(gameState, io, playerId, success, customDelay)
     // Délai pour laisser jouer l'animation de validation côté client (~750ms pour wrap fade + breathing room)
     // En cas d'échec (timer expiré), on enchaîne plus vite (300ms)
     // customDelay : override pour les mini-jeux qui ont une animation de victoire plus longue (ex: wordle 2500ms)
-    const delay = customDelay !== undefined ? customDelay : (success ? 1100 : 300);
+    // 1100 ms sur une reussite, c etait long : on a compris qu on avait gagne
+    // bien avant que l etage suivant arrive, et l attente cassait l elan d une
+    // course. 550 laisse voir la validation sans faire patienter.
+    const delay = customDelay !== undefined ? customDelay : (success ? 550 : 300);
     setTimeout(() => {
         if (ascension.active && ascension.playerProgress[playerId]) {
             startPlayerFloor(gameState, io, playerId, nextFloor);
