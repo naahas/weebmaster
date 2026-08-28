@@ -735,7 +735,7 @@
 
                             <!-- L'épreuve de l'étage : un écran par type -->
                             <div class="asc-epreuve">
-                                <transition name="asc-pas" mode="out-in">
+                                <transition name="asc-pas" mode="out-in" appear>
                                 <div class="asc-plan" :key="asc.etage">
                                 <div class="asc-attente" v-if="!asc.data">On monte…</div>
 
@@ -834,7 +834,7 @@
                                            @keyup.enter="envoyerWordle"
                                            autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
 
-                                    <span class="asc-aide">Entrée pour valider</span>
+                                    <span class="asc-aide">{{ asc.essais.length }} essai<span v-if="asc.essais.length > 1">s</span></span>
                                 </div>
 
                                 <div class="asc-brouillon" v-else>

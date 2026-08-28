@@ -1457,20 +1457,34 @@ createApp({
         prepararerWordle(d) {
             this.asc.essais = [];
             this.asc.mot = '';
+            this._ascDernierMot = null;
             this.$nextTick(() => {
                 const c = document.getElementById('ascWordle');
                 if (c) c.focus();
             });
         },
 
+        // La ligne part d'elle-même une fois pleine, juste ou fausse : c'est
+        // la mécanique du Wordle, et une touche Entrée en plus ne dit rien
+        // que la dernière lettre n'ait déjà dit. Le court délai laisse voir la
+        // ligne complète avant que les couleurs tombent.
         corrigerMotAsc(v) {
             const n = (this.asc.data && this.asc.data.wordLength) || 0;
             this.asc.mot = String(v || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, n);
+            clearTimeout(this._ascMotT);
+            if (this.asc.mot.length === n && n > 0) {
+                this._ascMotT = setTimeout(() => this.envoyerWordle(), 220);
+            }
         },
 
         envoyerWordle() {
             const n = (this.asc.data && this.asc.data.wordLength) || 0;
             if (!this.socket || this.asc.mot.length !== n) return;
+            // La ligne part toute seule une fois pleine : sans ce garde, taper
+            // une lettre de plus la renverrait telle quelle, et le même essai
+            // s'empilerait deux fois.
+            if (this._ascDernierMot === this.asc.mot) return;
+            this._ascDernierMot = this.asc.mot;
             this.socket.emit('ascension-check-wordle', { guess: this.asc.mot });
         },
 

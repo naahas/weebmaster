@@ -547,11 +547,14 @@
    Le fil du temps part le premier — c'est lui qui commande —, puis le nom,
    puis le plateau. Trois temps très courts : on doit sentir l'ordre sans
    attendre quoi que ce soit. */
+/* ⚠️ Pas d'animation ici. Le plan est enveloppé d'une « transition », qui
+   l'anime déjà à chaque changement d'étage. En posant une animation
+   permanente en plus, les deux se jouaient ensemble et le jeu semblait
+   glisser deux fois — c'était le « double rafraîchissement ». */
 .asc-plan {
     display: grid;
     place-items: center;
     width: 100%;
-    animation: ascPlan 0.42s cubic-bezier(0.2, 0.95, 0.25, 1) 0.12s both;
 }
 
 @keyframes ascPlan {
@@ -589,8 +592,15 @@
    vingt-quatre en réclament plus que cinq portraits : à 46 rem, leurs
    vignettes tombaient sous les cinquante pixels. */
 .asc-jeu { max-width: min(46rem, 100vw - 20rem); }
+.asc-jeu.asc-devine { max-width: min(64rem, 100vw - 16rem); }
+/* Quatre rangées de vingt-quatre : c'est la hauteur qui contraint, pas la
+   largeur. On la borne donc par la fenêtre — sans quoi la grille passait
+   sous le bord bas et remontait par-dessus le titre. Le facteur 0,92 tient
+   compte du format des portraits et des gouttières. */
 .asc-jeu.asc-cible,
-.asc-jeu.asc-intrus { max-width: min(52rem, 100vw - 16rem); }
+.asc-jeu.asc-intrus {
+    max-width: min(46rem, 100vw - 16rem, calc((100vh - 17rem) * 0.92));
+}
 
 @media (max-width: 900px) {
     .asc-jeu { max-width: 100%; }
@@ -623,7 +633,7 @@
     display: flex;
     flex-wrap: nowrap;
     justify-content: center;
-    gap: clamp(0.4rem, 1.2vw, 0.8rem);
+    gap: clamp(0.8rem, 2.2vw, 1.6rem);
     width: 100%;
 }
 
@@ -632,8 +642,8 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.45rem;
-    max-width: 9rem;
+    gap: 0.5rem;
+    max-width: 11.5rem;
 }
 
 .asc-portrait img {
