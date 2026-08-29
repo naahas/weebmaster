@@ -1003,78 +1003,120 @@
 }
 
 /* ══════════ Liaison ══════════
-   Deux colonnes face à face. Prendre à gauche allume la ligne ; poser à
-   droite scelle la paire. */
-.asc-jeu.asc-liaison { max-width: min(82rem, 100vw - 8rem); }
+   Les portraits en grand sur une ligne, les valeurs en dessous. Deux colonnes
+   de longues bandes se lisaient mal et donnaient un tableau ; ici c'est le
+   visage qu'on reconnaît, et la valeur qu'on lui attribue vient se poser
+   dessous — la paire se lit d'un coup d'œil, sans trait à suivre. */
+.asc-jeu.asc-liaison { max-width: min(74rem, 100vw - 8rem); }
 
-.asc-colonnes {
+.asc-visages {
     display: flex;
-    align-items: stretch;
-    gap: clamp(2rem, 7vw, 6rem);
+    justify-content: center;
+    gap: clamp(0.6rem, 1.8vw, 1.2rem);
     width: 100%;
 }
 
-.asc-col {
+.asc-visage {
     flex: 1 1 0;
     min-width: 0;
+    max-width: 13rem;
     display: flex;
     flex-direction: column;
-    gap: 0.55rem;
-}
-
-.asc-lig {
-    display: flex;
-    align-items: center;
-    gap: 1.1rem;
-    padding: 0.8rem 1.2rem;
-    text-align: left;
+    gap: 0.45rem;
+    padding: 0.45rem 0.45rem 0.55rem;
     background: rgba(255, 255, 255, 0.03);
     border: 0.09rem solid rgba(255, 255, 255, 0.08);
-    border-radius: 0.45rem;
+    border-radius: 0.55rem;
     cursor: pointer;
-    transition: border-color 0.2s ease, background 0.2s ease, transform 0.18s ease;
+    transition: transform 0.18s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
-.asc-lig img {
-    flex: 0 0 auto;
-    width: 4rem;
-    height: 5.5rem;
+.asc-visage img {
+    width: 100%;
+    aspect-ratio: 225 / 350;
     object-fit: cover;
-    border-radius: 0.3rem;
+    border-radius: 0.4rem;
 }
 
-.asc-lig-t {
-    flex: 1;
-    min-width: 0;
-    font-size: 1.15rem;
+.asc-visage-n {
+    font-size: 0.72rem;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.15;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.72);
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.asc-col.droite .asc-lig { justify-content: center; min-height: 5rem; }
-.asc-col.droite .asc-lig-t { flex: 0 1 auto; text-align: center; }
+/* La valeur attribuée, posée sous le portrait */
+.asc-visage-v {
+    padding: 0.25rem 0.3rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.15;
+    text-align: center;
+    color: #6ee7b7;
+    background: rgba(110, 231, 183, 0.12);
+    border-radius: 0.3rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    animation: ascLie 0.3s cubic-bezier(0.2, 1.4, 0.35, 1) both;
+}
 
-.asc-lig:hover { border-color: rgba(140, 180, 255, 0.45); transform: translateX(0.15rem); }
-.asc-col.droite .asc-lig:hover { transform: translateX(-0.15rem); }
-.asc-lig:active { transform: scale(0.97); }
+@keyframes ascLie {
+    from { opacity: 0; transform: translateY(-0.35rem) scale(0.9); }
+    to   { opacity: 1; transform: none; }
+}
 
-/* En main : la ligne attend qu'on lui donne sa valeur */
-.asc-lig.pris {
-    background: rgba(255, 215, 0, 0.12);
+.asc-visage:hover { border-color: rgba(140, 180, 255, 0.45); transform: translateY(-0.2rem); }
+.asc-visage:active { transform: scale(0.97); }
+
+/* En main : c'est ce portrait qui attend sa valeur */
+.asc-visage.pris {
     border-color: var(--neon-primary, #ffd700);
-    box-shadow: 0 0 0.9rem rgba(255, 215, 0, 0.25);
+    background: rgba(255, 215, 0, 0.1);
+    box-shadow: 0 0 1.1rem rgba(255, 215, 0, 0.25);
 }
 
-.asc-lig.lie {
-    background: rgba(110, 231, 183, 0.09);
-    border-color: rgba(110, 231, 183, 0.5);
-}
+.asc-visage.lie { border-color: rgba(110, 231, 183, 0.45); }
 
-.asc-lig.rate {
-    background: rgba(255, 100, 100, 0.1);
+.asc-visage.rate {
     border-color: rgba(255, 100, 100, 0.6);
+    background: rgba(255, 100, 100, 0.08);
+}
+
+/* Les valeurs : de simples jetons, larges de leur texte */
+.asc-valeurs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: clamp(0.4rem, 1.2vw, 0.8rem);
+    margin-top: 0.5rem;
+}
+
+.asc-valeur {
+    padding: 0.65rem 1.1rem;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.82);
+    background: rgba(140, 180, 255, 0.09);
+    border: 0.09rem solid rgba(140, 180, 255, 0.28);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: transform 0.18s ease, border-color 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+}
+
+.asc-valeur:hover { background: rgba(140, 180, 255, 0.2); transform: translateY(-0.15rem); }
+.asc-valeur:active { transform: scale(0.96); }
+
+/* Une valeur déjà attribuée s'efface : elle est visible sous son portrait */
+.asc-valeur.lie {
+    opacity: 0.3;
+    background: rgba(110, 231, 183, 0.08);
+    border-color: rgba(110, 231, 183, 0.3);
 }
 
 @media (max-width: 900px) {

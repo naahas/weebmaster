@@ -850,24 +850,28 @@
                                      jamais un glisser, qui demanderait de la précision. -->
                                 <div class="asc-jeu asc-liaison" v-else-if="asc.data.type === 'match'"
                                      :class="{ ko: asc.secousse }">
-                                    <div class="asc-colonnes">
-                                        <div class="asc-col">
-                                            <button class="asc-lig" v-for="g in asc.data.left" :key="g.id"
-                                                    :class="{ pris: asc.gauche === g.id, lie: asc.liens[g.id],
-                                                              rate: asc.mauvais.indexOf(g.id) >= 0 }"
-                                                    @click="prendreGauche(g.id)">
-                                                <img v-if="g.img" :src="'/ascensionpic/' + g.img" alt="" draggable="false">
-                                                <span class="asc-lig-t">{{ g.name }}</span>
-                                            </button>
-                                        </div>
+                                    <!-- Les portraits en grand, sans leur nom : une ligne de
+                                         noms faisait de longues bandelettes, et c est le visage
+                                         qu on reconnait, pas l etiquette. -->
+                                    <div class="asc-visages">
+                                        <button class="asc-visage" v-for="g in asc.data.left" :key="g.id"
+                                                :class="{ pris: asc.gauche === g.id, lie: asc.liens[g.id],
+                                                          rate: asc.mauvais.indexOf(g.id) >= 0 }"
+                                                @click="prendreGauche(g.id)">
+                                            <img v-if="g.img" :src="'/ascensionpic/' + g.img" alt="" draggable="false">
+                                            <span class="asc-visage-n">{{ g.name }}</span>
+                                            <!-- Ce qu on lui a attribué se pose dessous : la paire
+                                                 se lit d un coup d oeil, sans trait a suivre. -->
+                                            <span class="asc-visage-v" v-if="asc.liens[g.id]">
+                                                {{ (asc.data.right.find(d => d.id === asc.liens[g.id]) || {}).value }}
+                                            </span>
+                                        </button>
+                                    </div>
 
-                                        <div class="asc-col droite">
-                                            <button class="asc-lig val" v-for="d in asc.data.right" :key="d.id"
-                                                    :class="{ lie: lieA(d.id) }"
-                                                    @click="poserDroite(d.id)">
-                                                <span class="asc-lig-t">{{ d.value }}</span>
-                                            </button>
-                                        </div>
+                                    <div class="asc-valeurs">
+                                        <button class="asc-valeur" v-for="d in asc.data.right" :key="d.id"
+                                                :class="{ lie: lieA(d.id) }"
+                                                @click="poserDroite(d.id)">{{ d.value }}</button>
                                     </div>
                                 </div>
 
