@@ -747,7 +747,13 @@
                                     <div class="asc-portraits">
                                         <div class="asc-portrait" v-for="p in asc.data.characters" :key="p.id"
                                              :class="{ trouve: ascTrouve(p.id), rate: asc.faux === p.id }">
-                                            <img :src="'/ascensionpic/' + p.img" alt="" draggable="false">
+                                            <span class="asc-vitre">
+                                                <img :src="'/ascensionpic/' + p.img" alt="" draggable="false">
+                                                <!-- Le tampon claque sur le portrait au moment où il
+                                                     tombe, et porte le nom trouvé : on voit ce qu'on
+                                                     a répondu sans le chercher sous l'image. -->
+                                                <span class="asc-tampon" v-if="ascTrouve(p.id)">{{ asc.noms[p.id] }}</span>
+                                            </span>
                                             <input class="asc-nom" type="text"
                                                    :id="'guess-' + p.id"
                                                    :value="asc.saisies[p.id] || ''"
@@ -879,6 +885,8 @@
                                         <button class="asc-lettre" v-for="j in asc.reserve" :key="j.i"
                                                 @click="poserLettre(j)">{{ j.l }}</button>
                                     </div>
+
+                                    <span class="asc-aide">Clique ou tape les lettres</span>
                                 </div>
 
                                 <!-- ── Wordle ── -->

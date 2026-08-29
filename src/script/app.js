@@ -45,6 +45,7 @@ createApp({
                 // ce qui est trouvé, ce qui vient d'être raté, et où l'on en est.
                 trouves: [],     // identifiants déjà validés (guess, intruder)
                 saisies: {},     // le nom tapé sous chaque portrait (guess)
+                noms: {},        // le nom trouvé, tamponné sur le portrait
                 faux: null,      // le portrait qui vient d'être raté, le temps du flash
                 cible: null,     // ce qu'il faut cliquer maintenant (target)
                 avance: 0,       // combien de cibles d'affilée (target)
@@ -420,6 +421,7 @@ createApp({
                 this.toggleSound();
             }
             if (e.key === 'Escape') this.surEchap();
+            this.toucheAnagramme(e);
         });
 
         setTimeout(() => {
@@ -1347,6 +1349,7 @@ createApp({
         prepararerGrille(d, dejaTrouves) {
             this.asc.trouves = (dejaTrouves || []).slice();
             this.asc.saisies = {};
+            this.asc.noms = {};
             this.asc.faux = null;
             this.asc.cible = d.currentTarget || null;
             this.asc.avance = 0;
@@ -1543,6 +1546,30 @@ createApp({
             this.asc.fentes = Array.from({ length: n }, () => null);
             this.asc.figees = Array.from({ length: n }, () => false);
             this.asc.reserve = (d.scrambled || []).map((l, i) => ({ i, l }));
+        },
+
+        // L'anagramme se joue aussi au clavier : on tape une lettre, elle se
+        // pose si elle est encore en réserve. Une lettre absente ne fait rien
+        // — pas de secousse, pas de bruit : on tâtonne, ce n'est pas une faute.
+        // Retour arrière reprend la dernière posée, si elle n'est pas figée.
+        toucheAnagramme(e) {
+            if (!this.asc.data || this.asc.data.type !== 'scramble') return;
+            if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+            if (e.key === 'Backspace') {
+                e.preventDefault();
+                for (let i = this.asc.fentes.length - 1; i >= 0; i--) {
+                    if (this.asc.fentes[i] && !this.asc.figees[i]) { this.retirerLettre(i); return; }
+                }
+                return;
+            }
+
+            if (!/^[a-zA-Z]$/.test(e.key)) return;
+            const l = e.key.toUpperCase();
+            const jeton = this.asc.reserve.find(x => x.l.toUpperCase() === l);
+            if (!jeton) return;
+            e.preventDefault();
+            this.poserLettre(jeton);
         },
 
         poserLettre(jeton) {
@@ -4381,6 +4408,10 @@ createApp({
                 if (!data || !data.characterId) return;
                 if (data.correct) {
                     if (!this.ascTrouve(data.characterId)) this.asc.trouves.push(data.characterId);
+                    // Le nom trouvé est gardé avant d'être effacé du champ :
+                    // c'est lui que le tampon porte, et il reste ainsi lisible
+                    // jusqu'à la fin de l'étage.
+                    this.asc.noms[data.characterId] = (this.asc.saisies[data.characterId] || '').trim();
                     this.asc.saisies[data.characterId] = '';
                     this.playSound(this.sounds.ascJuste);
                     this.champSuivantGuess(data.characterId);
