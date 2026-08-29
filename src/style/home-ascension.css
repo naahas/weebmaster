@@ -1121,12 +1121,10 @@
 
 @media (max-width: 900px) {
     .asc-jeu.asc-liaison, .asc-jeu.asc-ordre { max-width: 100%; }
-    .asc-colonnes { gap: 0.8rem; }
-    .asc-lig { padding: 0.35rem 0.5rem; gap: 0.5rem; }
-    .asc-lig img { width: 2rem; height: 2.8rem; }
-    .asc-lig-t { font-size: 0.78rem; }
-    .asc-col.droite .asc-lig { min-height: 2.8rem; }
-    .asc-carte-arc { max-width: 6.5rem; }
+    .asc-visages { flex-wrap: wrap; }
+    .asc-visage { flex: 0 0 auto; width: clamp(4.4rem, 27vw, 6.5rem); }
+    .asc-valeur { padding: 0.45rem 0.7rem; font-size: 0.82rem; }
+    .asc-col.droite    .asc-carte-arc { max-width: 6.5rem; }
     .asc-fleche { width: 0.9rem; }
 }
 
