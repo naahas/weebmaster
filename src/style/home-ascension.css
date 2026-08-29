@@ -1124,7 +1124,7 @@
     .asc-visages { flex-wrap: wrap; }
     .asc-visage { flex: 0 0 auto; width: clamp(4.4rem, 27vw, 6.5rem); }
     .asc-valeur { padding: 0.45rem 0.7rem; font-size: 0.82rem; }
-    .asc-col.droite    .asc-carte-arc { max-width: 6.5rem; }
+    .asc-carte-arc { max-width: 6.5rem; }
     .asc-fleche { width: 0.9rem; }
 }
 
