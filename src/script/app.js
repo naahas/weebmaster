@@ -49,9 +49,11 @@ createApp({
                 cible: null,     // ce qu'il faut cliquer maintenant (target)
                 avance: 0,       // combien de cibles d'affilée (target)
 
-                // Ordre : les arcs posés, et ceux qui restent
+                // Ordre : la suite en cours, et l'arc qu'on déplace
                 rang: [],
                 enAttente: [],
+                prise: null,
+                survol: null,
 
                 // Liaison : ce qui est relié, et la colonne de gauche en main
                 liens: {},
@@ -1427,26 +1429,44 @@ createApp({
         },
 
         // ── Ordre chronologique ──
-        // Même geste que l'anagramme : on pose d'un clic, on reprend d'un clic.
+        // Les arcs sont posés d'emblée sur une seule ligne, dans le désordre :
+        // on les échange en les glissant l'un sur l'autre. Un rang qui se
+        // construit case par case ne montrait pas la suite qu'on est en train
+        // de faire ; là, elle se lit d'un bout à l'autre à tout moment.
         prepararerOrdre(d) {
-            const n = (d.arcs || []).length;
-            this.asc.rang = Array.from({ length: n }, () => null);
-            this.asc.enAttente = (d.arcs || []).slice();
+            this.asc.rang = (d.arcs || []).slice();
+            this.asc.enAttente = [];
+            this.asc.prise = null;
+            this.asc.survol = null;
         },
 
-        poserArc(a) {
-            const k = this.asc.rang.findIndex(x => !x);
-            if (k < 0) return;
-            this.asc.rang[k] = a;
-            this.asc.enAttente = this.asc.enAttente.filter(x => x.id !== a.id);
+        prendreArc(i) {
+            this.asc.prise = i;
+        },
+
+        survolerArc(i) {
+            if (this.asc.prise !== null && this.asc.prise !== i) this.asc.survol = i;
+        },
+
+        // Deux arcs échangent leur place. L'échange plutôt que l'insertion :
+        // la ligne garde sa longueur, et rien ne se décale sous le doigt.
+        lacherArc(i) {
+            const d = this.asc.prise;
+            this.asc.prise = null;
+            this.asc.survol = null;
+            if (d === null || d === i) return;
+            const suite = this.asc.rang.slice();
+            const t = suite[d];
+            suite[d] = suite[i];
+            suite[i] = t;
+            this.asc.rang = suite;
             this.playSound(this.sounds.ascPose);
-            if (this.asc.rang.every(Boolean)) this.envoyerOrdre();
+            this.envoyerOrdre();
         },
 
-        retirerArc(k) {
-            if (!this.asc.rang[k]) return;
-            this.asc.enAttente.push(this.asc.rang[k]);
-            this.asc.rang[k] = null;
+        annulerPrise() {
+            this.asc.prise = null;
+            this.asc.survol = null;
         },
 
         // Le serveur ne répond QUE si l'ordre est juste : son silence est la

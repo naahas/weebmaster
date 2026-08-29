@@ -804,24 +804,34 @@
                                      son silence est la réponse. -->
                                 <div class="asc-jeu asc-ordre" v-else-if="asc.data.type === 'order'"
                                      :class="{ ko: asc.secousse }">
-                                    <div class="asc-rang">
-                                        <button class="asc-place" v-for="(a, k) in asc.rang" :key="k"
-                                                :class="{ pleine: a }" @click="retirerArc(k)">
-                                            <span class="asc-place-n">{{ k + 1 }}</span>
-                                            <template v-if="a">
+                                    <!-- Les arcs sont posés d'emblée, dans le désordre : on les
+                                         échange en les glissant l'un sur l'autre. La suite se lit
+                                         donc d'un bout à l'autre à tout moment, ce qu'un rang
+                                         construit case par case ne montrait pas. -->
+                                    <div class="asc-suite">
+                                        <template v-for="(a, i) in asc.rang" :key="a.id">
+                                            <span class="asc-fleche" v-if="i > 0" aria-hidden="true">
+                                                <svg viewBox="0 0 40 12" preserveAspectRatio="none">
+                                                    <path d="M0 6h30" />
+                                                    <path d="M26 2l5 4-5 4" />
+                                                </svg>
+                                            </span>
+
+                                            <div class="asc-carte-arc"
+                                                 draggable="true"
+                                                 :class="{ prise: asc.prise === i, vise: asc.survol === i }"
+                                                 @dragstart="prendreArc(i)"
+                                                 @dragover.prevent="survolerArc(i)"
+                                                 @dragleave="asc.survol = null"
+                                                 @drop.prevent="lacherArc(i)"
+                                                 @dragend="annulerPrise">
                                                 <img :src="'/ascensionpic/ascensionarcs/' + a.img" alt="" draggable="false">
-                                                <span class="asc-place-t">{{ a.name }}</span>
-                                            </template>
-                                        </button>
+                                                <span class="asc-carte-arc-t">{{ a.name }}</span>
+                                            </div>
+                                        </template>
                                     </div>
 
-                                    <div class="asc-attente-arcs">
-                                        <button class="asc-arc" v-for="a in asc.enAttente" :key="a.id"
-                                                @click="poserArc(a)">
-                                            <img :src="'/ascensionpic/ascensionarcs/' + a.img" alt="" draggable="false">
-                                            <span class="asc-arc-t">{{ a.name }}</span>
-                                        </button>
-                                    </div>
+                                    <span class="asc-aide">Glisse les arcs pour les remettre dans l'ordre</span>
                                 </div>
 
                                 <!-- ── Liaison ── -->
@@ -868,14 +878,9 @@
 
                                 <!-- ── Wordle ── -->
                                 <div class="asc-jeu asc-wordle" v-else-if="asc.data.type === 'wordle'">
-                                    <!-- Les essais passés, du plus ancien au plus récent -->
-                                    <div class="asc-ligne" v-for="(e, n) in asc.essais" :key="n">
-                                        <span class="asc-case" v-for="(c, i) in casesWordle(e.mot, e.couleurs)" :key="i"
-                                              :class="[c.c, { coupe: coupureApres(i) }]">{{ c.l }}</span>
-                                    </div>
-
-                                    <!-- Celui en cours : la saisie est un vrai champ, invisible,
-                                         pour que le clavier des téléphones s'ouvre aussi. -->
+                                    <!-- La ligne qu'on remplit reste en haut, à une place fixe :
+                                         sous la pile des essais, elle descendait à chaque tentative
+                                         et il fallait rattraper le curseur des yeux. -->
                                     <div class="asc-ligne vive" @click="$refs.ascChamp && $refs.ascChamp.focus()">
                                         <span class="asc-case" v-for="(c, i) in casesWordle(asc.mot, null)" :key="i"
                                               :class="{ pleine: c.l, active: i === asc.mot.length, coupe: coupureApres(i) }">{{ c.l }}</span>
@@ -886,6 +891,12 @@
                                            @input="corrigerMotAsc($event.target.value)"
                                            @keyup.enter="envoyerWordle"
                                            autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+
+                                    <!-- Les essais passés, le plus récent juste dessous -->
+                                    <div class="asc-ligne" v-for="(e, n) in asc.essais.slice().reverse()" :key="n">
+                                        <span class="asc-case" v-for="(c, i) in casesWordle(e.mot, e.couleurs)" :key="i"
+                                              :class="[c.c, { coupe: coupureApres(i) }]">{{ c.l }}</span>
+                                    </div>
 
                                     <span class="asc-aide">{{ asc.essais.length }} essai<span v-if="asc.essais.length > 1">s</span></span>
                                 </div>
