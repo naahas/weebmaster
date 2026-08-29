@@ -785,8 +785,13 @@
 
                                 <!-- ── Intrus ── -->
                                 <div class="asc-jeu asc-intrus" v-else-if="asc.data.type === 'intruder'">
+                                    <!-- Le compte seul ne disait pas ce qu'on cherche : l'anime
+                                         visé se lit ici, à côté des cartes, et non uniquement dans
+                                         la légende du titre. -->
                                     <div class="asc-compte">
-                                        <b>{{ asc.trouves.length }}</b><i>/ {{ asc.data.totalTargets }}</i>
+                                        <span class="asc-compte-l">Trouve</span>
+                                        <span class="asc-compte-n">{{ asc.data.targetAnime }}</span>
+                                        <span class="asc-compte-c"><b>{{ asc.trouves.length }}</b><i>/ {{ asc.data.totalTargets }}</i></span>
                                     </div>
 
                                     <div class="asc-grille">
