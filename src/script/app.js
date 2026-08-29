@@ -49,6 +49,15 @@ createApp({
                 cible: null,     // ce qu'il faut cliquer maintenant (target)
                 avance: 0,       // combien de cibles d'affilée (target)
 
+                // Ordre : les arcs posés, et ceux qui restent
+                rang: [],
+                enAttente: [],
+
+                // Liaison : ce qui est relié, et la colonne de gauche en main
+                liens: {},
+                gauche: null,
+                mauvais: [],
+
                 fentes: [],
                 reserve: [],
                 figees: [],
@@ -1415,6 +1424,95 @@ createApp({
         cliquerIntrus(id) {
             if (!this.socket || this.ascTrouve(id)) return;
             this.socket.emit('ascension-check-intruder', { characterId: id });
+        },
+
+        // ── Ordre chronologique ──
+        // Même geste que l'anagramme : on pose d'un clic, on reprend d'un clic.
+        prepararerOrdre(d) {
+            const n = (d.arcs || []).length;
+            this.asc.rang = Array.from({ length: n }, () => null);
+            this.asc.enAttente = (d.arcs || []).slice();
+        },
+
+        poserArc(a) {
+            const k = this.asc.rang.findIndex(x => !x);
+            if (k < 0) return;
+            this.asc.rang[k] = a;
+            this.asc.enAttente = this.asc.enAttente.filter(x => x.id !== a.id);
+            this.playSound(this.sounds.ascPose);
+            if (this.asc.rang.every(Boolean)) this.envoyerOrdre();
+        },
+
+        retirerArc(k) {
+            if (!this.asc.rang[k]) return;
+            this.asc.enAttente.push(this.asc.rang[k]);
+            this.asc.rang[k] = null;
+        },
+
+        // Le serveur ne répond QUE si l'ordre est juste : son silence est la
+        // réponse. On l'attend un instant, puis on secoue — dire « raté » ne
+        // divulgue rien de plus que l'absence de passage à l'étage suivant.
+        envoyerOrdre() {
+            if (!this.socket) return;
+            this.socket.emit('ascension-check-order', {
+                order: this.asc.rang.map(a => a.id),
+            });
+            clearTimeout(this._ascOrdreT);
+            this._ascOrdreT = setTimeout(() => {
+                if (this.asc.rang.every(Boolean)) {
+                    this.secouerAsc();
+                    this.playSound(this.sounds.ascRate);
+                }
+            }, 700);
+        },
+
+        // ── Liaison ──
+        prepararerLiaison(d) {
+            this.asc.liens = {};
+            this.asc.gauche = null;
+            this.asc.mauvais = [];
+        },
+
+        // On prend à gauche, on pose à droite : deux clics, jamais un glisser,
+        // qui demanderait de la précision au doigt comme à la souris.
+        prendreGauche(id) {
+            this.asc.gauche = this.asc.gauche === id ? null : id;
+            if (this.asc.liens[id]) {
+                delete this.asc.liens[id];
+                this.asc.liens = Object.assign({}, this.asc.liens);
+            }
+        },
+
+        poserDroite(id) {
+            if (!this.asc.gauche) return;
+            // Une valeur déjà prise se libère : deux gauches ne partagent pas
+            // la même droite, le serveur n'accepterait pas la paire.
+            for (const g of Object.keys(this.asc.liens)) {
+                if (this.asc.liens[g] === id) delete this.asc.liens[g];
+            }
+            this.asc.liens = Object.assign({}, this.asc.liens, { [this.asc.gauche]: id });
+            this.asc.gauche = null;
+            this.asc.mauvais = [];
+            this.playSound(this.sounds.ascPose);
+
+            const total = ((this.asc.data && this.asc.data.left) || []).length;
+            if (Object.keys(this.asc.liens).length === total) this.envoyerLiaison();
+        },
+
+        envoyerLiaison() {
+            if (!this.socket) return;
+            this.socket.emit('ascension-check-match', {
+                connections: Object.keys(this.asc.liens)
+                    .map(g => ({ leftId: g, rightId: this.asc.liens[g] })),
+            });
+        },
+
+        // Ce qu'une valeur de droite est reliée à, pour le dessiner
+        lieA(idDroite) {
+            for (const g of Object.keys(this.asc.liens)) {
+                if (this.asc.liens[g] === idDroite) return g;
+            }
+            return null;
         },
 
         // ── Anagramme ──
@@ -4225,10 +4323,36 @@ createApp({
                 if (f0 && f0.type === 'scramble') this.prepararerScramble(f0);
                 if (f0 && f0.type === 'wordle') this.prepararerWordle(f0);
                 if (f0 && ['guess', 'target', 'intruder'].indexOf(f0.type) >= 0) this.prepararerGrille(f0);
+                if (f0 && f0.type === 'order') this.prepararerOrdre(f0);
+                if (f0 && f0.type === 'match') this.prepararerLiaison(f0);
 
                 // Un pas de plus dans la tour : le son le dit avant l'image.
                 // Pas au tout premier étage, où le décompte vient de sonner.
                 if (data.floor > 0) this.playSound(this.sounds.ascPas);
+            });
+
+            // L'ordre : le serveur ne parle que s'il est juste. Rien à faire
+            // ici — l'étage suivant arrive de lui-même.
+            this.socket.on('ascension-order-result', (data) => {
+                clearTimeout(this._ascOrdreT);
+                if (data && data.correct !== false) this.playSound(this.sounds.ascJuste);
+            });
+
+            // La liaison : le serveur rend chaque paire jugée. On garde les
+            // justes et on relâche les autres, plutôt que de tout défaire.
+            this.socket.on('ascension-match-result', (data) => {
+                if (!data || !Array.isArray(data.results)) return;
+                if (data.allCorrect) {
+                    this.playSound(this.sounds.ascJuste);
+                    return;
+                }
+                const fautifs = data.results.filter(r => !r.correct).map(r => r.leftId);
+                this.asc.mauvais = fautifs;
+                const restants = Object.assign({}, this.asc.liens);
+                for (const g of fautifs) delete restants[g];
+                this.asc.liens = restants;
+                this.secouerAsc();
+                this.playSound(this.sounds.ascRate);
             });
 
             // Devine le perso : un portrait à la fois, chacun se verrouille
@@ -4344,6 +4468,8 @@ createApp({
                 if (f && ['guess', 'target', 'intruder'].indexOf(f.type) >= 0) {
                     this.prepararerGrille(f, data.myValidatedGuesses);
                 }
+                if (f && f.type === 'order') this.prepararerOrdre(f);
+                if (f && f.type === 'match') this.prepararerLiaison(f);
             });
 
             this.socket.on('ascension-progress', (data) => {

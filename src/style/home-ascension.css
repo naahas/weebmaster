@@ -889,3 +889,157 @@
     .asc-portrait { width: clamp(4.2rem, 26vw, 6rem); }
     .asc-vise-n { font-size: 1.3rem; }
 }
+
+/* ══════════ Ordre chronologique ══════════
+   Une rangée de places numérotées, et dessous les arcs qui attendent. Même
+   geste que l'anagramme : on pose d'un clic, on reprend d'un clic. */
+.asc-rang,
+.asc-attente-arcs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: clamp(0.4rem, 1.2vw, 0.8rem);
+}
+
+.asc-place,
+.asc-arc {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.3rem;
+    width: clamp(6rem, 12vw, 9rem);
+    padding: 0.35rem 0.35rem 0.45rem;
+    border-radius: 0.45rem;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.18s ease;
+}
+
+.asc-place {
+    min-height: clamp(6rem, 12vh, 8rem);
+    background: rgba(255, 255, 255, 0.025);
+    border: 0.09rem dashed rgba(255, 255, 255, 0.12);
+}
+
+.asc-place.pleine {
+    background: rgba(140, 180, 255, 0.08);
+    border-style: solid;
+    border-color: rgba(140, 180, 255, 0.4);
+}
+
+/* Le rang, en filigrane : il numérote sans se disputer la place avec l'arc */
+.asc-place-n {
+    position: absolute;
+    top: 0.2rem;
+    left: 0.4rem;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.2);
+}
+
+.asc-arc {
+    background: rgba(140, 180, 255, 0.1);
+    border: 0.09rem solid rgba(140, 180, 255, 0.28);
+}
+
+.asc-arc:hover { background: rgba(140, 180, 255, 0.2); transform: translateY(-0.15rem); }
+.asc-arc:active { transform: scale(0.95); }
+
+.asc-place img,
+.asc-arc img {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    border-radius: 0.3rem;
+}
+
+.asc-place-t,
+.asc-arc-t {
+    font-size: 0.62rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+/* ══════════ Liaison ══════════
+   Deux colonnes face à face. Prendre à gauche allume la ligne ; poser à
+   droite scelle la paire. */
+.asc-colonnes {
+    display: flex;
+    align-items: stretch;
+    gap: clamp(1.5rem, 5vw, 4rem);
+    width: 100%;
+}
+
+.asc-col {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.asc-lig {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 0.6rem;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.03);
+    border: 0.09rem solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.45rem;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.18s ease;
+}
+
+.asc-lig img {
+    flex: 0 0 auto;
+    width: 2.1rem;
+    height: 2.9rem;
+    object-fit: cover;
+    border-radius: 0.25rem;
+}
+
+.asc-lig-t {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.asc-col.droite .asc-lig { justify-content: center; min-height: 2.6rem; }
+.asc-col.droite .asc-lig-t { flex: 0 1 auto; text-align: center; }
+
+.asc-lig:hover { border-color: rgba(140, 180, 255, 0.45); transform: translateX(0.15rem); }
+.asc-col.droite .asc-lig:hover { transform: translateX(-0.15rem); }
+.asc-lig:active { transform: scale(0.97); }
+
+/* En main : la ligne attend qu'on lui donne sa valeur */
+.asc-lig.pris {
+    background: rgba(255, 215, 0, 0.12);
+    border-color: var(--neon-primary, #ffd700);
+    box-shadow: 0 0 0.9rem rgba(255, 215, 0, 0.25);
+}
+
+.asc-lig.lie {
+    background: rgba(110, 231, 183, 0.09);
+    border-color: rgba(110, 231, 183, 0.5);
+}
+
+.asc-lig.rate {
+    background: rgba(255, 100, 100, 0.1);
+    border-color: rgba(255, 100, 100, 0.6);
+}
+
+@media (max-width: 900px) {
+    .asc-colonnes { gap: 0.8rem; }
+    .asc-lig { padding: 0.3rem 0.4rem; gap: 0.4rem; }
+    .asc-lig img { width: 1.6rem; height: 2.2rem; }
+    .asc-lig-t { font-size: 0.68rem; }
+    .asc-place, .asc-arc { width: clamp(4.5rem, 28vw, 7rem); }
+}

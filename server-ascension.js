@@ -1469,7 +1469,7 @@ function handleAscensionCheckWordle(gameState, io, socket, data) {
         console.log(`🏔️ ✅ ${player.username} valide étage Wordle ${floorIndex + 1} (${word})`);
         socket.emit('ascension-answer-result', { correct: true, floor: pp.floor + 1 });
         // Délai 2500ms : laisse le temps de jouer le flip + pulse verte + fade-out du wrap côté client
-        advancePlayerToNextFloor(gameState, io, player.playerId, true, 2500);
+        advancePlayerToNextFloor(gameState, io, player.playerId, true, 900);
     }
 }
 
@@ -1514,7 +1514,7 @@ function handleAscensionCheckMatch(gameState, io, socket, data) {
         console.log(`🏔️ ✅ ${player.username} valide étage Match ${floorIndex + 1} (${floorData.subtype})`);
         socket.emit('ascension-answer-result', { correct: true, floor: pp.floor + 1 });
         // Délai pour laisser jouer la cascade de validation + wrap fade
-        advancePlayerToNextFloor(gameState, io, player.playerId, true, 2500);
+        advancePlayerToNextFloor(gameState, io, player.playerId, true, 900);
     }
 }
 

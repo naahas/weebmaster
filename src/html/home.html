@@ -799,6 +799,58 @@
                                     </div>
                                 </div>
 
+                                <!-- ── Ordre chronologique ── -->
+                                <!-- Le serveur ne répond que si l'ordre est juste :
+                                     son silence est la réponse. -->
+                                <div class="asc-jeu asc-ordre" v-else-if="asc.data.type === 'order'"
+                                     :class="{ ko: asc.secousse }">
+                                    <div class="asc-rang">
+                                        <button class="asc-place" v-for="(a, k) in asc.rang" :key="k"
+                                                :class="{ pleine: a }" @click="retirerArc(k)">
+                                            <span class="asc-place-n">{{ k + 1 }}</span>
+                                            <template v-if="a">
+                                                <img :src="'/ascensionpic/ascensionarcs/' + a.img" alt="" draggable="false">
+                                                <span class="asc-place-t">{{ a.name }}</span>
+                                            </template>
+                                        </button>
+                                    </div>
+
+                                    <div class="asc-attente-arcs">
+                                        <button class="asc-arc" v-for="a in asc.enAttente" :key="a.id"
+                                                @click="poserArc(a)">
+                                            <img :src="'/ascensionpic/ascensionarcs/' + a.img" alt="" draggable="false">
+                                            <span class="asc-arc-t">{{ a.name }}</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- ── Liaison ── -->
+                                <!-- On prend à gauche, on pose à droite : deux clics,
+                                     jamais un glisser, qui demanderait de la précision. -->
+                                <div class="asc-jeu asc-liaison" v-else-if="asc.data.type === 'match'"
+                                     :class="{ ko: asc.secousse }">
+                                    <div class="asc-colonnes">
+                                        <div class="asc-col">
+                                            <button class="asc-lig" v-for="g in asc.data.left" :key="g.id"
+                                                    :class="{ pris: asc.gauche === g.id, lie: asc.liens[g.id],
+                                                              rate: asc.mauvais.indexOf(g.id) >= 0 }"
+                                                    @click="prendreGauche(g.id)">
+                                                <img v-if="g.img" :src="'/ascensionpic/' + g.img" alt="" draggable="false">
+                                                <span class="asc-lig-t">{{ g.name }}</span>
+                                            </button>
+                                        </div>
+
+                                        <div class="asc-col droite">
+                                            <button class="asc-lig val" v-for="d in asc.data.right" :key="d.id"
+                                                    :class="{ lie: lieA(d.id) }"
+                                                    @click="poserDroite(d.id)">
+                                                <span class="asc-lig-t">{{ d.value }}</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+
                                 <!-- ── Anagramme ── -->
                                 <div class="asc-jeu asc-anagramme" v-else-if="asc.data.type === 'scramble'"
                                      :class="{ ko: asc.secousse }">
@@ -838,9 +890,12 @@
                                     <span class="asc-aide">{{ asc.essais.length }} essai<span v-if="asc.essais.length > 1">s</span></span>
                                 </div>
 
+                                <!-- Les sept types ont leur écran. Ce cas ne devrait
+                                     plus se produire : il reste comme filet, pour qu'un
+                                     type ajouté un jour ne laisse pas un vide muet. -->
                                 <div class="asc-brouillon" v-else>
                                     <span class="asc-brouillon-t">{{ asc.data.type }}</span>
-                                    <span class="asc-brouillon-s">écran à venir</span>
+                                    <span class="asc-brouillon-s">écran inconnu</span>
                                 </div>
                                 </div>
                                 </transition>
