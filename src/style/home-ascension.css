@@ -639,7 +639,7 @@
    compte du format des portraits et des gouttières. */
 .asc-jeu.asc-cible,
 .asc-jeu.asc-intrus {
-    max-width: min(57rem, 100vw - 27rem, calc((100vh - 11rem) * 0.92));
+    max-width: min(57rem, 100vw - 30rem, calc((100vh - 11rem) * 0.92));
 }
 
 @media (max-width: 900px) {
@@ -805,14 +805,13 @@
 
 .asc-vise {
     position: absolute;
-    /* En haut plutôt qu'au milieu : la consigne se lit avant de chercher, et
-       de là elle ne bouge plus quand la grille change de hauteur. */
-    left: calc(100% + 4rem);
-    top: 0;
+    left: calc(100% + 5.5rem);
+    top: 50%;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 0.35rem;
+    transform: translateY(-50%);
     white-space: nowrap;
 }
 
@@ -857,12 +856,13 @@
 /* ── Intrus : le compte de ce qu'on a débusqué ── */
 .asc-compte {
     position: absolute;
-    left: calc(100% + 4rem);
-    top: 0;
+    left: calc(100% + 5.5rem);
+    top: 50%;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 0.2rem;
+    transform: translateY(-50%);
     white-space: nowrap;
 }
 
@@ -926,7 +926,7 @@
    gauche à droite, et c'est elle qu'on est en train de fabriquer. On échange
    deux arcs en glissant l'un sur l'autre — l'échange, et non l'insertion,
    pour que la ligne garde sa longueur et que rien ne se dérobe. */
-.asc-jeu.asc-ordre { max-width: min(76rem, 100vw - 10rem); }
+.asc-jeu.asc-ordre { max-width: min(92rem, 100vw - 5rem); }
 
 .asc-suite {
     display: flex;
@@ -939,11 +939,13 @@
 .asc-carte-arc {
     flex: 1 1 0;
     min-width: 0;
-    max-width: 15rem;
+    max-width: 19rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.5rem;
+    gap: 0.75rem;
+    /* Le titre se collait à l'image : il lui faut sa propre marge, en bas
+       comme sur les côtés, sinon la carte paraît coupée. */
+    padding: 0.55rem 0.55rem 0.85rem;
     background: rgba(140, 180, 255, 0.07);
     border: 0.09rem solid rgba(140, 180, 255, 0.24);
     border-radius: 0.5rem;
@@ -974,7 +976,7 @@
 }
 
 .asc-carte-arc-t {
-    font-size: 0.82rem;
+    font-size: 0.92rem;
     font-weight: 600;
     line-height: 1.2;
     text-align: center;
@@ -1003,7 +1005,7 @@
 /* ══════════ Liaison ══════════
    Deux colonnes face à face. Prendre à gauche allume la ligne ; poser à
    droite scelle la paire. */
-.asc-jeu.asc-liaison { max-width: min(66rem, 100vw - 12rem); }
+.asc-jeu.asc-liaison { max-width: min(82rem, 100vw - 8rem); }
 
 .asc-colonnes {
     display: flex;
@@ -1023,8 +1025,8 @@
 .asc-lig {
     display: flex;
     align-items: center;
-    gap: 0.9rem;
-    padding: 0.65rem 0.9rem;
+    gap: 1.1rem;
+    padding: 0.8rem 1.2rem;
     text-align: left;
     background: rgba(255, 255, 255, 0.03);
     border: 0.09rem solid rgba(255, 255, 255, 0.08);
@@ -1035,8 +1037,8 @@
 
 .asc-lig img {
     flex: 0 0 auto;
-    width: 3.2rem;
-    height: 4.4rem;
+    width: 4rem;
+    height: 5.5rem;
     object-fit: cover;
     border-radius: 0.3rem;
 }
@@ -1044,14 +1046,14 @@
 .asc-lig-t {
     flex: 1;
     min-width: 0;
-    font-size: 1rem;
+    font-size: 1.15rem;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.8);
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.asc-col.droite .asc-lig { justify-content: center; min-height: 4rem; }
+.asc-col.droite .asc-lig { justify-content: center; min-height: 5rem; }
 .asc-col.droite .asc-lig-t { flex: 0 1 auto; text-align: center; }
 
 .asc-lig:hover { border-color: rgba(140, 180, 255, 0.45); transform: translateX(0.15rem); }
