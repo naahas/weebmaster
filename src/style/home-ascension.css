@@ -639,7 +639,7 @@
    compte du format des portraits et des gouttières. */
 .asc-jeu.asc-cible,
 .asc-jeu.asc-intrus {
-    max-width: min(57rem, 100vw - 30rem, calc((100vh - 11rem) * 0.92));
+    max-width: min(62rem, 100vw - 30rem, calc((100vh - 9rem) * 0.92));
 }
 
 @media (max-width: 900px) {
@@ -815,14 +815,6 @@
     white-space: nowrap;
 }
 
-.asc-vise-l {
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.32);
-}
-
 /* Le nom change à chaque réussite : il se renouvelle d'un mouvement, sinon
    on ne verrait pas qu'on est passé au suivant. */
 .asc-vise-n {
@@ -838,7 +830,7 @@
     to   { opacity: 1; transform: none; }
 }
 
-.asc-vise-pts { display: flex; gap: 0.28rem; }
+.asc-vise-pts { display: flex; gap: 0.32rem; margin-top: 0.5rem; }
 
 .asc-vise-pts i {
     width: 0.42rem;
@@ -866,14 +858,6 @@
     white-space: nowrap;
 }
 
-.asc-compte-l {
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.32);
-}
-
 .asc-compte-n {
     font-family: 'Bebas Neue', sans-serif;
     font-size: clamp(1.4rem, 3vw, 2.1rem);
@@ -885,9 +869,19 @@
 .asc-compte-c {
     display: flex;
     align-items: baseline;
-    gap: 0.25rem;
-    margin-top: 0.3rem;
+    gap: 0.3rem;
+    margin-top: 0.45rem;
     font-family: 'Bebas Neue', sans-serif;
+}
+
+.asc-compte-c em {
+    font-family: 'Inter', sans-serif;
+    font-style: normal;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.3);
 }
 
 .asc-compte b { font-size: 1.8rem; font-weight: 400; color: #6ee7b7; }
@@ -1003,128 +997,145 @@
 }
 
 /* ══════════ Liaison ══════════
-   Les portraits en grand sur une ligne, les valeurs en dessous. Deux colonnes
-   de longues bandes se lisaient mal et donnaient un tableau ; ici c'est le
-   visage qu'on reconnaît, et la valeur qu'on lui attribue vient se poser
-   dessous — la paire se lit d'un coup d'œil, sans trait à suivre. */
-.asc-jeu.asc-liaison { max-width: min(74rem, 100vw - 8rem); }
+   Deux colonnes reliées par de vrais traits, tracés d'un bout à l'autre. La
+   courbe n'est pas une coquetterie : deux droites voisines se confondraient,
+   alors que deux courbes se suivent des yeux. Les coordonnées se mesurent
+   après chaque rendu — le gabarit seul ne peut pas les deviner. */
+.asc-jeu.asc-liaison { max-width: min(60rem, 100vw - 10rem); }
 
-.asc-visages {
+.asc-colonnes {
+    position: relative;
     display: flex;
-    justify-content: center;
-    gap: clamp(0.6rem, 1.8vw, 1.2rem);
+    align-items: stretch;
+    gap: clamp(4rem, 12vw, 9rem);
     width: 100%;
 }
 
-.asc-visage {
+/* Les traits passent derrière les nœuds : ils s'ancrent à leur bord */
+.asc-traits {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+}
+
+.asc-traits path {
+    fill: none;
+    stroke: #6ee7b7;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    filter: drop-shadow(0 0 0.3rem rgba(110, 231, 183, 0.5));
+    /* Le trait se dessine de gauche à droite : on voit le lien se faire */
+    stroke-dasharray: 1000;
+    animation: ascTrait 0.45s cubic-bezier(0.3, 0.9, 0.3, 1) both;
+}
+
+.asc-traits path.faux {
+    stroke: #ff6b6b;
+    filter: drop-shadow(0 0 0.3rem rgba(255, 90, 90, 0.5));
+}
+
+@keyframes ascTrait {
+    from { stroke-dashoffset: 1000; }
+    to   { stroke-dashoffset: 0; }
+}
+
+.asc-col {
     flex: 1 1 0;
     min-width: 0;
-    max-width: 13rem;
     display: flex;
     flex-direction: column;
-    gap: 0.45rem;
-    padding: 0.45rem 0.45rem 0.55rem;
+    justify-content: space-between;
+    gap: 0.6rem;
+}
+
+.asc-noeud {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.5rem 0.8rem;
+    text-align: left;
     background: rgba(255, 255, 255, 0.03);
-    border: 0.09rem solid rgba(255, 255, 255, 0.08);
-    border-radius: 0.55rem;
+    border: 0.09rem solid rgba(255, 255, 255, 0.09);
+    border-radius: 0.5rem;
     cursor: pointer;
     transition: transform 0.18s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
-.asc-visage img {
-    width: 100%;
-    aspect-ratio: 225 / 350;
+.asc-noeud img {
+    flex: 0 0 auto;
+    width: 3.4rem;
+    height: 4.6rem;
     object-fit: cover;
-    border-radius: 0.4rem;
-}
-
-.asc-visage-n {
-    font-size: 0.72rem;
-    font-weight: 600;
-    line-height: 1.15;
-    text-align: center;
-    color: rgba(255, 255, 255, 0.72);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* La valeur attribuée, posée sous le portrait */
-.asc-visage-v {
-    padding: 0.25rem 0.3rem;
-    font-size: 0.72rem;
-    font-weight: 700;
-    line-height: 1.15;
-    text-align: center;
-    color: #6ee7b7;
-    background: rgba(110, 231, 183, 0.12);
     border-radius: 0.3rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    animation: ascLie 0.3s cubic-bezier(0.2, 1.4, 0.35, 1) both;
 }
 
-@keyframes ascLie {
-    from { opacity: 0; transform: translateY(-0.35rem) scale(0.9); }
-    to   { opacity: 1; transform: none; }
-}
-
-.asc-visage:hover { border-color: rgba(140, 180, 255, 0.45); transform: translateY(-0.2rem); }
-.asc-visage:active { transform: scale(0.97); }
-
-/* En main : c'est ce portrait qui attend sa valeur */
-.asc-visage.pris {
-    border-color: var(--neon-primary, #ffd700);
-    background: rgba(255, 215, 0, 0.1);
-    box-shadow: 0 0 1.1rem rgba(255, 215, 0, 0.25);
-}
-
-.asc-visage.lie { border-color: rgba(110, 231, 183, 0.45); }
-
-.asc-visage.rate {
-    border-color: rgba(255, 100, 100, 0.6);
-    background: rgba(255, 100, 100, 0.08);
-}
-
-/* Les valeurs : de simples jetons, larges de leur texte */
-.asc-valeurs {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: clamp(0.4rem, 1.2vw, 0.8rem);
-    margin-top: 0.5rem;
-}
-
-.asc-valeur {
-    padding: 0.65rem 1.1rem;
-    font-family: inherit;
+.asc-noeud-t {
+    flex: 1;
+    min-width: 0;
     font-size: 1rem;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.82);
-    background: rgba(140, 180, 255, 0.09);
-    border: 0.09rem solid rgba(140, 180, 255, 0.28);
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: transform 0.18s ease, border-color 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.asc-valeur:hover { background: rgba(140, 180, 255, 0.2); transform: translateY(-0.15rem); }
-.asc-valeur:active { transform: scale(0.96); }
+/* Sans image, le texte est tout ce qu'il y a : il prend la place */
+.asc-colonnes.sansImage .asc-noeud { padding: 1rem 1.2rem; }
+.asc-colonnes.sansImage .asc-noeud-t { font-size: 1.3rem; text-align: center; }
 
-/* Une valeur déjà attribuée s'efface : elle est visible sous son portrait */
-.asc-valeur.lie {
-    opacity: 0.3;
-    background: rgba(110, 231, 183, 0.08);
-    border-color: rgba(110, 231, 183, 0.3);
+.asc-col.droite .asc-noeud { justify-content: center; }
+.asc-col.droite .asc-noeud-t { flex: 0 1 auto; text-align: center; }
+
+/* Le point d'attache : c'est de lui que part le trait */
+.asc-point {
+    position: absolute;
+    top: 50%;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    transform: translateY(-50%);
+    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.asc-col:not(.droite) .asc-point { right: -0.25rem; }
+.asc-col.droite .asc-point { left: -0.25rem; }
+
+.asc-noeud:hover { border-color: rgba(140, 180, 255, 0.45); }
+.asc-noeud:hover .asc-point { background: rgba(140, 180, 255, 0.7); }
+.asc-noeud:active { transform: scale(0.98); }
+
+/* En main : ce nœud attend son vis-à-vis */
+.asc-noeud.pris {
+    border-color: var(--neon-primary, #ffd700);
+    background: rgba(255, 215, 0, 0.1);
+}
+
+.asc-noeud.pris .asc-point {
+    background: var(--neon-primary, #ffd700);
+    box-shadow: 0 0 0.7rem rgba(255, 215, 0, 0.7);
+    transform: translateY(-50%) scale(1.4);
+}
+
+.asc-noeud.lie { border-color: rgba(110, 231, 183, 0.45); }
+.asc-noeud.lie .asc-point { background: #6ee7b7; box-shadow: 0 0 0.5rem rgba(110, 231, 183, 0.6); }
+
+.asc-noeud.rate {
+    border-color: rgba(255, 100, 100, 0.6);
+    background: rgba(255, 100, 100, 0.07);
 }
 
 @media (max-width: 900px) {
     .asc-jeu.asc-liaison, .asc-jeu.asc-ordre { max-width: 100%; }
-    .asc-visages { flex-wrap: wrap; }
-    .asc-visage { flex: 0 0 auto; width: clamp(4.4rem, 27vw, 6.5rem); }
-    .asc-valeur { padding: 0.45rem 0.7rem; font-size: 0.82rem; }
-    .asc-carte-arc { max-width: 6.5rem; }
+    .asc-colonnes { gap: 2rem; }
+    .asc-noeud { padding: 0.35rem 0.5rem; gap: 0.5rem; }
+    .asc-noeud img { width: 2.2rem; height: 3rem; }
+    .asc-noeud-t { font-size: 0.8rem; }
     .asc-fleche { width: 0.9rem; }
 }
 

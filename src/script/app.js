@@ -60,6 +60,7 @@ createApp({
                 liens: {},
                 gauche: null,
                 mauvais: [],
+                traits: [],      // les courbes tracées entre les deux colonnes
 
                 fentes: [],
                 reserve: [],
@@ -1057,6 +1058,7 @@ createApp({
             this._crackTimer = setTimeout(() => this.updateBombanimeEffects(), 15);
         }
         this.suivreInfosReglages();
+        if (this.asc.data && this.asc.data.type === 'match') this.tracerLiens();
     },
 
     methods: {
@@ -1311,6 +1313,9 @@ createApp({
         ascSousTitre() {
             const d = this.asc.data;
             if (!d) return '';
+            // Les épreuves à grille portent leur consigne à droite des cartes :
+            // la répéter en légende du titre volait de la hauteur aux vignettes.
+            if (['guess', 'target', 'intruder'].indexOf(d.type) >= 0) return '';
             if (d.instruction) return d.instruction;
             const par = {
                 guess: 'Nomme les ' + (d.totalToGuess || 5) + ' portraits',
@@ -1393,9 +1398,9 @@ createApp({
             if (nom.length < 3 || !this.socket || this.ascTrouve(id)) return;
 
             const maintenant = Date.now();
-            if (this._ascDernierEnvoi && maintenant - this._ascDernierEnvoi < 70) {
+            if (this._ascDernierEnvoi && maintenant - this._ascDernierEnvoi < 35) {
                 clearTimeout(this._ascRetard);
-                this._ascRetard = setTimeout(() => this.saisirGuess(id, this.asc.saisies[id]), 80);
+                this._ascRetard = setTimeout(() => this.saisirGuess(id, this.asc.saisies[id]), 40);
                 return;
             }
             this._ascDernierEnvoi = maintenant;
@@ -1480,13 +1485,9 @@ createApp({
             this.socket.emit('ascension-check-order', {
                 order: this.asc.rang.map(a => a.id),
             });
-            clearTimeout(this._ascOrdreT);
-            this._ascOrdreT = setTimeout(() => {
-                if (this.asc.rang.every(Boolean)) {
-                    this.secouerAsc();
-                    this.playSound(this.sounds.ascRate);
-                }
-            }, 700);
+            // Aucun signal tant que l'ordre n'est pas juste : c'est le parti pris
+            // du serveur, qui ne répond que sur une réussite. Une secousse à
+            // chaque essai reviendrait à rendre le tâtonnement gratuit.
         },
 
         // ── Liaison ──
@@ -1520,6 +1521,41 @@ createApp({
 
             const total = ((this.asc.data && this.asc.data.left) || []).length;
             if (Object.keys(this.asc.liens).length === total) this.envoyerLiaison();
+        },
+
+        // Les traits ne peuvent pas se déduire du gabarit : il faut mesurer où
+        // les deux bouts se trouvent réellement. On les recalcule après chaque
+        // rendu, comme les icônes d'aide des réglages.
+        tracerLiens() {
+            const zone = document.querySelector('.asc-colonnes');
+            if (!zone) { if (this.asc.traits.length) this.asc.traits = []; return false; }
+            const z = zone.getBoundingClientRect();
+            const traits = [];
+
+            for (const g of Object.keys(this.asc.liens)) {
+                const a = document.getElementById('lien-g-' + g);
+                const b = document.getElementById('lien-d-' + this.asc.liens[g]);
+                if (!a || !b) continue;
+                const ra = a.getBoundingClientRect();
+                const rb = b.getBoundingClientRect();
+                const x1 = ra.right - z.left, y1 = ra.top + ra.height / 2 - z.top;
+                const x2 = rb.left - z.left,  y2 = rb.top + rb.height / 2 - z.top;
+                // Une courbe de Bézier plutôt qu'un segment : deux traits voisins
+                // se distinguent, là où des droites se confondraient.
+                const dx = Math.max(24, (x2 - x1) * 0.45);
+                traits.push({
+                    id: g,
+                    faux: this.asc.mauvais.indexOf(g) >= 0,
+                    d: 'M' + x1 + ',' + y1 + ' C' + (x1 + dx) + ',' + y1 +
+                       ' ' + (x2 - dx) + ',' + y2 + ' ' + x2 + ',' + y2,
+                });
+            }
+
+            // On ne réécrit que si quelque chose a bougé : sans ce garde, le
+            // rendu se rappellerait lui-même sans fin.
+            const avant = JSON.stringify(this.asc.traits);
+            if (JSON.stringify(traits) !== avant) this.asc.traits = traits;
+            return true;
         },
 
         envoyerLiaison() {

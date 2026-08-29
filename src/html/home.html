@@ -772,7 +772,6 @@
                                     <!-- Posée à droite, hors du flux : la grille récupère
                                          la hauteur, et les vignettes grandissent d'autant. -->
                                     <div class="asc-vise">
-                                        <span class="asc-vise-l">Clique sur</span>
                                         <span class="asc-vise-n" :key="asc.cible && asc.cible.id">{{ asc.cible ? asc.cible.name : '…' }}</span>
                                         <span class="asc-vise-pts">
                                             <i v-for="n in asc.data.totalTargets" :key="n"
@@ -794,10 +793,14 @@
                                     <!-- Le compte seul ne disait pas ce qu'on cherche : l'anime
                                          visé se lit ici, à côté des cartes, et non uniquement dans
                                          la légende du titre. -->
+                                    <!-- Deux lignes, pas trois : ce qu'on cherche, puis où l'on
+                                         en est. « Trouve » en petit au-dessus n'apprenait rien. -->
                                     <div class="asc-compte">
-                                        <span class="asc-compte-l">Trouve</span>
                                         <span class="asc-compte-n">{{ asc.data.targetAnime }}</span>
-                                        <span class="asc-compte-c"><b>{{ asc.trouves.length }}</b><i>/ {{ asc.data.totalTargets }}</i></span>
+                                        <span class="asc-compte-c">
+                                            <b>{{ asc.trouves.length }}</b><i>/ {{ asc.data.totalTargets }}</i>
+                                            <em>{{ asc.data.variant === 'in' ? 'trouvés' : 'intrus' }}</em>
+                                        </span>
                                     </div>
 
                                     <div class="asc-grille">
@@ -850,28 +853,36 @@
                                      jamais un glisser, qui demanderait de la précision. -->
                                 <div class="asc-jeu asc-liaison" v-else-if="asc.data.type === 'match'"
                                      :class="{ ko: asc.secousse }">
-                                    <!-- Les portraits en grand, sans leur nom : une ligne de
-                                         noms faisait de longues bandelettes, et c est le visage
-                                         qu on reconnait, pas l etiquette. -->
-                                    <div class="asc-visages">
-                                        <button class="asc-visage" v-for="g in asc.data.left" :key="g.id"
-                                                :class="{ pris: asc.gauche === g.id, lie: asc.liens[g.id],
-                                                          rate: asc.mauvais.indexOf(g.id) >= 0 }"
-                                                @click="prendreGauche(g.id)">
-                                            <img v-if="g.img" :src="'/ascensionpic/' + g.img" alt="" draggable="false">
-                                            <span class="asc-visage-n">{{ g.name }}</span>
-                                            <!-- Ce qu on lui a attribué se pose dessous : la paire
-                                                 se lit d un coup d oeil, sans trait a suivre. -->
-                                            <span class="asc-visage-v" v-if="asc.liens[g.id]">
-                                                {{ (asc.data.right.find(d => d.id === asc.liens[g.id]) || {}).value }}
-                                            </span>
-                                        </button>
-                                    </div>
+                                    <!-- Deux colonnes reliées par de vrais traits : ils se
+                                         tracent d'un bout à l'autre, et se distinguent grâce à
+                                         leur courbe — des droites voisines se confondraient. -->
+                                    <div class="asc-colonnes" :class="{ sansImage: !asc.data.left[0].img }">
+                                        <svg class="asc-traits" aria-hidden="true">
+                                            <path v-for="t in asc.traits" :key="t.id" :d="t.d"
+                                                  :class="{ faux: t.faux }" />
+                                        </svg>
 
-                                    <div class="asc-valeurs">
-                                        <button class="asc-valeur" v-for="d in asc.data.right" :key="d.id"
-                                                :class="{ lie: lieA(d.id) }"
-                                                @click="poserDroite(d.id)">{{ d.value }}</button>
+                                        <div class="asc-col">
+                                            <button class="asc-noeud" v-for="g in asc.data.left" :key="g.id"
+                                                    :id="'lien-g-' + g.id"
+                                                    :class="{ pris: asc.gauche === g.id, lie: asc.liens[g.id],
+                                                              rate: asc.mauvais.indexOf(g.id) >= 0 }"
+                                                    @click="prendreGauche(g.id)">
+                                                <img v-if="g.img" :src="'/ascensionpic/' + g.img" alt="" draggable="false">
+                                                <span class="asc-noeud-t">{{ g.name }}</span>
+                                                <span class="asc-point"></span>
+                                            </button>
+                                        </div>
+
+                                        <div class="asc-col droite">
+                                            <button class="asc-noeud val" v-for="d in asc.data.right" :key="d.id"
+                                                    :id="'lien-d-' + d.id"
+                                                    :class="{ lie: lieA(d.id) }"
+                                                    @click="poserDroite(d.id)">
+                                                <span class="asc-point"></span>
+                                                <span class="asc-noeud-t">{{ d.value }}</span>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
 
