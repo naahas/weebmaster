@@ -564,11 +564,16 @@
 
     .asc-pastille-n {
         position: relative;
+        display: flex;
+        align-items: baseline;
         font-family: 'Bebas Neue', sans-serif;
         font-size: 1.35rem;
         line-height: 1;
         color: #fff;
     }
+
+    .asc-pastille-n b { font-weight: 400; }
+    .asc-pastille-n i { font-style: normal; font-size: 0.7rem; color: rgba(255, 255, 255, 0.4); }
 
     .asc-voile {
         display: block;
@@ -731,6 +736,14 @@
 @keyframes ascTour {
     from { opacity: 0; transform: translateX(1.2rem); }
     to   { opacity: 1; transform: none; }
+}
+
+@media (max-width: 900px) {
+    /* Repliée dans sa pastille, la tour n'a pas d'entrée à jouer. Et cette
+       animation-là, figée sur « opacity: 1 » par son mode de remplissage,
+       l'emportait sur le retrait du panneau : la tour restait dépliée sans
+       qu'on l'ait demandée. Une animation bat toujours une déclaration. */
+    .asc-tour { animation: none; }
 }
 
 @media (max-width: 900px) {
@@ -1057,14 +1070,19 @@
        jouer : six rangs de portraits qu'il fallait faire défiler. À six, la
        grille tient d'un coup d'œil. */
     .asc-grille { grid-template-columns: repeat(6, 1fr); gap: 0.28rem; }
-    /* Pas de marge latérale sur téléphone : consigne et compte reviennent au-dessus */
+    /* Pas de marge latérale sur téléphone : consigne et compte reviennent
+       au-dessus. Mais sur une seule ligne, « ONE PIECE 0/5 intrus » se lisait
+       comme une phrase et non comme un titre et son compte : les deux lignes
+       restent, et la grille prend ses distances. */
     .asc-vise, .asc-compte {
         position: static;
         transform: none;
-        flex-direction: row;
         align-items: center;
-        justify-content: center;
+        margin-bottom: 1.5rem;
     }
+
+    .asc-compte-c { margin-top: 0.2rem; }
+    .asc-vise-pts { margin-top: 0.3rem; }
     .asc-portraits { flex-wrap: wrap; }
     .asc-portrait { flex: 0 0 auto; width: clamp(4.4rem, 27vw, 6.5rem); }
     /* Pas de marge à droite sur téléphone : le compteur revient dessous */
@@ -1080,12 +1098,14 @@
     .asc-jeu.asc-cible,
     .asc-jeu.asc-intrus { max-width: 100%; }
     .asc-portrait { width: clamp(4.2rem, 26vw, 6rem); }
-    .asc-ampoule { top: -2.5rem; width: 1.15rem; height: 1.7rem; }
+    .asc-ampoule { top: -2.3rem; width: 1rem; height: 1.5rem; }
     .asc-vise-n { font-size: 1.3rem; }
 
     /* Les cinq portraits se rangent d'eux-mêmes sur deux lignes : on les
        centre pour que la seconde ne parte pas d'un bord. */
-    .asc-portraits { justify-content: center; align-items: flex-start; row-gap: 2.6rem; }
+    /* La seconde rangée doit laisser passer ses ampoules au-dessus des
+       saisies de la première : sans cet écart, elles se chevauchaient. */
+    .asc-portraits { justify-content: center; align-items: flex-start; row-gap: 3.6rem; }
 }
 
 /* ══════════ Ordre chronologique ══════════
@@ -1399,7 +1419,7 @@
 
     .asc-noeud { padding: 0.25rem; }
     .asc-noeud.avecImage { width: auto; }
-    .asc-noeud img { height: clamp(3rem, 9vh, 4.6rem); width: auto; }
+    .asc-noeud img { height: clamp(3.6rem, 12vh, 6rem); width: auto; }
 
     .asc-noeud:not(.avecImage) {
         width: 100%;

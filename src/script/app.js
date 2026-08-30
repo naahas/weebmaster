@@ -995,6 +995,16 @@ createApp({
             return this.ecran > 900;
         },
 
+        // Ma place parmi les grimpeurs, pour la pastille. L'étage se lit déjà
+        // en haut à gauche ; ce qu'on veut savoir d'un coup d'œil, c'est où
+        // l'on se situe. À égalité d'étage, on partage le rang.
+        ascMonRang() {
+            const tous = this.asc.progres || [];
+            const moi = tous.find(j => j.playerId === this.playerId);
+            if (!moi) return 0;
+            return tous.filter(j => (j.floor || 0) > (moi.floor || 0)).length + 1;
+        },
+
         // Combien de portraits nommés il faut pour allumer l'ampoule. Le
         // serveur tient le même seuil et refuse en dessous : celui-ci ne sert
         // qu'à l'affichage. Les deux doivent bouger ensemble.
