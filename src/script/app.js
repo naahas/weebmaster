@@ -60,7 +60,6 @@ createApp({
                 // part, où il est rendu, et la borne qu'il accrochera si on lâche
                 liens: {},
                 fil: null,
-                filVers: null,
                 filVise: null,
                 mauvais: [],
                 traits: [],      // les courbes tracées entre les deux colonnes
@@ -974,6 +973,17 @@ createApp({
             return Math.min(this.asc.total || 15, (this.asc.etage || 0) + 1);
         },
 
+        // Deux colonnes de portraits ne tiennent pas en hauteur : cinq cartes
+        // empilées deux fois laissent les deux tiers de l'écran vides à droite
+        // et rétrécissent les visages. Dans ce cas seulement, on couche la
+        // liaison — une ligne au-dessus, une ligne en dessous, les fils
+        // descendent au lieu de traverser.
+        ascLignes() {
+            const d = this.asc.data;
+            return !!(d && d.type === 'match' && d.left && d.right
+                      && d.left[0] && d.right[0] && d.left[0].img && d.right[0].img);
+        },
+
         // Le personnage qui accompagne la question. Il occupe la place que
         // prendra le classement : les deux ne coexistent jamais, l'un s'efface
         // quand l'autre arrive.
@@ -1529,28 +1539,47 @@ createApp({
             this.asc.liens = {};
             this.asc.mauvais = [];
             this.asc.traits = [];
-            this.asc.fil = null;
-            this.asc.filVers = null;
-            this.asc.filVise = null;
+            this.rangerFil();
         },
 
-        // On appuie sur un nœud de gauche et l'on tire le fil jusqu'à droite.
+        // ── Le fil ──
+        // On appuie sur un nœud de gauche et l'on tire jusqu'à l'autre côté.
         // Tirer pile sur une petite borne serait pénible au doigt comme à la
         // souris : la plus proche s'allume et attire, dans un rayon confortable.
 
-        // Le fil part du bord droit d'un nœud de gauche et arrive sur le bord
-        // gauche d'un nœud de droite — les mêmes ancrages que les traits posés,
-        // pour que rien ne saute au moment où le lien se fige.
-        ancrage(id, aDroite) {
+        // Le fil part d'un bord et arrive sur le bord d'en face. En colonnes
+        // c'est droite → gauche, en lignes bas → haut : les mêmes ancrages que
+        // les traits posés, pour que rien ne saute quand le lien se fige.
+        ancrage(id, cible) {
             const n = document.getElementById(id);
             const zone = document.querySelector('.asc-colonnes');
             if (!n || !zone) return null;
             const r = n.getBoundingClientRect();
             const z = zone.getBoundingClientRect();
+            if (this.ascLignes) {
+                return {
+                    x: r.left + r.width / 2 - z.left,
+                    y: (cible ? r.top : r.bottom) - z.top,
+                };
+            }
             return {
-                x: (aDroite ? r.left : r.right) - z.left,
+                x: (cible ? r.left : r.right) - z.left,
                 y: r.top + r.height / 2 - z.top,
             };
+        },
+
+        // Une courbe de Bézier plutôt qu'un segment : deux traits voisins se
+        // distinguent, là où des droites se confondraient. Elle part et arrive
+        // perpendiculaire au bord, donc dans le sens de la disposition.
+        courbeFil(a, b) {
+            if (this.ascLignes) {
+                const dy = Math.max(24, (b.y - a.y) * 0.45);
+                return 'M' + a.x + ',' + a.y + ' C' + a.x + ',' + (a.y + dy) +
+                       ' ' + b.x + ',' + (b.y - dy) + ' ' + b.x + ',' + b.y;
+            }
+            const dx = Math.max(24, (b.x - a.x) * 0.45);
+            return 'M' + a.x + ',' + a.y + ' C' + (a.x + dx) + ',' + a.y +
+                   ' ' + (b.x - dx) + ',' + b.y + ' ' + b.x + ',' + b.y;
         },
 
         souris(e) {
@@ -1584,8 +1613,9 @@ createApp({
                 this.asc.liens = reste;
             }
             this.asc.fil = id;
-            this.asc.filVers = this.souris(e);
             this.asc.filVise = null;
+            this._ascFilVers = this.souris(e);
+            this.peindreFil();
             // Sans capture, le fil se couperait dès que le curseur quitte le
             // nœud : les événements suivants iraient à ce qu'il survole.
             if (e.currentTarget && e.currentTarget.setPointerCapture) {
@@ -1593,11 +1623,42 @@ createApp({
             }
         },
 
+        // Le fil se redessine à même le SVG, une fois par image. Passer par
+        // le rendu de Vue le laissait d'une image derrière le curseur : on le
+        // voyait disparaître puis se rallonger d'un coup à chaque mouvement.
         tirerFil(e) {
             if (!this.asc.fil) return;
-            const p = this.souris(e);
-            this.asc.filVers = p;
-            this.asc.filVise = this.plusProcheDroite(p);
+            this._ascFilVers = this.souris(e);
+            if (this._ascFilRaf) return;
+            this._ascFilRaf = requestAnimationFrame(() => {
+                this._ascFilRaf = null;
+                this.peindreFil();
+            });
+        },
+
+        peindreFil() {
+            const trait = this.$refs.ascFil;
+            if (!trait) return;
+            const p = this._ascFilVers;
+            const a = this.asc.fil && this.ancrage('lien-g-' + this.asc.fil, false);
+            if (!a || !p) { trait.removeAttribute('d'); return; }
+
+            // L'aimant, lui, passe bien par l'état : il change rarement, et
+            // c'est Vue qui allume le nœud visé.
+            const vise = this.plusProcheDroite(p);
+            if (this.asc.filVise !== vise) this.asc.filVise = vise;
+
+            const b = (vise && this.ancrage('lien-d-' + vise, true)) || p;
+            trait.setAttribute('d', this.courbeFil(a, b));
+        },
+
+        rangerFil() {
+            if (this._ascFilRaf) { cancelAnimationFrame(this._ascFilRaf); this._ascFilRaf = null; }
+            this._ascFilVers = null;
+            this.asc.fil = null;
+            this.asc.filVise = null;
+            const trait = this.$refs.ascFil;
+            if (trait) trait.removeAttribute('d');
         },
 
         lacherFil(e) {
@@ -1614,9 +1675,7 @@ createApp({
                 if (n && n.id.indexOf('lien-d-') === 0) vise = n.id.slice(7);
             }
 
-            this.asc.fil = null;
-            this.asc.filVers = null;
-            this.asc.filVise = null;
+            this.rangerFil();
             if (vise) this.relier(depuis, vise);
         },
 
@@ -1640,45 +1699,21 @@ createApp({
         // les deux bouts se trouvent réellement. On les recalcule après chaque
         // rendu, comme les icônes d'aide des réglages.
         tracerLiens() {
-            const zone = document.querySelector('.asc-colonnes');
-            if (!zone) { if (this.asc.traits.length) this.asc.traits = []; return false; }
-            const z = zone.getBoundingClientRect();
+            if (!document.querySelector('.asc-colonnes')) {
+                if (this.asc.traits.length) this.asc.traits = [];
+                return false;
+            }
             const traits = [];
 
             for (const g of Object.keys(this.asc.liens)) {
-                const a = document.getElementById('lien-g-' + g);
-                const b = document.getElementById('lien-d-' + this.asc.liens[g]);
+                const a = this.ancrage('lien-g-' + g, false);
+                const b = this.ancrage('lien-d-' + this.asc.liens[g], true);
                 if (!a || !b) continue;
-                const ra = a.getBoundingClientRect();
-                const rb = b.getBoundingClientRect();
-                const x1 = ra.right - z.left, y1 = ra.top + ra.height / 2 - z.top;
-                const x2 = rb.left - z.left,  y2 = rb.top + rb.height / 2 - z.top;
-                // Une courbe de Bézier plutôt qu'un segment : deux traits voisins
-                // se distinguent, là où des droites se confondraient.
-                const dx = Math.max(24, (x2 - x1) * 0.45);
                 traits.push({
                     id: g,
                     faux: this.asc.mauvais.indexOf(g) >= 0,
-                    d: 'M' + x1 + ',' + y1 + ' C' + (x1 + dx) + ',' + y1 +
-                       ' ' + (x2 - dx) + ',' + y2 + ' ' + x2 + ',' + y2,
+                    d: this.courbeFil(a, b),
                 });
-            }
-
-            // Le fil qu'on tire : il part de sa borne et suit le curseur, ou
-            // se colle à la borne visée dès qu'elle est à portée.
-            if (this.asc.fil && this.asc.filVers) {
-                const a = this.ancrage('lien-g-' + this.asc.fil, false);
-                if (a) {
-                    const b = (this.asc.filVise && this.ancrage('lien-d-' + this.asc.filVise, true))
-                              || this.asc.filVers;
-                    const dx = Math.max(24, (b.x - a.x) * 0.45);
-                    traits.push({
-                        id: '__fil',
-                        encours: true,
-                        d: 'M' + a.x + ',' + a.y + ' C' + (a.x + dx) + ',' + a.y +
-                           ' ' + (b.x - dx) + ',' + b.y + ' ' + b.x + ',' + b.y,
-                    });
-                }
             }
 
             // On ne réécrit que si quelque chose a bougé : sans ce garde, le

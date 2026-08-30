@@ -852,16 +852,19 @@
                                      La borne la plus proche s'allume et attire : le geste
                                      reste ludique sans demander de la précision. -->
                                 <div class="asc-jeu asc-liaison" v-else-if="asc.data.type === 'match'"
-                                     :class="{ ko: asc.secousse }">
+                                     :class="{ ko: asc.secousse, enLignes: ascLignes }">
                                     <!-- Deux colonnes reliées par de vrais traits : ils se
                                          tracent d'un bout à l'autre, et se distinguent grâce à
                                          leur courbe — des droites voisines se confondraient. -->
                                     <div class="asc-colonnes"
-                                         :class="{ sansImage: !asc.data.left[0].img,
-                                                   deuxImages: asc.data.left[0].img && asc.data.right[0].img }">
+                                         :class="{ sansImage: !asc.data.left[0].img, enLignes: ascLignes }">
                                         <svg class="asc-traits" aria-hidden="true">
                                             <path v-for="t in asc.traits" :key="t.id" :d="t.d"
-                                                  :class="{ faux: t.faux, encours: t.encours }" />
+                                                  :class="{ faux: t.faux }" />
+                                            <!-- Le fil qu'on tire vit hors du rendu de Vue : son
+                                                 tracé se réécrit à chaque image, et le faire passer
+                                                 par l'état le laissait traîner derrière le curseur. -->
+                                            <path class="asc-fil" ref="ascFil" />
                                         </svg>
 
                                         <div class="asc-col">

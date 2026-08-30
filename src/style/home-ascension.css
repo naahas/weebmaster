@@ -1061,7 +1061,7 @@
 /* Le fil qu'on tire : violet, pour se distinguer des liens posés. Il ne se
    dessine pas progressivement — il suit le curseur, et l'animation de tracé
    le ferait clignoter à chaque déplacement. */
-.asc-traits path.encours {
+.asc-traits path.asc-fil {
     stroke: #a78bfa;
     stroke-dasharray: none;
     animation: none;
@@ -1084,12 +1084,40 @@
 }
 
 /* La colonne des portraits se resserre autour d'eux */
-.asc-colonnes:not(.sansImage) .asc-col:not(.droite) { flex: 0 0 auto; align-items: center; }
-.asc-colonnes:not(.sansImage) .asc-col:not(.droite) .asc-noeud { width: 7rem; }
+.asc-colonnes:not(.sansImage):not(.enLignes) .asc-col:not(.droite) { flex: 0 0 auto; align-items: center; }
+.asc-colonnes:not(.sansImage):not(.enLignes) .asc-col:not(.droite) .asc-noeud { width: 7rem; }
 
-/* Deux colonnes de portraits : la droite se resserre comme la gauche */
-.asc-colonnes.deuxImages .asc-col.droite { flex: 0 0 auto; align-items: center; }
-.asc-colonnes.deuxImages .asc-col.droite .asc-noeud { width: 7rem; }
+/* ── Couchée : deux lignes plutôt que deux colonnes ──
+   Quand les deux côtés sont des portraits, cinq cartes empilées deux fois ne
+   tiennent pas en hauteur : elles rétrécissent jusqu'à ce qu'on ne distingue
+   plus les visages, pendant que les deux tiers droits de l'écran restent
+   vides. Couchée, la liaison prend la largeur qu'elle a, et les fils
+   descendent d'une ligne à l'autre au lieu de traverser. */
+.asc-jeu.asc-liaison.enLignes { max-width: min(88rem, 100vw - 5rem); }
+
+.asc-colonnes.enLignes {
+    flex-direction: column;
+    gap: clamp(2.5rem, 9vh, 5.5rem);
+}
+
+.asc-colonnes.enLignes .asc-col {
+    flex: 0 0 auto;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(0.6rem, 2.2vw, 1.8rem);
+}
+
+.asc-colonnes.enLignes .asc-noeud { width: auto; }
+
+/* Le portrait se règle sur la hauteur : c'est elle qui manque, la largeur
+   suit par le rapport de l'image. */
+.asc-colonnes.enLignes .asc-noeud img {
+    height: clamp(6rem, 24vh, 13rem);
+    width: auto;
+    aspect-ratio: 3 / 4;
+}
+
 
 /* Un nœud à portrait se réduit à son image : il n'a plus de texte à porter,
    donc plus de raison de s'étendre. C'est ce qui faisait les bandelettes. */
@@ -1137,15 +1165,18 @@
 .asc-col.droite .asc-noeud { justify-content: center; }
 .asc-col.droite .asc-noeud-t { flex: 0 1 auto; text-align: center; }
 
-/* Le point d'attache : c'est de lui que part le trait */
+/* Le point d'attache : c'est de lui que part le trait. Son décalage passe par
+   une variable — couchée, la borne se centre en largeur et non en hauteur, et
+   sans cela chaque état aurait eu à redéclarer sa translation. */
 .asc-point {
+    --dec: translateY(-50%);
     position: absolute;
     top: 50%;
     width: 0.5rem;
     height: 0.5rem;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.18);
-    transform: translateY(-50%);
+    transform: var(--dec);
     transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
@@ -1167,7 +1198,7 @@
 .asc-noeud.pris .asc-point {
     background: var(--neon-primary, #ffd700);
     box-shadow: 0 0 0.7rem rgba(255, 215, 0, 0.7);
-    transform: translateY(-50%) scale(1.4);
+    transform: var(--dec) scale(1.4);
 }
 
 .asc-noeud.lie { border-color: rgba(110, 231, 183, 0.45); }
@@ -1184,7 +1215,7 @@
 .asc-noeud.vise .asc-point {
     background: #a78bfa;
     box-shadow: 0 0 0.7rem rgba(167, 139, 250, 0.8);
-    transform: translateY(-50%) scale(1.4);
+    transform: var(--dec) scale(1.4);
 }
 
 /* La main dit ce qu'on peut faire : tirer à gauche, recevoir à droite */
@@ -1197,6 +1228,19 @@
     background: rgba(255, 100, 100, 0.07);
 }
 
+/* Couchée, la borne descend sous la carte du haut et remonte au-dessus de
+   celle du bas : c'est par là que le fil passe. Ces règles closent la
+   section, sinon celles des colonnes, plus bas, les reprendraient. */
+.asc-colonnes.enLignes .asc-col .asc-point {
+    --dec: translateX(-50%);
+    top: auto;
+    right: auto;
+    bottom: -0.25rem;
+    left: 50%;
+}
+
+.asc-colonnes.enLignes .asc-col.droite .asc-point { bottom: auto; top: -0.25rem; }
+
 @media (max-width: 900px) {
     .asc-jeu.asc-liaison, .asc-jeu.asc-ordre { max-width: 100%; }
     .asc-colonnes { gap: 2rem; }
@@ -1204,6 +1248,16 @@
     .asc-noeud img { width: 2.2rem; height: 3rem; }
     .asc-noeud-t { font-size: 0.8rem; }
     .asc-fleche { width: 0.9rem; }
+
+    /* Cinq cartes de front sur un téléphone : c'est la largeur qui commande,
+       la hauteur suit. Les lignes restent, elles tiennent mieux qu'une pile. */
+    .asc-jeu.asc-liaison.enLignes { max-width: 100%; }
+    .asc-colonnes.enLignes { gap: 2.2rem; }
+    .asc-colonnes.enLignes .asc-col { gap: 0.4rem; }
+    .asc-colonnes.enLignes .asc-noeud img {
+        width: clamp(2.6rem, 15vw, 5rem);
+        height: auto;
+    }
 }
 
 /* ══════════ Le tampon de « Devine le perso » ══════════
