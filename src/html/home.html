@@ -864,6 +864,7 @@
                                             <div class="asc-carte-arc"
                                                  draggable="true"
                                                  :class="{ prise: asc.prise === i, vise: asc.survol === i }"
+                                                 @click="toucherArc(i)"
                                                  @dragstart="prendreArc(i)"
                                                  @dragover.prevent="survolerArc(i)"
                                                  @dragleave="asc.survol = null"
@@ -991,7 +992,22 @@
                              chacun le nombre de grimpeurs qui s'y trouvent. Des
                              jetons nominatifs ne tiendraient pas à cinquante ;
                              un compte se lit à n'importe quel effectif. -->
-                        <aside class="asc-tour" v-if="asc.total">
+                        <!-- Sur téléphone la tour n'a pas de colonne à elle. Elle se
+                             replie en pastille dans le coin, qui porte en permanence
+                             l'étage où l'on est ; un appui la déplie par-dessus le
+                             jeu, en transparence. -->
+                        <button class="asc-pastille" v-if="asc.total" @click="asc.tour = !asc.tour"
+                                :class="{ ouverte: asc.tour }"
+                                :aria-label="'Étage ' + ascMonEtage + ' sur ' + asc.total">
+                            <svg class="asc-pastille-ic" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M5 21h14M7 21V6l5-3 5 3v15M10 9h4M10 13h4M10 17h4" />
+                            </svg>
+                            <span class="asc-pastille-n">{{ ascMonEtage }}</span>
+                        </button>
+
+                        <span class="asc-voile" v-if="asc.tour" @click="asc.tour = false"></span>
+
+                        <aside class="asc-tour" v-if="asc.total" :class="{ ouverte: asc.tour }">
                             <span class="asc-fut"></span>
 
                             <div class="asc-etg" v-for="e in ascPaliers" :key="e"

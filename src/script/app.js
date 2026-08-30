@@ -56,6 +56,9 @@ createApp({
                 jokerUse: false,
                 jokerCasse: false,
 
+                // La tour, repliée en pastille sur téléphone
+                tour: false,
+
                 // Ordre : la suite en cours, et l'arc qu'on déplace
                 rang: [],
                 enAttente: [],
@@ -212,6 +215,9 @@ createApp({
 
             // 📱 Responsive
             isMobile: window.innerWidth <= 768,
+            // La largeur suivie de près : la liaison change de sens au même
+            // seuil que la feuille de style, et les fils doivent la suivre.
+            ecran: window.innerWidth,
             isMobileAlphabetOpen: false,
 
 
@@ -981,6 +987,14 @@ createApp({
             return Math.min(this.asc.total || 15, (this.asc.etage || 0) + 1);
         },
 
+        // Couchée sur grand écran, dressée sur téléphone. Deux rangées de
+        // cinq ne tiennent pas dans la largeur d'un pouce : les cartes y
+        // tombaient sous la taille d'une vignette. Le seuil est celui de la
+        // feuille de style — les deux doivent bouger ensemble.
+        ascLignes() {
+            return this.ecran > 900;
+        },
+
         // Combien de portraits nommés il faut pour allumer l'ampoule. Le
         // serveur tient le même seuil et refuse en dessous : celui-ci ne sert
         // qu'à l'affichage. Les deux doivent bouger ensemble.
@@ -1507,6 +1521,16 @@ createApp({
             this.socket.emit('ascension-guess-joker', { characterId: id });
         },
 
+        // Le glisser natif ne connaît pas le doigt : sans ce second geste,
+        // l'étage était injouable sur téléphone. Une tape prend l'arc, une
+        // seconde l'échange avec celui qu'on désigne — et la même tape le
+        // repose si l'on change d'avis.
+        toucherArc(i) {
+            if (this.asc.prise === null) { this.asc.prise = i; return; }
+            if (this.asc.prise === i) { this.asc.prise = null; return; }
+            this.lacherArc(i);
+        },
+
         // Le champ suivant prend la main dès qu'un portrait tombe : on ne
         // clique pas cinq fois pour répondre cinq fois.
         champSuivantGuess(id) {
@@ -1612,9 +1636,15 @@ createApp({
             if (!n || !zone) return null;
             const r = n.getBoundingClientRect();
             const z = zone.getBoundingClientRect();
+            if (this.ascLignes) {
+                return {
+                    x: r.left + r.width / 2 - z.left,
+                    y: (cible ? r.top : r.bottom) - z.top,
+                };
+            }
             return {
-                x: r.left + r.width / 2 - z.left,
-                y: (cible ? r.top : r.bottom) - z.top,
+                x: (cible ? r.left : r.right) - z.left,
+                y: r.top + r.height / 2 - z.top,
             };
         },
 
@@ -1622,9 +1652,14 @@ createApp({
         // distinguent, là où des droites se confondraient. Elle part et arrive
         // perpendiculaire au bord, donc dans le sens de la disposition.
         courbeFil(a, b) {
-            const dy = Math.max(24, (b.y - a.y) * 0.45);
-            return 'M' + a.x + ',' + a.y + ' C' + a.x + ',' + (a.y + dy) +
-                   ' ' + b.x + ',' + (b.y - dy) + ' ' + b.x + ',' + b.y;
+            if (this.ascLignes) {
+                const dy = Math.max(24, (b.y - a.y) * 0.45);
+                return 'M' + a.x + ',' + a.y + ' C' + a.x + ',' + (a.y + dy) +
+                       ' ' + b.x + ',' + (b.y - dy) + ' ' + b.x + ',' + b.y;
+            }
+            const dx = Math.max(24, (b.x - a.x) * 0.45);
+            return 'M' + a.x + ',' + a.y + ' C' + (a.x + dx) + ',' + a.y +
+                   ' ' + (b.x - dx) + ',' + b.y + ' ' + b.x + ',' + b.y;
         },
 
         souris(e) {
@@ -4664,6 +4699,8 @@ createApp({
             this.socket.on('ascension-floor-start', (data) => {
                 this.asc.decompte = 0;
                 this.asc.reussi = false;
+                // Dépliée, elle couvrirait le plateau qui arrive
+                this.asc.tour = false;
                 this.asc.etage = data.floor;
                 this.asc.total = data.totalFloors;
                 this.asc.data = data.floorData;
@@ -6172,6 +6209,7 @@ createApp({
 
         handleResize() {
             this.isMobile = window.innerWidth <= 768;
+            this.ecran = window.innerWidth;
             this.$nextTick(() => this.suivreInfosReglages());
             // Fermer l'alphabet mobile si on passe en desktop
             if (!this.isMobile) {

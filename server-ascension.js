@@ -231,7 +231,7 @@ function generateFloorData(type, usedData) {
                     
                     return {
                         type: 'intruder',
-                        label: 'Search',
+                        label: 'Recherche',
                         variant: 'in',
                         targetAnime: biggestAnime,
                         instruction: `${adjustedN} personnages de ${biggestAnime}`,
@@ -269,7 +269,7 @@ function generateFloorData(type, usedData) {
                 
                 return {
                     type: 'intruder',
-                    label: 'Search',
+                    label: 'Recherche',
                     variant: 'in',
                     targetAnime: animeName,
                     instruction: `${N} personnages de ${animeName}`,
