@@ -1026,6 +1026,30 @@ createApp({
             return i < 0 ? 0 : i + 1;
         },
 
+        // ── Le classement de la tour ──
+        // Le serveur range déjà : ceux qui ont atteint le sommet d'abord, dans
+        // l'ordre où ils y sont arrivés, puis les autres par étage atteint.
+        // On ne fait que traduire son « floor » (un indice) en un étage lisible.
+        ascPlaces() {
+            if (!this.gameEndData || this.gameEndData.gameMode !== 'ascension') return [];
+            const total = this.asc.total || this.asc.etages || 15;
+            return (this.gameEndData.podium || []).slice(0, 6).map(p => ({
+                playerId: p.playerId,
+                username: p.username,
+                rank: p.rank,
+                sommet: !!p.sommet,
+                etage: Math.min(total, (p.floor || 0) + 1),
+                total: total,
+            }));
+        },
+
+        monRangAsc() {
+            if (!this.gameEndData || this.gameEndData.gameMode !== 'ascension') return 0;
+            const i = (this.gameEndData.podium || [])
+                .findIndex(j => j.playerId === this.playerId);
+            return i < 0 ? 0 : i + 1;
+        },
+
 
         // 🔥 REFONTE: Vérifie si au moins un bonus disponible
         hasUnusedBonuses() {
@@ -2213,28 +2237,36 @@ createApp({
         },
 
         // L'écran de fin diffère d'un mode à l'autre : la fête, elle, est la même
-        // ── Rush : la révélation du classement ──
+        // ── La révélation d'un classement en liste ──
         // Elle monte de la dernière place vers la première, et le pas s'allonge
         // à l'approche du podium : les places de queue défilent, le vainqueur
         // se fait attendre. Le dernier pas découvre le rappel et les boutons.
-        startRushReveal() {
+        // Rush et Ascension la partagent — même geste, même attente.
+        lancerRevelationListe(nombre, selecteur) {
             this.arreterRevealRush();
             this.endStep = 0;
-            const n = this.rushPlaces.length;
             // Classement vide (tout le monde est parti) : rien a devoiler, mais les
             // boutons doivent rester atteignables.
-            if (!n) { this.endStep = 1; return; }
+            if (!nombre) { this.endStep = 1; return; }
 
             let t = 450;
-            for (let pas = 1; pas <= n; pas++) {
-                const place = n - pas + 1;
+            for (let pas = 1; pas <= nombre; pas++) {
+                const place = nombre - pas + 1;
                 this._rushReveal.push(setTimeout(() => {
                     this.endStep = pas;
-                    if (place === 1) this.$nextTick(() => this.celebrerVainqueur('.rush-fin'));
+                    if (place === 1) this.$nextTick(() => this.celebrerVainqueur(selecteur));
                 }, t));
                 t += place <= 3 ? 950 : 700;
             }
-            this._rushReveal.push(setTimeout(() => { this.endStep = n + 1; }, t));
+            this._rushReveal.push(setTimeout(() => { this.endStep = nombre + 1; }, t));
+        },
+
+        startRushReveal() {
+            this.lancerRevelationListe(this.rushPlaces.length, '.rush-fin');
+        },
+
+        startAscReveal() {
+            this.lancerRevelationListe(this.ascPlaces.length, '.asc-fin');
         },
 
         arreterRevealRush() {
@@ -2245,6 +2277,10 @@ createApp({
         // La place dévoilée au pas « n - i » : le dernier d'abord, le premier en dernier
         rushEndSlot(i) {
             return this.rushPlaces.length - i;
+        },
+
+        ascEndSlot(i) {
+            return this.ascPlaces.length - i;
         },
 
         celebrerVainqueur(selecteur = '.v2-end') {
@@ -2788,6 +2824,43 @@ createApp({
             this.backToHome();
         },
 
+        // ── Sortir de la tour ──
+        async hostRejouerAsc() {
+            if (this.rejouerBusy) return;
+            this.rejouerBusy = true;
+            try {
+                const res = await this.hostFetch('/admin/replay', { method: 'POST' });
+                const data = await res.json();
+                if (data.error) this.hostError = data.error;
+                else this.revenirAuSalonAsc();
+            } catch (e) {
+                this.hostError = 'Erreur de connexion';
+            } finally {
+                setTimeout(() => { this.rejouerBusy = false; }, 500);
+            }
+        },
+
+        // Remet les écrans au salon sans toucher au salon lui-même
+        revenirAuSalonAsc() {
+            this.arreterChronoAsc();
+            this.arreterRevealRush();
+            this.endStep = 0;
+            clearTimeout(this._ascDecompteT);
+            Object.assign(this.asc, {
+                enCours: false, decompte: 0, etage: 0, data: null, progres: [],
+                fini: false, reste: 0, styleJauge: {},
+            });
+            this.gameEnded = false;
+            this.gameInProgress = false;
+            this.gameEndData = null;
+            document.body.classList.remove('game-active');
+        },
+
+        quitterAsc() {
+            this.revenirAuSalonAsc();
+            this.backToHome();
+        },
+
         // La glissière va de 0 à 12, mais le serveur refuse 1 à 4 : on saute
         // ce creux plutôt que de laisser proposer une valeur invalide.
         corrigerLimiteRush(valeur) {
@@ -3159,6 +3232,7 @@ createApp({
                         // révélations ne comptent pas le même nombre de pas.
                         this.$nextTick(() => {
                             if (fin.gameMode === 'rush') this.startRushReveal();
+                            else if (fin.gameMode === 'ascension') this.startAscReveal();
                             else this.startEndReveal();
                         });
                     }
@@ -4803,6 +4877,7 @@ createApp({
                 this.gameInProgress = false;
                 this.gameStartedOnServer = false;
                 this.gameEndData = Object.assign({ gameMode: 'ascension' }, data || {});
+                this.$nextTick(() => this.startAscReveal());
             });
 
             // Les réglages, quand l'hôte les change depuis le salon

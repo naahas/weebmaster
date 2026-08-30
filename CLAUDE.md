@@ -45,7 +45,9 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   « guess » livre le nom cherché dans l'identifiant et le nom du fichier, « intruder » livre
   ses cibles par le champ `anime`. Même famille que les portraits de Rush, à traiter ensemble),
   `npm run test:tour` (Ascension de bout en bout : salon, réglages, départ, premier étage),
-  `npm run test:ampoule` (le joker de « Devine le perso » : seuil de trois, une seule fois, reprise),
+  `npm run test:ampoule` (le joker de « Devine le perso » : seuil de trois, une seule fois, reprise),
+  `npm run test:tour-fin` (classement final et rejeu — ⚠️ **3 min 30** : la montée
+  se fait en silence, un minuteur expiré poussant à l étage suivant),
   `npm run test:tour-reprise` (rafraîchissement en pleine montée),
   `npm run test:tour-grilles` (les épreuves à portraits : guess, target, intruder — ~2 min.
   ⚠️ **intermittente** : ~1 lancement sur 3 échoue, cause non identifiée), `npm run test:rush` (le mode Rush de bout en bout),

@@ -1063,6 +1063,9 @@ function endAscensionGame(gameState, io) {
                 colorIndex: pp.colorIndex,
                 rank: finished ? finished.rank : null,
                 finishedAt: finished ? finished.finishedAt : null,
+                // Fini n est pas arrive : on tombe aussi de la tour au bout du
+                // temps, et le classement final ne doit pas confondre les deux.
+                sommet: !!(finished && finished.reachedSummit),
             };
         })
         .sort((a, b) => {
@@ -1186,8 +1189,6 @@ function registerAscensionSocketHandlers(io, socket, resoudreSalon) {
         handleAscensionAnswer(gameState, io, socket, data);
     });
     
-    // 🆕 Validation incrémentale d'une seule guess (mini-jeu Guess)
-    // Le client envoie {characterId, name} — le serveur répond {correct, characterId}
     // L'ampoule de « Devine le perso » : le nom n'est livré qu'ici
     socket.on('ascension-guess-joker', (data) => {
         const gameState = resoudreSalon();
@@ -1195,6 +1196,8 @@ function registerAscensionSocketHandlers(io, socket, resoudreSalon) {
         handleAscensionGuessJoker(gameState, io, socket, data);
     });
 
+    // 🆕 Validation incrémentale d'une seule guess (mini-jeu Guess)
+    // Le client envoie {characterId, name} — le serveur répond {correct, characterId}
     socket.on('ascension-check-guess', (data) => {
         const gameState = resoudreSalon();
         if (!gameState) return;

@@ -1898,6 +1898,46 @@
             </div>
         </div>
         <!-- ============================================
+             ÉCRAN DE FIN ASCENSION
+             ============================================ -->
+        <!-- Ce n'est pas un score qu'on lit ici mais une altitude : chacun a
+             grimpé seul, et ce qui les sépare c'est l'étage où ils se sont
+             arrêtés. Le classement se dévoile du dernier au premier. -->
+        <div class="asc-fin" v-if="gameEnded && gameEndData && gameEndData.gameMode === 'ascension'">
+            <div class="asc-fin-boite">
+                <span class="asc-fin-titre">Jusqu'où ils sont montés</span>
+
+                <!-- Les six places sont posées dès le départ, seule leur visibilité
+                     change : la boîte ne bouge donc jamais pendant la révélation. -->
+                <ol class="asc-fin-liste">
+                    <li v-for="(j, i) in ascPlaces" :key="j.playerId"
+                        :class="{ moi: j.playerId === playerId, premier: i === 0,
+                                  sommet: j.sommet, vu: endStep >= ascEndSlot(i) }">
+                        <span class="asc-fin-sweep"></span>
+                        <span class="rang">{{ j.rank }}</span>
+                        <span class="nom">{{ j.username }}</span>
+                        <span class="detail" v-if="j.sommet">Sommet</span>
+                        <span class="etage">
+                            <b>{{ j.etage }}</b><i>/{{ j.total }}</i>
+                        </span>
+                    </li>
+                </ol>
+
+                <!-- Au-delà de la sixième place on ne se voit pas : on le dit -->
+                <div class="asc-fin-moi" :class="{ vu: endStep > ascPlaces.length }"
+                     v-if="monRangAsc > ascPlaces.length">
+                    Tu termines <b>{{ monRangAsc }}<sup>e</sup></b>
+                </div>
+
+                <div class="asc-fin-actions" :class="{ vu: endStep > ascPlaces.length }">
+                    <button class="winner-replay-btn" v-if="isHost" :disabled="rejouerBusy"
+                            @click="hostRejouerAsc">Rejouer</button>
+                    <button class="winner-back-btn" @click="quitterAsc">Retour</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================
              ÉCRAN DE FIN BOMBANIME
              ============================================ -->
         <div class="bombanime-winner-screen" v-if="gameEnded && gameEndData && gameEndData.gameMode === 'bombanime'">

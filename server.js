@@ -2406,6 +2406,20 @@ app.post('/admin/replay', (req, res) => {
     resetBombanimeState(gameState);
     resetRushState(gameState);
 
+    // Ascension : la montée s'efface, les réglages restent. L'hôte a choisi
+    // ses étages et sa durée avant la première manche ; il n'y a pas de raison
+    // qu'il les rechoisisse entre deux. Sans cette remise à neuf, la manche
+    // suivante repartait sur les progressions de la précédente.
+    if (gameState.ascension) {
+        const reglages = {
+            floors: gameState.ascension.floors,
+            timer: gameState.ascension.timer,
+            syncEpreuves: gameState.ascension.syncEpreuves,
+        };
+        ascension.resetAscensionState(gameState);
+        Object.assign(gameState.ascension, reglages);
+    }
+
     console.log(`🔁 Salon ${gameState.roomCode} : retour au lobby pour une nouvelle manche`);
     diffuser(gameState, 'retour-au-salon');
     broadcastLobbyUpdate(gameState);
