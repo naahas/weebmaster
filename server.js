@@ -622,6 +622,14 @@ function fermerRoom(gameState) {
         if (gameState.rush.timeoutFin) clearTimeout(gameState.rush.timeoutFin);
         for (const t of gameState.rush.timeoutsPerso.values()) clearTimeout(t);
     }
+    // Ascension en porte une par grimpeur, et chacune en arme une autre en
+    // finissant : sans cette coupure, un salon fermé continuait de gravir sa
+    // tour jusqu'au sommet — dix minutes d'état retenu pour personne.
+    // « resetAscensionState » éteint les minuteries et rabat le drapeau qui
+    // relance la chaîne.
+    if (gameState.ascension && gameState.ascension.active) {
+        ascension.resetAscensionState(gameState);
+    }
     rooms.delete(gameState.roomCode);
     console.log(`❌ Salon fermé : ${gameState.roomCode} (${rooms.size} restant(s))`);
 }
@@ -1596,7 +1604,21 @@ app.post('/admin/start-game', async (req, res) => {
     
     // 🏔️ MODE ASCENSION — chacun gravit sa tour à son rythme, jouable seul
     if (gameState.lobbyMode === 'ascension') {
-        const r = ascension.startAscensionGame(gameState, io);
+        gameState.initialPlayerCount = totalPlayers;
+        // L'accueil compte les parties jouées et en montre les dernières.
+        // « MODE_LABELS » et « seuilHistorique » connaissaient déjà Ascension ;
+        // il ne manquait que le fil qui les relie à sa fin de partie.
+        const r = ascension.startAscensionGame(gameState, io, {
+            onGameEnd: (podium, winner) => {
+                const debut = gameState.ascension.startedAt || Date.now();
+                recordFinishedGame({
+                    mode: 'ascension',
+                    playersCount: gameState.initialPlayerCount || podium.length,
+                    winnerName: winner ? winner.username : null,
+                    duration: Math.round((Date.now() - debut) / 1000),
+                });
+            },
+        });
         if (!r || r.success === false) {
             return res.status(400).json({ success: false, error: (r && r.error) || 'Démarrage impossible' });
         }

@@ -48,7 +48,9 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   `npm run test:ampoule` (le joker de « Devine le perso » : seuil de trois, une seule fois, reprise),
   `npm run test:tour-fin` (classement final et rejeu — ⚠️ **3 min 30** : la montée
   se fait en silence, un minuteur expiré poussant à l étage suivant),
-  `npm run test:tour-reprise` (rafraîchissement en pleine montée),
+  `npm run test:tour-reprise` (rafraîchissement en pleine montée),
+  `npm run test:tour-salons` (deux Ascensions simultanées : réglages, étages et
+  messages restent séparés),
   `npm run test:tour-grilles` (les épreuves à portraits : guess, target, intruder — ~2 min.
   ⚠️ **intermittente** : ~1 lancement sur 3 échoue, cause non identifiée), `npm run test:rush` (le mode Rush de bout en bout),
   `npm run test:depart` (quitter BombAnime en pleine partie), `npm run test:plafond` (le plafond
