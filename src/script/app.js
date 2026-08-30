@@ -56,9 +56,12 @@ createApp({
                 prise: null,
                 survol: null,
 
-                // Liaison : ce qui est relié, et la colonne de gauche en main
+                // Liaison : ce qui est relié, et le fil qu'on tire — d'où il
+                // part, où il est rendu, et la borne qu'il accrochera si on lâche
                 liens: {},
-                gauche: null,
+                fil: null,
+                filVers: null,
+                filVise: null,
                 mauvais: [],
                 traits: [],      // les courbes tracées entre les deux colonnes
                 bloqueA: 0,      // échéance de la pénalité, décidée par le serveur
@@ -1524,29 +1527,108 @@ createApp({
         // ── Liaison ──
         prepararerLiaison(d) {
             this.asc.liens = {};
-            this.asc.gauche = null;
             this.asc.mauvais = [];
+            this.asc.traits = [];
+            this.asc.fil = null;
+            this.asc.filVers = null;
+            this.asc.filVise = null;
         },
 
-        // On prend à gauche, on pose à droite : deux clics, jamais un glisser,
-        // qui demanderait de la précision au doigt comme à la souris.
-        prendreGauche(id) {
-            this.asc.gauche = this.asc.gauche === id ? null : id;
+        // On appuie sur un nœud de gauche et l'on tire le fil jusqu'à droite.
+        // Tirer pile sur une petite borne serait pénible au doigt comme à la
+        // souris : la plus proche s'allume et attire, dans un rayon confortable.
+
+        // Le fil part du bord droit d'un nœud de gauche et arrive sur le bord
+        // gauche d'un nœud de droite — les mêmes ancrages que les traits posés,
+        // pour que rien ne saute au moment où le lien se fige.
+        ancrage(id, aDroite) {
+            const n = document.getElementById(id);
+            const zone = document.querySelector('.asc-colonnes');
+            if (!n || !zone) return null;
+            const r = n.getBoundingClientRect();
+            const z = zone.getBoundingClientRect();
+            return {
+                x: (aDroite ? r.left : r.right) - z.left,
+                y: r.top + r.height / 2 - z.top,
+            };
+        },
+
+        souris(e) {
+            const zone = document.querySelector('.asc-colonnes');
+            if (!zone) return null;
+            const z = zone.getBoundingClientRect();
+            return { x: e.clientX - z.left, y: e.clientY - z.top };
+        },
+
+        // La borne de droite la plus proche du curseur, si elle est à portée
+        plusProcheDroite(p) {
+            if (!p) return null;
+            // Assez large pour ne pas avoir à viser, assez court pour qu'un fil
+            // lâché loin de tout ne s'accroche pas à une borne au hasard.
+            const RAYON = 130;
+            let choisi = null, meilleure = Infinity;
+            for (const d of (this.asc.data && this.asc.data.right) || []) {
+                const b = this.ancrage('lien-d-' + d.id, true);
+                if (!b) continue;
+                const dist = Math.hypot(b.x - p.x, b.y - p.y);
+                if (dist < meilleure) { meilleure = dist; choisi = d.id; }
+            }
+            return meilleure <= RAYON ? choisi : null;
+        },
+
+        saisirFil(id, e) {
+            // Reprendre un nœud déjà relié défait son fil : on refait le geste
             if (this.asc.liens[id]) {
-                delete this.asc.liens[id];
-                this.asc.liens = Object.assign({}, this.asc.liens);
+                const reste = Object.assign({}, this.asc.liens);
+                delete reste[id];
+                this.asc.liens = reste;
+            }
+            this.asc.fil = id;
+            this.asc.filVers = this.souris(e);
+            this.asc.filVise = null;
+            // Sans capture, le fil se couperait dès que le curseur quitte le
+            // nœud : les événements suivants iraient à ce qu'il survole.
+            if (e.currentTarget && e.currentTarget.setPointerCapture) {
+                try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) { /* on tire quand même */ }
             }
         },
 
-        poserDroite(id) {
-            if (!this.asc.gauche) return;
+        tirerFil(e) {
+            if (!this.asc.fil) return;
+            const p = this.souris(e);
+            this.asc.filVers = p;
+            this.asc.filVise = this.plusProcheDroite(p);
+        },
+
+        lacherFil(e) {
+            const depuis = this.asc.fil;
+            let vise = this.asc.filVise;
+            if (!depuis) return;
+
+            // Lâcher pile sur une carte prime sur l'aimant : un geste précis
+            // doit toujours faire ce qu'on croit. La capture du pointeur détourne
+            // « target », d'où le relevé sous les coordonnées.
+            if (e && typeof e.clientX === 'number') {
+                const sous = document.elementFromPoint(e.clientX, e.clientY);
+                const n = sous && sous.closest ? sous.closest('.asc-col.droite .asc-noeud') : null;
+                if (n && n.id.indexOf('lien-d-') === 0) vise = n.id.slice(7);
+            }
+
+            this.asc.fil = null;
+            this.asc.filVers = null;
+            this.asc.filVise = null;
+            if (vise) this.relier(depuis, vise);
+        },
+
+        relier(gauche, droite) {
             // Une valeur déjà prise se libère : deux gauches ne partagent pas
             // la même droite, le serveur n'accepterait pas la paire.
-            for (const g of Object.keys(this.asc.liens)) {
-                if (this.asc.liens[g] === id) delete this.asc.liens[g];
+            const liens = Object.assign({}, this.asc.liens);
+            for (const g of Object.keys(liens)) {
+                if (liens[g] === droite) delete liens[g];
             }
-            this.asc.liens = Object.assign({}, this.asc.liens, { [this.asc.gauche]: id });
-            this.asc.gauche = null;
+            liens[gauche] = droite;
+            this.asc.liens = liens;
             this.asc.mauvais = [];
             this.playSound(this.sounds.ascPose);
 
@@ -1580,6 +1662,23 @@ createApp({
                     d: 'M' + x1 + ',' + y1 + ' C' + (x1 + dx) + ',' + y1 +
                        ' ' + (x2 - dx) + ',' + y2 + ' ' + x2 + ',' + y2,
                 });
+            }
+
+            // Le fil qu'on tire : il part de sa borne et suit le curseur, ou
+            // se colle à la borne visée dès qu'elle est à portée.
+            if (this.asc.fil && this.asc.filVers) {
+                const a = this.ancrage('lien-g-' + this.asc.fil, false);
+                if (a) {
+                    const b = (this.asc.filVise && this.ancrage('lien-d-' + this.asc.filVise, true))
+                              || this.asc.filVers;
+                    const dx = Math.max(24, (b.x - a.x) * 0.45);
+                    traits.push({
+                        id: '__fil',
+                        encours: true,
+                        d: 'M' + a.x + ',' + a.y + ' C' + (a.x + dx) + ',' + a.y +
+                           ' ' + (b.x - dx) + ',' + b.y + ' ' + b.x + ',' + b.y,
+                    });
+                }
             }
 
             // On ne réécrit que si quelque chose a bougé : sans ce garde, le

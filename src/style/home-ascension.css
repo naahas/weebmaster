@@ -1026,6 +1026,10 @@
     align-items: stretch;
     gap: clamp(4rem, 12vw, 9rem);
     width: 100%;
+    /* On tire un fil : au doigt, le geste ferait défiler la page, et à la
+       souris il sélectionnerait les noms des nœuds au passage. */
+    touch-action: none;
+    user-select: none;
 }
 
 /* Les traits passent derrière les nœuds : ils s'ancrent à leur bord */
@@ -1052,6 +1056,16 @@
 .asc-traits path.faux {
     stroke: #ff6b6b;
     filter: drop-shadow(0 0 0.3rem rgba(255, 90, 90, 0.5));
+}
+
+/* Le fil qu'on tire : violet, pour se distinguer des liens posés. Il ne se
+   dessine pas progressivement — il suit le curseur, et l'animation de tracé
+   le ferait clignoter à chaque déplacement. */
+.asc-traits path.encours {
+    stroke: #a78bfa;
+    stroke-dasharray: none;
+    animation: none;
+    filter: drop-shadow(0 0 0.4rem rgba(167, 139, 250, 0.6));
 }
 
 @keyframes ascTrait {
@@ -1142,10 +1156,12 @@
 .asc-noeud:hover .asc-point { background: rgba(140, 180, 255, 0.7); }
 .asc-noeud:active { transform: scale(0.98); }
 
-/* En main : ce nœud attend son vis-à-vis */
+/* En main : ce nœud tient le fil. Il se soulève au lieu de s'enfoncer —
+   « :active » reste vrai tout le temps qu'on tire, et le creusait. */
 .asc-noeud.pris {
     border-color: var(--neon-primary, #ffd700);
     background: rgba(255, 215, 0, 0.1);
+    transform: scale(1.03);
 }
 
 .asc-noeud.pris .asc-point {
@@ -1156,6 +1172,25 @@
 
 .asc-noeud.lie { border-color: rgba(110, 231, 183, 0.45); }
 .asc-noeud.lie .asc-point { background: #6ee7b7; box-shadow: 0 0 0.5rem rgba(110, 231, 183, 0.6); }
+
+/* L'aimant : la borne la plus proche du fil s'allume et se soulève. C'est
+   elle qui prendra le fil si on lâche maintenant — il n'y a donc pas à viser. */
+.asc-noeud.vise {
+    border-color: #a78bfa;
+    background: rgba(167, 139, 250, 0.12);
+    transform: scale(1.04);
+}
+
+.asc-noeud.vise .asc-point {
+    background: #a78bfa;
+    box-shadow: 0 0 0.7rem rgba(167, 139, 250, 0.8);
+    transform: translateY(-50%) scale(1.4);
+}
+
+/* La main dit ce qu'on peut faire : tirer à gauche, recevoir à droite */
+.asc-col:not(.droite) .asc-noeud { cursor: grab; }
+.asc-col:not(.droite) .asc-noeud.pris { cursor: grabbing; }
+.asc-col.droite .asc-noeud { cursor: default; }
 
 .asc-noeud.rate {
     border-color: rgba(255, 100, 100, 0.6);

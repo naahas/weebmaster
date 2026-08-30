@@ -848,8 +848,9 @@
                                 </div>
 
                                 <!-- ── Liaison ── -->
-                                <!-- On prend à gauche, on pose à droite : deux clics,
-                                     jamais un glisser, qui demanderait de la précision. -->
+                                <!-- On tire un fil d'un nœud de gauche vers la droite.
+                                     La borne la plus proche s'allume et attire : le geste
+                                     reste ludique sans demander de la précision. -->
                                 <div class="asc-jeu asc-liaison" v-else-if="asc.data.type === 'match'"
                                      :class="{ ko: asc.secousse }">
                                     <!-- Deux colonnes reliées par de vrais traits : ils se
@@ -860,15 +861,18 @@
                                                    deuxImages: asc.data.left[0].img && asc.data.right[0].img }">
                                         <svg class="asc-traits" aria-hidden="true">
                                             <path v-for="t in asc.traits" :key="t.id" :d="t.d"
-                                                  :class="{ faux: t.faux }" />
+                                                  :class="{ faux: t.faux, encours: t.encours }" />
                                         </svg>
 
                                         <div class="asc-col">
                                             <button class="asc-noeud" v-for="g in asc.data.left" :key="g.id"
                                                     :id="'lien-g-' + g.id"
-                                                    :class="{ pris: asc.gauche === g.id, lie: asc.liens[g.id],
+                                                    :class="{ pris: asc.fil === g.id, lie: asc.liens[g.id],
                                                               rate: asc.mauvais.indexOf(g.id) >= 0 }"
-                                                    @click="prendreGauche(g.id)">
+                                                    @pointerdown.prevent="saisirFil(g.id, $event)"
+                                                    @pointermove="tirerFil($event)"
+                                                    @pointerup="lacherFil($event)"
+                                                    @pointercancel="lacherFil($event)">
                                                 <!-- Le nom ne paraît que sans portrait : avec lui,
                                                      il n'apprenait rien et tirait une bande sur toute
                                                      la largeur de la colonne. -->
@@ -884,8 +888,8 @@
                                                  à un nom, ce qui n'est pas le même exercice. -->
                                             <button class="asc-noeud val" v-for="d in asc.data.right" :key="d.id"
                                                     :id="'lien-d-' + d.id"
-                                                    :class="{ lie: lieA(d.id), avecImage: d.img }"
-                                                    @click="poserDroite(d.id)">
+                                                    :class="{ lie: lieA(d.id), avecImage: d.img,
+                                                              vise: asc.filVise === d.id }">
                                                 <span class="asc-point"></span>
                                                 <img v-if="d.img" :src="'/ascensionpic/' + d.img" alt="" draggable="false">
                                                 <span class="asc-noeud-t" v-if="!d.img">{{ d.value }}</span>
