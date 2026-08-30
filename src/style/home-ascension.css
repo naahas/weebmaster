@@ -732,7 +732,7 @@
    cran quand toutes s'éteignent. */
 .asc-ampoule {
     position: absolute;
-    top: -2.35rem;
+    top: -3.2rem;
     left: 50%;
     z-index: 2;
     width: 1.65rem;
@@ -1037,7 +1037,7 @@
     .asc-jeu.asc-cible,
     .asc-jeu.asc-intrus { max-width: 100%; }
     .asc-portrait { width: clamp(4.2rem, 26vw, 6rem); }
-    .asc-ampoule { top: -1.7rem; width: 1.15rem; height: 1.7rem; }
+    .asc-ampoule { top: -2.5rem; width: 1.15rem; height: 1.7rem; }
     .asc-vise-n { font-size: 1.3rem; }
 }
 
@@ -1344,6 +1344,16 @@
         padding: 0.45rem 0.4rem;
     }
     .asc-noeud-t { font-size: clamp(0.6rem, 2.2vw, 0.85rem); }
+
+    /* Sur grand écran, une liaison sans portrait s'offre de la hauteur et de
+       l'air. Sur un téléphone il n'y en a pas : ces mêmes valeurs poussaient
+       la rangée du bas sous le pli. */
+    .asc-colonnes.sansImage { gap: 2.6rem; }
+    .asc-colonnes.sansImage .asc-noeud:not(.avecImage) {
+        min-height: 3rem;
+        padding: 0.5rem 0.4rem;
+    }
+    .asc-colonnes.sansImage .asc-noeud-t { font-size: clamp(0.65rem, 2.4vw, 0.95rem); }
 }
 
 /* ══════════ Le tampon de « Devine le perso » ══════════
