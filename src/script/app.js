@@ -65,6 +65,8 @@ createApp({
                 traits: [],      // les courbes tracées entre les deux colonnes
                 bloqueA: 0,      // échéance de la pénalité, décidée par le serveur
 
+                reussi: false,   // l'étage vient de tomber : tout s'allume en vert
+
                 fentes: [],
                 reserve: [],
                 figees: [],
@@ -973,17 +975,6 @@ createApp({
             return Math.min(this.asc.total || 15, (this.asc.etage || 0) + 1);
         },
 
-        // Deux colonnes de portraits ne tiennent pas en hauteur : cinq cartes
-        // empilées deux fois laissent les deux tiers de l'écran vides à droite
-        // et rétrécissent les visages. Dans ce cas seulement, on couche la
-        // liaison — une ligne au-dessus, une ligne en dessous, les fils
-        // descendent au lieu de traverser.
-        ascLignes() {
-            const d = this.asc.data;
-            return !!(d && d.type === 'match' && d.left && d.right
-                      && d.left[0] && d.right[0] && d.left[0].img && d.right[0].img);
-        },
-
         // Le personnage qui accompagne la question. Il occupe la place que
         // prendra le classement : les deux ne coexistent jamais, l'un s'efface
         // quand l'autre arrive.
@@ -1357,7 +1348,8 @@ createApp({
                     };
                     return par[d.subtype] || 'Relie chaque paire';
                 })(),
-                scramble: (d.category === 'anime' ? "Reconstitue le titre" : 'Reconstitue le nom du personnage')
+                scramble: (d.category === 'anime' ? "Reconstitue le titre de l'anime"
+                                                  : 'Reconstitue le nom du personnage')
                           + (d.hint ? ' · ' + d.hint : ''),
             };
             return par[d.type] || '';
@@ -1556,15 +1548,9 @@ createApp({
             if (!n || !zone) return null;
             const r = n.getBoundingClientRect();
             const z = zone.getBoundingClientRect();
-            if (this.ascLignes) {
-                return {
-                    x: r.left + r.width / 2 - z.left,
-                    y: (cible ? r.top : r.bottom) - z.top,
-                };
-            }
             return {
-                x: (cible ? r.left : r.right) - z.left,
-                y: r.top + r.height / 2 - z.top,
+                x: r.left + r.width / 2 - z.left,
+                y: (cible ? r.top : r.bottom) - z.top,
             };
         },
 
@@ -1572,14 +1558,9 @@ createApp({
         // distinguent, là où des droites se confondraient. Elle part et arrive
         // perpendiculaire au bord, donc dans le sens de la disposition.
         courbeFil(a, b) {
-            if (this.ascLignes) {
-                const dy = Math.max(24, (b.y - a.y) * 0.45);
-                return 'M' + a.x + ',' + a.y + ' C' + a.x + ',' + (a.y + dy) +
-                       ' ' + b.x + ',' + (b.y - dy) + ' ' + b.x + ',' + b.y;
-            }
-            const dx = Math.max(24, (b.x - a.x) * 0.45);
-            return 'M' + a.x + ',' + a.y + ' C' + (a.x + dx) + ',' + a.y +
-                   ' ' + (b.x - dx) + ',' + b.y + ' ' + b.x + ',' + b.y;
+            const dy = Math.max(24, (b.y - a.y) * 0.45);
+            return 'M' + a.x + ',' + a.y + ' C' + a.x + ',' + (a.y + dy) +
+                   ' ' + b.x + ',' + (b.y - dy) + ' ' + b.x + ',' + b.y;
         },
 
         souris(e) {
@@ -4568,6 +4549,7 @@ createApp({
 
             this.socket.on('ascension-floor-start', (data) => {
                 this.asc.decompte = 0;
+                this.asc.reussi = false;
                 this.asc.etage = data.floor;
                 this.asc.total = data.totalFloors;
                 this.asc.data = data.floorData;
@@ -4690,8 +4672,15 @@ createApp({
                 }
             });
 
+            // L'étage est tombé. Avant de passer au suivant, tout ce qu'on
+            // vient de remplir s'allume en vert — un demi-battement, juste de
+            // quoi voir que c'était bon plutôt que de se demander pourquoi
+            // l'écran change.
             this.socket.on('ascension-answer-result', (data) => {
-                if (data && data.correct) this.playSound(this.sounds.ascEtage);
+                if (data && data.correct) {
+                    this.asc.reussi = true;
+                    this.playSound(this.sounds.ascEtage);
+                }
             });
 
             // La reprise : on se replace à l'étage où l'on était, le minuteur

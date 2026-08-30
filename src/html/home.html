@@ -736,7 +736,7 @@
                             <!-- L'épreuve de l'étage : un écran par type -->
                             <div class="asc-epreuve">
                                 <transition name="asc-pas" mode="out-in" appear>
-                                <div class="asc-plan" :key="asc.etage">
+                                <div class="asc-plan" :key="asc.etage" :class="{ reussi: asc.reussi }">
                                 <div class="asc-attente" v-if="!asc.data">On monte…</div>
 
                                 <!-- ── Devine le perso ── -->
@@ -852,12 +852,12 @@
                                      La borne la plus proche s'allume et attire : le geste
                                      reste ludique sans demander de la précision. -->
                                 <div class="asc-jeu asc-liaison" v-else-if="asc.data.type === 'match'"
-                                     :class="{ ko: asc.secousse, enLignes: ascLignes }">
+                                     :class="{ ko: asc.secousse }">
                                     <!-- Deux colonnes reliées par de vrais traits : ils se
                                          tracent d'un bout à l'autre, et se distinguent grâce à
                                          leur courbe — des droites voisines se confondraient. -->
                                     <div class="asc-colonnes"
-                                         :class="{ sansImage: !asc.data.left[0].img, enLignes: ascLignes }">
+                                         :class="{ sansImage: !asc.data.left[0].img && !asc.data.right[0].img }">
                                         <svg class="asc-traits" aria-hidden="true">
                                             <path v-for="t in asc.traits" :key="t.id" :d="t.d"
                                                   :class="{ faux: t.faux }" />
@@ -871,6 +871,7 @@
                                             <button class="asc-noeud" v-for="g in asc.data.left" :key="g.id"
                                                     :id="'lien-g-' + g.id"
                                                     :class="{ pris: asc.fil === g.id, lie: asc.liens[g.id],
+                                                              avecImage: g.img,
                                                               rate: asc.mauvais.indexOf(g.id) >= 0 }"
                                                     @pointerdown.prevent="saisirFil(g.id, $event)"
                                                     @pointermove="tirerFil($event)"
