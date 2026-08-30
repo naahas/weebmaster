@@ -3,6 +3,118 @@
 // ═══════════════════════════════════════════
 
 const ASCENSION_DATA = require('./ascensiondata.json');
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+
+// ══════════ Ce qui ne doit pas sortir d'ici ══════════
+// Le serveur est autoritaire, mais cela ne sert a rien si la reponse voyage
+// dans le message. Trois vecteurs se cumulaient : le nom du fichier image, les
+// identifiants, et les champs que le client n'affiche jamais.
+
+// ── Le nom du fichier ──
+// « sora.png » sous un portrait qu'on doit nommer, c'est la solution ecrite
+// dans le DOM. Les images voyagent donc sous un jeton, que le serveur seul sait
+// retourner en chemin. Le sel change a chaque demarrage : un jeton releve
+// aujourd hui ne vaudra plus rien demain.
+const SEL_IMAGES = crypto.randomBytes(16).toString('hex');
+const RACINE_IMAGES = path.join(__dirname, 'src', 'img', 'ascensionpic');
+const imageParJeton = new Map();
+const jetonParImage = new Map();
+
+function recenserImages(dossier, prefixe) {
+    let entrees;
+    try { entrees = fs.readdirSync(dossier, { withFileTypes: true }); }
+    catch (e) { return; }
+    for (const e of entrees) {
+        const relatif = prefixe ? prefixe + '/' + e.name : e.name;
+        if (e.isDirectory()) { recenserImages(path.join(dossier, e.name), relatif); continue; }
+        const jeton = crypto.createHash('sha256').update(SEL_IMAGES + relatif).digest('hex').slice(0, 20);
+        imageParJeton.set(jeton, relatif);
+        jetonParImage.set(relatif, jeton);
+    }
+}
+recenserImages(RACINE_IMAGES, '');
+
+// Un fichier ajoute apres le demarrage n'est pas au recensement : il passe
+// alors tel quel plutot que de laisser un cadre vide. Mieux vaut une fuite
+// visible qu'une image manquante — et le journal le dit.
+const manquantesSignalees = new Set();
+function urlImage(nom) {
+    if (!nom) return nom;
+    const jeton = jetonParImage.get(nom);
+    if (jeton) return '/ascpic/' + jeton;
+    if (!manquantesSignalees.has(nom)) {
+        manquantesSignalees.add(nom);
+        console.warn('⚠️ Ascension : image hors recensement, servie en clair — ' + nom);
+    }
+    return '/ascensionpic/' + nom;
+}
+
+function cheminImage(jeton) {
+    return imageParJeton.get(jeton) || null;
+}
+
+// ── Les portraits sans fichier ──
+// Un personnage dont l'image manque tirait une carte vide, sur laquelle il n'y
+// avait rien a reconnaitre — et le chronometre tournait quand meme. On l'ecarte
+// des tirages plutot que de le montrer, en le disant assez fort pour qu'on
+// pense a poser le fichier : il revient de lui-meme le jour ou il existe.
+{
+    const absents = (ASCENSION_DATA.characters || []).filter(c => c.img && !jetonParImage.has(c.img));
+    if (absents.length) {
+        console.warn('⚠️ Ascension : ' + absents.length + ' portrait(s) sans fichier, ecarte(s) des tirages — '
+            + absents.map(c => c.id + ' (' + c.img + ')').join(', '));
+        const perdus = new Set(absents.map(c => c.id));
+        ASCENSION_DATA.characters = (ASCENSION_DATA.characters || []).filter(c => !perdus.has(c.id));
+    }
+}
+
+// ── Les identifiants ──
+// Ils portaient le nom du personnage (« sora »), et pire : a la Liaison, une
+// paire portait le meme des deux cotes. Le fil se lisait dans le message sans
+// regarder l'ecran. On renumerote donc tout ce qui sort, en reportant la
+// correspondance sur les champs qui designent les reponses.
+function anonymiserEtage(d) {
+    if (!d) return d;
+
+    if (d.type === 'guess') {
+        d.characters.forEach((c, i) => { c.id = 'c' + i; });
+        return d;
+    }
+
+    if (d.type === 'target') {
+        const neuf = new Map();
+        d.characters.forEach((c, i) => { neuf.set(c.id, 'c' + i); c.id = 'c' + i; });
+        // Une cible se reconnait par son nom : deux personnages homonymes
+        // partagent la reponse, et le serveur l'accepte deja ainsi.
+        d.targets = d.targets.map(t => ({ id: neuf.get(t.id) || t.id, name: t.name }));
+        return d;
+    }
+
+    if (d.type === 'intruder') {
+        const neuf = new Map();
+        d.characters.forEach((c, i) => { neuf.set(c.id, 'c' + i); c.id = 'c' + i; });
+        d.targetIds = (d.targetIds || []).map(id => neuf.get(id) || id);
+        return d;
+    }
+
+    if (d.type === 'match') {
+        const gauche = new Map(), droite = new Map();
+        d.left.forEach((n, i) => { gauche.set(n.id, 'g' + i); });
+        d.right.forEach((n, i) => { droite.set(n.id, 'd' + i); });
+        d.pairs = (d.pairs || []).map(p => ({
+            leftId: gauche.get(p.leftId) || p.leftId,
+            rightId: droite.get(p.rightId) || p.rightId,
+        }));
+        d.left.forEach((n, i) => { n.id = 'g' + i; });
+        d.right.forEach((n, i) => { n.id = 'd' + i; });
+        return d;
+    }
+
+    return d;
+}
+
 
 // Cliquer au hasard sur les vingt-quatre cartes battait le jeu. Une erreur
 // ferme donc la grille deux secondes — cote serveur, sinon un rechargement
@@ -117,7 +229,14 @@ function slugifyArc(name) {
         .replace(/^_+|_+$/g, '');
 }
 
+// Toute epreuve passe par l anonymisation avant de quitter le generateur. Les
+// appels de repli que celui-ci se fait a lui-meme la subissent donc deux fois :
+// sans effet, renumeroter des numeros rend les memes.
 function generateFloorData(type, usedData) {
+    return anonymiserEtage(genererEtageBrut(type, usedData));
+}
+
+function genererEtageBrut(type, usedData) {
     // 🆕 Pour les jeux où le perso est la cible (guess/intruder/target/silhouette/char_anime),
     //    on exclut les persos marqués `match_only: true` (ils n'existent que pour servir de
     //    cible dans couples/rivals/same_voice/techniques/weapons côté Liaison).
@@ -857,16 +976,15 @@ function getFloorDataForClient(floorData) {
         const { word, characterName, ...rest } = data;
         return rest;
     }
-    if (data.type === 'silhouette') {
-        return {
-            type: data.type, label: data.label,
-            character: { id: data.character.id, img: data.character.img, anime: data.character.anime },
-        };
-    }
     if (data.type === 'intruder') {
-        // 🆕 Cacher targetIds (anti-triche). Pour 'find_one' on garde targetCharacter (le nom à trouver).
-        const { targetIds, ...rest } = data;
-        return rest;
+        // Le nom et l'anime de chaque carte suffisaient a trancher sans jouer :
+        // on cherche justement ceux d'un anime donne. Ni l'un ni l'autre n'est
+        // affiche — la grille ne montre que des visages.
+        const { targetIds, characters, ...rest } = data;
+        return {
+            ...rest,
+            characters: characters.map(c => ({ id: c.id, img: urlImage(c.img) })),
+        };
     }
     if (data.type === 'order') {
         // 🆕 Anti-triche : retirer correctOrder ET le champ "order" individuel de chaque arc
@@ -874,24 +992,32 @@ function getFloorDataForClient(floorData) {
             type: data.type,
             label: data.label,
             anime: data.anime,
-            arcs: data.arcs.map(a => ({ id: a.id, name: a.name, img: a.img })),
+            arcs: data.arcs.map(a => ({ id: a.id, name: a.name, img: urlImage('ascensionarcs/' + a.img) })),
         };
     }
     if (data.type === 'match') {
-        const { pairs, ...rest } = data;
-        return rest;
+        const { pairs, left, right, ...rest } = data;
+        return {
+            ...rest,
+            // Le nom ne part que sans portrait, la ou l'ecran l'affiche : avec
+            // l'image, il donnait gratuitement le personnage a reconnaitre.
+            left: left.map(n => (n.img ? { id: n.id, img: urlImage(n.img) } : { id: n.id, name: n.name })),
+            right: right.map(n => ({ id: n.id, value: n.value, img: urlImage(n.img) })),
+        };
     }
     if (data.type === 'guess') {
         return {
             type: data.type, label: data.label, totalToGuess: data.totalToGuess,
-            characters: data.characters.map(c => ({ id: c.id, img: c.img, anime: c.anime })),
+            characters: data.characters.map(c => ({ id: c.id, img: urlImage(c.img) })),
         };
     }
     if (data.type === 'target') {
         return {
             type: data.type, label: data.label, totalTargets: data.totalTargets,
-            characters: data.characters.map(c => ({ id: c.id, img: c.img, name: c.name, anime: c.anime })),
-            currentTarget: data.targets[0],
+            characters: data.characters.map(c => ({ id: c.id, img: urlImage(c.img) })),
+            // La cible se donne par son nom, jamais par son identifiant : celui-ci
+            // aurait designe la carte a cliquer sans qu'on regarde le visage.
+            currentTarget: data.targets[0] ? { name: data.targets[0].name } : null,
         };
     }
     return data;
@@ -900,7 +1026,7 @@ function getFloorDataForClient(floorData) {
 function getFloorAnswers(floorData) {
     switch (floorData.type) {
         case 'wordle': return { word: floorData.word };
-        case 'silhouette': return { name: floorData.character.name };
+        case 'scramble': return { word: floorData.word };
         case 'intruder': return { targetIds: floorData.targetIds };
         case 'order': return { correctOrder: floorData.correctOrder };
         case 'match': return { pairs: floorData.pairs };
@@ -908,6 +1034,23 @@ function getFloorAnswers(floorData) {
         case 'target': return { targets: floorData.targets };
         default: return {};
     }
+}
+
+// 🧪 La reponse de l etage ou se trouve un joueur, pour les suites automatisees.
+// Depuis que les identifiants sont opaques et les images anonymes, aucun test ne
+// peut plus jouer un etage en devinant depuis le fichier de donnees — et c est
+// exactement le but. Cette porte-la est refusee en production et exige le jeton
+// d hote, comme les bots de mise au point.
+function solutionEtage(gameState, playerId) {
+    const ascension = gameState.ascension;
+    if (!ascension || !ascension.active) return null;
+    const pp = ascension.playerProgress[playerId];
+    if (!pp) return null;
+    const fd = ascension.syncEpreuves
+        ? ascension.floorData[pp.floor]
+        : (pp.personalFloorData?.[pp.floor] || ascension.floorData[pp.floor]);
+    if (!fd) return null;
+    return Object.assign({ type: fd.type, floor: pp.floor }, getFloorAnswers(fd));
 }
 
 // ═══ Answer validation ═══
@@ -1678,7 +1821,8 @@ function handleAscensionCheckTarget(gameState, io, socket, data) {
     if (isCorrect) {
         pp.targetProgress++;
         const isComplete = pp.targetProgress >= floorData.totalTargets;
-        const nextTarget = isComplete ? null : floorData.targets[pp.targetProgress];
+        const suivante = isComplete ? null : floorData.targets[pp.targetProgress];
+        const nextTarget = suivante ? { name: suivante.name } : null;
         socket.emit('ascension-target-result', {
             correct: true,
             characterId: data.characterId,
@@ -1700,7 +1844,9 @@ function handleAscensionCheckTarget(gameState, io, socket, data) {
             correct: false,
             characterId: data.characterId,
             progress: 0,
-            currentTarget: floorData.targets[0],
+            // Le nom seul, comme partout ailleurs : l identifiant designait la
+            // carte a cliquer sans qu on regarde le visage.
+            currentTarget: floorData.targets[0] ? { name: floorData.targets[0].name } : null,
             isComplete: false,
             bloqueJusqua: pp.bloqueJusqua,
         });
@@ -1787,6 +1933,8 @@ module.exports = {
     createAscensionState,
     startAscensionGame,
     resetAscensionState,
+    cheminImage,
+    solutionEtage,
     registerAscensionSocketHandlers,
     getAscensionStateForClient,
 

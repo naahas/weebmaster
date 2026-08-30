@@ -499,6 +499,15 @@ app.get('/game/state', (req, res) => {
 // ============================================
 // Le code (html, css, js) garde une revalidation par ETag : un déploiement doit
 // être vu tout de suite, et le 304 ne coûte que quelques octets.
+// Les images d'Ascension passent par un jeton : leur nom de fichier disait la
+// reponse — « sora.png » sous un portrait qu'on doit nommer. Le serveur seul
+// sait le retourner en chemin (voir « urlImage » dans server-ascension.js).
+app.get('/ascpic/:jeton', (req, res) => {
+    const relatif = ascension.cheminImage(req.params.jeton);
+    if (!relatif) return res.status(404).end();
+    res.sendFile(path.join(__dirname, 'src', 'img', 'ascensionpic', relatif), { maxAge: '30d' });
+});
+
 app.use(express.static('src/html'));
 app.use(express.static('src/style'));
 app.use(express.static('src/script'));
@@ -2447,6 +2456,17 @@ app.post('/admin/replay', (req, res) => {
     broadcastLobbyUpdate(gameState);
 
     res.json({ success: true, playerCount: gameState.players.size });
+});
+
+// 🧪 La reponse de l etage courant, pour les suites automatisees. Les
+// identifiants d Ascension sont opaques et ses images anonymes : sans cette
+// porte, aucun test ne peut plus jouer un etage — et c est bien le but.
+// Refusee en production ; le jeton d hote est deja exige par le garde /admin.
+app.post('/admin/ascension/solution', (req, res) => {
+    if (process.env.NODE_ENV === 'production') return res.status(404).end();
+    const s = ascension.solutionEtage(req.room, req.body && req.body.playerId);
+    if (!s) return res.status(404).json({ error: 'Aucun etage en cours pour ce joueur' });
+    res.json(s);
 });
 
 // Passer à la question suivante

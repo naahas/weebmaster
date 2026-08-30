@@ -9,19 +9,13 @@
 // referme si ce n'est pas un « guess », et recommence. Attendre que le hasard
 // amène le bon type en montant dépendrait des minuteurs.
 //
-// ⚠️ Elle se sert de la fuite connue des identifiants : `nomDe(id)` retrouve
-// la réponse dans ascensiondata.json parce que l'identifiant la porte. C'est
-// justement ce que `npm run test:ascension` signale en rouge. Le jour où les
-// identifiants deviendront opaques, ce fichier devra changer avec eux.
+// Les identifiants sont opaques et les images anonymes : la suite ne peut plus
+// deviner les noms depuis le fichier de données, ce qui est le but. Elle les
+// demande donc au serveur par `/admin/ascension/solution`, une porte refusée en
+// production et fermée par le jeton d'hôte.
 const { io } = require('socket.io-client');
 const BASE = 'http://localhost:' + (process.env.TEST_PORT || process.env.PORT || 7000);
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
-
-const data = require('../ascensiondata.json');
-const nomDe = (id) => {
-    const c = (data.characters || []).find(x => x.id === id);
-    return c ? c.name : null;
-};
 
 let ko = 0;
 const check = (l, ok, extra) => {
@@ -63,7 +57,7 @@ async function premierEtage() {
 
     for (let i = 0; i < 60 && !etage; i++) await wait(200);
     return {
-        s, recu, etage,
+        s, recu, etage, post,
         fermer: async () => { s.close(); await post('/admin/toggle-game', {}); },
     };
 }
@@ -85,8 +79,18 @@ async function premierEtage() {
         process.exit(1);
     }
 
-    const { s, recu, f, fermer } = trouve;
+    const { s, recu, f, post, fermer } = trouve;
     const persos = f.characters || [];
+
+    // Le serveur seul connaît les noms derrière les identifiants opaques
+    const solution = await post('/admin/ascension/solution', { playerId: 'j1' });
+    const nomDe = (id) => {
+        const c = (solution.characters || []).find(x => x.id === id);
+        return c ? c.name : null;
+    };
+    check('le serveur veut bien donner la solution à un test',
+        (solution.characters || []).length === persos.length,
+        (solution.characters || []).length + ' nom(s) rendus');
     check('l étage porte bien cinq portraits', persos.length >= 4, persos.length + ' portrait(s)');
 
     // ── Trop tôt : rien ne doit sortir ──

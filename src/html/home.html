@@ -778,7 +778,7 @@
                                                 </svg>
                                             </button>
                                             <span class="asc-vitre">
-                                                <img :src="'/ascensionpic/' + p.img" alt="" draggable="false">
+                                                <img :src="p.img" alt="" draggable="false">
                                                 <!-- Le tampon claque sur le portrait au moment où il
                                                      tombe, et porte le nom trouvé : on voit ce qu'on
                                                      a répondu sans le chercher sous l'image. -->
@@ -813,7 +813,7 @@
                                         <button class="asc-vignette" v-for="p in asc.data.characters" :key="p.id"
                                                 :class="{ trouve: ascTrouve(p.id), rate: asc.faux === p.id }"
                                                 @click="cliquerCible(p.id)">
-                                            <img :src="'/ascensionpic/' + p.img" alt="" draggable="false">
+                                            <img :src="p.img" alt="" draggable="false">
                                         </button>
                                     </div>
                                 </div>
@@ -838,7 +838,7 @@
                                                 :class="{ trouve: ascTrouve(p.id), rate: asc.faux === p.id }"
                                                 :disabled="ascTrouve(p.id)"
                                                 @click="cliquerIntrus(p.id)">
-                                            <img :src="'/ascensionpic/' + p.img" alt="" draggable="false">
+                                            <img :src="p.img" alt="" draggable="false">
                                         </button>
                                     </div>
                                 </div>
@@ -870,7 +870,7 @@
                                                  @dragleave="asc.survol = null"
                                                  @drop.prevent="lacherArc(i)"
                                                  @dragend="annulerPrise">
-                                                <img :src="'/ascensionpic/ascensionarcs/' + a.img" alt="" draggable="false">
+                                                <img :src="a.img" alt="" draggable="false">
                                                 <span class="asc-carte-arc-t">{{ a.name }}</span>
                                             </div>
                                         </template>
@@ -911,7 +911,7 @@
                                                 <!-- Le nom ne paraît que sans portrait : avec lui,
                                                      il n'apprenait rien et tirait une bande sur toute
                                                      la largeur de la colonne. -->
-                                                <img v-if="g.img" :src="'/ascensionpic/' + g.img" alt="" draggable="false">
+                                                <img v-if="g.img" :src="g.img" alt="" draggable="false">
                                                 <span class="asc-noeud-t" v-else>{{ g.name }}</span>
                                                 <span class="asc-point"></span>
                                             </button>
@@ -926,7 +926,7 @@
                                                     :class="{ lie: lieA(d.id), avecImage: d.img,
                                                               vise: asc.filVise === d.id }">
                                                 <span class="asc-point"></span>
-                                                <img v-if="d.img" :src="'/ascensionpic/' + d.img" alt="" draggable="false">
+                                                <img v-if="d.img" :src="d.img" alt="" draggable="false">
                                                 <span class="asc-noeud-t" v-if="!d.img">{{ d.value }}</span>
                                             </button>
                                         </div>

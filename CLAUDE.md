@@ -39,20 +39,22 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   (les routes /admin sont-elles fermées aux visiteurs), `npm run test:rooms` (deux salons
   simultanés, plafond), `npm run test:mixte` (quiz et BombAnime en parallèle),
   `npm run test:rejouer` (deux manches d affilée sans répétition de question),
-  `npm run test:historique` (chaque salon a sa propre mémoire),
-  `npm run test:backoffice` (les routes /api/*question* exigent `QUESTION_ADMIN_CODE`),
-  `npm run test:ascension` (le moteur d'étages, sans serveur — **3 échecs volontaires** :
-  « guess » livre le nom cherché dans l'identifiant et le nom du fichier, « intruder » livre
-  ses cibles par le champ `anime`. Même famille que les portraits de Rush, à traiter ensemble),
+  `npm run test:historique` (chaque salon a sa propre mémoire),
+  `npm run test:backoffice` (les routes /api/*question* exigent `QUESTION_ADMIN_CODE`),
+  `npm run test:ascension` (le moteur d'étages, sans serveur : le tirage par sac, les
+  sept types, et surtout qu'aucun ne livre sa réponse — ni par un champ, ni par un
+  identifiant, ni par un nom de fichier),
   `npm run test:tour` (Ascension de bout en bout : salon, réglages, départ, premier étage),
   `npm run test:ampoule` (le joker de « Devine le perso » : seuil de trois, une seule fois, reprise),
   `npm run test:tour-fin` (classement final et rejeu — ⚠️ **3 min 30** : la montée
-  se fait en silence, un minuteur expiré poussant à l étage suivant),
+  se fait en silence, un minuteur expiré poussant à l étage suivant),
   `npm run test:tour-reprise` (rafraîchissement en pleine montée),
   `npm run test:tour-salons` (deux Ascensions simultanées : réglages, étages et
-  messages restent séparés),
-  `npm run test:tour-grilles` (les épreuves à portraits : guess, target, intruder — ~2 min.
-  ⚠️ **intermittente** : ~1 lancement sur 3 échoue, cause non identifiée), `npm run test:rush` (le mode Rush de bout en bout),
+  messages restent séparés),
+  `npm run test:tour-grilles` (les épreuves à portraits : guess, target, intruder — ~2 min.
+  Longtemps intermittente : elle rejouait 700 ms après une erreur, alors que celle-ci
+  ferme la grille une seconde — le second clic tombait dans le vide une fois sur trois.
+  Six passages d'affilée depuis), `npm run test:rush` (le mode Rush de bout en bout),
   `npm run test:depart` (quitter BombAnime en pleine partie), `npm run test:plafond` (le plafond
   de BombAnime : remplissage, refus du joueur de trop), `npm run test:bomb` (réglages
   BombAnime et enchaînement des manches), `npm run test:reprise`

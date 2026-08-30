@@ -21,15 +21,15 @@
 // l'autre. On ouvre maintenant un salon, on lit son premier étage, on referme,
 // et on recommence jusqu'à avoir croisé les trois. Chaque tour coûte le
 // décompte d'entrée et rien d'autre.
+//
+// Les identifiants sont opaques, les images anonymes, et les cartes ne portent
+// plus ni nom ni anime : rien de ce que reçoit le client ne dit la réponse —
+// c'est le but. Pour jouer quand même, la suite demande la solution au serveur
+// par `/admin/ascension/solution`, une porte refusée en production et fermée
+// par le jeton d'hôte.
 const { io } = require('socket.io-client');
 const BASE = 'http://localhost:' + (process.env.TEST_PORT || process.env.PORT || 7000);
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
-
-const data = require('../ascensiondata.json');
-const nomDe = (id) => {
-    const c = (data.characters || []).find(x => x.id === id);
-    return c ? c.name : null;
-};
 
 let ko = 0;
 const check = (l, ok, extra) => {
@@ -69,7 +69,7 @@ async function premierEtage() {
 
     for (let i = 0; i < 60 && !etage; i++) await wait(200);
     return {
-        s, recu, etage,
+        s, recu, etage, post,
         fermer: async () => { s.close(); await post('/admin/toggle-game', {}); },
     };
 }
@@ -79,13 +79,17 @@ async function premierEtage() {
     const MAX = 30;   // largement de quoi croiser trois types parmi sept
 
     for (let tour = 0; tour < MAX && Object.keys(vus).length < 3; tour++) {
-        const { s, recu, etage, fermer } = await premierEtage();
+        const { s, recu, etage, post, fermer } = await premierEtage();
         const f = etage && etage.floorData;
         const type = f && f.type;
 
+        // ── Devine le perso ──
         if (type === 'guess' && !vus.guess) {
             vus.guess = true;
+            const sol = await post('/admin/ascension/solution', { playerId: 'j1' });
+            const nomDe = (id) => (sol.characters || []).find(c => c.id === id)?.name;
             const p = f.characters[0];
+
             s.emit('ascension-check-guess', { characterId: p.id, name: 'nawak-qui-ne-marche-pas' });
             await wait(700);
             check('« guess » refuse un nom faux',
@@ -102,39 +106,55 @@ async function premierEtage() {
                 recu.guess[0] && recu.guess[0].characterId === p.id, p.id);
         }
 
+        // ── Cible ──
+        // Le client ne reçoit plus que le nom à chercher : c'est au serveur de
+        // dire quelle carte le porte, et c'est bien ce qu'on lui demande ici.
         if (type === 'target' && !vus.target) {
             vus.target = true;
-            const faux = f.characters.find(c => c.id !== f.currentTarget.id);
+            const sol = await post('/admin/ascension/solution', { playerId: 'j1' });
+            const cibles = new Set((sol.targets || []).map(t => t.id));
+            const attendue = (sol.targets || [])[0];
+            const faux = f.characters.find(c => !cibles.has(c.id));
+
             s.emit('ascension-check-target', { characterId: faux.id });
             await wait(700);
             check('« target » remet le compteur à zéro sur une erreur',
                 recu.target.length >= 1 && recu.target[0].correct === false && recu.target[0].progress === 0,
                 recu.target.length ? 'progress=' + recu.target[0].progress : 'aucune réponse');
-            check('et il redonne la première cible',
-                recu.target[0] && !!recu.target[0].currentTarget,
-                recu.target[0] && recu.target[0].currentTarget ? recu.target[0].currentTarget.name : '—');
+            check('et il redonne la première cible, par son nom seul',
+                recu.target[0] && !!recu.target[0].currentTarget
+                && !('id' in recu.target[0].currentTarget),
+                recu.target[0] && recu.target[0].currentTarget
+                    ? Object.keys(recu.target[0].currentTarget).join(', ') : '—');
 
-            const bonne = recu.target[0].currentTarget;
+            // L erreur ferme la grille une seconde : on attend qu elle rouvre,
+            // sinon le serveur refuse le clic suivant sans rien dire.
+            await wait(1200);
             recu.target.length = 0;
-            s.emit('ascension-check-target', { characterId: bonne.id });
+            s.emit('ascension-check-target', { characterId: attendue.id });
             await wait(700);
             check('« target » avance sur la bonne cible',
                 recu.target.length >= 1 && recu.target[0].correct === true && recu.target[0].progress === 1,
                 recu.target.length ? 'progress=' + recu.target[0].progress : 'aucune réponse');
         }
 
+        // ── Intrus ──
         if (type === 'intruder' && !vus.intruder) {
             vus.intruder = true;
-            // Le champ « anime » trahit les cibles — c'est la fuite connue, et
-            // elle sert ici à jouer sans rien inventer sur le protocole.
-            const cible = f.characters.find(c => c.anime === f.targetAnime);
-            const autre = f.characters.find(c => c.anime !== f.targetAnime);
+            const sol = await post('/admin/ascension/solution', { playerId: 'j1' });
+            const cibles = new Set(sol.targetIds || []);
+            const cible = f.characters.find(c => cibles.has(c.id));
+            const autre = f.characters.find(c => !cibles.has(c.id));
+
             s.emit('ascension-check-intruder', { characterId: autre.id });
             await wait(700);
             check('« intruder » refuse un portrait hors cible',
                 recu.intrus.length >= 1 && recu.intrus[0].correct === false,
                 recu.intrus.length ? 'correct=' + recu.intrus[0].correct : 'aucune réponse');
 
+            // Une erreur ferme la grille une seconde : on attend qu'elle rouvre,
+            // sinon le serveur refuse le clic suivant sans rien dire.
+            await wait(1200);
             recu.intrus.length = 0;
             s.emit('ascension-check-intruder', { characterId: cible.id });
             await wait(700);

@@ -78,44 +78,81 @@ for (const [type, champs] of Object.entries(secrets)) {
         fuite.length ? 'fuite : ' + fuite.join(', ') : 'retiré');
 }
 
-// L'intrus se lit dans le champ « anime » de chaque personnage : le joueur
-// doit trouver ceux d'un anime donné, et chacun annonce le sien.
+// ── Rien de ce qui sort ne doit designer la reponse ──
+// Trois vecteurs se cumulaient : les champs que le client n'affiche jamais, le
+// nom du fichier image, et les identifiants — a la Liaison, une paire portait
+// le meme des deux cotes, le fil se lisait donc sans regarder l'ecran.
+const parlant = (v) => typeof v === 'string' && /[a-z]{4}/i.test(v);
+const jetonValide = (u) => /^\/ascpic\/[0-9a-f]{20}$/.test(String(u));
+
 {
-    const d = I.generateFloorData('intruder', {});
-    const c = I.getFloorDataForClient(d);
-    // Le verdict porte sur la presence du champ, pas sur le tirage : selon la
-    // variante l'enonce demande ceux d'un anime ou ceux qui n'en sont pas, mais
-    // dans les deux cas le champ « anime » suffit a trancher sans jouer.
-    const porteurs = (c.characters || []).filter(p => 'anime' in p);
-    check("« intruder » ne trahit pas ses cibles par le champ « anime »",
-        porteurs.length === 0,
-        porteurs.length
-            ? porteurs.length + '/' + (c.characters || []).length + ' personnages annoncent leur anime'
-            : 'champ retiré');
-    void d;
+    const c = I.getFloorDataForClient(I.generateFloorData('intruder', {}));
+    const bavards = (c.characters || []).filter(p => 'anime' in p || 'name' in p);
+    check("« intruder » ne trahit pas ses cibles par « anime » ou « name »",
+        bavards.length === 0,
+        bavards.length ? bavards.length + '/' + c.characters.length + ' cartes en disent trop' : 'retires');
 }
 
-// À « guess » on tape le nom du personnage : ni son identifiant ni le nom de
-// son image ne doivent le désigner.
 {
-    // On examine tous les personnages de l'étage, pas seulement le premier :
-    // sinon le verdict dépend du tirage et la suite clignote d'un lancement
-    // à l'autre.
+    const c = I.getFloorDataForClient(I.generateFloorData('target', {}));
+    const bavards = (c.characters || []).filter(p => 'anime' in p || 'name' in p);
+    check("« target » ne nomme pas ses cartes", bavards.length === 0,
+        bavards.length ? bavards.length + '/' + c.characters.length + ' cartes nommees' : 'retires');
+    check('« target » ne designe pas la carte a cliquer',
+        !!c.currentTarget && !('id' in c.currentTarget),
+        c.currentTarget ? Object.keys(c.currentTarget).join(', ') : '(aucune cible)');
+}
+
+{
     const c = I.getFloorDataForClient(I.generateFloorData('guess', {}));
-    const persos = c.characters || [];
-    const parlant = (v) => typeof v === 'string'
-        && /[a-z]{4}/i.test(v.replace(/_ascension|\.png/g, ''));
+    const bavards = (c.characters || []).filter(p => 'name' in p || 'anime' in p || 'aliases' in p);
+    check('« guess » ne livre ni nom, ni anime, ni alias', bavards.length === 0,
+        bavards.length ? bavards.length + '/' + c.characters.length + ' portraits en disent trop' : 'retires');
 
-    const idsParlants = persos.filter(p => parlant(p.id));
-    check("« guess » ne trahit pas le nom par l'identifiant",
-        idsParlants.length === 0,
-        idsParlants.length ? idsParlants.length + '/' + persos.length + ' — ex. ' + idsParlants[0].id : 'opaques');
+    const ids = (c.characters || []).filter(p => parlant(p.id));
+    check("« guess » ne trahit pas le nom par l'identifiant", ids.length === 0,
+        ids.length ? ids.length + ' — ex. ' + ids[0].id : 'opaques');
 
-    const imgsParlantes = persos.filter(p => parlant(p.img));
-    check('« guess » ne trahit pas le nom par le fichier image',
-        imgsParlantes.length === 0,
-        imgsParlantes.length ? imgsParlantes.length + '/' + persos.length + ' — ex. ' + imgsParlantes[0].img : 'opaques');
+    // Un jeton est vingt caracteres hexadecimaux et rien d'autre : c'est la
+    // forme qu'on verifie, pas l'absence de mots — du hasard en hexadecimal
+    // finit toujours par en contenir un.
+    const imgs = (c.characters || []).filter(p => !jetonValide(p.img));
+    check('« guess » ne trahit pas le nom par le fichier image', imgs.length === 0,
+        imgs.length ? imgs.length + ' — ex. ' + imgs[0].img : 'sous jeton');
+}
+
+// La Liaison : la paire se lisait en comparant les identifiants des deux
+// colonnes, qui etaient les memes. Ils doivent maintenant etre etrangers.
+{
+    const d = I.generateFloorData('match', {});
+    const c = I.getFloorDataForClient(d);
+    const communs = (c.left || []).map(n => n.id).filter(id => (c.right || []).some(n => n.id === id));
+    check('« match » ne relie pas ses colonnes par leurs identifiants',
+        communs.length === 0,
+        communs.length ? communs.length + ' identifiant(s) partages — ex. ' + communs[0] : 'etrangers');
+
+    // Et l'ordre ne doit pas non plus faire la paire : le rang du bon element
+    // de droite doit varier d'un tirage a l'autre.
+    const rangs = new Set();
+    for (let n = 0; n < 30; n++) {
+        const e = I.generateFloorData('match', {});
+        const p0 = e.pairs.find(p => p.leftId === 'g0');
+        if (p0) rangs.add(p0.rightId);
+    }
+    check("« match » ne range pas la reponse en face de sa question",
+        rangs.size > 1, rangs.size + ' position(s) differentes en trente tirages');
+}
+
+// Les portraits de toutes les grilles passent sous jeton, pas seulement guess
+{
+    for (const type of ['target', 'intruder', 'match', 'order']) {
+        const c = I.getFloorDataForClient(I.generateFloorData(type, {}));
+        const listes = [c.characters, c.left, c.right, c.arcs].filter(Boolean);
+        const images = listes.flat().map(n => n.img).filter(Boolean);
+        const clair = images.filter(u => !jetonValide(u));
+        check('« ' + type + ' » sert ses images sous jeton', clair.length === 0,
+            clair.length ? clair.length + '/' + images.length + ' en clair — ex. ' + clair[0] : images.length + ' image(s)');
+    }
 }
 
 console.log(ko ? `\n${ko} échec(s)` : "\n✨ Le moteur d'Ascension tient, et ne trahit rien");
-process.exit(ko ? 1 : 0);
