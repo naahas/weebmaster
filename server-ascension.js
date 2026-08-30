@@ -628,7 +628,8 @@ function startAscensionGame(gameState, io, options = {}) {
         }
     }
     
-    const COUNTDOWN_MS = 4000;
+    // Trois secondes suffisent a se tenir pret : quatre faisaient attendre.
+    const COUNTDOWN_MS = 3000;
     ascension.countdownEndsAt = Date.now() + COUNTDOWN_MS;
     
     io.to(gameState.roomCode).emit('ascension-game-started', {

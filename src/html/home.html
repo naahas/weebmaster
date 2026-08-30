@@ -868,8 +868,11 @@
                                                     :class="{ pris: asc.gauche === g.id, lie: asc.liens[g.id],
                                                               rate: asc.mauvais.indexOf(g.id) >= 0 }"
                                                     @click="prendreGauche(g.id)">
+                                                <!-- Le nom ne paraît que sans portrait : avec lui,
+                                                     il n'apprenait rien et tirait une bande sur toute
+                                                     la largeur de la colonne. -->
                                                 <img v-if="g.img" :src="'/ascensionpic/' + g.img" alt="" draggable="false">
-                                                <span class="asc-noeud-t">{{ g.name }}</span>
+                                                <span class="asc-noeud-t" v-else>{{ g.name }}</span>
                                                 <span class="asc-point"></span>
                                             </button>
                                         </div>
@@ -920,10 +923,14 @@
                                            @keyup.enter="envoyerWordle"
                                            autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
 
-                                    <!-- Les essais passés, le plus récent juste dessous -->
-                                    <div class="asc-ligne" v-for="(e, n) in asc.essais.slice().reverse()" :key="n">
-                                        <span class="asc-case" v-for="(c, i) in casesWordle(e.mot, e.couleurs)" :key="i"
-                                              :class="[c.c, { coupe: coupureApres(i) }]">{{ c.l }}</span>
+                                    <!-- Les essais dans un cadre de hauteur fixe : sans lui, le
+                                         bloc grandissait a chaque tentative et, etant centre, la
+                                         ligne vive remontait sous les doigts. -->
+                                    <div class="asc-essais">
+                                        <div class="asc-ligne" v-for="(e, n) in asc.essais.slice().reverse()" :key="n">
+                                            <span class="asc-case" v-for="(c, i) in casesWordle(e.mot, e.couleurs)" :key="i"
+                                                  :class="[c.c, { coupe: coupureApres(i) }]">{{ c.l }}</span>
+                                        </div>
                                     </div>
 
                                     <span class="asc-aide">{{ asc.essais.length }} essai<span v-if="asc.essais.length > 1">s</span></span>

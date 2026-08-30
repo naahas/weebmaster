@@ -1324,7 +1324,19 @@ createApp({
                                                 : 'Trouve le nom, lettre après lettre')
                         + (d.animeHint ? ' · ' + d.animeHint : ''),
                 order: "Remets les arcs de " + (d.anime || '') + " dans l'ordre",
-                match: 'Relie chaque paire',
+                match: (function () {
+                    const par = {
+                        char_anime: 'Relie chaque personnage à son anime',
+                        couples: 'Relie chaque personnage à celui qu\'il aime',
+                        techniques: 'Relie chaque personnage à sa technique',
+                        weapons: 'Relie chaque personnage à son arme',
+                        rivals: 'Relie chaque personnage à son rival',
+                        same_voice: 'Relie les personnages qui partagent une voix',
+                        anime_studio: 'Relie chaque anime à son studio',
+                        anime_year: 'Relie chaque anime à son année',
+                    };
+                    return par[d.subtype] || 'Relie chaque paire';
+                })(),
                 scramble: (d.category === 'anime' ? "Reconstitue le titre" : 'Reconstitue le nom du personnage')
                           + (d.hint ? ' · ' + d.hint : ''),
             };
@@ -1415,10 +1427,7 @@ createApp({
             for (let n = 1; n <= l.length; n++) {
                 const p = l[(k + n) % l.length];
                 if (p && !this.ascTrouve(p.id)) {
-                    this.$nextTick(() => {
-                        const c = document.getElementById('guess-' + p.id);
-                        if (c) c.focus();
-                    });
+                    this.viserChamp('guess-' + p.id);
                     return;
                 }
             }
@@ -1639,9 +1648,18 @@ createApp({
             this.asc.essais = [];
             this.asc.mot = '';
             this._ascDernierMot = null;
+            this.viserChamp('ascWordle');
+        },
+
+        // Le champ n'existe pas encore quand l'étage arrive : la transition
+        // retient l'ancien plan un instant. Un seul « nextTick » tombait donc
+        // dans le vide — on réessaie quelques fois, puis on renonce.
+        viserChamp(id, essais) {
+            const reste = essais === undefined ? 12 : essais;
             this.$nextTick(() => {
-                const c = document.getElementById('ascWordle');
-                if (c) c.focus();
+                const c = document.getElementById(id);
+                if (c) { c.focus(); return; }
+                if (reste > 0) setTimeout(() => this.viserChamp(id, reste - 1), 60);
             });
         },
 

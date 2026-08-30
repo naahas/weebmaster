@@ -122,7 +122,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.55rem;
+    gap: 0.75rem;
     animation: ascTitre 0.5s cubic-bezier(0.2, 0.9, 0.25, 1) both;
 }
 
@@ -162,7 +162,7 @@
 }
 
 .asc-soustitre {
-    margin-top: 0.15rem;
+    margin-top: 0.3rem;
     font-size: 0.85rem;
     font-weight: 600;
     letter-spacing: 0.04em;
@@ -444,6 +444,20 @@
 .asc-case.green  { color: #0b0b0e; background: #6ee7b7; border-color: #6ee7b7; }
 .asc-case.yellow { color: #0b0b0e; background: #fcd34d; border-color: #fcd34d; }
 .asc-case.red    { color: rgba(255, 255, 255, 0.35); background: rgba(255, 255, 255, 0.02); }
+
+/* Les essais tiennent dans un cadre de hauteur fixe. Sans lui, le bloc
+   grandissait à chaque tentative et, comme il est centré, la ligne qu'on
+   remplit remontait sous les doigts. */
+.asc-essais {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    width: 100%;
+    height: clamp(9rem, 32vh, 16rem);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(140, 180, 255, 0.3) transparent;
+}
 
 .asc-ligne.vive { cursor: text; }
 
@@ -920,7 +934,7 @@
    gauche à droite, et c'est elle qu'on est en train de fabriquer. On échange
    deux arcs en glissant l'un sur l'autre — l'échange, et non l'insertion,
    pour que la ligne garde sa longueur et que rien ne se dérobe. */
-.asc-jeu.asc-ordre { max-width: min(92rem, 100vw - 5rem); }
+.asc-jeu.asc-ordre { max-width: min(104rem, 100vw - 3rem); }
 
 .asc-suite {
     display: flex;
@@ -933,7 +947,7 @@
 .asc-carte-arc {
     flex: 1 1 0;
     min-width: 0;
-    max-width: 19rem;
+    max-width: 23rem;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
@@ -1048,15 +1062,23 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    align-items: stretch;
     gap: 0.6rem;
 }
 
+/* La colonne des portraits se resserre autour d'eux */
+.asc-colonnes:not(.sansImage) .asc-col:not(.droite) { flex: 0 0 auto; align-items: center; }
+.asc-colonnes:not(.sansImage) .asc-col:not(.droite) .asc-noeud { width: 5.6rem; }
+
+/* Un nœud à portrait se réduit à son image : il n'a plus de texte à porter,
+   donc plus de raison de s'étendre. C'est ce qui faisait les bandelettes. */
 .asc-noeud {
     position: relative;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.8rem;
-    padding: 0.5rem 0.8rem;
+    padding: 0.4rem;
     text-align: left;
     background: rgba(255, 255, 255, 0.03);
     border: 0.09rem solid rgba(255, 255, 255, 0.09);
@@ -1067,8 +1089,8 @@
 
 .asc-noeud img {
     flex: 0 0 auto;
-    width: 3.4rem;
-    height: 4.6rem;
+    width: 4.6rem;
+    height: 6.2rem;
     object-fit: cover;
     border-radius: 0.3rem;
 }
