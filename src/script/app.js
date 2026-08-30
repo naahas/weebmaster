@@ -1327,8 +1327,8 @@ createApp({
             const par = {
                 guess: 'Nomme les ' + (d.totalToGuess || 5) + ' portraits',
                 target: "Clique sur les bons, dans l'ordre",
-                wordle: (d.category === 'anime' ? 'Trouve le titre, lettre après lettre'
-                                                : 'Trouve le nom, lettre après lettre')
+                wordle: (d.category === 'anime' ? "Trouve le titre de l'anime"
+                                                : 'Trouve le nom du personnage')
                         + (d.animeHint ? ' · ' + d.animeHint : ''),
                 order: "Remets les arcs de " + (d.anime || '') + " dans l'ordre",
                 match: (function () {
@@ -1340,7 +1340,7 @@ createApp({
                         rivals: 'Relie chaque personnage à son rival',
                         same_voice: 'Relie les personnages qui partagent une voix',
                         anime_studio: 'Relie chaque anime à son studio',
-                        anime_year: 'Relie chaque anime à son année',
+                        anime_year: 'Relie l\'anime à son année de parution',
                     };
                     return par[d.subtype] || 'Relie chaque paire';
                 })(),

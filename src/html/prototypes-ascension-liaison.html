@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ascension — relier deux colonnes</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   Quatre façons de relier. La question n'est pas laquelle est la
+   plus jolie à l'arrêt, mais laquelle donne envie de tirer le fil.
+   ════════════════════════════════════════════════════════════════ */
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 2rem 1.5rem 4rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #fff;
+    background: radial-gradient(70% 55% at 50% 0%, #16161d, #08080b 70%);
+    min-height: 100vh;
+}
+
+h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
+
+.sous {
+    margin: 0 0 2rem;
+    max-width: 48rem;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.42);
+}
+
+.grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr)); gap: 2.6rem 2rem; }
+.cas { display: flex; flex-direction: column; gap: 0.9rem; }
+
+.titre { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255,255,255,.36); }
+.titre em { display: block; margin-top: 0.3rem; font-style: normal; font-weight: 400; font-size: 0.74rem; letter-spacing: 0; text-transform: none; color: rgba(255,255,255,.26); }
+
+.scene {
+    position: relative;
+    padding: 1.2rem;
+    border: 0.06rem solid rgba(255,255,255,.06);
+    border-radius: 0.8rem;
+    background: #0b0b0f;
+    touch-action: none;
+    user-select: none;
+}
+
+.cols { position: relative; display: flex; gap: 6rem; }
+.col { flex: 1; display: flex; flex-direction: column; gap: 0.7rem; }
+
+.n {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3rem;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: rgba(255,255,255,.8);
+    background: rgba(255,255,255,.035);
+    border: 0.09rem solid rgba(255,255,255,.09);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: border-color .2s ease, background .2s ease, transform .15s ease;
+}
+
+.n:hover { border-color: rgba(140,180,255,.5); }
+.n.pris { border-color: #ffd700; background: rgba(255,215,0,.1); }
+.n.lie  { border-color: rgba(110,231,183,.5); background: rgba(110,231,183,.07); }
+
+/* La borne : c'est d'elle que part le fil */
+.b {
+    position: absolute;
+    top: 50%;
+    width: 0.62rem;
+    height: 0.62rem;
+    border-radius: 50%;
+    background: rgba(255,255,255,.2);
+    transform: translateY(-50%);
+    transition: background .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+.col:not(.d) .b { right: -0.31rem; }
+.col.d .b { left: -0.31rem; }
+.n:hover .b { background: rgba(140,180,255,.85); transform: translateY(-50%) scale(1.25); }
+.n.pris .b { background: #ffd700; box-shadow: 0 0 .7rem rgba(255,215,0,.8); transform: translateY(-50%) scale(1.45); }
+.n.lie .b { background: #6ee7b7; box-shadow: 0 0 .5rem rgba(110,231,183,.6); }
+
+svg.fils { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+svg.fils path { fill: none; stroke-width: 2.4; stroke-linecap: round; }
+svg.fils path.fait { stroke: #6ee7b7; filter: drop-shadow(0 0 .3rem rgba(110,231,183,.5)); }
+svg.fils path.encours { stroke: #ffd700; filter: drop-shadow(0 0 .4rem rgba(255,215,0,.6)); }
+
+/* ── A · Tirer le fil (maintenir) ── */
+.a svg.fils path.fait { stroke-dasharray: 1000; animation: trace .4s cubic-bezier(.3,.9,.3,1) both; }
+@keyframes trace { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
+
+/* ── B · Tirer, avec le fil qui ondule ── */
+.b-cas svg.fils path.encours { stroke-dasharray: 7 5; animation: file .5s linear infinite; }
+@keyframes file { to { stroke-dashoffset: -12; } }
+
+/* ── C · Deux clics, mais le fil suit quand même ── */
+.c svg.fils path.encours { stroke-dasharray: 4 6; opacity: .75; animation: file .6s linear infinite; }
+
+/* ── D · Aimanté : le fil se colle à la borne la plus proche ── */
+.d-cas svg.fils path.encours { stroke: #a78bfa; filter: drop-shadow(0 0 .4rem rgba(167,139,250,.6)); }
+.d-cas .n.vise { border-color: #a78bfa; background: rgba(167,139,250,.12); transform: scale(1.03); }
+
+.etat { font-size: .72rem; color: rgba(255,255,255,.3); }
+.raz { align-self: flex-start; font: inherit; font-size: .78rem; color: #fff; background: rgba(255,255,255,.07);
+       border: .06rem solid rgba(255,255,255,.12); border-radius: .4rem; padding: .3rem .6rem; cursor: pointer; }
+.raz:hover { background: rgba(140,180,255,.18); }
+</style>
+</head>
+<body>
+
+<h1>Ascension — relier deux colonnes</h1>
+<p class="sous">
+    Quatre gestes pour relier un personnage à sa technique. Essaie-les : la question n'est pas
+    laquelle est la plus jolie à l'arrêt, mais laquelle donne envie de tirer le fil. Les trois
+    premières se jouent au maintien (appuie sur une borne et tire) ; la troisième garde les deux
+    clics, pour comparer.
+</p>
+
+<div class="grille" id="grille"></div>
+
+<script>
+var GAUCHE = [
+    { id: 'g1', t: 'Naruto' }, { id: 'g2', t: 'Luffy' },
+    { id: 'g3', t: 'Ichigo' }, { id: 'g4', t: 'Gojo' },
+];
+var DROITE = [
+    { id: 'd1', t: 'Gomu Gomu' }, { id: 'd2', t: 'Rasengan' },
+    { id: 'd3', t: 'Infini' },    { id: 'd4', t: 'Getsuga' },
+];
+
+var CAS = [
+    ['a',     'A · Tirer le fil',   'maintiens sur une borne et tire jusqu’à l’autre', 'tirer'],
+    ['b-cas', 'B · Fil qui file',   'même geste, le fil en cours ondule',                        'tirer'],
+    ['c',     'C · Deux clics',     'clique la gauche, puis la droite — le fil suit la souris',  'clic'],
+    ['d-cas', 'D · Aimanté',        'en tirant, la borne la plus proche s’allume et attire', 'tirer'],
+];
+
+var grille = document.getElementById('grille');
+
+function bati(cls) {
+    var g = GAUCHE.map(function (x) {
+        return '<div class="n" data-id="' + x.id + '" data-cote="g">' + x.t + '<span class="b"></span></div>';
+    }).join('');
+    var d = DROITE.map(function (x) {
+        return '<div class="n" data-id="' + x.id + '" data-cote="d"><span class="b"></span>' + x.t + '</div>';
+    }).join('');
+    return '<div class="scene ' + cls + '">' +
+           '<div class="cols"><svg class="fils"></svg>' +
+           '<div class="col">' + g + '</div><div class="col d">' + d + '</div></div></div>';
+}
+
+function courbe(x1, y1, x2, y2) {
+    var dx = Math.max(24, Math.abs(x2 - x1) * 0.45);
+    return 'M' + x1 + ',' + y1 + ' C' + (x1 + dx) + ',' + y1 + ' ' + (x2 - dx) + ',' + y2 + ' ' + x2 + ',' + y2;
+}
+
+function brancher(scene, mode) {
+    var svg = scene.querySelector('svg.fils');
+    var cols = scene.querySelector('.cols');
+    var liens = {};       // gauche -> droite
+    var prise = null;     // { id, x, y }
+    var vise = null;
+
+    function bornes(el) {
+        var r = el.querySelector('.b').getBoundingClientRect();
+        var z = cols.getBoundingClientRect();
+        return { x: r.left + r.width / 2 - z.left, y: r.top + r.height / 2 - z.top };
+    }
+
+    function peindre(souris) {
+        var d = '';
+        for (var g in liens) {
+            var a = scene.querySelector('[data-id="' + g + '"]');
+            var b = scene.querySelector('[data-id="' + liens[g] + '"]');
+            if (!a || !b) continue;
+            var pa = bornes(a), pb = bornes(b);
+            d += '<path class="fait" d="' + courbe(pa.x, pa.y, pb.x, pb.y) + '"></path>';
+        }
+        if (prise && souris) {
+            d += '<path class="encours" d="' + courbe(prise.x, prise.y, souris.x, souris.y) + '"></path>';
+        }
+        svg.innerHTML = d;
+
+        scene.querySelectorAll('.n').forEach(function (n) {
+            var id = n.dataset.id;
+            n.classList.toggle('pris', !!prise && prise.id === id);
+            n.classList.toggle('lie', n.dataset.cote === 'g' ? !!liens[id]
+                                                             : Object.keys(liens).some(function (k) { return liens[k] === id; }));
+            n.classList.toggle('vise', vise === id);
+        });
+    }
+
+    function relative(e) {
+        var z = cols.getBoundingClientRect();
+        return { x: e.clientX - z.left, y: e.clientY - z.top };
+    }
+
+    // Quelle borne de droite est la plus proche du curseur
+    function laPlusProche(p, seuil) {
+        var best = null, bd = Infinity;
+        scene.querySelectorAll('.col.d .n').forEach(function (n) {
+            var b = bornes(n);
+            var dd = Math.hypot(b.x - p.x, b.y - p.y);
+            if (dd < bd) { bd = dd; best = n.dataset.id; }
+        });
+        return bd <= seuil ? best : null;
+    }
+
+    function poser(idDroite) {
+        if (!prise || !idDroite) return;
+        for (var k in liens) if (liens[k] === idDroite) delete liens[k];
+        liens[prise.id] = idDroite;
+        prise = null; vise = null;
+        peindre();
+    }
+
+    scene.addEventListener('pointerdown', function (e) {
+        var n = e.target.closest('.n');
+        if (!n) return;
+        if (n.dataset.cote === 'g') {
+            delete liens[n.dataset.id];
+            var b = bornes(n);
+            prise = { id: n.dataset.id, x: b.x, y: b.y };
+            peindre(relative(e));
+            if (mode === 'tirer') scene.setPointerCapture(e.pointerId);
+        } else if (mode === 'clic' && prise) {
+            poser(n.dataset.id);
+        }
+    });
+
+    scene.addEventListener('pointermove', function (e) {
+        if (!prise) return;
+        var p = relative(e);
+        vise = scene.classList.contains('d-cas') ? laPlusProche(p, 90) : null;
+        peindre(p);
+    });
+
+    scene.addEventListener('pointerup', function (e) {
+        if (!prise || mode !== 'tirer') return;
+        var p = relative(e);
+        var n = e.target.closest('.n');
+        var cible = (n && n.dataset.cote === 'd') ? n.dataset.id
+                  : (scene.classList.contains('d-cas') ? laPlusProche(p, 90) : null);
+        if (cible) poser(cible);
+        else { prise = null; vise = null; peindre(); }
+    });
+
+    // En mode « clic », le fil suit la souris entre les deux clics
+    if (mode === 'clic') {
+        scene.addEventListener('pointerleave', function () { if (prise) peindre(); });
+    }
+
+    peindre();
+    return function () { liens = {}; prise = null; vise = null; peindre(); };
+}
+
+grille.innerHTML = CAS.map(function (c) {
+    return '<div class="cas">' + bati(c[0]) +
+           '<span class="titre">' + c[1] + '<em>' + c[2] + '</em></span>' +
+           '<button class="raz">Effacer</button></div>';
+}).join('');
+
+document.querySelectorAll('.cas').forEach(function (cas, i) {
+    var raz = brancher(cas.querySelector('.scene'), CAS[i][3]);
+    cas.querySelector('.raz').addEventListener('click', raz);
+});
+</script>
+</body>
+</html>

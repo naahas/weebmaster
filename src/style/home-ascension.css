@@ -453,7 +453,7 @@
     flex-direction: column;
     gap: 0.35rem;
     width: 100%;
-    height: clamp(9rem, 32vh, 16rem);
+    height: clamp(12rem, 46vh, 26rem);
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(140, 180, 255, 0.3) transparent;
@@ -753,7 +753,10 @@
 /* ── La grille des vingt-quatre ── */
 /* Six colonnes plutôt que huit : vingt-quatre portraits tiennent en quatre
    rangées, et chaque vignette gagne un tiers de largeur. */
+/* La sortie du blocage se fond : sans transition, l'ombre et le voile
+   sautaient d'un coup, et l'œil lisait ce saut comme un clignotement. */
 .asc-grille {
+    transition: box-shadow 0.35s ease;
     display: grid;
     grid-template-columns: repeat(6, 1fr);
     gap: clamp(0.35rem, 0.9vw, 0.6rem);
@@ -1015,7 +1018,7 @@
    courbe n'est pas une coquetterie : deux droites voisines se confondraient,
    alors que deux courbes se suivent des yeux. Les coordonnées se mesurent
    après chaque rendu — le gabarit seul ne peut pas les deviner. */
-.asc-jeu.asc-liaison { max-width: min(60rem, 100vw - 10rem); }
+.asc-jeu.asc-liaison { max-width: min(72rem, 100vw - 8rem); }
 
 .asc-colonnes {
     position: relative;
@@ -1068,7 +1071,11 @@
 
 /* La colonne des portraits se resserre autour d'eux */
 .asc-colonnes:not(.sansImage) .asc-col:not(.droite) { flex: 0 0 auto; align-items: center; }
-.asc-colonnes:not(.sansImage) .asc-col:not(.droite) .asc-noeud { width: 5.6rem; }
+.asc-colonnes:not(.sansImage) .asc-col:not(.droite) .asc-noeud { width: 7rem; }
+
+/* Deux colonnes de portraits : la droite se resserre comme la gauche */
+.asc-colonnes.deuxImages .asc-col.droite { flex: 0 0 auto; align-items: center; }
+.asc-colonnes.deuxImages .asc-col.droite .asc-noeud { width: 7rem; }
 
 /* Un nœud à portrait se réduit à son image : il n'a plus de texte à porter,
    donc plus de raison de s'étendre. C'est ce qui faisait les bandelettes. */
@@ -1089,8 +1096,8 @@
 
 .asc-noeud img {
     flex: 0 0 auto;
-    width: 4.6rem;
-    height: 6.2rem;
+    width: 6rem;
+    height: 8rem;
     object-fit: cover;
     border-radius: 0.3rem;
 }
@@ -1106,9 +1113,12 @@
     white-space: nowrap;
 }
 
-/* Sans image, le texte est tout ce qu'il y a : il prend la place */
-.asc-colonnes.sansImage .asc-noeud { padding: 1rem 1.2rem; }
-.asc-colonnes.sansImage .asc-noeud-t { font-size: 1.3rem; text-align: center; }
+/* Sans image, le texte est tout ce qu'il y a : il prend la place, et les
+   deux colonnes s'écartent puisque rien ne les encombre. */
+.asc-colonnes.sansImage { gap: clamp(6rem, 16vw, 13rem); }
+.asc-colonnes.sansImage .asc-noeud { padding: 1.35rem 1.6rem; }
+.asc-colonnes.sansImage .asc-noeud-t { font-size: 1.35rem; text-align: center; }
+.asc-colonnes.sansImage .asc-col { gap: 0.9rem; }
 
 .asc-col.droite .asc-noeud { justify-content: center; }
 .asc-col.droite .asc-noeud-t { flex: 0 1 auto; text-align: center; }
@@ -1177,7 +1187,7 @@
     max-width: 92%;
     padding: 0.3rem 0.6rem;
     font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(0.85rem, 1.9vw, 1.3rem);
+    font-size: clamp(1rem, 2.4vw, 1.6rem);
     line-height: 1.1;
     letter-spacing: 0.06em;
     text-align: center;
@@ -1214,10 +1224,11 @@
     animation: ascFerme 0.5s ease-in-out infinite alternate;
 }
 
-.asc-grille.bloquee .asc-vignette img {
-    filter: saturate(0.15) brightness(0.4);
-    transition: filter 0.25s ease;
-}
+/* Le contour part avec la même douceur qu'il est venu */
+.asc-grille:not(.bloquee) { animation: none; }
+
+.asc-vignette img { transition: box-shadow 0.25s ease, filter 0.35s ease; }
+.asc-grille.bloquee .asc-vignette img { filter: saturate(0.15) brightness(0.4); }
 
 /* La pulsation reste lente : un clignotement rapide punirait l'œil en plus
    de la main, alors qu'on a seulement voulu aller trop vite. */

@@ -7,7 +7,7 @@ const ASCENSION_DATA = require('./ascensiondata.json');
 // Cliquer au hasard sur les vingt-quatre cartes battait le jeu. Une erreur
 // ferme donc la grille deux secondes — cote serveur, sinon un rechargement
 // suffirait a s en affranchir.
-const PENALITE_MS = 2000;
+const PENALITE_MS = 1000;
 
 const GAME_TYPES = [
     'guess',      // Devine le perso (5 images, tape les noms)

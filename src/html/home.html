@@ -845,7 +845,6 @@
                                         </template>
                                     </div>
 
-                                    <span class="asc-aide">Glisse les arcs pour les remettre dans l'ordre</span>
                                 </div>
 
                                 <!-- ── Liaison ── -->
@@ -856,7 +855,9 @@
                                     <!-- Deux colonnes reliées par de vrais traits : ils se
                                          tracent d'un bout à l'autre, et se distinguent grâce à
                                          leur courbe — des droites voisines se confondraient. -->
-                                    <div class="asc-colonnes" :class="{ sansImage: !asc.data.left[0].img }">
+                                    <div class="asc-colonnes"
+                                         :class="{ sansImage: !asc.data.left[0].img,
+                                                   deuxImages: asc.data.left[0].img && asc.data.right[0].img }">
                                         <svg class="asc-traits" aria-hidden="true">
                                             <path v-for="t in asc.traits" :key="t.id" :d="t.d"
                                                   :class="{ faux: t.faux }" />
@@ -878,12 +879,16 @@
                                         </div>
 
                                         <div class="asc-col droite">
+                                            <!-- Rivaux, couples, doublages : le serveur envoie aussi
+                                                 le portrait de droite. Sans lui, on reliait un visage
+                                                 à un nom, ce qui n'est pas le même exercice. -->
                                             <button class="asc-noeud val" v-for="d in asc.data.right" :key="d.id"
                                                     :id="'lien-d-' + d.id"
-                                                    :class="{ lie: lieA(d.id) }"
+                                                    :class="{ lie: lieA(d.id), avecImage: d.img }"
                                                     @click="poserDroite(d.id)">
                                                 <span class="asc-point"></span>
-                                                <span class="asc-noeud-t">{{ d.value }}</span>
+                                                <img v-if="d.img" :src="'/ascensionpic/' + d.img" alt="" draggable="false">
+                                                <span class="asc-noeud-t" v-if="!d.img">{{ d.value }}</span>
                                             </button>
                                         </div>
                                     </div>
@@ -903,8 +908,6 @@
                                         <button class="asc-lettre" v-for="j in asc.reserve" :key="j.i"
                                                 @click="poserLettre(j)">{{ j.l }}</button>
                                     </div>
-
-                                    <span class="asc-aide">Clique ou tape les lettres</span>
                                 </div>
 
                                 <!-- ── Wordle ── -->
@@ -933,7 +936,6 @@
                                         </div>
                                     </div>
 
-                                    <span class="asc-aide">{{ asc.essais.length }} essai<span v-if="asc.essais.length > 1">s</span></span>
                                 </div>
 
                                 <!-- Les sept types ont leur écran. Ce cas ne devrait

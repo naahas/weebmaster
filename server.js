@@ -1177,6 +1177,10 @@ app.get('/prototypes/ascension-tour', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-ascension-tour.html');
 });
 
+app.get('/prototypes/ascension-liaison', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-ascension-liaison.html');
+});
+
 app.get('/prototypes/rush-timer', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-rush-timer.html');
 });
