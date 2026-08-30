@@ -4,6 +4,11 @@
 
 const ASCENSION_DATA = require('./ascensiondata.json');
 
+// Cliquer au hasard sur les vingt-quatre cartes battait le jeu. Une erreur
+// ferme donc la grille deux secondes — cote serveur, sinon un rechargement
+// suffirait a s en affranchir.
+const PENALITE_MS = 2000;
+
 const GAME_TYPES = [
     'guess',      // Devine le perso (5 images, tape les noms)
     'target',     // Cible (30 persos, 5 consignes "clique sur X")
@@ -682,6 +687,7 @@ function startPlayerFloor(gameState, io, playerId, floorIndex) {
     if (!pp.guessProgress[floorIndex]) pp.guessProgress[floorIndex] = new Set();
     // 🆕 Reset le tracking Intruder pour ce nouvel étage
     pp.intruderFound = null;
+    pp.bloqueJusqua = 0;
     
     if (pp.floorTimer) {
         clearTimeout(pp.floorTimer);
@@ -1135,6 +1141,9 @@ function getAscensionStateForClient(gameState, playerId) {
         playerProgress: getPlayerProgressForClient(ascension),
         myValidatedGuesses: myValidatedGuesses,
         myGuessJokerUsed: myGuessJokerUsed,
+        // La penalite survit au rechargement : sans cette echeance, recharger
+        // suffisait a reprendre la main tout de suite.
+        bloqueJusqua: (pp && pp.bloqueJusqua) || 0,
     };
 }
 
@@ -1579,6 +1588,7 @@ function handleAscensionCheckTarget(gameState, io, socket, data) {
 
     if (!floorData || floorData.type !== 'target') return;
     if (!data || !data.characterId) return;
+    if (pp.bloqueJusqua && Date.now() < pp.bloqueJusqua) return;
 
     if (typeof pp.targetProgress !== 'number') pp.targetProgress = 0;
 
@@ -1611,12 +1621,14 @@ function handleAscensionCheckTarget(gameState, io, socket, data) {
     } else {
         // Wrong → reset progress, ré-envoie le 1er target
         pp.targetProgress = 0;
+        pp.bloqueJusqua = Date.now() + PENALITE_MS;
         socket.emit('ascension-target-result', {
             correct: false,
             characterId: data.characterId,
             progress: 0,
             currentTarget: floorData.targets[0],
             isComplete: false,
+            bloqueJusqua: pp.bloqueJusqua,
         });
     }
 }
@@ -1643,6 +1655,7 @@ function handleAscensionCheckIntruder(gameState, io, socket, data) {
     
     if (!floorData || floorData.type !== 'intruder') return;
     if (!data || !data.characterId) return;
+    if (pp.bloqueJusqua && Date.now() < pp.bloqueJusqua) return;
     
     const characterId = data.characterId;
     const targetSet = new Set(floorData.targetIds);
@@ -1684,9 +1697,11 @@ function handleAscensionCheckIntruder(gameState, io, socket, data) {
             advancePlayerToNextFloor(gameState, io, player.playerId, true);
         }
     } else {
-        // Mauvaise carte : pas de pénalité, on signale juste l'erreur
+        // Mauvaise carte : la grille se ferme deux secondes
+        pp.bloqueJusqua = Date.now() + PENALITE_MS;
         socket.emit('ascension-intruder-result', {
             correct: false,
+            bloqueJusqua: pp.bloqueJusqua,
             characterId,
             foundCount: pp.intruderFound.size,
             totalTargets: floorData.totalTargets,

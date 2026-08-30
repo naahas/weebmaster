@@ -1202,3 +1202,32 @@
     75%  { transform: translate(-50%, -50%) rotate(-7deg) scale(1.04); }
     100% { opacity: 1; transform: translate(-50%, -50%) rotate(-7deg) scale(1); }
 }
+
+/* ══════════ La grille fermée après une erreur ══════════
+   Cliquer les vingt-quatre cartes d'affilée battait le jeu. Une erreur ferme
+   donc la grille deux secondes. Le verrou est tenu par le serveur — ce qui
+   suit n'en est que la mise en scène, pour qu'on comprenne pourquoi les clics
+   ne répondent plus. */
+.asc-grille.bloquee {
+    pointer-events: none;
+    border-radius: 0.6rem;
+    animation: ascFerme 0.5s ease-in-out infinite alternate;
+}
+
+.asc-grille.bloquee .asc-vignette img {
+    filter: saturate(0.15) brightness(0.4);
+    transition: filter 0.25s ease;
+}
+
+/* La pulsation reste lente : un clignotement rapide punirait l'œil en plus
+   de la main, alors qu'on a seulement voulu aller trop vite. */
+@keyframes ascFerme {
+    from {
+        box-shadow: 0 0 0 0.14rem rgba(255, 90, 90, 0.35),
+                    0 0 1.4rem rgba(255, 90, 90, 0.12);
+    }
+    to {
+        box-shadow: 0 0 0 0.14rem rgba(255, 90, 90, 0.85),
+                    0 0 2.4rem rgba(255, 90, 90, 0.32);
+    }
+}

@@ -779,7 +779,7 @@
                                         </span>
                                     </div>
 
-                                    <div class="asc-grille">
+                                    <div class="asc-grille" :class="{ bloquee: ascBloque }">
                                         <button class="asc-vignette" v-for="p in asc.data.characters" :key="p.id"
                                                 :class="{ trouve: ascTrouve(p.id), rate: asc.faux === p.id }"
                                                 @click="cliquerCible(p.id)">
@@ -803,7 +803,7 @@
                                         </span>
                                     </div>
 
-                                    <div class="asc-grille">
+                                    <div class="asc-grille" :class="{ bloquee: ascBloque }">
                                         <button class="asc-vignette" v-for="p in asc.data.characters" :key="p.id"
                                                 :class="{ trouve: ascTrouve(p.id), rate: asc.faux === p.id }"
                                                 :disabled="ascTrouve(p.id)"

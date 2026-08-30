@@ -61,6 +61,7 @@ createApp({
                 gauche: null,
                 mauvais: [],
                 traits: [],      // les courbes tracées entre les deux colonnes
+                bloqueA: 0,      // échéance de la pénalité, décidée par le serveur
 
                 fentes: [],
                 reserve: [],
@@ -960,6 +961,12 @@ createApp({
         },
 
         // Ma place, pour la mettre en avant sans avoir à la chercher
+        // Vrai tant que la pénalité court. Recalculé au rendu, il suffit à
+        // fermer la grille — le serveur, lui, refuse pour de bon.
+        ascBloque() {
+            return !!this.asc.bloqueA && this.asc.bloqueA > Date.now();
+        },
+
         ascMonEtage() {
             return Math.min(this.asc.total || 15, (this.asc.etage || 0) + 1);
         },
@@ -1370,6 +1377,7 @@ createApp({
             this.asc.faux = null;
             this.asc.cible = d.currentTarget || null;
             this.asc.avance = 0;
+            this.asc.bloqueA = 0;
             // On arrive prêt à écrire, sans avoir à viser un champ
             if (d.type === 'guess' && (d.characters || []).length) {
                 this.champSuivantGuess(d.characters[d.characters.length - 1].id);
@@ -1382,6 +1390,17 @@ createApp({
             if (!d) return 0;
             const total = d.totalTargets || d.totalToGuess || 0;
             return Math.max(0, total - this.asc.trouves.length);
+        },
+
+        // Le décompte de la pénalité tourne côté client à partir de l'échéance :
+        // un message par dixième de seconde pour trente joueurs serait absurde.
+        lancerBlocageAsc(finA) {
+            this.asc.bloqueA = finA || 0;
+            clearTimeout(this._ascBloqueT);
+            if (!finA) return;
+            const reste = finA - Date.now();
+            if (reste <= 0) { this.asc.bloqueA = 0; return; }
+            this._ascBloqueT = setTimeout(() => { this.asc.bloqueA = 0; }, reste);
         },
 
         ascTrouve(id) {
@@ -1434,14 +1453,17 @@ createApp({
         },
 
         // ── Cible ──
+        // La grille est fermée le temps de la pénalité. Le garde est ici pour
+        // l'œil ; c'est le serveur qui refuse vraiment, sinon un rechargement
+        // rendrait la main aussitôt.
         cliquerCible(id) {
-            if (!this.socket) return;
+            if (!this.socket || this.ascBloque) return;
             this.socket.emit('ascension-check-target', { characterId: id });
         },
 
         // ── Intrus ──
         cliquerIntrus(id) {
-            if (!this.socket || this.ascTrouve(id)) return;
+            if (!this.socket || this.ascTrouve(id) || this.ascBloque) return;
             this.socket.emit('ascension-check-intruder', { characterId: id });
         },
 
@@ -4488,6 +4510,7 @@ createApp({
                     // Une erreur efface la série : la grille repart vierge
                     this.asc.trouves = [];
                     this.ascRater(data.characterId);
+                    this.lancerBlocageAsc(data.bloqueJusqua);
                 }
             });
 
@@ -4498,6 +4521,7 @@ createApp({
                     if (!data.alreadyFound) this.playSound(this.sounds.ascJuste);
                 } else {
                     this.ascRater(data.characterId);
+                    this.lancerBlocageAsc(data.bloqueJusqua);
                 }
             });
 
@@ -4572,6 +4596,8 @@ createApp({
                 // Le serveur garde les noms déjà trouvés : on ne les redemande pas
                 if (f && ['guess', 'target', 'intruder'].indexOf(f.type) >= 0) {
                     this.prepararerGrille(f, data.myValidatedGuesses);
+                    // Recharger ne rend pas la main : le serveur garde l'échéance
+                    this.lancerBlocageAsc(data.bloqueJusqua);
                 }
                 if (f && f.type === 'order') this.prepararerOrdre(f);
                 if (f && f.type === 'match') this.prepararerLiaison(f);
