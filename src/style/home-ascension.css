@@ -716,12 +716,96 @@
 }
 
 .asc-portrait {
+    position: relative;
     flex: 1 1 0;
     min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 0.55rem;
     max-width: 13.5rem;
+}
+
+/* ── L'ampoule ──
+   Un joker par étage, coiffant chaque portrait. Elle se remplit d'un tiers à
+   chaque nom trouvé ; pleine, elle livre celui qu'elle coiffe. Elle déborde du
+   cadre plutôt que de prendre une rangée : autrement la grille sautait d'un
+   cran quand toutes s'éteignent. */
+.asc-ampoule {
+    position: absolute;
+    top: -1.7rem;
+    left: 50%;
+    z-index: 2;
+    width: 1.65rem;
+    height: 2.4rem;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: default;
+    opacity: 0.5;
+    transform: translateX(-50%);
+    transition: opacity 0.3s ease, transform 0.25s ease;
+}
+
+.asc-ampoule svg { width: 100%; height: 100%; overflow: visible; }
+
+.asc-ampoule-verre {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.3);
+    stroke-width: 3;
+}
+
+/* Le liquide monte par paliers, mais il monte : d'un palier à l'autre on voit
+   la charge grimper, ce qu'un saut sec n'aurait pas dit. */
+.asc-ampoule-jus {
+    fill: rgba(255, 215, 0, 0.5);
+    transition: y 0.45s cubic-bezier(0.3, 0.9, 0.3, 1),
+                height 0.45s cubic-bezier(0.3, 0.9, 0.3, 1),
+                fill 0.3s ease;
+}
+
+.asc-ampoule-fil {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.32);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+}
+
+.asc-ampoule-culot {
+    stroke: rgba(255, 255, 255, 0.28);
+    stroke-width: 3;
+    stroke-linecap: round;
+}
+
+/* Pleine : elle s'allume et respire — c'est le moment de s'en servir */
+.asc-ampoule.prete {
+    cursor: pointer;
+    opacity: 1;
+    animation: ascAmpoule 1.9s ease-in-out infinite;
+}
+
+.asc-ampoule.prete .asc-ampoule-jus { fill: #ffd700; }
+.asc-ampoule.prete .asc-ampoule-verre { stroke: rgba(255, 215, 0, 0.85); }
+.asc-ampoule.prete .asc-ampoule-fil { stroke: rgba(70, 50, 0, 0.6); }
+.asc-ampoule.prete svg { filter: drop-shadow(0 0 0.4rem rgba(255, 215, 0, 0.6)); }
+.asc-ampoule.prete:hover { transform: translateX(-50%) scale(1.2); }
+
+@keyframes ascAmpoule {
+    0%, 100% { filter: brightness(0.9); }
+    50%      { filter: brightness(1.25); }
+}
+
+/* On s'en sert : un éclat, puis toutes quittent la scène. C'est la seule fois
+   du jeu où l'on gagne quelque chose sans l'avoir trouvé — autant que ça se
+   voie. Placée après « prete » : à égalité de poids, c'est l'ordre qui tranche. */
+.asc-ampoule.casse {
+    pointer-events: none;
+    animation: ascAmpouleCasse 0.62s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+}
+
+@keyframes ascAmpouleCasse {
+    0%   { opacity: 1; transform: translateX(-50%) scale(1); }
+    20%  { opacity: 1; transform: translateX(-50%) scale(1.4); filter: brightness(2.6); }
+    100% { opacity: 0; transform: translateX(-50%) scale(0.45) rotate(16deg); }
 }
 
 .asc-portrait img {
@@ -953,6 +1037,7 @@
     .asc-jeu.asc-cible,
     .asc-jeu.asc-intrus { max-width: 100%; }
     .asc-portrait { width: clamp(4.2rem, 26vw, 6rem); }
+    .asc-ampoule { top: -1.25rem; width: 1.15rem; height: 1.7rem; }
     .asc-vise-n { font-size: 1.3rem; }
 }
 

@@ -9,6 +9,12 @@ const ASCENSION_DATA = require('./ascensiondata.json');
 // suffirait a s en affranchir.
 const PENALITE_MS = 1000;
 
+// L'ampoule de « Devine le perso » : un joker par étage, qui livre le nom d'un
+// portrait. Elle ne s'allume qu'au bout de trois bonnes réponses — plus tôt,
+// elle remplacerait le jeu au lieu de débloquer celui qui sèche sur un seul
+// visage. Le compte est tenu ici : le client ne fait que l'afficher.
+const SEUIL_JOKER_GUESS = 3;
+
 const GAME_TYPES = [
     'guess',      // Devine le perso (5 images, tape les noms)
     'target',     // Cible (30 persos, 5 consignes "clique sur X")
@@ -1110,6 +1116,7 @@ function getAscensionStateForClient(gameState, playerId) {
     let floorTimerEndTime = null;
     let floorData = null;
     let myValidatedGuesses = [];
+    let myValidatedNames = {};
     let myGuessJokerUsed = false;
 
     if (pp) {
@@ -1121,6 +1128,14 @@ function getAscensionStateForClient(gameState, playerId) {
         floorData = fd ? getFloorDataForClient(fd) : null;
         if (pp.guessProgress?.[currentFloor]) {
             myValidatedGuesses = Array.from(pp.guessProgress[currentFloor]);
+            // Le nom d'un portrait déjà tombé n'est plus un secret. Sans lui,
+            // recharger laissait son tampon vide — et l'ampoule aurait rendu
+            // un nom qui disparaissait au premier rafraîchissement.
+            if (fd && fd.type === 'guess') {
+                for (const c of fd.characters || []) {
+                    if (pp.guessProgress[currentFloor].has(c.id)) myValidatedNames[c.id] = c.name;
+                }
+            }
         }
         if (pp.guessJokerUsed?.[currentFloor]) {
             myGuessJokerUsed = true;
@@ -1140,6 +1155,7 @@ function getAscensionStateForClient(gameState, playerId) {
         floorData: floorData,
         playerProgress: getPlayerProgressForClient(ascension),
         myValidatedGuesses: myValidatedGuesses,
+        myValidatedNames: myValidatedNames,
         myGuessJokerUsed: myGuessJokerUsed,
         // La penalite survit au rechargement : sans cette echeance, recharger
         // suffisait a reprendre la main tout de suite.
@@ -1172,6 +1188,13 @@ function registerAscensionSocketHandlers(io, socket, resoudreSalon) {
     
     // 🆕 Validation incrémentale d'une seule guess (mini-jeu Guess)
     // Le client envoie {characterId, name} — le serveur répond {correct, characterId}
+    // L'ampoule de « Devine le perso » : le nom n'est livré qu'ici
+    socket.on('ascension-guess-joker', (data) => {
+        const gameState = resoudreSalon();
+        if (!gameState) return;
+        handleAscensionGuessJoker(gameState, io, socket, data);
+    });
+
     socket.on('ascension-check-guess', (data) => {
         const gameState = resoudreSalon();
         if (!gameState) return;
@@ -1383,6 +1406,54 @@ function handleAscensionCheckGuess(gameState, io, socket, data) {
             // 🆕 Avance immédiatement au floor suivant (avec délai pour l'animation du stamp PERFECT)
             advancePlayerToNextFloor(gameState, io, player.playerId, true);
         }
+    }
+}
+
+// L'ampoule : elle livre un nom, puis toutes s'éteignent pour cet étage.
+// Tout se vérifie ici — le seuil, l'unicité, l'appartenance du personnage à
+// l'étage — sinon un client bricolé s'en servirait cinq fois, ou d'entrée.
+function handleAscensionGuessJoker(gameState, io, socket, data) {
+    const ascension = gameState.ascension;
+    if (!ascension || !ascension.active) return;
+
+    const player = resolvePlayerFromSocket(gameState, socket);
+    if (!player) return;
+
+    const pp = ascension.playerProgress[player.playerId];
+    if (!pp || pp.validated) return;
+
+    const floorIndex = pp.floor;
+    const floorData = ascension.syncEpreuves
+        ? ascension.floorData[floorIndex]
+        : (pp.personalFloorData?.[floorIndex] || ascension.floorData[floorIndex]);
+
+    if (!floorData || floorData.type !== 'guess') return;
+    if (!data || !data.characterId) return;
+
+    // Une seule ampoule par étage
+    if (!pp.guessJokerUsed) pp.guessJokerUsed = {};
+    if (pp.guessJokerUsed[floorIndex]) return;
+
+    if (!pp.guessProgress) pp.guessProgress = {};
+    if (!pp.guessProgress[floorIndex]) pp.guessProgress[floorIndex] = new Set();
+    const trouves = pp.guessProgress[floorIndex];
+    if (trouves.size < SEUIL_JOKER_GUESS) return;
+
+    const character = floorData.characters.find(c => c.id === data.characterId);
+    if (!character || trouves.has(character.id)) return;
+
+    // Le nom part maintenant, et seulement maintenant : jamais d'avance, sinon
+    // il suffirait de lire ce que le serveur envoie au début de l'étage.
+    pp.guessJokerUsed[floorIndex] = true;
+    trouves.add(character.id);
+    socket.emit('ascension-guess-joker', { characterId: character.id, name: character.name });
+
+    // L'ampoule peut suffire à finir l'étage : c'est au serveur de le voir,
+    // le client n'a rien renvoyé qui ressemble à une réponse.
+    if (trouves.size >= floorData.totalToGuess) {
+        console.log(`🏔️ ✅ ${player.username} valide étage Guess ${floorIndex + 1} (ampoule)`);
+        socket.emit('ascension-answer-result', { correct: true, floor: pp.floor + 1 });
+        advancePlayerToNextFloor(gameState, io, player.playerId, true);
     }
 }
 

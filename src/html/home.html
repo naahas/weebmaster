@@ -747,6 +747,36 @@
                                     <div class="asc-portraits">
                                         <div class="asc-portrait" v-for="p in asc.data.characters" :key="p.id"
                                              :class="{ trouve: ascTrouve(p.id), rate: asc.faux === p.id }">
+                                            <!-- L'ampoule : un joker par étage. Elle se remplit d'un
+                                                 tiers à chaque portrait nommé ; pleine, elle livre le
+                                                 nom de celui qu'elle coiffe, et toutes éclatent. Le
+                                                 nom n'arrive du serveur qu'au moment du clic. -->
+                                            <button class="asc-ampoule" type="button"
+                                                    v-if="(!asc.jokerUse || asc.jokerCasse) && !ascTrouve(p.id)"
+                                                    :class="{ prete: asc.jokerCharge >= SEUIL_JOKER, casse: asc.jokerCasse }"
+                                                    :disabled="asc.jokerCharge < SEUIL_JOKER"
+                                                    :title="asc.jokerCharge >= SEUIL_JOKER
+                                                            ? 'Révèle ce nom — une seule fois par étage'
+                                                            : 'Nomme encore ' + (SEUIL_JOKER - asc.jokerCharge) + ' portrait(s) pour l\'allumer'"
+                                                    @click="utiliserJoker(p.id)">
+                                                <svg viewBox="0 0 64 96" aria-hidden="true">
+                                                    <defs>
+                                                        <clipPath :id="'ampoule-' + p.id">
+                                                            <path d="M22 8 Q22 0 32 0 Q42 0 42 8 Q56 14 56 30 Q56 44 46 54 L46 70 Q46 74 42 74 L22 74 Q18 74 18 70 L18 54 Q8 44 8 30 Q8 14 22 8 Z" />
+                                                        </clipPath>
+                                                    </defs>
+                                                    <g :clip-path="'url(#ampoule-' + p.id + ')'">
+                                                        <rect class="asc-ampoule-jus" x="0" width="64"
+                                                              :y="jokerJus.y" :height="jokerJus.h" />
+                                                    </g>
+                                                    <path class="asc-ampoule-verre" d="M22 8 Q22 0 32 0 Q42 0 42 8 Q56 14 56 30 Q56 44 46 54 L46 70 Q46 74 42 74 L22 74 Q18 74 18 70 L18 54 Q8 44 8 30 Q8 14 22 8 Z" />
+                                                    <path class="asc-ampoule-fil"
+                                                          d="M26 36 Q32 28 38 36 Q32 44 26 36 Z M30 44 L30 50 M34 44 L34 50" />
+                                                    <line class="asc-ampoule-culot" x1="22" y1="80" x2="42" y2="80" />
+                                                    <line class="asc-ampoule-culot" x1="24" y1="86" x2="40" y2="86" />
+                                                    <line class="asc-ampoule-culot" x1="26" y1="92" x2="38" y2="92" />
+                                                </svg>
+                                            </button>
                                             <span class="asc-vitre">
                                                 <img :src="'/ascensionpic/' + p.img" alt="" draggable="false">
                                                 <!-- Le tampon claque sur le portrait au moment où il

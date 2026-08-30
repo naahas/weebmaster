@@ -50,6 +50,12 @@ createApp({
                 cible: null,     // ce qu'il faut cliquer maintenant (target)
                 avance: 0,       // combien de cibles d'affilée (target)
 
+                // L'ampoule de « Devine le perso » : sa charge, si elle a
+                // servi, et l'instant où toutes éclatent
+                jokerCharge: 0,
+                jokerUse: false,
+                jokerCasse: false,
+
                 // Ordre : la suite en cours, et l'arc qu'on déplace
                 rang: [],
                 enAttente: [],
@@ -975,6 +981,19 @@ createApp({
             return Math.min(this.asc.total || 15, (this.asc.etage || 0) + 1);
         },
 
+        // Combien de portraits nommés il faut pour allumer l'ampoule. Le
+        // serveur tient le même seuil et refuse en dessous : celui-ci ne sert
+        // qu'à l'affichage. Les deux doivent bouger ensemble.
+        SEUIL_JOKER() { return 3; },
+
+        // Le niveau du liquide dans le verre, en unités du dessin. Le verre
+        // va de 0 à 74 : un tiers par portrait nommé.
+        jokerJus() {
+            const part = Math.min(this.SEUIL_JOKER, this.asc.jokerCharge || 0);
+            const h = Math.round(74 * part / this.SEUIL_JOKER);
+            return { y: 74 - h, h: h };
+        },
+
         // Le personnage qui accompagne la question. Il occupe la place que
         // prendra le classement : les deux ne coexistent jamais, l'un s'efface
         // quand l'autre arrive.
@@ -1338,7 +1357,7 @@ createApp({
                 match: (function () {
                     const par = {
                         char_anime: 'Relie chaque personnage à son anime',
-                        couples: 'Relie chaque personnage à celui qu\'il aime',
+                        couples: 'Relie chaque couple de personnages',
                         techniques: 'Relie chaque personnage à sa technique',
                         weapons: 'Relie chaque personnage à son arme',
                         rivals: 'Relie chaque personnage à son rival',
@@ -1375,10 +1394,17 @@ createApp({
         },
 
         // ── Les trois épreuves à portraits ──
-        prepararerGrille(d, dejaTrouves) {
+        // Trois arguments de plus qu'à l'arrivée d'un étage : ils ne servent
+        // qu'à la reprise, où le serveur rend ce qu'on avait déjà trouvé.
+        prepararerGrille(d, dejaTrouves, noms, jokerUse) {
             this.asc.trouves = (dejaTrouves || []).slice();
             this.asc.saisies = {};
-            this.asc.noms = {};
+            this.asc.noms = Object.assign({}, noms || {});
+            // L'ampoule se recharge à la reprise : trois bonnes réponses
+            // restent trois bonnes réponses, quel que soit l'onglet.
+            this.asc.jokerCharge = Math.min(this.SEUIL_JOKER, this.asc.trouves.length);
+            this.asc.jokerUse = !!jokerUse;
+            this.asc.jokerCasse = false;
             this.asc.faux = null;
             this.asc.cible = d.currentTarget || null;
             this.asc.avance = 0;
@@ -1441,6 +1467,20 @@ createApp({
             }
             this._ascDernierEnvoi = maintenant;
             this.socket.emit('ascension-check-guess', { characterId: id, name: nom });
+        },
+
+        // ── L'ampoule ──
+        // Un joker par étage : elle livre le nom d'un portrait, puis toutes
+        // s'éteignent. Elle ne s'allume qu'au bout de trois bonnes réponses,
+        // sinon elle remplacerait le jeu au lieu de débloquer celui qui sèche
+        // sur un seul visage. Le serveur tient le même compte — ce qui suit
+        // n'est que ce qu'on en montre.
+        utiliserJoker(id) {
+            if (!this.socket || this.asc.jokerUse) return;
+            if (this.asc.jokerCharge < this.SEUIL_JOKER || this.ascTrouve(id)) return;
+            // Fermée d'emblée : un second clic partirait avant la réponse
+            this.asc.jokerUse = true;
+            this.socket.emit('ascension-guess-joker', { characterId: id });
         },
 
         // Le champ suivant prend la main dès qu'un portrait tombe : on ne
@@ -4599,7 +4639,14 @@ createApp({
             this.socket.on('ascension-guess-result', (data) => {
                 if (!data || !data.characterId) return;
                 if (data.correct) {
-                    if (!this.ascTrouve(data.characterId)) this.asc.trouves.push(data.characterId);
+                    const nouveau = !this.ascTrouve(data.characterId);
+                    if (nouveau) this.asc.trouves.push(data.characterId);
+                    // L'ampoule se remplit d'un tiers par portrait nommé, et
+                    // sonne une fois arrivée en haut.
+                    if (nouveau && !this.asc.jokerUse && this.asc.jokerCharge < this.SEUIL_JOKER) {
+                        this.asc.jokerCharge++;
+                        if (this.asc.jokerCharge >= this.SEUIL_JOKER) this.playSound(this.sounds.ascCharge);
+                    }
                     // Le nom trouvé est gardé avant d'être effacé du champ :
                     // c'est lui que le tampon porte, et il reste ainsi lisible
                     // jusqu'à la fin de l'étage.
@@ -4610,6 +4657,22 @@ createApp({
                 }
                 // Un nom faux ne dit rien : on tape encore, la réponse viendra.
                 // Secouer à chaque lettre rendrait la saisie insupportable.
+            });
+
+            // L'ampoule a parlé : le nom arrive maintenant, jamais avant —
+            // envoyé au début de l'étage, il aurait suffi de lire le trafic.
+            this.socket.on('ascension-guess-joker', (data) => {
+                if (!data || !data.characterId) return;
+                this.asc.jokerUse = true;
+                this.asc.jokerCasse = true;
+                if (!this.ascTrouve(data.characterId)) this.asc.trouves.push(data.characterId);
+                this.asc.noms[data.characterId] = data.name;
+                this.asc.saisies[data.characterId] = '';
+                this.playSound(this.sounds.ascJoker);
+                this.champSuivantGuess(data.characterId);
+                // Les autres ampoules éclatent, puis quittent la scène
+                clearTimeout(this._ascJokerT);
+                this._ascJokerT = setTimeout(() => { this.asc.jokerCasse = false; }, 620);
             });
 
             // Cible : le serveur renvoie la suivante, ou remet le compteur à zéro.
@@ -4718,7 +4781,8 @@ createApp({
                 if (f && f.type === 'wordle') this.prepararerWordle(f);
                 // Le serveur garde les noms déjà trouvés : on ne les redemande pas
                 if (f && ['guess', 'target', 'intruder'].indexOf(f.type) >= 0) {
-                    this.prepararerGrille(f, data.myValidatedGuesses);
+                    this.prepararerGrille(f, data.myValidatedGuesses,
+                                          data.myValidatedNames, data.myGuessJokerUsed);
                     // Recharger ne rend pas la main : le serveur garde l'échéance
                     this.lancerBlocageAsc(data.bloqueJusqua);
                 }
@@ -5918,6 +5982,10 @@ createApp({
                 ascTic: this.createPreloadedSound('click.mp3'),
                 ascPartir: this.createPreloadedSound('boost.mp3'),
                 ascPas: this.createPreloadedSound('step.mp3'),
+                // L'ampoule : un carillon quand elle est pleine, un éclat
+                // quand on la casse.
+                ascCharge: this.createPreloadedSound('fusion.mp3'),
+                ascJoker: this.createPreloadedSound('bonus1.mp3'),
             };
             
             // 💣 Son tictac en boucle (instance unique, pas cloné)
