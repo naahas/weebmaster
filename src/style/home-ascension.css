@@ -511,11 +511,29 @@
     }
 
     .asc-epreuve { padding: 0; }
-    /* Deux pixels et demi au bord extreme de l ecran : le temps qui s ecoule
-       ne se voyait pas. Il s epaissit, et descend sous l encoche. */
+    /* ── Le temps qui s ecoule ──
+       Deux pixels et demi d un rail a cinq pour cent d opacite, au bord extreme
+       de l ecran : sur telephone on ne le voyait tout simplement pas, et une
+       fois la barre a moitie vidange il ne restait rien a remarquer. Elle
+       triple d epaisseur, son rail devient perceptible meme vide, et elle
+       descend sous l encoche — sous laquelle « viewport-fit=cover » la fait
+       maintenant passer. */
     .asc-jauge {
         top: env(safe-area-inset-top, 0px);
-        height: 0.34rem;
+        height: 0.55rem;
+        background: rgba(255, 255, 255, 0.12);
+        box-shadow: inset 0 -0.06rem 0 rgba(0, 0, 0, 0.4);
+    }
+
+    .asc-jauge-fil {
+        border-radius: 0 0.28rem 0.28rem 0;
+        background: linear-gradient(90deg, rgba(140, 180, 255, 0.85), #a8c8ff);
+        box-shadow: 0 0 1rem rgba(140, 180, 255, 0.7);
+    }
+
+    .asc-jauge.urgence .asc-jauge-fil {
+        background: linear-gradient(90deg, rgba(255, 110, 110, 0.9), #ff7676);
+        box-shadow: 0 0 1.1rem rgba(255, 90, 90, 0.8);
     }
 
     .asc-etage { top: calc(0.7rem + env(safe-area-inset-top, 0px)); left: 0.8rem; }
