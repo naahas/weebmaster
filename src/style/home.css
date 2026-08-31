@@ -7849,10 +7849,16 @@ body.game-active:has(.poll-game-container) #particles-js {
         max-width: 60%;
     }
 
-    /* Tengen est le plus elance : cale a droite comme les autres, il serrait
-       le bord. On l ecarte, « right » se comptant depuis la droite du panneau. */
+    /* Nagi remplace Tengen, et change tout le raisonnement : l un etait tres
+       elance (0,56) et serrait le bord droit, qu il fallait ecarter ; l autre
+       est presque carre (1,04), comme Kenshin. C est donc sa largeur qui borne
+       l echelle et non sa hauteur, et sans les deux bornes il rendrait plus
+       petit que ses voisins sans jamais deborder. Meme traitement que Kenshin,
+       aux memes valeurs. */
     .v2-mode-char.char-rush {
-        right: 13%;
+        height: 132%;
+        max-width: 76%;
+        right: -10%;
     }
 
     /* Esdeath est la plus large des quatre (1,26 contre 1,00 / 0,84 / 0,56) :

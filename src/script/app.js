@@ -116,7 +116,7 @@ createApp({
                   desc: "Quiz QCM. Solo ou en deux camps, vies ou points, séries au choix." },
                 { id: 'bombanime', name: 'BombAnime', kind: 'Solo',   players: '15', img: 'lambo3.png',
                   desc: "La bombe tourne. Cite un perso avant qu'elle explose." },
-                { id: 'rush',      name: 'Rush',      kind: 'Solo',   players: '∞',  img: 'tengen2.png',
+                { id: 'rush',      name: 'Rush',      kind: 'Solo',   players: '∞',  img: 'nagi.png',
                   desc: "Un portrait, un nom. La plus longue serie gagne." },
                 { id: 'ascension', name: 'Ascension', kind: 'Solo',   players: '∞',  img: 'esdeath.png',
                   desc: "Une tour d'étages, chacun à son rythme. Le premier au sommet gagne." },
