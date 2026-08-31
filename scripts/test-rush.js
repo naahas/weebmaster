@@ -1,7 +1,7 @@
 // ⚡ Rush : réglages du salon, séquence commune, validation sans touche Entrée,
 // série qui casse, et classement en fin de manche.
 const { io } = require('socket.io-client');
-const data = require('../rushdata.json');
+
 const BASE = 'http://localhost:' + (process.env.TEST_PORT || process.env.PORT || 7000);
 const MDP = require("./mdp-hote");   // mesure temporaire : ouverture du mode Classique
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
@@ -23,7 +23,13 @@ const check = (l, ok, extra) => { console.log(`${ok ? '✅' : '❌'} ${l}${extra
 
 // Retrouve le personnage affiché à partir de son image : c'est tout ce que le
 // serveur envoie, il ne divulgue jamais le nom.
-const persoParImage = (img) => data.personnages.find(p => p.img === img);
+// L image passe sous jeton : son nom de fichier disait la reponse. Le nom du
+// portrait en cours se demande donc au serveur, par une porte refusee en
+// production et fermee par le jeton d hote.
+const nomDuPortrait = async (playerId) => {
+    const r = await post('/admin/rush/solution', { playerId });
+    return r.body ? r.body.nom : r.nom;
+};
 
 (async () => {
     await post('/admin/toggle-game', { lobbyMode: 'rush' });
@@ -80,13 +86,13 @@ const persoParImage = (img) => data.personnages.find(p => p.img === img);
         a.vu.portraits[0].portrait.img + ' / ' + b.vu.portraits[0].portrait.img);
 
     // ── La saisie, sans touche Entrée ──
-    const p1 = persoParImage(a.vu.portraits[0].portrait.img);
-    a.s.emit('rush-saisie', { texte: p1.nom.slice(0, 2) });   // début du nom : rien ne doit bouger
+    const nom1 = await nomDuPortrait(a.id);
+    a.s.emit('rush-saisie', { texte: nom1.slice(0, 2) });   // début du nom : rien ne doit bouger
     await wait(250);
     check('un nom incomplet ne valide rien', a.vu.portraits.length === 1,
         a.vu.portraits.length + ' portrait(s)');
 
-    a.s.emit('rush-saisie', { texte: p1.nom.toUpperCase() + ' ' });  // casse et espace ignorés
+    a.s.emit('rush-saisie', { texte: nom1.toUpperCase() + ' ' });  // casse et espace ignorés
     await wait(300);
     check('le nom complet valide, quelle que soit la casse', a.vu.portraits.length === 2,
         a.vu.portraits.length + ' portrait(s)');
@@ -94,8 +100,8 @@ const persoParImage = (img) => data.personnages.find(p => p.img === img);
 
     // Deux de plus, pour une série de 3
     for (let i = 0; i < 2; i++) {
-        const perso = persoParImage(a.vu.portraits[a.vu.portraits.length - 1].portrait.img);
-        a.s.emit('rush-saisie', { texte: perso.nom });
+        const nom = await nomDuPortrait(a.id);
+        a.s.emit('rush-saisie', { texte: nom });
         await wait(300);
     }
     const dernier = a.vu.portraits[a.vu.portraits.length - 1];

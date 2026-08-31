@@ -113,6 +113,8 @@ function getCharacterImage(name, serie) {
 // 🏔️ Ascension : le moteur vit dans son propre fichier. Il ne connaît ni
 // Supabase ni les autres modes, et prend l'état du salon en paramètre.
 const ascension = require('./server-ascension.js');
+const jetons = require('./jetons-images.js');
+jetons.recenser('rushpic');
 
 // Les barèmes que l'hôte peut choisir. Quinze étages à trente secondes font
 // une partie d'environ sept minutes pour qui ne bloque nulle part.
@@ -529,13 +531,13 @@ app.get('/game/state', (req, res) => {
 // ============================================
 // Le code (html, css, js) garde une revalidation par ETag : un déploiement doit
 // être vu tout de suite, et le 304 ne coûte que quelques octets.
-// Les images d'Ascension passent par un jeton : leur nom de fichier disait la
-// reponse — « sora.png » sous un portrait qu'on doit nommer. Le serveur seul
-// sait le retourner en chemin (voir « urlImage » dans server-ascension.js).
-app.get('/ascpic/:jeton', (req, res) => {
-    const relatif = ascension.cheminImage(req.params.jeton);
-    if (!relatif) return res.status(404).end();
-    res.sendFile(path.join(__dirname, 'src', 'img', 'ascensionpic', relatif), { maxAge: '30d' });
+// Les images des modes où l'image EST la question passent par un jeton : leur
+// nom de fichier disait la réponse — « naruto.png » sous un portrait qu'on doit
+// nommer. Le serveur seul sait le retourner en chemin (voir jetons-images.js).
+app.get('/pic/:jeton', (req, res) => {
+    const fichier = jetons.fichierPourJeton(req.params.jeton);
+    if (!fichier) return res.status(404).end();
+    res.sendFile(fichier, { maxAge: '30d' });
 });
 
 app.use(express.static('src/html'));
@@ -2497,6 +2499,23 @@ app.post('/admin/ascension/solution', (req, res) => {
     const s = ascension.solutionEtage(req.room, req.body && req.body.playerId);
     if (!s) return res.status(404).json({ error: 'Aucun etage en cours pour ce joueur' });
     res.json(s);
+});
+
+// 🧪 Le nom du portrait qu un joueur a sous les yeux, pour les suites
+// automatisees. Comme pour la tour : depuis que l image passe sous jeton, aucun
+// test ne peut plus deviner ce qu il faut taper — et c est bien le but.
+// Refusee en production ; le jeton d hote est deja exige par le garde /admin.
+app.post('/admin/rush/solution', (req, res) => {
+    if (process.env.NODE_ENV === 'production') return res.status(404).end();
+    const gameState = req.room;
+    const etat = gameState.rush && gameState.rush.joueurs.get(req.body && req.body.playerId);
+    if (!etat) return res.status(404).json({ error: 'Aucune manche en cours pour ce joueur' });
+    const sequence = gameState.rush.sequencePartagee
+        ? gameState.rush.sequence
+        : (gameState.rush.sequencesJoueur.get(req.body.playerId) || []);
+    const perso = rushPersoParId(sequence[etat.curseur]);
+    if (!perso) return res.status(404).json({ error: 'Aucun portrait a cette position' });
+    res.json({ nom: perso.nom, position: etat.curseur });
 });
 
 // Passer à la question suivante
@@ -5321,7 +5340,11 @@ function rushPortrait(gameState, playerId) {
     const id = sequence[etat.curseur];
     if (!id) return null;
     const perso = rushPersoParId(id);
-    return perso ? { img: perso.img, anime: perso.anime, position: etat.curseur } : null;
+    // Ni le nom du fichier, ni l anime. Le premier disait la reponse en toutes
+    // lettres — « naruto.png » sous le portrait a nommer —, le second la reduisait
+    // a une poignee de candidats. Et le client n affichait jamais l anime : il
+    // partait pour rien.
+    return perso ? { img: jetons.urlImage('rushpic', perso.img), position: etat.curseur } : null;
 }
 
 function rushClassement(gameState) {

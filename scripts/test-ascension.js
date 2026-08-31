@@ -83,7 +83,7 @@ for (const [type, champs] of Object.entries(secrets)) {
 // nom du fichier image, et les identifiants — a la Liaison, une paire portait
 // le meme des deux cotes, le fil se lisait donc sans regarder l'ecran.
 const parlant = (v) => typeof v === 'string' && /[a-z]{4}/i.test(v);
-const jetonValide = (u) => /^\/ascpic\/[0-9a-f]{20}$/.test(String(u));
+const jetonValide = (u) => /^\/pic\/[0-9a-f]{20}$/.test(String(u));
 
 {
     const c = I.getFloorDataForClient(I.generateFloorData('intruder', {}));

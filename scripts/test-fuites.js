@@ -103,6 +103,45 @@ function salon() {
         await s.post('/admin/toggle-game', {});
     }
 
+    // ══════════ Le Rush ══════════
+    // Même famille que la tour : l'image EST la question, donc son nom de
+    // fichier ne doit pas la dire. L'anime non plus — il réduisait la réponse à
+    // une poignée de candidats, et le client ne l'affichait même pas.
+    {
+        const s = salon();
+        await s.post('/admin/toggle-game', { lobbyMode: 'rush' });
+        const k = io(BASE, { transports: ['websocket'] });
+        await new Promise(r => k.on('connect', r));
+        let portrait = null;
+        k.on('rush-portrait', (d) => { if (!portrait) portrait = d.portrait; });
+        k.emit('register-authenticated', { playerId: 'fr' + process.pid, username: 'FuiteR' });
+        await wait(150);
+        k.emit('join-lobby', { playerId: 'fr' + process.pid, username: 'FuiteR', code: s.code });
+        await wait(400);
+        await s.post('/admin/start-game', {});
+        for (let i = 0; i < 40 && !portrait; i++) await wait(200);
+
+        check('un portrait de Rush arrive', !!portrait,
+            portrait ? JSON.stringify(portrait) : '(aucun)');
+        check('son fichier ne dit pas le nom du personnage',
+            !!portrait && /^\/pic\/[0-9a-f]{20}$/.test(portrait.img),
+            portrait ? portrait.img : '—');
+        check('et son anime ne part plus avec',
+            !!portrait && !('anime' in portrait),
+            portrait ? Object.keys(portrait).join(', ') : '—');
+
+        // Le jeton doit tout de même servir une vraie image
+        if (portrait && portrait.img) {
+            const r = await fetch(BASE + portrait.img);
+            const octets = (await r.arrayBuffer()).byteLength;
+            check('le jeton sert bien l image', r.status === 200 && octets > 1000,
+                'HTTP ' + r.status + ', ' + octets + ' octets');
+        }
+
+        k.close();
+        await s.post('/admin/toggle-game', {});
+    }
+
     // ══════════ Le pseudo d un client bricole ══════════
     // Le formulaire filtre déjà, mais rien n'oblige à passer par lui : une
     // socket faite à la main envoie ce qu'elle veut. Le pseudo voyage ensuite à

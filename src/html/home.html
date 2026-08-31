@@ -1080,7 +1080,7 @@
                                 <div class="rush-carte" :key="rush.portrait ? rush.portrait.img : 'fin'"
                                      :class="{ juste: rush.flash === 'juste', passe: rush.flash === 'passe' }">
                                     <span class="rush-vitre">
-                                        <img v-if="rush.portrait" :src="'/rushpic/' + rush.portrait.img" alt="" draggable="false">
+                                        <img v-if="rush.portrait" :src="rush.portrait.img" alt="" draggable="false">
                                     </span>
                                     <span class="rush-cartouche"></span>
                                     <span class="rush-limite-rail" v-if="rush.limite && rush.portrait">

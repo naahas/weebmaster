@@ -17,43 +17,12 @@ const path = require('path');
 // dans le DOM. Les images voyagent donc sous un jeton, que le serveur seul sait
 // retourner en chemin. Le sel change a chaque demarrage : un jeton releve
 // aujourd hui ne vaudra plus rien demain.
-const SEL_IMAGES = crypto.randomBytes(16).toString('hex');
-const RACINE_IMAGES = path.join(__dirname, 'src', 'img', 'ascensionpic');
-const imageParJeton = new Map();
-const jetonParImage = new Map();
+// Le Rush souffrait de la même fuite : le mécanisme vit maintenant dans son
+// propre module, et les deux modes y puisent.
+const JETONS = require('./jetons-images.js');
+JETONS.recenser('ascensionpic');
 
-function recenserImages(dossier, prefixe) {
-    let entrees;
-    try { entrees = fs.readdirSync(dossier, { withFileTypes: true }); }
-    catch (e) { return; }
-    for (const e of entrees) {
-        const relatif = prefixe ? prefixe + '/' + e.name : e.name;
-        if (e.isDirectory()) { recenserImages(path.join(dossier, e.name), relatif); continue; }
-        const jeton = crypto.createHash('sha256').update(SEL_IMAGES + relatif).digest('hex').slice(0, 20);
-        imageParJeton.set(jeton, relatif);
-        jetonParImage.set(relatif, jeton);
-    }
-}
-recenserImages(RACINE_IMAGES, '');
-
-// Un fichier ajoute apres le demarrage n'est pas au recensement : il passe
-// alors tel quel plutot que de laisser un cadre vide. Mieux vaut une fuite
-// visible qu'une image manquante — et le journal le dit.
-const manquantesSignalees = new Set();
-function urlImage(nom) {
-    if (!nom) return nom;
-    const jeton = jetonParImage.get(nom);
-    if (jeton) return '/ascpic/' + jeton;
-    if (!manquantesSignalees.has(nom)) {
-        manquantesSignalees.add(nom);
-        console.warn('⚠️ Ascension : image hors recensement, servie en clair — ' + nom);
-    }
-    return '/ascensionpic/' + nom;
-}
-
-function cheminImage(jeton) {
-    return imageParJeton.get(jeton) || null;
-}
+const urlImage = (nom) => JETONS.urlImage('ascensionpic', nom);
 
 // ── Les portraits sans fichier ──
 // Un personnage dont l'image manque tirait une carte vide, sur laquelle il n'y
@@ -61,7 +30,7 @@ function cheminImage(jeton) {
 // des tirages plutot que de le montrer, en le disant assez fort pour qu'on
 // pense a poser le fichier : il revient de lui-meme le jour ou il existe.
 {
-    const absents = (ASCENSION_DATA.characters || []).filter(c => c.img && !jetonParImage.has(c.img));
+    const absents = (ASCENSION_DATA.characters || []).filter(c => c.img && !JETONS.connait('ascensionpic', c.img));
     if (absents.length) {
         console.warn('⚠️ Ascension : ' + absents.length + ' portrait(s) sans fichier, ecarte(s) des tirages — '
             + absents.map(c => c.id + ' (' + c.img + ')').join(', '));
@@ -2054,7 +2023,6 @@ module.exports = {
     createAscensionState,
     startAscensionGame,
     resetAscensionState,
-    cheminImage,
     solutionEtage,
     quitterAscension,
     registerAscensionSocketHandlers,
