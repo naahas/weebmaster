@@ -7862,8 +7862,13 @@ body.game-active:has(.poll-game-container) #particles-js {
        « right ». */
     .v2-mode-char.char-rush {
         height: 140%;
-        max-width: 82%;
+        /* Deux pixels, pas deux pour cent : a cette largeur de panneau, un
+           point de pourcentage en vaut huit. La soustraction dit exactement ce
+           qu on retire, et suit le panneau quand il change de taille. */
+        max-width: calc(82% - 2px);
         right: -7%;
+        /* Ancree par le bas : descendre, c est passer sous la ligne du cadre */
+        bottom: -0.4rem;
     }
 
     /* Esdeath est la plus large des quatre (1,26 contre 1,00 / 0,84 / 0,56) :
