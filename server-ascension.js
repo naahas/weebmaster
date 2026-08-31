@@ -146,6 +146,7 @@ const MATCH_SUBTYPES = [
     'same_voice',   // Même voix
     'anime_studio', // Anime → studio
     'anime_year',   // Anime → année de sortie (1ère diffusion)
+    'anime_author', // Anime → auteur (mangaka, ou romancier pour les light novels)
 ];
 
 // ═══ State ═══
@@ -689,6 +690,35 @@ function generateMatchData(subtype) {
                 label: 'Liaison',
                 left: picked.map(a => ({ id: a.name, name: a.name })),
                 right: shuffle(picked.map(a => ({ id: a.name, value: String(a.year) }))),
+                pairs: picked.map(a => ({ leftId: a.name, rightId: a.name })),
+            };
+        }
+
+        case 'anime_author': {
+            // Le champ « author » est facultatif : les séries sans manga
+            // d'origine n'ont pas d'auteur unique, et on ne va pas leur en
+            // inventer un. Elles sont simplement hors du tirage.
+            const animes = (ASCENSION_DATA.animes || []).filter(a => a.author);
+            // Un auteur par étage, sinon la grille n'a pas de solution :
+            // Togashi a écrit Hunter x Hunter et Yu Yu Hakusho, Araki trois
+            // parties de Jojo, Isayama deux saisons de L'Attaque des Titans.
+            const usedAuthors = new Set();
+            const picked = [];
+            for (const a of shuffle(animes)) {
+                if (!usedAuthors.has(a.author) && picked.length < 5) {
+                    picked.push(a);
+                    usedAuthors.add(a.author);
+                }
+            }
+            if (picked.length < 5) {
+                console.warn(`⚠️ Pas assez d'auteurs uniques pour anime_author (${picked.length}/5) → fallback sur char_anime`);
+                return generateMatchData('char_anime');
+            }
+            return {
+                type: 'match', subtype: 'anime_author',
+                label: 'Liaison',
+                left: picked.map(a => ({ id: a.name, name: a.name })),
+                right: shuffle(picked.map(a => ({ id: a.name, value: a.author }))),
                 pairs: picked.map(a => ({ leftId: a.name, rightId: a.name })),
             };
         }

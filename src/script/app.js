@@ -1412,6 +1412,7 @@ createApp({
                         same_voice: 'Relie les personnages qui partagent une voix',
                         anime_studio: 'Relie chaque anime à son studio',
                         anime_year: 'Relie l\'anime à son année de parution',
+                        anime_author: 'Relie chaque œuvre à son auteur',
                     };
                     return par[d.subtype] || 'Relie chaque paire';
                 })(),
