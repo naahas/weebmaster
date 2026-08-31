@@ -127,6 +127,25 @@ const PENALITE_MS = 1000;
 // visage. Le compte est tenu ici : le client ne fait que l'afficher.
 const SEUIL_JOKER_GUESS = 3;
 
+// ⏳ Regarder un écran sans remonter toute la tour.
+// « ASC_ETAGE_FORCE » impose le premier étage de chaque partie : « wordle », ou
+// « match:anime_author » pour viser un sous-type de Liaison. Les étages suivants
+// restent tirés au sort. Rien à défaire dans le code — on retire la variable et
+// tout revient au hasard —, et un avertissement au démarrage évite de l'oublier
+// en ligne.
+const ETAGE_FORCE = (() => {
+    const brut = (process.env.ASC_ETAGE_FORCE || '').trim();
+    if (!brut) return null;
+    const [type, subtype] = brut.split(':');
+    return { type: type, subtype: subtype || null };
+})();
+
+if (ETAGE_FORCE) {
+    console.warn('⏳ Ascension : premier étage forcé sur « ' + ETAGE_FORCE.type
+        + (ETAGE_FORCE.subtype ? ':' + ETAGE_FORCE.subtype : '')
+        + ' » (ASC_ETAGE_FORCE). Retirer la variable pour revenir au tirage.');
+}
+
 const GAME_TYPES = [
     'guess',      // Devine le perso (5 images, tape les noms)
     'target',     // Cible (30 persos, 5 consignes "clique sur X")
@@ -490,7 +509,10 @@ function genererEtageBrut(type, usedData) {
         }
 
         case 'match': {
-            const subtype = MATCH_SUBTYPES[Math.floor(Math.random() * MATCH_SUBTYPES.length)];
+            // « usedData.subtype » ne vient que de l'étage forcé : le tirage
+            // ordinaire ne le pose jamais.
+            const subtype = (usedData && usedData.subtype)
+                || MATCH_SUBTYPES[Math.floor(Math.random() * MATCH_SUBTYPES.length)];
             return generateMatchData(subtype);
         }
 
@@ -757,7 +779,12 @@ function startAscensionGame(gameState, io, options = {}) {
     ascension.floorData = [];
     const usedData = {};
     for (let i = 0; i < ascension.floors; i++) {
-        ascension.floorData.push(generateFloorData(ascension.floorSequence[i], usedData));
+        // Le premier étage se laisse imposer, les suivants restent au hasard
+        const impose = i === 0 && ETAGE_FORCE;
+        if (impose) ascension.floorSequence[0] = ETAGE_FORCE.type;
+        ascension.floorData.push(generateFloorData(
+            ascension.floorSequence[i],
+            impose ? Object.assign({}, usedData, { subtype: ETAGE_FORCE.subtype }) : usedData));
     }
     
     ascension.playerProgress = {};
@@ -782,7 +809,9 @@ function startAscensionGame(gameState, io, options = {}) {
             const personalSeq = generateFloorSequence(ascension.floors);
             for (let i = 0; i < ascension.floors; i++) {
                 ascension.playerProgress[player.playerId].personalFloorData.push(
-                    generateFloorData(personalSeq[i], {})
+                    generateFloorData(
+                        (i === 0 && ETAGE_FORCE) ? ETAGE_FORCE.type : personalSeq[i],
+                        (i === 0 && ETAGE_FORCE) ? { subtype: ETAGE_FORCE.subtype } : {})
                 );
             }
         }

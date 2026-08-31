@@ -132,6 +132,11 @@ veille du projet Supabase free tier.
 
 `NODE_ENV`, `PORT` (7000), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `QUESTION_ADMIN_CODE`.
 
+Facultative aussi, et de mise au point : `ASC_ETAGE_FORCE` impose le premier étage
+d'Ascension (`wordle`, ou `match:anime_author` pour viser un sous-type de Liaison). Les
+étages suivants restent tirés au sort. Elle ne vit que dans `.env` — rien à défaire dans
+le code — et le serveur l'annonce au démarrage pour qu'on ne l'oublie pas en ligne.
+
 Facultatives : `MAX_CONNECTIONS_PER_IP` (100 par défaut — les opérateurs mobiles placent leurs
 abonnés derrière une même IP, un plafond bas couperait la moitié d'un public) et `MAX_ROOMS` (50).
 
