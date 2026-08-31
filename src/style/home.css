@@ -7866,10 +7866,10 @@ body.game-active:has(.poll-game-container) #particles-js {
            point de pourcentage en vaut huit. La soustraction dit exactement ce
            qu on retire, et suit le panneau quand il change de taille. */
         max-width: calc(82% - 2px);
-        right: -7%;
+        right: -8.5%;
         /* Ancree par le bas : descendre, c est passer sous la ligne du cadre.
            Le fondu du bas la rattrape, donc le debordement ne se coupe pas net. */
-        bottom: -0.9rem;
+        bottom: -1.4rem;
     }
 
     /* Esdeath est la plus large des quatre (1,26 contre 1,00 / 0,84 / 0,56) :
