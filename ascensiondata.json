@@ -2472,8 +2472,7 @@
   {
    "name": "Death Note",
    "studio": "Madhouse",
-   "year": 2006,
-   "author": "Tsugumi Ohba & Takeshi Obata"
+   "year": 2006
   },
   {
    "name": " Cowboy Bebop",
@@ -2483,11 +2482,10 @@
   {
    "name": "Fate Zero",
    "studio": "Ufotable",
-   "year": 2011,
-   "author": "Gen Urobuchi"
+   "year": 2011
   },
   {
-   "name": "Hunter Hunter (2)",
+   "name": "Hunter Hunter",
    "studio": "Madhouse",
    "year": 2011,
    "author": "Yoshihiro Togashi"
@@ -2534,7 +2532,7 @@
    "name": "One Punch Man S1",
    "studio": "Madhouse",
    "year": 2015,
-   "author": "ONE & Yusuke Murata"
+   "author": "Yusuke Murata"
   },
   {
    "name": "My Hero Academia",
@@ -2664,8 +2662,7 @@
   {
    "name": "Violet Evergarden",
    "studio": "Kyoto Animation",
-   "year": 2018,
-   "author": "Kana Akatsuki"
+   "year": 2018
   },
   {
    "name": "Black Lagoon",
@@ -2694,14 +2691,12 @@
   {
    "name": "Attack on Titan S3",
    "studio": "MAPPA",
-   "year": 2018,
-   "author": "Hajime Isayama"
+   "year": 2018
   },
   {
    "name": "Trigun",
    "studio": "Madhouse",
-   "year": 1998,
-   "author": "Yasuhiro Nightow"
+   "year": 1998
   },
   {
    "name": "Seven Deadly Sins",
@@ -2723,8 +2718,7 @@
   {
    "name": "Durarara",
    "studio": "Brain's Base",
-   "year": 2010,
-   "author": "Ryohgo Narita"
+   "year": 2010
   },
   {
    "name": "Nana",
@@ -2735,8 +2729,7 @@
   {
    "name": "No Game No Life",
    "studio": "Madhouse",
-   "year": 2014,
-   "author": "Yuu Kamiya"
+   "year": 2014
   },
   {
    "name": "Claymore",
@@ -2747,44 +2740,32 @@
   {
    "name": "Black Butler",
    "studio": "A-1 Pictures",
-   "year": 2008,
-   "author": "Yana Toboso"
+   "year": 2008
   },
   {
    "name": "Noragami",
    "studio": "Bones",
-   "year": 2014,
-   "author": "Adachitoka"
-  },
-  {
-   "name": "Hunter Hunter (1)",
-   "studio": "Nippon Animation",
-   "year": 1999,
-   "author": "Yoshihiro Togashi"
+   "year": 2014
   },
   {
    "name": "Frieren",
    "studio": "Madhouse",
-   "year": 2023,
-   "author": "Kanehito Yamada & Tsukasa Abe"
+   "year": 2023
   },
   {
    "name": "Re:zero",
    "studio": "White Fox",
-   "year": 2016,
-   "author": "Tappei Nagatsuki"
+   "year": 2016
   },
   {
    "name": "The Promised Neverland",
    "studio": "CloverWorks",
-   "year": 2019,
-   "author": "Kaiu Shirai & Posuka Demizu"
+   "year": 2019
   },
   {
    "name": "Nichijou",
    "studio": "Kyoto Animation",
-   "year": 2011,
-   "author": "Keiichi Arawi"
+   "year": 2011
   },
   {
    "name": "Chainsaw Man",
@@ -2812,14 +2793,12 @@
   {
    "name": "A Silent Voice",
    "studio": "Kyoto Animation",
-   "year": 2016,
-   "author": "Yoshitoki Oima"
+   "year": 2016
   },
   {
    "name": "Inuyasha",
    "studio": "Sunrise",
-   "year": 2000,
-   "author": "Rumiko Takahashi"
+   "year": 2000
   },
   {
    "name": "Yu Yu Hakusho",
@@ -2851,14 +2830,18 @@
   {
    "name": "Date a Live S3",
    "studio": "J.C Staff",
-   "year": 2019,
-   "author": "Koshi Tachibana"
+   "year": 2019
   },
   {
    "name": "Danmachi",
    "studio": "J.C Staff",
-   "year": 2015,
-   "author": "Fujino Omori"
+   "year": 2015
+  },
+  {
+   "name": "Berserk",
+   "studio": "Madhouse",
+   "year": 1997,
+   "author": "Kentaro Miura"
   }
  ],
  "arcs": {
