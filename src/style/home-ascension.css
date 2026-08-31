@@ -511,7 +511,14 @@
     }
 
     .asc-epreuve { padding: 0; }
-    .asc-etage { top: 0.7rem; left: 0.8rem; }
+    /* Deux pixels et demi au bord extreme de l ecran : le temps qui s ecoule
+       ne se voyait pas. Il s epaissit, et descend sous l encoche. */
+    .asc-jauge {
+        top: env(safe-area-inset-top, 0px);
+        height: 0.34rem;
+    }
+
+    .asc-etage { top: calc(0.7rem + env(safe-area-inset-top, 0px)); left: 0.8rem; }
     .asc-etage b { font-size: 1.3rem; }
     .asc-entete { top: 2.2rem; gap: 0.45rem; }
     .asc-titre { font-size: 1.25rem; }
@@ -1709,4 +1716,45 @@
     opacity: 1;
     transform: none;
     pointer-events: auto;
+}
+
+/* ══════════ Les portraits paraissent au lieu de surgir ══════════
+   Un portrait pèse deux cents kilo-octets : sur téléphone, les vingt-quatre
+   d'une grille n'arrivent pas ensemble, et les cartes semblaient se fabriquer
+   une à une sous les yeux. Chacune se découvre donc en fondu dès qu'elle est
+   là, sur un fond neutre qui tient sa place en attendant.
+
+   Le filet : si l'événement de chargement ne venait jamais — image en cache
+   attachée trop tôt, requête perdue —, l'animation la révèle au bout de trois
+   secondes. Mieux vaut une image en retard qu'une image jamais montrée. */
+.asc img {
+    opacity: 0;
+    background: rgba(255, 255, 255, 0.035);
+    animation: ascFiletImage 0s linear 3s forwards;
+}
+
+.asc img.vue {
+    opacity: 1;
+    animation: none;
+    transition: opacity 0.32s ease;
+}
+
+@keyframes ascFiletImage {
+    to { opacity: 1; }
+}
+
+/* ══════════ Le double-tape ne doit pas zoomer ══════════
+   Sur un jeu de clics rapides, deux appuis rapprochés sont une cadence, pas une
+   demande d'agrandissement. « manipulation » supprime l'attente de trois cents
+   millisecondes du double-tape sans rien enlever au défilement ni au pincer. */
+.asc {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Le clavier ne doit pas pousser la page : l'épreuve tient déjà tout l'écran,
+   il n'y a rien à révéler en la faisant monter. */
+body.game-active:has(.asc) {
+    overflow: hidden;
+    overscroll-behavior: none;
 }

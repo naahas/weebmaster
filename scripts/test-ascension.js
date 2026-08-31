@@ -155,4 +155,26 @@ const jetonValide = (u) => /^\/ascpic\/[0-9a-f]{20}$/.test(String(u));
     }
 }
 
+// ── Aucun nom ne doit être intapable ──
+// « Devine le perso » n'envoie la saisie qu'au-delà d'un certain nombre de
+// lettres. Ce seuil valait trois : « L » de Death Note ne partait jamais, et
+// le portrait restait invalidable — il fallait dépenser l'ampoule dessus. Le
+// seuil doit donc rester sous la longueur du nom le plus court des données.
+{
+    const donnees = require('../ascensiondata.json');
+    const noms = (donnees.characters || []).map(c => c.name).filter(Boolean);
+    const court = noms.reduce((m, n) => Math.min(m, n.length), Infinity);
+
+    const app = require('fs').readFileSync(require('path').join(__dirname, '..', 'src', 'script', 'app.js'), 'utf8');
+    const m = app.match(/if \(nom\.length < (\d+) \|\| !this\.socket/);
+    const seuil = m ? parseInt(m[1], 10) : null;
+
+    check('le seuil de saisie de « guess » se lit encore', seuil !== null,
+        seuil === null ? 'la ligne a changé de forme' : seuil + ' lettre(s)');
+    check('aucun nom n est trop court pour être tapé',
+        seuil !== null && seuil <= court,
+        'seuil ' + seuil + ', plus court nom ' + court + ' lettre(s) — ex. '
+            + noms.find(n => n.length === court));
+}
+
 console.log(ko ? `\n${ko} échec(s)` : "\n✨ Le moteur d'Ascension tient, et ne trahit rien");

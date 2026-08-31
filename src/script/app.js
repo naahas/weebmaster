@@ -1498,14 +1498,17 @@ createApp({
         // Le nom se valide en le tapant, sans touche Entrée : on enchaîne les
         // cinq portraits d'un trait. La cadence est bridée comme au Rush —
         // sinon chaque frappe partirait au serveur, cinq champs à la fois.
-        // Sous trois lettres on n'envoie rien : « Ai » ou « Ed » tomberaient
-        // juste par hasard avant qu'on ait fini d'écrire.
+        // Une seule lettre suffit à partir : « L » de Death Note était
+        // intapable, et tout nom de moins de trois lettres avec lui. Le seuil
+        // ne protégeait de rien — chaque saisie n'est comparée qu'au portrait
+        // sous lequel on écrit, jamais aux autres, et la comparaison est
+        // exacte. Taper « L » dans le champ de Luffy ne valide donc rien.
         saisirGuess(id, valeur) {
             // Les capitales sont aussi dans l'état, pas seulement à l'écran :
             // le champ affiche ce qu'il contient, et non une mise en forme.
             this.asc.saisies[id] = String(valeur || '').toUpperCase();
             const nom = this.asc.saisies[id].trim();
-            if (nom.length < 3 || !this.socket || this.ascTrouve(id)) return;
+            if (nom.length < 1 || !this.socket || this.ascTrouve(id)) return;
 
             const maintenant = Date.now();
             if (this._ascDernierEnvoi && maintenant - this._ascDernierEnvoi < 35) {
@@ -6131,13 +6134,49 @@ createApp({
         playSound(sound) {
             if (!sound || this.soundMuted) return;
             
-            // Cloner le son pour éviter le délai de reset si déjà en lecture
-            const clone = sound.cloneNode();
+            // Cloner un <audio> ne copie pas le son déjà décodé : le clone doit
+            // le recharger, ce qui sur téléphone se paie en centaines de
+            // millisecondes. Le bruit arrivait donc bien après le geste, alors
+            // que l'effet visuel partait tout de suite. On garde maintenant
+            // quelques exemplaires prêts par son — l'original en tête, déjà
+            // chargé — et l'on joue le premier qui ne sert pas. Les clones ne
+            // sont fabriqués qu'à la première superposition, et resservent.
+            if (!this._voix) this._voix = new Map();
+            let voix = this._voix.get(sound);
+            if (!voix) {
+                voix = [sound];
+                this._voix.set(sound, voix);
+            }
+
+            let libre = voix.find(a => a.paused || a.ended);
+            if (!libre) {
+                // Tous occupés : on en ajoute un, jusqu'à quatre. Au-delà on
+                // reprend le plus ancien — quatre bruits ensemble, c'est déjà
+                // plus que ce qu'on distingue.
+                if (voix.length < 4) {
+                    libre = sound.cloneNode();
+                    libre.preload = 'auto';
+                    libre.load();
+                    voix.push(libre);
+                } else {
+                    libre = voix[0];
+                }
+            }
+
             const maxVol = this.lobbyMode === 'bombanime' ? 0.45 : 0.7;
-            clone.volume = (this.soundVolume / 100) * maxVol;
-            clone.play().catch(e => console.log('Audio blocked:', e));
+            libre.volume = (this.soundVolume / 100) * maxVol;
+            try { libre.currentTime = 0; } catch (e) { /* pas encore chargé */ }
+            libre.play().catch(e => console.log('Audio blocked:', e));
         },
         
+        // Un portrait pèse deux cents kilo-octets : sur téléphone, les vingt-quatre
+        // d'une grille n'arrivent pas ensemble et les cartes semblaient se
+        // fabriquer une à une. Chacune se découvre donc en fondu dès qu'elle est
+        // là, ce qui donne une arrivée au lieu d'une apparition sèche.
+        imageVue(e) {
+            if (e && e.target) e.target.classList.add('vue');
+        },
+
         toggleSound() {
             this.soundMuted = !this.soundMuted;
             localStorage.setItem('soundMuted', this.soundMuted);
