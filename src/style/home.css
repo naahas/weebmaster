@@ -7853,12 +7853,17 @@ body.game-active:has(.poll-game-container) #particles-js {
        elance (0,56) et serrait le bord droit, qu il fallait ecarter ; l autre
        est presque carre (1,04), comme Kenshin. C est donc sa largeur qui borne
        l echelle et non sa hauteur, et sans les deux bornes il rendrait plus
-       petit que ses voisins sans jamais deborder. Meme traitement que Kenshin,
-       aux memes valeurs. */
+       petit que ses voisins sans jamais deborder.
+
+       C est donc « max-width » qui commande sa taille : le monter seul suffirait,
+       mais les deux bornes montent ensemble pour que le reglage garde un sens le
+       jour ou l image change de rapport. Et grandir le decale deja vers la
+       gauche, puisqu il est ancre par la droite — d ou le pas tres court sur
+       « right ». */
     .v2-mode-char.char-rush {
-        height: 132%;
-        max-width: 76%;
-        right: -10%;
+        height: 140%;
+        max-width: 82%;
+        right: -7%;
     }
 
     /* Esdeath est la plus large des quatre (1,26 contre 1,00 / 0,84 / 0,56) :
