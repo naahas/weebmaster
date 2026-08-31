@@ -50,7 +50,8 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   se fait en silence, un minuteur expiré poussant à l étage suivant),
   `npm run test:tour-reprise` (rafraîchissement en pleine montée),
   `npm run test:tour-quitter` (quitter en pleine montée : on se fige, on n entend
-  plus rien, on reste au classement — ~1 min),
+  plus rien, on reste au classement — ~1 min, ~2 min avec `GRACE_DECONNEXION=3000`
+  des deux côtés, qui joue en plus le cas de l onglet fermé sans prévenir),
   `npm run test:tour-salons` (deux Ascensions simultanées : réglages, étages et
   messages restent séparés),
   `npm run test:tour-grilles` (les épreuves à portraits : guess, target, intruder — ~2 min.

@@ -127,6 +127,22 @@ const PENALITE_MS = 1000;
 // visage. Le compte est tenu ici : le client ne fait que l'afficher.
 const SEUIL_JOKER_GUESS = 3;
 
+// Un grimpeur qui ferme son onglet continuait de monter : personne ne répondait
+// pour lui, mais chaque minuteur expiré le poussait d'un étage, et il finissait
+// par atteindre le sommet — déclenchant la mort subite et gagnant la partie
+// sans être là. On lui laisse de quoi revenir d'un rafraîchissement, puis on le
+// fige. Le délai doit rester bien plus long qu'un rechargement (deux ou trois
+// secondes) et guère plus qu'un étage, pour qu'un absent n'en gagne pas trois.
+const GRACE_DECONNEXION_MS = parseInt(process.env.GRACE_DECONNEXION, 10) || 30000;
+
+// Parti pour de bon, ou seulement en train de recharger sa page ?
+function absentPourDeBon(gameState, pp) {
+    if (pp.parti) return true;
+    const joueur = gameState.players.get(pp.socketId);
+    if (!joueur || !joueur.disconnectedAt) return false;
+    return Date.now() - joueur.disconnectedAt > GRACE_DECONNEXION_MS;
+}
+
 // ⏳ Regarder un écran sans remonter toute la tour.
 // « ASC_ETAGE_FORCE » impose le premier étage de chaque partie : « wordle », ou
 // « match:anime_author » pour viser un sous-type de Liaison. Les étages suivants
@@ -897,6 +913,14 @@ function startPlayerFloor(gameState, io, playerId, floorIndex) {
     pp.floorTimer = setTimeout(() => {
         // Timer expiré sans validation → on avance quand même (échec)
         if (!pp.validated && pp.floor === floorIndex) {
+            // … sauf s'il n'y a plus personne derrière l'écran : le faire monter
+            // reviendrait à le laisser gagner en son absence.
+            if (absentPourDeBon(gameState, pp)) {
+                console.log(`🏔️ 👋 ${pp.username} absent, figé à l'étage ${floorIndex + 1}`);
+                pp.parti = true;
+                finalizePlayerFinish(gameState, io, playerId);
+                return;
+            }
             console.log(`🏔️ ⏰ ${pp.username} timer expiré étage ${floorIndex + 1}, passage forcé`);
             advancePlayerToNextFloor(gameState, io, playerId, false);
         }
@@ -997,8 +1021,11 @@ function quitterAscension(gameState, io, socket, playerId) {
 
     pp.parti = true;
     // La socket quitte son salon personnel : sans quoi elle recevait encore les
-    // étages, et l'on entendait le jeu depuis l'écran d'accueil.
-    try { socket.leave(gameState.roomCode + ':asc:' + playerId); } catch (e) { /* deja partie */ }
+    // étages, et l'on entendait le jeu depuis l'écran d'accueil. Un exclu n'en
+    // a pas forcément une sous la main — le départ vaut quand même.
+    if (socket) {
+        try { socket.leave(gameState.roomCode + ':asc:' + playerId); } catch (e) { /* déjà partie */ }
+    }
 
     finalizePlayerFinish(gameState, io, playerId);
 }
@@ -1298,14 +1325,22 @@ function endAscensionGame(gameState, io) {
             };
         })
         .sort((a, b) => {
-            if (a.rank && b.rank) return a.rank - b.rank;
-            if (a.rank) return -1;
-            if (b.rank) return 1;
+            // Ceux qui ont atteint le sommet d'abord, dans l'ordre où ils y sont
+            // arrivés ; les autres ensuite, du plus haut au plus bas. Le tri se
+            // faisait sur l'ordre d'arrivée dans « finishedPlayers », ce qui
+            // valait tant qu'on n'y entrait qu'en touchant le sommet — depuis
+            // qu'abandonner y fait entrer aussi, partir au premier étage y
+            // décrochait la première place devant qui avait grimpé jusqu'au
+            // huitième.
+            if (a.sommet && b.sommet) return (a.finishedAt || 0) - (b.finishedAt || 0);
+            if (a.sommet) return -1;
+            if (b.sommet) return 1;
             return b.floor - a.floor;
         });
     
-    let rank = ascension.finishedPlayers.length + 1;
-    podium.forEach(p => { if (!p.rank) p.rank = rank++; });
+    // Le rang se donne après le tri, et à tout le monde : celui qui venait de
+    // « finishedPlayers » ne disait que l'ordre d'arrivée au sommet.
+    podium.forEach((p, i) => { p.rank = i + 1; });
     
     const winner = podium[0] || null;
     io.to(gameState.roomCode).emit('ascension-game-end', { podium, winner });

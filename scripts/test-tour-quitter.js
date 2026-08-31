@@ -89,6 +89,46 @@ const check = (l, ok, extra) => {
     check('la partie n est pas terminée pour autant',
         joueurs[B].recu.fin.length === 0, joueurs[B].recu.fin.length + ' fin(s)');
 
+    // ── Et celui qui ferme son onglet sans rien dire ──
+    // Bien plus courant que le bouton quitter. Le serveur lui laisse de quoi
+    // revenir d'un rafraîchissement, puis le fige : sinon il montait jusqu'au
+    // sommet tout seul et gagnait la partie sans être là.
+    // Le délai vaut trente secondes en temps normal ; on ne joue ce cas que si
+    // le serveur a été lancé avec un délai court.
+    const graceCourte = parseInt(process.env.GRACE_DECONNEXION, 10) || 0;
+    if (graceCourte && graceCourte <= 5000) {
+        const avantB = joueurs[B].recu.etages.length;
+        const etageBavant = joueurs[B].recu.etages[avantB - 1].playerProgress
+            .find(p => p.playerId === B);
+
+        joueurs[B].s.close();          // fermeture brutale, aucun « leave-lobby »
+        console.log('   … onglet fermé sans prévenir, on laisse passer deux étages (~45 s)');
+        await wait(45000);
+
+        // Plus personne ne joue : la partie se termine, et son classement dit
+        // tout. La socket du partant est restée dans le salon, elle l'a reçu.
+        const fin = joueurs[A].recu.fin[0];
+        check('la partie se termine quand plus personne n est là',
+            !!fin, fin ? (fin.podium || []).length + ' ligne(s)' : '(aucune fin)');
+
+        const vuB = fin && (fin.podium || []).find(p => p.playerId === B);
+        check('celui qui ferme son onglet se fige au lieu de monter',
+            !!vuB && vuB.floor < 9, vuB ? 'étage ' + (vuB.floor + 1) + ' sur 10' : '(absent)');
+        check('il n a donc pas gagné en son absence',
+            !!vuB && vuB.sommet === false, vuB ? 'sommet=' + vuB.sommet : '(absent)');
+
+        // Et le classement doit récompenser l'étage atteint, pas la vitesse à
+        // laquelle on a abandonné : B est monté plus haut que A, il passe devant.
+        const vuA = fin && (fin.podium || []).find(p => p.playerId === A);
+        check('celui qui a grimpé plus haut passe devant celui qui est parti tôt',
+            !!vuA && !!vuB && vuB.rank < vuA.rank,
+            vuA && vuB ? 'B ' + vuB.rank + 'e (étage ' + (vuB.floor + 1) + ') contre A '
+                + vuA.rank + 'e (étage ' + (vuA.floor + 1) + ')' : '(incomplet)');
+        void etageBavant;
+    } else {
+        console.log('   … cas de l onglet fermé non joué (relancer avec GRACE_DECONNEXION=3000 des deux côtés)');
+    }
+
     for (const id of [A, B]) joueurs[id].s.close();
     await post('/admin/toggle-game', {});
 

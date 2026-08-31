@@ -5853,6 +5853,13 @@ io.on('connection', (socket) => {
         }
 
         if (targetSocketId && targetPlayer) {
+            // Exclu en pleine montée, il continuait de gravir la tour tout seul
+            // et pouvait la gagner : il se fige à son étage, comme celui qui part.
+            if (gameState.lobbyMode === 'ascension' && gameState.inProgress) {
+                ascension.quitterAscension(gameState, io,
+                    io.sockets.sockets.get(targetSocketId) || null, targetPlayer.playerId);
+            }
+
             // Supprimer le joueur
             gameState.players.delete(targetSocketId);
             gameState.answers.delete(targetSocketId);
