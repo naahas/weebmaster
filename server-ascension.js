@@ -862,8 +862,8 @@ function startPlayerFloor(gameState, io, playerId, floorIndex) {
     if (!ascension.active) return;
     
     const pp = ascension.playerProgress[playerId];
-    if (!pp) return;
-    
+    if (!pp || pp.parti) return;
+
     if (floorIndex >= ascension.floors) {
         // Joueur a complété tous les étages
         finalizePlayerFinish(gameState, io, playerId);
@@ -938,7 +938,7 @@ function advancePlayerToNextFloor(gameState, io, playerId, success, customDelay)
     if (!ascension.active) return;
 
     const pp = ascension.playerProgress[playerId];
-    if (!pp) return;
+    if (!pp || pp.parti) return;
 
     if (pp.floorTimer) {
         clearTimeout(pp.floorTimer);
@@ -979,6 +979,28 @@ function advancePlayerToNextFloor(gameState, io, playerId, success, customDelay)
             startPlayerFloor(gameState, io, playerId, nextFloor);
         }
     }, delay);
+}
+
+// Quitter la partie fige le grimpeur où il en est. Sans cela, le serveur
+// continuait de le faire monter d'un étage à chaque minuteur expiré : parti au
+// deuxième, il atteignait le sommet tout seul, déclenchait la mort subite et
+// gagnait la partie sans être là. Il reste au classement, à l'étage où il s'est
+// arrêté — comme au Rush, où l'on ne raye pas celui qui s'en va.
+//
+// C'est bien le départ volontaire, pas la coupure : un rafraîchissement doit
+// laisser la montée intacte, c'est ce qui fait marcher la reprise.
+function quitterAscension(gameState, io, socket, playerId) {
+    const ascension = gameState.ascension;
+    if (!ascension || !ascension.active) return;
+    const pp = ascension.playerProgress[playerId];
+    if (!pp) return;
+
+    pp.parti = true;
+    // La socket quitte son salon personnel : sans quoi elle recevait encore les
+    // étages, et l'on entendait le jeu depuis l'écran d'accueil.
+    try { socket.leave(gameState.roomCode + ':asc:' + playerId); } catch (e) { /* deja partie */ }
+
+    finalizePlayerFinish(gameState, io, playerId);
 }
 
 // 🆕 Marque la fin du parcours du joueur (atteint l'étage final ou abandonné)
@@ -1999,6 +2021,7 @@ module.exports = {
     resetAscensionState,
     cheminImage,
     solutionEtage,
+    quitterAscension,
     registerAscensionSocketHandlers,
     getAscensionStateForClient,
 

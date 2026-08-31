@@ -5752,6 +5752,13 @@ io.on('connection', (socket) => {
                 return;
             }
 
+            // La tour, elle, continuait de le faire monter : parti au deuxieme
+            // etage, il atteignait le sommet tout seul et gagnait sans etre la.
+            // Il se fige donc a l etage ou il s arrete, et y reste au classement.
+            if (gameState.lobbyMode === 'ascension' && gameState.inProgress) {
+                ascension.quitterAscension(gameState, io, socket, player.playerId);
+            }
+
             gameState.players.delete(socket.id);
             gameState.answers.delete(socket.id);
             console.log(`👋 ${data.username} a quitté le lobby`);

@@ -28,7 +28,8 @@
     "test:tour-grilles": "node scripts/test-tour-grilles.js",
     "test:ampoule": "node scripts/test-ampoule.js",
     "test:tour-fin": "node scripts/test-tour-fin.js",
-    "test:tour-salons": "node scripts/test-tour-salons.js"
+    "test:tour-salons": "node scripts/test-tour-salons.js",
+    "test:tour-quitter": "node scripts/test-tour-quitter.js"
   },
   "keywords": [
     "quiz",

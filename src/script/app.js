@@ -2559,6 +2559,36 @@ createApp({
             }
         },
 
+        // Quitter un salon en pleine partie laissait chaque mode tourner dans
+        // son coin : les minuteries du client continuaient de battre, et l'écran
+        // d'accueil recevait encore les messages de la partie. On entendait le
+        // pas d'un étage franchi longtemps après être parti. Tout s'arrête ici,
+        // quel que soit le mode qu'on quitte — les deux chemins de sortie, celui
+        // du joueur et celui de l'hôte, y passent.
+        arreterLesModes() {
+            this.arreterChronoAsc();
+            this.arreterChronoRush();
+            this.arreterRevealRush();
+            for (const t of ['_ascDecompteT', '_ascBloqueT', '_ascJokerT',
+                             '_ascOrdreT', '_ascFauxT', '_ascRetard', '_rushIntroA']) {
+                clearTimeout(this[t]);
+                this[t] = null;
+            }
+            if (this._ascFilRaf) { cancelAnimationFrame(this._ascFilRaf); this._ascFilRaf = null; }
+
+            Object.assign(this.asc, {
+                enCours: false, decompte: 0, etage: 0, data: null, progres: [],
+                fini: false, reste: 0, tour: false, styleJauge: {},
+            });
+            Object.assign(this.rush, {
+                portrait: null, texte: '', serie: 0, record: 0,
+                classement: [], fini: false, flash: null, reste: 0, intro: null,
+            });
+            this.bombanime.active = false;
+            this.bombanime.playersData = [];
+            this.endStep = 0;
+        },
+
         leaveRoom() {
             if (this.socket) {
                 this.socket.emit('leave-lobby', { playerId: this.playerId, username: this.username });
@@ -2583,6 +2613,7 @@ createApp({
             this.stopTimer();
             this.clearSeal();
             this.resetComboSystem();
+            this.arreterLesModes();
             document.body.classList.remove('game-active');
             localStorage.removeItem('hasJoinedLobby');
             localStorage.removeItem('lobbyPlayerId');
@@ -3125,8 +3156,7 @@ createApp({
             this.gameStartedOnServer = false;
             this.gameEnded = false;
             this.gameEndData = null;
-            this.bombanime.active = false;
-            this.bombanime.playersData = [];
+            this.arreterLesModes();
             document.body.classList.remove('game-active');
             this.isHost = false;
             this.roomCode = null;
