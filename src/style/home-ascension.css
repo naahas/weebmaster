@@ -500,7 +500,7 @@
        — alors on le laisse défiler plutôt que de le rogner. */
     .asc {
         flex-direction: column;
-        padding: 5.4rem 0.7rem 4.5rem;
+        padding: calc(6.4rem + env(safe-area-inset-top, 0px)) 0.7rem 4.5rem;
         overflow-y: auto;
         overflow-x: hidden;
         /* « safe » et non « center » tout court : quand le plateau dépasse la
@@ -525,10 +525,12 @@
         box-shadow: inset 0 -0.06rem 0 rgba(0, 0, 0, 0.4);
     }
 
+    /* Franc et opaque : degrade a demi transparent, le trait paraissait brumeux
+       sur le noir de la page. */
     .asc-jauge-fil {
         border-radius: 0 0.28rem 0.28rem 0;
-        background: linear-gradient(90deg, rgba(140, 180, 255, 0.85), #a8c8ff);
-        box-shadow: 0 0 1rem rgba(140, 180, 255, 0.7);
+        background: linear-gradient(90deg, #7fb4ff, #c2d9ff);
+        box-shadow: 0 0 1.1rem rgba(140, 180, 255, 0.85);
     }
 
     .asc-jauge.urgence .asc-jauge-fil {
@@ -536,10 +538,18 @@
         box-shadow: 0 0 1.1rem rgba(255, 90, 90, 0.8);
     }
 
-    .asc-etage { top: calc(0.7rem + env(safe-area-inset-top, 0px)); left: 0.8rem; }
-    .asc-etage b { font-size: 1.3rem; }
-    .asc-entete { top: 2.2rem; gap: 0.45rem; }
-    .asc-titre { font-size: 1.25rem; }
+    /* L en-tete se tasse et recule d un demi-centimetre : colle sous la jauge,
+       il la faisait passer pour de la chrome systeme — a cote de l encoche, on
+       ne la lisait plus comme un element de la page. */
+    .asc-etage {
+        top: calc(1.5rem + env(safe-area-inset-top, 0px));
+        left: 0.8rem;
+    }
+    .asc-etage b { font-size: 1.1rem; }
+    .asc-etage i { font-size: 0.85rem; }
+    .asc-etage-ic { width: 1rem; height: 1rem; }
+    .asc-entete { top: calc(2.8rem + env(safe-area-inset-top, 0px)); gap: 0.4rem; }
+    .asc-titre { font-size: 1.12rem; }
     .asc-filet { width: 4rem; }
     .asc-soustitre { margin-top: 0.15rem; font-size: 0.72rem; max-width: 88vw; }
 
