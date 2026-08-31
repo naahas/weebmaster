@@ -117,6 +117,24 @@ Les tables de comptes (`users`, `games`, `player_games`, `titles`, `badges`, `sh
 Le workflow GitHub `.github/workflows/main.yml` ping `keep_alive` 3x/semaine pour éviter la mise en
 veille du projet Supabase free tier.
 
+## Mettre en ligne
+
+Le travail se fait sur `v2` ; `main` est ce que Heroku déploie et n’en est jamais
+qu’un ancêtre — personne ne commite dessus directement. Deux lignes suffisent donc,
+sans changer de branche :
+
+```bash
+git push origin v2        # sauvegarde la branche de travail
+git push origin v2:main   # avance main, ce qui déclenche le déploiement
+```
+
+Le second push est refusé si `main` a divergé — c’est le garde-fou : il ne
+réécrit jamais rien. Dans ce cas seulement, il faut fusionner à la main.
+
+Sur Heroku, vérifier que `ADMIN_PASSWORD` et `NODE_ENV=production` sont posées :
+sans la première, ouvrir un salon Classique est refusé ; sans la seconde, les bots
+de mise au point et `/admin/ascension/solution` resteraient ouverts.
+
 ## Accès
 
 - `/` : le jeu (saisie du pseudo puis lobby).
