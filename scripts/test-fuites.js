@@ -214,6 +214,35 @@ function salon() {
         await wait(700);
 
         const lui = salle2 && (salle2.players || []).find(p => p.playerId === 'y' + process.pid);
+        // Un pseudo inconvenant ne doit pas entrer, ni par la socket ni par la
+        // porte de verification — c est le meme tamis des deux cotes.
+        const grossier = io(BASE, { transports: ['websocket'] });
+        await new Promise(r => grossier.on('connect', r));
+        let salle3 = null;
+        grossier.on('lobby-update', (d) => { salle3 = d; });
+        grossier.emit('register-authenticated', { playerId: 'z' + process.pid, username: 'C0nn4rd' });
+        await wait(150);
+        grossier.emit('join-lobby', { playerId: 'z' + process.pid, username: 'C0nn4rd', code: s.code });
+        await wait(700);
+        const entre = salle3 && (salle3.players || []).find(p => p.playerId === 'z' + process.pid);
+        check('un pseudo inconvenant n entre pas dans le salon', !entre,
+            entre ? JSON.stringify(entre.username) : 'refuse a la porte');
+        grossier.close();
+
+        const verdict = await fetch(BASE + '/api/pseudo', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pseudo: 'C0nn4rd' }),
+        }).then(r => r.json());
+        check('et la verification le dit avant meme de rejoindre', verdict.ok === false,
+            JSON.stringify(verdict));
+
+        const honnete = await fetch(BASE + '/api/pseudo', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pseudo: 'Kakashi' }),
+        }).then(r => r.json());
+        check('un pseudo honnete passe sans encombre', honnete.ok === true,
+            JSON.stringify(honnete));
+
         check('un pseudo de trois cents lettres est raccourci',
             !lui || lui.username.length <= 16,
             lui ? lui.username.length + ' caractère(s)' : '(refusé à l entrée)');

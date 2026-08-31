@@ -74,6 +74,8 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
 ```
 server.js              6.2k lignes — serveur + modes classic / rivalry / bombanime
 dbs.js                 client Supabase : questions + suggestions BombAnime uniquement
+pseudos-interdits.js   les pseudos refuses : deux listes, l une cherchee partout,
+                       l autre en mot entier. Voir l en-tete du fichier
 jetons-images.js       les portraits de Rush et d Ascension servis sous jeton : leur nom
                        de fichier disait la reponse. Route /pic/<jeton>
 character-variants.js  BombAnime : groupes d'alias par perso (citer « Kakarot » bloque « Goku »)

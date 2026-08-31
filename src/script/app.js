@@ -3175,7 +3175,7 @@ createApp({
             this.loadHomeStats();
         },
 
-        setPseudo() {
+        async setPseudo() {
             const name = (this.pseudoInput || '').trim();
 
             if (name.length < 2) {
@@ -3190,6 +3190,28 @@ createApp({
             if (!/^[\p{L}\p{N}_\- ]+$/u.test(name)) {
                 this.pseudoError = 'Lettres, chiffres, espaces, - et _ uniquement';
                 return;
+            }
+
+            // Le serveur a le dernier mot : lui seul tient la liste des pseudos
+            // refusés, et la lui demander ici évite de la livrer au navigateur —
+            // ce qui reviendrait à la donner à contourner. On le fait avant
+            // d'aller plus loin, pour que le refus paraisse sous le champ plutôt
+            // qu'au moment de rejoindre un salon, le code déjà saisi.
+            try {
+                const r = await fetch('/api/pseudo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pseudo: name }),
+                });
+                const v = await r.json();
+                if (!v.ok) {
+                    this.pseudoError = v.error || "Ce pseudo n'est pas accepté.";
+                    return;
+                }
+            } catch (e) {
+                // Serveur injoignable : on laisse entrer plutôt que de bloquer
+                // sur une panne. Le contrôle est refait à la jointure, qui, elle,
+                // ne peut pas se passer du serveur.
             }
 
             this.pseudoError = '';

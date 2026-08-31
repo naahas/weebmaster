@@ -114,6 +114,7 @@ function getCharacterImage(name, serie) {
 // Supabase ni les autres modes, et prend l'état du salon en paramètre.
 const ascension = require('./server-ascension.js');
 const jetons = require('./jetons-images.js');
+const interdits = require('./pseudos-interdits.js');
 jetons.recenser('rushpic');
 
 // Les barèmes que l'hôte peut choisir. Quinze étages à trente secondes font
@@ -369,8 +370,29 @@ function pseudoPropre(brut) {
         .replace(/\s+/g, ' ')
         .trim()
         .slice(0, 16);
-    return nom.length >= 2 ? nom : '';
+    if (nom.length < 2) return '';
+
+    // Un pseudo inconvenant s'affiche sur l'écran d'un streamer : on le refuse
+    // plutôt que de le rogner, sinon « Connard » deviendrait « rd » et
+    // personne ne comprendrait pourquoi.
+    const faute = interdits.motInterdit(nom);
+    if (faute) {
+        console.log(`🚫 Pseudo refusé : « ${nom} » (terme « ${faute} »)`);
+        return '';
+    }
+
+    return nom;
 }
+
+// Le pseudo se choisit avant d entrer dans un salon, et rien ne partait au
+// serveur a ce moment-la : un pseudo refuse ne se voyait donc qu au moment de
+// rejoindre, une fois le code saisi. Cette porte permet de le dire tout de
+// suite, sans livrer la liste au navigateur — qui la donnerait a contourner.
+app.post('/api/pseudo', (req, res) => {
+    const propre = pseudoPropre(req.body && req.body.pseudo);
+    if (!propre) return res.status(400).json({ ok: false, error: 'Ce pseudo n est pas accepte.' });
+    res.json({ ok: true, pseudo: propre });
+});
 
 // Ce que le client a le droit de savoir d une question en cours : tout, sauf
 // laquelle est la bonne.
@@ -5655,16 +5677,18 @@ io.on('connection', (socket) => {
             return socket.emit('error', { message: 'Code de salon invalide', badCode: true });
         }
 
-        // Le même tamis qu'à l'écran, mais celui-ci, personne ne le contourne.
-        const pseudo = pseudoPropre(data.username);
-        if (!pseudo) {
-            return socket.emit('error', { message: 'Pseudo invalide' });
-        }
-        data.username = pseudo;
-
         if (gameState.inProgress) {
             return socket.emit('error', { message: 'Partie déjà en cours' });
         }
+
+        // Le même tamis qu'à l'écran, mais celui-ci, personne ne le contourne.
+        // Il vient après la porte close : à un retardataire, savoir que la
+        // partie a commencé est plus utile qu'un avis sur son pseudo.
+        const pseudo = pseudoPropre(data.username);
+        if (!pseudo) {
+            return socket.emit('error', { message: "Ce pseudo n'est pas accepté. Choisis-en un autre.", badPseudo: true });
+        }
+        data.username = pseudo;
 
         // 🔑 Vérification du code de salon (l'hôte le transmet, il n'a rien à saisir)
         if (data.code !== undefined && data.code !== null && !data.isHost) {
