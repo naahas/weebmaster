@@ -724,12 +724,17 @@ function generateMatchData(subtype) {
             // Un auteur par étage, sinon la grille n'a pas de solution :
             // Togashi a écrit Hunter x Hunter et Yu Yu Hakusho, Araki trois
             // parties de Jojo, Isayama deux saisons de L'Attaque des Titans.
+            // La comparaison passe par « normalize » : saisi a la main, un meme
+            // auteur s ecrit « Hirohiko Araki » ici et « hirohiko araki » la, et
+            // deux orthographes auraient compte pour deux personnes — la grille
+            // aurait alors propose deux fois la meme reponse.
             const usedAuthors = new Set();
             const picked = [];
             for (const a of shuffle(animes)) {
-                if (!usedAuthors.has(a.author) && picked.length < 5) {
+                const cle = normalize(a.author);
+                if (!usedAuthors.has(cle) && picked.length < 5) {
                     picked.push(a);
-                    usedAuthors.add(a.author);
+                    usedAuthors.add(cle);
                 }
             }
             if (picked.length < 5) {

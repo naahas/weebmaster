@@ -177,4 +177,43 @@ const jetonValide = (u) => /^\/ascpic\/[0-9a-f]{20}$/.test(String(u));
             + noms.find(n => n.length === court));
 }
 
+// ── Deux orthographes pour une même personne ──
+// La Liaison ne prend qu'un anime par auteur, sinon la grille proposerait deux
+// fois la même réponse et n'aurait pas de solution. Ce dédoublonnage compare
+// des chaînes : saisi à la main, « Hirohiko Araki » ici et « Araki Hirohiko »
+// là comptent pour deux personnes. La comparaison ignore déjà la casse, les
+// accents et la ponctuation — le reste se signale ici.
+{
+    const donnees = require('../ascensiondata.json');
+    const cle = (s) => String(s || '').toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9]/g, '');
+
+    for (const champ of ['author', 'studio']) {
+        const parCle = new Map();
+        for (const a of donnees.animes || []) {
+            if (!a[champ]) continue;
+            const k = cle(a[champ]);
+            if (!parCle.has(k)) parCle.set(k, new Set());
+            parCle.get(k).add(a[champ]);
+        }
+        // Un mot en commun, des mots dans un ordre différent : on rapproche les
+        // clés qui contiennent les mêmes lettres pour attraper l'inversion.
+        const trie = (s) => s.split('').sort().join('');
+        const parLettres = new Map();
+        for (const [k, formes] of parCle) {
+            const l = trie(k);
+            if (!parLettres.has(l)) parLettres.set(l, new Set());
+            for (const f of formes) parLettres.get(l).add(f);
+        }
+        const suspects = [...parLettres.values()].filter(s => s.size > 1);
+
+        check('les « ' + champ + ' » ne s écrivent que d une façon',
+            suspects.length === 0,
+            suspects.length
+                ? suspects.map(s => [...s].join(' ≠ ')).join(' | ')
+                : parCle.size + ' valeur(s) distinctes');
+    }
+}
+
 console.log(ko ? `\n${ko} échec(s)` : "\n✨ Le moteur d'Ascension tient, et ne trahit rien");
