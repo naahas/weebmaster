@@ -353,6 +353,31 @@ app.get('/api/home-stats', async (req, res) => {
 
 // L'état d'un salon, pour se remettre en phase après un rechargement.
 // Le code est la seule clé : sans lui, il n'y a rien à raconter.
+// ── Le pseudo, repassé au tamis ──
+// Le formulaire le filtre déjà, mais un client bricolé n'y passe pas : rien
+// n'empêchait de rejoindre avec quinze mille caractères, ou avec du balisage.
+// Aucun écran ne l'injecte tel quel aujourd'hui — Vue échappe tout ce qu'il
+// affiche —, mais ce pseudo voyage à tous les joueurs, entre dans l'historique
+// et finit en base : il n'a aucune raison de sortir du même jeu de caractères
+// que celui qu'on demande à l'écran.
+function pseudoPropre(brut) {
+    const nom = String(brut === undefined || brut === null ? '' : brut)
+        .normalize('NFC')
+        .replace(/[^\p{L}\p{N}_\- ]/gu, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 16);
+    return nom.length >= 2 ? nom : '';
+}
+
+// Ce que le client a le droit de savoir d une question en cours : tout, sauf
+// laquelle est la bonne.
+function questionSansReponse(q) {
+    if (!q) return q;
+    const { correctAnswer, ...reste } = q;
+    return reste;
+}
+
 app.get('/game/state', (req, res) => {
     const gameState = roomParCode(req.query.code) || roomParJeton(req.get('X-Host-Token'));
     if (!gameState) {
@@ -427,7 +452,12 @@ app.get('/game/state', (req, res) => {
         inProgress: gameState.inProgress,
         currentQuestionIndex: gameState.currentQuestionIndex,
         playerCount: gameState.players.size,
-        currentQuestion: gameState.currentQuestion,
+        // La question sans sa reponse. « gameState.currentQuestion » garde
+        // « correctAnswer » pour la validation ; cette route est publique — il
+        // suffisait du code du salon, lisible a l ecran pendant un direct, pour
+        // lire la bonne reponse avant de repondre. Le socket, lui, n a jamais
+        // envoye que « questionData », deja propre.
+        currentQuestion: questionSansReponse(gameState.currentQuestion),
         timeRemaining: timeRemaining,
         players: playersData,
         showResults: gameState.showResults,
@@ -5518,6 +5548,8 @@ io.on('connection', (socket) => {
 
     // 🔥 NOUVEAU: Événement pour enregistrer l'authentification
     socket.on('register-authenticated', (data) => {
+        // Le pseudo passe au tamis dès l'entrée : tout ce qui suit le reprend.
+        if (data) data.username = pseudoPropre(data.username) || 'Joueur';
         authenticatedUsers.set(socket.id, {
             playerId: data.playerId,
             username: data.username,
@@ -5587,6 +5619,13 @@ io.on('connection', (socket) => {
         if (!gameState || !gameState.isActive) {
             return socket.emit('error', { message: 'Code de salon invalide', badCode: true });
         }
+
+        // Le même tamis qu'à l'écran, mais celui-ci, personne ne le contourne.
+        const pseudo = pseudoPropre(data.username);
+        if (!pseudo) {
+            return socket.emit('error', { message: 'Pseudo invalide' });
+        }
+        data.username = pseudo;
 
         if (gameState.inProgress) {
             return socket.emit('error', { message: 'Partie déjà en cours' });

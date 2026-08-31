@@ -5232,10 +5232,16 @@ createApp({
             const randomPath = Math.random() < 0.5 ? 'path1' : 'path2';
             notification.classList.add(randomPath);
 
-            notification.innerHTML = `
-                <span class="notif-username">${username}</span>
-                <span class="notif-text">a répondu</span>
-            `;
+            // Le pseudo se pose en texte, jamais en balisage : le serveur le
+            // filtre déjà, mais une seule interpolation oubliée suffirait à
+            // rendre chaque pseudo exécutable chez tous les autres joueurs.
+            const nom = document.createElement('span');
+            nom.className = 'notif-username';
+            nom.textContent = username;
+            const dit = document.createElement('span');
+            dit.className = 'notif-text';
+            dit.textContent = 'a répondu';
+            notification.append(nom, dit);
 
             document.body.appendChild(notification);
 
@@ -6584,7 +6590,16 @@ createApp({
             const flash = document.createElement('div');
             flash.id = 'playerCharFlash';
             flash.className = 'character-flash';
-            flash.innerHTML = `<img src="${imageUrl}" alt="${characterName}" draggable="false" onerror="this.parentElement.remove()"/>`;
+            // Construite par attributs plutôt qu'en chaîne : le nom du
+            // personnage vient d'une réponse de joueur, et une image dont
+            // l'adresse se termine par un guillemet écrivait le reste du
+            // balisage à sa place.
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.alt = characterName || '';
+            img.draggable = false;
+            img.onerror = () => { if (img.parentElement) img.parentElement.remove(); };
+            flash.appendChild(img);
             
             const bombWrapper = document.querySelector('.bomb-wrapper');
             if (bombWrapper) {

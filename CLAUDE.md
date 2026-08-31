@@ -41,6 +41,9 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   `npm run test:rejouer` (deux manches d affilée sans répétition de question),
   `npm run test:historique` (chaque salon a sa propre mémoire),
   `npm run test:backoffice` (les routes /api/*question* exigent `QUESTION_ADMIN_CODE`),
+  `npm run test:fuites` (ce qu un curieux muni du seul code du salon peut lire :
+  la reponse du quiz, les etages de la tour, les portes /admin, le pseudo d un
+  client bricole),
   `npm run test:ascension` (le moteur d'étages, sans serveur : le tirage par sac, les
   sept types, et surtout qu'aucun ne livre sa réponse — ni par un champ, ni par un
   identifiant, ni par un nom de fichier),
