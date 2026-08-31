@@ -67,6 +67,44 @@ function salon() {
                 !!q && !JSON.stringify(q).match(/coanswer|answer[0-9]|bonneReponse/i),
                 'aucun champ suspect');
 
+            // La répartition des votes : l'écran ne la montre qu'aux résultats,
+            // mais elle partait dès la première réponse. Il suffisait d'écouter
+            // pour voir la salle se ranger, puis de choisir la majorité.
+            let stats = null;
+            socks[0].on('live-answer-stats', (d) => { stats = d; });
+            socks[0].emit('submit-answer', { answer: 1 });
+            await wait(900);
+
+            check('la répartition des votes ne circule pas pendant la question',
+                !!stats && Object.keys(stats.answerCounts || {}).length === 0,
+                stats ? JSON.stringify(stats.answerCounts) : '(aucune statistique)');
+            check('mais le nombre de répondants, oui',
+                !!stats && stats.answeredCount >= 1,
+                stats ? stats.answeredCount + ' répondant(s)' : '—');
+
+            const pendant = await fetch(BASE + '/game/state?code=' + s.code).then(r => r.json());
+            check('/game/state ne dit pas non plus comment la salle a voté',
+                Object.keys(pendant.answerCounts || {}).length === 0,
+                JSON.stringify(pendant.answerCounts));
+
+            // Une réponse, une seule : l'écran verrouille ses boutons, le serveur
+            // doit le faire aussi — sinon on répond, on regarde, on change d'avis.
+            socks[0].emit('submit-answer', { answer: 2 });
+            await wait(500);
+            const apres = await fetch(BASE + '/game/state?code=' + s.code).then(r => r.json());
+            const moi = (apres.players || []).find(p => p.username === 'FuiteA');
+            check('on ne change pas sa réponse une fois donnée',
+                !moi || moi.selectedAnswerIndex === 1,
+                moi ? 'index ' + moi.selectedAnswerIndex : '(joueur introuvable)');
+
+            // Et une réponse hors des choix proposés n'entre nulle part
+            socks[1].emit('submit-answer', { answer: 999 });
+            await wait(500);
+            const bidon = await fetch(BASE + '/game/state?code=' + s.code).then(r => r.json());
+            const lui = (bidon.players || []).find(p => p.username === 'FuiteB');
+            check('une réponse hors barème est refusée',
+                !lui || !lui.hasAnswered, lui ? 'hasAnswered=' + lui.hasAnswered : '(introuvable)');
+
             for (const k of socks) k.close();
             await s.post('/admin/toggle-game', {});
         }

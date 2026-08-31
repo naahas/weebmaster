@@ -439,14 +439,18 @@ app.get('/game/state', (req, res) => {
         };
     });
 
-    // 🔥 Compter les réponses par option
+    // 🔥 Compter les réponses par option — mais seulement une fois la question
+    // close : avant, cette route publique disait à qui la demandait comment la
+    // salle avait voté, ce qu'aucun écran ne montre à ce moment-là.
     const answerCounts = {};
-    gameState.liveAnswers.forEach((answerIndex) => {
-        if (!answerCounts[answerIndex]) {
-            answerCounts[answerIndex] = 0;
-        }
-        answerCounts[answerIndex]++;
-    });
+    if (gameState.showResults) {
+        gameState.liveAnswers.forEach((answerIndex) => {
+            if (!answerCounts[answerIndex]) {
+                answerCounts[answerIndex] = 0;
+            }
+            answerCounts[answerIndex]++;
+        });
+    }
 
     res.json({
         isActive: gameState.isActive,
@@ -2992,6 +2996,9 @@ function revealAnswers(gameState, correctAnswer) {
     };
 
     gameState.showResults = true;
+    // Les pourcentages n'ont circulé jusqu'ici que vides : c'est maintenant
+    // qu'ils s'affichent, donc maintenant qu'on les envoie.
+    updateLiveAnswerStats(gameState);
     gameState.lastQuestionResults = resultsData;
 
     diffuser(gameState, 'question-results', resultsData);
@@ -3250,6 +3257,9 @@ function revealTiebreakerAnswers(gameState, correctAnswer) {
     };
 
     gameState.showResults = true;
+    // Les pourcentages n'ont circulé jusqu'ici que vides : c'est maintenant
+    // qu'ils s'affichent, donc maintenant qu'on les envoie.
+    updateLiveAnswerStats(gameState);
     gameState.lastQuestionResults = resultsData;
 
     diffuser(gameState, 'question-results', resultsData);
@@ -3653,6 +3663,8 @@ async function revealRivalryTiebreakerAnswers(gameState, correctAnswer) {
     
     // 🆕 Marquer qu'on est en phase de résultats
     gameState.showResults = true;
+    // Le departage aussi : les pourcentages ne circulent qu une fois la question close
+    updateLiveAnswerStats(gameState);
 
     const results = {
         correctAnswer,
@@ -6082,10 +6094,20 @@ io.on('connection', (socket) => {
         // Mode Vie - bloquer si éliminé
         if (gameState.mode === 'lives' && player.lives === 0) return;
 
+        // L'écran verrouille les boutons après la réponse, mais l'écran n'engage
+        // que les clients honnêtes : sans ce garde, on pouvait répondre autant
+        // de fois qu'on voulait jusqu'à l'expiration du minuteur.
+        if (gameState.answers.has(socket.id)) return;
+
+        // Et la réponse doit être l'un des choix proposés : n'importe quelle
+        // valeur entrait sinon dans les compteurs, puis repartait à tout le monde.
+        const choix = Number(data && data.answer);
+        if (!Number.isInteger(choix) || choix < 1 || choix > gameState.answersCount) return;
+
         const responseTime = Date.now() - gameState.questionStartTime;
 
         gameState.answers.set(socket.id, {
-            answer: data.answer,
+            answer: choix,
             time: responseTime,
             bonusActive: data.bonusActive // 🔥 AJOUTER CETTE LIGNE
         });
@@ -6095,7 +6117,7 @@ io.on('connection', (socket) => {
 
         socket.emit('answer-recorded');
 
-        gameState.liveAnswers.set(socket.id, data.answer);
+        gameState.liveAnswers.set(socket.id, choix);
         throttledUpdateLiveAnswerStats(gameState);
 
 
@@ -6669,15 +6691,22 @@ function resetGameState(gameState) {
 
 
 
+// L'écran ne montre les pourcentages qu'une fois la question close — mais ils
+// partaient dès la première réponse, à tous les joueurs. Il suffisait d'écouter
+// la socket pour voir la foule se ranger, puis de choisir la majorité. On ne
+// diffuse donc la répartition qu'au moment où elle s'affiche ; pendant la
+// question, seul le nombre de répondants circule, qui ne dit rien de leur choix.
 function updateLiveAnswerStats(gameState) {
     const answerCounts = {};
 
-    gameState.liveAnswers.forEach((answerIndex) => {
-        if (!answerCounts[answerIndex]) {
-            answerCounts[answerIndex] = 0;
-        }
-        answerCounts[answerIndex]++;
-    });
+    if (gameState.showResults) {
+        gameState.liveAnswers.forEach((answerIndex) => {
+            if (!answerCounts[answerIndex]) {
+                answerCounts[answerIndex] = 0;
+            }
+            answerCounts[answerIndex]++;
+        });
+    }
 
     diffuser(gameState, 'live-answer-stats', {
         answerCounts: answerCounts,
