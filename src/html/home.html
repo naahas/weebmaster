@@ -184,7 +184,8 @@
                             <transition name="v2-fade" type="transition">
                                 <!-- Une illustration pas encore déposée ne doit pas laisser
                                      une image cassée au milieu du panneau : elle s'efface. -->
-                                <img class="v2-mode-char" :class="['char-' + currentMode.id, { plain: currentMode.plain }]" :key="currentMode.id"
+                                <img class="v2-mode-char" v-if="!isMobile"
+                                     :class="['char-' + currentMode.id, { plain: currentMode.plain }]" :key="currentMode.id"
                                      :src="currentMode.img" :alt="currentMode.name" draggable="false"
                                      @error="$event.target.style.visibility = 'hidden'">
                             </transition>

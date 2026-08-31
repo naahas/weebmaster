@@ -9660,13 +9660,13 @@ body.game-active:has(.poll-game-container) #particles-js {
         padding: 0;
     }
 
-    /* Le personnage débordait sur le titre et la description */
-    .v2-mode-char {
-        height: 88%;
-        max-width: 42%;
-        right: 0;
-        opacity: 0.55;
-    }
+    /* ── Pas d illustration sur telephone ──
+       Elle debordait sur le titre et la description, et il fallait la reduire
+       puis la faire palir jusqu a ce qu elle ne serve plus a rien. Autant ne
+       pas la poser : le gabarit ne la rend meme pas ici, ce qui epargne au
+       passage un a deux mega-octets par mode survole. La regle reste, comme
+       filet, si l image revenait un jour par un autre chemin. */
+    .v2-mode-char { display: none; }
 
     .v2-mode-preview-body { position: relative; z-index: 4; max-width: 100%; }
     .v2-mode-preview-desc { max-width: 16rem; }
@@ -9761,9 +9761,9 @@ body.game-active:has(.poll-game-container) #particles-js {
     .v2-room-leave:hover { transform: none; }
 
     /* ── Choix du mode : la description passait sous le personnage ── */
-    .v2-mode-preview-desc { max-width: 100%; padding-right: 7.5rem; }
-    .v2-mode-preview-name { padding-right: 6rem; }
-    .v2-mode-char { max-width: 38%; opacity: 0.45; }
+    /* Plus d illustration a contourner : le texte reprend toute la largeur */
+    .v2-mode-preview-desc { max-width: 100%; }
+    .v2-mode-preview-name { padding-right: 0; }
 
     /* ── En jeu : le contenu dépasse la fenêtre aux résultats ──
        Le body est figé (position: fixed) : c'est la section de jeu
