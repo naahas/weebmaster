@@ -109,7 +109,7 @@
    l'entoure d'un filet fin, et le bandeau du bas porte le minuteur du tour.
    Toutes les tailles descendent de --carte-h : elle seule se règle. */
 .rush {
-    --carte-h: min(21rem, 41vh);
+    --carte-h: min(22rem, 42vh);
     --carte-l: calc(var(--carte-h) * 225 / 350);
     --cadre: 0.4rem;        /* le filet, sur trois côtés */
     --cartouche: 1.9rem;    /* le bandeau du bas */
