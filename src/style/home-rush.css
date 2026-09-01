@@ -49,7 +49,7 @@
 .rush-chrono-n {
     position: relative;
     font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(2rem, 4vh, 2.7rem);
+    font-size: clamp(2.2rem, 4.6vh, 3rem);
     line-height: 0.85;
     color: #fff;
     letter-spacing: -0.02em;
@@ -109,7 +109,7 @@
    l'entoure d'un filet fin, et le bandeau du bas porte le minuteur du tour.
    Toutes les tailles descendent de --carte-h : elle seule se règle. */
 .rush {
-    --carte-h: min(23rem, 44vh);
+    --carte-h: min(21rem, 41vh);
     --carte-l: calc(var(--carte-h) * 225 / 350);
     --cadre: 0.4rem;        /* le filet, sur trois côtés */
     --cartouche: 1.9rem;    /* le bandeau du bas */
