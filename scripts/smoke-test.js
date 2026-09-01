@@ -213,10 +213,10 @@ async function scenarioHomeStats() {
     // justement à quinze et n aurait sinon retenu que les salons complets.
     check('historique lisible', Array.isArray(stats.recentGames),
         (stats.recentGames || []).length + ' partie(s) retenue(s)');
-    // Rush et Ascension partagent le seuil de BombAnime : une partie a cinq y a
-    // du sens. Il doit suivre « seuilHistorique » dans server.js — Ascension y a
-    // ete branchee apres coup, et cette liste-ci l avait oubliee.
-    const seuil = (m) => ((m === 'bombanime' || m === 'rush' || m === 'ascension') ? 5 : 15);
+    // Un seul seuil pour la liste, tous modes confondus : cinq joueurs. Il doit
+    // suivre « MIN_JOUEURS_LISTE » dans server.js. Le compteur, lui, retient des
+    // trois — mais il ne se lit pas ici.
+    const seuil = () => 5;
     const petites = (stats.recentGames || []).filter(g => g.playersCount < seuil(g.mode));
     check('les parties sous le seuil de leur mode sont écartées', petites.length === 0,
         petites.length ? petites.map(g => g.mode + ' ' + g.playersCount + 'j').join(', ') : 'aucune');

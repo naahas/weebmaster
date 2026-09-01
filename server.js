@@ -191,16 +191,17 @@ const AUTO_DELAI_MS = parseInt(process.env.AUTO_DELAI_MS, 10) || 5000;
 // rafraîchissement de page. Sans rapport avec le délai du mode auto.
 const DELAI_RETRAIT_JOUEUR_MS = 5000;
 
-// Les parties à deux ou trois ne disent rien de l'activité du site : elles
-// viennent d'un test ou d'un essai entre amis. Seules celles qui ont rassemblé
-// du monde sont comptées et affichées.
-// BombAnime plafonne à quinze : au même seuil que le quiz, seul un salon
-// complet serait retenu. Cinq joueurs y font déjà une vraie partie.
-const MIN_JOUEURS_HISTORIQUE = parseInt(process.env.MIN_JOUEURS_HISTORIQUE, 10) || 15;
-const MIN_JOUEURS_HISTORIQUE_BOMB = parseInt(process.env.MIN_JOUEURS_HISTORIQUE_BOMB, 10) || 5;
-const seuilHistorique = (mode) =>
-    (mode === 'bombanime' || mode === 'rush' || mode === 'ascension')
-        ? MIN_JOUEURS_HISTORIQUE_BOMB : MIN_JOUEURS_HISTORIQUE;
+// ── Deux seuils, deux questions ──
+// Le compteur de l'accueil et la liste qui l'accompagne ne disent pas la même
+// chose. Le compteur dit combien on a joué : une partie à trois en est une, et
+// c'est ce chiffre qui renseigne sur le trafic du site. La liste montre les
+// dernières parties dignes d'être montrées — cinq joueurs, quel que soit le
+// mode, une manche en dessous n'apprend rien à qui arrive sur la page.
+//
+// Le seuil ne dépend plus du mode. Il valait quinze au quiz et cinq ailleurs,
+// ce qui écartait de la liste des parties de quiz tout à fait honorables.
+const MIN_JOUEURS_COMPTEUR = parseInt(process.env.MIN_JOUEURS_COMPTEUR, 10) || 3;
+const MIN_JOUEURS_LISTE = parseInt(process.env.MIN_JOUEURS_LISTE, 10) || 5;
 let gameHistoryTableOk = null; // null = pas encore testé, false = table absente
 
 let questionsCountCache = { value: null, at: 0 };
@@ -218,15 +219,21 @@ async function recordFinishedGame({ mode, playersCount, winnerName, duration }) 
         endedAt: new Date().toISOString(),
     };
 
-    const minimum = seuilHistorique(entry.mode);
-    if (entry.playersCount < minimum) {
-        console.log(`📊 Partie non retenue : ${entry.playersCount} joueur(s), minimum ${minimum} en ${entry.modeLabel}`);
+    // Le filtre était à l'écriture : une partie sous le seuil n'entrait jamais
+    // en base, et ne pouvait donc plus être comptée après coup. On garde
+    // maintenant tout ce qui atteint trois joueurs, et l'on trie à l'affichage.
+    if (entry.playersCount < MIN_JOUEURS_COMPTEUR) {
+        console.log(`📊 Partie non retenue : ${entry.playersCount} joueur(s), minimum ${MIN_JOUEURS_COMPTEUR}`);
         return;
     }
 
     gamesPlayedTotal++;
-    recentGames.unshift(entry);
-    if (recentGames.length > RECENT_GAMES_MAX) recentGames.length = RECENT_GAMES_MAX;
+
+    // La liste, elle, ne montre qu au-dessus de cinq
+    if (entry.playersCount >= MIN_JOUEURS_LISTE) {
+        recentGames.unshift(entry);
+        if (recentGames.length > RECENT_GAMES_MAX) recentGames.length = RECENT_GAMES_MAX;
+    }
 
     if (gameHistoryTableOk === false) return;
 
@@ -249,22 +256,23 @@ async function recordFinishedGame({ mode, playersCount, winnerName, duration }) 
 
 async function loadRecentGamesFromDb() {
     try {
-        // Le seuil dépend du mode : on ratisse au plus bas des deux, puis on
-        // trie ici. Filtrer à quinze faisait disparaître toutes les parties de
-        // BombAnime au premier redémarrage, alors qu'elles comptent dès cinq.
-        const seuilBas = Math.min(MIN_JOUEURS_HISTORIQUE, MIN_JOUEURS_HISTORIQUE_BOMB);
+        // On ratisse au seuil du compteur — le plus bas de tous — puis on trie
+        // ici par mode. Filtrer à quinze faisait disparaître toutes les parties
+        // de BombAnime au premier redémarrage, alors qu'elles comptent dès cinq ;
+        // filtrer à cinq écarterait de même les petites parties, qui ne comptent
+        // que dans le total mais y comptent bel et bien.
         const { data, error } = await supabase
             .from('game_history')
             .select('mode, players_count, winner_name, duration, created_at')
-            .gte('players_count', seuilBas)
+            .gte('players_count', MIN_JOUEURS_COMPTEUR)
             .order('created_at', { ascending: false })
-            .limit(RECENT_GAMES_MAX * 4);
+            .limit(RECENT_GAMES_MAX * 8);
         if (error) throw error;
 
         gameHistoryTableOk = true;
         recentGames.length = 0;
         (data || [])
-            .filter(g => (g.players_count || 0) >= seuilHistorique(g.mode))
+            .filter(g => (g.players_count || 0) >= MIN_JOUEURS_LISTE)
             .slice(0, RECENT_GAMES_MAX)
             .forEach(g => recentGames.push({
             mode: g.mode,
@@ -274,13 +282,15 @@ async function loadRecentGamesFromDb() {
             duration: g.duration || 0,
             endedAt: g.created_at,
         }));
-        const [quiz, bombe] = await Promise.all([
-            supabase.from('game_history').select('id', { count: 'exact', head: true })
-                .neq('mode', 'bombanime').gte('players_count', MIN_JOUEURS_HISTORIQUE),
-            supabase.from('game_history').select('id', { count: 'exact', head: true })
-                .eq('mode', 'bombanime').gte('players_count', MIN_JOUEURS_HISTORIQUE_BOMB),
-        ]);
-        gamesPlayedTotal = (quiz.count || 0) + (bombe.count || 0) || recentGames.length;
+        // Une seule requête, un seul seuil : le compte dit combien de parties on
+        // a jouées, tous modes confondus. Les deux requêtes d avant comptaient
+        // Rush et Ascension au seuil du quiz — quinze — alors qu ils comptent
+        // des cinq : trois manches de Rush a douze joueurs figuraient dans la
+        // liste sans figurer dans le total.
+        const { count } = await supabase.from('game_history')
+            .select('id', { count: 'exact', head: true })
+            .gte('players_count', MIN_JOUEURS_COMPTEUR);
+        gamesPlayedTotal = count || recentGames.length;
         console.log(`📊 ${recentGames.length} partie(s) récente(s) chargée(s), ${gamesPlayedTotal} au total`);
     } catch (e) {
         // Silencieux jusqu'ici : on ne voyait pas que la table manquait
@@ -1677,7 +1687,7 @@ app.post('/admin/start-game', async (req, res) => {
     if (gameState.lobbyMode === 'ascension') {
         gameState.initialPlayerCount = totalPlayers;
         // L'accueil compte les parties jouées et en montre les dernières.
-        // « MODE_LABELS » et « seuilHistorique » connaissaient déjà Ascension ;
+        // « MODE_LABELS » connaissait déjà Ascension ;
         // il ne manquait que le fil qui les relie à sa fin de partie.
         const r = ascension.startAscensionGame(gameState, io, {
             onGameEnd: (podium, winner) => {

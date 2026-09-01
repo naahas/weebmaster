@@ -209,9 +209,12 @@ Pour lever la mesure, trois endroits : le garde dans `/admin/toggle-game`, `dema
 
 ## Points d'attention
 
-- Une partie n entre dans l historique de l accueil qu au-dessus d un seuil de joueurs :
-  `MIN_JOUEURS_HISTORIQUE` (15) au quiz, `MIN_JOUEURS_HISTORIQUE_BOMB` (5) en BombAnime, qui
-  plafonne justement à 15 et n aurait sinon retenu que les salons complets.
+- L accueil compte les parties et en montre les dernieres, avec deux seuils :
+  `MIN_JOUEURS_COMPTEUR` (3) pour ce qu on garde et ce qu on compte — c est ce
+  chiffre qui renseigne sur le trafic —, `MIN_JOUEURS_LISTE` (5) pour ce qu on
+  affiche, tous modes confondus. Le filtre est a l ecriture pour le premier : une
+  partie sous trois joueurs n entre jamais en base, et ne pourra donc pas etre
+  comptee apres coup.
 - Gros fichiers (`home.css` 11.5k lignes, `server.js` 6.2k, `app.js` 4.9k) : cibler via grep/offset,
   ne jamais relire en entier.
 - Valider une modif : `npm run check`, puis `npm start` et les trois suites, et ouvrir `/` dans le
