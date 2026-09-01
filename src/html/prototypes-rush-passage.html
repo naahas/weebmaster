@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rush — le passage d'une carte à la suivante</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   Six façons d'enchaîner. Le Rush se joue à un portrait toutes les
+   deux ou trois secondes : une animation qui dure se met en travers
+   du jeu. Aucune ne dépasse 0,4 s, et le champ de saisie ne perd
+   jamais la main.
+   ════════════════════════════════════════════════════════════════ */
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 2rem 1.5rem 4rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #fff;
+    background: radial-gradient(70% 55% at 50% 0%, #17161c, #08080b 70%);
+    min-height: 100vh;
+}
+
+h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
+
+.sous {
+    margin: 0 0 2rem;
+    max-width: 52rem;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.42);
+}
+
+.grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr)); gap: 2.4rem 1.6rem; }
+.cas { display: flex; flex-direction: column; align-items: center; gap: 0.9rem; }
+
+.titre { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255,255,255,.36); text-align: center; }
+.titre em { display: block; margin-top: 0.3rem; font-style: normal; font-weight: 400; font-size: 0.74rem; letter-spacing: 0; text-transform: none; color: rgba(255,255,255,.26); }
+
+/* ── Le cadre, repris du jeu ── */
+.scene {
+    --carte-h: 15rem;
+    --carte-l: calc(var(--carte-h) * 225 / 350);
+    --cadre: 0.4rem;
+    --cartouche: 1.6rem;
+    position: relative;
+    width: calc(var(--carte-l) + var(--cadre) * 2);
+    height: calc(var(--carte-h) + var(--cadre) + var(--cartouche));
+    perspective: 60rem;
+}
+
+.carte {
+    position: absolute;
+    inset: 0;
+    padding: var(--cadre) var(--cadre) var(--cartouche);
+    border-radius: 0.55rem;
+    background: #131217;
+    box-shadow: 0 1.2rem 3rem rgba(0,0,0,.5), inset 0 0 0 0.06rem rgba(255,255,255,.09);
+    overflow: hidden;
+}
+
+.carte img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0.35rem;
+    display: block;
+}
+
+.bandeau {
+    position: absolute;
+    left: var(--cadre); right: var(--cadre); bottom: 0.35rem;
+    height: 0.18rem;
+    background: rgba(255,255,255,.1);
+    border-radius: 1rem;
+    overflow: hidden;
+}
+.bandeau i { display: block; height: 100%; width: 60%; background: linear-gradient(90deg, rgba(140,180,255,.6), #a8c8ff); }
+
+/* La carte sortante est posée par-dessus, le temps de son départ */
+.carte.sort { z-index: 2; pointer-events: none; }
+
+.boutons { display: flex; gap: 0.5rem; }
+.b {
+    font: inherit; font-size: .76rem; color: #fff;
+    background: rgba(255,255,255,.07);
+    border: .06rem solid rgba(255,255,255,.12);
+    border-radius: .4rem; padding: .35rem .7rem; cursor: pointer;
+}
+.b:hover { background: rgba(140,180,255,.18); }
+.b.juste:hover { background: rgba(110,231,183,.2); }
+.b.rate:hover { background: rgba(255,90,110,.2); }
+
+.chrono { font-size: .68rem; color: rgba(255,255,255,.25); font-variant-numeric: tabular-nums; }
+
+/* ════════════ A · Ce qui existe aujourd hui ════════════
+   Un fondu et un léger glissement vertical. Sobre, mais on ne sait pas
+   toujours si la réponse est passée. */
+.a .carte.entre { animation: aEntre .24s cubic-bezier(.2,.9,.25,1) both; }
+.a .carte.sort  { animation: aSort .16s ease both; }
+@keyframes aEntre { from { opacity:0; transform: translateY(.7rem) scale(.97); } }
+@keyframes aSort  { to   { opacity:0; transform: translateY(-.5rem) scale(.99); } }
+
+/* ════════════ B · La carte se retourne ════════════
+   Un demi-tour sur l axe vertical : la sortante montre son dos, l entrante
+   arrive de l autre côté. C est le geste d une carte qu on abat. */
+.b-cas .scene { perspective: 50rem; }
+.b-cas .carte { backface-visibility: hidden; }
+.b-cas .carte.entre { animation: bEntre .3s cubic-bezier(.3,.9,.3,1) both; }
+.b-cas .carte.sort  { animation: bSort .18s ease-in both; }
+@keyframes bEntre { from { transform: rotateY(-95deg); opacity:.4; } to { transform: none; opacity:1; } }
+@keyframes bSort  { to   { transform: rotateY(95deg); opacity:.4; } }
+
+/* ════════════ C · Le paquet qui defile ════════════
+   La sortante part sur la gauche, l entrante arrive de la droite. On sent
+   une pile qu on parcourt, et le sens de lecture est celui du temps. */
+.c .carte.entre { animation: cEntre .26s cubic-bezier(.2,.95,.25,1) both; }
+.c .carte.sort  { animation: cSort .2s cubic-bezier(.5,0,.9,.3) both; }
+@keyframes cEntre { from { transform: translateX(115%) rotate(4deg); opacity:0; } }
+@keyframes cSort  { to   { transform: translateX(-115%) rotate(-6deg); opacity:0; } }
+
+/* ════════════ D · Le coup de tampon ════════════
+   La sortante se fait pousser vers le fond et s efface ; l entrante tombe
+   dessus. Rien ne se deplace lateralement : le regard ne bouge pas. */
+.d .carte.entre { animation: dEntre .28s cubic-bezier(.2,1.5,.35,1) both; }
+.d .carte.sort  { animation: dSort .18s ease-in both; }
+@keyframes dEntre { from { transform: scale(1.18); opacity:0; } to { transform: none; opacity:1; } }
+@keyframes dSort  { to   { transform: scale(.86); opacity:0; filter: brightness(1.6); } }
+
+/* ════════════ E · La bascule ════════════
+   La sortante bascule vers l arriere comme une page qu on tourne, en pivotant
+   sur son bord haut. L entrante etait deja dessous. */
+.e .scene { perspective: 45rem; }
+.e .carte { transform-origin: 50% 0%; }
+.e .carte.entre { animation: eEntre .24s ease-out both; }
+.e .carte.sort  { animation: eSort .26s cubic-bezier(.5,0,.75,0) both; }
+@keyframes eEntre { from { transform: scale(.94); opacity:.65; } to { transform:none; opacity:1; } }
+@keyframes eSort  { to { transform: rotateX(-92deg); opacity:0; } }
+
+/* ════════════ F · L eclat, puis le fondu ════════════
+   Presque rien ne bouge : un eclat de lumiere traverse la carte au verdict,
+   et le portrait suivant se substitue dessous. Le plus rapide de tous. */
+.f .carte.entre { animation: fEntre .18s ease both; }
+.f .carte.sort  { animation: fSort .14s ease both; }
+@keyframes fEntre { from { opacity:0; } }
+@keyframes fSort  { to { opacity:0; } }
+.f .eclat {
+    position: absolute; inset: 0; z-index: 3; pointer-events: none;
+    border-radius: .55rem; overflow: hidden;
+}
+.f .eclat::after {
+    content: ''; position: absolute; top: -20%; bottom: -20%; width: 45%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,.75), transparent);
+    animation: fEclat .34s cubic-bezier(.3,.8,.2,1) both;
+}
+@keyframes fEclat { from { left: -60%; } to { left: 120%; } }
+
+/* ── Le verdict, commun a tous : un lisere qui bat ── */
+.carte.ok  { box-shadow: 0 1.2rem 3rem rgba(0,0,0,.5), inset 0 0 0 .2rem rgba(110,231,183,.85); }
+.carte.non { box-shadow: 0 1.2rem 3rem rgba(0,0,0,.5), inset 0 0 0 .2rem rgba(255,90,110,.8); }
+</style>
+</head>
+<body>
+
+<h1>Rush — le passage d'une carte à la suivante</h1>
+<p class="sous">
+    Le Rush se joue à un portrait toutes les deux ou trois secondes : une animation qui dure se met
+    en travers du jeu, et on tape le nom suivant avant qu'elle soit finie. Aucune de ces six ne
+    dépasse quatre dixièmes de seconde, verdict compris. Clique « Juste » ou « Raté » pour les
+    comparer — et regarde-les plusieurs fois d'affilée, c'est en rafale qu'on sent laquelle fatigue.
+</p>
+
+<div class="grille" id="grille"></div>
+
+<script>
+var CAS = [
+    ['a',     'A · Ce qui existe',   'fondu et glissement vertical'],
+    ['b-cas', 'B · La carte se retourne', 'un demi-tour, comme une carte qu’on abat'],
+    ['c',     'C · Le paquet défile', 'la sortante part à gauche, la suivante arrive à droite'],
+    ['d',     'D · Le coup de tampon', 'la suivante tombe dessus, rien ne se déplace'],
+    ['e',     'E · La bascule',       'la sortante pivote sur son bord haut'],
+    ['f',     'F · L’éclat',          'un trait de lumière, et le portrait a changé'],
+];
+
+// Quelques portraits du jeu, pris au hasard à chaque passage
+var PORTRAITS = ['naruto.png', 'luffy.png', 'goku.png', 'ichigo.png', 'zoro.png',
+                 'sasuke.png', 'gojo.png', 'levi.png', 'tanjiro.png', 'killua.png'];
+
+var grille = document.getElementById('grille');
+
+grille.innerHTML = CAS.map(function (c) {
+    return '<div class="cas ' + c[0] + '">' +
+        '<div class="scene"><div class="carte entre">' +
+            '<img src="/rushpic/' + PORTRAITS[0] + '" alt="">' +
+            '<span class="bandeau"><i></i></span>' +
+        '</div></div>' +
+        '<span class="titre">' + c[1] + '<em>' + c[2] + '</em></span>' +
+        '<div class="boutons">' +
+            '<button class="b juste">Juste</button>' +
+            '<button class="b rate">Raté</button>' +
+        '</div>' +
+        '<span class="chrono">—</span>' +
+    '</div>';
+}).join('');
+
+function carteNeuve(src) {
+    var d = document.createElement('div');
+    d.className = 'carte entre';
+    d.innerHTML = '<img src="' + src + '" alt=""><span class="bandeau"><i></i></span>';
+    return d;
+}
+
+document.querySelectorAll('.cas').forEach(function (cas, i) {
+    var scene = cas.querySelector('.scene');
+    var chrono = cas.querySelector('.chrono');
+    var n = 0;
+    var occupe = false;
+
+    function passer(juste) {
+        if (occupe) return;
+        occupe = true;
+        var debut = performance.now();
+
+        var sortante = scene.querySelector('.carte:not(.sort)');
+        // Le verdict d'abord : il doit se lire avant que la carte parte
+        sortante.classList.add(juste ? 'ok' : 'non');
+
+        setTimeout(function () {
+            n = (n + 1) % PORTRAITS.length;
+            var entrante = carteNeuve('/rushpic/' + PORTRAITS[n]);
+
+            sortante.classList.remove('entre');
+            sortante.classList.add('sort');
+            scene.appendChild(entrante);
+
+            // L'éclat du cas F se pose sur la scène, pas sur une carte
+            if (cas.classList.contains('f')) {
+                var e = document.createElement('span');
+                e.className = 'eclat';
+                scene.appendChild(e);
+                setTimeout(function () { e.remove(); }, 360);
+            }
+
+            setTimeout(function () {
+                sortante.remove();
+                occupe = false;
+                chrono.textContent = Math.round(performance.now() - debut) + ' ms';
+            }, 320);
+        }, 90);
+    }
+
+    cas.querySelector('.juste').addEventListener('click', function () { passer(true); });
+    cas.querySelector('.rate').addEventListener('click', function () { passer(false); });
+});
+</script>
+</body>
+</html>
