@@ -1077,7 +1077,9 @@
                              en bas qui porte le minuteur du tour. Posé dans l'image,
                              un fond clair l'avalait ; à droite, il distrayait. -->
                         <div class="rush-scene">
-                            <transition name="rush-carte" mode="out-in">
+                            <!-- Pas de « out-in » : les deux cartes doivent se croiser, la sortante
+                                 partant a gauche pendant que la suivante arrive de droite. -->
+                            <transition name="rush-carte">
                                 <div class="rush-carte" :key="rush.portrait ? rush.portrait.img : 'fin'"
                                      :class="{ juste: rush.flash === 'juste', passe: rush.flash === 'passe' }">
                                     <span class="rush-vitre">

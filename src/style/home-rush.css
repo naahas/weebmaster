@@ -225,11 +225,26 @@
     100% { box-shadow: var(--porte), var(--filet); }
 }
 
-/* Le remplacement d'un portrait par le suivant */
-.rush-carte-enter-active { transition: opacity 0.16s ease, transform 0.24s cubic-bezier(0.2, 0.9, 0.25, 1); }
-.rush-carte-leave-active { transition: opacity 0.12s ease, transform 0.16s ease; }
-.rush-carte-enter-from   { opacity: 0; transform: translateY(0.7rem) scale(0.97); }
-.rush-carte-leave-to     { opacity: 0; transform: translateY(-0.5rem) scale(0.99); }
+/* ── Le paquet qui defile ──
+   La sortante part sur la gauche, la suivante arrive de la droite : on parcourt
+   une pile, et le sens de lecture est celui du temps. Les deux se croisent, ce
+   qui suppose que la transition ne soit plus en « out-in » — sinon la sortante
+   aurait fini son chemin avant que l autre s annonce, et le geste se casserait
+   en deux.
+
+   Les deux cartes occupent alors la meme case de la grille : sans « grid-area »,
+   la seconde s empilerait sous la premiere et la scene doublerait de hauteur le
+   temps du passage.
+
+   Les durees sont courtes a dessein — deux dixiemes a l aller, un et demi au
+   retour. Au rythme d un portrait toutes les deux secondes, on tape deja le nom
+   suivant : une animation qui s attarde deconcentre au lieu d accompagner. */
+.rush-scene > .rush-carte { grid-area: 1 / 1; }
+
+.rush-carte-enter-active { transition: opacity 0.14s ease, transform 0.2s cubic-bezier(0.2, 0.95, 0.25, 1); }
+.rush-carte-leave-active { transition: opacity 0.12s ease, transform 0.15s cubic-bezier(0.5, 0, 0.9, 0.3); }
+.rush-carte-enter-from   { opacity: 0; transform: translateX(115%) rotate(4deg); }
+.rush-carte-leave-to     { opacity: 0; transform: translateX(-115%) rotate(-6deg); }
 
 /* ══════════ La série et le record ══════════ */
 .rush-serie, .rush-record {
