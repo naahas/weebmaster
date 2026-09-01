@@ -7538,6 +7538,9 @@ body.game-active:has(.poll-game-container) #particles-js {
         gap: clamp(1.2rem, 4vh, 2.2rem);
         padding: 0;
     }
+    /* Plus petit sur telephone : a 2,9 rem il pesait autant que le pseudo
+       d en face, alors qu il n est qu un repere. */
+    .v2-logo { width: 2.3rem; height: 2.3rem; }
     .v2-hub-left { align-items: center; text-align: center; }
     .v2-bigstats { justify-content: center; }
     .v2-bigstat { align-items: center; }
@@ -7545,7 +7548,7 @@ body.game-active:has(.poll-game-container) #particles-js {
 }
 
 @media (max-width: 768px) {
-    .v2-home { padding: 1rem 0.9rem; }
+    .v2-home { padding: 1.5rem 1.4rem; }
     .v2-choice { aspect-ratio: 16 / 7; }
     .v2-modes-layout { grid-template-columns: 1fr; }
     /* Les six modes en deux colonnes : plus de bande étroite à faire défiler
