@@ -6841,13 +6841,18 @@ body.game-active:has(.poll-game-container) #particles-js {
 }
 
 /* ── Barre du haut ────────────────────────── */
+/* « flex-end » plutot que « space-between », et c'est le logo qui pousse le
+   reste a droite. Sans lui — sur l'accueil — le pseudo reste donc a sa place,
+   la ou « space-between » l'aurait ramene a gauche. */
 .v2-topbar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 1rem;
     flex: 0 0 auto;
 }
+
+.v2-topbar .v2-logo { margin-right: auto; }
 
 .v2-logo {
     position: relative;
@@ -6950,9 +6955,13 @@ body.game-active:has(.poll-game-container) #particles-js {
 /* Le halo doré qui pulsait en text-shadow se rejoue en drop-shadow : même
    effet, mais qui épouse le dessin au lieu du rectangle de l'image. Le rayon
    est plus court — sur des lettres pleines, un flou de 3 rem noierait tout. */
+/* L or livre dans le fichier est un #ce9940, un or brun : c etait le plus
+   terne de la page, quand tout le reste — les grands chiffres, le S du coin —
+   tape a #FFD700. Le coup de brillance le remet dans la famille, sans toucher
+   au fichier ; passer les deux valeurs a 1 le rend tel quel. */
 @keyframes v2Glow {
-    0%, 100% { filter: drop-shadow(0 0 1.6rem rgba(255, 190, 40, 0.14)); }
-    50%      { filter: drop-shadow(0 0 2.6rem rgba(255, 190, 40, 0.30)); }
+    0%, 100% { filter: saturate(1.12) brightness(1.22) drop-shadow(0 0 1.6rem rgba(255, 190, 40, 0.14)); }
+    50%      { filter: saturate(1.12) brightness(1.22) drop-shadow(0 0 2.6rem rgba(255, 190, 40, 0.30)); }
 }
 
 /* ── Stats en grand ───────────────────────── */
@@ -10645,7 +10654,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     .v2-choices {
         flex-direction: row;
         gap: 0;
-        width: min(19rem, 88%);
+        width: min(17.5rem, 84%);
         margin: 0 auto;
         border: 0.06rem solid rgba(255, 255, 255, 0.1);
         border-radius: 0.8rem;
@@ -10656,7 +10665,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
         flex: 1 1 0;
         min-width: 0;
         aspect-ratio: auto;
-        padding: 1.35rem 0.6rem;
+        padding: 1.1rem 0.55rem;
         border: none;
         border-radius: 0;
         clip-path: none;
@@ -10681,7 +10690,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 
     .v2-choice-kicker { font-size: 0.46rem; letter-spacing: 0.18em; }
     .v2-choice-join .v2-choice-kicker { color: #8ca0ff; }
-    .v2-choice-title { font-size: clamp(1.1rem, 5.6vw, 1.4rem); line-height: 1; }
+    .v2-choice-title { font-size: clamp(1rem, 5vw, 1.25rem); line-height: 1; }
 
     /* Ni flèche ni halo : ils n'ont plus de place ni d'utilité au doigt */
     .v2-choice-arrow,

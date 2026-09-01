@@ -78,7 +78,10 @@
             <div class="v2-home" v-if="!booting && !hasJoined && !(isHost && isGameActive) && !gameInProgress && !gameEnded">
 
                 <header class="v2-topbar">
-                    <button class="v2-logo" @click="reloadHome" title="Accueil">
+                    <!-- Sur l'accueil le logotype porte deja le nom au centre : le S du
+                         coin ferait doublon. Il reprend sa place des qu'on entre dans
+                         les modes ou le code, ou plus rien ne nomme le site. -->
+                    <button class="v2-logo" v-if="homeScreen !== 'hub'" @click="reloadHome" title="Accueil">
                         <img class="v2-logo-img" src="logo-sm.png" alt="ShonenMaster" draggable="false">
                         <span class="v2-logo-ring"></span>
                     </button>
