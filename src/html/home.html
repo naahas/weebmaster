@@ -20,14 +20,35 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Russo+One&family=Space+Grotesk:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
 
-    <link rel="icon" type="image/png" href="icon.png">
-    <link rel="shortcut icon" type="image/png" href="icon.png">
+    <!-- ── L icone du site ──
+         Google reclame un favicon CARRE d au moins 48 px, servi a une adresse
+         stable : il ne le rafraichit qu a son prochain passage, et changer
+         d adresse a chaque fois lui ferait tout reprendre de zero. D ou des
+         noms fixes et deux tailles, la petite pour l onglet, la grande pour les
+         ecrans denses et l ajout a l ecran d accueil. -->
+    <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="favicon-512.png">
+    <link rel="shortcut icon" type="image/png" href="favicon-192.png">
+    <link rel="apple-touch-icon" href="favicon-192.png">
 
-    <!-- Pour Apple/iOS -->
-    <link rel="apple-touch-icon" href="icon.png">
-
-    <!-- Pour les résultats de recherche Google (optionnel) -->
-    <meta property="og:image" content="icon.png">
+    <!-- ── La vignette de partage ──
+         Celle qui parait quand on colle le lien sur Discord, X ou WhatsApp.
+         L adresse doit etre absolue : les robots ne resolvent pas les chemins
+         relatifs, et « icon.png » ne menait donc nulle part pour eux. Elle est
+         au format qu ils attendent, 1200 x 630, sur fond plein — une image
+         transparente s affiche en noir chez les uns, en blanc chez les autres. -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="ShonenMaster">
+    <meta property="og:title" content="ShonenMaster — le quiz anime en temps reel">
+    <meta property="og:description"
+        content="Quiz, Rush, BombAnime et Ascension : affronte tes amis sur l anime et le manga, en direct et sans compte.">
+    <meta property="og:url" content="https://shonenmaster.com/">
+    <meta property="og:image" content="https://shonenmaster.com/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="ShonenMaster — le quiz anime en temps reel">
+    <meta name="twitter:image" content="https://shonenmaster.com/og-image.png">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 
@@ -58,7 +79,7 @@
 
                 <header class="v2-topbar">
                     <button class="v2-logo" @click="reloadHome" title="Accueil">
-                        <span class="v2-logo-text">SM</span>
+                        <img class="v2-logo-img" src="logo-sm.png" alt="ShonenMaster" draggable="false">
                         <span class="v2-logo-ring"></span>
                     </button>
                     <button class="v2-identity" v-if="homeScreen !== 'join'" @click="editPseudo" title="Changer de pseudo">
@@ -278,7 +299,7 @@
 
                 <header class="v2-topbar">
                     <button class="v2-logo" @click="reloadHome" title="Accueil">
-                        <span class="v2-logo-text">SM</span>
+                        <img class="v2-logo-img" src="logo-sm.png" alt="ShonenMaster" draggable="false">
                         <span class="v2-logo-ring"></span>
                     </button>
                     <div class="v2-room-topright">
@@ -1806,7 +1827,7 @@
             ============================================ -->
             <div class="v2-end" v-if="gameEnded && podiumPlayers.length > 0">
                 <button class="v2-logo v2-end-logo" @click="reloadHome" title="Accueil">
-                    <span class="v2-logo-text">SM</span>
+                    <img class="v2-logo-img" src="logo-sm.png" alt="ShonenMaster" draggable="false">
                     <span class="v2-logo-ring"></span>
                 </button>
 

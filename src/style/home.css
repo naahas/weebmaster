@@ -6860,15 +6860,13 @@ body.game-active:has(.poll-game-container) #particles-js {
     cursor: pointer;
 }
 
-.v2-logo-text {
-    font-family: 'Bebas Neue', 'Russo One', sans-serif;
-    font-size: 1.65rem;
-    letter-spacing: 0.04em;
-    line-height: 1;
-    background: linear-gradient(135deg, #fff 10%, var(--neon-primary) 55%, var(--accent-color));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+/* Le « SM » etait dessine en typographie, avec un degrade decoupe dans le
+   texte. C est maintenant une image : elle porte son propre or, il n y a plus
+   qu a la caler et a lui garder son mouvement au survol. */
+.v2-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
     transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.35s ease;
 }
 
@@ -6881,9 +6879,9 @@ body.game-active:has(.poll-game-container) #particles-js {
     transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.4s ease, box-shadow 0.4s ease;
 }
 
-.v2-logo:hover .v2-logo-text { transform: scale(1.12) rotate(-4deg); filter: drop-shadow(0 0 0.7rem rgba(255, 190, 40, 0.55)); }
+.v2-logo:hover .v2-logo-img { transform: scale(1.12) rotate(-4deg); filter: drop-shadow(0 0 0.7rem rgba(255, 190, 40, 0.55)); }
 .v2-logo:hover .v2-logo-ring { transform: scale(1); border-color: rgba(255, 215, 0, 0.45); box-shadow: 0 0 1.4rem rgba(255, 190, 40, 0.28) inset; }
-.v2-logo:active .v2-logo-text { transform: scale(0.94); }
+.v2-logo:active .v2-logo-img { transform: scale(0.94); }
 
 .v2-identity {
     display: flex;
