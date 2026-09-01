@@ -10653,7 +10653,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     .v2-choices {
         flex-direction: row;
         gap: 0;
-        width: min(17.5rem, 84%);
+        width: min(16rem, 80%);
         margin: 0 auto;
         border: 0.06rem solid rgba(255, 255, 255, 0.1);
         border-radius: 0.8rem;
@@ -10664,7 +10664,7 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
         flex: 1 1 0;
         min-width: 0;
         aspect-ratio: auto;
-        padding: 1.1rem 0.55rem;
+        padding: 0.95rem 0.5rem;
         border: none;
         border-radius: 0;
         clip-path: none;
@@ -10687,9 +10687,9 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
         text-align: center;
     }
 
-    .v2-choice-kicker { font-size: 0.46rem; letter-spacing: 0.18em; }
+    .v2-choice-kicker { font-size: 0.43rem; letter-spacing: 0.17em; }
     .v2-choice-join .v2-choice-kicker { color: #8ca0ff; }
-    .v2-choice-title { font-size: clamp(1rem, 5vw, 1.25rem); line-height: 1; }
+    .v2-choice-title { font-size: clamp(0.9rem, 4.5vw, 1.12rem); line-height: 1; }
 
     /* Ni flèche ni halo : ils n'ont plus de place ni d'utilité au doigt */
     .v2-choice-arrow,
