@@ -1786,3 +1786,47 @@ body.game-active:has(.asc) {
     overflow: hidden;
     overscroll-behavior: none;
 }
+
+/* ══════════ Les grands écrans ══════════
+   Toutes les bornes hautes étaient en rem, donc en pixels fixes : sur un 2K,
+   le plateau gardait exactement la taille qu'il a en 1080p et flottait au
+   milieu du vide. Seule la grille de vingt-quatre grandissait, parce que
+   c'est la hauteur qui la contraint et non la largeur.
+
+   Le seuil est à 2000 px, et non à 1600 : il doit passer juste au-dessus du
+   1920 de large d'un écran ordinaire, sur lequel tous ces réglages ont été
+   faits à l'œil. Un seuil plus bas les aurait défaits sans prévenir.
+
+   Les bornes de fenêtre (100vw, 100vh) sont laissées telles quelles : ce sont
+   elles qui empêchent le plateau de courir sous la tour, et elles se règlent
+   seules. Sur un écran large mais court — un 2560x1080 — c'est donc toujours
+   la hauteur qui commande la grille de vingt-quatre. */
+@media (min-width: 2000px) {
+    .asc-jeu { max-width: min(58rem, 100vw - 20rem); }
+    .asc-jeu.asc-devine { max-width: min(90rem, 100vw - 14rem); }
+
+    .asc-jeu.asc-cible,
+    .asc-jeu.asc-intrus {
+        max-width: min(78rem, 100vw - 30rem, calc((100vh - 9rem) * 0.92));
+    }
+
+    .asc-jeu.asc-liaison { max-width: min(110rem, 100vw - 16rem); }
+    .asc-jeu.asc-ordre { max-width: min(120rem, 100vw - 3rem); }
+
+    /* Les portraits suivent le plateau, sinon ils s espaceraient au lieu de
+       grandir — cinq vignettes de deux cents pixels perdues dans un mètre. */
+    .asc-portrait { max-width: 17rem; }
+    .asc-colonnes .asc-noeud img { height: clamp(6rem, 24vh, 16rem); }
+    .asc-carte-arc { max-width: 28rem; }
+
+    /* L en-tete se met a l echelle du reste : a taille fixe, il paraissait
+       chuchote au-dessus d un plateau qui, lui, avait grandi. */
+    .asc-titre { font-size: 2.4rem; }
+    .asc-soustitre { font-size: 1rem; }
+    .asc-etage b { font-size: 2.6rem; }
+    .asc-etage i { font-size: 1.4rem; }
+
+    /* La tour gagne de quoi rester lisible a cote d un plateau plus large */
+    .asc-tour { width: 6rem; }
+    .asc-fut { left: 2.7rem; width: 3.1rem; }
+}

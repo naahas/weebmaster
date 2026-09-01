@@ -647,3 +647,16 @@
     transform: none;
     pointer-events: auto;
 }
+
+/* ══════════ Les grands écrans ══════════
+   « --carte-h » vaut min(23rem, 44vh) : sur un 2K c est le terme en rem qui
+   l emporte, et le portrait garde donc les 368 pixels qu il a en 1080p. Le
+   plafond monte ici, le terme en vh restant le garde-fou pour les écrans
+   larges mais courts. Le seuil est a 2000 px, et non plus bas : il doit passer
+   juste au-dessus du 1920 de large d un ecran ordinaire, sur lequel tout a ete
+   regle a l oeil. */
+@media (min-width: 2000px) {
+    .rush { --carte-h: min(30rem, 50vh); --cartouche: 2.3rem; }
+    .rush-chrono-n { font-size: clamp(2.8rem, 8vw, 5rem); }
+    .rush-saisie { font-size: 1.3rem; }
+}
