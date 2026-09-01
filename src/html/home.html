@@ -256,9 +256,11 @@
                     </div>
                 </section>
 
-                <!-- Les reseaux de l auteur, dans le coin. Discrets tant qu on ne les
-                     regarde pas : c est une signature, pas un appel. -->
-                <nav class="v2-reseaux" aria-label="Reseaux sociaux">
+                <!-- Le reseau de l auteur, dans le coin. Eteint tant qu on ne le regarde
+                     pas : c est une signature, pas un appel. Il ne parait que sur
+                     l accueil meme — ni sur le choix des modes, ni sur la saisie du
+                     code, ni en salon : on n y vient plus pour le decouvrir. -->
+                <nav class="v2-reseaux" v-if="homeScreen === 'hub'" aria-label="Reseaux sociaux">
                     <a class="v2-reseau tiktok" href="https://www.tiktok.com/@adeem7i"
                        target="_blank" rel="noopener noreferrer" title="TikTok — @adeem7i" aria-label="TikTok">
                         <svg viewBox="0 0 24 24" aria-hidden="true">

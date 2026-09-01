@@ -2674,9 +2674,18 @@ createApp({
         signalJoinError(message) {
             this.joinError = message || '';
             this.joinShake = false;
+
+            // Les quatre cases se vident et reprennent la main. Sans cela, un
+            // code refusé les laissait pleines : la saisie étant bornée à quatre
+            // caractères, plus rien n'entrait et il fallait effacer soi-même
+            // avant de pouvoir réessayer.
+            this.joinCode = '';
+
             this.$nextTick(() => {
                 this.joinShake = true;
                 setTimeout(() => { this.joinShake = false; }, 600);
+                const c = this.$refs.codeInput;
+                if (c && this.homeScreen === 'join') c.focus();
             });
         },
 

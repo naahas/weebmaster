@@ -7561,9 +7561,10 @@ body.game-active:has(.poll-game-container) #particles-js {
     .v2-mode-row-name { font-size: 0.92rem; }
     .v2-mode-row-kind { display: none; }
     .v2-mode-preview { min-height: 15rem; }
-    /* Un cran plus haut : sous le titre, elles tombaient trop bas et le bloc
-       des modes commencait juste dessous, sans respiration. */
-    .v2-bigstats { gap: 1rem; margin-top: 0.15rem; }
+    /* Remontees sous le titre : elles tombaient trop bas et le bloc des modes
+       commencait juste dessous, sans respiration. La marge passe en negatif —
+       le titre porte son propre interligne, et c est lui qu on rattrape. */
+    .v2-bigstats { gap: 1rem; margin-top: -1.15rem; }
     .v2-bigstat-sep { display: none; }
 }
 
