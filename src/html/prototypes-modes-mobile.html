@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le choix du mode, sur téléphone</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   Cinq façons de choisir un mode au doigt.
+
+   Ce qu'on cherche à corriger : la grille 2×2 actuelle donne quatre
+   pastilles fades, puis répète le nom dans un panneau en dessous —
+   deux gestes pour une seule décision, et les deux tiers de l'écran
+   vides autour. Chaque piste s'y attaque autrement.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+    --or: #ffd24a;
+    --vert: #4ade80;
+    --blanc: #ffffff;
+    --bleu: #7fb4ff;
+}
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 2rem 1.5rem 5rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #fff;
+    background: radial-gradient(70% 55% at 50% 0%, #1a1710, #08080b 68%);
+    min-height: 100vh;
+}
+
+h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
+
+.sous {
+    margin: 0 0 2.4rem;
+    max-width: 56rem;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.42);
+}
+
+.grille { display: flex; flex-wrap: wrap; gap: 2.6rem 2rem; }
+
+.piste { width: 340px; }
+
+.piste h2 {
+    margin: 0 0 0.15rem;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.25rem;
+    letter-spacing: 0.07em;
+    color: var(--or);
+}
+.piste p.note {
+    margin: 0 0 0.9rem;
+    font-size: 0.74rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.4);
+    min-height: 4.4em;
+}
+
+/* ── Le cadre de téléphone ── */
+.tel {
+    position: relative;
+    width: 340px;
+    height: 700px;
+    padding: 0.55rem;
+    background: #16161a;
+    border-radius: 2.2rem;
+    box-shadow: 0 1.4rem 3rem rgba(0, 0, 0, 0.55);
+}
+.ecran {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 1.7rem;
+    background: radial-gradient(90% 50% at 50% 0%, #191510, #0a0a0d 70%);
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── La barre du haut, commune aux cinq ── */
+.barre {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 0.9rem 0.4rem;
+}
+.retour {
+    width: 2.1rem; height: 2.1rem;
+    display: grid; place-items: center;
+    color: rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.05);
+    border: 0.06rem solid rgba(255, 255, 255, 0.09);
+    border-radius: 0.6rem;
+    font-size: 0.9rem;
+}
+.pseudo {
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.34rem 0.7rem;
+    font-size: 0.72rem; font-weight: 600;
+    background: rgba(255, 255, 255, 0.06);
+    border: 0.06rem solid rgba(255, 255, 255, 0.09);
+    border-radius: 999px;
+}
+.pseudo i { width: 0.4rem; height: 0.4rem; border-radius: 50%; background: #22c55e; }
+
+.corps { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 0 0.9rem 0.9rem; }
+
+.chapeau {
+    margin: 0.5rem 0 0.9rem;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.14em;
+    color: rgba(255, 255, 255, 0.35);
+}
+
+/* Le bouton d'action, repris du site */
+.cta {
+    width: 100%;
+    padding: 0.8rem;
+    font: inherit; font-weight: 700; font-size: 0.92rem;
+    color: #17140a;
+    background: linear-gradient(135deg, #ffe066, #ffb300);
+    border: 0; border-radius: 0.7rem;
+    cursor: pointer;
+}
+
+/* ════════ A — L'accordéon ════════ */
+.a-liste { display: flex; flex-direction: column; gap: 0.5rem; }
+.a-item {
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.035);
+    border: 0.06rem solid rgba(255, 255, 255, 0.08);
+    border-left: 0.2rem solid rgba(255, 255, 255, 0.14);
+    border-radius: 0.7rem;
+    transition: border-color 0.25s ease, background 0.25s ease;
+}
+.a-item.on { background: rgba(255, 255, 255, 0.06); border-left-color: var(--c); }
+.a-tete {
+    width: 100%;
+    display: flex; align-items: baseline; justify-content: space-between; gap: 0.6rem;
+    padding: 0.85rem 0.9rem;
+    font: inherit; color: #fff; text-align: left;
+    background: none; border: 0; cursor: pointer;
+}
+.a-nom { font-family: 'Bebas Neue', sans-serif; font-size: 1.25rem; letter-spacing: 0.05em; }
+.a-item.on .a-nom { color: var(--c); }
+.a-kind { font-size: 0.66rem; color: rgba(255, 255, 255, 0.38); }
+/* Le corps se déplie par une hauteur en grille plutôt qu'un max-height
+   deviné, qui coupe toujours d'un cheveu ou laisse un blanc. */
+.a-corps { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.a-item.on .a-corps { grid-template-rows: 1fr; }
+.a-corps > div { overflow: hidden; }
+.a-desc { margin: 0 0.9rem 0.75rem; font-size: 0.78rem; line-height: 1.5; color: rgba(255, 255, 255, 0.6); }
+.a-corps .cta { width: calc(100% - 1.8rem); margin: 0 0.9rem 0.9rem; }
+
+/* ════════ B — Le carrousel ════════ */
+.b-scene { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.b-carte {
+    position: relative;
+    flex: 1; min-height: 0;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 1.2rem;
+    background: linear-gradient(170deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.015));
+    border: 0.06rem solid var(--c);
+    border-radius: 1.1rem;
+    overflow: hidden;
+}
+.b-halo {
+    position: absolute; inset: -40% -20% auto; height: 70%;
+    background: radial-gradient(60% 100% at 50% 0%, var(--c), transparent 70%);
+    opacity: 0.16; pointer-events: none;
+}
+.b-num { font-size: 0.68rem; letter-spacing: 0.16em; color: var(--c); opacity: 0.7; }
+.b-nom { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; line-height: 1; letter-spacing: 0.03em; margin: 0.3rem 0 0.15rem; }
+.b-kind { font-size: 0.7rem; color: rgba(255, 255, 255, 0.4); }
+.b-desc { margin: 0.7rem 0 1.1rem; font-size: 0.82rem; line-height: 1.55; color: rgba(255, 255, 255, 0.66); }
+.b-nav { display: flex; align-items: center; justify-content: center; gap: 0.45rem; padding: 0.9rem 0 0.2rem; }
+.b-point { width: 0.42rem; height: 0.42rem; border-radius: 50%; background: rgba(255, 255, 255, 0.2); border: 0; padding: 0; cursor: pointer; transition: width 0.25s ease, background 0.25s ease, border-radius 0.25s ease; }
+.b-point.on { width: 1.3rem; border-radius: 999px; background: var(--c); }
+.b-fleche {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 2rem; height: 2rem; display: grid; place-items: center;
+    color: rgba(255, 255, 255, 0.5); font-size: 1.1rem;
+    background: rgba(0, 0, 0, 0.35); border: 0; border-radius: 50%; cursor: pointer;
+}
+.b-fleche.g { left: 0.5rem; }
+.b-fleche.d { right: 0.5rem; }
+
+/* ════════ C — La feuille du bas ════════ */
+.c-grille { display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem; }
+.c-tuile {
+    position: relative;
+    aspect-ratio: 1 / 0.82;
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding: 0.75rem;
+    font: inherit; color: #fff; text-align: left;
+    background: rgba(255, 255, 255, 0.035);
+    border: 0.06rem solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.85rem;
+    cursor: pointer;
+    transition: border-color 0.22s ease, background 0.22s ease, transform 0.22s ease;
+}
+.c-tuile.on { border-color: var(--c); background: rgba(255, 255, 255, 0.07); transform: translateY(-0.15rem); }
+.c-pastille { width: 1.7rem; height: 1.7rem; border-radius: 0.5rem; background: var(--c); opacity: 0.85; }
+.c-nom { font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; letter-spacing: 0.04em; line-height: 1; }
+.c-kind { font-size: 0.62rem; color: rgba(255, 255, 255, 0.35); }
+.c-feuille {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 1rem 1rem 1.2rem;
+    background: linear-gradient(180deg, #14131a, #0c0c10);
+    border-top: 0.09rem solid var(--c);
+    border-radius: 1.2rem 1.2rem 1.7rem 1.7rem;
+    box-shadow: 0 -1rem 2.5rem rgba(0, 0, 0, 0.6);
+    transform: translateY(110%);
+    transition: transform 0.34s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.c-feuille.on { transform: none; }
+.c-poignee { width: 2.4rem; height: 0.22rem; margin: 0 auto 0.8rem; border-radius: 999px; background: rgba(255, 255, 255, 0.22); }
+.c-fnom { font-family: 'Bebas Neue', sans-serif; font-size: 1.7rem; letter-spacing: 0.04em; color: var(--c); }
+.c-fdesc { margin: 0.35rem 0 1rem; font-size: 0.8rem; line-height: 1.5; color: rgba(255, 255, 255, 0.6); }
+
+/* ════════ D — Tout visible, l'action ancrée ════════ */
+.d-flux { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 0.55rem; padding-bottom: 0.4rem; }
+.d-flux::-webkit-scrollbar { display: none; }
+.d-carte {
+    position: relative;
+    padding: 0.9rem;
+    font: inherit; color: #fff; text-align: left;
+    background: rgba(255, 255, 255, 0.035);
+    border: 0.06rem solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.85rem;
+    cursor: pointer;
+    transition: border-color 0.22s ease, background 0.22s ease;
+}
+.d-carte.on { border-color: var(--c); background: rgba(255, 255, 255, 0.065); }
+.d-tete { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; padding-right: 1.4rem; }
+.d-nom { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.04em; }
+.d-carte.on .d-nom { color: var(--c); }
+.d-kind { font-size: 0.64rem; color: rgba(255, 255, 255, 0.35); }
+.d-desc { margin: 0.3rem 0 0; font-size: 0.75rem; line-height: 1.45; color: rgba(255, 255, 255, 0.5); }
+.d-coche {
+    position: absolute; top: 0.75rem; right: 0.75rem;
+    width: 1.05rem; height: 1.05rem; display: grid; place-items: center;
+    font-size: 0.6rem; color: #17140a;
+    background: var(--c); border-radius: 50%;
+    opacity: 0; transform: scale(0.6);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.d-carte.on .d-coche { opacity: 1; transform: none; }
+.d-pied { flex: 0 0 auto; padding-top: 0.7rem; }
+
+/* ════════ E — La pile ════════ */
+.e-scene { position: relative; flex: 1; min-height: 0; }
+.e-carte {
+    position: absolute; left: 0; right: 0; top: 1.4rem;
+    height: 60%;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 1.1rem;
+    text-align: left; font: inherit; color: #fff;
+    background: linear-gradient(165deg, #1b1a20, #101014);
+    border: 0.06rem solid rgba(255, 255, 255, 0.1);
+    border-radius: 1.1rem;
+    cursor: pointer;
+    transition: transform 0.42s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.42s ease, border-color 0.42s ease;
+}
+.e-carte.devant { border-color: var(--c); box-shadow: 0 1.2rem 2.6rem rgba(0, 0, 0, 0.5); }
+.e-nom { font-family: 'Bebas Neue', sans-serif; font-size: 2.1rem; line-height: 1; letter-spacing: 0.03em; }
+.e-carte.devant .e-nom { color: var(--c); }
+.e-kind { margin-top: 0.2rem; font-size: 0.68rem; color: rgba(255, 255, 255, 0.38); }
+.e-desc { margin: 0.6rem 0 0; font-size: 0.8rem; line-height: 1.5; color: rgba(255, 255, 255, 0.62); }
+.e-pied { flex: 0 0 auto; padding-top: 0.9rem; }
+</style>
+</head>
+<body>
+
+<h1>Le choix du mode, sur téléphone</h1>
+<p class="sous">
+    La grille 2×2 actuelle donne quatre pastilles fades, puis répète le nom dans un panneau
+    en dessous : deux gestes pour une seule décision, et les deux tiers de l'écran vides autour.
+    Cinq façons de s'en sortir. Tout est cliquable.
+</p>
+
+<div class="grille" id="grille"></div>
+
+<script>
+const MODES = [
+    { id: 'classic',   nom: 'Classique', kind: 'Solo ou équipes · ∞', c: 'var(--or)',
+      desc: "Quiz QCM. Solo ou en deux camps, vies ou points, séries au choix." },
+    { id: 'bombanime', nom: 'BombAnime', kind: 'Solo · 15 joueurs', c: 'var(--vert)',
+      desc: "La bombe tourne. Cite un perso avant qu'elle explose." },
+    { id: 'rush',      nom: 'Rush',      kind: 'Solo · ∞', c: 'var(--blanc)',
+      desc: "Un portrait, un nom. La plus longue série gagne." },
+    { id: 'ascension', nom: 'Ascension', kind: 'Solo · ∞', c: 'var(--bleu)',
+      desc: "Une tour d'étages, chacun à son rythme. Le premier au sommet gagne." },
+];
+
+/* ── Ossature commune : cadre, barre du haut, corps ── */
+function cadre(remplir) {
+    const tel = document.createElement('div');
+    tel.className = 'tel';
+    const ec = document.createElement('div');
+    ec.className = 'ecran';
+    ec.innerHTML =
+        '<div class="barre">' +
+          '<div class="retour">&#8592;</div>' +
+          '<div class="pseudo"><i></i>Shinobi946</div>' +
+        '</div>';
+    const corps = document.createElement('div');
+    corps.className = 'corps';
+    ec.appendChild(corps);
+    remplir(corps, ec);
+    tel.appendChild(ec);
+    return tel;
+}
+
+const chapeau = (t) => '<div class="chapeau">' + t + '</div>';
+
+/* ════ A — l'accordéon ════ */
+function pisteA(corps) {
+    let actif = 'rush';
+    corps.innerHTML = chapeau('CHOISIS TON MODE');
+    const liste = document.createElement('div');
+    liste.className = 'a-liste';
+    corps.appendChild(liste);
+    const peindre = () => {
+        liste.innerHTML = MODES.map(m =>
+            '<div class="a-item' + (m.id === actif ? ' on' : '') + '" style="--c:' + m.c + '" data-id="' + m.id + '">' +
+              '<button class="a-tete"><span class="a-nom">' + m.nom + '</span><span class="a-kind">' + m.kind + '</span></button>' +
+              '<div class="a-corps"><div>' +
+                '<p class="a-desc">' + m.desc + '</p>' +
+                '<button class="cta">Créer le salon</button>' +
+              '</div></div>' +
+            '</div>').join('');
+        liste.querySelectorAll('.a-tete').forEach(b =>
+            b.onclick = () => { actif = b.parentElement.dataset.id; peindre(); });
+    };
+    peindre();
+}
+
+/* ════ B — le carrousel ════ */
+function pisteB(corps) {
+    let i = 2;
+    corps.innerHTML = chapeau('CHOISIS TON MODE') + '<div class="b-scene"></div>';
+    const scene = corps.querySelector('.b-scene');
+    const peindre = () => {
+        const m = MODES[i];
+        scene.innerHTML =
+            '<div class="b-carte" style="--c:' + m.c + '">' +
+              '<div class="b-halo"></div>' +
+              '<button class="b-fleche g">&#8249;</button><button class="b-fleche d">&#8250;</button>' +
+              '<div class="b-num">' + (i + 1) + ' / ' + MODES.length + '</div>' +
+              '<div class="b-nom">' + m.nom + '</div>' +
+              '<div class="b-kind">' + m.kind + '</div>' +
+              '<p class="b-desc">' + m.desc + '</p>' +
+              '<button class="cta">Créer le salon</button>' +
+            '</div>' +
+            '<div class="b-nav">' + MODES.map((x, k) =>
+              '<button class="b-point' + (k === i ? ' on' : '') + '" style="--c:' + x.c + '" data-k="' + k + '"></button>').join('') +
+            '</div>';
+        scene.querySelector('.b-fleche.g').onclick = () => { i = (i + MODES.length - 1) % MODES.length; peindre(); };
+        scene.querySelector('.b-fleche.d').onclick = () => { i = (i + 1) % MODES.length; peindre(); };
+        scene.querySelectorAll('.b-point').forEach(p => p.onclick = () => { i = Number(p.dataset.k); peindre(); });
+    };
+    peindre();
+}
+
+/* ════ C — la feuille du bas ════ */
+function pisteC(corps, ecran) {
+    corps.innerHTML = chapeau('CHOISIS TON MODE') +
+        '<div class="c-grille">' + MODES.map(m =>
+          '<button class="c-tuile" style="--c:' + m.c + '" data-id="' + m.id + '">' +
+            '<span class="c-pastille"></span>' +
+            '<span><span class="c-nom">' + m.nom + '</span><br><span class="c-kind">' + m.kind + '</span></span>' +
+          '</button>').join('') + '</div>';
+    const feuille = document.createElement('div');
+    feuille.className = 'c-feuille';
+    ecran.appendChild(feuille);
+    corps.querySelectorAll('.c-tuile').forEach(b => b.onclick = () => {
+        const m = MODES.find(x => x.id === b.dataset.id);
+        corps.querySelectorAll('.c-tuile').forEach(x => x.classList.toggle('on', x === b));
+        feuille.style.setProperty('--c', m.c);
+        feuille.innerHTML =
+            '<div class="c-poignee"></div>' +
+            '<div class="c-fnom">' + m.nom + '</div>' +
+            '<p class="c-fdesc">' + m.desc + '</p>' +
+            '<button class="cta">Créer le salon</button>';
+        feuille.classList.add('on');
+    });
+}
+
+/* ════ D — tout visible, l'action ancrée ════ */
+function pisteD(corps) {
+    let actif = 'rush';
+    corps.innerHTML = chapeau('CHOISIS TON MODE') + '<div class="d-flux"></div><div class="d-pied"></div>';
+    const flux = corps.querySelector('.d-flux');
+    const pied = corps.querySelector('.d-pied');
+    const peindre = () => {
+        flux.innerHTML = MODES.map(m =>
+            '<button class="d-carte' + (m.id === actif ? ' on' : '') + '" style="--c:' + m.c + '" data-id="' + m.id + '">' +
+              '<span class="d-coche">&#10003;</span>' +
+              '<span class="d-tete"><span class="d-nom">' + m.nom + '</span><span class="d-kind">' + m.kind + '</span></span>' +
+              '<p class="d-desc">' + m.desc + '</p>' +
+            '</button>').join('');
+        flux.querySelectorAll('.d-carte').forEach(b => b.onclick = () => { actif = b.dataset.id; peindre(); });
+        pied.innerHTML = '<button class="cta">Créer un salon ' + MODES.find(x => x.id === actif).nom + '</button>';
+    };
+    peindre();
+}
+
+/* ════ E — la pile ════ */
+function pisteE(corps) {
+    let ordre = MODES.map(m => m.id);
+    corps.innerHTML = chapeau('CHOISIS TON MODE') + '<div class="e-scene"></div><div class="e-pied"></div>';
+    const scene = corps.querySelector('.e-scene');
+    const pied = corps.querySelector('.e-pied');
+    const peindre = () => {
+        scene.innerHTML = ordre.map((id, rang) => {
+            const m = MODES.find(x => x.id === id);
+            // le rang 0 est devant ; les suivants reculent, rapetissent et pâlissent
+            const y = rang * -1.15;
+            const s = 1 - rang * 0.055;
+            const o = rang === 0 ? 1 : 0.6 - rang * 0.12;
+            return '<button class="e-carte' + (rang === 0 ? ' devant' : '') + '" style="--c:' + m.c +
+                   ';transform:translateY(' + y + 'rem) scale(' + s + ');z-index:' + (10 - rang) +
+                   ';opacity:' + o + '" data-id="' + id + '">' +
+                     '<span class="e-nom">' + m.nom + '</span>' +
+                     '<span class="e-kind">' + m.kind + '</span>' +
+                     (rang === 0 ? '<p class="e-desc">' + m.desc + '</p>' : '') +
+                   '</button>';
+        }).join('');
+        scene.querySelectorAll('.e-carte').forEach(b => b.onclick = () => {
+            const id = b.dataset.id;
+            ordre = [id].concat(ordre.filter(x => x !== id));
+            peindre();
+        });
+        pied.innerHTML = '<button class="cta">Créer un salon ' + MODES.find(x => x.id === ordre[0]).nom + '</button>';
+    };
+    peindre();
+}
+
+const PISTES = [
+    { t: 'A · L’accordéon', f: pisteA,
+      n: "Une colonne, plus de grille. Le mode touché se déplie sur place avec sa description et son bouton — un seul geste, et le panneau du bas disparaît." },
+    { t: 'B · Le carrousel', f: pisteB,
+      n: "Un mode à la fois, plein cadre. On balaie du pouce. Le plus spectaculaire et le plus lisible, mais il cache les trois autres." },
+    { t: 'C · La feuille du bas', f: pisteC,
+      n: "La grille reste, mais le détail monte du bas comme une fiche. Geste que tout téléphone connaît, et la grille garde sa place à l’écran." },
+    { t: 'D · Tout visible, action ancrée', f: pisteD,
+      n: "Les quatre modes montrent déjà leur description. On coche, le bouton attend en bas, toujours au même endroit sous le pouce." },
+    { t: 'E · La pile', f: pisteE,
+      n: "Les quatre cartes empilées, l’active devant. On touche une carte du fond pour la ramener. Le plus ludique — et le moins évident à comprendre." },
+];
+
+const grille = document.getElementById('grille');
+for (const p of PISTES) {
+    const bloc = document.createElement('div');
+    bloc.className = 'piste';
+    bloc.innerHTML = '<h2>' + p.t + '</h2><p class="note">' + p.n + '</p>';
+    bloc.appendChild(cadre(p.f));
+    grille.appendChild(bloc);
+}
+</script>
+</body>
+</html>
