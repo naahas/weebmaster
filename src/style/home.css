@@ -6946,7 +6946,7 @@ body.game-active:has(.poll-game-container) #particles-js {
 
 .v2-hero-title img {
     display: block;
-    width: clamp(16rem, 52vw, 38rem);
+    width: clamp(16rem, 52vw, 40rem);
     max-width: 100%;
     height: auto;
     animation: v2Glow 5s ease-in-out infinite;
@@ -6955,13 +6955,12 @@ body.game-active:has(.poll-game-container) #particles-js {
 /* Le halo doré qui pulsait en text-shadow se rejoue en drop-shadow : même
    effet, mais qui épouse le dessin au lieu du rectangle de l'image. Le rayon
    est plus court — sur des lettres pleines, un flou de 3 rem noierait tout. */
-/* L or livre dans le fichier est un #ce9940, un or brun : c etait le plus
-   terne de la page, quand tout le reste — les grands chiffres, le S du coin —
-   tape a #FFD700. Le coup de brillance le remet dans la famille, sans toucher
-   au fichier ; passer les deux valeurs a 1 le rend tel quel. */
+/* La brillance etait ici, en filtre ; elle est desormais cuite dans le
+   fichier — un filtre se recalcule a chaque image de l'animation, un pixel
+   deja dore ne coute rien. Ne reste que le halo. */
 @keyframes v2Glow {
-    0%, 100% { filter: saturate(1.12) brightness(1.22) drop-shadow(0 0 1.6rem rgba(255, 190, 40, 0.14)); }
-    50%      { filter: saturate(1.12) brightness(1.22) drop-shadow(0 0 2.6rem rgba(255, 190, 40, 0.30)); }
+    0%, 100% { filter: drop-shadow(0 0 1.6rem rgba(255, 190, 40, 0.14)); }
+    50%      { filter: drop-shadow(0 0 2.6rem rgba(255, 190, 40, 0.30)); }
 }
 
 /* ── Stats en grand ───────────────────────── */
