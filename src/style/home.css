@@ -1917,69 +1917,6 @@ body {
 }
 
 /* ============================================
-   INSTAGRAM BUTTON - Côte à côte en bas à gauche
-   ============================================ */
-.instagram-btn {
-    position: fixed;
-    bottom: 1.5rem;
-    right: 0.9375rem;
-    /* Premier à gauche */
-    width: 3rem;
-    height: 3rem;
-    background: transparent;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    z-index: 100;
-    color: rgba(255, 255, 255, 0.5);
-    text-decoration: none;
-    animation: slideInLeft 0.8s ease-out;
-}
-
-.instagram-btn:hover {
-    transform: scale(1.1);
-    color: var(--neon-primary);
-    filter: drop-shadow(0 0 0.5rem rgba(255, 215, 0, 0.3));
-}
-
-.instagram-btn svg {
-    transition: all 0.3s ease;
-}
-
-/* ============================================
-   TIKTOK BUTTON - À côté d'Instagram
-   ============================================ */
-
-
-/* Animation slide depuis la gauche */
-@keyframes slideInLeft {
-    0% {
-        opacity: 0;
-        transform: translateY(1.875rem);
-    }
-
-    100% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Mobile */
-@media (max-width: 38.375rem) {
-    .instagram-btn {
-        bottom: 1.25rem;
-        /* Au lieu de 80px */
-        left: 1.25rem;
-        width: 2.75rem;
-        height: 2.75rem;
-    }
-
-}
-
-/* ============================================
    HUD JOUEUR - MODE POINTS
    ============================================ */
 
@@ -12020,4 +11957,81 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
    de marge à droite, le personnage n'a plus de place où paraître. */
 @media (max-width: 1200px) {
     .v2q-perso { display: none; }
+}
+
+/* ============================================
+   LES RESEAUX, DANS LE COIN
+   Une signature, pas un appel : eteints tant qu on ne les regarde pas, ils ne
+   prennent leur couleur qu au survol. Le coin bas droit est le seul libre de
+   l accueil — le badge « en direct » tient le centre, le pseudo le haut.
+   ============================================ */
+.v2-reseaux {
+    position: fixed;
+    right: clamp(1rem, 2.5vw, 2.2rem);
+    bottom: clamp(1rem, 2.5vh, 1.8rem);
+    z-index: 20;
+    display: flex;
+    gap: 0.55rem;
+}
+
+.v2-reseau {
+    display: grid;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    color: rgba(255, 255, 255, 0.34);
+    background: rgba(255, 255, 255, 0.035);
+    border: 0.06rem solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.7rem;
+    text-decoration: none;
+    /* Le fond du survol se peint dessous : il grandit depuis le centre sans
+       toucher a la taille du lien, donc sans pousser son voisin. */
+    position: relative;
+    overflow: hidden;
+    transition: color 0.25s ease, border-color 0.25s ease, transform 0.25s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+.v2-reseau::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transform: scale(0.6);
+    transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+.v2-reseau svg {
+    position: relative;
+    width: 1.15rem;
+    height: 1.15rem;
+    fill: currentColor;
+}
+
+/* Instagram est dessine au trait, TikTok en aplat : le premier ne doit pas
+   etre rempli, sinon il devient une tache. */
+.v2-reseau.insta svg { fill: none; }
+
+.v2-reseau:hover {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.22);
+    transform: translateY(-0.16rem);
+}
+
+.v2-reseau:hover::before { opacity: 1; transform: scale(1); }
+
+/* Chacun reprend ses couleurs, mais seulement quand on s y interesse */
+.v2-reseau.tiktok::before {
+    background: linear-gradient(135deg, rgba(37, 244, 238, 0.28), rgba(254, 44, 85, 0.32));
+}
+
+.v2-reseau.insta::before {
+    background: linear-gradient(135deg, rgba(255, 220, 128, 0.28), rgba(210, 60, 150, 0.32), rgba(120, 70, 240, 0.28));
+}
+
+@media (max-width: 768px) {
+    /* Le badge « en direct » vit au meme etage : on remonte pour ne pas
+       l enjamber, et l on retrecit pour ne pas manger le coin du pouce. */
+    .v2-reseaux { right: 0.8rem; bottom: 0.9rem; gap: 0.45rem; }
+    .v2-reseau { width: 2.1rem; height: 2.1rem; border-radius: 0.6rem; }
+    .v2-reseau svg { width: 1rem; height: 1rem; }
 }
