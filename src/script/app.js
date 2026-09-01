@@ -201,6 +201,9 @@ createApp({
             createError: '',
             joinCode: '',
             joinShake: false,
+            // Le champ reel est invisible : c est lui qui a le focus, mais ce
+            // sont les cases qui doivent le montrer.
+            codeFocus: false,
             joinError: '',
             roomCode: localStorage.getItem('roomCode') || null,
             codeCopied: false,
@@ -2683,6 +2686,21 @@ createApp({
             this.homeScreen = 'join';
             // Le curseur se pose tout de suite : sur mobile le clavier s'ouvre avec
             this.$nextTick(() => this.$refs.codeInput && this.$refs.codeInput.focus());
+        },
+
+        // Quatre lettres et l on part : un code de salon n a pas besoin qu on
+        // confirme qu on a fini de l ecrire. La saisie se met en capitales et
+        // refuse tout ce qui n est pas une lettre ou un chiffre — un code colle
+        // depuis un message arrive souvent avec un espace ou un point.
+        saisirCode(brut) {
+            const propre = String(brut || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+            this.joinCode = propre;
+            if (this.joinError) this.joinError = '';
+            if (propre.length === 4) {
+                // Un souffle avant de partir : la quatrieme case doit avoir le
+                // temps de s allumer, sinon on ne voit jamais son code complet.
+                setTimeout(() => { if (this.joinCode.length === 4) this.joinRoom(); }, 140);
+            }
         },
 
         joinRoom(team) {

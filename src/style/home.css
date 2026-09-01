@@ -7382,9 +7382,12 @@ body.game-active:has(.poll-game-container) #particles-js {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.9rem;
+    gap: 1.1rem;
     width: min(22rem, 90vw);
-    padding: 2rem 1.6rem;
+    /* Un peu plus bas que haut : sans bouton ni ligne d erreur, la carte se
+       terminait trop court sous les cases. */
+    padding: 2rem 1.6rem 2.6rem;
+    cursor: text;
     background: rgba(255, 255, 255, 0.025);
     border: 0.09rem solid rgba(255, 255, 255, 0.08);
     border-radius: 1rem;
@@ -7396,30 +7399,98 @@ body.game-active:has(.poll-game-container) #particles-js {
     font-weight: 700;
     letter-spacing: 0.2em;
     text-transform: uppercase;
+    text-align: center;
     color: var(--text-secondary);
+    transition: color 0.25s ease;
 }
 
-.v2-code-input {
-    width: 100%;
-    padding: 0.9rem;
+/* Le message prend la place du libelle au lieu de s ajouter dessous : rien ne
+   bouge, et il n y a plus de vide a reserver sous les cases. */
+.v2-join-label.ko { color: #ff8a8a; }
+
+/* ── Les quatre cases du code ──
+   Une case par caractere : on voit d un coup d oeil combien il en reste, et
+   chacune se remplit sous les doigts. Le champ reel est pose par-dessus,
+   transparent — il porte la frappe et fait sortir le clavier du telephone,
+   mais ce sont les cases qu on regarde. */
+.v2-code {
+    position: relative;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.v2-code-case {
+    width: 3.3rem;
+    height: 4rem;
+    display: grid;
+    place-items: center;
     font-family: 'Space Grotesk', monospace;
-    font-size: 2rem;
+    font-size: 1.9rem;
     font-weight: 700;
-    letter-spacing: 0.55em;
-    text-align: center;
-    text-indent: 0.55em;
-    text-transform: uppercase;
+    line-height: 1;
     color: var(--text-primary);
     background: rgba(0, 0, 0, 0.35);
-    border: 0.09rem solid rgba(255, 215, 0, 0.25);
+    border: 0.1rem solid rgba(255, 255, 255, 0.09);
     border-radius: 0.6rem;
-    outline: none;
-    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.25s ease;
 }
 
-.v2-code-input:focus {
+.v2-code-case.pleine {
+    border-color: rgba(255, 215, 0, 0.5);
+    background: rgba(255, 215, 0, 0.06);
+}
+
+/* La case en attente porte un curseur : sans lui, le champ etant invisible,
+   rien ne disait ou l on en etait. */
+.v2-code-case.active {
     border-color: var(--neon-primary);
-    box-shadow: 0 0 0 0.22rem rgba(255, 215, 0, 0.13);
+    box-shadow: 0 0 0 0.2rem rgba(255, 215, 0, 0.13);
+}
+
+.v2-code-case.active::after {
+    content: '';
+    width: 0.1rem;
+    height: 1.7rem;
+    background: var(--neon-primary);
+    animation: v2CodeBat 1.1s steps(2, start) infinite;
+}
+
+@keyframes v2CodeBat { 50% { opacity: 0; } }
+
+/* Transparent, mais bien la : c est lui qui a le focus */
+.v2-code-vrai {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    opacity: 0;
+    border: none;
+    background: none;
+    outline: none;
+    font-size: 1rem;
+    cursor: text;
+}
+
+/* L erreur ne s ecrit pas sous les cases : la carte tremble, les cases
+   rougissent, et le libelle dit le pourquoi a sa place habituelle. */
+.v2-join-box.ko { animation: v2CodeSecousse 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+
+.v2-join-box.ko .v2-code-case {
+    border-color: rgba(255, 90, 110, 0.75);
+    background: rgba(255, 90, 110, 0.07);
+}
+
+.v2-join-box.ko .v2-code-case.active { box-shadow: 0 0 0 0.2rem rgba(255, 90, 110, 0.15); }
+
+@keyframes v2CodeSecousse {
+    10%, 90% { transform: translateX(-0.13rem); }
+    20%, 80% { transform: translateX(0.26rem); }
+    30%, 50%, 70% { transform: translateX(-0.4rem); }
+    40%, 60% { transform: translateX(0.4rem); }
+}
+
+@media (max-width: 768px) {
+    .v2-code { gap: 0.42rem; }
+    .v2-code-case { width: 3rem; height: 3.7rem; font-size: 1.75rem; }
 }
 
 /* ── Boutons ──────────────────────────────── */
@@ -7490,7 +7561,9 @@ body.game-active:has(.poll-game-container) #particles-js {
     .v2-mode-row-name { font-size: 0.92rem; }
     .v2-mode-row-kind { display: none; }
     .v2-mode-preview { min-height: 15rem; }
-    .v2-bigstats { gap: 1rem; }
+    /* Un cran plus haut : sous le titre, elles tombaient trop bas et le bloc
+       des modes commencait juste dessous, sans respiration. */
+    .v2-bigstats { gap: 1rem; margin-top: 0.15rem; }
     .v2-bigstat-sep { display: none; }
 }
 
@@ -8760,12 +8833,6 @@ body.game-active:has(.poll-game-container) #particles-js {
     .v2q-answers.six { grid-template-columns: 1fr; }
 }
 
-/* Code refusé : l'input tremble et rougit brièvement */
-.v2-code-input.ko {
-    border-color: var(--error-color);
-    box-shadow: 0 0 0 0.22rem rgba(239, 68, 68, 0.16);
-    animation: v2Shake 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-}
 
 @keyframes v2Shake {
     10%, 90% { transform: translateX(-0.12rem); }
@@ -9618,7 +9685,6 @@ body.game-active:has(.poll-game-container) #particles-js {
     }
     .v2-back:hover, .v2-back.left:hover { transform: none; }
 
-    .v2-code-input { font-size: 1.5rem; letter-spacing: 0.4em; text-indent: 0.4em; padding: 0.8rem 0.5rem; }
 
     /* ── En jeu : l'état du joueur reste calé à droite ── */
     .v2-hud { left: auto; right: 0.9rem; top: 0.9rem; }
@@ -11960,10 +12026,11 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 }
 
 /* ============================================
-   LES RESEAUX, DANS LE COIN
-   Une signature, pas un appel : eteints tant qu on ne les regarde pas, ils ne
-   prennent leur couleur qu au survol. Le coin bas droit est le seul libre de
+   LE RESEAU, DANS LE COIN
+   Une signature, pas un appel : eteint tant qu on ne le regarde pas, il ne
+   prend ses couleurs qu au survol. Le coin bas droit est le seul libre de
    l accueil — le badge « en direct » tient le centre, le pseudo le haut.
+   Seul, il peut se permettre d etre plus grand qu une icone parmi d autres.
    ============================================ */
 .v2-reseaux {
     position: fixed;
@@ -11977,8 +12044,8 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 .v2-reseau {
     display: grid;
     place-items: center;
-    width: 2.4rem;
-    height: 2.4rem;
+    width: 3.1rem;
+    height: 3.1rem;
     color: rgba(255, 255, 255, 0.34);
     background: rgba(255, 255, 255, 0.035);
     border: 0.06rem solid rgba(255, 255, 255, 0.08);
@@ -12002,14 +12069,11 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 
 .v2-reseau svg {
     position: relative;
-    width: 1.15rem;
-    height: 1.15rem;
+    width: 1.55rem;
+    height: 1.55rem;
     fill: currentColor;
 }
 
-/* Instagram est dessine au trait, TikTok en aplat : le premier ne doit pas
-   etre rempli, sinon il devient une tache. */
-.v2-reseau.insta svg { fill: none; }
 
 .v2-reseau:hover {
     color: #fff;
@@ -12024,14 +12088,12 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     background: linear-gradient(135deg, rgba(37, 244, 238, 0.28), rgba(254, 44, 85, 0.32));
 }
 
-.v2-reseau.insta::before {
-    background: linear-gradient(135deg, rgba(255, 220, 128, 0.28), rgba(210, 60, 150, 0.32), rgba(120, 70, 240, 0.28));
-}
 
 @media (max-width: 768px) {
-    /* Le badge « en direct » vit au meme etage : on remonte pour ne pas
-       l enjamber, et l on retrecit pour ne pas manger le coin du pouce. */
-    .v2-reseaux { right: 0.8rem; bottom: 0.9rem; gap: 0.45rem; }
-    .v2-reseau { width: 2.1rem; height: 2.1rem; border-radius: 0.6rem; }
-    .v2-reseau svg { width: 1rem; height: 1rem; }
+    /* A gauche sur telephone : le coin bas droit est celui du pouce, et une
+       signature n a pas a s y trouver. Plus petite aussi — seule sur grand
+       ecran elle peut se permettre d etre grande, ici elle doit s effacer. */
+    .v2-reseaux { right: auto; left: 0.8rem; bottom: 0.9rem; gap: 0.45rem; }
+    .v2-reseau { width: 2.3rem; height: 2.3rem; border-radius: 0.65rem; }
+    .v2-reseau svg { width: 1.15rem; height: 1.15rem; }
 }
