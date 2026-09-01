@@ -7561,10 +7561,10 @@ body.game-active:has(.poll-game-container) #particles-js {
     .v2-mode-row-name { font-size: 0.92rem; }
     .v2-mode-row-kind { display: none; }
     .v2-mode-preview { min-height: 15rem; }
-    /* Remontees sous le titre : elles tombaient trop bas et le bloc des modes
-       commencait juste dessous, sans respiration. La marge passe en negatif —
-       le titre porte son propre interligne, et c est lui qu on rattrape. */
-    .v2-bigstats { gap: 1rem; margin-top: -1.15rem; }
+    /* Pas de marge ici : plus bas, la mise en page mobile les passe en
+       « position: fixed » ancree par le bas, ou une marge haute ne deplace rien.
+       C est « bottom » qui commande — voir le bloc de l accueil mobile. */
+    .v2-bigstats { gap: 1rem; }
     .v2-bigstat-sep { display: none; }
 }
 
@@ -10269,11 +10269,15 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     .v2-choices { order: 2; width: 100%; }
     .v2-recent { order: 3; }
 
+    /* Decollees du bord bas : plaquees dessus, elles se lisaient comme une
+       barre de navigation et non comme les chiffres du site. C est « bottom »
+       qui les commande, et lui seul — l element etant ancre par le bas, toute
+       marge haute reste sans effet. */
     .v2-bigstats {
         position: fixed;
         left: 0;
         right: 0;
-        bottom: 1.4rem;
+        bottom: 5.2rem;
         z-index: 4;
         flex-wrap: wrap;
         justify-content: center;
