@@ -227,4 +227,6 @@ Pour lever la mesure, trois endroits : le garde dans `/admin/toggle-game`, `dema
   la nouvelle socket) **puis** `join-lobby`. Ne jamais déconnecter « l'ancienne » socket sans
   vérifier qu'elle n'est pas la socket courante.
 - ⚠️ `home.html` est un template Vue inline : un `v-else` séparé de son `v-if` par un autre
-  élément casse toute la page (écran blanc). `npm run check` attrape ce cas.
+  élément casse toute la page (écran blanc). `npm run check` attrape ce cas, et depuis qu il
+  analyse aussi les expressions (`prefixIdentifiers`), il attrape également un `@click` dont
+  la syntaxe JavaScript est fautive — qui compilait sans broncher et blanchissait la page.

@@ -27,7 +27,11 @@ const fin = html.indexOf('<script', debut);
 const template = html.slice(debut, fin === -1 ? html.length : fin);
 
 try {
-    compile(template, { onError: (e) => { throw e; } });
+    // « prefixIdentifiers » fait passer chaque expression par un analyseur
+    // JavaScript. Sans lui, le compilateur se contente de la structure : un
+    // « @click=".codeInput.focus()" » — un  perdu en route — compilait
+    // sans broncher et blanchissait la page a l execution. C est arrive.
+    compile(template, { prefixIdentifiers: true, onError: (e) => { throw e; } });
     const lignes = template.split('\n').length;
     console.log(`✅ Template Vue valide (${lignes} lignes compilées)`);
 } catch (e) {

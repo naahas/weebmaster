@@ -231,7 +231,7 @@
                          il ne sert qu a recevoir la frappe et le clavier du telephone.
                          Le libelle porte le message d erreur a la place qu il occupe
                          deja — c est ce qui permet de ne rien reserver dessous. -->
-                    <div class="v2-join-box" :class="{ ko: joinShake }" @click=".codeInput && .codeInput.focus()">
+                    <div class="v2-join-box" :class="{ ko: joinShake }" @click="$refs.codeInput && $refs.codeInput.focus()">
                         <span class="v2-join-label" :class="{ ko: joinError }">{{ joinError || 'Code du salon' }}</span>
 
                         <div class="v2-code">
@@ -242,7 +242,7 @@
                                 class="v2-code-vrai"
                                 ref="codeInput"
                                 :value="joinCode"
-                                @input="saisirCode(.target.value)"
+                                @input="saisirCode($event.target.value)"
                                 @focus="codeFocus = true"
                                 @blur="codeFocus = false"
                                 @keyup.enter="joinRoom()"
