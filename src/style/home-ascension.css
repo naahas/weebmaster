@@ -1793,6 +1793,12 @@ body.game-active:has(.asc) {
    milieu du vide. Seule la grille de vingt-quatre grandissait, parce que
    c'est la hauteur qui la contraint et non la largeur.
 
+   ⚠️ La racine grandit DEJA au-dela de 2000 px — « html { font-size: clamp(16px,
+   0.83vw, 26px) } » dans home.css — si bien que tout ce qui est en rem suit
+   sans qu on y touche. Ce palier-ci s ajoute par-dessus : il double donc la
+   croissance, ce qui va bien pour les plateaux mais avait fait passer l ordre
+   chronologique sous la tour. A n augmenter qu avec cette mise en garde en tete.
+
    Le seuil est à 2000 px, et non à 1600 : il doit passer juste au-dessus du
    1920 de large d'un écran ordinaire, sur lequel tous ces réglages ont été
    faits à l'œil. Un seuil plus bas les aurait défaits sans prévenir.
@@ -1811,13 +1817,17 @@ body.game-active:has(.asc) {
     }
 
     .asc-jeu.asc-liaison { max-width: min(110rem, 100vw - 16rem); }
-    .asc-jeu.asc-ordre { max-width: min(120rem, 100vw - 3rem); }
+    /* La borne de fenetre valait « 100vw - 3rem » : la plus permissive de
+       toutes les epreuves, seule a ne pas reserver la place de la tour. Sur un
+       2K, ou la racine grandit deja, le plateau passait donc dessous. Il garde
+       ses 104 rem — qui valent 2210 px a cette taille — et laisse la marge que
+       les autres epreuves laissent. */
+    .asc-jeu.asc-ordre { max-width: min(104rem, 100vw - 16rem); }
 
     /* Les portraits suivent le plateau, sinon ils s espaceraient au lieu de
        grandir — cinq vignettes de deux cents pixels perdues dans un mètre. */
     .asc-portrait { max-width: 17rem; }
     .asc-colonnes .asc-noeud img { height: clamp(6rem, 24vh, 16rem); }
-    .asc-carte-arc { max-width: 28rem; }
 
     /* L en-tete se met a l echelle du reste : a taille fixe, il paraissait
        chuchote au-dessus d un plateau qui, lui, avait grandi. */

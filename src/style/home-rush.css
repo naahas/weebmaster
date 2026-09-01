@@ -49,7 +49,7 @@
 .rush-chrono-n {
     position: relative;
     font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(2.6rem, 5.5vh, 3.6rem);
+    font-size: clamp(2rem, 4vh, 2.7rem);
     line-height: 0.85;
     color: #fff;
     letter-spacing: -0.02em;
@@ -657,6 +657,5 @@
    regle a l oeil. */
 @media (min-width: 2000px) {
     .rush { --carte-h: min(30rem, 50vh); --cartouche: 2.3rem; }
-    .rush-chrono-n { font-size: clamp(2.8rem, 8vw, 5rem); }
     .rush-saisie { font-size: 1.3rem; }
 }
