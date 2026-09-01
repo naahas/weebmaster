@@ -6931,27 +6931,28 @@ body.game-active:has(.poll-game-container) #particles-js {
     to   { opacity: 1; transform: none; }
 }
 
+/* Le titre n'est plus de la typographie mais le logotype, une image. Le h1
+   reste, avec le nom en « alt » : c'est lui que Google lit, le référencement
+   ne perd rien au change. */
 .v2-hero-title {
-    font-family: 'Bebas Neue', 'Russo One', sans-serif;
-    font-size: clamp(3rem, 9.5vw, 7rem);
-    line-height: 0.92;
-    letter-spacing: 0.02em;
-    color: var(--text-primary);
-    text-shadow: 0 0 4rem rgba(255, 190, 40, 0.25);
+    margin: 0;
+    line-height: 0;
+}
+
+.v2-hero-title img {
+    display: block;
+    width: clamp(16rem, 52vw, 38rem);
+    max-width: 100%;
+    height: auto;
     animation: v2Glow 5s ease-in-out infinite;
 }
 
-.v2-hero-title b {
-    font-weight: inherit;
-    background: linear-gradient(135deg, #ffe066, var(--neon-primary), var(--accent-color));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-}
-
+/* Le halo doré qui pulsait en text-shadow se rejoue en drop-shadow : même
+   effet, mais qui épouse le dessin au lieu du rectangle de l'image. Le rayon
+   est plus court — sur des lettres pleines, un flou de 3 rem noierait tout. */
 @keyframes v2Glow {
-    0%, 100% { text-shadow: 0 0 3rem rgba(255, 190, 40, 0.18); }
-    50%      { text-shadow: 0 0 5rem rgba(255, 190, 40, 0.38); }
+    0%, 100% { filter: drop-shadow(0 0 1.6rem rgba(255, 190, 40, 0.14)); }
+    50%      { filter: drop-shadow(0 0 2.6rem rgba(255, 190, 40, 0.30)); }
 }
 
 /* ── Stats en grand ───────────────────────── */
