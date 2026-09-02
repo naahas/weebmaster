@@ -196,9 +196,9 @@ Pour TikTok, ce sera **code de room + navigateur mobile**, point.
 |---|---|---|---|---|
 | 0 | Filet de sécurité | ▁ | nul | ✅ fait |
 | 1 | Suppression | ███ | faible | ✅ fait |
-| 2 | Multi-room | █████ | **élevé** | à faire |
+| 2 | Multi-room | █████ | **élevé** | ✅ fait |
 | 3 | Identité invité | ██ | faible | 🟡 version minimale en place |
-| 4 | Mobile-first | ████ | moyen | à faire |
+| 4 | Mobile-first | ████ | moyen | ✅ fait (accueil, salon, quiz, Rush, Ascension, BombAnime) |
 | 5 | Chat Twitch | ███ | moyen | à faire |
 
 ### Résultat de la phase 1

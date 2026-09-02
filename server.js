@@ -28,6 +28,15 @@ let connectionsByIP = new Map();
 // sans comprendre pourquoi.
 const MAX_CONNECTIONS_PER_IP = parseInt(process.env.MAX_CONNECTIONS_PER_IP, 10) || 100;
 
+// Le plafond d'événements qu'une socket peut envoyer par seconde. Le client le
+// plus bavard est celui du Rush : il se limite lui-même à un envoi toutes les
+// 60 ms, soit seize par seconde. Vingt-cinq laisse donc de la marge à un
+// joueur normal, et ramène un client bricolé de plusieurs milliers par seconde
+// à vingt-cinq. Sur un seul dyno, sans quoi un salon peut geler tous les autres.
+const EVENEMENTS_PAR_SECONDE = parseInt(process.env.EVENEMENTS_PAR_SECONDE, 10) || 25;
+const RAFALE = EVENEMENTS_PAR_SECONDE * 2;   // ce qu'on tolère d'un coup
+const REFUS_AVANT_COUPURE = 300;             // au-delà, ce n'est plus un accident
+
 
 
 
@@ -5628,6 +5637,47 @@ io.on('connection', (socket) => {
 
     connectionsByIP.set(ip, currentConnections + 1);
     console.log(`🔌 Nouveau socket connecté: ${socket.id} (IP: ${ip}, connexions: ${currentConnections + 1})`);
+    // ── 🛡️ Le débit d'une socket ──
+    //
+    // Le plafond par IP ne compte que les connexions ouvertes : une seule
+    // suffisait ensuite à envoyer des milliers d'événements par seconde. Sur un
+    // seul dyno, dont la boucle est partagée par tous les salons, un client
+    // bricolé pouvait faire ramer les parties des autres sans jamais approcher
+    // le plafond de connexions.
+    //
+    // Un seau à jetons par socket, posé en amont de tous les gestionnaires : il
+    // se remplit de EVENEMENTS_PAR_SECONDE jetons par seconde et en contient
+    // RAFALE au plus. Un événement coûte un jeton ; sans jeton, il est jeté en
+    // silence — répondre coûterait justement ce qu'on cherche à éviter, et une
+    // connexion qui hoquette peut légitimement envoyer une salve.
+    //
+    // Le silence a une limite : au-delà de REFUS_AVANT_COUPURE refus, ce n'est
+    // plus un accident de réseau et la socket est fermée. « disconnect » est un
+    // événement réservé de socket.io : il ne passe pas par ce filtre, une socket
+    // muselée peut donc toujours partir proprement.
+    let jetons = RAFALE;
+    let dernierRemplissage = Date.now();
+    let refuses = 0;
+
+    socket.use((paquet, suite) => {
+        const maintenant = Date.now();
+        jetons = Math.min(RAFALE, jetons + ((maintenant - dernierRemplissage) / 1000) * EVENEMENTS_PAR_SECONDE);
+        dernierRemplissage = maintenant;
+
+        if (jetons < 1) {
+            refuses++;
+            // Une ligne à l'entrée dans le rouge, une à la coupure : de quoi
+            // repérer un abus dans le journal sans le noyer sous lui-même.
+            if (refuses === 1 || refuses === REFUS_AVANT_COUPURE) {
+                console.warn(`⚠️ Débit dépassé — ${socket.id} (IP ${ip}), ${refuses} événement(s) jeté(s), dernier « ${paquet[0]} »`);
+            }
+            if (refuses >= REFUS_AVANT_COUPURE) socket.disconnect(true);
+            return;   // sans « suite() », le gestionnaire n'est jamais appelé
+        }
+
+        jetons -= 1;
+        suite();
+    });
 
     // 🔥 NOUVEAU: Événement pour enregistrer l'authentification
     socket.on('register-authenticated', (data) => {

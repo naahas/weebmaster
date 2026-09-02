@@ -41,6 +41,8 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   `npm run test:rejouer` (deux manches d affilée sans répétition de question),
   `npm run test:historique` (chaque salon a sa propre mémoire),
   `npm run test:backoffice` (les routes /api/*question* exigent `QUESTION_ADMIN_CODE`),
+  `npm run test:debit` (le seau a jetons par socket : une brute est bornee a la
+  rafale puis coupee, un joueur a cadence normale n en voit rien),
   `npm run test:fuites` (ce qu un curieux muni du seul code du salon peut lire :
   la reponse du quiz, les etages de la tour, les portes /admin, le pseudo d un
   client bricole),
@@ -174,6 +176,12 @@ le code — et le serveur l'annonce au démarrage pour qu'on ne l'oublie pas en 
 Facultatives : `MAX_CONNECTIONS_PER_IP` (100 par défaut — les opérateurs mobiles placent leurs
 abonnés derrière une même IP, un plafond bas couperait la moitié d'un public) et `MAX_ROOMS` (50).
 
+`EVENEMENTS_PAR_SECONDE` (25) borne ce qu'**une socket** peut envoyer : le plafond par IP ne
+comptait que les connexions ouvertes, une seule suffisait ensuite à noyer la boucle du dyno —
+partagée par tous les salons. Un seau à jetons posé en `socket.use()` laisse passer une rafale
+de 2× puis jette en silence ; au-delà de 300 refus la socket est fermée. Le client le plus
+bavard est celui du Rush, qui se limite lui-même à seize envois par seconde.
+
 `ADMIN_PASSWORD` (l'ancien panneau d'administration) resservait : voir la mesure temporaire
 ci-dessous. Les variables Twitch, `SESSION_SECRET` et `MASTER_ADMIN_PASSWORD` ne servent plus.
 
@@ -222,6 +230,10 @@ Pour lever la mesure, trois endroits : le garde dans `/admin/toggle-game`, `dema
   comptee apres coup.
 - Gros fichiers (`home.css` 11.5k lignes, `server.js` 6.2k, `app.js` 4.9k) : cibler via grep/offset,
   ne jamais relire en entier.
+- Les portraits de Rush et d'Ascension sont en **WebP**, pas en PNG : à 225×350 de trait manga,
+  le PNG demandait 150 Ko là où le WebP en prend 15. Un portrait ajouté doit suivre, sans quoi
+  il pèsera dix fois ses voisins. Les noms cités dans `rushdata.json` et `ascensiondata.json`
+  portent l'extension : elle doit correspondre au fichier.
 - Valider une modif : `npm run check`, puis `npm start` et les trois suites, et ouvrir `/` dans le
   navigateur.
 - ⚠️ `transform` sur un ancêtre crée un bloc conteneur et casse le `position: fixed` de ses
