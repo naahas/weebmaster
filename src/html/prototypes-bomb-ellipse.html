@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BombAnime — le cercle contre l’ellipse</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   Sur téléphone, le diamètre du cercle est borné par la largeur —
+   335 px — alors que l'écran fait plus du double en hauteur. Presque
+   quatre dixièmes de l'écran ne servent à rien.
+
+   L'ellipse récupère cette place. Mais elle a un piège : à pas
+   d'angle constant, les joueurs se tassent aux deux pôles. D'où la
+   troisième colonne, qui répartit à longueur d'arc constante.
+
+   Les trois colonnes rejouent le calcul réel de app.js à 375 px.
+   ════════════════════════════════════════════════════════════════ */
+:root { --or: #ffd24a; }
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 2rem 1.5rem 4rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #fff;
+    background: radial-gradient(70% 55% at 50% 0%, #1a1710, #08080b 68%);
+    min-height: 100vh;
+}
+
+h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
+.sous { margin: 0 0 1.6rem; max-width: 58rem; font-size: 0.85rem; line-height: 1.55; color: rgba(255, 255, 255, 0.42); }
+
+/* ── Le curseur du nombre de joueurs ── */
+.reglage {
+    display: flex; align-items: center; gap: 1rem;
+    margin-bottom: 2rem; padding: 0.9rem 1.1rem;
+    max-width: 34rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 0.06rem solid rgba(255, 255, 255, 0.09);
+    border-radius: 0.8rem;
+}
+.reglage label { font-size: 0.78rem; color: rgba(255, 255, 255, 0.5); white-space: nowrap; }
+.reglage input { flex: 1; accent-color: var(--or); }
+.reglage .val { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--or); min-width: 2ch; text-align: right; }
+
+.grille { display: flex; flex-wrap: wrap; gap: 2.4rem 1.8rem; }
+.col { width: 375px; }
+.col h2 { margin: 0 0 0.15rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.07em; color: var(--or); }
+.col p.note { margin: 0 0 0.8rem; font-size: 0.73rem; line-height: 1.5; color: rgba(255, 255, 255, 0.4); min-height: 4.5em; }
+
+/* ── Le cadre de téléphone ── */
+.tel { width: 375px; height: 780px; padding: 0.5rem; background: #16161a; border-radius: 2.2rem; box-shadow: 0 1.4rem 3rem rgba(0, 0, 0, 0.55); }
+.ecran {
+    position: relative; width: 100%; height: 100%; overflow: hidden;
+    border-radius: 1.8rem;
+    background: radial-gradient(90% 45% at 50% 0%, #17140f, #0a0a0d 70%);
+    display: flex; flex-direction: column;
+}
+
+.barre { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 0.8rem; }
+.son { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.8rem; background: rgba(255, 255, 255, 0.07); border-radius: 999px; font-size: 0.8rem; }
+.son b { display: block; width: 3.2rem; height: 0.2rem; border-radius: 999px; background: linear-gradient(90deg, #22c55e 45%, rgba(255,255,255,0.2) 45%); }
+.outils { display: flex; gap: 0.5rem; }
+.outil { width: 2.3rem; height: 2.3rem; display: grid; place-items: center; border-radius: 0.7rem; font-size: 0.9rem; }
+.outil.bleu { background: #2563eb; }
+.outil.jaune { background: var(--or); color: #1a1508; }
+
+/* ── L'arène ── */
+.arene { position: relative; flex: 1; min-height: 0; }
+
+.bombe { position: absolute; border-radius: 50%; background: radial-gradient(35% 35% at 35% 30%, #4a4a52, #1c1c22); transform: translate(-50%, -50%); }
+.meche { position: absolute; height: 0.12rem; background: rgba(255, 255, 255, 0.35); transform-origin: left center; }
+.etincelle { position: absolute; border-radius: 50%; background: #ffa716; box-shadow: 0 0 0.5rem #ffa716; transform: translate(-50%, -50%); }
+
+.joueur { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; }
+.nom { font-size: 0.62rem; font-weight: 600; color: rgba(255, 255, 255, 0.6); white-space: nowrap; margin-bottom: 0.15rem; }
+.joueur.tour .nom { color: var(--or); }
+.hexa {
+    position: relative;
+    display: grid; place-items: center;
+    background: linear-gradient(160deg, #23222a, #14141a);
+    border: 0.09rem solid rgba(255, 255, 255, 0.14);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    font-size: 0.75rem;
+}
+.joueur.tour .hexa { border-color: var(--or); background: linear-gradient(160deg, #3a3018, #1d1810); box-shadow: 0 0 1rem rgba(255, 210, 74, 0.35); }
+.joueur.moi .hexa { border-color: rgba(255, 210, 74, 0.55); }
+.coeurs { margin-top: -0.35rem; font-size: 0.5rem; letter-spacing: 0.05em; color: #ff4d5e; }
+
+/* ── Le pied : la série ── */
+.pied { flex: 0 0 auto; padding: 0.6rem 1rem 1.4rem; text-align: center; }
+.serie { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.18em; color: rgba(255, 255, 255, 0.35); }
+.trait { width: 60%; height: 0.06rem; margin: 0.4rem auto 0; background: rgba(255, 255, 255, 0.12); }
+
+/* ── La fiche de mesures ── */
+.mesures { margin-top: 0.7rem; font-size: 0.68rem; line-height: 1.7; color: rgba(255, 255, 255, 0.38); }
+.mesures b { color: rgba(255, 255, 255, 0.72); font-weight: 600; }
+.mesures .gain { color: #4ade80; }
+.mesures .perte { color: #ff7a88; }
+</style>
+</head>
+<body>
+
+<h1>BombAnime — le cercle contre l’ellipse</h1>
+<p class="sous">
+    Le diamètre d’un cercle est borné par la largeur de l’écran. Sur un téléphone de 375 px, il plafonne
+    à 335 px alors que la hauteur disponible en fait près du double : presque quatre dixièmes de l’écran
+    ne servent à rien. L’ellipse récupère cette place — mais pas naïvement, d’où la troisième colonne.
+    Les trois rejouent le calcul réel d’<code>app.js</code>. Bouge le curseur : le défaut du milieu ne se
+    voit qu’à partir de sept ou huit joueurs.
+</p>
+
+<div class="reglage">
+    <label>Joueurs dans le salon</label>
+    <input type="range" id="curseur" min="2" max="15" value="11">
+    <span class="val" id="valeur">11</span>
+</div>
+
+<div class="grille" id="grille"></div>
+
+<script>
+const NOMS = ['nahass', 'Ramen492', 'Katana380', 'Nakama154', 'Kitsune828', 'Yokai174', 'Hokage625',
+              'Kaiju401', 'Shinobi340', 'Senpai911', 'Ronin169', 'Otaku307', 'Sensei812', 'Oni455', 'Tanuki128'];
+
+const LARGEUR = 375;          // la largeur d'écran qu'on simule
+const HAUT_ARENE = 610;       // ce qui reste entre la barre du haut et le pied
+
+/* ═══ Le calcul d'aujourd'hui, repris tel quel de app.js ═══ */
+const marge = (hex) => (hex / 2) + 8;
+
+function mesuresActuelles(n) {
+    const boite = Math.min(LARGEUR - 40, (n <= 3 ? 250 : 280) + n * 18);
+    let hex = Math.max(44, 62 - n * 1.2);
+    const rayonGarde = (boite / 2) - marge(hex);
+    if (rayonGarde > 0) {
+        const place = (2 * Math.PI * rayonGarde) / n / 1.25;
+        hex = Math.max(30, Math.min(hex, place));
+    }
+    const bombe = Math.min(44, Math.max(32, 27 + n));
+    let ecartBombe = Math.max(35, 60 + (13 - n) * 5);
+    if (n <= 2) ecartBombe = 65;
+    let rayon = Math.max((boite / 2) - marge(hex), (bombe / 2) + hex + ecartBombe);
+    const demiPlace = Math.min(boite, LARGEUR - 24) / 2;
+    rayon = Math.min(rayon, demiPlace - (hex / 2) - 6);
+    return { hex, bombe, rx: rayon, ry: rayon, boite };
+}
+
+/* ═══ L'ellipse ═══
+   Le demi-axe horizontal ne bouge pas : jamais plus large qu'aujourd'hui.
+   Le vertical prend ce que la hauteur laisse. */
+function mesuresEllipse(n) {
+    const socle = mesuresActuelles(n);
+    let hex = Math.max(52, 76 - n * 1.4);
+    const rx = socle.rx;
+    let ry = (HAUT_ARENE / 2) - (hex / 2) - 26;
+    // le garde-fou d'origine, mais sur le périmètre de l'ellipse
+    const perim = perimetre(rx, ry);
+    const place = (perim / n) / 1.25;
+    hex = Math.max(30, Math.min(hex, place));
+    ry = (HAUT_ARENE / 2) - (hex / 2) - 26;
+    return { hex, bombe: Math.min(60, Math.max(42, 34 + n * 1.4)), rx, ry, boite: socle.boite };
+}
+
+/* Ramanujan : assez précis pour du placement à l'écran */
+function perimetre(a, b) {
+    return Math.PI * (3 * (a + b) - Math.sqrt((3 * a + b) * (a + 3 * b)));
+}
+
+/* ═══ Placement ═══ */
+// À pas d'angle constant : ce que fait le code aujourd'hui. Sur un cercle
+// c'est exact ; sur une ellipse, les points se tassent aux deux pôles.
+function parAngle(n, rx, ry) {
+    const decalage = Math.PI / n;
+    const p = [];
+    for (let i = 0; i < n; i++) {
+        const a = ((i / n) * 2 * Math.PI) - (Math.PI / 2) + decalage;
+        p.push({ x: rx * Math.cos(a), y: ry * Math.sin(a) });
+    }
+    return p;
+}
+
+// À longueur d'arc constante : on échantillonne l'ellipse, on cumule les
+// longueurs, et chaque joueur atterrit sur une fraction égale du périmètre.
+function parArc(n, rx, ry) {
+    const PAS = 3000;
+    const cum = [0];
+    let px = rx * Math.cos(-Math.PI / 2), py = ry * Math.sin(-Math.PI / 2);
+    for (let k = 1; k <= PAS; k++) {
+        const a = -Math.PI / 2 + (k / PAS) * 2 * Math.PI;
+        const x = rx * Math.cos(a), y = ry * Math.sin(a);
+        cum.push(cum[k - 1] + Math.hypot(x - px, y - py));
+        px = x; py = y;
+    }
+    const total = cum[PAS];
+    const p = [];
+    for (let i = 0; i < n; i++) {
+        const vise = ((i + 0.5) / n) * total;   // + 0.5 : le même demi-décalage qu'aujourd'hui
+        let lo = 0, hi = PAS;
+        while (lo < hi) { const mi = (lo + hi) >> 1; if (cum[mi] < vise) lo = mi + 1; else hi = mi; }
+        const a = -Math.PI / 2 + (lo / PAS) * 2 * Math.PI;
+        p.push({ x: rx * Math.cos(a), y: ry * Math.sin(a) });
+    }
+    return p;
+}
+
+/* ═══ Rendu d'un téléphone ═══ */
+function peindre(hote, n, mes, points) {
+    const cx = LARGEUR / 2, cy = HAUT_ARENE / 2;
+    const b = mes.bombe;
+    let html =
+        '<div class="bombe" style="width:' + b + 'px;height:' + b + 'px;left:' + cx + 'px;top:' + cy + 'px"></div>' +
+        '<div class="meche" style="width:' + (b * 0.62) + 'px;left:' + (cx + b * 0.34) + 'px;top:' + (cy - b * 0.3) + 'px;transform:rotate(-14deg)"></div>' +
+        '<div class="etincelle" style="width:' + (b * 0.28) + 'px;height:' + (b * 0.28) + 'px;left:' + (cx + b * 0.98) + 'px;top:' + (cy - b * 0.44) + 'px"></div>';
+
+    points.forEach((pt, i) => {
+        const tour = i === 5 % n;
+        const moi = i === 0;
+        html +=
+            '<div class="joueur' + (tour ? ' tour' : '') + (moi ? ' moi' : '') + '" style="left:' + (cx + pt.x) + 'px;top:' + (cy + pt.y) + 'px">' +
+              '<span class="nom">' + NOMS[i % NOMS.length] + '</span>' +
+              '<span class="hexa" style="width:' + mes.hex + 'px;height:' + (mes.hex * 1.1) + 'px">🥷</span>' +
+              '<span class="coeurs">♥♥</span>' +
+            '</div>';
+    });
+    hote.innerHTML = html;
+}
+
+function cadre() {
+    const tel = document.createElement('div');
+    tel.className = 'tel';
+    tel.innerHTML =
+        '<div class="ecran">' +
+          '<div class="barre">' +
+            '<div class="son">🔊<b></b></div>' +
+            '<div class="outils"><div class="outil bleu">Tt</div><div class="outil jaune">🎁</div></div>' +
+          '</div>' +
+          '<div class="arene"></div>' +
+          '<div class="pied"><div class="serie">NARUTO</div><div class="trait"></div></div>' +
+        '</div>';
+    return tel;
+}
+
+const COLONNES = [
+    { t: 'Aujourd’hui · le cercle',
+      n: "Le calcul en place. Le diamètre bute sur la largeur de l’écran, et tout ce qu’il y a au-dessus et en dessous est perdu.",
+      mes: mesuresActuelles, pos: (n, m) => parAngle(n, m.rx, m.ry) },
+    { t: 'Ellipse · pas d’angle constant',
+      n: "On étire vers le haut et le bas en gardant le calcul d’angle actuel. La place est récupérée, mais les joueurs se tassent aux deux pôles et s’écartent sur les côtés.",
+      mes: mesuresEllipse, pos: (n, m) => parAngle(n, m.rx, m.ry) },
+    { t: 'Ellipse · longueur d’arc',
+      n: "Même ellipse, mais chaque joueur occupe une fraction égale du périmètre au lieu d’un pas d’angle. L’écart redevient constant, et la place gagnée sert à agrandir pastilles et bombe.",
+      mes: mesuresEllipse, pos: (n, m) => parArc(n, m.rx, m.ry) },
+];
+
+const grille = document.getElementById('grille');
+const arenes = [], fiches = [];
+for (const c of COLONNES) {
+    const col = document.createElement('div');
+    col.className = 'col';
+    col.innerHTML = '<h2>' + c.t + '</h2><p class="note">' + c.n + '</p>';
+    const tel = cadre();
+    col.appendChild(tel);
+    const fiche = document.createElement('div');
+    fiche.className = 'mesures';
+    col.appendChild(fiche);
+    grille.appendChild(col);
+    arenes.push(tel.querySelector('.arene'));
+    fiches.push(fiche);
+}
+
+// L'écart le plus serré entre deux voisins : c'est lui qui dit si ça se tasse
+function ecartMini(points) {
+    let mini = Infinity;
+    for (let i = 0; i < points.length; i++) {
+        const a = points[i], b = points[(i + 1) % points.length];
+        mini = Math.min(mini, Math.hypot(a.x - b.x, a.y - b.y));
+    }
+    return mini;
+}
+
+function tout(n) {
+    let refEcart = 0;
+    COLONNES.forEach((c, k) => {
+        const m = c.mes(n);
+        const pts = c.pos(n, m);
+        peindre(arenes[k], n, m, pts);
+        const ecart = ecartMini(pts);
+        if (k === 0) refEcart = ecart;
+        const hauteur = 2 * m.ry + m.hex;
+        const part = Math.round(hauteur / 610 * 100);
+        // l'écart le plus serré doit rester au-dessus de la pastille, sinon ça se touche
+        const serre = ecart < m.hex * 1.05;
+        fiches[k].innerHTML =
+            'hauteur occupée <b>' + part + ' %</b> de l’arène<br>' +
+            'pastille <b>' + Math.round(m.hex) + ' px</b> · bombe <b>' + Math.round(m.bombe) + ' px</b><br>' +
+            'écart le plus serré <b class="' + (serre ? 'perte' : 'gain') + '">' + Math.round(ecart) + ' px</b>' +
+            (serre ? ' — les pastilles se touchent' : '');
+    });
+}
+
+const curseur = document.getElementById('curseur');
+const valeur = document.getElementById('valeur');
+curseur.oninput = () => { valeur.textContent = curseur.value; tout(Number(curseur.value)); };
+tout(11);
+</script>
+</body>
+</html>

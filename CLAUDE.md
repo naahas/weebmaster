@@ -156,6 +156,8 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
   Et `/prototypes/code` : cinq facons de demander le code du salon, avec un
   basculeur ordinateur/telephone.
   Et `/prototypes/modes-mobile` : cinq facons de choisir un mode au doigt.
+  Et `/prototypes/bomb-ellipse` : le cercle de BombAnime contre l ellipse,
+  avec un curseur de joueurs et les mesures sous chaque telephone.
 - `/question` : back-office des questions, protégé par `QUESTION_ADMIN_CODE`. Trois onglets :
   ajouter, lister, et relire les **suggestions de personnages** envoyées depuis BombAnime
   (`/api/suggestions`, `/api/suggestion-status`, `/api/delete-suggestion` — même code).

@@ -1226,6 +1226,10 @@ app.get('/prototypes/modes-2', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-modes2.html');
 });
 
+app.get('/prototypes/bomb-ellipse', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-bomb-ellipse.html');
+});
+
 app.get('/prototypes/modes-mobile', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-modes-mobile.html');
 });
