@@ -651,11 +651,13 @@
 
                             <!-- 🧪 Peupler le salon sans ouvrir quinze onglets.
                                  Le serveur ne l'accepte qu'en dehors de la production.
-                                 Réservé à Ascension : les bots y montent pour de bon,
-                                 leur minuteur d'étage les faisant avancer d'un cran à
-                                 chaque expiration. C'est le seul mode où ils remplissent
-                                 l'écran de façon utile — la tour se juge en mouvement. -->
-                            <div class="v2-set" v-if="estDev && lobbyMode === 'ascension'">
+                                 Ouvert à Ascension et à BombAnime, les deux modes où des
+                                 bots remplissent l'écran de façon utile : la tour se juge
+                                 en mouvement, et le cercle de la bombe ne montre ses
+                                 limites qu'une fois plein. Un bot ne bloque pas le tour —
+                                 l'explosion est un minuteur serveur, il perd une vie à
+                                 l'expiration et la bombe passe au suivant. -->
+                            <div class="v2-set" v-if="estDev && (lobbyMode === 'ascension' || lobbyMode === 'bombanime')">
                                 <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9"/></svg>
                                 <span class="v2-set-label">Test</span>
                                 <span class="v2-set-value">{{ playerCount }}</span>
