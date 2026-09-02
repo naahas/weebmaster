@@ -4,91 +4,91 @@
    "id": "naruto",
    "nom": "Naruto",
    "anime": "Naruto",
-   "img": "naruto.png",
+   "img": "naruto.webp",
    "alias": []
   },
   {
    "id": "sasuke",
    "nom": "Sasuke",
    "anime": "Naruto",
-   "img": "sasuke.png",
+   "img": "sasuke.webp",
    "alias": []
   },
   {
    "id": "sakura",
    "nom": "Sakura",
    "anime": "Naruto",
-   "img": "sakura.png",
+   "img": "sakura.webp",
    "alias": []
   },
   {
    "id": "kakashi",
    "nom": "Kakashi",
    "anime": "Naruto",
-   "img": "kakashi.png",
+   "img": "kakashi.webp",
    "alias": []
   },
   {
    "id": "itachi",
    "nom": "Itachi",
    "anime": "Naruto",
-   "img": "itachi.png",
+   "img": "itachi.webp",
    "alias": []
   },
   {
    "id": "madara",
    "nom": "Madara",
    "anime": "Naruto",
-   "img": "madara.png",
+   "img": "madara.webp",
    "alias": []
   },
   {
    "id": "hashirama",
    "nom": "Hashirama",
    "anime": "Naruto",
-   "img": "hashirama.png",
+   "img": "hashirama.webp",
    "alias": []
   },
   {
    "id": "minato",
    "nom": "Minato",
    "anime": "Naruto",
-   "img": "minato.png",
+   "img": "minato.webp",
    "alias": []
   },
   {
    "id": "kisame",
    "nom": "Kisame",
    "anime": "Naruto",
-   "img": "kisame.png",
+   "img": "kisame.webp",
    "alias": []
   },
   {
    "id": "kushina",
    "nom": "Kushina",
    "anime": "Naruto",
-   "img": "kushina.png",
+   "img": "kushina.webp",
    "alias": []
   },
   {
    "id": "hinata",
    "nom": "Hinata",
    "anime": "Naruto",
-   "img": "hinata.png",
+   "img": "hinata.webp",
    "alias": []
   },
   {
    "id": "gaara",
    "nom": "Gaara",
    "anime": "Naruto",
-   "img": "gaara.png",
+   "img": "gaara.webp",
    "alias": []
   },
   {
    "id": "jiraiya",
    "nom": "Jiraiya",
    "anime": "Naruto",
-   "img": "jiraiya.png",
+   "img": "jiraiya.webp",
    "alias": [
     "Jiraya"
    ]
@@ -97,14 +97,14 @@
    "id": "orochimaru",
    "nom": "Orochimaru",
    "anime": "Naruto",
-   "img": "orochimaru.png",
+   "img": "orochimaru.webp",
    "alias": []
   },
   {
    "id": "rock_lee",
    "nom": "Rock Lee",
    "anime": "Naruto",
-   "img": "rock_lee.png",
+   "img": "rock_lee.webp",
    "alias": [
     "Lee"
    ]
@@ -113,7 +113,7 @@
    "id": "obito",
    "nom": "Obito",
    "anime": "Naruto",
-   "img": "obito.png",
+   "img": "obito.webp",
    "alias": [
     "Tobi"
    ]
@@ -122,42 +122,42 @@
    "id": "tsunade",
    "nom": "Tsunade",
    "anime": "Naruto",
-   "img": "tsunade.png",
+   "img": "tsunade.webp",
    "alias": []
   },
   {
    "id": "luffy",
    "nom": "Luffy",
    "anime": "One Piece",
-   "img": "luffy.png",
+   "img": "luffy.webp",
    "alias": []
   },
   {
    "id": "zoro",
    "nom": "Zoro",
    "anime": "One Piece",
-   "img": "zoro.png",
+   "img": "zoro.webp",
    "alias": []
   },
   {
    "id": "sanji",
    "nom": "Sanji",
    "anime": "One Piece",
-   "img": "sanji.png",
+   "img": "sanji.webp",
    "alias": []
   },
   {
    "id": "nami",
    "nom": "Nami",
    "anime": "One Piece",
-   "img": "nami.png",
+   "img": "nami.webp",
    "alias": []
   },
   {
    "id": "robin",
    "nom": "Robin",
    "anime": "One Piece",
-   "img": "robin.png",
+   "img": "robin.webp",
    "alias": [
     "nico robin"
    ]
@@ -166,35 +166,35 @@
    "id": "ace",
    "nom": "Ace",
    "anime": "One Piece",
-   "img": "ace.png",
+   "img": "ace.webp",
    "alias": []
   },
   {
    "id": "shanks",
    "nom": "Shanks",
    "anime": "One Piece",
-   "img": "shanks.png",
+   "img": "shanks.webp",
    "alias": []
   },
   {
    "id": "mihawk",
    "nom": "Mihawk",
    "anime": "One Piece",
-   "img": "mihawk.png",
+   "img": "mihawk.webp",
    "alias": []
   },
   {
    "id": "law",
    "nom": "Law",
    "anime": "One Piece",
-   "img": "law.png",
+   "img": "law.webp",
    "alias": []
   },
   {
    "id": "kaido",
    "nom": "Kaido",
    "anime": "One Piece",
-   "img": "kaido.png",
+   "img": "kaido.webp",
    "alias": [
     "kaidou"
    ]
@@ -203,14 +203,14 @@
    "id": "doflamingo",
    "nom": "Doflamingo",
    "anime": "One Piece",
-   "img": "doflamingo.png",
+   "img": "doflamingo.webp",
    "alias": []
   },
   {
    "id": "boa_hancock",
    "nom": "Boa Hancock",
    "anime": "One Piece",
-   "img": "boa_hancock.png",
+   "img": "boa_hancock.webp",
    "alias": [
     "Hancock"
    ]
@@ -219,35 +219,35 @@
    "id": "chopper",
    "nom": "Chopper",
    "anime": "One Piece",
-   "img": "chopper.png",
+   "img": "chopper.webp",
    "alias": []
   },
   {
    "id": "sabo",
    "nom": "Sabo",
    "anime": "One Piece",
-   "img": "sabo.png",
+   "img": "sabo.webp",
    "alias": []
   },
   {
    "id": "baggy",
    "nom": "Baggy",
    "anime": "One Piece",
-   "img": "baggy.png",
+   "img": "baggy.webp",
    "alias": []
   },
   {
    "id": "vivi",
    "nom": "Vivi",
    "anime": "One Piece",
-   "img": "vivi.png",
+   "img": "vivi.webp",
    "alias": []
   },
   {
    "id": "teach",
    "nom": "Teach",
    "anime": "One Piece",
-   "img": "teach.png",
+   "img": "teach.webp",
    "alias": [
     "Barbe noire",
     "Blackbeard",
@@ -258,7 +258,7 @@
    "id": "newgate",
    "nom": "Newgate",
    "anime": "One Piece",
-   "img": "newgate.png",
+   "img": "newgate.webp",
    "alias": [
     "Barbe blanche",
     "Edward newgate",
@@ -270,28 +270,28 @@
    "id": "goku",
    "nom": "Goku",
    "anime": "Dragon Ball",
-   "img": "goku.png",
+   "img": "goku.webp",
    "alias": []
   },
   {
    "id": "vegeta",
    "nom": "Vegeta",
    "anime": "Dragon Ball",
-   "img": "vegeta.png",
+   "img": "vegeta.webp",
    "alias": []
   },
   {
    "id": "gohan",
    "nom": "Gohan",
    "anime": "Dragon Ball",
-   "img": "gohan.png",
+   "img": "gohan.webp",
    "alias": []
   },
   {
    "id": "frieza",
    "nom": "Freezer",
    "anime": "Dragon Ball",
-   "img": "frieza.png",
+   "img": "frieza.webp",
    "alias": [
     "Frieza"
    ]
@@ -300,14 +300,14 @@
    "id": "cell",
    "nom": "Cell",
    "anime": "Dragon Ball",
-   "img": "cell.png",
+   "img": "cell.webp",
    "alias": []
   },
   {
    "id": "buu",
    "nom": "Buu",
    "anime": "Dragon Ball",
-   "img": "buu.png",
+   "img": "buu.webp",
    "alias": [
     "Boo"
    ]
@@ -316,7 +316,7 @@
    "id": "piccolo",
    "nom": "Piccolo",
    "anime": "Dragon Ball",
-   "img": "piccolo.png",
+   "img": "piccolo.webp",
    "alias": [
     "petit coeur",
     "picolo"
@@ -326,14 +326,14 @@
    "id": "trunks",
    "nom": "Trunks",
    "anime": "Dragon Ball",
-   "img": "trunks.png",
+   "img": "trunks.webp",
    "alias": []
   },
   {
    "id": "krillin",
    "nom": "Krilin",
    "anime": "Dragon Ball",
-   "img": "krillin.png",
+   "img": "krillin.webp",
    "alias": [
     "Krilin"
    ]
@@ -342,14 +342,14 @@
    "id": "broly",
    "nom": "Broly",
    "anime": "Dragon Ball",
-   "img": "broly.png",
+   "img": "broly.webp",
    "alias": []
   },
   {
    "id": "C-18",
    "nom": "C-18",
    "anime": "Dragon Ball",
-   "img": "C-18.png",
+   "img": "C-18.webp",
    "alias": [
     "C18",
     "C 18",
@@ -360,42 +360,42 @@
    "id": "Goten",
    "nom": "Goten",
    "anime": "Dragon Ball",
-   "img": "Goten.png",
+   "img": "Goten.webp",
    "alias": []
   },
   {
    "id": "ichigo",
    "nom": "Ichigo",
    "anime": "Bleach",
-   "img": "ichigo.png",
+   "img": "ichigo.webp",
    "alias": []
   },
   {
    "id": "rukia",
    "nom": "Rukia",
    "anime": "Bleach",
-   "img": "rukia.png",
+   "img": "rukia.webp",
    "alias": []
   },
   {
    "id": "aizen",
    "nom": "Aizen",
    "anime": "Bleach",
-   "img": "aizen.png",
+   "img": "aizen.webp",
    "alias": []
   },
   {
    "id": "byakuya",
    "nom": "Byakuya",
    "anime": "Bleach",
-   "img": "byakuya.png",
+   "img": "byakuya.webp",
    "alias": []
   },
   {
    "id": "toshiro",
    "nom": "Toshiro",
    "anime": "Bleach",
-   "img": "toshiro.png",
+   "img": "toshiro.webp",
    "alias": [
     "Hitsugaya"
    ]
@@ -404,7 +404,7 @@
    "id": "grimmjow",
    "nom": "Grimmjow",
    "anime": "Bleach",
-   "img": "grimmjow.png",
+   "img": "grimmjow.webp",
    "alias": [
     "Grimjow"
    ]
@@ -413,14 +413,14 @@
    "id": "ulquiorra",
    "nom": "Ulquiorra",
    "anime": "Bleach",
-   "img": "ulquiorra.png",
+   "img": "ulquiorra.webp",
    "alias": []
   },
   {
    "id": "renji",
    "nom": "Renji",
    "anime": "Bleach",
-   "img": "renji.png",
+   "img": "renji.webp",
    "alias": [
     "abarai"
    ]
@@ -429,7 +429,7 @@
    "id": "zaraki",
    "nom": "Zaraki",
    "anime": "Bleach",
-   "img": "zaraki.png",
+   "img": "zaraki.webp",
    "alias": [
     "kenpachi"
    ]
@@ -438,7 +438,7 @@
    "id": "urahara",
    "nom": "Urahara",
    "anime": "Bleach",
-   "img": "urahara.png",
+   "img": "urahara.webp",
    "alias": [
     "kisuke"
    ]
@@ -447,7 +447,7 @@
    "id": "Gin",
    "nom": "Gin",
    "anime": "Bleach",
-   "img": "Gin.png",
+   "img": "Gin.webp",
    "alias": [
     "ichimaru"
    ]
@@ -456,7 +456,7 @@
    "id": "deku",
    "nom": "Deku",
    "anime": "My Hero Academia",
-   "img": "deku.png",
+   "img": "deku.webp",
    "alias": [
     "Izuku",
     "Midoriya"
@@ -466,7 +466,7 @@
    "id": "bakugo",
    "nom": "Bakugo",
    "anime": "My Hero Academia",
-   "img": "bakugo.png",
+   "img": "bakugo.webp",
    "alias": [
     "Katsuki"
    ]
@@ -475,7 +475,7 @@
    "id": "todoroki",
    "nom": "Todoroki",
    "anime": "My Hero Academia",
-   "img": "todoroki.png",
+   "img": "todoroki.webp",
    "alias": [
     "Shoto"
    ]
@@ -484,7 +484,7 @@
    "id": "shigaraki",
    "nom": "Shigaraki",
    "anime": "My Hero Academia",
-   "img": "shigaraki.png",
+   "img": "shigaraki.webp",
    "alias": [
     "Tomura"
    ]
@@ -493,21 +493,21 @@
    "id": "endeavor",
    "nom": "Endeavor",
    "anime": "My Hero Academia",
-   "img": "endeavor.png",
+   "img": "endeavor.webp",
    "alias": []
   },
   {
    "id": "hawks",
    "nom": "Hawks",
    "anime": "My Hero Academia",
-   "img": "hawks.png",
+   "img": "hawks.webp",
    "alias": []
   },
   {
    "id": "uraraka",
    "nom": "Uraraka",
    "anime": "My Hero Academia",
-   "img": "uraraka.png",
+   "img": "uraraka.webp",
    "alias": [
     "Ochaco"
    ]
@@ -516,28 +516,28 @@
    "id": "denki",
    "nom": "Denki",
    "anime": "My Hero Academia",
-   "img": "denki.png",
+   "img": "denki.webp",
    "alias": []
   },
   {
    "id": "kirishima",
    "nom": "Kirishima",
    "anime": "My Hero Academia",
-   "img": "kirishima.png",
+   "img": "kirishima.webp",
    "alias": []
   },
   {
    "id": "overhaul",
    "nom": "Overhaul",
    "anime": "My Hero Academia",
-   "img": "overhaul.png",
+   "img": "overhaul.webp",
    "alias": []
   },
   {
    "id": "mirio",
    "nom": "Mirio",
    "anime": "My Hero Academia",
-   "img": "mirio.png",
+   "img": "mirio.webp",
    "alias": [
     "lemillion",
     "lemilion"
@@ -547,7 +547,7 @@
    "id": "toga",
    "nom": "Toga",
    "anime": "My Hero Academia",
-   "img": "toga.png",
+   "img": "toga.webp",
    "alias": [
     "himiko"
    ]
@@ -556,14 +556,14 @@
    "id": "gojo",
    "nom": "Gojo",
    "anime": "Jujutsu Kaisen",
-   "img": "gojo.png",
+   "img": "gojo.webp",
    "alias": []
   },
   {
    "id": "itadori",
    "nom": "Itadori",
    "anime": "Jujutsu Kaisen",
-   "img": "itadori.png",
+   "img": "itadori.webp",
    "alias": [
     "Yuji"
    ]
@@ -572,49 +572,49 @@
    "id": "yusuke",
    "nom": "Yusuke",
    "anime": "Yu Yu Hakusho",
-   "img": "yusuke.png",
+   "img": "yusuke.webp",
    "alias": []
   },
   {
    "id": "hiei",
    "nom": "Hiei",
    "anime": "Yu Yu Hakusho",
-   "img": "hiei.png",
+   "img": "hiei.webp",
    "alias": []
   },
   {
    "id": "kurama",
    "nom": "Kurama",
    "anime": "Yu Yu Hakusho",
-   "img": "kurama.png",
+   "img": "kurama.webp",
    "alias": []
   },
   {
    "id": "sukuna",
    "nom": "Sukuna",
    "anime": "Jujutsu Kaisen",
-   "img": "sukuna.png",
+   "img": "sukuna.webp",
    "alias": []
   },
   {
    "id": "megumi",
    "nom": "Megumi",
    "anime": "Jujutsu Kaisen",
-   "img": "megumi.png",
+   "img": "megumi.webp",
    "alias": []
   },
   {
    "id": "nobara",
    "nom": "Nobara",
    "anime": "Jujutsu Kaisen",
-   "img": "nobara.png",
+   "img": "nobara.webp",
    "alias": []
   },
   {
    "id": "todo",
    "nom": "Todo",
    "anime": "Jujutsu Kaisen",
-   "img": "todo.png",
+   "img": "todo.webp",
    "alias": [
     "aoi"
    ]
@@ -623,98 +623,98 @@
    "id": "nanami",
    "nom": "Nanami",
    "anime": "Jujutsu Kaisen",
-   "img": "nanami.png",
+   "img": "nanami.webp",
    "alias": []
   },
   {
    "id": "toji",
    "nom": "Toji",
    "anime": "Jujutsu Kaisen",
-   "img": "toji.png",
+   "img": "toji.webp",
    "alias": []
   },
   {
    "id": "mahito",
    "nom": "Mahito",
    "anime": "Jujutsu Kaisen",
-   "img": "mahito.png",
+   "img": "mahito.webp",
    "alias": []
   },
   {
    "id": "choso",
    "nom": "Choso",
    "anime": "Jujutsu Kaisen",
-   "img": "choso.png",
+   "img": "choso.webp",
    "alias": []
   },
   {
    "id": "yuta",
    "nom": "Yuta",
    "anime": "Jujutsu Kaisen",
-   "img": "yuta.png",
+   "img": "yuta.webp",
    "alias": []
   },
   {
    "id": "geto",
    "nom": "Geto",
    "anime": "Jujutsu Kaisen",
-   "img": "geto.png",
+   "img": "geto.webp",
    "alias": []
   },
   {
    "id": "tanjiro",
    "nom": "Tanjiro",
    "anime": "Demon Slayer",
-   "img": "tanjiro.png",
+   "img": "tanjiro.webp",
    "alias": []
   },
   {
    "id": "nezuko",
    "nom": "Nezuko",
    "anime": "Demon Slayer",
-   "img": "nezuko.png",
+   "img": "nezuko.webp",
    "alias": []
   },
   {
    "id": "zenitsu",
    "nom": "Zenitsu",
    "anime": "Demon Slayer",
-   "img": "zenitsu.png",
+   "img": "zenitsu.webp",
    "alias": []
   },
   {
    "id": "inosuke",
    "nom": "Inosuke",
    "anime": "Demon Slayer",
-   "img": "inosuke.png",
+   "img": "inosuke.webp",
    "alias": []
   },
   {
    "id": "rengoku",
    "nom": "Rengoku",
    "anime": "Demon Slayer",
-   "img": "rengoku.png",
+   "img": "rengoku.webp",
    "alias": []
   },
   {
    "id": "muzan",
    "nom": "Muzan",
    "anime": "Demon Slayer",
-   "img": "muzan.png",
+   "img": "muzan.webp",
    "alias": []
   },
   {
    "id": "akaza",
    "nom": "Akaza",
    "anime": "Demon Slayer",
-   "img": "akaza.png",
+   "img": "akaza.webp",
    "alias": []
   },
   {
    "id": "giyu",
    "nom": "Giyu",
    "anime": "Demon Slayer",
-   "img": "giyu.png",
+   "img": "giyu.webp",
    "alias": [
     "tomioka"
    ]
@@ -723,14 +723,14 @@
    "id": "shinobu",
    "nom": "Shinobu",
    "anime": "Demon Slayer",
-   "img": "shinobu.png",
+   "img": "shinobu.webp",
    "alias": []
   },
   {
    "id": "tokito",
    "nom": "Tokito",
    "anime": "Demon Slayer",
-   "img": "tokito.png",
+   "img": "tokito.webp",
    "alias": [
     "muichiro"
    ]
@@ -739,21 +739,21 @@
    "id": "gyomei",
    "nom": "Gyomei",
    "anime": "Demon Slayer",
-   "img": "gyomei.png",
+   "img": "gyomei.webp",
    "alias": []
   },
   {
    "id": "sanemi",
    "nom": "Sanemi",
    "anime": "Demon Slayer",
-   "img": "sanemi.png",
+   "img": "sanemi.webp",
    "alias": []
   },
   {
    "id": "doma",
    "nom": "Doma",
    "anime": "Demon Slayer",
-   "img": "doma.png",
+   "img": "doma.webp",
    "alias": [
     "Douma"
    ]
@@ -762,14 +762,14 @@
    "id": "obanai",
    "nom": "Obanai",
    "anime": "Demon Slayer",
-   "img": "obanai.png",
+   "img": "obanai.webp",
    "alias": []
   },
   {
    "id": "mitsuri",
    "nom": "Mitsuri",
    "anime": "Demon Slayer",
-   "img": "mitsuri.png",
+   "img": "mitsuri.webp",
    "alias": [
     "kanroji"
    ]
@@ -778,14 +778,14 @@
    "id": "gon",
    "nom": "Gon",
    "anime": "Hunter Hunter",
-   "img": "gon.png",
+   "img": "gon.webp",
    "alias": []
   },
   {
    "id": "killua",
    "nom": "Killua",
    "anime": "Hunter Hunter",
-   "img": "killua.png",
+   "img": "killua.webp",
    "alias": [
     "kirua"
    ]
@@ -794,42 +794,42 @@
    "id": "kurapika",
    "nom": "Kurapika",
    "anime": "Hunter Hunter",
-   "img": "kurapika.png",
+   "img": "kurapika.webp",
    "alias": []
   },
   {
    "id": "hisoka",
    "nom": "Hisoka",
    "anime": "Hunter Hunter",
-   "img": "hisoka.png",
+   "img": "hisoka.webp",
    "alias": []
   },
   {
    "id": "meruem",
    "nom": "Meruem",
    "anime": "Hunter Hunter",
-   "img": "meruem.png",
+   "img": "meruem.webp",
    "alias": []
   },
   {
    "id": "netero",
    "nom": "Netero",
    "anime": "Hunter Hunter",
-   "img": "netero.png",
+   "img": "netero.webp",
    "alias": []
   },
   {
    "id": "leorio",
    "nom": "Leorio",
    "anime": "Hunter Hunter",
-   "img": "leorio.png",
+   "img": "leorio.webp",
    "alias": []
   },
   {
    "id": "chrollo",
    "nom": "Chrollo",
    "anime": "Hunter Hunter",
-   "img": "chrollo.png",
+   "img": "chrollo.webp",
    "alias": [
     "kuroro"
    ]
@@ -838,42 +838,42 @@
    "id": "feitan",
    "nom": "Feitan",
    "anime": "Hunter Hunter",
-   "img": "feitan.png",
+   "img": "feitan.webp",
    "alias": []
   },
   {
    "id": "illumi",
    "nom": "Illumi",
    "anime": "Hunter Hunter",
-   "img": "illumi.png",
+   "img": "illumi.webp",
    "alias": []
   },
   {
    "id": "eren",
    "nom": "Eren",
    "anime": "Attack on Titan",
-   "img": "eren.png",
+   "img": "eren.webp",
    "alias": []
   },
   {
    "id": "mikasa",
    "nom": "Mikasa",
    "anime": "Attack on Titan",
-   "img": "mikasa.png",
+   "img": "mikasa.webp",
    "alias": []
   },
   {
    "id": "armin",
    "nom": "Armin",
    "anime": "Attack on Titan",
-   "img": "armin.png",
+   "img": "armin.webp",
    "alias": []
   },
   {
    "id": "levi",
    "nom": "Levi",
    "anime": "Attack on Titan",
-   "img": "levi.png",
+   "img": "levi.webp",
    "alias": [
     "livaille",
     "rivaille",
@@ -884,35 +884,35 @@
    "id": "erwin",
    "nom": "Erwin",
    "anime": "Attack on Titan",
-   "img": "erwin.png",
+   "img": "erwin.webp",
    "alias": []
   },
   {
    "id": "reiner",
    "nom": "Reiner",
    "anime": "Attack on Titan",
-   "img": "reiner.png",
+   "img": "reiner.webp",
    "alias": []
   },
   {
    "id": "annie",
    "nom": "Annie",
    "anime": "Attack on Titan",
-   "img": "annie.png",
+   "img": "annie.webp",
    "alias": []
   },
   {
    "id": "jean",
    "nom": "Jean",
    "anime": "Attack on Titan",
-   "img": "jean.png",
+   "img": "jean.webp",
    "alias": []
   },
   {
    "id": "sasha",
    "nom": "Sasha",
    "anime": "Attack on Titan",
-   "img": "sasha.png",
+   "img": "sasha.webp",
    "alias": [
     "sacha",
     "sascha"
@@ -922,14 +922,14 @@
    "id": "ymir",
    "nom": "Ymir",
    "anime": "Attack on Titan",
-   "img": "ymir.png",
+   "img": "ymir.webp",
    "alias": []
   },
   {
    "id": "krista",
    "nom": "Krista",
    "anime": "Attack on Titan",
-   "img": "krista.png",
+   "img": "krista.webp",
    "alias": [
     "historia"
    ]
@@ -938,56 +938,56 @@
    "id": "jotaro",
    "nom": "Jotaro",
    "anime": "JoJo",
-   "img": "jotaro.png",
+   "img": "jotaro.webp",
    "alias": []
   },
   {
    "id": "dio",
    "nom": "Dio",
    "anime": "JoJo",
-   "img": "dio.png",
+   "img": "dio.webp",
    "alias": []
   },
   {
    "id": "giorno",
    "nom": "Giorno",
    "anime": "JoJo",
-   "img": "giorno.png",
+   "img": "giorno.webp",
    "alias": []
   },
   {
    "id": "josuke",
    "nom": "Josuke",
    "anime": "JoJo",
-   "img": "josuke.png",
+   "img": "josuke.webp",
    "alias": []
   },
   {
    "id": "joseph",
    "nom": "Joseph",
    "anime": "JoJo",
-   "img": "joseph.png",
+   "img": "joseph.webp",
    "alias": []
   },
   {
    "id": "jolyne",
    "nom": "Jolyne",
    "anime": "JoJo",
-   "img": "jolyne.png",
+   "img": "jolyne.webp",
    "alias": []
   },
   {
    "id": "bruno",
    "nom": "Bruno",
    "anime": "JoJo",
-   "img": "bruno.png",
+   "img": "bruno.webp",
    "alias": []
   },
   {
    "id": "polnareff",
    "nom": "Polnareff",
    "anime": "JoJo",
-   "img": "polnareff.png",
+   "img": "polnareff.webp",
    "alias": [
     "jean pierre",
     "jean-pierre"
@@ -997,49 +997,49 @@
    "id": "johnny",
    "nom": "Johnny",
    "anime": "JoJo",
-   "img": "johnny.png",
+   "img": "johnny.webp",
    "alias": []
   },
   {
    "id": "kira",
    "nom": "Kira",
    "anime": "JoJo",
-   "img": "kira.png",
+   "img": "kira.webp",
    "alias": []
   },
   {
    "id": "diavolo",
    "nom": "Diavolo",
    "anime": "JoJo",
-   "img": "diavolo.png",
+   "img": "diavolo.webp",
    "alias": []
   },
   {
    "id": "gyro",
    "nom": "Gyro",
    "anime": "JoJo",
-   "img": "gyro.png",
+   "img": "gyro.webp",
    "alias": []
   },
   {
    "id": "edward",
    "nom": "Edward",
    "anime": "Fullmetal Alchemist",
-   "img": "edward.png",
+   "img": "edward.webp",
    "alias": []
   },
   {
    "id": "alphonse",
    "nom": "Alphonse",
    "anime": "Fullmetal Alchemist",
-   "img": "alphonse.png",
+   "img": "alphonse.webp",
    "alias": []
   },
   {
    "id": "roy_mustang",
    "nom": "Roy Mustang",
    "anime": "Fullmetal Alchemist",
-   "img": "roy_mustang.png",
+   "img": "roy_mustang.webp",
    "alias": [
     "Mustang",
     "Roy"
@@ -1049,49 +1049,49 @@
    "id": "winry",
    "nom": "Winry",
    "anime": "Fullmetal Alchemist",
-   "img": "winry.png",
+   "img": "winry.webp",
    "alias": []
   },
   {
    "id": "lust",
    "nom": "Lust",
    "anime": "Fullmetal Alchemist",
-   "img": "lust.png",
+   "img": "lust.webp",
    "alias": []
   },
   {
    "id": "envy",
    "nom": "Envy",
    "anime": "Fullmetal Alchemist",
-   "img": "envy.png",
+   "img": "envy.webp",
    "alias": []
   },
   {
    "id": "natsu",
    "nom": "Natsu",
    "anime": "Fairy Tail",
-   "img": "natsu.png",
+   "img": "natsu.webp",
    "alias": []
   },
   {
    "id": "erza",
    "nom": "Erza",
    "anime": "Fairy Tail",
-   "img": "erza.png",
+   "img": "erza.webp",
    "alias": []
   },
   {
    "id": "gray",
    "nom": "Gray",
    "anime": "Fairy Tail",
-   "img": "gray.png",
+   "img": "gray.webp",
    "alias": []
   },
   {
    "id": "laxus",
    "nom": "Laxus",
    "anime": "Fairy Tail",
-   "img": "laxus.png",
+   "img": "laxus.webp",
    "alias": [
     "luxus"
    ]
@@ -1100,7 +1100,7 @@
    "id": "juvia",
    "nom": "Juvia",
    "anime": "Fairy Tail",
-   "img": "juvia.png",
+   "img": "juvia.webp",
    "alias": [
     "jubia"
    ]
@@ -1109,14 +1109,14 @@
    "id": "gajeel",
    "nom": "Gajeel",
    "anime": "Fairy Tail",
-   "img": "gajeel.png",
+   "img": "gajeel.webp",
    "alias": []
   },
   {
    "id": "zeref",
    "nom": "Zeref",
    "anime": "Fairy Tail",
-   "img": "zeref.png",
+   "img": "zeref.webp",
    "alias": [
     "zeleph"
    ]
@@ -1125,35 +1125,35 @@
    "id": "lucy",
    "nom": "Lucy",
    "anime": "Fairy Tail",
-   "img": "lucy.png",
+   "img": "lucy.webp",
    "alias": []
   },
   {
    "id": "asta",
    "nom": "Asta",
    "anime": "Black Clover",
-   "img": "asta.png",
+   "img": "asta.webp",
    "alias": []
   },
   {
    "id": "yuno",
    "nom": "Yuno",
    "anime": "Black Clover",
-   "img": "yuno.png",
+   "img": "yuno.webp",
    "alias": []
   },
   {
    "id": "yami",
    "nom": "Yami",
    "anime": "Black Clover",
-   "img": "yami.png",
+   "img": "yami.webp",
    "alias": []
   },
   {
    "id": "denji",
    "nom": "Denji",
    "anime": "Chainsaw Man",
-   "img": "denji.png",
+   "img": "denji.webp",
    "alias": [
     "Chainsaw Man"
    ]
@@ -1162,35 +1162,35 @@
    "id": "makima",
    "nom": "Makima",
    "anime": "Chainsaw Man",
-   "img": "makima.png",
+   "img": "makima.webp",
    "alias": []
   },
   {
    "id": "power",
    "nom": "Power",
    "anime": "Chainsaw Man",
-   "img": "power.png",
+   "img": "power.webp",
    "alias": []
   },
   {
    "id": "aki",
    "nom": "Aki",
    "anime": "Chainsaw Man",
-   "img": "aki.png",
+   "img": "aki.webp",
    "alias": []
   },
   {
    "id": "reze",
    "nom": "Reze",
    "anime": "Chainsaw Man",
-   "img": "reze.png",
+   "img": "reze.webp",
    "alias": []
   },
   {
    "id": "light",
    "nom": "Light",
    "anime": "Death Note",
-   "img": "light.png",
+   "img": "light.webp",
    "alias": [
     "Yagami",
     "Kira"
@@ -1200,7 +1200,7 @@
    "id": "l",
    "nom": "L",
    "anime": "Death Note",
-   "img": "l.png",
+   "img": "l.webp",
    "alias": [
     "L",
     "Ryuzaki",
@@ -1211,21 +1211,21 @@
    "id": "kaneki",
    "nom": "Kaneki",
    "anime": "Tokyo Ghoul",
-   "img": "kaneki.png",
+   "img": "kaneki.webp",
    "alias": []
   },
   {
    "id": "gintoki",
    "nom": "Gintoki",
    "anime": "Gintama",
-   "img": "gintoki.png",
+   "img": "gintoki.webp",
    "alias": []
   },
   {
    "id": "tsuna",
    "nom": "Tsuna",
    "anime": "Reborn",
-   "img": "tsuna.png",
+   "img": "tsuna.webp",
    "alias": [
     "sawada",
     "tsunayoshi"
@@ -1235,21 +1235,21 @@
    "id": "boruto",
    "nom": "Boruto",
    "anime": "Naruto",
-   "img": "boruto.png",
+   "img": "boruto.webp",
    "alias": []
   },
   {
    "id": "kawaki",
    "nom": "Kawaki",
    "anime": "Naruto",
-   "img": "kawaki.png",
+   "img": "kawaki.webp",
    "alias": []
   },
   {
    "id": "hibari",
    "nom": "Hibari",
    "anime": "Reborn",
-   "img": "hibari.png",
+   "img": "hibari.webp",
    "alias": [
     "kyouya",
     "kyoya"
@@ -1259,35 +1259,35 @@
    "id": "yamamoto",
    "nom": "Yamamoto",
    "anime": "Reborn",
-   "img": "yamamoto.png",
+   "img": "yamamoto.webp",
    "alias": []
   },
   {
    "id": "gokudera",
    "nom": "Gokudera",
    "anime": "Reborn",
-   "img": "gokudera.png",
+   "img": "gokudera.webp",
    "alias": []
   },
   {
    "id": "seiya",
    "nom": "Seiya",
    "anime": "Saint Seiya",
-   "img": "seiya.png",
+   "img": "seiya.webp",
    "alias": []
   },
   {
    "id": "ikki",
    "nom": "ikki",
    "anime": "Saint Seiya",
-   "img": "ikki.png",
+   "img": "ikki.webp",
    "alias": []
   },
   {
    "id": "hyoga",
    "nom": "Hyoga",
    "anime": "Saint Seiya",
-   "img": "hyoga.png",
+   "img": "hyoga.webp",
    "alias": [
     "hyouga"
    ]
@@ -1296,21 +1296,21 @@
    "id": "shun",
    "nom": "Shun",
    "anime": "Saint Seiya",
-   "img": "shun.png",
+   "img": "shun.webp",
    "alias": []
   },
   {
    "id": "shiryu",
    "nom": "Shiryu",
    "anime": "Saint Seiya",
-   "img": "shiryu.png",
+   "img": "shiryu.webp",
    "alias": []
   },
   {
    "id": "ryohei",
    "nom": "Ryohei",
    "anime": "Reborn",
-   "img": "ryohei.png",
+   "img": "ryohei.webp",
    "alias": [
     "sasagawa",
     "ryouhei"
@@ -1320,7 +1320,7 @@
    "id": "mukuro",
    "nom": "Mukuro",
    "anime": "Reborn",
-   "img": "mukuro.png",
+   "img": "mukuro.webp",
    "alias": [
     "rokudo"
    ]
@@ -1329,35 +1329,35 @@
    "id": "reborn",
    "nom": "Reborn",
    "anime": "Reborn",
-   "img": "reborn.png",
+   "img": "reborn.webp",
    "alias": []
   },
   {
    "id": "lambo",
    "nom": "Lambo",
    "anime": "Reborn",
-   "img": "lambo.png",
+   "img": "lambo.webp",
    "alias": []
   },
   {
    "id": "frieren",
    "nom": "Frieren",
    "anime": "Frieren",
-   "img": "frieren.png",
+   "img": "frieren.webp",
    "alias": []
   },
   {
    "id": "thorfinn",
    "nom": "Thorfinn",
    "anime": "Vinland Saga",
-   "img": "thorfinn.png",
+   "img": "thorfinn.webp",
    "alias": []
   },
   {
    "id": "yugi",
    "nom": "Yugi",
    "anime": "Yugioh",
-   "img": "yugi.png",
+   "img": "yugi.webp",
    "alias": [
     "atem",
     "yami yugi"
@@ -1367,14 +1367,14 @@
    "id": "mash",
    "nom": "Mash",
    "anime": "Mashle",
-   "img": "mash.png",
+   "img": "mash.webp",
    "alias": []
   },
   {
    "id": "lena",
    "nom": "Lena",
    "anime": "86",
-   "img": "lena.png",
+   "img": "lena.webp",
    "alias": [
     "vladilena",
     "milize",
@@ -1386,14 +1386,14 @@
    "id": "medaka",
    "nom": "Medaka",
    "anime": "Medaka Box",
-   "img": "medaka.png",
+   "img": "medaka.webp",
    "alias": []
   },
   {
    "id": "jaden",
    "nom": "Jaden",
    "anime": "Yugioh",
-   "img": "jaden.png",
+   "img": "jaden.webp",
    "alias": [
     "judai"
    ]
@@ -1402,7 +1402,7 @@
    "id": "kaiba",
    "nom": "Kaiba",
    "anime": "Yugioh",
-   "img": "kaiba.png",
+   "img": "kaiba.webp",
    "alias": [
     "seto"
    ]
@@ -1411,14 +1411,14 @@
    "id": "senku",
    "nom": "Senku",
    "anime": "Dr. Stone",
-   "img": "senku.png",
+   "img": "senku.webp",
    "alias": []
   },
   {
    "id": "shoyo",
    "nom": "Hinata",
    "anime": "Haikyuu",
-   "img": "shoyo.png",
+   "img": "shoyo.webp",
    "alias": [
     "shoyo"
    ]
@@ -1427,14 +1427,14 @@
    "id": "kageyama",
    "nom": "Kageyama",
    "anime": "Haikyuu",
-   "img": "kageyama.png",
+   "img": "kageyama.webp",
    "alias": []
   },
   {
    "id": "nishinoya",
    "nom": "Nishinoya",
    "anime": "Haikyuu",
-   "img": "nishinoya.png",
+   "img": "nishinoya.webp",
    "alias": [
     "noya"
    ]
@@ -1443,21 +1443,21 @@
    "id": "saber",
    "nom": "Saber",
    "anime": "Fate",
-   "img": "saber.png",
+   "img": "saber.webp",
    "alias": []
   },
   {
    "id": "rin",
    "nom": "Rin",
    "anime": "Fate",
-   "img": "rin.png",
+   "img": "rin.webp",
    "alias": []
   },
   {
    "id": "sakuragi",
    "nom": "Sakuragi",
    "anime": "Slam Dunk",
-   "img": "sakuragi.png",
+   "img": "sakuragi.webp",
    "alias": [
     "hanamichi"
    ]
@@ -1466,28 +1466,28 @@
    "id": "isagi",
    "nom": "Isagi",
    "anime": "Blue Lock",
-   "img": "isagi.png",
+   "img": "isagi.webp",
    "alias": []
   },
   {
    "id": "bachira",
    "nom": "Bachira",
    "anime": "Blue Lock",
-   "img": "bachira.png",
+   "img": "bachira.webp",
    "alias": []
   },
   {
    "id": "nagi",
    "nom": "Nagi",
    "anime": "Blue Lock",
-   "img": "nagi.png",
+   "img": "nagi.webp",
    "alias": []
   },
   {
    "id": "rinitoshi",
    "nom": "Rin",
    "anime": "Blue Lock",
-   "img": "rinitoshi.png",
+   "img": "rinitoshi.webp",
    "alias": [
     "itoshi"
    ]
@@ -1496,14 +1496,14 @@
    "id": "chigiri",
    "nom": "chigiri",
    "anime": "Blue Lock",
-   "img": "chigiri.png",
+   "img": "chigiri.webp",
    "alias": []
   },
   {
    "id": "baro",
    "nom": "baro",
    "anime": "Blue Lock",
-   "img": "baro.png",
+   "img": "baro.webp",
    "alias": [
     "barou"
    ]
@@ -1512,21 +1512,21 @@
    "id": "nana",
    "nom": "nana",
    "anime": "Nana",
-   "img": "nana.png",
+   "img": "nana.webp",
    "alias": []
   },
   {
    "id": "lucy2",
    "nom": "Lucy",
    "anime": "Cyberpunk Edgerunners",
-   "img": "lucy2.png",
+   "img": "lucy2.webp",
    "alias": []
   },
   {
    "id": "limule",
    "nom": "limule",
    "anime": "Tensura",
-   "img": "limule.png",
+   "img": "limule.webp",
    "alias": [
     "rimuru"
    ]
@@ -1535,140 +1535,140 @@
    "id": "onizuka",
    "nom": "Onizuka",
    "anime": "GTO",
-   "img": "onizuka.png",
+   "img": "onizuka.webp",
    "alias": []
   },
   {
    "id": "sakuramatou",
    "nom": "Sakura",
    "anime": "Fate",
-   "img": "sakuramatou.png",
+   "img": "sakuramatou.webp",
    "alias": []
   },
   {
    "id": "lancer",
    "nom": "Lancer",
    "anime": "Fate",
-   "img": "lancer.png",
+   "img": "lancer.webp",
    "alias": []
   },
   {
    "id": "archer",
    "nom": "Archer",
    "anime": "Fate",
-   "img": "archer.png",
+   "img": "archer.webp",
    "alias": []
   },
   {
    "id": "gilgamesh",
    "nom": "Gilgamesh",
    "anime": "Fate",
-   "img": "gilgamesh.png",
+   "img": "gilgamesh.webp",
    "alias": []
   },
   {
    "id": "anya",
    "nom": "Anya",
    "anime": "Spy Family",
-   "img": "anya.png",
+   "img": "anya.webp",
    "alias": []
   },
   {
    "id": "yor",
    "nom": "Yor",
    "anime": "Spy Family",
-   "img": "yor.png",
+   "img": "yor.webp",
    "alias": []
   },
   {
    "id": "loid",
    "nom": "Loid",
    "anime": "Spy Family",
-   "img": "loid.png",
+   "img": "loid.webp",
    "alias": []
   },
   {
    "id": "guts",
    "nom": "Guts",
    "anime": "Berserk",
-   "img": "guts.png",
+   "img": "guts.webp",
    "alias": []
   },
   {
    "id": "griffith",
    "nom": "Griffith",
    "anime": "Berserk",
-   "img": "griffith.png",
+   "img": "griffith.webp",
    "alias": []
   },
   {
    "id": "rem",
    "nom": "Rem",
    "anime": "Re:Zero",
-   "img": "rem.png",
+   "img": "rem.webp",
    "alias": []
   },
   {
    "id": "ram",
    "nom": "Ram",
    "anime": "Re:Zero",
-   "img": "ram.png",
+   "img": "ram.webp",
    "alias": []
   },
   {
    "id": "emilia",
    "nom": "Emilia",
    "anime": "Re:Zero",
-   "img": "emilia.png",
+   "img": "emilia.webp",
    "alias": []
   },
   {
    "id": "subaru",
    "nom": "Subaru",
    "anime": "Re:Zero",
-   "img": "subaru.png",
+   "img": "subaru.webp",
    "alias": []
   },
   {
    "id": "violet",
    "nom": "Violet",
    "anime": "Violet Evergarden",
-   "img": "violet.png",
+   "img": "violet.webp",
    "alias": []
   },
   {
    "id": "elizabeth",
    "nom": "Elizabeth",
    "anime": "Seven Deadly Sins",
-   "img": "elizabeth.png",
+   "img": "elizabeth.webp",
    "alias": []
   },
   {
    "id": "lelouch",
    "nom": "Lelouch",
    "anime": "Code Geass",
-   "img": "lelouch.png",
+   "img": "lelouch.webp",
    "alias": []
   },
   {
    "id": "kirito",
    "nom": "Kirito",
    "anime": "Sword Art Online",
-   "img": "kirito.png",
+   "img": "kirito.webp",
    "alias": []
   },
   {
    "id": "asuna",
    "nom": "Asuna",
    "anime": "Sword Art Online",
-   "img": "asuna.png",
+   "img": "asuna.webp",
    "alias": []
   },
   {
    "id": "yumeko",
    "nom": "Yumeko",
    "anime": "Gambling School",
-   "img": "yumeko.png",
+   "img": "yumeko.webp",
    "alias": [
     "jabami"
    ]
@@ -1677,63 +1677,63 @@
    "id": "ban",
    "nom": "Ban",
    "anime": "Seven Deadly Sins",
-   "img": "ban.png",
+   "img": "ban.webp",
    "alias": []
   },
   {
    "id": "fern",
    "nom": "Fern",
    "anime": "Frieren",
-   "img": "fern.png",
+   "img": "fern.webp",
    "alias": []
   },
   {
    "id": "meliodas",
    "nom": "Meliodas",
    "anime": "Seven Deadly Sins",
-   "img": "meliodas.png",
+   "img": "meliodas.webp",
    "alias": []
   },
   {
    "id": "diane",
    "nom": "Diane",
    "anime": "Seven Deadly Sins",
-   "img": "diane.png",
+   "img": "diane.webp",
    "alias": []
   },
   {
    "id": "gowther",
    "nom": "Gowther",
    "anime": "Seven Deadly Sins",
-   "img": "gowther.png",
+   "img": "gowther.webp",
    "alias": []
   },
   {
    "id": "king",
    "nom": "King",
    "anime": "Seven Deadly Sins",
-   "img": "king.png",
+   "img": "king.webp",
    "alias": []
   },
   {
    "id": "merlin",
    "nom": "Merlin",
    "anime": "Seven Deadly Sins",
-   "img": "merlin.png",
+   "img": "merlin.webp",
    "alias": []
   },
   {
    "id": "escanor",
    "nom": "Escanor",
    "anime": "Seven Deadly Sins",
-   "img": "escanor.png",
+   "img": "escanor.webp",
    "alias": []
   },
   {
    "id": "002",
    "nom": "002",
    "anime": "Darling in the Franxx",
-   "img": "002.png",
+   "img": "002.webp",
    "alias": [
     "zero two"
    ]
@@ -1742,7 +1742,7 @@
    "id": "aizawa",
    "nom": "Aizawa",
    "anime": "My Hero Academia",
-   "img": "aizawa.png",
+   "img": "aizawa.webp",
    "alias": [
     "shota"
    ]
@@ -1751,35 +1751,35 @@
    "id": "akashi",
    "nom": "Akashi",
    "anime": "Kuroko no Basket",
-   "img": "akashi.png",
+   "img": "akashi.webp",
    "alias": []
   },
   {
    "id": "aokiji",
    "nom": "Aokiji",
    "anime": "One Piece",
-   "img": "aokiji.png",
+   "img": "aokiji.webp",
    "alias": []
   },
   {
    "id": "aomine",
    "nom": "Aomine",
    "anime": "Kuroko no Basket",
-   "img": "aomine.png",
+   "img": "aomine.webp",
    "alias": []
   },
   {
    "id": "araragi",
    "nom": "Araragi",
    "anime": "Monogatari",
-   "img": "araragi.png",
+   "img": "araragi.webp",
    "alias": []
   },
   {
    "id": "askeladd",
    "nom": "Askeladd",
    "anime": "Vinland Saga",
-   "img": "askeladd.png",
+   "img": "askeladd.webp",
    "alias": [
     "askelad"
    ]
@@ -1788,49 +1788,49 @@
    "id": "asuma",
    "nom": "Asuma",
    "anime": "Naruto",
-   "img": "asuma.png",
+   "img": "asuma.webp",
    "alias": []
   },
   {
    "id": "bell",
    "nom": "Bell",
    "anime": "DanMachi",
-   "img": "bell.png",
+   "img": "bell.webp",
    "alias": []
   },
   {
    "id": "benimaru",
    "nom": "Benimaru",
    "anime": "Tensura",
-   "img": "benimaru.png",
+   "img": "benimaru.webp",
    "alias": []
   },
   {
    "id": "boros",
    "nom": "Boros",
    "anime": "One Punch Man",
-   "img": "boros.png",
+   "img": "boros.webp",
    "alias": []
   },
   {
    "id": "brogy",
    "nom": "Brogy",
    "anime": "One Piece",
-   "img": "brogy.png",
+   "img": "brogy.webp",
    "alias": []
   },
   {
    "id": "david",
    "nom": "David",
    "anime": "Cyberpunk Edgerunners",
-   "img": "david.png",
+   "img": "david.webp",
    "alias": []
   },
   {
    "id": "dazai",
    "nom": "Dazai",
    "anime": "Bungou Stray Dogs",
-   "img": "dazai.png",
+   "img": "dazai.webp",
    "alias": [
     "osamu"
    ]
@@ -1839,7 +1839,7 @@
    "id": "dorry",
    "nom": "Dorry",
    "anime": "One Piece",
-   "img": "dorry.png",
+   "img": "dorry.webp",
    "alias": [
     "dory"
    ]
@@ -1848,7 +1848,7 @@
    "id": "eiji",
    "nom": "Eiji",
    "anime": "Bakuman",
-   "img": "eiji.png",
+   "img": "eiji.webp",
    "alias": [
     "nizuma"
    ]
@@ -1857,7 +1857,7 @@
    "id": "ener",
    "nom": "Ener",
    "anime": "One Piece",
-   "img": "ener.png",
+   "img": "ener.webp",
    "alias": [
     "enel"
    ]
@@ -1866,7 +1866,7 @@
    "id": "ff",
    "nom": "FF",
    "anime": "Jujutsu Kaisen",
-   "img": "ff.png",
+   "img": "ff.webp",
    "alias": [
     "f f"
    ]
@@ -1875,7 +1875,7 @@
    "id": "gai",
    "nom": "Gai",
    "anime": "Naruto",
-   "img": "gai.png",
+   "img": "gai.webp",
    "alias": [
     "guy"
    ]
@@ -1884,28 +1884,28 @@
    "id": "genos",
    "nom": "Genos",
    "anime": "One Punch Man",
-   "img": "genos.png",
+   "img": "genos.webp",
    "alias": []
   },
   {
    "id": "greed",
    "nom": "Greed",
    "anime": "Fullmetal Alchemist",
-   "img": "greed.png",
+   "img": "greed.webp",
    "alias": []
   },
   {
    "id": "hancock",
    "nom": "Hancock",
    "anime": "One Piece",
-   "img": "hancock.png",
+   "img": "hancock.webp",
    "alias": []
   },
   {
    "id": "hange",
    "nom": "Hange",
    "anime": "Attack on Titan",
-   "img": "hange.png",
+   "img": "hange.webp",
    "alias": [
     "hanje"
    ]
@@ -1914,14 +1914,14 @@
    "id": "hijikata",
    "nom": "Hijikata",
    "anime": "Gintama",
-   "img": "hijikata.png",
+   "img": "hijikata.webp",
    "alias": []
   },
   {
    "id": "hikki",
    "nom": "Hikigaya",
    "anime": "Oregairu",
-   "img": "hikki.png",
+   "img": "hikki.webp",
    "alias": [
     "hachiman",
     "hikki",
@@ -1932,14 +1932,14 @@
    "id": "hori",
    "nom": "Hori",
    "anime": "Horimiya",
-   "img": "hori.png",
+   "img": "hori.webp",
    "alias": []
   },
   {
    "id": "iida",
    "nom": "Iida",
    "anime": "My Hero Academia",
-   "img": "iida.png",
+   "img": "iida.webp",
    "alias": [
     "tenya",
     "ida"
@@ -1949,28 +1949,28 @@
    "id": "kaguya",
    "nom": "Kaguya",
    "anime": "Kaguya-sama",
-   "img": "kaguya.png",
+   "img": "kaguya.webp",
    "alias": []
   },
   {
    "id": "karma",
    "nom": "Karma",
    "anime": "Assassination Classroom",
-   "img": "karma.png",
+   "img": "karma.webp",
    "alias": []
   },
   {
    "id": "katakuri",
    "nom": "Katakuri",
    "anime": "One Piece",
-   "img": "katakuri.png",
+   "img": "katakuri.webp",
    "alias": []
   },
   {
    "id": "katsura",
    "nom": "Katsura",
    "anime": "Gintama",
-   "img": "katsura.png",
+   "img": "katsura.webp",
    "alias": [
     "zura"
    ]
@@ -1979,21 +1979,21 @@
    "id": "kenma",
    "nom": "Kenma",
    "anime": "Haikyuu",
-   "img": "kenma.png",
+   "img": "kenma.webp",
    "alias": []
   },
   {
    "id": "kimimaro",
    "nom": "Kimimaro",
    "anime": "Naruto",
-   "img": "kimimaro.png",
+   "img": "kimimaro.webp",
    "alias": []
   },
   {
    "id": "kizaru",
    "nom": "Kizaru",
    "anime": "One Piece",
-   "img": "kizaru.png",
+   "img": "kizaru.webp",
    "alias": [
     "borsalino"
    ]
@@ -2002,21 +2002,21 @@
    "id": "koichi",
    "nom": "Koichi",
    "anime": "JoJo",
-   "img": "koichi.png",
+   "img": "koichi.webp",
    "alias": []
   },
   {
    "id": "kurenai",
    "nom": "Kurenai",
    "anime": "Naruto",
-   "img": "kurenai.png",
+   "img": "kurenai.webp",
    "alias": []
   },
   {
    "id": "kuroo",
    "nom": "Kuroo",
    "anime": "Haikyuu",
-   "img": "kuroo.png",
+   "img": "kuroo.webp",
    "alias": [
     "kuro"
    ]
@@ -2025,56 +2025,56 @@
    "id": "marco",
    "nom": "Marco",
    "anime": "One Piece",
-   "img": "marco.png",
+   "img": "marco.webp",
    "alias": []
   },
   {
    "id": "mashiro",
    "nom": "Mashiro",
    "anime": "Bakuman",
-   "img": "mashiro.png",
+   "img": "mashiro.webp",
    "alias": []
   },
   {
    "id": "midorima",
    "nom": "Midorima",
    "anime": "Kuroko no Basket",
-   "img": "midorima.png",
+   "img": "midorima.webp",
    "alias": []
   },
   {
    "id": "miyamura",
    "nom": "Miyamura",
    "anime": "Horimiya",
-   "img": "miyamura.png",
+   "img": "miyamura.webp",
    "alias": []
   },
   {
    "id": "morgiana",
    "nom": "Morgiana",
    "anime": "Magi",
-   "img": "morgiana.png",
+   "img": "morgiana.webp",
    "alias": []
   },
   {
    "id": "naofumi",
    "nom": "Naofumi",
    "anime": "Shield Hero",
-   "img": "naofumi.png",
+   "img": "naofumi.webp",
    "alias": []
   },
   {
    "id": "nobunaga",
    "nom": "Nobunaga",
    "anime": "Hunter Hunter",
-   "img": "nobunaga.png",
+   "img": "nobunaga.webp",
    "alias": []
   },
   {
    "id": "okabe",
    "nom": "Okabe",
    "anime": "Steins;Gate",
-   "img": "okabe.png",
+   "img": "okabe.webp",
    "alias": [
     "kyouma"
    ]
@@ -2083,7 +2083,7 @@
    "id": "okarun",
    "nom": "Okarun",
    "anime": "Dandadan",
-   "img": "okarun.png",
+   "img": "okarun.webp",
    "alias": [
     "ken"
    ]
@@ -2092,7 +2092,7 @@
    "id": "okumura",
    "nom": "Okumura",
    "anime": "Blue Exorcist",
-   "img": "okumura.png",
+   "img": "okumura.webp",
    "alias": [
     "rin"
    ]
@@ -2101,7 +2101,7 @@
    "id": "orihime",
    "nom": "Orihime",
    "anime": "Bleach",
-   "img": "orihime.png",
+   "img": "orihime.webp",
    "alias": [
     "inoue"
    ]
@@ -2110,14 +2110,14 @@
    "id": "ray",
    "nom": "Ray",
    "anime": "The Promised Neverland",
-   "img": "ray.png",
+   "img": "ray.webp",
    "alias": []
   },
   {
    "id": "regis",
    "nom": "Regis",
    "anime": "Frieren",
-   "img": "regis.png",
+   "img": "regis.webp",
    "alias": [
     "blue"
    ]
@@ -2126,7 +2126,7 @@
    "id": "revy",
    "nom": "Revy",
    "anime": "Black Lagoon",
-   "img": "revy.png",
+   "img": "revy.webp",
    "alias": [
     "reby"
    ]
@@ -2135,14 +2135,14 @@
    "id": "roger",
    "nom": "Roger",
    "anime": "One Piece",
-   "img": "roger.png",
+   "img": "roger.webp",
    "alias": []
   },
   {
    "id": "sacha",
    "nom": "Sacha",
    "anime": "Pokemon",
-   "img": "sacha.png",
+   "img": "sacha.webp",
    "alias": [
     "ash",
     "sasha"
@@ -2152,49 +2152,49 @@
    "id": "saga",
    "nom": "Saga",
    "anime": "Saint Seiya",
-   "img": "saga.png",
+   "img": "saga.webp",
    "alias": []
   },
   {
    "id": "saiki",
    "nom": "Saiki",
    "anime": "Saiki K",
-   "img": "saiki.png",
+   "img": "saiki.webp",
    "alias": []
   },
   {
    "id": "saitama",
    "nom": "Saitama",
    "anime": "One Punch Man",
-   "img": "saitama.png",
+   "img": "saitama.webp",
    "alias": []
   },
   {
    "id": "scar",
    "nom": "Scar",
    "anime": "Fullmetal Alchemist",
-   "img": "scar.png",
+   "img": "scar.webp",
    "alias": []
   },
   {
    "id": "sebastian",
    "nom": "Sebastian",
    "anime": "Black Butler",
-   "img": "sebastian.png",
+   "img": "sebastian.webp",
    "alias": []
   },
   {
    "id": "shikamaru",
    "nom": "Shikamaru",
    "anime": "Naruto",
-   "img": "shikamaru.png",
+   "img": "shikamaru.webp",
    "alias": []
   },
   {
    "id": "shin",
    "nom": "Shin",
    "anime": "Kingdom",
-   "img": "shin.png",
+   "img": "shin.webp",
    "alias": [
     "ri shin",
     "li shin"
@@ -2204,14 +2204,14 @@
    "id": "shirogane",
    "nom": "Shirogane",
    "anime": "Kaguya-sama",
-   "img": "shirogane.png",
+   "img": "shirogane.webp",
    "alias": []
   },
   {
    "id": "shoto",
    "nom": "Shoto",
    "anime": "My Hero Academia",
-   "img": "shoto.png",
+   "img": "shoto.webp",
    "alias": [
     "todoroki"
    ]
@@ -2220,14 +2220,14 @@
    "id": "sinbad",
    "nom": "Sinbad",
    "anime": "Magi",
-   "img": "sinbad.png",
+   "img": "sinbad.webp",
    "alias": []
   },
   {
    "id": "soma",
    "nom": "Soma",
    "anime": "Food Wars",
-   "img": "soma.png",
+   "img": "soma.webp",
    "alias": [
     "souma"
    ]
@@ -2236,21 +2236,21 @@
    "id": "sora",
    "nom": "Sora",
    "anime": "No Game No Life",
-   "img": "sora.png",
+   "img": "sora.webp",
    "alias": []
   },
   {
    "id": "soul",
    "nom": "Soul",
    "anime": "Soul Eater",
-   "img": "soul.png",
+   "img": "soul.webp",
    "alias": []
   },
   {
    "id": "blackstar",
    "nom": "Black star",
    "anime": "Soul Eater",
-   "img": "blackstar.png",
+   "img": "blackstar.webp",
    "alias": [
     "Black Star"
    ]
@@ -2259,7 +2259,7 @@
    "id": "deaththekid",
    "nom": "Death the Kid",
    "anime": "Soul Eater",
-   "img": "deaththekid.png",
+   "img": "deaththekid.webp",
    "alias": [
     "kid",
     "kid the death"
@@ -2269,21 +2269,21 @@
    "id": "takasugi",
    "nom": "Takasugi",
    "anime": "Gintama",
-   "img": "takasugi.png",
+   "img": "takasugi.webp",
    "alias": []
   },
   {
    "id": "temari",
    "nom": "Temari",
    "anime": "Naruto",
-   "img": "temari.png",
+   "img": "temari.webp",
    "alias": []
   },
   {
    "id": "toge",
    "nom": "Toge",
    "anime": "Jujutsu Kaisen",
-   "img": "toge.png",
+   "img": "toge.webp",
    "alias": [
     "inumaki"
    ]
@@ -2292,14 +2292,14 @@
    "id": "toriko",
    "nom": "Toriko",
    "anime": "Toriko",
-   "img": "toriko.png",
+   "img": "toriko.webp",
    "alias": []
   },
   {
    "id": "touka",
    "nom": "Touka",
    "anime": "Tokyo Ghoul",
-   "img": "touka.png",
+   "img": "touka.webp",
    "alias": [
     "toka"
    ]
@@ -2308,63 +2308,63 @@
    "id": "tsukasa",
    "nom": "Tsukasa",
    "anime": "Dr. Stone",
-   "img": "tsukasa.png",
+   "img": "tsukasa.webp",
    "alias": []
   },
   {
    "id": "tsukishima",
    "nom": "Tsukishima",
    "anime": "Haikyuu",
-   "img": "tsukishima.png",
+   "img": "tsukishima.webp",
    "alias": []
   },
   {
    "id": "vanitas",
    "nom": "Vanitas",
    "anime": "Vanitas no Carte",
-   "img": "vanitas.png",
+   "img": "vanitas.webp",
    "alias": []
   },
   {
    "id": "whis",
    "nom": "Whis",
    "anime": "Dragon Ball",
-   "img": "whis.png",
+   "img": "whis.webp",
    "alias": []
   },
   {
    "id": "xanxus",
    "nom": "Xanxus",
    "anime": "Reborn",
-   "img": "xanxus.png",
+   "img": "xanxus.webp",
    "alias": []
   },
   {
    "id": "yamato",
    "nom": "Yamato",
    "anime": "One Piece",
-   "img": "yamato.png",
+   "img": "yamato.webp",
    "alias": []
   },
   {
    "id": "yato",
    "nom": "Yato",
    "anime": "Noragami",
-   "img": "yato.png",
+   "img": "yato.webp",
    "alias": []
   },
   {
    "id": "yukino",
    "nom": "Yukino",
    "anime": "Oregairu",
-   "img": "yukino.png",
+   "img": "yukino.webp",
    "alias": []
   },
   {
    "id": "zeke",
    "nom": "Zeke",
    "anime": "Attack on Titan",
-   "img": "zeke.png",
+   "img": "zeke.webp",
    "alias": [
     "sieg"
    ]

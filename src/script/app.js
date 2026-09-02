@@ -112,13 +112,13 @@ createApp({
             modes: [
                 // `plain: true` = illustration sans fond transparent : elle est alors
                 // cadrée dans le panneau au lieu de flotter comme un personnage détouré.
-                { id: 'classic',   name: 'Classique', kind: 'Solo ou équipes', players: '∞',  img: 'kenshin2.png',
+                { id: 'classic',   name: 'Classique', kind: 'Solo ou équipes', players: '∞',  img: 'kenshin2.webp',
                   desc: "Quiz QCM. Solo ou en deux camps, vies ou points, séries au choix." },
-                { id: 'bombanime', name: 'BombAnime', kind: 'Solo',   players: '15', img: 'lambo3.png',
+                { id: 'bombanime', name: 'BombAnime', kind: 'Solo',   players: '15', img: 'lambo3.webp',
                   desc: "La bombe tourne. Cite un perso avant qu'elle explose." },
-                { id: 'rush',      name: 'Rush',      kind: 'Solo',   players: '∞',  img: 'nagi.png',
+                { id: 'rush',      name: 'Rush',      kind: 'Solo',   players: '∞',  img: 'nagi.webp',
                   desc: "Un portrait, un nom. La plus longue serie gagne." },
-                { id: 'ascension', name: 'Ascension', kind: 'Solo',   players: '∞',  img: 'esdeath.png',
+                { id: 'ascension', name: 'Ascension', kind: 'Solo',   players: '∞',  img: 'esdeath.webp',
                   desc: "Une tour d'étages, chacun à son rythme. Le premier au sommet gagne." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.

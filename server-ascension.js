@@ -225,7 +225,7 @@ function pickRandom(arr, n) {
 }
 
 // 🆕 Slugifier le nom d'un arc pour générer un id stable + le filename d'image
-// "Examen Chunin" → "examen_chunin" → image "arc_examen_chunin.png"
+// "Examen Chunin" → "examen_chunin" → image "arc_examen_chunin.webp"
 function slugifyArc(name) {
     return String(name)
         .toLowerCase()
@@ -464,7 +464,7 @@ function genererEtageBrut(type, usedData) {
             const enriched = slice.map(a => ({
                 id: slugifyArc(a.name),
                 name: a.name,
-                img: 'arc_' + slugifyArc(a.name) + '.png',
+                img: 'arc_' + slugifyArc(a.name) + '.webp',
                 order: a.order,  // côté serveur seulement, retiré dans getFloorDataForClient
             }));
             
