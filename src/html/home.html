@@ -623,7 +623,7 @@
                                 <div class="v2-set">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M4 7h10v13H4zM8 4h10v13"/></svg>
                                     <span class="v2-set-label">Main</span>
-                                    <span class="v2-set-value">{{ col.regleMain }}</span>
+                                    <span class="v2-set-value">{{ col.regleMain }}<small class="col-obj">{{ colResumeObjectif }}</small></span>
                                     <span class="v2-set-opts">
                                         <button v-for="n in [3, 4, 5]" :key="n"
                                                 class="v2-set-opt" :class="{ on: col.regleMain === n }"
@@ -640,12 +640,6 @@
                                                 class="v2-set-opt" :class="{ on: col.regleAnimes === n }"
                                                 @click="applySetting('/admin/collect/set-animes', { animes: n }, () => col.regleAnimes = n)">{{ n }}</button>
                                     </span>
-                                </div>
-
-                                <div class="v2-set v2-set-info">
-                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M12 16v-5M12 8h.01"/><circle cx="12" cy="12" r="9"/></svg>
-                                    <span class="v2-set-label">Objectif</span>
-                                    <span class="v2-set-value">{{ colResumeObjectif }}</span>
                                 </div>
                             </template>
 
