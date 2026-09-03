@@ -1025,11 +1025,6 @@ createApp({
         // en haut à gauche ; ce qu'on veut savoir d'un coup d'œil, c'est où
         // l'on se situe. À égalité d'étage, on partage le rang.
         // ── 🎴 Collect ──
-        // Ce que la taille de main entraîne : l'hôte doit le voir, sinon le
-        // réglage a l'air arbitraire.
-        colResumeObjectif() {
-            return { 3: '3 paires', 4: '2 sets de 3', 5: '3 sets de 3' }[this.col.regleMain] || '';
-        },
         colMonTour() {
             return !!(this.col.etat && this.col.etat.tourJoueur === this.playerId);
         },

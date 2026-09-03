@@ -341,17 +341,3 @@
     .col-etiquette { font-size: 0.62rem; margin-bottom: 0.18rem; }
     .col-zone { margin-bottom: 0.35rem; }
 }
-
-/* ── Le réglage du salon ──────────────────────────────────────── */
-/* L'objectif est la conséquence directe de la taille de main : il tient dans
-   la même ligne. Surtout pas dans une ligne « v2-set-info » — cette classe
-   existe déjà, c'est la bulle d'aide « ? », en position absolue. */
-.col-obj {
-    display: block;
-    margin-top: 0.1rem;
-    font-size: 0.58rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    color: rgba(255, 255, 255, 0.38);
-    text-align: right;
-}
