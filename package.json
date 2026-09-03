@@ -32,7 +32,8 @@
     "test:tour-quitter": "node scripts/test-tour-quitter.js",
     "test:fuites": "node scripts/test-fuites.js",
     "test:debit": "node scripts/test-debit.js",
-    "test:collect": "node scripts/test-collect.js"
+    "test:collect": "node scripts/test-collect.js",
+    "test:collect-salon": "node scripts/test-collect-salon.js"
   },
   "keywords": [
     "quiz",

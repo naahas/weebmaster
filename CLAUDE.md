@@ -41,6 +41,10 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   `npm run test:rejouer` (deux manches d affilée sans répétition de question),
   `npm run test:historique` (chaque salon a sa propre mémoire),
   `npm run test:backoffice` (les routes /api/*question* exigent `QUESTION_ADMIN_CODE`),
+  `npm run test:collect` (le moteur de Collect sans serveur : les regles, les neuf
+  duels du triangle, et surtout qu aucune main ne sort de chez son proprietaire),
+  `npm run test:collect-salon` (Collect de bout en bout : reglages, partie jouee par
+  les sockets, le duel, le depart d un joueur),
   `npm run test:debit` (le seau a jetons par socket : une brute est bornee a la
   rafale puis coupee, un joueur a cadence normale n en voit rien),
   `npm run test:fuites` (ce qu un curieux muni du seul code du salon peut lire :
@@ -78,6 +82,9 @@ server.js              6.2k lignes — serveur + modes classic / rivalry / bomba
 dbs.js                 client Supabase : questions + suggestions BombAnime uniquement
 pseudos-interdits.js   les pseudos refuses : deux listes, l une cherchee partout,
                        l autre en mot entier. Voir l en-tete du fichier
+server-collect.js      mode Collect : le moteur (pur, eprouvable sans serveur) puis son
+                       raccord au salon. Les trois reglages qui comptent viennent de
+                       mesures, l en-tete du fichier dit lesquels et pourquoi
 jetons-images.js       les portraits de Rush et d Ascension servis sous jeton : leur nom
                        de fichier disait la reponse. Route /pic/<jeton>
 character-variants.js  BombAnime : groupes d'alias par perso (citer « Kakarot » bloque « Goku »)
@@ -102,6 +109,7 @@ src/img/               avatars, questionpic
 | `classic`   | Classique | Quiz QCM en solo. Réglage **Mode** : `lives` (vies) ou `points` (score + bonus rapidité) |
 | `rivalry`   | Classique | Le même quiz en deux camps. Ce n'est **pas un mode à part** : c'est le réglage **Format** du quiz |
 | `rush`      | Rush      | Un portrait, un nom, sans touche Entrée. La plus longue série de la manche gagne. Réglages : **durée** (30/60/90 s), **limite par portrait** (5–12 s ou aucune), **filtre** (Tout, Mainstream, Big 3) et **séquence** commune ou propre à chacun. Jouable seul. Données dans `rushdata.json`, portraits dans `src/img/rushpic/` |
+| `collect`   | Collect   | Jeu de cartes, 2 a 6 joueurs. Reunir **deux sets de trois** personnages du meme anime. A son tour, une action : piocher, echanger au marche, scanner une main, **voler** (duel a l aveugle sur le triangle Assaut > Mirage > Oracle) ou poser un set. Reglages : **duree** (courte/normale/longue — elle fixe ensemble la taille de main et l objectif) et **animes** (8/10/12) |
 | `bombanime` | BombAnime | Bombe tournante : citer un perso d'une série, alphabet à compléter, défis + bonus. Réglages du salon : **série** (21 au choix), **temps du tour** (5–10 s, 8 par défaut), **vies** (1 ou 2, 2 par défaut) ; quinze joueurs au plus |
 
 ⚠️ `classic` et `rivalry` sont **un seul mode pour le joueur**. Le réglage *Format* (Solo / Équipe)
@@ -116,6 +124,10 @@ Ascension est documenté dans docs/ASCENSION.md et conservé sur la branche `arc
 ## Fichiers de données
 
 - `bombdata.json` / `bombimages.json` — persos BombAnime par série + images
+- `collectdata.json` — les cartes de Collect : 385 cartes sur 21 animes, chacune avec son
+  portrait, son anime et sa classe. Genere depuis `collect-cards.json` (la source v1, gardee
+  comme reference) ; portraits dans `src/img/collectpic/`, en WebP.
+  ⚠️ Un anime doit fournir **au moins trois** cartes, sinon son set est impossible a reunir
 - Les **questions du quiz** vivent en base Supabase (table `questions`). Ajout/édition via la page
   `/question` protégée par `QUESTION_ADMIN_CODE`.
 
@@ -158,6 +170,9 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
   Et `/prototypes/code` : cinq facons de demander le code du salon, avec un
   basculeur ordinateur/telephone.
   Et `/prototypes/modes-mobile` : cinq facons de choisir un mode au doigt.
+  Et `/prototypes/collect-triangle` : trois facons d afficher le triangle des classes
+  en permanence — il n est pas decoratif, un joueur qui ne le comprend pas rate 99 %
+  de ses vols contre 86 % de reussite pour celui qui choisit sa classe.
   Et `/prototypes/bomb-ellipse` : le cercle de BombAnime contre l ellipse,
   avec un curseur de joueurs et les mesures sous chaque telephone.
 - `/question` : back-office des questions, protégé par `QUESTION_ADMIN_CODE`. Trois onglets :

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Collect — le triangle des classes</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   Le rappel du triangle, affiché en permanence pendant une partie.
+
+   Il n'est pas décoratif : mesuré, un joueur qui ne comprend pas le
+   cycle rate 99 % de ses vols, contre 86 % de réussite pour celui
+   qui choisit sa classe. C'est donc le rappel qui décide si le mode
+   est jouable par quelqu'un qui arrive en cours de stream.
+
+   D'où les contraintes : lisible en très petit, lisible sans lire
+   les mots (la couleur et le sens des flèches doivent suffire),
+   et assez discret pour rester à l'écran des dizaines de minutes.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+    --or: #ffd24a;
+    --assaut: #ff7a5c;
+    --mirage: #a78bfa;
+    --oracle: #4fd1c5;
+}
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 2rem 1.5rem 5rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #fff;
+    background: radial-gradient(70% 55% at 50% 0%, #1a1710, #08080b 68%);
+    min-height: 100vh;
+}
+h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
+.sous { margin: 0 0 2.4rem; max-width: 56rem; font-size: 0.85rem; line-height: 1.55; color: rgba(255,255,255,0.42); }
+
+.grille { display: flex; flex-wrap: wrap; gap: 2.4rem; align-items: flex-start; }
+.piste { width: 300px; }
+.piste h2 { margin: 0 0 0.15rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.07em; color: var(--or); }
+.piste p.note { margin: 0 0 1rem; font-size: 0.73rem; line-height: 1.5; color: rgba(255,255,255,0.4); min-height: 4em; }
+
+.boite {
+    padding: 1.4rem;
+    background: rgba(255,255,255,0.025);
+    border: 0.06rem solid rgba(255,255,255,0.07);
+    border-radius: 0.9rem;
+    display: flex; align-items: center; justify-content: center; gap: 2rem;
+}
+.tailles { margin-top: 0.9rem; display: flex; align-items: flex-end; gap: 1.4rem; }
+.tailles small { display: block; margin-top: 0.4rem; font-size: 0.6rem; color: rgba(255,255,255,0.3); text-align: center; }
+
+/* ── A · l'anneau ── */
+.tri-anneau text { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.06em; }
+.tri-anneau .arc { fill: none; stroke-linecap: round; opacity: 0.55; }
+.tri-anneau .pastille { stroke-width: 1.4; }
+
+/* ── B · les trois lignes ── */
+.tri-lignes {
+    display: inline-flex; flex-direction: column; gap: 0.3rem;
+    padding: 0.55rem 0.7rem;
+    background: rgba(0,0,0,0.35);
+    border: 0.06rem solid rgba(255,255,255,0.08);
+    border-radius: 0.55rem;
+}
+.tri-ligne { display: flex; align-items: center; gap: 0.35rem; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.05em; }
+.tri-ligne .pion { width: 0.52rem; height: 0.52rem; border-radius: 2px; transform: rotate(45deg); flex: 0 0 auto; }
+.tri-ligne .fl { color: rgba(255,255,255,0.3); font-size: 0.55rem; }
+.tri-ligne .nom { min-width: 3.4rem; }
+
+/* ── C · le ruban ── */
+.tri-ruban {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 0.4rem 0.65rem;
+    background: rgba(0,0,0,0.4);
+    border: 0.06rem solid rgba(255,255,255,0.08);
+    border-radius: 999px;
+    font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em;
+}
+.tri-ruban .jeton {
+    display: inline-flex; align-items: center; gap: 0.28rem;
+    padding: 0.16rem 0.42rem 0.16rem 0.3rem;
+    border-radius: 999px;
+}
+.tri-ruban .jeton i { width: 0.42rem; height: 0.42rem; border-radius: 50%; }
+.tri-ruban .fl { color: rgba(255,255,255,0.28); }
+.tri-ruban .boucle { color: rgba(255,255,255,0.2); font-size: 0.72rem; margin-left: 0.1rem; }
+
+/* ── le coin d'écran, pour juger en situation ── */
+.ecran {
+    margin-top: 3rem;
+    position: relative;
+    width: 100%; max-width: 62rem; height: 22rem;
+    border-radius: 1rem;
+    overflow: hidden;
+    background:
+        radial-gradient(60% 50% at 20% 10%, rgba(255,190,60,0.06), transparent 60%),
+        linear-gradient(160deg, #16151c, #0b0b0e);
+    border: 0.06rem solid rgba(255,255,255,0.07);
+}
+.ecran .coin { position: absolute; top: 0.9rem; left: 0.9rem; }
+.ecran .faux {
+    position: absolute; inset: auto 0 1.6rem 0;
+    display: flex; justify-content: center; gap: 0.6rem;
+}
+.ecran .carte {
+    width: 4.6rem; height: 7.2rem; border-radius: 0.5rem;
+    background: linear-gradient(165deg, #262533, #16151d);
+    border: 0.06rem solid rgba(255,255,255,0.09);
+}
+.ecran .carte:nth-child(2) { border-color: rgba(255,122,92,0.5); }
+.ecran .carte:nth-child(4) { border-color: rgba(167,139,250,0.5); }
+.ecran .titre { position: absolute; top: 1.1rem; left: 50%; transform: translateX(-50%); font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.16em; font-size: 0.9rem; color: rgba(255,255,255,0.3); }
+.ecran .bascule { position: absolute; top: 0.9rem; right: 0.9rem; display: flex; gap: 0.4rem; }
+.ecran .bascule button {
+    font: inherit; font-size: 0.68rem; color: #fff; cursor: pointer;
+    background: rgba(255,255,255,0.07); border: 0.06rem solid rgba(255,255,255,0.1);
+    border-radius: 0.4rem; padding: 0.25rem 0.55rem;
+}
+.ecran .bascule button.on { background: var(--or); color: #17140a; border-color: var(--or); }
+</style>
+</head>
+<body>
+
+<h1>Collect — le rappel du triangle</h1>
+<p class="sous">
+    Il n'est pas décoratif. Mesuré : un joueur qui ne comprend pas le cycle réussit <b>1 %</b> de ses vols,
+    contre <b>86 %</b> pour celui qui choisit sa classe. C'est donc ce rappel qui décide si le mode est
+    jouable par quelqu'un qui débarque en cours de stream. Il doit se lire en tout petit, se comprendre
+    sans lire les mots, et rester supportable à l'écran pendant vingt minutes.
+</p>
+
+<div class="grille" id="grille"></div>
+
+<div class="ecran">
+    <div class="titre">COLLECT</div>
+    <div class="coin" id="coin"></div>
+    <div class="bascule" id="bascule"></div>
+    <div class="faux">
+        <div class="carte"></div><div class="carte"></div><div class="carte"></div>
+        <div class="carte"></div><div class="carte"></div>
+    </div>
+</div>
+
+<script>
+const CLASSES = [
+    { cle: 'assaut', nom: 'Assaut', couleur: 'var(--assaut)' },
+    { cle: 'mirage', nom: 'Mirage', couleur: 'var(--mirage)' },
+    { cle: 'oracle', nom: 'Oracle', couleur: 'var(--oracle)' },
+];
+
+/* ════ A · l'anneau ════
+   Trois sommets, trois arcs fléchés dans le sens du cycle. C'est la forme
+   la plus immédiate — on voit le mouvement avant de lire quoi que ce soit. */
+function anneau(taille) {
+    const T = taille, c = T / 2, R = T * 0.30, r = T * 0.105;
+    // sommets : Assaut en haut, puis dans le sens des aiguilles
+    const pts = CLASSES.map((_, i) => {
+        const a = -Math.PI / 2 + i * (2 * Math.PI / 3);
+        return { x: c + R * Math.cos(a), y: c + R * Math.sin(a) };
+    });
+    // un arc légèrement bombé entre deux sommets, raccourci pour ne pas
+    // toucher les pastilles
+    const arc = (p, q, col) => {
+        const dx = q.x - p.x, dy = q.y - p.y, d = Math.hypot(dx, dy);
+        const ux = dx / d, uy = dy / d;
+        const m = r * 1.35;
+        const x1 = p.x + ux * m, y1 = p.y + uy * m;
+        const x2 = q.x - ux * m, y2 = q.y - uy * m;
+        return `<path class="arc" d="M ${x1} ${y1} A ${d * 0.85} ${d * 0.85} 0 0 1 ${x2} ${y2}"
+                 stroke="${col}" stroke-width="${T * 0.018}" marker-end="url(#fleche${Math.round(T)})"/>`;
+    };
+    let svg = `<svg class="tri-anneau" width="${T}" height="${T}" viewBox="0 0 ${T} ${T}" aria-label="Assaut bat Mirage bat Oracle bat Assaut">
+      <defs><marker id="fleche${Math.round(T)}" viewBox="0 0 8 8" refX="6" refY="4"
+             markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M 0 1 L 7 4 L 0 7 z" fill="rgba(255,255,255,0.45)"/></marker></defs>`;
+    for (let i = 0; i < 3; i++) svg += arc(pts[i], pts[(i + 1) % 3], CLASSES[i].couleur);
+    pts.forEach((p, i) => {
+        svg += `<circle class="pastille" cx="${p.x}" cy="${p.y}" r="${r}"
+                 fill="rgba(0,0,0,0.55)" stroke="${CLASSES[i].couleur}"/>`;
+        svg += `<text x="${p.x}" y="${p.y + T * 0.038}" text-anchor="middle"
+                 font-size="${T * 0.115}" fill="${CLASSES[i].couleur}">${CLASSES[i].nom[0]}</text>`;
+    });
+    if (T >= 110) pts.forEach((p, i) => {
+        const dx = p.x - c, dy = p.y - c, d = Math.hypot(dx, dy) || 1;
+        svg += `<text x="${p.x + dx / d * r * 2.1}" y="${p.y + dy / d * r * 2.1 + T * 0.03}"
+                 text-anchor="middle" font-size="${T * 0.075}" fill="rgba(255,255,255,0.42)">${CLASSES[i].nom}</text>`;
+    });
+    return svg + '</svg>';
+}
+
+/* ════ B · les trois lignes ════
+   Une phrase par relation, empilées. Zéro ambiguïté — on lit « Assaut bat
+   Mirage » — mais ça prend de la hauteur et ça demande de lire. */
+function lignes() {
+    let h = '<div class="tri-lignes">';
+    for (let i = 0; i < 3; i++) {
+        const a = CLASSES[i], b = CLASSES[(i + 1) % 3];
+        h += `<div class="tri-ligne">
+                <span class="pion" style="background:${a.couleur}"></span>
+                <span class="nom" style="color:${a.couleur}">${a.nom}</span>
+                <span class="fl">▶</span>
+                <span class="pion" style="background:${b.couleur}"></span>
+                <span class="nom" style="color:${b.couleur}">${b.nom}</span>
+              </div>`;
+    }
+    return h + '</div>';
+}
+
+/* ════ C · le ruban ════
+   Une seule ligne, à plat : Assaut ▸ Mirage ▸ Oracle ↩. Le plus discret de
+   tous, et il se glisse dans une barre existante — mais la boucle finale se
+   devine plus qu'elle ne se voit. */
+function ruban() {
+    let h = '<div class="tri-ruban">';
+    CLASSES.forEach((c, i) => {
+        h += `<span class="jeton" style="background:${c.couleur}1f;color:${c.couleur}">
+                <i style="background:${c.couleur}"></i>${c.nom}</span>`;
+        if (i < 2) h += '<span class="fl">▸</span>';
+    });
+    return h + '<span class="boucle">↺</span></div>';
+}
+
+const PISTES = [
+    { t: 'A · L’anneau', h: () => `<div class="boite">${anneau(150)}</div>
+        <div class="tailles">${anneau(96)}${anneau(64)}${anneau(44)}
+        </div><small style="color:rgba(255,255,255,.3);font-size:.6rem">150 · 96 · 64 · 44 px</small>`,
+      n: "Trois sommets, trois flèches dans le sens du cycle. On voit le mouvement avant de lire quoi que ce soit — et à 44 px il reste lisible par la couleur seule." },
+    { t: 'B · Les trois lignes', h: () => `<div class="boite">${lignes()}</div>`,
+      n: "Une phrase par relation. Aucune ambiguïté possible, mais il faut lire, et ça mange de la hauteur — mauvais sur un téléphone en 9:16." },
+    { t: 'C · Le ruban', h: () => `<div class="boite">${ruban()}</div>`,
+      n: "Une seule ligne, qui se glisse dans une barre existante. Le plus discret — mais la boucle finale (Oracle bat Assaut) se devine plus qu’elle ne se voit." },
+];
+
+const grille = document.getElementById('grille');
+for (const p of PISTES) {
+    const d = document.createElement('div');
+    d.className = 'piste';
+    d.innerHTML = `<h2>${p.t}</h2><p class="note">${p.n}</p>` + p.h();
+    grille.appendChild(d);
+}
+
+// le coin d'écran, pour juger en situation
+const coin = document.getElementById('coin');
+const bascule = document.getElementById('bascule');
+const rendus = { A: () => anneau(88), B: lignes, C: ruban };
+Object.keys(rendus).forEach((k, i) => {
+    const b = document.createElement('button');
+    b.textContent = k;
+    if (!i) b.classList.add('on');
+    b.onclick = () => {
+        [...bascule.children].forEach(x => x.classList.remove('on'));
+        b.classList.add('on');
+        coin.innerHTML = rendus[k]();
+    };
+    bascule.appendChild(b);
+});
+coin.innerHTML = rendus.A();
+</script>
+</body>
+</html>

@@ -122,6 +122,7 @@ function getCharacterImage(name, serie) {
 // 🏔️ Ascension : le moteur vit dans son propre fichier. Il ne connaît ni
 // Supabase ni les autres modes, et prend l'état du salon en paramètre.
 const ascension = require('./server-ascension.js');
+const collect = require('./server-collect.js');
 const jetons = require('./jetons-images.js');
 const interdits = require('./pseudos-interdits.js');
 jetons.recenser('rushpic');
@@ -216,7 +217,7 @@ let gameHistoryTableOk = null; // null = pas encore testé, false = table absent
 let questionsCountCache = { value: null, at: 0 };
 const QUESTIONS_COUNT_TTL = 5 * 60 * 1000;
 
-const MODE_LABELS = { classic: 'Classique', rivalry: 'Rivalité', bombanime: 'BombAnime', rush: 'Rush', ascension: 'Ascension' };
+const MODE_LABELS = { classic: 'Classique', rivalry: 'Rivalité', bombanime: 'BombAnime', rush: 'Rush', ascension: 'Ascension', collect: 'Collect' };
 
 async function recordFinishedGame({ mode, playersCount, winnerName, duration }) {
     const entry = {
@@ -545,6 +546,15 @@ app.get('/game/state', (req, res) => {
             timer: gameState.ascension.timer,
             syncEpreuves: gameState.ascension.syncEpreuves,
         } : null,
+        collect: gameState.lobbyMode === 'collect' ? {
+            active: gameState.collect.active,
+            duree: gameState.collect.duree,
+            animes: gameState.collect.nbAnimes,
+            regles: collect.DUREES[gameState.collect.duree],
+            durees: Object.values(collect.DUREES),
+            animesPossibles: collect.CONFIG.ANIMES_POSSIBLES,
+            maxJoueurs: collect.CONFIG.MAX_JOUEURS,
+        } : null,
         rush: gameState.lobbyMode === 'rush' ? {
             duree: gameState.rush.duree,
             limite: gameState.rush.tempsParPerso,
@@ -716,6 +726,9 @@ function fermerRoom(gameState) {
     if (gameState.ascension && gameState.ascension.active) {
         ascension.resetAscensionState(gameState);
     }
+    // Même raison pour Collect : ses minuteries de tour et de duel tourneraient
+    // sinon pour un salon que plus personne ne regarde.
+    collect.reinitialiser(gameState);
     rooms.delete(gameState.roomCode);
     console.log(`❌ Salon fermé : ${gameState.roomCode} (${rooms.size} restant(s))`);
 }
@@ -796,6 +809,9 @@ function etatNeuf() {
     // ============================================
     // 🏔️ Ascension : sa fabrique vit dans son module, l'état est isolé par salon
     ascension: ascension.createAscensionState(),
+
+    // 🎴 Collect : même principe, un jeu de cartes par salon
+    collect: collect.etatNeuf(),
 
     rush: {
         active: false,
@@ -1235,6 +1251,10 @@ app.get('/prototypes/modes-2', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-modes2.html');
 });
 
+app.get('/prototypes/collect-triangle', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-collect-triangle.html');
+});
+
 app.get('/prototypes/bomb-ellipse', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-bomb-ellipse.html');
 });
@@ -1445,6 +1465,37 @@ app.post('/admin/toggle-game', async (req, res) => {
 
     // Le jeton ne part qu'ici, dans la réponse à celui qui vient d'ouvrir
     res.json({ isActive: true, roomCode: gameState.roomCode, hostToken: gameState.hostToken });
+});
+
+// ============================================
+// 🎴 COLLECT — réglages du salon
+// ============================================
+// La durée ne règle pas qu'un temps : elle fixe ensemble la taille de main et
+// l'objectif, parce que les deux ne se choisissent pas séparément. Une main de
+// trois avec des sets de trois exigerait toute la main d'un seul anime, sans
+// réserve possible — 22 % de parties sans vainqueur.
+app.post('/admin/collect/set-duree', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+    const cle = String((req.body && req.body.duree) || '');
+    if (!collect.DUREES[cle]) return res.status(400).json({ error: 'Durée inconnue' });
+    gameState.collect.duree = cle;
+    diffuser(gameState, 'collect-config', { duree: cle, regles: collect.DUREES[cle] });
+    res.json({ success: true, duree: cle, regles: collect.DUREES[cle] });
+});
+
+// Huit animes au minimum, et le barème ne propose rien en dessous : à quatre,
+// une main servie complète un set du premier coup une partie sur quatorze.
+app.post('/admin/collect/set-animes', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+    const n = parseInt(req.body && req.body.animes, 10);
+    if (!collect.CONFIG.ANIMES_POSSIBLES.includes(n)) {
+        return res.status(400).json({ error: 'Nombre d\'animes hors barème' });
+    }
+    gameState.collect.nbAnimes = n;
+    diffuser(gameState, 'collect-config', { animes: n });
+    res.json({ success: true, animes: n });
 });
 
 // ============================================
@@ -1730,6 +1781,23 @@ app.post('/admin/start-game', async (req, res) => {
             floors: gameState.ascension.floors,
             timer: gameState.ascension.timer,
         });
+    }
+
+    // 🎴 MODE COLLECT — un jeu de cartes en tour par tour, deux à six joueurs
+    if (gameState.lobbyMode === 'collect') {
+        gameState.initialPlayerCount = totalPlayers;
+        const r = collect.demarrerPartie(gameState, io, {
+            onGameEnd: (vainqueurId, nom, secondes) => {
+                recordFinishedGame({
+                    mode: 'collect',
+                    playersCount: gameState.initialPlayerCount || 0,
+                    winnerName: nom,
+                    duration: secondes,
+                });
+            },
+        });
+        if (!r.success) return res.status(400).json({ success: false, error: r.error });
+        return res.json({ success: true, mode: 'collect', duree: gameState.collect.duree });
     }
 
     // ⚡ MODE RUSH — chacun court de son côté, donc jouable même seul
@@ -5933,6 +6001,12 @@ io.on('connection', (socket) => {
                 ascension.quitterAscension(gameState, io, socket, player.playerId);
             }
 
+            // Collect : sans ca, la table attendait indefiniment le tour d un
+            // joueur parti. Ses cartes retournent au paquet et le tour reprend.
+            if (gameState.lobbyMode === 'collect' && gameState.inProgress) {
+                collect.quitterCollect(gameState, io, player.playerId);
+            }
+
             gameState.players.delete(socket.id);
             gameState.answers.delete(socket.id);
             console.log(`👋 ${data.username} a quitté le lobby`);
@@ -6032,6 +6106,9 @@ io.on('connection', (socket) => {
             if (gameState.lobbyMode === 'ascension' && gameState.inProgress) {
                 ascension.quitterAscension(gameState, io,
                     io.sockets.sockets.get(targetSocketId) || null, targetPlayer.playerId);
+            }
+            if (gameState.lobbyMode === 'collect' && gameState.inProgress) {
+                collect.quitterCollect(gameState, io, targetPlayer.playerId);
             }
 
             // Supprimer le joueur
@@ -6312,6 +6389,7 @@ io.on('connection', (socket) => {
     // quoi retrouver le salon, et non le salon lui-même — une socket peut en
     // changer, ses gestionnaires vivent aussi longtemps qu'elle.
     ascension.registerAscensionSocketHandlers(io, socket, () => roomDeSocket(socket));
+    collect.registerCollectSocketHandlers(io, socket, () => roomDeSocket(socket));
 
     socket.on('rush-get-state', () => {
         const gameState = roomDeSocket(socket);

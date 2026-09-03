@@ -88,6 +88,8 @@ function etatNeuf() {
         tourJoueur: null,
         tourFin: 0,
         tourTimer: null,
+        duelTimer: null,
+        debut: 0,
         duel: null,          // un vol en attente de la defense de sa cible
         vainqueur: null,
         journal: [],           // les derniers faits, pour l'écran de tous
@@ -441,8 +443,168 @@ function vueJoueur(etat, playerId) {
     };
 }
 
+// ══════════════════════════════════════════════════════════════
+// 🔌 Le raccord au salon
+// ══════════════════════════════════════════════════════════════
+//
+// Tout ce qui précède ignore les sockets. À partir d'ici on relie le moteur à
+// un salon : minuteries, diffusion, et les mains qui ne partent qu'à leur
+// propriétaire.
+
+const DUEL_MS = 8000;   // la cible n'a qu'une chose à faire, choisir une carte
+
+// Le pseudo d'un joueur, pour le journal — le moteur ne connaît que des
+// identifiants.
+function pseudos(gameState) {
+    const m = {};
+    for (const p of gameState.players.values()) m[p.playerId] = p.username;
+    return m;
+}
+
+// La main d'un joueur ne part QUE vers lui. Tout le reste va au salon.
+function diffuserEtat(gameState, io) {
+    const etat = gameState.collect;
+    const publique = { ...vuePublique(etat), pseudos: pseudos(gameState) };
+    io.to(gameState.roomCode).emit('collect-state', publique);
+    for (const p of gameState.players.values()) {
+        if (!etat.mains.has(p.playerId)) continue;
+        io.to(p.socketId).emit('collect-main', { main: etat.mains.get(p.playerId).map(c => ({ ...c })) });
+    }
+}
+
+function stopperMinuteries(etat) {
+    if (etat.tourTimer) { clearTimeout(etat.tourTimer); etat.tourTimer = null; }
+    if (etat.duelTimer) { clearTimeout(etat.duelTimer); etat.duelTimer = null; }
+}
+
+// Après CHAQUE action : on remet la bonne minuterie en marche, on diffuse, et
+// l'on regarde si quelqu'un a gagné. Un seul endroit, pour qu'aucun chemin ne
+// puisse oublier l'un des trois.
+function apresAction(gameState, io, onGameEnd) {
+    const etat = gameState.collect;
+    stopperMinuteries(etat);
+
+    if (!etat.active) {
+        diffuserEtat(gameState, io);
+        if (etat.vainqueur && onGameEnd) onGameEnd(etat.vainqueur);
+        return;
+    }
+
+    if (etat.duel) {
+        etat.duel.fin = Date.now() + DUEL_MS;
+        etat.duelTimer = setTimeout(() => {
+            defenseParDefaut(etat);
+            apresAction(gameState, io, onGameEnd);
+        }, DUEL_MS);
+    } else {
+        etat.tourFin = Date.now() + CONFIG.TOUR_MS;
+        etat.tourTimer = setTimeout(() => {
+            actionParDefaut(etat, etat.tourJoueur);
+            apresAction(gameState, io, onGameEnd);
+        }, CONFIG.TOUR_MS);
+    }
+    diffuserEtat(gameState, io);
+}
+
+function demarrerPartie(gameState, io, opts) {
+    const etat = gameState.collect;
+    const joueurs = [...gameState.players.values()].map(p => p.playerId);
+    const r = demarrer(etat, joueurs);
+    if (!r.ok) return { success: false, error: r.erreur };
+
+    gameState.inProgress = true;
+    etat.debut = Date.now();
+    const onGameEnd = (vainqueurId) => {
+        const nom = pseudos(gameState)[vainqueurId] || null;
+        if (opts && opts.onGameEnd) opts.onGameEnd(vainqueurId, nom, Math.round((Date.now() - etat.debut) / 1000));
+    };
+    etat._onGameEnd = onGameEnd;
+    apresAction(gameState, io, onGameEnd);
+    return { success: true };
+}
+
+// Un salon qui se ferme, ou une partie qu'on relance : les minuteries d'un
+// salon mort continueraient sinon de tourner pour personne.
+function reinitialiser(gameState) {
+    if (!gameState.collect) return;
+    stopperMinuteries(gameState.collect);
+    gameState.collect = etatNeuf();
+}
+
+// Un joueur s'en va. S'il tenait le tour, la partie doit repartir sans lui —
+// et s'il ne reste qu'un joueur, elle s'arrête.
+function quitterCollect(gameState, io, playerId) {
+    const etat = gameState.collect;
+    if (!etat || !etat.active || !etat.mains.has(playerId)) return;
+
+    // ses cartes retournent au paquet plutôt que de disparaître
+    for (const c of etat.mains.get(playerId)) rendreAuPaquet(etat, c);
+    etat.mains.delete(playerId);
+    etat.sets.delete(playerId);
+    const i = etat.ordre.indexOf(playerId);
+    if (i >= 0) etat.ordre.splice(i, 1);
+
+    if (etat.ordre.length < 2) {
+        etat.active = false;
+        etat.vainqueur = etat.ordre[0] || null;
+        stopperMinuteries(etat);
+        diffuserEtat(gameState, io);
+        return;
+    }
+    // le duel qui le visait, ou qu'il menait, n'a plus d'objet
+    if (etat.duel && (etat.duel.cible === playerId || etat.duel.attaquant === playerId)) etat.duel = null;
+    if (etat.tourIndex >= etat.ordre.length) etat.tourIndex = 0;
+    if (etat.tourJoueur === playerId) etat.tourJoueur = etat.ordre[etat.tourIndex];
+    apresAction(gameState, io, etat._onGameEnd);
+}
+
+// ── Les événements ────────────────────────────────────────────
+function registerCollectSocketHandlers(io, socket, resoudreSalon) {
+    // Le salon se résout à chaque événement : une socket peut en changer, ses
+    // gestionnaires vivent aussi longtemps qu'elle.
+    const contexte = () => {
+        const gameState = resoudreSalon();
+        if (!gameState || !gameState.collect) return null;
+        const joueur = gameState.players.get(socket.id);
+        if (!joueur) return null;
+        return { gameState, etat: gameState.collect, moi: joueur.playerId };
+    };
+
+    const jouer = (fn) => {
+        const c = contexte();
+        if (!c) return;
+        const r = fn(c);
+        if (!r) return;
+        if (!r.ok) return socket.emit('collect-refus', { erreur: r.erreur });
+        if (r.main) socket.emit('collect-scan', { cible: r.cible, main: r.main });
+        apresAction(c.gameState, io, c.etat._onGameEnd);
+    };
+
+    socket.on('collect-get-state', () => {
+        const c = contexte();
+        if (!c) return;
+        socket.emit('collect-state', { ...vuePublique(c.etat), pseudos: pseudos(c.gameState) });
+        if (c.etat.mains.has(c.moi)) socket.emit('collect-main', { main: c.etat.mains.get(c.moi).map(x => ({ ...x })) });
+    });
+
+    socket.on('collect-piocher', (d) => jouer(c => actionPiocher(c.etat, c.moi, d && d.uidDefausse)));
+    socket.on('collect-echanger', (d) => jouer(c => actionEchanger(c.etat, c.moi, d && d.uidMain, d && d.uidMarche)));
+    socket.on('collect-poser', (d) => jouer(c => actionPoser(c.etat, c.moi, d && d.anime)));
+    socket.on('collect-voler', (d) => jouer(c => actionVoler(c.etat, c.moi, d && d.cibleId, d && d.anime, d && d.uidAttaque)));
+    socket.on('collect-defendre', (d) => jouer(c => actionDefendre(c.etat, c.moi, d && d.uidDefense)));
+
+    // Le scan est le seul dont le résultat ne part qu'au demandeur : il porte
+    // la main d'un adversaire, elle ne doit jamais passer par le salon.
+    socket.on('collect-scanner', (d) => jouer(c => {
+        const r = actionScanner(c.etat, c.moi, d && d.cibleId);
+        return r.ok ? { ...r, cible: d.cibleId } : r;
+    }));
+}
+
 module.exports = {
-    CONFIG, DUREES, CLASSES, BAT,
+    CONFIG, DUREES, CLASSES, BAT, DUEL_MS,
+    demarrerPartie, reinitialiser, quitterCollect,
+    registerCollectSocketHandlers, diffuserEtat,
     domine, etatNeuf, regles, demarrer, tourSuivant,
     actionPiocher, actionEchanger, actionVoler, actionScanner, actionPoser, actionParDefaut,
     actionDefendre, defenseParDefaut, rendreAuPaquet, poserAuMarche,
