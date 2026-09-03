@@ -37,6 +37,7 @@ createApp({
                 erreur: '',
                 reste: 0,
                 _tic: null,
+                loupe: null,         // la carte qu'on regarde de près
                 // réglages du salon, avant la partie
                 regleMain: 4,
                 regleAnimes: 10,
@@ -1025,6 +1026,10 @@ createApp({
         // en haut à gauche ; ce qu'on veut savoir d'un coup d'œil, c'est où
         // l'on se situe. À égalité d'étage, on partage le rang.
         // ── 🎴 Collect ──
+        colMesSets() {
+            const p = this.col.etat && this.col.etat.joueurs.find(x => x.playerId === this.playerId);
+            return p ? p.sets.length : 0;
+        },
         colMonTour() {
             return !!(this.col.etat && this.col.etat.tourJoueur === this.playerId);
         },
@@ -1638,6 +1643,19 @@ createApp({
         // sur un seul visage. Le serveur tient le même compte — ce qui suit
         // n'est que ce qu'on en montre.
         // ══ 🎴 Collect ══
+        // Les autres joueurs se répartissent sur l'arc du HAUT, de 200° à 340°,
+        // et jamais sur les côtés bas : c'est là que se trouve ta propre main, et
+        // deux sièges y viendraient buter contre elle.
+        colSiege(i, total) {
+            const angle = (200 + (i + 0.5) * (140 / Math.max(1, total))) * Math.PI / 180;
+            return {
+                left: (50 + 42 * Math.cos(angle)).toFixed(1) + '%',
+                top: (46 + 34 * Math.sin(angle)).toFixed(1) + '%',
+            };
+        },
+        colCouleurClasse(c) {
+            return { assaut: '#ff7a5c', mirage: '#a78bfa', oracle: '#4fd1c5' }[c] || '#fff';
+        },
         colNom(id) {
             if (!id) return '';
             const p = this.col.etat && this.col.etat.pseudos;
@@ -1662,6 +1680,7 @@ createApp({
         colChoisirMode(m) {
             if (!this.colMonTour) return;
             this.col.erreur = '';
+            this.col.loupe = null;
             // retoucher l'action en cours la referme : c'est le geste attendu
             if (this.col.mode === m) return this.colRaz();
             this.colRaz();
@@ -1675,7 +1694,12 @@ createApp({
             }
         },
         colToucherMain(c) {
-            if (!this.colMonTour) return;
+            // Sans action choisie, toucher une carte la regarde de pres : c est
+            // le geste naturel, et il ne peut entrer en conflit avec rien.
+            if (!this.colMonTour || !this.col.mode) {
+                this.col.loupe = (this.col.loupe && this.col.loupe.uid === c.uid) ? null : c;
+                return;
+            }
             if (this.col.mode === 'piocher') {
                 this.col.mainChoisie = c.uid;
                 this.socket.emit('collect-piocher', { uidDefausse: c.uid });
@@ -1686,7 +1710,10 @@ createApp({
             }
         },
         colToucherMarche(c) {
-            if (!this.colMonTour || this.col.mode !== 'echanger') return;
+            if (!this.colMonTour || this.col.mode !== 'echanger') {
+                this.col.loupe = (this.col.loupe && this.col.loupe.uid === c.uid) ? null : c;
+                return;
+            }
             this.col.marcheChoisi = c.uid;
         },
         colToucherRival(id) {

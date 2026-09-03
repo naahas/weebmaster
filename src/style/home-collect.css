@@ -1,15 +1,19 @@
 /* ════════════════════════════════════════════════════════════════
    🎴 COLLECT — l'écran de jeu
 
-   Trois zones empilées, du plus lointain au plus proche : les
-   adversaires, le marché, ta main. Le pouce est en bas, donc les
-   actions aussi.
+   Une table, et tout le monde autour. Toi toujours en bas, collé au
+   bord ; les autres répartis sur l'arc du haut, à l'angle que leur
+   nombre commande. Le marché au centre du feutre, la pioche à droite.
 
-   Le triangle des classes est en haut à gauche, en permanence. Ce
-   n'est pas de la décoration : mesuré, un joueur qui ne le comprend
-   pas réussit 1 % de ses vols contre 86 % pour celui qui choisit sa
-   classe. C'est lui qui décide si le mode est jouable par quelqu'un
-   qui débarque en cours de partie.
+   C'est la disposition de la v1, dont la lecture était immédiate : on
+   voit d'un coup qui a combien de cartes et où en est chacun. Ce qui
+   change, c'est le soin — un feutre qui ne jure pas avec le doré du
+   site, des cartes qui portent leur classe, et un agrandissement quand
+   on en touche une.
+
+   Le triangle des classes reste en haut à gauche, en permanence :
+   mesuré, un joueur qui ne le comprend pas réussit 1 % de ses vols
+   contre 86 % pour celui qui choisit sa classe.
    ════════════════════════════════════════════════════════════════ */
 
 .col {
@@ -17,13 +21,14 @@
     --mirage: #a78bfa;
     --oracle: #4fd1c5;
     --col-or: #ffd24a;
+    --carte: 4.4rem;
 
     position: fixed;
     inset: 0;
     z-index: 3;
     display: flex;
     flex-direction: column;
-    padding: 0.7rem 0.7rem 0.5rem;
+    padding: 0.7rem 0.7rem 0.6rem;
     overflow: hidden;
 }
 
@@ -35,108 +40,174 @@
     justify-content: space-between;
     gap: 0.6rem;
 }
-
 .col-tri { flex: 0 0 auto; }
 .col-tri svg { display: block; }
 
-.col-tour {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.2rem;
-    text-align: right;
-}
+.col-tour { text-align: center; flex: 1 1 auto; min-width: 0; }
 .col-tour-qui {
+    display: block;
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.05rem;
-    letter-spacing: 0.06em;
+    font-size: 1.1rem;
+    letter-spacing: 0.08em;
     color: rgba(255, 255, 255, 0.55);
 }
 .col-tour-qui.moi { color: var(--col-or); }
-.col-tour-but { font-size: 0.6rem; color: rgba(255, 255, 255, 0.32); letter-spacing: 0.04em; }
+.col-tour-but { font-size: 0.58rem; color: rgba(255, 255, 255, 0.3); letter-spacing: 0.05em; }
 
-/* Le temps restant : un arc, pas un nombre — on le lit sans le lire */
-.col-chrono { position: relative; width: 2.2rem; height: 2.2rem; }
-.col-chrono svg { transform: rotate(-90deg); }
+.col-chrono { position: relative; width: 2.4rem; height: 2.4rem; flex: 0 0 auto; }
+.col-chrono svg { transform: rotate(-90deg); display: block; }
 .col-chrono circle { fill: none; stroke-width: 2.6; }
-.col-chrono .fond { stroke: rgba(255, 255, 255, 0.09); }
+.col-chrono .fond { stroke: rgba(255, 255, 255, 0.08); }
 .col-chrono .fil { stroke: var(--col-or); transition: stroke-dashoffset 0.25s linear; }
 .col-chrono.urgence .fil { stroke: #ff5a6e; }
 .col-chrono b {
     position: absolute; inset: 0;
     display: grid; place-items: center;
-    font-family: 'Bebas Neue', sans-serif; font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.65);
+    font-family: 'Bebas Neue', sans-serif; font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
 }
 
-/* ── Les adversaires ──────────────────────────────────────────── */
-.col-rivaux {
-    flex: 0 0 auto;
-    display: flex; flex-wrap: wrap; gap: 0.4rem;
-    margin: 0.6rem 0 0.5rem;
+/* ── La scène ─────────────────────────────────────────────────── */
+.col-scene { position: relative; flex: 1 1 auto; min-height: 0; }
+
+/* Le feutre. Vert sombre plutôt que vif : on lit « table de cartes » au
+   premier coup d'œil sans que ça se batte avec l'or du site. */
+.col-table {
+    position: absolute;
+    left: 50%; top: 46%;
+    transform: translate(-50%, -50%);
+    width: min(74%, 46rem);
+    aspect-ratio: 16 / 9;
+    border-radius: 50%;
+    background:
+        radial-gradient(60% 60% at 50% 30%, rgba(255, 255, 255, 0.05), transparent 70%),
+        linear-gradient(170deg, #17352b, #0d1f19);
+    box-shadow:
+        0 0 0 0.5rem rgba(70, 48, 22, 0.85),
+        0 0 0 0.62rem rgba(255, 210, 74, 0.16),
+        0 1.6rem 3.5rem rgba(0, 0, 0, 0.55),
+        inset 0 0 4rem rgba(0, 0, 0, 0.45);
 }
-.col-rival {
-    flex: 1 1 6rem;
-    min-width: 0;
-    padding: 0.45rem 0.55rem;
-    background: rgba(255, 255, 255, 0.035);
-    border: 0.06rem solid rgba(255, 255, 255, 0.08);
-    border-radius: 0.55rem;
-    font: inherit; color: #fff; text-align: left;
-    cursor: pointer;
-    transition: border-color 0.2s ease, background 0.2s ease;
+
+/* ── Le marché, au centre du feutre ───────────────────────────── */
+.col-marche {
+    position: absolute;
+    left: 50%; top: 46%;
+    transform: translate(-50%, -50%);
+    display: flex; gap: 0.3rem; align-items: center;
+    z-index: 4;
 }
-.col-rival.tour { border-color: var(--col-or); background: rgba(255, 210, 74, 0.07); }
-.col-rival.choisissable { border-color: rgba(255, 255, 255, 0.3); }
-.col-rival.choisissable:active { background: rgba(255, 255, 255, 0.1); }
-.col-rival-nom {
-    display: block;
-    font-size: 0.72rem; font-weight: 600;
+.col-emplacement {
+    width: var(--carte);
+    aspect-ratio: 225 / 350;
+    border: 0.09rem dashed rgba(255, 210, 74, 0.35);
+    border-radius: 0.4rem;
+    display: grid; place-items: center;
+    color: rgba(255, 210, 74, 0.35);
+    font-size: 1rem;
+}
+
+/* ── La pioche, sur le côté ───────────────────────────────────── */
+.col-pioche {
+    position: absolute;
+    right: 1%; top: 46%;
+    transform: translateY(-50%);
+    width: calc(var(--carte) * 1.15);
+    aspect-ratio: 225 / 350;
+    display: grid; place-items: center;
+    border-radius: 0.5rem;
+    background: repeating-linear-gradient(135deg, #1d2733 0 7px, #161d27 7px 14px);
+    border: 0.09rem solid rgba(255, 255, 255, 0.12);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem; letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.35);
+    z-index: 4;
+}
+
+/* ── Un siège ─────────────────────────────────────────────────── */
+.col-siege {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: flex; flex-direction: column; align-items: center;
+    gap: 0.2rem;
+    z-index: 6;
+}
+.col-siege.choisissable .col-eventail { cursor: pointer; }
+
+/* L'éventail : des dos de cartes, autant que la main en contient. Le
+   nombre se lit sans le compter — c'est tout l'intérêt. */
+.col-eventail {
+    position: relative;
+    display: flex; align-items: flex-start;
+    padding-left: calc(var(--carte) * 0.42);
+}
+.col-dos {
+    width: calc(var(--carte) * 0.62);
+    aspect-ratio: 225 / 350;
+    margin-left: calc(var(--carte) * -0.42);
+    border-radius: 0.28rem;
+    background: repeating-linear-gradient(135deg, #1d2733 0 5px, #161d27 5px 10px);
+    border: 0.06rem solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.45);
+}
+.col-siege.tour .col-dos { border-color: rgba(255, 210, 74, 0.55); }
+.col-siege.choisissable .col-dos { border-color: rgba(255, 255, 255, 0.45); }
+
+.col-etoiles {
+    display: flex; gap: 0.12rem;
+    padding: 0.14rem 0.4rem;
+    background: rgba(0, 0, 0, 0.55);
+    border: 0.06rem solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+}
+.col-etoiles i {
+    width: 0.38rem; height: 0.38rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.16);
+}
+.col-etoiles i.pleine { background: var(--col-or); box-shadow: 0 0 0.3rem rgba(255, 210, 74, 0.7); }
+
+.col-nom {
+    max-width: 6.5rem;
+    padding: 0.12rem 0.5rem;
+    font-size: 0.62rem; font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 0.35rem;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.col-rival-bas { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.2rem; }
-.col-rival-cartes { font-size: 0.6rem; color: rgba(255, 255, 255, 0.38); }
-.col-rival-sets { display: flex; gap: 0.15rem; }
-.col-rival-sets i {
-    width: 0.42rem; height: 0.42rem;
-    border-radius: 50%;
-    background: var(--col-or);
-    box-shadow: 0 0 0.3rem rgba(255, 210, 74, 0.6);
-}
+.col-siege.tour .col-nom { color: var(--col-or); }
 
-/* ── Le marché et la main ─────────────────────────────────────── */
-.col-zone { flex: 0 0 auto; margin-bottom: 0.5rem; }
-.col-zone.main { margin-top: auto; }
-.col-etiquette {
-    display: block;
-    margin-bottom: 0.3rem;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 0.72rem; letter-spacing: 0.16em;
-    color: rgba(255, 255, 255, 0.28);
+/* ── Toi, en bas, collé au bord ───────────────────────────────── */
+.col-moi {
+    position: absolute;
+    left: 50%; bottom: 0;
+    transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center;
+    z-index: 8;
 }
-.col-rangee {
-    display: flex; gap: 0.35rem;
-    justify-content: center;
-    /* « safe » : sans lui, un contenu plus large que l'écran se coupe du
-       mauvais côté et les premières cartes deviennent inatteignables. */
-    justify-content: safe center;
-    overflow-x: auto;
-    padding-bottom: 0.15rem;
+.col-main {
+    display: flex;
+    padding-left: calc(var(--carte) * 0.2);
+    max-width: 96vw;
 }
-.col-rangee::-webkit-scrollbar { display: none; }
+.col-main .col-carte { margin-left: calc(var(--carte) * -0.2); }
+.col-moi .col-etoiles { margin-top: -0.5rem; z-index: 2; }
+.col-moi .col-nom { margin-top: 0.15rem; color: var(--col-or); }
 
 /* ── La carte ─────────────────────────────────────────────────── */
 .col-carte {
     position: relative;
     flex: 0 0 auto;
-    width: var(--carte, 4.3rem);
+    width: var(--carte);
     aspect-ratio: 225 / 350;
     padding: 0;
     background: #14131a;
-    border: 0.09rem solid rgba(255, 255, 255, 0.12);
+    border: 0.09rem solid rgba(255, 255, 255, 0.14);
     border-radius: 0.4rem;
     overflow: hidden;
     cursor: pointer;
+    box-shadow: 0 0.3rem 0.7rem rgba(0, 0, 0, 0.5);
     transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 .col-carte img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -144,64 +215,90 @@
 .col-carte.classe-mirage { border-color: var(--mirage); }
 .col-carte.classe-oracle { border-color: var(--oracle); }
 
-/* Le nom et la série, sur un voile en bas : sans lui, un portrait clair
-   rendait le texte illisible. */
-.col-carte-pied {
-    position: absolute; inset: auto 0 0 0;
-    padding: 0.5rem 0.25rem 0.18rem;
-    background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.88) 55%);
-    text-align: center;
-}
-.col-carte-nom {
-    display: block;
-    font-size: 0.5rem; font-weight: 700; line-height: 1.1;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.col-carte-serie {
-    display: block;
-    font-size: 0.42rem; letter-spacing: 0.04em;
-    color: rgba(255, 255, 255, 0.5);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-
-/* La classe, en pastille dans le coin — la couleur porte déjà
-   l'information, la lettre est là pour ceux qui la distinguent mal. */
+/* La classe en pastille : la couleur porte déjà l'information, la lettre
+   est là pour ceux qui la distinguent mal. */
 .col-carte-classe {
-    position: absolute; top: 0.18rem; left: 0.18rem;
-    width: 0.85rem; height: 0.85rem;
+    position: absolute; top: 0.15rem; left: 0.15rem;
+    width: 0.9rem; height: 0.9rem;
     display: grid; place-items: center;
-    font-family: 'Bebas Neue', sans-serif; font-size: 0.6rem;
+    font-family: 'Bebas Neue', sans-serif; font-size: 0.62rem;
     color: #14131a;
     border-radius: 50%;
+    box-shadow: 0 0.1rem 0.3rem rgba(0, 0, 0, 0.5);
 }
 .classe-assaut .col-carte-classe { background: var(--assaut); }
 .classe-mirage .col-carte-classe { background: var(--mirage); }
 .classe-oracle .col-carte-classe { background: var(--oracle); }
 
-.col-carte.choisie { transform: translateY(-0.35rem); box-shadow: 0 0.4rem 1rem rgba(255, 210, 74, 0.28); border-color: var(--col-or); }
-.col-carte.choisissable { box-shadow: 0 0 0 0.1rem rgba(255, 210, 74, 0.35); }
-.col-carte.eteinte { opacity: 0.35; }
-.col-carte.dos {
-    background: repeating-linear-gradient(135deg, #1b1a24 0 6px, #16151d 6px 12px);
-    display: grid; place-items: center;
-}
+.col-carte:hover { transform: translateY(-0.4rem); z-index: 3; }
+.col-carte.choisie { transform: translateY(-0.75rem); border-color: var(--col-or); box-shadow: 0 0.6rem 1.2rem rgba(255, 210, 74, 0.3); z-index: 4; }
+.col-carte.choisissable { box-shadow: 0 0 0 0.11rem rgba(255, 210, 74, 0.4), 0 0.3rem 0.7rem rgba(0, 0, 0, 0.5); }
+.col-carte.eteinte { opacity: 0.3; }
 
-/* Une paire déjà réunie se signale : c'est la carte qu'on cherche */
+/* Un liseré doré au bas d'une carte dont on tient déjà de quoi avancer :
+   c'est celle qu'on cherche, autant qu'elle se repère dans le marché. */
 .col-carte.paire::after {
     content: '';
-    position: absolute; inset: auto 0 0 0; height: 0.16rem;
+    position: absolute; inset: auto 0 0 0; height: 0.18rem;
     background: var(--col-or);
+    box-shadow: 0 0 0.5rem rgba(255, 210, 74, 0.8);
 }
 
-/* ── Les actions ──────────────────────────────────────────────── */
+/* ── La carte regardée de près ────────────────────────────────── */
+.col-loupe {
+    position: absolute;
+    left: 1%; top: 50%;
+    transform: translateY(-50%);
+    width: min(11rem, 26vw);
+    padding-bottom: 0.7rem;
+    background: linear-gradient(180deg, #1a1922, #101015);
+    border: 0.06rem solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.7rem;
+    overflow: hidden;
+    z-index: 12;
+}
+.col-loupe img { width: 100%; display: block; }
+.col-loupe-nom {
+    display: block;
+    margin: 0.5rem 0.7rem 0;
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; letter-spacing: 0.03em;
+}
+.col-loupe-serie {
+    display: block;
+    margin: 0 0.7rem;
+    font-size: 0.55rem; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--col-or);
+}
+.col-loupe-classe {
+    display: inline-block;
+    margin: 0.4rem 0.7rem 0;
+    padding: 0.1rem 0.45rem;
+    font-size: 0.55rem; font-weight: 700; letter-spacing: 0.08em;
+    color: #14131a;
+    border-radius: 0.3rem;
+}
+
+/* ── La consigne et les actions ───────────────────────────────── */
+.col-consigne {
+    flex: 0 0 auto;
+    min-height: 1.2rem;
+    padding: 0.35rem 0.2rem 0.15rem;
+    text-align: center;
+    font-size: 0.72rem; line-height: 1.35;
+    color: rgba(255, 255, 255, 0.55);
+}
+.col-consigne b { color: var(--col-or); }
+.col-consigne.ko { color: #ff8b98; }
+
 .col-actions {
     flex: 0 0 auto;
     display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.3rem;
-    padding-top: 0.5rem;
+    width: min(30rem, 100%);
+    margin: 0 auto;
 }
 .col-action {
-    padding: 0.5rem 0.2rem;
-    font: inherit; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.03em;
+    padding: 0.55rem 0.2rem;
+    font: inherit; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.03em;
     color: rgba(255, 255, 255, 0.75);
     background: rgba(255, 255, 255, 0.05);
     border: 0.06rem solid rgba(255, 255, 255, 0.09);
@@ -209,35 +306,35 @@
     cursor: pointer;
     transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
 }
-.col-action:disabled { opacity: 0.3; cursor: default; }
+.col-action:disabled { opacity: 0.28; cursor: default; }
 .col-action.on { background: var(--col-or); border-color: var(--col-or); color: #17140a; }
 .col-action.prete { border-color: var(--col-or); color: var(--col-or); }
 
-/* ── La consigne du moment ────────────────────────────────────── */
-.col-consigne {
+.col-journal {
     flex: 0 0 auto;
-    min-height: 1.4rem;
-    padding: 0.3rem 0.2rem 0;
+    padding-top: 0.3rem;
+    font-size: 0.6rem; line-height: 1.4;
+    color: rgba(255, 255, 255, 0.3);
     text-align: center;
-    font-size: 0.7rem; line-height: 1.35;
-    color: rgba(255, 255, 255, 0.55);
+    min-height: 1.3rem;
 }
-.col-consigne b { color: var(--col-or); }
-.col-consigne.ko { color: #ff8b98; }
+.col-journal b { color: rgba(255, 255, 255, 0.6); }
+.col-journal .gagne { color: #6ee7a8; }
+.col-journal .perdu { color: #ff8b98; }
 
-/* ── Le panneau du vol ────────────────────────────────────────── */
+/* ── Les feuilles (vol, duel, scan) ───────────────────────────── */
 .col-voile {
     position: fixed; inset: 0; z-index: 40;
-    background: rgba(4, 4, 8, 0.78);
+    background: rgba(4, 4, 8, 0.8);
     display: flex; align-items: flex-end; justify-content: center;
 }
 .col-feuille {
-    width: 100%; max-width: 30rem;
+    width: 100%; max-width: 32rem;
     padding: 1rem 1rem 1.3rem;
     background: linear-gradient(180deg, #16151d, #0c0c10);
     border-top: 0.09rem solid rgba(255, 210, 74, 0.5);
     border-radius: 1.1rem 1.1rem 0 0;
-    max-height: 88vh; overflow-y: auto;
+    max-height: 90vh; overflow-y: auto;
 }
 .col-feuille h3 {
     margin: 0 0 0.15rem;
@@ -245,7 +342,20 @@
     color: var(--col-or);
 }
 .col-feuille p.aide { margin: 0 0 0.8rem; font-size: 0.68rem; line-height: 1.45; color: rgba(255, 255, 255, 0.42); }
-.col-feuille .col-etiquette { margin-top: 0.7rem; }
+.col-etiquette {
+    display: block;
+    margin: 0.7rem 0 0.3rem;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.68rem; letter-spacing: 0.16em;
+    color: rgba(255, 255, 255, 0.28);
+}
+.col-rangee {
+    display: flex; gap: 0.35rem;
+    justify-content: safe center;
+    overflow-x: auto;
+    padding: 0.5rem 0 0.2rem;
+}
+.col-rangee::-webkit-scrollbar { display: none; }
 
 .col-series { display: flex; flex-wrap: wrap; gap: 0.25rem; }
 .col-serie {
@@ -275,7 +385,6 @@
     background: none; border: 0; cursor: pointer;
 }
 
-/* ── Le duel, quand on est visé ───────────────────────────────── */
 .col-duel-serie {
     display: inline-block;
     margin: 0.15rem 0 0.7rem;
@@ -293,51 +402,36 @@
 }
 .col-duel-sablier i { display: block; height: 100%; background: var(--col-or); transition: width 0.2s linear; }
 
-/* ── Le journal ───────────────────────────────────────────────── */
-.col-journal {
-    flex: 0 0 auto;
-    margin-top: 0.35rem;
-    font-size: 0.6rem; line-height: 1.5;
-    color: rgba(255, 255, 255, 0.3);
-    text-align: center;
-    min-height: 1.5rem;
-}
-.col-journal b { color: rgba(255, 255, 255, 0.6); }
-.col-journal .gagne { color: #6ee7a8; }
-.col-journal .perdu { color: #ff8b98; }
-
-/* ── Le podium ────────────────────────────────────────────────── */
+/* ── Le vainqueur ─────────────────────────────────────────────── */
 .col-fin {
     position: fixed; inset: 0; z-index: 45;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
     background: radial-gradient(70% 55% at 50% 20%, #1a1710, #08080b 70%);
     text-align: center;
     padding: 2rem 1.2rem;
 }
-.col-fin-titre { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.2em; color: rgba(255, 255, 255, 0.35); }
+.col-fin-titre { font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; letter-spacing: 0.2em; color: rgba(255, 255, 255, 0.35); }
 .col-fin-nom {
-    font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; line-height: 1;
+    font-family: 'Bebas Neue', sans-serif; font-size: 2.8rem; line-height: 1;
     letter-spacing: 0.03em; color: var(--col-or);
 }
-.col-fin-sets { display: flex; gap: 0.5rem; margin-top: 0.8rem; flex-wrap: wrap; justify-content: center; }
+.col-fin-sets { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; justify-content: center; }
 
-/* ── Écrans larges ────────────────────────────────────────────── */
-@media (min-width: 900px) {
-    .col { padding: 1.2rem 1.6rem 0.9rem; }
-    .col-carte { --carte: 5.6rem; }
-    .col-rangee { gap: 0.5rem; }
-    .col-rivaux { gap: 0.6rem; }
-    .col-actions { max-width: 34rem; margin: 0 auto; gap: 0.5rem; }
-    .col-carte-nom { font-size: 0.6rem; }
-    .col-carte-serie { font-size: 0.5rem; }
-    .col-carte-classe { width: 1.05rem; height: 1.05rem; font-size: 0.72rem; }
-    .col-consigne { font-size: 0.8rem; }
+/* ── Écrans étroits ───────────────────────────────────────────── */
+@media (max-width: 780px) {
+    .col { --carte: 3.4rem; }
+    /* La table se redresse : en 9:16, une ellipse large laisse deux grands
+       vides sur les côtés et écrase les sièges du haut. */
+    .col-table { width: min(94%, 30rem); aspect-ratio: 1 / 1.05; top: 42%; }
+    .col-marche { top: 42%; gap: 0.2rem; }
+    .col-pioche { display: none; }
+    .col-nom { max-width: 4.6rem; font-size: 0.55rem; }
+    .col-loupe { width: 7.5rem; left: 0.4rem; top: 34%; }
+    .col-action { font-size: 0.56rem; padding: 0.5rem 0.1rem; }
 }
 
-/* Écran bas : la main prime, le marché se resserre */
-@media (max-height: 700px) {
-    .col-carte { --carte: 3.8rem; }
-    .col-etiquette { font-size: 0.62rem; margin-bottom: 0.18rem; }
-    .col-zone { margin-bottom: 0.35rem; }
+@media (min-width: 1400px) {
+    .col { --carte: 5.4rem; }
+    .col-tour-qui { font-size: 1.35rem; }
 }

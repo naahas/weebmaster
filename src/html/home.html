@@ -732,7 +732,7 @@
             <!-- État: Partie en cours -->
             <!-- 🆕 v2 — Contrôles de l'hôte pendant la partie (remplacent /admin) -->
             <!-- Commandes de l'hôte : enchaînement en bas à droite, arrêt en bas à gauche -->
-            <div class="v2-hostbar" v-if="isHost && gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'rush' && lobbyMode !== 'ascension'">
+            <div class="v2-hostbar" v-if="isHost && gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'rush' && lobbyMode !== 'ascension' && lobbyMode !== 'collect'">
                 <button class="v2q-cmd-btn"
                         @click="hostNextQuestion" :disabled="nextQuestionBusy || !showResults || autoMode"
                         :title="autoMode ? 'Le mode auto enchaîne tout seul' : (showResults ? 'Question suivante' : 'Disponible à la fin de la question')">
@@ -794,7 +794,7 @@
                                  pas décoratif, c'est lui qui rend le mode jouable
                                  pour quelqu'un qui débarque en cours de partie. -->
                             <div class="col-tri" aria-label="Assaut bat Mirage bat Oracle bat Assaut">
-                                <svg width="64" height="64" viewBox="0 0 64 64">
+                                <svg width="58" height="58" viewBox="0 0 64 64">
                                     <defs>
                                         <marker id="colFleche" viewBox="0 0 8 8" refX="6" refY="4"
                                                 markerWidth="5" markerHeight="5" orient="auto-start-reverse">
@@ -824,7 +824,7 @@
                             </div>
 
                             <div class="col-chrono" :class="{ urgence: col.reste <= 5 }">
-                                <svg width="35" height="35" viewBox="0 0 35 35">
+                                <svg width="38" height="38" viewBox="0 0 35 35">
                                     <circle class="fond" cx="17.5" cy="17.5" r="15"></circle>
                                     <circle class="fil" cx="17.5" cy="17.5" r="15"
                                             :stroke-dasharray="94.2" :stroke-dashoffset="colArcChrono"></circle>
@@ -833,25 +833,12 @@
                             </div>
                         </div>
 
-                        <!-- ── Les adversaires ── -->
-                        <div class="col-rivaux">
-                            <button v-for="p in colRivaux" :key="p.playerId"
-                                    class="col-rival"
-                                    :class="{ tour: p.playerId === col.etat.tourJoueur,
-                                              choisissable: col.mode === 'scanner' || col.mode === 'voler' }"
-                                    @click="colToucherRival(p.playerId)">
-                                <span class="col-rival-nom">{{ colNom(p.playerId) }}</span>
-                                <span class="col-rival-bas">
-                                    <span class="col-rival-cartes">{{ p.cartes }} carte{{ p.cartes > 1 ? 's' : '' }}</span>
-                                    <span class="col-rival-sets"><i v-for="n in p.sets.length" :key="n"></i></span>
-                                </span>
-                            </button>
-                        </div>
+                        <!-- ── La table ── -->
+                        <div class="col-scene">
+                            <div class="col-table"></div>
 
-                        <!-- ── Le marché ── -->
-                        <div class="col-zone">
-                            <span class="col-etiquette">MARCHÉ</span>
-                            <div class="col-rangee">
+                            <!-- Le marché, au centre du feutre -->
+                            <div class="col-marche">
                                 <button v-for="c in col.etat.marche" :key="c.uid"
                                         class="col-carte" :class="['classe-' + c.classe, {
                                             choisie: col.marcheChoisi === c.uid,
@@ -860,38 +847,62 @@
                                         @click="colToucherMarche(c)">
                                     <img :src="'collectpic/' + c.img" :alt="c.nom" draggable="false">
                                     <span class="col-carte-classe">{{ c.classe[0].toUpperCase() }}</span>
-                                    <span class="col-carte-pied">
-                                        <span class="col-carte-nom">{{ c.nom }}</span>
-                                        <span class="col-carte-serie">{{ c.anime }}</span>
-                                    </span>
                                 </button>
+                                <span class="col-emplacement">★</span>
+                            </div>
+
+                            <div class="col-pioche">SM</div>
+
+                            <!-- Les autres, répartis sur l'arc du haut -->
+                            <div v-for="(p, i) in colRivaux" :key="p.playerId"
+                                 class="col-siege"
+                                 :class="{ tour: p.playerId === col.etat.tourJoueur,
+                                           choisissable: colMonTour && (col.mode === 'scanner' || col.mode === 'voler') }"
+                                 :style="colSiege(i, colRivaux.length)">
+                                <div class="col-eventail" @click="colToucherRival(p.playerId)">
+                                    <span v-for="n in p.cartes" :key="n" class="col-dos"></span>
+                                </div>
+                                <span class="col-etoiles">
+                                    <i v-for="n in col.etat.setsPourGagner" :key="n"
+                                       :class="{ pleine: n <= p.sets.length }"></i>
+                                </span>
+                                <span class="col-nom">{{ colNom(p.playerId) }}</span>
+                            </div>
+
+                            <!-- Toi, collé au bord du bas -->
+                            <div class="col-moi">
+                                <div class="col-main">
+                                    <button v-for="c in col.main" :key="c.uid"
+                                            class="col-carte" :class="['classe-' + c.classe, {
+                                                choisie: col.mainChoisie === c.uid || (col.loupe && col.loupe.uid === c.uid),
+                                                choisissable: colMainCliquable,
+                                                paire: colDansMaMain(c.anime) >= col.etat.taille - 1 }]"
+                                            @click="colToucherMain(c)">
+                                        <img :src="'collectpic/' + c.img" :alt="c.nom" draggable="false">
+                                        <span class="col-carte-classe">{{ c.classe[0].toUpperCase() }}</span>
+                                    </button>
+                                </div>
+                                <span class="col-etoiles">
+                                    <i v-for="n in col.etat.setsPourGagner" :key="n"
+                                       :class="{ pleine: n <= colMesSets }"></i>
+                                </span>
+                                <span class="col-nom">Vous</span>
+                            </div>
+
+                            <!-- La carte qu'on regarde de près -->
+                            <div class="col-loupe" v-if="col.loupe" @click="col.loupe = null">
+                                <img :src="'collectpic/' + col.loupe.img" :alt="col.loupe.nom" draggable="false">
+                                <span class="col-loupe-nom">{{ col.loupe.nom }}</span>
+                                <span class="col-loupe-serie">{{ col.loupe.anime }}</span>
+                                <span class="col-loupe-classe" :style="{ background: colCouleurClasse(col.loupe.classe) }">
+                                    {{ col.loupe.classe.toUpperCase() }}
+                                </span>
                             </div>
                         </div>
 
-                        <!-- ── Ta main ── -->
-                        <div class="col-zone main">
-                            <span class="col-etiquette">TA MAIN</span>
-                            <div class="col-rangee">
-                                <button v-for="c in col.main" :key="c.uid"
-                                        class="col-carte" :class="['classe-' + c.classe, {
-                                            choisie: col.mainChoisie === c.uid,
-                                            choisissable: colMainCliquable,
-                                            paire: colDansMaMain(c.anime) >= col.etat.taille - 1 }]"
-                                        @click="colToucherMain(c)">
-                                    <img :src="'collectpic/' + c.img" :alt="c.nom" draggable="false">
-                                    <span class="col-carte-classe">{{ c.classe[0].toUpperCase() }}</span>
-                                    <span class="col-carte-pied">
-                                        <span class="col-carte-nom">{{ c.nom }}</span>
-                                        <span class="col-carte-serie">{{ c.anime }}</span>
-                                    </span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- ── La consigne du moment ── -->
+                        <!-- ── La consigne, puis les cinq actions ── -->
                         <div class="col-consigne" :class="{ ko: col.erreur }" v-html="col.erreur || colConsigne"></div>
 
-                        <!-- ── Les cinq actions ── -->
                         <div class="col-actions">
                             <button class="col-action" :class="{ on: col.mode === 'piocher' }"
                                     :disabled="!colMonTour" @click="colChoisirMode('piocher')">Piocher</button>
@@ -905,9 +916,9 @@
                                     :disabled="!colMonTour || !colSetPret" @click="colPoser">Poser</button>
                         </div>
 
-                        <!-- ── Le journal ── -->
                         <div class="col-journal" v-html="colDernierFait"></div>
                     </div>
+
 
                     <!-- ── Le panneau du vol ── -->
                     <div class="col-voile" v-if="col.mode === 'voler' && col.volCible" @click.self="colAnnuler">
