@@ -548,10 +548,11 @@ app.get('/game/state', (req, res) => {
         } : null,
         collect: gameState.lobbyMode === 'collect' ? {
             active: gameState.collect.active,
-            duree: gameState.collect.duree,
+            main: gameState.collect.main,
             animes: gameState.collect.nbAnimes,
-            regles: collect.DUREES[gameState.collect.duree],
-            durees: Object.values(collect.DUREES),
+            regles: collect.BAREMES[gameState.collect.main],
+            baremes: Object.values(collect.BAREMES),
+            mainsPossibles: collect.CONFIG.MAINS_POSSIBLES,
             animesPossibles: collect.CONFIG.ANIMES_POSSIBLES,
             maxJoueurs: collect.CONFIG.MAX_JOUEURS,
         } : null,
@@ -1470,18 +1471,17 @@ app.post('/admin/toggle-game', async (req, res) => {
 // ============================================
 // 🎴 COLLECT — réglages du salon
 // ============================================
-// La durée ne règle pas qu'un temps : elle fixe ensemble la taille de main et
-// l'objectif, parce que les deux ne se choisissent pas séparément. Une main de
-// trois avec des sets de trois exigerait toute la main d'un seul anime, sans
-// réserve possible — 22 % de parties sans vainqueur.
-app.post('/admin/collect/set-duree', (req, res) => {
+// L'hôte ne règle que la taille de main : l'objectif suit tout seul, parce
+// qu'il ne se choisit pas séparément. À trois cartes en main, un set de trois
+// exigerait toute la main d'un seul anime, sans réserve possible.
+app.post('/admin/collect/set-main', (req, res) => {
     const gameState = req.room;
     if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
-    const cle = String((req.body && req.body.duree) || '');
-    if (!collect.DUREES[cle]) return res.status(400).json({ error: 'Durée inconnue' });
-    gameState.collect.duree = cle;
-    diffuser(gameState, 'collect-config', { duree: cle, regles: collect.DUREES[cle] });
-    res.json({ success: true, duree: cle, regles: collect.DUREES[cle] });
+    const n = parseInt(req.body && req.body.main, 10);
+    if (!collect.BAREMES[n]) return res.status(400).json({ error: 'Taille de main hors barème' });
+    gameState.collect.main = n;
+    diffuser(gameState, 'collect-config', { main: n, regles: collect.BAREMES[n] });
+    res.json({ success: true, main: n, regles: collect.BAREMES[n] });
 });
 
 // Huit animes au minimum, et le barème ne propose rien en dessous : à quatre,
@@ -1797,7 +1797,7 @@ app.post('/admin/start-game', async (req, res) => {
             },
         });
         if (!r.success) return res.status(400).json({ success: false, error: r.error });
-        return res.json({ success: true, mode: 'collect', duree: gameState.collect.duree });
+        return res.json({ success: true, mode: 'collect', main: gameState.collect.main });
     }
 
     // ⚡ MODE RUSH — chacun court de son côté, donc jouable même seul

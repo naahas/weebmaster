@@ -183,11 +183,9 @@ function anneau(taille) {
         svg += `<text x="${p.x}" y="${p.y + T * 0.038}" text-anchor="middle"
                  font-size="${T * 0.115}" fill="${CLASSES[i].couleur}">${CLASSES[i].nom[0]}</text>`;
     });
-    if (T >= 110) pts.forEach((p, i) => {
-        const dx = p.x - c, dy = p.y - c, d = Math.hypot(dx, dy) || 1;
-        svg += `<text x="${p.x + dx / d * r * 2.1}" y="${p.y + dy / d * r * 2.1 + T * 0.03}"
-                 text-anchor="middle" font-size="${T * 0.075}" fill="rgba(255,255,255,0.42)">${CLASSES[i].nom}</text>`;
-    });
+    // Pas de libellés : la couleur et l'initiale suffisent, et les trois mots
+    // autour de l'anneau le rendaient bavard à un endroit qui doit se lire d'un
+    // coup d'œil, des dizaines de fois par partie.
     return svg + '</svg>';
 }
 

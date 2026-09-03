@@ -35,14 +35,22 @@ const CONFIG = {
     TOUR_MS: 15000,
     ANIMES_POSSIBLES: [8, 10, 12],
     ANIMES_DEFAUT: 10,
-    DUREE_DEFAUT: 'normale',
+    MAINS_POSSIBLES: [3, 4, 5],
+    MAIN_DEFAUT: 4,
 };
 
-// Chaque durée fixe la main ET l'objectif : les deux se tiennent.
-const DUREES = {
-    courte:  { cle: 'courte',  nom: 'Courte',  main: 5, taille: 2, sets: 3 },
-    normale: { cle: 'normale', nom: 'Normale', main: 5, taille: 3, sets: 2 },
-    longue:  { cle: 'longue',  nom: 'Longue',  main: 4, taille: 3, sets: 2 },
+// L'hôte ne choisit qu'une chose : combien de cartes en main. L'objectif suit
+// tout seul, parce qu'il ne se choisit pas séparément — avec trois cartes en
+// main, un set de trois exigerait toute la main d'un seul anime, sans jamais
+// pouvoir garder une carte de réserve.
+//
+// Les trois barèmes tournent tous autour de cinq à six tours de table : la
+// taille de main change la TENSION, pas la durée. À trois cartes on étouffe et
+// l'objectif est simple ; à cinq on respire et il devient ambitieux.
+const BAREMES = {
+    3: { main: 3, taille: 2, sets: 3, nom: '3 cartes', resume: '3 paires' },
+    4: { main: 4, taille: 3, sets: 2, nom: '4 cartes', resume: '2 sets de 3' },
+    5: { main: 5, taille: 3, sets: 3, nom: '5 cartes', resume: '3 sets de 3' },
 };
 
 // ── Le triangle ───────────────────────────────────────────────
@@ -76,7 +84,7 @@ const instancier = (modele) => ({
 function etatNeuf() {
     return {
         active: false,
-        duree: CONFIG.DUREE_DEFAUT,
+        main: CONFIG.MAIN_DEFAUT,
         nbAnimes: CONFIG.ANIMES_DEFAUT,
         animes: [],
         pioche: [],
@@ -96,7 +104,7 @@ function etatNeuf() {
     };
 }
 
-const regles = (etat) => DUREES[etat.duree] || DUREES.normale;
+const regles = (etat) => BAREMES[etat.main] || BAREMES[CONFIG.MAIN_DEFAUT];
 
 // ── La pioche ne s'épuise jamais ──────────────────────────────
 // Mesuré : même à dix cartes par joueur, un paquet fini ne se vide jamais —
@@ -417,7 +425,8 @@ function vuePublique(etat) {
     const r = regles(etat);
     return {
         active: etat.active,
-        duree: r.cle, dureeNom: r.nom, taille: r.taille, setsPourGagner: r.sets, mainMax: r.main,
+        main: r.main, bareme: r.nom, resume: r.resume,
+        taille: r.taille, setsPourGagner: r.sets, mainMax: r.main,
         animes: etat.animes,
         marche: etat.marche.map(c => ({ ...c })),
         tourJoueur: etat.tourJoueur,
@@ -602,7 +611,7 @@ function registerCollectSocketHandlers(io, socket, resoudreSalon) {
 }
 
 module.exports = {
-    CONFIG, DUREES, CLASSES, BAT, DUEL_MS,
+    CONFIG, BAREMES, CLASSES, BAT, DUEL_MS,
     demarrerPartie, reinitialiser, quitterCollect,
     registerCollectSocketHandlers, diffuserEtat,
     domine, etatNeuf, regles, demarrer, tourSuivant,

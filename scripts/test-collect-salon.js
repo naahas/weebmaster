@@ -50,20 +50,30 @@ const dernier = (j) => j.etats[j.etats.length - 1];
     check('salon Collect ouvert', !!code, code);
 
     let e = await etat();
-    check('les réglages sont annoncés', !!e.collect, e.collect ? e.collect.duree : 'aucun');
-    check('la durée par défaut est « normale »', e.collect && e.collect.duree === 'normale');
-    check('… soit 2 sets de 3, main de 5',
-        e.collect && e.collect.regles.sets === 2 && e.collect.regles.taille === 3 && e.collect.regles.main === 5,
+    check('les réglages sont annoncés', !!e.collect, e.collect ? e.collect.main + ' cartes' : 'aucun');
+    check('la main par défaut est de 4 — l\'entre-deux', e.collect && e.collect.main === 4);
+    check('… soit 2 sets de 3',
+        e.collect && e.collect.regles.sets === 2 && e.collect.regles.taille === 3 && e.collect.regles.main === 4,
         e.collect ? `${e.collect.regles.sets}×${e.collect.regles.taille}, main ${e.collect.regles.main}` : '');
+    check('les trois tailles de main sont proposées',
+        e.collect && e.collect.mainsPossibles.join() === '3,4,5', e.collect && e.collect.mainsPossibles.join(', '));
     check('dix animes par défaut', e.collect && e.collect.animes === 10, e.collect && String(e.collect.animes));
     check('jamais moins de huit au barème',
         e.collect && e.collect.animesPossibles.every(n => n >= 8), e.collect && e.collect.animesPossibles.join(', '));
 
-    const d1 = await post('/admin/collect/set-duree', { duree: 'courte' });
-    check('la durée se change', d1.status === 200 && d1.body.regles.sets === 3, d1.body.error || '3 sets de 2');
-    const d2 = await post('/admin/collect/set-duree', { duree: 'eternelle' });
-    check('une durée inconnue est refusée', d2.status === 400, 'HTTP ' + d2.status);
-    await post('/admin/collect/set-duree', { duree: 'normale' });
+    // Une main de 3 ne peut pas viser des sets de 3 : il faudrait toute la
+    // main d'un seul anime. L'objectif doit donc suivre tout seul.
+    const d1 = await post('/admin/collect/set-main', { main: 3 });
+    check('la taille de main se change', d1.status === 200 && d1.body.main === 3, d1.body.error || '3');
+    check('… et l\'objectif suit tout seul',
+        d1.status === 200 && d1.body.regles.taille === 2, d1.body.regles && d1.body.regles.resume);
+    const d15 = await post('/admin/collect/set-main', { main: 5 });
+    check('à cinq cartes l\'objectif grandit',
+        d15.status === 200 && d15.body.regles.sets === 3 && d15.body.regles.taille === 3,
+        d15.body.regles && d15.body.regles.resume);
+    const d2 = await post('/admin/collect/set-main', { main: 9 });
+    check('une main hors barème est refusée', d2.status === 400, 'HTTP ' + d2.status);
+    await post('/admin/collect/set-main', { main: 4 });
 
     const a1 = await post('/admin/collect/set-animes', { animes: 8 });
     check('le nombre d\'animes se change', a1.status === 200 && a1.body.animes === 8, a1.body.error || '8');
@@ -82,7 +92,7 @@ const dernier = (j) => j.etats[j.etats.length - 1];
     await wait(400);
 
     check('chacun reçoit l\'état', tous.every(j => j.etats.length), tous.map(j => j.etats.length).join('/'));
-    check('chacun reçoit une main de 5', tous.every(j => j.main && j.main.length === 5),
+    check('chacun reçoit une main de 4', tous.every(j => j.main && j.main.length === 4),
         tous.map(j => (j.main || []).length).join('/'));
     check('dix animes sont en jeu', dernier(A).animes.length === 10);
     check('le marché est servi', dernier(A).marche.length === 5);
@@ -114,7 +124,7 @@ const dernier = (j) => j.etats[j.etats.length - 1];
     check('la pioche passe', dernier(A).tourJoueur !== courant.nom, courant.nom + ' → ' + dernier(A).tourJoueur);
     check('la carte lâchée est au marché', dernier(A).marche.some(c => c.uid === lachee));
     check('le marché garde ses cinq cartes', dernier(A).marche.length === 5, String(dernier(A).marche.length));
-    check('la main reste à cinq', courant.main.length === 5, String(courant.main.length));
+    check('la main garde sa taille', courant.main.length === 4, String(courant.main.length));
 
     // ── Le scan ne part qu'au demandeur ──
     courant = tous.find(j => j.nom === dernier(A).tourJoueur);

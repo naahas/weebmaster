@@ -10,9 +10,9 @@ let ko = 0;
 const check = (l, ok, extra) => { console.log(`${ok ? '✅' : '❌'} ${l}${extra ? ' → ' + extra : ''}`); if (!ok) ko++; };
 
 const joueurs = ['alice', 'bob', 'chloe', 'driss'];
-const neuf = (duree = 'normale', nbAnimes = 10) => {
+const neuf = (main = 4, nbAnimes = 10) => {
     const e = C.etatNeuf();
-    e.duree = duree;
+    e.main = main;
     e.nbAnimes = nbAnimes;
     C.demarrer(e, joueurs);
     return e;
@@ -294,7 +294,7 @@ console.log('\n── Ce que le serveur laisse voir ──');
 
 console.log('\n── La pioche ne s\'épuise jamais ──');
 {
-    const e = neuf('normale', 8);
+    const e = neuf(4, 8);
     let vides = 0;
     for (let i = 0; i < 3000; i++) {
         const avant = e.pioche.length;
@@ -307,7 +307,7 @@ console.log('\n── La pioche ne s\'épuise jamais ──');
         void avant;
     }
     // le vrai contrôle : trois mille pioches d'affilée par le moteur
-    const e2 = neuf('normale', 8);
+    const e2 = neuf(4, 8);
     let manquee = 0;
     for (let i = 0; i < 3000; i++) {
         const j = e2.tourJoueur;
@@ -318,19 +318,22 @@ console.log('\n── La pioche ne s\'épuise jamais ──');
     check('trois mille pioches d\'affilée sans rupture', manquee === 0, manquee + ' échec(s)');
 }
 
-console.log('\n── Les trois durées ──');
+console.log('\n── Les trois barèmes ──');
 {
-    for (const cle of Object.keys(C.DUREES)) {
-        const d = C.DUREES[cle];
-        const assez = d.main > d.taille;
-        check(`« ${d.nom} » laisse une carte de réserve`, assez,
-            `main ${d.main}, sets de ${d.taille} × ${d.sets}`);
+    // L'hôte ne règle que la taille de main ; l'objectif suit. Le seul
+    // invariant qui compte : il doit rester au moins une carte de réserve,
+    // sinon il faudrait toute la main d'un seul anime pour poser.
+    for (const n of C.CONFIG.MAINS_POSSIBLES) {
+        const b = C.BAREMES[n];
+        check(`main de ${n} : « ${b.resume} » laisse de la réserve`, b && b.main > b.taille,
+            b ? `${b.sets} × ${b.taille}, main ${b.main}` : 'barème absent');
     }
-    check('aucune durée ne descend sous 8 animes', C.CONFIG.ANIMES_POSSIBLES.every(n => n >= 8),
+    check('chaque taille proposée a son barème',
+        C.CONFIG.MAINS_POSSIBLES.every(n => C.BAREMES[n]), C.CONFIG.MAINS_POSSIBLES.join(', '));
+    check('la main par défaut est l\'entre-deux',
+        C.CONFIG.MAIN_DEFAUT === 4 && C.BAREMES[4], String(C.CONFIG.MAIN_DEFAUT));
+    check('aucun barème ne descend sous 8 animes', C.CONFIG.ANIMES_POSSIBLES.every(n => n >= 8),
         C.CONFIG.ANIMES_POSSIBLES.join(', '));
-    check('l\'objectif ne dépasse jamais 2 sets de 3',
-        Object.values(C.DUREES).every(d => d.taille * d.sets <= 6),
-        Object.values(C.DUREES).map(d => d.sets + '×' + d.taille).join(' '));
 }
 
 console.log('\n── Une partie entière se termine ──');
@@ -338,7 +341,7 @@ console.log('\n── Une partie entière se termine ──');
     let sansVainqueur = 0, total = 0;
     const PARTIES = 400;
     for (let p = 0; p < PARTIES; p++) {
-        const e = neuf('normale', 10);
+        const e = neuf(4, 10);
         let tours = 0;
         while (e.active && tours < 600) {
             tours++;
