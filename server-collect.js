@@ -110,6 +110,18 @@ function tirer(etat) {
     return etat.pioche.pop();
 }
 
+// Tout ce qu'un joueur lâche atterrit au marché, jamais dans le paquet : une
+// carte rendue doit profiter à quelqu'un, sinon elle disparaît sans que
+// personne en tire rien. Le marché garde sa taille — la plus ancienne carte
+// repart dans la pioche, ce qui le fait tourner sans qu'on ait à s'en occuper.
+function poserAuMarche(etat, carte) {
+    etat.marche.push(carte);
+    while (etat.marche.length > CONFIG.MARCHE) {
+        const partie = etat.marche.shift();
+        etat.pioche.splice(Math.floor(Math.random() * (etat.pioche.length + 1)), 0, partie);
+    }
+}
+
 // ── Démarrage ─────────────────────────────────────────────────
 function demarrer(etat, joueurs) {
     if (joueurs.length < CONFIG.MIN_JOUEURS) return { ok: false, erreur: `Il faut au moins ${CONFIG.MIN_JOUEURS} joueurs` };
@@ -160,26 +172,26 @@ function noter(etat, fait) {
 
 // ── Les cinq actions ──────────────────────────────────────────
 
-// Toutes les actions rendent une carte pour une, sauf le scan qui n'en bouge
-// aucune et la pose qui en retire. La main garde donc toujours sa taille.
+// Chaque action fait entrer une carte et en fait sortir une — vers le MARCHÉ,
+// où tout le monde la voit et peut la reprendre. La main garde donc sa taille.
 //
 // Ce n'est pas une coquetterie : avec un plafond dur, la main est pleine dès la
 // donne, et ni la pioche ni le vol ne sont plus jamais disponibles — or le vol
 // est ce qui fait converger la partie. En rendant tout symétrique, chaque
-// action reste ouverte à chaque tour, et il n'y a plus aucun cas limite à
-// écrire. Le prix à payer devient le choix de ce qu'on lâche.
-function actionPiocher(etat, playerId, uidRendue) {
+// action reste ouverte à chaque tour, il n'y a plus aucun cas limite à écrire,
+// et le prix à payer devient le choix de ce qu'on abandonne aux autres.
+function actionPiocher(etat, playerId, uidDefausse) {
     const ko = verifierTour(etat, playerId);
     if (ko) return { ok: false, erreur: ko };
     const main = etat.mains.get(playerId);
 
-    // main incomplète (juste après une pose) : on se sert sans rien rendre
+    // main incomplète (juste après une pose) : on se sert sans rien lâcher
     if (main.length < regles(etat).main) {
         main.push(tirer(etat));
     } else {
-        const i = carteParUid(main, uidRendue);
-        if (i < 0) return { ok: false, erreur: 'Choisis la carte à rendre' };
-        etat.pioche.splice(Math.floor(Math.random() * (etat.pioche.length + 1)), 0, main[i]);
+        const i = carteParUid(main, uidDefausse);
+        if (i < 0) return { ok: false, erreur: 'Choisis la carte à laisser au marché' };
+        poserAuMarche(etat, main[i]);
         main[i] = tirer(etat);
     }
     noter(etat, { type: 'pioche', joueur: playerId });
@@ -209,8 +221,12 @@ function actionEchanger(etat, playerId, uidMain, uidMarche) {
 
 // Le vol : on annonce un anime et on pose une carte face visible. Cette carte
 // joue deux rôles d'un coup — sa CLASSE dit ce qu'on a le droit de prendre, et
-// elle part chez la cible en échange. Un seul geste, et voler coûte quelque
-// chose : on nourrit forcément celui qu'on dépouille.
+// elle part au MARCHÉ en paiement. Un seul geste.
+//
+// Elle ne va surtout pas à la victime : celle-ci se fait voler, elle ne troque
+// pas. Sinon les deux joueurs échangeraient une carte contre une autre et le
+// vol n'aurait plus rien d'un vol. Le prix existe quand même, mais il est payé
+// à la table : ce qu'on lâche, tout le monde peut le reprendre.
 //
 // Rien chez elle que notre classe domine ? Le tour est perdu et la carte
 // revient. C'est ce qui donne sa valeur au scan — sans cette pénalité, voler
@@ -240,14 +256,14 @@ function actionVoler(etat, playerId, cibleId, anime, uidAttaque) {
     }
 
     const prise = cible.splice(iPrise, 1)[0];
-    main[iAttaque] = prise;          // une pour une
-    cible.push(attaque);
+    main[iAttaque] = prise;              // la volée prend la place de l'attaque
+    poserAuMarche(etat, attaque);        // qui va au marché, pas à la victime
     fait.reussi = true;
     fait.prise = prise;
-    fait.donnee = attaque;
+    fait.laissee = attaque;
     noter(etat, fait);
     tourSuivant(etat);
-    return { ok: true, reussi: true, prise, donnee: attaque };
+    return { ok: true, reussi: true, prise, laissee: attaque };
 }
 
 // Le scan ne rend rien : il informe. C'est lui qui rend le vol sûr, au prix

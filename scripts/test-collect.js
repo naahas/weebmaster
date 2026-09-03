@@ -49,7 +49,10 @@ console.log('\n── Le tour de table ──');
     check('le tour passe au suivant', e.tourJoueur !== premier, premier + ' → ' + e.tourJoueur);
     check('la main garde sa taille après une pioche',
         e.mains.get(premier).length === C.regles(e).main, e.mains.get(premier).length + ' cartes');
-    check('la carte rendue a quitté la main', !e.mains.get(premier).some(c => c.uid === rendue));
+    check('la carte lâchée a quitté la main', !e.mains.get(premier).some(c => c.uid === rendue));
+    // elle ne repart pas dans le paquet : elle doit profiter à quelqu'un
+    check('… et se retrouve au marché', e.marche.some(c => c.uid === rendue));
+    check('le marché garde sa taille', e.marche.length === C.CONFIG.MARCHE, e.marche.length + ' cartes');
 }
 
 console.log('\n── Le marché ──');
@@ -89,12 +92,15 @@ console.log('\n── Le vol et le triangle ──');
     check('les autres classes restent chez la cible',
         e.mains.get(b).filter(c => c.uid.startsWith('B')).map(c => c.uid).sort().join() === 'B1,B3',
         e.mains.get(b).map(c => c.uid).join());
-    // le vol est un échange : la carte d'attaque part chez la cible
-    check('la carte d\'attaque passe à la cible', e.mains.get(b).some(c => c.uid === 'A1'));
-    check('… et n\'est plus chez le voleur', !e.mains.get(a).some(c => c.uid === 'A1'));
-    check('les deux mains gardent leur taille',
-        e.mains.get(a).length === 2 && e.mains.get(b).length === 3,
-        e.mains.get(a).length + ' / ' + e.mains.get(b).length);
+    // La carte d'attaque est le prix du vol, et elle va au MARCHÉ — surtout pas
+    // à la victime : sinon les deux joueurs troqueraient une carte contre une
+    // autre et le vol n'aurait plus rien d'un vol.
+    check('la carte d\'attaque ne va pas à la victime', !e.mains.get(b).some(c => c.uid === 'A1'));
+    check('… elle atterrit au marché', e.marche.some(c => c.uid === 'A1'));
+    check('… et quitte la main du voleur', !e.mains.get(a).some(c => c.uid === 'A1'));
+    check('la victime perd bien une carte', e.mains.get(b).length === 2, e.mains.get(b).length + ' cartes');
+    check('le voleur garde sa taille de main', e.mains.get(a).length === 2, e.mains.get(a).length + ' cartes');
+    check('le marché garde la sienne', e.marche.length === C.CONFIG.MARCHE, e.marche.length + ' cartes');
 
     // rien à prendre : le tour part quand même
     const e2 = neuf();
