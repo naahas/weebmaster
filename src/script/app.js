@@ -37,6 +37,9 @@ createApp({
                 erreur: '',
                 reste: 0,
                 _tic: null,
+                // réglages du salon, avant la partie
+                regleMain: 4,
+                regleAnimes: 10,
             },
 
             asc: {
@@ -138,7 +141,7 @@ createApp({
                   desc: "Un portrait, un nom. La plus longue serie gagne." },
                 { id: 'ascension', name: 'Ascension', kind: 'Solo',   players: '∞',  img: 'esdeath.webp',
                   desc: "Une tour d'étages, chacun à son rythme. Le premier au sommet gagne." },
-                { id: 'collect',   name: 'Collect',   kind: 'Solo',   players: '2 à 6', img: 'tengen2.webp',
+                { id: 'collect',   name: 'Collect',   kind: 'Solo',   players: '6',  img: 'tengen2.webp',
                   desc: "Réunis des sets du même anime. Vole ceux des autres, défends les tiens." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.
@@ -1022,6 +1025,11 @@ createApp({
         // en haut à gauche ; ce qu'on veut savoir d'un coup d'œil, c'est où
         // l'on se situe. À égalité d'étage, on partage le rang.
         // ── 🎴 Collect ──
+        // Ce que la taille de main entraîne : l'hôte doit le voir, sinon le
+        // réglage a l'air arbitraire.
+        colResumeObjectif() {
+            return { 3: '3 paires', 4: '2 sets de 3', 5: '3 sets de 3' }[this.col.regleMain] || '';
+        },
         colMonTour() {
             return !!(this.col.etat && this.col.etat.tourJoueur === this.playerId);
         },
@@ -4967,6 +4975,15 @@ createApp({
             // ══ 🎴 Collect ══
             this.socket.on('collect-state', (data) => {
                 this.col.etat = data;
+                // C'est l'état lui-même qui dit que la partie tourne : les autres
+                // modes ont un « game-started » dédié, celui-ci n'en a pas besoin.
+                // Sans cette bascule, la partie demarrait vraiment mais l'écran
+                // restait au salon — et le clic suivant repondait « déjà en cours ».
+                if (data.active || data.vainqueur) {
+                    this.gameInProgress = true;
+                    this.gameEnded = false;
+                    this.lobbyMode = 'collect';
+                }
                 this.colTic();
                 this.colBrancherTic();
                 // le tour a changé de main : ce qu'on préparait n'a plus d'objet
@@ -5224,6 +5241,14 @@ createApp({
             });
 
             // Les réglages, quand l'hôte les change depuis le salon
+            // Un joueur qui arrive apres un reglage doit le voir : le salon le
+            // rediffuse, sinon son ecran resterait sur les valeurs par defaut.
+            this.socket.on('collect-config', (data) => {
+                if (!data) return;
+                if (data.main !== undefined) this.col.regleMain = data.main;
+                if (data.animes !== undefined) this.col.regleAnimes = data.animes;
+            });
+
             this.socket.on('ascension-config', (data) => {
                 if (!data) return;
                 if (data.floors !== undefined) this.asc.etages = data.floors;
