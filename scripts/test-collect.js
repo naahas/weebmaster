@@ -73,60 +73,158 @@ console.log('\n── Le marché ──');
     check('on n\'échange pas deux fois dans le tour', !encore.ok, encore.erreur);
 }
 
-console.log('\n── Le vol et le triangle ──');
+console.log('\n── Le vol : le duel à l\'aveugle ──');
 {
-    // on fabrique la situation à la main pour l'éprouver exactement
-    const e = neuf();
-    const [a, b] = [e.tourJoueur, joueurs.find(j => j !== e.tourJoueur)];
     const carte = (anime, classe, uid) => ({ uid, id: uid, nom: uid, anime, classe, img: 'x.webp' });
+    // On fabrique la situation à la main pour l'éprouver exactement. Les animes
+    // sont tirés au sort à chaque partie : on prend ceux de CELLE-CI.
+    const table = (mainsA, mainsB) => {
+        const e = neuf();
+        const [a, b] = [e.tourJoueur, joueurs.find(j => j !== e.tourJoueur)];
+        e.mains.set(a, mainsA(e.animes));
+        e.mains.set(b, mainsB(e.animes));
+        return { e, a, b, A1: e.animes[0], A2: e.animes[1] };
+    };
 
-    // les animes sont tirés au sort : on prend ceux de CETTE partie
-    const [A1, A2] = e.animes;
-    // assaut domine mirage, pas oracle ni assaut
-    e.mains.set(a, [carte(A1, 'assaut', 'A1'), carte(A2, 'oracle', 'A2')]);
-    e.mains.set(b, [carte(A1, 'oracle', 'B1'), carte(A1, 'mirage', 'B2'), carte(A1, 'assaut', 'B3')]);
+    // ── L'attaque ouvre un duel, elle ne tranche rien ──
+    {
+        const { e, a, b, A1, A2 } = table(
+            (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'oracle', 'A2')],
+            (an) => [carte(an[0], 'mirage', 'B1'), carte(an[0], 'assaut', 'B2')]);
+        void A2;
+        const r = C.actionVoler(e, a, b, A1, 'A1');
+        check('l\'attaque ouvre un duel', r.ok && r.duel === true, r.erreur || (r.choix + ' défense(s) possible(s)'));
+        check('le tour n\'a pas encore tourné', e.tourJoueur === a, e.tourJoueur);
+        check('plus personne ne joue pendant le duel', !C.actionPiocher(e, a, 'A2').ok,
+            C.actionPiocher(e, a, 'A2').erreur);
 
-    const r = C.actionVoler(e, a, b, A1, 'A1');
-    check('le vol réussit sur la classe dominée', r.ok && r.reussi, r.reussi ? r.prise.uid : (r.erreur || 'échec'));
-    check('c\'est bien le Mirage qui est pris', r.prise && r.prise.uid === 'B2', r.prise && r.prise.uid);
-    check('les autres classes restent chez la cible',
-        e.mains.get(b).filter(c => c.uid.startsWith('B')).map(c => c.uid).sort().join() === 'B1,B3',
-        e.mains.get(b).map(c => c.uid).join());
-    // La carte d'attaque est le prix du vol, et elle va au MARCHÉ — surtout pas
-    // à la victime : sinon les deux joueurs troqueraient une carte contre une
-    // autre et le vol n'aurait plus rien d'un vol.
-    check('la carte d\'attaque ne va pas à la victime', !e.mains.get(b).some(c => c.uid === 'A1'));
-    check('… elle atterrit au marché', e.marche.some(c => c.uid === 'A1'));
-    check('… et quitte la main du voleur', !e.mains.get(a).some(c => c.uid === 'A1'));
-    check('la victime perd bien une carte', e.mains.get(b).length === 2, e.mains.get(b).length + ' cartes');
-    check('le voleur garde sa taille de main', e.mains.get(a).length === 2, e.mains.get(a).length + ' cartes');
-    check('le marché garde la sienne', e.marche.length === C.CONFIG.MARCHE, e.marche.length + ' cartes');
-
-    // rien à prendre : le tour part quand même
-    const e2 = neuf();
-    const [x, y] = [e2.tourJoueur, joueurs.find(j => j !== e2.tourJoueur)];
-    const B1 = e2.animes[0];
-    e2.mains.set(x, [carte(B1, 'assaut', 'X1')]);
-    e2.mains.set(y, [carte(B1, 'assaut', 'Y1'), carte(B1, 'oracle', 'Y2')]);
-    const vide = C.actionVoler(e2, x, y, B1, 'X1');
-    check('annoncer dans le vide ne prend rien', vide.ok && !vide.reussi);
-    check('… et coûte quand même le tour', e2.tourJoueur !== x, x + ' → ' + e2.tourJoueur);
-    check('la carte d\'attaque reste en main', e2.mains.get(x).some(c => c.uid === 'X1'));
-
-    // le triangle, exhaustivement
-    const attendu = { assaut: 'mirage', mirage: 'oracle', oracle: 'assaut' };
-    let triangleOk = true;
-    for (const att of Object.keys(attendu)) for (const def of Object.keys(attendu)) {
-        if (C.domine(att, def) !== (attendu[att] === def)) triangleOk = false;
+        // c'est tout l'intérêt du vol à l'aveugle : la classe attaquante est secrète
+        const pub = JSON.stringify(C.vuePublique(e));
+        check('le duel est annoncé à la table', C.vuePublique(e).duel && C.vuePublique(e).duel.anime === A1, A1);
+        check('… mais la carte d\'attaque reste cachée', !pub.includes('"A1"'));
+        const vueCible = JSON.stringify(C.vueJoueur(e, b));
+        check('… y compris pour la cible', !vueCible.includes('"A1"'));
     }
-    check('le triangle est bien un cycle, sans égalité', triangleOk, 'assaut > mirage > oracle > assaut');
 
-    // on ne vole pas soi-même, ni un anime hors partie
-    const e3 = neuf();
-    const soi = C.actionVoler(e3, e3.tourJoueur, e3.tourJoueur, e3.animes[0], e3.mains.get(e3.tourJoueur)[0].uid);
-    check('on ne se vole pas soi-même', !soi.ok, soi.erreur);
-    const hors = C.actionVoler(e3, e3.tourJoueur, joueurs.find(j => j !== e3.tourJoueur), 'AnimeQuiNExistePas', e3.mains.get(e3.tourJoueur)[0].uid);
-    check('on ne vole pas un anime hors partie', !hors.ok, hors.erreur);
+    // ── La défense domine : l'attaquant perd sa carte ──
+    {
+        const { e, a, b, A1 } = table(
+            (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'oracle', 'A2')],
+            (an) => [carte(an[0], 'oracle', 'B1'), carte(an[0], 'mirage', 'B2')]);
+        C.actionVoler(e, a, b, A1, 'A1');
+        // oracle bat assaut
+        const d = C.actionDefendre(e, b, 'B1');
+        check('la défense qui domine l\'emporte', d.ok && d.issue === 'perdu', d.issue || d.erreur);
+        check('l\'attaquant perd sa carte', !e.mains.get(a).some(c => c.uid === 'A1'));
+        check('… elle repart au paquet, pas au marché',
+            !e.marche.some(c => c.uid === 'A1') && e.pioche.some(c => c.uid === 'A1'));
+        check('la cible ne perd rien', e.mains.get(b).length === 2, e.mains.get(b).map(c => c.uid).join());
+        check('la main de l\'attaquant s\'ouvre d\'une place', e.mains.get(a).length === 1);
+        check('le duel est refermé et le tour passe', !e.duel && e.tourJoueur !== a);
+    }
+
+    // ── L'attaque domine : la carte change de main ──
+    {
+        const { e, a, b, A1 } = table(
+            (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'oracle', 'A2')],
+            (an) => [carte(an[0], 'mirage', 'B1'), carte(an[0], 'assaut', 'B2')]);
+        C.actionVoler(e, a, b, A1, 'A1');
+        // assaut bat mirage
+        const d = C.actionDefendre(e, b, 'B1');
+        check('l\'attaque qui domine emporte la carte', d.ok && d.issue === 'gagne', d.issue || d.erreur);
+        check('la carte volée est en main du voleur', e.mains.get(a).some(c => c.uid === 'B1'));
+        check('la cible l\'a bien perdue', !e.mains.get(b).some(c => c.uid === 'B1'));
+        check('la carte d\'attaque repart au paquet',
+            e.pioche.some(c => c.uid === 'A1') && !e.marche.some(c => c.uid === 'A1'));
+        check('les deux mains gardent leur compte',
+            e.mains.get(a).length === 2 && e.mains.get(b).length === 1,
+            e.mains.get(a).length + ' / ' + e.mains.get(b).length);
+    }
+
+    // ── Même classe : rien ne bouge ──
+    {
+        const { e, a, b, A1 } = table(
+            (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'oracle', 'A2')],
+            (an) => [carte(an[0], 'assaut', 'B1'), carte(an[0], 'oracle', 'B2')]);
+        C.actionVoler(e, a, b, A1, 'A1');
+        const d = C.actionDefendre(e, b, 'B1');
+        check('même classe : match nul', d.ok && d.issue === 'nul', d.issue || d.erreur);
+        check('personne ne perd de carte',
+            e.mains.get(a).length === 2 && e.mains.get(b).length === 2);
+        check('l\'attaquant garde la sienne', e.mains.get(a).some(c => c.uid === 'A1'));
+        check('… mais il a perdu son tour', e.tourJoueur !== a);
+    }
+
+    // ── La cible n'a rien de la série : tranché sans l'attendre ──
+    {
+        const { e, a, b, A1 } = table(
+            (an) => [carte(an[1], 'assaut', 'A1')],
+            (an) => [carte(an[2], 'mirage', 'B1'), carte(an[3], 'assaut', 'B2')]);
+        const r = C.actionVoler(e, a, b, A1, 'A1');
+        check('sans carte de la série, aucun duel ne s\'ouvre', r.ok && r.issue === 'vide' && !e.duel, r.issue);
+        check('l\'attaquant garde sa carte', e.mains.get(a).some(c => c.uid === 'A1'));
+        check('… et perd seulement son tour', e.tourJoueur !== a);
+    }
+
+    // ── Qui peut défendre, et avec quoi ──
+    {
+        const { e, a, b, A1 } = table(
+            (an) => [carte(an[1], 'assaut', 'A1')],
+            (an) => [carte(an[0], 'mirage', 'B1'), carte(an[2], 'assaut', 'B2')]);
+        C.actionVoler(e, a, b, A1, 'A1');
+        const parA = C.actionDefendre(e, a, 'A1');
+        check('l\'attaquant ne défend pas à la place de sa cible', !parA.ok, parA.erreur);
+        const horsSerie = C.actionDefendre(e, b, 'B2');
+        check('on ne défend pas avec une autre série', !horsSerie.ok, horsSerie.erreur);
+        check('le duel est toujours ouvert', !!e.duel);
+        const bon = C.actionDefendre(e, b, 'B1');
+        check('la bonne carte le referme', bon.ok && !e.duel, bon.issue);
+    }
+
+    // ── L'absent ──
+    {
+        const { e, a, b, A1 } = table(
+            (an) => [carte(an[1], 'assaut', 'A1')],
+            (an) => [carte(an[0], 'mirage', 'B1'), carte(an[0], 'oracle', 'B2')]);
+        C.actionVoler(e, a, b, A1, 'A1');
+        const d = C.defenseParDefaut(e);
+        check('une cible qui ne répond pas présente une carte au hasard',
+            d.ok && ['gagne', 'perdu', 'nul'].includes(d.issue), d.issue);
+        check('le duel se referme quand même', !e.duel && e.tourJoueur !== a);
+    }
+
+    // ── Le triangle, exhaustivement ──
+    {
+        const attendu = { assaut: 'mirage', mirage: 'oracle', oracle: 'assaut' };
+        let triangleOk = true;
+        for (const att of Object.keys(attendu)) for (const def of Object.keys(attendu)) {
+            if (C.domine(att, def) !== (attendu[att] === def)) triangleOk = false;
+        }
+        check('le triangle est bien un cycle, sans égalité', triangleOk, 'assaut > mirage > oracle > assaut');
+
+        // et le moteur le respecte à la lettre, sur les neuf combinaisons
+        let issuesOk = true; const vues = [];
+        for (const ca of Object.keys(attendu)) for (const cd of Object.keys(attendu)) {
+            const { e, a, b, A1 } = table(
+                (an) => [carte(an[1], ca, 'A1'), carte(an[1], 'assaut', 'A2')],
+                (an) => [carte(an[0], cd, 'B1')]);
+            C.actionVoler(e, a, b, A1, 'A1');
+            const d = C.actionDefendre(e, b, 'B1');
+            const veut = ca === cd ? 'nul' : (attendu[ca] === cd ? 'gagne' : 'perdu');
+            if (d.issue !== veut) { issuesOk = false; vues.push(ca + '/' + cd + '→' + d.issue); }
+        }
+        check('les neuf duels possibles tombent juste', issuesOk, vues.join(' ') || '9/9');
+    }
+
+    // ── On ne vole ni soi-même, ni une série absente ──
+    {
+        const e = neuf();
+        const j = e.tourJoueur;
+        const soi = C.actionVoler(e, j, j, e.animes[0], e.mains.get(j)[0].uid);
+        check('on ne se vole pas soi-même', !soi.ok, soi.erreur);
+        const hors = C.actionVoler(e, j, joueurs.find(x => x !== j), 'SerieQuiNExistePas', e.mains.get(j)[0].uid);
+        check('on ne vole pas une série hors partie', !hors.ok, hors.erreur);
+    }
 }
 
 console.log('\n── Poser un set ──');
@@ -260,24 +358,40 @@ console.log('\n── Une partie entière se termine ──');
                 C.actionEchanger(e, j, rendre.uid, e.marche[iM].uid);
                 continue;
             }
-            if (main.length < r.main) {
-                let vole = false;
+            // Le vol. Le joueur simulé se comporte comme quelqu'un qui a scanné :
+            // il ne frappe que là où la série se trouve, et choisit la classe qui
+            // bat le plus des cartes visées. C'est délibéré — attaquer à l'aveugle
+            // ne réussit qu'une fois sur cent et ferait échouer une partie sur
+            // quatre, ce qui mesurerait la bêtise du robot, pas le jeu.
+            //
+            // En face, la défense est tirée au hasard, et c'est juste : à
+            // l'aveugle, aucune réponse n'est meilleure qu'une autre.
+            {
+                const armes = main.filter(c => c.anime !== vise);
+                let cible = null, arme = null;
                 for (const k of e.ordre) {
                     if (k === j) continue;
-                    for (const att of main) {
-                        if (e.mains.get(k).some(c => c.anime === vise && C.domine(att.classe, c.classe))) {
-                            C.actionVoler(e, j, k, vise, att.uid); vole = true; break;
-                        }
+                    const chez = e.mains.get(k).filter(c => c.anime === vise);
+                    if (!chez.length) continue;
+                    let meilleure = null, score = 0;
+                    for (const a of armes) {
+                        const n = chez.filter(c => C.domine(a.classe, c.classe)).length
+                                - chez.filter(c => C.domine(c.classe, a.classe)).length;
+                        if (n > score) { score = n; meilleure = a; }
                     }
-                    if (vole) break;
+                    if (meilleure) { cible = k; arme = meilleure; break; }
                 }
-                if (vole) continue;
+                if (cible && arme) {
+                    const r2 = C.actionVoler(e, j, cible, vise, arme.uid);
+                    if (r2.ok && r2.duel) C.defenseParDefaut(e);
+                    if (r2.ok) continue;
+                }
             }
             {
                 const par2 = {};
                 for (const c of main) par2[c.anime] = (par2[c.anime] || 0) + 1;
                 const isolee = main.find(c => par2[c.anime] === 1) || main[main.length - 1];
-                C.actionPiocher(e, j, isolee.uid);
+                C.actionPiocher(e, j, isolee ? isolee.uid : null);
                 continue;
             }
             const rendre = main[Math.floor(Math.random() * main.length)];
