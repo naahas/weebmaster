@@ -1652,7 +1652,10 @@ createApp({
         // son enfant. À 50 il serait pile sur le bord ; 47 le fait mordre un peu
         // sur le feutre, ce qui donne l'impression qu'on y est assis.
         colSiege(i, total) {
-            const angle = (200 + (i + 0.5) * (140 / Math.max(1, total))) * Math.PI / 180;
+            // L'arc s'ouvre de 170° à 370°, soit un demi-tour et un peu : les
+            // sièges des extrémités descendent alors le long des côtés, vers toi,
+            // au lieu de rester massés en haut.
+            const angle = (170 + (i + 0.5) * (200 / Math.max(1, total))) * Math.PI / 180;
             return {
                 left: (50 + 47 * Math.cos(angle)).toFixed(1) + '%',
                 top: (50 + 47 * Math.sin(angle)).toFixed(1) + '%',
@@ -1660,10 +1663,14 @@ createApp({
         },
         // Un éventail tenu en main, pas un alignement au cordeau : chaque carte
         // pivote autour d'un point bas et les extérieures retombent un peu.
+        // On passe par des variables plutôt qu'un « transform » écrit en dur :
+        // c'est ce qui permet au survol de soulever la carte sans lui reprendre
+        // son inclinaison.
         colIncline(i, total, pas) {
             const k = i - (total - 1) / 2;
             return {
-                transform: 'rotate(' + (k * (pas || 5)).toFixed(1) + 'deg) translateY(' + (Math.abs(k) * 0.14).toFixed(2) + 'rem)',
+                '--rot': (k * (pas || 5)).toFixed(1) + 'deg',
+                '--dy': (Math.abs(k) * 0.14).toFixed(2) + 'rem',
                 '--i': i,
             };
         },
@@ -5024,7 +5031,7 @@ createApp({
                     // rediffusé après chacune.
                     if (!this.gameInProgress) {
                         this.col.entree = true;
-                        setTimeout(() => { this.col.entree = false; }, 1900);
+                        setTimeout(() => { this.col.entree = false; }, 3000);
                     }
                     this.gameInProgress = true;
                     this.gameEnded = false;

@@ -52,17 +52,6 @@
 .col-tri:hover { opacity: 1; transform: scale(1.06); }
 .col-tri svg { display: block; }
 
-.col-tour { text-align: center; flex: 1 1 auto; min-width: 0; }
-.col-tour-qui {
-    display: block;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.15rem;
-    letter-spacing: 0.08em;
-    color: rgba(255, 255, 255, 0.55);
-}
-.col-tour-qui.moi { color: var(--col-or); }
-.col-tour-but { font-size: 0.58rem; color: rgba(255, 255, 255, 0.3); letter-spacing: 0.05em; }
-
 .col-chrono { position: relative; width: 2.6rem; height: 2.6rem; flex: 0 0 auto; }
 .col-chrono svg { transform: rotate(-90deg); display: block; }
 .col-chrono circle { fill: none; stroke-width: 2.6; }
@@ -83,7 +72,7 @@
     position: absolute;
     left: 50%; top: 44%;
     transform: translate(-50%, -50%);
-    width: min(88%, 60rem);
+    width: min(93%, 65rem);
     aspect-ratio: 16 / 8.4;
     border-radius: 50%;
     background:
@@ -104,8 +93,13 @@
     display: flex; gap: 0.3rem; align-items: center;
     z-index: 4;
 }
+/* Le marché est commun donc lointain ; ta main est à toi et sous le pouce.
+   Les deux ne méritent pas la même taille. */
+.col-marche .col-carte { width: calc(var(--carte) * 0.9); }
+.col-moi .col-carte { width: calc(var(--carte) * 1.14); }
+
 .col-emplacement {
-    width: var(--carte);
+    width: calc(var(--carte) * 0.9);
     aspect-ratio: 225 / 350;
     border: 0.09rem dashed rgba(255, 210, 74, 0.32);
     border-radius: 0.45rem;
@@ -117,8 +111,8 @@
 /* ── La pioche, dans le coin bas droit de l'écran ─────────────── */
 .col-pioche {
     position: absolute;
-    right: 1.4rem; bottom: 1.2rem;
-    width: calc(var(--carte) * 1.2);
+    right: 2.4rem; bottom: 2rem;
+    width: calc(var(--carte) * 1.5);
     aspect-ratio: 225 / 350;
     display: grid; place-items: center;
     border-radius: 0.55rem;
@@ -161,14 +155,14 @@
 .col-siege.choisissable .col-dos { border-color: rgba(255, 255, 255, 0.45); }
 
 .col-etoiles {
-    display: flex; gap: 0.13rem;
-    padding: 0.15rem 0.42rem;
+    display: flex; gap: 0.2rem;
+    padding: 0.22rem 0.5rem;
     background: rgba(0, 0, 0, 0.62);
     border: 0.06rem solid rgba(255, 255, 255, 0.1);
     border-radius: 999px;
 }
 .col-etoiles i {
-    width: 0.4rem; height: 0.4rem;
+    width: 0.58rem; height: 0.58rem;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.16);
 }
@@ -240,8 +234,13 @@
 .pion-mirage { color: var(--mirage); }
 .pion-oracle { color: var(--oracle); }
 
-.col-carte:hover { transform: translateY(-0.45rem) rotate(0deg) !important; z-index: 20; }
-.col-carte.choisie { transform: translateY(-0.8rem) rotate(0deg) !important; border-color: var(--col-or); box-shadow: 0 0.6rem 1.2rem rgba(255, 210, 74, 0.3); z-index: 21; }
+/* La carte garde son inclinaison et monte tout droit. L'ordre compte : le
+   « translateY » est écrit AVANT le « rotate », donc il s'applique après —
+   dans l'axe de l'écran et non dans celui de la carte penchée, qui la ferait
+   partir de biais. */
+.col-carte { transform: translateY(var(--lift, 0rem)) translateY(var(--dy, 0rem)) rotate(var(--rot, 0deg)); }
+.col-carte:hover { --lift: -0.65rem; z-index: 20; }
+.col-carte.choisie { --lift: -1rem; border-color: var(--col-or); box-shadow: 0 0.7rem 1.4rem rgba(255, 210, 74, 0.32); z-index: 21; }
 .col-carte.choisissable { box-shadow: 0 0 0 0.11rem rgba(255, 210, 74, 0.4), 0 0.3rem 0.7rem rgba(0, 0, 0, 0.5); }
 .col-carte.eteinte { opacity: 0.3; }
 
@@ -260,7 +259,7 @@
     position: absolute;
     left: 1.2rem; top: 50%;
     transform: translateY(-50%);
-    width: min(13.5rem, 26vw);
+    width: min(17rem, 30vw);
     background: linear-gradient(180deg, #1c1b25, #0e0e13);
     border: 0.06rem solid rgba(255, 255, 255, 0.09);
     border-radius: 0.85rem;
@@ -370,10 +369,13 @@
 }
 .col.entree .col-marche .col-carte {
     animation: colMarche 0.4s cubic-bezier(0.2, 0.85, 0.3, 1) both;
-    animation-delay: calc(0.95s + var(--i, 0) * 0.07s);
+    /* Une seconde de plus après la donne : sans ce temps mort, le marché
+       arrivait dans le même mouvement que les mains et l'on ne comprenait pas
+       qu'il est commun. */
+    animation-delay: calc(1.95s + var(--i, 0) * 0.08s);
 }
 .col.entree .col-emplacement,
-.col.entree .col-pioche { animation: colFondu 0.4s ease both; animation-delay: 1.3s; }
+.col.entree .col-pioche { animation: colFondu 0.4s ease both; animation-delay: 2.4s; }
 
 @keyframes colTable {
     from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
@@ -385,12 +387,12 @@
 }
 /* Les cartes viennent du centre de la table : c'est de là qu'on distribue */
 @keyframes colDonne {
-    from { opacity: 0; transform: translate(0, -14rem) scale(0.6) rotate(0deg); }
-    to   { opacity: 1; }
+    from { opacity: 0; transform: translate(0, -14rem) scale(0.6); }
+    to   { opacity: 1; transform: translateY(var(--dy, 0rem)) rotate(var(--rot, 0deg)); }
 }
 @keyframes colMarche {
-    from { opacity: 0; transform: translateX(-4rem) scale(0.85); }
-    to   { opacity: 1; transform: translateX(0) scale(1); }
+    from { opacity: 0; transform: translateX(-5rem) scale(0.85); }
+    to   { opacity: 1; transform: translateY(var(--dy, 0rem)) rotate(var(--rot, 0deg)); }
 }
 @keyframes colFondu { from { opacity: 0; } to { opacity: 1; } }
 
@@ -483,6 +485,7 @@
     text-align: center;
     padding: 2rem 1.2rem;
 }
+.col-fin-but { font-size: 0.62rem; letter-spacing: 0.06em; color: rgba(255, 255, 255, 0.35); }
 .col-fin-titre { font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; letter-spacing: 0.2em; color: rgba(255, 255, 255, 0.35); }
 .col-fin-nom {
     font-family: 'Bebas Neue', sans-serif; font-size: 2.8rem; line-height: 1;
@@ -497,14 +500,13 @@
        vides sur les côtés et écrase les sièges du haut. */
     .col-table { width: min(96%, 30rem); aspect-ratio: 1 / 1.02; top: 42%; }
     .col-marche { gap: 0.18rem; }
-    .col-pioche { right: 0.6rem; bottom: 0.6rem; width: calc(var(--carte) * 0.95); }
+    .col-pioche { right: 1rem; bottom: 1rem; width: calc(var(--carte) * 1.15); }
     .col-nom { max-width: 4.8rem; font-size: 0.56rem; }
-    .col-loupe { width: 8rem; left: 0.4rem; top: 32%; }
+    .col-loupe { width: 9.5rem; left: 0.4rem; top: 32%; }
     .col-loupe-nom { font-size: 1rem; }
     .col-action { font-size: 0.57rem; padding: 0.5rem 0.1rem; }
 }
 
 @media (min-width: 1500px) {
     .col { --carte: 5.6rem; }
-    .col-tour-qui { font-size: 1.4rem; }
 }

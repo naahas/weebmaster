@@ -816,12 +816,10 @@
                                 </svg>
                             </div>
 
-                            <div class="col-tour">
-                                <span class="col-tour-qui" :class="{ moi: colMonTour }">
-                                    {{ colMonTour ? 'À TOI' : (colNom(col.etat.tourJoueur) || '…') }}
-                                </span>
-                                <span class="col-tour-but">{{ col.etat.resume }}</span>
-                            </div>
+                            <!-- Ni le nom du joueur courant ni l'objectif ici : le
+                                 siège en cours s'allume déjà, et la consigne du bas
+                                 le redit. Trois endroits pour la même information,
+                                 c'était deux de trop. -->
 
                             <div class="col-chrono" :class="{ urgence: col.reste <= 5 }">
                                 <svg width="41" height="41" viewBox="0 0 35 35">
@@ -1027,7 +1025,7 @@
                     <div class="col-fin" v-if="col.etat && col.etat.vainqueur">
                         <span class="col-fin-titre">COLLECT</span>
                         <span class="col-fin-nom">{{ colNom(col.etat.vainqueur) }}</span>
-                        <span class="col-tour-but">{{ col.etat.resume }}</span>
+                        <span class="col-fin-but">{{ col.etat.resume }}</span>
                         <div class="col-fin-sets">
                             <div v-for="s in colSetsDu(col.etat.vainqueur)" :key="s.anime" class="col-rangee">
                                 <div v-for="c in s.cartes" :key="c.uid" class="col-carte" :class="'classe-' + c.classe">
