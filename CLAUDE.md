@@ -96,7 +96,7 @@ scripts/test-hote.js          les routes /admin sont-elles fermées aux visiteur
 docs/ASCENSION.md      conception du mode Ascension, mis de côté (branche archive/ascension)
 src/html/              home (le jeu), question (back-office questions), prototypes-*.html
 src/script/            app.js — le seul script du jeu
-src/style/             home.css, home-bombanime.css
+src/style/             home.css, home-bombanime.css, home-collect.css
 src/img/               avatars, questionpic
 ```
 

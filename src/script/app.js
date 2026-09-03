@@ -21,6 +21,24 @@ createApp({
             // 🏔️ Ascension : une tour d'étages, chacun grimpe à son rythme.
             // « etage » est l'étage courant du joueur, « tour » ce que fait
             // l'ensemble — les deux ne se mélangent pas.
+            // 🎴 Collect. « etat » est la vue publique envoyée par le serveur ;
+            // « main » n'arrive que sur notre propre socket et ne transite
+            // jamais par le salon.
+            col: {
+                etat: null,
+                main: [],
+                mode: null,          // piocher | echanger | voler | scanner
+                mainChoisie: null,
+                marcheChoisi: null,
+                volCible: null,
+                volSerie: null,
+                volArme: null,
+                scan: null,          // la main qu'on vient de scanner
+                erreur: '',
+                reste: 0,
+                _tic: null,
+            },
+
             asc: {
                 etages: 15,          // réglage du salon
                 timer: 30,           // secondes par étage
@@ -1001,6 +1019,90 @@ createApp({
         // Ma place parmi les grimpeurs, pour la pastille. L'étage se lit déjà
         // en haut à gauche ; ce qu'on veut savoir d'un coup d'œil, c'est où
         // l'on se situe. À égalité d'étage, on partage le rang.
+        // ── 🎴 Collect ──
+        colMonTour() {
+            return !!(this.col.etat && this.col.etat.tourJoueur === this.playerId);
+        },
+        colRivaux() {
+            if (!this.col.etat) return [];
+            return this.col.etat.joueurs.filter(p => p.playerId !== this.playerId);
+        },
+        colMainCliquable() {
+            return this.colMonTour && (this.col.mode === 'piocher'
+                || (this.col.mode === 'echanger' && this.col.marcheChoisi));
+        },
+        // L'anime dont on tient déjà de quoi poser : c'est ce qui allume « Poser »
+        colSetPret() {
+            if (!this.col.etat) return null;
+            const par = {};
+            for (const c of this.col.main) par[c.anime] = (par[c.anime] || 0) + 1;
+            return Object.keys(par).find(a => par[a] >= this.col.etat.taille) || null;
+        },
+        colArcChrono() {
+            const total = 15;
+            const part = Math.max(0, Math.min(1, this.col.reste / total));
+            return (94.2 * (1 - part)).toFixed(1);
+        },
+        colJeDefends() {
+            const d = this.col.etat && this.col.etat.duel;
+            return !!(d && d.cible === this.playerId);
+        },
+        colMesDefenses() {
+            const d = this.col.etat && this.col.etat.duel;
+            if (!d) return [];
+            return this.col.main.filter(c => c.anime === d.anime);
+        },
+        colSablierDuel() {
+            const d = this.col.etat && this.col.etat.duel;
+            if (!d || !d.fin) return '100%';
+            const reste = Math.max(0, d.fin - Date.now());
+            return Math.round(reste / 8000 * 100) + '%';
+        },
+        colArmeDeLaSerie() {
+            if (!this.col.volArme || !this.col.volSerie) return false;
+            const c = this.col.main.find(x => x.uid === this.col.volArme);
+            return !!(c && c.anime === this.col.volSerie);
+        },
+        // La consigne change avec l'action en cours : sans elle, on ne sait pas
+        // ce que l'écran attend de nous.
+        colConsigne() {
+            if (!this.col.etat) return '';
+            if (this.col.etat.duel) {
+                return this.colJeDefends ? 'On t\'attaque — présente une carte.'
+                    : 'Un vol est en cours…';
+            }
+            if (!this.colMonTour) return 'Au tour de <b>' + this.colNom(this.col.etat.tourJoueur) + '</b>.';
+            switch (this.col.mode) {
+                case 'piocher':  return 'Choisis la carte que tu laisses au marché.';
+                case 'echanger': return this.col.marcheChoisi
+                    ? 'Et celle que tu rends en échange.'
+                    : 'Choisis une carte du marché.';
+                case 'scanner':  return 'Quel adversaire veux-tu regarder ?';
+                case 'voler':    return 'Qui veux-tu attaquer ?';
+                default:         return 'À toi de jouer — une seule action.';
+            }
+        },
+        // Le dernier fait du salon, en une ligne. C'est par là que passe
+        // l'information publique : qui a échangé quoi, qui a volé qui.
+        colDernierFait() {
+            const j = this.col.etat && this.col.etat.journal;
+            if (!j || !j.length) return '';
+            const f = j[j.length - 1];
+            const qui = '<b>' + this.colNom(f.joueur) + '</b>';
+            if (f.type === 'pioche') return qui + ' a pioché.';
+            if (f.type === 'echange') return qui + ' a pris <b>' + f.prise.nom + '</b> au marché.';
+            if (f.type === 'scan') return qui + ' a regardé la main de <b>' + this.colNom(f.cible) + '</b>.';
+            if (f.type === 'set') return qui + ' pose un set <b>' + f.anime + '</b> !';
+            if (f.type === 'vol') {
+                const cible = '<b>' + this.colNom(f.cible) + '</b>';
+                if (f.issue === 'vide') return qui + ' a réclamé du ' + f.anime + ' à ' + cible + ' — elle n\'en avait pas.';
+                if (f.issue === 'gagne') return '<span class="gagne">' + qui + ' prend <b>' + f.defense.nom + '</b> à ' + cible + '.</span>';
+                if (f.issue === 'perdu') return '<span class="perdu">' + cible + ' repousse ' + qui + ' — il y perd sa carte.</span>';
+                if (f.issue === 'nul') return qui + ' et ' + cible + ' sortent la même classe. Rien ne bouge.';
+            }
+            return '';
+        },
+
         ascMonRang() {
             const tous = this.asc.progres || [];
             const moi = tous.find(j => j.playerId === this.playerId);
@@ -1530,6 +1632,96 @@ createApp({
         // sinon elle remplacerait le jeu au lieu de débloquer celui qui sèche
         // sur un seul visage. Le serveur tient le même compte — ce qui suit
         // n'est que ce qu'on en montre.
+        // ══ 🎴 Collect ══
+        colNom(id) {
+            if (!id) return '';
+            const p = this.col.etat && this.col.etat.pseudos;
+            return (p && p[id]) || id;
+        },
+        colDansMaMain(anime) {
+            return this.col.main.filter(c => c.anime === anime).length;
+        },
+        colSetsDu(id) {
+            const p = this.col.etat && this.col.etat.joueurs.find(x => x.playerId === id);
+            return p ? p.sets : [];
+        },
+        colRaz() {
+            this.col.mode = null;
+            this.col.mainChoisie = null;
+            this.col.marcheChoisi = null;
+            this.col.volCible = null;
+            this.col.volSerie = null;
+            this.col.volArme = null;
+        },
+        colAnnuler() { this.colRaz(); },
+        colChoisirMode(m) {
+            if (!this.colMonTour) return;
+            this.col.erreur = '';
+            // retoucher l'action en cours la referme : c'est le geste attendu
+            if (this.col.mode === m) return this.colRaz();
+            this.colRaz();
+            this.col.mode = m;
+            // Le vol vise presque toujours la série qu'on complète : on la
+            // pré-remplit, quitte à ce que le joueur en change.
+            if (m === 'voler') {
+                const par = {};
+                for (const c of this.col.main) par[c.anime] = (par[c.anime] || 0) + 1;
+                this.col.volSerie = Object.keys(par).sort((a, b) => par[b] - par[a])[0] || null;
+            }
+        },
+        colToucherMain(c) {
+            if (!this.colMonTour) return;
+            if (this.col.mode === 'piocher') {
+                this.col.mainChoisie = c.uid;
+                this.socket.emit('collect-piocher', { uidDefausse: c.uid });
+                this.colRaz();
+            } else if (this.col.mode === 'echanger' && this.col.marcheChoisi) {
+                this.socket.emit('collect-echanger', { uidMain: c.uid, uidMarche: this.col.marcheChoisi });
+                this.colRaz();
+            }
+        },
+        colToucherMarche(c) {
+            if (!this.colMonTour || this.col.mode !== 'echanger') return;
+            this.col.marcheChoisi = c.uid;
+        },
+        colToucherRival(id) {
+            if (!this.colMonTour) return;
+            if (this.col.mode === 'scanner') {
+                this.socket.emit('collect-scanner', { cibleId: id });
+                this.colRaz();
+            } else if (this.col.mode === 'voler') {
+                this.col.volCible = id;
+            }
+        },
+        colVoler() {
+            if (!this.col.volCible || !this.col.volSerie || !this.col.volArme) return;
+            this.socket.emit('collect-voler', {
+                cibleId: this.col.volCible,
+                anime: this.col.volSerie,
+                uidAttaque: this.col.volArme,
+            });
+            this.colRaz();
+        },
+        colDefendre(uid) {
+            this.socket.emit('collect-defendre', { uidDefense: uid });
+        },
+        colPoser() {
+            const a = this.colSetPret;
+            if (a) this.socket.emit('collect-poser', { anime: a });
+        },
+        // Le compte à rebours vit côté client, mais sur l'heure de fin envoyée
+        // par le serveur : un client en retard ne décale pas son minuteur.
+        colTic() {
+            const e = this.col.etat;
+            if (!e) return;
+            const fin = (e.duel && e.duel.fin) || e.tourFin;
+            this.col.reste = fin ? Math.max(0, Math.ceil((fin - Date.now()) / 1000)) : 0;
+        },
+        colBrancherTic() {
+            if (this.col._tic) return;
+            this.col._tic = setInterval(() => this.colTic(), 250);
+        },
+
         utiliserJoker(id) {
             if (!this.socket || this.asc.jokerUse) return;
             if (this.asc.jokerCharge < this.SEUIL_JOKER || this.ascTrouve(id)) return;
@@ -4770,6 +4962,25 @@ createApp({
             });
 
             // ── 🏔️ Ascension ──
+            // ══ 🎴 Collect ══
+            this.socket.on('collect-state', (data) => {
+                this.col.etat = data;
+                this.colTic();
+                this.colBrancherTic();
+                // le tour a changé de main : ce qu'on préparait n'a plus d'objet
+                if (data.tourJoueur !== this.playerId) this.colRaz();
+            });
+            this.socket.on('collect-main', (data) => {
+                this.col.main = data.main || [];
+            });
+            this.socket.on('collect-scan', (data) => {
+                this.col.scan = data;
+            });
+            this.socket.on('collect-refus', (data) => {
+                this.col.erreur = data.erreur || '';
+                setTimeout(() => { this.col.erreur = ''; }, 2500);
+            });
+
             this.socket.on('ascension-game-started', (data) => {
                 Object.assign(this.asc, {
                     enCours: true,
