@@ -38,6 +38,7 @@ createApp({
                 reste: 0,
                 _tic: null,
                 loupe: null,         // la carte qu'on regarde de près
+                entree: false,       // le temps de la distribution, au tout début
                 // réglages du salon, avant la partie
                 regleMain: 4,
                 regleAnimes: 10,
@@ -1646,15 +1647,37 @@ createApp({
         // Les autres joueurs se répartissent sur l'arc du HAUT, de 200° à 340°,
         // et jamais sur les côtés bas : c'est là que se trouve ta propre main, et
         // deux sièges y viendraient buter contre elle.
+        //
+        // Les pourcentages sont ceux de la TABLE, pas de l'écran — le siège est
+        // son enfant. À 50 il serait pile sur le bord ; 47 le fait mordre un peu
+        // sur le feutre, ce qui donne l'impression qu'on y est assis.
         colSiege(i, total) {
             const angle = (200 + (i + 0.5) * (140 / Math.max(1, total))) * Math.PI / 180;
             return {
-                left: (50 + 42 * Math.cos(angle)).toFixed(1) + '%',
-                top: (46 + 34 * Math.sin(angle)).toFixed(1) + '%',
+                left: (50 + 47 * Math.cos(angle)).toFixed(1) + '%',
+                top: (50 + 47 * Math.sin(angle)).toFixed(1) + '%',
             };
         },
-        colCouleurClasse(c) {
-            return { assaut: '#ff7a5c', mirage: '#a78bfa', oracle: '#4fd1c5' }[c] || '#fff';
+        // Un éventail tenu en main, pas un alignement au cordeau : chaque carte
+        // pivote autour d'un point bas et les extérieures retombent un peu.
+        colIncline(i, total, pas) {
+            const k = i - (total - 1) / 2;
+            return {
+                transform: 'rotate(' + (k * (pas || 5)).toFixed(1) + 'deg) translateY(' + (Math.abs(k) * 0.14).toFixed(2) + 'rem)',
+                '--i': i,
+            };
+        },
+        // Trois silhouettes qu'on distingue à dix pixels : un triangle qui pointe
+        // (Assaut), un losange (Mirage), un cercle plein (Oracle). Des mots ne se
+        // liraient pas à cette taille, des couleurs seules ne suffisent pas à qui
+        // les confond.
+        colSymbole(classe) {
+            const d = {
+                assaut: '<path d="M12 3 L21 20 L3 20 Z" fill="currentColor"/>',
+                mirage: '<path d="M12 2 L21 12 L12 22 L3 12 Z" fill="currentColor"/>',
+                oracle: '<circle cx="12" cy="12" r="8" fill="currentColor"/>',
+            }[classe] || '';
+            return '<svg viewBox="0 0 24 24">' + d + '</svg>';
         },
         colNom(id) {
             if (!id) return '';
@@ -1694,12 +1717,9 @@ createApp({
             }
         },
         colToucherMain(c) {
-            // Sans action choisie, toucher une carte la regarde de pres : c est
-            // le geste naturel, et il ne peut entrer en conflit avec rien.
-            if (!this.colMonTour || !this.col.mode) {
-                this.col.loupe = (this.col.loupe && this.col.loupe.uid === c.uid) ? null : c;
-                return;
-            }
+            // La loupe est désormais au survol : le clic n'a plus qu'à servir les
+            // actions, ce qui évite qu'un même geste veuille dire deux choses.
+            if (!this.colMonTour || !this.col.mode) return;
             if (this.col.mode === 'piocher') {
                 this.col.mainChoisie = c.uid;
                 this.socket.emit('collect-piocher', { uidDefausse: c.uid });
@@ -1710,10 +1730,7 @@ createApp({
             }
         },
         colToucherMarche(c) {
-            if (!this.colMonTour || this.col.mode !== 'echanger') {
-                this.col.loupe = (this.col.loupe && this.col.loupe.uid === c.uid) ? null : c;
-                return;
-            }
+            if (!this.colMonTour || this.col.mode !== 'echanger') return;
             this.col.marcheChoisi = c.uid;
         },
         colToucherRival(id) {
@@ -5002,6 +5019,13 @@ createApp({
                 // Sans cette bascule, la partie demarrait vraiment mais l'écran
                 // restait au salon — et le clic suivant repondait « déjà en cours ».
                 if (data.active || data.vainqueur) {
+                    // La distribution ne se joue qu'à la toute première arrivée :
+                    // sans ce garde, chaque action la rejouerait, l'état étant
+                    // rediffusé après chacune.
+                    if (!this.gameInProgress) {
+                        this.col.entree = true;
+                        setTimeout(() => { this.col.entree = false; }, 1900);
+                    }
                     this.gameInProgress = true;
                     this.gameEnded = false;
                     this.lobbyMode = 'collect';

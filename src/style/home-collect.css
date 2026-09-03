@@ -1,19 +1,19 @@
 /* ════════════════════════════════════════════════════════════════
    🎴 COLLECT — l'écran de jeu
 
-   Une table, et tout le monde autour. Toi toujours en bas, collé au
-   bord ; les autres répartis sur l'arc du haut, à l'angle que leur
-   nombre commande. Le marché au centre du feutre, la pioche à droite.
+   Une table, et tout le monde autour. Toi toujours en bas, à cheval
+   sur le bord ; les autres répartis sur l'arc du haut, à l'angle que
+   leur nombre commande.
 
-   C'est la disposition de la v1, dont la lecture était immédiate : on
-   voit d'un coup qui a combien de cartes et où en est chacun. Ce qui
-   change, c'est le soin — un feutre qui ne jure pas avec le doré du
-   site, des cartes qui portent leur classe, et un agrandissement quand
-   on en touche une.
+   ⚠️ Tout ce qui doit toucher la table est ENFANT de la table, et se
+   place en pourcentage de SA boîte — pas de celle de l'écran. C'est
+   la seule façon pour que les sièges restent collés au feutre quelle
+   que soit la taille de la fenêtre : un pourcentage d'écran ne suit
+   pas une ellipse dont la hauteur vient d'un « aspect-ratio ».
 
-   Le triangle des classes reste en haut à gauche, en permanence :
-   mesuré, un joueur qui ne le comprend pas réussit 1 % de ses vols
-   contre 86 % pour celui qui choisit sa classe.
+   Le triangle des classes reste en haut à gauche : mesuré, un joueur
+   qui ne le comprend pas réussit 1 % de ses vols, contre 86 % pour
+   celui qui choisit sa classe.
    ════════════════════════════════════════════════════════════════ */
 
 .col {
@@ -21,7 +21,7 @@
     --mirage: #a78bfa;
     --oracle: #4fd1c5;
     --col-or: #ffd24a;
-    --carte: 4.4rem;
+    --carte: 4.6rem;
 
     position: fixed;
     inset: 0;
@@ -40,21 +40,30 @@
     justify-content: space-between;
     gap: 0.6rem;
 }
-.col-tri { flex: 0 0 auto; }
+
+/* Discret tant qu'on ne le regarde pas : il doit rester des dizaines de
+   minutes à l'écran sans peser, et redevenir net dès qu'on s'y attarde. */
+.col-tri {
+    flex: 0 0 auto;
+    opacity: 0.42;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    cursor: help;
+}
+.col-tri:hover { opacity: 1; transform: scale(1.06); }
 .col-tri svg { display: block; }
 
 .col-tour { text-align: center; flex: 1 1 auto; min-width: 0; }
 .col-tour-qui {
     display: block;
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     letter-spacing: 0.08em;
     color: rgba(255, 255, 255, 0.55);
 }
 .col-tour-qui.moi { color: var(--col-or); }
 .col-tour-but { font-size: 0.58rem; color: rgba(255, 255, 255, 0.3); letter-spacing: 0.05em; }
 
-.col-chrono { position: relative; width: 2.4rem; height: 2.4rem; flex: 0 0 auto; }
+.col-chrono { position: relative; width: 2.6rem; height: 2.6rem; flex: 0 0 auto; }
 .col-chrono svg { transform: rotate(-90deg); display: block; }
 .col-chrono circle { fill: none; stroke-width: 2.6; }
 .col-chrono .fond { stroke: rgba(255, 255, 255, 0.08); }
@@ -63,28 +72,26 @@
 .col-chrono b {
     position: absolute; inset: 0;
     display: grid; place-items: center;
-    font-family: 'Bebas Neue', sans-serif; font-size: 0.85rem;
+    font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem;
     color: rgba(255, 255, 255, 0.7);
 }
 
-/* ── La scène ─────────────────────────────────────────────────── */
+/* ── La scène et la table ─────────────────────────────────────── */
 .col-scene { position: relative; flex: 1 1 auto; min-height: 0; }
 
-/* Le feutre. Vert sombre plutôt que vif : on lit « table de cartes » au
-   premier coup d'œil sans que ça se batte avec l'or du site. */
 .col-table {
     position: absolute;
-    left: 50%; top: 46%;
+    left: 50%; top: 44%;
     transform: translate(-50%, -50%);
-    width: min(74%, 46rem);
-    aspect-ratio: 16 / 9;
+    width: min(88%, 60rem);
+    aspect-ratio: 16 / 8.4;
     border-radius: 50%;
     background:
-        radial-gradient(60% 60% at 50% 30%, rgba(255, 255, 255, 0.05), transparent 70%),
+        radial-gradient(60% 60% at 50% 28%, rgba(255, 255, 255, 0.055), transparent 70%),
         linear-gradient(170deg, #17352b, #0d1f19);
     box-shadow:
-        0 0 0 0.5rem rgba(70, 48, 22, 0.85),
-        0 0 0 0.62rem rgba(255, 210, 74, 0.16),
+        0 0 0 0.55rem rgba(74, 51, 23, 0.9),
+        0 0 0 0.68rem rgba(255, 210, 74, 0.14),
         0 1.6rem 3.5rem rgba(0, 0, 0, 0.55),
         inset 0 0 4rem rgba(0, 0, 0, 0.45);
 }
@@ -92,7 +99,7 @@
 /* ── Le marché, au centre du feutre ───────────────────────────── */
 .col-marche {
     position: absolute;
-    left: 50%; top: 46%;
+    left: 50%; top: 50%;
     transform: translate(-50%, -50%);
     display: flex; gap: 0.3rem; align-items: center;
     z-index: 4;
@@ -100,31 +107,31 @@
 .col-emplacement {
     width: var(--carte);
     aspect-ratio: 225 / 350;
-    border: 0.09rem dashed rgba(255, 210, 74, 0.35);
-    border-radius: 0.4rem;
+    border: 0.09rem dashed rgba(255, 210, 74, 0.32);
+    border-radius: 0.45rem;
     display: grid; place-items: center;
-    color: rgba(255, 210, 74, 0.35);
+    color: rgba(255, 210, 74, 0.3);
     font-size: 1rem;
 }
 
-/* ── La pioche, sur le côté ───────────────────────────────────── */
+/* ── La pioche, dans le coin bas droit de l'écran ─────────────── */
 .col-pioche {
     position: absolute;
-    right: 1%; top: 46%;
-    transform: translateY(-50%);
-    width: calc(var(--carte) * 1.15);
+    right: 1.4rem; bottom: 1.2rem;
+    width: calc(var(--carte) * 1.2);
     aspect-ratio: 225 / 350;
     display: grid; place-items: center;
-    border-radius: 0.5rem;
+    border-radius: 0.55rem;
     background: repeating-linear-gradient(135deg, #1d2733 0 7px, #161d27 7px 14px);
     border: 0.09rem solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.5);
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.1rem; letter-spacing: 0.08em;
-    color: rgba(255, 255, 255, 0.35);
-    z-index: 4;
+    font-size: 1.15rem; letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.32);
+    z-index: 9;
 }
 
-/* ── Un siège ─────────────────────────────────────────────────── */
+/* ── Un siège, posé sur le bord du feutre ─────────────────────── */
 .col-siege {
     position: absolute;
     transform: translate(-50%, -50%);
@@ -134,65 +141,64 @@
 }
 .col-siege.choisissable .col-eventail { cursor: pointer; }
 
-/* L'éventail : des dos de cartes, autant que la main en contient. Le
-   nombre se lit sans le compter — c'est tout l'intérêt. */
+/* L'éventail : des dos de cartes, autant que la main en contient, tenus
+   en main plutôt qu'alignés au cordeau. Le nombre se lit sans le compter. */
 .col-eventail {
-    position: relative;
-    display: flex; align-items: flex-start;
-    padding-left: calc(var(--carte) * 0.42);
+    display: flex; align-items: flex-end;
+    padding-left: calc(var(--carte) * 0.4);
 }
 .col-dos {
-    width: calc(var(--carte) * 0.62);
+    width: calc(var(--carte) * 0.66);
     aspect-ratio: 225 / 350;
-    margin-left: calc(var(--carte) * -0.42);
-    border-radius: 0.28rem;
+    margin-left: calc(var(--carte) * -0.4);
+    border-radius: 0.3rem;
     background: repeating-linear-gradient(135deg, #1d2733 0 5px, #161d27 5px 10px);
     border: 0.06rem solid rgba(255, 255, 255, 0.14);
-    box-shadow: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.45);
+    box-shadow: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.5);
+    transform-origin: 50% 120%;
 }
 .col-siege.tour .col-dos { border-color: rgba(255, 210, 74, 0.55); }
 .col-siege.choisissable .col-dos { border-color: rgba(255, 255, 255, 0.45); }
 
 .col-etoiles {
-    display: flex; gap: 0.12rem;
-    padding: 0.14rem 0.4rem;
-    background: rgba(0, 0, 0, 0.55);
+    display: flex; gap: 0.13rem;
+    padding: 0.15rem 0.42rem;
+    background: rgba(0, 0, 0, 0.62);
     border: 0.06rem solid rgba(255, 255, 255, 0.1);
     border-radius: 999px;
 }
 .col-etoiles i {
-    width: 0.38rem; height: 0.38rem;
+    width: 0.4rem; height: 0.4rem;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.16);
 }
-.col-etoiles i.pleine { background: var(--col-or); box-shadow: 0 0 0.3rem rgba(255, 210, 74, 0.7); }
+.col-etoiles i.pleine { background: var(--col-or); box-shadow: 0 0 0.35rem rgba(255, 210, 74, 0.75); }
 
 .col-nom {
-    max-width: 6.5rem;
-    padding: 0.12rem 0.5rem;
-    font-size: 0.62rem; font-weight: 600;
-    color: rgba(255, 255, 255, 0.7);
-    background: rgba(0, 0, 0, 0.6);
+    max-width: 7rem;
+    padding: 0.13rem 0.55rem;
+    font-size: 0.64rem; font-weight: 600;
+    color: rgba(255, 255, 255, 0.72);
+    background: rgba(0, 0, 0, 0.68);
     border-radius: 0.35rem;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .col-siege.tour .col-nom { color: var(--col-or); }
 
-/* ── Toi, en bas, collé au bord ───────────────────────────────── */
+/* ── Toi, à cheval sur le bord du bas ─────────────────────────── */
 .col-moi {
     position: absolute;
-    left: 50%; bottom: 0;
-    transform: translateX(-50%);
+    left: 50%; top: 100%;
+    transform: translate(-50%, -46%);
     display: flex; flex-direction: column; align-items: center;
     z-index: 8;
 }
 .col-main {
-    display: flex;
-    padding-left: calc(var(--carte) * 0.2);
-    max-width: 96vw;
+    display: flex; align-items: flex-end;
+    padding-left: calc(var(--carte) * 0.22);
 }
-.col-main .col-carte { margin-left: calc(var(--carte) * -0.2); }
-.col-moi .col-etoiles { margin-top: -0.5rem; z-index: 2; }
+.col-main .col-carte { margin-left: calc(var(--carte) * -0.22); transform-origin: 50% 130%; }
+.col-moi .col-etoiles { margin-top: -0.55rem; z-index: 2; }
 .col-moi .col-nom { margin-top: 0.15rem; color: var(--col-or); }
 
 /* ── La carte ─────────────────────────────────────────────────── */
@@ -204,34 +210,38 @@
     padding: 0;
     background: #14131a;
     border: 0.09rem solid rgba(255, 255, 255, 0.14);
-    border-radius: 0.4rem;
-    overflow: hidden;
+    border-radius: 0.42rem;
     cursor: pointer;
     box-shadow: 0 0.3rem 0.7rem rgba(0, 0, 0, 0.5);
     transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
-.col-carte img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.col-carte img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    border-radius: 0.34rem;
+}
 .col-carte.classe-assaut { border-color: var(--assaut); }
 .col-carte.classe-mirage { border-color: var(--mirage); }
 .col-carte.classe-oracle { border-color: var(--oracle); }
 
-/* La classe en pastille : la couleur porte déjà l'information, la lettre
-   est là pour ceux qui la distinguent mal. */
-.col-carte-classe {
-    position: absolute; top: 0.15rem; left: 0.15rem;
-    width: 0.9rem; height: 0.9rem;
+/* La classe déborde du coin haut droit : elle se lit alors même quand les
+   cartes se chevauchent en éventail, ce qui n'était pas le cas dans le coin. */
+.col-pion {
+    position: absolute; top: -0.32rem; right: -0.32rem;
+    width: 1.15rem; height: 1.15rem;
     display: grid; place-items: center;
-    font-family: 'Bebas Neue', sans-serif; font-size: 0.62rem;
-    color: #14131a;
+    background: #0b0b0f;
+    border: 0.11rem solid currentColor;
     border-radius: 50%;
-    box-shadow: 0 0.1rem 0.3rem rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0.15rem 0.4rem rgba(0, 0, 0, 0.65);
+    z-index: 3;
 }
-.classe-assaut .col-carte-classe { background: var(--assaut); }
-.classe-mirage .col-carte-classe { background: var(--mirage); }
-.classe-oracle .col-carte-classe { background: var(--oracle); }
+.col-pion svg { width: 0.62rem; height: 0.62rem; display: block; }
+.pion-assaut { color: var(--assaut); }
+.pion-mirage { color: var(--mirage); }
+.pion-oracle { color: var(--oracle); }
 
-.col-carte:hover { transform: translateY(-0.4rem); z-index: 3; }
-.col-carte.choisie { transform: translateY(-0.75rem); border-color: var(--col-or); box-shadow: 0 0.6rem 1.2rem rgba(255, 210, 74, 0.3); z-index: 4; }
+.col-carte:hover { transform: translateY(-0.45rem) rotate(0deg) !important; z-index: 20; }
+.col-carte.choisie { transform: translateY(-0.8rem) rotate(0deg) !important; border-color: var(--col-or); box-shadow: 0 0.6rem 1.2rem rgba(255, 210, 74, 0.3); z-index: 21; }
 .col-carte.choisissable { box-shadow: 0 0 0 0.11rem rgba(255, 210, 74, 0.4), 0 0.3rem 0.7rem rgba(0, 0, 0, 0.5); }
 .col-carte.eteinte { opacity: 0.3; }
 
@@ -240,6 +250,7 @@
 .col-carte.paire::after {
     content: '';
     position: absolute; inset: auto 0 0 0; height: 0.18rem;
+    border-radius: 0 0 0.34rem 0.34rem;
     background: var(--col-or);
     box-shadow: 0 0 0.5rem rgba(255, 210, 74, 0.8);
 }
@@ -247,36 +258,59 @@
 /* ── La carte regardée de près ────────────────────────────────── */
 .col-loupe {
     position: absolute;
-    left: 1%; top: 50%;
+    left: 1.2rem; top: 50%;
     transform: translateY(-50%);
-    width: min(11rem, 26vw);
-    padding-bottom: 0.7rem;
-    background: linear-gradient(180deg, #1a1922, #101015);
-    border: 0.06rem solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.7rem;
-    overflow: hidden;
-    z-index: 12;
+    width: min(13.5rem, 26vw);
+    background: linear-gradient(180deg, #1c1b25, #0e0e13);
+    border: 0.06rem solid rgba(255, 255, 255, 0.09);
+    border-radius: 0.85rem;
+    z-index: 14;
+    pointer-events: none;
+    animation: colLoupe 0.18s ease both;
 }
-.col-loupe img { width: 100%; display: block; }
+@keyframes colLoupe {
+    from { opacity: 0; transform: translateY(-50%) translateX(-0.6rem); }
+    to   { opacity: 1; transform: translateY(-50%) translateX(0); }
+}
+.col-loupe-vue { position: relative; }
+.col-loupe-vue img { width: 100%; display: block; border-radius: 0.85rem 0.85rem 0 0; }
+/* Le fondu : le nom se pose SUR la carte, dans sa partie basse, au lieu
+   d'être relégué dans un bandeau qui coupe l'image en deux. */
+.col-loupe-vue::after {
+    content: '';
+    position: absolute; inset: 40% 0 0 0;
+    background: linear-gradient(180deg, transparent, #131218 88%);
+    border-radius: 0 0 0.2rem 0.2rem;
+}
+.col-loupe-texte {
+    position: absolute; inset: auto 0 0 0;
+    padding: 0 0.85rem 0.9rem;
+    z-index: 2;
+}
 .col-loupe-nom {
     display: block;
-    margin: 0.5rem 0.7rem 0;
-    font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; letter-spacing: 0.03em;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.35rem; line-height: 1; letter-spacing: 0.04em;
+}
+/* La barre entre le nom et la série : un trait doré qui s'éteint, pas un
+   filet plein — il sépare sans faire une deuxième ligne. */
+.col-loupe-barre {
+    display: block;
+    width: 2.6rem; height: 0.09rem;
+    margin: 0.4rem 0 0.35rem;
+    background: linear-gradient(90deg, var(--col-or), transparent);
 }
 .col-loupe-serie {
     display: block;
-    margin: 0 0.7rem;
-    font-size: 0.55rem; letter-spacing: 0.16em; text-transform: uppercase;
-    color: var(--col-or);
+    font-size: 0.56rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.45);
 }
-.col-loupe-classe {
-    display: inline-block;
-    margin: 0.4rem 0.7rem 0;
-    padding: 0.1rem 0.45rem;
-    font-size: 0.55rem; font-weight: 700; letter-spacing: 0.08em;
-    color: #14131a;
-    border-radius: 0.3rem;
+.col-loupe .col-pion {
+    top: 0.6rem; right: 0.6rem;
+    width: 1.9rem; height: 1.9rem;
+    border-width: 0.14rem;
 }
+.col-loupe .col-pion svg { width: 1rem; height: 1rem; }
 
 /* ── La consigne et les actions ───────────────────────────────── */
 .col-consigne {
@@ -284,7 +318,7 @@
     min-height: 1.2rem;
     padding: 0.35rem 0.2rem 0.15rem;
     text-align: center;
-    font-size: 0.72rem; line-height: 1.35;
+    font-size: 0.74rem; line-height: 1.35;
     color: rgba(255, 255, 255, 0.55);
 }
 .col-consigne b { color: var(--col-or); }
@@ -293,12 +327,12 @@
 .col-actions {
     flex: 0 0 auto;
     display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.3rem;
-    width: min(30rem, 100%);
+    width: min(32rem, 100%);
     margin: 0 auto;
 }
 .col-action {
     padding: 0.55rem 0.2rem;
-    font: inherit; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.03em;
+    font: inherit; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.03em;
     color: rgba(255, 255, 255, 0.75);
     background: rgba(255, 255, 255, 0.05);
     border: 0.06rem solid rgba(255, 255, 255, 0.09);
@@ -321,6 +355,44 @@
 .col-journal b { color: rgba(255, 255, 255, 0.6); }
 .col-journal .gagne { color: #6ee7a8; }
 .col-journal .perdu { color: #ff8b98; }
+
+/* ════════ L'entrée en partie ════════
+   La table s'ouvre, les mains tombent toutes ensemble, puis le marché
+   glisse. Sans ce temps, on découvre une position déjà installée sans
+   avoir vu d'où viennent les cartes — et l'on ne comprend pas que le
+   marché est commun. */
+.col.entree .col-table { animation: colTable 0.5s cubic-bezier(0.2, 0.9, 0.25, 1) both; }
+.col.entree .col-siege { animation: colSiege 0.45s ease both; animation-delay: 0.35s; }
+.col.entree .col-dos,
+.col.entree .col-main .col-carte {
+    animation: colDonne 0.42s cubic-bezier(0.2, 0.85, 0.3, 1) both;
+    animation-delay: calc(0.5s + var(--i, 0) * 0.05s);
+}
+.col.entree .col-marche .col-carte {
+    animation: colMarche 0.4s cubic-bezier(0.2, 0.85, 0.3, 1) both;
+    animation-delay: calc(0.95s + var(--i, 0) * 0.07s);
+}
+.col.entree .col-emplacement,
+.col.entree .col-pioche { animation: colFondu 0.4s ease both; animation-delay: 1.3s; }
+
+@keyframes colTable {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes colSiege {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+/* Les cartes viennent du centre de la table : c'est de là qu'on distribue */
+@keyframes colDonne {
+    from { opacity: 0; transform: translate(0, -14rem) scale(0.6) rotate(0deg); }
+    to   { opacity: 1; }
+}
+@keyframes colMarche {
+    from { opacity: 0; transform: translateX(-4rem) scale(0.85); }
+    to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes colFondu { from { opacity: 0; } to { opacity: 1; } }
 
 /* ── Les feuilles (vol, duel, scan) ───────────────────────────── */
 .col-voile {
@@ -350,10 +422,10 @@
     color: rgba(255, 255, 255, 0.28);
 }
 .col-rangee {
-    display: flex; gap: 0.35rem;
+    display: flex; gap: 0.5rem;
     justify-content: safe center;
     overflow-x: auto;
-    padding: 0.5rem 0 0.2rem;
+    padding: 0.7rem 0 0.3rem;
 }
 .col-rangee::-webkit-scrollbar { display: none; }
 
@@ -420,18 +492,19 @@
 
 /* ── Écrans étroits ───────────────────────────────────────────── */
 @media (max-width: 780px) {
-    .col { --carte: 3.4rem; }
+    .col { --carte: 3.5rem; }
     /* La table se redresse : en 9:16, une ellipse large laisse deux grands
        vides sur les côtés et écrase les sièges du haut. */
-    .col-table { width: min(94%, 30rem); aspect-ratio: 1 / 1.05; top: 42%; }
-    .col-marche { top: 42%; gap: 0.2rem; }
-    .col-pioche { display: none; }
-    .col-nom { max-width: 4.6rem; font-size: 0.55rem; }
-    .col-loupe { width: 7.5rem; left: 0.4rem; top: 34%; }
-    .col-action { font-size: 0.56rem; padding: 0.5rem 0.1rem; }
+    .col-table { width: min(96%, 30rem); aspect-ratio: 1 / 1.02; top: 42%; }
+    .col-marche { gap: 0.18rem; }
+    .col-pioche { right: 0.6rem; bottom: 0.6rem; width: calc(var(--carte) * 0.95); }
+    .col-nom { max-width: 4.8rem; font-size: 0.56rem; }
+    .col-loupe { width: 8rem; left: 0.4rem; top: 32%; }
+    .col-loupe-nom { font-size: 1rem; }
+    .col-action { font-size: 0.57rem; padding: 0.5rem 0.1rem; }
 }
 
-@media (min-width: 1400px) {
-    .col { --carte: 5.4rem; }
-    .col-tour-qui { font-size: 1.35rem; }
+@media (min-width: 1500px) {
+    .col { --carte: 5.6rem; }
+    .col-tour-qui { font-size: 1.4rem; }
 }

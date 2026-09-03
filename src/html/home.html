@@ -784,7 +784,7 @@
                      🎴 COLLECT — réunir des sets, et se les voler
                      ============================================ -->
                 <template v-if="lobbyMode === 'collect' && !gameEnded">
-                    <div class="col" v-if="col.etat">
+                    <div class="col" :class="{ entree: col.entree }" v-if="col.etat">
 
                         <!-- ── La barre du haut ── -->
                         <div class="col-haut">
@@ -793,26 +793,26 @@
                                  pour celui qui choisit sa classe : ce rappel n'est
                                  pas décoratif, c'est lui qui rend le mode jouable
                                  pour quelqu'un qui débarque en cours de partie. -->
-                            <div class="col-tri" aria-label="Assaut bat Mirage bat Oracle bat Assaut">
-                                <svg width="58" height="58" viewBox="0 0 64 64">
+                            <div class="col-tri" title="Assaut bat Mirage · Mirage bat Oracle · Oracle bat Assaut">
+                                <svg width="84" height="84" viewBox="0 0 64 64">
                                     <defs>
                                         <marker id="colFleche" viewBox="0 0 8 8" refX="6" refY="4"
                                                 markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-                                            <path d="M 0 1 L 7 4 L 0 7 z" fill="rgba(255,255,255,0.45)"/>
+                                            <path d="M 0 1 L 7 4 L 0 7 z" fill="rgba(255,255,255,0.5)"/>
                                         </marker>
                                     </defs>
                                     <path d="M 36.5 20.7 A 28.3 28.3 0 0 1 44.1 33.8" fill="none" stroke="#ff7a5c"
-                                          stroke-width="1.15" stroke-linecap="round" opacity="0.55" marker-end="url(#colFleche)"/>
+                                          stroke-width="1.3" stroke-linecap="round" opacity="0.65" marker-end="url(#colFleche)"/>
                                     <path d="M 39.6 41.6 A 28.3 28.3 0 0 1 24.4 41.6" fill="none" stroke="#a78bfa"
-                                          stroke-width="1.15" stroke-linecap="round" opacity="0.55" marker-end="url(#colFleche)"/>
+                                          stroke-width="1.3" stroke-linecap="round" opacity="0.65" marker-end="url(#colFleche)"/>
                                     <path d="M 19.9 33.8 A 28.3 28.3 0 0 1 27.5 20.7" fill="none" stroke="#4fd1c5"
-                                          stroke-width="1.15" stroke-linecap="round" opacity="0.55" marker-end="url(#colFleche)"/>
-                                    <circle cx="32" cy="12.8" r="6.7" fill="rgba(0,0,0,0.55)" stroke="#ff7a5c" stroke-width="1.4"/>
-                                    <circle cx="48.6" cy="41.6" r="6.7" fill="rgba(0,0,0,0.55)" stroke="#a78bfa" stroke-width="1.4"/>
-                                    <circle cx="15.4" cy="41.6" r="6.7" fill="rgba(0,0,0,0.55)" stroke="#4fd1c5" stroke-width="1.4"/>
-                                    <text x="32" y="15.3" text-anchor="middle" font-family="Bebas Neue" font-size="7.4" fill="#ff7a5c">A</text>
-                                    <text x="48.6" y="44.1" text-anchor="middle" font-family="Bebas Neue" font-size="7.4" fill="#a78bfa">M</text>
-                                    <text x="15.4" y="44.1" text-anchor="middle" font-family="Bebas Neue" font-size="7.4" fill="#4fd1c5">O</text>
+                                          stroke-width="1.3" stroke-linecap="round" opacity="0.65" marker-end="url(#colFleche)"/>
+                                    <circle cx="32" cy="12.8" r="7" fill="#0b0b0f" stroke="#ff7a5c" stroke-width="1.5"/>
+                                    <circle cx="48.6" cy="41.6" r="7" fill="#0b0b0f" stroke="#a78bfa" stroke-width="1.5"/>
+                                    <circle cx="15.4" cy="41.6" r="7" fill="#4fd1c5" stroke="#4fd1c5" stroke-width="1.5" fill-opacity="0"/>
+                                    <path d="M32 9.2 L35.2 15.6 L28.8 15.6 Z" fill="#ff7a5c"/>
+                                    <path d="M48.6 38.1 L52 41.6 L48.6 45.1 L45.2 41.6 Z" fill="#a78bfa"/>
+                                    <circle cx="15.4" cy="41.6" r="2.6" fill="#4fd1c5"/>
                                 </svg>
                             </div>
 
@@ -824,7 +824,7 @@
                             </div>
 
                             <div class="col-chrono" :class="{ urgence: col.reste <= 5 }">
-                                <svg width="38" height="38" viewBox="0 0 35 35">
+                                <svg width="41" height="41" viewBox="0 0 35 35">
                                     <circle class="fond" cx="17.5" cy="17.5" r="15"></circle>
                                     <circle class="fil" cx="17.5" cy="17.5" r="15"
                                             :stroke-dasharray="94.2" :stroke-dashoffset="colArcChrono"></circle>
@@ -833,72 +833,85 @@
                             </div>
                         </div>
 
-                        <!-- ── La table ── -->
+                        <!-- ── La table. Tout ce qui doit la toucher est DEDANS :
+                             un pourcentage d'écran ne suivrait pas une ellipse
+                             dont la hauteur vient d'un « aspect-ratio ». ── -->
                         <div class="col-scene">
-                            <div class="col-table"></div>
+                            <div class="col-table">
 
-                            <!-- Le marché, au centre du feutre -->
-                            <div class="col-marche">
-                                <button v-for="c in col.etat.marche" :key="c.uid"
-                                        class="col-carte" :class="['classe-' + c.classe, {
-                                            choisie: col.marcheChoisi === c.uid,
-                                            choisissable: col.mode === 'echanger',
-                                            paire: colDansMaMain(c.anime) > 0 }]"
-                                        @click="colToucherMarche(c)">
-                                    <img :src="'collectpic/' + c.img" :alt="c.nom" draggable="false">
-                                    <span class="col-carte-classe">{{ c.classe[0].toUpperCase() }}</span>
-                                </button>
-                                <span class="col-emplacement">★</span>
-                            </div>
-
-                            <div class="col-pioche">SM</div>
-
-                            <!-- Les autres, répartis sur l'arc du haut -->
-                            <div v-for="(p, i) in colRivaux" :key="p.playerId"
-                                 class="col-siege"
-                                 :class="{ tour: p.playerId === col.etat.tourJoueur,
-                                           choisissable: colMonTour && (col.mode === 'scanner' || col.mode === 'voler') }"
-                                 :style="colSiege(i, colRivaux.length)">
-                                <div class="col-eventail" @click="colToucherRival(p.playerId)">
-                                    <span v-for="n in p.cartes" :key="n" class="col-dos"></span>
-                                </div>
-                                <span class="col-etoiles">
-                                    <i v-for="n in col.etat.setsPourGagner" :key="n"
-                                       :class="{ pleine: n <= p.sets.length }"></i>
-                                </span>
-                                <span class="col-nom">{{ colNom(p.playerId) }}</span>
-                            </div>
-
-                            <!-- Toi, collé au bord du bas -->
-                            <div class="col-moi">
-                                <div class="col-main">
-                                    <button v-for="c in col.main" :key="c.uid"
+                                <!-- Le marché, au centre du feutre -->
+                                <div class="col-marche">
+                                    <button v-for="(c, i) in col.etat.marche" :key="c.uid"
                                             class="col-carte" :class="['classe-' + c.classe, {
-                                                choisie: col.mainChoisie === c.uid || (col.loupe && col.loupe.uid === c.uid),
-                                                choisissable: colMainCliquable,
-                                                paire: colDansMaMain(c.anime) >= col.etat.taille - 1 }]"
-                                            @click="colToucherMain(c)">
+                                                choisie: col.marcheChoisi === c.uid,
+                                                choisissable: col.mode === 'echanger',
+                                                paire: colDansMaMain(c.anime) > 0 }]"
+                                            :style="{ '--i': i }"
+                                            @mouseenter="col.loupe = c" @mouseleave="col.loupe = null"
+                                            @click="colToucherMarche(c)">
                                         <img :src="'collectpic/' + c.img" :alt="c.nom" draggable="false">
-                                        <span class="col-carte-classe">{{ c.classe[0].toUpperCase() }}</span>
+                                        <span class="col-pion" :class="'pion-' + c.classe" v-html="colSymbole(c.classe)"></span>
                                     </button>
+                                    <span class="col-emplacement">★</span>
                                 </div>
-                                <span class="col-etoiles">
-                                    <i v-for="n in col.etat.setsPourGagner" :key="n"
-                                       :class="{ pleine: n <= colMesSets }"></i>
-                                </span>
-                                <span class="col-nom">Vous</span>
+
+                                <!-- Les autres, sur l'arc du haut -->
+                                <div v-for="(p, i) in colRivaux" :key="p.playerId"
+                                     class="col-siege"
+                                     :class="{ tour: p.playerId === col.etat.tourJoueur,
+                                               choisissable: colMonTour && (col.mode === 'scanner' || col.mode === 'voler') }"
+                                     :style="colSiege(i, colRivaux.length)">
+                                    <div class="col-eventail" @click="colToucherRival(p.playerId)">
+                                        <span v-for="n in p.cartes" :key="n" class="col-dos"
+                                              :style="colIncline(n - 1, p.cartes, 6)"></span>
+                                    </div>
+                                    <span class="col-etoiles">
+                                        <i v-for="n in col.etat.setsPourGagner" :key="n"
+                                           :class="{ pleine: n <= p.sets.length }"></i>
+                                    </span>
+                                    <span class="col-nom">{{ colNom(p.playerId) }}</span>
+                                </div>
+
+                                <!-- Toi, à cheval sur le bord du bas -->
+                                <div class="col-moi">
+                                    <div class="col-main">
+                                        <button v-for="(c, i) in col.main" :key="c.uid"
+                                                class="col-carte" :class="['classe-' + c.classe, {
+                                                    choisie: col.mainChoisie === c.uid,
+                                                    choisissable: colMainCliquable,
+                                                    paire: colDansMaMain(c.anime) >= col.etat.taille - 1 }]"
+                                                :style="colIncline(i, col.main.length, 5)"
+                                                @mouseenter="col.loupe = c" @mouseleave="col.loupe = null"
+                                                @click="colToucherMain(c)">
+                                            <img :src="'collectpic/' + c.img" :alt="c.nom" draggable="false">
+                                            <span class="col-pion" :class="'pion-' + c.classe" v-html="colSymbole(c.classe)"></span>
+                                        </button>
+                                    </div>
+                                    <span class="col-etoiles">
+                                        <i v-for="n in col.etat.setsPourGagner" :key="n"
+                                           :class="{ pleine: n <= colMesSets }"></i>
+                                    </span>
+                                    <span class="col-nom">Vous</span>
+                                </div>
                             </div>
 
-                            <!-- La carte qu'on regarde de près -->
-                            <div class="col-loupe" v-if="col.loupe" @click="col.loupe = null">
-                                <img :src="'collectpic/' + col.loupe.img" :alt="col.loupe.nom" draggable="false">
-                                <span class="col-loupe-nom">{{ col.loupe.nom }}</span>
-                                <span class="col-loupe-serie">{{ col.loupe.anime }}</span>
-                                <span class="col-loupe-classe" :style="{ background: colCouleurClasse(col.loupe.classe) }">
-                                    {{ col.loupe.classe.toUpperCase() }}
-                                </span>
+                            <!-- La carte survolée, en grand -->
+                            <div class="col-loupe" v-if="col.loupe">
+                                <div class="col-loupe-vue">
+                                    <img :src="'collectpic/' + col.loupe.img" :alt="col.loupe.nom" draggable="false">
+                                    <span class="col-pion" :class="'pion-' + col.loupe.classe"
+                                          v-html="colSymbole(col.loupe.classe)"></span>
+                                    <span class="col-loupe-texte">
+                                        <span class="col-loupe-nom">{{ col.loupe.nom }}</span>
+                                        <span class="col-loupe-barre"></span>
+                                        <span class="col-loupe-serie">{{ col.loupe.anime }}</span>
+                                    </span>
+                                </div>
                             </div>
                         </div>
+
+                        <!-- La pioche, dans le coin -->
+                        <div class="col-pioche">SM</div>
 
                         <!-- ── La consigne, puis les cinq actions ── -->
                         <div class="col-consigne" :class="{ ko: col.erreur }" v-html="col.erreur || colConsigne"></div>
