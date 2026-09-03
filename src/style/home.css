@@ -7249,6 +7249,8 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-mode-row.mode-rush.active      { background: rgba(255, 255, 255, 0.07); border-color: rgba(255, 255, 255, 0.38); }
 .v2-mode-row.mode-rush.active .v2-mode-row-bar { background: #ffffff; box-shadow: 0 0 0.8rem rgba(255, 255, 255, 0.55); }
 .v2-mode-row.mode-ascension.active { background: rgba(127, 180, 255, 0.1); border-color: rgba(127, 180, 255, 0.42); }
+.v2-mode-row.mode-collect.active   { background: rgba(255, 122, 92, 0.09); border-color: rgba(255, 122, 92, 0.4); }
+.v2-mode-row.mode-collect.active .v2-mode-row-bar { background: #ff7a5c; box-shadow: 0 0 0.8rem rgba(255, 122, 92, 0.6); }
 .v2-mode-row.mode-ascension.active .v2-mode-row-bar { background: #7fb4ff; box-shadow: 0 0 0.8rem rgba(127, 180, 255, 0.6); }
 
 .v2-mode-preview {
@@ -7273,6 +7275,7 @@ body.game-active:has(.poll-game-container) #particles-js {
    confondait avec Classique dans la liste comme dans le panneau. */
 .v2-mode-preview.mode-rush      { border-color: rgba(255, 255, 255, 0.32); box-shadow: 0 1rem 3rem rgba(255, 255, 255, 0.09); }
 .v2-mode-preview.mode-ascension { border-color: rgba(127, 180, 255, 0.35); box-shadow: 0 1rem 3rem rgba(127, 180, 255, 0.13); }
+.v2-mode-preview.mode-collect   { border-color: rgba(255, 122, 92, 0.35); box-shadow: 0 1rem 3rem rgba(255, 122, 92, 0.13); }
 
 /* Personnage détouré : au premier plan, entier, débordant du cadre par le haut */
 .v2-mode-char {
@@ -7781,6 +7784,7 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-mode-preview.mode-classic   { --mode-color: #ffd24a; }
 .v2-mode-preview.mode-rush      { --mode-color: #ffffff; }
 .v2-mode-preview.mode-ascension { --mode-color: #7fb4ff; }
+.v2-mode-preview.mode-collect   { --mode-color: #ff7a5c; }
 .v2-mode-preview.mode-rivalry   { --mode-color: #a78bfa; }
 .v2-mode-preview.mode-bombanime { --mode-color: #4ade80; }
 /* La v1 donnait du rouge à Ascension. La règle vivait après la nouvelle et

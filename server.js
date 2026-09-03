@@ -6028,7 +6028,9 @@ io.on('connection', (socket) => {
         if (!gameState || gameState.inProgress) return;
         if (!gameState.hostToken || !data || data.hostToken !== gameState.hostToken) return;
 
-        const plafond = gameState.lobbyMode === 'bombanime' ? BOMBANIME_CONFIG.MAX_PLAYERS : 60;
+        const plafond = gameState.lobbyMode === 'bombanime' ? BOMBANIME_CONFIG.MAX_PLAYERS
+            : gameState.lobbyMode === 'collect' ? collect.CONFIG.MAX_JOUEURS
+            : 60;
         const place = Math.max(0, plafond - gameState.players.size);
         const combien = Math.min(parseInt(data.count, 10) || 0, place);
 

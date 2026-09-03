@@ -658,7 +658,7 @@
                                  limites qu'une fois plein. Un bot ne bloque pas le tour —
                                  l'explosion est un minuteur serveur, il perd une vie à
                                  l'expiration et la bombe passe au suivant. -->
-                            <div class="v2-set" v-if="estDev && (lobbyMode === 'ascension' || lobbyMode === 'bombanime')">
+                            <div class="v2-set" v-if="estDev && (lobbyMode === 'ascension' || lobbyMode === 'bombanime' || lobbyMode === 'collect')">
                                 <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9"/></svg>
                                 <span class="v2-set-label">Test</span>
                                 <span class="v2-set-value">{{ playerCount }}</span>
