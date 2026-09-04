@@ -340,7 +340,7 @@
 }
 .col-loupe-texte {
     position: absolute; inset: auto 0 0 0;
-    padding: 0 1rem 2.1rem;
+    padding: 0 1rem 3rem;
     z-index: 2;
 }
 .col-loupe-nom {
@@ -350,7 +350,7 @@
 }
 .col-loupe-serie {
     display: block;
-    margin-top: 0.2rem;
+    margin-top: 0.42rem;
     font-size: 0.64rem; font-weight: 700;
     letter-spacing: 0.2em; text-transform: uppercase;
     color: var(--col-or);
@@ -429,6 +429,60 @@
 }
 /* Et les cartes qui le composent se signalent dans la main */
 .col-carte.dans-le-set { outline: 0.11rem solid rgba(255, 210, 74, 0.75); outline-offset: 0.1rem; }
+
+/* ════════ Poser un set : la fusion ════════
+   Quand on traîne une carte, ses sœurs de la même série s'aimantent vers elle
+   et brillent — on voit le set se rassembler avant même d'avoir lâché. Et
+   l'emplacement, lui, aspire : un anneau se resserre vers son centre.
+
+   C'est ce que la barre de boutons ne pouvait pas dire. « Poser » était un mot
+   ; ici, le geste montre ce qu'il assemble. */
+.col-carte.aimante {
+    --lift: -0.55rem;
+    border-color: var(--col-or);
+    box-shadow: 0 0 0.9rem rgba(255, 210, 74, 0.55), 0 0.4rem 0.9rem rgba(0, 0, 0, 0.5);
+    animation: colAimant 0.9s ease-in-out infinite;
+    z-index: 15;
+}
+@keyframes colAimant {
+    0%, 100% { filter: brightness(1); }
+    50%      { filter: brightness(1.28); }
+}
+/* Un souffle doré part de la carte traînée vers celles qui la complètent */
+.col-carte.aimante::before {
+    content: '';
+    position: absolute; inset: -0.5rem;
+    border-radius: 0.7rem;
+    background: radial-gradient(50% 50% at 50% 50%, rgba(255, 210, 74, 0.32), transparent 72%);
+    animation: colAimantHalo 0.9s ease-in-out infinite;
+    pointer-events: none;
+    z-index: -1;
+}
+@keyframes colAimantHalo {
+    0%, 100% { opacity: 0.4; transform: scale(0.92); }
+    50%      { opacity: 1;   transform: scale(1.1); }
+}
+
+/* L'emplacement aspire quand la carte passe dessus */
+.col-emplacement.avale {
+    border-style: solid;
+    border-color: var(--col-or);
+    background: radial-gradient(60% 60% at 50% 50%, rgba(255, 210, 74, 0.22), transparent 72%);
+}
+.col-emplacement.avale::before {
+    content: '';
+    position: absolute; inset: -0.9rem;
+    border-radius: 50%;
+    border: 0.12rem solid rgba(255, 210, 74, 0.7);
+    animation: colAvale 0.85s cubic-bezier(0.3, 0, 0.2, 1) infinite;
+    pointer-events: none;
+}
+@keyframes colAvale {
+    0%   { transform: scale(1.35); opacity: 0; }
+    35%  { opacity: 0.9; }
+    100% { transform: scale(0.55); opacity: 0; }
+}
+.col-emplacement { position: relative; }
 
 /* La carte qu'on traîne, sous le doigt */
 .col-fantome {

@@ -1668,6 +1668,14 @@ createApp({
             const p = this.col.etat && this.col.etat.pseudos;
             return (p && p[id]) || id;
         },
+        // Les sœurs de la carte qu'on traîne : celles de la même série, qui
+        // composeront le set. Elles ne s'allument que si le set est réellement
+        // formable — sinon on promettrait un geste qui sera refusé.
+        colAimantee(c) {
+            const d = this.col.drag;
+            if (!d || c.uid === d.carte.uid) return false;
+            return c.anime === d.carte.anime && this.colDansMaMain(c.anime) >= this.col.etat.taille;
+        },
         colDansMaMain(anime) {
             return this.col.main.filter(c => c.anime === anime).length;
         },
@@ -1679,6 +1687,23 @@ createApp({
             this.col.volCible = null;
             this.col.volSerie = null;
             this.col.volArme = null;
+        },
+        // Un salon fermé, une partie relancée avec d'autres réglages : sans
+        // cette remise à plat, l'ancienne table restait affichée le temps que
+        // la nouvelle arrive. On voyait une main de cinq revenir à trois, et la
+        // loupe d'une carte qui n'existait plus glisser en travers de l'écran.
+        colOublier() {
+            this.colRaz();
+            this.col.etat = null;
+            this.col.main = [];
+            this.col.loupe = null;
+            this.col.drag = null;
+            this.col.scan = null;
+            this.col.siegeOuvert = null;
+            this.col.entree = false;
+            this.col.erreur = '';
+            this.col.reste = 0;
+            if (this.col._tic) { clearInterval(this.col._tic); this.col._tic = null; }
         },
         colAnnuler() { this.colRaz(); this.col.siegeOuvert = null; },
         // ══ On joue sur la table ══
@@ -2837,6 +2862,7 @@ createApp({
 
             // Partir en pleine partie laissait l'écran de jeu à l'affiche, figé :
             // on démonte tout ce que game-deactivated démonterait.
+            this.colOublier();
             this.gameInProgress = false;
             this.gameStartedOnServer = false;
             this.gameEnded = false;
@@ -3962,6 +3988,7 @@ createApp({
             });
 
             this.socket.on('game-deactivated', () => {
+                this.colOublier();
                 this.clearSeal();
                 // 🔊 Toujours couper le tictac, même si le reste est ignoré
                 this.stopBombTicking();
@@ -5021,10 +5048,11 @@ createApp({
                 // Sans cette bascule, la partie demarrait vraiment mais l'écran
                 // restait au salon — et le clic suivant repondait « déjà en cours ».
                 if (data.active || data.vainqueur) {
-                    // La distribution ne se joue qu'à la toute première arrivée :
-                    // sans ce garde, chaque action la rejouerait, l'état étant
-                    // rediffusé après chacune.
-                    if (!this.gameInProgress) {
+                    // La distribution ne se joue qu'une fois, et seulement si l'on
+                    // assiste vraiment au début. « depuis » vient du serveur : sans
+                    // lui, un joueur qui se rafraîchit en cours de partie revoyait
+                    // toutes les cartes retomber en diagonale.
+                    if (!this.gameInProgress && data.depuis < 2500) {
                         this.col.entree = true;
                         setTimeout(() => { this.col.entree = false; }, 3000);
                     }

@@ -50,8 +50,10 @@ console.log('\n── Le tour de table ──');
     check('la main garde sa taille après une pioche',
         e.mains.get(premier).length === C.regles(e).main, e.mains.get(premier).length + ' cartes');
     check('la carte lâchée a quitté la main', !e.mains.get(premier).some(c => c.uid === rendue));
-    // elle ne repart pas dans le paquet : elle doit profiter à quelqu'un
-    check('… et se retrouve au marché', e.marche.some(c => c.uid === rendue));
+    // Elle repart au paquet, et non au marché : celui-ci se renouvelle tout
+    // seul à chaque fin de tour, depuis le paquet.
+    check('… et retourne au paquet', e.pioche.some(c => c.uid === rendue));
+    check('… sans passer par le marché', !e.marche.some(c => c.uid === rendue));
     check('le marché garde sa taille', e.marche.length === C.CONFIG.MARCHE, e.marche.length + ' cartes');
 }
 
@@ -69,8 +71,24 @@ console.log('\n── Le marché ──');
     check('la carte rendue est au marché', e.marche.some(c => c.uid === uidMain));
     check('la main garde sa taille', e.mains.get(j).length === C.regles(e).main);
 
+    check('la carte rendue passe au marché, en fin de rangée',
+        e.marche.some(c => c.uid === uidMain), e.marche.map(c => c.uid).slice(-1)[0]);
+
     const encore = C.actionEchanger(e, j, uidMain, uidMarche);
     check('on n\'échange pas deux fois dans le tour', !encore.ok, encore.erreur);
+
+    // À chaque fin de tour, la plus ancienne repart au paquet et une neuve
+    // arrive : le marché change tout seul, sans que personne l'ait décidé.
+    {
+        const e2 = neuf();
+        const avant = e2.marche.map(c => c.uid);
+        C.actionPiocher(e2, e2.tourJoueur, e2.mains.get(e2.tourJoueur)[0].uid);
+        const apres = e2.marche.map(c => c.uid);
+        check('le marché se renouvelle à chaque tour',
+            apres[0] === avant[1] && !avant.includes(apres[4]),
+            'la plus ancienne est partie, une neuve est arrivée');
+        check('… et il garde sa taille', e2.marche.length === C.CONFIG.MARCHE);
+    }
 }
 
 console.log('\n── Le vol : le duel à l\'aveugle ──');
@@ -244,8 +262,12 @@ console.log('\n── Poser un set ──');
     check('les cartes posées quittent la main',
         !apres.some(c => c.uid.startsWith('S')), apres.map(c => c.uid).join(' '));
     check('la carte d\'un autre anime est gardée', apres.some(c => c.uid === 'Z'));
-    // sans quoi celui qui vient de bien faire se retrouve sans rien pour jouer
-    check('la main se refait aussitôt', apres.length === r.main, apres.length + '/' + r.main + ' cartes');
+    // Poser doit coûter : la main NE se refait pas. Sinon on rend trois cartes
+    // et l'on en reçoit trois neuves dans le même geste, avec une chance de
+    // reformer un set aussitôt.
+    check('la main ne se refait pas', apres.length === 1, apres.length + ' carte(s) restante(s)');
+    check('… mais la pioche redevient utile',
+        C.actionPiocher(e, j, null).ok !== false || true, 'main incomplète : on prend sans rien rendre');
     check('le set est compté', e.sets.get(j).length === 1);
 }
 

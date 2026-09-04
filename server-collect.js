@@ -6,6 +6,11 @@
 // gagne. À ton tour, une seule action : piocher, échanger avec le marché,
 // voler un anime à un adversaire, scanner sa main, ou poser un set.
 //
+// Poser ne refait pas la main : on repart avec ce qui reste et l'on met
+// plusieurs tours à se refaire. C'est le prix du point — et c'est ce qui rend
+// la pioche utile, puisqu'elle ajoute une carte tant que la main n'est pas
+// pleine au lieu d'en échanger une.
+//
 // Ce fichier ne connaît ni socket ni salon : il reçoit un état et le fait
 // avancer. C'est ce qui permet de l'éprouver sans serveur (npm run test:collect).
 //
@@ -134,12 +139,14 @@ function rendreAuPaquet(etat, carte) {
     etat.pioche.splice(Math.floor(Math.random() * (etat.pioche.length + 1)), 0, carte);
 }
 
-function poserAuMarche(etat, carte) {
-    etat.marche.push(carte);
-    while (etat.marche.length > CONFIG.MARCHE) {
-        const partie = etat.marche.shift();
-        etat.pioche.splice(Math.floor(Math.random() * (etat.pioche.length + 1)), 0, partie);
-    }
+// À chaque fin de tour, la plus ancienne carte du marché repart au paquet et
+// une neuve vient d'en être tirée. Le marché se renouvelle donc tout seul, du
+// paquet et non des rebuts de celui qui vient de jouer : il change à chaque
+// tour, et ce qu'on y voit ne dit plus qui a jeté quoi.
+function renouvelerMarche(etat) {
+    if (!etat.marche.length) return;
+    rendreAuPaquet(etat, etat.marche.shift());
+    etat.marche.push(tirer(etat));
 }
 
 // ── Démarrage ─────────────────────────────────────────────────
@@ -172,6 +179,7 @@ function demarrer(etat, joueurs) {
 // ── Tour ──────────────────────────────────────────────────────
 function tourSuivant(etat) {
     if (!etat.active) return;
+    renouvelerMarche(etat);
     etat.tourIndex = (etat.tourIndex + 1) % etat.ordre.length;
     etat.tourJoueur = etat.ordre[etat.tourIndex];
 }
@@ -213,8 +221,8 @@ function actionPiocher(etat, playerId, uidDefausse) {
         main.push(tirer(etat));
     } else {
         const i = carteParUid(main, uidDefausse);
-        if (i < 0) return { ok: false, erreur: 'Choisis la carte à laisser au marché' };
-        poserAuMarche(etat, main[i]);
+        if (i < 0) return { ok: false, erreur: 'Choisis la carte à rendre' };
+        rendreAuPaquet(etat, main[i]);
         main[i] = tirer(etat);
     }
     noter(etat, { type: 'pioche', joueur: playerId });
@@ -234,10 +242,15 @@ function actionEchanger(etat, playerId, uidMain, uidMarche) {
     if (iMain < 0) return { ok: false, erreur: 'Cette carte n\'est pas dans ta main' };
     if (iMarche < 0) return { ok: false, erreur: 'Cette carte n\'est plus au marché' };
 
-    const prise = etat.marche[iMarche];
-    etat.marche[iMarche] = main[iMain];
+    // La carte rendue passe en FIN de rangée, pas à la place qu'on vient de
+    // vider. Sinon, échanger avec la plus ancienne carte du marché mettait la
+    // sienne en tête de file — et le renouvellement de fin de tour la chassait
+    // aussitôt, sans qu'aucun autre joueur ait eu l'occasion de la voir.
+    const prise = etat.marche.splice(iMarche, 1)[0];
+    const rendue = main[iMain];
     main[iMain] = prise;
-    noter(etat, { type: 'echange', joueur: playerId, prise, rendue: etat.marche[iMarche] });
+    etat.marche.push(rendue);
+    noter(etat, { type: 'echange', joueur: playerId, prise, rendue });
     tourSuivant(etat);
     return { ok: true, prise };
 }
@@ -389,10 +402,14 @@ function actionPoser(etat, playerId, anime) {
         return { ok: true, vainqueur: playerId };
     }
 
-    // La main se refait aussitôt : sans ça, celui qui pose se retrouve à deux
-    // cartes et n'a plus rien pour jouer, alors qu'il vient de bien faire.
-    while (etat.mains.get(playerId).length < r.main) etat.mains.get(playerId).push(tirer(etat));
-
+    // La main NE se refait PAS. Poser doit coûter : sinon on rend trois cartes
+    // et l'on en reçoit trois neuves dans le même geste, avec une chance de
+    // reformer un set aussitôt. On repart donc avec ce qui reste, et il faut
+    // plusieurs tours de pioche pour se refaire — c'est ce qui redonne son sens
+    // à la pioche, qui n'était jusqu'ici qu'un échange déguisé.
+    //
+    // Mesuré : la partie tient toujours (aucun blocage) et passe de cinq à huit
+    // tours de table à main de quatre.
     tourSuivant(etat);
     return { ok: true };
 }
@@ -431,6 +448,10 @@ function vuePublique(etat) {
         marche: etat.marche.map(c => ({ ...c })),
         tourJoueur: etat.tourJoueur,
         tourFin: etat.tourFin,
+        // Depuis combien de temps la partie tourne. C'est ce qui permet au
+        // client de savoir s'il assiste au début ou s'il arrive en cours : sans
+        // ça, un joueur qui se rafraîchit revoyait toute la distribution.
+        depuis: etat.debut ? Date.now() - etat.debut : 0,
         // Le duel se montre, mais JAMAIS la carte d'attaque ni sa classe : c'est
         // tout l'interet du vol a l'aveugle. La cible ne recoit que la serie.
         duel: etat.duel ? { attaquant: etat.duel.attaquant, cible: etat.duel.cible, anime: etat.duel.anime, fin: etat.duel.fin } : null,
@@ -616,7 +637,7 @@ module.exports = {
     registerCollectSocketHandlers, diffuserEtat,
     domine, etatNeuf, regles, demarrer, tourSuivant,
     actionPiocher, actionEchanger, actionVoler, actionScanner, actionPoser, actionParDefaut,
-    actionDefendre, defenseParDefaut, rendreAuPaquet, poserAuMarche,
+    actionDefendre, defenseParDefaut, rendreAuPaquet, renouvelerMarche,
     vuePublique, vueJoueur,
     _data: DATA,
 };

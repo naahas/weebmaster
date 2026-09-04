@@ -118,11 +118,17 @@ const dernier = (j) => j.etats[j.etats.length - 1];
 
     // ── Piocher ──
     let courant = tous.find(j => j.nom === dernier(A).tourJoueur);
+    const marcheAvant = dernier(A).marche.map(c => c.uid);
     const lachee = courant.main[0].uid;
     courant.socket.emit('collect-piocher', { uidDefausse: lachee });
     await wait(300);
     check('la pioche passe', dernier(A).tourJoueur !== courant.nom, courant.nom + ' → ' + dernier(A).tourJoueur);
-    check('la carte lâchée est au marché', dernier(A).marche.some(c => c.uid === lachee));
+    // La carte lâchée repart au PAQUET, que le client ne voit pas. Ce qu'il
+    // peut constater, c'est le renouvellement de fin de tour : la plus ancienne
+    // du marché s'en va et une neuve arrive, depuis le paquet.
+    check('la carte lâchée ne réapparaît pas au marché', !dernier(A).marche.some(c => c.uid === lachee));
+    check('le marché s\'est renouvelé', dernier(A).marche[0].uid === marcheAvant[1],
+        marcheAvant[0].slice(0, 6) + ' est partie');
     check('le marché garde ses cinq cartes', dernier(A).marche.length === 5, String(dernier(A).marche.length));
     check('la main garde sa taille', courant.main.length === 4, String(courant.main.length));
 

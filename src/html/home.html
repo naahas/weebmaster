@@ -861,7 +861,8 @@
                                     </button>
                                     </transition-group>
                                     <span class="col-emplacement" data-drop="poser"
-                                          :class="{ prete: colMonTour && colSetPret,
+                                          :class="{ prete: colMonTour && !col.drag && colSetPret,
+                                                    avale: col.drag && col.drag.cible === 'poser' && colSetPret,
                                                     'col-cible': col.drag && col.drag.cible === 'poser' }">★</span>
                                 </div>
 
@@ -899,7 +900,8 @@
                                         <button v-for="(c, i) in col.main" :key="c.uid"
                                                 class="col-carte" :class="['classe-' + c.classe, {
                                                     partie: col.drag && col.drag.carte.uid === c.uid,
-                                                    'dans-le-set': colMonTour && colSetPret === c.anime,
+                                                    aimante: colAimantee(c),
+                                                    'dans-le-set': colMonTour && !col.drag && colSetPret === c.anime,
                                                     paire: colDansMaMain(c.anime) >= col.etat.taille - 1 }]"
                                                 :style="colIncline(i, col.main.length, 5)"
                                                 @mouseenter="col.loupe = c" @mouseleave="col.loupe = null"
