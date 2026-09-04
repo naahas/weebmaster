@@ -794,7 +794,7 @@
                                  pas décoratif, c'est lui qui rend le mode jouable
                                  pour quelqu'un qui débarque en cours de partie. -->
                             <div class="col-tri" title="Assaut bat Mirage · Mirage bat Oracle · Oracle bat Assaut">
-                                <svg width="84" height="84" viewBox="0 0 64 64">
+                                <svg width="96" height="96" viewBox="0 0 64 64">
                                     <defs>
                                         <marker id="colFleche" viewBox="0 0 8 8" refX="6" refY="4"
                                                 markerWidth="5" markerHeight="5" orient="auto-start-reverse">
@@ -901,8 +901,8 @@
                                           v-html="colSymbole(col.loupe.classe)"></span>
                                     <span class="col-loupe-texte">
                                         <span class="col-loupe-nom">{{ col.loupe.nom }}</span>
-                                        <span class="col-loupe-barre"></span>
                                         <span class="col-loupe-serie">{{ col.loupe.anime }}</span>
+                                        <span class="col-loupe-barre"></span>
                                     </span>
                                 </div>
                             </div>
@@ -927,7 +927,6 @@
                                     :disabled="!colMonTour || !colSetPret" @click="colPoser">Poser</button>
                         </div>
 
-                        <div class="col-journal" v-html="colDernierFait"></div>
                     </div>
 
 

@@ -45,6 +45,7 @@
    minutes à l'écran sans peser, et redevenir net dès qu'on s'y attarde. */
 .col-tri {
     flex: 0 0 auto;
+    margin: 0.55rem 0 0 0.7rem;
     opacity: 0.42;
     transition: opacity 0.25s ease, transform 0.25s ease;
     cursor: help;
@@ -150,6 +151,10 @@
     border: 0.06rem solid rgba(255, 255, 255, 0.14);
     box-shadow: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.5);
     transform-origin: 50% 120%;
+    /* L'inclinaison doit vivre ICI et pas seulement dans l'animation d'entrée :
+       sans cette règle, les dos se redressaient d'un coup à la fin de la
+       distribution, quand la classe « entree » disparaissait avec elle. */
+    transform: translateY(var(--dy, 0rem)) rotate(var(--rot, 0deg));
 }
 .col-siege.tour .col-dos { border-color: rgba(255, 210, 74, 0.55); }
 .col-siege.choisissable .col-dos { border-color: rgba(255, 255, 255, 0.45); }
@@ -259,10 +264,10 @@
     position: absolute;
     left: 1.2rem; top: 50%;
     transform: translateY(-50%);
-    width: min(17rem, 30vw);
-    background: linear-gradient(180deg, #1c1b25, #0e0e13);
-    border: 0.06rem solid rgba(255, 255, 255, 0.09);
-    border-radius: 0.85rem;
+    width: min(14.5rem, 26vw);
+    background: #0e0e13;
+    border-radius: 0.9rem;
+    box-shadow: 0 1rem 2.4rem rgba(0, 0, 0, 0.6);
     z-index: 14;
     pointer-events: none;
     animation: colLoupe 0.18s ease both;
@@ -271,45 +276,57 @@
     from { opacity: 0; transform: translateY(-50%) translateX(-0.6rem); }
     to   { opacity: 1; transform: translateY(-50%) translateX(0); }
 }
-.col-loupe-vue { position: relative; }
-.col-loupe-vue img { width: 100%; display: block; border-radius: 0.85rem 0.85rem 0 0; }
-/* Le fondu : le nom se pose SUR la carte, dans sa partie basse, au lieu
-   d'être relégué dans un bandeau qui coupe l'image en deux. */
+.col-loupe-vue { position: relative; border-radius: 0.9rem; overflow: visible; }
+.col-loupe-vue img { width: 100%; display: block; border-radius: 0.9rem; }
+/* Le fondu monte haut et se ferme sur le fond de la carte : le nom se pose
+   SUR l'image, dans sa partie basse, au lieu d'être relégué dans un bandeau
+   qui la couperait en deux. */
 .col-loupe-vue::after {
     content: '';
-    position: absolute; inset: 40% 0 0 0;
-    background: linear-gradient(180deg, transparent, #131218 88%);
-    border-radius: 0 0 0.2rem 0.2rem;
+    position: absolute; inset: 38% 0 0 0;
+    background: linear-gradient(180deg, transparent, rgba(10, 10, 14, 0.72) 42%, #0a0a0e 82%);
+    border-radius: 0 0 0.9rem 0.9rem;
 }
 .col-loupe-texte {
     position: absolute; inset: auto 0 0 0;
-    padding: 0 0.85rem 0.9rem;
+    padding: 0 0.9rem 0.95rem;
     z-index: 2;
 }
 .col-loupe-nom {
     display: block;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.35rem; line-height: 1; letter-spacing: 0.04em;
-}
-/* La barre entre le nom et la série : un trait doré qui s'éteint, pas un
-   filet plein — il sépare sans faire une deuxième ligne. */
-.col-loupe-barre {
-    display: block;
-    width: 2.6rem; height: 0.09rem;
-    margin: 0.4rem 0 0.35rem;
-    background: linear-gradient(90deg, var(--col-or), transparent);
+    font-size: 1.28rem; font-weight: 700; line-height: 1.1;
+    letter-spacing: -0.01em;
 }
 .col-loupe-serie {
     display: block;
-    font-size: 0.56rem; letter-spacing: 0.18em; text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.45);
+    margin-top: 0.16rem;
+    font-size: 0.58rem; font-weight: 700;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--col-or);
+}
+/* Le filet et son losange : la signature de la v1. Le trait s'éteint aux
+   deux bouts, ce qui l'empêche de faire une deuxième ligne de texte. */
+.col-loupe-barre {
+    display: block;
+    position: relative;
+    height: 0.06rem;
+    margin-top: 0.6rem;
+    background: linear-gradient(90deg, transparent, rgba(255, 210, 74, 0.5), transparent);
+}
+.col-loupe-barre::after {
+    content: '';
+    position: absolute; left: 50%; top: 50%;
+    width: 0.3rem; height: 0.3rem;
+    margin: -0.15rem 0 0 -0.15rem;
+    background: var(--col-or);
+    transform: rotate(45deg);
 }
 .col-loupe .col-pion {
-    top: 0.6rem; right: 0.6rem;
-    width: 1.9rem; height: 1.9rem;
-    border-width: 0.14rem;
+    top: -0.55rem; right: -0.55rem;
+    width: 2.1rem; height: 2.1rem;
+    border-width: 0.15rem;
 }
-.col-loupe .col-pion svg { width: 1rem; height: 1rem; }
+.col-loupe .col-pion svg { width: 1.05rem; height: 1.05rem; }
 
 /* ── La consigne et les actions ───────────────────────────────── */
 .col-consigne {
@@ -343,18 +360,6 @@
 .col-action.on { background: var(--col-or); border-color: var(--col-or); color: #17140a; }
 .col-action.prete { border-color: var(--col-or); color: var(--col-or); }
 
-.col-journal {
-    flex: 0 0 auto;
-    padding-top: 0.3rem;
-    font-size: 0.6rem; line-height: 1.4;
-    color: rgba(255, 255, 255, 0.3);
-    text-align: center;
-    min-height: 1.3rem;
-}
-.col-journal b { color: rgba(255, 255, 255, 0.6); }
-.col-journal .gagne { color: #6ee7a8; }
-.col-journal .perdu { color: #ff8b98; }
-
 /* ════════ L'entrée en partie ════════
    La table s'ouvre, les mains tombent toutes ensemble, puis le marché
    glisse. Sans ce temps, on découvre une position déjà installée sans
@@ -372,10 +377,10 @@
     /* Une seconde de plus après la donne : sans ce temps mort, le marché
        arrivait dans le même mouvement que les mains et l'on ne comprenait pas
        qu'il est commun. */
-    animation-delay: calc(1.95s + var(--i, 0) * 0.08s);
+    animation-delay: calc(1.7s + var(--i, 0) * 0.08s);
 }
 .col.entree .col-emplacement,
-.col.entree .col-pioche { animation: colFondu 0.4s ease both; animation-delay: 2.4s; }
+.col.entree .col-pioche { animation: colFondu 0.4s ease both; animation-delay: 2.15s; }
 
 @keyframes colTable {
     from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
@@ -502,7 +507,7 @@
     .col-marche { gap: 0.18rem; }
     .col-pioche { right: 1rem; bottom: 1rem; width: calc(var(--carte) * 1.15); }
     .col-nom { max-width: 4.8rem; font-size: 0.56rem; }
-    .col-loupe { width: 9.5rem; left: 0.4rem; top: 32%; }
+    .col-loupe { width: 8.5rem; left: 0.4rem; top: 32%; }
     .col-loupe-nom { font-size: 1rem; }
     .col-action { font-size: 0.57rem; padding: 0.5rem 0.1rem; }
 }

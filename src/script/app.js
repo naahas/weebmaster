@@ -1082,7 +1082,9 @@ createApp({
                 return this.colJeDefends ? 'On t\'attaque — présente une carte.'
                     : 'Un vol est en cours…';
             }
-            if (!this.colMonTour) return 'Au tour de <b>' + this.colNom(this.col.etat.tourJoueur) + '</b>.';
+            // Le siège en cours s'allume déjà : le redire en toutes lettres
+            // sous la table faisait doublon.
+            if (!this.colMonTour) return '';
             switch (this.col.mode) {
                 case 'piocher':  return 'Choisis la carte que tu laisses au marché.';
                 case 'echanger': return this.col.marcheChoisi
@@ -1092,26 +1094,6 @@ createApp({
                 case 'voler':    return 'Qui veux-tu attaquer ?';
                 default:         return 'À toi de jouer — une seule action.';
             }
-        },
-        // Le dernier fait du salon, en une ligne. C'est par là que passe
-        // l'information publique : qui a échangé quoi, qui a volé qui.
-        colDernierFait() {
-            const j = this.col.etat && this.col.etat.journal;
-            if (!j || !j.length) return '';
-            const f = j[j.length - 1];
-            const qui = '<b>' + this.colNom(f.joueur) + '</b>';
-            if (f.type === 'pioche') return qui + ' a pioché.';
-            if (f.type === 'echange') return qui + ' a pris <b>' + f.prise.nom + '</b> au marché.';
-            if (f.type === 'scan') return qui + ' a regardé la main de <b>' + this.colNom(f.cible) + '</b>.';
-            if (f.type === 'set') return qui + ' pose un set <b>' + f.anime + '</b> !';
-            if (f.type === 'vol') {
-                const cible = '<b>' + this.colNom(f.cible) + '</b>';
-                if (f.issue === 'vide') return qui + ' a réclamé du ' + f.anime + ' à ' + cible + ' — elle n\'en avait pas.';
-                if (f.issue === 'gagne') return '<span class="gagne">' + qui + ' prend <b>' + f.defense.nom + '</b> à ' + cible + '.</span>';
-                if (f.issue === 'perdu') return '<span class="perdu">' + cible + ' repousse ' + qui + ' — il y perd sa carte.</span>';
-                if (f.issue === 'nul') return qui + ' et ' + cible + ' sortent la même classe. Rien ne bouge.';
-            }
-            return '';
         },
 
         ascMonRang() {
@@ -1674,17 +1656,17 @@ createApp({
                 '--i': i,
             };
         },
-        // Trois silhouettes qu'on distingue à dix pixels : un triangle qui pointe
-        // (Assaut), un losange (Mirage), un cercle plein (Oracle). Des mots ne se
-        // liraient pas à cette taille, des couleurs seules ne suffisent pas à qui
-        // les confond.
+        // Les symboles de la v1, repris tels quels : une épée pour Assaut, un
+        // cercle validé pour Oracle, un cercle d'alerte pour Mirage. Ils se
+        // distinguent à dix pixels, là où un mot ne se lirait pas — et ceux qui
+        // ont joué la v1 les reconnaissent.
         colSymbole(classe) {
             const d = {
-                assaut: '<path d="M12 3 L21 20 L3 20 Z" fill="currentColor"/>',
-                mirage: '<path d="M12 2 L21 12 L12 22 L3 12 Z" fill="currentColor"/>',
-                oracle: '<circle cx="12" cy="12" r="8" fill="currentColor"/>',
-            }[classe] || '';
-            return '<svg viewBox="0 0 24 24">' + d + '</svg>';
+                assaut: 'M6.92 5H5L14 14L15 13.06L6.92 5M19.06 3C18.44 3 17.82 3.24 17.35 3.71L13.71 7.35L16.65 10.29L20.29 6.65C21.24 5.7 21.24 4.14 20.29 3.19C19.82 2.72 19.44 3 19.06 3M7.06 18.34L9.06 16.34L7.66 14.94L5.66 16.94C5.16 17.44 5.16 18.25 5.66 18.75C6.16 19.25 6.97 19.25 7.47 18.75L7.06 18.34Z',
+                oracle: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z',
+                mirage: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z',
+            }[classe];
+            return d ? '<svg viewBox="0 0 24 24"><path d="' + d + '" fill="currentColor"/></svg>' : '';
         },
         colNom(id) {
             if (!id) return '';
