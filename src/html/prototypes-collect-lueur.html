@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Collect — la carte qui t’intéresse</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   Signaler la carte dont on tient déjà la série.
+
+   Un liséré doré au bas faisait le travail, mais platement : il se
+   confond avec une bordure, et sur une rangée de cinq cartes on ne
+   sait pas laquelle il désigne. Il faut quelque chose qui BOUGE —
+   l'œil attrape le mouvement avant la couleur.
+
+   Deux contraintes qu'on oublie vite : ça reste à l'écran pendant
+   toute la partie, donc ça ne doit pas fatiguer ; et plusieurs cartes
+   peuvent s'allumer en même temps, donc l'effet doit supporter d'être
+   répété trois fois côte à côte sans faire sapin de Noël.
+   ════════════════════════════════════════════════════════════════ */
+:root { --or: #ffd24a; --assaut: #ff7a5c; --mirage: #a78bfa; --oracle: #4fd1c5; }
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 2rem 1.5rem 5rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #fff;
+    background: radial-gradient(70% 55% at 50% 0%, #17150f, #08080b 68%);
+    min-height: 100vh;
+}
+h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
+.sous { margin: 0 0 1.4rem; max-width: 58rem; font-size: 0.85rem; line-height: 1.55; color: rgba(255,255,255,0.42); }
+
+.reglage { display: flex; gap: 0.5rem; margin-bottom: 2.2rem; flex-wrap: wrap; }
+.reglage button {
+    font: inherit; font-size: 0.72rem; font-weight: 600; color: #fff; cursor: pointer;
+    padding: 0.4rem 0.8rem;
+    background: rgba(255,255,255,0.06);
+    border: 0.06rem solid rgba(255,255,255,0.1);
+    border-radius: 0.45rem;
+}
+.reglage button.on { background: var(--or); border-color: var(--or); color: #17140a; }
+
+.grille { display: flex; flex-wrap: wrap; gap: 2rem 1.8rem; }
+.piste { width: 300px; }
+.piste h2 { margin: 0 0 0.15rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; letter-spacing: 0.07em; color: var(--or); }
+.piste p { margin: 0 0 0.9rem; font-size: 0.72rem; line-height: 1.5; color: rgba(255,255,255,0.4); min-height: 5.2em; }
+
+/* Le feutre, pour juger dans les vraies conditions */
+.feutre {
+    padding: 1.5rem 1rem;
+    border-radius: 0.9rem;
+    background:
+        radial-gradient(60% 60% at 50% 28%, rgba(255,255,255,0.05), transparent 70%),
+        linear-gradient(170deg, #17352b, #0d1f19);
+    box-shadow: inset 0 0 2.5rem rgba(0,0,0,0.45);
+}
+.rangee { display: flex; gap: 0.35rem; justify-content: center; }
+
+/* ── La carte, comme dans le jeu ── */
+.c {
+    position: relative;
+    width: 3.6rem; aspect-ratio: 225/350;
+    border-radius: 0.42rem;
+    border: 0.09rem solid rgba(255,255,255,0.14);
+    overflow: hidden;
+    background: #14131a;
+    flex: 0 0 auto;
+}
+.c img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.c.assaut { border-color: var(--assaut); }
+.c.mirage { border-color: var(--mirage); }
+.c.oracle { border-color: var(--oracle); }
+
+/* ════ A · le liséré d'aujourd'hui ════ */
+.a.on::after {
+    content: '';
+    position: absolute; inset: auto 0 0 0; height: 0.18rem;
+    background: var(--or);
+    box-shadow: 0 0 0.5rem rgba(255,210,74,0.8);
+}
+
+/* ════ B · le halo qui respire ════ */
+.b.on {
+    border-color: var(--or);
+    animation: bRespire 2.4s ease-in-out infinite;
+}
+@keyframes bRespire {
+    0%, 100% { box-shadow: 0 0 0.3rem rgba(255,210,74,0.25), inset 0 0 0.5rem rgba(255,210,74,0.1); }
+    50%      { box-shadow: 0 0 1.1rem rgba(255,210,74,0.6), inset 0 0 0.9rem rgba(255,210,74,0.25); }
+}
+
+/* ════ C · le reflet qui court le long du cadre ════
+   Un dégradé conique tourne derrière la carte ; seule la marge du
+   contour le laisse voir. C'est la bordure elle-même qui a l'air de
+   circuler, sans qu'aucun élément ne bouge. */
+.c.c-bord { border-color: transparent; padding: 0; }
+.c.c-bord.on { background: none; }
+.c.c-bord.on::before {
+    content: '';
+    position: absolute; inset: -60%;
+    background: conic-gradient(from 0deg, transparent 0 62%, rgba(255,210,74,0.15) 70%, var(--or) 80%, #fff2c0 84%, var(--or) 88%, transparent 96%);
+    animation: cTourne 3.2s linear infinite;
+    z-index: 0;
+}
+.c.c-bord.on::after {
+    content: '';
+    position: absolute; inset: 0.11rem;
+    border-radius: 0.32rem;
+    background: #14131a;
+    z-index: 1;
+}
+.c.c-bord img { position: relative; z-index: 2; border-radius: 0.32rem; }
+.c.c-bord.on img { position: absolute; inset: 0.11rem; width: auto; height: auto; }
+@keyframes cTourne { to { transform: rotate(1turn); } }
+
+/* ════ D · la lueur ténébreuse ════
+   Une brume dorée sous la carte, plus dense en bas, qui monte et
+   redescend lentement. Rien ne clignote : c'est une présence. */
+.d.on { border-color: rgba(255,210,74,0.65); }
+.d.on::before {
+    content: '';
+    position: absolute; inset: -0.9rem -0.6rem -1.1rem;
+    border-radius: 1rem;
+    background: radial-gradient(55% 55% at 50% 75%, rgba(255,190,60,0.55), transparent 72%);
+    filter: blur(0.28rem);
+    animation: dMonte 3.4s ease-in-out infinite;
+    z-index: -1;
+    pointer-events: none;
+}
+@keyframes dMonte {
+    0%, 100% { opacity: 0.4; transform: translateY(0.25rem) scale(0.95); }
+    50%      { opacity: 1;   transform: translateY(-0.2rem) scale(1.06); }
+}
+
+/* ════ E · le passage de lumière ════
+   Un éclat oblique traverse la carte de temps à autre, comme une
+   lueur qui glisse sur du métal. Discret entre deux passages. */
+.e.on { border-color: rgba(255,210,74,0.7); box-shadow: 0 0 0.5rem rgba(255,210,74,0.2); }
+.e.on::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(105deg, transparent 38%, rgba(255,240,190,0.55) 48%, rgba(255,255,255,0.85) 51%, rgba(255,240,190,0.5) 54%, transparent 64%);
+    transform: translateX(-130%);
+    animation: eGlisse 3.6s ease-in-out infinite;
+    pointer-events: none;
+}
+@keyframes eGlisse {
+    0%, 62% { transform: translateX(-130%); }
+    88%, 100% { transform: translateX(130%); }
+}
+
+/* ════ F · le cadre en pointillé qui tourne ════
+   Un trait segmenté qui défile autour de la carte, comme une
+   sélection. Très lisible, un peu technique. */
+.f.on { border-color: transparent; }
+.f.on::before {
+    content: '';
+    position: absolute; inset: -0.1rem;
+    border-radius: 0.5rem;
+    background:
+        repeating-linear-gradient(90deg, var(--or) 0 0.5rem, transparent 0.5rem 1rem) top/100% 0.11rem no-repeat,
+        repeating-linear-gradient(90deg, var(--or) 0 0.5rem, transparent 0.5rem 1rem) bottom/100% 0.11rem no-repeat,
+        repeating-linear-gradient(0deg, var(--or) 0 0.5rem, transparent 0.5rem 1rem) left/0.11rem 100% no-repeat,
+        repeating-linear-gradient(0deg, var(--or) 0 0.5rem, transparent 0.5rem 1rem) right/0.11rem 100% no-repeat;
+    animation: fDefile 0.9s linear infinite;
+    pointer-events: none;
+}
+@keyframes fDefile { to { background-position: 1rem top, -1rem bottom, left -1rem, right 1rem; } }
+</style>
+</head>
+<body>
+
+<h1>Collect — signaler la carte qui t’intéresse</h1>
+<p class="sous">
+    Le liséré doré actuel fait le travail, mais platement : il se confond avec une bordure, et sur une
+    rangée de cinq on ne voit pas tout de suite laquelle il désigne. Il faut quelque chose qui <b>bouge</b>,
+    parce que l’œil attrape le mouvement avant la couleur. Deux contraintes qu’on oublie vite : ça reste à
+    l’écran toute la partie, donc ça ne doit pas fatiguer — et plusieurs cartes peuvent s’allumer en même
+    temps, donc l’effet doit supporter d’être répété trois fois côte à côte.
+</p>
+
+<div class="reglage">
+    <button data-n="1" class="on">1 carte allumée</button>
+    <button data-n="3">3 allumées</button>
+    <button data-n="5">toutes allumées</button>
+</div>
+
+<div class="grille" id="grille"></div>
+
+<script>
+const PORTRAITS = ['ace', 'zoro', 'itachi', 'gohan', 'levi'];
+let allumees = 1;
+
+const PISTES = [
+    { cle: 'a', t: 'A · Le liséré', n: "Celui d’aujourd’hui : un trait doré au bas de la carte. Honnête et sobre, mais immobile — on le confond avec la bordure de classe, et il ne se remarque que si on le cherche." },
+    { cle: 'b', t: 'B · Le halo qui respire', n: "Le cadre s’éclaire et s’éteint lentement, dedans comme dehors. C’est le plus simple, et il tient très bien à cinq exemplaires : rien ne clignote, tout respire ensemble." },
+    { cle: 'c c-bord', t: 'C · Le reflet qui court', n: "Un éclat circule le long du cadre, sans qu’aucun élément ne bouge — c’est un dégradé conique qui tourne derrière. Le plus spectaculaire, mais aussi le plus bavard si trois cartes le font en même temps." },
+    { cle: 'd', t: 'D · La lueur ténébreuse', n: "Une brume dorée sous la carte, plus dense au bas, qui monte et redescend. Rien ne clignote : c’est une présence plutôt qu’un signal. Le plus proche de ce que tu décris." },
+    { cle: 'e', t: 'E · Le passage de lumière', n: "Un éclat oblique traverse la carte de loin en loin, comme sur du métal. Discret entre deux passages — mais on peut le rater si on regarde ailleurs au mauvais moment." },
+    { cle: 'f', t: 'F · Le cadre qui défile', n: "Un trait segmenté tourne autour de la carte, comme une sélection. Impossible à manquer, mais très « logiciel » : ça dit « sélectionné » plus que « celle-ci t’intéresse »." },
+];
+
+const grille = document.getElementById('grille');
+for (const p of PISTES) {
+    const bloc = document.createElement('div');
+    bloc.className = 'piste';
+    bloc.innerHTML = '<h2>' + p.t + '</h2><p>' + p.n + '</p>';
+    const f = document.createElement('div');
+    f.className = 'feutre';
+    f.innerHTML = '<div class="rangee">' + PORTRAITS.map((nom, i) =>
+        '<div class="c ' + p.cle + '" data-i="' + i + '"><img src="collectpic/' + nom + '.webp" alt=""></div>').join('') + '</div>';
+    bloc.appendChild(f);
+    grille.appendChild(bloc);
+}
+
+function peindre() {
+    document.querySelectorAll('.c').forEach(c => {
+        c.classList.toggle('on', Number(c.dataset.i) < allumees);
+    });
+}
+document.querySelectorAll('.reglage button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('.reglage button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    allumees = Number(b.dataset.n);
+    peindre();
+});
+peindre();
+</script>
+</body>
+</html>
