@@ -250,8 +250,14 @@
    première chose qu'on se demande quand rien ne bouge pendant dix secondes.
    Jamais sous le sien : on n'attend pas après soi-même. */
 .col-reflechit {
+    /* En haut a droite du siege, hors du flux : sous le nom, la colonne
+       s allongeait a chaque changement de main et le siege sautait. */
+    position: absolute;
+    top: -0.35rem; right: -1.5rem;
     display: flex; gap: 0.2rem;
-    height: 0.5rem;
+    padding: 0.25rem 0.4rem;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 999px;
     align-items: center;
 }
 .col-reflechit i {
@@ -435,7 +441,32 @@
    est prêt. On n'a jamais à deviner ce qui est cliquable. */
 
 /* La pioche appelle quand on peut piocher */
+.col-pioche { cursor: pointer; }
 .col-pioche.vivante span:nth-child(3) { animation: colRespire 2.2s ease-in-out infinite; }
+
+/* « +1 » quand la main n'est pas pleine : un clic suffit alors, sans rien
+   rendre. C'est le cas le plus fréquent après avoir posé un set. */
+.col-pioche-plus {
+    position: absolute; top: -0.6rem; right: -0.6rem;
+    width: 1.7rem; height: 1.7rem;
+    display: grid; place-items: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 0.85rem;
+    color: #17140a;
+    background: var(--col-or);
+    border-radius: 50%;
+    box-shadow: 0 0.2rem 0.6rem rgba(0, 0, 0, 0.6);
+    z-index: 4;
+    animation: colPlus 1.6s ease-in-out infinite;
+}
+@keyframes colPlus {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.14); }
+}
+/* Elle attend qu'on lui désigne la carte à laisser */
+.col-pioche.attend span:nth-child(3) {
+    border-color: var(--col-or);
+    box-shadow: 0 0 0 0.12rem rgba(255, 210, 74, 0.6), 0 0.5rem 1.2rem rgba(0, 0, 0, 0.5);
+}
 @keyframes colRespire {
     0%, 100% { transform: translateY(0); box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.5); }
     50%      { transform: translateY(-0.4rem); box-shadow: 0 0.9rem 1.8rem rgba(0, 0, 0, 0.55), 0 0 1.4rem rgba(255, 210, 74, 0.18); }

@@ -37,6 +37,7 @@ createApp({
                 loupe: null,         // la carte qu'on regarde de près
                 drag: null,          // { carte, x, y, cible } pendant qu'on traîne
                 siegeOuvert: null,   // au doigt : le siège dont les gestes sont dépliés
+                piocheOuverte: false, // la pioche attend qu'on désigne la carte à laisser
                 entree: false,       // le temps de la distribution, au tout début
                 // réglages du salon, avant la partie
                 regleMain: 4,
@@ -1030,6 +1031,12 @@ createApp({
             const p = this.col.etat && this.col.etat.joueurs.find(x => x.playerId === this.playerId);
             return p ? p.sets.length : 0;
         },
+        // Main incomplète : piocher ne coûte rien, un clic suffit. C'est le cas
+        // le plus fréquent, puisque poser un set ne refait plus la main.
+        colPiocheLibre() {
+            return !!(this.colMonTour && this.col.etat && !this.col.etat.duel
+                && this.col.main.length < this.col.etat.mainMax);
+        },
         colMonTour() {
             return !!(this.col.etat && this.col.etat.tourJoueur === this.playerId);
         },
@@ -1087,7 +1094,9 @@ createApp({
                 if (c && c.startsWith('marche:')) return 'Lâche pour l\'<b>échanger</b>.';
                 return 'Amène-la sur le marché, la pioche, ou l\'emplacement étoilé.';
             }
+            if (this.col.piocheOuverte) return 'Quelle carte laisses-tu pour piocher ?';
             if (this.colSetPret) return 'Un set est prêt — glisse une carte sur l\'<b>emplacement étoilé</b>.';
+            if (this.colPiocheLibre) return 'Ta main n\'est pas pleine — <b>clique le paquet</b> pour te refaire.';
             return '<b>Pioche</b>, <b>pose un set</b>, ou survole un adversaire pour le <b>scanner</b> ou le <b>voler</b>.';
         },
 
@@ -1724,6 +1733,7 @@ createApp({
             this.col.drag = null;
             this.col.scan = null;
             this.col.siegeOuvert = null;
+            this.col.piocheOuverte = false;
             this.col.entree = false;
             this.col.erreur = '';
             this.col._dernierSon = undefined;
@@ -1835,6 +1845,23 @@ createApp({
                 if (d < plusProche) { plusProche = d; meilleure = z; }
             }
             return meilleure ? meilleure.getAttribute('data-drop') : null;
+        },
+        // Un clic sur le paquet. Main incomplète, il donne tout de suite ; main
+        // pleine, il attend qu'on lui désigne la carte à laisser — deux touches,
+        // comme le glissement, mais sans avoir à viser.
+        colToucherPioche() {
+            if (!this.colMonTour || this.col.etat.duel) return;
+            if (this.colPiocheLibre) {
+                this.socket.emit('collect-piocher', {});
+                this.col.piocheOuverte = false;
+                return;
+            }
+            this.col.piocheOuverte = !this.col.piocheOuverte;
+        },
+        colPiocherEnLachant(c) {
+            if (!this.col.piocheOuverte) return;
+            this.col.piocheOuverte = false;
+            this.socket.emit('collect-piocher', { uidDefausse: c.uid });
         },
         colScanner(cibleId) {
             if (!this.colMonTour || this.col.etat.duel) return;
@@ -5170,6 +5197,10 @@ createApp({
                 this.col.scan = data;
             });
             this.socket.on('collect-refus', (data) => {
+                // « Ce n'est pas ton tour » n'apprend rien : le siège de celui qui
+                // joue est déjà allumé, et le refus arrive après un geste qu'on
+                // savait vain. On ne montre que ce qui surprend.
+                if (data.erreur === 'Ce n\'est pas ton tour' || data.erreur === 'Un vol est en cours') return;
                 this.col.erreur = data.erreur || '';
                 setTimeout(() => { this.col.erreur = ''; }, 2500);
             });

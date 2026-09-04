@@ -891,7 +891,7 @@
                                            :class="{ pleine: n <= p.sets.length }"></i>
                                     </span>
                                     <span class="col-nom">{{ colNom(p.playerId) }}</span>
-                                    <span class="col-reflechit" v-if="p.playerId === col.etat.tourJoueur">
+                                    <span class="col-reflechit" v-if="p.playerId === col.etat.tourJoueur && !col.etat.duel">
                                         <i></i><i></i><i></i>
                                     </span>
                                 </div>
@@ -904,10 +904,12 @@
                                                 class="col-carte" :class="['classe-' + c.classe, {
                                                     partie: col.drag && col.drag.carte.uid === c.uid,
                                                     aimante: colAimantee(c),
+                                                    choisissable: col.piocheOuverte,
                                                     'dans-le-set': colMonTour && !col.drag && colSetPret === c.anime,
                                                     paire: colDansMaMain(c.anime) >= col.etat.taille - 1 }]"
                                                 :style="colIncline(i, col.main.length, 5)"
                                                 @mouseenter="col.loupe = c" @mouseleave="col.loupe = null"
+                                                @click="colPiocherEnLachant(c)"
                                                 @pointerdown="colPrendre(c, $event)">
                                             <img :src="'collectpic/' + c.img" :alt="c.nom" draggable="false">
                                             <span class="col-pion" :class="'pion-' + c.classe" v-html="colSymbole(c.classe)"></span>
@@ -937,10 +939,17 @@
                         </div>
 
                         <!-- La pioche, dans le coin -->
+                        <!-- Elle se CLIQUE autant qu'elle reçoit un glissement. Traîner une
+                             carte jusqu'à un coin de l'écran est un geste long, et le dernier
+                             centimètre n'est jamais précis — un clic ne rate jamais. -->
                         <div class="col-pioche" data-drop="pioche"
-                         :class="{ vivante: colMonTour && !col.etat.duel, 'col-cible': col.drag && col.drag.cible === 'pioche' }">
-                        <span></span><span></span><span>SM</span>
-                    </div>
+                             :class="{ vivante: colMonTour && !col.etat.duel,
+                                       'col-cible': col.drag && col.drag.cible === 'pioche',
+                                       attend: col.piocheOuverte }"
+                             @click="colToucherPioche">
+                            <span></span><span></span><span>SM</span>
+                            <span class="col-pioche-plus" v-if="colPiocheLibre">+1</span>
+                        </div>
 
                         <!-- ── La consigne, puis les cinq actions ── -->
                         <div class="col-consigne" :class="{ ko: col.erreur }" v-html="col.erreur || colConsigne"></div>
