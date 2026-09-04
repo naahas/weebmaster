@@ -142,7 +142,10 @@ createApp({
                   desc: "Un portrait, un nom. La plus longue serie gagne." },
                 { id: 'ascension', name: 'Ascension', kind: 'Solo',   players: '∞',  img: 'esdeath.webp',
                   desc: "Une tour d'étages, chacun à son rythme. Le premier au sommet gagne." },
-                { id: 'collect',   name: 'Collect',   kind: 'Solo',   players: '6',  img: 'tengen2.webp',
+                // ⏳ Encore en chantier : il s'affiche pour se faire attendre, mais
+                // le serveur refuse aussi de l'ouvrir — un « soon » côté client seul
+                // se contournerait en fabriquant la requête à la main.
+                { id: 'collect',   name: 'Collect',   kind: 'Solo',   players: '6',  img: 'tengen2.webp', soon: true,
                   desc: "Réunis des sets du même anime. Vole ceux des autres, défends les tiens." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.

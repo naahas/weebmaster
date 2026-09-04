@@ -204,6 +204,16 @@ bavard est celui du Rush, qui se limite lui-même à seize envois par seconde.
 `ADMIN_PASSWORD` (l'ancien panneau d'administration) resservait : voir la mesure temporaire
 ci-dessous. Les variables Twitch, `SESSION_SECRET` et `MASTER_ADMIN_PASSWORD` ne servent plus.
 
+## ⏳ Collect ne s ouvre pas en production
+
+Il s affiche dans la liste avec un badge « bientot » et son bouton est verrouille, mais le
+controle qui compte est dans `/admin/toggle-game` : la liste des modes du client se contourne
+en fabriquant la requete a la main. Ferme **en production seulement** — en local il s ouvre
+normalement, sans quoi ni le developpement ni ses suites ne passeraient.
+
+Pour l ouvrir : retirer le bloc dans `/admin/toggle-game` et le `soon: true` de son entree
+dans `modes`, cote `app.js`.
+
 ## ⏳ Mesure temporaire — le mode Classique est sous mot de passe
 
 Ouvrir un salon **Classique** exige `ADMIN_PASSWORD` ; Rush et BombAnime restent libres. Le

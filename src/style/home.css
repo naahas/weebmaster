@@ -7747,16 +7747,33 @@ body.game-active:has(.poll-game-container) #particles-js {
 }
 
 /* Modes pas encore disponibles */
+/* Un mode annoncé mais fermé doit se remarquer sans faire de promesse : le
+   doré du site, en creux plutôt qu'en plein, et une lueur qui passe lentement
+   dessus. Assez pour attirer l'œil, pas assez pour qu'on insiste à cliquer. */
 .v2-mode-row-soon {
+    position: relative;
     margin-left: auto;
-    padding: 0.15rem 0.42rem;
-    font-size: 0.52rem;
+    padding: 0.18rem 0.5rem;
+    font-size: 0.5rem;
     font-weight: 800;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.06);
-    border-radius: 0.25rem;
+    color: var(--neon-primary, #ffd700);
+    background: rgba(255, 215, 0, 0.09);
+    border: 0.06rem solid rgba(255, 215, 0, 0.32);
+    border-radius: 0.28rem;
+    overflow: hidden;
+}
+.v2-mode-row-soon::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(105deg, transparent 40%, rgba(255, 240, 190, 0.45) 50%, transparent 60%);
+    transform: translateX(-140%);
+    animation: v2SoonEclat 4.5s ease-in-out infinite;
+}
+@keyframes v2SoonEclat {
+    0%, 70%   { transform: translateX(-140%); }
+    92%, 100% { transform: translateX(140%); }
 }
 
 .v2-mode-row.soon .v2-mode-row-name { color: rgba(255, 255, 255, 0.62); }

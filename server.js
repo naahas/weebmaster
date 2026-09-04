@@ -1438,6 +1438,19 @@ app.post('/admin/toggle-game', async (req, res) => {
     // fermer. Pour lever la mesure, supprimer ce bloc et la demande côté
     // client (« demandeMdp » dans app.js).
     const modeDemande = (req.body && req.body.lobbyMode) || 'classic';
+
+    // ⏳ Collect n'est pas encore ouvert au public. Le contrôle est ici et pas
+    // seulement dans la liste des modes du client : celle-ci se contourne en
+    // fabriquant la requête à la main.
+    //
+    // Fermé EN PRODUCTION seulement : en local il s'ouvre normalement, sans quoi
+    // on ne pourrait ni le développer ni le faire passer par ses suites. Pour
+    // l'ouvrir au public, retirer ce bloc et le « soon: true » de son entrée
+    // dans « modes », côté app.js.
+    if (modeDemande === 'collect' && process.env.NODE_ENV === 'production') {
+        return res.status(503).json({ error: 'Collect arrive bientôt.' });
+    }
+
     if (modeDemande === 'classic' || modeDemande === 'rivalry') {
         const attendu = process.env.ADMIN_PASSWORD;
         if (!attendu) {
