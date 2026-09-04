@@ -674,7 +674,15 @@ function creerRoom() {
     }
 
     const gameState = etatNeuf();
-    gameState.roomCode = generateRoomCode();
+    // ⚠️ Un code tire au hasard peut deja exister. « rooms.set » ecrasait alors
+    // l entree du premier salon : son hote gardait le sien en memoire, mais
+    // quiconque entrait avec le code atterrissait dans le SECOND. L hote ne
+    // voyait jamais arriver personne, sans qu aucune erreur ne le dise.
+    //
+    // A trente et un caracteres sur quatre positions et cinquante salons au
+    // plus, la collision reste rare — mais elle est silencieuse et incomprise
+    // par celui qui la subit, ce qui en fait le pire genre de defaut.
+    do { gameState.roomCode = generateRoomCode(); } while (rooms.has(gameState.roomCode));
     gameState.hostToken = randomUUID();
     gameState.isActive = true;
     gameState.creeA = Date.now();
