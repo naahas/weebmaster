@@ -891,6 +891,9 @@
                                            :class="{ pleine: n <= p.sets.length }"></i>
                                     </span>
                                     <span class="col-nom">{{ colNom(p.playerId) }}</span>
+                                    <span class="col-reflechit" v-if="p.playerId === col.etat.tourJoueur">
+                                        <i></i><i></i><i></i>
+                                    </span>
                                 </div>
 
                                 <!-- Toi, à cheval sur le bord du bas -->

@@ -1663,6 +1663,30 @@ createApp({
             }[classe];
             return d ? '<svg viewBox="0 0 24 24"><path d="' + d + '" fill="currentColor"/></svg>' : '';
         },
+        // Le son se déduit du JOURNAL, pas des actions qu'on lance soi-même :
+        // ainsi on entend aussi ce que font les autres, et une seule règle sert
+        // pour les cinq gestes. Le dernier fait connu sert de repère — l'état
+        // est rediffusé après chaque action, il ne faut pas rejouer le même son.
+        colSonner(avant, apres) {
+            const j = apres && apres.journal;
+            if (!j || !j.length) return;
+            const f = j[j.length - 1];
+            const signature = f.type + ':' + (f.joueur || '') + ':' + (f.issue || '') + ':' + j.length;
+            if (this.col._dernierSon === signature) return;
+            const premier = this.col._dernierSon === undefined;
+            this.col._dernierSon = signature;
+            // à la toute première réception on ne rejoue pas l'historique
+            if (premier || !avant) return;
+
+            const s = this.sounds;
+            if (f.type === 'pioche') this.playSound(s.colPioche);
+            else if (f.type === 'echange') this.playSound(s.colEchange);
+            else if (f.type === 'scan') this.playSound(s.colScan);
+            else if (f.type === 'set') this.playSound(s.colSet);
+            else if (f.type === 'vol') {
+                this.playSound(f.issue === 'gagne' ? s.colVol : s.colVolRate);
+            }
+        },
         colNom(id) {
             if (!id) return '';
             const p = this.col.etat && this.col.etat.pseudos;
@@ -1702,6 +1726,8 @@ createApp({
             this.col.siegeOuvert = null;
             this.col.entree = false;
             this.col.erreur = '';
+            this.col._dernierSon = undefined;
+            this.col._dernierTour = null;
             this.col.reste = 0;
             if (this.col._tic) { clearInterval(this.col._tic); this.col._tic = null; }
         },
@@ -1766,14 +1792,16 @@ createApp({
                 el.style.height = de.height + 'px';
                 el.innerHTML = '<img src="collectpic/' + carte.img + '" alt="">';
                 document.body.appendChild(el);
-                // deux images d'attente : sans elles le navigateur applique la
-                // position d'arrivée d'emblée et il n'y a aucun mouvement
-                requestAnimationFrame(() => requestAnimationFrame(() => {
-                    el.style.transform = 'translate(' + (vers.left - de.left) + 'px, ' +
-                        (vers.top - de.top) + 'px) scale(' + (vers.width / de.width).toFixed(3) + ')';
-                    el.style.transformOrigin = 'top left';
-                }));
-                setTimeout(() => el.remove(), 380);
+                // Un reflet forcé plutôt que deux images d'attente : le navigateur
+                // enregistre la position de départ tout de suite, et le mouvement
+                // commence à l'image suivante. Avec « requestAnimationFrame » on
+                // perdait deux images avant que quoi que ce soit ne bouge, ce qui
+                // se sent sur un geste aussi court.
+                void el.offsetWidth;
+                el.style.transformOrigin = 'top left';
+                el.style.transform = 'translate(' + (vers.left - de.left) + 'px, ' +
+                    (vers.top - de.top) + 'px) scale(' + (vers.width / de.width).toFixed(3) + ')';
+                setTimeout(() => el.remove(), 300);
             };
 
             faire(carteMain, a, b, 'vers-marche');
@@ -1783,10 +1811,30 @@ createApp({
         // Ce qu'il y a sous le doigt. « elementFromPoint » plutôt que des
         // rectangles calculés d'avance : la table bouge avec la fenêtre, et une
         // liste de zones mémorisée serait fausse au premier redimensionnement.
+        //
+        // Et si l'on ne tombe sur rien, on prend la cible la PLUS PROCHE dans un
+        // rayon d'une demi-carte. Viser au pixel près une pioche posée dans le
+        // coin de l'écran, en traînant une carte depuis le bas, ne marche pas —
+        // ni à la souris ni au doigt. La tolérance ne rend rien ambigu : les
+        // cibles sont assez éloignées les unes des autres pour qu'il n'y ait
+        // jamais de doute sur celle qu'on visait.
         colCibleSous(x, y) {
             const el = document.elementFromPoint(x, y);
-            const cible = el && el.closest && el.closest('[data-drop]');
-            return cible ? cible.getAttribute('data-drop') : null;
+            const direct = el && el.closest && el.closest('[data-drop]');
+            if (direct) return direct.getAttribute('data-drop');
+
+            const rayon = Math.max(70, (this.ecran || 1200) * 0.06);
+            let meilleure = null, plusProche = rayon;
+            for (const z of document.querySelectorAll('[data-drop]')) {
+                const r = z.getBoundingClientRect();
+                // distance au RECTANGLE, pas à son centre : une carte est haute
+                // et étroite, viser son bord doit compter autant que son milieu
+                const dx = Math.max(r.left - x, 0, x - r.right);
+                const dy = Math.max(r.top - y, 0, y - r.bottom);
+                const d = Math.hypot(dx, dy);
+                if (d < plusProche) { plusProche = d; meilleure = z; }
+            }
+            return meilleure ? meilleure.getAttribute('data-drop') : null;
         },
         colScanner(cibleId) {
             if (!this.colMonTour || this.col.etat.duel) return;
@@ -5081,7 +5129,9 @@ createApp({
             // ── 🏔️ Ascension ──
             // ══ 🎴 Collect ══
             this.socket.on('collect-state', (data) => {
+                const avant = this.col.etat;
                 this.col.etat = data;
+                this.colSonner(avant, data);
                 // C'est l'état lui-même qui dit que la partie tourne : les autres
                 // modes ont un « game-started » dédié, celui-ci n'en a pas besoin.
                 // Sans cette bascule, la partie demarrait vraiment mais l'écran
@@ -5093,12 +5143,21 @@ createApp({
                     // toutes les cartes retomber en diagonale.
                     if (!this.gameInProgress && data.depuis < 2500) {
                         this.col.entree = true;
+                        // Le bruit de la donne se cale sur l'animation, pas sur
+                        // l'arrivée du message : les cartes tombent à 0,5 s.
+                        setTimeout(() => this.playSound(this.sounds.colDonne), 450);
                         setTimeout(() => { this.col.entree = false; }, 3000);
                     }
                     this.gameInProgress = true;
                     this.gameEnded = false;
                     this.lobbyMode = 'collect';
                 }
+                // Un petit signal quand la main revient : on ne regarde pas
+                // l'écran en permanence pendant que trois autres jouent.
+                if (data.tourJoueur === this.playerId && this.col._dernierTour !== data.tourJoueur) {
+                    this.playSound(this.sounds.colTour);
+                }
+                this.col._dernierTour = data.tourJoueur;
                 this.colTic();
                 this.colBrancherTic();
                 // le tour a changé de main : ce qu'on préparait n'a plus d'objet
@@ -6545,6 +6604,18 @@ createApp({
                 ascJuste: this.createPreloadedSound('pickup.mp3'),
                 ascTic: this.createPreloadedSound('click.mp3'),
                 ascPartir: this.createPreloadedSound('boost.mp3'),
+                // 🎴 Collect. Rien de neuf à enregistrer : la bibliothèque
+                // existante couvre tout, à condition de choisir par le GESTE et
+                // non par le mot. Poser un set, c'est une fusion ; voler, c'est
+                // un coup porté ; scanner, c'est un verrou qu'on force.
+                colDonne: this.createPreloadedSound('dealing.mp3'),
+                colPioche: this.createPreloadedSound('dealing.mp3'),
+                colEchange: this.createPreloadedSound('pickup.mp3'),
+                colVol: this.createPreloadedSound('slash2.mp3'),
+                colVolRate: this.createPreloadedSound('wrong.mp3'),
+                colScan: this.createPreloadedSound('lock1.mp3'),
+                colSet: this.createPreloadedSound('fusion.mp3'),
+                colTour: this.createPreloadedSound('playerturn.mp3'),
                 ascPas: this.createPreloadedSound('step.mp3'),
                 // L'ampoule : un carillon quand elle est pleine, un éclat
                 // quand on la casse.
