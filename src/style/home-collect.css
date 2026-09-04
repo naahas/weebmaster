@@ -484,6 +484,27 @@
 }
 .col-emplacement { position: relative; }
 
+/* ════════ L'échange : deux cartes qui se croisent ════════
+   Le « transition-group » sait faire entrer et sortir, mais pas montrer qu'une
+   carte PREND la place de l'autre. Sans ce croisement, on voyait deux
+   changements sans lien : une carte apparaissait dans la main, une autre au
+   marché, et rien ne disait qu'elles avaient été troquées.
+
+   Les deux fantômes sont posés sur les vraies positions relevées au moment du
+   lâcher, et volent l'un vers l'autre. Ils passent l'un devant l'autre — celui
+   qui va vers la main dessus, parce que c'est celui qu'on suit du regard. */
+.col-croise {
+    position: fixed;
+    z-index: 55;
+    border-radius: 0.42rem;
+    overflow: hidden;
+    pointer-events: none;
+    box-shadow: 0 0.8rem 1.6rem rgba(0, 0, 0, 0.6);
+    transition: transform 0.34s cubic-bezier(0.35, 0, 0.2, 1), opacity 0.34s ease;
+}
+.col-croise img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.col-croise.vers-main { z-index: 56; }
+
 /* La carte qu'on traîne, sous le doigt */
 .col-fantome {
     position: fixed;

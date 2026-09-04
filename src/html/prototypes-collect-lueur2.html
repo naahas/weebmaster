@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Collect — la bordure électrique</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   Second tour : les six premières pistes étaient trop sages.
+
+   Ce qu'on cherche : une bordure qui VIT, pas une bordure qui
+   s'éclaire. Tout ce qui suit est du CSS et du SVG — une
+   bibliothèque n'apporterait rien de plus, elle emballerait les
+   mêmes propriétés. Ce qui change entre une lueur plate et un arc
+   électrique, ce n'est pas l'outil, c'est le nombre de couches :
+   un trait net, sa copie floue en dessous, et les deux qui ne
+   bougent pas à la même vitesse.
+
+   Les deux contraintes tiennent toujours : ça reste à l'écran
+   pendant toute la partie, et plusieurs cartes s'allument souvent
+   en même temps.
+   ════════════════════════════════════════════════════════════════ */
+:root { --or: #ffd24a; --chaud: #ffb300; --blanc: #fff6d8; }
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 2rem 1.5rem 5rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #fff;
+    background: radial-gradient(70% 55% at 50% 0%, #17150f, #08080b 68%);
+    min-height: 100vh;
+}
+h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
+.sous { margin: 0 0 1.4rem; max-width: 58rem; font-size: 0.85rem; line-height: 1.55; color: rgba(255,255,255,0.42); }
+
+.reglage { display: flex; gap: 0.5rem; margin-bottom: 2.2rem; flex-wrap: wrap; align-items: center; }
+.reglage button {
+    font: inherit; font-size: 0.72rem; font-weight: 600; color: #fff; cursor: pointer;
+    padding: 0.4rem 0.8rem;
+    background: rgba(255,255,255,0.06);
+    border: 0.06rem solid rgba(255,255,255,0.1);
+    border-radius: 0.45rem;
+}
+.reglage button.on { background: var(--or); border-color: var(--or); color: #17140a; }
+.reglage span { font-size: 0.7rem; color: rgba(255,255,255,0.35); }
+
+.grille { display: flex; flex-wrap: wrap; gap: 2rem 1.8rem; }
+.piste { width: 310px; }
+.piste h2 { margin: 0 0 0.15rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; letter-spacing: 0.07em; color: var(--or); }
+.piste p { margin: 0 0 0.9rem; font-size: 0.72rem; line-height: 1.5; color: rgba(255,255,255,0.4); min-height: 5.2em; }
+
+.feutre {
+    padding: 1.6rem 1rem;
+    border-radius: 0.9rem;
+    background:
+        radial-gradient(60% 60% at 50% 28%, rgba(255,255,255,0.05), transparent 70%),
+        linear-gradient(170deg, #17352b, #0d1f19);
+    box-shadow: inset 0 0 2.5rem rgba(0,0,0,0.45);
+}
+.rangee { display: flex; gap: 0.4rem; justify-content: center; }
+
+.c {
+    position: relative;
+    width: 3.8rem; aspect-ratio: 225/350;
+    border-radius: 0.42rem;
+    flex: 0 0 auto;
+}
+.c > img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 0.42rem; position: relative; z-index: 2; border: 0.09rem solid rgba(255,255,255,0.14); }
+.c.on > img { border-color: transparent; }
+
+/* ════ G · L'ARC ÉLECTRIQUE ════
+   Un trait SVG qui court le long du contour, en tirets. Dessous, la
+   même chose floutée qui fait la décharge. Le flou est la clé : sans
+   lui c'est un pointillé, avec lui c'est de l'électricité. */
+.g .arc { position: absolute; inset: -0.25rem; z-index: 3; pointer-events: none; opacity: 0; transition: opacity 0.2s ease; }
+.g.on .arc { opacity: 1; }
+.g .arc svg { width: 100%; height: 100%; overflow: visible; }
+.g .arc rect { fill: none; stroke-linecap: round; }
+.g .arc .halo { stroke: var(--chaud); stroke-width: 5; filter: blur(4px); opacity: 0.9; }
+.g .arc .fil  { stroke: var(--blanc); stroke-width: 1.6; }
+.g .arc rect { stroke-dasharray: 34 300; animation: gCourt 1.5s linear infinite; }
+.g .arc .halo { animation-duration: 1.5s; }
+@keyframes gCourt { to { stroke-dashoffset: -334; } }
+
+/* ════ H · LE DOUBLE FLUX ════
+   Deux dégradés coniques qui tournent en sens inverse, à des vitesses
+   différentes, plus une couche floutée. Là où ils se croisent, la
+   lumière s'accumule — ça ne se répète jamais tout à fait. */
+.h .plasma, .h .plasma2 {
+    position: absolute; inset: -55%;
+    z-index: 0; pointer-events: none;
+    opacity: 0; transition: opacity 0.25s ease;
+}
+.h.on .plasma, .h.on .plasma2 { opacity: 1; }
+.h .plasma {
+    background: conic-gradient(from 0deg, transparent 0 55%, rgba(255,179,0,0.5) 68%, var(--blanc) 76%, rgba(255,179,0,0.5) 84%, transparent 94%);
+    animation: hTourne 2.6s linear infinite;
+    filter: blur(3px);
+}
+.h .plasma2 {
+    background: conic-gradient(from 180deg, transparent 0 62%, rgba(255,90,60,0.45) 74%, var(--or) 80%, transparent 90%);
+    animation: hTourneInv 4.1s linear infinite;
+}
+.h .fond { position: absolute; inset: 0.1rem; border-radius: 0.34rem; background: #0d0c12; z-index: 1; }
+@keyframes hTourne { to { transform: rotate(1turn); } }
+@keyframes hTourneInv { to { transform: rotate(-1turn); } }
+
+/* ════ I · LE CIRCUIT ════
+   Le contour découpé en segments qui s'allument l'un après l'autre,
+   comme un courant qui parcourt une piste. Net, mécanique, très lisible
+   même à trois cartes. */
+.i .piste-c { position: absolute; inset: -0.18rem; z-index: 3; pointer-events: none; opacity: 0; transition: opacity 0.2s ease; }
+.i.on .piste-c { opacity: 1; }
+.i .piste-c svg { width: 100%; height: 100%; overflow: visible; }
+.i .piste-c rect { fill: none; stroke: var(--or); stroke-width: 2; stroke-dasharray: 12 10; }
+.i .piste-c .lueur { stroke-width: 6; filter: blur(3px); opacity: 0.55; }
+.i .piste-c rect { animation: iDefile 1.1s linear infinite; }
+@keyframes iDefile { to { stroke-dashoffset: -44; } }
+
+/* ════ J · LE NÉON LIQUIDE ════
+   Un tube de néon : une couche large et très floue derrière, une fine
+   et nette devant, la même couleur. C'est ce dédoublement qui donne
+   l'impression de verre chauffé plutôt que de trait dessiné. */
+.j .neon { position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0; transition: opacity 0.25s ease; }
+.j.on .neon { opacity: 1; }
+.j .neon i {
+    position: absolute; inset: 0;
+    border-radius: 0.42rem;
+    border: 0.11rem solid var(--or);
+}
+.j .neon i:nth-child(1) { filter: blur(9px); border-width: 0.3rem; opacity: 0.85; }
+.j .neon i:nth-child(2) { filter: blur(3px); border-width: 0.18rem; }
+.j .neon i:nth-child(3) { border-color: var(--blanc); }
+.j.on .neon i { animation: jVibre 1.9s ease-in-out infinite; }
+.j .neon i:nth-child(2) { animation-delay: 0.15s; }
+.j .neon i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes jVibre {
+    0%, 100% { opacity: 0.55; }
+    45%      { opacity: 1; }
+}
+
+/* ════ K · LES ÉCLATS ════
+   Une aura sourde, et des étincelles qui jaillissent à des points au
+   hasard du contour. C'est le seul qui ait un rythme irrégulier — ce
+   qui attire l'œil bien plus qu'un cycle régulier. */
+.k .aura { position: absolute; inset: -0.4rem; border-radius: 0.7rem; z-index: 0; pointer-events: none; opacity: 0; transition: opacity 0.25s ease; }
+.k.on .aura {
+    opacity: 1;
+    background: radial-gradient(55% 55% at 50% 50%, rgba(255,179,0,0.45), transparent 72%);
+    animation: kSouffle 2.3s ease-in-out infinite;
+}
+@keyframes kSouffle { 0%,100% { transform: scale(0.94); opacity: 0.5; } 50% { transform: scale(1.07); opacity: 1; } }
+.k .eclats { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.k .eclats b {
+    position: absolute;
+    width: 0.28rem; height: 0.28rem;
+    margin: -0.14rem 0 0 -0.14rem;
+    border-radius: 50%;
+    background: var(--blanc);
+    box-shadow: 0 0 0.5rem var(--chaud), 0 0 1rem var(--chaud);
+    opacity: 0;
+}
+.k.on .eclats b { animation: kEclat 2.8s ease-out infinite; }
+@keyframes kEclat {
+    0%, 74%   { opacity: 0; transform: scale(0.4); }
+    80%       { opacity: 1; transform: scale(1.6); }
+    100%      { opacity: 0; transform: scale(0.7); }
+}
+.j.on > img, .h.on > img { border-color: transparent; }
+</style>
+</head>
+<body>
+
+<h1>Collect — la bordure électrique</h1>
+<p class="sous">
+    Second tour : les six premières étaient trop sages. Ce qui sépare une lueur plate d’un arc électrique,
+    ce n’est pas l’outil — tout ceci est du CSS et du SVG, et une bibliothèque emballerait les mêmes
+    propriétés — c’est le <b>nombre de couches</b> : un trait net, sa copie floue en dessous, et les deux
+    qui ne bougent pas à la même vitesse. Les contraintes tiennent toujours : ça reste à l’écran toute la
+    partie, et plusieurs cartes s’allument souvent ensemble.
+</p>
+
+<div class="reglage">
+    <button data-n="1" class="on">1 carte</button>
+    <button data-n="3">3 cartes</button>
+    <button data-n="5">5 cartes</button>
+    <span>— regarde surtout à 5 : c’est là que les effets trop bavards se trahissent</span>
+</div>
+
+<div class="grille" id="grille"></div>
+
+<script>
+const PORTRAITS = ['ace', 'zoro', 'itachi', 'gohan', 'levi'];
+let allumees = 1;
+
+// Le contour SVG, redessiné à la taille de la carte
+const contour = (cls) => `<svg viewBox="0 0 100 156" preserveAspectRatio="none">
+    <rect class="halo ${cls}" x="2" y="2" width="96" height="152" rx="7"/>
+    <rect class="fil ${cls}"  x="2" y="2" width="96" height="152" rx="7"/>
+  </svg>`;
+
+const PISTES = [
+    { cle: 'g', t: 'G · L’arc électrique',
+      n: "Un trait court le long du contour, doublé d’une copie floutée qui fait la décharge. Le flou est toute la différence : sans lui c’est un pointillé qui tourne, avec lui c’est de l’électricité.",
+      dedans: '<span class="arc">' + contour('') + '</span>' },
+    { cle: 'h', t: 'H · Le double flux',
+      n: "Deux dégradés coniques tournant en sens inverse, à des vitesses différentes, plus une couche floue. Là où ils se croisent la lumière s’accumule — le motif ne se répète jamais tout à fait.",
+      dedans: '<span class="plasma"></span><span class="plasma2"></span><span class="fond"></span>' },
+    { cle: 'i', t: 'I · Le circuit',
+      n: "Le contour découpé en segments qui s’allument à la file, comme un courant sur une piste. Net et mécanique — le plus lisible des cinq, même à cinq cartes allumées.",
+      dedans: '<span class="piste-c">' + contour('') + '</span>' },
+    { cle: 'j', t: 'J · Le néon liquide',
+      n: "Trois bordures superposées de la même couleur : une large très floue, une moyenne, une fine et blanche. C’est ce dédoublement qui donne du verre chauffé plutôt qu’un trait dessiné.",
+      dedans: '<span class="neon"><i></i><i></i><i></i></span>' },
+    { cle: 'k', t: 'K · Les éclats',
+      n: "Une aura sourde, et des étincelles qui jaillissent à des points au hasard du contour. Le seul au rythme irrégulier — et l’irrégulier attire l’œil bien plus sûrement qu’un cycle propre.",
+      dedans: '<span class="aura"></span><span class="eclats"></span>' },
+];
+
+// Les étincelles se posent sur le pourtour, à des instants décalés
+function semerEclats(el) {
+    const zone = el.querySelector('.eclats');
+    if (!zone) return;
+    for (let i = 0; i < 7; i++) {
+        const b = document.createElement('b');
+        const t = Math.random();
+        // on parcourt le périmètre : haut, droite, bas, gauche
+        let x, y;
+        if (t < 0.28)      { x = t / 0.28 * 100; y = 0; }
+        else if (t < 0.5)  { x = 100; y = (t - 0.28) / 0.22 * 100; }
+        else if (t < 0.78) { x = 100 - (t - 0.5) / 0.28 * 100; y = 100; }
+        else               { x = 0; y = 100 - (t - 0.78) / 0.22 * 100; }
+        b.style.left = x + '%';
+        b.style.top = y + '%';
+        b.style.animationDelay = (Math.random() * 2.8).toFixed(2) + 's';
+        zone.appendChild(b);
+    }
+}
+
+const grille = document.getElementById('grille');
+for (const p of PISTES) {
+    const bloc = document.createElement('div');
+    bloc.className = 'piste';
+    bloc.innerHTML = '<h2>' + p.t + '</h2><p>' + p.n + '</p>';
+    const f = document.createElement('div');
+    f.className = 'feutre';
+    f.innerHTML = '<div class="rangee">' + PORTRAITS.map((nom, i) =>
+        `<div class="c ${p.cle}" data-i="${i}">${p.dedans}<img src="collectpic/${nom}.webp" alt=""></div>`).join('') + '</div>';
+    bloc.appendChild(f);
+    grille.appendChild(bloc);
+    f.querySelectorAll('.k').forEach(semerEclats);
+}
+
+function peindre() {
+    document.querySelectorAll('.c').forEach(c => c.classList.toggle('on', Number(c.dataset.i) < allumees));
+}
+document.querySelectorAll('.reglage button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('.reglage button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    allumees = Number(b.dataset.n);
+    peindre();
+});
+peindre();
+</script>
+</body>
+</html>

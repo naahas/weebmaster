@@ -1737,13 +1737,52 @@ createApp({
                 } else if (cible === 'poser') {
                     if (this.colSetPret) this.socket.emit('collect-poser', { anime: this.colSetPret });
                 } else if (cible.startsWith('marche:')) {
-                    this.socket.emit('collect-echanger', { uidMain: prise.uid, uidMarche: cible.slice(7) });
+                    const uidMarche = cible.slice(7);
+                    this.colCroiser(prise, uidMarche);
+                    this.socket.emit('collect-echanger', { uidMain: prise.uid, uidMarche });
                 }
             };
             window.addEventListener('pointermove', bouger);
             window.addEventListener('pointerup', lacher);
             window.addEventListener('pointercancel', lacher);
         },
+        // Deux fantômes qui volent l'un vers l'autre, le temps que le serveur
+        // réponde. On relève les positions AVANT que l'état ne change : une fois
+        // la nouvelle main arrivée, les cartes ne sont plus là où elles étaient.
+        colCroiser(carteMain, uidMarche) {
+            const elMarche = document.querySelector('[data-drop="marche:' + uidMarche + '"]');
+            const elMain = document.querySelector('.col-main .col-carte:nth-child(' +
+                (this.col.main.findIndex(c => c.uid === carteMain.uid) + 1) + ')');
+            if (!elMarche || !elMain) return;
+
+            const a = elMain.getBoundingClientRect();
+            const b = elMarche.getBoundingClientRect();
+            const carteMarche = (this.col.etat.marche || []).find(c => c.uid === uidMarche);
+            if (!carteMarche) return;
+
+            const faire = (carte, de, vers, classe) => {
+                const el = document.createElement('div');
+                el.className = 'col-croise ' + classe;
+                el.style.left = de.left + 'px';
+                el.style.top = de.top + 'px';
+                el.style.width = de.width + 'px';
+                el.style.height = de.height + 'px';
+                el.innerHTML = '<img src="collectpic/' + carte.img + '" alt="">';
+                document.body.appendChild(el);
+                // deux images d'attente : sans elles le navigateur applique la
+                // position d'arrivée d'emblée et il n'y a aucun mouvement
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    el.style.transform = 'translate(' + (vers.left - de.left) + 'px, ' +
+                        (vers.top - de.top) + 'px) scale(' + (vers.width / de.width).toFixed(3) + ')';
+                    el.style.transformOrigin = 'top left';
+                }));
+                setTimeout(() => el.remove(), 380);
+            };
+
+            faire(carteMain, a, b, 'vers-marche');
+            faire(carteMarche, b, a, 'vers-main');
+        },
+
         // Ce qu'il y a sous le doigt. « elementFromPoint » plutôt que des
         // rectangles calculés d'avance : la table bouge avec la fenêtre, et une
         // liste de zones mémorisée serait fausse au premier redimensionnement.
