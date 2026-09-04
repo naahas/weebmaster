@@ -185,6 +185,28 @@ const dernier = (j) => j.etats[j.etats.length - 1];
     }
     check('un duel a bien pu être joué', duelOuvert, duelOuvert ? 'oui' : 'aucune occasion en six essais');
 
+    // ── La reprise après un rafraîchissement ──
+    // La main ne part QUE sur sa propre socket : rien ne la rejoue tout seul.
+    // Sans « collect-get-state » au retour, le joueur revenait devant une table
+    // dont il ne voyait plus ses propres cartes.
+    {
+        const revenant = tous.find(j => j.nom !== dernier(A).tourJoueur);
+        const avant = revenant.main.map(c => c.uid).join();
+        revenant.socket.close();
+        await wait(350);
+
+        const repris = await joueur(revenant.nom);
+        check('en revenant, rien ne vient tout seul', !repris.main, repris.main ? repris.main.length + ' cartes' : 'aucune main');
+        repris.socket.emit('collect-get-state');
+        await wait(350);
+        check('la main est retrouvée à l\'identique',
+            repris.main && repris.main.map(c => c.uid).join() === avant,
+            repris.main ? repris.main.length + ' cartes' : 'rien');
+        check('… et la table avec', dernier(repris) && dernier(repris).marche.length === 5,
+            dernier(repris) ? dernier(repris).marche.length + ' au marché' : 'rien');
+        tous[tous.indexOf(revenant)] = repris;
+    }
+
     // ── Un départ ne fige pas la table ──
     const partant = tous.find(j => j.nom === dernier(A).tourJoueur);
     const restants = tous.filter(j => j !== partant);

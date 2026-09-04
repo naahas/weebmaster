@@ -101,9 +101,12 @@
     position: absolute;
     left: 50%; top: 50%;
     transform: translate(-50%, -50%);
-    display: flex; gap: 0.3rem; align-items: center;
+    display: flex; align-items: center;
     z-index: 4;
 }
+/* « relative » : les cartes qui s'en vont passent en absolu le temps de
+   sortir, sinon les autres attendraient leur disparition pour se décaler. */
+.col-cartes { position: relative; display: flex; gap: 0.3rem; align-items: center; }
 /* Le marché est commun donc lointain ; ta main est à toi et sous le pouce.
    Les deux ne méritent pas la même taille. */
 .col-marche .col-carte { width: calc(var(--carte) * 0.9); }
@@ -127,7 +130,7 @@
    « carte jouable », donc on n'essaie plus de la retourner. */
 .col-pioche {
     position: absolute;
-    right: 2.4rem; bottom: 2rem;
+    right: 3.4rem; bottom: 3rem;
     width: calc(var(--carte) * 1.5);
     aspect-ratio: 225 / 350;
     z-index: 9;
@@ -139,8 +142,10 @@
     background: repeating-linear-gradient(135deg, #1d2733 0 7px, #161d27 7px 14px);
     transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.col-pioche span:nth-child(1) { transform: translate(0.38rem, 0.38rem); opacity: 0.4; }
-.col-pioche span:nth-child(2) { transform: translate(0.19rem, 0.19rem); opacity: 0.72; }
+/* Un décalage franc, et chaque épaisseur un peu plus sombre : sans ça on
+   voyait une carte avec une ombre, pas une pile. */
+.col-pioche span:nth-child(1) { transform: translate(0.85rem, 0.85rem); filter: brightness(0.45); }
+.col-pioche span:nth-child(2) { transform: translate(0.42rem, 0.42rem); filter: brightness(0.72); }
 .col-pioche span:nth-child(3) {
     display: grid; place-items: center;
     font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; letter-spacing: 0.08em;
@@ -178,7 +183,31 @@
        distribution, quand la classe « entree » disparaissait avec elle. */
     transform: translateY(var(--dy, 0rem)) rotate(var(--rot, 0deg));
 }
+/* À qui le tour : une lueur qui respire autour de l'éventail. Sobre parce
+   qu'elle ne fait que pulser — pas de couleur criarde, pas de mouvement du
+   siège lui-même, qui ferait sauter la table à chaque changement de main. */
 .col-siege.tour .col-dos { border-color: rgba(255, 210, 74, 0.55); }
+.col-siege.tour .col-eventail,
+.col-moi.tour .col-main {
+    position: relative;
+}
+.col-siege.tour .col-eventail::before,
+.col-moi.tour .col-main::before {
+    content: '';
+    position: absolute; inset: -0.6rem -0.4rem -0.9rem;
+    border-radius: 1rem;
+    background: radial-gradient(60% 60% at 50% 60%, rgba(255, 210, 74, 0.3), transparent 72%);
+    animation: colLueur 2.1s ease-in-out infinite;
+    pointer-events: none;
+    z-index: -1;
+}
+@keyframes colLueur {
+    0%, 100% { opacity: 0.35; transform: scale(0.96); }
+    50%      { opacity: 1;    transform: scale(1.04); }
+}
+.col-siege.tour .col-nom, .col-moi.tour .col-nom {
+    box-shadow: 0 0 0.7rem rgba(255, 210, 74, 0.35);
+}
 .col-siege.choisissable .col-dos { border-color: rgba(255, 255, 255, 0.45); }
 
 .col-etoiles {
@@ -286,7 +315,7 @@
     position: absolute;
     left: 1.2rem; top: 50%;
     transform: translateY(-50%);
-    width: min(14.5rem, 26vw);
+    width: min(15.5rem, 27vw);
     background: #0e0e13;
     border-radius: 0.9rem;
     box-shadow: 0 1rem 2.4rem rgba(0, 0, 0, 0.6);
@@ -311,18 +340,18 @@
 }
 .col-loupe-texte {
     position: absolute; inset: auto 0 0 0;
-    padding: 0 1rem 1.5rem;
+    padding: 0 1rem 2.1rem;
     z-index: 2;
 }
 .col-loupe-nom {
     display: block;
-    font-size: 1.65rem; font-weight: 700; line-height: 1.05;
+    font-size: 1.5rem; font-weight: 700; line-height: 1.05;
     letter-spacing: -0.015em;
 }
 .col-loupe-serie {
     display: block;
-    margin-top: 0.22rem;
-    font-size: 0.7rem; font-weight: 700;
+    margin-top: 0.2rem;
+    font-size: 0.64rem; font-weight: 700;
     letter-spacing: 0.2em; text-transform: uppercase;
     color: var(--col-or);
 }
@@ -442,6 +471,27 @@
 .col-siege-actions svg { width: 1.15rem; height: 1.15rem; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .col-siege.jouable:hover .col-eventail,
 .col-siege.ouvert .col-eventail { opacity: 0.35; transition: opacity 0.18s ease; }
+
+/* ════════ Le marché tourne ════════
+   Chaque défausse pousse une carte au marché et en renvoie la plus ancienne
+   dans le paquet. Sans transition, la rangée se réécrivait d'un coup et l'on
+   ne comprenait pas ce qui venait d'entrer ni ce qui était parti. */
+.col-marche-t-enter-active,
+.col-marche-t-leave-active { transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.25, 1), opacity 0.35s ease; }
+.col-marche-t-enter-from { opacity: 0; transform: translateX(5.5rem); }
+.col-marche-t-leave-to   { opacity: 0; transform: translateX(-5.5rem); }
+.col-marche-t-leave-active { position: absolute; }
+.col-marche-t-move { transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.25, 1); }
+
+/* ════════ La carte piochée ════════
+   Elle vient du paquet, en bas à droite, et se retourne en chemin. */
+.col-main-t-enter-active,
+.col-main-t-leave-active { transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.25, 1), opacity 0.4s ease; }
+.col-main-t-enter-from { opacity: 0; transform: translate(13rem, 5rem) rotateY(95deg) scale(0.85); }
+.col-main-t-leave-to   { opacity: 0; transform: translateY(-2.5rem) scale(0.9); }
+.col-main-t-leave-active { position: absolute; }
+.col-main-t-move { transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.25, 1); }
+.col-main { position: relative; }
 
 /* ════════ L'entrée en partie ════════
    La table s'ouvre, les mains tombent toutes ensemble, puis le marché

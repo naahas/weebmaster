@@ -1088,7 +1088,7 @@ createApp({
                 return 'Amène-la sur le marché, la pioche, ou l\'emplacement étoilé.';
             }
             if (this.colSetPret) return 'Un set est prêt — glisse une carte sur l\'<b>emplacement étoilé</b>.';
-            return 'Glisse une carte, ou survole un adversaire pour le <b>scanner</b> ou le <b>voler</b>.';
+            return '<b>Pioche</b>, <b>pose un set</b>, ou survole un adversaire pour le <b>scanner</b> ou le <b>voler</b>.';
         },
 
         ascMonRang() {
@@ -3872,6 +3872,14 @@ createApp({
                 if (this.lobbyMode === 'ascension') {
                     this.socket.emit('ascension-reconnect', { playerId: this.playerId });
                     console.log('🏔️ Demande état Ascension après connexion');
+                }
+
+                // 🎴 Idem pour Collect. C'est le seul chemin par lequel on
+                // récupère sa main : elle ne part qu'à sa propre socket, donc
+                // rien ne la rejoue tant qu'on ne la redemande pas.
+                if (this.lobbyMode === 'collect') {
+                    this.socket.emit('collect-get-state');
+                    console.log('🎴 Demande état Collect après connexion');
                 }
                 
             });

@@ -843,6 +843,12 @@
 
                                 <!-- Le marché, au centre du feutre -->
                                 <div class="col-marche">
+                                    <!-- Un « transition-group » et non une simple boucle : c'est lui
+                                         qui sait faire glisser les cartes restantes vers la place
+                                         libérée. Sans ça elles sautent d'un cran d'un coup.
+                                         Il se tait pendant la distribution, qui a déjà la sienne. -->
+                                    <transition-group tag="div" class="col-cartes"
+                                                      :name="col.entree ? '' : 'col-marche-t'">
                                     <button v-for="(c, i) in col.etat.marche" :key="c.uid"
                                             class="col-carte" :class="['classe-' + c.classe, {
                                                 'col-cible': col.drag && col.drag.cible === 'marche:' + c.uid,
@@ -853,6 +859,7 @@
                                         <img :src="'collectpic/' + c.img" :alt="c.nom" draggable="false">
                                         <span class="col-pion" :class="'pion-' + c.classe" v-html="colSymbole(c.classe)"></span>
                                     </button>
+                                    </transition-group>
                                     <span class="col-emplacement" data-drop="poser"
                                           :class="{ prete: colMonTour && colSetPret,
                                                     'col-cible': col.drag && col.drag.cible === 'poser' }">★</span>
@@ -886,8 +893,9 @@
                                 </div>
 
                                 <!-- Toi, à cheval sur le bord du bas -->
-                                <div class="col-moi">
-                                    <div class="col-main">
+                                <div class="col-moi" :class="{ tour: colMonTour }">
+                                    <transition-group tag="div" class="col-main"
+                                                  :name="col.entree ? '' : 'col-main-t'">
                                         <button v-for="(c, i) in col.main" :key="c.uid"
                                                 class="col-carte" :class="['classe-' + c.classe, {
                                                     partie: col.drag && col.drag.carte.uid === c.uid,
@@ -899,7 +907,7 @@
                                             <img :src="'collectpic/' + c.img" :alt="c.nom" draggable="false">
                                             <span class="col-pion" :class="'pion-' + c.classe" v-html="colSymbole(c.classe)"></span>
                                         </button>
-                                    </div>
+                                    </transition-group>
                                     <span class="col-etoiles">
                                         <i v-for="n in col.etat.setsPourGagner" :key="n"
                                            :class="{ pleine: n <= colMesSets }"></i>
