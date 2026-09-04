@@ -170,6 +170,8 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
   Et `/prototypes/code` : cinq facons de demander le code du salon, avec un
   basculeur ordinateur/telephone.
   Et `/prototypes/modes-mobile` : cinq facons de choisir un mode au doigt.
+  Et `/prototypes/collect-hud` : le chrono, la pioche et les boutons d action de
+  Collect, quatre pistes chacun — le chrono y tourne pour de vrai.
   Et `/prototypes/collect-triangle` : trois facons d afficher le triangle des classes
   en permanence — il n est pas decoratif, un joueur qui ne le comprend pas rate 99 %
   de ses vols contre 86 % de reussite pour celui qui choisit sa classe.

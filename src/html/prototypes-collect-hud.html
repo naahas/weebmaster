@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Collect — le chrono, la pioche et les actions</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   Les trois pièces qui entourent la table.
+
+   Elles ne sont pas au même régime. Le CHRONO se regarde du coin de
+   l'œil, dix fois par tour : il doit se lire sans être lu. La PIOCHE
+   ne se touche jamais — c'est un décor qui dit « il reste des cartes ».
+   Les ACTIONS sont le seul endroit qu'on vise vraiment du doigt.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+    --or: #ffd24a;
+    --assaut: #ff7a5c;
+    --mirage: #a78bfa;
+    --oracle: #4fd1c5;
+}
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 2rem 1.5rem 5rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #fff;
+    background: radial-gradient(70% 55% at 50% 0%, #17150f, #08080b 68%);
+    min-height: 100vh;
+}
+h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
+.sous { margin: 0 0 2rem; max-width: 58rem; font-size: 0.85rem; line-height: 1.55; color: rgba(255,255,255,0.42); }
+h2.fam {
+    margin: 2.6rem 0 0.2rem;
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 0.09em; color: var(--or);
+}
+p.intro { margin: 0 0 1.4rem; max-width: 52rem; font-size: 0.78rem; line-height: 1.55; color: rgba(255,255,255,0.4); }
+
+.grille { display: flex; flex-wrap: wrap; gap: 1.6rem; align-items: flex-start; }
+.piste { width: 262px; }
+.piste h3 { margin: 0 0 0.15rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.05rem; letter-spacing: 0.07em; }
+.piste p { margin: 0 0 0.8rem; font-size: 0.7rem; line-height: 1.5; color: rgba(255,255,255,0.38); min-height: 4.2em; }
+.boite {
+    height: 9.5rem;
+    display: grid; place-items: center;
+    background: linear-gradient(160deg, rgba(255,255,255,0.03), rgba(255,255,255,0.008));
+    border: 0.06rem solid rgba(255,255,255,0.07);
+    border-radius: 0.8rem;
+}
+.boite.large { height: auto; padding: 1.4rem 1rem; }
+
+/* ════════ LES CHRONOS ════════ */
+
+/* A · l'anneau — celui d'aujourd'hui */
+.ch-anneau { position: relative; width: 3.2rem; height: 3.2rem; }
+.ch-anneau svg { transform: rotate(-90deg); display: block; }
+.ch-anneau circle { fill: none; stroke-width: 2.6; }
+.ch-anneau .f { stroke: rgba(255,255,255,0.08); }
+.ch-anneau .v { stroke: var(--or); transition: stroke-dashoffset 0.3s linear; }
+.ch-anneau b { position: absolute; inset: 0; display: grid; place-items: center; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; }
+
+/* B · le sablier plat */
+.ch-barre { width: 11rem; }
+.ch-barre .haut { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem; }
+.ch-barre .qui { font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; letter-spacing: 0.07em; color: rgba(255,255,255,0.55); }
+.ch-barre .n { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: var(--or); }
+.ch-barre .rail { height: 0.3rem; border-radius: 999px; background: rgba(255,255,255,0.09); overflow: hidden; }
+.ch-barre .fil { height: 100%; background: linear-gradient(90deg, #ffb300, var(--or)); transition: width 0.3s linear; }
+.ch-barre.rouge .fil { background: linear-gradient(90deg, #ff3b4e, #ff7a5c); }
+.ch-barre.rouge .n { color: #ff7a5c; }
+
+/* C · les jetons qui s'éteignent */
+.ch-jetons { display: flex; gap: 0.22rem; align-items: center; }
+.ch-jetons i {
+    width: 0.42rem; height: 1.5rem;
+    border-radius: 999px;
+    background: var(--or);
+    box-shadow: 0 0 0.4rem rgba(255,210,74,0.5);
+    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+.ch-jetons i.off { background: rgba(255,255,255,0.09); box-shadow: none; transform: scaleY(0.55); }
+.ch-jetons b { margin-left: 0.5rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.35rem; color: var(--or); }
+
+/* D · l'anneau qui ceint l'avatar */
+.ch-siege { position: relative; width: 5.4rem; }
+.ch-siege .eventail { display: flex; padding-left: 1.1rem; }
+.ch-siege .dos {
+    width: 1.7rem; height: 2.5rem; margin-left: -1.1rem;
+    border-radius: 0.25rem;
+    background: repeating-linear-gradient(135deg, #1d2733 0 5px, #161d27 5px 10px);
+    border: 0.06rem solid rgba(255,255,255,0.14);
+}
+.ch-siege .nom { display: block; margin-top: 0.3rem; text-align: center; font-size: 0.6rem; font-weight: 600; }
+.ch-siege .arc { position: absolute; left: 50%; top: 1.25rem; transform: translate(-50%, -50%); pointer-events: none; }
+.ch-siege .arc svg { transform: rotate(-90deg); display: block; }
+.ch-siege .arc circle { fill: none; stroke-width: 2.2; }
+.ch-siege .arc .f { stroke: rgba(255,255,255,0.06); }
+.ch-siege .arc .v { stroke: var(--or); transition: stroke-dashoffset 0.3s linear; }
+
+/* ════════ LES PIOCHES ════════ */
+.pi-base {
+    width: 4.6rem; aspect-ratio: 225/350;
+    border-radius: 0.5rem;
+    border: 0.09rem solid rgba(255,255,255,0.12);
+    background: repeating-linear-gradient(135deg, #1d2733 0 7px, #161d27 7px 14px);
+    display: grid; place-items: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 0.08em;
+    color: rgba(255,255,255,0.3);
+}
+/* A · le paquet épais */
+.pi-pile { position: relative; width: 4.6rem; aspect-ratio: 225/350; }
+.pi-pile span {
+    position: absolute; inset: 0;
+    border-radius: 0.5rem;
+    border: 0.09rem solid rgba(255,255,255,0.1);
+    background: repeating-linear-gradient(135deg, #1d2733 0 7px, #161d27 7px 14px);
+}
+.pi-pile span:nth-child(1) { transform: translate(0.34rem, 0.34rem); opacity: 0.4; }
+.pi-pile span:nth-child(2) { transform: translate(0.17rem, 0.17rem); opacity: 0.7; }
+.pi-pile span:nth-child(3) { display: grid; place-items: center; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 0.08em; color: rgba(255,255,255,0.32); }
+
+/* B · le dos siglé */
+.pi-sigle { position: relative; }
+.pi-sigle .marque {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+}
+.pi-sigle .marque i {
+    width: 2rem; height: 2rem;
+    border: 0.11rem solid rgba(255,210,74,0.4);
+    border-radius: 50%;
+    display: grid; place-items: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 0.75rem; letter-spacing: 0.05em;
+    color: rgba(255,210,74,0.6);
+    font-style: normal;
+}
+
+/* C · le paquet couché */
+.pi-couche { transform: rotate(-8deg); }
+.pi-couche .pi-base { box-shadow: 0 0.6rem 1.4rem rgba(0,0,0,0.55); }
+
+/* D · l'empreinte discrète */
+.pi-fantome {
+    width: 4.6rem; aspect-ratio: 225/350;
+    border-radius: 0.5rem;
+    border: 0.09rem dashed rgba(255,255,255,0.14);
+    display: grid; place-items: center;
+    color: rgba(255,255,255,0.2);
+    font-size: 0.6rem; letter-spacing: 0.16em; text-align: center;
+    font-family: 'Bebas Neue', sans-serif;
+}
+
+/* ════════ LES BOUTONS ════════ */
+.bt-rangee { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.35rem; width: 100%; max-width: 25rem; }
+
+/* A · les pastilles d'aujourd'hui */
+.bt-a button {
+    padding: 0.55rem 0.2rem;
+    font: inherit; font-size: 0.62rem; font-weight: 700;
+    color: rgba(255,255,255,0.75);
+    background: rgba(255,255,255,0.05);
+    border: 0.06rem solid rgba(255,255,255,0.09);
+    border-radius: 0.5rem; cursor: pointer;
+}
+.bt-a button.on { background: var(--or); border-color: var(--or); color: #17140a; }
+
+/* B · icône au-dessus du mot */
+.bt-b button {
+    display: flex; flex-direction: column; align-items: center; gap: 0.28rem;
+    padding: 0.6rem 0.2rem 0.5rem;
+    font: inherit; font-size: 0.55rem; font-weight: 700; letter-spacing: 0.04em;
+    color: rgba(255,255,255,0.6);
+    background: rgba(255,255,255,0.04);
+    border: 0.06rem solid rgba(255,255,255,0.08);
+    border-radius: 0.6rem; cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+.bt-b button svg { width: 1.05rem; height: 1.05rem; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.bt-b button.on { color: var(--or); border-color: rgba(255,210,74,0.55); background: rgba(255,210,74,0.09); }
+
+/* C · la barre segmentée */
+.bt-c { display: flex; width: 100%; max-width: 25rem; border: 0.06rem solid rgba(255,255,255,0.1); border-radius: 0.7rem; overflow: hidden; }
+.bt-c button {
+    flex: 1 1 0;
+    display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+    padding: 0.62rem 0.15rem;
+    font: inherit; font-size: 0.53rem; font-weight: 700; letter-spacing: 0.05em;
+    color: rgba(255,255,255,0.55);
+    background: rgba(255,255,255,0.03);
+    border: 0; cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease;
+}
+.bt-c button + button { border-left: 0.06rem solid rgba(255,255,255,0.08); }
+.bt-c button svg { width: 1rem; height: 1rem; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.bt-c button.on { background: var(--or); color: #17140a; }
+
+/* D · quatre + une, la pose à part */
+.bt-d { display: flex; gap: 0.5rem; width: 100%; max-width: 25rem; align-items: stretch; }
+.bt-d .quatre { flex: 1 1 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.3rem; }
+.bt-d .quatre button {
+    display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+    padding: 0.55rem 0.15rem;
+    font: inherit; font-size: 0.53rem; font-weight: 700;
+    color: rgba(255,255,255,0.6);
+    background: rgba(255,255,255,0.04);
+    border: 0.06rem solid rgba(255,255,255,0.08);
+    border-radius: 0.55rem; cursor: pointer;
+}
+.bt-d .quatre button svg { width: 1rem; height: 1rem; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.bt-d .quatre button.on { color: var(--or); border-color: rgba(255,210,74,0.55); background: rgba(255,210,74,0.09); }
+.bt-d .poser {
+    flex: 0 0 5.6rem;
+    font: inherit; font-size: 0.68rem; font-weight: 700;
+    color: #17140a;
+    background: linear-gradient(135deg, #ffe066, #ffb300);
+    border: 0; border-radius: 0.55rem; cursor: pointer;
+    box-shadow: 0 0.3rem 0.9rem rgba(255,180,0,0.25);
+}
+.bt-d .poser.eteint {
+    color: rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.04);
+    border: 0.06rem solid rgba(255,255,255,0.08);
+    box-shadow: none;
+}
+</style>
+</head>
+<body>
+
+<h1>Collect — le chrono, la pioche et les actions</h1>
+<p class="sous">
+    Trois pièces au même endroit de l'écran, mais pas au même régime. Le <b>chrono</b> se regarde du coin
+    de l'œil dix fois par tour : il doit se lire sans être lu. La <b>pioche</b> ne se touche jamais —
+    c'est un décor qui dit « il reste des cartes ». Les <b>actions</b> sont le seul endroit qu'on vise
+    vraiment du doigt, et le seul qui doive supporter un pouce sur un téléphone.
+    Tout est cliquable, le chrono tourne pour de vrai.
+</p>
+
+<h2 class="fam">Le chrono</h2>
+<p class="intro">Quinze secondes par tour. Il doit dire deux choses : combien il reste, et si ça devient urgent.</p>
+<div class="grille" id="chronos"></div>
+
+<h2 class="fam">La pioche</h2>
+<p class="intro">
+    Elle ne se clique pas et ne se vide jamais — la pioche se remélange. Son seul rôle est de rappeler
+    d'où viennent les cartes, dans un coin où elle ne gêne pas.
+</p>
+<div class="grille" id="pioches"></div>
+
+<h2 class="fam">Les boutons d'action</h2>
+<p class="intro">
+    Cinq choix, un seul par tour. « Poser » n'est pas de la même nature que les quatre autres : c'est
+    celui qui fait marquer, et il n'est disponible que par moments.
+</p>
+<div class="grille" id="boutons"></div>
+
+<script>
+/* Le compte à rebours, partagé par tous les prototypes */
+const TOTAL = 15;
+let reste = 15;
+
+const ICONES = {
+    piocher:  '<svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5"/><path d="M12 11v6M9 14h6"/></svg>',
+    echanger: '<svg viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>',
+    voler:    '<svg viewBox="0 0 24 24"><path d="M5 19L19 5M15 5h4v4M9 19H5v-4"/><path d="M5 5l6 6"/></svg>',
+    scanner:  '<svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+    poser:    '<svg viewBox="0 0 24 24"><path d="M4 7h16v13H4z"/><path d="M8 7V4h8v3M9 13h6"/></svg>',
+};
+const NOMS = ['Piocher', 'Échanger', 'Voler', 'Scanner', 'Poser'];
+const CLES = ['piocher', 'echanger', 'voler', 'scanner', 'poser'];
+
+/* ── Les chronos ── */
+const CHRONOS = [
+    { t: 'A · L’anneau', n: "Celui d’aujourd’hui. Compact, il tient dans un coin — mais un anneau se lit mal en périphérie : il faut y poser les yeux pour savoir où il en est.",
+      h: () => `<div class="ch-anneau"><svg width="52" height="52" viewBox="0 0 35 35">
+            <circle class="f" cx="17.5" cy="17.5" r="15"></circle>
+            <circle class="v" cx="17.5" cy="17.5" r="15" stroke-dasharray="94.2" stroke-dashoffset="0"></circle>
+          </svg><b>15</b></div>`,
+      maj: (e) => {
+          e.querySelector('.v').setAttribute('stroke-dashoffset', (94.2 * (1 - reste / TOTAL)).toFixed(1));
+          e.querySelector('.v').style.stroke = reste <= 5 ? '#ff5a6e' : 'var(--or)';
+          e.querySelector('b').textContent = reste;
+      } },
+    { t: 'B · Le sablier plat', n: "Une barre qui se vide, avec le nom du joueur au-dessus. La longueur se perçoit sans lire, et l’on sait de qui c’est le tour au même endroit — deux informations pour une place.",
+      h: () => `<div class="ch-barre"><div class="haut"><span class="qui">SHINOBI212</span><span class="n">15</span></div>
+          <div class="rail"><i class="fil" style="width:100%"></i></div></div>`,
+      maj: (e) => {
+          e.querySelector('.fil').style.width = (reste / TOTAL * 100) + '%';
+          e.querySelector('.n').textContent = reste;
+          e.classList.toggle('rouge', reste <= 5);
+      } },
+    { t: 'C · Les jetons', n: "Quinze bâtons qui s’éteignent un par un. On compte d’un coup d’œil ce qu’il reste, comme des vies — et la dernière poignée saute aux yeux sans qu’on ait rien à changer.",
+      h: () => `<div class="ch-jetons">${Array.from({length: TOTAL}, () => '<i></i>').join('')}<b>15</b></div>`,
+      maj: (e) => {
+          [...e.querySelectorAll('i')].forEach((x, k) => x.classList.toggle('off', k >= reste));
+          e.querySelector('b').textContent = reste;
+      } },
+    { t: 'D · L’anneau du siège', n: "Le temps ceint le joueur dont c’est le tour, au lieu de vivre dans un coin. On regarde déjà les mains : l’information vient à l’œil au lieu de l’attendre.",
+      h: () => `<div class="ch-siege">
+            <div class="eventail"><span class="dos"></span><span class="dos"></span><span class="dos"></span><span class="dos"></span></div>
+            <span class="nom">Shinobi212</span>
+            <span class="arc"><svg width="86" height="86" viewBox="0 0 60 60">
+                <circle class="f" cx="30" cy="30" r="27"></circle>
+                <circle class="v" cx="30" cy="30" r="27" stroke-dasharray="169.6" stroke-dashoffset="0"></circle>
+            </svg></span></div>`,
+      maj: (e) => {
+          e.querySelector('.v').setAttribute('stroke-dashoffset', (169.6 * (1 - reste / TOTAL)).toFixed(1));
+          e.querySelector('.v').style.stroke = reste <= 5 ? '#ff5a6e' : 'var(--or)';
+      } },
+];
+
+/* ── Les pioches ── */
+const PIOCHES = [
+    { t: 'A · Le dos simple', n: "Celui d’aujourd’hui : une carte retournée, rien de plus. Honnête, mais elle ressemble à une carte jouable, ce qu’elle n’est pas.",
+      h: () => '<div class="pi-base">SM</div>' },
+    { t: 'B · Le paquet épais', n: "Trois dos décalés. On lit « un paquet » et non « une carte », donc on n’essaie pas de le toucher. C’est aussi ce que fait une vraie table.",
+      h: () => '<div class="pi-pile"><span></span><span></span><span>SM</span></div>' },
+    { t: 'C · Le dos siglé', n: "Un dos neutre avec le monogramme au centre, dans un cercle doré. Plus proche d’un vrai jeu de cartes, et ça place la marque là où l’œil passe souvent.",
+      h: () => '<div class="pi-base pi-sigle"><span class="marque"><i>SM</i></span></div>' },
+    { t: 'D · L’empreinte', n: "Un simple contour pointillé, comme l’emplacement vide du marché. Le plus discret de tous — mais il n’évoque plus rien du tout, et le coin paraît inachevé.",
+      h: () => '<div class="pi-fantome">PIOCHE</div>' },
+];
+
+/* ── Les boutons ── */
+const BOUTONS = [
+    { t: 'A · Les pastilles', n: "Celles d’aujourd’hui. Cinq mots de même poids : rien ne dit que « Poser » est celui qui fait gagner, ni qu’il n’est pas toujours possible.",
+      h: () => `<div class="bt-rangee bt-a">${NOMS.map((n, i) => `<button class="${i===2?'on':''}">${n}</button>`).join('')}</div>` },
+    { t: 'B · L’icône et le mot', n: "Un pictogramme au-dessus du mot. On finit par ne plus lire que les icônes, et le doigt vise plus vite — au prix d’un peu de hauteur.",
+      h: () => `<div class="bt-rangee bt-b">${NOMS.map((n, i) => `<button class="${i===2?'on':''}">${ICONES[CLES[i]]}<span>${n}</span></button>`).join('')}</div>` },
+    { t: 'C · La barre segmentée', n: "Les cinq soudés en une seule barre, comme un sélecteur. Très propre, et le choix en cours se voit de loin — mais les cinq restent de même nature.",
+      h: () => `<div class="bt-c">${NOMS.map((n, i) => `<button class="${i===2?'on':''}">${ICONES[CLES[i]]}<span>${n}</span></button>`).join('')}</div>` },
+    { t: 'D · Quatre, et la pose à part', n: "Les quatre actions ordinaires d’un côté, « Poser » en bouton plein de l’autre. Il n’est pas du même ordre : c’est lui qui fait marquer, et il ne s’allume que quand un set est prêt.",
+      h: () => `<div class="bt-d"><div class="quatre">${NOMS.slice(0,4).map((n, i) =>
+            `<button class="${i===2?'on':''}">${ICONES[CLES[i]]}<span>${n}</span></button>`).join('')}</div>
+            <button class="poser">Poser</button></div>` },
+];
+
+function monter(id, liste, large) {
+    const hote = document.getElementById(id);
+    for (const p of liste) {
+        const bloc = document.createElement('div');
+        bloc.className = 'piste';
+        bloc.innerHTML = `<h3>${p.t}</h3><p>${p.n}</p>`;
+        const b = document.createElement('div');
+        b.className = 'boite' + (large ? ' large' : '');
+        b.innerHTML = p.h();
+        bloc.appendChild(b);
+        hote.appendChild(bloc);
+        if (p.maj) p._e = b.firstElementChild;
+    }
+}
+monter('chronos', CHRONOS);
+monter('pioches', PIOCHES);
+monter('boutons', BOUTONS, true);
+
+// on fait tourner le compte à rebours pour de vrai : un chrono se juge en marche
+setInterval(() => {
+    reste = reste <= 0 ? TOTAL : reste - 1;
+    for (const c of CHRONOS) if (c.maj && c._e) c.maj(c._e);
+}, 1000);
+for (const c of CHRONOS) if (c.maj && c._e) c.maj(c._e);
+
+// « Poser » s'éteint et se rallume, pour montrer qu'il n'est pas toujours offert
+setInterval(() => {
+    const p = document.querySelector('.bt-d .poser');
+    if (p) p.classList.toggle('eteint');
+}, 2600);
+
+// les rangées se laissent essayer
+document.addEventListener('click', (e) => {
+    const b = e.target.closest('.bt-rangee button, .bt-c button, .bt-d .quatre button');
+    if (!b) return;
+    [...b.parentElement.children].forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+});
+</script>
+</body>
+</html>

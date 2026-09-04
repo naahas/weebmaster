@@ -1252,6 +1252,10 @@ app.get('/prototypes/modes-2', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-modes2.html');
 });
 
+app.get('/prototypes/collect-hud', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-collect-hud.html');
+});
+
 app.get('/prototypes/collect-triangle', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-collect-triangle.html');
 });
