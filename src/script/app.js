@@ -27,9 +27,6 @@ createApp({
             col: {
                 etat: null,
                 main: [],
-                mode: null,          // piocher | echanger | voler | scanner
-                mainChoisie: null,
-                marcheChoisi: null,
                 volCible: null,
                 volSerie: null,
                 volArme: null,
@@ -38,6 +35,8 @@ createApp({
                 reste: 0,
                 _tic: null,
                 loupe: null,         // la carte qu'on regarde de près
+                drag: null,          // { carte, x, y, cible } pendant qu'on traîne
+                siegeOuvert: null,   // au doigt : le siège dont les gestes sont dépliés
                 entree: false,       // le temps de la distribution, au tout début
                 // réglages du salon, avant la partie
                 regleMain: 4,
@@ -1038,10 +1037,6 @@ createApp({
             if (!this.col.etat) return [];
             return this.col.etat.joueurs.filter(p => p.playerId !== this.playerId);
         },
-        colMainCliquable() {
-            return this.colMonTour && (this.col.mode === 'piocher'
-                || (this.col.mode === 'echanger' && this.col.marcheChoisi));
-        },
         // L'anime dont on tient déjà de quoi poser : c'est ce qui allume « Poser »
         colSetPret() {
             if (!this.col.etat) return null;
@@ -1049,10 +1044,10 @@ createApp({
             for (const c of this.col.main) par[c.anime] = (par[c.anime] || 0) + 1;
             return Object.keys(par).find(a => par[a] >= this.col.etat.taille) || null;
         },
-        colArcChrono() {
-            const total = 15;
-            const part = Math.max(0, Math.min(1, this.col.reste / total));
-            return (94.2 * (1 - part)).toFixed(1);
+        // Un tour dure quinze secondes, un duel huit : les bâtons se comptent
+        // sur ce qui est réellement en train de s'écouler.
+        colTotalTemps() {
+            return (this.col.etat && this.col.etat.duel) ? 8 : 15;
         },
         colJeDefends() {
             const d = this.col.etat && this.col.etat.duel;
@@ -1085,15 +1080,15 @@ createApp({
             // Le siège en cours s'allume déjà : le redire en toutes lettres
             // sous la table faisait doublon.
             if (!this.colMonTour) return '';
-            switch (this.col.mode) {
-                case 'piocher':  return 'Choisis la carte que tu laisses au marché.';
-                case 'echanger': return this.col.marcheChoisi
-                    ? 'Et celle que tu rends en échange.'
-                    : 'Choisis une carte du marché.';
-                case 'scanner':  return 'Quel adversaire veux-tu regarder ?';
-                case 'voler':    return 'Qui veux-tu attaquer ?';
-                default:         return 'À toi de jouer — une seule action.';
+            if (this.col.drag) {
+                const c = this.col.drag.cible;
+                if (c === 'pioche') return 'Lâche pour <b>piocher</b> à sa place.';
+                if (c === 'poser') return 'Lâche pour <b>poser ton set</b>.';
+                if (c && c.startsWith('marche:')) return 'Lâche pour l\'<b>échanger</b>.';
+                return 'Amène-la sur le marché, la pioche, ou l\'emplacement étoilé.';
             }
+            if (this.colSetPret) return 'Un set est prêt — glisse une carte sur l\'<b>emplacement étoilé</b>.';
+            return 'Glisse une carte, ou survole un adversaire pour le <b>scanner</b> ou le <b>voler</b>.';
         },
 
         ascMonRang() {
@@ -1681,55 +1676,69 @@ createApp({
             return p ? p.sets : [];
         },
         colRaz() {
-            this.col.mode = null;
-            this.col.mainChoisie = null;
-            this.col.marcheChoisi = null;
             this.col.volCible = null;
             this.col.volSerie = null;
             this.col.volArme = null;
         },
-        colAnnuler() { this.colRaz(); },
-        colChoisirMode(m) {
-            if (!this.colMonTour) return;
-            this.col.erreur = '';
+        colAnnuler() { this.colRaz(); this.col.siegeOuvert = null; },
+        // ══ On joue sur la table ══
+        // Chaque action se fait là où elle a lieu. Le glissement porte les trois
+        // qui déplacent une carte ; les deux qui visent un joueur sont des
+        // boutons posés sur son siège.
+        colPrendre(carte, ev) {
+            if (!this.colMonTour || this.col.etat.duel) return;
+            ev.preventDefault();
             this.col.loupe = null;
-            // retoucher l'action en cours la referme : c'est le geste attendu
-            if (this.col.mode === m) return this.colRaz();
-            this.colRaz();
-            this.col.mode = m;
-            // Le vol vise presque toujours la série qu'on complète : on la
-            // pré-remplit, quitte à ce que le joueur en change.
-            if (m === 'voler') {
-                const par = {};
-                for (const c of this.col.main) par[c.anime] = (par[c.anime] || 0) + 1;
-                this.col.volSerie = Object.keys(par).sort((a, b) => par[b] - par[a])[0] || null;
-            }
+            this.col.drag = { carte, x: ev.clientX, y: ev.clientY, cible: null };
+            const bouger = (e) => {
+                if (!this.col.drag) return;
+                this.col.drag.x = e.clientX;
+                this.col.drag.y = e.clientY;
+                this.col.drag.cible = this.colCibleSous(e.clientX, e.clientY);
+            };
+            const lacher = (e) => {
+                window.removeEventListener('pointermove', bouger);
+                window.removeEventListener('pointerup', lacher);
+                window.removeEventListener('pointercancel', lacher);
+                const cible = this.colCibleSous(e.clientX, e.clientY);
+                const prise = this.col.drag && this.col.drag.carte;
+                this.col.drag = null;
+                if (!cible || !prise) return;
+                if (cible === 'pioche') {
+                    this.socket.emit('collect-piocher', { uidDefausse: prise.uid });
+                } else if (cible === 'poser') {
+                    if (this.colSetPret) this.socket.emit('collect-poser', { anime: this.colSetPret });
+                } else if (cible.startsWith('marche:')) {
+                    this.socket.emit('collect-echanger', { uidMain: prise.uid, uidMarche: cible.slice(7) });
+                }
+            };
+            window.addEventListener('pointermove', bouger);
+            window.addEventListener('pointerup', lacher);
+            window.addEventListener('pointercancel', lacher);
         },
-        colToucherMain(c) {
-            // La loupe est désormais au survol : le clic n'a plus qu'à servir les
-            // actions, ce qui évite qu'un même geste veuille dire deux choses.
-            if (!this.colMonTour || !this.col.mode) return;
-            if (this.col.mode === 'piocher') {
-                this.col.mainChoisie = c.uid;
-                this.socket.emit('collect-piocher', { uidDefausse: c.uid });
-                this.colRaz();
-            } else if (this.col.mode === 'echanger' && this.col.marcheChoisi) {
-                this.socket.emit('collect-echanger', { uidMain: c.uid, uidMarche: this.col.marcheChoisi });
-                this.colRaz();
-            }
+        // Ce qu'il y a sous le doigt. « elementFromPoint » plutôt que des
+        // rectangles calculés d'avance : la table bouge avec la fenêtre, et une
+        // liste de zones mémorisée serait fausse au premier redimensionnement.
+        colCibleSous(x, y) {
+            const el = document.elementFromPoint(x, y);
+            const cible = el && el.closest && el.closest('[data-drop]');
+            return cible ? cible.getAttribute('data-drop') : null;
         },
-        colToucherMarche(c) {
-            if (!this.colMonTour || this.col.mode !== 'echanger') return;
-            this.col.marcheChoisi = c.uid;
+        colScanner(cibleId) {
+            if (!this.colMonTour || this.col.etat.duel) return;
+            this.col.siegeOuvert = null;
+            this.socket.emit('collect-scanner', { cibleId });
         },
-        colToucherRival(id) {
-            if (!this.colMonTour) return;
-            if (this.col.mode === 'scanner') {
-                this.socket.emit('collect-scanner', { cibleId: id });
-                this.colRaz();
-            } else if (this.col.mode === 'voler') {
-                this.col.volCible = id;
-            }
+        colOuvrirVol(cibleId) {
+            if (!this.colMonTour || this.col.etat.duel) return;
+            this.col.siegeOuvert = null;
+            this.col.volCible = cibleId;
+            this.col.volArme = null;
+            // On vise presque toujours la série qu'on complète : elle est
+            // pré-remplie, quitte à ce que le joueur en change.
+            const par = {};
+            for (const c of this.col.main) par[c.anime] = (par[c.anime] || 0) + 1;
+            this.col.volSerie = Object.keys(par).sort((a, b) => par[b] - par[a])[0] || null;
         },
         colVoler() {
             if (!this.col.volCible || !this.col.volSerie || !this.col.volArme) return;
@@ -1742,10 +1751,6 @@ createApp({
         },
         colDefendre(uid) {
             this.socket.emit('collect-defendre', { uidDefense: uid });
-        },
-        colPoser() {
-            const a = this.colSetPret;
-            if (a) this.socket.emit('collect-poser', { anime: a });
         },
         // Le compte à rebours vit côté client, mais sur l'heure de fin envoyée
         // par le serveur : un client en retard ne décale pas son minuteur.

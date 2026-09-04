@@ -53,18 +53,28 @@
 .col-tri:hover { opacity: 1; transform: scale(1.06); }
 .col-tri svg { display: block; }
 
-.col-chrono { position: relative; width: 2.6rem; height: 2.6rem; flex: 0 0 auto; }
-.col-chrono svg { transform: rotate(-90deg); display: block; }
-.col-chrono circle { fill: none; stroke-width: 2.6; }
-.col-chrono .fond { stroke: rgba(255, 255, 255, 0.08); }
-.col-chrono .fil { stroke: var(--col-or); transition: stroke-dashoffset 0.25s linear; }
-.col-chrono.urgence .fil { stroke: #ff5a6e; }
-.col-chrono b {
-    position: absolute; inset: 0;
-    display: grid; place-items: center;
-    font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.7);
+/* Le temps en bâtons qui s'éteignent, sans chiffre : on compte ce qu'il
+   reste d'un coup d'œil, comme des vies, et la dernière poignée saute aux
+   yeux sans qu'on ait à changer quoi que ce soit. Un anneau, lui, demandait
+   qu'on y pose les yeux pour savoir où il en était. */
+.col-chrono {
+    flex: 0 0 auto;
+    display: flex; align-items: center; gap: 0.16rem;
+    margin: 0.9rem 0.5rem 0 0;
 }
+.col-chrono i {
+    width: 0.28rem; height: 1.35rem;
+    border-radius: 999px;
+    background: var(--col-or);
+    box-shadow: 0 0 0.35rem rgba(255, 210, 74, 0.45);
+    transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+.col-chrono i.off {
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: none;
+    transform: scaleY(0.5);
+}
+.col-chrono.urgence i:not(.off) { background: #ff5a6e; box-shadow: 0 0 0.4rem rgba(255, 90, 110, 0.6); }
 
 /* ── La scène et la table ─────────────────────────────────────── */
 .col-scene { position: relative; flex: 1 1 auto; min-height: 0; }
@@ -99,7 +109,10 @@
 .col-marche .col-carte { width: calc(var(--carte) * 0.9); }
 .col-moi .col-carte { width: calc(var(--carte) * 1.14); }
 
+/* Il n'est pas du marché : la marge l'en détache pour qu'on ne le prenne
+   pas pour une sixième carte à échanger. La rangée reste centrée d'un bloc. */
 .col-emplacement {
+    margin-left: 1.4rem;
     width: calc(var(--carte) * 0.9);
     aspect-ratio: 225 / 350;
     border: 0.09rem dashed rgba(255, 210, 74, 0.32);
@@ -110,20 +123,29 @@
 }
 
 /* ── La pioche, dans le coin bas droit de l'écran ─────────────── */
+/* Un paquet, pas une carte : trois dos décalés. On lit « pile » et non
+   « carte jouable », donc on n'essaie plus de la retourner. */
 .col-pioche {
     position: absolute;
     right: 2.4rem; bottom: 2rem;
     width: calc(var(--carte) * 1.5);
     aspect-ratio: 225 / 350;
-    display: grid; place-items: center;
-    border-radius: 0.55rem;
-    background: repeating-linear-gradient(135deg, #1d2733 0 7px, #161d27 7px 14px);
-    border: 0.09rem solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.5);
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.15rem; letter-spacing: 0.08em;
-    color: rgba(255, 255, 255, 0.32);
     z-index: 9;
+}
+.col-pioche span {
+    position: absolute; inset: 0;
+    border-radius: 0.55rem;
+    border: 0.09rem solid rgba(255, 255, 255, 0.1);
+    background: repeating-linear-gradient(135deg, #1d2733 0 7px, #161d27 7px 14px);
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.col-pioche span:nth-child(1) { transform: translate(0.38rem, 0.38rem); opacity: 0.4; }
+.col-pioche span:nth-child(2) { transform: translate(0.19rem, 0.19rem); opacity: 0.72; }
+.col-pioche span:nth-child(3) {
+    display: grid; place-items: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.32);
+    box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.5);
 }
 
 /* ── Un siège, posé sur le bord du feutre ─────────────────────── */
@@ -289,19 +311,19 @@
 }
 .col-loupe-texte {
     position: absolute; inset: auto 0 0 0;
-    padding: 0 0.9rem 0.95rem;
+    padding: 0 1rem 1.5rem;
     z-index: 2;
 }
 .col-loupe-nom {
     display: block;
-    font-size: 1.28rem; font-weight: 700; line-height: 1.1;
-    letter-spacing: -0.01em;
+    font-size: 1.65rem; font-weight: 700; line-height: 1.05;
+    letter-spacing: -0.015em;
 }
 .col-loupe-serie {
     display: block;
-    margin-top: 0.16rem;
-    font-size: 0.58rem; font-weight: 700;
-    letter-spacing: 0.22em; text-transform: uppercase;
+    margin-top: 0.22rem;
+    font-size: 0.7rem; font-weight: 700;
+    letter-spacing: 0.2em; text-transform: uppercase;
     color: var(--col-or);
 }
 /* Le filet et son losange : la signature de la v1. Le trait s'éteint aux
@@ -310,7 +332,7 @@
     display: block;
     position: relative;
     height: 0.06rem;
-    margin-top: 0.6rem;
+    margin-top: 0.85rem;
     background: linear-gradient(90deg, transparent, rgba(255, 210, 74, 0.5), transparent);
 }
 .col-loupe-barre::after {
@@ -340,25 +362,86 @@
 .col-consigne b { color: var(--col-or); }
 .col-consigne.ko { color: #ff8b98; }
 
-.col-actions {
-    flex: 0 0 auto;
-    display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.3rem;
-    width: min(32rem, 100%);
-    margin: 0 auto;
+/* ════════ On joue sur la table, plus dans une barre ════════
+   Plus de boutons : chaque action se fait à l'endroit qui la désigne. On
+   glisse une carte sur la pioche pour piocher, sur une carte du marché pour
+   l'échanger, sur l'emplacement pour poser. Les adversaires montrent leurs
+   deux icônes au survol.
+
+   Ce qui rend la chose lisible, c'est que les cibles s'annoncent SEULES
+   quand c'est ton tour : la pioche respire, l'emplacement pulse dès qu'un set
+   est prêt. On n'a jamais à deviner ce qui est cliquable. */
+
+/* La pioche appelle quand on peut piocher */
+.col-pioche.vivante span:nth-child(3) { animation: colRespire 2.2s ease-in-out infinite; }
+@keyframes colRespire {
+    0%, 100% { transform: translateY(0); box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.5); }
+    50%      { transform: translateY(-0.4rem); box-shadow: 0 0.9rem 1.8rem rgba(0, 0, 0, 0.55), 0 0 1.4rem rgba(255, 210, 74, 0.18); }
 }
-.col-action {
-    padding: 0.55rem 0.2rem;
-    font: inherit; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.03em;
-    color: rgba(255, 255, 255, 0.75);
-    background: rgba(255, 255, 255, 0.05);
-    border: 0.06rem solid rgba(255, 255, 255, 0.09);
-    border-radius: 0.5rem;
+
+/* Une cible sous le doigt : elle se soulève et s'entoure d'or */
+.col-cible {
+    outline: 0.14rem solid var(--col-or);
+    outline-offset: 0.14rem;
+    transform: translateY(-0.5rem) scale(1.04) !important;
+    z-index: 30;
+}
+.col-pioche.col-cible, .col-emplacement.col-cible { transform: scale(1.06) !important; }
+
+/* L'emplacement pulse dès qu'un set est prêt : c'est le seul moment où il sert */
+.col-emplacement.prete {
+    border-color: var(--col-or);
+    color: var(--col-or);
+    animation: colPulse 1.5s ease-in-out infinite;
+}
+@keyframes colPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 210, 74, 0.35); }
+    50%      { box-shadow: 0 0 0 0.5rem rgba(255, 210, 74, 0); }
+}
+/* Et les cartes qui le composent se signalent dans la main */
+.col-carte.dans-le-set { outline: 0.11rem solid rgba(255, 210, 74, 0.75); outline-offset: 0.1rem; }
+
+/* La carte qu'on traîne, sous le doigt */
+.col-fantome {
+    position: fixed;
+    z-index: 60;
+    width: calc(var(--carte) * 1.14);
+    aspect-ratio: 225 / 350;
+    border-radius: 0.42rem;
+    overflow: hidden;
+    pointer-events: none;
+    transform: translate(-50%, -50%) rotate(-4deg);
+    box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.6);
+    opacity: 0.92;
+}
+.col-fantome img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.col-carte.partie { opacity: 0.25; }
+
+/* Les deux gestes qu'on peut faire à un adversaire */
+.col-siege-actions {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex; gap: 0.4rem;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.18s ease;
+    z-index: 12;
+}
+.col-siege.jouable:hover .col-siege-actions,
+.col-siege.ouvert .col-siege-actions { opacity: 1; pointer-events: auto; }
+.col-siege-actions button {
+    width: 2.3rem; height: 2.3rem;
+    display: grid; place-items: center;
+    color: #17140a;
+    background: var(--col-or);
+    border: 0; border-radius: 50%;
     cursor: pointer;
-    transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+    box-shadow: 0 0.3rem 0.8rem rgba(0, 0, 0, 0.55);
+    transition: transform 0.15s ease;
 }
-.col-action:disabled { opacity: 0.28; cursor: default; }
-.col-action.on { background: var(--col-or); border-color: var(--col-or); color: #17140a; }
-.col-action.prete { border-color: var(--col-or); color: var(--col-or); }
+.col-siege-actions button:hover { transform: scale(1.12); }
+.col-siege-actions svg { width: 1.15rem; height: 1.15rem; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.col-siege.jouable:hover .col-eventail,
+.col-siege.ouvert .col-eventail { opacity: 0.35; transition: opacity 0.18s ease; }
 
 /* ════════ L'entrée en partie ════════
    La table s'ouvre, les mains tombent toutes ensemble, puis le marché
@@ -395,8 +478,12 @@
     from { opacity: 0; transform: translate(0, -14rem) scale(0.6); }
     to   { opacity: 1; transform: translateY(var(--dy, 0rem)) rotate(var(--rot, 0deg)); }
 }
+/* Pas de « scale » ici : c'est lui qui faisait tressauter la bordure à la
+   dernière image. Une mise à l'échelle épaissit le trait pendant l'animation,
+   et le navigateur repeint autrement quand elle se termine — d'où le
+   micro-saut. Un simple glissement n'a pas ce défaut. */
 @keyframes colMarche {
-    from { opacity: 0; transform: translateX(-5rem) scale(0.85); }
+    from { opacity: 0; transform: translateX(-5rem); }
     to   { opacity: 1; transform: translateY(var(--dy, 0rem)) rotate(var(--rot, 0deg)); }
 }
 @keyframes colFondu { from { opacity: 0; } to { opacity: 1; } }
