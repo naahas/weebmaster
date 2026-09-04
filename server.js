@@ -1260,6 +1260,10 @@ app.get('/prototypes/modes-2', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-modes2.html');
 });
 
+app.get('/prototypes/collect-gestes', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-collect-gestes.html');
+});
+
 app.get('/prototypes/collect-lueur2', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-collect-lueur2.html');
 });

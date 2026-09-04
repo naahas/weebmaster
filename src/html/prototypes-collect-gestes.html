@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Collect — piocher et poser un set</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   Les deux gestes qui méritent une animation.
+
+   PIOCHER arrive à chaque tour ou presque : l'animation doit être
+   courte et ne jamais lasser. Trois cents millisecondes, pas plus.
+
+   POSER UN SET arrive deux ou trois fois par partie et c'est le
+   moment où l'on marque : là, on peut se permettre d'être long et
+   spectaculaire. C'est le seul instant de gloire du mode.
+
+   Chaque piste se rejoue au clic — une animation ne se juge pas sur
+   une capture.
+   ════════════════════════════════════════════════════════════════ */
+:root { --or: #ffd24a; --chaud: #ffb300; --blanc: #fff6d8; }
+* { box-sizing: border-box; }
+
+body {
+    margin: 0; padding: 2rem 1.5rem 5rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #fff;
+    background: radial-gradient(70% 55% at 50% 0%, #17150f, #08080b 68%);
+    min-height: 100vh;
+}
+h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
+.sous { margin: 0 0 2rem; max-width: 58rem; font-size: 0.85rem; line-height: 1.55; color: rgba(255,255,255,0.42); }
+h2.fam { margin: 2.4rem 0 0.2rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 0.09em; color: var(--or); }
+p.intro { margin: 0 0 1.3rem; max-width: 52rem; font-size: 0.78rem; line-height: 1.55; color: rgba(255,255,255,0.4); }
+
+.grille { display: flex; flex-wrap: wrap; gap: 1.8rem; }
+.piste { width: 330px; }
+.piste h3 { margin: 0 0 0.15rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.05rem; letter-spacing: 0.07em; }
+.piste p { margin: 0 0 0.8rem; font-size: 0.71rem; line-height: 1.5; color: rgba(255,255,255,0.38); min-height: 5em; }
+
+.scene {
+    position: relative;
+    height: 15rem;
+    border-radius: 0.9rem;
+    overflow: hidden;
+    cursor: pointer;
+    background:
+        radial-gradient(60% 60% at 50% 30%, rgba(255,255,255,0.05), transparent 70%),
+        linear-gradient(170deg, #17352b, #0d1f19);
+    box-shadow: inset 0 0 2.5rem rgba(0,0,0,0.45);
+}
+.scene::after {
+    content: 'rejouer';
+    position: absolute; right: 0.5rem; bottom: 0.4rem;
+    font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase;
+    color: rgba(255,255,255,0.22);
+}
+
+.carte {
+    position: absolute;
+    width: 3.6rem; aspect-ratio: 225/350;
+    border-radius: 0.4rem;
+    overflow: hidden;
+    border: 0.09rem solid rgba(255,255,255,0.16);
+    box-shadow: 0 0.3rem 0.7rem rgba(0,0,0,0.5);
+}
+.carte img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dos {
+    position: absolute;
+    width: 3.6rem; aspect-ratio: 225/350;
+    border-radius: 0.4rem;
+    border: 0.09rem solid rgba(255,255,255,0.12);
+    background: repeating-linear-gradient(135deg, #1d2733 0 7px, #161d27 7px 14px);
+}
+.paquet { right: 1.2rem; bottom: 1.2rem; }
+.main { left: 50%; bottom: 0.9rem; transform: translateX(-50%); display: flex; }
+.main .carte { position: relative; margin-left: -0.7rem; }
+.emplacement {
+    position: absolute; left: 50%; top: 3.2rem; transform: translateX(-50%);
+    width: 3.6rem; aspect-ratio: 225/350;
+    border: 0.09rem dashed rgba(255,210,74,0.32);
+    border-radius: 0.4rem;
+    display: grid; place-items: center; color: rgba(255,210,74,0.3);
+}
+
+/* ════════ PIOCHER ════════ */
+
+/* P1 · le glissement simple */
+.p1 .vol { animation: p1 0.34s cubic-bezier(0.25, 0.8, 0.3, 1) forwards; }
+@keyframes p1 {
+    from { right: 1.2rem; bottom: 1.2rem; opacity: 1; }
+    to   { right: calc(50% - 1.8rem); bottom: 0.9rem; opacity: 1; }
+}
+
+/* P2 · le retournement */
+.p2 .vol { transform-style: preserve-3d; animation: p2 0.42s cubic-bezier(0.25, 0.8, 0.3, 1) forwards; }
+.p2 .vol .face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 0.32rem; overflow: hidden; }
+.p2 .vol .face.dosf { background: repeating-linear-gradient(135deg, #1d2733 0 7px, #161d27 7px 14px); transform: rotateY(180deg); }
+@keyframes p2 {
+    from { right: 1.2rem; bottom: 1.2rem; transform: rotateY(180deg) scale(0.9); }
+    to   { right: calc(50% - 1.8rem); bottom: 0.9rem; transform: rotateY(0deg) scale(1); }
+}
+
+/* P3 · l'arc, avec un temps d'arrêt */
+.p3 .vol { animation: p3 0.55s cubic-bezier(0.3, 0.9, 0.25, 1) forwards; }
+@keyframes p3 {
+    0%   { right: 1.2rem; bottom: 1.2rem; transform: rotate(-14deg) scale(0.92); }
+    45%  { right: calc(50% - 1.8rem); bottom: 6.5rem; transform: rotate(6deg) scale(1.16); }
+    100% { right: calc(50% - 1.8rem); bottom: 0.9rem; transform: rotate(0deg) scale(1); }
+}
+
+/* P4 · le paquet qui pousse */
+.p4 .paquet { animation: p4pousse 0.36s ease-out; }
+@keyframes p4pousse {
+    0%   { transform: none; }
+    35%  { transform: translate(-0.5rem, -0.7rem) rotate(-5deg); }
+    100% { transform: none; }
+}
+.p4 .vol { animation: p1 0.36s 0.12s cubic-bezier(0.25, 0.8, 0.3, 1) both; }
+
+/* ════════ POSER UN SET ════════ */
+
+/* S1 · l'éclat de verre — les cartes se brisent en éclats qui partent */
+.s1 .trio { position: absolute; left: 50%; bottom: 1rem; transform: translateX(-50%); display: flex; }
+.s1 .trio .carte { position: relative; margin-left: -0.7rem; animation: s1monte 0.5s cubic-bezier(0.3, 0.9, 0.25, 1) forwards; }
+.s1 .trio .carte:nth-child(2) { animation-delay: 0.06s; }
+.s1 .trio .carte:nth-child(3) { animation-delay: 0.12s; }
+@keyframes s1monte {
+    0%   { transform: translateY(0) scale(1); opacity: 1; }
+    55%  { transform: translateY(-6.2rem) scale(1.05); opacity: 1; }
+    72%  { transform: translateY(-6.2rem) scale(1.12); opacity: 1; filter: brightness(2.2); }
+    100% { transform: translateY(-6.2rem) scale(1.3); opacity: 0; filter: brightness(3); }
+}
+.s1 .eclat {
+    position: absolute; left: 50%; top: 4.5rem;
+    width: 0.4rem; height: 0.55rem;
+    background: linear-gradient(180deg, var(--blanc), var(--chaud));
+    clip-path: polygon(50% 0, 100% 45%, 62% 100%, 0 60%);
+    opacity: 0;
+    animation: s1eclat 0.8s 0.62s ease-out forwards;
+}
+@keyframes s1eclat {
+    0%   { opacity: 1; transform: translate(0,0) rotate(0) scale(1); }
+    100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--dr)) scale(0.3); }
+}
+
+/* S2 · le sceau — les trois cartes s'empilent et un anneau se scelle */
+.s2 .trio { position: absolute; left: 50%; bottom: 1rem; transform: translateX(-50%); display: flex; }
+.s2 .trio .carte { position: relative; margin-left: -0.7rem; animation: s2pile 0.6s cubic-bezier(0.3, 0.9, 0.25, 1) forwards; }
+.s2 .trio .carte:nth-child(1) { --fin: -1.4rem; }
+.s2 .trio .carte:nth-child(2) { --fin: 0rem; animation-delay: 0.05s; }
+.s2 .trio .carte:nth-child(3) { --fin: 1.4rem; animation-delay: 0.1s; }
+@keyframes s2pile {
+    0%   { transform: translate(0, 0); }
+    60%  { transform: translate(calc(var(--fin) * -1), -6.2rem) scale(1.04); }
+    100% { transform: translate(0, -6.2rem) scale(0.86); opacity: 0.9; }
+}
+.s2 .sceau {
+    position: absolute; left: 50%; top: 4.6rem;
+    width: 5rem; height: 5rem; margin: -2.5rem 0 0 -2.5rem;
+    border: 0.16rem solid var(--or);
+    border-radius: 50%;
+    opacity: 0;
+    animation: s2sceau 0.7s 0.55s cubic-bezier(0.3, 0, 0.2, 1) forwards;
+}
+@keyframes s2sceau {
+    0%   { opacity: 0; transform: scale(2.2) rotate(-40deg); }
+    45%  { opacity: 1; }
+    100% { opacity: 0; transform: scale(0.7) rotate(20deg); }
+}
+
+/* S3 · l'onde — les cartes se fondent et une onde part de l'emplacement */
+.s3 .trio { position: absolute; left: 50%; bottom: 1rem; transform: translateX(-50%); display: flex; }
+.s3 .trio .carte { position: relative; margin-left: -0.7rem; animation: s3aspire 0.62s cubic-bezier(0.5, 0, 0.3, 1) forwards; }
+.s3 .trio .carte:nth-child(2) { animation-delay: 0.05s; }
+.s3 .trio .carte:nth-child(3) { animation-delay: 0.1s; }
+@keyframes s3aspire {
+    0%   { transform: translate(0,0) scale(1) rotate(0); opacity: 1; }
+    100% { transform: translate(0, -7rem) scale(0.15) rotate(20deg); opacity: 0; }
+}
+.s3 .onde {
+    position: absolute; left: 50%; top: 4.6rem;
+    width: 2rem; height: 2rem; margin: -1rem 0 0 -1rem;
+    border: 0.14rem solid var(--chaud);
+    border-radius: 50%;
+    opacity: 0;
+    animation: s3onde 0.9s 0.6s ease-out forwards;
+}
+.s3 .onde:nth-of-type(2) { animation-delay: 0.72s; }
+@keyframes s3onde {
+    0%   { opacity: 0.9; transform: scale(0.4); }
+    100% { opacity: 0; transform: scale(4.5); }
+}
+
+/* S4 · l'éclair — les cartes explosent vers le haut dans une décharge */
+.s4 .trio { position: absolute; left: 50%; bottom: 1rem; transform: translateX(-50%); display: flex; }
+.s4 .trio .carte { position: relative; margin-left: -0.7rem; }
+.s4 .trio .carte:nth-child(1) { --ex: -5rem; --er: -35deg; }
+.s4 .trio .carte:nth-child(2) { --ex: 0rem;  --er: 4deg; }
+.s4 .trio .carte:nth-child(3) { --ex: 5rem;  --er: 35deg; }
+.s4 .trio .carte { animation: s4 0.75s cubic-bezier(0.2, 0.9, 0.3, 1) forwards; }
+@keyframes s4 {
+    0%   { transform: translate(0,0) rotate(0); opacity: 1; }
+    35%  { transform: translate(0, -5.5rem) scale(1.1); opacity: 1; filter: brightness(2.4); }
+    100% { transform: translate(var(--ex), -9rem) rotate(var(--er)) scale(0.5); opacity: 0; filter: brightness(4); }
+}
+.s4 .flash {
+    position: absolute; inset: 0;
+    background: radial-gradient(40% 40% at 50% 45%, rgba(255,240,190,0.75), transparent 70%);
+    opacity: 0;
+    animation: s4flash 0.5s 0.28s ease-out forwards;
+}
+@keyframes s4flash { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 0; } }
+</style>
+</head>
+<body>
+
+<h1>Collect — piocher et poser un set</h1>
+<p class="sous">
+    Deux gestes, deux régimes opposés. <b>Piocher</b> revient à presque chaque tour : l’animation doit
+    être courte et ne jamais lasser — trois cents millisecondes, pas plus. <b>Poser un set</b> arrive
+    deux ou trois fois par partie et c’est le seul moment où l’on marque : là on peut se permettre
+    d’être long et spectaculaire. <b>Clique une scène pour la rejouer</b> — une animation ne se juge
+    pas sur une capture.
+</p>
+
+<h2 class="fam">Piocher</h2>
+<p class="intro">La carte vient du paquet, en bas à droite, et rejoint la main.</p>
+<div class="grille" id="pioches"></div>
+
+<h2 class="fam">Poser un set</h2>
+<p class="intro">
+    Trois cartes quittent la main pour l’emplacement étoilé. C’est l’instant de gloire du mode —
+    et le seul endroit où l’on peut se permettre presque une seconde.
+</p>
+<div class="grille" id="poses"></div>
+
+<script>
+const P = ['luffy', 'zoro', 'itachi'];
+const img = (n) => '<img src="/collectpic/' + n + '.webp" alt="">';
+
+const PIOCHES = [
+    { cle: 'p1', t: 'P1 · Le glissement', n: "La carte quitte le paquet et rejoint la main en ligne droite. Sobre et rapide — mais on ne voit pas qu’elle était retournée, donc rien ne dit qu’on a tiré à l’aveugle.",
+      h: `<div class="dos paquet"></div><div class="carte vol">${img(P[0])}</div>
+          <div class="main"><div class="carte">${img(P[1])}</div><div class="carte">${img(P[2])}</div></div>` },
+    { cle: 'p2', t: 'P2 · Le retournement', n: "Elle part de dos et se retourne en chemin. Le geste dit ce qu’il fait : on a tiré sans savoir, et l’on découvre en même temps que la table. C’est le plus juste des quatre.",
+      h: `<div class="dos paquet"></div>
+          <div class="carte vol"><span class="face">${img(P[0])}</span><span class="face dosf"></span></div>
+          <div class="main"><div class="carte">${img(P[1])}</div><div class="carte">${img(P[2])}</div></div>` },
+    { cle: 'p3', t: 'P3 · L’arc', n: "Elle monte, marque un temps en haut, puis retombe dans la main. Très lisible de loin — un streamer y gagne — mais 550 ms à chaque tour finissent par peser.",
+      h: `<div class="dos paquet"></div><div class="carte vol">${img(P[0])}</div>
+          <div class="main"><div class="carte">${img(P[1])}</div><div class="carte">${img(P[2])}</div></div>` },
+    { cle: 'p4', t: 'P4 · Le paquet qui pousse', n: "La pile recule d’abord, comme si l’on en arrachait une carte, puis celle-ci part. Le détail coûte 120 ms mais rend le geste physique — on croit voir une main tirer.",
+      h: `<div class="dos paquet"></div><div class="carte vol">${img(P[0])}</div>
+          <div class="main"><div class="carte">${img(P[1])}</div><div class="carte">${img(P[2])}</div></div>` },
+];
+
+const POSES = [
+    { cle: 's1', t: 'S1 · L’éclat de verre', n: "Les trois cartes montent, blanchissent, puis se brisent en éclats qui partent en étoile. C’est le « shatter » que tu décrivais — le plus violent, et celui qui se voit le mieux en stream.",
+      h: `<div class="emplacement">★</div>
+          <div class="trio">${P.map(n => '<div class="carte">' + img(n) + '</div>').join('')}</div>
+          <span class="eclats"></span>` },
+    { cle: 's2', t: 'S2 · Le sceau', n: "Les trois se rassemblent en pile et un anneau doré se referme dessus, comme un cachet de cire. Plus posé, plus « collection » — on range une pièce plutôt qu’on ne détruit.",
+      h: `<div class="emplacement">★</div>
+          <div class="trio">${P.map(n => '<div class="carte">' + img(n) + '</div>').join('')}</div>
+          <span class="sceau"></span>` },
+    { cle: 's3', t: 'S3 · L’aspiration', n: "L’emplacement les avale et deux ondes s’en échappent. C’est la suite naturelle de l’effet d’absorption qu’il fait déjà quand on survole — le geste et son aboutissement se répondent.",
+      h: `<div class="emplacement">★</div>
+          <div class="trio">${P.map(n => '<div class="carte">' + img(n) + '</div>').join('')}</div>
+          <span class="onde"></span><span class="onde"></span>` },
+    { cle: 's4', t: 'S4 · L’éclair', n: "Elles montent ensemble, un éclair blanchit la table, puis elles s’éparpillent vers le haut. Le plus spectaculaire — mais le flash sur toute la scène peut gêner les autres joueurs qui, eux, n’ont rien fait.",
+      h: `<div class="emplacement">★</div>
+          <div class="trio">${P.map(n => '<div class="carte">' + img(n) + '</div>').join('')}</div>
+          <span class="flash"></span>` },
+];
+
+// Les éclats de S1 sont semés au hasard : un éparpillement régulier se voit
+// tout de suite et fait décoratif plutôt qu'accidentel.
+function semer(scene) {
+    const zone = scene.querySelector('.eclats');
+    if (!zone) return;
+    zone.innerHTML = '';
+    for (let i = 0; i < 14; i++) {
+        const b = document.createElement('i');
+        const a = (i / 14) * Math.PI * 2 + Math.random() * 0.4;
+        const d = 3 + Math.random() * 4;
+        b.className = 'eclat';
+        b.style.setProperty('--dx', (Math.cos(a) * d).toFixed(2) + 'rem');
+        b.style.setProperty('--dy', (Math.sin(a) * d).toFixed(2) + 'rem');
+        b.style.setProperty('--dr', Math.round(Math.random() * 540 - 270) + 'deg');
+        b.style.animationDelay = (0.62 + Math.random() * 0.12).toFixed(2) + 's';
+        zone.appendChild(b);
+    }
+}
+
+function monter(hote, liste) {
+    const cible = document.getElementById(hote);
+    for (const p of liste) {
+        const bloc = document.createElement('div');
+        bloc.className = 'piste';
+        bloc.innerHTML = `<h3>${p.t}</h3><p>${p.n}</p>`;
+        const s = document.createElement('div');
+        s.className = 'scene ' + p.cle;
+        s.innerHTML = p.h;
+        bloc.appendChild(s);
+        cible.appendChild(bloc);
+        semer(s);
+        // rejouer : on remplace le contenu, seul moyen sûr de relancer des
+        // animations CSS déjà terminées
+        s.addEventListener('click', () => {
+            s.innerHTML = p.h;
+            semer(s);
+        });
+    }
+}
+monter('pioches', PIOCHES);
+monter('poses', POSES);
+
+// on rejoue tout en boucle douce, pour que la page vive sans qu'on clique
+setInterval(() => {
+    document.querySelectorAll('.scene').forEach(s => {
+        const p = [...PIOCHES, ...POSES].find(x => s.classList.contains(x.cle));
+        if (p) { s.innerHTML = p.h; semer(s); }
+    });
+}, 3200);
+</script>
+</body>
+</html>

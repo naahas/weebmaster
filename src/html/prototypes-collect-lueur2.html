@@ -247,7 +247,7 @@ for (const p of PISTES) {
     const f = document.createElement('div');
     f.className = 'feutre';
     f.innerHTML = '<div class="rangee">' + PORTRAITS.map((nom, i) =>
-        `<div class="c ${p.cle}" data-i="${i}">${p.dedans}<img src="collectpic/${nom}.webp" alt=""></div>`).join('') + '</div>';
+        `<div class="c ${p.cle}" data-i="${i}">${p.dedans}<img src="/collectpic/${nom}.webp" alt=""></div>`).join('') + '</div>';
     bloc.appendChild(f);
     grille.appendChild(bloc);
     f.querySelectorAll('.k').forEach(semerEclats);

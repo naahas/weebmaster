@@ -169,6 +169,9 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
   Dont `/prototypes/rush-passage` : six facons d enchainer les portraits du Rush.
   Et `/prototypes/code` : cinq facons de demander le code du salon, avec un
   basculeur ordinateur/telephone.
+  Et `/prototypes/collect-gestes` : quatre pioches et quatre facons de poser un
+  set. ⚠️ Les images y sont en chemin ABSOLU (`/collectpic/…`) : une page servie
+  sous `/prototypes/` chercherait sinon `/prototypes/collectpic/…`, qui n existe pas.
   Et `/prototypes/modes-mobile` : cinq facons de choisir un mode au doigt.
   Et `/prototypes/collect-lueur2` : le second tour, en beaucoup plus violent —
   arc electrique, double flux conique, circuit, neon liquide, eclats irreguliers.
