@@ -6945,18 +6945,23 @@ createApp({
                 ascJuste: this.createPreloadedSound('pickup.mp3'),
                 ascTic: this.createPreloadedSound('click.mp3'),
                 ascPartir: this.createPreloadedSound('boost.mp3'),
-                // 🎴 Collect. Rien de neuf à enregistrer : la bibliothèque
-                // existante couvre tout, à condition de choisir par le GESTE et
-                // non par le mot. Poser un set, c'est une fusion ; voler, c'est
-                // un coup porté ; scanner, c'est un verrou qu'on force.
+                // 🎴 Collect. Les quatre gestes qui n'appartiennent qu'à lui ont
+                // leur propre son, fabriqué pour eux — voir scripts/sons-collect.js.
+                // Ce qui venait d'ailleurs s'entendait comme tel : un verrou de quiz
+                // pour un scan de cartes, un buzzer d'erreur pour un vol raté — alors
+                // qu'un vol échoue près d'une fois sur deux et n'est pas une faute.
+                //
+                // La donne, la pioche et l'échange gardent « dealing » : ce sont les
+                // trois moments où une carte glisse, et le même bruit de carton les
+                // relie.
                 colDonne: this.createPreloadedSound('dealing.mp3'),
                 colPioche: this.createPreloadedSound('dealing.mp3'),
-                colEchange: this.createPreloadedSound('pickup.mp3'),
-                colVol: this.createPreloadedSound('slash2.mp3'),
-                colVolRate: this.createPreloadedSound('wrong.mp3'),
-                colScan: this.createPreloadedSound('lock1.mp3'),
-                colSet: this.createPreloadedSound('fusion.mp3'),
-                colTour: this.createPreloadedSound('playerturn.mp3'),
+                colEchange: this.createPreloadedSound('dealing.mp3'),
+                colVol: this.createPreloadedSound('col-vol.mp3'),
+                colVolRate: this.createPreloadedSound('col-vol-rate.mp3'),
+                colScan: this.createPreloadedSound('col-scan.mp3'),
+                colSet: this.createPreloadedSound('col-set.mp3'),
+                colTour: this.createPreloadedSound('col-tour.mp3'),
                 ascPas: this.createPreloadedSound('step.mp3'),
                 // L'ampoule : un carillon quand elle est pleine, un éclat
                 // quand on la casse.

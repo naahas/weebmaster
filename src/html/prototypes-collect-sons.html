@@ -2,8 +2,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 /* ════════════════════════════════════════════════════════════════
-   Cinq gestes, dix-huit sons déjà en boîte. Rien à enregistrer : la
-   question est laquelle va où, et ça ne se décide pas en lisant des
+   Cinq gestes. Quatre sons ont été fabriqués pour eux (voir
+   scripts/sons-collect.js) et sont en place ; les autres candidats
+   viennent de la bibliothèque commune, empruntée aux autres modes.
+   Reste à décider lequel va où, et ça ne se décide pas en lisant des
    noms de fichiers — il faut les entendre, dans l'ordre où ils
    tomberont pendant une partie.
 
@@ -96,8 +98,9 @@ h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem;
 
 <h1>Collect — les sons des cinq gestes</h1>
 <p class="sous">
-    Dix-huit sons sont déjà en boîte : il n’y a rien à enregistrer, seulement à décider lequel va où.
-    Et ça ne se décide pas en lisant des noms de fichiers. <b>Clique une piste pour l’entendre</b> ;
+Quatre sons ont été <b>fabriqués pour Collect</b> — voir <code>scripts/sons-collect.js</code> — et sont
+    en place ; les autres candidats viennent de la bibliothèque commune. Reste à décider lequel va où,
+    et ça ne se décide pas en lisant des noms de fichiers. <b>Clique une piste pour l’entendre</b> ;
     elle devient le choix de son geste. Le bouton <b>« la manche »</b> joue ensuite une suite crédible
     de coups — c’est là qu’on découvre que deux sons se ressemblent trop, ce qu’aucune écoute isolée
     ne dit. Ton choix s’écrit dans la ligne dorée : copie-la et donne-la moi.
@@ -115,7 +118,7 @@ h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem;
 
 <script>
 // Ce que le jeu joue AUJOURD'HUI, pour avoir un point de comparaison honnête.
-const ACTUEL = { pioche: 'dealing', echange: 'pickup', scan: 'lock1', set: 'fusion', vol: 'slash2', volRate: 'wrong' };
+const ACTUEL = { pioche: 'dealing', echange: 'dealing', scan: 'col-scan', set: 'col-set', vol: 'col-vol', volRate: 'col-vol-rate' };
 
 const GESTES = [
     { cle: 'pioche', nom: 'Piocher', freq: 'à presque chaque tour',
@@ -129,15 +132,16 @@ const GESTES = [
     { cle: 'echange', nom: 'Échanger au marché', freq: 'un tour sur trois',
       note: "Deux cartes se croisent. Le son doit contenir un aller-retour, sinon il raconte une prise et non un troc.",
       pistes: [
-        ['pickup',  'Un ramassage franc. L’actuel.'],
-        ['dealing', 'Le glissement de carte. Fluide, mais confondu avec la pioche.'],
+        ['dealing', 'Le même bruit de carton que la pioche. L’actuel : la donne, la pioche et l’échange sont les trois moments où une carte glisse, et le même son les relie.'],
+        ['pickup',  'Un ramassage franc. Distingue l’échange de la pioche — au prix d’un son emprunté à un autre mode.'],
         ['quest',   'Deux notes qui montent. Le troc s’entend, mais c’est une récompense — trop de fête pour un geste ordinaire.'],
         ['bonus1',  'Un tintement bref. Agréable ; risque de rendre l’échange plus gratifiant qu’il ne l’est.'],
       ] },
     { cle: 'scan', nom: 'Scanner une main', freq: 'deux ou trois fois par partie',
       note: "On force un secret. Le son doit être mécanique et un peu froid : ce n’est pas une prise, c’est une intrusion.",
       pistes: [
-        ['lock1',   'Un verrou. Exactement le bon registre, et l’actuel.'],
+        ['col-scan', 'FABRIQUÉ POUR ÇA. Un balayage qui monte, un souffle étroit, et deux déclics : le verrou qui cède. L’actuel.'],
+        ['lock1',   'Un verrou de BombAnime. Bon registre, mais c’est le son d’un autre jeu.'],
         ['tictac',  'Un compte qui démarre — pertinent maintenant que le scan dure sept secondes.'],
         ['npc',     'Une notation sourde. Discrète, presque un chuchotement.'],
         ['click',   'Un déclic d’appareil photo. Lisible, mais trop anodin pour une intrusion.'],
@@ -145,7 +149,8 @@ const GESTES = [
     { cle: 'set', nom: 'Poser un set', freq: 'deux ou trois fois par partie',
       note: "L’instant de gloire. C’est le seul endroit où l’on a le droit d’être long et large — mais il doit rester lisible quand il tombe pendant que les éclats de verre volent.",
       pistes: [
-        ['fusion',  'Une montée qui se referme. L’actuel, et difficile à battre.'],
+        ['col-set', 'FABRIQUÉ POUR ÇA. Trois couches : le corps grave de l’impact, un éclat très aigu qui EST le verre, et un accord qui monte par-dessus. L’actuel.'],
+        ['fusion',  'Une montée qui se referme. Empruntée à Ascension.'],
         ['explode', 'Une détonation. Colle à la casse de verre — peut-être trop violente pour une réussite.'],
         ['bonus1',  'Un carillon de récompense. Très « point gagné », moins « set brisé ».'],
         ['quest',   'Une fanfare courte. Nette, mais elle sonne comme une fin de partie.'],
@@ -153,7 +158,8 @@ const GESTES = [
     { cle: 'vol', nom: 'Voler — le coup qui porte', freq: 'une ou deux fois par partie',
       note: "Un duel tranché en sa faveur. Il faut un tranchant : c’est le seul moment du jeu où l’on prend quelque chose à quelqu’un.",
       pistes: [
-        ['slash2',  'Une lame. L’actuel.'],
+        ['col-vol', 'FABRIQUÉ POUR ÇA. Le sifflement descend, l’impact suit avec une résonance métallique — trois partiels non harmoniques, ce qui s’entend comme du métal et non comme une note. L’actuel.'],
+        ['slash2',  'Une lame de BombAnime.'],
         ['slash',   'Plus sec, plus court. Moins spectaculaire, plus net.'],
         ['slash3',  'Plus grave, avec de la traîne. Le plus « manga » des quatre.'],
         ['slash4',  'Double impact. Deux cartes qui s’entrechoquent — le plus proche du duel qu’on va montrer.'],
@@ -161,7 +167,8 @@ const GESTES = [
     { cle: 'volRate', nom: 'Voler — le coup qui rate', freq: 'aussi souvent que l’autre',
       note: "Un vol échoue une fois sur deux ou presque. Le son ne doit pas punir : on a tenté quelque chose, on n’a pas commis d’erreur.",
       pistes: [
-        ['wrong',   'Le refus classique. L’actuel — mais il dit « tu t’es trompé », ce qui est faux.'],
+        ['col-vol-rate', 'FABRIQUÉ POUR ÇA. Un choc mat, deux cartes qui se cognent et retombent. Aucun jugement. L’actuel.'],
+        ['wrong',   'Le refus classique. Il dit « tu t’es trompé », ce qui est faux.'],
         ['npc',     'Un son mat, sans jugement. Il se passe quelque chose, sans plus.'],
         ['step',    'Un pas. Le plus neutre de tous : l’échec passe sans commentaire.'],
         ['click',   'Rien de plus qu’un déclic. Peut-être trop peu — on ne saurait plus que le duel a eu lieu.'],
