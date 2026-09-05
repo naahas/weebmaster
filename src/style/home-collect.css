@@ -253,7 +253,7 @@
     /* En haut a droite du siege, hors du flux : sous le nom, la colonne
        s allongeait a chaque changement de main et le siege sautait. */
     position: absolute;
-    top: -0.35rem; right: -1.5rem;
+    top: -0.35rem; right: -2.6rem;
     display: flex; gap: 0.2rem;
     padding: 0.25rem 0.4rem;
     background: rgba(0, 0, 0, 0.6);
@@ -389,9 +389,9 @@
 }
 .col-loupe-serie {
     display: block;
-    margin-top: 0.42rem;
-    font-size: 0.64rem; font-weight: 700;
-    letter-spacing: 0.2em; text-transform: uppercase;
+    margin-top: 0.62rem;
+    font-size: 0.74rem; font-weight: 700;
+    letter-spacing: 0.16em; text-transform: uppercase;
     color: var(--col-or);
 }
 /* Le filet et son losange : la signature de la v1. Le trait s'éteint aux
@@ -440,36 +440,54 @@
    quand c'est ton tour : la pioche respire, l'emplacement pulse dès qu'un set
    est prêt. On n'a jamais à deviner ce qui est cliquable. */
 
-/* La pioche appelle quand on peut piocher */
-.col-pioche { cursor: pointer; }
-.col-pioche.vivante span:nth-child(3) { animation: colRespire 2.2s ease-in-out infinite; }
-
-/* « +1 » quand la main n'est pas pleine : un clic suffit alors, sans rien
-   rendre. C'est le cas le plus fréquent après avoir posé un set. */
-.col-pioche-plus {
-    position: absolute; top: -0.6rem; right: -0.6rem;
-    width: 1.7rem; height: 1.7rem;
-    display: grid; place-items: center;
-    font-family: 'Bebas Neue', sans-serif; font-size: 0.85rem;
-    color: #17140a;
-    background: var(--col-or);
+/* La pioche appelle quand on peut piocher. Elle respirait à peine — quatre
+   millimètres, dans le coin le plus sombre de l'écran : on ne la voyait pas
+   bouger. Elle se soulève maintenant franchement et s'auréole d'or. */
+.col-pioche { cursor: default; }
+.col-pioche.vivante { cursor: pointer; }
+.col-pioche.vivante span:nth-child(3) { animation: colRespire 1.9s ease-in-out infinite; }
+/* Un halo derrière la pile, qui bat avec elle */
+.col-pioche.vivante::before {
+    content: '';
+    position: absolute; inset: -18%;
     border-radius: 50%;
-    box-shadow: 0 0.2rem 0.6rem rgba(0, 0, 0, 0.6);
-    z-index: 4;
-    animation: colPlus 1.6s ease-in-out infinite;
+    background: radial-gradient(closest-side, rgba(255, 210, 74, 0.24), transparent 72%);
+    animation: colHalo 1.9s ease-in-out infinite;
+    pointer-events: none;
+    z-index: -1;
 }
-@keyframes colPlus {
-    0%, 100% { transform: scale(1); }
-    50%      { transform: scale(1.14); }
+@keyframes colHalo {
+    0%, 100% { opacity: 0.35; transform: scale(0.9); }
+    50%      { opacity: 1;    transform: scale(1.06); }
 }
+/* Au survol, la carte du dessus commence à partir : elle se décolle de la pile
+   et s'incline, comme une main qui la saisit. On voit alors que c'est CELLE-LÀ
+   qu'on va prendre, et non la pile entière. */
+.col-pioche.vivante:hover span:nth-child(3) {
+    animation: none;
+    transform: translate(-0.35rem, -1.15rem) rotate(-6deg);
+    border-color: rgba(255, 210, 74, 0.75);
+    box-shadow: 0 1.1rem 2rem rgba(0, 0, 0, 0.6), 0 0 1.8rem rgba(255, 210, 74, 0.45);
+    color: rgba(255, 210, 74, 0.85);
+}
+.col-pioche.vivante:hover span:nth-child(2) { transform: translate(0.42rem, 0.42rem) rotate(1.5deg); }
+.col-pioche.vivante:hover::before { animation: none; opacity: 1; transform: scale(1.12); }
+
+/* La pastille « +1 » a été retirée : elle posait un carré de plus dans un coin
+   déjà chargé, alors que le halo et le soulèvement disent la même chose sans
+   rien ajouter à l'écran. */
 /* Elle attend qu'on lui désigne la carte à laisser */
 .col-pioche.attend span:nth-child(3) {
     border-color: var(--col-or);
     box-shadow: 0 0 0 0.12rem rgba(255, 210, 74, 0.6), 0 0.5rem 1.2rem rgba(0, 0, 0, 0.5);
 }
 @keyframes colRespire {
-    0%, 100% { transform: translateY(0); box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.5); }
-    50%      { transform: translateY(-0.4rem); box-shadow: 0 0.9rem 1.8rem rgba(0, 0, 0, 0.55), 0 0 1.4rem rgba(255, 210, 74, 0.18); }
+    0%, 100% { transform: translateY(0) rotate(0deg);
+               border-color: rgba(255, 255, 255, 0.1);
+               box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.5); }
+    50%      { transform: translateY(-0.75rem) rotate(-2deg);
+               border-color: rgba(255, 210, 74, 0.5);
+               box-shadow: 0 1.2rem 2rem rgba(0, 0, 0, 0.6), 0 0 1.6rem rgba(255, 210, 74, 0.4); }
 }
 
 /* Une cible sous le doigt : elle se soulève et s'entoure d'or */
@@ -568,6 +586,37 @@
 }
 .col-croise img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .col-croise.vers-main { z-index: 56; }
+
+/* ════════ La carte piochée, en vol ════════
+   Elle part du paquet DOS VISIBLE et se retourne en chemin. C'est ce qui relie
+   le geste à son résultat : sans ce vol, la carte apparaissait d'un coup dans
+   l'éventail, et rien ne disait d'où elle sortait.
+
+   Les deux faces sont posées dos à dos avec « backface-visibility: hidden » :
+   à mi-parcours, l'une s'efface exactement quand l'autre paraît. */
+.col-vol {
+    position: fixed;
+    z-index: 60;
+    pointer-events: none;
+    transform-style: preserve-3d;
+    transition: transform 0.58s cubic-bezier(0.22, 0.68, 0.25, 1);
+}
+.col-vol span {
+    position: absolute; inset: 0;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    backface-visibility: hidden;
+    border: 0.09rem solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 0.8rem 1.6rem rgba(0, 0, 0, 0.6);
+}
+.col-vol-face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.col-vol-dos {
+    transform: rotateY(180deg);
+    background: repeating-linear-gradient(135deg, #1d2733 0 7px, #161d27 7px 14px);
+}
+/* Sa place l'attend dans l'éventail, vide : sans ça la carte serait à deux
+   endroits en même temps, et l'éventail sauterait à l'arrivée du fantôme. */
+.col-carte.envol { opacity: 0; }
 
 /* La carte qu'on traîne, sous le doigt */
 .col-fantome {

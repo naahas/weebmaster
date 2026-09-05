@@ -4,6 +4,35 @@
 
 const { createApp } = Vue;
 
+// 🎴 Les séries de Collect sont écrites d'un seul tenant dans les données
+// (« FairyTail ») : c'est une CLÉ, pas un titre. On ne la découpe pas aux
+// majuscules — « JoJo » donnerait « Jo Jo », « HunterXHunter » un X esseulé.
+// Vingt et une entrées écrites à la main coûtent moins qu'une règle qui se
+// trompe une fois sur cinq.
+const COL_SERIES = {
+    AttackOnTitan: 'Attack on Titan',
+    BlackClover: 'Black Clover',
+    Bleach: 'Bleach',
+    ChainsawMan: 'Chainsaw Man',
+    DemonSlayer: 'Demon Slayer',
+    DragonBall: 'Dragon Ball',
+    FairyTail: 'Fairy Tail',
+    Fate: 'Fate',
+    FoodWars: 'Food Wars',
+    FullmetalAlchemist: 'Fullmetal Alchemist',
+    Haikyuu: 'Haikyuu',
+    HunterXHunter: 'Hunter x Hunter',
+    JoJo: 'JoJo',
+    JujutsuKaisen: 'Jujutsu Kaisen',
+    KurokoNoBasket: 'Kuroko no Basket',
+    MyHeroAcademia: 'My Hero Academia',
+    NanatsuNoTaizai: 'Nanatsu no Taizai',
+    Naruto: 'Naruto',
+    OnePiece: 'One Piece',
+    Reborn: 'Reborn',
+    TokyoGhoul: 'Tokyo Ghoul',
+};
+
 createApp({
     data() {
         return {
@@ -38,6 +67,7 @@ createApp({
                 drag: null,          // { carte, x, y, cible } pendant qu'on traîne
                 siegeOuvert: null,   // au doigt : le siège dont les gestes sont dépliés
                 piocheOuverte: false, // la pioche attend qu'on désigne la carte à laisser
+                enVol: null,         // l'uid de la carte qui vole encore du paquet vers la main
                 entree: false,       // le temps de la distribution, au tout début
                 // réglages du salon, avant la partie
                 regleMain: 4,
@@ -1696,6 +1726,9 @@ createApp({
                 this.playSound(f.issue === 'gagne' ? s.colVol : s.colVolRate);
             }
         },
+        // Le titre lisible d'une série. Une clé inconnue est rendue telle
+        // quelle plutôt que masquée : on veut la voir pour l'ajouter.
+        colSerie(cle) { return COL_SERIES[cle] || cle; },
         colNom(id) {
             if (!id) return '';
             const p = this.col.etat && this.col.etat.pseudos;
@@ -1734,10 +1767,13 @@ createApp({
             this.col.scan = null;
             this.col.siegeOuvert = null;
             this.col.piocheOuverte = false;
+            this.col.enVol = null;
+            this.col._attendPioche = false;
             this.col.entree = false;
             this.col.erreur = '';
             this.col._dernierSon = undefined;
             this.col._dernierTour = null;
+            if (this.col._finDrag) this.col._finDrag();
             this.col.reste = 0;
             if (this.col._tic) { clearInterval(this.col._tic); this.col._tic = null; }
         },
@@ -1746,6 +1782,13 @@ createApp({
         // Chaque action se fait là où elle a lieu. Le glissement porte les trois
         // qui déplacent une carte ; les deux qui visent un joueur sont des
         // boutons posés sur son siège.
+        // Couper net un glissement en cours : le tour est tombé, ou un vol
+        // s'ouvre. Sans ça, on lâchait sur le marché une seconde après la fin du
+        // tour : le serveur refusait, mais l'animation d'échange partait quand
+        // même et l'on croyait avoir troqué.
+        colCouperDrag() {
+            if (this.col._finDrag) this.col._finDrag();
+        },
         colPrendre(carte, ev) {
             if (!this.colMonTour || this.col.etat.duel) return;
             ev.preventDefault();
@@ -1757,15 +1800,25 @@ createApp({
                 this.col.drag.y = e.clientY;
                 this.col.drag.cible = this.colCibleSous(e.clientX, e.clientY);
             };
+            // De quoi tout défaire depuis l'extérieur, sans attendre le lâcher
+            this.col._finDrag = () => {
+                window.removeEventListener('pointermove', bouger);
+                window.removeEventListener('pointerup', lacher);
+                window.removeEventListener('pointercancel', lacher);
+                this.col._finDrag = null;
+                this.col.drag = null;
+            };
             const lacher = (e) => {
                 window.removeEventListener('pointermove', bouger);
                 window.removeEventListener('pointerup', lacher);
                 window.removeEventListener('pointercancel', lacher);
+                this.col._finDrag = null;
                 const cible = this.colCibleSous(e.clientX, e.clientY);
                 const prise = this.col.drag && this.col.drag.carte;
                 this.col.drag = null;
                 if (!cible || !prise) return;
                 if (cible === 'pioche') {
+                    this.col._attendPioche = true;
                     this.socket.emit('collect-piocher', { uidDefausse: prise.uid });
                 } else if (cible === 'poser') {
                     if (this.colSetPret) this.socket.emit('collect-poser', { anime: this.colSetPret });
@@ -1779,6 +1832,57 @@ createApp({
             window.addEventListener('pointerup', lacher);
             window.addEventListener('pointercancel', lacher);
         },
+        // ══ La carte piochée vient vraiment du paquet ══
+        // Un fantôme part du paquet, dos visible, et se retourne EN CHEMIN pour
+        // se poser dans la main. Sans ce vol, la carte apparaissait d'un coup
+        // dans l'éventail : rien ne reliait le geste au paquet, et l'on ne
+        // savait pas d'où sortait ce qu'on venait d'obtenir.
+        colVolPioche(carte) {
+            const paquet = document.querySelector('.col-pioche');
+            if (!paquet) return;
+            const de = paquet.getBoundingClientRect();
+            this.col.enVol = carte.uid;
+            this.$nextTick(() => {
+                const cible = document.querySelector('.col-main .col-carte.envol');
+                if (!cible) { this.col.enVol = null; return; }
+                // On vise le CENTRE, pas le coin : « getBoundingClientRect »
+                // rend la boîte englobante, qui déborde dès que la carte est
+                // inclinée — à dix degrés le coin est faux d'une dizaine de
+                // pixels et le fantôme se posait de travers. Une rotation, elle,
+                // laisse le centre en place.
+                const b = cible.getBoundingClientRect();
+                const cx = b.left + b.width / 2, cy = b.top + b.height / 2;
+                const large = cible.offsetWidth;
+                // L'inclinaison de la carte dans l'éventail : le fantôme doit se
+                // poser exactement dessus, sinon on voit un ressaut à l'arrivée.
+                const pente = (getComputedStyle(cible).getPropertyValue('--rot') || '0deg').trim();
+
+                const el = document.createElement('div');
+                el.className = 'col-vol';
+                el.style.left = de.left + 'px';
+                el.style.top = de.top + 'px';
+                el.style.width = de.width + 'px';
+                el.style.height = de.height + 'px';
+                el.innerHTML = '<span class="col-vol-face"><img src="collectpic/' + carte.img +
+                    '" alt=""></span><span class="col-vol-dos"></span>';
+                document.body.appendChild(el);
+
+                // Les deux états portent EXACTEMENT la même liste de fonctions :
+                // sans cela le navigateur interpole des matrices, et un demi-tour
+                // interpolé en matrice ne tourne pas — il s'écrase. Le reflet
+                // forcé entre les deux fixe le départ.
+                const dx = cx - (de.left + de.width / 2);
+                const dy = cy - (de.top + de.height / 2);
+                const ech = (large / de.width).toFixed(3);
+                el.style.transform = 'perspective(900px) translate(0px, 0px) scale(1) rotate(0deg) rotateY(180deg)';
+                void el.offsetWidth;
+                el.style.transform = 'perspective(900px) translate(' + dx.toFixed(1) + 'px, ' +
+                    dy.toFixed(1) + 'px) scale(' + ech + ') rotate(' + pente + ') rotateY(0deg)';
+
+                setTimeout(() => { el.remove(); this.col.enVol = null; }, 640);
+            });
+        },
+
         // Deux fantômes qui volent l'un vers l'autre, le temps que le serveur
         // réponde. On relève les positions AVANT que l'état ne change : une fois
         // la nouvelle main arrivée, les cartes ne sont plus là où elles étaient.
@@ -1852,6 +1956,7 @@ createApp({
         colToucherPioche() {
             if (!this.colMonTour || this.col.etat.duel) return;
             if (this.colPiocheLibre) {
+                this.col._attendPioche = true;
                 this.socket.emit('collect-piocher', {});
                 this.col.piocheOuverte = false;
                 return;
@@ -1861,7 +1966,15 @@ createApp({
         colPiocherEnLachant(c) {
             if (!this.col.piocheOuverte) return;
             this.col.piocheOuverte = false;
+            this.col._attendPioche = true;
             this.socket.emit('collect-piocher', { uidDefausse: c.uid });
+        },
+        // Un siège adverse ne s'ouvre que si l'on peut s'en servir. Déplier
+        // « scanner » et « voler » quand ce n'est pas notre tour ne menait qu'à
+        // un refus — et le refus, on ne l'affiche même plus.
+        colToucherSiege(id) {
+            if (!this.colMonTour || this.col.etat.duel) { this.col.siegeOuvert = null; return; }
+            this.col.siegeOuvert = this.col.siegeOuvert === id ? null : id;
         },
         colScanner(cibleId) {
             if (!this.colMonTour || this.col.etat.duel) return;
@@ -5185,13 +5298,35 @@ createApp({
                     this.playSound(this.sounds.colTour);
                 }
                 this.col._dernierTour = data.tourJoueur;
+                // Le tour a changé de main : plus rien de ce qu'on avait
+                // entamé n'a de sens. On coupe le glissement, on referme les
+                // sièges et la pioche. (Points 4 et 5 : sans ça, un glissement
+                // survivait à son tour et partait dans le vide.)
+                if (data.tourJoueur !== this.playerId) {
+                    this.colCouperDrag();
+                    this.col.siegeOuvert = null;
+                    this.col.piocheOuverte = false;
+                }
                 this.colTic();
                 this.colBrancherTic();
                 // le tour a changé de main : ce qu'on préparait n'a plus d'objet
                 if (data.tourJoueur !== this.playerId) this.colRaz();
             });
             this.socket.on('collect-main', (data) => {
-                this.col.main = data.main || [];
+                const avant = new Set(this.col.main.map(c => c.uid));
+                const suite = data.main || [];
+                const neuve = suite.find(c => !avant.has(c.uid));
+                const attendue = this.col._attendPioche;
+                this.col._attendPioche = false;
+                this.col.main = suite;
+                // Le vol ne part que si NOUS venons de demander une pioche. Une
+                // carte neuve peut aussi venir du marché (l'échange a déjà son
+                // croisement), d'un vol réussi, ou de la donne : la faire sortir
+                // du paquet mentirait sur sa provenance. « avant » vide, c'est
+                // un rafraîchissement, pas une pioche.
+                if (neuve && attendue && avant.size && this.col.etat && !this.col.entree) {
+                    this.colVolPioche(neuve);
+                }
             });
             this.socket.on('collect-scan', (data) => {
                 this.col.scan = data;

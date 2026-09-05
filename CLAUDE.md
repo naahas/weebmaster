@@ -109,7 +109,8 @@ src/img/               avatars, questionpic
 | `classic`   | Classique | Quiz QCM en solo. Réglage **Mode** : `lives` (vies) ou `points` (score + bonus rapidité) |
 | `rivalry`   | Classique | Le même quiz en deux camps. Ce n'est **pas un mode à part** : c'est le réglage **Format** du quiz |
 | `rush`      | Rush      | Un portrait, un nom, sans touche Entrée. La plus longue série de la manche gagne. Réglages : **durée** (30/60/90 s), **limite par portrait** (5–12 s ou aucune), **filtre** (Tout, Mainstream, Big 3) et **séquence** commune ou propre à chacun. Jouable seul. Données dans `rushdata.json`, portraits dans `src/img/rushpic/` |
-| `collect`   | Collect   | Jeu de cartes, 2 a 6 joueurs. Reunir **deux sets de trois** personnages du meme anime. A son tour, une action : piocher, echanger au marche, scanner une main, **voler** (duel a l aveugle sur le triangle Assaut > Mirage > Oracle) ou poser un set. Poser ne refait PAS la main : on repart avec ce qui reste, et la pioche ajoute une carte tant que la main n est pas pleine. Le marche se renouvelle du paquet a chaque fin de tour. Reglages : **main** (3, 4 ou 5 — l objectif suit tout seul : 3 paires, 2 sets de 3, ou 3 sets de 3) et **animes** (8/10/12) |
+| `collect`   | Collect   | Jeu de cartes, 2 a 6 joueurs. Reunir **deux sets de trois** personnages du meme anime. A son tour, une action : piocher, echanger au marche, scanner une main, **voler** (duel a l aveugle sur le triangle Assaut > Mirage > Oracle) ou poser un set. Poser ne refait PAS la main : on repart avec ce qui reste, et la pioche ajoute une carte tant que la main n est pas pleine. Le marche ne bouge QUE par l echange : rien n y entre ni n en sort tout seul, ce qui permet
+  de convoiter une carte d un tour sur l autre. Reglages : **main** (3, 4 ou 5 — l objectif suit tout seul : 3 paires, 2 sets de 3, ou 3 sets de 3) et **animes** (8/10/12) |
 | `bombanime` | BombAnime | Bombe tournante : citer un perso d'une série, alphabet à compléter, défis + bonus. Réglages du salon : **série** (21 au choix), **temps du tour** (5–10 s, 8 par défaut), **vies** (1 ou 2, 2 par défaut) ; quinze joueurs au plus |
 
 ⚠️ `classic` et `rivalry` sont **un seul mode pour le joueur**. Le réglage *Format* (Solo / Équipe)
@@ -169,6 +170,8 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
   Dont `/prototypes/rush-passage` : six facons d enchainer les portraits du Rush.
   Et `/prototypes/code` : cinq facons de demander le code du salon, avec un
   basculeur ordinateur/telephone.
+  Et `/prototypes/collect-attente` : huit facons de dire « il reflechit », posees
+  sur un vrai siege, avec un curseur de taille.
   Et `/prototypes/collect-gestes` : quatre pioches et quatre facons de poser un
   set. ⚠️ Les images y sont en chemin ABSOLU (`/collectpic/…`) : une page servie
   sous `/prototypes/` chercherait sinon `/prototypes/collectpic/…`, qui n existe pas.

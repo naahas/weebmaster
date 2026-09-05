@@ -139,15 +139,12 @@ function rendreAuPaquet(etat, carte) {
     etat.pioche.splice(Math.floor(Math.random() * (etat.pioche.length + 1)), 0, carte);
 }
 
-// À chaque fin de tour, la plus ancienne carte du marché repart au paquet et
-// une neuve vient d'en être tirée. Le marché se renouvelle donc tout seul, du
-// paquet et non des rebuts de celui qui vient de jouer : il change à chaque
-// tour, et ce qu'on y voit ne dit plus qui a jeté quoi.
-function renouvelerMarche(etat) {
-    if (!etat.marche.length) return;
-    rendreAuPaquet(etat, etat.marche.shift());
-    etat.marche.push(tirer(etat));
-}
+// Le marché ne bouge QUE par l'échange : une carte n'y entre que si quelqu'un
+// l'y a mise, et n'en sort que si quelqu'un l'a prise. Il se renouvelait
+// auparavant à chaque fin de tour, du paquet ; on ne pouvait alors rien y
+// convoiter, puisque ce qu'on visait avait disparu avant de rejouer. Cinq
+// cartes qui tiennent en place, c'est cinq cartes qu'on peut guetter — et ce
+// qu'on y voit dit désormais ce que les autres ont jeté.
 
 // ── Démarrage ─────────────────────────────────────────────────
 function demarrer(etat, joueurs) {
@@ -179,7 +176,6 @@ function demarrer(etat, joueurs) {
 // ── Tour ──────────────────────────────────────────────────────
 function tourSuivant(etat) {
     if (!etat.active) return;
-    renouvelerMarche(etat);
     etat.tourIndex = (etat.tourIndex + 1) % etat.ordre.length;
     etat.tourJoueur = etat.ordre[etat.tourIndex];
 }
@@ -414,25 +410,19 @@ function actionPoser(etat, playerId, anime) {
     return { ok: true };
 }
 
-// Le minuteur a expiré : on pioche à sa place plutôt que de sauter le tour.
-// Piocher marche toujours, et un joueur absent ne doit pas prendre de retard
-// au point de décrocher.
+// Le minuteur a expiré : on PASSE, on ne joue pas à la place du joueur.
+//
+// On piochait autrefois pour lui, en rendant sa carte la plus isolée. C'était
+// bien intentionné et c'était faux : la pioche est un choix, et le minuteur le
+// prenait à sa place — y compris pendant qu'il traînait une carte, qui lui
+// était alors arrachée des doigts. Une main hésitante n'est pas une main
+// absente. Passer ne coûte que le tour, et ne décide de rien.
 function actionParDefaut(etat, playerId) {
-    const main = etat.mains.get(playerId);
-    if (!main || !main.length) {
-        const ko = verifierTour(etat, playerId);
-        if (ko) return { ok: false, erreur: ko };
-        noter(etat, { type: 'passe', joueur: playerId });
-        tourSuivant(etat);
-        return { ok: true };
-    }
-    // On rend la carte la plus isolée : celle d'un anime dont il n'a que cet
-    // exemplaire. C'est le choix qu'un joueur ferait, et il ne casse jamais une
-    // paire en cours.
-    const par = {};
-    for (const c of main) par[c.anime] = (par[c.anime] || 0) + 1;
-    const isolee = main.find(c => par[c.anime] === 1) || main[main.length - 1];
-    return actionPiocher(etat, playerId, isolee.uid);
+    const ko = verifierTour(etat, playerId);
+    if (ko) return { ok: false, erreur: ko };
+    noter(etat, { type: 'passe', joueur: playerId });
+    tourSuivant(etat);
+    return { ok: true };
 }
 
 // ── Ce que chacun voit ────────────────────────────────────────
@@ -637,7 +627,7 @@ module.exports = {
     registerCollectSocketHandlers, diffuserEtat,
     domine, etatNeuf, regles, demarrer, tourSuivant,
     actionPiocher, actionEchanger, actionVoler, actionScanner, actionPoser, actionParDefaut,
-    actionDefendre, defenseParDefaut, rendreAuPaquet, renouvelerMarche,
+    actionDefendre, defenseParDefaut, rendreAuPaquet,
     vuePublique, vueJoueur,
     _data: DATA,
 };

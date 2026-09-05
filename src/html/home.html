@@ -873,7 +873,7 @@
                                                jouable: colMonTour && !col.etat.duel,
                                                ouvert: col.siegeOuvert === p.playerId }"
                                      :style="colSiege(i, colRivaux.length)"
-                                     @click="col.siegeOuvert = col.siegeOuvert === p.playerId ? null : p.playerId">
+                                     @click="colToucherSiege(p.playerId)">
                                     <div class="col-siege-actions">
                                         <button title="Scanner sa main" @click.stop="colScanner(p.playerId)">
                                             <svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -905,6 +905,7 @@
                                                     partie: col.drag && col.drag.carte.uid === c.uid,
                                                     aimante: colAimantee(c),
                                                     choisissable: col.piocheOuverte,
+                                                    envol: col.enVol === c.uid,
                                                     'dans-le-set': colMonTour && !col.drag && colSetPret === c.anime,
                                                     paire: colDansMaMain(c.anime) >= col.etat.taille - 1 }]"
                                                 :style="colIncline(i, col.main.length, 5)"
@@ -931,7 +932,7 @@
                                           v-html="colSymbole(col.loupe.classe)"></span>
                                     <span class="col-loupe-texte">
                                         <span class="col-loupe-nom">{{ col.loupe.nom }}</span>
-                                        <span class="col-loupe-serie">{{ col.loupe.anime }}</span>
+                                        <span class="col-loupe-serie">{{ colSerie(col.loupe.anime) }}</span>
                                         <span class="col-loupe-barre"></span>
                                     </span>
                                 </div>
@@ -948,7 +949,6 @@
                                        attend: col.piocheOuverte }"
                              @click="colToucherPioche">
                             <span></span><span></span><span>SM</span>
-                            <span class="col-pioche-plus" v-if="colPiocheLibre">+1</span>
                         </div>
 
                         <!-- ── La consigne, puis les cinq actions ── -->

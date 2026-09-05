@@ -77,17 +77,30 @@ console.log('\n── Le marché ──');
     const encore = C.actionEchanger(e, j, uidMain, uidMarche);
     check('on n\'échange pas deux fois dans le tour', !encore.ok, encore.erreur);
 
-    // À chaque fin de tour, la plus ancienne repart au paquet et une neuve
-    // arrive : le marché change tout seul, sans que personne l'ait décidé.
+    // Le marché ne bouge QUE par l'échange. Piocher, poser, voler, scanner :
+    // rien de tout cela n'y touche. C'est ce qui permet de convoiter une carte
+    // d'un tour sur l'autre — elle sera encore là.
     {
         const e2 = neuf();
-        const avant = e2.marche.map(c => c.uid);
+        const avant = e2.marche.map(c => c.uid).join(',');
         C.actionPiocher(e2, e2.tourJoueur, e2.mains.get(e2.tourJoueur)[0].uid);
-        const apres = e2.marche.map(c => c.uid);
-        check('le marché se renouvelle à chaque tour',
-            apres[0] === avant[1] && !avant.includes(apres[4]),
-            'la plus ancienne est partie, une neuve est arrivée');
-        check('… et il garde sa taille', e2.marche.length === C.CONFIG.MARCHE);
+        check('piocher ne touche pas au marché', e2.marche.map(c => c.uid).join(',') === avant);
+        const e3 = neuf();
+        const av3 = e3.marche.map(c => c.uid).join(',');
+        C.actionParDefaut(e3, e3.tourJoueur);
+        check('le minuteur non plus', e3.marche.map(c => c.uid).join(',') === av3);
+        check('… et il garde sa taille', e3.marche.length === C.CONFIG.MARCHE);
+    }
+
+    // Le minuteur ne joue pas à la place du joueur : il passe.
+    {
+        const e4 = neuf();
+        const qui = e4.tourJoueur;
+        const mainAvant = e4.mains.get(qui).map(c => c.uid).join(',');
+        const r = C.actionParDefaut(e4, qui);
+        check('le minuteur passe le tour', r.ok && e4.tourJoueur !== qui);
+        check('… sans toucher à la main', e4.mains.get(qui).map(c => c.uid).join(',') === mainAvant);
+        check('… et il le note', e4.journal[e4.journal.length - 1].type === 'passe');
     }
 }
 
@@ -378,7 +391,14 @@ console.log('\n── Une partie entière se termine ──');
 
             const vise = Object.keys(par).sort((x, y) => par[y].length - par[x].length)[0];
             const iM = e.marche.findIndex(c => c.anime === vise);
-            if (iM >= 0) {
+            // Un caprice sur vingt : une fois de temps en temps il pioche au lieu
+            // d'échanger. Sans lui, le robot répétait à l'infini un échange qui
+            // ne changeait rien — le marché ne se renouvelant plus, la même carte
+            // revenait à chaque tour et il la reprenait. Quatre parties sur cent
+            // ne finissaient jamais, et ce n'était pas le jeu : à 5 % de caprice,
+            // moins de variance que n'en a le plus obstiné des joueurs, elles
+            // finissent toutes. On mesure le jeu, pas l'entêtement du robot.
+            if (iM >= 0 && Math.random() > 0.05) {
                 const rendre = main.find(c => par[c.anime].length === 1 && c.anime !== vise) || main[main.length - 1];
                 C.actionEchanger(e, j, rendre.uid, e.marche[iM].uid);
                 continue;
@@ -428,7 +448,11 @@ console.log('\n── Une partie entière se termine ──');
     const moy = (total / PARTIES).toFixed(1);
     check('presque toutes les parties trouvent un vainqueur', sansVainqueur / PARTIES < 0.05,
         (sansVainqueur / PARTIES * 100).toFixed(1) + ' % sans vainqueur');
-    check('la partie dure ce qui était annoncé', moy >= 3 && moy <= 12, moy + ' manches en moyenne');
+    // Le marché ne se renouvelant plus tout seul, la seule porte par où entre
+    // une carte fraîche est la pioche. Mesuré à 4 joueurs et 10 animes :
+    // 8,7 manches avant, 11,6 après. Un tiers de plus, pas le double — le
+    // double, c'était le robot qui tournait en rond.
+    check('la partie dure ce qui était annoncé', moy >= 3 && moy <= 16, moy + ' manches en moyenne');
 }
 
 console.log(ko ? `\n💥 ${ko} contrôle(s) en échec` : '\n✨ Le moteur de Collect tient, et ne montre aucune main');
