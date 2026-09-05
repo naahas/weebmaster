@@ -212,10 +212,12 @@
     /* L'inclinaison doit vivre ICI et pas seulement dans l'animation d'entrée :
        sans cette règle, les dos se redressaient d'un coup à la fin de la
        distribution, quand la classe « entree » disparaissait avec elle. */
-    transform: translateY(var(--dy, 0rem)) rotate(var(--rot, 0deg)) rotateY(var(--flip, 0deg));
-    transition: transform 0.6s cubic-bezier(0.32, 0.72, 0.24, 1),
-                width 0.6s cubic-bezier(0.32, 0.72, 0.24, 1),
-                margin-left 0.6s cubic-bezier(0.32, 0.72, 0.24, 1);
+    transform: translateX(var(--dx, 0rem)) translateY(var(--dy, 0rem))
+               rotate(var(--rot, 0deg)) rotateY(var(--flip, 0deg)) scale(var(--ech, 1));
+    /* Une seule propriété animée, et c'est « transform ». La largeur et les
+       marges refaisaient la mise en page à chaque image, pour les cinq cartes,
+       pendant que cinq demi-tours tournaient : c'était la saccade. */
+    transition: transform 0.6s cubic-bezier(0.32, 0.72, 0.24, 1);
 }
 .col-dos > span {
     position: absolute; inset: 0;
@@ -243,9 +245,14 @@
 /* ── Le scan : l'éventail se retourne et s'écarte ── */
 .col-dos.retournee { --flip: 180deg; }
 .col-eventail.scanne .col-dos {
-    width: calc(var(--carte) * 0.92);
-    margin-left: calc(var(--carte) * -0.16);
+    --ech: 1.35;
+    z-index: 26;
+    /* Prévenir le navigateur : il promeut les cinq cartes sur leur propre
+       calque avant que ça bouge, plutôt qu'à la première image. */
+    will-change: transform;
 }
+.col-eventail.scanne .col-dos:hover { --ech: 1.5; z-index: 27; }
+.col-eventail.scanne .col-dos-recto { cursor: zoom-in; }
 .col-eventail.scanne { z-index: 25; }
 /* Le compte à rebours des sept secondes, sous l'éventail. Sans lui on ne sait
    pas qu'on est en train de perdre l'information, et l'on regarde ailleurs. */
@@ -448,6 +455,16 @@
    distinguaient pas du dessin. Les ronds vides sont aussi un peu moins
    discrets — c'est justement quand on n'a rien marqué qu'il faut voir
    combien il en reste à marquer. */
+/* Hors tour, la main baisse d'un ton. Rien n'y est cliquable, et une main
+   aussi vive que pendant son tour laissait croire qu'on pouvait encore jouer —
+   on tirait une carte, il ne se passait rien, et le refus ne s'affiche plus. */
+.col-moi .col-main .col-carte {
+    transition: transform 0.18s ease, border-color 0.18s ease,
+                box-shadow 0.18s ease, filter 0.35s ease;
+}
+.col-moi:not(.tour) .col-main .col-carte { filter: saturate(0.45) brightness(0.62); }
+.col-moi:not(.tour) .col-main .col-carte:hover { filter: saturate(0.75) brightness(0.85); }
+
 .col-moi .col-etoiles { margin-top: 0.45rem; z-index: 2; }
 /* ⚠️ « :not(.pleine) » n'est pas décoratif. Sans lui cette règle, à
    spécificité égale mais placée plus bas, écrasait l'or de « .pleine » — et
@@ -948,6 +965,8 @@
 .col-carte.partie { opacity: 0.25; }
 
 /* Les deux gestes qu'on peut faire à un adversaire */
+/* Posés dans l'éventail, donc centrés sur les CARTES. Dans la colonne du
+   siège, « 50 % » tombait entre le nom et les étoiles, sous les cartes. */
 .col-siege-actions {
     position: absolute; left: 50%; top: 50%;
     transform: translate(-50%, -50%);

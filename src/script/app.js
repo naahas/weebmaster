@@ -1682,11 +1682,18 @@ createApp({
         // On passe par des variables plutôt qu'un « transform » écrit en dur :
         // c'est ce qui permet au survol de soulever la carte sans lui reprendre
         // son inclinaison.
-        colIncline(i, total, pas) {
+        // « ecart » écarte les cartes les unes des autres SANS toucher à leur
+        // largeur ni à leurs marges. C'est la différence entre une animation
+        // fluide et une saccade : une largeur qui varie oblige le navigateur à
+        // refaire la mise en page à chaque image, pour les cinq cartes, pendant
+        // que cinq demi-tours sont en cours. Une translation, elle, ne coûte
+        // rien — elle se règle sur la carte graphique.
+        colIncline(i, total, pas, ecart) {
             const k = i - (total - 1) / 2;
             return {
                 '--rot': (k * (pas || 5)).toFixed(1) + 'deg',
                 '--dy': (Math.abs(k) * 0.14).toFixed(2) + 'rem',
+                '--dx': (k * (ecart || 0)).toFixed(2) + 'rem',
                 '--i': i,
             };
         },
@@ -5515,17 +5522,38 @@ createApp({
                 }
             });
             this.socket.on('collect-scan', (data) => {
-                // Sept secondes, et tout se referme. Une fenêtre qu'on ferme
-                // soi-même laisse le choix de tout noter tranquillement ; le
-                // scan doit coûter un effort de mémoire, sinon la classe des
-                // cartes adverses devient une donnée publique et le duel à
-                // l'aveugle n'en est plus un.
                 if (this.col._finScan) clearTimeout(this.col._finScan);
-                this.col.scan = data;
-                this.col._finScan = setTimeout(() => {
-                    this.col.scan = null;
-                    this.col._finScan = null;
-                }, 7000);
+
+                // On RETOURNE une fois les portraits chargés, pas avant. Sinon
+                // le navigateur décode cinq images au beau milieu de cinq
+                // demi-tours, et ça se voit — c'était l'à-coup du retournement.
+                // Un filet de 400 ms : mieux vaut une image en retard qu'un
+                // scan qui ne part jamais.
+                const partir = () => {
+                    // Sept secondes, et tout se referme. Une fenêtre qu'on ferme
+                    // soi-même laisse le choix de tout noter tranquillement ; le
+                    // scan doit coûter un effort de mémoire, sinon la classe des
+                    // cartes adverses devient une donnée publique et le duel à
+                    // l'aveugle n'en est plus un.
+                    this.col.scan = data;
+                    this.col._finScan = setTimeout(() => {
+                        this.col.scan = null;
+                        this.col._finScan = null;
+                    }, 7000);
+                };
+                let reste = (data.main || []).length;
+                let lance = false;
+                const go = () => { if (!lance) { lance = true; partir(); } };
+                if (!reste) return go();
+                const filet = setTimeout(go, 400);
+                for (const c of data.main) {
+                    const im = new Image();
+                    im.onload = im.onerror = () => {
+                        if (--reste <= 0) { clearTimeout(filet); go(); }
+                    };
+                    im.src = 'collectpic/' + c.img;
+                }
+                return;
             });
             this.socket.on('collect-refus', (data) => {
                 // « Ce n'est pas ton tour » n'apprend rien : le siège de celui qui

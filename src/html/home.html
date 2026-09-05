@@ -874,14 +874,6 @@
                                                ouvert: col.siegeOuvert === p.playerId }"
                                      :style="colSiege(i, colRivaux.length)"
                                      @click="colToucherSiege(p.playerId)">
-                                    <div class="col-siege-actions">
-                                        <button title="Scanner sa main" @click.stop="colScanner(p.playerId)">
-                                            <svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
-                                        </button>
-                                        <button title="Lui voler une carte" @click.stop="colOuvrirVol(p.playerId)">
-                                            <svg viewBox="0 0 24 24"><path d="M5 19L19 5M15 5h4v4M9 19H5v-4"/><path d="M5 5l6 6"/></svg>
-                                        </button>
-                                    </div>
                                     <!-- Scanné, l'éventail se retourne SUR PLACE et s'écarte, au
                                          lieu d'ouvrir une fenêtre par-dessus la table. On voit alors
                                          de qui sont ces cartes — la fenêtre, elle, les sortait de
@@ -889,13 +881,25 @@
                                     <div class="col-eventail" :class="{ scanne: colScanDe(p.playerId) }">
                                         <span v-for="(d, k) in colEventail(p)" :key="k" class="col-dos"
                                               :class="{ retournee: !!d }"
-                                              :style="colIncline(k, colEventail(p).length, colScanDe(p.playerId) ? 11 : 6)">
+                                              :style="colIncline(k, colEventail(p).length, colScanDe(p.playerId) ? 10 : 6, colScanDe(p.playerId) ? 0.72 : 0)"
+                                              @mouseenter="d && (col.loupe = d)" @mouseleave="col.loupe = null">
                                             <span class="col-dos-verso"></span>
                                             <span class="col-dos-recto" v-if="d">
                                                 <img :src="'collectpic/' + d.img" :alt="d.nom" draggable="false">
                                                 <i class="col-pion" :class="'pion-' + d.classe" v-html="colSymbole(d.classe)"></i>
                                             </span>
                                         </span>
+                                        <!-- Les deux gestes vivent DANS l'éventail : au milieu de la
+                                             colonne du siège, ils tombaient sous les cartes, entre le
+                                             nom et les étoiles. -->
+                                        <div class="col-siege-actions">
+                                            <button title="Scanner sa main" @click.stop="colScanner(p.playerId)">
+                                                <svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                                            </button>
+                                            <button title="Lui voler une carte" @click.stop="colOuvrirVol(p.playerId)">
+                                                <svg viewBox="0 0 24 24"><path d="M5 19L19 5M15 5h4v4M9 19H5v-4"/><path d="M5 5l6 6"/></svg>
+                                            </button>
+                                        </div>
                                     </div>
                                     <!-- Le temps qu'il reste avant que tout se referme -->
                                     <span class="col-scan-jauge" v-if="colScanDe(p.playerId)"><i></i></span>
