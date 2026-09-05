@@ -68,6 +68,7 @@ createApp({
                 siegeOuvert: null,   // au doigt : le siège dont les gestes sont dépliés
                 piocheOuverte: false, // la pioche attend qu'on désigne la carte à laisser
                 enVol: null,         // l'uid de la carte qui vole encore du paquet vers la main
+                jauge: null,         // le style de la barre de temps, posé une fois par échéance
                 entree: false,       // le temps de la distribution, au tout début
                 // réglages du salon, avant la partie
                 regleMain: 4,
@@ -1153,7 +1154,7 @@ createApp({
             if (this.col.piocheOuverte) return 'Quelle carte laisses-tu pour piocher ?';
             if (this.colSetPret) return 'Un set est prêt — glisse une carte sur l\'<b>emplacement étoilé</b>.';
             if (this.colPiocheLibre) return 'Ta main n\'est pas pleine — <b>clique le paquet</b> pour te refaire.';
-            return '<b>Pioche</b>, <b>pose un set</b>, ou survole un adversaire pour le <b>scanner</b> ou le <b>voler</b>.';
+            return '<b>Clique le paquet</b>, <b>pose un set</b>, ou survole un adversaire pour le <b>scanner</b> ou le <b>voler</b>.';
         },
 
         ascMonRang() {
@@ -1765,17 +1766,19 @@ createApp({
         colSerie(cle) { return COL_SERIES[cle] || cle; },
         // La jauge du tour, en pur CSS : une animation linéaire dont on règle la
         // durée et le RETARD NÉGATIF, ce qui la fait reprendre en cours de route.
-        // Un rafraîchissement retombe donc pile où il faut, et rien n'est repeint
-        // quatre fois par seconde comme le ferait un compteur.
+        // Un rafraîchissement retombe donc pile où il faut.
         //
-        // Une MÉTHODE et non une propriété calculée : celle-ci serait mise en
-        // cache, alors qu'il faut relire l'heure à chaque rendu.
-        colJauge() {
+        // ⚠️ Elle se calcule UNE FOIS par échéance, et le résultat dort dans
+        // « col.jauge ». Recalculée à chaque rendu, elle avançait par à-coups :
+        // le compteur des secondes redessine le composant quatre fois par
+        // seconde, chaque rendu posait un nouveau retard, et une animation dont
+        // on change le retard en cours de route saute.
+        colPoserJauge() {
             const e = this.col.etat;
-            if (!e || !e.tourFin) return null;
+            if (!e || !e.tourFin) { this.col.jauge = null; return; }
             const total = this.colTotalTemps * 1000;
             const ecoule = Math.max(0, Math.min(total, total - (e.tourFin - Date.now())));
-            return { animationDuration: total + 'ms', animationDelay: (-ecoule) + 'ms' };
+            this.col.jauge = { animationDuration: total + 'ms', animationDelay: (-ecoule) + 'ms' };
         },
         colNom(id) {
             if (!id) return '';
@@ -1829,6 +1832,8 @@ createApp({
             this.col.siegeOuvert = null;
             this.col.piocheOuverte = false;
             this.col.enVol = null;
+            this.col.jauge = null;
+            this.col._tourFin = null;
             this.col._attendPioche = false;
             this.col._sets = null;
             if (this.col._finScan) { clearTimeout(this.col._finScan); this.col._finScan = null; }
@@ -1891,10 +1896,7 @@ createApp({
                 const prise = this.col.drag && this.col.drag.carte;
                 this.col.drag = null;
                 if (!cible || !prise) return;
-                if (cible === 'pioche') {
-                    this.col._attendPioche = true;
-                    this.socket.emit('collect-piocher', { uidDefausse: prise.uid });
-                } else if (cible === 'poser') {
+                if (cible === 'poser') {
                     if (this.colSetPret) {
                         this.colBriser(this.colSetPret);
                         this.socket.emit('collect-poser', { anime: this.colSetPret });
@@ -5598,6 +5600,11 @@ createApp({
                     this.playSound(this.sounds.colTour);
                 }
                 this.col._dernierTour = data.tourJoueur;
+                // Une échéance neuve, une jauge neuve — et une seule fois.
+                if (data.tourFin !== this.col._tourFin) {
+                    this.col._tourFin = data.tourFin;
+                    this.colPoserJauge();
+                }
                 // Un point de plus qu'à la dernière image : on le fête. On se
                 // fie à l'état reçu et non au geste qu'on vient de faire, car un
                 // set peut aussi se conclure sur un vol qui complète la série.

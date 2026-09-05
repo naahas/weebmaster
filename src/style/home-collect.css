@@ -112,16 +112,10 @@
     aspect-ratio: 225 / 350;
     z-index: 9;
 }
-/* Une marge invisible autour du paquet : on vise une pile posée dans un coin
-   en traînant une carte depuis le bas de l'écran, et le dernier centimètre
-   d'un geste long n'est jamais précis. Les pseudo-éléments ne sont pas rendus
-   par « elementFromPoint » — c'est bien « .col-pioche » qui répond, donc
-   « data-drop » fonctionne pareil. */
-.col-pioche::after {
-    content: '';
-    position: absolute;
-    inset: -1.6rem;
-}
+/* Plus de marge de visée invisible : le paquet ne reçoit plus de glissement,
+   il se clique. Elle n'agrandissait donc plus que la zone cliquable, et une
+   zone cliquable qui déborde de trois centimètres attrape des clics qu'on ne
+   lui destinait pas. */
 /* Un sol sous le paquet, en permanence. Le fond de l'écran est noir et le dos
    des cartes presque : sans cette lueur froide, la pile flottait dans le vide
    et l'on ne voyait plus qu'elle avait une épaisseur. Elle devient dorée quand
@@ -263,21 +257,28 @@
    Sobre, et sous son propre nom : se faire scanner n'appelle pas une alarme,
    mais on doit le savoir SUR LE MOMENT — c'est là qu'on apprend que son bluff
    ne tient plus, et non après s'être fait voler. */
-.col-lu {
-    display: flex; align-items: center; gap: 0.3rem;
-    margin-top: 0.3rem;
-    padding: 0.16rem 0.5rem;
-    font-size: 0.58rem; font-weight: 700; letter-spacing: 0.04em;
-    color: #ffd9c0;
-    background: rgba(60, 20, 10, 0.8);
-    border: 0.06rem solid rgba(255, 140, 90, 0.5);
-    border-radius: 999px;
-    animation: colLuBat 1.6s ease-in-out infinite;
+/* Un œil POSÉ SUR la main, large et translucide. Une pastille en périphérie
+   demandait qu'on la lise ; un œil sur ses propres cartes se comprend sans un
+   mot, et il ne cache rien puisqu'on voit au travers. */
+.col-oeil {
+    position: absolute; left: 50%; top: 42%;
+    transform: translate(-50%, -50%);
+    width: calc(var(--carte) * 2.4);
+    pointer-events: none;
+    z-index: 14;
+    animation: colOeilBat 2.4s ease-in-out infinite;
 }
-.col-lu svg { width: 0.7rem; height: 0.7rem; fill: none; stroke: #ff9d6b; stroke-width: 2; }
-@keyframes colLuBat {
-    0%, 100% { border-color: rgba(255, 140, 90, 0.35); }
-    50%      { border-color: rgba(255, 140, 90, 0.9); }
+.col-oeil svg {
+    display: block; width: 100%; height: auto;
+    fill: rgba(20, 8, 4, 0.28);
+    stroke: rgba(255, 190, 150, 0.85);
+    stroke-width: 1.1;
+    stroke-linecap: round; stroke-linejoin: round;
+    filter: drop-shadow(0 0 0.6rem rgba(255, 120, 70, 0.55));
+}
+@keyframes colOeilBat {
+    0%, 100% { opacity: 0.55; transform: translate(-50%, -50%) scale(0.97); }
+    50%      { opacity: 1;    transform: translate(-50%, -50%) scale(1.03); }
 }
 
 /* ── L'écho d'un geste adverse ──
@@ -587,12 +588,17 @@
    se sentait jusque dans la distribution. Ici l'élément est un CARRÉ (pour que
    la rotation ne découvre jamais de coin) que le navigateur peint une fois et
    se contente ensuite de faire pivoter : rien à recalculer. */
+/* Un carré qui tourne se voit tourner : ses coins sortaient de derrière la
+   carte, quatre fois par tour. On le rend circulaire ET on l'estompe par un
+   masque radial — ce qui tourne n'a alors plus de bord du tout, et il ne reste
+   qu'une lumière qui fait le tour. La forme reste un carré parfait sous le
+   masque, sinon la rotation ferait battre la largeur. */
 .col-carte.paire::before {
     content: '';
     position: absolute;
     top: 50%; left: 50%;
-    width: 150%; aspect-ratio: 1;
-    margin: 0;
+    height: 128%; aspect-ratio: 1;
+    border-radius: 50%;
     background: conic-gradient(
         rgba(255, 138, 61, 0)   0deg,
         rgba(255, 190, 60, 0.7) 55deg,
@@ -601,8 +607,10 @@
         rgba(255, 138, 61, 0)   200deg,
         rgba(255, 210, 74, 0.5) 250deg,
         rgba(255, 138, 61, 0)   320deg);
-    filter: blur(0.42rem);
-    opacity: 0.8;
+    -webkit-mask: radial-gradient(closest-side, #000 34%, rgba(0, 0, 0, 0.55) 62%, transparent 100%);
+            mask: radial-gradient(closest-side, #000 34%, rgba(0, 0, 0, 0.55) 62%, transparent 100%);
+    filter: blur(0.35rem);
+    opacity: 0.85;
     animation: colTourneInverse 1.4s linear infinite;
     pointer-events: none;
     z-index: -1;

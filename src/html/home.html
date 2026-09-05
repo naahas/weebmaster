@@ -908,7 +908,7 @@
                                          scan, huit pour un duel. -->
                                     <span class="col-jauge" :class="{ urgence: col.reste <= 4 }"
                                           v-if="p.playerId === col.etat.tourJoueur && !col.etat.vainqueur">
-                                        <i :key="col.etat.tourFin" :style="colJauge()"></i>
+                                        <i :key="col.etat.tourFin" :style="col.jauge"></i>
                                     </span>
                                     <span class="col-etoiles">
                                         <i v-for="n in col.etat.setsPourGagner" :key="n"
@@ -946,22 +946,27 @@
                                             <span class="col-pion" :class="'pion-' + c.classe" v-html="colSymbole(c.classe)"></span>
                                         </button>
                                     </transition-group>
+                                    <!-- Se faire lire n'est pas rien : on sait dès lors que son
+                                         bluff ne tient plus, et c'est à ce moment-là qu'il faut
+                                         le savoir — pas après s'être fait voler. Un œil POSÉ SUR
+                                         la main le dit sans un mot, et sans rien ajouter en
+                                         périphérie de l'écran. -->
+                                    <span class="col-oeil" v-if="colOnMeLit">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
+                                            <circle cx="12" cy="12" r="3.4"/>
+                                        </svg>
+                                    </span>
                                     <span class="col-etoiles">
                                         <i v-for="n in col.etat.setsPourGagner" :key="n"
                                            :class="{ pleine: n <= colMesSets }"></i>
                                     </span>
                                     <span class="col-jauge" :class="{ urgence: col.reste <= 4 }"
                                           v-if="colMonTour && !col.etat.vainqueur">
-                                        <i :key="col.etat.tourFin" :style="colJauge()"></i>
+                                        <i :key="col.etat.tourFin" :style="col.jauge"></i>
                                     </span>
                                     <span class="col-nom">Vous</span>
-                                    <!-- Se faire lire n'est pas rien : on sait dès lors que son
-                                         bluff ne tient plus, et c'est à ce moment-là qu'il faut
-                                         le savoir — pas après s'être fait voler. -->
-                                    <span class="col-lu" v-if="colOnMeLit">
-                                        <svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
-                                        Ta main est lue
-                                    </span>
+
                                 </div>
                             </div>
 
@@ -981,12 +986,13 @@
                         </div>
 
                         <!-- La pioche, dans le coin -->
-                        <!-- Elle se CLIQUE autant qu'elle reçoit un glissement. Traîner une
-                             carte jusqu'à un coin de l'écran est un geste long, et le dernier
-                             centimètre n'est jamais précis — un clic ne rate jamais. -->
-                        <div class="col-pioche" data-drop="pioche"
+                        <!-- Elle se CLIQUE, et rien d'autre. Elle recevait aussi un
+                             glissement, et c'était l'unique geste du jeu qui consommait la
+                             carte qu'on traînait : on lâchait par-dessus, elle disparaissait,
+                             remplacée par une inconnue. Le clic ne surprend personne — le
+                             paquet s'allume, on choisit ensuite ce qu'on laisse. -->
+                        <div class="col-pioche"
                              :class="{ vivante: colMonTour && !col.etat.duel,
-                                       'col-cible': col.drag && col.drag.cible === 'pioche',
                                        attend: col.piocheOuverte }"
                              @click="colToucherPioche">
                             <span></span><span></span><span>SM</span>
