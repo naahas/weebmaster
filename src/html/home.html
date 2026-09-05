@@ -862,7 +862,7 @@
                                     </button>
                                     </transition-group>
                                     <span class="col-emplacement" data-drop="poser"
-                                          :class="{ prete: colMonTour && !col.drag && colSetPret,
+                                          :class="{ prete: colPeutAgir && !col.drag && colSetPret,
                                                     avale: col.drag && col.drag.cible === 'poser' && colSetPret,
                                                     'col-cible': col.drag && col.drag.cible === 'poser' }">★</span>
                                 </div>
@@ -871,7 +871,7 @@
                                 <div v-for="(p, i) in colRivaux" :key="p.playerId"
                                      class="col-siege"
                                      :class="{ tour: p.playerId === col.etat.tourJoueur,
-                                               jouable: colMonTour && !col.etat.duel,
+                                               jouable: colPeutAgir,
                                                ouvert: col.siegeOuvert === p.playerId }"
                                      :style="colSiege(i, colRivaux.length)"
                                      @click="colToucherSiege(p.playerId)">
@@ -921,7 +921,7 @@
                                 </div>
 
                                 <!-- Toi, à cheval sur le bord du bas -->
-                                <div class="col-moi" :class="{ tour: colMonTour }">
+                                <div class="col-moi" :class="{ tour: colPeutAgir }">
                                     <!-- Pendant qu'une carte piochée vole vers la main, on coupe
                                          les transitions de l'éventail : « col-main-t-enter-from »
                                          pose la carte treize rem plus loin avant de la ramener, et
@@ -936,7 +936,7 @@
                                                     aimante: colAimantee(c),
                                                     choisissable: col.piocheOuverte,
                                                     envol: col.enVol === c.uid,
-                                                    'dans-le-set': colMonTour && !col.drag && colSetPret === c.anime,
+                                                    'dans-le-set': colPeutAgir && !col.drag && colSetPret === c.anime,
                                                     paire: colSerieVisible(c.anime) >= 2 }]"
                                                 :style="colIncline(i, col.main.length, 5)"
                                                 @mouseenter="col.loupe = c" @mouseleave="col.loupe = null"
@@ -992,7 +992,7 @@
                              remplacée par une inconnue. Le clic ne surprend personne — le
                              paquet s'allume, on choisit ensuite ce qu'on laisse. -->
                         <div class="col-pioche"
-                             :class="{ vivante: colMonTour && !col.etat.duel,
+                             :class="{ vivante: colPeutAgir,
                                        attend: col.piocheOuverte }"
                              @click="colToucherPioche">
                             <span></span><span></span><span>SM</span>

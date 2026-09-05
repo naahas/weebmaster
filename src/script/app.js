@@ -1066,8 +1066,17 @@ createApp({
         // Main incomplète : piocher ne coûte rien, un clic suffit. C'est le cas
         // le plus fréquent, puisque poser un set ne refait plus la main.
         colPiocheLibre() {
-            return !!(this.colMonTour && this.col.etat && !this.col.etat.duel
-                && this.col.main.length < this.col.etat.mainMax);
+            return !!(this.colPeutAgir && this.col.main.length < this.col.etat.mainMax);
+        },
+        // AVOIR la main et POUVOIR jouer sont deux choses. Pendant un scan, le
+        // tour reste au scanneur sept secondes — il le voit à sa jauge — mais la
+        // table est arrêtée : le serveur refuse tout. Le client le laissait
+        // pourtant traîner ses cartes, et les animations partaient : on voyait
+        // un échange se faire, puis rien. Un geste qui ne mène nulle part ne
+        // doit pas s'offrir.
+        colPeutAgir() {
+            const e = this.col.etat;
+            return !!(this.colMonTour && e && !e.duel && !e.scan);
         },
         colMonTour() {
             return !!(this.col.etat && this.col.etat.tourJoueur === this.playerId);
@@ -1144,7 +1153,13 @@ createApp({
             }
             // Le siège en cours s'allume déjà : le redire en toutes lettres
             // sous la table faisait doublon.
-            if (!this.colMonTour) return '';
+            if (!this.colPeutAgir) {
+                // Pendant son propre scan, on ne dit pas « ce n'est pas ton tour »
+                // — c'est le sien. On dit ce qu'on attend.
+                const e = this.col.etat;
+                if (e && e.scan && e.scan.par === this.playerId) return 'Retiens ce que tu vois…';
+                return '';
+            }
             if (this.col.drag) {
                 const c = this.col.drag.cible;
                 if (c === 'pioche') return 'Lâche pour <b>piocher</b> à sa place.';
@@ -1863,7 +1878,7 @@ createApp({
             if (this.col._finDrag) this.col._finDrag();
         },
         colPrendre(carte, ev) {
-            if (!this.colMonTour || this.col.etat.duel) return;
+            if (!this.colPeutAgir) return;
             ev.preventDefault();
             this.col.loupe = null;
             this.col.drag = { carte, x: ev.clientX, y: ev.clientY, cible: null };
@@ -2230,7 +2245,7 @@ createApp({
         // pleine, il attend qu'on lui désigne la carte à laisser — deux touches,
         // comme le glissement, mais sans avoir à viser.
         colToucherPioche() {
-            if (!this.colMonTour || this.col.etat.duel) return;
+            if (!this.colPeutAgir) return;
             if (this.colPiocheLibre) {
                 this.col._attendPioche = true;
                 this.socket.emit('collect-piocher', {});
@@ -2252,7 +2267,7 @@ createApp({
         // « scanner » et « voler » quand ce n'est pas notre tour ne menait qu'à
         // un refus — et le refus, on ne l'affiche même plus.
         colToucherSiege(id) {
-            if (!this.colMonTour || this.col.etat.duel) { this.col.siegeOuvert = null; return; }
+            if (!this.colPeutAgir) { this.col.siegeOuvert = null; return; }
             this.col.siegeOuvert = this.col.siegeOuvert === id ? null : id;
         },
         // Ce qu'un éventail adverse doit afficher : les vraies cartes si on
@@ -2266,12 +2281,12 @@ createApp({
             return new Array(p.cartes).fill(null);
         },
         colScanner(cibleId) {
-            if (!this.colMonTour || this.col.etat.duel) return;
+            if (!this.colPeutAgir) return;
             this.col.siegeOuvert = null;
             this.socket.emit('collect-scanner', { cibleId });
         },
         colOuvrirVol(cibleId) {
-            if (!this.colMonTour || this.col.etat.duel) return;
+            if (!this.colPeutAgir) return;
             this.col.siegeOuvert = null;
             this.col.volCible = cibleId;
             this.col.volArme = null;
