@@ -1769,6 +1769,7 @@ createApp({
             this.col.piocheOuverte = false;
             this.col.enVol = null;
             this.col._attendPioche = false;
+            this.col._sets = null;
             this.col.entree = false;
             this.col.erreur = '';
             this.col._dernierSon = undefined;
@@ -1835,6 +1836,37 @@ createApp({
             window.addEventListener('pointerup', lacher);
             window.addEventListener('pointercancel', lacher);
         },
+        // ══ Le point marqué ══
+        // La pastille se dilate, un anneau s'en échappe et douze étincelles
+        // partent en étoile. C'est deux ou trois fois par partie, et c'est TOUT
+        // ce qu'on cherche : sans cela, la seule trace d'une victoire d'étape
+        // était un rond qui changeait de couleur en silence, au bas de l'écran,
+        // pendant que les éclats de verre accaparaient le regard ailleurs.
+        colPointGagne() {
+            const pastille = document.querySelector('.col-moi .col-etoiles');
+            if (!pastille) return;
+            pastille.classList.add('gagne');
+            setTimeout(() => pastille.classList.remove('gagne'), 800);
+
+            const r = pastille.getBoundingClientRect();
+            const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+            for (let i = 0; i < 12; i++) {
+                const e = document.createElement('span');
+                e.className = 'col-etincelle';
+                // Semées, pas réparties : douze étincelles à intervalle régulier
+                // se lisent comme une roue dentée, pas comme une gerbe.
+                const a = (i / 12) * Math.PI * 2 + Math.random() * 0.5;
+                const d = 2.4 + Math.random() * 2.6;
+                e.style.left = cx + 'px';
+                e.style.top = cy + 'px';
+                e.style.setProperty('--dx', (Math.cos(a) * d).toFixed(2) + 'rem');
+                e.style.setProperty('--dy', (Math.sin(a) * d).toFixed(2) + 'rem');
+                e.style.animationDelay = (Math.random() * 0.12).toFixed(2) + 's';
+                document.body.appendChild(e);
+                setTimeout(() => e.remove(), 1000);
+            }
+        },
+
         // ══ Poser un set : l'éclat de verre ══
         // Les trois cartes filent vers l'emplacement, blanchissent, puis se
         // brisent en sept éclats qui partent en étoile. Chaque éclat porte un
@@ -1887,6 +1919,16 @@ createApp({
                 setTimeout(() => el.remove(), 900 + n * 45);
             }
 
+            // La table tressaille au moment de la casse, pas au départ des
+            // cartes : c'est l'impact qu'on veut sentir.
+            const table = document.querySelector('.col-table');
+            if (table) {
+                setTimeout(() => {
+                    table.classList.add('secoue');
+                    setTimeout(() => table.classList.remove('secoue'), 450);
+                }, 300);
+            }
+
             // Le souffle au point d'impact, une fois pour les trois
             setTimeout(() => {
                 const s = document.createElement('div');
@@ -1914,12 +1956,22 @@ createApp({
             this.$nextTick(() => {
                 const cible = document.querySelector('.col-main .col-carte.envol');
                 if (!cible) { this.col.enVol = null; return; }
-                // On vise le CENTRE, pas le coin : « getBoundingClientRect »
-                // rend la boîte englobante, qui déborde dès que la carte est
-                // inclinée — à dix degrés le coin est faux d'une dizaine de
-                // pixels et le fantôme se posait de travers. Une rotation, elle,
-                // laisse le centre en place.
+                // On MESURE SANS TRANSFORMATION, et c'est le point délicat.
+                // La carte vient d'entrer dans un « transition-group » : Vue lui
+                // a déjà posé « col-main-t-enter-from », qui la place treize rem
+                // à droite et cinq rem plus bas avant de la ramener. Mesurée
+                // telle quelle, elle donnait CE point-là — le fantôme partait
+                // donc vers le bas de l'écran, puis disparaissait pendant que la
+                // vraie carte se posait ailleurs. On voyait une téléportation.
+                //
+                // La carte est invisible pendant tout le vol (« .envol »), on
+                // peut donc la manipuler sans que rien ne se voie : transform
+                // neutralisé, on lit la place que la mise en page lui a
+                // réellement donnée, puis on remet tout comme c'était.
+                const memoire = cible.style.transform;
+                cible.style.transform = 'none';
                 const b = cible.getBoundingClientRect();
+                cible.style.transform = memoire;
                 const cx = b.left + b.width / 2, cy = b.top + b.height / 2;
                 const large = cible.offsetWidth;
                 // L'inclinaison de la carte dans l'éventail : le fantôme doit se
@@ -5367,6 +5419,15 @@ createApp({
                     this.playSound(this.sounds.colTour);
                 }
                 this.col._dernierTour = data.tourJoueur;
+                // Un point de plus qu'à la dernière image : on le fête. On se
+                // fie à l'état reçu et non au geste qu'on vient de faire, car un
+                // set peut aussi se conclure sur un vol qui complète la série.
+                const mesSets = this.colMesSets;
+                if (this.col._sets !== null && this.col._sets !== undefined && mesSets > this.col._sets) {
+                    this.$nextTick(() => this.colPointGagne());
+                }
+                this.col._sets = mesSets;
+
                 // Le tour a changé de main : plus rien de ce qu'on avait
                 // entamé n'a de sens. On coupe le glissement, on referme les
                 // sièges et la pioche. (Points 4 et 5 : sans ça, un glissement

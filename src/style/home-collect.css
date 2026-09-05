@@ -222,6 +222,7 @@
 .col-siege.choisissable .col-dos { border-color: rgba(255, 255, 255, 0.45); }
 
 .col-etoiles {
+    position: relative;
     display: flex; gap: 0.2rem;
     padding: 0.22rem 0.5rem;
     background: rgba(0, 0, 0, 0.62);
@@ -234,6 +235,55 @@
     background: rgba(255, 255, 255, 0.16);
 }
 .col-etoiles i.pleine { background: var(--col-or); box-shadow: 0 0 0.35rem rgba(255, 210, 74, 0.75); }
+
+/* ── Le point qui vient d'être marqué ──
+   Deux ou trois fois par partie, et c'est TOUT ce qu'on cherche : la pastille
+   se dilate, un anneau s'en échappe, et les points allumés blanchissent. Sans
+   ça, la seule trace d'une victoire d'étape était un rond qui changeait de
+   couleur en silence, au bas de l'écran, pendant que les éclats de verre
+   accaparaient le regard ailleurs. */
+.col-etoiles.gagne {
+    animation: colPointBoite 0.75s cubic-bezier(0.24, 1.4, 0.4, 1);
+    border-color: rgba(255, 210, 74, 0.85);
+}
+.col-etoiles.gagne::after {
+    content: '';
+    position: absolute; inset: -0.3rem;
+    border-radius: 999px;
+    border: 0.12rem solid var(--col-or);
+    animation: colPointOnde 0.75s ease-out forwards;
+    pointer-events: none;
+}
+.col-etoiles.gagne i.pleine { animation: colPointPlein 0.75s ease-out; }
+.col-etoiles.gagne i.pleine:nth-child(2) { animation-delay: 0.05s; }
+.col-etoiles.gagne i.pleine:nth-child(3) { animation-delay: 0.1s; }
+@keyframes colPointBoite {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.32); }
+    100% { transform: scale(1); }
+}
+@keyframes colPointOnde {
+    0%   { opacity: 1; transform: scale(0.85); }
+    100% { opacity: 0; transform: scale(2.4); }
+}
+@keyframes colPointPlein {
+    0%, 100% { box-shadow: 0 0 0.35rem rgba(255, 210, 74, 0.75); filter: brightness(1); }
+    30%      { box-shadow: 0 0 1.1rem rgba(255, 240, 190, 1);    filter: brightness(2.4); }
+}
+/* Les étincelles, semées autour de la pastille */
+.col-etincelle {
+    position: fixed;
+    z-index: 63;
+    width: 0.32rem; height: 0.32rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff6d8, var(--col-or) 55%, rgba(255, 138, 61, 0));
+    pointer-events: none;
+    animation: colEtincelle 0.8s cubic-bezier(0.15, 0.7, 0.3, 1) forwards;
+}
+@keyframes colEtincelle {
+    0%   { opacity: 1; transform: translate(0, 0) scale(1.2); }
+    100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.3); }
+}
 
 .col-nom {
     max-width: 7rem;
@@ -351,22 +401,45 @@
    SOUS la carte, plus dense au bas, qui monte et redescend. Aucun trait, aucun
    cadre — une présence plutôt qu'un signal, qui tient à cinq exemplaires
    allumés en même temps sans que la table se mette à clignoter. */
+/* Un néon qui COURT autour de la carte. Un dégradé conique tourne derrière,
+   et un masque n'en laisse voir que le contour : la lumière fait le tour du
+   cadre sans que rien ne se déplace. Les deux essais précédents — le liseré au
+   bas, puis la brume — étaient immobiles, et c'est precisement ce qui les
+   rendait invisibles au milieu de cinq cartes.
+
+   « @property » est indispensable : sans lui, une variable d'angle n'est qu'un
+   texte et ne s'interpole pas. Un navigateur qui l'ignore garde le halo fixe —
+   dégradé honnête, la carte reste signalée, elle ne bouge simplement plus. */
+@property --colTour {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
 .col-carte.paire::after {
     content: '';
-    position: absolute; inset: -0.55rem -0.45rem -0.75rem;
-    border-radius: 0.9rem;
-    background:
-        radial-gradient(60% 45% at 50% 100%, rgba(255, 190, 60, 0.55), transparent 72%),
-        radial-gradient(75% 70% at 50% 78%, rgba(255, 210, 74, 0.22), transparent 78%);
-    filter: blur(0.12rem);
+    position: absolute; inset: -0.22rem;
+    border-radius: 0.62rem;
+    padding: 0.15rem;
+    background: conic-gradient(from var(--colTour),
+        rgba(255, 210, 74, 0)   0deg,
+        rgba(255, 210, 74, 0)   38deg,
+        rgba(255, 210, 74, 0.9) 82deg,
+        #fff0c0                 108deg,
+        #ff9d3d                 138deg,
+        rgba(255, 138, 61, 0)   196deg,
+        rgba(255, 210, 74, 0)   360deg);
+    /* Le masque évide le centre : il ne reste que l'anneau. Deux calques
+       identiques, l'un limité à la boîte de contenu, soustraits l'un de
+       l'autre — c'est le seul moyen d'obtenir un contour arrondi net. */
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            mask-composite: exclude;
+    filter: drop-shadow(0 0 0.4rem rgba(255, 180, 60, 0.9));
+    animation: colTourne 2.1s linear infinite;
     pointer-events: none;
-    z-index: -1;
-    animation: colBrume 2.6s ease-in-out infinite;
 }
-@keyframes colBrume {
-    0%, 100% { opacity: 0.45; transform: translateY(0.12rem) scale(0.96); }
-    50%      { opacity: 1;    transform: translateY(-0.1rem) scale(1.03); }
-}
+@keyframes colTourne { to { --colTour: 360deg; } }
 
 /* ── La carte regardée de près ────────────────────────────────── */
 .col-loupe {
@@ -649,6 +722,22 @@
    endroits en même temps, et l'éventail sauterait à l'arrivée du fantôme. */
 .col-carte.envol { opacity: 0; }
 
+/* La table tressaille une demi-seconde quand un set éclate. Le décalage est
+   minuscule — un demi-caractère — mais c'est ce qui fait qu'on SENT la casse
+   au lieu de la regarder. Au-delà, ça devient un tremblement de terre et l'on
+   perd des yeux ce qui reste sur le feutre.
+
+   La translation de repos est reprise dans chaque étape : « .col-table » est
+   centrée par « translate(-50%, -50%) », qu'une secousse écraserait. */
+.col-table.secoue { animation: colSecousse 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+@keyframes colSecousse {
+    0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+    14%      { transform: translate(calc(-50% - 0.45rem), calc(-50% + 0.22rem)) rotate(-0.45deg); }
+    32%      { transform: translate(calc(-50% + 0.5rem),  calc(-50% - 0.28rem)) rotate(0.5deg); }
+    52%      { transform: translate(calc(-50% - 0.32rem), calc(-50% - 0.16rem)) rotate(-0.3deg); }
+    74%      { transform: translate(calc(-50% + 0.18rem), calc(-50% + 0.12rem)) rotate(0.16deg); }
+}
+
 /* ════════ Poser un set : l'éclat de verre ════════
    Les trois cartes filent vers l'emplacement, blanchissent, puis se brisent en
    sept éclats qui partent en étoile. Chaque éclat porte un MORCEAU du portrait
@@ -918,6 +1007,12 @@
     .col-table { width: min(96%, 30rem); aspect-ratio: 1 / 1.02; top: 42%; }
     .col-marche { gap: 0.18rem; }
     .col-pioche { right: 1rem; bottom: 1rem; width: calc(var(--carte) * 1.15); }
+
+    /* Le neon de serie coute cher : un degrade conique se rematricule a chaque
+       image, et le halo qui l entoure est un filtre. Sur telephone, jusqu a neuf
+       cartes allumees a la fois, cela chauffe pour rien — on garde la course, on
+       lache le halo et on ralentit. */
+    .col-carte.paire::after { animation-duration: 3.2s; filter: none; }
     .col-nom { max-width: 4.8rem; font-size: 0.56rem; }
     .col-loupe { width: 8.5rem; left: 0.4rem; top: 32%; }
     .col-loupe-nom { font-size: 1rem; }
