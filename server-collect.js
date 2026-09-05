@@ -139,12 +139,21 @@ function rendreAuPaquet(etat, carte) {
     etat.pioche.splice(Math.floor(Math.random() * (etat.pioche.length + 1)), 0, carte);
 }
 
-// Le marché ne bouge QUE par l'échange : une carte n'y entre que si quelqu'un
-// l'y a mise, et n'en sort que si quelqu'un l'a prise. Il se renouvelait
-// auparavant à chaque fin de tour, du paquet ; on ne pouvait alors rien y
-// convoiter, puisque ce qu'on visait avait disparu avant de rejouer. Cinq
-// cartes qui tiennent en place, c'est cinq cartes qu'on peut guetter — et ce
-// qu'on y voit dit désormais ce que les autres ont jeté.
+// La plus ancienne carte du marché part SOUS le paquet, et une neuve arrive
+// du dessus. « Sous », et non mêlée au hasard : une carte qu'on vient de voir
+// partir ne doit pas pouvoir revenir au tour suivant. Le fond de la pile, c'est
+// la promesse qu'on ne la reverra pas de sitôt.
+//
+// (« tirer » prend par le haut, avec « pop » : le bas de la pile est donc
+// l'index zéro.)
+function sousLePaquet(etat, carte) {
+    etat.pioche.unshift(carte);
+}
+function renouvelerMarche(etat) {
+    if (!etat.marche.length) return;
+    sousLePaquet(etat, etat.marche.shift());
+    etat.marche.push(tirer(etat));
+}
 
 // ── Démarrage ─────────────────────────────────────────────────
 function demarrer(etat, joueurs) {
@@ -176,6 +185,7 @@ function demarrer(etat, joueurs) {
 // ── Tour ──────────────────────────────────────────────────────
 function tourSuivant(etat) {
     if (!etat.active) return;
+    renouvelerMarche(etat);
     etat.tourIndex = (etat.tourIndex + 1) % etat.ordre.length;
     etat.tourJoueur = etat.ordre[etat.tourIndex];
 }
@@ -627,7 +637,7 @@ module.exports = {
     registerCollectSocketHandlers, diffuserEtat,
     domine, etatNeuf, regles, demarrer, tourSuivant,
     actionPiocher, actionEchanger, actionVoler, actionScanner, actionPoser, actionParDefaut,
-    actionDefendre, defenseParDefaut, rendreAuPaquet,
+    actionDefendre, defenseParDefaut, rendreAuPaquet, renouvelerMarche, sousLePaquet,
     vuePublique, vueJoueur,
     _data: DATA,
 };

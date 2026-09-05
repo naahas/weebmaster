@@ -123,14 +123,12 @@ const dernier = (j) => j.etats[j.etats.length - 1];
     courant.socket.emit('collect-piocher', { uidDefausse: lachee });
     await wait(300);
     check('la pioche passe', dernier(A).tourJoueur !== courant.nom, courant.nom + ' → ' + dernier(A).tourJoueur);
-    // La carte lâchée repart au PAQUET, que le client ne voit pas — elle ne
-    // doit pas ressortir au marché. Et le marché, lui, ne bouge pas d'un pouce :
-    // il ne se renouvelle plus tout seul en fin de tour, ce qui permet de
-    // convoiter une carte d'un tour sur l'autre.
+    // La carte lâchée repart au PAQUET, que le client ne voit pas. Ce qu'il
+    // peut constater, c'est le renouvellement de fin de tour : la plus ancienne
+    // du marché s'en va sous la pile et une neuve arrive du dessus.
     check('la carte lâchée ne réapparaît pas au marché', !dernier(A).marche.some(c => c.uid === lachee));
-    check('piocher ne touche pas au marché',
-        dernier(A).marche.map(c => c.uid).join(',') === marcheAvant.join(','),
-        marcheAvant.length + ' cartes, les mêmes');
+    check('le marché s\'est renouvelé', dernier(A).marche[0].uid === marcheAvant[1],
+        marcheAvant[0].slice(0, 6) + ' est partie');
     check('le marché garde ses cinq cartes', dernier(A).marche.length === 5, String(dernier(A).marche.length));
     check('la main garde sa taille', courant.main.length === 4, String(courant.main.length));
 

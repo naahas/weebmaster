@@ -77,19 +77,20 @@ console.log('\n── Le marché ──');
     const encore = C.actionEchanger(e, j, uidMain, uidMarche);
     check('on n\'échange pas deux fois dans le tour', !encore.ok, encore.erreur);
 
-    // Le marché ne bouge QUE par l'échange. Piocher, poser, voler, scanner :
-    // rien de tout cela n'y touche. C'est ce qui permet de convoiter une carte
-    // d'un tour sur l'autre — elle sera encore là.
+    // À chaque fin de tour, la plus ancienne du marché part SOUS le paquet et
+    // une neuve arrive du dessus. « Sous » et non mêlée au hasard : une carte
+    // qu'on vient de voir partir ne doit pas revenir au tour suivant.
     {
         const e2 = neuf();
-        const avant = e2.marche.map(c => c.uid).join(',');
+        const avant = e2.marche.map(c => c.uid);
         C.actionPiocher(e2, e2.tourJoueur, e2.mains.get(e2.tourJoueur)[0].uid);
-        check('piocher ne touche pas au marché', e2.marche.map(c => c.uid).join(',') === avant);
-        const e3 = neuf();
-        const av3 = e3.marche.map(c => c.uid).join(',');
-        C.actionParDefaut(e3, e3.tourJoueur);
-        check('le minuteur non plus', e3.marche.map(c => c.uid).join(',') === av3);
-        check('… et il garde sa taille', e3.marche.length === C.CONFIG.MARCHE);
+        const apres = e2.marche.map(c => c.uid);
+        check('le marché se renouvelle à chaque tour',
+            apres[0] === avant[1] && !avant.includes(apres[4]),
+            'la plus ancienne est partie, une neuve est arrivée');
+        check('… et elle part au FOND du paquet', e2.pioche[0].uid === avant[0],
+            'index 0, le dernier servi');
+        check('… et il garde sa taille', e2.marche.length === C.CONFIG.MARCHE);
     }
 
     // Le minuteur ne joue pas à la place du joueur : il passe.
@@ -448,11 +449,10 @@ console.log('\n── Une partie entière se termine ──');
     const moy = (total / PARTIES).toFixed(1);
     check('presque toutes les parties trouvent un vainqueur', sansVainqueur / PARTIES < 0.05,
         (sansVainqueur / PARTIES * 100).toFixed(1) + ' % sans vainqueur');
-    // Le marché ne se renouvelant plus tout seul, la seule porte par où entre
-    // une carte fraîche est la pioche. Mesuré à 4 joueurs et 10 animes :
-    // 8,7 manches avant, 11,6 après. Un tiers de plus, pas le double — le
-    // double, c'était le robot qui tournait en rond.
-    check('la partie dure ce qui était annoncé', moy >= 3 && moy <= 16, moy + ' manches en moyenne');
+    // Mesuré à 4 joueurs et 10 animes : 8,7 manches. Le caprice du robot,
+    // au-dessus, n'est pas cosmétique — sans lui il tournait en rond et
+    // annonçait le double.
+    check('la partie dure ce qui était annoncé', moy >= 3 && moy <= 14, moy + ' manches en moyenne');
 }
 
 console.log(ko ? `\n💥 ${ko} contrôle(s) en échec` : '\n✨ Le moteur de Collect tient, et ne montre aucune main');

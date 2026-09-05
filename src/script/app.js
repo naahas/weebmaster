@@ -1821,7 +1821,10 @@ createApp({
                     this.col._attendPioche = true;
                     this.socket.emit('collect-piocher', { uidDefausse: prise.uid });
                 } else if (cible === 'poser') {
-                    if (this.colSetPret) this.socket.emit('collect-poser', { anime: this.colSetPret });
+                    if (this.colSetPret) {
+                        this.colBriser(this.colSetPret);
+                        this.socket.emit('collect-poser', { anime: this.colSetPret });
+                    }
                 } else if (cible.startsWith('marche:')) {
                     const uidMarche = cible.slice(7);
                     this.colCroiser(prise, uidMarche);
@@ -1832,6 +1835,72 @@ createApp({
             window.addEventListener('pointerup', lacher);
             window.addEventListener('pointercancel', lacher);
         },
+        // ══ Poser un set : l'éclat de verre ══
+        // Les trois cartes filent vers l'emplacement, blanchissent, puis se
+        // brisent en sept éclats qui partent en étoile. Chaque éclat porte un
+        // MORCEAU du portrait, découpé en coin depuis le centre : on doit
+        // reconnaître la carte qui vole en morceaux, sinon le geste n'est qu'un
+        // feu d'artifice posé par-dessus.
+        //
+        // On relève les positions AVANT d'émettre : la réponse du serveur vide
+        // la main en quelques dizaines de millisecondes, et les cartes ne sont
+        // alors plus là où on les a vues.
+        colBriser(anime) {
+            const emplacement = document.querySelector('.col-emplacement');
+            if (!emplacement) return;
+            const e = emplacement.getBoundingClientRect();
+            const cx = e.left + e.width / 2, cy = e.top + e.height / 2;
+
+            const cartes = this.col.main.filter(c => c.anime === anime).slice(0, this.col.etat.taille);
+            const morceaux = [];
+            for (const c of cartes) {
+                const i = this.col.main.findIndex(x => x.uid === c.uid);
+                const el = document.querySelector('.col-main .col-carte:nth-child(' + (i + 1) + ')');
+                if (!el) continue;
+                const b = el.getBoundingClientRect();
+                morceaux.push({ carte: c, x: b.left, y: b.top, w: el.offsetWidth, h: el.offsetHeight,
+                                mx: b.left + b.width / 2, my: b.top + b.height / 2 });
+            }
+            if (!morceaux.length) return;
+
+            for (const [n, m] of morceaux.entries()) {
+                const el = document.createElement('div');
+                el.className = 'col-brise';
+                el.style.left = m.x + 'px';
+                el.style.top = m.y + 'px';
+                el.style.width = m.w + 'px';
+                el.style.height = m.h + 'px';
+                // Sept éclats, tous porteurs du même portrait : c'est le
+                // « clip-path » de chacun qui en découpe sa part.
+                el.innerHTML = Array.from({ length: 7 }, () =>
+                    '<i style="background-image:url(collectpic/' + m.carte.img + ')"></i>').join('');
+                document.body.appendChild(el);
+
+                // Elles convergent vers l'emplacement, légèrement décalées les
+                // unes des autres pour qu'on les distingue en vol.
+                const ecart = (n - (morceaux.length - 1) / 2) * 6;
+                void el.offsetWidth;
+                el.style.transform = 'translate(' + (cx - m.mx + ecart).toFixed(1) + 'px, ' +
+                    (cy - m.my).toFixed(1) + 'px) scale(1.06)';
+
+                setTimeout(() => el.classList.add('eclate'), 300 + n * 45);
+                setTimeout(() => el.remove(), 900 + n * 45);
+            }
+
+            // Le souffle au point d'impact, une fois pour les trois
+            setTimeout(() => {
+                const s = document.createElement('div');
+                s.className = 'col-souffle';
+                const r = Math.max(e.width, e.height) * 2.2;
+                s.style.left = (cx - r / 2) + 'px';
+                s.style.top = (cy - r / 2) + 'px';
+                s.style.width = r + 'px';
+                s.style.height = r + 'px';
+                document.body.appendChild(s);
+                setTimeout(() => s.remove(), 600);
+            }, 300);
+        },
+
         // ══ La carte piochée vient vraiment du paquet ══
         // Un fantôme part du paquet, dos visible, et se retourne EN CHEMIN pour
         // se poser dans la main. Sans ce vol, la carte apparaissait d'un coup
