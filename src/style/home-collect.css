@@ -341,7 +341,13 @@
     padding-left: calc(var(--carte) * 0.22);
 }
 .col-main .col-carte { margin-left: calc(var(--carte) * -0.22); transform-origin: 50% 130%; }
-.col-moi .col-etoiles { margin-top: -0.55rem; z-index: 2; }
+/* L'objectif descend sous l'éventail au lieu de le chevaucher. Il mordait sur
+   le bas des cartes : à zéro point, deux ronds gris sur un portrait ne se
+   distinguaient pas du dessin. Les ronds vides sont aussi un peu moins
+   discrets — c'est justement quand on n'a rien marqué qu'il faut voir
+   combien il en reste à marquer. */
+.col-moi .col-etoiles { margin-top: 0.45rem; z-index: 2; }
+.col-moi .col-etoiles i { background: rgba(255, 255, 255, 0.3); }
 .col-moi .col-nom { margin-top: 0.15rem; color: var(--col-or); }
 
 /* ── La carte ─────────────────────────────────────────────────── */
@@ -415,11 +421,40 @@
     initial-value: 0deg;
     inherits: false;
 }
+@property --colTourInverse {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
+/* La couche du dessous : plus large, floue, et qui tourne À L'ENVERS et plus
+   vite. Une seule course était nette mais mince — de loin on ne voyait qu'un
+   filet. Deux courses en sens contraire se croisent quatre fois par tour, et
+   c'est ce battement-là qu'on remarque du coin de l'œil. */
+.col-carte.paire::before {
+    content: '';
+    position: absolute; inset: -0.5rem;
+    border-radius: 0.85rem;
+    background: conic-gradient(from var(--colTourInverse),
+        rgba(255, 138, 61, 0)   0deg,
+        rgba(255, 190, 60, 0.7) 55deg,
+        #ffd24a                 90deg,
+        rgba(255, 138, 61, 0)   150deg,
+        rgba(255, 138, 61, 0)   200deg,
+        rgba(255, 210, 74, 0.5) 250deg,
+        rgba(255, 138, 61, 0)   320deg);
+    filter: blur(0.42rem);
+    opacity: 0.85;
+    animation: colTourneInverse 1.4s linear infinite;
+    pointer-events: none;
+    z-index: -1;
+}
+@keyframes colTourneInverse { to { --colTourInverse: -360deg; } }
+
 .col-carte.paire::after {
     content: '';
-    position: absolute; inset: -0.22rem;
-    border-radius: 0.62rem;
-    padding: 0.15rem;
+    position: absolute; inset: -0.28rem;
+    border-radius: 0.68rem;
+    padding: 0.26rem;
     background: conic-gradient(from var(--colTour),
         rgba(255, 210, 74, 0)   0deg,
         rgba(255, 210, 74, 0)   38deg,
@@ -435,8 +470,8 @@
     -webkit-mask-composite: xor;
             mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
             mask-composite: exclude;
-    filter: drop-shadow(0 0 0.4rem rgba(255, 180, 60, 0.9));
-    animation: colTourne 2.1s linear infinite;
+    filter: drop-shadow(0 0 0.55rem rgba(255, 180, 60, 1));
+    animation: colTourne 1.6s linear infinite;
     pointer-events: none;
 }
 @keyframes colTourne { to { --colTour: 360deg; } }
@@ -1012,7 +1047,8 @@
        image, et le halo qui l entoure est un filtre. Sur telephone, jusqu a neuf
        cartes allumees a la fois, cela chauffe pour rien — on garde la course, on
        lache le halo et on ralentit. */
-    .col-carte.paire::after { animation-duration: 3.2s; filter: none; }
+    .col-carte.paire::after  { animation-duration: 2.6s; filter: none; }
+    .col-carte.paire::before { animation-duration: 2.2s; filter: blur(0.3rem); opacity: 0.6; }
     .col-nom { max-width: 4.8rem; font-size: 0.56rem; }
     .col-loupe { width: 8.5rem; left: 0.4rem; top: 32%; }
     .col-loupe-nom { font-size: 1rem; }

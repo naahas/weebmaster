@@ -77,6 +77,22 @@ console.log('\n── Le marché ──');
     const encore = C.actionEchanger(e, j, uidMain, uidMarche);
     check('on n\'échange pas deux fois dans le tour', !encore.ok, encore.erreur);
 
+    // Un échange sert déjà le marché : la rangée reste pleine et elle a
+    // changé. Un renouvellement de fin de tour la ferait tourner deux fois
+    // dans le même geste, et la carte tout juste déposée disparaîtrait avant
+    // que quiconque ait pu la voir.
+    {
+        const e5 = neuf();
+        const j5 = e5.tourJoueur;
+        const rendue = e5.mains.get(j5)[0].uid;
+        const attendu = e5.marche.slice(1).map(c => c.uid);
+        attendu.push(rendue);
+        C.actionEchanger(e5, j5, rendue, e5.marche[0].uid);
+        check('un échange ne fait pas venir de carte en plus',
+            e5.marche.map(c => c.uid).join(',') === attendu.join(','),
+            'quatre restantes, plus la rendue');
+    }
+
     // À chaque fin de tour, la plus ancienne du marché part SOUS le paquet et
     // une neuve arrive du dessus. « Sous » et non mêlée au hasard : une carte
     // qu'on vient de voir partir ne doit pas revenir au tour suivant.

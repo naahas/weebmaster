@@ -183,9 +183,13 @@ function demarrer(etat, joueurs) {
 }
 
 // ── Tour ──────────────────────────────────────────────────────
-function tourSuivant(etat) {
+// L'échange est le seul geste qui SERT déjà le marché : la carte prise y est
+// remplacée par celle qu'on rend, la rangée reste pleine et elle a changé. Y
+// verser une carte de plus en fin de tour la faisait donc tourner deux fois
+// d'un coup, et l'on perdait de vue ce qu'on venait d'y déposer.
+function tourSuivant(etat, renouveler = true) {
     if (!etat.active) return;
-    renouvelerMarche(etat);
+    if (renouveler) renouvelerMarche(etat);
     etat.tourIndex = (etat.tourIndex + 1) % etat.ordre.length;
     etat.tourJoueur = etat.ordre[etat.tourIndex];
 }
@@ -257,7 +261,7 @@ function actionEchanger(etat, playerId, uidMain, uidMarche) {
     main[iMain] = prise;
     etat.marche.push(rendue);
     noter(etat, { type: 'echange', joueur: playerId, prise, rendue });
-    tourSuivant(etat);
+    tourSuivant(etat, false);
     return { ok: true, prise };
 }
 

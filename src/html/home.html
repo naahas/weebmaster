@@ -898,8 +898,14 @@
 
                                 <!-- Toi, à cheval sur le bord du bas -->
                                 <div class="col-moi" :class="{ tour: colMonTour }">
+                                    <!-- Pendant qu'une carte piochée vole vers la main, on coupe
+                                         les transitions de l'éventail : « col-main-t-enter-from »
+                                         pose la carte treize rem plus loin avant de la ramener, et
+                                         c'est CETTE place-là que le fantôme mesurait — il partait
+                                         donc vers le bas de l'écran. Le fantôme fait déjà tout le
+                                         travail : on n'a pas besoin des deux. -->
                                     <transition-group tag="div" class="col-main"
-                                                  :name="col.entree ? '' : 'col-main-t'">
+                                                  :name="col.entree || col.enVol ? '' : 'col-main-t'">
                                         <button v-for="(c, i) in col.main" :key="c.uid"
                                                 class="col-carte" :class="['classe-' + c.classe, {
                                                     partie: col.drag && col.drag.carte.uid === c.uid,
