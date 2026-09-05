@@ -499,8 +499,10 @@
 .col-moi:not(.tour) .col-main .col-carte:hover { filter: saturate(0.75) brightness(0.85); }
 
 .col-moi .col-etoiles { margin-top: 0.45rem; z-index: 2; }
-.col-moi .col-jauge { margin-top: 0.4rem; }
-.col-siege .col-jauge { width: 3.6rem; }
+/* La jauge se pose entre deux textes : elle a besoin d'air des deux côtés,
+   sans quoi elle se lit comme le soulignement du nom. */
+.col-moi .col-jauge { margin: 0.5rem 0 0.45rem; }
+.col-siege .col-jauge { width: 3.6rem; margin: 0.45rem 0 0.4rem; }
 /* ⚠️ « :not(.pleine) » n'est pas décoratif. Sans lui cette règle, à
    spécificité égale mais placée plus bas, écrasait l'or de « .pleine » — et
    les points gagnés restaient gris. */
@@ -1194,6 +1196,9 @@
    On y lisait les cartes du vainqueur en grand. Elles ne disaient rien : on
    venait de les voir se briser, et personne ne veut relire une main qu'il a
    perdue. Ce qu'on cherche à la fin d'une partie, c'est où l'on s'est classé. */
+/* La boîte attend que l'écran ait fini de s'assombrir : une seconde. Sans ce
+   temps, on passait de la table au résultat sans avoir vu le coup qui l'avait
+   décidé. */
 .col-fin-boite {
     width: min(92%, 26rem);
     padding: 1.6rem 1.4rem 1.3rem;
@@ -1202,13 +1207,46 @@
     border-radius: 1rem;
     box-shadow: 0 1.4rem 3rem rgba(0, 0, 0, 0.6);
     text-align: center;
+    opacity: 0;
+    transform: translateY(0.8rem) scale(0.98);
+    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.2, 0.9, 0.25, 1);
 }
+.col-fin-boite.vu { opacity: 1; transform: none; }
+
 .col-fin-liste { list-style: none; margin: 1.1rem 0 1.4rem; padding: 0; }
+/* Chaque place occupe sa hauteur dès le départ, mais attend son tour : la
+   boîte garde donc la même taille du premier au dernier dévoilement. */
 .col-fin-liste li {
+    position: relative; overflow: hidden;
     display: flex; align-items: center; gap: 0.8rem;
     padding: 0.55rem 0.7rem;
     border-radius: 0.5rem;
     border: 0.06rem solid transparent;
+    opacity: 0;
+    transform: translateY(0.55rem);
+    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+.col-fin-liste li.vu { opacity: 1; transform: none; }
+/* Un trait de lumière balaie la ligne au moment où elle paraît */
+.col-fin-sweep {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.11), transparent);
+    opacity: 0;
+}
+.col-fin-liste li.vu .col-fin-sweep {
+    animation: colFinSweep 0.85s cubic-bezier(0.3, 0.8, 0.2, 1) 0.1s both;
+}
+@keyframes colFinSweep {
+    0%   { opacity: 0; transform: translateX(-100%); }
+    30%  { opacity: 1; }
+    100% { opacity: 0; transform: translateX(100%); }
+}
+.col-fin-liste li.premier.vu { animation: colFinChoc 0.7s cubic-bezier(0.2, 1.4, 0.35, 1) both; }
+@keyframes colFinChoc {
+    0%   { transform: scale(0.92); }
+    60%  { transform: scale(1.04); }
+    100% { transform: scale(1); }
 }
 .col-fin-liste li + li { margin-top: 0.3rem; }
 .col-fin-liste li.moi { background: rgba(255, 255, 255, 0.06); }
@@ -1235,16 +1273,24 @@
                        50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
 }
 .col-fin-liste .sets i.pleine { background: var(--col-or); }
-.col-fin-actions { display: flex; gap: 0.6rem; justify-content: center; }
+.col-fin-actions {
+    display: flex; gap: 0.6rem; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.45s ease;
+}
+.col-fin-actions.vu { opacity: 1; pointer-events: auto; }
 
 .col-fin {
     position: fixed; inset: 0; z-index: 45;
+    animation: colFinVoile 0.9s ease both;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 0.4rem;
     background: radial-gradient(70% 55% at 50% 20%, #1a1710, #08080b 70%);
     text-align: center;
     padding: 2rem 1.2rem;
 }
+/* L ecran s assombrit d abord, seul : la boite ne vient qu apres. */
+@keyframes colFinVoile { from { opacity: 0; } to { opacity: 1; } }
 .col-fin-titre { font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; letter-spacing: 0.2em; color: rgba(255, 255, 255, 0.35); }
 
 /* ── Écrans étroits ───────────────────────────────────────────── */

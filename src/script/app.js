@@ -69,6 +69,7 @@ createApp({
                 piocheOuverte: false, // la pioche attend qu'on désigne la carte à laisser
                 enVol: null,         // l'uid de la carte qui vole encore du paquet vers la main
                 jauge: null,         // le style de la barre de temps, posé une fois par échéance
+                fin: 0,              // 0 rien · 1 l'écran s'assombrit · 2 le classement paraît
                 entree: false,       // le temps de la distribution, au tout début
                 // réglages du salon, avant la partie
                 regleMain: 4,
@@ -1834,6 +1835,10 @@ createApp({
             this.col.enVol = null;
             this.col.jauge = null;
             this.col._tourFin = null;
+            this.col.fin = 0;
+            this.col._fini = false;
+            this.arreterRevealRush();
+            this.endStep = 0;
             this.col._attendPioche = false;
             this.col._sets = null;
             if (this.col._finScan) { clearTimeout(this.col._finScan); this.col._finScan = null; }
@@ -3088,6 +3093,12 @@ createApp({
             this.lancerRevelationListe(this.rushPlaces.length, '.rush-fin');
         },
 
+        colEndSlot(i) {
+            return this.colClassement.length - i;
+        },
+        startCollectReveal() {
+            this.lancerRevelationListe(this.colClassement.length, '.col-fin');
+        },
         startAscReveal() {
             this.lancerRevelationListe(this.ascPlaces.length, '.asc-fin');
         },
@@ -5605,6 +5616,19 @@ createApp({
                     this.col._tourFin = data.tourFin;
                     this.colPoserJauge();
                 }
+                // La fin ne tombe pas d'un bloc : l'écran s'assombrit d'abord,
+                // une seconde passe, puis la boîte paraît et le classement se
+                // dit ligne par ligne. Sans ce temps, on passait de la table au
+                // résultat sans avoir vu le coup qui l'avait décidé.
+                if (data.vainqueur && !this.col._fini) {
+                    this.col._fini = true;
+                    this.col.fin = 1;
+                    setTimeout(() => {
+                        this.col.fin = 2;
+                        this.$nextTick(() => this.startCollectReveal());
+                    }, 1000);
+                }
+
                 // Un point de plus qu'à la dernière image : on le fête. On se
                 // fie à l'état reçu et non au geste qu'on vient de faire, car un
                 // set peut aussi se conclure sur un vol qui complète la série.

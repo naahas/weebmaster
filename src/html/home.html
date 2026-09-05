@@ -1086,11 +1086,16 @@
                          ne veut relire une main qu'il a perdue. Ce qu'on cherche à
                          la fin d'une partie, c'est où l'on s'est classé. -->
                     <div class="col-fin" v-if="col.etat && col.etat.vainqueur">
-                        <div class="col-fin-boite">
+                        <!-- Les places sont posées dès le départ, seule leur visibilité
+                             change : la boîte ne bouge donc jamais pendant qu'on dévoile,
+                             et le classement se dit du dernier au premier. -->
+                        <div class="col-fin-boite" :class="{ vu: col.fin >= 2 }">
                             <span class="col-fin-titre">Les sets réunis</span>
                             <ol class="col-fin-liste">
-                                <li v-for="j in colClassement" :key="j.playerId"
-                                    :class="{ moi: j.playerId === playerId, premier: j.gagnant }">
+                                <li v-for="(j, i) in colClassement" :key="j.playerId"
+                                    :class="{ moi: j.playerId === playerId, premier: j.gagnant,
+                                              vu: endStep >= colEndSlot(i) }">
+                                    <span class="col-fin-sweep"></span>
                                     <span class="rang">{{ j.rang }}</span>
                                     <span class="nom">{{ j.nom }}</span>
                                     <span class="sets">
@@ -1099,7 +1104,8 @@
                                     </span>
                                 </li>
                             </ol>
-                            <div class="col-fin-actions">
+                            <!-- Rien ne s'offre au clic tant que le classement n'est pas dit -->
+                            <div class="col-fin-actions" :class="{ vu: endStep > colClassement.length }">
                                 <button class="winner-replay-btn" v-if="isHost" :disabled="rejouerBusy"
                                         @click="hostRejouerCollect">Rejouer</button>
                                 <button class="winner-back-btn" @click="quitterCollect">Retour</button>
