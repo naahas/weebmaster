@@ -1214,6 +1214,15 @@
 }
 .col-fin-boite.vu { opacity: 1; transform: none; }
 
+/* Un intitule discret, dans le registre des autres modes : petites capitales,
+   tres espacees, presque eteint. Il nomme ce qu on regarde sans se disputer
+   l attention avec la premiere ligne. */
+.col-fin-titre {
+    font-size: 0.62rem; font-weight: 700;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.32);
+}
+
 .col-fin-liste { width: 100%; list-style: none; margin: 0; padding: 0; }
 /* Chaque place occupe sa hauteur dès le départ, mais attend son tour : le
    bloc garde donc la même taille du premier au dernier dévoilement. Un filet
