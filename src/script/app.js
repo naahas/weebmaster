@@ -1089,17 +1089,6 @@ createApp({
             if (e && e.scan) return 7;
             return 15;
         },
-        // La jauge du tour, en pur CSS : une animation linéaire dont on règle
-        // la durée et le RETARD NÉGATIF, ce qui la fait reprendre en cours de
-        // route. Un rafraîchissement retombe donc pile où il faut, et rien
-        // n'est repeint quatre fois par seconde comme le ferait un compteur.
-        colJauge() {
-            const e = this.col.etat;
-            if (!e || !e.tourFin) return null;
-            const total = this.colTotalTemps * 1000;
-            const ecoule = Math.max(0, Math.min(total, total - (e.tourFin - Date.now())));
-            return { animationDuration: total + 'ms', animationDelay: (-ecoule) + 'ms' };
-        },
         // Ma main est-elle en train d'être lue ?
         colOnMeLit() {
             const s = this.col.etat && this.col.etat.scan;
@@ -1774,6 +1763,20 @@ createApp({
         // Le titre lisible d'une série. Une clé inconnue est rendue telle
         // quelle plutôt que masquée : on veut la voir pour l'ajouter.
         colSerie(cle) { return COL_SERIES[cle] || cle; },
+        // La jauge du tour, en pur CSS : une animation linéaire dont on règle la
+        // durée et le RETARD NÉGATIF, ce qui la fait reprendre en cours de route.
+        // Un rafraîchissement retombe donc pile où il faut, et rien n'est repeint
+        // quatre fois par seconde comme le ferait un compteur.
+        //
+        // Une MÉTHODE et non une propriété calculée : celle-ci serait mise en
+        // cache, alors qu'il faut relire l'heure à chaque rendu.
+        colJauge() {
+            const e = this.col.etat;
+            if (!e || !e.tourFin) return null;
+            const total = this.colTotalTemps * 1000;
+            const ecoule = Math.max(0, Math.min(total, total - (e.tourFin - Date.now())));
+            return { animationDuration: total + 'ms', animationDelay: (-ecoule) + 'ms' };
+        },
         colNom(id) {
             if (!id) return '';
             const p = this.col.etat && this.col.etat.pseudos;
