@@ -1,0 +1,252 @@
+<title>Collect — les sons des cinq gestes</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   Cinq gestes, dix-huit sons déjà en boîte. Rien à enregistrer : la
+   question est laquelle va où, et ça ne se décide pas en lisant des
+   noms de fichiers — il faut les entendre, dans l'ordre où ils
+   tomberont pendant une partie.
+
+   Chaque geste propose ses candidats. Le bouton « la manche » joue
+   une suite crédible de coups pour entendre l'ensemble : c'est là
+   qu'on découvre que deux sons se ressemblent trop, ce qu'aucune
+   écoute isolée ne dit.
+
+   Le choix retenu tient dans l'adresse : elle se met à jour toute
+   seule, il suffit de la copier-coller pour me la donner.
+   ════════════════════════════════════════════════════════════════ */
+:root { --or: #ffd24a; --chaud: #ffb300; }
+* { box-sizing: border-box; }
+
+body {
+    margin: 0; padding: 2rem 1.5rem 6rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #fff;
+    background: radial-gradient(70% 55% at 50% 0%, #17150f, #08080b 68%);
+    min-height: 100vh;
+}
+h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
+.sous { margin: 0 0 1.6rem; max-width: 60rem; font-size: 0.85rem; line-height: 1.55; color: rgba(255,255,255,0.45); }
+
+.barre {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.8rem;
+    padding: 0.9rem 1rem;
+    margin-bottom: 2rem;
+    border: 0.06rem solid rgba(255,255,255,0.1);
+    border-radius: 0.7rem;
+    background: rgba(255,255,255,0.03);
+}
+.barre button {
+    font: inherit; font-weight: 700; font-size: 0.78rem;
+    padding: 0.5rem 1.1rem;
+    color: #17140a; background: var(--or);
+    border: 0; border-radius: 0.45rem; cursor: pointer;
+}
+.barre button.gris { color: #fff; background: rgba(255,255,255,0.1); }
+.barre label { font-size: 0.72rem; color: rgba(255,255,255,0.45); }
+.barre input[type=range] { width: 9rem; accent-color: var(--or); }
+#recette {
+    flex: 1 1 22rem; min-width: 0;
+    font: 0.7rem/1.4 ui-monospace, monospace;
+    padding: 0.5rem 0.7rem;
+    color: var(--or); background: rgba(0,0,0,0.5);
+    border: 0.06rem solid rgba(255,210,74,0.25); border-radius: 0.45rem;
+}
+
+.geste { margin-bottom: 2.2rem; }
+.geste h2 {
+    margin: 0 0 0.1rem;
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.45rem; letter-spacing: 0.08em;
+    color: var(--or);
+}
+.geste p { margin: 0 0 0.9rem; max-width: 54rem; font-size: 0.75rem; line-height: 1.5; color: rgba(255,255,255,0.4); }
+.pistes { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+
+.piste {
+    display: flex; flex-direction: column; gap: 0.25rem;
+    width: 12.5rem;
+    padding: 0.7rem 0.8rem;
+    text-align: left;
+    font: inherit;
+    color: #fff;
+    background: rgba(255,255,255,0.04);
+    border: 0.09rem solid rgba(255,255,255,0.1);
+    border-radius: 0.55rem;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+.piste:hover { border-color: rgba(255,210,74,0.5); transform: translateY(-0.1rem); }
+.piste.choisi { border-color: var(--or); background: rgba(255,210,74,0.12); }
+.piste.joue { animation: sonne 0.4s ease; }
+@keyframes sonne { 0%,100% { transform: none; } 40% { transform: scale(1.05); } }
+.piste b { font-size: 0.82rem; }
+.piste em { font-style: normal; font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.3); }
+.piste span { font-size: 0.68rem; line-height: 1.4; color: rgba(255,255,255,0.42); }
+
+#journal {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    padding: 0.6rem 1.5rem;
+    font: 0.72rem/1.5 ui-monospace, monospace;
+    color: rgba(255,255,255,0.5);
+    background: rgba(8,8,11,0.94);
+    border-top: 0.06rem solid rgba(255,255,255,0.08);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+</style>
+
+<h1>Collect — les sons des cinq gestes</h1>
+<p class="sous">
+    Dix-huit sons sont déjà en boîte : il n’y a rien à enregistrer, seulement à décider lequel va où.
+    Et ça ne se décide pas en lisant des noms de fichiers. <b>Clique une piste pour l’entendre</b> ;
+    elle devient le choix de son geste. Le bouton <b>« la manche »</b> joue ensuite une suite crédible
+    de coups — c’est là qu’on découvre que deux sons se ressemblent trop, ce qu’aucune écoute isolée
+    ne dit. Ton choix s’écrit dans la ligne dorée : copie-la et donne-la moi.
+</p>
+
+<div class="barre">
+    <button id="manche">▶ La manche</button>
+    <button class="gris" id="raz">Revenir aux choix actuels</button>
+    <label>Volume</label><input type="range" id="vol" min="0" max="1" step="0.05" value="0.6">
+    <input id="recette" readonly>
+</div>
+
+<div id="gestes"></div>
+<div id="journal">—</div>
+
+<script>
+// Ce que le jeu joue AUJOURD'HUI, pour avoir un point de comparaison honnête.
+const ACTUEL = { pioche: 'dealing', echange: 'pickup', scan: 'lock1', set: 'fusion', vol: 'slash2', volRate: 'wrong' };
+
+const GESTES = [
+    { cle: 'pioche', nom: 'Piocher', freq: 'à presque chaque tour',
+      note: "Le son le plus entendu de la partie, et donc le seul qui puisse lasser. Il doit être court, mat, et ne rien annoncer : on prend une carte, il ne se passe rien de grave.",
+      pistes: [
+        ['dealing', 'Une carte qu’on tire d’une pile. Le plus littéral, et l’actuel.'],
+        ['step',    'Un pas mat, très court. Discret au point de disparaître — peut-être trop.'],
+        ['click',   'Un clic sec. Neutre, mais c’est un son d’interface, pas de carton.'],
+        ['pickup',  'Un ramassage. Juste, mais il sert déjà à l’échange : les confondre serait fâcheux.'],
+      ] },
+    { cle: 'echange', nom: 'Échanger au marché', freq: 'un tour sur trois',
+      note: "Deux cartes se croisent. Le son doit contenir un aller-retour, sinon il raconte une prise et non un troc.",
+      pistes: [
+        ['pickup',  'Un ramassage franc. L’actuel.'],
+        ['dealing', 'Le glissement de carte. Fluide, mais confondu avec la pioche.'],
+        ['quest',   'Deux notes qui montent. Le troc s’entend, mais c’est une récompense — trop de fête pour un geste ordinaire.'],
+        ['bonus1',  'Un tintement bref. Agréable ; risque de rendre l’échange plus gratifiant qu’il ne l’est.'],
+      ] },
+    { cle: 'scan', nom: 'Scanner une main', freq: 'deux ou trois fois par partie',
+      note: "On force un secret. Le son doit être mécanique et un peu froid : ce n’est pas une prise, c’est une intrusion.",
+      pistes: [
+        ['lock1',   'Un verrou. Exactement le bon registre, et l’actuel.'],
+        ['tictac',  'Un compte qui démarre — pertinent maintenant que le scan dure sept secondes.'],
+        ['npc',     'Une notation sourde. Discrète, presque un chuchotement.'],
+        ['click',   'Un déclic d’appareil photo. Lisible, mais trop anodin pour une intrusion.'],
+      ] },
+    { cle: 'set', nom: 'Poser un set', freq: 'deux ou trois fois par partie',
+      note: "L’instant de gloire. C’est le seul endroit où l’on a le droit d’être long et large — mais il doit rester lisible quand il tombe pendant que les éclats de verre volent.",
+      pistes: [
+        ['fusion',  'Une montée qui se referme. L’actuel, et difficile à battre.'],
+        ['explode', 'Une détonation. Colle à la casse de verre — peut-être trop violente pour une réussite.'],
+        ['bonus1',  'Un carillon de récompense. Très « point gagné », moins « set brisé ».'],
+        ['quest',   'Une fanfare courte. Nette, mais elle sonne comme une fin de partie.'],
+      ] },
+    { cle: 'vol', nom: 'Voler — le coup qui porte', freq: 'une ou deux fois par partie',
+      note: "Un duel tranché en sa faveur. Il faut un tranchant : c’est le seul moment du jeu où l’on prend quelque chose à quelqu’un.",
+      pistes: [
+        ['slash2',  'Une lame. L’actuel.'],
+        ['slash',   'Plus sec, plus court. Moins spectaculaire, plus net.'],
+        ['slash3',  'Plus grave, avec de la traîne. Le plus « manga » des quatre.'],
+        ['slash4',  'Double impact. Deux cartes qui s’entrechoquent — le plus proche du duel qu’on va montrer.'],
+      ] },
+    { cle: 'volRate', nom: 'Voler — le coup qui rate', freq: 'aussi souvent que l’autre',
+      note: "Un vol échoue une fois sur deux ou presque. Le son ne doit pas punir : on a tenté quelque chose, on n’a pas commis d’erreur.",
+      pistes: [
+        ['wrong',   'Le refus classique. L’actuel — mais il dit « tu t’es trompé », ce qui est faux.'],
+        ['npc',     'Un son mat, sans jugement. Il se passe quelque chose, sans plus.'],
+        ['step',    'Un pas. Le plus neutre de tous : l’échec passe sans commentaire.'],
+        ['click',   'Rien de plus qu’un déclic. Peut-être trop peu — on ne saurait plus que le duel a eu lieu.'],
+      ] },
+];
+
+const choix = {};
+const cache = {};
+const vol = document.getElementById('vol');
+const journal = document.getElementById('journal');
+
+function jouer(nom) {
+    if (!cache[nom]) cache[nom] = new Audio('/' + nom + '.mp3');
+    const a = cache[nom].cloneNode();
+    a.volume = Number(vol.value);
+    a.play().catch(() => {});
+}
+
+function ecrire() {
+    document.getElementById('recette').value =
+        GESTES.map(g => g.cle + '=' + choix[g.cle]).join('  ·  ');
+    const url = new URL(location.href);
+    url.hash = GESTES.map(g => g.cle + ':' + choix[g.cle]).join(',');
+    history.replaceState(null, '', url);
+}
+
+function monter() {
+    const hote = document.getElementById('gestes');
+    // une reprise éventuelle depuis l'adresse, pour qu'un lien partagé rejoue
+    // exactement les mêmes choix
+    const repris = {};
+    for (const p of location.hash.replace('#', '').split(',')) {
+        const [k, v] = p.split(':');
+        if (k && v) repris[k] = v;
+    }
+    for (const g of GESTES) {
+        choix[g.cle] = repris[g.cle] || ACTUEL[g.cle];
+        const bloc = document.createElement('section');
+        bloc.className = 'geste';
+        bloc.innerHTML = '<h2>' + g.nom + ' <small style="font-size:0.6rem;letter-spacing:0.12em;' +
+            'color:rgba(255,255,255,0.28)">— ' + g.freq + '</small></h2><p>' + g.note + '</p>';
+        const pistes = document.createElement('div');
+        pistes.className = 'pistes';
+        for (const [fichier, texte] of g.pistes) {
+            const b = document.createElement('button');
+            b.className = 'piste' + (choix[g.cle] === fichier ? ' choisi' : '');
+            b.dataset.geste = g.cle;
+            b.dataset.son = fichier;
+            b.innerHTML = '<em>' + fichier + '</em><span>' + texte + '</span>';
+            b.addEventListener('click', () => {
+                choix[g.cle] = fichier;
+                for (const s of pistes.children) s.classList.toggle('choisi', s === b);
+                b.classList.remove('joue'); void b.offsetWidth; b.classList.add('joue');
+                jouer(fichier);
+                journal.textContent = g.nom + ' → ' + fichier;
+                ecrire();
+            });
+            pistes.appendChild(b);
+        }
+        bloc.appendChild(pistes);
+        hote.appendChild(bloc);
+    }
+    ecrire();
+}
+monter();
+
+// ── La manche : une suite crédible de coups ──
+// Les délais imitent le rythme réel — quinze secondes de réflexion se jouent
+// ici en une seconde, mais l'ORDRE et les enchaînements sont ceux d'une partie.
+const MANCHE = [
+    ['pioche', 'Toi : tu piocher'], ['pioche', 'Kitsune : pioche'],
+    ['echange', 'Toi : échange au marché'], ['pioche', 'Kitsune : pioche'],
+    ['scan', 'Toi : tu scannes Kitsune'], ['echange', 'Kitsune : échange'],
+    ['vol', 'Toi : vol réussi'], ['volRate', 'Kitsune : vol raté'],
+    ['pioche', 'Toi : pioche'], ['set', 'Toi : SET POSÉ'],
+];
+document.getElementById('manche').addEventListener('click', () => {
+    let t = 0;
+    for (const [cle, texte] of MANCHE) {
+        setTimeout(() => { jouer(choix[cle]); journal.textContent = texte + '  ·  ' + choix[cle]; }, t);
+        t += cle === 'set' ? 1100 : 850;
+    }
+});
+document.getElementById('raz').addEventListener('click', () => {
+    location.hash = '';
+    location.reload();
+});
+</script>

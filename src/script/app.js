@@ -1742,6 +1742,19 @@ createApp({
             if (!d || c.uid === d.carte.uid) return false;
             return c.anime === d.carte.anime && this.colDansMaMain(c.anime) >= this.col.etat.taille;
         },
+        // Une série « visible » : ce que j'ai en main PLUS ce qui traîne au
+        // marché. C'est la seule définition que le joueur puisse vérifier des
+        // yeux — il voit les deux cartes, donc il comprend pourquoi elles
+        // s'allument.
+        //
+        // L'ancienne règle en avait deux, dont une fausse : la main s'allumait
+        // dès « taille - 1 » cartes, ce qui à trois cartes (objectif : des
+        // paires) valait « au moins une » — donc toujours vrai, donc toute la
+        // main allumée en permanence.
+        colSerieVisible(anime) {
+            const marche = (this.col.etat && this.col.etat.marche) || [];
+            return this.colDansMaMain(anime) + marche.filter(c => c.anime === anime).length;
+        },
         colDansMaMain(anime) {
             return this.col.main.filter(c => c.anime === anime).length;
         },
@@ -1845,6 +1858,33 @@ createApp({
         colPointGagne() {
             const pastille = document.querySelector('.col-moi .col-etoiles');
             if (!pastille) return;
+            // La case qu'on vient de remplir, et non la pastille entière : c'est
+            // vers ELLE que l'étoile doit voler.
+            const cases = pastille.querySelectorAll('i');
+            const gagnee = cases[Math.max(0, this.colMesSets - 1)] || pastille;
+            const emplacement = document.querySelector('.col-emplacement');
+
+            // Une étoile naît au milieu de l'emplacement, puis va se ranger sous
+            // le joueur. Sans ce trajet, le point apparaissait au bas de l'écran
+            // sans qu'aucun lien ne le rattache au set qu'on venait de poser —
+            // et le regard était encore sur les éclats de verre, ailleurs.
+            if (emplacement) {
+                const a = emplacement.getBoundingClientRect();
+                const b = gagnee.getBoundingClientRect();
+                const et = document.createElement('span');
+                et.className = 'col-etoile-vol';
+                et.style.left = (a.left + a.width / 2) + 'px';
+                et.style.top = (a.top + a.height / 2) + 'px';
+                et.style.setProperty('--dx', (b.left + b.width / 2 - a.left - a.width / 2).toFixed(1) + 'px');
+                et.style.setProperty('--dy', (b.top + b.height / 2 - a.top - a.height / 2).toFixed(1) + 'px');
+                document.body.appendChild(et);
+                setTimeout(() => { et.remove(); this.colPointBurst(pastille); }, 780);
+                return;
+            }
+            this.colPointBurst(pastille);
+        },
+        // L'arrivée : la pastille encaisse le point et une gerbe en part.
+        colPointBurst(pastille) {
             pastille.classList.add('gagne');
             setTimeout(() => pastille.classList.remove('gagne'), 800);
 
@@ -1914,9 +1954,11 @@ createApp({
                 void el.offsetWidth;
                 el.style.transform = 'translate(' + (cx - m.mx + ecart).toFixed(1) + 'px, ' +
                     (cy - m.my).toFixed(1) + 'px) scale(1.06)';
+                // (la durée du trajet est dans « .col-brise », resserrée avec
+                //  le reste : on sentait un temps mort avant la casse)
 
-                setTimeout(() => el.classList.add('eclate'), 300 + n * 45);
-                setTimeout(() => el.remove(), 900 + n * 45);
+                setTimeout(() => el.classList.add('eclate'), 170 + n * 35);
+                setTimeout(() => el.remove(), 760 + n * 35);
             }
 
             // La table tressaille au moment de la casse, pas au départ des
@@ -1926,7 +1968,7 @@ createApp({
                 setTimeout(() => {
                     table.classList.add('secoue');
                     setTimeout(() => table.classList.remove('secoue'), 450);
-                }, 300);
+                }, 170);
             }
 
             // Le souffle au point d'impact, une fois pour les trois
@@ -1940,7 +1982,7 @@ createApp({
                 s.style.height = r + 'px';
                 document.body.appendChild(s);
                 setTimeout(() => s.remove(), 600);
-            }, 300);
+            }, 170);
         },
 
         // ══ La carte piochée vient vraiment du paquet ══
@@ -5424,7 +5466,10 @@ createApp({
                 // set peut aussi se conclure sur un vol qui complète la série.
                 const mesSets = this.colMesSets;
                 if (this.col._sets !== null && this.col._sets !== undefined && mesSets > this.col._sets) {
-                    this.$nextTick(() => this.colPointGagne());
+                    // On laisse la casse se disperser avant de faire naître
+                    // l'étoile : sinon les deux se disputent le même regard au
+                    // même endroit.
+                    this.$nextTick(() => setTimeout(() => this.colPointGagne(), 420));
                 }
                 this.col._sets = mesSets;
 

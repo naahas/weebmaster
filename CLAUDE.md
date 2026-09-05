@@ -170,6 +170,9 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
   Dont `/prototypes/rush-passage` : six facons d enchainer les portraits du Rush.
   Et `/prototypes/code` : cinq facons de demander le code du salon, avec un
   basculeur ordinateur/telephone.
+  Et `/prototypes/collect-sons` : les cinq gestes de Collect et leurs candidats
+  sonores, plus un bouton qui joue une manche entiere — deux sons trop proches ne
+  s entendent qu enchaines. Le choix s ecrit dans l adresse.
   Et `/prototypes/collect-attente` : huit facons de dire « il reflechit », posees
   sur un vrai siege, avec un curseur de taille.
   Et `/prototypes/collect-gestes` : quatre pioches et quatre facons de poser un

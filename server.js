@@ -1260,6 +1260,10 @@ app.get('/prototypes/modes-2', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-modes2.html');
 });
 
+app.get('/prototypes/collect-sons', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-collect-sons.html');
+});
+
 app.get('/prototypes/collect-attente', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-collect-attente.html');
 });

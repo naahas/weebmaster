@@ -145,23 +145,38 @@
     position: absolute;
     inset: -1.6rem;
 }
+/* Un sol sous le paquet, en permanence. Le fond de l'écran est noir et le dos
+   des cartes presque : sans cette lueur froide, la pile flottait dans le vide
+   et l'on ne voyait plus qu'elle avait une épaisseur. Elle devient dorée quand
+   c'est notre tour — voir « .vivante » plus bas. */
+.col-pioche::before {
+    content: '';
+    position: absolute; inset: -20%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(130, 160, 210, 0.16), transparent 74%);
+    pointer-events: none;
+    z-index: -1;
+    transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
 .col-pioche span {
     position: absolute; inset: 0;
     border-radius: 0.55rem;
-    border: 0.09rem solid rgba(255, 255, 255, 0.1);
-    background: repeating-linear-gradient(135deg, #1d2733 0 7px, #161d27 7px 14px);
+    /* Le liseré clair est l'ARÊTE de la carte : c'est lui, et non l'ombre, qui
+       donne l'épaisseur sur un fond noir. */
+    border: 0.09rem solid rgba(255, 255, 255, 0.22);
+    background: repeating-linear-gradient(135deg, #26323f 0 7px, #1b232e 7px 14px);
     transition: transform 0.38s cubic-bezier(0.22, 0.68, 0.25, 1),
                 box-shadow 0.38s ease, border-color 0.38s ease, color 0.38s ease;
 }
 /* Un décalage franc, et chaque épaisseur un peu plus sombre : sans ça on
    voyait une carte avec une ombre, pas une pile. */
-.col-pioche span:nth-child(1) { transform: translate(0.85rem, 0.85rem); filter: brightness(0.45); }
-.col-pioche span:nth-child(2) { transform: translate(0.42rem, 0.42rem); filter: brightness(0.72); }
+.col-pioche span:nth-child(1) { transform: translate(0.85rem, 0.85rem); filter: brightness(0.62); }
+.col-pioche span:nth-child(2) { transform: translate(0.42rem, 0.42rem); filter: brightness(0.82); }
 .col-pioche span:nth-child(3) {
     display: grid; place-items: center;
     font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; letter-spacing: 0.08em;
-    color: rgba(255, 255, 255, 0.32);
-    box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.5);
+    color: rgba(255, 255, 255, 0.42);
+    box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.75), 0 0 0 0.04rem rgba(255, 255, 255, 0.06);
 }
 
 /* ── Un siège, posé sur le bord du feutre ─────────────────────── */
@@ -229,12 +244,22 @@
     border: 0.06rem solid rgba(255, 255, 255, 0.1);
     border-radius: 999px;
 }
+/* Des ÉTOILES, et non des ronds. L'emplacement où l'on pose porte déjà une
+   étoile : le point qu'on y gagne doit en être une aussi, sinon rien ne relie
+   ce qu'on fait à ce qu'on marque. Un « clip-path » plutôt qu'un caractère —
+   une étoile typographique change de dessin d'une police à l'autre, et la
+   nôtre doit être exactement celle de l'emplacement. */
 .col-etoiles i {
-    width: 0.58rem; height: 0.58rem;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.16);
+    width: 0.72rem; height: 0.72rem;
+    background: rgba(255, 255, 255, 0.3);
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%,
+                       50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    transition: background 0.25s ease, filter 0.25s ease;
 }
-.col-etoiles i.pleine { background: var(--col-or); box-shadow: 0 0 0.35rem rgba(255, 210, 74, 0.75); }
+.col-etoiles i.pleine {
+    background: var(--col-or);
+    filter: drop-shadow(0 0 0.3rem rgba(255, 210, 74, 0.85));
+}
 
 /* ── Le point qui vient d'être marqué ──
    Deux ou trois fois par partie, et c'est TOUT ce qu'on cherche : la pastille
@@ -270,6 +295,28 @@
     0%, 100% { box-shadow: 0 0 0.35rem rgba(255, 210, 74, 0.75); filter: brightness(1); }
     30%      { box-shadow: 0 0 1.1rem rgba(255, 240, 190, 1);    filter: brightness(2.4); }
 }
+/* L'étoile qui quitte l'emplacement pour aller se ranger sous le joueur.
+   Elle naît grande au milieu du feutre, là où le regard est déjà, et rétrécit
+   en chemin : c'est le trajet qui dit « ce set-là devient ce point-ci ». */
+.col-etoile-vol {
+    position: fixed;
+    z-index: 64;
+    width: 2.6rem; height: 2.6rem;
+    margin: -1.3rem 0 0 -1.3rem;
+    background: linear-gradient(160deg, #fff3cf, var(--col-or) 45%, #ff9d3d);
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%,
+                       50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    filter: drop-shadow(0 0 0.7rem rgba(255, 200, 80, 0.95));
+    pointer-events: none;
+    animation: colEtoileVol 0.78s cubic-bezier(0.36, 0, 0.2, 1) forwards;
+}
+@keyframes colEtoileVol {
+    0%   { opacity: 0; transform: translate(0, 0) scale(0.2) rotate(-50deg); }
+    16%  { opacity: 1; transform: translate(0, 0) scale(1.3) rotate(6deg); }
+    30%  { opacity: 1; transform: translate(0, 0) scale(1)   rotate(0deg); }
+    100% { opacity: 1; transform: translate(var(--dx), var(--dy)) scale(0.26) rotate(200deg); }
+}
+
 /* Les étincelles, semées autour de la pastille */
 .col-etincelle {
     position: fixed;
@@ -347,7 +394,10 @@
    discrets — c'est justement quand on n'a rien marqué qu'il faut voir
    combien il en reste à marquer. */
 .col-moi .col-etoiles { margin-top: 0.45rem; z-index: 2; }
-.col-moi .col-etoiles i { background: rgba(255, 255, 255, 0.3); }
+/* ⚠️ « :not(.pleine) » n'est pas décoratif. Sans lui cette règle, à
+   spécificité égale mais placée plus bas, écrasait l'or de « .pleine » — et
+   les points gagnés restaient gris. */
+.col-moi .col-etoiles i:not(.pleine) { background: rgba(255, 255, 255, 0.34); }
 .col-moi .col-nom { margin-top: 0.15rem; color: var(--col-or); }
 
 /* ── La carte ─────────────────────────────────────────────────── */
@@ -579,15 +629,10 @@
 .col-pioche { cursor: default; }
 .col-pioche.vivante { cursor: pointer; }
 .col-pioche.vivante span:nth-child(3) { animation: colRespire 1.9s ease-in-out infinite; }
-/* Un halo derrière la pile, qui bat avec elle */
+/* Le sol froid vire à l'or et se met à battre */
 .col-pioche.vivante::before {
-    content: '';
-    position: absolute; inset: -18%;
-    border-radius: 50%;
-    background: radial-gradient(closest-side, rgba(255, 210, 74, 0.24), transparent 72%);
+    background: radial-gradient(closest-side, rgba(255, 210, 74, 0.3), transparent 72%);
     animation: colHalo 1.9s ease-in-out infinite;
-    pointer-events: none;
-    z-index: -1;
 }
 @keyframes colHalo {
     0%, 100% { opacity: 0.35; transform: scale(0.9); }
@@ -787,7 +832,9 @@
     position: fixed;
     z-index: 62;
     pointer-events: none;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.3, 1), filter 0.3s ease;
+    /* 0,17 s pour rejoindre l'emplacement, pas 0,3 : on sentait un temps mort
+       entre la carte posée et la casse. */
+    transition: transform 0.17s cubic-bezier(0.4, 0, 0.3, 1), filter 0.2s ease;
 }
 .col-brise i {
     position: absolute; inset: 0;

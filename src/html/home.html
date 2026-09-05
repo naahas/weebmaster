@@ -852,7 +852,7 @@
                                     <button v-for="(c, i) in col.etat.marche" :key="c.uid"
                                             class="col-carte" :class="['classe-' + c.classe, {
                                                 'col-cible': col.drag && col.drag.cible === 'marche:' + c.uid,
-                                                paire: colDansMaMain(c.anime) > 0 }]"
+                                                paire: colSerieVisible(c.anime) >= 2 }]"
                                             :style="{ '--i': i }"
                                             :data-drop="'marche:' + c.uid"
                                             @mouseenter="col.loupe = c" @mouseleave="col.loupe = null">
@@ -913,7 +913,7 @@
                                                     choisissable: col.piocheOuverte,
                                                     envol: col.enVol === c.uid,
                                                     'dans-le-set': colMonTour && !col.drag && colSetPret === c.anime,
-                                                    paire: colDansMaMain(c.anime) >= col.etat.taille - 1 }]"
+                                                    paire: colSerieVisible(c.anime) >= 2 }]"
                                                 :style="colIncline(i, col.main.length, 5)"
                                                 @mouseenter="col.loupe = c" @mouseleave="col.loupe = null"
                                                 @click="colPiocherEnLachant(c)"
