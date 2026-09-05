@@ -340,6 +340,25 @@ console.log('\n── Ce que le serveur laisse voir ──');
     // le scan est le seul chemin par lequel une main sort, et seulement vers lui
     const s = C.actionScanner(e, e.tourJoueur, joueurs.find(j => j !== e.tourJoueur));
     check('le scan rend bien la main visée', s.ok && Array.isArray(s.main) && s.main.length > 0, s.main && s.main.length + ' cartes');
+
+    // Le scan RETIENT le tour sept secondes. Sans cela la main scannée restait
+    // retournée pendant que le joueur suivant agissait, et ce qu’on lisait
+    // devenait faux sous les yeux.
+    {
+        const e6 = neuf();
+        const lecteur = e6.tourJoueur;
+        const vise = e6.ordre.find(x => x !== lecteur);
+        C.actionScanner(e6, lecteur, vise);
+        check('scanner ne passe pas la main tout de suite', e6.tourJoueur === lecteur);
+        check('la table est bloquée le temps du scan',
+            !C.actionPiocher(e6, lecteur, e6.mains.get(lecteur)[0].uid).ok);
+        check('et personne d’autre ne peut jouer non plus',
+            !C.actionPiocher(e6, vise, e6.mains.get(vise)[0].uid).ok);
+        C.finirScan(e6);
+        check('le scan refermé, la main passe', e6.tourJoueur !== lecteur);
+        check('et le jeu repart',
+            C.actionPiocher(e6, e6.tourJoueur, e6.mains.get(e6.tourJoueur)[0].uid).ok);
+    }
     const apres = JSON.stringify(C.vuePublique(e));
     check('… sans que le salon en sache rien', s.main.every(c => !apres.includes('"' + c.uid + '"')));
 }

@@ -1084,7 +1084,44 @@ createApp({
         // Un tour dure quinze secondes, un duel huit : les bâtons se comptent
         // sur ce qui est réellement en train de s'écouler.
         colTotalTemps() {
-            return (this.col.etat && this.col.etat.duel) ? 8 : 15;
+            const e = this.col.etat;
+            if (e && e.duel) return 8;
+            if (e && e.scan) return 7;
+            return 15;
+        },
+        // La jauge du tour, en pur CSS : une animation linéaire dont on règle
+        // la durée et le RETARD NÉGATIF, ce qui la fait reprendre en cours de
+        // route. Un rafraîchissement retombe donc pile où il faut, et rien
+        // n'est repeint quatre fois par seconde comme le ferait un compteur.
+        colJauge() {
+            const e = this.col.etat;
+            if (!e || !e.tourFin) return null;
+            const total = this.colTotalTemps * 1000;
+            const ecoule = Math.max(0, Math.min(total, total - (e.tourFin - Date.now())));
+            return { animationDuration: total + 'ms', animationDelay: (-ecoule) + 'ms' };
+        },
+        // Ma main est-elle en train d'être lue ?
+        colOnMeLit() {
+            const s = this.col.etat && this.col.etat.scan;
+            return !!(s && s.cible === this.playerId);
+        },
+        // Le classement de fin : le nombre de sets, puis le nom. C'est tout ce
+        // qui sépare deux joueurs à Collect — il n'y a pas de score caché.
+        colClassement() {
+            const e = this.col.etat;
+            if (!e || !e.joueurs) return [];
+            const liste = e.joueurs.map(j => ({
+                playerId: j.playerId,
+                nom: this.colNom(j.playerId),
+                sets: j.sets.length,
+                gagnant: j.playerId === e.vainqueur,
+            }));
+            liste.sort((a, b) => (b.gagnant - a.gagnant) || (b.sets - a.sets) || a.nom.localeCompare(b.nom));
+            let rang = 0, precedent = null;
+            return liste.map((j, i) => {
+                if (precedent === null || j.sets !== precedent) { rang = i + 1; precedent = j.sets; }
+                return { ...j, rang };
+            });
         },
         colJeDefends() {
             const d = this.col.etat && this.col.etat.duel;
@@ -1725,6 +1762,7 @@ createApp({
             if (premier || !avant) return;
 
             const s = this.sounds;
+            this.$nextTick(() => this.colEcho(f));
             if (f.type === 'pioche') this.playSound(s.colPioche);
             else if (f.type === 'echange') this.playSound(s.colEchange);
             else if (f.type === 'scan') this.playSound(s.colScan);
@@ -1816,8 +1854,17 @@ createApp({
             ev.preventDefault();
             this.col.loupe = null;
             this.col.drag = { carte, x: ev.clientX, y: ev.clientY, cible: null };
+            // A-t-on VRAIMENT glissé ? Un « pointerup » est suivi d'un « click »
+            // sur la carte relâchée. Si la pioche attendait qu'on lui désigne
+            // une carte à laisser, ce clic fantôme la lui donnait : on croyait
+            // avoir traîné une carte, et elle était remplacée par une piochée.
+            // Six pixels de marge, sinon un doigt qui tremble compte pour un
+            // glissement et le vrai clic ne passe plus.
+            const depart = { x: ev.clientX, y: ev.clientY };
+            this.col._glisse = false;
             const bouger = (e) => {
                 if (!this.col.drag) return;
+                if (Math.hypot(e.clientX - depart.x, e.clientY - depart.y) > 6) this.col._glisse = true;
                 this.col.drag.x = e.clientX;
                 this.col.drag.y = e.clientY;
                 this.col.drag.cible = this.colCibleSous(e.clientX, e.clientY);
@@ -1835,6 +1882,8 @@ createApp({
                 window.removeEventListener('pointerup', lacher);
                 window.removeEventListener('pointercancel', lacher);
                 this.col._finDrag = null;
+                // On a choisi de traîner : la pioche n'attend plus rien.
+                if (this.col._glisse) this.col.piocheOuverte = false;
                 const cible = this.colCibleSous(e.clientX, e.clientY);
                 const prise = this.col.drag && this.col.drag.carte;
                 this.col.drag = null;
@@ -1857,6 +1906,52 @@ createApp({
             window.addEventListener('pointerup', lacher);
             window.addEventListener('pointercancel', lacher);
         },
+        // ══ Ce que les AUTRES voient quand quelqu'un joue ══
+        // Une main adverse est un paquet de dos : quand un joueur pioche ou
+        // échange, rien n'y bougeait — le compte de cartes restait le même et
+        // l'on ne savait qu'il avait joué qu'en voyant le siège suivant
+        // s'allumer. Un mouvement bref suffit à dire « il vient de faire
+        // quelque chose », sans rien révéler de ce que c'était.
+        colSiegeDe(id) {
+            const sieges = document.querySelectorAll('.col-siege');
+            const rivaux = this.colRivaux;
+            for (let i = 0; i < rivaux.length; i++) {
+                if (rivaux[i].playerId === id) return sieges[i] || null;
+            }
+            return null;
+        },
+        colEcho(fait) {
+            if (!fait || !fait.joueur || fait.joueur === this.playerId) return;
+            const siege = this.colSiegeDe(fait.joueur);
+            if (!siege) return;
+            const fan = siege.querySelector('.col-eventail');
+            if (!fan) return;
+            const r = fan.getBoundingClientRect();
+
+            if (fait.type === 'pioche') {
+                // Une carte glisse dans la main PAR LA DROITE. Pas depuis le
+                // paquet : de l'autre bout de la table le trajet serait long et
+                // traverserait le marché, alors que la seule chose à dire est
+                // « il a pris une carte ».
+                this.colGlisser(r, 'dos', null);
+            } else if (fait.type === 'echange' && fait.prise && fait.rendue) {
+                // Les deux cartes de l'échange sont publiques : elles viennent
+                // du marché ou y retournent. On les montre.
+                this.colGlisser(r, 'face', fait.prise);
+            }
+        },
+        colGlisser(r, quoi, carte) {
+            const el = document.createElement('div');
+            el.className = 'col-echo' + (quoi === 'dos' ? ' dos' : '');
+            el.style.left = (r.left + r.width / 2) + 'px';
+            el.style.top = (r.top + r.height / 2) + 'px';
+            el.style.width = (r.height * 0.52) + 'px';
+            el.style.height = (r.height * 0.8) + 'px';
+            if (carte) el.innerHTML = '<img src="collectpic/' + carte.img + '" alt="">';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 620);
+        },
+
         // ══ Le point marqué ══
         // La pastille se dilate, un anneau s'en échappe et douze étincelles
         // partent en étoile. C'est deux ou trois fois par partie, et c'est TOUT
@@ -2135,6 +2230,9 @@ createApp({
             this.col.piocheOuverte = !this.col.piocheOuverte;
         },
         colPiocherEnLachant(c) {
+            // Le clic qui suit un glissement n'est pas un choix : voir la marge
+            // des six pixels dans « colPrendre ».
+            if (this.col._glisse) { this.col._glisse = false; return; }
             if (!this.col.piocheOuverte) return;
             this.col.piocheOuverte = false;
             this.col._attendPioche = true;
@@ -3632,6 +3730,24 @@ createApp({
             document.body.classList.remove('game-active');
         },
 
+        async hostRejouerCollect() {
+            if (this.rejouerBusy) return;
+            this.rejouerBusy = true;
+            try {
+                const res = await this.hostFetch('/admin/replay', { method: 'POST' });
+                const data = await res.json();
+                if (data.error) this.hostError = data.error;
+                else this.colOublier();
+            } catch (e) {
+                this.hostError = 'Erreur de connexion';
+            } finally {
+                setTimeout(() => { this.rejouerBusy = false; }, 500);
+            }
+        },
+        quitterCollect() {
+            this.colOublier();
+            this.backToHome();
+        },
         quitterAsc() {
             this.revenirAuSalonAsc();
             this.backToHome();

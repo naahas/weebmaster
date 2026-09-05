@@ -149,6 +149,23 @@ const dernier = (j) => j.etats[j.etats.length - 1];
             return vise.main.every(c => !recents.includes('"' + c.uid + '"'));
         }), apres.join('/') + ' états reçus');
 
+    // ── Le scan retient la table ──
+    // Il ne passe plus la main tout de suite : sinon le joueur suivant
+    // agissait pendant que la main scannee etait encore retournee, et ce
+    // qu'on lisait devenait faux sous les yeux.
+    {
+        const lecteur = dernier(A).scan && dernier(A).scan.par;
+        check('la table sait qui scanne qui', !!dernier(A).scan,
+            dernier(A).scan ? dernier(A).scan.par + ' → ' + dernier(A).scan.cible : 'aucun');
+        check('le scan ne montre aucune carte au salon',
+            !dernier(A).scan || !JSON.stringify(dernier(A).scan).includes('img'));
+        check('le tour reste au scanneur', dernier(A).tourJoueur === lecteur, String(lecteur));
+        // on attend qu'il se referme de lui-meme
+        for (let i = 0; i < 40 && dernier(A).scan; i++) await wait(300);
+        check('sept secondes plus tard, la main passe',
+            !dernier(A).scan && dernier(A).tourJoueur !== lecteur, String(dernier(A).tourJoueur));
+    }
+
     // ── Le duel ──
     // On cherche un vol qui ouvrira vraiment un duel : la cible doit avoir la
     // série annoncée. Le scan précédent nous a montré une main, on s'en sert —

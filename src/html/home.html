@@ -830,9 +830,10 @@
                                  le redit. Trois endroits pour la même information,
                                  c'était deux de trop. -->
 
-                            <div class="col-chrono" :class="{ urgence: col.reste <= 4 }">
-                                <i v-for="n in colTotalTemps" :key="n" :class="{ off: n > col.reste }"></i>
-                            </div>
+                            <!-- Le chrono ne vit plus ici mais SOUS le siège de celui
+                                 qui joue : dans le coin, il fallait faire l'aller-retour
+                                 entre deux bouts de l'écran pour savoir à qui il restait
+                                 combien de temps. -->
                         </div>
 
                         <!-- ── La table. Tout ce qui doit la toucher est DEDANS :
@@ -901,8 +902,14 @@
                                             </button>
                                         </div>
                                     </div>
-                                    <!-- Le temps qu'il reste avant que tout se referme -->
-                                    <span class="col-scan-jauge" v-if="colScanDe(p.playerId)"><i></i></span>
+                                    <!-- Le temps qu'il lui reste. Elle ne s'affiche que sous
+                                         celui qui joue, et sa durée suit ce qui s'écoule
+                                         vraiment : quinze secondes pour un tour, sept pour un
+                                         scan, huit pour un duel. -->
+                                    <span class="col-jauge" :class="{ urgence: col.reste <= 4 }"
+                                          v-if="p.playerId === col.etat.tourJoueur && !col.etat.vainqueur">
+                                        <i :key="col.etat.tourFin" :style="colJauge()"></i>
+                                    </span>
                                     <span class="col-etoiles">
                                         <i v-for="n in col.etat.setsPourGagner" :key="n"
                                            :class="{ pleine: n <= p.sets.length }"></i>
@@ -943,7 +950,18 @@
                                         <i v-for="n in col.etat.setsPourGagner" :key="n"
                                            :class="{ pleine: n <= colMesSets }"></i>
                                     </span>
+                                    <span class="col-jauge" :class="{ urgence: col.reste <= 4 }"
+                                          v-if="colMonTour && !col.etat.vainqueur">
+                                        <i :key="col.etat.tourFin" :style="colJauge()"></i>
+                                    </span>
                                     <span class="col-nom">Vous</span>
+                                    <!-- Se faire lire n'est pas rien : on sait dès lors que son
+                                         bluff ne tient plus, et c'est à ce moment-là qu'il faut
+                                         le savoir — pas après s'être fait voler. -->
+                                    <span class="col-lu" v-if="colOnMeLit">
+                                        <svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                                        Ta main est lue
+                                    </span>
                                 </div>
                             </div>
 
@@ -1057,15 +1075,28 @@
                     </div>
 
                     <!-- ── Le vainqueur ── -->
+                    <!-- On lisait ici les cartes du vainqueur en grand. Elles ne
+                         disaient rien : on venait de les voir se briser, et personne
+                         ne veut relire une main qu'il a perdue. Ce qu'on cherche à
+                         la fin d'une partie, c'est où l'on s'est classé. -->
                     <div class="col-fin" v-if="col.etat && col.etat.vainqueur">
-                        <span class="col-fin-titre">COLLECT</span>
-                        <span class="col-fin-nom">{{ colNom(col.etat.vainqueur) }}</span>
-                        <span class="col-fin-but">{{ col.etat.resume }}</span>
-                        <div class="col-fin-sets">
-                            <div v-for="s in colSetsDu(col.etat.vainqueur)" :key="s.anime" class="col-rangee">
-                                <div v-for="c in s.cartes" :key="c.uid" class="col-carte" :class="'classe-' + c.classe">
-                                    <img :src="'collectpic/' + c.img" :alt="c.nom" draggable="false">
-                                </div>
+                        <div class="col-fin-boite">
+                            <span class="col-fin-titre">Les sets réunis</span>
+                            <ol class="col-fin-liste">
+                                <li v-for="j in colClassement" :key="j.playerId"
+                                    :class="{ moi: j.playerId === playerId, premier: j.gagnant }">
+                                    <span class="rang">{{ j.rang }}</span>
+                                    <span class="nom">{{ j.nom }}</span>
+                                    <span class="sets">
+                                        <i v-for="n in col.etat.setsPourGagner" :key="n"
+                                           :class="{ pleine: n <= j.sets }"></i>
+                                    </span>
+                                </li>
+                            </ol>
+                            <div class="col-fin-actions">
+                                <button class="winner-replay-btn" v-if="isHost" :disabled="rejouerBusy"
+                                        @click="hostRejouerCollect">Rejouer</button>
+                                <button class="winner-back-btn" @click="quitterCollect">Retour</button>
                             </div>
                         </div>
                     </div>

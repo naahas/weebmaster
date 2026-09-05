@@ -53,29 +53,6 @@
 .col-tri:hover { opacity: 1; transform: scale(1.06); }
 .col-tri svg { display: block; }
 
-/* Le temps en bâtons qui s'éteignent, sans chiffre : on compte ce qu'il
-   reste d'un coup d'œil, comme des vies, et la dernière poignée saute aux
-   yeux sans qu'on ait à changer quoi que ce soit. Un anneau, lui, demandait
-   qu'on y pose les yeux pour savoir où il en était. */
-.col-chrono {
-    flex: 0 0 auto;
-    display: flex; align-items: center; gap: 0.16rem;
-    margin: 0.9rem 0.5rem 0 0;
-}
-.col-chrono i {
-    width: 0.28rem; height: 1.35rem;
-    border-radius: 999px;
-    background: var(--col-or);
-    box-shadow: 0 0 0.35rem rgba(255, 210, 74, 0.45);
-    transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
-}
-.col-chrono i.off {
-    background: rgba(255, 255, 255, 0.08);
-    box-shadow: none;
-    transform: scaleY(0.5);
-}
-.col-chrono.urgence i:not(.off) { background: #ff5a6e; box-shadow: 0 0 0.4rem rgba(255, 90, 110, 0.6); }
-
 /* ── La scène et la table ─────────────────────────────────────── */
 .col-scene { position: relative; flex: 1 1 auto; min-height: 0; }
 
@@ -254,23 +231,78 @@
 .col-eventail.scanne .col-dos:hover { --ech: 1.5; z-index: 27; }
 .col-eventail.scanne .col-dos-recto { cursor: zoom-in; }
 .col-eventail.scanne { z-index: 25; }
-/* Le compte à rebours des sept secondes, sous l'éventail. Sans lui on ne sait
-   pas qu'on est en train de perdre l'information, et l'on regarde ailleurs. */
-.col-scan-jauge {
+/* ── Le temps qu'il reste, SOUS celui qui joue ──
+   Il vivait dans le coin de l'écran : il fallait faire l'aller-retour entre
+   deux bouts de la table pour savoir à qui il restait combien. Sous le siège,
+   les deux informations sont au même endroit et se lisent d'un coup.
+
+   La barre est une animation linéaire dont on règle la durée ET un retard
+   NÉGATIF : elle reprend donc en cours de route, ce qui la rend juste après un
+   rafraîchissement — et rien n'est repeint quatre fois par seconde comme le
+   ferait un compteur en JavaScript. */
+.col-jauge {
     display: block;
-    width: 4.5rem; height: 0.2rem;
-    margin: 0.3rem 0 0;
+    width: 4.5rem; height: 0.22rem;
+    margin: 0.32rem 0 0;
     border-radius: 999px;
     background: rgba(0, 0, 0, 0.6);
     overflow: hidden;
 }
-.col-scan-jauge i {
+.col-jauge i {
     display: block; height: 100%;
     transform-origin: left;
     background: linear-gradient(90deg, var(--col-or), #ff9d3d);
-    animation: colScanFond 7s linear forwards;
+    animation-name: colJaugeFond;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
 }
-@keyframes colScanFond { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+.col-jauge.urgence i { background: linear-gradient(90deg, #ff6b4a, #ff3b30); }
+@keyframes colJaugeFond { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+/* ── « Ta main est lue » ──
+   Sobre, et sous son propre nom : se faire scanner n'appelle pas une alarme,
+   mais on doit le savoir SUR LE MOMENT — c'est là qu'on apprend que son bluff
+   ne tient plus, et non après s'être fait voler. */
+.col-lu {
+    display: flex; align-items: center; gap: 0.3rem;
+    margin-top: 0.3rem;
+    padding: 0.16rem 0.5rem;
+    font-size: 0.58rem; font-weight: 700; letter-spacing: 0.04em;
+    color: #ffd9c0;
+    background: rgba(60, 20, 10, 0.8);
+    border: 0.06rem solid rgba(255, 140, 90, 0.5);
+    border-radius: 999px;
+    animation: colLuBat 1.6s ease-in-out infinite;
+}
+.col-lu svg { width: 0.7rem; height: 0.7rem; fill: none; stroke: #ff9d6b; stroke-width: 2; }
+@keyframes colLuBat {
+    0%, 100% { border-color: rgba(255, 140, 90, 0.35); }
+    50%      { border-color: rgba(255, 140, 90, 0.9); }
+}
+
+/* ── L'écho d'un geste adverse ──
+   Une main adverse est un paquet de dos : quand un joueur pioche ou échange,
+   rien n'y bougeait, et l'on n'apprenait qu'il avait joué qu'en voyant le
+   siège suivant s'allumer. Une carte qui glisse par la droite suffit à dire
+   « il vient de faire quelque chose » sans rien révéler de plus. */
+.col-echo {
+    position: fixed;
+    z-index: 30;
+    margin: -1.5rem 0 0 -1rem;
+    border-radius: 0.28rem;
+    overflow: hidden;
+    border: 0.06rem solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0.4rem 0.9rem rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+    animation: colEcho 0.6s cubic-bezier(0.25, 0.8, 0.3, 1) forwards;
+}
+.col-echo.dos { background: repeating-linear-gradient(135deg, #26323f 0 5px, #1b232e 5px 10px); }
+.col-echo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+@keyframes colEcho {
+    0%   { opacity: 0; transform: translate(4.5rem, -0.6rem) rotate(14deg) scale(0.9); }
+    28%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(0, 0) rotate(0deg) scale(0.72); }
+}
 /* À qui le tour : une lueur qui respire autour de l'éventail. Sobre parce
    qu'elle ne fait que pulser — pas de couleur criarde, pas de mouvement du
    siège lui-même, qui ferait sauter la table à chaque changement de main. */
@@ -466,6 +498,8 @@
 .col-moi:not(.tour) .col-main .col-carte:hover { filter: saturate(0.75) brightness(0.85); }
 
 .col-moi .col-etoiles { margin-top: 0.45rem; z-index: 2; }
+.col-moi .col-jauge { margin-top: 0.4rem; }
+.col-siege .col-jauge { width: 3.6rem; }
 /* ⚠️ « :not(.pleine) » n'est pas décoratif. Sans lui cette règle, à
    spécificité égale mais placée plus bas, écrasait l'or de « .pleine » — et
    les points gagnés restaient gris. */
@@ -543,20 +577,23 @@
     initial-value: 0deg;
     inherits: false;
 }
-@property --colTourInverse {
-    syntax: '<angle>';
-    initial-value: 0deg;
-    inherits: false;
-}
 /* La couche du dessous : plus large, floue, et qui tourne À L'ENVERS et plus
    vite. Une seule course était nette mais mince — de loin on ne voyait qu'un
    filet. Deux courses en sens contraire se croisent quatre fois par tour, et
    c'est ce battement-là qu'on remarque du coin de l'œil. */
+/* La couche du dessous TOURNE, au lieu de se repeindre. Un dégradé conique
+   dont on anime l'angle est refait à chaque image, et le flou avec — sur neuf
+   cartes allumées à la fois, c'était le poste le plus lourd de l'écran et cela
+   se sentait jusque dans la distribution. Ici l'élément est un CARRÉ (pour que
+   la rotation ne découvre jamais de coin) que le navigateur peint une fois et
+   se contente ensuite de faire pivoter : rien à recalculer. */
 .col-carte.paire::before {
     content: '';
-    position: absolute; inset: -0.5rem;
-    border-radius: 0.85rem;
-    background: conic-gradient(from var(--colTourInverse),
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 150%; aspect-ratio: 1;
+    margin: 0;
+    background: conic-gradient(
         rgba(255, 138, 61, 0)   0deg,
         rgba(255, 190, 60, 0.7) 55deg,
         #ffd24a                 90deg,
@@ -565,12 +602,16 @@
         rgba(255, 210, 74, 0.5) 250deg,
         rgba(255, 138, 61, 0)   320deg);
     filter: blur(0.42rem);
-    opacity: 0.85;
+    opacity: 0.8;
     animation: colTourneInverse 1.4s linear infinite;
     pointer-events: none;
     z-index: -1;
+    will-change: transform;
 }
-@keyframes colTourneInverse { to { --colTourInverse: -360deg; } }
+@keyframes colTourneInverse {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to   { transform: translate(-50%, -50%) rotate(-360deg); }
+}
 
 .col-carte.paire::after {
     content: '';
@@ -592,7 +633,9 @@
     -webkit-mask-composite: xor;
             mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
             mask-composite: exclude;
-    filter: drop-shadow(0 0 0.55rem rgba(255, 180, 60, 1));
+    /* Plus d'ombre portée ici : un filtre recalculé à chaque image, sur une
+       source qui change à chaque image. La lueur vient de la couche du dessous,
+       qui elle ne fait que tourner. */
     animation: colTourne 1.6s linear infinite;
     pointer-events: none;
 }
@@ -1139,6 +1182,53 @@
 .col-duel-sablier i { display: block; height: 100%; background: var(--col-or); transition: width 0.2s linear; }
 
 /* ── Le vainqueur ─────────────────────────────────────────────── */
+/* ── Le classement de fin ──
+   On y lisait les cartes du vainqueur en grand. Elles ne disaient rien : on
+   venait de les voir se briser, et personne ne veut relire une main qu'il a
+   perdue. Ce qu'on cherche à la fin d'une partie, c'est où l'on s'est classé. */
+.col-fin-boite {
+    width: min(92%, 26rem);
+    padding: 1.6rem 1.4rem 1.3rem;
+    background: rgba(14, 14, 20, 0.92);
+    border: 0.06rem solid rgba(255, 255, 255, 0.09);
+    border-radius: 1rem;
+    box-shadow: 0 1.4rem 3rem rgba(0, 0, 0, 0.6);
+    text-align: center;
+}
+.col-fin-liste { list-style: none; margin: 1.1rem 0 1.4rem; padding: 0; }
+.col-fin-liste li {
+    display: flex; align-items: center; gap: 0.8rem;
+    padding: 0.55rem 0.7rem;
+    border-radius: 0.5rem;
+    border: 0.06rem solid transparent;
+}
+.col-fin-liste li + li { margin-top: 0.3rem; }
+.col-fin-liste li.moi { background: rgba(255, 255, 255, 0.06); }
+.col-fin-liste li.premier {
+    border-color: rgba(255, 210, 74, 0.45);
+    background: rgba(255, 210, 74, 0.09);
+}
+.col-fin-liste .rang {
+    width: 1.4rem;
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.4);
+}
+.col-fin-liste li.premier .rang { color: var(--col-or); }
+.col-fin-liste .nom {
+    flex: 1; min-width: 0;
+    text-align: left; font-size: 0.85rem; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.col-fin-liste .sets { display: flex; gap: 0.22rem; }
+.col-fin-liste .sets i {
+    width: 0.7rem; height: 0.7rem;
+    background: rgba(255, 255, 255, 0.18);
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%,
+                       50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+.col-fin-liste .sets i.pleine { background: var(--col-or); }
+.col-fin-actions { display: flex; gap: 0.6rem; justify-content: center; }
+
 .col-fin {
     position: fixed; inset: 0; z-index: 45;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -1147,13 +1237,7 @@
     text-align: center;
     padding: 2rem 1.2rem;
 }
-.col-fin-but { font-size: 0.62rem; letter-spacing: 0.06em; color: rgba(255, 255, 255, 0.35); }
 .col-fin-titre { font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; letter-spacing: 0.2em; color: rgba(255, 255, 255, 0.35); }
-.col-fin-nom {
-    font-family: 'Bebas Neue', sans-serif; font-size: 2.8rem; line-height: 1;
-    letter-spacing: 0.03em; color: var(--col-or);
-}
-.col-fin-sets { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; justify-content: center; }
 
 /* ── Écrans étroits ───────────────────────────────────────────── */
 @media (max-width: 780px) {
@@ -1168,7 +1252,7 @@
        image, et le halo qui l entoure est un filtre. Sur telephone, jusqu a neuf
        cartes allumees a la fois, cela chauffe pour rien — on garde la course, on
        lache le halo et on ralentit. */
-    .col-carte.paire::after  { animation-duration: 2.6s; filter: none; }
+    .col-carte.paire::after  { animation-duration: 2.6s; }
     .col-carte.paire::before { animation-duration: 2.2s; filter: blur(0.3rem); opacity: 0.6; }
     .col-nom { max-width: 4.8rem; font-size: 0.56rem; }
     .col-loupe { width: 8.5rem; left: 0.4rem; top: 32%; }

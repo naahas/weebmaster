@@ -60,6 +60,12 @@ const BAREMES = {
 
 // ── Le triangle ───────────────────────────────────────────────
 // Assaut bat Mirage, Mirage bat Oracle, Oracle bat Assaut.
+// Le scan RETIENT le tour sept secondes. Il ne fallait pas qu'il le passe
+// aussitôt : la main scannée reste retournée pendant ce temps, et si le joueur
+// suivant agissait dans l'intervalle, ce qu'on lisait devenait faux sous nos
+// yeux. Sept secondes, la table s'arrête, puis on enchaîne.
+const SCAN_MS = 7000;
+
 const BAT = { assaut: 'mirage', mirage: 'oracle', oracle: 'assaut' };
 const CLASSES = { assaut: 'Assaut', mirage: 'Mirage', oracle: 'Oracle' };
 const domine = (a, b) => BAT[a] === b;
@@ -102,8 +108,10 @@ function etatNeuf() {
         tourFin: 0,
         tourTimer: null,
         duelTimer: null,
+        scanTimer: null,
         debut: 0,
         duel: null,          // un vol en attente de la defense de sa cible
+        scan: null,          // un scan qui retient la table sept secondes
         vainqueur: null,
         journal: [],           // les derniers faits, pour l'écran de tous
     };
@@ -201,6 +209,8 @@ function verifierTour(etat, playerId) {
     // Un vol attend sa défense : tant qu'il n'est pas tranché, plus personne ne
     // joue — pas même celui dont c'est le tour.
     if (etat.duel) return 'Un vol est en cours';
+    // Un scan retient la table le temps qu'on lise la main
+    if (etat.scan) return 'Un scan est en cours';
     if (etat.tourJoueur !== playerId) return 'Ce n\'est pas ton tour';
     if (!etat.mains.has(playerId)) return 'Tu n\'es pas dans cette partie';
     return null;
@@ -383,9 +393,22 @@ function actionScanner(etat, playerId, cibleId) {
     if (!cible) return { ok: false, erreur: 'Ce joueur n\'est pas dans la partie' };
 
     noter(etat, { type: 'scan', joueur: playerId, cible: cibleId });
-    tourSuivant(etat);
+    // On ne passe PAS la main ici : « apresAction » pose un minuteur de sept
+    // secondes, et c'est lui qui enchaînera. Voir « SCAN_MS ».
+    etat.scan = { par: playerId, cible: cibleId, fin: 0 };
     // la main scannée ne part qu'au scanneur, jamais au salon
     return { ok: true, main: cible.map(c => ({ ...c })) };
+}
+
+// Le scan se referme : la main passe. C'est « apresAction » qui l'appelle au
+// bout de sept secondes, mais la fonction vit ICI pour que le moteur reste
+// éprouvable sans serveur — sinon un scan ouvert bloquait la table à jamais
+// dans une partie simulée.
+function finirScan(etat) {
+    if (!etat.scan) return false;
+    etat.scan = null;
+    tourSuivant(etat);
+    return true;
 }
 
 function actionPoser(etat, playerId, anime) {
@@ -459,6 +482,10 @@ function vuePublique(etat) {
         // Le duel se montre, mais JAMAIS la carte d'attaque ni sa classe : c'est
         // tout l'interet du vol a l'aveugle. La cible ne recoit que la serie.
         duel: etat.duel ? { attaquant: etat.duel.attaquant, cible: etat.duel.cible, anime: etat.duel.anime, fin: etat.duel.fin } : null,
+        // Qui scanne qui, et jusqu'à quand — JAMAIS les cartes. Celui qui se
+        // fait lire a le droit de le savoir : c'est ce qui l'avertit que sa
+        // main vient d'être vue, donc que son bluff ne tient plus.
+        scan: etat.scan ? { par: etat.scan.par, cible: etat.scan.cible, fin: etat.scan.fin } : null,
         vainqueur: etat.vainqueur,
         joueurs: etat.ordre.map(id => ({
             playerId: id,
@@ -509,6 +536,7 @@ function diffuserEtat(gameState, io) {
 function stopperMinuteries(etat) {
     if (etat.tourTimer) { clearTimeout(etat.tourTimer); etat.tourTimer = null; }
     if (etat.duelTimer) { clearTimeout(etat.duelTimer); etat.duelTimer = null; }
+    if (etat.scanTimer) { clearTimeout(etat.scanTimer); etat.scanTimer = null; }
 }
 
 // Après CHAQUE action : on remet la bonne minuterie en marche, on diffuse, et
@@ -530,6 +558,16 @@ function apresAction(gameState, io, onGameEnd) {
             defenseParDefaut(etat);
             apresAction(gameState, io, onGameEnd);
         }, DUEL_MS);
+    } else if (etat.scan) {
+        // Sept secondes pendant lesquelles la table ne bouge pas, puis la main
+        // passe. Le chrono du tour affiche cette échéance-là : c'est bien le
+        // tour en cours qui dure sept secondes de plus.
+        etat.scan.fin = Date.now() + SCAN_MS;
+        etat.tourFin = etat.scan.fin;
+        etat.scanTimer = setTimeout(() => {
+            finirScan(etat);
+            apresAction(gameState, io, onGameEnd);
+        }, SCAN_MS);
     } else {
         etat.tourFin = Date.now() + CONFIG.TOUR_MS;
         etat.tourTimer = setTimeout(() => {
@@ -587,6 +625,9 @@ function quitterCollect(gameState, io, playerId) {
     }
     // le duel qui le visait, ou qu'il menait, n'a plus d'objet
     if (etat.duel && (etat.duel.cible === playerId || etat.duel.attaquant === playerId)) etat.duel = null;
+    // le scan qu'il lisait, ou qu'il subissait, non plus : la table ne doit
+    // pas rester bloquee sept secondes pour un joueur parti
+    if (etat.scan && (etat.scan.par === playerId || etat.scan.cible === playerId)) etat.scan = null;
     if (etat.tourIndex >= etat.ordre.length) etat.tourIndex = 0;
     if (etat.tourJoueur === playerId) etat.tourJoueur = etat.ordre[etat.tourIndex];
     apresAction(gameState, io, etat._onGameEnd);
@@ -640,8 +681,9 @@ module.exports = {
     demarrerPartie, reinitialiser, quitterCollect,
     registerCollectSocketHandlers, diffuserEtat,
     domine, etatNeuf, regles, demarrer, tourSuivant,
-    actionPiocher, actionEchanger, actionVoler, actionScanner, actionPoser, actionParDefaut,
+    actionPiocher, actionEchanger, actionVoler, actionScanner, actionPoser, actionParDefaut, finirScan,
     actionDefendre, defenseParDefaut, rendreAuPaquet, renouvelerMarche, sousLePaquet,
+    SCAN_MS,
     vuePublique, vueJoueur,
     _data: DATA,
 };
