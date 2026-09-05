@@ -1090,7 +1090,6 @@
                              change : la boîte ne bouge donc jamais pendant qu'on dévoile,
                              et le classement se dit du dernier au premier. -->
                         <div class="col-fin-boite" :class="{ vu: col.fin >= 2 }">
-                            <span class="col-fin-titre">Les sets réunis</span>
                             <ol class="col-fin-liste">
                                 <li v-for="(j, i) in colClassement" :key="j.playerId"
                                     :class="{ moi: j.playerId === playerId, premier: j.gagnant,

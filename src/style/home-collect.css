@@ -1196,32 +1196,33 @@
    On y lisait les cartes du vainqueur en grand. Elles ne disaient rien : on
    venait de les voir se briser, et personne ne veut relire une main qu'il a
    perdue. Ce qu'on cherche à la fin d'une partie, c'est où l'on s'est classé. */
-/* La boîte attend que l'écran ait fini de s'assombrir : une seconde. Sans ce
+/* Pas de boîte : le classement est POSÉ sur l'écran noir, comme dans les
+   autres modes. Un cadre, un fond et une ombre par-dessus un écran déjà vide
+   ne délimitaient rien — ils ajoutaient une fenêtre là où il n'y a rien
+   d'autre à regarder.
+
+   Elle attend que l'écran ait fini de s'assombrir : une seconde. Sans ce
    temps, on passait de la table au résultat sans avoir vu le coup qui l'avait
    décidé. */
 .col-fin-boite {
-    width: min(92%, 26rem);
-    padding: 1.6rem 1.4rem 1.3rem;
-    background: rgba(14, 14, 20, 0.92);
-    border: 0.06rem solid rgba(255, 255, 255, 0.09);
-    border-radius: 1rem;
-    box-shadow: 0 1.4rem 3rem rgba(0, 0, 0, 0.6);
-    text-align: center;
+    width: min(27rem, 92vw);
+    display: flex; flex-direction: column; align-items: center;
+    gap: 1.2rem;
     opacity: 0;
-    transform: translateY(0.8rem) scale(0.98);
+    transform: translateY(0.8rem);
     transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.2, 0.9, 0.25, 1);
 }
 .col-fin-boite.vu { opacity: 1; transform: none; }
 
-.col-fin-liste { list-style: none; margin: 1.1rem 0 1.4rem; padding: 0; }
-/* Chaque place occupe sa hauteur dès le départ, mais attend son tour : la
-   boîte garde donc la même taille du premier au dernier dévoilement. */
+.col-fin-liste { width: 100%; list-style: none; margin: 0; padding: 0; }
+/* Chaque place occupe sa hauteur dès le départ, mais attend son tour : le
+   bloc garde donc la même taille du premier au dernier dévoilement. Un filet
+   entre les lignes, et rien de plus — pas de cartouche. */
 .col-fin-liste li {
     position: relative; overflow: hidden;
     display: flex; align-items: center; gap: 0.8rem;
-    padding: 0.55rem 0.7rem;
-    border-radius: 0.5rem;
-    border: 0.06rem solid transparent;
+    padding: 0.7rem 0.2rem;
+    border-bottom: 0.06rem solid rgba(255, 255, 255, 0.05);
     opacity: 0;
     transform: translateY(0.55rem);
     transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.2, 0.9, 0.25, 1);
@@ -1248,23 +1249,24 @@
     60%  { transform: scale(1.04); }
     100% { transform: scale(1); }
 }
-.col-fin-liste li + li { margin-top: 0.3rem; }
-.col-fin-liste li.moi { background: rgba(255, 255, 255, 0.06); }
-.col-fin-liste li.premier {
-    border-color: rgba(255, 210, 74, 0.45);
-    background: rgba(255, 210, 74, 0.09);
-}
+/* Le vainqueur se distingue par la TAILLE et la couleur, pas par un cadre :
+   c'est ce que font les autres modes, et un cadre doré autour d'une ligne
+   posée sur du noir se lit comme un bouton. */
+.col-fin-liste li.premier { padding: 0.95rem 0.2rem; }
 .col-fin-liste .rang {
     width: 1.4rem;
     font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.32);
 }
-.col-fin-liste li.premier .rang { color: var(--col-or); }
+.col-fin-liste li.premier .rang { font-size: 1.7rem; color: var(--col-or); }
 .col-fin-liste .nom {
     flex: 1; min-width: 0;
     text-align: left; font-size: 0.85rem; font-weight: 600;
+    color: rgba(255, 255, 255, 0.72);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.col-fin-liste li.premier .nom { font-size: 1.1rem; color: #fff; }
+.col-fin-liste li.moi .nom { color: var(--col-or); }
 .col-fin-liste .sets { display: flex; gap: 0.22rem; }
 .col-fin-liste .sets i {
     width: 0.7rem; height: 0.7rem;
@@ -1273,8 +1275,10 @@
                        50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
 }
 .col-fin-liste .sets i.pleine { background: var(--col-or); }
+.col-fin-liste li.premier .sets i { width: 0.95rem; height: 0.95rem; }
 .col-fin-actions {
     display: flex; gap: 0.6rem; justify-content: center;
+    margin-top: 0.4rem;
     opacity: 0; pointer-events: none;
     transition: opacity 0.45s ease;
 }
@@ -1291,7 +1295,6 @@
 }
 /* L ecran s assombrit d abord, seul : la boite ne vient qu apres. */
 @keyframes colFinVoile { from { opacity: 0; } to { opacity: 1; } }
-.col-fin-titre { font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; letter-spacing: 0.2em; color: rgba(255, 255, 255, 0.35); }
 
 /* ── Écrans étroits ───────────────────────────────────────────── */
 @media (max-width: 780px) {
