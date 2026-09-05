@@ -1783,6 +1783,7 @@ createApp({
             this.col.enVol = null;
             this.col._attendPioche = false;
             this.col._sets = null;
+            if (this.col._finScan) { clearTimeout(this.col._finScan); this.col._finScan = null; }
             this.col.entree = false;
             this.col.erreur = '';
             this.col._dernierSon = undefined;
@@ -2138,6 +2139,16 @@ createApp({
         colToucherSiege(id) {
             if (!this.colMonTour || this.col.etat.duel) { this.col.siegeOuvert = null; return; }
             this.col.siegeOuvert = this.col.siegeOuvert === id ? null : id;
+        },
+        // Ce qu'un éventail adverse doit afficher : les vraies cartes si on
+        // est en train de le scanner, sinon autant de « rien » que de cartes.
+        // Une seule liste dans les deux cas, sinon Vue démonte et remonte les
+        // éléments au lieu de les retourner — et un élément remonté ne peut pas
+        // s'animer, il apparaît.
+        colScanDe(id) { return !!(this.col.scan && this.col.scan.cible === id); },
+        colEventail(p) {
+            if (this.colScanDe(p.playerId)) return this.col.scan.main;
+            return new Array(p.cartes).fill(null);
         },
         colScanner(cibleId) {
             if (!this.colMonTour || this.col.etat.duel) return;
@@ -5504,7 +5515,17 @@ createApp({
                 }
             });
             this.socket.on('collect-scan', (data) => {
+                // Sept secondes, et tout se referme. Une fenêtre qu'on ferme
+                // soi-même laisse le choix de tout noter tranquillement ; le
+                // scan doit coûter un effort de mémoire, sinon la classe des
+                // cartes adverses devient une donnée publique et le duel à
+                // l'aveugle n'en est plus un.
+                if (this.col._finScan) clearTimeout(this.col._finScan);
                 this.col.scan = data;
+                this.col._finScan = setTimeout(() => {
+                    this.col.scan = null;
+                    this.col._finScan = null;
+                }, 7000);
             });
             this.socket.on('collect-refus', (data) => {
                 // « Ce n'est pas ton tour » n'apprend rien : le siège de celui qui

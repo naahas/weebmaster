@@ -882,10 +882,23 @@
                                             <svg viewBox="0 0 24 24"><path d="M5 19L19 5M15 5h4v4M9 19H5v-4"/><path d="M5 5l6 6"/></svg>
                                         </button>
                                     </div>
-                                    <div class="col-eventail">
-                                        <span v-for="n in p.cartes" :key="n" class="col-dos"
-                                              :style="colIncline(n - 1, p.cartes, 6)"></span>
+                                    <!-- Scanné, l'éventail se retourne SUR PLACE et s'écarte, au
+                                         lieu d'ouvrir une fenêtre par-dessus la table. On voit alors
+                                         de qui sont ces cartes — la fenêtre, elle, les sortait de
+                                         leur contexte et il fallait relire un nom pour le savoir. -->
+                                    <div class="col-eventail" :class="{ scanne: colScanDe(p.playerId) }">
+                                        <span v-for="(d, k) in colEventail(p)" :key="k" class="col-dos"
+                                              :class="{ retournee: !!d }"
+                                              :style="colIncline(k, colEventail(p).length, colScanDe(p.playerId) ? 11 : 6)">
+                                            <span class="col-dos-verso"></span>
+                                            <span class="col-dos-recto" v-if="d">
+                                                <img :src="'collectpic/' + d.img" :alt="d.nom" draggable="false">
+                                                <i class="col-pion" :class="'pion-' + d.classe" v-html="colSymbole(d.classe)"></i>
+                                            </span>
+                                        </span>
                                     </div>
+                                    <!-- Le temps qu'il reste avant que tout se referme -->
+                                    <span class="col-scan-jauge" v-if="colScanDe(p.playerId)"><i></i></span>
                                     <span class="col-etoiles">
                                         <i v-for="n in col.etat.setsPourGagner" :key="n"
                                            :class="{ pleine: n <= p.sets.length }"></i>
@@ -1036,28 +1049,6 @@
                             </div>
                             <div class="col-duel-sablier"><i :style="{ width: colSablierDuel }"></i></div>
                             <p class="aide">Sans réponse, une carte partira au hasard.</p>
-                        </div>
-                    </div>
-
-                    <!-- ── La main scannée ── -->
-                    <div class="col-voile" v-if="col.scan" @click.self="col.scan = null">
-                        <div class="col-feuille">
-                            <h3>La main de {{ colNom(col.scan.cible) }}</h3>
-                            <p class="aide">
-                                Retiens les <b>classes</b> : c'est elles qui décident de ce que tu peux lui prendre.
-                            </p>
-                            <div class="col-rangee">
-                                <div v-for="c in col.scan.main" :key="c.uid"
-                                     class="col-carte" :class="'classe-' + c.classe">
-                                    <img :src="'collectpic/' + c.img" :alt="c.nom" draggable="false">
-                                    <span class="col-carte-classe">{{ c.classe[0].toUpperCase() }}</span>
-                                    <span class="col-carte-pied">
-                                        <span class="col-carte-nom">{{ c.nom }}</span>
-                                        <span class="col-carte-serie">{{ c.anime }}</span>
-                                    </span>
-                                </div>
-                            </div>
-                            <button class="col-fermer" @click="col.scan = null">Fermer</button>
                         </div>
                     </div>
 
