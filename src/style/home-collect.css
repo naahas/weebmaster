@@ -1285,6 +1285,18 @@
 }
 .col-fin-liste .sets i.pleine { background: var(--col-or); }
 .col-fin-liste li.premier .sets i { width: 0.95rem; height: 0.95rem; }
+/* Le compte a cote des etoiles. Les deux disent la meme chose, et c est
+   voulu : les etoiles se lisent d un coup d oeil sur une ligne, le chiffre se
+   compare d une ligne a l autre. */
+.col-fin-liste .compte {
+    display: flex; align-items: baseline;
+    min-width: 2.4rem; justify-content: flex-end;
+    font-family: 'Bebas Neue', sans-serif;
+}
+.col-fin-liste .compte b { font-size: 1.25rem; color: rgba(255, 255, 255, 0.7); }
+.col-fin-liste .compte i { font-style: normal; font-size: 0.72rem; color: rgba(255, 255, 255, 0.28); }
+.col-fin-liste li.premier .compte b { font-size: 1.9rem; color: var(--col-or); }
+.col-fin-liste li.premier .compte i { font-size: 0.85rem; }
 .col-fin-actions {
     display: flex; gap: 0.6rem; justify-content: center;
     margin-top: 0.4rem;

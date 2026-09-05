@@ -1102,6 +1102,7 @@
                                         <i v-for="n in col.etat.setsPourGagner" :key="n"
                                            :class="{ pleine: n <= j.sets }"></i>
                                     </span>
+                                    <span class="compte"><b>{{ j.sets }}</b><i>/{{ col.etat.setsPourGagner }}</i></span>
                                 </li>
                             </ol>
                             <!-- Rien ne s'offre au clic tant que le classement n'est pas dit -->
