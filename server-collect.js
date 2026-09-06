@@ -109,7 +109,6 @@ function etatNeuf() {
         animes: [],
         pioche: [],
         marche: [],
-        horloge: 0,            // le jeton d'arrivée des cartes du marché
         ordre: [],
         mains: new Map(),      // playerId → [carte]
         sets: new Map(),       // playerId → [{ anime, cartes }]
@@ -168,33 +167,26 @@ function sousLePaquet(etat, carte) {
     etat.pioche.unshift(carte);
 }
 
-// ⚠️ LES CINQ PLACES DU MARCHÉ NE BOUGENT JAMAIS.
+// ⚠️ DEUX MOUVEMENTS, ET IL FAUT LES DISTINGUER.
 //
-// L'ancienneté se lisait dans la POSITION : la plus vieille en tête, la
-// nouvelle à la queue. Chaque échange décalait donc toute la rangée, et l'on
-// voyait quatre cartes glisser d'un cran pour un troc qui n'en concernait
-// qu'une. Pire : au moment où l'on rendait sa carte, elle entrait par la
-// droite comme une carte neuve — impossible de comprendre ce qu'on regardait.
+// Le RENOUVELLEMENT de fin de tour est un TAPIS ROULANT : la carte de gauche
+// s'en va, tout glisse d'un cran, une neuve entre par la droite. La position
+// dit alors exactement combien de tours il reste à chaque carte — la première
+// part au prochain, la dernière dans cinq. C'est un renseignement qu'on lit
+// sans y penser, et le glissement se voit de loin.
 //
-// Elle se lit désormais dans un JETON d'arrivée, et chaque carte reste chez
-// elle. On garde ce que la position servait à garantir — celle qui part est
-// bien la plus ancienne — sans rien devoir déplacer.
-function marquer(etat, carte) {
-    carte.arrive = ++etat.horloge;
-    return carte;
-}
-function plusAncienne(etat) {
-    let k = 0;
-    for (let i = 1; i < etat.marche.length; i++) {
-        if ((etat.marche[i].arrive || 0) < (etat.marche[k].arrive || 0)) k = i;
-    }
-    return k;
-}
+// L'ÉCHANGE, lui, se fait SUR PLACE : chacune prend la place de l'autre et
+// rien d'autre ne bouge. Faire glisser toute la rangée pour un troc qui n'en
+// concerne qu'une la rendait illisible — la carte rendue entrait par la droite
+// comme une carte neuve, et l'on ne savait plus ce qu'on regardait.
+//
+// Les deux ne se croisent jamais : un échange ne renouvelle pas le marché
+// (voir « tourSuivant(etat, false) »), et le renouvellement ne touche à aucune
+// place au hasard. Une seule chose bouge à la fois.
 function renouvelerMarche(etat) {
     if (!etat.marche.length) return;
-    const k = plusAncienne(etat);
-    sousLePaquet(etat, etat.marche[k]);
-    etat.marche[k] = marquer(etat, tirer(etat));
+    sousLePaquet(etat, etat.marche.shift());
+    etat.marche.push(tirer(etat));
 }
 
 // ── Démarrage ─────────────────────────────────────────────────
@@ -214,8 +206,7 @@ function demarrer(etat, joueurs) {
         etat.mains.set(id, Array.from({ length: r.main }, () => tirer(etat)));
         etat.sets.set(id, []);
     }
-    etat.horloge = 0;
-    etat.marche = Array.from({ length: CONFIG.MARCHE }, () => marquer(etat, tirer(etat)));
+    etat.marche = Array.from({ length: CONFIG.MARCHE }, () => tirer(etat));
 
     etat.active = true;
     etat.vainqueur = null;
@@ -298,13 +289,14 @@ function actionEchanger(etat, playerId, uidMain, uidMarche) {
     if (iMarche < 0) return { ok: false, erreur: 'Cette carte n\'est plus au marché' };
 
     // Chacune prend la place de l'autre, sans que rien d'autre ne bouge. La
-    // rendue reçoit un jeton d'arrivée neuf : elle est donc la plus JEUNE du
-    // marché et ne sera pas balayée au prochain renouvellement, ce que la mise
-    // en queue de rangée garantissait auparavant.
+    // rendue hérite donc du rang de la prise dans la file : prendre la carte de
+    // gauche, c'est y laisser la sienne pour un seul tour. Ce n'est pas une
+    // punition — on est souvent content de voir sa défausse disparaître vite —
+    // et la flèche sous la première carte le dit à qui regarde.
     const prise = etat.marche[iMarche];
     const rendue = main[iMain];
     main[iMain] = prise;
-    etat.marche[iMarche] = marquer(etat, rendue);
+    etat.marche[iMarche] = rendue;
     noter(etat, { type: 'echange', joueur: playerId, prise, rendue });
     tourSuivant(etat, false);
     return { ok: true, prise };
@@ -772,7 +764,7 @@ module.exports = {
     domine, etatNeuf, regles, demarrer, tourSuivant,
     actionPiocher, actionEchanger, actionVoler, actionScanner, actionPoser, actionParDefaut, finirScan,
     actionDefendre, resoudreDuel, defendreEtResoudre, defenseParDefaut,
-    rendreAuPaquet, renouvelerMarche, sousLePaquet, plusAncienne,
+    rendreAuPaquet, renouvelerMarche, sousLePaquet,
     SCAN_MS, REVELE_MS,
     vuePublique, vueJoueur,
     _data: DATA,

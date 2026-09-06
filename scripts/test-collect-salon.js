@@ -127,14 +127,16 @@ const dernier = (j) => j.etats[j.etats.length - 1];
     // peut constater, c'est le renouvellement de fin de tour : la plus ancienne
     // du marché s'en va sous la pile et une neuve arrive du dessus.
     check('la carte lâchée ne réapparaît pas au marché', !dernier(A).marche.some(c => c.uid === lachee));
-    // Une place a change, et une seule : le marche ne glisse plus d un cran a
-    // chaque tour, l anciennete se lit dans un jeton d arrivee.
+    // Le marche GLISSE d un cran : celle de gauche part, les autres avancent,
+    // une neuve entre par la droite. La position d une carte est son compte a
+    // rebours.
     {
         const apres = dernier(A).marche.map(c => c.uid);
-        const bouge = apres.filter((u, k) => u !== marcheAvant[k]);
-        check('le marché s\'est renouvelé, sur UNE place',
-            bouge.length === 1 && !marcheAvant.includes(bouge[0]),
-            bouge.length + ' place(s) changée(s)');
+        check('le marché a glissé d\'un cran',
+            apres.slice(0, 4).join(',') === marcheAvant.slice(1).join(','),
+            'les quatre restantes ont avancé');
+        check('… et une neuve est entrée par la droite',
+            !marcheAvant.includes(apres[4]), apres[4].slice(0, 6));
     }
     check('le marché garde ses cinq cartes', dernier(A).marche.length === 5, String(dernier(A).marche.length));
     check('la main garde sa taille', courant.main.length === 4, String(courant.main.length));

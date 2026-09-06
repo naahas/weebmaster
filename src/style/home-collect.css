@@ -652,9 +652,10 @@
 }
 @keyframes colTourne { to { --colTour: 360deg; } }
 
-/* La carte qui partira au prochain renouvellement. Discrète — c'est un
-   renseignement, pas une alarme : elle dit seulement qu'il faut se dépêcher si
-   on la convoitait. Sans elle, la place qui change semblait tirée au sort. */
+/* La première de la file, celle qui part à la fin du tour. Discrète — c'est un
+   renseignement, pas une alarme : elle dit qu'il faut se dépêcher si on la
+   convoitait. Le glissement le dit déjà à qui l'a compris ; la flèche le dit
+   aux autres. */
 .col-sortante {
     position: absolute; left: 50%; bottom: -0.72rem;
     transform: translateX(-50%);
@@ -1075,17 +1076,26 @@
    Chaque défausse pousse une carte au marché et en renvoie la plus ancienne
    dans le paquet. Sans transition, la rangée se réécrivait d'un coup et l'on
    ne comprenait pas ce qui venait d'entrer ni ce qui était parti. */
-/* Le marché a cinq places FIXES : une carte remplacée ne pousse plus ses
-   voisines, elle tombe et la neuve descend à sa place. Le mouvement est
-   VERTICAL, justement pour qu'on ne le confonde pas avec un décalage de la
-   rangée — c'est cette place-là qui change, et elle seule. */
-.col-marche-t-enter-active { transition: transform 0.42s cubic-bezier(0.2, 0.9, 0.25, 1), opacity 0.3s ease; }
-.col-marche-t-leave-active { transition: transform 0.35s cubic-bezier(0.4, 0, 0.7, 0.3), opacity 0.3s ease; position: absolute; }
-.col-marche-t-enter-from { opacity: 0; transform: translateY(-2.6rem) scale(0.9); }
-.col-marche-t-leave-to   { opacity: 0; transform: translateY(2.2rem) scale(0.86) rotate(6deg); }
-/* Rien ne bouge de place : le « move » n'a plus lieu d'être, mais on le laisse
-   court au cas où le nombre de places changerait un jour. */
-.col-marche-t-move { transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.25, 1); }
+/* ── Le tapis roulant : la fin d'un tour ──
+   La carte de gauche s'en va, tout glisse d'un cran, une neuve entre par la
+   droite. C'est ce glissement qui dit qu'il reste un tour de moins à chacune —
+   la position d'une carte au marché EST son compte à rebours. */
+.col-marche-t-enter-active,
+.col-marche-t-leave-active { transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.25, 1), opacity 0.35s ease; }
+.col-marche-t-enter-from { opacity: 0; transform: translateX(5.5rem); }
+.col-marche-t-leave-to   { opacity: 0; transform: translateX(-5.5rem); }
+.col-marche-t-leave-active { position: absolute; }
+.col-marche-t-move { transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.25, 1); }
+
+/* ── Sur place : un échange ──
+   Rien ne glisse, la carte tombe et l'autre descend à sa place. Le mouvement
+   est VERTICAL exprès : un troc qui ferait glisser toute la rangée se lirait
+   comme une fin de tour, et l'on ne saurait plus lequel des deux on regarde. */
+.col-marche-p-enter-active { transition: transform 0.42s cubic-bezier(0.2, 0.9, 0.25, 1), opacity 0.3s ease; }
+.col-marche-p-leave-active { transition: transform 0.35s cubic-bezier(0.4, 0, 0.7, 0.3), opacity 0.3s ease; position: absolute; }
+.col-marche-p-enter-from { opacity: 0; transform: translateY(-2.6rem) scale(0.9); }
+.col-marche-p-leave-to   { opacity: 0; transform: translateY(2.2rem) scale(0.86) rotate(6deg); }
+.col-marche-p-move { transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.25, 1); }
 
 /* ════════ La carte piochée ════════
    Elle vient du paquet, en bas à droite, et se retourne en chemin. */

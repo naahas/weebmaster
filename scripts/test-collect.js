@@ -98,22 +98,21 @@ console.log('\n── Le marché ──');
             'les quatre autres n\'ont pas bougé');
     }
 
-    // À chaque fin de tour, la plus ancienne du marché part SOUS le paquet et
-    // une neuve arrive À SA PLACE. « Sous » et non mêlée au hasard : une carte
-    // qu'on vient de voir partir ne doit pas revenir au tour suivant. Et « à sa
-    // place » : l'ancienneté se lit dans un jeton d'arrivée, plus dans la
-    // position, ce qui évite de faire glisser toute la rangée.
+    // À chaque fin de tour le marché GLISSE d'un cran : celle de gauche part
+    // sous le paquet, les autres avancent, une neuve entre par la droite. La
+    // position d'une carte est donc son compte à rebours. « Sous » et non mêlée
+    // au hasard : une carte qu'on vient de voir partir ne doit pas revenir au
+    // tour suivant.
     {
         const e2 = neuf();
         const avant = e2.marche.map(c => c.uid);
-        const k = C.plusAncienne(e2);
         C.actionPiocher(e2, e2.tourJoueur, e2.mains.get(e2.tourJoueur)[0].uid);
         const apres = e2.marche.map(c => c.uid);
-        check('le marché se renouvelle à chaque tour',
-            apres[k] !== avant[k] && !avant.includes(apres[k]),
-            'la plus ancienne (place ' + k + ') est partie, une neuve est arrivée');
-        check('… et les quatre autres n\'ont pas bougé',
-            apres.filter((u, i) => i !== k).join(',') === avant.filter((u, i) => i !== k).join(','));
+        check('le marché glisse d\'un cran à chaque tour',
+            apres.slice(0, 4).join(',') === avant.slice(1).join(','),
+            'les quatre restantes ont avancé');
+        check('… et une neuve entre par la droite',
+            !avant.includes(apres[4]), apres[4].slice(0, 6));
         check('… et elle part au FOND du paquet', e2.pioche[0].uid === avant[0],
             'index 0, le dernier servi');
         check('… et il garde sa taille', e2.marche.length === C.CONFIG.MARCHE);
@@ -380,20 +379,21 @@ console.log('\n── Ce que le serveur laisse voir ──');
     const s = C.actionScanner(e, e.tourJoueur, joueurs.find(j => j !== e.tourJoueur));
     check('le scan rend bien la main visée', s.ok && Array.isArray(s.main) && s.main.length > 0, s.main && s.main.length + ' cartes');
 
-    // La carte qu'on vient de rendre ne doit pas être balayée au tour suivant.
-    // C'est ce que la mise en queue de rangée garantissait ; le jeton d'arrivée
-    // s'en charge désormais, sans rien déplacer.
+    // La carte rendue hérite du RANG de celle qu'on prend : troquer contre la
+    // dernière de la file, c'est y laisser la sienne pour cinq tours ; contre la
+    // première, pour un seul. Ce n'est pas un piège, c'est le sens de la file —
+    // et l'on est souvent content de voir sa défausse disparaître vite.
     {
         const e7 = neuf();
         const j7 = e7.tourJoueur;
         const rendue = e7.mains.get(j7)[0].uid;
-        C.actionEchanger(e7, j7, rendue, e7.marche[C.plusAncienne(e7)].uid);
+        C.actionEchanger(e7, j7, rendue, e7.marche[4].uid);
         for (let tour = 0; tour < 3; tour++) {
             const qui = e7.tourJoueur;
             C.actionPiocher(e7, qui, e7.mains.get(qui)[0].uid);
         }
-        check('la carte rendue survit à trois renouvellements',
-            e7.marche.some(c => c.uid === rendue), 'elle est la plus jeune du marché');
+        check('rendue en queue de file, elle survit à trois tours',
+            e7.marche.some(c => c.uid === rendue), 'elle est entrée en cinquième place');
     }
 
     // Poser un set renouvelle le marche comme n importe quel autre tour : c est
@@ -408,10 +408,10 @@ console.log('\n── Ce que le serveur laisse voir ──');
         e8.mains.set(j8, memes.concat(e8.mains.get(j8).slice(r8.taille)));
         const avant = e8.marche.map(c => c.uid);
         const res = C.actionPoser(e8, j8, an);
-        const bouge = e8.marche.map(c => c.uid).filter((u, k) => u !== avant[k]);
-        check('poser un set renouvelle le marché, sur UNE place',
-            res.ok && bouge.length === 1,
-            res.ok ? bouge.length + ' place(s)' : res.erreur);
+        const apres = e8.marche.map(c => c.uid);
+        check('poser un set fait glisser le marché comme les autres tours',
+            res.ok && apres.slice(0, 4).join(',') === avant.slice(1).join(',') && !avant.includes(apres[4]),
+            res.ok ? 'la première est partie, une neuve entre' : res.erreur);
     }
 
     // Le scan RETIENT le tour sept secondes. Sans cela la main scannée restait

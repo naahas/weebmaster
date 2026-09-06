@@ -113,11 +113,12 @@ src/img/               avatars, questionpic
 | `classic`   | Classique | Quiz QCM en solo. Réglage **Mode** : `lives` (vies) ou `points` (score + bonus rapidité) |
 | `rivalry`   | Classique | Le même quiz en deux camps. Ce n'est **pas un mode à part** : c'est le réglage **Format** du quiz |
 | `rush`      | Rush      | Un portrait, un nom, sans touche Entrée. La plus longue série de la manche gagne. Réglages : **durée** (30/60/90 s), **limite par portrait** (5–12 s ou aucune), **filtre** (Tout, Mainstream, Big 3) et **séquence** commune ou propre à chacun. Jouable seul. Données dans `rushdata.json`, portraits dans `src/img/rushpic/` |
-| `collect`   | Collect   | Jeu de cartes, 2 a 6 joueurs. Reunir **deux sets de trois** personnages du meme anime. A son tour, une action : piocher, echanger au marche, scanner une main, **voler** (duel a l aveugle sur le triangle Assaut > Mirage > Oracle) ou poser un set. Poser ne refait PAS la main : on repart avec ce qui reste, et la pioche ajoute une carte tant que la main n est pas pleine. Le marche a CINQ PLACES FIXES : rien n y glisse jamais. A chaque fin de tour la plus ancienne part SOUS
-  le paquet (jamais melee au hasard, sinon elle reviendrait aussitot) et une neuve arrive A SA PLACE ;
-  un echange remplace une carte par l autre sur place. L anciennete se lit dans un jeton d arrivee
-  (etat.horloge), plus dans la position — sans quoi toute la rangee decalait pour un troc qui n en
-  concernait qu une. Reglages : **main** (3, 4 ou 5 — l objectif suit tout seul : 3 paires, 2 sets de 3, ou 3 sets de 3) et **animes** (8/10/12) |
+| `collect`   | Collect   | Jeu de cartes, 2 a 6 joueurs. Reunir **deux sets de trois** personnages du meme anime. A son tour, une action : piocher, echanger au marche, scanner une main, **voler** (duel a l aveugle sur le triangle Assaut > Mirage > Oracle) ou poser un set. Poser ne refait PAS la main : on repart avec ce qui reste, et la pioche ajoute une carte tant que la main n est pas pleine. Le marche est une FILE : a chaque fin de tour celle de gauche part SOUS le paquet (jamais melee au
+  hasard, sinon elle reviendrait aussitot), tout glisse d un cran et une neuve entre par la droite —
+  la position d une carte est donc son compte a rebours, et une fleche marque celle qui s en va.
+  Un ECHANGE, lui, se fait SUR PLACE : chacune prend la place de l autre et rien d autre ne bouge
+  (faire glisser la rangee pour un troc la rendait illisible). Les deux ne se croisent jamais :
+  un echange ne renouvelle pas le marche. Reglages : **main** (3, 4 ou 5 — l objectif suit tout seul : 3 paires, 2 sets de 3, ou 3 sets de 3) et **animes** (8/10/12) |
 | `bombanime` | BombAnime | Bombe tournante : citer un perso d'une série, alphabet à compléter, défis + bonus. Réglages du salon : **série** (21 au choix), **temps du tour** (5–10 s, 8 par défaut), **vies** (1 ou 2, 2 par défaut) ; quinze joueurs au plus |
 
 ⚠️ `classic` et `rivalry` sont **un seul mode pour le joueur**. Le réglage *Format* (Solo / Équipe)

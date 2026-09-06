@@ -849,7 +849,7 @@
                                          libérée. Sans ça elles sautent d'un cran d'un coup.
                                          Il se tait pendant la distribution, qui a déjà la sienne. -->
                                     <transition-group tag="div" class="col-cartes"
-                                                      :name="col.entree ? '' : 'col-marche-t'">
+                                                      :name="colMarcheAnim">
                                     <button v-for="(c, i) in col.etat.marche" :key="c.uid"
                                             class="col-carte" :class="['classe-' + c.classe, {
                                                 'col-cible': col.drag && col.drag.cible === 'marche:' + c.uid,

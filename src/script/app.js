@@ -1062,18 +1062,22 @@ createApp({
         // en haut à gauche ; ce qu'on veut savoir d'un coup d'œil, c'est où
         // l'on se situe. À égalité d'étage, on partage le rang.
         // ── 🎴 Collect ──
-        // Celle qui partira au prochain renouvellement. Le marché a cinq places
-        // FIXES, et l'ancienneté se lit dans un jeton d'arrivée : sans ce repère,
-        // la carte remplacée semblait tirée au hasard — on voyait une place
-        // changer sans jamais savoir laquelle allait changer.
+        // Le marché est une file : celle de gauche s'en va au prochain tour, et
+        // la position de chaque carte dit combien de tours il lui reste. La
+        // flèche ne fait que rendre la règle visible à qui ne l'a pas devinée.
         colProchaineSortie() {
             const m = (this.col.etat && this.col.etat.marche) || [];
-            if (!m.length) return null;
-            let k = 0;
-            for (let i = 1; i < m.length; i++) {
-                if ((m[i].arrive || 0) < (m[k].arrive || 0)) k = i;
-            }
-            return m[k].uid;
+            return m.length ? m[0].uid : null;
+        },
+        // Deux mouvements, deux animations, et jamais les deux à la fois : un
+        // échange remplace une carte SUR PLACE (elle tombe, l'autre descend),
+        // le renouvellement de fin de tour fait GLISSER toute la rangée. Se
+        // tromper d'animation rendrait l'un illisible en imitant l'autre.
+        colMarcheAnim() {
+            if (this.col.entree) return '';
+            const j = (this.col.etat && this.col.etat.journal) || [];
+            const f = j[j.length - 1];
+            return (f && f.type === 'echange') ? 'col-marche-p' : 'col-marche-t';
         },
         colMesSets() {
             const p = this.col.etat && this.col.etat.joueurs.find(x => x.playerId === this.playerId);
