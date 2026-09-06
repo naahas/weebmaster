@@ -66,6 +66,15 @@ const BAREMES = {
 // yeux. Sept secondes, la table s'arrête, puis on enchaîne.
 const SCAN_MS = 7000;
 
+// Les deux cartes sont posees FACE CACHEE, et l'on attend deux secondes avant
+// de les retourner. C'est court, mais c'est ce qui fait exister le duel : sans
+// ce temps, la resolution tombait dans la meme image que la defense et les
+// deux joueurs voyaient un resultat sans avoir vu de confrontation.
+//
+// Pendant ces deux secondes le serveur ne LIVRE toujours rien : il annonce que
+// les deux cartes sont posees, et c'est tout. Elles n'arrivent qu'avec l'issue.
+const REVELE_MS = 2000;
+
 const BAT = { assaut: 'mirage', mirage: 'oracle', oracle: 'assaut' };
 const CLASSES = { assaut: 'Assaut', mirage: 'Mirage', oracle: 'Oracle' };
 const domine = (a, b) => BAT[a] === b;
@@ -317,16 +326,41 @@ function actionVoler(etat, playerId, cibleId, anime, uidAttaque) {
 }
 
 // La cible présente sa carte. C'est le seul moment où quelqu'un d'autre que le
-// joueur courant agit.
+// joueur courant agit. Elle POSE seulement : c'est « resoudreDuel » qui tranche,
+// deux secondes plus tard, une fois que les deux joueurs ont vu les deux cartes
+// posées face cachée.
 function actionDefendre(etat, cibleId, uidDefense) {
     const d = etat.duel;
     if (!d) return { ok: false, erreur: 'Aucun vol en cours' };
     if (d.cible !== cibleId) return { ok: false, erreur: 'Ce vol ne te vise pas' };
+    if (d.uidDefense) return { ok: false, erreur: 'Ta carte est déjà posée' };
 
     const mainCible = etat.mains.get(cibleId);
     const iDef = carteParUid(mainCible, uidDefense);
     if (iDef < 0) return { ok: false, erreur: 'Cette carte n\'est pas dans ta main' };
     if (mainCible[iDef].anime !== d.anime) return { ok: false, erreur: 'Cette carte n\'est pas de la série annoncée' };
+
+    d.uidDefense = uidDefense;
+    d.revele = 0;   // « apresAction » pose l'échéance
+    return { ok: true, pose: true };
+}
+
+// Les deux cartes se retournent, et l'on compare. Séparé de « actionDefendre »
+// pour que le moteur reste éprouvable sans serveur : une suite d'épreuves
+// appelle les deux à la file, un salon laisse deux secondes entre les deux.
+function resoudreDuel(etat) {
+    const d = etat.duel;
+    if (!d || !d.uidDefense) return { ok: false, erreur: 'Aucune défense posée' };
+    const cibleId = d.cible;
+
+    const mainCible = etat.mains.get(cibleId);
+    const iDef = carteParUid(mainCible, d.uidDefense);
+    // elle a pu perdre sa carte entre-temps : on annule proprement
+    if (iDef < 0) {
+        etat.duel = null;
+        tourSuivant(etat);
+        return { ok: true, issue: 'annule' };
+    }
 
     const mainAtt = etat.mains.get(d.attaquant);
     const iAtt = carteParUid(mainAtt, d.uidAttaque);
@@ -368,6 +402,15 @@ function actionDefendre(etat, cibleId, uidDefense) {
     return { ok: true, issue, attaque, defense };
 }
 
+// Poser puis trancher, d'un seul geste. C'est ce que faisait « actionDefendre »
+// avant qu'on y glisse les deux secondes de suspense ; les épreuves du moteur
+// s'en servent pour ne pas avoir à attendre.
+function defendreEtResoudre(etat, cibleId, uidDefense) {
+    const r = actionDefendre(etat, cibleId, uidDefense);
+    if (!r.ok) return r;
+    return resoudreDuel(etat);
+}
+
 // La cible n'a pas répondu à temps. Aucune de ses cartes n'est « la bonne » —
 // il n'existe pas de meilleure défense à l'aveugle — donc on en présente une au
 // hasard. Un absent ne fait ainsi perdre personne, et ne gagne rien non plus.
@@ -380,6 +423,8 @@ function defenseParDefaut(etat) {
         tourSuivant(etat);
         return { ok: true, issue: 'vide' };
     }
+    // Elle POSE, comme un joueur : la révélation suit son cours normal, et les
+    // deux secondes de suspense ont lieu même quand personne n'a répondu.
     return actionDefendre(etat, d.cible, dispo[Math.floor(Math.random() * dispo.length)].uid);
 }
 
@@ -481,7 +526,13 @@ function vuePublique(etat) {
         depuis: etat.debut ? Date.now() - etat.debut : 0,
         // Le duel se montre, mais JAMAIS la carte d'attaque ni sa classe : c'est
         // tout l'interet du vol a l'aveugle. La cible ne recoit que la serie.
-        duel: etat.duel ? { attaquant: etat.duel.attaquant, cible: etat.duel.cible, anime: etat.duel.anime, fin: etat.duel.fin } : null,
+        // Le duel se montre, mais JAMAIS les cartes ni leurs classes tant qu'il
+        // n'est pas tranché : c'est tout l'intérêt du vol à l'aveugle. On dit
+        // seulement que la défense est POSÉE, et à quelle heure on retourne.
+        duel: etat.duel ? {
+            attaquant: etat.duel.attaquant, cible: etat.duel.cible, anime: etat.duel.anime,
+            fin: etat.duel.fin, pose: !!etat.duel.uidDefense, revele: etat.duel.revele || 0,
+        } : null,
         // Qui scanne qui, et jusqu'à quand — JAMAIS les cartes. Celui qui se
         // fait lire a le droit de le savoir : c'est ce qui l'avertit que sa
         // main vient d'être vue, donc que son bluff ne tient plus.
@@ -552,7 +603,14 @@ function apresAction(gameState, io, onGameEnd) {
         return;
     }
 
-    if (etat.duel) {
+    if (etat.duel && etat.duel.uidDefense) {
+        // Les deux cartes sont posées : deux secondes, puis on retourne.
+        etat.duel.revele = Date.now() + REVELE_MS;
+        etat.duelTimer = setTimeout(() => {
+            resoudreDuel(etat);
+            apresAction(gameState, io, onGameEnd);
+        }, REVELE_MS);
+    } else if (etat.duel) {
         etat.duel.fin = Date.now() + DUEL_MS;
         etat.duelTimer = setTimeout(() => {
             defenseParDefaut(etat);
@@ -682,8 +740,9 @@ module.exports = {
     registerCollectSocketHandlers, diffuserEtat,
     domine, etatNeuf, regles, demarrer, tourSuivant,
     actionPiocher, actionEchanger, actionVoler, actionScanner, actionPoser, actionParDefaut, finirScan,
-    actionDefendre, defenseParDefaut, rendreAuPaquet, renouvelerMarche, sousLePaquet,
-    SCAN_MS,
+    actionDefendre, resoudreDuel, defendreEtResoudre, defenseParDefaut,
+    rendreAuPaquet, renouvelerMarche, sousLePaquet,
+    SCAN_MS, REVELE_MS,
     vuePublique, vueJoueur,
     _data: DATA,
 };

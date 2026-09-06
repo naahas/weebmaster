@@ -201,8 +201,15 @@ const dernier = (j) => j.etats[j.etats.length - 1];
 
             const def = cible.main.find(c => c.anime === serie);
             cible.socket.emit('collect-defendre', { uidDefense: def.uid });
-            await wait(350);
-            check('la cible tranche le duel', !dernier(A).duel);
+            await wait(400);
+            // Poser n'est pas trancher : les deux cartes restent face cachée deux
+            // secondes, et la table ne doit toujours en voir aucune.
+            check('la défense se pose sans trancher', !!dernier(A).duel && dernier(A).duel.pose === true);
+            const pendant = JSON.stringify(dernier(A)) + JSON.stringify(cible.etats.slice(-3));
+            check('… et rien ne fuit pendant la pose',
+                !pendant.includes('"' + arme.uid + '"') && !pendant.includes('"' + def.uid + '"'));
+            for (let i = 0; i < 30 && dernier(A).duel; i++) await wait(200);
+            check('la révélation tranche le duel', !dernier(A).duel);
             check('… et le tour repart', dernier(A).tourJoueur !== courant.nom, dernier(A).tourJoueur);
         }
     }

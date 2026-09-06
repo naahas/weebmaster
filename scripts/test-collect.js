@@ -161,7 +161,7 @@ console.log('\n── Le vol : le duel à l\'aveugle ──');
             (an) => [carte(an[0], 'oracle', 'B1'), carte(an[0], 'mirage', 'B2')]);
         C.actionVoler(e, a, b, A1, 'A1');
         // oracle bat assaut
-        const d = C.actionDefendre(e, b, 'B1');
+        const d = C.defendreEtResoudre(e, b, 'B1');
         check('la défense qui domine l\'emporte', d.ok && d.issue === 'perdu', d.issue || d.erreur);
         check('l\'attaquant perd sa carte', !e.mains.get(a).some(c => c.uid === 'A1'));
         check('… elle repart au paquet, pas au marché',
@@ -178,7 +178,7 @@ console.log('\n── Le vol : le duel à l\'aveugle ──');
             (an) => [carte(an[0], 'mirage', 'B1'), carte(an[0], 'assaut', 'B2')]);
         C.actionVoler(e, a, b, A1, 'A1');
         // assaut bat mirage
-        const d = C.actionDefendre(e, b, 'B1');
+        const d = C.defendreEtResoudre(e, b, 'B1');
         check('l\'attaque qui domine emporte la carte', d.ok && d.issue === 'gagne', d.issue || d.erreur);
         check('la carte volée est en main du voleur', e.mains.get(a).some(c => c.uid === 'B1'));
         check('la cible l\'a bien perdue', !e.mains.get(b).some(c => c.uid === 'B1'));
@@ -195,7 +195,7 @@ console.log('\n── Le vol : le duel à l\'aveugle ──');
             (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'oracle', 'A2')],
             (an) => [carte(an[0], 'assaut', 'B1'), carte(an[0], 'oracle', 'B2')]);
         C.actionVoler(e, a, b, A1, 'A1');
-        const d = C.actionDefendre(e, b, 'B1');
+        const d = C.defendreEtResoudre(e, b, 'B1');
         check('même classe : match nul', d.ok && d.issue === 'nul', d.issue || d.erreur);
         check('personne ne perd de carte',
             e.mains.get(a).length === 2 && e.mains.get(b).length === 2);
@@ -225,7 +225,7 @@ console.log('\n── Le vol : le duel à l\'aveugle ──');
         const horsSerie = C.actionDefendre(e, b, 'B2');
         check('on ne défend pas avec une autre série', !horsSerie.ok, horsSerie.erreur);
         check('le duel est toujours ouvert', !!e.duel);
-        const bon = C.actionDefendre(e, b, 'B1');
+        const bon = C.defendreEtResoudre(e, b, 'B1');
         check('la bonne carte le referme', bon.ok && !e.duel, bon.issue);
     }
 
@@ -235,9 +235,10 @@ console.log('\n── Le vol : le duel à l\'aveugle ──');
             (an) => [carte(an[1], 'assaut', 'A1')],
             (an) => [carte(an[0], 'mirage', 'B1'), carte(an[0], 'oracle', 'B2')]);
         C.actionVoler(e, a, b, A1, 'A1');
-        const d = C.defenseParDefaut(e);
+        const pose = C.defenseParDefaut(e);
+        const d = C.resoudreDuel(e);
         check('une cible qui ne répond pas présente une carte au hasard',
-            d.ok && ['gagne', 'perdu', 'nul'].includes(d.issue), d.issue);
+            pose.ok && d.ok && ['gagne', 'perdu', 'nul'].includes(d.issue), d.issue);
         check('le duel se referme quand même', !e.duel && e.tourJoueur !== a);
     }
 
@@ -257,12 +258,40 @@ console.log('\n── Le vol : le duel à l\'aveugle ──');
                 (an) => [carte(an[1], ca, 'A1'), carte(an[1], 'assaut', 'A2')],
                 (an) => [carte(an[0], cd, 'B1')]);
             C.actionVoler(e, a, b, A1, 'A1');
-            const d = C.actionDefendre(e, b, 'B1');
+            const d = C.defendreEtResoudre(e, b, 'B1');
             const veut = ca === cd ? 'nul' : (attendu[ca] === cd ? 'gagne' : 'perdu');
             if (d.issue !== veut) { issuesOk = false; vues.push(ca + '/' + cd + '→' + d.issue); }
         }
         check('les neuf duels possibles tombent juste', issuesOk, vues.join(' ') || '9/9');
     }
+
+{
+    // Poser et trancher sont deux moments : entre les deux, les deux cartes
+    // sont sur la table FACE CACHÉE et le salon laisse deux secondes. Sans ce
+    // temps, la résolution tombait dans la même image que la défense, et les
+    // deux joueurs voyaient un résultat sans avoir vu de confrontation.
+    const { e, a, b, A1 } = table(
+        (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'oracle', 'A2')],
+        (an) => [carte(an[0], 'mirage', 'B1')]);
+    C.actionVoler(e, a, b, A1, 'A1');
+
+    const pose = C.actionDefendre(e, b, 'B1');
+    check('poser ne tranche pas', pose.ok && pose.pose && !!e.duel);
+    check('les deux mains sont intactes tant qu\'on n\'a pas retourné',
+        e.mains.get(a).length === 2 && e.mains.get(b).length === 1);
+    check('on ne pose pas deux fois', !C.actionDefendre(e, b, 'B1').ok);
+
+    // Et surtout : rien ne sort. Ni la carte d'attaque, ni celle de la défense.
+    const vue = JSON.stringify(C.vuePublique(e));
+    check('la table sait que la défense est posée', C.vuePublique(e).duel.pose === true);
+    check('… sans voir aucune des deux cartes',
+        !vue.includes('"A1"') && !vue.includes('"B1"'),
+        'ni A1 ni B1 dans la vue publique');
+
+    const d = C.resoudreDuel(e);
+    check('la révélation tranche', d.ok && d.issue === 'gagne', d.issue || d.erreur);
+    check('et le duel se referme', !e.duel && e.tourJoueur !== a);
+}
 
     // ── On ne vole ni soi-même, ni une série absente ──
     {
@@ -362,6 +391,7 @@ console.log('\n── Ce que le serveur laisse voir ──');
     const apres = JSON.stringify(C.vuePublique(e));
     check('… sans que le salon en sache rien', s.main.every(c => !apres.includes('"' + c.uid + '"')));
 }
+
 
 console.log('\n── La pioche ne s\'épuise jamais ──');
 {
@@ -464,7 +494,7 @@ console.log('\n── Une partie entière se termine ──');
                 }
                 if (cible && arme) {
                     const r2 = C.actionVoler(e, j, cible, vise, arme.uid);
-                    if (r2.ok && r2.duel) C.defenseParDefaut(e);
+                    if (r2.ok && r2.duel) { C.defenseParDefaut(e); C.resoudreDuel(e); }
                     if (r2.ok) continue;
                 }
             }

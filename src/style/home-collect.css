@@ -261,7 +261,7 @@
    demandait qu'on la lise ; un œil sur ses propres cartes se comprend sans un
    mot, et il ne cache rien puisqu'on voit au travers. */
 .col-oeil {
-    position: absolute; left: 50%; top: 42%;
+    position: absolute; left: 50%; top: 31%;
     transform: translate(-50%, -50%);
     width: calc(var(--carte) * 2.4);
     pointer-events: none;
