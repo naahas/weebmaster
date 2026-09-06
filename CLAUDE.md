@@ -33,7 +33,11 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   Node épinglé en 20.x). ⚠️ Les salons vivent dans la mémoire du processus, sans adaptateur Redis :
   passer à deux dynos donnerait deux ensembles de salons qui s'ignorent. Et le recyclage quotidien
   du dyno tue les parties en cours — c'est architectural, aucun plan n'y change rien.
-- **Tests** : `npm run check` (le template Vue compile-t-il), puis, serveur lancé à côté :
+- **Tests** : `npm run check` (le template Vue compile-t-il) et `npm run check:vue`
+  (une propriété calculée appelée avec des parenthèses dans le gabarit lève une TypeError
+  et blanchit la page ; une méthode citée sans parenthèses rend une fonction toujours
+  vraie — `check` ne voit ni l un ni l autre, ce sont des expressions valides), puis,
+  serveur lancé à côté :
   `npm run smoke` (cycle de jeu complet), `npm run test:host` (contrôles de l'hôte, camps,
   rafraîchissement), `npm run test:tie` (départage solo et en camps, ~1 min), `npm run test:hote`
   (les routes /admin sont-elles fermées aux visiteurs), `npm run test:rooms` (deux salons

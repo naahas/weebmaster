@@ -33,7 +33,8 @@
     "test:fuites": "node scripts/test-fuites.js",
     "test:debit": "node scripts/test-debit.js",
     "test:collect": "node scripts/test-collect.js",
-    "test:collect-salon": "node scripts/test-collect-salon.js"
+    "test:collect-salon": "node scripts/test-collect-salon.js",
+    "check:vue": "node scripts/verif-calculees.js"
   },
   "keywords": [
     "quiz",

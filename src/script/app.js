@@ -1062,6 +1062,19 @@ createApp({
         // en haut à gauche ; ce qu'on veut savoir d'un coup d'œil, c'est où
         // l'on se situe. À égalité d'étage, on partage le rang.
         // ── 🎴 Collect ──
+        // Celle qui partira au prochain renouvellement. Le marché a cinq places
+        // FIXES, et l'ancienneté se lit dans un jeton d'arrivée : sans ce repère,
+        // la carte remplacée semblait tirée au hasard — on voyait une place
+        // changer sans jamais savoir laquelle allait changer.
+        colProchaineSortie() {
+            const m = (this.col.etat && this.col.etat.marche) || [];
+            if (!m.length) return null;
+            let k = 0;
+            for (let i = 1; i < m.length; i++) {
+                if ((m[i].arrive || 0) < (m[k].arrive || 0)) k = i;
+            }
+            return m[k].uid;
+        },
         colMesSets() {
             const p = this.col.etat && this.col.etat.joueurs.find(x => x.playerId === this.playerId);
             return p ? p.sets.length : 0;
@@ -1872,19 +1885,6 @@ createApp({
         // dès « taille - 1 » cartes, ce qui à trois cartes (objectif : des
         // paires) valait « au moins une » — donc toujours vrai, donc toute la
         // main allumée en permanence.
-        // Celle qui partira au prochain renouvellement. Le marché a cinq places
-        // FIXES, et l'ancienneté se lit dans un jeton d'arrivée : sans ce repère,
-        // la carte remplacée semblait tirée au hasard — on voyait une place
-        // changer sans jamais savoir laquelle allait changer.
-        colProchaineSortie() {
-            const m = (this.col.etat && this.col.etat.marche) || [];
-            if (!m.length) return null;
-            let k = 0;
-            for (let i = 1; i < m.length; i++) {
-                if ((m[i].arrive || 0) < (m[k].arrive || 0)) k = i;
-            }
-            return m[k].uid;
-        },
         colSerieVisible(anime) {
             const marche = (this.col.etat && this.col.etat.marche) || [];
             return this.colDansMaMain(anime) + marche.filter(c => c.anime === anime).length;
