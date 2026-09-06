@@ -58,26 +58,17 @@ const BAREMES = {
     5: { main: 5, taille: 3, sets: 3, nom: '5 cartes', resume: '3 sets de 3' },
 };
 
-// ── Le triangle ───────────────────────────────────────────────
-// Assaut bat Mirage, Mirage bat Oracle, Oracle bat Assaut.
 // Le scan RETIENT le tour sept secondes. Il ne fallait pas qu'il le passe
 // aussitôt : la main scannée reste retournée pendant ce temps, et si le joueur
 // suivant agissait dans l'intervalle, ce qu'on lisait devenait faux sous nos
 // yeux. Sept secondes, la table s'arrête, puis on enchaîne.
 const SCAN_MS = 7000;
 
-// Les deux cartes sont posees FACE CACHEE, et l'on attend deux secondes avant
-// de les retourner. C'est court, mais c'est ce qui fait exister le duel : sans
-// ce temps, la resolution tombait dans la meme image que la defense et les
-// deux joueurs voyaient un resultat sans avoir vu de confrontation.
-//
-// Pendant ces deux secondes le serveur ne LIVRE toujours rien : il annonce que
-// les deux cartes sont posees, et c'est tout. Elles n'arrivent qu'avec l'issue.
-const REVELE_MS = 2000;
-
-const BAT = { assaut: 'mirage', mirage: 'oracle', oracle: 'assaut' };
+// Les trois classes. Elles ne se battent plus entre elles — le cycle « Assaut
+// bat Mirage bat Oracle » a disparu avec le duel — mais elles décident de ce
+// que coûte un vol : rendre une carte de la même classe, ou deux à défaut.
+// Il n'y a donc plus rien à apprendre par cœur, seulement à faire correspondre.
 const CLASSES = { assaut: 'Assaut', mirage: 'Mirage', oracle: 'Oracle' };
-const domine = (a, b) => BAT[a] === b;
 
 // ── Le paquet ─────────────────────────────────────────────────
 const CARTES_PAR_ANIME = {};
@@ -116,10 +107,10 @@ function etatNeuf() {
         tourJoueur: null,
         tourFin: 0,
         tourTimer: null,
-        duelTimer: null,
+        larcinTimer: null,
         scanTimer: null,
         debut: 0,
-        duel: null,          // un vol en attente de la defense de sa cible
+        larcin: null,        // un vol pris, en attente de son paiement
         scan: null,          // un scan qui retient la table sept secondes
         vainqueur: null,
         journal: [],           // les derniers faits, pour l'écran de tous
@@ -149,9 +140,9 @@ function tirer(etat) {
 // il pioche. C'est public, convoité, et sa taille ne bouge jamais : la plus
 // ancienne carte repart dans le paquet quand une nouvelle arrive.
 //
-// Le PAQUET reprend ce qui se perd au combat. Une carte tombée au duel ne doit
-// pas atterrir sous les yeux de tous — elle disparaît, anonyme, et reviendra
-// plus tard sans qu'on sache d'où elle vient.
+// Le PAQUET reprend ce qu'on perd au vol. Une carte lâchée pour solder un
+// larcin ne doit pas atterrir sous les yeux de tous — elle disparaît, anonyme,
+// et reviendra plus tard sans qu'on sache d'où elle vient.
 function rendreAuPaquet(etat, carte) {
     etat.pioche.splice(Math.floor(Math.random() * (etat.pioche.length + 1)), 0, carte);
 }
@@ -234,7 +225,7 @@ function verifierTour(etat, playerId) {
     if (!etat.active) return 'La partie n\'est pas en cours';
     // Un vol attend sa défense : tant qu'il n'est pas tranché, plus personne ne
     // joue — pas même celui dont c'est le tour.
-    if (etat.duel) return 'Un vol est en cours';
+    if (etat.larcin) return 'Un vol est en cours';
     // Un scan retient la table le temps qu'on lise la main
     if (etat.scan) return 'Un scan est en cours';
     if (etat.tourJoueur !== playerId) return 'Ce n\'est pas ton tour';
@@ -302,149 +293,103 @@ function actionEchanger(etat, playerId, uidMain, uidMarche) {
     return { ok: true, prise };
 }
 
-// ── Le vol, en deux temps ─────────────────────────────────────
+// ── Le vol : on prend à l'aveugle, et l'on paie ───────────────
 //
-// L'attaquant pose une carte FACE CACHÉE, annonce une série et désigne sa
-// cible. Celle-ci ne voit que la série : elle doit présenter une de ses cartes
-// de cette série sans savoir à quelle classe elle fait face. Les deux se
-// retournent ensemble.
+// Le voleur désigne une carte dans la main d'un adversaire — une carte DE DOS,
+// il ne choisit qu'une position. Elle se retourne pour toute la table, et il
+// doit alors rendre une carte de LA MÊME CLASSE. S'il n'en a aucune, il en
+// rend DEUX, de n'importe quelle classe.
 //
-// C'est ce secret qui fait tout. Si la cible voyait la carte, elle jouerait
-// mécaniquement sa meilleure réponse — dominante si elle l'a, égale sinon —
-// et son « choix » serait une consultation de table. À l'aveugle, il n'existe
-// aucune réponse dominante : c'est un pierre-feuille-ciseaux, donc un vrai
-// pari des deux côtés. Le triangle ne sert enfin à rien d'autre qu'à ça.
+// Le hasard n'en est un que pour l'étourdi : les positions ne bougent pas d'un
+// tour à l'autre — une pioche remplace la carte lâchée à sa place, un échange
+// aussi — et l'on voit une carte entrer dans la main d'un adversaire. Qui suit
+// sait ce qu'il prend. Le scan, lui, sert deux fois : il donne la position ET
+// la classe, donc le prix qu'on va payer.
 //
-// Et le scan prend sa vraie valeur : il ne dit plus seulement quoi prendre,
-// mais avec quoi attaquer — sans jamais donner de certitude.
-function actionVoler(etat, playerId, cibleId, anime, uidAttaque) {
+// C'est ce qui a remplacé le duel de classes. Le duel était élégant — un
+// pierre-feuille-ciseaux à l'aveugle — mais il ratait une fois sur deux, il
+// demandait un cycle à apprendre, et il ouvrait une fenêtre par joueur. Ici le
+// vol aboutit toujours, la règle tient en cinq mots, et la classe reste la
+// chose qui décide : elle ne décide plus de qui gagne, mais de ce que ça coûte.
+function actionVoler(etat, playerId, cibleId, index) {
     const ko = verifierTour(etat, playerId);
     if (ko) return { ok: false, erreur: ko };
     if (cibleId === playerId) return { ok: false, erreur: 'Choisis un adversaire' };
-    if (!etat.mains.has(cibleId)) return { ok: false, erreur: 'Ce joueur n\'est pas dans la partie' };
-    if (!etat.animes.includes(anime)) return { ok: false, erreur: 'Cet anime n\'est pas en jeu' };
-
-    const main = etat.mains.get(playerId);
-    const iAttaque = carteParUid(main, uidAttaque);
-    if (iAttaque < 0) return { ok: false, erreur: 'Cette carte n\'est pas dans ta main' };
-
-    const attaque = main[iAttaque];
-    const defenses = etat.mains.get(cibleId).filter(c => c.anime === anime);
-
-    // Rien de cette série chez elle : inutile de la faire attendre pour rien,
-    // on tranche tout de suite. L'attaquant garde sa carte et perd son tour.
-    if (!defenses.length) {
-        noter(etat, { type: 'vol', joueur: playerId, cible: cibleId, anime, issue: 'vide' });
-        tourSuivant(etat);
-        return { ok: true, issue: 'vide' };
-    }
-
-    etat.duel = { attaquant: playerId, cible: cibleId, anime, uidAttaque, fin: 0 };
-    return { ok: true, duel: true, cible: cibleId, anime, choix: defenses.length };
-}
-
-// La cible présente sa carte. C'est le seul moment où quelqu'un d'autre que le
-// joueur courant agit. Elle POSE seulement : c'est « resoudreDuel » qui tranche,
-// deux secondes plus tard, une fois que les deux joueurs ont vu les deux cartes
-// posées face cachée.
-function actionDefendre(etat, cibleId, uidDefense) {
-    const d = etat.duel;
-    if (!d) return { ok: false, erreur: 'Aucun vol en cours' };
-    if (d.cible !== cibleId) return { ok: false, erreur: 'Ce vol ne te vise pas' };
-    if (d.uidDefense) return { ok: false, erreur: 'Ta carte est déjà posée' };
-
     const mainCible = etat.mains.get(cibleId);
-    const iDef = carteParUid(mainCible, uidDefense);
-    if (iDef < 0) return { ok: false, erreur: 'Cette carte n\'est pas dans ta main' };
-    if (mainCible[iDef].anime !== d.anime) return { ok: false, erreur: 'Cette carte n\'est pas de la série annoncée' };
-
-    d.uidDefense = uidDefense;
-    d.revele = 0;   // « apresAction » pose l'échéance
-    return { ok: true, pose: true };
-}
-
-// Les deux cartes se retournent, et l'on compare. Séparé de « actionDefendre »
-// pour que le moteur reste éprouvable sans serveur : une suite d'épreuves
-// appelle les deux à la file, un salon laisse deux secondes entre les deux.
-function resoudreDuel(etat) {
-    const d = etat.duel;
-    if (!d || !d.uidDefense) return { ok: false, erreur: 'Aucune défense posée' };
-    const cibleId = d.cible;
-
-    const mainCible = etat.mains.get(cibleId);
-    const iDef = carteParUid(mainCible, d.uidDefense);
-    // elle a pu perdre sa carte entre-temps : on annule proprement
-    if (iDef < 0) {
-        etat.duel = null;
-        tourSuivant(etat);
-        return { ok: true, issue: 'annule' };
+    if (!mainCible) return { ok: false, erreur: 'Ce joueur n\'est pas dans la partie' };
+    const i = Number(index);
+    if (!Number.isInteger(i) || i < 0 || i >= mainCible.length) {
+        return { ok: false, erreur: 'Cette carte n\'existe pas' };
     }
 
-    const mainAtt = etat.mains.get(d.attaquant);
-    const iAtt = carteParUid(mainAtt, d.uidAttaque);
-    // l'attaquant a pu perdre sa carte entre-temps : on annule proprement
-    if (iAtt < 0) {
-        etat.duel = null;
-        tourSuivant(etat);
-        return { ok: true, issue: 'annule' };
-    }
-
-    const attaque = mainAtt[iAtt];
-    const defense = mainCible[iDef];
-    const fait = {
-        type: 'vol', joueur: d.attaquant, cible: cibleId, anime: d.anime,
-        attaque: { ...attaque }, defense: { ...defense },
+    // Elle quitte sa main tout de suite et se montre : c'est le moment du mode.
+    const carte = mainCible.splice(i, 1)[0];
+    const main = etat.mains.get(playerId) || [];
+    // Le prix : une carte de la même classe, ou deux à défaut. On ne paie
+    // JAMAIS avec la carte qu'on vient de prendre — sinon rendre un Oracle
+    // volé pour un Oracle dû serait un tour blanc, et le vol ne coûterait rien.
+    const du = main.some(c => c.classe === carte.classe) ? 1 : 2;
+    // Sauf quand on n'a pas de quoi : la prise elle-même comble le manque, et
+    // l'on ressort les mains vides. C'est le prix d'un vol tenté trop tard.
+    const aRendre = Math.min(du, main.length);
+    etat.larcin = {
+        voleur: playerId, cible: cibleId, carte, classe: carte.classe,
+        du, aRendre, prisePayee: du > main.length, fin: 0,
     };
+    noter(etat, { type: 'prise', joueur: playerId, cible: cibleId, carte: { ...carte }, du });
+    return { ok: true, larcin: true, carte, du };
+}
 
-    let issue;
-    if (domine(attaque.classe, defense.classe)) {
-        // l'attaque passe : la carte volée prend la place de l'attaque, qui
-        // retourne au paquet — pas au marché, ce n'est pas une défausse choisie
-        mainCible.splice(iDef, 1);
-        mainAtt[iAtt] = defense;
-        rendreAuPaquet(etat, attaque);
-        issue = 'gagne';
-    } else if (domine(defense.classe, attaque.classe)) {
-        // la défense l'emporte : l'attaquant perd sa carte, et sa main s'ouvre
-        mainAtt.splice(iAtt, 1);
-        rendreAuPaquet(etat, attaque);
-        issue = 'perdu';
-    } else {
-        issue = 'nul';   // même classe : rien ne bouge, le tour est simplement passé
+// Le voleur solde sa dette. Il choisit lui-même ce qu'il lâche — parmi les
+// cartes de la bonne classe s'il en a — et tout repart au paquet : ce n'est pas
+// une défausse choisie, personne ne doit pouvoir la ramasser au marché.
+function actionPayer(etat, playerId, uids) {
+    const l = etat.larcin;
+    if (!l) return { ok: false, erreur: 'Aucun vol en cours' };
+    if (l.voleur !== playerId) return { ok: false, erreur: 'Ce n\'est pas toi qui voles' };
+
+    const main = etat.mains.get(playerId) || [];
+    const choisies = [...new Set(uids || [])];
+    if (choisies.length !== l.aRendre) {
+        return { ok: false, erreur: l.aRendre === 1 ? 'Rends une carte' : `Rends ${l.aRendre} cartes` };
+    }
+    const index = choisies.map(u => carteParUid(main, u));
+    if (index.some(k => k < 0)) return { ok: false, erreur: 'Cette carte n\'est pas dans ta main' };
+    if (l.du === 1 && main[index[0]].classe !== l.classe) {
+        return { ok: false, erreur: 'Il faut une carte de la même classe' };
     }
 
-    fait.issue = issue;
-    noter(etat, fait);
-    etat.duel = null;
+    // du plus grand indice au plus petit, sinon les suivants glissent
+    const rendues = index.sort((a, b) => b - a).map(k => main.splice(k, 1)[0]);
+    for (const c of rendues) rendreAuPaquet(etat, c);
+    if (l.prisePayee) rendreAuPaquet(etat, l.carte);
+    else main.push(l.carte);
+
+    noter(etat, {
+        type: 'vol', joueur: playerId, cible: l.cible,
+        carte: { ...l.carte }, rendues: rendues.map(c => ({ ...c })),
+        du: l.du, issue: l.prisePayee ? 'ruine' : (l.du === 1 ? 'juste' : 'cher'),
+    });
+    etat.larcin = null;
     tourSuivant(etat);
-    return { ok: true, issue, attaque, defense };
+    return { ok: true, issue: l.prisePayee ? 'ruine' : 'paye', rendues };
 }
 
-// Poser puis trancher, d'un seul geste. C'est ce que faisait « actionDefendre »
-// avant qu'on y glisse les deux secondes de suspense ; les épreuves du moteur
-// s'en servent pour ne pas avoir à attendre.
-function defendreEtResoudre(etat, cibleId, uidDefense) {
-    const r = actionDefendre(etat, cibleId, uidDefense);
-    if (!r.ok) return r;
-    return resoudreDuel(etat);
+// Le voleur n'a pas payé à temps. On solde à sa place, au moins mauvais choix :
+// ses cartes les plus isolées, celles qui ne cassent aucune série en cours.
+// Un joueur parti ne doit pas figer la table, et il ne doit pas non plus s'en
+// tirer mieux qu'un joueur présent.
+function larcinParDefaut(etat) {
+    const l = etat.larcin;
+    if (!l) return { ok: false, erreur: 'Aucun vol en cours' };
+    const main = etat.mains.get(l.voleur) || [];
+    const par = {};
+    for (const c of main) par[c.anime] = (par[c.anime] || 0) + 1;
+    const eligibles = l.du === 1 ? main.filter(c => c.classe === l.classe) : main.slice();
+    eligibles.sort((a, b) => par[a.anime] - par[b.anime]);
+    return actionPayer(etat, l.voleur, eligibles.slice(0, l.aRendre).map(c => c.uid));
 }
 
-// La cible n'a pas répondu à temps. Aucune de ses cartes n'est « la bonne » —
-// il n'existe pas de meilleure défense à l'aveugle — donc on en présente une au
-// hasard. Un absent ne fait ainsi perdre personne, et ne gagne rien non plus.
-function defenseParDefaut(etat) {
-    const d = etat.duel;
-    if (!d) return { ok: false, erreur: 'Aucun vol en cours' };
-    const dispo = (etat.mains.get(d.cible) || []).filter(c => c.anime === d.anime);
-    if (!dispo.length) {
-        etat.duel = null;
-        tourSuivant(etat);
-        return { ok: true, issue: 'vide' };
-    }
-    // Elle POSE, comme un joueur : la révélation suit son cours normal, et les
-    // deux secondes de suspense ont lieu même quand personne n'a répondu.
-    return actionDefendre(etat, d.cible, dispo[Math.floor(Math.random() * dispo.length)].uid);
-}
 
 // Le scan ne rend rien : il informe. C'est lui qui rend le vol sûr, au prix
 // d'un tour.
@@ -547,14 +492,14 @@ function vuePublique(etat) {
         // client de savoir s'il assiste au début ou s'il arrive en cours : sans
         // ça, un joueur qui se rafraîchit revoyait toute la distribution.
         depuis: etat.debut ? Date.now() - etat.debut : 0,
-        // Le duel se montre, mais JAMAIS la carte d'attaque ni sa classe : c'est
-        // tout l'interet du vol a l'aveugle. La cible ne recoit que la serie.
-        // Le duel se montre, mais JAMAIS les cartes ni leurs classes tant qu'il
-        // n'est pas tranché : c'est tout l'intérêt du vol à l'aveugle. On dit
-        // seulement que la défense est POSÉE, et à quelle heure on retourne.
-        duel: etat.duel ? {
-            attaquant: etat.duel.attaquant, cible: etat.duel.cible, anime: etat.duel.anime,
-            fin: etat.duel.fin, pose: !!etat.duel.uidDefense, revele: etat.duel.revele || 0,
+        // Le vol en cours se montre ENTIÈREMENT, carte comprise : elle vient de
+        // se retourner devant tout le monde, c'est le moment du mode. Seul le
+        // paiement reste à venir, et il n'a rien de secret non plus.
+        larcin: etat.larcin ? {
+            voleur: etat.larcin.voleur, cible: etat.larcin.cible,
+            carte: { ...etat.larcin.carte }, classe: etat.larcin.classe,
+            du: etat.larcin.du, aRendre: etat.larcin.aRendre,
+            prisePayee: etat.larcin.prisePayee, fin: etat.larcin.fin,
         } : null,
         // Qui scanne qui, et jusqu'à quand — JAMAIS les cartes. Celui qui se
         // fait lire a le droit de le savoir : c'est ce qui l'avertit que sa
@@ -586,7 +531,7 @@ function vueJoueur(etat, playerId) {
 // un salon : minuteries, diffusion, et les mains qui ne partent qu'à leur
 // propriétaire.
 
-const DUEL_MS = 8000;   // la cible n'a qu'une chose à faire, choisir une carte
+const LARCIN_MS = 12000;  // choisir ce qu'on lâche demande de regarder sa main
 
 // Le pseudo d'un joueur, pour le journal — le moteur ne connaît que des
 // identifiants.
@@ -609,7 +554,7 @@ function diffuserEtat(gameState, io) {
 
 function stopperMinuteries(etat) {
     if (etat.tourTimer) { clearTimeout(etat.tourTimer); etat.tourTimer = null; }
-    if (etat.duelTimer) { clearTimeout(etat.duelTimer); etat.duelTimer = null; }
+    if (etat.larcinTimer) { clearTimeout(etat.larcinTimer); etat.larcinTimer = null; }
     if (etat.scanTimer) { clearTimeout(etat.scanTimer); etat.scanTimer = null; }
 }
 
@@ -626,19 +571,13 @@ function apresAction(gameState, io, onGameEnd) {
         return;
     }
 
-    if (etat.duel && etat.duel.uidDefense) {
-        // Les deux cartes sont posées : deux secondes, puis on retourne.
-        etat.duel.revele = Date.now() + REVELE_MS;
-        etat.duelTimer = setTimeout(() => {
-            resoudreDuel(etat);
+    if (etat.larcin) {
+        // La carte est retournée, la table s'arrête : le voleur doit payer.
+        etat.larcin.fin = Date.now() + LARCIN_MS;
+        etat.larcinTimer = setTimeout(() => {
+            larcinParDefaut(etat);
             apresAction(gameState, io, onGameEnd);
-        }, REVELE_MS);
-    } else if (etat.duel) {
-        etat.duel.fin = Date.now() + DUEL_MS;
-        etat.duelTimer = setTimeout(() => {
-            defenseParDefaut(etat);
-            apresAction(gameState, io, onGameEnd);
-        }, DUEL_MS);
+        }, LARCIN_MS);
     } else if (etat.scan) {
         // Sept secondes pendant lesquelles la table ne bouge pas, puis la main
         // passe. Le chrono du tour affiche cette échéance-là : c'est bien le
@@ -704,8 +643,13 @@ function quitterCollect(gameState, io, playerId) {
         diffuserEtat(gameState, io);
         return;
     }
-    // le duel qui le visait, ou qu'il menait, n'a plus d'objet
-    if (etat.duel && (etat.duel.cible === playerId || etat.duel.attaquant === playerId)) etat.duel = null;
+    // Le vol qu'il menait, ou qu'il subissait, n'a plus d'objet. La carte prise
+    // repart au paquet : elle n'appartient plus à personne, et la laisser dans
+    // les limbes bloquerait la table.
+    if (etat.larcin && (etat.larcin.voleur === playerId || etat.larcin.cible === playerId)) {
+        rendreAuPaquet(etat, etat.larcin.carte);
+        etat.larcin = null;
+    }
     // le scan qu'il lisait, ou qu'il subissait, non plus : la table ne doit
     // pas rester bloquee sept secondes pour un joueur parti
     if (etat.scan && (etat.scan.par === playerId || etat.scan.cible === playerId)) etat.scan = null;
@@ -746,8 +690,11 @@ function registerCollectSocketHandlers(io, socket, resoudreSalon) {
     socket.on('collect-piocher', (d) => jouer(c => actionPiocher(c.etat, c.moi, d && d.uidDefausse)));
     socket.on('collect-echanger', (d) => jouer(c => actionEchanger(c.etat, c.moi, d && d.uidMain, d && d.uidMarche)));
     socket.on('collect-poser', (d) => jouer(c => actionPoser(c.etat, c.moi, d && d.anime)));
-    socket.on('collect-voler', (d) => jouer(c => actionVoler(c.etat, c.moi, d && d.cibleId, d && d.anime, d && d.uidAttaque)));
-    socket.on('collect-defendre', (d) => jouer(c => actionDefendre(c.etat, c.moi, d && d.uidDefense)));
+    // Le vol en deux temps : on prend une position, puis on paie. Le paiement
+    // n'est pas soumis a « verifierTour » — c'est bien le tour du voleur, mais
+    // « etat.larcin » y bloque justement tout le monde, lui compris.
+    socket.on('collect-voler', (d) => jouer(c => actionVoler(c.etat, c.moi, d && d.cibleId, d && d.index)));
+    socket.on('collect-payer', (d) => jouer(c => actionPayer(c.etat, c.moi, d && d.uids)));
 
     // Le scan est le seul dont le résultat ne part qu'au demandeur : il porte
     // la main d'un adversaire, elle ne doit jamais passer par le salon.
@@ -758,14 +705,14 @@ function registerCollectSocketHandlers(io, socket, resoudreSalon) {
 }
 
 module.exports = {
-    CONFIG, BAREMES, CLASSES, BAT, DUEL_MS,
+    CONFIG, BAREMES, CLASSES, LARCIN_MS,
     demarrerPartie, reinitialiser, quitterCollect,
     registerCollectSocketHandlers, diffuserEtat,
-    domine, etatNeuf, regles, demarrer, tourSuivant,
+    etatNeuf, regles, demarrer, tourSuivant,
     actionPiocher, actionEchanger, actionVoler, actionScanner, actionPoser, actionParDefaut, finirScan,
-    actionDefendre, resoudreDuel, defendreEtResoudre, defenseParDefaut,
+    actionPayer, larcinParDefaut,
     rendreAuPaquet, renouvelerMarche, sousLePaquet,
-    SCAN_MS, REVELE_MS,
+    SCAN_MS,
     vuePublique, vueJoueur,
     _data: DATA,
 };

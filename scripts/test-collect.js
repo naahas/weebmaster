@@ -130,7 +130,7 @@ console.log('\n── Le marché ──');
     }
 }
 
-console.log('\n── Le vol : le duel à l\'aveugle ──');
+console.log('\n── Le vol : on prend, et l\'on paie ──');
 {
     const carte = (anime, classe, uid) => ({ uid, id: uid, nom: uid, anime, classe, img: 'x.webp' });
     // On fabrique la situation à la main pour l'éprouver exactement. Les animes
@@ -140,178 +140,120 @@ console.log('\n── Le vol : le duel à l\'aveugle ──');
         const [a, b] = [e.tourJoueur, joueurs.find(j => j !== e.tourJoueur)];
         e.mains.set(a, mainsA(e.animes));
         e.mains.set(b, mainsB(e.animes));
-        return { e, a, b, A1: e.animes[0], A2: e.animes[1] };
+        return { e, a, b };
     };
 
-    // ── L'attaque ouvre un duel, elle ne tranche rien ──
+    // ── La prise ouvre une dette, elle ne conclut rien ──
     {
-        const { e, a, b, A1, A2 } = table(
+        const { e, a, b } = table(
             (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'oracle', 'A2')],
             (an) => [carte(an[0], 'mirage', 'B1'), carte(an[0], 'assaut', 'B2')]);
-        void A2;
-        const r = C.actionVoler(e, a, b, A1, 'A1');
-        check('l\'attaque ouvre un duel', r.ok && r.duel === true, r.erreur || (r.choix + ' défense(s) possible(s)'));
+        const r = C.actionVoler(e, a, b, 0);
+        check('la prise ouvre une dette', r.ok && r.larcin === true, r.erreur || r.carte.uid);
+        check('la carte quitte la main de la cible tout de suite',
+            !e.mains.get(b).some(c => c.uid === 'B1'), e.mains.get(b).map(c => c.uid).join());
+        check('… mais n\'est pas encore chez le voleur',
+            !e.mains.get(a).some(c => c.uid === 'B1'));
         check('le tour n\'a pas encore tourné', e.tourJoueur === a, e.tourJoueur);
-        check('plus personne ne joue pendant le duel', !C.actionPiocher(e, a, 'A2').ok,
-            C.actionPiocher(e, a, 'A2').erreur);
-
-        // c'est tout l'intérêt du vol à l'aveugle : la classe attaquante est secrète
-        const pub = JSON.stringify(C.vuePublique(e));
-        check('le duel est annoncé à la table', C.vuePublique(e).duel && C.vuePublique(e).duel.anime === A1, A1);
-        check('… mais la carte d\'attaque reste cachée', !pub.includes('"A1"'));
-        const vueCible = JSON.stringify(C.vueJoueur(e, b));
-        check('… y compris pour la cible', !vueCible.includes('"A1"'));
+        check('plus personne ne joue tant que la dette court',
+            !C.actionPiocher(e, a, 'A2').ok, C.actionPiocher(e, a, 'A2').erreur);
+        // la carte est retournée : elle n'a plus rien de secret
+        check('la table voit la carte prise',
+            C.vuePublique(e).larcin && C.vuePublique(e).larcin.carte.uid === 'B1');
     }
 
-    // ── La défense domine : l'attaquant perd sa carte ──
+    // ── Le prix : une carte de la même classe ──
     {
-        const { e, a, b, A1 } = table(
-            (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'oracle', 'A2')],
-            (an) => [carte(an[0], 'oracle', 'B1'), carte(an[0], 'mirage', 'B2')]);
-        C.actionVoler(e, a, b, A1, 'A1');
-        // oracle bat assaut
-        const d = C.defendreEtResoudre(e, b, 'B1');
-        check('la défense qui domine l\'emporte', d.ok && d.issue === 'perdu', d.issue || d.erreur);
-        check('l\'attaquant perd sa carte', !e.mains.get(a).some(c => c.uid === 'A1'));
-        check('… elle repart au paquet, pas au marché',
-            !e.marche.some(c => c.uid === 'A1') && e.pioche.some(c => c.uid === 'A1'));
-        check('la cible ne perd rien', e.mains.get(b).length === 2, e.mains.get(b).map(c => c.uid).join());
-        check('la main de l\'attaquant s\'ouvre d\'une place', e.mains.get(a).length === 1);
-        check('le duel est refermé et le tour passe', !e.duel && e.tourJoueur !== a);
+        const { e, a, b } = table(
+            (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'mirage', 'A2')],
+            (an) => [carte(an[0], 'mirage', 'B1')]);
+        const r = C.actionVoler(e, a, b, 0);
+        check('avec la classe en main, on ne doit qu\'une carte', r.du === 1, 'dû ' + r.du);
+        check('une carte d\'une autre classe est refusée', !C.actionPayer(e, a, ['A1']).ok);
+        check('deux cartes aussi', !C.actionPayer(e, a, ['A1', 'A2']).ok);
+        const p = C.actionPayer(e, a, ['A2']);
+        check('la bonne classe solde la dette', p.ok, p.erreur || p.issue);
+        check('la carte volée est chez le voleur', e.mains.get(a).some(c => c.uid === 'B1'));
+        check('la carte rendue repart au paquet',
+            e.pioche.some(c => c.uid === 'A2') && !e.marche.some(c => c.uid === 'A2'));
+        check('la main du voleur garde sa taille', e.mains.get(a).length === 2,
+            e.mains.get(a).map(c => c.uid).join());
+        check('… et celle de la cible a perdu une place', e.mains.get(b).length === 0);
+        check('le tour repart', !e.larcin && e.tourJoueur !== a);
     }
 
-    // ── L'attaque domine : la carte change de main ──
+    // ── Pas la classe : deux cartes, n'importe lesquelles ──
     {
-        const { e, a, b, A1 } = table(
-            (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'oracle', 'A2')],
-            (an) => [carte(an[0], 'mirage', 'B1'), carte(an[0], 'assaut', 'B2')]);
-        C.actionVoler(e, a, b, A1, 'A1');
-        // assaut bat mirage
-        const d = C.defendreEtResoudre(e, b, 'B1');
-        check('l\'attaque qui domine emporte la carte', d.ok && d.issue === 'gagne', d.issue || d.erreur);
-        check('la carte volée est en main du voleur', e.mains.get(a).some(c => c.uid === 'B1'));
-        check('la cible l\'a bien perdue', !e.mains.get(b).some(c => c.uid === 'B1'));
-        check('la carte d\'attaque repart au paquet',
-            e.pioche.some(c => c.uid === 'A1') && !e.marche.some(c => c.uid === 'A1'));
-        check('les deux mains gardent leur compte',
-            e.mains.get(a).length === 2 && e.mains.get(b).length === 1,
-            e.mains.get(a).length + ' / ' + e.mains.get(b).length);
+        const { e, a, b } = table(
+            (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'assaut', 'A2'), carte(an[2], 'assaut', 'A3')],
+            (an) => [carte(an[0], 'oracle', 'B1')]);
+        const r = C.actionVoler(e, a, b, 0);
+        check('sans la classe, on en doit deux', r.du === 2, 'dû ' + r.du);
+        check('une seule ne suffit pas', !C.actionPayer(e, a, ['A1']).ok, C.actionPayer(e, a, ['A1']).erreur);
+        check('et la même deux fois non plus', !C.actionPayer(e, a, ['A1', 'A1']).ok);
+        const p = C.actionPayer(e, a, ['A1', 'A3']);
+        check('deux cartes de n\'importe quelle classe soldent', p.ok, p.erreur || p.issue);
+        check('la main du voleur a rétréci', e.mains.get(a).length === 2,
+            e.mains.get(a).map(c => c.uid).join());
+        check('les deux rendues sont au paquet',
+            e.pioche.some(c => c.uid === 'A1') && e.pioche.some(c => c.uid === 'A3'));
     }
 
-    // ── Même classe : rien ne bouge ──
+    // ── La main vide : la prise elle-même comble le manque ──
+    // C'est le prix d'un vol tenté trop tard. On ressort les mains vides plutôt
+    // que d'interdire le geste — un joueur qui n'a qu'une carte a déjà assez de
+    // soucis sans qu'on lui retire une action.
     {
-        const { e, a, b, A1 } = table(
-            (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'oracle', 'A2')],
-            (an) => [carte(an[0], 'assaut', 'B1'), carte(an[0], 'oracle', 'B2')]);
-        C.actionVoler(e, a, b, A1, 'A1');
-        const d = C.defendreEtResoudre(e, b, 'B1');
-        check('même classe : match nul', d.ok && d.issue === 'nul', d.issue || d.erreur);
-        check('personne ne perd de carte',
-            e.mains.get(a).length === 2 && e.mains.get(b).length === 2);
-        check('l\'attaquant garde la sienne', e.mains.get(a).some(c => c.uid === 'A1'));
-        check('… mais il a perdu son tour', e.tourJoueur !== a);
-    }
-
-    // ── La cible n'a rien de la série : tranché sans l'attendre ──
-    {
-        const { e, a, b, A1 } = table(
+        const { e, a, b } = table(
             (an) => [carte(an[1], 'assaut', 'A1')],
-            (an) => [carte(an[2], 'mirage', 'B1'), carte(an[3], 'assaut', 'B2')]);
-        const r = C.actionVoler(e, a, b, A1, 'A1');
-        check('sans carte de la série, aucun duel ne s\'ouvre', r.ok && r.issue === 'vide' && !e.duel, r.issue);
-        check('l\'attaquant garde sa carte', e.mains.get(a).some(c => c.uid === 'A1'));
-        check('… et perd seulement son tour', e.tourJoueur !== a);
-    }
-
-    // ── Qui peut défendre, et avec quoi ──
-    {
-        const { e, a, b, A1 } = table(
-            (an) => [carte(an[1], 'assaut', 'A1')],
-            (an) => [carte(an[0], 'mirage', 'B1'), carte(an[2], 'assaut', 'B2')]);
-        C.actionVoler(e, a, b, A1, 'A1');
-        const parA = C.actionDefendre(e, a, 'A1');
-        check('l\'attaquant ne défend pas à la place de sa cible', !parA.ok, parA.erreur);
-        const horsSerie = C.actionDefendre(e, b, 'B2');
-        check('on ne défend pas avec une autre série', !horsSerie.ok, horsSerie.erreur);
-        check('le duel est toujours ouvert', !!e.duel);
-        const bon = C.defendreEtResoudre(e, b, 'B1');
-        check('la bonne carte le referme', bon.ok && !e.duel, bon.issue);
+            (an) => [carte(an[0], 'oracle', 'B1')]);
+        const r = C.actionVoler(e, a, b, 0);
+        check('une seule carte en main : on doit deux mais on n\'en rend qu\'une',
+            r.du === 2 && e.larcin.aRendre === 1 && e.larcin.prisePayee === true);
+        const p = C.actionPayer(e, a, ['A1']);
+        check('… et la prise part avec', p.ok && p.issue === 'ruine', p.erreur || p.issue);
+        check('le voleur ressort les mains vides', e.mains.get(a).length === 0);
+        check('les deux cartes sont au paquet',
+            e.pioche.some(c => c.uid === 'A1') && e.pioche.some(c => c.uid === 'B1'));
     }
 
     // ── L'absent ──
     {
-        const { e, a, b, A1 } = table(
-            (an) => [carte(an[1], 'assaut', 'A1')],
-            (an) => [carte(an[0], 'mirage', 'B1'), carte(an[0], 'oracle', 'B2')]);
-        C.actionVoler(e, a, b, A1, 'A1');
-        const pose = C.defenseParDefaut(e);
-        const d = C.resoudreDuel(e);
-        check('une cible qui ne répond pas présente une carte au hasard',
-            pose.ok && d.ok && ['gagne', 'perdu', 'nul'].includes(d.issue), d.issue);
-        check('le duel se referme quand même', !e.duel && e.tourJoueur !== a);
+        const { e, a, b } = table(
+            (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'assaut', 'A2'), carte(an[2], 'mirage', 'A3')],
+            (an) => [carte(an[0], 'mirage', 'B1')]);
+        C.actionVoler(e, a, b, 0);
+        const p = C.larcinParDefaut(e);
+        check('un voleur qui ne paie pas est soldé d\'office', p.ok, p.erreur);
+        check('… avec une carte de la bonne classe', e.pioche.some(c => c.uid === 'A3'));
+        check('… et le tour repart', !e.larcin && e.tourJoueur !== a);
     }
 
-    // ── Le triangle, exhaustivement ──
-    {
-        const attendu = { assaut: 'mirage', mirage: 'oracle', oracle: 'assaut' };
-        let triangleOk = true;
-        for (const att of Object.keys(attendu)) for (const def of Object.keys(attendu)) {
-            if (C.domine(att, def) !== (attendu[att] === def)) triangleOk = false;
-        }
-        check('le triangle est bien un cycle, sans égalité', triangleOk, 'assaut > mirage > oracle > assaut');
-
-        // et le moteur le respecte à la lettre, sur les neuf combinaisons
-        let issuesOk = true; const vues = [];
-        for (const ca of Object.keys(attendu)) for (const cd of Object.keys(attendu)) {
-            const { e, a, b, A1 } = table(
-                (an) => [carte(an[1], ca, 'A1'), carte(an[1], 'assaut', 'A2')],
-                (an) => [carte(an[0], cd, 'B1')]);
-            C.actionVoler(e, a, b, A1, 'A1');
-            const d = C.defendreEtResoudre(e, b, 'B1');
-            const veut = ca === cd ? 'nul' : (attendu[ca] === cd ? 'gagne' : 'perdu');
-            if (d.issue !== veut) { issuesOk = false; vues.push(ca + '/' + cd + '→' + d.issue); }
-        }
-        check('les neuf duels possibles tombent juste', issuesOk, vues.join(' ') || '9/9');
-    }
-
-{
-    // Poser et trancher sont deux moments : entre les deux, les deux cartes
-    // sont sur la table FACE CACHÉE et le salon laisse deux secondes. Sans ce
-    // temps, la résolution tombait dans la même image que la défense, et les
-    // deux joueurs voyaient un résultat sans avoir vu de confrontation.
-    const { e, a, b, A1 } = table(
-        (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'oracle', 'A2')],
-        (an) => [carte(an[0], 'mirage', 'B1')]);
-    C.actionVoler(e, a, b, A1, 'A1');
-
-    const pose = C.actionDefendre(e, b, 'B1');
-    check('poser ne tranche pas', pose.ok && pose.pose && !!e.duel);
-    check('les deux mains sont intactes tant qu\'on n\'a pas retourné',
-        e.mains.get(a).length === 2 && e.mains.get(b).length === 1);
-    check('on ne pose pas deux fois', !C.actionDefendre(e, b, 'B1').ok);
-
-    // Et surtout : rien ne sort. Ni la carte d'attaque, ni celle de la défense.
-    const vue = JSON.stringify(C.vuePublique(e));
-    check('la table sait que la défense est posée', C.vuePublique(e).duel.pose === true);
-    check('… sans voir aucune des deux cartes',
-        !vue.includes('"A1"') && !vue.includes('"B1"'),
-        'ni A1 ni B1 dans la vue publique');
-
-    const d = C.resoudreDuel(e);
-    check('la révélation tranche', d.ok && d.issue === 'gagne', d.issue || d.erreur);
-    check('et le duel se referme', !e.duel && e.tourJoueur !== a);
-}
-
-    // ── On ne vole ni soi-même, ni une série absente ──
+    // ── On ne vole ni soi-même, ni une carte qui n'existe pas ──
     {
         const e = neuf();
         const j = e.tourJoueur;
-        const soi = C.actionVoler(e, j, j, e.animes[0], e.mains.get(j)[0].uid);
-        check('on ne se vole pas soi-même', !soi.ok, soi.erreur);
-        const hors = C.actionVoler(e, j, joueurs.find(x => x !== j), 'SerieQuiNExistePas', e.mains.get(j)[0].uid);
-        check('on ne vole pas une série hors partie', !hors.ok, hors.erreur);
+        const autre = joueurs.find(x => x !== j);
+        check('on ne se vole pas soi-même', !C.actionVoler(e, j, j, 0).ok);
+        check('ni une place qui n\'existe pas', !C.actionVoler(e, j, autre, 99).ok);
+        check('ni une place négative', !C.actionVoler(e, j, autre, -1).ok);
+    }
+
+    // ── Ce qu'un curieux ne doit pas pouvoir déduire ──
+    // La carte prise est publique — elle vient de se retourner devant tous —
+    // mais RIEN d'autre de la main de la cible ne doit sortir avec elle.
+    {
+        const { e, a, b } = table(
+            (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'mirage', 'A2')],
+            (an) => [carte(an[0], 'mirage', 'B1'), carte(an[0], 'oracle', 'B2'), carte(an[0], 'assaut', 'B3')]);
+        C.actionVoler(e, a, b, 0);
+        const vue = JSON.stringify(C.vuePublique(e));
+        check('la carte prise se montre', vue.includes('"B1"'));
+        check('… et le reste de sa main ne sort pas',
+            !vue.includes('"B2"') && !vue.includes('"B3"'), 'ni B2 ni B3');
     }
 }
+
 
 console.log('\n── Poser un set ──');
 {
@@ -513,33 +455,24 @@ console.log('\n── Une partie entière se termine ──');
                 C.actionEchanger(e, j, rendre.uid, e.marche[iM].uid);
                 continue;
             }
-            // Le vol. Le joueur simulé se comporte comme quelqu'un qui a scanné :
-            // il ne frappe que là où la série se trouve, et choisit la classe qui
-            // bat le plus des cartes visées. C'est délibéré — attaquer à l'aveugle
-            // ne réussit qu'une fois sur cent et ferait échouer une partie sur
-            // quatre, ce qui mesurerait la bêtise du robot, pas le jeu.
-            //
-            // En face, la défense est tirée au hasard, et c'est juste : à
-            // l'aveugle, aucune réponse n'est meilleure qu'une autre.
+            // Le vol. Le joueur simulé se comporte comme quelqu'un qui a SCANNÉ :
+            // il sait où est la carte qu'il lui faut, et il sait ce qu'elle va lui
+            // coûter. C'est délibéré — voler au hasard mesurerait la mémoire du
+            // robot, pas le jeu, et un robot n'oublie jamais rien de toute façon.
             {
-                const armes = main.filter(c => c.anime !== vise);
-                let cible = null, arme = null;
+                let cible = null, place = -1;
                 for (const k of e.ordre) {
                     if (k === j) continue;
-                    const chez = e.mains.get(k).filter(c => c.anime === vise);
-                    if (!chez.length) continue;
-                    let meilleure = null, score = 0;
-                    for (const a of armes) {
-                        const n = chez.filter(c => C.domine(a.classe, c.classe)).length
-                                - chez.filter(c => C.domine(c.classe, a.classe)).length;
-                        if (n > score) { score = n; meilleure = a; }
-                    }
-                    if (meilleure) { cible = k; arme = meilleure; break; }
+                    const p = e.mains.get(k).findIndex(c => c.anime === vise);
+                    if (p >= 0) { cible = k; place = p; break; }
                 }
-                if (cible && arme) {
-                    const r2 = C.actionVoler(e, j, cible, vise, arme.uid);
-                    if (r2.ok && r2.duel) { C.defenseParDefaut(e); C.resoudreDuel(e); }
-                    if (r2.ok) continue;
+                if (cible !== null) {
+                    const r2 = C.actionVoler(e, j, cible, place);
+                    if (r2.ok) {
+                        // il paie tout de suite, au moins mauvais choix
+                        C.larcinParDefaut(e);
+                        continue;
+                    }
                 }
             }
             {

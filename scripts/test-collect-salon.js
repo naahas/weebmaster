@@ -175,54 +175,55 @@ const dernier = (j) => j.etats[j.etats.length - 1];
             !dernier(A).scan && dernier(A).tourJoueur !== lecteur, String(dernier(A).tourJoueur));
     }
 
-    // ── Le duel ──
-    // On cherche un vol qui ouvrira vraiment un duel : la cible doit avoir la
-    // série annoncée. Le scan précédent nous a montré une main, on s'en sert —
-    // c'est exactement ce que ferait un joueur.
+    // ── Le vol ──
+    // On prend une carte par sa POSITION, elle se retourne pour tout le monde,
+    // et le voleur doit la payer : une carte de la même classe, ou deux à défaut.
     courant = tous.find(j => j.nom === dernier(A).tourJoueur);
-    let duelOuvert = false;
-    for (let essai = 0; essai < 6 && !duelOuvert; essai++) {
-        courant = tous.find(j => j.nom === dernier(A).tourJoueur);
-        const cible = tous.find(j => j.nom !== courant.nom);
-        // on triche pour le test : on lit la main de la cible côté client
-        const serie = cible.main.length ? cible.main[0].anime : null;
-        const arme = courant.main.find(c => c.anime !== serie);
-        if (!serie || !arme) { // rien à tenter, on pioche pour passer la main
-            courant.socket.emit('collect-piocher', { uidDefausse: courant.main[0].uid });
-            await wait(250);
-            continue;
-        }
-        courant.socket.emit('collect-voler', { cibleId: cible.nom, anime: serie, uidAttaque: arme.uid });
+    {
+        const cible = tous.find(j => j.nom !== courant.nom && j.main.length);
+        const avantCible = cible.main.length;
+        const avantVoleur = courant.main.map(c => c.uid);
+        courant.socket.emit('collect-voler', { cibleId: cible.nom, index: 0 });
         await wait(300);
+
         const st = dernier(A);
-        if (st.duel) {
-            duelOuvert = true;
-            check('le vol ouvre un duel', true, courant.nom + ' → ' + cible.nom + ' sur ' + serie);
-            check('la table voit le duel et sa série', st.duel.anime === serie && st.duel.cible === cible.nom);
-            // le secret de la carte d'attaque est tout l'intérêt du vol
-            const vu = JSON.stringify(st) + JSON.stringify(cible.etats.slice(-3));
-            check('… mais jamais la carte d\'attaque', !vu.includes('"' + arme.uid + '"'), arme.nom);
+        check('le vol ouvre une dette', !!st.larcin,
+            st.larcin ? courant.nom + ' → ' + cible.nom : 'aucun');
+        check('la carte prise se montre à toute la table',
+            !!(st.larcin && st.larcin.carte && st.larcin.carte.img));
+        check('la cible a perdu une carte', cible.main.length === avantCible - 1,
+            avantCible + ' → ' + cible.main.length);
+        check('le tour reste au voleur', st.tourJoueur === courant.nom);
+        check('personne d\'autre ne joue pendant ce temps',
+            (() => { cible.socket.emit('collect-piocher', {}); return true; })());
 
-            const parAutre = tous.find(j => j !== cible);
-            parAutre.socket.emit('collect-defendre', { uidDefense: parAutre.main[0].uid });
-            await wait(250);
-            check('un autre que la cible ne peut pas défendre', !!dernier(A).duel);
+        // le reste de la main de la cible ne sort toujours pas
+        const vu = JSON.stringify(st) + JSON.stringify(cible.etats.slice(-3));
+        const restants = cible.main.map(c => c.uid).filter(u => !vu.includes(u));
+        check('… et le reste de sa main ne fuit pas',
+            restants.length === cible.main.length,
+            cible.main.length + ' carte(s) toujours cachée(s)');
 
-            const def = cible.main.find(c => c.anime === serie);
-            cible.socket.emit('collect-defendre', { uidDefense: def.uid });
-            await wait(400);
-            // Poser n'est pas trancher : les deux cartes restent face cachée deux
-            // secondes, et la table ne doit toujours en voir aucune.
-            check('la défense se pose sans trancher', !!dernier(A).duel && dernier(A).duel.pose === true);
-            const pendant = JSON.stringify(dernier(A)) + JSON.stringify(cible.etats.slice(-3));
-            check('… et rien ne fuit pendant la pose',
-                !pendant.includes('"' + arme.uid + '"') && !pendant.includes('"' + def.uid + '"'));
-            for (let i = 0; i < 30 && dernier(A).duel; i++) await wait(200);
-            check('la révélation tranche le duel', !dernier(A).duel);
-            check('… et le tour repart', dernier(A).tourJoueur !== courant.nom, dernier(A).tourJoueur);
-        }
+        // un autre que le voleur ne solde pas sa dette
+        cible.socket.emit('collect-payer', { uids: [cible.main[0].uid] });
+        await wait(250);
+        check('un autre que le voleur ne peut pas payer', !!dernier(A).larcin);
+
+        const du = dernier(A).larcin.aRendre;
+        const classe = dernier(A).larcin.classe;
+        const dette = dernier(A).larcin.du === 1
+            ? [courant.main.find(c => c.classe === classe).uid]
+            : courant.main.slice(0, du).map(c => c.uid);
+        courant.socket.emit('collect-payer', { uids: dette });
+        await wait(350);
+
+        check('le paiement solde le vol', !dernier(A).larcin);
+        check('… et le tour repart', dernier(A).tourJoueur !== courant.nom,
+            String(dernier(A).tourJoueur));
+        const perdues = avantVoleur.filter(u => !courant.main.some(c => c.uid === u));
+        check('le voleur a bien lâché ce qu\'il devait', perdues.length === du,
+            perdues.length + '/' + du);
     }
-    check('un duel a bien pu être joué', duelOuvert, duelOuvert ? 'oui' : 'aucune occasion en six essais');
 
     // ── La reprise après un rafraîchissement ──
     // La main ne part QUE sur sa propre socket : rien ne la rejoue tout seul.
