@@ -2082,20 +2082,78 @@ createApp({
             const r = fan.getBoundingClientRect();
 
             if (fait.type === 'pioche') {
-                // Une carte glisse dans la main PAR LA DROITE. Pas depuis le
-                // paquet : de l'autre bout de la table le trajet serait long et
+                // Une carte glisse dans sa main PAR LA DROITE, de dos. Pas depuis
+                // le paquet : de l'autre bout de la table le trajet serait long et
                 // traverserait le marché, alors que la seule chose à dire est
-                // « il a pris une carte ».
-                this.colGlisser(r, 'dos', null);
+                // « il a pris une carte », et l'on ne saura jamais laquelle.
+                this.colGlisser(r, null);
             } else if (fait.type === 'echange' && fait.prise && fait.rendue) {
-                // Les deux cartes de l'échange sont publiques : elles viennent
-                // du marché ou y retournent. On les montre.
-                this.colGlisser(r, 'face', fait.prise);
+                // L'échange, lui, est PUBLIC des deux côtés : on voit très bien
+                // quelle carte il a prise au marché et laquelle il y a laissée.
+                // Les deux se croisent donc pour de vrai, entre sa main et la
+                // place du marché concernée — c'est la seule façon de
+                // comprendre ce qui vient d'être troqué.
+                this.colCroisementRival(r, fait);
+            } else if (fait.type === 'set' && fait.cartes && fait.cartes.length) {
+                this.colSetRival(r, fait.cartes);
             }
         },
-        colGlisser(r, quoi, carte) {
+        // Deux fantômes qui se croisent, comme pour mon propre échange, mais
+        // entre le siège d'un adversaire et la place du marché qu'il a touchée.
+        colCroisementRival(r, fait) {
+            const place = document.querySelector('[data-drop="marche:' + fait.rendue.uid + '"]');
+            const main = { left: r.left + r.width / 2 - r.height * 0.26,
+                           top: r.top + r.height / 2 - r.height * 0.4,
+                           width: r.height * 0.52, height: r.height * 0.8 };
+            // La place du marché porte désormais la carte RENDUE : c'est la même
+            // case que celle où était la carte prise, puisque le marché ne se
+            // décale plus.
+            const b = place ? place.getBoundingClientRect() : null;
+            if (!b) { this.colGlisser(r, fait.prise); return; }
+            const marche = { left: b.left, top: b.top, width: b.width, height: b.height };
+
+            this.colFantome(fait.prise, marche, main, 'vers-main');
+            this.colFantome(fait.rendue, main, marche, 'vers-marche');
+        },
+        // Un set posé par un adversaire : ses trois cartes filent vers
+        // l'emplacement et s'y brisent. En plus petit que le nôtre — c'est son
+        // point, pas le nôtre — mais on doit le voir arriver.
+        colSetRival(r, cartes) {
+            const cible = document.querySelector('.col-emplacement');
+            if (!cible) return;
+            const e = cible.getBoundingClientRect();
+            const larg = r.height * 0.52, haut = r.height * 0.8;
+            for (const [n, c] of cartes.entries()) {
+                const de = { left: r.left + r.width / 2 - larg / 2 + (n - 1) * 8,
+                             top: r.top + r.height / 2 - haut / 2,
+                             width: larg, height: haut };
+                const vers = { left: e.left, top: e.top, width: e.width, height: e.height };
+                const el = this.colFantome(c, de, vers, 'vers-marche', 340 + n * 40);
+                if (el) setTimeout(() => this.colEclaterCarte(el, c), 300 + n * 45);
+            }
+        },
+        // Un fantôme qui vole d'un rectangle à l'autre. Les positions sont
+        // relevées AVANT que l'état ne change : une fois la table à jour, les
+        // cartes ne sont plus là où on les a vues.
+        colFantome(carte, de, vers, classe, duree) {
             const el = document.createElement('div');
-            el.className = 'col-echo' + (quoi === 'dos' ? ' dos' : '');
+            el.className = 'col-croise ' + (classe || '');
+            el.style.left = de.left + 'px';
+            el.style.top = de.top + 'px';
+            el.style.width = de.width + 'px';
+            el.style.height = de.height + 'px';
+            el.innerHTML = '<img src="collectpic/' + carte.img + '" alt="">';
+            document.body.appendChild(el);
+            void el.offsetWidth;
+            el.style.transformOrigin = 'top left';
+            el.style.transform = 'translate(' + (vers.left - de.left).toFixed(1) + 'px, ' +
+                (vers.top - de.top).toFixed(1) + 'px) scale(' + (vers.width / de.width).toFixed(3) + ')';
+            setTimeout(() => el.remove(), duree || 340);
+            return el;
+        },
+        colGlisser(r, carte) {
+            const el = document.createElement('div');
+            el.className = 'col-echo' + (carte ? '' : ' dos');
             el.style.left = (r.left + r.width / 2) + 'px';
             el.style.top = (r.top + r.height / 2) + 'px';
             el.style.width = (r.height * 0.52) + 'px';

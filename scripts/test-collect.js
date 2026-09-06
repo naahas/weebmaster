@@ -71,8 +71,8 @@ console.log('\n── Le marché ──');
     check('la carte rendue est au marché', e.marche.some(c => c.uid === uidMain));
     check('la main garde sa taille', e.mains.get(j).length === C.regles(e).main);
 
-    check('la carte rendue passe au marché, en fin de rangée',
-        e.marche.some(c => c.uid === uidMain), e.marche.map(c => c.uid).slice(-1)[0]);
+    check('la carte rendue prend EXACTEMENT la place de la prise',
+        e.marche[0].uid === uidMain, 'place 0');
 
     const encore = C.actionEchanger(e, j, uidMain, uidMarche);
     check('on n\'échange pas deux fois dans le tour', !encore.ok, encore.erreur);
@@ -81,29 +81,39 @@ console.log('\n── Le marché ──');
     // changé. Un renouvellement de fin de tour la ferait tourner deux fois
     // dans le même geste, et la carte tout juste déposée disparaîtrait avant
     // que quiconque ait pu la voir.
+    //
+    // Et il ne DÉCALE rien : seule la place échangée change. Toute la rangée
+    // glissait d'un cran pour un troc qui n'en concernait qu'une, et la carte
+    // rendue entrait par la droite comme une carte neuve.
     {
         const e5 = neuf();
         const j5 = e5.tourJoueur;
         const rendue = e5.mains.get(j5)[0].uid;
-        const attendu = e5.marche.slice(1).map(c => c.uid);
-        attendu.push(rendue);
-        C.actionEchanger(e5, j5, rendue, e5.marche[0].uid);
-        check('un échange ne fait pas venir de carte en plus',
+        const attendu = e5.marche.map(c => c.uid);
+        const cible = 2;
+        attendu[cible] = rendue;
+        C.actionEchanger(e5, j5, rendue, e5.marche[cible].uid);
+        check('un échange ne déplace que sa propre place',
             e5.marche.map(c => c.uid).join(',') === attendu.join(','),
-            'quatre restantes, plus la rendue');
+            'les quatre autres n\'ont pas bougé');
     }
 
     // À chaque fin de tour, la plus ancienne du marché part SOUS le paquet et
-    // une neuve arrive du dessus. « Sous » et non mêlée au hasard : une carte
-    // qu'on vient de voir partir ne doit pas revenir au tour suivant.
+    // une neuve arrive À SA PLACE. « Sous » et non mêlée au hasard : une carte
+    // qu'on vient de voir partir ne doit pas revenir au tour suivant. Et « à sa
+    // place » : l'ancienneté se lit dans un jeton d'arrivée, plus dans la
+    // position, ce qui évite de faire glisser toute la rangée.
     {
         const e2 = neuf();
         const avant = e2.marche.map(c => c.uid);
+        const k = C.plusAncienne(e2);
         C.actionPiocher(e2, e2.tourJoueur, e2.mains.get(e2.tourJoueur)[0].uid);
         const apres = e2.marche.map(c => c.uid);
         check('le marché se renouvelle à chaque tour',
-            apres[0] === avant[1] && !avant.includes(apres[4]),
-            'la plus ancienne est partie, une neuve est arrivée');
+            apres[k] !== avant[k] && !avant.includes(apres[k]),
+            'la plus ancienne (place ' + k + ') est partie, une neuve est arrivée');
+        check('… et les quatre autres n\'ont pas bougé',
+            apres.filter((u, i) => i !== k).join(',') === avant.filter((u, i) => i !== k).join(','));
         check('… et elle part au FOND du paquet', e2.pioche[0].uid === avant[0],
             'index 0, le dernier servi');
         check('… et il garde sa taille', e2.marche.length === C.CONFIG.MARCHE);
@@ -369,6 +379,22 @@ console.log('\n── Ce que le serveur laisse voir ──');
     // le scan est le seul chemin par lequel une main sort, et seulement vers lui
     const s = C.actionScanner(e, e.tourJoueur, joueurs.find(j => j !== e.tourJoueur));
     check('le scan rend bien la main visée', s.ok && Array.isArray(s.main) && s.main.length > 0, s.main && s.main.length + ' cartes');
+
+    // La carte qu'on vient de rendre ne doit pas être balayée au tour suivant.
+    // C'est ce que la mise en queue de rangée garantissait ; le jeton d'arrivée
+    // s'en charge désormais, sans rien déplacer.
+    {
+        const e7 = neuf();
+        const j7 = e7.tourJoueur;
+        const rendue = e7.mains.get(j7)[0].uid;
+        C.actionEchanger(e7, j7, rendue, e7.marche[C.plusAncienne(e7)].uid);
+        for (let tour = 0; tour < 3; tour++) {
+            const qui = e7.tourJoueur;
+            C.actionPiocher(e7, qui, e7.mains.get(qui)[0].uid);
+        }
+        check('la carte rendue survit à trois renouvellements',
+            e7.marche.some(c => c.uid === rendue), 'elle est la plus jeune du marché');
+    }
 
     // Le scan RETIENT le tour sept secondes. Sans cela la main scannée restait
     // retournée pendant que le joueur suivant agissait, et ce qu’on lisait

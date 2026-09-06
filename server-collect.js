@@ -109,6 +109,7 @@ function etatNeuf() {
         animes: [],
         pioche: [],
         marche: [],
+        horloge: 0,            // le jeton d'arrivée des cartes du marché
         ordre: [],
         mains: new Map(),      // playerId → [carte]
         sets: new Map(),       // playerId → [{ anime, cartes }]
@@ -166,10 +167,34 @@ function rendreAuPaquet(etat, carte) {
 function sousLePaquet(etat, carte) {
     etat.pioche.unshift(carte);
 }
+
+// ⚠️ LES CINQ PLACES DU MARCHÉ NE BOUGENT JAMAIS.
+//
+// L'ancienneté se lisait dans la POSITION : la plus vieille en tête, la
+// nouvelle à la queue. Chaque échange décalait donc toute la rangée, et l'on
+// voyait quatre cartes glisser d'un cran pour un troc qui n'en concernait
+// qu'une. Pire : au moment où l'on rendait sa carte, elle entrait par la
+// droite comme une carte neuve — impossible de comprendre ce qu'on regardait.
+//
+// Elle se lit désormais dans un JETON d'arrivée, et chaque carte reste chez
+// elle. On garde ce que la position servait à garantir — celle qui part est
+// bien la plus ancienne — sans rien devoir déplacer.
+function marquer(etat, carte) {
+    carte.arrive = ++etat.horloge;
+    return carte;
+}
+function plusAncienne(etat) {
+    let k = 0;
+    for (let i = 1; i < etat.marche.length; i++) {
+        if ((etat.marche[i].arrive || 0) < (etat.marche[k].arrive || 0)) k = i;
+    }
+    return k;
+}
 function renouvelerMarche(etat) {
     if (!etat.marche.length) return;
-    sousLePaquet(etat, etat.marche.shift());
-    etat.marche.push(tirer(etat));
+    const k = plusAncienne(etat);
+    sousLePaquet(etat, etat.marche[k]);
+    etat.marche[k] = marquer(etat, tirer(etat));
 }
 
 // ── Démarrage ─────────────────────────────────────────────────
@@ -189,7 +214,8 @@ function demarrer(etat, joueurs) {
         etat.mains.set(id, Array.from({ length: r.main }, () => tirer(etat)));
         etat.sets.set(id, []);
     }
-    etat.marche = Array.from({ length: CONFIG.MARCHE }, () => tirer(etat));
+    etat.horloge = 0;
+    etat.marche = Array.from({ length: CONFIG.MARCHE }, () => marquer(etat, tirer(etat)));
 
     etat.active = true;
     etat.vainqueur = null;
@@ -271,14 +297,14 @@ function actionEchanger(etat, playerId, uidMain, uidMarche) {
     if (iMain < 0) return { ok: false, erreur: 'Cette carte n\'est pas dans ta main' };
     if (iMarche < 0) return { ok: false, erreur: 'Cette carte n\'est plus au marché' };
 
-    // La carte rendue passe en FIN de rangée, pas à la place qu'on vient de
-    // vider. Sinon, échanger avec la plus ancienne carte du marché mettait la
-    // sienne en tête de file — et le renouvellement de fin de tour la chassait
-    // aussitôt, sans qu'aucun autre joueur ait eu l'occasion de la voir.
-    const prise = etat.marche.splice(iMarche, 1)[0];
+    // Chacune prend la place de l'autre, sans que rien d'autre ne bouge. La
+    // rendue reçoit un jeton d'arrivée neuf : elle est donc la plus JEUNE du
+    // marché et ne sera pas balayée au prochain renouvellement, ce que la mise
+    // en queue de rangée garantissait auparavant.
+    const prise = etat.marche[iMarche];
     const rendue = main[iMain];
     main[iMain] = prise;
-    etat.marche.push(rendue);
+    etat.marche[iMarche] = marquer(etat, rendue);
     noter(etat, { type: 'echange', joueur: playerId, prise, rendue });
     tourSuivant(etat, false);
     return { ok: true, prise };
@@ -472,7 +498,12 @@ function actionPoser(etat, playerId, anime) {
 
     const sets = etat.sets.get(playerId);
     sets.push({ anime, cartes: poses });
-    noter(etat, { type: 'set', joueur: playerId, anime, total: sets.length });
+    // Les cartes posées sont PUBLIQUES : elles quittent la main pour un tas
+    // visible de tous. Le journal les porte, ce qui permet aux autres écrans de
+    // montrer le set partir — sans elles, poser un set ne se voyait de nulle part
+    // ailleurs que de sa propre main.
+    noter(etat, { type: 'set', joueur: playerId, anime, total: sets.length,
+                  cartes: poses.map(c => ({ ...c })) });
 
     if (sets.length >= r.sets) {
         etat.vainqueur = playerId;
@@ -741,7 +772,7 @@ module.exports = {
     domine, etatNeuf, regles, demarrer, tourSuivant,
     actionPiocher, actionEchanger, actionVoler, actionScanner, actionPoser, actionParDefaut, finirScan,
     actionDefendre, resoudreDuel, defendreEtResoudre, defenseParDefaut,
-    rendreAuPaquet, renouvelerMarche, sousLePaquet,
+    rendreAuPaquet, renouvelerMarche, sousLePaquet, plusAncienne,
     SCAN_MS, REVELE_MS,
     vuePublique, vueJoueur,
     _data: DATA,
