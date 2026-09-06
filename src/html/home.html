@@ -1012,71 +1012,121 @@
                     </div>
 
 
-                    <!-- ── Le panneau du vol ── -->
+                    <!-- ── Le vol, en deux temps ──
+                         Tout demander d'un coup posait trois décisions sur le même
+                         écran — quoi réclamer, à qui, avec quoi — là où il n'y en a
+                         que deux, et où la seconde découle de la première. -->
                     <div class="col-voile" v-if="col.volCible" @click.self="colAnnuler">
-                        <div class="col-feuille">
-                            <h3>Voler {{ colNom(col.volCible) }}</h3>
-                            <p class="aide">
-                                Ta carte n'est pas prise : seule sa <b>classe</b> compte, et elle part
-                                au marché si tu gagnes. Ta cible répondra sans savoir laquelle tu as jouée.
-                            </p>
+                        <div class="col-feuille col-vol">
+                            <span class="col-vol-etape">{{ col.volEtape }}<i>/2</i></span>
 
-                            <span class="col-etiquette">TU RÉCLAMES</span>
-                            <div class="col-series">
-                                <button v-for="a in col.etat.animes" :key="a"
-                                        class="col-serie" :class="{ on: col.volSerie === a }"
-                                        @click="col.volSerie = a">
-                                    {{ a }}
-                                    <small v-if="colDansMaMain(a)">tu en as {{ colDansMaMain(a) }}</small>
-                                </button>
-                            </div>
+                            <template v-if="col.volEtape === 1">
+                                <h3>Que réclames-tu à {{ colNom(col.volCible) }} ?</h3>
+                                <p class="aide">
+                                    S'il n'a rien de cette série, tu perds ton tour sans rien perdre d'autre.
+                                </p>
+                                <div class="col-series">
+                                    <button v-for="a in col.etat.animes" :key="a"
+                                            class="col-serie" @click="colVolSerie(a)">
+                                        {{ colSerie(a) }}
+                                        <small v-if="colDansMaMain(a)">tu en as {{ colDansMaMain(a) }}</small>
+                                    </button>
+                                </div>
+                            </template>
 
-                            <span class="col-etiquette">TU ATTAQUES AVEC</span>
-                            <div class="col-rangee">
-                                <button v-for="c in col.main" :key="c.uid"
-                                        class="col-carte" :class="['classe-' + c.classe, {
-                                            choisie: col.volArme === c.uid,
-                                            eteinte: c.anime === col.volSerie }]"
-                                        @click="col.volArme = c.uid">
-                                    <img :src="'collectpic/' + c.img" :alt="c.nom" draggable="false">
-                                    <span class="col-carte-classe">{{ c.classe[0].toUpperCase() }}</span>
-                                </button>
-                            </div>
-                            <p class="aide" v-if="colArmeDeLaSerie">
-                                ⚠️ Cette carte est de la série que tu réclames : tu en prendrais une pour
-                                en lâcher une, tu serais à zéro.
-                            </p>
+                            <template v-else>
+                                <h3>Avec quelle carte ?</h3>
+                                <p class="aide">
+                                    Elle n'est pas prise : seule sa <b>classe</b> compte, et elle repart au
+                                    paquet quoi qu'il arrive. Ta cible répondra sans l'avoir vue.
+                                </p>
+                                <span class="col-vol-rappel">
+                                    Tu réclames <b>{{ colSerie(col.volSerie) }}</b>
+                                    <button class="col-vol-retour" @click="col.volEtape = 1">changer</button>
+                                </span>
+                                <div class="col-rangee">
+                                    <button v-for="c in col.main" :key="c.uid"
+                                            class="col-carte choisissable" :class="['classe-' + c.classe, {
+                                                eteinte: c.anime === col.volSerie }]"
+                                            @click="colVolArme(c)">
+                                        <img :src="'collectpic/' + c.img" :alt="c.nom" draggable="false">
+                                        <span class="col-carte-classe">{{ c.classe[0].toUpperCase() }}</span>
+                                    </button>
+                                </div>
+                                <p class="aide">
+                                    ⚠️ Une carte de la série réclamée te ferait en prendre une pour en
+                                    lâcher une : tu serais à zéro.
+                                </p>
+                            </template>
 
-                            <button class="col-valider" :disabled="!col.volSerie || !col.volArme" @click="colVoler">
-                                Attaquer
-                            </button>
                             <button class="col-fermer" @click="colAnnuler">Annuler</button>
                         </div>
                     </div>
 
-                    <!-- ── On te vole : à toi de présenter une carte ── -->
-                    <div class="col-voile" v-if="colJeDefends">
-                        <div class="col-feuille">
-                            <h3>{{ colNom(col.etat.duel.attaquant) }} t'attaque</h3>
-                            <span class="col-duel-serie">{{ col.etat.duel.anime }}</span>
-                            <p class="aide">
-                                Présente une de tes cartes de cette série. Tu ne sais pas quelle classe
-                                il a jouée — si la tienne la domine, il perd sa carte ; si elle est
-                                dominée, tu perds la tienne ; à égalité, rien ne bouge.
-                            </p>
-                            <div class="col-rangee">
-                                <button v-for="c in colMesDefenses" :key="c.uid"
-                                        class="col-carte choisissable" :class="'classe-' + c.classe"
-                                        @click="colDefendre(c.uid)">
-                                    <img :src="'collectpic/' + c.img" :alt="c.nom" draggable="false">
-                                    <span class="col-carte-classe">{{ c.classe[0].toUpperCase() }}</span>
-                                    <span class="col-carte-pied">
-                                        <span class="col-carte-nom">{{ c.nom }}</span>
+                    <!-- ── L'arène : deux cartes face cachée, au milieu de la table ──
+                         Le vol se jouait dans deux fenêtres séparées, une par joueur :
+                         chacun voyait sa moitié du duel et personne ne voyait la
+                         confrontation. Ici les deux camps sont côte à côte, et tout
+                         le salon les regarde — c'est le moment du mode.
+
+                         Les cartes ne portent RIEN tant qu'elles ne sont pas
+                         retournées : le serveur ne les envoie qu'avec l'issue. -->
+                    <div class="col-arene" v-if="colVuDuel">
+                        <div class="col-arene-corps">
+                            <span class="col-arene-serie">{{ colSerie(colVuDuel.anime) }}</span>
+
+                            <div class="col-arene-slots">
+                                <div class="col-arene-camp">
+                                    <span class="col-arene-nom" :class="{ moi: colVuDuel.attaquant === playerId }">
+                                        {{ colNom(colVuDuel.attaquant) }}
                                     </span>
-                                </button>
+                                    <div class="col-arene-slot attaque pleine"
+                                         :class="{ retourne: colDuelRetourne, perd: colPerdant === 'attaque',
+                                                   choc: col.duelPhase === 'choc' }">
+                                        <span class="col-arene-dos"></span>
+                                        <span class="col-arene-face" v-if="colVuDuel.attaque">
+                                            <img :src="'collectpic/' + colVuDuel.attaque.img" alt="">
+                                            <i class="col-pion" :class="'pion-' + colVuDuel.attaque.classe"
+                                               v-html="colSymbole(colVuDuel.attaque.classe)"></i>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <span class="col-arene-vs" :class="{ choc: col.duelPhase === 'choc' }">VS</span>
+
+                                <div class="col-arene-camp">
+                                    <span class="col-arene-nom" :class="{ moi: colVuDuel.cible === playerId }">
+                                        {{ colNom(colVuDuel.cible) }}
+                                    </span>
+                                    <div class="col-arene-slot defense"
+                                         :class="{ pleine: colVuDuel.pose, retourne: colDuelRetourne,
+                                                   perd: colPerdant === 'defense', choc: col.duelPhase === 'choc' }">
+                                        <span class="col-arene-dos"></span>
+                                        <span class="col-arene-face" v-if="colVuDuel.defense">
+                                            <img :src="'collectpic/' + colVuDuel.defense.img" alt="">
+                                            <i class="col-pion" :class="'pion-' + colVuDuel.defense.classe"
+                                               v-html="colSymbole(colVuDuel.defense.classe)"></i>
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-duel-sablier"><i :style="{ width: colSablierDuel }"></i></div>
-                            <p class="aide">Sans réponse, une carte partira au hasard.</p>
+
+                            <!-- La cible choisit, et elle seule -->
+                            <div class="col-arene-choix" v-if="colJeDefends && !colVuDuel.pose">
+                                <span class="col-etiquette">Présente une carte de cette série</span>
+                                <div class="col-rangee">
+                                    <button v-for="c in colMesDefenses" :key="c.uid"
+                                            class="col-carte choisissable" :class="'classe-' + c.classe"
+                                            @click="colDefendre(c.uid)">
+                                        <img :src="'collectpic/' + c.img" :alt="c.nom" draggable="false">
+                                        <span class="col-carte-classe">{{ c.classe[0].toUpperCase() }}</span>
+                                    </button>
+                                </div>
+                                <div class="col-duel-sablier"><i :style="{ width: colSablierDuel }"></i></div>
+                                <p class="aide">Sans réponse, une carte partira au hasard.</p>
+                            </div>
+                            <p class="col-arene-mot" :class="{ issue: !!colPerdant || colVuDuel.issue }"
+                               v-else>{{ colMotDuel }}</p>
                         </div>
                     </div>
 

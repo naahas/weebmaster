@@ -70,6 +70,9 @@ createApp({
                 enVol: null,         // l'uid de la carte qui vole encore du paquet vers la main
                 jauge: null,         // le style de la barre de temps, posé une fois par échéance
                 fin: 0,              // 0 rien · 1 l'écran s'assombrit · 2 le classement paraît
+                volEtape: 1,         // le vol se choisit en deux temps : la série, puis la carte
+                duelFini: null,      // le duel tranché, gardé le temps de le montrer
+                duelPhase: '',       // '' · retourne · choc · issue
                 entree: false,       // le temps de la distribution, au tout début
                 // réglages du salon, avant la partie
                 regleMain: 4,
@@ -1123,6 +1126,43 @@ createApp({
                 return { ...j, rang };
             });
         },
+        // ══ Le duel ══
+        // L'arène vit sur deux sources : le duel EN COURS que le serveur diffuse
+        // (sans jamais livrer les cartes), puis le duel TRANCHÉ que le journal
+        // rapporte — celui-là porte enfin les deux cartes. On les présente sous
+        // la même forme, sinon le passage de l'un à l'autre remonterait tout
+        // l'écran au moment précis où l'on veut que rien ne bouge.
+        colVuDuel() {
+            const d = this.col.etat && this.col.etat.duel;
+            if (d) return { attaquant: d.attaquant, cible: d.cible, anime: d.anime,
+                            pose: !!d.pose, attaque: null, defense: null, issue: null };
+            const f = this.col.duelFini;
+            if (f) return { attaquant: f.joueur, cible: f.cible, anime: f.anime,
+                            pose: true, attaque: f.attaque, defense: f.defense, issue: f.issue };
+            return null;
+        },
+        colDuelRetourne() { return !!this.col.duelFini; },
+        // Qui perd sa carte. « gagne » se lit du point de vue de l'attaquant.
+        colPerdant() {
+            const v = this.colVuDuel;
+            if (!v || !v.issue) return null;
+            if (v.issue === 'gagne') return 'defense';
+            if (v.issue === 'perdu') return 'attaque';
+            return null;
+        },
+        colMotDuel() {
+            const v = this.colVuDuel;
+            if (!v) return '';
+            if (v.issue) {
+                const att = this.colNom(v.attaquant), cib = this.colNom(v.cible);
+                if (v.issue === 'gagne') return att + ' emporte la carte';
+                if (v.issue === 'perdu') return cib + ' repousse le vol';
+                return 'Même classe — rien ne bouge';
+            }
+            if (v.pose) return 'On retourne…';
+            if (v.cible === this.playerId) return '';
+            return this.colNom(v.cible) + ' choisit sa carte…';
+        },
         colJeDefends() {
             const d = this.col.etat && this.col.etat.duel;
             return !!(d && d.cible === this.playerId);
@@ -1137,11 +1177,6 @@ createApp({
             if (!d || !d.fin) return '100%';
             const reste = Math.max(0, d.fin - Date.now());
             return Math.round(reste / 8000 * 100) + '%';
-        },
-        colArmeDeLaSerie() {
-            if (!this.col.volArme || !this.col.volSerie) return false;
-            const c = this.col.main.find(x => x.uid === this.col.volArme);
-            return !!(c && c.anime === this.col.volSerie);
         },
         // La consigne change avec l'action en cours : sans elle, on ne sait pas
         // ce que l'écran attend de nous.
@@ -1768,13 +1803,20 @@ createApp({
             if (premier || !avant) return;
 
             const s = this.sounds;
+            if (f.type === 'vol' && f.attaque) this.$nextTick(() => this.colFinDuel(f));
             this.$nextTick(() => this.colEcho(f));
             if (f.type === 'pioche') this.playSound(s.colPioche);
             else if (f.type === 'echange') this.playSound(s.colEchange);
             else if (f.type === 'scan') this.playSound(s.colScan);
             else if (f.type === 'set') this.playSound(s.colSet);
             else if (f.type === 'vol') {
-                this.playSound(f.issue === 'gagne' ? s.colVol : s.colVolRate);
+                // Le son tombe sur le CHOC, pas sur l'arrivée du message : les
+                // deux cartes se retournent d'abord, elles se heurtent ensuite.
+                // Un coup d'épée pendant que les cartes tournent encore ne dit
+                // rien de ce qui vient de se passer.
+                const quoi = f.issue === 'gagne' ? s.colVol : s.colVolRate;
+                if (f.attaque) setTimeout(() => this.playSound(quoi), 620);
+                else this.playSound(quoi);
             }
         },
         // Le titre lisible d'une série. Une clé inconnue est rendue telle
@@ -1852,6 +1894,11 @@ createApp({
             this.col._tourFin = null;
             this.col.fin = 0;
             this.col._fini = false;
+            this.col.duelFini = null;
+            this.col.duelPhase = '';
+            this.col.volEtape = 1;
+            for (const t of (this.col._duelT || [])) clearTimeout(t);
+            this.col._duelT = [];
             this.arreterRevealRush();
             this.endStep = 0;
             this.col._attendPioche = false;
@@ -1931,6 +1978,87 @@ createApp({
             window.addEventListener('pointerup', lacher);
             window.addEventListener('pointercancel', lacher);
         },
+        // ══ Le duel tranché, rejoué à l'écran ══
+        // Le journal porte les deux cartes : c'est la première fois qu'elles
+        // sortent du serveur. On les retourne, on les fait se heurter, puis la
+        // battue éclate — et si c'est celle de la cible, l'autre part rejoindre
+        // la main du voleur.
+        colFinDuel(f) {
+            if (!f.attaque || !f.defense) return;
+            this.col.duelFini = f;
+            this.col.duelPhase = 'retourne';
+            const t = [];
+            t.push(setTimeout(() => { this.col.duelPhase = 'choc'; }, 620));
+            t.push(setTimeout(() => {
+                this.col.duelPhase = 'issue';
+                this.colIssueDuel(f);
+            }, 1050));
+            t.push(setTimeout(() => {
+                this.col.duelFini = null;
+                this.col.duelPhase = '';
+            }, 2600));
+            this.col._duelT = t;
+        },
+        colIssueDuel(f) {
+            // « gagne » : la carte de la cible part chez le voleur, et la carte
+            // d'attaque éclate — elle retourne au paquet, elle n'est pas prise.
+            // « perdu » : seule l'attaque éclate. « nul » : rien.
+            const slotAtt = document.querySelector('.col-arene-slot.attaque');
+            const slotDef = document.querySelector('.col-arene-slot.defense');
+            if (f.issue === 'gagne') {
+                if (slotAtt) this.colEclaterCarte(slotAtt, f.attaque);
+                if (slotDef) this.colVersMain(slotDef, f.defense, f.joueur);
+            } else if (f.issue === 'perdu') {
+                if (slotAtt) this.colEclaterCarte(slotAtt, f.attaque);
+            }
+        },
+        // Sept éclats en étoile, sur place. Le même patron que la pose d'un set :
+        // ce qui casse dans ce jeu casse toujours de la même façon.
+        colEclaterCarte(el, carte) {
+            const b = el.getBoundingClientRect();
+            const brise = document.createElement('div');
+            brise.className = 'col-brise eclate';
+            brise.style.left = b.left + 'px';
+            brise.style.top = b.top + 'px';
+            brise.style.width = b.width + 'px';
+            brise.style.height = b.height + 'px';
+            brise.innerHTML = Array.from({ length: 7 }, () =>
+                '<i style="background-image:url(collectpic/' + carte.img + ')"></i>').join('');
+            document.body.appendChild(brise);
+            el.classList.add('brisee');
+            setTimeout(() => brise.remove(), 700);
+        },
+        // La carte gagnée rejoint son nouveau propriétaire : ma main si c'est
+        // moi, son siège sinon.
+        colVersMain(el, carte, playerId) {
+            const de = el.getBoundingClientRect();
+            let hote = null;
+            if (playerId === this.playerId) {
+                hote = document.querySelector('.col-moi .col-main');
+            } else {
+                const siege = this.colSiegeDe(playerId);
+                hote = siege && siege.querySelector('.col-eventail');
+            }
+            if (!hote) return;
+            const vers = hote.getBoundingClientRect();
+            const g = document.createElement('div');
+            g.className = 'col-croise vers-main';
+            g.style.left = de.left + 'px';
+            g.style.top = de.top + 'px';
+            g.style.width = de.width + 'px';
+            g.style.height = de.height + 'px';
+            g.innerHTML = '<img src="collectpic/' + carte.img + '" alt="">';
+            document.body.appendChild(g);
+            void g.offsetWidth;
+            g.style.transformOrigin = 'center';
+            g.style.transform = 'translate(' +
+                (vers.left + vers.width / 2 - de.left - de.width / 2).toFixed(1) + 'px, ' +
+                (vers.top + vers.height / 2 - de.top - de.height / 2).toFixed(1) + 'px) scale(0.45)';
+            g.style.opacity = '0.2';
+            el.classList.add('brisee');
+            setTimeout(() => g.remove(), 700);
+        },
+
         // ══ Ce que les AUTRES voient quand quelqu'un joue ══
         // Une main adverse est un paquet de dos : quand un joueur pioche ou
         // échange, rien n'y bougeait — le compte de cartes restait le même et
@@ -2290,11 +2418,23 @@ createApp({
             this.col.siegeOuvert = null;
             this.col.volCible = cibleId;
             this.col.volArme = null;
+            this.col.volEtape = 1;
             // On vise presque toujours la série qu'on complète : elle est
             // pré-remplie, quitte à ce que le joueur en change.
             const par = {};
             for (const c of this.col.main) par[c.anime] = (par[c.anime] || 0) + 1;
             this.col.volSerie = Object.keys(par).sort((a, b) => par[b] - par[a])[0] || null;
+        },
+        // Deux temps : la série, puis la carte. Tout demander d'un coup posait
+        // trois décisions sur le même écran — quoi réclamer, à qui, avec quoi —
+        // là où il n'y en a que deux, et l'une découle de l'autre.
+        colVolSerie(a) {
+            this.col.volSerie = a;
+            this.col.volEtape = 2;
+        },
+        colVolArme(c) {
+            this.col.volArme = c.uid;
+            this.colVoler();
         },
         colVoler() {
             if (!this.col.volCible || !this.col.volSerie || !this.col.volArme) return;
