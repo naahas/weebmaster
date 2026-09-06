@@ -1378,6 +1378,7 @@
 @keyframes colAreneVoile { from { opacity: 0; } to { opacity: 1; } }
 
 .col-arene-corps {
+    position: relative;
     display: flex; flex-direction: column; align-items: center;
     gap: 1.1rem;
     width: min(34rem, 94vw);
@@ -1447,17 +1448,51 @@
 }
 .col-arene-face .col-pion svg { width: 1rem; height: 1rem; }
 
-/* Le choc : les deux cartes se heurtent puis reviennent. Deux dixièmes de
-   seconde — au-delà, on attend au lieu de sursauter. */
-.col-arene-slot.attaque.choc { animation: colChocGauche 0.4s cubic-bezier(0.3, 0, 0.2, 1); }
-.col-arene-slot.defense.choc { animation: colChocDroite 0.4s cubic-bezier(0.3, 0, 0.2, 1); }
+/* L'ENTRECHOC. Elles reculent d'abord — c'est l'élan qui fait qu'on voit venir
+   le coup —, se jettent l'une sur l'autre, se cognent et repartent en
+   tremblant. Sans le recul, le choc arrivait sans prévenir et l'on croyait à
+   un simple décalage. */
+.col-arene-slot.attaque.choc { animation: colChocGauche 0.52s cubic-bezier(0.34, 0, 0.2, 1); }
+.col-arene-slot.defense.choc { animation: colChocDroite 0.52s cubic-bezier(0.34, 0, 0.2, 1); }
 @keyframes colChocGauche {
-    0%, 100% { transform: rotateY(180deg) translateX(0); }
-    45%      { transform: rotateY(180deg) translateX(1.1rem) rotate(2deg); }
+    0%   { transform: rotateY(180deg) translateX(0) rotate(0deg); }
+    22%  { transform: rotateY(180deg) translateX(-1.3rem) rotate(-3deg); }
+    46%  { transform: rotateY(180deg) translateX(2.4rem) rotate(5deg) scale(1.06); }
+    62%  { transform: rotateY(180deg) translateX(-0.7rem) rotate(-2deg); }
+    78%  { transform: rotateY(180deg) translateX(0.35rem) rotate(1deg); }
+    100% { transform: rotateY(180deg) translateX(0) rotate(0deg); }
 }
 @keyframes colChocDroite {
-    0%, 100% { transform: rotateY(180deg) translateX(0); }
-    45%      { transform: rotateY(180deg) translateX(-1.1rem) rotate(-2deg); }
+    0%   { transform: rotateY(180deg) translateX(0) rotate(0deg); }
+    22%  { transform: rotateY(180deg) translateX(1.3rem) rotate(3deg); }
+    46%  { transform: rotateY(180deg) translateX(-2.4rem) rotate(-5deg) scale(1.06); }
+    62%  { transform: rotateY(180deg) translateX(0.7rem) rotate(2deg); }
+    78%  { transform: rotateY(180deg) translateX(-0.35rem) rotate(-1deg); }
+    100% { transform: rotateY(180deg) translateX(0) rotate(0deg); }
+}
+/* Toute l'arène encaisse le coup : c'est la secousse qui fait qu'on le SENT
+   au lieu de le regarder. Un demi-caractère, pas plus. */
+.col-arene-corps.choc { animation: colAreneChoc 0.4s 0.24s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+@keyframes colAreneChoc {
+    0%, 100% { transform: translate(0, 0); }
+    18%      { transform: translate(-0.5rem, 0.24rem) rotate(-0.5deg); }
+    40%      { transform: translate(0.55rem, -0.3rem) rotate(0.55deg); }
+    64%      { transform: translate(-0.3rem, -0.16rem) rotate(-0.3deg); }
+    84%      { transform: translate(0.16rem, 0.1rem); }
+}
+/* L'éclair blanc à l'impact, une fraction de seconde */
+.col-arene-corps.choc::before {
+    content: '';
+    position: absolute; inset: -20% -10%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(255, 244, 210, 0.5), transparent 70%);
+    pointer-events: none;
+    animation: colAreneEclair 0.42s 0.24s ease-out forwards;
+}
+@keyframes colAreneEclair {
+    0%   { opacity: 0; transform: scale(0.5); }
+    22%  { opacity: 1; transform: scale(0.95); }
+    100% { opacity: 0; transform: scale(1.5); }
 }
 /* Celle qui tombe s'éteint sur place — les éclats, eux, sont posés par-dessus */
 .col-arene-slot.brisee { opacity: 0; transition: opacity 0.12s ease; }
@@ -1504,6 +1539,68 @@
     color: var(--col-or);
 }
 .col-larcin-etape i { font-style: normal; font-size: 0.7rem; color: rgba(255, 255, 255, 0.3); }
+
+/* ── Premier temps : une phrase, une liste ──
+   Onze pastilles à plat demandaient de lire onze noms pour en choisir un, et
+   neuf ne seraient jamais réclamés : on ne vole que ce qu'on collectionne. La
+   liste est triée, celles qu'on tient d'abord, et la première est déjà prise. */
+.col-larcin-choix {
+    width: 100%;
+    margin: 0.7rem 0 0.2rem;
+    padding: 0.7rem 0.8rem;
+    font: inherit; font-size: 0.86rem; font-weight: 600;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.06);
+    border: 0.09rem solid rgba(255, 210, 74, 0.35);
+    border-radius: 0.55rem;
+    cursor: pointer;
+    /* La flèche du système ne suit pas le thème : on pose la nôtre. */
+    appearance: none; -webkit-appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--col-or) 50%),
+                      linear-gradient(135deg, var(--col-or) 50%, transparent 50%);
+    background-position: right 1.05rem center, right 0.75rem center;
+    background-size: 0.35rem 0.35rem, 0.35rem 0.35rem;
+    background-repeat: no-repeat;
+}
+.col-larcin-choix:focus { outline: none; border-color: var(--col-or); }
+.col-larcin-choix option { background: #14131a; color: #fff; }
+
+/* ── Second temps : la classe, sans un mot ──
+   La carte d'attaque n'est jamais prise : seule sa CLASSE décide. Les trois
+   colonnes et leurs couleurs le disent mieux qu'une phrase, et c'est le seul
+   écran du mode qui apprenne le triangle à qui ne l'a pas encore compris. */
+.col-larcin-centre { text-align: center; }
+.col-larcin-triangle {
+    display: flex; align-items: center; justify-content: center; gap: 0.3rem;
+    margin: 0.35rem 0 0.7rem;
+    font-size: 0.62rem;
+    color: rgba(255, 255, 255, 0.22);
+}
+.col-larcin-triangle i { display: grid; place-items: center; }
+.col-larcin-triangle svg { width: 0.82rem; height: 0.82rem; }
+
+.col-larcin-classes { display: flex; gap: 0.5rem; }
+.col-larcin-classe {
+    flex: 1;
+    min-height: 4rem;
+    padding: 0.45rem;
+    display: flex; flex-wrap: wrap; gap: 0.3rem; justify-content: center; align-content: flex-start;
+    border-radius: 0.55rem;
+    border: 0.09rem solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+}
+.col-larcin-classe.classe-assaut { border-color: rgba(255, 107, 94, 0.35); }
+.col-larcin-classe.classe-mirage { border-color: rgba(169, 139, 255, 0.35); }
+.col-larcin-classe.classe-oracle { border-color: rgba(56, 214, 176, 0.35); }
+/* Une colonne vide ne se cache pas : c'est un renseignement — cette classe-là,
+   tu ne l'as pas, et c'est peut-être celle qu'il te faudrait. */
+.col-larcin-classe:empty::after {
+    content: '—';
+    display: block; width: 100%; padding: 1rem 0;
+    text-align: center; color: rgba(255, 255, 255, 0.15);
+}
+.col-larcin-classe .col-carte { width: calc(var(--carte) * 0.85); }
+.col-larcin-rappel { justify-content: center; width: 100%; margin: 0.7rem 0 0; }
 .col-larcin-rappel {
     display: inline-flex; align-items: center; gap: 0.5rem;
     margin-bottom: 0.2rem;

@@ -1065,6 +1065,26 @@ createApp({
         // Le marché est une file : celle de gauche s'en va au prochain tour, et
         // la position de chaque carte dit combien de tours il lui reste. La
         // flèche ne fait que rendre la règle visible à qui ne l'a pas devinée.
+        // Les séries, celles qu'on collectionne d'abord : on ne réclame que ce
+        // qu'on cherche à compléter, et une liste alphabétique de onze noms
+        // oblige à relire tout pour trouver les deux qui comptent.
+        colSeriesTriees() {
+            const a = (this.col.etat && this.col.etat.animes) || [];
+            return a.slice().sort((x, y) => {
+                const d = this.colDansMaMain(y) - this.colDansMaMain(x);
+                return d || this.colSerie(x).localeCompare(this.colSerie(y));
+            });
+        },
+        // La main groupée par classe. C'est la VRAIE décision : la carte
+        // d'attaque n'est jamais prise, seule sa classe décide de l'issue.
+        // Demander de choisir un visage pour un choix qui n'en dépend pas
+        // faisait manquer le triangle à qui ne l'avait pas encore compris.
+        colMainParClasse() {
+            return ['assaut', 'mirage', 'oracle'].map(classe => ({
+                classe,
+                cartes: this.col.main.filter(c => c.classe === classe),
+            }));
+        },
         colProchaineSortie() {
             const m = (this.col.etat && this.col.etat.marche) || [];
             return m.length ? m[0].uid : null;
@@ -1832,7 +1852,7 @@ createApp({
                 // Un coup d'épée pendant que les cartes tournent encore ne dit
                 // rien de ce qui vient de se passer.
                 const quoi = f.issue === 'gagne' ? s.colVol : s.colVolRate;
-                if (f.attaque) setTimeout(() => this.playSound(quoi), 620);
+                if (f.attaque) setTimeout(() => this.playSound(quoi), 880);
                 else this.playSound(quoi);
             }
         },
@@ -2017,15 +2037,18 @@ createApp({
             this.col.duelFini = f;
             this.col.duelPhase = 'retourne';
             const t = [];
-            t.push(setTimeout(() => { this.col.duelPhase = 'choc'; }, 620));
+            // Le retournement dure 0,62 s, l'entrechoc 0,52 s et la secousse de
+            // l'arene le suit de 0,24 s : la phase doit tenir jusqu'au bout,
+            // sinon la classe part au milieu du mouvement et tout se fige.
+            t.push(setTimeout(() => { this.col.duelPhase = 'choc'; }, 640));
             t.push(setTimeout(() => {
                 this.col.duelPhase = 'issue';
                 this.colIssueDuel(f);
-            }, 1050));
+            }, 1360));
             t.push(setTimeout(() => {
                 this.col.duelFini = null;
                 this.col.duelPhase = '';
-            }, 2600));
+            }, 2900));
             this.col._duelT = t;
         },
         colIssueDuel(f) {
