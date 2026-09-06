@@ -1126,13 +1126,16 @@ createApp({
             const l = this.col.etat && this.col.etat.larcin;
             return !!(l && l.cible === this.playerId);
         },
-        // Ce qu'on lit sous la carte qui vient de se retourner.
+        // Ce qu'on lit sous la carte qui vient de se retourner. Le VOLEUR a sa
+        // consigne en bas de l'écran, à l'impératif : ici on ne parle qu'aux
+        // autres, et l'on ne dit que ce qui les regarde — le sort de la carte.
         colMotPrise() {
             const l = this.col.etat && this.col.etat.larcin;
-            if (!l) return '';
+            if (!l || l.voleur === this.playerId) return '';
             const nom = '<b>' + this.colNom(l.voleur) + '</b>';
-            if (l.du === 1) return nom + ' doit rendre une carte de la même classe';
-            return nom + ' n\'a pas cette classe — il en rend deux';
+            return l.du === 1
+                ? nom + ' l\'emporte'
+                : nom + ' n\'a pas la classe — elle lui revient';
         },
         colOnMeLit() {
             const s = this.col.etat && this.col.etat.scan;
@@ -1178,13 +1181,9 @@ createApp({
                         : '<b>' + this.colNom(l.voleur) + '</b> prend une carte à <b>' + this.colNom(l.cible) + '</b>…';
                 }
                 const reste = l.aRendre - this.col.aLacher.length;
-                if (l.prisePayee) {
-                    return 'Tu n\'as pas de quoi payer : lâche ta dernière carte, ' +
-                           'la prise part avec.';
-                }
-                if (l.du === 1) return 'Rends une carte de la <b>même classe</b>.';
-                return 'Pas cette classe en main : rends <b>' + reste + ' carte' +
-                       (reste > 1 ? 's' : '') + '</b>, n\'importe lesquelles.';
+                if (l.du === 1) return 'Sélectionne <b>1 carte de la même classe</b> à jeter.';
+                return '<b>Vol impossible</b> — sélectionne <b>' + reste + ' carte' +
+                       (reste > 1 ? 's' : '') + '</b> à jeter.';
             }
             // Le siège en cours s'allume déjà : le redire en toutes lettres
             // sous la table faisait doublon.
@@ -1989,7 +1988,12 @@ createApp({
         // Sept éclats en étoile, sur place. Le même patron que la pose d'un set :
         // ce qui casse dans ce jeu casse toujours de la même façon.
         colEclaterCarte(el, carte) {
-            const b = el.getBoundingClientRect();
+            this.colEclaterBoite(el.getBoundingClientRect(), carte);
+            el.classList.add('brisee');
+        },
+        // Sept éclats sur un rectangle DONNÉ. Séparé de l'élément, parce que
+        // celui-ci a souvent disparu quand vient le moment d'éclater.
+        colEclaterBoite(b, carte) {
             const brise = document.createElement('div');
             brise.className = 'col-brise eclate';
             brise.style.left = b.left + 'px';
@@ -1999,7 +2003,6 @@ createApp({
             brise.innerHTML = Array.from({ length: 7 }, () =>
                 '<i style="background-image:url(collectpic/' + carte.img + ')"></i>').join('');
             document.body.appendChild(brise);
-            el.classList.add('brisee');
             setTimeout(() => brise.remove(), 700);
         },
         // La carte gagnée rejoint son nouveau propriétaire : ma main si c'est
@@ -2488,6 +2491,12 @@ createApp({
         // Ce que la dette exige de cette carte-là. « du » vaut 1 quand on a la
         // classe — et alors seule cette classe est acceptée — 2 sinon, et
         // n'importe laquelle fait l'affaire.
+        // L'inverse : ce qu'on n'a PAS le droit de lâcher. Uniquement quand
+        // la classe trie — à deux cartes dues, tout passe et rien ne s'éteint.
+        colHorsDette(c) {
+            const l = this.colMaDette;
+            return !!(l && l.du === 1 && c.classe !== l.classe);
+        },
         colDetteExige(c) {
             const l = this.colMaDette;
             if (!l) return false;
@@ -2515,13 +2524,24 @@ createApp({
         // Les cartes lâchées éclatent sur place, comme un set qu'on pose : ce
         // qui quitte une main dans ce jeu part toujours de la même façon.
         colBriserMain(uids) {
-            for (const [n, uid] of uids.entries()) {
+            // ⚠️ On relève les RECTANGLES tout de suite, pas au moment d'éclater.
+            // Le serveur répond en quelques dizaines de millisecondes : la main
+            // est déjà refaite quand le minuteur tombe, l'élément qu'on tenait
+            // est détaché, et « getBoundingClientRect » d'un élément détaché rend
+            // des zéros — les éclats partaient donc du coin haut gauche de
+            // l'écran, à côté de la carte qu'on regardait.
+            const pris = [];
+            for (const uid of uids) {
                 const i = this.col.main.findIndex(x => x.uid === uid);
                 const carte = this.col.main[i];
                 const el = document.querySelector('.col-main .col-carte:nth-child(' + (i + 1) + ')');
                 if (!el || !carte) continue;
+                const b = el.getBoundingClientRect();
                 el.classList.add('col-secoue');
-                setTimeout(() => this.colEclaterCarte(el, carte), 220 + n * 90);
+                pris.push({ carte, boite: { left: b.left, top: b.top, width: b.width, height: b.height } });
+            }
+            for (const [n, p] of pris.entries()) {
+                setTimeout(() => this.colEclaterBoite(p.boite, p.carte), 220 + n * 110);
             }
         },
         // Le compte à rebours vit côté client, mais sur l'heure de fin envoyée

@@ -1356,7 +1356,11 @@
 }
 .col-prise-carte {
     position: relative;
-    width: calc(var(--carte) * 2.1);
+    /* ⚠️ PAS « var(--carte) » : « .col-prise » est posée en « fixed » HORS de
+       « .col », qui porte cette variable. Le calcul était donc invalide, la
+       largeur tombait à zéro et la carte n'apparaissait jamais — on la voyait
+       « disparaître » alors qu'elle n'avait jamais été dessinée. */
+    width: min(13rem, 30vw);
     aspect-ratio: 225 / 350;
     border-radius: 0.6rem;
     /* La perspective vit ici : le retournement doit être un vrai demi-tour, pas
@@ -1436,6 +1440,10 @@
                            0 0 1.5rem rgba(255, 210, 74, 0.55); }
 }
 .col-carte.lachee { opacity: 0.35; filter: saturate(0.3); }
+/* Vol réussi : seule la bonne classe est acceptée. Les autres s'éteignent au
+   lieu de rester vives et de se faire cliquer pour rien — la couleur du pion
+   est trop petite pour trancher à elle seule. */
+.col-carte.horsdette { opacity: 0.32; filter: saturate(0.25) brightness(0.7); }
 
 /* Un tressaillement bref avant que la carte n'éclate : c'est lui qui fait
    qu'on la voit partir plutôt qu'on ne la voit disparaître. */
@@ -1457,7 +1465,7 @@
     .col { --carte: 3.5rem; }
     /* La carte prise reste lisible : c est le seul moment ou l on doit
        reconnaitre une classe a coup sur. */
-    .col-prise-carte { width: calc(var(--carte) * 1.8); }
+    .col-prise-carte { width: min(9.5rem, 46vw); }
     /* La table se redresse : en 9:16, une ellipse large laisse deux grands
        vides sur les côtés et écrase les sièges du haut. */
     .col-table { width: min(96%, 30rem); aspect-ratio: 1 / 1.02; top: 42%; }

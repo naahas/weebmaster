@@ -188,15 +188,22 @@ console.log('\n── Le vol : on prend, et l\'on paie ──');
     {
         const { e, a, b } = table(
             (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'assaut', 'A2'), carte(an[2], 'assaut', 'A3')],
-            (an) => [carte(an[0], 'oracle', 'B1')]);
+            (an) => [carte(an[0], 'oracle', 'B1'), carte(an[0], 'assaut', 'B2')]);
         C.actionViser(e, a, b);
         const r = C.actionVoler(e, a, b, 0);
         check('sans la classe, on en doit deux', r.du === 2, 'dû ' + r.du);
         check('une seule ne suffit pas', !C.actionPayer(e, a, ['A1']).ok, C.actionPayer(e, a, ['A1']).erreur);
         check('et la même deux fois non plus', !C.actionPayer(e, a, ['A1', 'A1']).ok);
         const p = C.actionPayer(e, a, ['A1', 'A3']);
-        check('deux cartes de n\'importe quelle classe soldent', p.ok, p.erreur || p.issue);
-        check('la main du voleur a rétréci', e.mains.get(a).length === 2,
+        check('deux cartes de n\'importe quelle classe soldent', p.ok && p.issue === 'rate',
+            p.erreur || p.issue);
+        // Et le vol N'A PAS LIEU : sans la classe, on ne peut pas remplacer ce
+        // qu'on prend. La carte retourne À SA PLACE — les positions sont ce sur
+        // quoi toute la table compte pour viser.
+        check('le vol échoue', !e.mains.get(a).some(c => c.uid === 'B1'));
+        check('… et la carte revient à sa place chez son propriétaire',
+            e.mains.get(b).map(c => c.uid).join(',') === 'B1,B2', e.mains.get(b).map(c => c.uid).join(','));
+        check('la main du voleur a rétréci', e.mains.get(a).length === 1,
             e.mains.get(a).map(c => c.uid).join());
         check('les deux rendues sont au paquet',
             e.pioche.some(c => c.uid === 'A1') && e.pioche.some(c => c.uid === 'A3'));
@@ -212,13 +219,13 @@ console.log('\n── Le vol : on prend, et l\'on paie ──');
             (an) => [carte(an[0], 'oracle', 'B1')]);
         C.actionViser(e, a, b);
         const r = C.actionVoler(e, a, b, 0);
-        check('une seule carte en main : on doit deux mais on n\'en rend qu\'une',
-            r.du === 2 && e.larcin.aRendre === 1 && e.larcin.prisePayee === true);
+        check('une seule carte en main : on doit deux, on n\'en rend qu\'une',
+            r.du === 2 && e.larcin.aRendre === 1);
         const p = C.actionPayer(e, a, ['A1']);
-        check('… et la prise part avec', p.ok && p.issue === 'ruine', p.erreur || p.issue);
+        check('… et l\'on paie quand même', p.ok, p.erreur || p.issue);
         check('le voleur ressort les mains vides', e.mains.get(a).length === 0);
-        check('les deux cartes sont au paquet',
-            e.pioche.some(c => c.uid === 'A1') && e.pioche.some(c => c.uid === 'B1'));
+        check('… et n\'a rien pris', e.mains.get(b).some(c => c.uid === 'B1'));
+        check('sa carte est au paquet', e.pioche.some(c => c.uid === 'A1'));
     }
 
     // ── L'absent ──

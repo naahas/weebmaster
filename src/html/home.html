@@ -954,6 +954,7 @@
                                                     choisissable: col.piocheOuverte,
                                                     envol: col.enVol === c.uid,
                                                     exigee: col.priseVue && colDetteExige(c),
+                                                    horsdette: col.priseVue && colHorsDette(c),
                                                     lachee: col.aLacher.includes(c.uid),
                                                     'dans-le-set': colPeutAgir && !col.drag && colSetPret === c.anime,
                                                     paire: colSerieVisible(c.anime) >= 2 }]"

@@ -370,19 +370,23 @@ function actionVoler(etat, playerId, cibleId, index) {
     }
 
     etat.visee = null;
-    // Elle quitte sa main tout de suite et se montre : c'est le moment du mode.
+    // Elle quitte sa main et se retourne pour tout le monde : c'est le moment
+    // du mode, et il a lieu même quand le vol va rater.
     const carte = mainCible.splice(i, 1)[0];
     const main = etat.mains.get(playerId) || [];
-    // Le prix : une carte de la même classe, ou deux à défaut. On ne paie
-    // JAMAIS avec la carte qu'on vient de prendre — sinon rendre un Oracle
-    // volé pour un Oracle dû serait un tour blanc, et le vol ne coûterait rien.
+    // La classe décide de TOUT : on ne peut prendre une carte que si l'on a de
+    // quoi la remplacer chez soi. Sans elle, le vol échoue — la carte retourne
+    // à son propriétaire — et l'on paie quand même deux cartes d'avoir tenté à
+    // l'aveugle. C'est ce qui donne son prix au scan : lui seul dit à l'avance
+    // ce qu'on va trouver, donc si le coup est jouable.
     const du = main.some(c => c.classe === carte.classe) ? 1 : 2;
-    // Sauf quand on n'a pas de quoi : la prise elle-même comble le manque, et
-    // l'on ressort les mains vides. C'est le prix d'un vol tenté trop tard.
-    const aRendre = Math.min(du, main.length);
     etat.larcin = {
         voleur: playerId, cible: cibleId, carte, classe: carte.classe,
-        du, aRendre, prisePayee: du > main.length, fin: 0,
+        place: i, du,
+        // On rend ce qu'on a, quitte à finir les mains vides : le geste reste
+        // permis à qui n'a plus qu'une carte, il lui coûte simplement tout.
+        aRendre: Math.min(du, main.length),
+        fin: 0,
     };
     noter(etat, { type: 'prise', joueur: playerId, cible: cibleId, carte: { ...carte }, du });
     return { ok: true, larcin: true, carte, du };
@@ -410,17 +414,27 @@ function actionPayer(etat, playerId, uids) {
     // du plus grand indice au plus petit, sinon les suivants glissent
     const rendues = index.sort((a, b) => b - a).map(k => main.splice(k, 1)[0]);
     for (const c of rendues) rendreAuPaquet(etat, c);
-    if (l.prisePayee) rendreAuPaquet(etat, l.carte);
-    else main.push(l.carte);
+
+    if (l.du === 1) {
+        main.push(l.carte);
+    } else {
+        // Le vol a raté : la carte retourne À SA PLACE chez son propriétaire.
+        // À sa place, et pas au bout : les positions sont ce sur quoi tout le
+        // monde compte pour viser, et une carte qui reviendrait ailleurs
+        // fausserait la mémoire de toute la table.
+        const chezElle = etat.mains.get(l.cible);
+        if (chezElle) chezElle.splice(Math.min(l.place, chezElle.length), 0, l.carte);
+        else rendreAuPaquet(etat, l.carte);
+    }
 
     noter(etat, {
         type: 'vol', joueur: playerId, cible: l.cible,
         carte: { ...l.carte }, rendues: rendues.map(c => ({ ...c })),
-        du: l.du, issue: l.prisePayee ? 'ruine' : (l.du === 1 ? 'juste' : 'cher'),
+        du: l.du, issue: l.du === 1 ? 'pris' : 'rate',
     });
     etat.larcin = null;
     tourSuivant(etat);
-    return { ok: true, issue: l.prisePayee ? 'ruine' : 'paye', rendues };
+    return { ok: true, issue: l.du === 1 ? 'pris' : 'rate', rendues };
 }
 
 // Le voleur n'a pas payé à temps. On solde à sa place, au moins mauvais choix :
@@ -549,8 +563,7 @@ function vuePublique(etat) {
         larcin: etat.larcin ? {
             voleur: etat.larcin.voleur, cible: etat.larcin.cible,
             carte: { ...etat.larcin.carte }, classe: etat.larcin.classe,
-            du: etat.larcin.du, aRendre: etat.larcin.aRendre,
-            prisePayee: etat.larcin.prisePayee, fin: etat.larcin.fin,
+            du: etat.larcin.du, aRendre: etat.larcin.aRendre, fin: etat.larcin.fin,
         } : null,
         // Qui scanne qui, et jusqu'à quand — JAMAIS les cartes. Celui qui se
         // fait lire a le droit de le savoir : c'est ce qui l'avertit que sa
