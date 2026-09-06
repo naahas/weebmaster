@@ -148,6 +148,7 @@ console.log('\n── Le vol : on prend, et l\'on paie ──');
         const { e, a, b } = table(
             (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'oracle', 'A2')],
             (an) => [carte(an[0], 'mirage', 'B1'), carte(an[0], 'assaut', 'B2')]);
+        C.actionViser(e, a, b);
         const r = C.actionVoler(e, a, b, 0);
         check('la prise ouvre une dette', r.ok && r.larcin === true, r.erreur || r.carte.uid);
         check('la carte quitte la main de la cible tout de suite',
@@ -167,6 +168,7 @@ console.log('\n── Le vol : on prend, et l\'on paie ──');
         const { e, a, b } = table(
             (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'mirage', 'A2')],
             (an) => [carte(an[0], 'mirage', 'B1')]);
+        C.actionViser(e, a, b);
         const r = C.actionVoler(e, a, b, 0);
         check('avec la classe en main, on ne doit qu\'une carte', r.du === 1, 'dû ' + r.du);
         check('une carte d\'une autre classe est refusée', !C.actionPayer(e, a, ['A1']).ok);
@@ -187,6 +189,7 @@ console.log('\n── Le vol : on prend, et l\'on paie ──');
         const { e, a, b } = table(
             (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'assaut', 'A2'), carte(an[2], 'assaut', 'A3')],
             (an) => [carte(an[0], 'oracle', 'B1')]);
+        C.actionViser(e, a, b);
         const r = C.actionVoler(e, a, b, 0);
         check('sans la classe, on en doit deux', r.du === 2, 'dû ' + r.du);
         check('une seule ne suffit pas', !C.actionPayer(e, a, ['A1']).ok, C.actionPayer(e, a, ['A1']).erreur);
@@ -207,6 +210,7 @@ console.log('\n── Le vol : on prend, et l\'on paie ──');
         const { e, a, b } = table(
             (an) => [carte(an[1], 'assaut', 'A1')],
             (an) => [carte(an[0], 'oracle', 'B1')]);
+        C.actionViser(e, a, b);
         const r = C.actionVoler(e, a, b, 0);
         check('une seule carte en main : on doit deux mais on n\'en rend qu\'une',
             r.du === 2 && e.larcin.aRendre === 1 && e.larcin.prisePayee === true);
@@ -222,6 +226,7 @@ console.log('\n── Le vol : on prend, et l\'on paie ──');
         const { e, a, b } = table(
             (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'assaut', 'A2'), carte(an[2], 'mirage', 'A3')],
             (an) => [carte(an[0], 'mirage', 'B1')]);
+        C.actionViser(e, a, b);
         C.actionVoler(e, a, b, 0);
         const p = C.larcinParDefaut(e);
         check('un voleur qui ne paie pas est soldé d\'office', p.ok, p.erreur);
@@ -229,14 +234,49 @@ console.log('\n── Le vol : on prend, et l\'on paie ──');
         check('… et le tour repart', !e.larcin && e.tourJoueur !== a);
     }
 
+    // ── Viser est un temps a part, et il bloque la table ──
+    // Sans ce passage par le serveur, le viseur ne vivait que sur l ecran du
+    // voleur : personne d autre ne comprenait pourquoi la table s etait arretee,
+    // et le compte a rebours n etait pas le meme pour tout le monde.
+    {
+        const { e, a, b } = table(
+            (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'mirage', 'A2')],
+            (an) => [carte(an[0], 'mirage', 'B1'), carte(an[0], 'oracle', 'B2')]);
+        check('on ne prend pas sans avoir vise', !C.actionVoler(e, a, b, 0).ok);
+        const v = C.actionViser(e, a, b);
+        check('viser s\'annonce', v.ok && !!e.visee, v.erreur);
+        check('la table voit qui vise qui',
+            C.vuePublique(e).visee && C.vuePublique(e).visee.cible === b);
+        check('plus personne ne joue pendant qu\'il cherche',
+            !C.actionPiocher(e, a, 'A2').ok);
+        check('un autre ne prend pas a sa place', !C.actionVoler(e, b, a, 0).ok);
+        check('on peut se raviser', C.annulerVisee(e, a).ok && !e.visee);
+        check('… et le tour reprend son cours', C.actionPiocher(e, a, 'A2').ok);
+    }
+
+    // ── Sept secondes sans choisir : la place est tiree au sort ──
+    {
+        const { e, a, b } = table(
+            (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'mirage', 'A2')],
+            (an) => [carte(an[0], 'mirage', 'B1')]);
+        C.actionViser(e, a, b);
+        const d = C.viseeParDefaut(e);
+        check('une visee expiree prend une place au hasard', d.ok && !!e.larcin, d.erreur);
+        check('… et la dette est bien ouverte', e.larcin.carte.uid === 'B1');
+    }
+
     // ── On ne vole ni soi-même, ni une carte qui n'existe pas ──
     {
         const e = neuf();
         const j = e.tourJoueur;
         const autre = joueurs.find(x => x !== j);
-        check('on ne se vole pas soi-même', !C.actionVoler(e, j, j, 0).ok);
+        check('on ne se vise pas soi-même', !C.actionViser(e, j, j).ok);
+        // vise pour de bon, puis on eprouve les places impossibles
+        C.actionViser(e, j, autre);
         check('ni une place qui n\'existe pas', !C.actionVoler(e, j, autre, 99).ok);
         check('ni une place négative', !C.actionVoler(e, j, autre, -1).ok);
+        check('ni chez quelqu\'un qu\'on ne vise pas',
+            !C.actionVoler(e, j, e.ordre.find(x => x !== j && x !== autre), 0).ok);
     }
 
     // ── Ce qu'un curieux ne doit pas pouvoir déduire ──
@@ -246,6 +286,7 @@ console.log('\n── Le vol : on prend, et l\'on paie ──');
         const { e, a, b } = table(
             (an) => [carte(an[1], 'assaut', 'A1'), carte(an[1], 'mirage', 'A2')],
             (an) => [carte(an[0], 'mirage', 'B1'), carte(an[0], 'oracle', 'B2'), carte(an[0], 'assaut', 'B3')]);
+        C.actionViser(e, a, b);
         C.actionVoler(e, a, b, 0);
         const vue = JSON.stringify(C.vuePublique(e));
         check('la carte prise se montre', vue.includes('"B1"'));
@@ -467,6 +508,7 @@ console.log('\n── Une partie entière se termine ──');
                     if (p >= 0) { cible = k; place = p; break; }
                 }
                 if (cible !== null) {
+                    C.actionViser(e, j, cible);
                     const r2 = C.actionVoler(e, j, cible, place);
                     if (r2.ok) {
                         // il paie tout de suite, au moins mauvais choix

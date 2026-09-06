@@ -107,9 +107,11 @@ function etatNeuf() {
         tourJoueur: null,
         tourFin: 0,
         tourTimer: null,
+        viseeTimer: null,
         larcinTimer: null,
         scanTimer: null,
         debut: 0,
+        visee: null,         // un voleur qui cherche sa place dans une main
         larcin: null,        // un vol pris, en attente de son paiement
         scan: null,          // un scan qui retient la table sept secondes
         vainqueur: null,
@@ -225,6 +227,7 @@ function verifierTour(etat, playerId) {
     if (!etat.active) return 'La partie n\'est pas en cours';
     // Un vol attend sa défense : tant qu'il n'est pas tranché, plus personne ne
     // joue — pas même celui dont c'est le tour.
+    if (etat.visee) return 'Un vol est en cours';
     if (etat.larcin) return 'Un vol est en cours';
     // Un scan retient la table le temps qu'on lise la main
     if (etat.scan) return 'Un scan est en cours';
@@ -311,10 +314,54 @@ function actionEchanger(etat, playerId, uidMain, uidMarche) {
 // demandait un cycle à apprendre, et il ouvrait une fenêtre par joueur. Ici le
 // vol aboutit toujours, la règle tient en cinq mots, et la classe reste la
 // chose qui décide : elle ne décide plus de qui gagne, mais de ce que ça coûte.
-function actionVoler(etat, playerId, cibleId, index) {
+// Premier temps : on ANNONCE qu'on va prendre chez quelqu'un. Le serveur le
+// sait, donc toute la table le voit et le même compte à rebours tourne pour
+// tout le monde — sept secondes, puis la place est tirée au sort. Sans ce
+// passage par le serveur, le viseur ne vivait que sur l'écran du voleur et
+// personne d'autre ne comprenait pourquoi la table s'était arrêtée.
+function actionViser(etat, playerId, cibleId) {
     const ko = verifierTour(etat, playerId);
     if (ko) return { ok: false, erreur: ko };
     if (cibleId === playerId) return { ok: false, erreur: 'Choisis un adversaire' };
+    const mainCible = etat.mains.get(cibleId);
+    if (!mainCible) return { ok: false, erreur: 'Ce joueur n\'est pas dans la partie' };
+    if (!mainCible.length) return { ok: false, erreur: 'Il n\'a plus rien à prendre' };
+    etat.visee = { voleur: playerId, cible: cibleId, fin: 0 };
+    noter(etat, { type: 'visee', joueur: playerId, cible: cibleId });
+    return { ok: true, visee: true };
+}
+
+// On se ravise. Le tour reprend son cours, on n'a rien perdu.
+function annulerVisee(etat, playerId) {
+    if (!etat.visee || etat.visee.voleur !== playerId) {
+        return { ok: false, erreur: 'Tu ne vises personne' };
+    }
+    etat.visee = null;
+    // le fait annoncé n'a plus eu lieu : on le retire plutôt que de laisser
+    // « X vise Y » traîner dans le journal de tout le monde
+    if (etat.journal.length && etat.journal[etat.journal.length - 1].type === 'visee') {
+        etat.journal.pop();
+    }
+    return { ok: true };
+}
+
+// Sept secondes sans choisir : la place est tirée au sort. Ce n'est pas une
+// punition — à l'aveugle, une place en vaut une autre pour qui n'a rien suivi.
+function viseeParDefaut(etat) {
+    const v = etat.visee;
+    if (!v) return { ok: false, erreur: 'Personne ne vise' };
+    const main = etat.mains.get(v.cible) || [];
+    if (!main.length) { etat.visee = null; tourSuivant(etat); return { ok: true, issue: 'vide' }; }
+    return actionVoler(etat, v.voleur, v.cible, Math.floor(Math.random() * main.length));
+}
+
+function actionVoler(etat, playerId, cibleId, index) {
+    // La visée tient lieu d'autorisation : « verifierTour » refuserait, puisque
+    // c'est justement elle qui bloque la table.
+    const v = etat.visee;
+    if (!v || v.voleur !== playerId || v.cible !== cibleId) {
+        return { ok: false, erreur: 'Tu ne vises pas ce joueur' };
+    }
     const mainCible = etat.mains.get(cibleId);
     if (!mainCible) return { ok: false, erreur: 'Ce joueur n\'est pas dans la partie' };
     const i = Number(index);
@@ -322,6 +369,7 @@ function actionVoler(etat, playerId, cibleId, index) {
         return { ok: false, erreur: 'Cette carte n\'existe pas' };
     }
 
+    etat.visee = null;
     // Elle quitte sa main tout de suite et se montre : c'est le moment du mode.
     const carte = mainCible.splice(i, 1)[0];
     const main = etat.mains.get(playerId) || [];
@@ -492,6 +540,9 @@ function vuePublique(etat) {
         // client de savoir s'il assiste au début ou s'il arrive en cours : sans
         // ça, un joueur qui se rafraîchit revoyait toute la distribution.
         depuis: etat.debut ? Date.now() - etat.debut : 0,
+        // Qui vise qui, et jusqu'à quand. La table doit comprendre pourquoi
+        // elle s'est arrêtée — et la cible mérite de voir venir le coup.
+        visee: etat.visee ? { voleur: etat.visee.voleur, cible: etat.visee.cible, fin: etat.visee.fin } : null,
         // Le vol en cours se montre ENTIÈREMENT, carte comprise : elle vient de
         // se retourner devant tout le monde, c'est le moment du mode. Seul le
         // paiement reste à venir, et il n'a rien de secret non plus.
@@ -531,7 +582,12 @@ function vueJoueur(etat, playerId) {
 // un salon : minuteries, diffusion, et les mains qui ne partent qu'à leur
 // propriétaire.
 
-const LARCIN_MS = 12000;  // choisir ce qu'on lâche demande de regarder sa main
+// Les deux temps du vol durent la même chose : sept secondes pour désigner
+// une place chez l'autre, sept pour désigner ce qu'on lâche chez soi. C'est la
+// durée du scan, et ce n'est pas un hasard — ce sont les trois moments où la
+// table entière attend une seule personne.
+const VISEE_MS = 7000;
+const LARCIN_MS = 7000;
 
 // Le pseudo d'un joueur, pour le journal — le moteur ne connaît que des
 // identifiants.
@@ -554,6 +610,7 @@ function diffuserEtat(gameState, io) {
 
 function stopperMinuteries(etat) {
     if (etat.tourTimer) { clearTimeout(etat.tourTimer); etat.tourTimer = null; }
+    if (etat.viseeTimer) { clearTimeout(etat.viseeTimer); etat.viseeTimer = null; }
     if (etat.larcinTimer) { clearTimeout(etat.larcinTimer); etat.larcinTimer = null; }
     if (etat.scanTimer) { clearTimeout(etat.scanTimer); etat.scanTimer = null; }
 }
@@ -571,9 +628,18 @@ function apresAction(gameState, io, onGameEnd) {
         return;
     }
 
-    if (etat.larcin) {
+    if (etat.visee) {
+        // Il cherche sa place. Toute la table voit le même compte à rebours.
+        etat.visee.fin = Date.now() + VISEE_MS;
+        etat.tourFin = etat.visee.fin;
+        etat.viseeTimer = setTimeout(() => {
+            viseeParDefaut(etat);
+            apresAction(gameState, io, onGameEnd);
+        }, VISEE_MS);
+    } else if (etat.larcin) {
         // La carte est retournée, la table s'arrête : le voleur doit payer.
         etat.larcin.fin = Date.now() + LARCIN_MS;
+        etat.tourFin = etat.larcin.fin;
         etat.larcinTimer = setTimeout(() => {
             larcinParDefaut(etat);
             apresAction(gameState, io, onGameEnd);
@@ -646,6 +712,7 @@ function quitterCollect(gameState, io, playerId) {
     // Le vol qu'il menait, ou qu'il subissait, n'a plus d'objet. La carte prise
     // repart au paquet : elle n'appartient plus à personne, et la laisser dans
     // les limbes bloquerait la table.
+    if (etat.visee && (etat.visee.voleur === playerId || etat.visee.cible === playerId)) etat.visee = null;
     if (etat.larcin && (etat.larcin.voleur === playerId || etat.larcin.cible === playerId)) {
         rendreAuPaquet(etat, etat.larcin.carte);
         etat.larcin = null;
@@ -693,6 +760,9 @@ function registerCollectSocketHandlers(io, socket, resoudreSalon) {
     // Le vol en deux temps : on prend une position, puis on paie. Le paiement
     // n'est pas soumis a « verifierTour » — c'est bien le tour du voleur, mais
     // « etat.larcin » y bloque justement tout le monde, lui compris.
+    socket.on('collect-viser', (d) => jouer(c => (d && d.cibleId)
+        ? actionViser(c.etat, c.moi, d.cibleId)
+        : annulerVisee(c.etat, c.moi)));
     socket.on('collect-voler', (d) => jouer(c => actionVoler(c.etat, c.moi, d && d.cibleId, d && d.index)));
     socket.on('collect-payer', (d) => jouer(c => actionPayer(c.etat, c.moi, d && d.uids)));
 
@@ -710,9 +780,9 @@ module.exports = {
     registerCollectSocketHandlers, diffuserEtat,
     etatNeuf, regles, demarrer, tourSuivant,
     actionPiocher, actionEchanger, actionVoler, actionScanner, actionPoser, actionParDefaut, finirScan,
-    actionPayer, larcinParDefaut,
+    actionViser, annulerVisee, viseeParDefaut, actionPayer, larcinParDefaut,
     rendreAuPaquet, renouvelerMarche, sousLePaquet,
-    SCAN_MS,
+    SCAN_MS, VISEE_MS,
     vuePublique, vueJoueur,
     _data: DATA,
 };

@@ -888,12 +888,13 @@
                                          de qui sont ces cartes — la fenêtre, elle, les sortait de
                                          leur contexte et il fallait relire un nom pour le savoir. -->
                                     <div class="col-eventail"
-                                         :class="{ scanne: colScanDe(p.playerId), vise: col.viseur === p.playerId }">
+                                         :class="{ scanne: colScanDe(p.playerId), vise: colViseDe(p.playerId) }">
                                         <!-- Visé, chaque dos se met à battre : on choisit une PLACE,
                                              pas une carte. Les positions ne bougent pas d'un tour à
                                              l'autre — qui suit sait ce qu'il prend. -->
                                         <span v-for="(d, k) in colEventail(p)" :key="k" class="col-dos"
-                                              :class="{ retournee: !!d, prenable: col.viseur === p.playerId }"
+                                              :class="{ retournee: !!d,
+                                                        prenable: colMaVisee && colMaVisee.cible === p.playerId }"
                                               :style="colIncline(k, colEventail(p).length, colScanDe(p.playerId) ? 10 : 6, colScanDe(p.playerId) ? 0.72 : 0)"
                                               @click.stop="colPrendreChez(p.playerId, k)"
                                               @mouseenter="d && (col.loupe = d)" @mouseleave="col.loupe = null">
@@ -906,7 +907,7 @@
                                         <!-- Les deux gestes vivent DANS l'éventail : au milieu de la
                                              colonne du siège, ils tombaient sous les cartes, entre le
                                              nom et les étoiles. -->
-                                        <div class="col-siege-actions">
+                                        <div class="col-siege-actions" v-if="!col.etat.visee && !col.etat.larcin">
                                             <button title="Scanner sa main" @click.stop="colScanner(p.playerId)">
                                                 <svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
                                             </button>
@@ -952,7 +953,7 @@
                                                     aimante: colAimantee(c),
                                                     choisissable: col.piocheOuverte,
                                                     envol: col.enVol === c.uid,
-                                                    exigee: colDetteExige(c),
+                                                    exigee: col.priseVue && colDetteExige(c),
                                                     lachee: col.aLacher.includes(c.uid),
                                                     'dans-le-set': colPeutAgir && !col.drag && colSetPret === c.anime,
                                                     paire: colSerieVisible(c.anime) >= 2 }]"
@@ -1044,7 +1045,7 @@
                          moment du mode. Pas de voile, pas de fenêtre — la table doit
                          rester visible et la main du voleur, cliquable : c'est là
                          qu'il va prendre de quoi payer. -->
-                    <div class="col-prise" v-if="col.etat && col.etat.larcin">
+                    <div class="col-prise" v-if="col.etat && col.etat.larcin" :style="col._priseDe">
                         <div class="col-prise-carte" :class="['classe-' + col.etat.larcin.carte.classe,
                                                              { retournee: col.priseVue }]">
                             <span class="col-prise-dos"></span>

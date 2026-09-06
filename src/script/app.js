@@ -68,7 +68,6 @@ createApp({
                 enVol: null,         // l'uid de la carte qui vole encore du paquet vers la main
                 jauge: null,         // le style de la barre de temps, posé une fois par échéance
                 fin: 0,              // 0 rien · 1 l'écran s'assombrit · 2 le classement paraît
-                viseur: null,     // l'adversaire dont on s'apprête à prendre une carte
                 priseVue: false,  // la carte prise s'est-elle retournée
                 aLacher: [],      // ce qu'on a désigné pour payer sa dette
                 entree: false,       // le temps de la distribution, au tout début
@@ -1087,7 +1086,7 @@ createApp({
         // doit pas s'offrir.
         colPeutAgir() {
             const e = this.col.etat;
-            return !!(this.colMonTour && e && !e.larcin && !e.scan);
+            return !!(this.colMonTour && e && !e.visee && !e.larcin && !e.scan);
         },
         colMonTour() {
             return !!(this.col.etat && this.col.etat.tourJoueur === this.playerId);
@@ -1107,11 +1106,17 @@ createApp({
         // sur ce qui est réellement en train de s'écouler.
         colTotalTemps() {
             const e = this.col.etat;
-            if (e && e.larcin) return 12;
+            if (e && e.visee) return 7;
+            if (e && e.larcin) return 7;
             if (e && e.scan) return 7;
             return 15;
         },
         // Ma main est-elle en train d'être lue ?
+        // La visée en cours, si c'est la mienne.
+        colMaVisee() {
+            const v = this.col.etat && this.col.etat.visee;
+            return (v && v.voleur === this.playerId) ? v : null;
+        },
         // La dette en cours, si c'est la mienne.
         colMaDette() {
             const l = this.col.etat && this.col.etat.larcin;
@@ -1155,6 +1160,16 @@ createApp({
         // ce que l'écran attend de nous.
         colConsigne() {
             if (!this.col.etat) return '';
+            const v = this.col.etat.visee;
+            if (v) {
+                if (v.voleur === this.playerId) {
+                    return 'Choisis une carte chez <b>' + this.colNom(v.cible) +
+                           '</b> — tu ne sauras qu\'après ce qu\'elle te coûte.';
+                }
+                return v.cible === this.playerId
+                    ? '<b>' + this.colNom(v.voleur) + '</b> cherche laquelle te prendre…'
+                    : '<b>' + this.colNom(v.voleur) + '</b> vise <b>' + this.colNom(v.cible) + '</b>…';
+            }
             const l = this.col.etat.larcin;
             if (l) {
                 if (l.voleur !== this.playerId) {
@@ -1180,10 +1195,7 @@ createApp({
                 if (e && e.scan && e.scan.par === this.playerId) return 'Retiens ce que tu vois…';
                 return '';
             }
-            if (this.col.viseur) {
-                return 'Choisis une carte chez <b>' + this.colNom(this.col.viseur) +
-                       '</b> — tu ne verras qu\'après ce qu\'elle te coûte.';
-            }
+
             if (this.col.drag) {
                 const c = this.col.drag.cible;
                 if (c === 'pioche') return 'Lâche pour <b>piocher</b> à sa place.';
@@ -1824,6 +1836,7 @@ createApp({
         colEcheance() {
             const e = this.col.etat;
             if (!e) return 0;
+            if (e.visee && e.visee.fin) return e.visee.fin;
             if (e.larcin && e.larcin.fin) return e.larcin.fin;
             if (e.scan && e.scan.fin) return e.scan.fin;
             return e.tourFin || 0;
@@ -1870,7 +1883,6 @@ createApp({
             return p ? p.sets : [];
         },
         colRaz() {
-            this.col.viseur = null;
             this.col.aLacher = [];
         },
         // Un salon fermé, une partie relancée avec d'autres réglages : sans
@@ -1891,9 +1903,9 @@ createApp({
             this.col._tourFin = null;
             this.col.fin = 0;
             this.col._fini = false;
-            this.col.viseur = null;
             this.col.priseVue = false;
             this.col._priseVue = false;
+            this.col._priseDe = null;
             this.col.aLacher = [];
             this.arreterRevealRush();
             this.endStep = 0;
@@ -2423,6 +2435,12 @@ createApp({
         // Une seule liste dans les deux cas, sinon Vue démonte et remonte les
         // éléments au lieu de les retourner — et un élément remonté ne peut pas
         // s'animer, il apparaît.
+        // Est-ce cet éventail-là qu'on vise ? Tout le monde le voit, mais seul
+        // le voleur peut cliquer.
+        colViseDe(id) {
+            const v = this.col.etat && this.col.etat.visee;
+            return !!(v && v.cible === id);
+        },
         colScanDe(id) { return !!(this.col.scan && this.col.scan.cible === id); },
         colEventail(p) {
             if (this.colScanDe(p.playerId)) return this.col.scan.main;
@@ -2437,15 +2455,35 @@ createApp({
         // Plus de panneau. On arme le viseur ; l'éventail de la cible se met à
         // battre ; on clique une PLACE. C'est le seul geste du mode qui se
         // faisait encore dans une fenêtre par-dessus la table.
+        // La visée vit sur le SERVEUR, pas dans mon coin : sans quoi la table
+        // s'arrêtait sans que personne comprenne pourquoi, et le compte à
+        // rebours n'était pas le même pour tous.
         colViser(cibleId) {
+            if (this.colMaVisee) return this.socket.emit('collect-viser', {});
             if (!this.colPeutAgir) return;
             this.col.siegeOuvert = null;
-            this.col.viseur = this.col.viseur === cibleId ? null : cibleId;
+            this.socket.emit('collect-viser', { cibleId });
         },
         colPrendreChez(cibleId, index) {
-            if (this.col.viseur !== cibleId || !this.colPeutAgir) return;
-            this.col.viseur = null;
+            const v = this.colMaVisee;
+            if (!v || v.cible !== cibleId) return;
+            // On relève d'où part la carte AVANT que l'état ne change : elle
+            // doit venir de sa main, pas apparaître au milieu de nulle part.
+            this.colPriseDepuis(cibleId);
             this.socket.emit('collect-voler', { cibleId, index });
+        },
+        // Le point de départ du vol de la carte prise, en écart par rapport au
+        // milieu du feutre où elle va se poser.
+        colPriseDepuis(cibleId) {
+            const siege = this.colSiegeDe(cibleId);
+            const fan = siege && siege.querySelector('.col-eventail');
+            if (!fan) { this.col._priseDe = null; return; }
+            const r = fan.getBoundingClientRect();
+            const cx = window.innerWidth / 2, cy = window.innerHeight * 0.34;
+            this.col._priseDe = {
+                '--de-x': (r.left + r.width / 2 - cx).toFixed(0) + 'px',
+                '--de-y': (r.top + r.height / 2 - cy).toFixed(0) + 'px',
+            };
         },
         // Ce que la dette exige de cette carte-là. « du » vaut 1 quand on a la
         // classe — et alors seule cette classe est acceptée — 2 sinon, et
@@ -5813,10 +5851,14 @@ createApp({
                 if (data.larcin && !this.col._priseVue) {
                     this.col._priseVue = true;
                     this.col.priseVue = false;
-                    setTimeout(() => { this.col.priseVue = true; }, 260);
+                    // Elle vole d'abord depuis la main de la cible (0,45 s),
+                    // elle se retourne ensuite : deux gestes, pas un seul. La
+                    // voir tourner en chemin dirait qu'elle était déjà à nous.
+                    setTimeout(() => { this.col.priseVue = true; }, 480);
                 } else if (!data.larcin) {
                     this.col._priseVue = false;
                     this.col.priseVue = false;
+                    this.col._priseDe = null;
                 }
 
                 // Une échéance neuve, une jauge neuve — et une seule fois. La

@@ -183,8 +183,20 @@ const dernier = (j) => j.etats[j.etats.length - 1];
         const cible = tous.find(j => j.nom !== courant.nom && j.main.length);
         const avantCible = cible.main.length;
         const avantVoleur = courant.main.map(c => c.uid);
+        // Premier temps : on ANNONCE. Toute la table le voit, et le meme compte
+        // a rebours tourne pour tout le monde.
+        courant.socket.emit('collect-viser', { cibleId: cible.nom });
+        await wait(300);
+        check('la visee s\'annonce a la table',
+            !!dernier(A).visee && dernier(A).visee.cible === cible.nom,
+            dernier(A).visee ? dernier(A).visee.voleur : 'aucune');
+        check('la table est arretee pendant qu\'il cherche',
+            dernier(A).tourJoueur === courant.nom);
+
+        // Second temps : la place.
         courant.socket.emit('collect-voler', { cibleId: cible.nom, index: 0 });
         await wait(300);
+        check('la prise leve la visee', !dernier(A).visee);
 
         const st = dernier(A);
         check('le vol ouvre une dette', !!st.larcin,
