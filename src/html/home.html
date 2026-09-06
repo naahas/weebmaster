@@ -887,10 +887,15 @@
                                          lieu d'ouvrir une fenêtre par-dessus la table. On voit alors
                                          de qui sont ces cartes — la fenêtre, elle, les sortait de
                                          leur contexte et il fallait relire un nom pour le savoir. -->
-                                    <div class="col-eventail" :class="{ scanne: colScanDe(p.playerId) }">
+                                    <div class="col-eventail"
+                                         :class="{ scanne: colScanDe(p.playerId), vise: col.viseur === p.playerId }">
+                                        <!-- Visé, chaque dos se met à battre : on choisit une PLACE,
+                                             pas une carte. Les positions ne bougent pas d'un tour à
+                                             l'autre — qui suit sait ce qu'il prend. -->
                                         <span v-for="(d, k) in colEventail(p)" :key="k" class="col-dos"
-                                              :class="{ retournee: !!d }"
+                                              :class="{ retournee: !!d, prenable: col.viseur === p.playerId }"
                                               :style="colIncline(k, colEventail(p).length, colScanDe(p.playerId) ? 10 : 6, colScanDe(p.playerId) ? 0.72 : 0)"
+                                              @click.stop="colPrendreChez(p.playerId, k)"
                                               @mouseenter="d && (col.loupe = d)" @mouseleave="col.loupe = null">
                                             <span class="col-dos-verso"></span>
                                             <span class="col-dos-recto" v-if="d">
@@ -905,7 +910,7 @@
                                             <button title="Scanner sa main" @click.stop="colScanner(p.playerId)">
                                                 <svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
                                             </button>
-                                            <button title="Lui voler une carte" @click.stop="colOuvrirVol(p.playerId)">
+                                            <button title="Lui prendre une carte" @click.stop="colViser(p.playerId)">
                                                 <svg viewBox="0 0 24 24"><path d="M5 19L19 5M15 5h4v4M9 19H5v-4"/><path d="M5 5l6 6"/></svg>
                                             </button>
                                         </div>
@@ -929,7 +934,10 @@
                                 </div>
 
                                 <!-- Toi, à cheval sur le bord du bas -->
-                                <div class="col-moi" :class="{ tour: colPeutAgir }">
+                                <!-- « tour » vaut aussi quand une dette m attend : la table est bloquee pour
+                                     tout le monde, mais c est MA main qu on attend, et une main eteinte
+                                     ne se clique pas. -->
+                                <div class="col-moi" :class="{ tour: colPeutAgir || !!colMaDette }">
                                     <!-- Pendant qu'une carte piochée vole vers la main, on coupe
                                          les transitions de l'éventail : « col-main-t-enter-from »
                                          pose la carte treize rem plus loin avant de la ramener, et
@@ -944,11 +952,13 @@
                                                     aimante: colAimantee(c),
                                                     choisissable: col.piocheOuverte,
                                                     envol: col.enVol === c.uid,
+                                                    exigee: colDetteExige(c),
+                                                    lachee: col.aLacher.includes(c.uid),
                                                     'dans-le-set': colPeutAgir && !col.drag && colSetPret === c.anime,
                                                     paire: colSerieVisible(c.anime) >= 2 }]"
                                                 :style="colIncline(i, col.main.length, 5)"
                                                 @mouseenter="col.loupe = c" @mouseleave="col.loupe = null"
-                                                @click="colPiocherEnLachant(c)"
+                                                @click="colToucherCarte(c)"
                                                 @pointerdown="colPrendre(c, $event)">
                                             <img :src="'collectpic/' + c.img" :alt="c.nom" draggable="false">
                                             <span class="col-pion" :class="'pion-' + c.classe" v-html="colSymbole(c.classe)"></span>
@@ -959,6 +969,15 @@
                                          le savoir — pas après s'être fait voler. Un œil POSÉ SUR
                                          la main le dit sans un mot, et sans rien ajouter en
                                          périphérie de l'écran. -->
+                                    <!-- On te prend une carte : la main qui se referme, posée sur
+                                         tes cartes comme l'œil du scan. Tu ne peux rien y faire, mais
+                                         tu dois le voir arriver. -->
+                                    <span class="col-oeil col-pince" v-if="colOnMeVole">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M8 13V4.5a1.5 1.5 0 013 0V12M11 12V3.5a1.5 1.5 0 013 0V12M14 12.5V5.5a1.5 1.5 0 013 0V13"/>
+                                            <path d="M17 8.5a1.5 1.5 0 013 0V15a6 6 0 01-6 6h-2a6 6 0 01-6-6v-2.5l-2.2-2.2a1.5 1.5 0 012.1-2.1L8 11"/>
+                                        </svg>
+                                    </span>
                                     <span class="col-oeil" v-if="colOnMeLit">
                                         <svg viewBox="0 0 24 24">
                                             <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
@@ -1020,123 +1039,22 @@
                     </div>
 
 
-                    <!-- ── Le vol, en deux temps ──
-                         Tout demander d'un coup posait trois décisions sur le même
-                         écran — quoi réclamer, à qui, avec quoi — là où il n'y en a
-                         que deux, et où la seconde découle de la première. -->
-                    <div class="col-voile" v-if="col.volCible" @click.self="colAnnuler">
-                        <div class="col-feuille col-larcin">
-                            <span class="col-larcin-etape">{{ col.volEtape }}<i>/2</i></span>
-
-                            <!-- Une phrase, une liste. Onze pastilles à plat demandaient de
-                                 lire onze noms pour en choisir un, et neuf ne seraient jamais
-                                 réclamés — on ne vole que ce qu'on collectionne. -->
-                            <template v-if="col.volEtape === 1">
-                                <h3>Quelle série chez {{ colNom(col.volCible) }} ?</h3>
-                                <select class="col-larcin-choix" v-model="col.volSerie">
-                                    <option v-for="a in colSeriesTriees" :key="a" :value="a">
-                                        {{ colSerie(a) }}<template v-if="colDansMaMain(a)"> — tu en as {{ colDansMaMain(a) }}</template>
-                                    </option>
-                                </select>
-                                <button class="col-valider" :disabled="!col.volSerie"
-                                        @click="col.volEtape = 2">Continuer</button>
-                            </template>
-
-                            <!-- La carte se choisit PAR CLASSE, sans un mot : les trois colonnes
-                                 et leurs couleurs suffisent, et c'est la vraie décision — la
-                                 carte n'est jamais prise, seule sa classe décide. -->
-                            <template v-else>
-                                <h3 class="col-larcin-centre">Choisis ta carte attaquante</h3>
-                                <span class="col-larcin-triangle" title="Assaut bat Mirage, Mirage bat Oracle, Oracle bat Assaut">
-                                    <i class="pion-assaut" v-html="colSymbole('assaut')"></i>›<i class="pion-mirage" v-html="colSymbole('mirage')"></i>›<i class="pion-oracle" v-html="colSymbole('oracle')"></i>›<i class="pion-assaut" v-html="colSymbole('assaut')"></i>
-                                </span>
-                                <div class="col-larcin-classes">
-                                    <div v-for="g in colMainParClasse" :key="g.classe"
-                                         class="col-larcin-classe" :class="'classe-' + g.classe">
-                                        <button v-for="c in g.cartes" :key="c.uid"
-                                                class="col-carte choisissable" :class="['classe-' + c.classe, {
-                                                    eteinte: c.anime === col.volSerie }]"
-                                                @click="colVolArme(c)">
-                                            <img :src="'collectpic/' + c.img" :alt="c.nom" draggable="false">
-                                            <span class="col-pion" :class="'pion-' + c.classe" v-html="colSymbole(c.classe)"></span>
-                                        </button>
-                                    </div>
-                                </div>
-                                <span class="col-larcin-rappel">
-                                    Tu réclames <b>{{ colSerie(col.volSerie) }}</b>
-                                    <button class="col-larcin-retour" @click="col.volEtape = 1">changer</button>
-                                </span>
-                            </template>
-
-                            <button class="col-fermer" @click="colAnnuler">Annuler</button>
+                    <!-- ── La carte prise, au milieu du feutre ──
+                         Elle vient de se retourner devant tout le monde : c'est le
+                         moment du mode. Pas de voile, pas de fenêtre — la table doit
+                         rester visible et la main du voleur, cliquable : c'est là
+                         qu'il va prendre de quoi payer. -->
+                    <div class="col-prise" v-if="col.etat && col.etat.larcin">
+                        <div class="col-prise-carte" :class="['classe-' + col.etat.larcin.carte.classe,
+                                                             { retournee: col.priseVue }]">
+                            <span class="col-prise-dos"></span>
+                            <span class="col-prise-face">
+                                <img :src="'collectpic/' + col.etat.larcin.carte.img" alt="">
+                                <i class="col-pion" :class="'pion-' + col.etat.larcin.carte.classe"
+                                   v-html="colSymbole(col.etat.larcin.carte.classe)"></i>
+                            </span>
                         </div>
-                    </div>
-
-                    <!-- ── L'arène : deux cartes face cachée, au milieu de la table ──
-                         Le vol se jouait dans deux fenêtres séparées, une par joueur :
-                         chacun voyait sa moitié du duel et personne ne voyait la
-                         confrontation. Ici les deux camps sont côte à côte, et tout
-                         le salon les regarde — c'est le moment du mode.
-
-                         Les cartes ne portent RIEN tant qu'elles ne sont pas
-                         retournées : le serveur ne les envoie qu'avec l'issue. -->
-                    <div class="col-arene" v-if="colVuDuel">
-                        <div class="col-arene-corps" :class="{ choc: col.duelPhase === 'choc' }">
-                            <span class="col-arene-serie">{{ colSerie(colVuDuel.anime) }}</span>
-
-                            <div class="col-arene-slots">
-                                <div class="col-arene-camp">
-                                    <span class="col-arene-nom" :class="{ moi: colVuDuel.attaquant === playerId }">
-                                        {{ colNom(colVuDuel.attaquant) }}
-                                    </span>
-                                    <div class="col-arene-slot attaque pleine"
-                                         :class="{ retourne: colDuelRetourne, perd: colPerdant === 'attaque',
-                                                   choc: col.duelPhase === 'choc' }">
-                                        <span class="col-arene-dos"></span>
-                                        <span class="col-arene-face" v-if="colVuDuel.attaque">
-                                            <img :src="'collectpic/' + colVuDuel.attaque.img" alt="">
-                                            <i class="col-pion" :class="'pion-' + colVuDuel.attaque.classe"
-                                               v-html="colSymbole(colVuDuel.attaque.classe)"></i>
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <span class="col-arene-vs" :class="{ choc: col.duelPhase === 'choc' }">VS</span>
-
-                                <div class="col-arene-camp">
-                                    <span class="col-arene-nom" :class="{ moi: colVuDuel.cible === playerId }">
-                                        {{ colNom(colVuDuel.cible) }}
-                                    </span>
-                                    <div class="col-arene-slot defense"
-                                         :class="{ pleine: colVuDuel.pose, retourne: colDuelRetourne,
-                                                   perd: colPerdant === 'defense', choc: col.duelPhase === 'choc' }">
-                                        <span class="col-arene-dos"></span>
-                                        <span class="col-arene-face" v-if="colVuDuel.defense">
-                                            <img :src="'collectpic/' + colVuDuel.defense.img" alt="">
-                                            <i class="col-pion" :class="'pion-' + colVuDuel.defense.classe"
-                                               v-html="colSymbole(colVuDuel.defense.classe)"></i>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- La cible choisit, et elle seule -->
-                            <div class="col-arene-choix" v-if="colJeDefends && !colVuDuel.pose">
-                                <span class="col-etiquette">Présente une carte de cette série</span>
-                                <div class="col-rangee">
-                                    <button v-for="c in colMesDefenses" :key="c.uid"
-                                            class="col-carte choisissable" :class="'classe-' + c.classe"
-                                            @click="colDefendre(c.uid)">
-                                        <img :src="'collectpic/' + c.img" :alt="c.nom" draggable="false">
-                                        <span class="col-carte-classe">{{ c.classe[0].toUpperCase() }}</span>
-                                    </button>
-                                </div>
-                                <div class="col-duel-sablier"><i :style="{ width: colSablierDuel }"></i></div>
-                                <p class="aide">Sans réponse, une carte partira au hasard.</p>
-                            </div>
-                            <p class="col-arene-mot" :class="{ issue: !!colPerdant || colVuDuel.issue }"
-                               v-else>{{ colMotDuel }}</p>
-                        </div>
+                        <span class="col-prise-mot" v-html="colMotPrise"></span>
                     </div>
 
                     <!-- ── Le vainqueur ── -->
