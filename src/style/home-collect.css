@@ -295,13 +295,14 @@
     border: 0.06rem solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 0.4rem 0.9rem rgba(0, 0, 0, 0.6);
     pointer-events: none;
-    animation: colEcho 0.6s cubic-bezier(0.25, 0.8, 0.3, 1) forwards;
+    animation: colEcho 0.85s cubic-bezier(0.28, 0.75, 0.3, 1) forwards;
 }
 .col-echo.dos { background: repeating-linear-gradient(135deg, #26323f 0 5px, #1b232e 5px 10px); }
 .col-echo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 @keyframes colEcho {
-    0%   { opacity: 0; transform: translate(4.5rem, -0.6rem) rotate(14deg) scale(0.9); }
-    28%  { opacity: 1; }
+    0%   { opacity: 0; transform: translate(7rem, -0.9rem) rotate(16deg) scale(0.92); }
+    22%  { opacity: 1; }
+    82%  { opacity: 1; }
     100% { opacity: 0; transform: translate(0, 0) rotate(0deg) scale(0.72); }
 }
 /* À qui le tour : une lueur qui respire autour de l'éventail. Sobre parce
@@ -650,6 +651,29 @@
     pointer-events: none;
 }
 @keyframes colTourne { to { --colTour: 360deg; } }
+
+/* La carte qui partira au prochain renouvellement. Discrète — c'est un
+   renseignement, pas une alarme : elle dit seulement qu'il faut se dépêcher si
+   on la convoitait. Sans elle, la place qui change semblait tirée au sort. */
+.col-sortante {
+    position: absolute; left: 50%; bottom: -0.72rem;
+    transform: translateX(-50%);
+    width: 1.05rem; height: 1.05rem;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.75);
+    border: 0.06rem solid rgba(255, 255, 255, 0.18);
+    animation: colSortante 2.4s ease-in-out infinite;
+}
+.col-sortante svg {
+    width: 0.6rem; height: 0.6rem;
+    fill: none; stroke: rgba(255, 255, 255, 0.55);
+    stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
+}
+@keyframes colSortante {
+    0%, 100% { opacity: 0.45; transform: translateX(-50%) translateY(0); }
+    50%      { opacity: 1;    transform: translateX(-50%) translateY(0.14rem); }
+}
 
 /* ── La carte regardée de près ────────────────────────────────── */
 .col-loupe {
@@ -1051,12 +1075,17 @@
    Chaque défausse pousse une carte au marché et en renvoie la plus ancienne
    dans le paquet. Sans transition, la rangée se réécrivait d'un coup et l'on
    ne comprenait pas ce qui venait d'entrer ni ce qui était parti. */
-.col-marche-t-enter-active,
-.col-marche-t-leave-active { transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.25, 1), opacity 0.35s ease; }
-.col-marche-t-enter-from { opacity: 0; transform: translateX(5.5rem); }
-.col-marche-t-leave-to   { opacity: 0; transform: translateX(-5.5rem); }
-.col-marche-t-leave-active { position: absolute; }
-.col-marche-t-move { transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.25, 1); }
+/* Le marché a cinq places FIXES : une carte remplacée ne pousse plus ses
+   voisines, elle tombe et la neuve descend à sa place. Le mouvement est
+   VERTICAL, justement pour qu'on ne le confonde pas avec un décalage de la
+   rangée — c'est cette place-là qui change, et elle seule. */
+.col-marche-t-enter-active { transition: transform 0.42s cubic-bezier(0.2, 0.9, 0.25, 1), opacity 0.3s ease; }
+.col-marche-t-leave-active { transition: transform 0.35s cubic-bezier(0.4, 0, 0.7, 0.3), opacity 0.3s ease; position: absolute; }
+.col-marche-t-enter-from { opacity: 0; transform: translateY(-2.6rem) scale(0.9); }
+.col-marche-t-leave-to   { opacity: 0; transform: translateY(2.2rem) scale(0.86) rotate(6deg); }
+/* Rien ne bouge de place : le « move » n'a plus lieu d'être, mais on le laisse
+   court au cas où le nombre de places changerait un jour. */
+.col-marche-t-move { transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.25, 1); }
 
 /* ════════ La carte piochée ════════
    Elle vient du paquet, en bas à droite, et se retourne en chemin. */

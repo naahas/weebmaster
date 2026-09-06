@@ -396,6 +396,24 @@ console.log('\n── Ce que le serveur laisse voir ──');
             e7.marche.some(c => c.uid === rendue), 'elle est la plus jeune du marché');
     }
 
+    // Poser un set renouvelle le marche comme n importe quel autre tour : c est
+    // « tourSuivant » qui s en charge, et poser passe par lui. On le verifie
+    // parce que rien ne le dit a la lecture de « actionPoser ».
+    {
+        const e8 = neuf();
+        const j8 = e8.tourJoueur;
+        const r8 = C.regles(e8);
+        const an = e8.animes[0];
+        const memes = e8.pioche.filter(c => c.anime === an).slice(0, r8.taille);
+        e8.mains.set(j8, memes.concat(e8.mains.get(j8).slice(r8.taille)));
+        const avant = e8.marche.map(c => c.uid);
+        const res = C.actionPoser(e8, j8, an);
+        const bouge = e8.marche.map(c => c.uid).filter((u, k) => u !== avant[k]);
+        check('poser un set renouvelle le marché, sur UNE place',
+            res.ok && bouge.length === 1,
+            res.ok ? bouge.length + ' place(s)' : res.erreur);
+    }
+
     // Le scan RETIENT le tour sept secondes. Sans cela la main scannée restait
     // retournée pendant que le joueur suivant agissait, et ce qu’on lisait
     // devenait faux sous les yeux.

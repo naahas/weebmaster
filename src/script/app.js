@@ -1831,11 +1831,23 @@ createApp({
         // le compteur des secondes redessine le composant quatre fois par
         // seconde, chaque rendu posait un nouveau retard, et une animation dont
         // on change le retard en cours de route saute.
-        colPoserJauge() {
+        // L'échéance en cours. Un duel a la sienne, un scan la sienne, et
+        // « tourFin » ne bouge pas pendant ce temps-là : le lire sans regarder
+        // ce qui se passe vraiment donnait une échéance déjà passée, donc une
+        // barre à zéro — c'est ainsi qu'elle disparaissait par moments.
+        colEcheance() {
             const e = this.col.etat;
-            if (!e || !e.tourFin) { this.col.jauge = null; return; }
+            if (!e) return 0;
+            if (e.duel && e.duel.fin) return e.duel.fin;
+            if (e.scan && e.scan.fin) return e.scan.fin;
+            return e.tourFin || 0;
+        },
+        colPoserJauge() {
+            const fin = this.colEcheance();
+            if (!fin) { this.col.jauge = null; this.col._tourFin = null; return; }
             const total = this.colTotalTemps * 1000;
-            const ecoule = Math.max(0, Math.min(total, total - (e.tourFin - Date.now())));
+            const ecoule = Math.max(0, Math.min(total, total - (fin - Date.now())));
+            this.col._tourFin = fin;
             this.col.jauge = { animationDuration: total + 'ms', animationDelay: (-ecoule) + 'ms' };
         },
         colNom(id) {
@@ -1860,6 +1872,19 @@ createApp({
         // dès « taille - 1 » cartes, ce qui à trois cartes (objectif : des
         // paires) valait « au moins une » — donc toujours vrai, donc toute la
         // main allumée en permanence.
+        // Celle qui partira au prochain renouvellement. Le marché a cinq places
+        // FIXES, et l'ancienneté se lit dans un jeton d'arrivée : sans ce repère,
+        // la carte remplacée semblait tirée au hasard — on voyait une place
+        // changer sans jamais savoir laquelle allait changer.
+        colProchaineSortie() {
+            const m = (this.col.etat && this.col.etat.marche) || [];
+            if (!m.length) return null;
+            let k = 0;
+            for (let i = 1; i < m.length; i++) {
+                if ((m[i].arrive || 0) < (m[k].arrive || 0)) k = i;
+            }
+            return m[k].uid;
+        },
         colSerieVisible(anime) {
             const marche = (this.col.etat && this.col.etat.marche) || [];
             return this.colDansMaMain(anime) + marche.filter(c => c.anime === anime).length;
@@ -2160,7 +2185,7 @@ createApp({
             el.style.height = (r.height * 0.8) + 'px';
             if (carte) el.innerHTML = '<img src="collectpic/' + carte.img + '" alt="">';
             document.body.appendChild(el);
-            setTimeout(() => el.remove(), 620);
+            setTimeout(() => el.remove(), 880);
         },
 
         // ══ Le point marqué ══
@@ -2511,8 +2536,11 @@ createApp({
         colTic() {
             const e = this.col.etat;
             if (!e) return;
-            const fin = (e.duel && e.duel.fin) || e.tourFin;
+            const fin = this.colEcheance();
             this.col.reste = fin ? Math.max(0, Math.ceil((fin - Date.now()) / 1000)) : 0;
+            // Filet : si l'échéance a changé sans qu'un message ne l'ait posée,
+            // on rattrape ici plutôt que de laisser une barre vide à l'écran.
+            if (fin && fin !== this.col._tourFin) this.colPoserJauge();
         },
         colBrancherTic() {
             if (this.col._tic) return;
@@ -5824,11 +5852,11 @@ createApp({
                     this.playSound(this.sounds.colTour);
                 }
                 this.col._dernierTour = data.tourJoueur;
-                // Une échéance neuve, une jauge neuve — et une seule fois.
-                if (data.tourFin !== this.col._tourFin) {
-                    this.col._tourFin = data.tourFin;
-                    this.colPoserJauge();
-                }
+                // Une échéance neuve, une jauge neuve — et une seule fois. La
+                // recalculer à chaque rendu la faisait avancer par à-coups : le
+                // compteur des secondes redessine le composant quatre fois par
+                // seconde, et une animation dont on change le retard saute.
+                if (this.colEcheance() !== this.col._tourFin) this.colPoserJauge();
                 // La fin ne tombe pas d'un bloc : l'écran s'assombrit d'abord,
                 // une seconde passe, puis la boîte paraît et le classement se
                 // dit ligne par ligne. Sans ce temps, on passait de la table au

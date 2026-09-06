@@ -859,6 +859,14 @@
                                             @mouseenter="col.loupe = c" @mouseleave="col.loupe = null">
                                         <img :src="'collectpic/' + c.img" :alt="c.nom" draggable="false">
                                         <span class="col-pion" :class="'pion-' + c.classe" v-html="colSymbole(c.classe)"></span>
+                                        <!-- Celle qui partira au prochain tour. Les cinq places sont
+                                             fixes : sans ce repère, la carte remplacée semblait tirée
+                                             au hasard — on voyait une place changer sans jamais savoir
+                                             laquelle allait changer. -->
+                                        <span class="col-sortante" v-if="c.uid === colProchaineSortie"
+                                              title="Elle repart au paquet à la fin de ce tour">
+                                            <svg viewBox="0 0 24 24"><path d="M12 5v13M6 13l6 6 6-6"/></svg>
+                                        </span>
                                     </button>
                                     </transition-group>
                                     <span class="col-emplacement" data-drop="poser"
