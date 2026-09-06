@@ -1025,8 +1025,8 @@
                          écran — quoi réclamer, à qui, avec quoi — là où il n'y en a
                          que deux, et où la seconde découle de la première. -->
                     <div class="col-voile" v-if="col.volCible" @click.self="colAnnuler">
-                        <div class="col-feuille col-vol">
-                            <span class="col-vol-etape">{{ col.volEtape }}<i>/2</i></span>
+                        <div class="col-feuille col-larcin">
+                            <span class="col-larcin-etape">{{ col.volEtape }}<i>/2</i></span>
 
                             <template v-if="col.volEtape === 1">
                                 <h3>Que réclames-tu à {{ colNom(col.volCible) }} ?</h3>
@@ -1048,9 +1048,9 @@
                                     Elle n'est pas prise : seule sa <b>classe</b> compte, et elle repart au
                                     paquet quoi qu'il arrive. Ta cible répondra sans l'avoir vue.
                                 </p>
-                                <span class="col-vol-rappel">
+                                <span class="col-larcin-rappel">
                                     Tu réclames <b>{{ colSerie(col.volSerie) }}</b>
-                                    <button class="col-vol-retour" @click="col.volEtape = 1">changer</button>
+                                    <button class="col-larcin-retour" @click="col.volEtape = 1">changer</button>
                                 </span>
                                 <div class="col-rangee">
                                     <button v-for="c in col.main" :key="c.uid"

@@ -1493,27 +1493,31 @@
 .col-arene-choix .col-rangee { flex-wrap: wrap; justify-content: center; }
 
 /* ── Le vol, en deux temps ── */
-.col-vol { position: relative; }
-.col-vol-etape {
+/* ⚠️ « col-larcin » et non « col-vol » : « .col-vol » est deja la carte qui
+   VOLE du paquet vers la main, et elle porte « pointer-events: none ». Le
+   panneau en heritait — il etait incliquable, et pose en « fixed » par-dessus
+   le marche. Deux sens du mot « vol », un seul nom de classe. */
+.col-larcin { position: relative; }
+.col-larcin-etape {
     position: absolute; top: 0.9rem; right: 1.1rem;
     font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem;
     color: var(--col-or);
 }
-.col-vol-etape i { font-style: normal; font-size: 0.7rem; color: rgba(255, 255, 255, 0.3); }
-.col-vol-rappel {
+.col-larcin-etape i { font-style: normal; font-size: 0.7rem; color: rgba(255, 255, 255, 0.3); }
+.col-larcin-rappel {
     display: inline-flex; align-items: center; gap: 0.5rem;
     margin-bottom: 0.2rem;
     font-size: 0.72rem; color: rgba(255, 255, 255, 0.45);
 }
-.col-vol-rappel b { color: var(--col-or); }
-.col-vol-retour {
+.col-larcin-rappel b { color: var(--col-or); }
+.col-larcin-retour {
     font: inherit; font-size: 0.66rem;
     padding: 0.12rem 0.5rem;
     color: rgba(255, 255, 255, 0.6);
     background: rgba(255, 255, 255, 0.07);
     border: 0; border-radius: 999px; cursor: pointer;
 }
-.col-vol-retour:hover { background: rgba(255, 255, 255, 0.14); color: #fff; }
+.col-larcin-retour:hover { background: rgba(255, 255, 255, 0.14); color: #fff; }
 
 /* ── Écrans étroits ───────────────────────────────────────────── */
 @media (max-width: 780px) {
