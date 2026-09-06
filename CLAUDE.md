@@ -178,6 +178,8 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
   Dont `/prototypes/rush-passage` : six facons d enchainer les portraits du Rush.
   Et `/prototypes/code` : cinq facons de demander le code du salon, avec un
   basculeur ordinateur/telephone.
+  Et `/prototypes/collect-duel` : les trois temps du vol — choisir la serie, choisir
+  la carte, l arene — trois pistes chacun, rejouables au clic.
   Et `/prototypes/collect-sons` : les cinq gestes de Collect et leurs candidats
   sonores, plus un bouton qui joue une manche entiere — deux sons trop proches ne
   s entendent qu enchaines. Le choix s ecrit dans l adresse.

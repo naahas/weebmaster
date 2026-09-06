@@ -1,0 +1,404 @@
+<title>Collect — les trois temps du vol</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   Le vol se joue en trois temps, et chacun a son problème.
+
+   1. LA SÉRIE. Onze pastilles au hasard, dont neuf qu'on ne
+      réclamera jamais : on ne vole que ce qu'on collectionne.
+
+   2. LA CARTE. C'est le pire. Les portraits sont énormes, la rangée
+      déborde, on ne voit pas sa main entière — alors même que le
+      choix ne porte QUE sur la classe. On demande de choisir un
+      visage pour une décision qui n'en dépend pas.
+
+   3. L'ARÈNE. Deux dos, deux secondes, puis tout se joue en une
+      demi-seconde qu'on rate si on cligne. Les cartes sont petites
+      au moment précis où elles comptent le plus.
+
+   Chaque piste se rejoue au clic. Les cartes et les portraits sont
+   les vrais.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+    --or: #ffd24a; --chaud: #ffb300;
+    --assaut: #ff6b5e; --mirage: #a98bff; --oracle: #38d6b0;
+    --carte: 4.6rem;
+}
+* { box-sizing: border-box; }
+
+body {
+    margin: 0; padding: 2rem 1.5rem 5rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #fff;
+    background: radial-gradient(70% 55% at 50% 0%, #17150f, #08080b 68%);
+    min-height: 100vh;
+}
+h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
+.sous { margin: 0 0 2rem; max-width: 60rem; font-size: 0.85rem; line-height: 1.55; color: rgba(255,255,255,0.45); }
+h2.temps {
+    margin: 2.6rem 0 0.2rem;
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.09em;
+    color: var(--or);
+}
+p.mal { margin: 0 0 1.4rem; max-width: 54rem; font-size: 0.78rem; line-height: 1.55; color: rgba(255,255,255,0.42); }
+p.mal b { color: rgba(255,255,255,0.75); }
+
+.grille { display: flex; flex-wrap: wrap; gap: 1.6rem; align-items: flex-start; }
+.piste { width: 26rem; }
+.piste h3 { margin: 0 0 0.15rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 0.07em; }
+.piste p { margin: 0 0 0.8rem; font-size: 0.72rem; line-height: 1.5; color: rgba(255,255,255,0.4); min-height: 4.4em; }
+
+/* Le décor : un bout de feutre, comme la vraie table */
+.scene {
+    position: relative;
+    padding: 1rem;
+    border-radius: 0.9rem;
+    background:
+        radial-gradient(70% 70% at 50% 35%, rgba(255,255,255,0.045), transparent 70%),
+        linear-gradient(170deg, #17352b, #0d1f19);
+    box-shadow: inset 0 0 2.5rem rgba(0,0,0,0.5);
+    cursor: pointer;
+    overflow: hidden;
+}
+.scene::after {
+    content: 'rejouer';
+    position: absolute; right: 0.5rem; bottom: 0.35rem;
+    font-size: 0.52rem; letter-spacing: 0.14em; text-transform: uppercase;
+    color: rgba(255,255,255,0.2);
+}
+
+/* ── Le panneau, tel qu'il est aujourd'hui ── */
+.feuille {
+    padding: 0.9rem;
+    background: linear-gradient(180deg, #16151d, #0c0c10);
+    border: 0.06rem solid rgba(255,255,255,0.08);
+    border-radius: 0.8rem;
+}
+.feuille h4 {
+    margin: 0 0 0.15rem;
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.05rem; letter-spacing: 0.07em;
+    color: var(--or);
+}
+.feuille .aide { margin: 0 0 0.7rem; font-size: 0.64rem; line-height: 1.45; color: rgba(255,255,255,0.4); }
+
+.carte {
+    position: relative;
+    width: var(--carte); aspect-ratio: 225/350;
+    border-radius: 0.4rem; overflow: hidden;
+    border: 0.09rem solid rgba(255,255,255,0.14);
+    background: #14131a;
+    flex: 0 0 auto;
+}
+.carte img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.carte.assaut { border-color: var(--assaut); }
+.carte.mirage { border-color: var(--mirage); }
+.carte.oracle { border-color: var(--oracle); }
+.pion {
+    position: absolute; top: 0.15rem; right: 0.15rem;
+    width: 0.95rem; height: 0.95rem;
+    display: grid; place-items: center;
+    border-radius: 50%; background: rgba(0,0,0,0.75);
+    font-size: 0.5rem; font-weight: 700;
+}
+.pion.assaut { color: var(--assaut); }
+.pion.mirage { color: var(--mirage); }
+.pion.oracle { color: var(--oracle); }
+
+/* ═══════ 1 · LA SÉRIE ═══════ */
+.puces { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.puce {
+    padding: 0.3rem 0.55rem;
+    font: inherit; font-size: 0.63rem; font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    background: rgba(255,255,255,0.05);
+    border: 0.06rem solid rgba(255,255,255,0.09);
+    border-radius: 0.4rem; cursor: pointer;
+}
+.puce small { display: block; font-size: 0.5rem; opacity: 0.7; }
+.puce.tiens { border-color: rgba(255,210,74,0.5); color: #fff; background: rgba(255,210,74,0.1); }
+.puce.tiens small { color: var(--or); opacity: 1; }
+.puce.pale { opacity: 0.42; }
+
+/* A2 : ce qu'on tient, en grand ; le reste, replié */
+.serie-forte {
+    display: flex; align-items: center; gap: 0.6rem;
+    width: 100%; margin-bottom: 0.3rem; padding: 0.5rem 0.7rem;
+    font: inherit; text-align: left; color: #fff;
+    background: rgba(255,210,74,0.09);
+    border: 0.06rem solid rgba(255,210,74,0.4);
+    border-radius: 0.5rem; cursor: pointer;
+}
+.serie-forte b { flex: 1; font-size: 0.82rem; }
+.serie-forte .mini { display: flex; gap: 0.15rem; }
+.serie-forte .mini i {
+    width: 0.9rem; height: 1.4rem; border-radius: 0.15rem;
+    background-size: cover; background-position: center;
+    border: 0.05rem solid rgba(255,255,255,0.2);
+}
+.replier {
+    margin-top: 0.5rem; font: inherit; font-size: 0.6rem;
+    color: rgba(255,255,255,0.45); background: none; border: 0; cursor: pointer;
+    text-decoration: underline;
+}
+
+/* ═══════ 2 · LA CARTE ═══════ */
+/* B1 : la rangée telle qu'elle est — elle déborde */
+.rangee-actuelle { display: flex; gap: 0.4rem; overflow-x: auto; }
+.rangee-actuelle .carte { --carte: 6.2rem; width: 6.2rem; }
+
+/* B2 : toutes visibles, en petit */
+.rangee-tenue { display: flex; gap: 0.3rem; justify-content: center; }
+.rangee-tenue .carte { width: 3.4rem; transition: transform 0.15s ease; }
+.rangee-tenue .carte:hover { transform: translateY(-0.3rem); }
+
+/* B3 : par CLASSE, puisque c'est tout ce qui compte */
+.classes { display: flex; gap: 0.5rem; }
+.classe-col {
+    flex: 1; padding: 0.45rem;
+    border-radius: 0.5rem; border: 0.09rem solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.03); cursor: pointer;
+}
+.classe-col.assaut { border-color: rgba(255,107,94,0.45); }
+.classe-col.mirage { border-color: rgba(169,139,255,0.45); }
+.classe-col.oracle { border-color: rgba(56,214,176,0.45); }
+.classe-col > b {
+    display: block; margin-bottom: 0.35rem;
+    font-family: 'Bebas Neue', sans-serif; font-size: 0.8rem; letter-spacing: 0.1em;
+}
+.classe-col.assaut > b { color: var(--assaut); }
+.classe-col.mirage > b { color: var(--mirage); }
+.classe-col.oracle > b { color: var(--oracle); }
+.classe-col .lot { display: flex; gap: 0.2rem; flex-wrap: wrap; }
+.classe-col .carte { width: 2.6rem; }
+.classe-col .vide { font-size: 0.6rem; color: rgba(255,255,255,0.22); padding: 0.6rem 0; }
+.triangle {
+    display: flex; align-items: center; justify-content: center; gap: 0.35rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.58rem; letter-spacing: 0.06em; color: rgba(255,255,255,0.35);
+}
+.triangle i { font-style: normal; font-weight: 700; }
+
+/* ═══════ 3 · L'ARÈNE ═══════ */
+.arene { display: flex; flex-direction: column; align-items: center; gap: 0.7rem; padding: 0.4rem 0 0.9rem; }
+.arene .serie {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; letter-spacing: 0.12em;
+    color: var(--or);
+}
+.arene .camps { display: flex; align-items: center; gap: 1rem; perspective: 1100px; }
+.arene .camp { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; }
+.arene .nom {
+    font-size: 0.62rem; font-weight: 700; padding: 0.1rem 0.45rem;
+    border-radius: 999px; background: rgba(0,0,0,0.55); color: rgba(255,255,255,0.65);
+}
+.slot {
+    position: relative; width: var(--carte); aspect-ratio: 225/350;
+    border-radius: 0.45rem;
+    transform-style: preserve-3d;
+    transition: transform 0.62s cubic-bezier(0.32,0.72,0.24,1);
+}
+.slot > span {
+    position: absolute; inset: 0; border-radius: 0.45rem;
+    overflow: hidden; backface-visibility: hidden;
+    box-shadow: 0 0.5rem 1.2rem rgba(0,0,0,0.6);
+}
+.slot .dos { border: 0.09rem solid rgba(255,255,255,0.18);
+             background: repeating-linear-gradient(135deg, #26323f 0 7px, #1b232e 7px 14px); }
+.slot .face { transform: rotateY(180deg); background: #14131a; }
+.slot .face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.vs { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: rgba(255,255,255,0.28); }
+
+/* C1 · l'actuel : retournement puis petit choc */
+.c1 .slot { animation: c1flip 0.62s 1.4s cubic-bezier(0.32,0.72,0.24,1) forwards; }
+@keyframes c1flip { to { transform: rotateY(180deg); } }
+.c1 .camp:nth-child(1) .slot { animation-name: c1flipG; }
+.c1 .camp:nth-child(3) .slot { animation-name: c1flipD; }
+@keyframes c1flipG { 60% { transform: rotateY(180deg); } 78% { transform: rotateY(180deg) translateX(0.9rem); } 100% { transform: rotateY(180deg); } }
+@keyframes c1flipD { 60% { transform: rotateY(180deg); } 78% { transform: rotateY(180deg) translateX(-0.9rem); } 100% { transform: rotateY(180deg); } }
+
+/* C2 · les cartes grandissent au moment du retournement */
+.c2 { --carte: 5.4rem; }
+.c2 .camps { animation: c2zoom 1.1s 1.3s cubic-bezier(0.3,0.9,0.25,1) forwards; }
+@keyframes c2zoom { 0% { transform: scale(1); } 55% { transform: scale(1.34); } 100% { transform: scale(1.34); } }
+.c2 .slot { animation: c1flip 0.62s 1.4s cubic-bezier(0.32,0.72,0.24,1) forwards; }
+.c2 .verdict {
+    opacity: 0; font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.07em;
+    color: var(--or); animation: paraitre 0.4s 2.5s forwards;
+}
+@keyframes paraitre { to { opacity: 1; } }
+
+/* C3 · elles se rapprochent, se heurtent, la battue part en éclats */
+.c3 .camps { gap: 1rem; }
+.c3 .slot { animation: c1flip 0.62s 1.3s cubic-bezier(0.32,0.72,0.24,1) forwards; }
+.c3 .camp:nth-child(1) .slot { animation-name: c3G; animation-duration: 1.3s; }
+.c3 .camp:nth-child(3) .slot { animation-name: c3D; animation-duration: 1.3s; }
+@keyframes c3G {
+    0%, 45%  { transform: rotateY(0deg) translateX(0); }
+    62%      { transform: rotateY(180deg) translateX(0); }
+    76%      { transform: rotateY(180deg) translateX(2.1rem) scale(1.08); }
+    100%     { transform: rotateY(180deg) translateX(0); }
+}
+@keyframes c3D {
+    0%, 45%  { transform: rotateY(0deg) translateX(0); }
+    62%      { transform: rotateY(180deg) translateX(0); }
+    76%      { transform: rotateY(180deg) translateX(-2.1rem) scale(1.08); }
+    100%     { transform: rotateY(180deg) translateX(0); }
+}
+.c3 .camp:nth-child(3) .slot { animation-fill-mode: forwards; }
+.c3 .perd { animation: c3perd 0.5s 2.1s forwards; }
+@keyframes c3perd {
+    0%   { opacity: 1; filter: brightness(1); }
+    30%  { opacity: 1; filter: brightness(2.6); }
+    100% { opacity: 0; transform: rotateY(180deg) scale(0.5) rotate(22deg); }
+}
+.c3 .eclair {
+    position: absolute; inset: 0; pointer-events: none; opacity: 0;
+    background: radial-gradient(35% 35% at 50% 50%, rgba(255,240,200,0.75), transparent 70%);
+    animation: c3flash 0.45s 2s forwards;
+}
+@keyframes c3flash { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 0; } }
+</style>
+
+<h1>Collect — les trois temps du vol</h1>
+<p class="sous">
+    Le vol se joue en trois temps, et chacun a son défaut. <b>Clique une scène pour la rejouer.</b>
+    Les portraits et les classes sont les vrais — le triangle est <b>Assaut&nbsp;›&nbsp;Mirage&nbsp;›&nbsp;Oracle&nbsp;›&nbsp;Assaut</b>.
+</p>
+
+<h2 class="temps">1 · Que réclames-tu ?</h2>
+<p class="mal">
+    Onze pastilles alignées, dont neuf qu’on ne réclamera jamais : <b>on ne vole que ce qu’on
+    collectionne</b>. Le « tu en as 2 » est écrit en tout petit sous le nom, alors que c’est la seule
+    chose qui décide.
+</p>
+<div class="grille" id="t1"></div>
+
+<h2 class="temps">2 · Avec quelle carte ?</h2>
+<p class="mal">
+    Le pire des trois. Les portraits sont énormes, la rangée déborde, on ne voit pas sa main entière —
+    alors que <b>le choix ne porte que sur la classe</b> : la carte n’est jamais prise, elle repart au
+    paquet quoi qu’il arrive. On demande de choisir un visage pour une décision qui n’en dépend pas.
+</p>
+<div class="grille" id="t2"></div>
+
+<h2 class="temps">3 · L’arène</h2>
+<p class="mal">
+    Deux dos, deux secondes, puis tout se joue en une demi-seconde qu’on rate si on cligne. Et les
+    cartes sont <b>petites au moment précis où elles comptent le plus</b> — c’est là qu’on veut voir
+    les deux classes, et c’est là qu’on les voit le moins.
+</p>
+<div class="grille" id="t3"></div>
+
+<script>
+const MAIN = [
+    { nom: 'Dio', anime: 'JoJo', classe: 'assaut', img: 'dio' },
+    { nom: 'Gon', anime: 'HunterXHunter', classe: 'mirage', img: 'gon' },
+    { nom: 'Naruto', anime: 'Naruto', classe: 'oracle', img: 'naruto' },
+    { nom: 'Luffy', anime: 'OnePiece', classe: 'assaut', img: 'luffy' },
+];
+const SERIES = ['Jujutsu Kaisen', 'One Piece', 'Haikyuu', 'Bleach', 'Hunter x Hunter',
+                'Fairy Tail', 'Nanatsu no Taizai', 'Naruto', 'Demon Slayer', 'Fullmetal Alchemist', 'JoJo'];
+const TENUS = { 'One Piece': 1, 'Hunter x Hunter': 1, 'Naruto': 1, 'JoJo': 1 };
+const SIGNE = { assaut: '⚔', mirage: '◈', oracle: '◉' };
+
+const carte = (c, cls) =>
+    '<span class="carte ' + c.classe + (cls ? ' ' + cls : '') + '">' +
+    '<img src="/collectpic/' + c.img + '.webp" alt="">' +
+    '<i class="pion ' + c.classe + '">' + SIGNE[c.classe] + '</i></span>';
+
+const PISTES = {
+    t1: [
+        { cle: 'a1', t: 'A1 · Les pastilles (l’actuel)', n: "Les onze séries à plat. Honnête, mais on lit onze noms pour en choisir un, et celles qu’on tient ne se distinguent que par une ligne minuscule.",
+          h: `<div class="feuille"><h4>Que réclames-tu à Haki318 ?</h4>
+              <p class="aide">S’il n’a rien de cette série, tu perds ton tour sans rien perdre d’autre.</p>
+              <div class="puces">` +
+              SERIES.map(s => '<button class="puce">' + s +
+                (TENUS[s] ? '<small>tu en as ' + TENUS[s] + '</small>' : '') + '</button>').join('') +
+              `</div></div>` },
+        { cle: 'a2', t: 'A2 · Ce que tu collectionnes', n: "Les séries qu’on tient passent devant, en grand, avec les cartes qu’on en a déjà. Les autres restent accessibles d’un clic. On vole pour compléter : autant mettre en avant ce qu’il y a à compléter.",
+          h: `<div class="feuille"><h4>Que réclames-tu à Haki318 ?</h4>
+              <p class="aide">Tu voles pour compléter : voici ce que tu as commencé.</p>` +
+              MAIN.map(c => '<button class="serie-forte"><b>' + c.anime.replace(/([a-z])([A-Z])/g, '$1 $2') +
+                '</b><span class="mini"><i style="background-image:url(/collectpic/' + c.img + '.webp)"></i></span>' +
+                '<span style="font-size:0.62rem;color:rgba(255,255,255,0.4)">tu en as 1</span></button>').join('') +
+              `<button class="replier">…ou une autre série (7)</button></div>` },
+        { cle: 'a3', t: 'A3 · Les pastilles, triées', n: "Les mêmes pastilles, mais celles qu’on tient d’abord et allumées, le reste éteint derrière. Le plus petit changement des trois — une ligne de tri — et il fait presque tout le travail.",
+          h: `<div class="feuille"><h4>Que réclames-tu à Haki318 ?</h4>
+              <p class="aide">S’il n’a rien de cette série, tu perds ton tour sans rien perdre d’autre.</p>
+              <div class="puces">` +
+              SERIES.filter(s => TENUS[s]).map(s => '<button class="puce tiens">' + s +
+                '<small>tu en as ' + TENUS[s] + '</small></button>').join('') +
+              SERIES.filter(s => !TENUS[s]).map(s => '<button class="puce pale">' + s + '</button>').join('') +
+              `</div></div>` },
+    ],
+    t2: [
+        { cle: 'b1', t: 'B1 · La rangée (l’actuel)', n: "Des portraits de six rem dans une rangée qui déborde : on ne voit que deux cartes et demie, et il faut faire défiler pour découvrir sa propre main. C’est ce qu’il faut corriger.",
+          h: `<div class="feuille"><h4>Avec quelle carte ?</h4>
+              <p class="aide">Elle n’est pas prise : seule sa <b>classe</b> compte.</p>
+              <div class="rangee-actuelle">` + MAIN.map(c => carte(c)).join('') + `</div></div>` },
+        { cle: 'b2', t: 'B2 · La main entière', n: "Les mêmes cartes, à la taille de celles de la table. On voit sa main d’un coup, on reconnaît les portraits, et le pion de classe reste lisible. Le changement minimal — et il suffit peut-être.",
+          h: `<div class="feuille"><h4>Avec quelle carte ?</h4>
+              <p class="aide">Elle n’est pas prise : seule sa <b>classe</b> compte, et elle repart au paquet.</p>
+              <div class="rangee-tenue">` + MAIN.map(c => carte(c)).join('') + `</div></div>` },
+        { cle: 'b3', t: 'B3 · Par classe', n: "Trois colonnes, le triangle rappelé au-dessus. C’est la vraie décision : on choisit une classe, et la carte ensuite s’il y en a plusieurs. Mon avis — c’est le seul écran des trois qui apprenne à jouer.",
+          h: `<div class="feuille"><h4>Avec quelle classe attaques-tu ?</h4>
+              <p class="aide">Ta carte n’est jamais prise : seule sa classe décide.</p>
+              <div class="triangle"><i style="color:var(--assaut)">⚔ Assaut</i> ›
+                 <i style="color:var(--mirage)">◈ Mirage</i> ›
+                 <i style="color:var(--oracle)">◉ Oracle</i> › <i style="color:var(--assaut)">⚔</i></div>
+              <div class="classes">` +
+              ['assaut', 'mirage', 'oracle'].map(k => {
+                  const lot = MAIN.filter(c => c.classe === k);
+                  return '<div class="classe-col ' + k + '"><b>' + SIGNE[k] + ' ' + k + '</b><div class="lot">' +
+                      (lot.length ? lot.map(c => carte(c)).join('') : '<span class="vide">aucune</span>') +
+                      '</div></div>';
+              }).join('') + `</div></div>` },
+    ],
+    t3: [
+        { cle: 'c1', t: 'C1 · L’actuel', n: "Les deux cartes se retournent, se poussent d’un cran, c’est fini. Correct, mais tout est petit et le choc passe inaperçu : on lit le résultat sans avoir vu l’affrontement.",
+          h: arene() },
+        { cle: 'c2', t: 'C2 · Elles se rapprochent de l’œil', n: "Même chose, mais l’ensemble grossit d’un tiers au moment du retournement et le verdict s’écrit dessous. On regarde là où il faut, au moment où il faut.",
+          h: arene('<span class="verdict">Haki318 repousse le vol</span>') },
+        { cle: 'c3', t: 'C3 · Le choc et l’éclat', n: "Elles se retournent, foncent l’une sur l’autre, un éclair blanchit la table et la battue part en morceaux. Le plus long des trois (2,6 s) — mais ça n’arrive qu’une ou deux fois par partie.",
+          h: arene('', true) },
+    ],
+};
+
+function arene(dessous, eclat) {
+    const att = MAIN[0], def = { nom: 'Jotaro', classe: 'oracle', img: 'jotaro' };
+    const slot = (c, perd) =>
+        '<div class="slot' + (perd ? ' perd' : '') + '"><span class="dos"></span>' +
+        '<span class="face"><img src="/collectpic/' + c.img + '.webp" alt="">' +
+        '<i class="pion ' + c.classe + '" style="top:0.25rem;right:0.25rem">' + SIGNE[c.classe] + '</i></span></div>';
+    return '<div class="arene"><span class="serie">JoJo</span><div class="camps">' +
+        '<div class="camp"><span class="nom">Toi</span>' + slot(att, eclat) + '</div>' +
+        '<span class="vs">VS</span>' +
+        '<div class="camp"><span class="nom">Haki318</span>' + slot(def) + '</div>' +
+        '</div>' + (dessous || '') + '</div>' +
+        (eclat ? '<span class="eclair"></span>' : '');
+}
+
+for (const [hote, liste] of Object.entries(PISTES)) {
+    const cible = document.getElementById(hote);
+    for (const p of liste) {
+        const bloc = document.createElement('div');
+        bloc.className = 'piste';
+        bloc.innerHTML = '<h3>' + p.t + '</h3><p>' + p.n + '</p>';
+        const s = document.createElement('div');
+        s.className = 'scene ' + p.cle;
+        s.innerHTML = p.h;
+        bloc.appendChild(s);
+        cible.appendChild(bloc);
+        // rejouer : remplacer le contenu est le seul moyen sûr de relancer des
+        // animations CSS déjà terminées
+        s.addEventListener('click', () => { s.innerHTML = p.h; });
+    }
+}
+
+// les trois arènes se rejouent en boucle, pour qu'on puisse les comparer
+setInterval(() => {
+    for (const p of PISTES.t3) {
+        const s = document.querySelector('.scene.' + p.cle);
+        if (s) s.innerHTML = p.h;
+    }
+}, 4000);
+</script>
