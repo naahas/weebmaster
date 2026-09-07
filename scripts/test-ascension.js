@@ -260,6 +260,36 @@ check('le mélange garde exactement les mêmes lettres', lettresPerdues.length =
 check('l indice ne donne jamais la réponse', indiceVendu.length === 0,
     indiceVendu.length ? [...new Set(indiceVendu)].join(', ') : 'jamais l anime homonyme');
 
+// ── Les trois écritures d'une entrée ──
+//
+// L'indice affiché sous les lettres est l'anime du personnage, et il se
+// retrouve TOUT SEUL par le nom. Reste le personnage qui n'existe nulle part
+// ailleurs : il n'a pas de portrait, donc rien à faire dans « characters » —
+// l'y mettre le ferait tirer par Devine le perso, Cible et l'Intrus, qui
+// montreraient une carte vide. Pour celui-là on écrit { nom, anime }.
+const annuaire = {
+    ORIHIME: { name: 'Orihime', anime: 'Bleach' },
+    NARUTO: { name: 'Naruto', anime: 'Naruto' },
+};
+const sac = I.construireSacScramble(
+    ['Orihime', 'Naruto', 'Ryuk', { nom: 'Beerus', anime: 'Dragon Ball' }, 'One Piece', 'Ace'],
+    ['Bleach'], annuaire);
+const parMot = {};
+for (const p of sac.persos) parMot[p.word] = p.hint;
+
+check('le nom seul retrouve son anime dans « characters »',
+    parMot.ORIHIME === 'Bleach', 'ORIHIME → ' + parMot.ORIHIME);
+check('{ nom, anime } donne l indice à la main, sans passer par « characters »',
+    parMot.BEERUS === 'Dragon Ball', 'BEERUS → ' + parMot.BEERUS);
+check('un nom introuvable reste jouable, mais sans indice',
+    'RYUK' in parMot && parMot.RYUK === null, 'RYUK → ' + parMot.RYUK);
+check('et il est nommé au démarrage plutôt que jeté en silence',
+    sac.inconnus.length === 1 && sac.inconnus[0] === 'Ryuk', sac.inconnus.join(', '));
+check('un nom qui EST son anime n affiche pas la réponse en indice',
+    parMot.NARUTO === null, 'NARUTO → ' + parMot.NARUTO);
+check('les entrées mal formées sont écartées et nommées',
+    sac.refuses.length === 2 && sac.refuses.includes('One Piece') && sac.refuses.includes('Ace'),
+    sac.refuses.join(' | '));
 // ⚠️ Le point de toute l'affaire : le sac RESTREINT l'anagramme et ne touche à
 // rien d'autre. Un personnage absent de la liste doit rester tiré ailleurs.
 const horsSac = (DONNEES.characters || []).filter(c => c.img && !dansSac.has((c.name || '').toUpperCase()));

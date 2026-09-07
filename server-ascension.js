@@ -158,44 +158,70 @@ function scrambleFormeOk(nom) {
         && nom.length >= SCRAMBLE_MIN && nom.length <= SCRAMBLE_MAX;
 }
 
-// Le sac se calcule une fois. « hint » est l'anime du personnage, sauf quand il
-// porte le nom de son anime — annoncer « Naruto » sous les lettres de NARUTO
-// donnerait la réponse.
-const SCRAMBLE_SAC = (() => {
-    const parNom = {};
-    for (const c of ASCENSION_DATA.characters || []) {
-        if (c && c.name) parNom[c.name.toUpperCase()] = c;
-    }
+// L'indice affiché sous les lettres — « Reconstitue le nom du personnage ·
+// Bleach » — est l'anime du personnage. Il se retrouve TOUT SEUL, par le nom :
+// le serveur cherche l'entrée dans « characters » et en tire son anime. Écrire
+// le nom dans la liste suffit donc, dans l'immense majorité des cas.
+//
+// Reste le personnage qui n'existe nulle part ailleurs. Il n'a pas de portrait,
+// donc rien à faire dans « characters » — l'y mettre le ferait tirer par Devine
+// le perso, Cible et l'Intrus, qui montreraient une carte vide. Pour celui-là,
+// on écrit { "nom": "Ryuk", "anime": "Death Note" } au lieu du nom seul, et
+// l'indice est donné à la main.
+//
+// « hint » est enfin retiré quand le personnage porte le nom de son anime :
+// annoncer « Naruto » sous les lettres de NARUTO donnerait la réponse.
+// Fonction pure du contenu des listes : la suite de test lui donne des listes
+// fabriquées et vérifie les trois écritures sans toucher au fichier de données.
+// « parNom » est l'annuaire des personnages, name majuscule → entrée.
+function construireSacScramble(listePersos, listeAnimes, parNom) {
     const refuses = [], inconnus = [];
 
-    const persos = (ASCENSION_DATA.scramble_characters || []).map(nom => {
-        if (!scrambleFormeOk(nom)) { refuses.push(nom); return null; }
+    const persos = (listePersos || []).map(entree => {
+        const objet = !!entree && typeof entree === 'object';
+        const nom = objet ? entree.nom : entree;
+        if (!scrambleFormeOk(nom)) { refuses.push(objet ? JSON.stringify(entree) : String(entree)); return null; }
+        const donne = objet && entree.anime;
         const c = parNom[nom.toUpperCase()];
-        if (!c) inconnus.push(nom);
-        const anime = c && c.anime;
+        if (!donne && !c) inconnus.push(nom);
+        const anime = donne || (c && c.anime);
         return {
             word: nom.toUpperCase(),
             hint: anime && anime.toUpperCase() !== nom.toUpperCase() ? anime : null,
         };
     }).filter(Boolean);
 
-    const animes = (ASCENSION_DATA.scramble_animes || []).map(nom => {
-        if (!scrambleFormeOk(nom)) { refuses.push(nom); return null; }
+    const animes = (listeAnimes || []).map(nom => {
+        if (!scrambleFormeOk(nom)) { refuses.push(String(nom)); return null; }
         return { word: nom.toUpperCase(), hint: null };
     }).filter(Boolean);
 
+    return { persos, animes, refuses, inconnus };
+}
+
+const SCRAMBLE_SAC = (() => {
+    const parNom = {};
+    for (const c of ASCENSION_DATA.characters || []) {
+        if (c && c.name) parNom[c.name.toUpperCase()] = c;
+    }
+    const sac = construireSacScramble(
+        ASCENSION_DATA.scramble_characters, ASCENSION_DATA.scramble_animes, parNom);
+
     // On ne jette rien en silence : une entrée mal formée disparaîtrait sans
     // que personne ne le sache, et la liste est faite pour être éditée à la main.
-    if (refuses.length) {
-        console.warn('⚠️ Anagramme : ' + refuses.length + ' entrée(s) écartée(s) — il faut un seul mot de '
-            + SCRAMBLE_MIN + ' à ' + SCRAMBLE_MAX + ' lettres : ' + refuses.join(', '));
+    if (sac.refuses.length) {
+        console.warn('⚠️ Anagramme : ' + sac.refuses.length + ' entrée(s) écartée(s) — il faut un seul mot de '
+            + SCRAMBLE_MIN + ' à ' + SCRAMBLE_MAX + ' lettres : ' + sac.refuses.join(', '));
     }
-    if (inconnus.length) {
-        console.warn('⚠️ Anagramme : ' + inconnus.length + ' nom(s) absent(s) de « characters » — jouables, '
-            + 'mais sans indice d\'anime : ' + inconnus.join(', '));
+    if (sac.inconnus.length) {
+        console.warn('⚠️ Anagramme : ' + sac.inconnus.length + ' nom(s) absent(s) de « characters », donc SANS '
+            + 'INDICE d\'anime — écrire { "nom": "…", "anime": "…" } pour le donner à la main : '
+            + sac.inconnus.join(', '));
     }
-    console.log('🔤 Anagramme : ' + persos.length + ' personnages, ' + animes.length + ' animes');
-    return { persos, animes };
+    const donnesMain = (ASCENSION_DATA.scramble_characters || []).filter(e => !!e && typeof e === 'object').length;
+    console.log('🔤 Anagramme : ' + sac.persos.length + ' personnages, ' + sac.animes.length + ' animes'
+        + (donnesMain ? ' (' + donnesMain + ' indice(s) donné(s) à la main)' : ''));
+    return sac;
 })();
 
 const GAME_TYPES = [
@@ -2101,6 +2127,7 @@ module.exports = {
         MATCH_SUBTYPES,
         generateFloorSequence,
         generateFloorData,
+        construireSacScramble,
         generateMatchData,
         getFloorDataForClient,
         getFloorAnswers,

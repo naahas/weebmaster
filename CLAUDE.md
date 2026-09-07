@@ -163,6 +163,13 @@ Ascension est documenté dans docs/ASCENSION.md et conservé sur la branche `arc
   n'aurait pas de sens) ; le serveur annonce au démarrage combien il en a retenu et nomme celles
   qu'il écarte. Une liste vidée retombe sur l'ancien filtre : le mode ne peut pas se retrouver
   sans mots.
+  L indice affiché sous les lettres — « Reconstitue le nom du personnage · Bleach » — est l anime
+  du personnage, et il se **retrouve tout seul par le nom** : le serveur cherche l entrée dans
+  `characters`. Écrire le nom suffit donc. Reste le personnage qui n existe nulle part ailleurs :
+  il n a pas de portrait, donc rien à faire dans `characters` — l y mettre le ferait tirer par
+  Devine le perso, Cible et l Intrus, qui montreraient une carte vide. Pour celui-là on écrit
+  `{ "nom": "Ryuk", "anime": "Death Note" }` au lieu du nom seul. Sans indice trouvé ni donné,
+  le mot reste jouable et le serveur le nomme au démarrage.
 - Les **questions du quiz** vivent en base Supabase (table `questions`). Ajout/édition via la page
   `/question` protégée par `QUESTION_ADMIN_CODE`.
 
