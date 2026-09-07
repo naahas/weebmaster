@@ -213,6 +213,12 @@ d'Ascension (`wordle`, ou `match:anime_author` pour viser un sous-type de Liaiso
 étages suivants restent tirés au sort. Elle ne vit que dans `.env` — rien à défaire dans
 le code — et le serveur l'annonce au démarrage pour qu'on ne l'oublie pas en ligne.
 
+`GRACE_LOBBY_MS` (60 000) est le sursis d un joueur qui se deconnecte DU SALON — jamais
+en cours de partie, ou il est conserve quoi qu il arrive. Il valait cinq secondes, ce qui ne
+se voyait qu a plusieurs sur telephone : verrouiller son ecran ou passer sur le chat du stream
+coupe la socket bien au-dela, le joueur etait retire, et `join-lobby` le refusait ensuite des
+que l hote avait relance. Il restait devant SON ecran de salon sans etre nulle part.
+
 Facultatives : `MAX_CONNECTIONS_PER_IP` (100 par défaut — les opérateurs mobiles placent leurs
 abonnés derrière une même IP, un plafond bas couperait la moitié d'un public) et `MAX_ROOMS` (50).
 

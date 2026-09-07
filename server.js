@@ -197,9 +197,22 @@ const QUESTIONS_VITRINE = 500;
 // 3 s : l'anneau de décompte affiché à l'hôte doit suivre la vraie valeur.
 const AUTO_DELAI_MS = parseInt(process.env.AUTO_DELAI_MS, 10) || 5000;
 
-// Sursis laissé à un joueur qui se déconnecte du salon : le temps d'un
-// rafraîchissement de page. Sans rapport avec le délai du mode auto.
-const DELAI_RETRAIT_JOUEUR_MS = 5000;
+// Sursis laissé à un joueur qui se déconnecte DU SALON — jamais en cours de
+// partie, où il est conservé quoi qu'il arrive.
+//
+// ⚠️ Cinq secondes ne suffisaient pas, et le défaut ne se voyait qu'à
+// plusieurs sur téléphone : verrouiller son écran, passer sur le chat du
+// stream ou changer d'antenne coupe la socket bien au-delà. Le joueur était
+// alors retiré du salon ; à son retour « register-authenticated » ne trouvait
+// plus aucun salon à son nom, et « join-lobby » le refusait dès que l'hôte
+// avait relancé (« Partie déjà en cours »). Il restait devant SON écran de
+// salon sans être nulle part — « j'étais dans le salon, pourquoi je ne suis
+// pas en jeu ». Constaté en direct, entre deux manches, sur un stream à douze.
+//
+// Une minute laisse le temps de lire le chat et de revenir. Le risque inverse
+// — un fantôme dans la liste — est bénin : l'hôte peut l'exclure, et rien
+// n'attend un joueur absent au démarrage.
+const DELAI_RETRAIT_JOUEUR_MS = parseInt(process.env.GRACE_LOBBY_MS, 10) || 60000;
 
 // ── Deux seuils, deux questions ──
 // Le compteur de l'accueil et la liste qui l'accompagne ne disent pas la même
