@@ -4837,6 +4837,16 @@ createApp({
                     return;
                 }
 
+                // ⚠️ ON LE DIT. Le joueur se retrouvait sur l'accueil sans un mot :
+                // de son point de vue le site venait de le sortir tout seul. Et si
+                // l'hôte rouvre dans la foulée, le nouveau salon porte un AUTRE code
+                // — il faut donc qu'il sache qu'il y a un code à redemander, sans
+                // quoi il attend devant un accueil en se demandant ce qui s'est
+                // passé. Constaté en direct, sur un stream.
+                if (this.hasJoined && !this.isHost) {
+                    this.showNotification('L\'hôte a fermé le salon.', 'info');
+                }
+
                 // Reset COMPLET de l'état du jeu
                 this.isGameActive = false;
                 this.gameInProgress = false;
