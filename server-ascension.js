@@ -384,7 +384,7 @@ function generateFloorData(type, usedData) {
 }
 
 function genererEtageBrut(type, usedData) {
-    // 🆕 Pour les jeux où le perso est la cible (guess/intruder/target/silhouette/char_anime),
+    // 🆕 Pour les jeux où le perso est la cible (guess/intruder/target/char_anime),
     //    on exclut les persos marqués `match_only: true` (ils n'existent que pour servir de
     //    cible dans couples/rivals/same_voice/techniques/weapons côté Liaison).
     const chars = (ASCENSION_DATA.characters || []).filter(c => !c.match_only);
@@ -575,15 +575,6 @@ function genererEtageBrut(type, usedData) {
                 category: pickFromAnimes ? 'anime' : 'character',
                 groups: picked.groups,                     // ex: [5, 6] pour rendre les cells avec un gap entre groupes
                 animeHint: picked.anime || null,
-            };
-        }
-
-        case 'silhouette': {
-            const picked = pickRandom(chars, 1)[0];
-            return {
-                type: 'silhouette',
-                label: 'Silhouette',
-                character: { id: picked.id, img: picked.img, name: picked.name, anime: picked.anime },
             };
         }
 
@@ -1357,10 +1348,6 @@ function validateAnswer(floorData, answer) {
 
         case 'wordle': {
             return normalize(answer.word) === normalize(floorData.word);
-        }
-
-        case 'silhouette': {
-            return normalize(answer.name) === normalize(floorData.character.name);
         }
 
         case 'order': {
