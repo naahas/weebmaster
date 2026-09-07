@@ -45,6 +45,8 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   `npm run test:rejouer` (deux manches d affilée sans répétition de question),
   `npm run test:historique` (chaque salon a sa propre mémoire),
   `npm run test:backoffice` (les routes /api/*question* exigent `QUESTION_ADMIN_CODE`),
+  `npm run test:preuve` (le lien de preuve d une question n atteint le joueur
+  qu APRES la revelation : ni `new-question` ni `/game/state` ne le portent),
   `npm run test:collect` (le moteur de Collect sans serveur : les regles, les neuf
   duels du triangle, et surtout qu aucune main ne sort de chez son proprietaire),
   `npm run test:collect-salon` (Collect de bout en bout : reglages, partie jouee par
@@ -302,6 +304,21 @@ Pour lever la mesure, trois endroits : le garde dans `/admin/toggle-game`, `dema
 - Les joueurs sont identifiés par `playerId` (pseudo invité) **et** `socket.id` (volatile).
 - Le serveur est **autoritaire** : toute validation de réponse se fait côté serveur, le client
   n'affiche que le résultat.
+
+## Le lien de preuve d’une question
+
+Chaque question du quiz peut porter un `proof_url`, saisi dans `/question`. Une pastille bleue le
+rejoint sous le drapeau de signalement pendant les resultats — ouverte a **tous**, contrairement au
+drapeau : c’est ce qui clot une discussion en vocal ou sur un stream, et l’hote n’est pas toujours
+celui qui conteste.
+
+⚠️ **Il ne part qu’APRES la revelation.** L’URL nomme tres souvent la reponse —
+`…/wiki/One_For_All` sous « Quel est le pouvoir de Deku ? ». Il voyageait avec `new-question`,
+donc lisible dans l’onglet reseau avant d’avoir repondu. Il vit maintenant dans
+`gameState.currentQuestion`, d’ou `questionSansReponse()` le retire avec `correctAnswer` :
+`/game/state` s’ouvre avec le seul code du salon pendant que la question est posee, et n’aurait
+fait que deplacer la fuite. Le client le recoit par `question-results`.
+`npm run test:preuve` tient les trois portes.
 
 ## Points d'attention
 

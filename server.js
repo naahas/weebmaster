@@ -436,9 +436,13 @@ app.post('/api/pseudo', (req, res) => {
 
 // Ce que le client a le droit de savoir d une question en cours : tout, sauf
 // laquelle est la bonne.
+// ⚠️ « proofUrl » part avec « correctAnswer », et pour la meme raison : l URL de
+// la preuve nomme souvent la reponse, et cette porte-ci s ouvre avec le seul code
+// du salon, pendant que la question est posee. Le client la recoit par
+// « question-results », une fois la reponse dite.
 function questionSansReponse(q) {
     if (!q) return q;
-    const { correctAnswer, ...reste } = q;
+    const { correctAnswer, proofUrl, ...reste } = q;
     return reste;
 }
 
@@ -2131,11 +2135,11 @@ app.post('/admin/start-game', async (req, res) => {
                     serie: question.serie,
                     difficulty: question.difficulty,
                     timeLimit: gameState.questionTime,
-                    proof_url: question.proof_url || null
                 };
 
                 gameState.currentQuestion = {
                     ...questionData,
+                    proofUrl: question.proof_url || null,
                     correctAnswer: newCorrectIndex,
                     difficulty: question.difficulty
                 };
@@ -2636,11 +2640,11 @@ app.post('/admin/trigger-auto-next', (req, res) => {
                 serie: question.serie,
                 difficulty: question.difficulty,
                 timeLimit: gameState.questionTime,
-                proof_url: question.proof_url || null
             };
 
             gameState.currentQuestion = {
                 ...questionData,
+                proofUrl: question.proof_url || null,
                 correctAnswer: newCorrectIndex,
                 difficulty: question.difficulty
             };
@@ -2844,11 +2848,11 @@ app.post('/admin/next-question', async (req, res) => {
             serie: question.serie,
             difficulty: question.difficulty, // ✅ Important pour le calcul des points
             timeLimit: gameState.questionTime,
-            proof_url: question.proof_url || null
         };
 
         gameState.currentQuestion = {
             ...questionData,
+            proofUrl: question.proof_url || null,
             correctAnswer: newCorrectIndex,
             difficulty: question.difficulty // ✅ Stocker aussi dans l'état
         };
@@ -2891,6 +2895,11 @@ function getQuestionDistribution(totalQuestions) {
 }
 
 // Fonction pour révéler les réponses
+// ⚠️ La preuve reste au serveur jusqu'a la revelation. L'URL nomme souvent
+// la reponse — « …/wiki/Gaara » passe sous « De quel village est originaire
+// Gaara ? », mais pas sous « Qui est le pere de Boruto ? ». Elle partait avec
+// « new-question », donc lisible dans l'onglet reseau avant d'avoir repondu.
+// Elle repart avec « question-results », quand la reponse est deja dite.
 function revealAnswers(gameState, correctAnswer) {
     // 🆕 Si tiebreaker rivalry en cours, ne pas interférer
     if (gameState.isRivalryTiebreaker) {
@@ -3191,6 +3200,8 @@ function revealAnswers(gameState, correctAnswer) {
 
     const resultsData = {
         correctAnswer,
+        // La preuve, enfin : la reponse vient d'etre dite, l'URL ne trahit plus rien.
+        proofUrl: (gameState.currentQuestion && gameState.currentQuestion.proofUrl) || null,
         stats,
         eliminatedCount: eliminatedThisRound,
         remainingPlayers: alivePlayersAfter.length,
@@ -3353,11 +3364,11 @@ function revealAnswers(gameState, correctAnswer) {
                     serie: question.serie,
                     difficulty: question.difficulty,
                     timeLimit: gameState.questionTime,
-                    proof_url: question.proof_url || null
                 };
 
                 gameState.currentQuestion = {
                     ...questionData,
+                    proofUrl: question.proof_url || null,
                     correctAnswer: newCorrectIndex,
                     difficulty: question.difficulty
                 };
@@ -3461,6 +3472,7 @@ function revealTiebreakerAnswers(gameState, correctAnswer) {
 
     const resultsData = {
         correctAnswer: correctAnswer,
+        proofUrl: (gameState.currentQuestion && gameState.currentQuestion.proofUrl) || null,
         stats: stats,
         players: playersDetails,
         playersData: playersData,
@@ -3642,11 +3654,11 @@ async function sendTiebreakerQuestion(gameState) {
             difficulty: 'extreme',
             timeLimit: gameState.questionTime,
             isTiebreaker: true,
-            proof_url: question.proof_url || null
         };
 
         gameState.currentQuestion = {
             ...questionData,
+            proofUrl: question.proof_url || null,
             correctAnswer: newCorrectIndex
         };
 
@@ -3836,11 +3848,11 @@ async function sendRivalryTiebreakerQuestion(gameState) {
             // n'apparaissait jamais en mode camps.
             isTiebreaker: true,
             isRivalryTiebreaker: true,
-            proof_url: question.proof_url || null
         };
 
         gameState.currentQuestion = {
             ...questionData,
+            proofUrl: question.proof_url || null,
             correctAnswer: newCorrectIndex
         };
 
@@ -3926,6 +3938,7 @@ async function revealRivalryTiebreakerAnswers(gameState, correctAnswer) {
     // Envoyer les résultats
     diffuser(gameState, 'question-results', {
         correctAnswer,
+        proofUrl: (gameState.currentQuestion && gameState.currentQuestion.proofUrl) || null,
         players: results.players,
         stats: results.stats,
         teamScores: gameState.teamScores,

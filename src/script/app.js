@@ -4846,7 +4846,7 @@ createApp({
                 // quoi il attend devant un accueil en se demandant ce qui s'est
                 // passé. Constaté en direct, sur un stream.
                 if (this.hasJoined && !this.isHost) {
-                    this.showNotification('L\'hôte a fermé le salon.', 'info');
+                    this.showNotification('L\'hôte a fermé le salon.', 'info', true);
                 }
 
                 // Reset COMPLET de l'état du jeu
@@ -7101,9 +7101,11 @@ createApp({
         // ========== Notifications ==========
         // Neutralisée depuis la v1, elle n'écrivait plus que dans la console :
         // vingt-six appels ne donnaient donc aucun retour au joueur.
-        showNotification(message, type = 'info') {
+        // « discret » : sans cadre ni fond, à la même place. Pour ce qui n'est pas
+        // un incident mais une explication — le salon qu'on referme, par exemple.
+        showNotification(message, type = 'info', discret = false) {
             if (!message) return;
-            const n = { id: ++this._notifSeq, message, type };
+            const n = { id: ++this._notifSeq, message, type, discret };
             this.notifs.push(n);
             // Trois à l'écran au plus : au-delà, les plus anciens cèdent la place
             if (this.notifs.length > 3) this.notifs.shift();

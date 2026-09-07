@@ -10147,6 +10147,38 @@ body.v2-sheet-open .v2-hud {
     transform: translateY(-50%) scale(1.06);
 }
 
+/* ── Le lien de preuve ──
+   Sous le drapeau, dans la même colonne, et du même gabarit : trois pastilles
+   rondes de trois rem alignées à gauche du panneau. En bleu froid — le rouge
+   est pris par le signalement, et l'or par tout le reste de l'écran. */
+.v2q-proof-btn {
+    position: absolute;
+    right: calc(100% + 3.4rem);
+    top: calc(50% + 7.4rem);
+    transform: translateY(-50%);
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    padding: 0;
+    color: #7fb4ff;
+    background: rgba(110, 168, 255, 0.08);
+    border: 0.06rem solid rgba(110, 168, 255, 0.32);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: color 0.25s ease, background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+    animation: v2qStatsIn 0.85s cubic-bezier(0.16, 0.9, 0.25, 1) 0.26s both;
+}
+
+.v2q-proof-btn svg { width: 1.3rem; height: 1.3rem; }
+
+.v2q-proof-btn:hover {
+    color: #a8ccff;
+    background: rgba(110, 168, 255, 0.18);
+    border-color: rgba(110, 168, 255, 0.6);
+    transform: translateY(-50%) scale(1.06);
+}
+
 /* ── La modale ── */
 .v2-report-veil {
     position: fixed;
@@ -10253,26 +10285,31 @@ body.v2-sheet-open .v2-hud {
 .v2-report-send:hover:not(:disabled) { background: rgba(239, 68, 68, 0.26); border-color: rgba(239, 68, 68, 0.75); }
 .v2-report-send:disabled { opacity: 0.4; cursor: default; }
 
-/* Sur petit écran, le drapeau rejoint la rangée du haut, après le classement */
+/* Sur petit écran, le drapeau rejoint la rangée du haut, après le classement,
+   et la preuve le suit. La colonne de gauche n'existe plus : elle se couche. */
 @media (max-width: 1200px) {
-    .v2q-report-btn {
+    .v2q-report-btn, .v2q-proof-btn {
         position: fixed;
         top: 0.9rem;
-        left: 7.9rem;
         right: auto;
         transform: none;
         animation: none;
     }
-    .v2q-report-btn:hover { transform: scale(1.06); }
+    .v2q-report-btn { left: 7.9rem; }
+    .v2q-proof-btn { left: 11.4rem; }
+    .v2q-report-btn:hover, .v2q-proof-btn:hover { transform: scale(1.06); }
 }
 
 @media (max-width: 768px) {
-    .v2q-report-btn { width: 2.7rem; height: 2.7rem; left: 7.3rem; }
-    .v2q-report-btn svg { width: 1.1rem; height: 1.1rem; }
+    .v2q-report-btn, .v2q-proof-btn { width: 2.7rem; height: 2.7rem; }
+    .v2q-report-btn svg, .v2q-proof-btn svg { width: 1.1rem; height: 1.1rem; }
+    .v2q-report-btn { left: 7.3rem; }
+    .v2q-proof-btn { left: 10.5rem; }
 }
 
-/* Le drapeau disparaît aussi derrière un calque */
-body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
+/* Le drapeau disparaît aussi derrière un calque, et la preuve avec */
+body.v2-sheet-open .v2q-report-btn,
+body.v2-sheet-open .v2q-proof-btn { opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
 
 /* Retour visuel du signalement : les notifications de la v1 ne font plus rien */
 .v2-report-send.fait { color: #b9f5d8; background: rgba(16, 185, 129, 0.18); border-color: rgba(16, 185, 129, 0.6); opacity: 1; }
@@ -10992,6 +11029,20 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
 .v2-notif.t-error   { border-top-color: #ef4444; }
 .v2-notif.t-warning { border-top-color: var(--accent-color); }
 .v2-notif.t-info    { border-top-color: rgba(255, 215, 0, 0.6); }
+
+/* Sans cadre ni fond, a la meme place. Le salon qu on referme n est pas un
+   incident : le joueur est deja revenu a l accueil, le message ne fait que
+   dire pourquoi. Un bandeau plein l annoncait comme une panne.
+   Ecrit APRES les « t-* » : meme poids de selecteur, c est l ordre qui
+   tranche, et « border: 0 » doit effacer le filet colore qu ils posent. */
+.v2-notif.discret {
+    padding: 0.35rem 0.9rem;
+    color: rgba(255, 255, 255, 0.5);
+    background: none;
+    border: 0;
+    box-shadow: none;
+    text-shadow: 0 0.1rem 0.7rem rgba(0, 0, 0, 0.9);
+}
 
 .v2-notif-enter-active { transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.2, 0.85, 0.3, 1); }
 .v2-notif-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; position: absolute; }
