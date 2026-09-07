@@ -308,9 +308,8 @@ Pour lever la mesure, trois endroits : le garde dans `/admin/toggle-game`, `dema
 ## Le lien de preuve d’une question
 
 Chaque question du quiz peut porter un `proof_url`, saisi dans `/question`. Une pastille bleue le
-rejoint sous le drapeau de signalement pendant les resultats — ouverte a **tous**, contrairement au
-drapeau : c’est ce qui clot une discussion en vocal ou sur un stream, et l’hote n’est pas toujours
-celui qui conteste.
+rejoint sous le drapeau de signalement pendant les resultats, **reservee a l’hote** comme le
+drapeau : c’est lui qui arbitre.
 
 ⚠️ **Il ne part qu’APRES la revelation.** L’URL nomme tres souvent la reponse —
 `…/wiki/One_For_All` sous « Quel est le pouvoir de Deku ? ». Il voyageait avec `new-question`,

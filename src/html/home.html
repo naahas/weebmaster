@@ -2216,12 +2216,12 @@
                                 </svg>
                             </button>
 
-                            <!-- La preuve de la réponse, saisie au back-office. Ouverte à TOUS,
-                                 contrairement au drapeau : c'est ce qui clôt une discussion en
-                                 vocal ou sur un stream, et l'hôte n'est pas toujours celui qui
-                                 conteste. Elle ne paraît qu'aux résultats — l'URL nomme souvent
+                            <!-- La preuve de la réponse, saisie au back-office. Réservée à
+                                 l'hôte, comme le drapeau : c'est lui qui arbitre, et une
+                                 pastille de plus chez chaque joueur encombrait un écran déjà
+                                 charge. Elle ne paraît qu'aux résultats — l'URL nomme souvent
                                  la réponse, et le serveur ne l'envoie pas avant. -->
-                            <a class="v2q-proof-btn" v-if="showResults && lobbyMode !== 'bombanime' && questionResults && questionResults.proofUrl"
+                            <a class="v2q-proof-btn" v-if="isHost && showResults && lobbyMode !== 'bombanime' && questionResults && questionResults.proofUrl"
                                :href="questionResults.proofUrl" target="_blank" rel="noopener noreferrer"
                                title="Voir la source de la réponse" aria-label="Voir la source de la réponse">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
