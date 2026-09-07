@@ -172,10 +172,6 @@ function sousLePaquet(etat, carte) {
 // rien d'autre ne bouge. Faire glisser toute la rangée pour un troc qui n'en
 // concerne qu'une la rendait illisible — la carte rendue entrait par la droite
 // comme une carte neuve, et l'on ne savait plus ce qu'on regardait.
-//
-// Les deux ne se croisent jamais : un échange ne renouvelle pas le marché
-// (voir « tourSuivant(etat, false) »), et le renouvellement ne touche à aucune
-// place au hasard. Une seule chose bouge à la fois.
 function renouvelerMarche(etat) {
     if (!etat.marche.length) return;
     sousLePaquet(etat, etat.marche.shift());
@@ -214,11 +210,31 @@ function demarrer(etat, joueurs) {
 // remplacée par celle qu'on rend, la rangée reste pleine et elle a changé. Y
 // verser une carte de plus en fin de tour la faisait donc tourner deux fois
 // d'un coup, et l'on perdait de vue ce qu'on venait d'y déposer.
-function tourSuivant(etat, renouveler = true) {
+// ⚠️ UNE CARTE PART PAR TOUR DE TABLE, pas par tour.
+//
+// C'est la seule chose que le joueur regarde vraiment : « est-ce que cette
+// carte sera encore là quand MON tour reviendra ? » Mesuré à l'ancien rythme —
+// un renouvellement par tour — la durée de vie d'une carte, comptée en tours du
+// joueur, valait 2,26 à deux joueurs et 0,94 à six : à six, ce qu'on convoitait
+// avait disparu avant qu'on rejoue, systématiquement. La même règle donnait
+// deux jeux différents selon le nombre de joueurs.
+//
+// Au rythme de la table, une carte vit cinq de MES tours quel que soit
+// l'effectif — cinq places, une qui part par tour de table. La position reste
+// un compte à rebours, mais compté dans la seule unité qui intéresse celui qui
+// regarde. Et la flèche marque déjà celle qui s'en va.
+//
+// Sans exception, y compris quand le dernier du tour vient d'échanger : c'est
+// la régularité qu'on achète, et une exception la détruirait. L'ancienne — un
+// échange ne renouvelait pas — existait parce que le geste et le renouvellement
+// tombaient dans le MÊME tour, et que la carte tout juste déposée pouvait être
+// chassée aussitôt. À raison d'une fois par tour de table, les deux ne
+// coïncident plus qu'une fois sur N, et la flèche prévient.
+function tourSuivant(etat) {
     if (!etat.active) return;
-    if (renouveler) renouvelerMarche(etat);
     etat.tourIndex = (etat.tourIndex + 1) % etat.ordre.length;
     etat.tourJoueur = etat.ordre[etat.tourIndex];
+    if (etat.tourIndex === 0) renouvelerMarche(etat);
 }
 
 const carteParUid = (liste, uid) => liste.findIndex(c => c.uid === uid);
@@ -292,7 +308,7 @@ function actionEchanger(etat, playerId, uidMain, uidMarche) {
     main[iMain] = prise;
     etat.marche[iMarche] = rendue;
     noter(etat, { type: 'echange', joueur: playerId, prise, rendue });
-    tourSuivant(etat, false);
+    tourSuivant(etat);
     return { ok: true, prise };
 }
 

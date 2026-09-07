@@ -98,24 +98,32 @@ console.log('\n── Le marché ──');
             'les quatre autres n\'ont pas bougé');
     }
 
-    // À chaque fin de tour le marché GLISSE d'un cran : celle de gauche part
-    // sous le paquet, les autres avancent, une neuve entre par la droite. La
-    // position d'une carte est donc son compte à rebours. « Sous » et non mêlée
-    // au hasard : une carte qu'on vient de voir partir ne doit pas revenir au
-    // tour suivant.
+    // ⚠️ UNE CARTE PART PAR TOUR DE TABLE, pas par tour. C'est la seule chose
+    // que le joueur regarde : « sera-t-elle encore là quand MON tour reviendra ? »
+    // Au rythme du tour, une carte vivait 0,94 de ses tours à six joueurs — elle
+    // disparaissait avant qu'il rejoue. Au rythme de la table, le plancher
+    // double. Mesuré, pas devine : voir l'en-tête de « tourSuivant ».
     {
         const e2 = neuf();
         const avant = e2.marche.map(c => c.uid);
+        const tour = e2.ordre.length;
+        // un tour qui n'achève pas le tour de table ne touche à rien
         C.actionPiocher(e2, e2.tourJoueur, e2.mains.get(e2.tourJoueur)[0].uid);
+        check('un tour seul ne renouvelle pas le marché',
+            e2.marche.map(c => c.uid).join(',') === avant.join(','), tour + ' joueurs');
+        // on termine le tour de table
+        for (let n = 1; n < tour; n++) {
+            const qui = e2.tourJoueur;
+            C.actionPiocher(e2, qui, e2.mains.get(qui)[0].uid);
+        }
         const apres = e2.marche.map(c => c.uid);
-        check('le marché glisse d\'un cran à chaque tour',
+        check('le tour de table bouclé, le marché glisse d\'un cran',
             apres.slice(0, 4).join(',') === avant.slice(1).join(','),
             'les quatre restantes ont avancé');
         check('… et une neuve entre par la droite',
             !avant.includes(apres[4]), apres[4].slice(0, 6));
-        check('… et elle part au FOND du paquet', e2.pioche[0].uid === avant[0],
-            'index 0, le dernier servi');
-        check('… et il garde sa taille', e2.marche.length === C.CONFIG.MARCHE);
+        check('… et celle qui part va au FOND du paquet',
+            e2.pioche[0].uid === avant[0], 'index 0, le dernier servi');
     }
 
     // Le minuteur ne joue pas à la place du joueur : il passe.
@@ -386,9 +394,9 @@ console.log('\n── Ce que le serveur laisse voir ──');
             e7.marche.some(c => c.uid === rendue), 'elle est entrée en cinquième place');
     }
 
-    // Poser un set renouvelle le marche comme n importe quel autre tour : c est
-    // « tourSuivant » qui s en charge, et poser passe par lui. On le verifie
-    // parce que rien ne le dit a la lecture de « actionPoser ».
+    // Poser un set ne renouvelle rien de particulier : c'est un tour comme un
+    // autre, et c'est le TOUR DE TABLE qui commande. On le vérifie parce que
+    // rien ne le dit à la lecture de « actionPoser ».
     {
         const e8 = neuf();
         const j8 = e8.tourJoueur;
@@ -398,10 +406,15 @@ console.log('\n── Ce que le serveur laisse voir ──');
         e8.mains.set(j8, memes.concat(e8.mains.get(j8).slice(r8.taille)));
         const avant = e8.marche.map(c => c.uid);
         const res = C.actionPoser(e8, j8, an);
-        const apres = e8.marche.map(c => c.uid);
-        check('poser un set fait glisser le marché comme les autres tours',
-            res.ok && apres.slice(0, 4).join(',') === avant.slice(1).join(',') && !avant.includes(apres[4]),
-            res.ok ? 'la première est partie, une neuve entre' : res.erreur);
+        check('poser un set ne renouvelle pas à lui seul',
+            res.ok && e8.marche.map(c => c.uid).join(',') === avant.join(','),
+            res.ok ? 'le marché n\'a pas bougé' : res.erreur);
+        for (let n = 1; n < e8.ordre.length; n++) {
+            const qui = e8.tourJoueur;
+            C.actionPiocher(e8, qui, e8.mains.get(qui)[0].uid);
+        }
+        check('… mais le tour de table bouclé, si', e8.marche[4].uid !== avant[4],
+            'une neuve est entrée');
     }
 
     // Le scan RETIENT le tour sept secondes. Sans cela la main scannée restait

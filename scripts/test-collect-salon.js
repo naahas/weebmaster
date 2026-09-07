@@ -127,16 +127,28 @@ const dernier = (j) => j.etats[j.etats.length - 1];
     // peut constater, c'est le renouvellement de fin de tour : la plus ancienne
     // du marché s'en va sous la pile et une neuve arrive du dessus.
     check('la carte lâchée ne réapparaît pas au marché', !dernier(A).marche.some(c => c.uid === lachee));
-    // Le marche GLISSE d un cran : celle de gauche part, les autres avancent,
-    // une neuve entre par la droite. La position d une carte est son compte a
-    // rebours.
+    // Une carte part par TOUR DE TABLE, pas par tour : un seul coup ne bouge
+    // rien. C'est la seule mesure qui compte pour un joueur — « sera-t-elle
+    // encore là quand MON tour reviendra ? » Au rythme du tour, elle vivait
+    // 0,94 de ses tours à six joueurs : elle disparaissait avant qu'il rejoue.
     {
         const apres = dernier(A).marche.map(c => c.uid);
-        check('le marché a glissé d\'un cran',
-            apres.slice(0, 4).join(',') === marcheAvant.slice(1).join(','),
+        check('un tour seul ne renouvelle pas le marché',
+            apres.join() === marcheAvant.join(),
+            tous.length + ' joueurs à table');
+
+        // on boucle le tour de table
+        for (let n = 1; n < tous.length; n++) {
+            const qui = tous.find(x => x.nom === dernier(A).tourJoueur);
+            qui.socket.emit('collect-piocher', { uidDefausse: qui.main[0].uid });
+            await wait(250);
+        }
+        const fini = dernier(A).marche.map(c => c.uid);
+        check('le tour de table bouclé, le marché glisse d\'un cran',
+            fini.slice(0, 4).join() === marcheAvant.slice(1).join(),
             'les quatre restantes ont avancé');
         check('… et une neuve est entrée par la droite',
-            !marcheAvant.includes(apres[4]), apres[4].slice(0, 6));
+            !marcheAvant.includes(fini[4]), fini[4].slice(0, 6));
     }
     check('le marché garde ses cinq cartes', dernier(A).marche.length === 5, String(dernier(A).marche.length));
     check('la main garde sa taille', courant.main.length === 4, String(courant.main.length));
