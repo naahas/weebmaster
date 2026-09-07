@@ -5532,12 +5532,36 @@ function rushPersoParId(id) {
 }
 
 // Ce que le joueur doit voir : le portrait, jamais le nom.
+// La séquence se rallonge d'elle-même quand on approche du bout.
+//
+// Elle était tirée une fois pour toutes, cent vingt portraits, et le joueur qui
+// arrivait au bout se retrouvait devant une carte vide jusqu'à la fin de la
+// manche. Il suffisait de marteler « passer » : à cinq clics par seconde on y
+// est en moins d'une demi-minute. Un très bon joueur sur une manche de quatre-
+// vingt-dix secondes pouvait y arriver aussi.
+//
+// « rushPiocher » sait déjà se recharger quand le lot est épuisé (il vide
+// « dejaVus » et repart) : il n'y a donc rien à craindre pour un filtre étroit
+// comme les Big 3, on retombera sur des visages déjà vus plutôt que sur rien.
+function rushRallonger(gameState, playerId) {
+    const perso = !gameState.rush.sequencePartagee;
+    const sequence = perso
+        ? gameState.rush.sequencesJoueur.get(playerId)
+        : gameState.rush.sequence;
+    if (!sequence) return null;
+    const etat = gameState.rush.joueurs.get(playerId);
+    // On rallonge AVANT d'être à sec : sinon la carte suivante manque le temps
+    // d'un aller-retour, et l'on voit un trou.
+    if (etat && sequence.length - etat.curseur <= 8) {
+        sequence.push(...rushPiocher(gameState, RUSH_CONFIG.LONGUEUR_SEQUENCE));
+    }
+    return sequence;
+}
+
 function rushPortrait(gameState, playerId) {
     const etat = gameState.rush.joueurs.get(playerId);
     if (!etat) return null;
-    const sequence = gameState.rush.sequencePartagee
-        ? gameState.rush.sequence
-        : (gameState.rush.sequencesJoueur.get(playerId) || []);
+    const sequence = rushRallonger(gameState, playerId) || [];
     const id = sequence[etat.curseur];
     if (!id) return null;
     const perso = rushPersoParId(id);
