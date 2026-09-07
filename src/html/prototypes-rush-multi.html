@@ -1,0 +1,283 @@
+<title>Rush — le multiplicateur</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   Le multiplicateur monte avec la SÉRIE EN COURS : ×2 à dix
+   d'affilée, ×3 à vingt, ×4 à trente. Une erreur casse la série,
+   donc il tombe avec elle.
+
+   Deux moments à traiter, et ils n'appellent pas la même chose :
+
+   · LE DÉBLOCAGE — la dixième bonne réponse. Il arrive deux ou
+     trois fois par manche, on peut y mettre du fracas.
+   · LA VIE AVEC — les réponses suivantes, où le ×2 reste affiché.
+     Là il faut de la retenue : ça dure, et un truc qui tremble en
+     permanence à côté du chiffre qu'on lit devient vite pénible.
+
+   Chaque piste rejoue la même séquence : 8, 9, 10 (déblocage),
+   11, 12, puis une erreur. Elles tournent en boucle.
+   ════════════════════════════════════════════════════════════════ */
+:root { --or: #ffd700; --chaud: #ffb300; }
+* { box-sizing: border-box; }
+
+body {
+    margin: 0; padding: 2rem 1.5rem 5rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #fff;
+    background: radial-gradient(70% 55% at 50% 0%, #17150f, #08080b 68%);
+    min-height: 100vh;
+}
+h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
+.sous { margin: 0 0 2rem; max-width: 58rem; font-size: 0.85rem; line-height: 1.55; color: rgba(255,255,255,0.45); }
+.sous b { color: rgba(255,255,255,0.75); }
+
+.grille { display: flex; flex-wrap: wrap; gap: 1.6rem; }
+.piste { width: 21rem; }
+.piste h3 { margin: 0 0 0.15rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 0.07em; }
+.piste p { margin: 0 0 0.8rem; font-size: 0.72rem; line-height: 1.5; color: rgba(255,255,255,0.4); min-height: 6em; }
+
+.scene {
+    position: relative;
+    height: 13rem;
+    display: grid; place-items: center;
+    border-radius: 0.9rem;
+    background: radial-gradient(60% 60% at 50% 40%, rgba(255,255,255,0.035), transparent 70%), #0b0b0f;
+    box-shadow: inset 0 0 2rem rgba(0,0,0,0.5);
+    overflow: hidden;
+}
+.scene::after {
+    content: 'en boucle';
+    position: absolute; right: 0.5rem; bottom: 0.35rem;
+    font-size: 0.52rem; letter-spacing: 0.14em; text-transform: uppercase;
+    color: rgba(255,255,255,0.18);
+}
+
+/* Le compteur, repris du jeu à l'identique */
+.compteurs { display: flex; gap: 2.2rem; align-items: flex-start; }
+.bloc { position: relative; display: flex; flex-direction: column; align-items: center; line-height: 1; }
+.bloc .v {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.4rem;
+    color: var(--or);
+    text-shadow: 0 0 1.8rem rgba(255, 215, 0, 0.4);
+    font-variant-numeric: tabular-nums;
+}
+.bloc .l {
+    margin-top: 0.25rem;
+    font-size: 0.55rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+}
+.bloc.record .v { color: #6ea8ff; text-shadow: 0 0 1.4rem rgba(110,168,255,0.35); }
+
+/* Le battement d'une bonne réponse, repris du jeu */
+.bloc.monte .v { animation: monte 0.34s cubic-bezier(0.2, 1.6, 0.4, 1); }
+@keyframes monte { 0% { transform: scale(1); } 45% { transform: scale(1.22); } 100% { transform: scale(1); } }
+
+/* Le badge, commun à toutes les pistes — chacune le décline ensuite */
+.mult {
+    position: absolute; left: 50%; top: -1.05rem;
+    transform: translateX(-50%);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.95rem; letter-spacing: 0.05em;
+    padding: 0.05rem 0.4rem;
+    border-radius: 0.35rem;
+    white-space: nowrap;
+    opacity: 0;
+}
+.mult.on { opacity: 1; }
+
+/* ─────────── A · le badge sage ─────────── */
+.a .mult {
+    color: #17140a;
+    background: linear-gradient(135deg, #ffe066, var(--chaud));
+    box-shadow: 0 0 0.9rem rgba(255, 179, 0, 0.55);
+}
+.a .mult.on { animation: aParait 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+@keyframes aParait {
+    0%   { opacity: 0; transform: translateX(-50%) translateY(0.6rem) scale(0.6); }
+    100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+/* ─────────── B · le badge qui tremble en continu ─────────── */
+.b .mult {
+    color: #17140a;
+    background: linear-gradient(135deg, #ffe066, var(--chaud));
+    box-shadow: 0 0 0.9rem rgba(255, 179, 0, 0.55);
+}
+.b .mult.on { animation: aParait 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) both, bTremble 0.5s linear 0.4s infinite; }
+@keyframes bTremble {
+    0%, 100% { transform: translateX(-50%) rotate(0deg); }
+    25%      { transform: translateX(-50%) translate(-0.06rem, 0.04rem) rotate(-1.6deg); }
+    75%      { transform: translateX(-50%) translate(0.06rem, -0.04rem) rotate(1.6deg); }
+}
+.b .bloc.on .v { animation: bChiffre 0.5s linear infinite; }
+@keyframes bChiffre {
+    0%, 100% { transform: translate(0, 0); }
+    25%      { transform: translate(-0.05rem, 0.05rem); }
+    75%      { transform: translate(0.05rem, -0.05rem); }
+}
+
+/* ─────────── C · la secousse au rythme des réponses ─────────── */
+.c .mult {
+    color: #17140a;
+    background: linear-gradient(135deg, #ffe066, var(--chaud));
+    box-shadow: 0 0 0.9rem rgba(255, 179, 0, 0.55);
+}
+.c .mult.on { animation: aParait 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+/* elle ne tremble QUE sur une bonne réponse, puis se tait */
+.c .bloc.monte.on .v { animation: cSecousse 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+.c .mult.on.secoue { animation: cSecousse 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+@keyframes cSecousse {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    20%      { transform: translate(-0.18rem, 0.08rem) scale(1.1); }
+    45%      { transform: translate(0.2rem, -0.1rem) scale(1.14); }
+    70%      { transform: translate(-0.1rem, 0.05rem) scale(1.06); }
+}
+.c .mult.on.secoue { transform-origin: center; }
+
+/* ─────────── D · le chiffre change de couleur par palier ─────────── */
+.d .mult {
+    color: #17140a;
+    background: linear-gradient(135deg, #ffe066, var(--chaud));
+    box-shadow: 0 0 0.9rem rgba(255, 179, 0, 0.55);
+}
+.d .mult.on { animation: aParait 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+.d .bloc.on .v {
+    color: #ff9d3d;
+    text-shadow: 0 0 2.2rem rgba(255, 157, 61, 0.75);
+    animation: dSouffle 1.6s ease-in-out infinite;
+}
+@keyframes dSouffle {
+    0%, 100% { text-shadow: 0 0 1.6rem rgba(255, 157, 61, 0.5); }
+    50%      { text-shadow: 0 0 2.8rem rgba(255, 157, 61, 0.95); }
+}
+
+/* ─────────── E · l'anneau qui se remplit ─────────── */
+.e .jauge {
+    position: absolute; left: 50%; top: -0.5rem;
+    transform: translateX(-50%);
+    width: 3.6rem; height: 0.16rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.1);
+    overflow: hidden;
+}
+.e .jauge i {
+    display: block; height: 100%;
+    background: linear-gradient(90deg, var(--or), var(--chaud));
+    transform-origin: left;
+    transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+.e .mult {
+    top: -1.5rem;
+    color: #17140a;
+    background: linear-gradient(135deg, #ffe066, var(--chaud));
+    box-shadow: 0 0 0.9rem rgba(255, 179, 0, 0.55);
+}
+.e .mult.on { animation: aParait 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+
+/* Le déblocage : un éclat qui part du chiffre, sur toutes les pistes */
+.eclat {
+    position: absolute; left: 50%; top: 42%;
+    width: 7rem; height: 7rem; margin: -3.5rem 0 0 -3.5rem;
+    border-radius: 50%;
+    pointer-events: none;
+    background: radial-gradient(closest-side, rgba(255,224,102,0.55), transparent 70%);
+    opacity: 0;
+}
+.eclat.va { animation: eclat 0.6s ease-out; }
+@keyframes eclat {
+    0%   { opacity: 0; transform: scale(0.3); }
+    25%  { opacity: 1; transform: scale(0.8); }
+    100% { opacity: 0; transform: scale(2.2); }
+}
+</style>
+
+<h1>Rush — le multiplicateur</h1>
+<p class="sous">
+    Il monte avec la <b>série en cours</b> : ×2 à dix d’affilée, ×3 à vingt, ×4 à trente. Une erreur
+    casse la série, donc il tombe avec elle. Deux moments à traiter, et ils n’appellent pas la même
+    chose : <b>le déblocage</b> arrive deux ou trois fois par manche, on peut y mettre du fracas ;
+    <b>la vie avec</b>, elle, dure — et un badge qui tremble en permanence à côté du chiffre qu’on
+    lit devient vite pénible. Chaque piste rejoue la même séquence : 8, 9, 10, 11, 12, puis une
+    erreur.
+</p>
+
+<div class="grille" id="grille"></div>
+
+<script>
+const PISTES = [
+    { cle: 'a', t: 'A · Le badge sage', n: "Il apparaît d’un bond au déblocage, puis ne bouge plus. Le plus lisible et le moins fatigant — mais rien ne rappelle qu’on est en série une fois passé le premier instant." },
+    { cle: 'b', t: 'B · Le tremblement continu', n: "Le badge ET le chiffre vibrent tant que le multiplicateur tient. C’est ce que tu décrivais. À l’essai sur une manche entière, la question est de savoir si ça reste excitant ou si ça devient du bruit." },
+    { cle: 'c', t: 'C · La secousse à chaque réponse', n: "Immobile entre deux portraits, secoué franchement à chaque bonne réponse. On garde l’énergie du tremblement sans le bruit de fond, et chaque trouvaille se sent. Mon avis." },
+    { cle: 'd', t: 'D · Le chiffre s’embrase', n: "Pas de tremblement : le chiffre de la série change de couleur et respire. Le multiplicateur devient un état plutôt qu’un effet — plus calme, et lisible d’un coup d’œil de l’autre bout d’un stream." },
+    { cle: 'e', t: 'E · L’anneau de progression', n: "Une barre au-dessus se remplit de 0 à 10 : on voit venir le palier suivant. C’est la seule qui donne une information nouvelle — « encore trois et je passe ×3 » — au prix d’un élément de plus." },
+];
+
+const grille = document.getElementById('grille');
+for (const p of PISTES) {
+    const bloc = document.createElement('div');
+    bloc.className = 'piste';
+    bloc.innerHTML = '<h3>' + p.t + '</h3><p>' + p.n + '</p>' +
+        '<div class="scene ' + p.cle + '">' +
+        '<span class="eclat"></span>' +
+        '<div class="compteurs">' +
+            '<div class="bloc serie">' +
+                (p.cle === 'e' ? '<span class="jauge"><i></i></span>' : '') +
+                '<span class="mult">×2</span>' +
+                '<span class="v">8</span><span class="l">série</span>' +
+            '</div>' +
+            '<div class="bloc record"><span class="v">12</span><span class="l">record</span></div>' +
+        '</div></div>';
+    grille.appendChild(bloc);
+}
+
+// La même séquence pour toutes : 8 → 9 → 10 (déblocage) → 11 → 12 → raté.
+const SUITE = [9, 10, 11, 12, 0];
+
+function jouer() {
+    for (const p of PISTES) {
+        const s = document.querySelector('.scene.' + p.cle);
+        const bloc = s.querySelector('.bloc.serie');
+        const v = bloc.querySelector('.v');
+        const mult = s.querySelector('.mult');
+        const eclat = s.querySelector('.eclat');
+        const jauge = s.querySelector('.jauge i');
+
+        v.textContent = '8';
+        bloc.classList.remove('on');
+        mult.classList.remove('on', 'secoue');
+        if (jauge) jauge.style.transform = 'scaleX(0.8)';
+
+        SUITE.forEach((n, i) => {
+            setTimeout(() => {
+                v.textContent = n;
+                bloc.classList.remove('monte');
+                void bloc.offsetWidth;
+
+                if (n === 0) {                       // l'erreur : tout retombe
+                    bloc.classList.remove('on');
+                    mult.classList.remove('on', 'secoue');
+                    if (jauge) jauge.style.transform = 'scaleX(0)';
+                    return;
+                }
+                bloc.classList.add('monte');
+                if (jauge) jauge.style.transform = 'scaleX(' + ((n % 10) / 10 || 1) + ')';
+
+                if (n >= 10) {
+                    if (!mult.classList.contains('on')) {   // le déblocage
+                        mult.classList.add('on');
+                        eclat.classList.remove('va'); void eclat.offsetWidth;
+                        eclat.classList.add('va');
+                        bloc.classList.add('on');
+                    } else if (p.cle === 'c') {             // la secousse par réponse
+                        mult.classList.remove('secoue'); void mult.offsetWidth;
+                        mult.classList.add('secoue');
+                    }
+                }
+            }, 900 * (i + 1));
+        });
+    }
+}
+jouer();
+setInterval(jouer, 900 * (SUITE.length + 2));
+</script>
