@@ -177,9 +177,7 @@ createApp({
                   desc: "Un portrait, un nom. La plus longue serie gagne." },
                 { id: 'ascension', name: 'Ascension', kind: 'Solo',   players: '∞',  img: 'esdeath.webp',
                   desc: "Une tour d'étages, chacun à son rythme. Le premier au sommet gagne." },
-                // « soon » le temps de lui trouver son personnage : le badge et le
-                // bouton verrouillé sont déjà câblés.
-                { id: 'collect',   name: 'Collect',   kind: 'Solo',   players: '5',  img: 'collect-mystere.webp', soon: true,
+                { id: 'collect',   name: 'Collect',   kind: 'Solo',   players: '5',  img: 'collect-mystere.webp',
                   desc: "Réunis des sets du même anime. Vole ceux des autres, défends les tiens." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.
