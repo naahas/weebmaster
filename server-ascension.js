@@ -131,6 +131,73 @@ if (ETAGE_FORCE) {
         + ' » (ASC_ETAGE_FORCE). Retirer la variable pour revenir au tirage.');
 }
 
+// ═══ 🔤 Le sac de l'Anagramme ═══
+//
+// Deux listes NOMMÉES dans « ascensiondata.json » — « scramble_characters » et
+// « scramble_animes » —, sur le modèle de « wordle_words ».
+//
+// L'anagramme se servait auparavant dans « characters » et « animes » en
+// entier, filtrés à la volée sur la forme du nom. On ne pouvait donc pas en
+// retirer un mot sans le retirer aussi de Devine le perso, de Cible, de
+// l'Intrus et de la Liaison. Or cet étage-ci demande du mainstream — remettre
+// dans l'ordre les lettres d'un personnage qu'on ne connaît pas ne se devine
+// pas, ça se subit —, là où les autres vivent très bien avec du plus pointu.
+// D'où une liste à part : on y ajoute et on en retire sans toucher au reste.
+//
+// Les deux listes n'ont AUCUN effet ailleurs. Un nom qui n'y figure pas reste
+// jouable partout ailleurs.
+//
+// Une liste vide ou absente fait retomber sa moitié sur l'ancien filtre : le
+// mode ne peut pas se retrouver sans mots à cause d'une clef mal orthographiée.
+const SCRAMBLE_MIN = 4, SCRAMBLE_MAX = 10;
+
+// Un seul mot de lettres, ni espace ni tiret ni chiffre : mélanger les lettres
+// de « One Piece » n'aurait pas de sens, et « C-18 » encore moins.
+function scrambleFormeOk(nom) {
+    return !!nom && /^[A-Z]+$/i.test(nom)
+        && nom.length >= SCRAMBLE_MIN && nom.length <= SCRAMBLE_MAX;
+}
+
+// Le sac se calcule une fois. « hint » est l'anime du personnage, sauf quand il
+// porte le nom de son anime — annoncer « Naruto » sous les lettres de NARUTO
+// donnerait la réponse.
+const SCRAMBLE_SAC = (() => {
+    const parNom = {};
+    for (const c of ASCENSION_DATA.characters || []) {
+        if (c && c.name) parNom[c.name.toUpperCase()] = c;
+    }
+    const refuses = [], inconnus = [];
+
+    const persos = (ASCENSION_DATA.scramble_characters || []).map(nom => {
+        if (!scrambleFormeOk(nom)) { refuses.push(nom); return null; }
+        const c = parNom[nom.toUpperCase()];
+        if (!c) inconnus.push(nom);
+        const anime = c && c.anime;
+        return {
+            word: nom.toUpperCase(),
+            hint: anime && anime.toUpperCase() !== nom.toUpperCase() ? anime : null,
+        };
+    }).filter(Boolean);
+
+    const animes = (ASCENSION_DATA.scramble_animes || []).map(nom => {
+        if (!scrambleFormeOk(nom)) { refuses.push(nom); return null; }
+        return { word: nom.toUpperCase(), hint: null };
+    }).filter(Boolean);
+
+    // On ne jette rien en silence : une entrée mal formée disparaîtrait sans
+    // que personne ne le sache, et la liste est faite pour être éditée à la main.
+    if (refuses.length) {
+        console.warn('⚠️ Anagramme : ' + refuses.length + ' entrée(s) écartée(s) — il faut un seul mot de '
+            + SCRAMBLE_MIN + ' à ' + SCRAMBLE_MAX + ' lettres : ' + refuses.join(', '));
+    }
+    if (inconnus.length) {
+        console.warn('⚠️ Anagramme : ' + inconnus.length + ' nom(s) absent(s) de « characters » — jouables, '
+            + 'mais sans indice d\'anime : ' + inconnus.join(', '));
+    }
+    console.log('🔤 Anagramme : ' + persos.length + ' personnages, ' + animes.length + ' animes');
+    return { persos, animes };
+})();
+
 const GAME_TYPES = [
     'guess',      // Devine le perso (5 images, tape les noms)
     'target',     // Cible (30 persos, 5 consignes "clique sur X")
@@ -502,28 +569,27 @@ function genererEtageBrut(type, usedData) {
         }
 
         case 'scramble': {
-            // Anagramme : pioche soit un perso (single-word 4-10 lettres), soit un anime (single-word).
-            // 50/50 entre les 2 pools pour la variété.
-            const personsPool = chars.filter(c =>
-                c.img && c.name && /^[A-Z]+$/i.test(c.name) && c.name.length >= 4 && c.name.length <= 10
-            );
-            const animesPool = (ASCENSION_DATA.animes || []).filter(a =>
-                a.name && /^[A-Z]+$/i.test(a.name) && a.name.length >= 4 && a.name.length <= 10
-            );
+            // Le sac est nommé dans « ascensiondata.json » — voir SCRAMBLE_SAC.
+            // Une liste vide retombe sur l'ancien filtre, appliqué aux données
+            // entières : le mode ne peut pas se retrouver sans mots.
+            const personsPool = SCRAMBLE_SAC.persos.length ? SCRAMBLE_SAC.persos
+                : chars.filter(c => c.img && scrambleFormeOk(c.name))
+                    .map(c => ({ word: c.name.toUpperCase(), hint: c.anime }));
+            const animesPool = SCRAMBLE_SAC.animes.length ? SCRAMBLE_SAC.animes
+                : (ASCENSION_DATA.animes || []).filter(a => scrambleFormeOk(a.name))
+                    .map(a => ({ word: a.name.toUpperCase(), hint: null }));
+
+            // 50/50 entre les deux sacs, et non au prorata de leur taille : les
+            // titres sont bien moins nombreux que les personnages, et un tirage
+            // proportionnel ne les sortirait presque jamais. Ce sont deux
+            // épreuves différentes, on les alterne.
             const pickFromAnime = animesPool.length > 0 && Math.random() < 0.5;
-            let word, hint, category;
-            if (pickFromAnime) {
-                const picked = animesPool[Math.floor(Math.random() * animesPool.length)];
-                word = picked.name.toUpperCase();
-                hint = null;
-                category = 'anime';
-            } else {
-                if (personsPool.length === 0) return generateFloorData('guess', usedData);
-                const picked = personsPool[Math.floor(Math.random() * personsPool.length)];
-                word = picked.name.toUpperCase();
-                hint = picked.anime;
-                category = 'character';
-            }
+            if (!pickFromAnime && personsPool.length === 0) return generateFloorData('guess', usedData);
+            const sac = pickFromAnime ? animesPool : personsPool;
+            const picked = sac[Math.floor(Math.random() * sac.length)];
+            const word = picked.word;
+            const hint = picked.hint;
+            const category = pickFromAnime ? 'anime' : 'character';
 
             // Shuffle des lettres en garantissant un résultat différent du mot original
             let scrambled;

@@ -216,4 +216,61 @@ const jetonValide = (u) => /^\/pic\/[0-9a-f]{20}$/.test(String(u));
     }
 }
 
+// ── 🔤 Le sac de l'Anagramme ──
+//
+// Deux listes nommées dans le fichier de données, et elles seules. L'étage se
+// servait auparavant dans « characters » et « animes » en entier : on ne
+// pouvait pas en retirer un mot sans le retirer aussi de Devine le perso, de
+// Cible, de l'Intrus et de la Liaison. Ce que cette section garde, c'est
+// exactement cette séparation — le sac est clos, et il n'ampute rien.
+const DONNEES = require('../ascensiondata.json');
+const sacPersos = DONNEES.scramble_characters || [];
+const sacAnimes = DONNEES.scramble_animes || [];
+
+check('les deux listes de l anagramme existent et sont fournies',
+    sacPersos.length > 20 && sacAnimes.length > 5,
+    sacPersos.length + ' personnages, ' + sacAnimes.length + ' animes');
+
+// Rien ne doit être écarté en silence : une entrée mal formée disparaîtrait du
+// sac sans que personne ne le sache, et ces listes sont faites pour être
+// éditées à la main.
+const malFormees = [...sacPersos, ...sacAnimes].filter(n =>
+    !(n && /^[A-Z]+$/i.test(n) && n.length >= 4 && n.length <= 10));
+check('aucune entrée mal formée n est jetée en silence', malFormees.length === 0,
+    malFormees.length ? malFormees.join(', ') : 'un seul mot de 4 à 10 lettres partout');
+
+const dansSac = new Set([...sacPersos, ...sacAnimes].map(n => n.toUpperCase()));
+const dehors = [], melangeRate = [], lettresPerdues = [], indiceVendu = [];
+for (let i = 0; i < 1500; i++) {
+    const e = I.generateFloorData('scramble', {});
+    if (e.type !== 'scramble') continue;
+    if (!dansSac.has(e.word)) dehors.push(e.word);
+    if (e.scrambled.join('') === e.word) melangeRate.push(e.word);
+    if (e.scrambled.slice().sort().join('') !== e.word.split('').sort().join('')) lettresPerdues.push(e.word);
+    // L'indice est l'anime du personnage : il ne doit jamais être le mot
+    // lui-même, sans quoi « Naruto » s'afficherait sous les lettres de NARUTO.
+    if (e.hint && e.hint.toUpperCase() === e.word) indiceVendu.push(e.word);
+}
+check('sur 1500 tirages, aucun mot ne vient d ailleurs que du sac',
+    dehors.length === 0, dehors.length ? [...new Set(dehors)].slice(0, 6).join(', ') : 'sac clos');
+check('le mélange ne rend jamais le mot tel quel', melangeRate.length === 0,
+    melangeRate.length ? melangeRate.slice(0, 4).join(', ') : 'toujours brouillé');
+check('le mélange garde exactement les mêmes lettres', lettresPerdues.length === 0,
+    lettresPerdues.length ? lettresPerdues.slice(0, 4).join(', ') : 'aucune lettre perdue');
+check('l indice ne donne jamais la réponse', indiceVendu.length === 0,
+    indiceVendu.length ? [...new Set(indiceVendu)].join(', ') : 'jamais l anime homonyme');
+
+// ⚠️ Le point de toute l'affaire : le sac RESTREINT l'anagramme et ne touche à
+// rien d'autre. Un personnage absent de la liste doit rester tiré ailleurs.
+const horsSac = (DONNEES.characters || []).filter(c => c.img && !dansSac.has((c.name || '').toUpperCase()));
+check('des personnages hors du sac existent encore dans les données',
+    horsSac.length > 30, horsSac.length + ' personnage(s) hors anagramme');
+
+const vusAilleurs = new Set();
+for (let i = 0; i < 400; i++) {
+    for (const c of I.generateFloorData('guess', {}).characters) vusAilleurs.add(c.name.toUpperCase());
+}
+check('et « Devine le perso » les tire toujours',
+    horsSac.some(c => vusAilleurs.has((c.name || '').toUpperCase())),
+    vusAilleurs.size + ' nom(s) vus en 400 étages');
 console.log(ko ? `\n${ko} échec(s)` : "\n✨ Le moteur d'Ascension tient, et ne trahit rien");

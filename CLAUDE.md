@@ -151,6 +151,18 @@ Ascension est documenté dans docs/ASCENSION.md et conservé sur la branche `arc
   portrait, son anime et sa classe. Genere depuis `collect-cards.json` (la source v1, gardee
   comme reference) ; portraits dans `src/img/collectpic/`, en WebP.
   ⚠️ Un anime doit fournir **au moins trois** cartes, sinon son set est impossible a reunir
+- `ascensiondata.json` — les données d'Ascension. Deux clefs ne servent qu'à **un seul étage** :
+  `wordle_words` pour le Wordle, et **`scramble_characters` / `scramble_animes` pour
+  l'Anagramme**. ⚠️ L'anagramme se servait auparavant dans `characters` et `animes` en entier,
+  filtrés à la volée : on ne pouvait pas en retirer un mot sans le retirer aussi de Devine le
+  perso, de Cible, de l'Intrus et de la Liaison. Or cet étage demande du **mainstream** — remettre
+  dans l'ordre les lettres d'un personnage qu'on ne connaît pas ne se devine pas, ça se subit —,
+  là où les autres vivent très bien avec du plus pointu. Ajouter ou retirer un mot de l'anagramme
+  se fait donc **dans ces deux listes, et nulle part ailleurs** ; une entrée absente reste jouable
+  partout ailleurs. Chaque nom doit être **un seul mot de lettres, 4 à 10** (mélanger « One Piece »
+  n'aurait pas de sens) ; le serveur annonce au démarrage combien il en a retenu et nomme celles
+  qu'il écarte. Une liste vidée retombe sur l'ancien filtre : le mode ne peut pas se retrouver
+  sans mots.
 - Les **questions du quiz** vivent en base Supabase (table `questions`). Ajout/édition via la page
   `/question` protégée par `QUESTION_ADMIN_CODE`.
 
