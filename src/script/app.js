@@ -2541,7 +2541,12 @@ createApp({
                 pris.push({ carte, boite: { left: b.left, top: b.top, width: b.width, height: b.height } });
             }
             for (const [n, p] of pris.entries()) {
-                setTimeout(() => this.colEclaterBoite(p.boite, p.carte), 220 + n * 110);
+                // Vite : la carte quitte le DOM des que le serveur repond, une
+                // trentaine de millisecondes plus tard. Eclater trop tard laissait
+                // un trou entre la carte qui disparait et les morceaux qui
+                // arrivent — on ne la voyait plus se briser, on la voyait partir
+                // puis quelque chose casser.
+                setTimeout(() => this.colEclaterBoite(p.boite, p.carte), 110 + n * 120);
             }
         },
         // Le compte à rebours vit côté client, mais sur l'heure de fin envoyée

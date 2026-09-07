@@ -1342,6 +1342,8 @@
     z-index: 44;
     display: flex; flex-direction: column; align-items: center; gap: 0.7rem;
     pointer-events: none;
+    /* Le demi-tour doit etre un vrai demi-tour, pas un ecrasement horizontal */
+    perspective: 1200px;
     animation: colPriseEntre 0.45s cubic-bezier(0.25, 0.85, 0.3, 1) both;
 }
 /* Elle VIENT de la main de la cible : « --de-x » et « --de-y » sont posés à
@@ -1368,7 +1370,11 @@
     transform-style: preserve-3d;
     transform: rotateY(0deg);
     transition: transform 0.62s cubic-bezier(0.32, 0.72, 0.24, 1);
-    filter: drop-shadow(0 1rem 2rem rgba(0, 0, 0, 0.7));
+    /* ⚠️ AUCUN « filter » ici. Un filtre force « transform-style: flat » : le
+       demi-tour ne se propageait donc plus aux deux faces, « backface-visibility »
+       se calculait sur leur seule rotation propre, et le dos restait visible
+       quoi qu il arrive. On voyait la carte tourner et ne jamais se montrer.
+       L ombre est passee sur les faces, ou elle ne casse rien. */
 }
 .col-prise-carte.retournee { transform: rotateY(180deg); }
 .col-prise-carte > span {
@@ -1376,6 +1382,7 @@
     border-radius: 0.55rem;
     overflow: hidden;
     backface-visibility: hidden;
+    box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.7);
 }
 .col-prise-dos {
     border: 0.11rem solid rgba(255, 255, 255, 0.2);
@@ -1447,7 +1454,9 @@
 
 /* Un tressaillement bref avant que la carte n'éclate : c'est lui qui fait
    qu'on la voit partir plutôt qu'on ne la voit disparaître. */
-.col-carte.col-secoue { animation: colSecoueCarte 0.22s cubic-bezier(0.36, 0.07, 0.19, 0.97) 2; }
+/* Un seul aller-retour, et court : la carte n a que cent millisecondes a vivre
+   avant d eclater, deux passes n auraient jamais le temps de se jouer. */
+.col-carte.col-secoue { animation: colSecoueCarte 0.14s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
 @keyframes colSecoueCarte {
     0%, 100% { transform: translateY(var(--lift, 0rem)) translateY(var(--dy, 0rem)) rotate(var(--rot, 0deg)); }
     25%      { transform: translateY(var(--lift, 0rem)) translateY(var(--dy, 0rem)) rotate(var(--rot, 0deg)) translateX(-0.35rem); }
