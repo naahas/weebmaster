@@ -1407,6 +1407,13 @@
 }
 .col-prise-mot b { color: var(--col-or); }
 
+/* Pendant qu'une carte est retournée au milieu du feutre, le marché s'efface.
+   Cinq portraits en pleine lumière juste sous elle se disputaient le regard au
+   moment précis où il n'y a qu'une chose à lire — et à côté d'eux, une carte
+   deux fois plus grande passait presque inaperçue. */
+.col.larcin .col-marche { filter: brightness(0.3) saturate(0.4); }
+.col-marche { transition: filter 0.35s ease; }
+
 /* ── L'éventail visé : on choisit une PLACE ──
    Les positions ne bougent pas d'un tour à l'autre : le hasard n'en est un que
    pour l'étourdi. Chaque dos bat à son tour pour dire qu'il est prenable. */
@@ -1441,10 +1448,19 @@
     cursor: pointer;
     animation: colExigee 1.3s ease-in-out infinite;
 }
+/* ⚠️ La pulsation prend LA COULEUR DE LA CLASSE, pas l'or du jeu.
+   La carte volée s'affiche avec sa bordure de classe ; les cartes qu'on a le
+   droit de lâcher sont exactement celles de cette classe. Les faire battre en
+   doré coupait le seul lien qui explique la règle — on voyait une carte rouge
+   au centre et des cartes dorées en bas, sans rapport visible entre les deux.
+   Trois teintes, une par classe, reprises de « --assaut / --mirage / --oracle ». */
+.col-carte.classe-assaut { --eclat: 255, 122, 92; }
+.col-carte.classe-mirage { --eclat: 167, 139, 250; }
+.col-carte.classe-oracle { --eclat: 79, 209, 197; }
 @keyframes colExigee {
     0%, 100% { box-shadow: 0 0.3rem 0.7rem rgba(0, 0, 0, 0.5); }
-    50%      { box-shadow: 0 0 0 0.13rem rgba(255, 210, 74, 0.75),
-                           0 0 1.5rem rgba(255, 210, 74, 0.55); }
+    50%      { box-shadow: 0 0 0 0.14rem rgba(var(--eclat, 255, 210, 74), 0.9),
+                           0 0 1.6rem rgba(var(--eclat, 255, 210, 74), 0.6); }
 }
 .col-carte.lachee { opacity: 0.35; filter: saturate(0.3); }
 /* Vol réussi : seule la bonne classe est acceptée. Les autres s'éteignent au

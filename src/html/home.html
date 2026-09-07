@@ -784,7 +784,7 @@
                      🎴 COLLECT — réunir des sets, et se les voler
                      ============================================ -->
                 <template v-if="lobbyMode === 'collect' && !gameEnded">
-                    <div class="col" :class="{ entree: col.entree }" v-if="col.etat">
+                    <div class="col" :class="{ entree: col.entree, larcin: !!(col.etat.larcin) }" v-if="col.etat">
 
                         <!-- ── La barre du haut ── -->
                         <div class="col-haut">
