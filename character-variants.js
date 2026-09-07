@@ -107,7 +107,7 @@ const CHARACTER_VARIANTS = {
         ["BROOK"],
         ["JINBE", "JINBEI"],
         ["LUCKY ROO", "LUCKY ROUX"],
-        ["BEN BECKMAN", "BENN BECKMAN"],
+        ["BEN BECKMAN", "BENN BECKMAN" , "BEN BECKMANN", "BENN BECKMANN"],
         ["AOKIJI", "KUZAN"],
         ["KIZARU", "BORSALINO"],
         ["FUJITORA", "ISSHO"],

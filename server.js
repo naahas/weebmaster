@@ -435,6 +435,17 @@ function questionSansReponse(q) {
     return reste;
 }
 
+// Combien de joueurs un salon accepte, selon son mode. Deux modes ont un vrai
+// plafond — quinze pour BombAnime, cinq pour Collect —, les autres n en ont
+// pas. Il se lit A LA PORTE et plus seulement au demarrage : Collect ne le
+// verifiait qu au lancement, si bien qu un joueur de trop entrait et que
+// l hote ne pouvait plus lancer sans savoir pourquoi.
+function plafondDuSalon(gameState) {
+    if (gameState.lobbyMode === 'bombanime') return BOMBANIME_CONFIG.MAX_PLAYERS;
+    if (gameState.lobbyMode === 'collect') return collect.CONFIG.MAX_JOUEURS;
+    return Infinity;
+}
+
 app.get('/game/state', (req, res) => {
     const gameState = roomParCode(req.query.code) || roomParJeton(req.get('X-Host-Token'));
     if (!gameState) {
@@ -453,10 +464,13 @@ app.get('/game/state', (req, res) => {
         updateTeamScores(gameState); // 🆕 Calculer les scores d'équipe
     }
     
-    // 💣 Vérifier si le lobby BombAnime est plein
+    // 💣 Le salon est-il plein ? Deux modes ont un plafond, et il doit se lire
+    // À LA PORTE : Collect ne le vérifiait qu'au démarrage, si bien qu'un
+    // sixième joueur entrait et que l'hôte ne pouvait plus lancer sans savoir
+    // pourquoi.
     const isBombanimeMode = gameState.lobbyMode === 'bombanime';
-    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : Infinity;
-    const isLobbyFull = isBombanimeMode && gameState.players.size >= maxPlayers;
+    const maxPlayers = plafondDuSalon(gameState);
+    const isLobbyFull = gameState.players.size >= maxPlayers;
 
     // 🔥 Construire les données des joueurs avec leurs réponses
     const playersData = Array.from(gameState.players.values()).map(player => {
@@ -947,8 +961,8 @@ function broadcastLobbyUpdate(gameState) {
     
     // 💣 Vérifier si le lobby BombAnime est plein
     const isBombanimeMode = gameState.lobbyMode === 'bombanime';
-    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : Infinity;
-    const isLobbyFull = isBombanimeMode && gameState.players.size >= maxPlayers;
+    const maxPlayers = plafondDuSalon(gameState);
+    const isLobbyFull = gameState.players.size >= maxPlayers;
     
     diffuser(gameState, 'lobby-update', {
         playerCount: gameState.players.size,
@@ -1438,8 +1452,8 @@ app.get('/admin/game-state', (req, res) => {
     const gameState = req.room;   // posée par le garde-fou d'hôte
     // 💣 Vérifier si le lobby BombAnime est plein
     const isBombanimeMode = gameState.lobbyMode === 'bombanime';
-    const maxPlayers = isBombanimeMode ? BOMBANIME_CONFIG.MAX_PLAYERS : Infinity;
-    const isLobbyFull = isBombanimeMode && gameState.players.size >= maxPlayers;
+    const maxPlayers = plafondDuSalon(gameState);
+    const isLobbyFull = gameState.players.size >= maxPlayers;
 
     res.json({
         isActive: gameState.isActive,
@@ -5911,13 +5925,16 @@ io.on('connection', (socket) => {
             }
         }
         
-        // 💣 En BombAnime, vérifier la limite avec les places réservées
-        if (gameState.lobbyMode === 'bombanime' && !isReconnection) {
-            const maxPlayers = BOMBANIME_CONFIG.MAX_PLAYERS;
+        // 💣🎴 Le plafond du mode, places réservées comprises. Il ne valait que
+        // pour BombAnime : Collect n'était vérifié qu'au DÉMARRAGE, si bien qu'un
+        // joueur de trop entrait et que l'hôte ne pouvait plus lancer sans savoir
+        // pourquoi. Voir « plafondDuSalon ».
+        if (!isReconnection) {
+            const maxPlayers = plafondDuSalon(gameState);
             const currentCount = gameState.players.size + gameState.pendingJoins.size;
             if (currentCount >= maxPlayers) {
-                console.log(`🚫 Lobby plein: ${gameState.players.size} joueurs + ${gameState.pendingJoins.size} en attente >= ${maxPlayers}`);
-                return socket.emit('error', { message: `Le lobby est plein (maximum ${maxPlayers} joueurs)` });
+                console.log(`🚫 Salon plein: ${gameState.players.size} joueurs + ${gameState.pendingJoins.size} en attente >= ${maxPlayers}`);
+                return socket.emit('error', { message: `Le salon est plein (maximum ${maxPlayers} joueurs)` });
             }
         }
         

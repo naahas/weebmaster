@@ -35,7 +35,7 @@ const DATA = require('./collectdata.json');
 // ── Réglages ──────────────────────────────────────────────────
 const CONFIG = {
     MIN_JOUEURS: 2,
-    MAX_JOUEURS: 6,
+    MAX_JOUEURS: 5,
     MARCHE: 5,              // cartes face visible, taille constante
     TOUR_MS: 15000,
     ANIMES_POSSIBLES: [8, 10, 12],
