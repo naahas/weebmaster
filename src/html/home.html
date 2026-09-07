@@ -2112,7 +2112,7 @@
                             <div class="v2q-top-row" v-for="(p, i) in topPlayers" :key="p.playerId || p.username"
                                  :class="{ me: p.playerId === playerId }">
                                 <span class="rk">{{ i + 1 }}</span>
-                                <span class="col">
+                                <span class="v2q-col">
                                     <span class="nm">{{ p.username }}</span>
                                     <span class="sub" v-if="gameMode === 'lives'">
                                         <span class="v2q-top-hp">

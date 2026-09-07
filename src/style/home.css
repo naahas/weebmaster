@@ -9399,18 +9399,6 @@ body.game-active:has(.poll-game-container) #particles-js {
 /* Lignes nues : ni fond ni filet, l'air suffit à séparer */
 .v2q-top-row { display: flex; align-items: baseline; gap: 0.8rem; padding: 0.66rem 0; }
 
-/* ⚠️ En mode vies, la colonne du milieu tient DEUX lignes — le pseudo, puis les
-   cœurs. Alignée sur la ligne de base, elle prenait celle des cœurs et non celle
-   du pseudo : « .nm » porte « overflow: hidden », ce qui empêche un bloc de
-   donner sa ligne de base à son parent, et le navigateur descendait donc à la
-   suivante. Le pseudo se retrouvait poussé au-dessus de sa propre rangée — sur
-   deux joueurs les deux noms se superposaient au même endroit, l'un paraissant
-   gras et l'autre disparu, et les cœurs venaient chevaucher le repère de
-   réponse.
-   En mode points la colonne n'a qu'une ligne et rien ne se voyait : on ne
-   change donc que le cas à deux lignes. */
-.v2q-top-row:has(.sub) { align-items: center; }
-
 .v2q-top-row .rk {
     width: 1.6rem;
     font-family: 'Bebas Neue', 'Russo One', sans-serif;
@@ -9421,7 +9409,17 @@ body.game-active:has(.poll-game-container) #particles-js {
 
 .v2q-top-row:first-of-type .rk { color: rgba(255, 215, 0, 0.5); }
 
-.v2q-top-row .col { flex: 1; min-width: 0; }
+/* ⚠️ « v2q-col » et non « col ». Cette colonne s appelait « col » tout court, et
+   « home-collect.css » — charge sur la meme page, apres celle-ci — donne a « .col »
+   la racine du mode Collect : « position: fixed; inset: 0; display: flex ». Chaque
+   colonne du Top 3 devenait donc une boite fixe plein cadre. Elle ne partait meme
+   pas au coin de l ecran : « .v2q-top » porte un « transform », qui fait d elle le
+   bloc conteneur de ses descendants fixes — c est le piege le plus frequent de ce
+   projet. Les deux colonnes se superposaient ainsi en haut du panneau, un pseudo
+   paraissant gras et l autre disparu, les coeurs par-dessus le repere de reponse.
+   Les cinq feuilles sont chargees ENSEMBLE sur cette page : un nom sans prefixe
+   de module y rencontre tot ou tard son homonyme. */
+.v2q-top-row .v2q-col { flex: 1; min-width: 0; }
 
 .v2q-top-row .nm {
     display: block;
@@ -9529,7 +9527,7 @@ body.game-active:has(.poll-game-container) #particles-js {
     color: var(--neon-primary);
     background: rgba(255, 215, 0, 0.07);
     border-color: rgba(255, 215, 0, 0.45);
-    transform: translateY(-50%) scale(1.06);
+    transform: scale(1.06);
 }
 
 /* ============================================
