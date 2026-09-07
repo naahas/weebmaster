@@ -6823,6 +6823,20 @@ createApp({
 
         // ========== Game Over ==========
         backToHome() {
+            // ⚠️ PREVENIR LE SERVEUR AVANT tout le reste.
+            //
+            // « quitterSalonLocalement » ne nettoie que l ecran : un invite qui
+            // revenait a l accueil disparaissait de sa propre vue mais restait
+            // dans « gameState.players ». Sa socket tient — il est sur l accueil
+            // du meme site —, donc rien ne le retirait. L hote voyait un joueur
+            // de plus dans son salon et pouvait lancer une manche en l attendant :
+            // a BombAnime la bombe passait a un absent et le tour s ecoulait tout
+            // seul a chaque tour de table.
+            //
+            // L hote, lui, referme son salon plus bas : il n a rien a annoncer.
+            if (!this.isHost && this.hasJoined && this.socket) {
+                this.socket.emit('leave-lobby', { playerId: this.playerId, username: this.username });
+            }
             this.gameInProgress = false;
             this.gameEnded = false;
             this.currentQuestion = null;
