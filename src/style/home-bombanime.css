@@ -1380,36 +1380,6 @@
     align-items: center;
 }
 
-/* Le champ et son bouton sur la même ligne. Le bouton n'existe que pendant
-   son tour : le reste du temps il n'aurait rien à valider, et il pousserait
-   le champ hors de l'axe. */
-.game-input-ligne {
-    display: flex; align-items: center; gap: 0.4rem;
-    max-width: 100%;
-}
-/* Sans « min-width: 0 », un champ en flex refuse de descendre sous la largeur
-   de son contenu : il poussait le bouton hors de l ecran sur les petits
-   telephones, ceux-la memes ou le bouton sert le plus. */
-.game-input-ligne .game-input { min-width: 0; }
-.game-input-go {
-    flex: 0 0 auto;
-    width: 2.6rem; height: 2.6rem;
-    display: grid; place-items: center;
-    border: none; border-radius: 50%;
-    background: linear-gradient(135deg, #ffe066, #ffb300);
-    color: #17140a;
-    cursor: pointer;
-    box-shadow: 0 0.3rem 0.9rem rgba(255, 179, 0, 0.35);
-    transition: transform 0.15s ease, opacity 0.15s ease;
-}
-.game-input-go svg {
-    width: 1.25rem; height: 1.25rem;
-    fill: none; stroke: currentColor; stroke-width: 2.6;
-    stroke-linecap: round; stroke-linejoin: round;
-}
-.game-input-go:active { transform: scale(0.92); }
-.game-input-go:disabled { opacity: 0.28; cursor: default; box-shadow: none; }
-
 .game-input {
     width: 420px;
     padding: 1rem 1.8rem;

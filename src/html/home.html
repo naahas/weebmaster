@@ -1667,42 +1667,20 @@
                         'intro-hidden': bombanime.introPhase === 'players'
                     }">
                         <div class="game-input-container">
-                            <!-- ⚠️ La touche Entrée ne suffit pas au doigt. Sur téléphone
-                                 elle n'existe pas toujours — le clavier propose « retour à la
-                                 ligne » —, et la saisie prédictive avale la frappe pour valider
-                                 sa suggestion au lieu d'envoyer. Il FAUT un bouton qu'on voit
-                                 et qu'on touche.
-                                 « enterkeyhint » fait écrire « Envoyer » sur la touche des
-                                 claviers qui le savent ; les corrections automatiques sont
-                                 coupées, elles réécrivaient les noms propres. -->
-                            <div class="game-input-ligne">
-                                <input
-                                    type="text"
-                                    class="game-input"
-                                    id="bombanimeInput"
-                                    v-model="bombanime.inputValue"
-                                    @keydown.enter.prevent="submitBombanimeName"
-                                    @input="emitTyping"
-                                    @paste.prevent
-                                    @drop.prevent
-                                    :placeholder="getFormattedSerieName()"
-                                    autocomplete="off" autocorrect="off" autocapitalize="characters"
-                                    spellcheck="false" enterkeyhint="send"
-                                    :class="{ 'error': bombanime.lastError, 'disabled': !bombanime.isMyTurn || bombanime.introPhase }"
-                                    :disabled="!bombanime.isMyTurn || bombanime.introPhase"
-                                >
-                                <!-- « pointerdown.prevent » garde le clavier ouvert : sans lui le
-                                     bouton vole le focus, le clavier se referme, et le tour suivant
-                                     demande de retoucher le champ. -->
-                                <button class="game-input-go" type="button"
-                                        v-if="bombanime.isMyTurn && !bombanime.introPhase"
-                                        :disabled="!bombanime.inputValue.trim()"
-                                        @pointerdown.prevent
-                                        @click="submitBombanimeName"
-                                        aria-label="Envoyer">
-                                    <svg viewBox="0 0 24 24"><path d="M5 12h13M12 5l7 7-7 7"/></svg>
-                                </button>
-                            </div>
+                            <input 
+                                type="text" 
+                                class="game-input"
+                                id="bombanimeInput"
+                                v-model="bombanime.inputValue"
+                                @keydown.enter.prevent="submitBombanimeName"
+                                @input="emitTyping"
+                                @paste.prevent
+                                @drop.prevent
+                                :placeholder="getFormattedSerieName()"
+                                autocomplete="off"
+                                :class="{ 'error': bombanime.lastError, 'disabled': !bombanime.isMyTurn || bombanime.introPhase }"
+                                :disabled="!bombanime.isMyTurn || bombanime.introPhase"
+                            >
                             <div class="input-underline" :class="{ 'disabled': !bombanime.isMyTurn || bombanime.introPhase }"></div>
                             <div class="feedback-message" :class="{ show: bombanime.lastError, error: bombanime.lastError }">
                                 {{ getBombanimeErrorMessage() }}
