@@ -1,22 +1,22 @@
 <title>Rush — le multiplicateur</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&family=Orbitron:wght@600;800&family=Russo+One&family=Rajdhani:wght@600;700&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
 <style>
 /* ════════════════════════════════════════════════════════════════
-   Le multiplicateur monte avec la SÉRIE EN COURS : ×2 à dix
-   d'affilée, ×3 à vingt, ×4 à trente. Une erreur casse la série,
-   donc il tombe avec elle.
+   L'exposant et le trait, retenus — quatre déclinaisons du GLYPHE.
 
-   ⚠️ AUCUNE PASTILLE PLEINE. Un rectangle jaune posé sur le chiffre
-   fait badge de jeu mobile — le reste de l'écran est fait de
-   chiffres nus sur du noir, et une pastille de couleur y détonne.
-   Ici c'est la TYPOGRAPHIE qui porte le multiplicateur : un glyphe,
-   sa taille, sa couleur, sa place. Rien à encadrer.
+   Ce qui ne change plus : pas de pastille pleine, le ×N collé en
+   haut à droite du chiffre, un filet doré dessous qui respire tant
+   que le multiplicateur tient, et la secousse à chaque bonne
+   réponse plutôt qu'en continu.
 
-   Deux moments, et ils n'appellent pas la même chose : le déblocage
-   arrive deux ou trois fois par manche et peut se permettre du
-   fracas ; la vie avec dure, et doit se faire oublier.
+   Ce qui change d'une piste à l'autre : la POLICE du ×N, son
+   inclinaison, sa hauteur et son éclat. C'est le seul détail qui
+   reste, et il décide si l'ensemble fait « pro » ou « jeu mobile ».
 
-   Même séquence sur les cinq : 8, 9, 10 (déblocage), 11, 12, raté.
+   ⚠️ LE COMPTEUR AVANCE PAR PAS. Une fois ×2 atteint, chaque bonne
+   réponse ajoute 2 : 10, 12, 14… puis 3 à partir de vingt, 4 à
+   partir de trente. Le nombre n'est donc PLUS une série — c'est un
+   score qui accélère. La séquence ci-dessous le joue en vrai.
    ════════════════════════════════════════════════════════════════ */
 :root { --or: #ffd700; --chaud: #ffb300; --bleu: #6ea8ff; }
 * { box-sizing: border-box; }
@@ -29,13 +29,20 @@ body {
     min-height: 100vh;
 }
 h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
-.sous { margin: 0 0 2rem; max-width: 58rem; font-size: 0.85rem; line-height: 1.55; color: rgba(255,255,255,0.45); }
+.sous { margin: 0 0 1.4rem; max-width: 58rem; font-size: 0.85rem; line-height: 1.55; color: rgba(255,255,255,0.45); }
 .sous b { color: rgba(255,255,255,0.75); }
+.note {
+    max-width: 58rem; margin: 0 0 2rem; padding: 0.7rem 0.9rem;
+    font-size: 0.76rem; line-height: 1.5; color: rgba(255,255,255,0.5);
+    border-left: 0.14rem solid rgba(255,215,0,0.5);
+    background: rgba(255,215,0,0.04);
+}
+.note b { color: var(--or); }
 
 .grille { display: flex; flex-wrap: wrap; gap: 1.6rem; }
 .piste { width: 21rem; }
 .piste h3 { margin: 0 0 0.15rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 0.07em; }
-.piste p { margin: 0 0 0.8rem; font-size: 0.72rem; line-height: 1.5; color: rgba(255,255,255,0.4); min-height: 6.4em; }
+.piste p { margin: 0 0 0.8rem; font-size: 0.72rem; line-height: 1.5; color: rgba(255,255,255,0.4); min-height: 4.4em; }
 
 .scene {
     position: relative;
@@ -53,7 +60,6 @@ h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem;
     color: rgba(255,255,255,0.14);
 }
 
-/* Le compteur, repris du jeu à l'identique */
 .compteurs { display: flex; gap: 2.6rem; align-items: flex-start; }
 .bloc { position: relative; display: flex; flex-direction: column; align-items: center; line-height: 1; }
 .bloc .v {
@@ -62,123 +68,114 @@ h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem;
     color: var(--or);
     text-shadow: 0 0 1.8rem rgba(255, 215, 0, 0.35);
     font-variant-numeric: tabular-nums;
-    transition: color 0.35s ease, text-shadow 0.35s ease;
 }
 .bloc .l {
-    margin-top: 0.3rem;
+    margin-top: 0.55rem;
     font-size: 0.55rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
     color: rgba(255,255,255,0.28);
-    white-space: nowrap;
-    transition: color 0.35s ease;
 }
 .bloc.record .v { color: var(--bleu); text-shadow: 0 0 1.4rem rgba(110,168,255,0.3); }
-
 .bloc.monte .v { animation: monte 0.34s cubic-bezier(0.2, 1.6, 0.4, 1); }
 @keyframes monte { 0% { transform: scale(1); } 45% { transform: scale(1.2); } 100% { transform: scale(1); } }
 
-/* Le glyphe, sans cadre, dans toutes les pistes */
+/* ── Le glyphe : plus haut, plus loin, penché, et il brûle ── */
 .mult {
-    font-family: 'Bebas Neue', sans-serif;
-    color: var(--or);
+    position: absolute; left: 100%; bottom: 62%;
+    margin-left: 0.42rem;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    white-space: nowrap;
     pointer-events: none;
 }
 .mult.on { opacity: 1; }
 
-/* ─────────── A · l'exposant ─────────── */
-.a .mult {
-    position: absolute; left: 100%; top: 0.1rem;
-    margin-left: 0.14rem;
-    font-size: 1.15rem; letter-spacing: 0.02em;
-    text-shadow: 0 0 1rem rgba(255, 215, 0, 0.7);
-}
-.a .mult.on { animation: exposant 0.45s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
-@keyframes exposant {
-    0%   { opacity: 0; transform: translateY(0.5rem) scale(0.4); }
-    100% { opacity: 1; transform: none; }
-}
-
-/* ─────────── B · dans le libellé ─────────── */
-.b .mult {
-    position: static;
-    display: inline;
-    font-size: inherit; letter-spacing: inherit;
-    margin-left: 0.35rem;
-    text-shadow: 0 0 0.7rem rgba(255, 215, 0, 0.6);
-}
-.b .bloc.on .l { color: rgba(255, 215, 0, 0.75); }
-
-/* ─────────── C · le contour ─────────── */
-.c .mult {
-    position: absolute; left: 50%; top: -1.15rem;
+/* Le filet sous le chiffre, commun aux quatre */
+.trait {
+    position: absolute; left: 50%; bottom: 0.05rem;
     transform: translateX(-50%);
-    font-size: 0.95rem; letter-spacing: 0.06em;
-    padding: 0.06rem 0.42rem;
-    border: 0.07rem solid rgba(255, 215, 0, 0.6);
-    border-radius: 0.3rem;
-    text-shadow: 0 0 0.8rem rgba(255, 215, 0, 0.5);
-}
-.c .mult.on { animation: contour 0.45s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
-@keyframes contour {
-    0%   { opacity: 0; transform: translateX(-50%) translateY(0.5rem) scale(0.7); }
-    100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-}
-
-/* ─────────── D · le fantôme derrière ─────────── */
-.d .mult {
-    position: absolute; left: 50%; top: 50%;
-    transform: translate(-50%, -58%);
-    font-size: 5.4rem; letter-spacing: 0;
-    color: rgba(255, 215, 0, 0.13);
-    z-index: -1;
-}
-.d .mult.on { animation: fantome 0.6s ease both; }
-@keyframes fantome {
-    0%   { opacity: 0; transform: translate(-50%, -58%) scale(1.5); }
-    100% { opacity: 1; transform: translate(-50%, -58%) scale(1); }
-}
-
-/* ─────────── E · le trait sous le chiffre ─────────── */
-.e .mult {
-    position: absolute; left: 100%; top: 0.15rem;
-    margin-left: 0.14rem;
-    font-size: 1.05rem;
-    text-shadow: 0 0 1rem rgba(255, 215, 0, 0.7);
-}
-.e .mult.on { animation: exposant 0.45s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
-.e .trait {
-    position: absolute; left: 50%; bottom: -0.35rem;
-    transform: translateX(-50%);
-    width: 2.6rem; height: 0.1rem;
+    width: 2.4rem; height: 0.1rem;
     border-radius: 999px;
     background: linear-gradient(90deg, transparent, var(--or), transparent);
     opacity: 0;
-    transition: opacity 0.3s ease;
 }
-.e .bloc.on .trait { opacity: 1; animation: traitSouffle 1.8s ease-in-out infinite; }
+.bloc.on .trait { animation: traitSouffle 1.8s ease-in-out infinite; }
 @keyframes traitSouffle {
-    0%, 100% { opacity: 0.45; width: 2.2rem; }
-    50%      { opacity: 1;    width: 3rem; }
+    0%, 100% { opacity: 0.4; width: 2rem; }
+    50%      { opacity: 1;   width: 3.2rem; }
 }
 
-/* ── La secousse à chaque bonne réponse, commune aux cinq ──
-   Immobile entre deux portraits, franche au moment où l'on trouve : on garde
-   l'énergie du tremblement sans le bruit de fond d'une vibration permanente. */
-.bloc.on.monte .v,
-.bloc.on.monte .mult { animation: secousse 0.38s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+/* ─────────── 1 · Orbitron ─────────── */
+.p1 .mult {
+    font-family: 'Orbitron', sans-serif; font-weight: 800;
+    font-size: 0.98rem; letter-spacing: 0.02em;
+    color: #fff3c4;
+    transform: rotate(-9deg);
+    text-shadow: 0 0 0.5rem #ffd700, 0 0 1.4rem rgba(255, 179, 0, 0.9), 0 0 2.6rem rgba(255, 179, 0, 0.5);
+}
+.p1 .mult.on { animation: pose1 0.5s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+@keyframes pose1 {
+    0%   { opacity: 0; transform: rotate(-32deg) translateY(0.7rem) scale(0.3); }
+    100% { opacity: 1; transform: rotate(-9deg) translateY(0) scale(1); }
+}
+
+/* ─────────── 2 · Russo One ─────────── */
+.p2 .mult {
+    font-family: 'Russo One', sans-serif;
+    font-size: 1.05rem; letter-spacing: 0.01em;
+    color: #fff8dc;
+    transform: rotate(-13deg);
+    text-shadow: 0 0 0.4rem #ffd700, 0 0 1.2rem rgba(255, 179, 0, 1), 0 0 2.4rem rgba(255, 140, 0, 0.6);
+}
+.p2 .mult.on { animation: pose2 0.5s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+@keyframes pose2 {
+    0%   { opacity: 0; transform: rotate(-40deg) translateY(0.7rem) scale(0.3); }
+    100% { opacity: 1; transform: rotate(-13deg) translateY(0) scale(1); }
+}
+
+/* ─────────── 3 · Rajdhani italique ─────────── */
+.p3 .mult {
+    font-family: 'Rajdhani', sans-serif; font-weight: 700; font-style: italic;
+    font-size: 1.3rem; letter-spacing: 0.02em;
+    color: #fff;
+    transform: rotate(-7deg) skewX(-6deg);
+    text-shadow: 0 0 0.4rem #ffd700, 0 0 1.1rem rgba(255, 179, 0, 0.95), 0 0 2.2rem rgba(255, 179, 0, 0.45);
+}
+.p3 .mult.on { animation: pose3 0.5s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+@keyframes pose3 {
+    0%   { opacity: 0; transform: rotate(-30deg) skewX(-6deg) translateY(0.7rem) scale(0.3); }
+    100% { opacity: 1; transform: rotate(-7deg) skewX(-6deg) translateY(0) scale(1); }
+}
+
+/* ─────────── 4 · Bebas, la police du jeu ─────────── */
+.p4 .mult {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem; letter-spacing: 0.03em;
+    color: #fff6d0;
+    transform: rotate(-10deg);
+    text-shadow: 0 0 0.45rem #ffd700, 0 0 1.3rem rgba(255, 179, 0, 1), 0 0 2.8rem rgba(255, 140, 0, 0.55);
+}
+.p4 .mult.on { animation: pose4 0.5s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+@keyframes pose4 {
+    0%   { opacity: 0; transform: rotate(-34deg) translateY(0.7rem) scale(0.3); }
+    100% { opacity: 1; transform: rotate(-10deg) translateY(0) scale(1); }
+}
+
+/* La secousse à chaque bonne réponse, sur le chiffre ET le glyphe */
+.bloc.on.monte .v { animation: secousse 0.38s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
 @keyframes secousse {
     0%, 100% { transform: translate(0, 0) scale(1); }
     20%      { transform: translate(-0.16rem, 0.07rem) scale(1.12); }
     50%      { transform: translate(0.18rem, -0.09rem) scale(1.16); }
     78%      { transform: translate(-0.08rem, 0.04rem) scale(1.05); }
 }
-/* le fantôme ne tremble pas : à cette taille, ça donne le mal de mer */
-.d .bloc.on.monte .mult { animation: none; }
+.bloc.on.monte .mult { animation: multSecoue 0.38s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+@keyframes multSecoue {
+    0%, 100% { filter: brightness(1); }
+    45%      { filter: brightness(1.7); }
+}
 
 /* Le déblocage : une onde qui part du chiffre */
 .onde {
-    position: absolute; left: 50%; top: 44%;
+    position: absolute; left: 50%; top: 42%;
     width: 4rem; height: 4rem; margin: -2rem 0 0 -2rem;
     border: 0.09rem solid var(--or);
     border-radius: 50%;
@@ -193,45 +190,52 @@ h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem;
 
 <h1>Rush — le multiplicateur</h1>
 <p class="sous">
-    Sans aucune pastille pleine : un rectangle jaune posé sur le chiffre fait badge de jeu mobile,
-    alors que tout l’écran est fait de chiffres nus sur du noir. Ici c’est la <b>typographie</b> qui
-    porte le multiplicateur — un glyphe, sa taille, sa couleur, sa place. Toutes secouent le chiffre
-    <b>à chaque bonne réponse</b> et restent immobiles entre deux portraits : l’énergie du
-    tremblement, sans le bruit de fond. Même séquence sur les cinq : 8, 9, 10, 11, 12, puis une
-    erreur.
+    L’exposant et le trait, retenus. Ce qui ne bouge plus : aucune pastille, le ×N en haut à droite,
+    un filet doré sous le chiffre qui respire tant que ça tient, la secousse à chaque bonne réponse.
+    <b>Ce qui change d’une piste à l’autre : la police du ×N, son inclinaison et son éclat.</b>
+</p>
+<p class="note">
+    ⚠️ <b>Le compteur avance par pas.</b> À ×2, chaque bonne réponse ajoute 2 — 10, 12, 14… — puis 3
+    à partir de vingt, 4 à partir de trente. La séquence le joue en vrai. Conséquence à trancher :
+    <b>le nombre n’est plus une série</b>, c’est un score qui accélère. Le libellé « SÉRIE » et le
+    « RECORD » à côté disent donc autre chose que ce qu’ils affichent.
 </p>
 
 <div class="grille" id="grille"></div>
 
 <script>
 const PISTES = [
-    { cle: 'a', t: 'A · L’exposant', n: "Le ×2 se colle en haut à droite du chiffre, comme une puissance. Rien à encadrer, rien de neuf à l’écran : la série et son multiplicateur ne font qu’un seul objet. Mon avis." },
-    { cle: 'b', t: 'B · Dans le libellé', n: "« SÉRIE ×2 » : le libellé existant gagne un suffixe et s’allume. Absolument rien n’apparaît — c’est le plus sobre des cinq, et le seul qui ne coûte pas un pixel de plus. Peut-être trop discret pour un stream." },
-    { cle: 'c', t: 'C · Le contour', n: "Un badge, mais en contour fin sur fond transparent. On garde l’idée du badge sans le côté vignette de jeu mobile — reste que c’est un élément de plus, posé au-dessus du chiffre." },
-    { cle: 'd', t: 'D · Le fantôme', n: "Un ×2 énorme et très pâle derrière le chiffre. Spectaculaire de loin, et il ne prend aucune place puisqu’il occupe celle qui existe déjà. Il ne tremble pas : à cette taille, ça donne le mal de mer." },
-    { cle: 'e', t: 'E · L’exposant et le trait', n: "L’exposant de A, plus un filet doré sous le chiffre qui respire tant que le multiplicateur tient. Le trait dit « c’est en cours » là où l’exposant seul se fait oublier entre deux réponses." },
+    { cle: 'p1', t: '1 · Orbitron', n: "Anguleuse et technique, elle tranche franchement avec le Bebas du chiffre. C’est celle qui fait le plus « écran de jeu » au sens noble — pensée pour les chiffres." },
+    { cle: 'p2', t: '2 · Russo One', n: "Plus massive et plus penchée. Elle pèse davantage à côté du chiffre, ce qui la rend visible de loin — au risque de lui disputer la vedette." },
+    { cle: 'p3', t: '3 · Rajdhani italique', n: "Fine, italique, penchée : c’est la plus rapide à l’œil, et celle qui évoque le mieux la vitesse. La plus discrète des quatre aussi." },
+    { cle: 'p4', t: '4 · Bebas, comme le chiffre', n: "La police du jeu, simplement penchée et plus brillante. Aucune rupture de style — au prix de moins de contraste avec le chiffre qu’elle surplombe." },
 ];
 
 const grille = document.getElementById('grille');
 for (const p of PISTES) {
     const bloc = document.createElement('div');
     bloc.className = 'piste';
-    const libelle = p.cle === 'b'
-        ? '<span class="l">série<span class="mult">×2</span></span>'
-        : '<span class="l">série</span>';
-    const mult = p.cle === 'b' ? '' : '<span class="mult">×2</span>';
-    const trait = p.cle === 'e' ? '<span class="trait"></span>' : '';
     bloc.innerHTML = '<h3>' + p.t + '</h3><p>' + p.n + '</p>' +
         '<div class="scene ' + p.cle + '">' +
         '<span class="onde"></span>' +
         '<div class="compteurs">' +
-            '<div class="bloc serie"><span class="v">8</span>' + mult + trait + libelle + '</div>' +
-            '<div class="bloc record"><span class="v">12</span><span class="l">record</span></div>' +
+            '<div class="bloc serie"><span class="v">8</span><span class="mult">×2</span>' +
+            '<span class="trait"></span><span class="l">série</span></div>' +
+            '<div class="bloc record"><span class="v">32</span><span class="l">record</span></div>' +
         '</div></div>';
     grille.appendChild(bloc);
 }
 
-const SUITE = [9, 10, 11, 12, 0];
+// Le vrai barème : le pas suit le palier atteint.
+const pas = (n) => n >= 30 ? 4 : n >= 20 ? 3 : n >= 10 ? 2 : 1;
+function suite() {
+    const s = [];
+    let n = 8;
+    for (let i = 0; i < 9; i++) { n += pas(n); s.push(n); }
+    s.push(0);                       // l'erreur : tout retombe
+    return s;
+}
+const SUITE = suite();
 
 function jouer() {
     for (const p of PISTES) {
@@ -244,6 +248,7 @@ function jouer() {
         v.textContent = '8';
         bloc.classList.remove('on', 'monte');
         mult.classList.remove('on');
+        mult.textContent = '×2';
 
         SUITE.forEach((n, i) => {
             setTimeout(() => {
@@ -251,23 +256,30 @@ function jouer() {
                 bloc.classList.remove('monte');
                 void bloc.offsetWidth;
 
-                if (n === 0) {                       // l'erreur : tout retombe
+                if (n === 0) {
                     bloc.classList.remove('on');
                     mult.classList.remove('on');
                     return;
                 }
                 bloc.classList.add('monte');
 
-                if (n >= 10 && !mult.classList.contains('on')) {   // le déblocage
-                    mult.classList.add('on');
-                    bloc.classList.add('on');
-                    onde.classList.remove('va'); void onde.offsetWidth;
-                    onde.classList.add('va');
+                const m = pas(n);
+                if (m > 1) {
+                    const neuf = '×' + m;
+                    const monte = mult.textContent !== neuf || !mult.classList.contains('on');
+                    mult.textContent = neuf;
+                    if (monte) {                      // déblocage ou palier suivant
+                        mult.classList.remove('on'); void mult.offsetWidth;
+                        mult.classList.add('on');
+                        bloc.classList.add('on');
+                        onde.classList.remove('va'); void onde.offsetWidth;
+                        onde.classList.add('va');
+                    }
                 }
-            }, 950 * (i + 1));
+            }, 850 * (i + 1));
         });
     }
 }
 jouer();
-setInterval(jouer, 950 * (SUITE.length + 2));
+setInterval(jouer, 850 * (SUITE.length + 2));
 </script>
