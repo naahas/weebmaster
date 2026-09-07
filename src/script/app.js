@@ -2515,10 +2515,16 @@ createApp({
             const choix = this.col.aLacher.concat(c.uid);
             this.col.aLacher = choix;
             if (choix.length < l.aRendre) return;
-            // On brise ce qu'on lâche AVANT que le serveur ne réponde : les
-            // cartes ne seront plus là quand la nouvelle main arrivera.
+            // On brise D'ABORD, on prévient le serveur ENSUITE.
+            //
+            // Sa réponse arrive en une trentaine de millisecondes et refait la
+            // main : les cartes quittaient l'écran avant d'avoir eu le temps de
+            // se briser, et à deux cartes le second éclat tombait deux cents
+            // millisecondes après le vide. Un quart de seconde de retard sur un
+            // geste qui en a sept — on ne le sent pas, et les cartes restent
+            // à l'écran le temps de partir en morceaux.
             this.colBriserMain(choix);
-            this.socket.emit('collect-payer', { uids: choix });
+            setTimeout(() => this.socket.emit('collect-payer', { uids: choix }), 260);
             this.col.aLacher = [];
         },
         // Les cartes lâchées éclatent sur place, comme un set qu'on pose : ce
@@ -2546,7 +2552,7 @@ createApp({
                 // un trou entre la carte qui disparait et les morceaux qui
                 // arrivent — on ne la voyait plus se briser, on la voyait partir
                 // puis quelque chose casser.
-                setTimeout(() => this.colEclaterBoite(p.boite, p.carte), 110 + n * 120);
+                setTimeout(() => this.colEclaterBoite(p.boite, p.carte), 70 + n * 110);
             }
         },
         // Le compte à rebours vit côté client, mais sur l'heure de fin envoyée
