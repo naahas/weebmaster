@@ -41,19 +41,84 @@
     gap: 0.6rem;
 }
 
-/* Discret tant qu'on ne le regarde pas : il doit rester des dizaines de
-   minutes à l'écran sans peser, et redevenir net dès qu'on s'y attarde. */
-.col-tri {
+/* ── Les règles, sous un parchemin ──
+   Le triangle des classes vivait ici. Il montrait un cycle qui n'existe plus —
+   les classes ne se battent plus entre elles, elles décident du prix d'un vol —
+   et surtout il n'expliquait qu'une règle sur cinq, à un joueur qui débarque en
+   cours de partie et n'en connaît aucune. */
+.col-regles-bouton {
     flex: 0 0 auto;
-    margin: 0.55rem 0 0 0.7rem;
-    opacity: 0.42;
-    transition: opacity 0.25s ease, transform 0.25s ease;
-    cursor: help;
+    width: 2.6rem; height: 2.6rem;
+    display: grid; place-items: center;
+    margin: 0.5rem 0 0 0.4rem;
+    border: 0.06rem solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.7rem;
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
-.col-tri:hover { opacity: 1; transform: scale(1.06); }
-.col-tri svg { display: block; }
+.col-regles-bouton svg {
+    width: 1.35rem; height: 1.35rem;
+    fill: none; stroke: currentColor; stroke-width: 1.6;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+.col-regles-bouton:hover,
+.col-regles-bouton.ouvert {
+    color: var(--col-or);
+    border-color: rgba(255, 210, 74, 0.5);
+    background: rgba(255, 210, 74, 0.08);
+}
 
-/* ── La scène et la table ─────────────────────────────────────── */
+/* Posé sur le feutre et non en plein écran : on lit sans quitter la partie des
+   yeux, et un clic n'importe où referme. */
+.col-regles {
+    position: fixed;
+    left: 0.9rem; top: 4rem;
+    z-index: 47;
+    width: min(23rem, 88vw);
+    max-height: 78vh; overflow-y: auto;
+    padding: 1rem 1.1rem 1.1rem;
+    background: rgba(12, 12, 17, 0.96);
+    border: 0.06rem solid rgba(255, 210, 74, 0.25);
+    border-radius: 0.9rem;
+    box-shadow: 0 1.2rem 2.6rem rgba(0, 0, 0, 0.7);
+    cursor: pointer;
+    animation: colReglesEntre 0.25s cubic-bezier(0.25, 0.9, 0.3, 1) both;
+}
+@keyframes colReglesEntre {
+    from { opacity: 0; transform: translateY(-0.5rem) scale(0.97); }
+    to   { opacity: 1; transform: none; }
+}
+.col-regles-but {
+    display: block; margin-bottom: 0.8rem;
+    font-size: 0.82rem; color: rgba(255, 255, 255, 0.75);
+}
+.col-regles-but b { color: var(--col-or); }
+.col-regles-liste { margin: 0; padding: 0; list-style: none; }
+.col-regles-liste li {
+    display: flex; gap: 0.6rem;
+    padding: 0.5rem 0;
+    font-size: 0.72rem; line-height: 1.5;
+    color: rgba(255, 255, 255, 0.55);
+    border-top: 0.06rem solid rgba(255, 255, 255, 0.06);
+}
+.col-regles-liste b { color: rgba(255, 255, 255, 0.9); }
+.col-regles-liste i {
+    flex: 0 0 auto;
+    width: 0.5rem; height: 0.5rem; margin-top: 0.35rem;
+    border-radius: 50%;
+}
+.col-regles-liste .r-pioche  { background: #7f9cc0; }
+.col-regles-liste .r-echange { background: #7f9cc0; }
+.col-regles-liste .r-set     { background: var(--col-or); }
+.col-regles-liste .r-scan    { background: var(--oracle); }
+.col-regles-liste .r-vol     { background: var(--assaut); }
+.col-regles-fin {
+    display: block; margin-top: 0.8rem;
+    font-size: 0.66rem; line-height: 1.5;
+    color: rgba(255, 255, 255, 0.32);
+}
 .col-scene { position: relative; flex: 1 1 auto; min-height: 0; }
 
 .col-table {

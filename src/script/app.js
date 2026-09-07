@@ -67,6 +67,8 @@ createApp({
                 piocheOuverte: false, // la pioche attend qu'on désigne la carte à laisser
                 enVol: null,         // l'uid de la carte qui vole encore du paquet vers la main
                 jauge: null,         // le style de la barre de temps, posé une fois par échéance
+                jaugeCle: 0,         // à incrémenter pour forcer la barre à repartir
+                regles: false,       // le parchemin des règles est-il déplié
                 fin: 0,              // 0 rien · 1 l'écran s'assombrit · 2 le classement paraît
                 priseVue: false,  // la carte prise s'est-elle retournée
                 aLacher: [],      // ce qu'on a désigné pour payer sa dette
@@ -539,6 +541,17 @@ createApp({
                 
                 // 🔒 Re-sync état serveur immédiatement au retour d'onglet
                 this._resyncServerState();
+
+                // La barre de temps de Collect est une animation CSS : pendant
+                // que l'onglet dormait elle est allée jusqu'au bout et s'est
+                // figée à zéro, donc invisible. Tant que l'échéance n'a pas
+                // changé, rien ne la relançait — on revenait sur une table sans
+                // minuteur. On la recalcule et on force l'élément à repartir :
+                // c'est la clé qui change, sinon Vue le garde tel quel.
+                if (this.lobbyMode === 'collect' && this.col && this.col.etat) {
+                    this.col.jaugeCle++;
+                    this.colPoserJauge();
+                }
 
                 if (this.gameInProgress && this.hasJoined && this.isAuthenticated) {
                     this.socket.emit('reconnect-player', {
@@ -1900,6 +1913,7 @@ createApp({
             this.col.enVol = null;
             this.col.jauge = null;
             this.col._tourFin = null;
+            this.col.regles = false;
             this.col.fin = 0;
             this.col._fini = false;
             this.col.priseVue = false;
