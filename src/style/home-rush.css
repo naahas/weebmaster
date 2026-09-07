@@ -281,6 +281,34 @@
     100% { transform: scale(1); }
 }
 
+/* Sous multiplicateur, le chiffre ne se contente plus de gonfler : il tremble.
+   Le simple changement d échelle ne se sentait pas — c est le meme geste que
+   sans multiplicateur, et rien ne disait que la reponse valait davantage.
+   L exposant vit DANS le chiffre : il est emporte par la meme transformation,
+   sans avoir a etre anime a part.
+   Les decalages sont en « em » pour suivre la taille du chiffre, qui tombe de
+   4 rem a 1.85 rem sur telephone ; en « rem » la secousse y aurait double.
+   Duree calee sur les 340 ms de « battreSerieRush » : plus longue, la classe
+   serait retiree en pleine animation et le chiffre retomberait d un coup. */
+.rush-serie.cran.monte .v { animation: rushSecousse 0.34s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+
+@keyframes rushSecousse {
+    0%   { transform: translate(0, 0) scale(1); }
+    18%  { transform: translate(-0.09em, 0.035em) scale(1.24); }
+    38%  { transform: translate(0.1em, -0.045em) scale(1.35); }
+    58%  { transform: translate(-0.07em, 0.03em) scale(1.28); }
+    78%  { transform: translate(0.045em, -0.02em) scale(1.12); }
+    100% { transform: translate(0, 0) scale(1); }
+}
+
+/* ⚠️ Ne rien animer sur l exposant lui-meme. Une regle « .cran.monte
+   .rush-mult » ecraserait la propriete « animation » de sa regle de base et lui
+   volerait son entree : le palier s ouvre et la secousse part dans le meme
+   trente-quatrieme de seconde, si bien que le x2 apparaitrait d un coup, puis
+   se poserait 340 ms trop tard une fois la classe retiree.
+   Il n en a pas besoin : il vit DANS le chiffre, la transformation du parent
+   l emporte deja, et sa lueur doree est permanente. */
+
 /* ══════════ ✖️ Le multiplicateur ══════════
    Un exposant, et rien autour. Une pastille pleine y ferait badge de jeu
    mobile : tout l ecran du Rush est fait de chiffres nus sur du noir, et un

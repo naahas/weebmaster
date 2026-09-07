@@ -1496,10 +1496,13 @@
                                 <!-- L'exposant vit DANS le chiffre : dans la colonne, il se serait
                                      accroché au plus large des deux — le libellé sur téléphone, où le
                                      chiffre rétrécit. -->
-                                <div class="rush-serie" :class="{ bat: rush.serie > 0, monte: rush.pulse }">
+                                <!-- Les deux enfants sont clés sur le multiplicateur : sans ça
+                                     ils survivraient d'un palier à l'autre, le texte changerait
+                                     seul, et ni l'onde ni la pose ne se rejoueraient. -->
+                                <div class="rush-serie" :class="{ bat: rush.serie > 0, monte: rush.pulse, cran: rush.mult > 1 }">
                                     <span class="rush-onde" v-if="rush.mult > 1" :key="rush.mult"></span>
-                                    <span class="v">{{ rush.serie }}<span class="rush-mult" v-if="rush.mult > 1">×{{ rush.mult }}</span></span>
-                                    <span class="l">{{ rush.multiplicateur ? 'score' : 'série' }}</span>
+                                    <span class="v">{{ rush.serie }}<span class="rush-mult" v-if="rush.mult > 1" :key="rush.mult">×{{ rush.mult }}</span></span>
+                                    <span class="l">série</span>
                                 </div>
                                 <div class="rush-record">
                                     <span class="v">{{ rush.record }}</span>

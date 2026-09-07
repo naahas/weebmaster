@@ -131,8 +131,9 @@ sur le score affiché aurait ouvert le ×3 après quinze réponses puis le ×4 a
 l'emballement se serait mangé lui-même. D'où deux nombres dans l'état du joueur — `serie` compte les
 réponses et ne sert qu'au palier, `score` est ce qu'on affiche et ce qui classe. Réglage éteint (le
 défaut), le pas vaut toujours un et les deux valeurs sont égales : c'est le mode d'avant, au point
-près. Le libellé du compteur bascule de « série » à « score » quand le réglage est allumé, sans quoi
-il annoncerait une série là où le nombre saute de deux en deux. Visuel dans `/prototypes/rush-multi`.
+près. Le libellé du compteur reste « série » dans les deux cas : le nombre est alors un score, mais
+faire changer le mot selon un réglage embrouillait plus qu il ne renseignait. Visuel dans
+/prototypes/rush-multi.
 
 ⚠️ `classic` et `rivalry` sont **un seul mode pour le joueur**. Le réglage *Format* (Solo / Équipe)
 bascule `lobbyMode` de l'un à l'autre en cours de salon (`POST /admin/set-teams`). Le badge de mode
