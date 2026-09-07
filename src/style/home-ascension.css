@@ -1346,25 +1346,31 @@
     overflow-wrap: anywhere;
 }
 
-/* Aucun portrait nulle part : rien n'encombre. Les cartes se donnent de la
-   hauteur — sans image elles n'en tiraient aucune du contenu et restaient des
-   fentes — et les deux rangées s'écartent d'autant. */
+/* Aucun portrait nulle part : rien n'encombre. Une carte sans image ne tire
+   aucune hauteur de son contenu — elle restait une fente, quand celles d'en
+   face font treize rem. On lui en donne, et les deux rangées s'écartent
+   d'autant : les fils ont alors de quoi se lire. */
 .asc-colonnes.sansImage { gap: clamp(4rem, 13vh, 8rem); }
 .asc-colonnes.sansImage .asc-noeud-t { font-size: clamp(0.95rem, 1.8vw, 1.25rem); }
-
-/* Une carte sans portrait ne tire aucune hauteur de son contenu : elle restait
-   une fente, quand celles d'en face font treize rem. On lui en donne, et les
-   deux rangées s'écartent d'autant — les fils ont de quoi se lire. */
-.asc-colonnes.sansImage { gap: clamp(4rem, 13vh, 8rem); }
 
 .asc-colonnes.sansImage .asc-noeud:not(.avecImage) {
     min-height: 5.4rem;
     padding: 1.15rem 1rem;
 }
 
-.asc-colonnes.sansImage .asc-noeud:not(.avecImage) {
-    min-height: 5.4rem;
-    padding: 1.15rem 1rem;
+/* ── Portraits en face de texte ──
+   Techniques, armes, studio, année, auteur, perso→anime : une rangée de
+   treize rem fait face à une rangée qui ne tire sa hauteur que de son texte.
+   Les cartes du bas passaient pour des fentes sous les vignettes, et les deux
+   rangées se serraient au point que les fils n'avaient plus de course.
+   L'écart et la hauteur ne sont repris QUE dans ce cas : portrait contre
+   portrait, les deux rangées sont déjà hautes, et les écarter davantage ferait
+   déborder l'épreuve hors de l'écran. */
+.asc-colonnes.mixte { gap: clamp(3.4rem, 12vh, 7rem); }
+
+.asc-colonnes.mixte .asc-noeud:not(.avecImage) {
+    min-height: 4.8rem;
+    padding: 1.1rem 1rem;
 }
 
 /* Le point d'attache : c'est de lui que part le trait. Il pend sous la carte
@@ -1437,8 +1443,13 @@
        les noms se coupaient en deux. Sur téléphone c'est la hauteur qui est
        libre, pas la largeur : on revient aux deux colonnes, et les fils
        traversent de nouveau. « ascLignes » suit le même seuil côté script. */
+    /* ⚠️ Les trois dispositions doivent être nommées. « .asc-colonnes.mixte »
+       et « .asc-colonnes.sansImage » pèsent deux classes contre une : listées
+       seules, les règles de grand écran l'emporteraient ici par spécificité et
+       le téléphone garderait un écart réglé en vh alors qu'il est couché. */
     .asc-colonnes,
-    .asc-colonnes.sansImage {
+    .asc-colonnes.sansImage,
+    .asc-colonnes.mixte {
         flex-direction: row;
         align-items: stretch;
         gap: clamp(2.4rem, 12vw, 4.5rem);
@@ -1462,7 +1473,13 @@
         padding: 0.45rem 0.35rem;
     }
 
-    .asc-colonnes.sansImage .asc-noeud:not(.avecImage) { min-height: 2.9rem; }
+    /* Même raison, et le « padding » aussi : il ne reprenait que la hauteur,
+       si bien qu'une carte de téléphone gardait le rembourrage du grand écran. */
+    .asc-colonnes.sansImage .asc-noeud:not(.avecImage),
+    .asc-colonnes.mixte .asc-noeud:not(.avecImage) {
+        min-height: 2.9rem;
+        padding: 0.45rem 0.35rem;
+    }
     .asc-noeud-t { font-size: clamp(0.62rem, 2.5vw, 0.95rem); }
 
     /* Les bornes reviennent sur les flancs : c'est par là que le fil passe */

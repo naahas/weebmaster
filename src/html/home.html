@@ -1322,8 +1322,13 @@
                                     <!-- Deux colonnes reliées par de vrais traits : ils se
                                          tracent d'un bout à l'autre, et se distinguent grâce à
                                          leur courbe — des droites voisines se confondraient. -->
+                                    <!-- Trois dispositions, et elles n'ont pas les mêmes besoins :
+                                         portrait contre portrait, texte contre texte, ou l'un
+                                         contre l'autre. « mixte » nomme la troisième — c'est la
+                                         seule où une rangée haute fait face à une rangée basse. -->
                                     <div class="asc-colonnes"
-                                         :class="{ sansImage: !asc.data.left[0].img && !asc.data.right[0].img }">
+                                         :class="{ sansImage: !asc.data.left[0].img && !asc.data.right[0].img,
+                                                   mixte: !!asc.data.left[0].img && !asc.data.right[0].img }">
                                         <svg class="asc-traits" aria-hidden="true">
                                             <path v-for="t in asc.traits" :key="t.id" :d="t.d"
                                                   :class="{ faux: t.faux }" />
