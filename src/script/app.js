@@ -147,6 +147,8 @@ createApp({
                 duree: 60,
                 limite: 8,          // secondes par portrait, 0 = sans limite
                 filtre: 'overall',
+                multiplicateur: false, // le réglage du salon
+                mult: 1,            // le multiplicateur en cours, 1 = aucun
                 sequencePartagee: true,
                 filtres: [],        // annoncés par le serveur avec leur effectif
                 portrait: null,     // { img, anime, position }
@@ -5860,6 +5862,7 @@ createApp({
                 Object.assign(this.rush, {
                     duree: data.duree, limite: data.limite, filtre: data.filtre,
                     portrait: null, texte: '', serie: 0, record: 0,
+                    multiplicateur: !!data.multiplicateur, mult: 1,
                     classement: data.classement || [], fini: false, flash: null,
                 });
                 this.gameInProgress = true;
@@ -6284,6 +6287,7 @@ createApp({
                 this.rush.portrait = data.portrait;
                 this.rush.serie = data.serie;
                 this.rush.record = data.record;
+                if (data.mult !== undefined) this.rush.mult = data.mult;
                 if (data.limite !== undefined) this.rush.limite = data.limite;
                 this.rush.limiteA = this.rush.limite ? Date.now() + this.rush.limite * 1000 : 0;
                 if (data.reussi === true) {
@@ -6321,6 +6325,7 @@ createApp({
                     duree: data.duree, limite: data.limite,
                     portrait: data.portrait, texte: '',
                     serie: data.serie, record: data.record,
+                    multiplicateur: !!data.multiplicateur, mult: data.mult || 1,
                     classement: data.classement || [], fini: false, flash: null,
                     limiteA: data.limiteA || 0,
                 });

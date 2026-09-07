@@ -1,24 +1,32 @@
 <title>Rush — le multiplicateur</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&family=Orbitron:wght@600;800&family=Russo+One&family=Rajdhani:wght@600;700&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
 <style>
 /* ════════════════════════════════════════════════════════════════
-   L'exposant et le trait, retenus — quatre déclinaisons du GLYPHE.
+   RETENU, ET EN PLACE DANS LE JEU. Cette page ne sert plus à
+   choisir : elle garde le geste isolé, sans manche à lancer, pour
+   qu'on puisse le régler sans jouer.
 
-   Ce qui ne change plus : pas de pastille pleine, le ×N collé en
-   haut à droite du chiffre, un filet doré dessous qui respire tant
-   que le multiplicateur tient, et la secousse à chaque bonne
-   réponse plutôt qu'en continu.
+   Un exposant, et rien autour. Une pastille pleine y faisait badge
+   de jeu mobile : tout l'écran du Rush est fait de chiffres nus sur
+   du noir, et un rectangle de couleur posé dessus casse le ton du
+   reste.
 
-   Ce qui change d'une piste à l'autre : la POLICE du ×N, son
-   inclinaison, sa hauteur et son éclat. C'est le seul détail qui
-   reste, et il décide si l'ensemble fait « pro » ou « jeu mobile ».
+   Rajdhani italique contre le Bebas du chiffre — c'est le contraste
+   de POLICE qui empêche le ×2 de se lire comme un troisième digit.
+   Elle est déjà chargée par la page du jeu : pas une requête de plus.
 
-   ⚠️ LE COMPTEUR AVANCE PAR PAS. Une fois ×2 atteint, chaque bonne
-   réponse ajoute 2 : 10, 12, 14… puis 3 à partir de vingt, 4 à
-   partir de trente. Le nombre n'est donc PLUS une série — c'est un
-   score qui accélère. La séquence ci-dessous le joue en vrai.
+   Le glyphe mord au-dessus du chiffre (« bottom » dépasse les 100 %
+   de sa hauteur) au lieu de s'aligner sur son sommet.
+
+   ⚠️ LE BARÈME COMPTE LES RÉPONSES, PAS LES POINTS. Un cran toutes
+   les dix bonnes réponses d'affilée : dix réponses valent dix points
+   et ouvrent le ×2, dix de plus en valent vingt — on est donc à
+   trente points quand le ×3 s'ouvre. Compter le palier sur le score
+   affiché aurait ouvert le ×3 après quinze réponses, puis le ×4
+   après quatre de plus : l'emballement se serait mangé lui-même.
+   La séquence ci-dessous joue le vrai barème, réponse par réponse.
    ════════════════════════════════════════════════════════════════ */
-:root { --or: #ffd700; --chaud: #ffb300; --bleu: #6ea8ff; }
+:root { --or: #ffd700; --bleu: #7fb4ff; }
 * { box-sizing: border-box; }
 
 body {
@@ -29,153 +37,80 @@ body {
     min-height: 100vh;
 }
 h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
-.sous { margin: 0 0 1.4rem; max-width: 58rem; font-size: 0.85rem; line-height: 1.55; color: rgba(255,255,255,0.45); }
+.sous { margin: 0 0 1.4rem; max-width: 54rem; font-size: 0.85rem; line-height: 1.55; color: rgba(255,255,255,0.45); }
 .sous b { color: rgba(255,255,255,0.75); }
 .note {
-    max-width: 58rem; margin: 0 0 2rem; padding: 0.7rem 0.9rem;
-    font-size: 0.76rem; line-height: 1.5; color: rgba(255,255,255,0.5);
+    max-width: 54rem; margin: 0 0 2rem; padding: 0.7rem 0.9rem;
+    font-size: 0.78rem; line-height: 1.55; color: rgba(255,255,255,0.5);
     border-left: 0.14rem solid rgba(255,215,0,0.5);
     background: rgba(255,215,0,0.04);
 }
 .note b { color: var(--or); }
 
-.grille { display: flex; flex-wrap: wrap; gap: 1.6rem; }
-.piste { width: 21rem; }
-.piste h3 { margin: 0 0 0.15rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 0.07em; }
-.piste p { margin: 0 0 0.8rem; font-size: 0.72rem; line-height: 1.5; color: rgba(255,255,255,0.4); min-height: 4.4em; }
+.plateau { display: flex; flex-wrap: wrap; gap: 2rem; align-items: flex-start; }
 
 .scene {
     position: relative;
-    height: 14rem;
+    width: 26rem; height: 15rem;
     display: grid; place-items: center;
     border-radius: 0.9rem;
     background: #08080b;
     box-shadow: inset 0 0 0 0.06rem rgba(255,255,255,0.05);
-    overflow: hidden;
-}
-.scene::after {
-    content: 'en boucle';
-    position: absolute; right: 0.6rem; bottom: 0.4rem;
-    font-size: 0.5rem; letter-spacing: 0.16em; text-transform: uppercase;
-    color: rgba(255,255,255,0.14);
 }
 
-.compteurs { display: flex; gap: 2.6rem; align-items: flex-start; }
-.bloc { position: relative; display: flex; flex-direction: column; align-items: center; line-height: 1; }
-.bloc .v {
+/* ══ Le compteur, repris du jeu à l'identique ══ */
+.compteurs { display: flex; gap: 3rem; align-items: flex-start; }
+.serie, .record { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+.serie { position: relative; }
+
+.serie .v {
+    position: relative;
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 3.6rem;
-    color: var(--or);
-    text-shadow: 0 0 1.8rem rgba(255, 215, 0, 0.35);
+    font-size: 4rem;
+    color: rgba(255, 255, 255, 0.35);
     font-variant-numeric: tabular-nums;
+    transition: color 0.3s ease, text-shadow 0.3s ease;
 }
-.bloc .l {
-    margin-top: 0.55rem;
-    font-size: 0.55rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
-    color: rgba(255,255,255,0.28);
-}
-.bloc.record .v { color: var(--bleu); text-shadow: 0 0 1.4rem rgba(110,168,255,0.3); }
-.bloc.monte .v { animation: monte 0.34s cubic-bezier(0.2, 1.6, 0.4, 1); }
-@keyframes monte { 0% { transform: scale(1); } 45% { transform: scale(1.2); } 100% { transform: scale(1); } }
+.serie.bat .v { color: var(--or); text-shadow: 0 0 1.8rem rgba(255, 215, 0, 0.4); }
+.serie.monte .v { animation: monte 0.34s cubic-bezier(0.2, 1.6, 0.4, 1); }
+@keyframes monte { 0% { transform: scale(1); } 45% { transform: scale(1.35); } 100% { transform: scale(1); } }
 
-/* ── Le glyphe : plus haut, plus loin, penché, et il brûle ── */
+.record .v {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem; color: var(--bleu);
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 1.4rem rgba(127, 180, 255, 0.22);
+}
+.record .l { color: rgba(127, 180, 255, 0.4); }
+.serie .l, .record .l {
+    margin-top: 0.3rem;
+    font-size: 0.56rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.28);
+}
+
+/* ══ L'exposant ══ */
 .mult {
-    position: absolute; left: 100%; bottom: 62%;
-    margin-left: 0.42rem;
-    opacity: 0;
+    position: absolute;
+    left: 100%; bottom: 74%;
+    margin-left: 0.06em;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700; font-style: italic;
+    font-size: 0.36em; letter-spacing: 0.02em;
+    color: #fff;
     white-space: nowrap;
     pointer-events: none;
-}
-.mult.on { opacity: 1; }
-
-/* Le filet sous le chiffre, commun aux quatre */
-.trait {
-    position: absolute; left: 50%; bottom: 0.05rem;
-    transform: translateX(-50%);
-    width: 2.4rem; height: 0.1rem;
-    border-radius: 999px;
-    background: linear-gradient(90deg, transparent, var(--or), transparent);
-    opacity: 0;
-}
-.bloc.on .trait { animation: traitSouffle 1.8s ease-in-out infinite; }
-@keyframes traitSouffle {
-    0%, 100% { opacity: 0.4; width: 2rem; }
-    50%      { opacity: 1;   width: 3.2rem; }
-}
-
-/* ─────────── 1 · Orbitron ─────────── */
-.p1 .mult {
-    font-family: 'Orbitron', sans-serif; font-weight: 800;
-    font-size: 0.98rem; letter-spacing: 0.02em;
-    color: #fff3c4;
-    transform: rotate(-9deg);
-    text-shadow: 0 0 0.5rem #ffd700, 0 0 1.4rem rgba(255, 179, 0, 0.9), 0 0 2.6rem rgba(255, 179, 0, 0.5);
-}
-.p1 .mult.on { animation: pose1 0.5s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
-@keyframes pose1 {
-    0%   { opacity: 0; transform: rotate(-32deg) translateY(0.7rem) scale(0.3); }
-    100% { opacity: 1; transform: rotate(-9deg) translateY(0) scale(1); }
-}
-
-/* ─────────── 2 · Russo One ─────────── */
-.p2 .mult {
-    font-family: 'Russo One', sans-serif;
-    font-size: 1.05rem; letter-spacing: 0.01em;
-    color: #fff8dc;
-    transform: rotate(-13deg);
-    text-shadow: 0 0 0.4rem #ffd700, 0 0 1.2rem rgba(255, 179, 0, 1), 0 0 2.4rem rgba(255, 140, 0, 0.6);
-}
-.p2 .mult.on { animation: pose2 0.5s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
-@keyframes pose2 {
-    0%   { opacity: 0; transform: rotate(-40deg) translateY(0.7rem) scale(0.3); }
-    100% { opacity: 1; transform: rotate(-13deg) translateY(0) scale(1); }
-}
-
-/* ─────────── 3 · Rajdhani italique ─────────── */
-.p3 .mult {
-    font-family: 'Rajdhani', sans-serif; font-weight: 700; font-style: italic;
-    font-size: 1.3rem; letter-spacing: 0.02em;
-    color: #fff;
     transform: rotate(-7deg) skewX(-6deg);
-    text-shadow: 0 0 0.4rem #ffd700, 0 0 1.1rem rgba(255, 179, 0, 0.95), 0 0 2.2rem rgba(255, 179, 0, 0.45);
+    text-shadow: 0 0 0.12em #ffd700, 0 0 0.34em rgba(255, 179, 0, 0.95), 0 0 0.7em rgba(255, 179, 0, 0.45);
+    animation: multPose 0.45s cubic-bezier(0.2, 1.5, 0.4, 1) both;
 }
-.p3 .mult.on { animation: pose3 0.5s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
-@keyframes pose3 {
-    0%   { opacity: 0; transform: rotate(-30deg) skewX(-6deg) translateY(0.7rem) scale(0.3); }
+@keyframes multPose {
+    0%   { opacity: 0; transform: rotate(-30deg) skewX(-6deg) translateY(0.4em) scale(0.3); }
     100% { opacity: 1; transform: rotate(-7deg) skewX(-6deg) translateY(0) scale(1); }
 }
 
-/* ─────────── 4 · Bebas, la police du jeu ─────────── */
-.p4 .mult {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.5rem; letter-spacing: 0.03em;
-    color: #fff6d0;
-    transform: rotate(-10deg);
-    text-shadow: 0 0 0.45rem #ffd700, 0 0 1.3rem rgba(255, 179, 0, 1), 0 0 2.8rem rgba(255, 140, 0, 0.55);
-}
-.p4 .mult.on { animation: pose4 0.5s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
-@keyframes pose4 {
-    0%   { opacity: 0; transform: rotate(-34deg) translateY(0.7rem) scale(0.3); }
-    100% { opacity: 1; transform: rotate(-10deg) translateY(0) scale(1); }
-}
-
-/* La secousse à chaque bonne réponse, sur le chiffre ET le glyphe */
-.bloc.on.monte .v { animation: secousse 0.38s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
-@keyframes secousse {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    20%      { transform: translate(-0.16rem, 0.07rem) scale(1.12); }
-    50%      { transform: translate(0.18rem, -0.09rem) scale(1.16); }
-    78%      { transform: translate(-0.08rem, 0.04rem) scale(1.05); }
-}
-.bloc.on.monte .mult { animation: multSecoue 0.38s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
-@keyframes multSecoue {
-    0%, 100% { filter: brightness(1); }
-    45%      { filter: brightness(1.7); }
-}
-
-/* Le déblocage : une onde qui part du chiffre */
+/* L'onde du palier : elle ne part qu'au moment où le cran s'ouvre */
 .onde {
-    position: absolute; left: 50%; top: 42%;
+    position: absolute; left: 50%; top: 1.4rem;
     width: 4rem; height: 4rem; margin: -2rem 0 0 -2rem;
     border: 0.09rem solid var(--or);
     border-radius: 50%;
@@ -186,100 +121,113 @@ h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem;
     0%   { opacity: 0.9; transform: scale(0.4); }
     100% { opacity: 0;   transform: scale(2.6); }
 }
+
+/* ══ Le barème déroulé à côté ══ */
+.bareme { font-size: 0.8rem; line-height: 1.7; color: rgba(255,255,255,0.5); }
+.bareme table { border-collapse: collapse; }
+.bareme td { padding: 0.15rem 0.9rem 0.15rem 0; font-variant-numeric: tabular-nums; }
+.bareme .cran { color: var(--or); font-weight: 600; }
+.bareme .courant td { color: #fff; }
+.bareme .courant .cran { text-shadow: 0 0 0.6rem rgba(255,215,0,0.6); }
 </style>
 
 <h1>Rush — le multiplicateur</h1>
 <p class="sous">
-    L’exposant et le trait, retenus. Ce qui ne bouge plus : aucune pastille, le ×N en haut à droite,
-    un filet doré sous le chiffre qui respire tant que ça tient, la secousse à chaque bonne réponse.
-    <b>Ce qui change d’une piste à l’autre : la police du ×N, son inclinaison et son éclat.</b>
+    <b>Retenu, et en place dans le jeu.</b> Cette page garde le geste isolé, sans manche à lancer,
+    pour qu’on puisse le régler sans jouer. Un exposant et rien autour : une pastille pleine faisait
+    badge de jeu mobile, là où tout l’écran du Rush est fait de chiffres nus sur du noir. C’est le
+    contraste de police — Rajdhani italique contre le Bebas du chiffre — qui empêche le ×2 de se
+    lire comme un troisième digit.
 </p>
 <p class="note">
-    ⚠️ <b>Le compteur avance par pas.</b> À ×2, chaque bonne réponse ajoute 2 — 10, 12, 14… — puis 3
-    à partir de vingt, 4 à partir de trente. La séquence le joue en vrai. Conséquence à trancher :
-    <b>le nombre n’est plus une série</b>, c’est un score qui accélère. Le libellé « SÉRIE » et le
-    « RECORD » à côté disent donc autre chose que ce qu’ils affichent.
+    ⚠️ <b>Le barème compte les réponses, pas les points.</b> Un cran toutes les dix bonnes réponses
+    d’affilée : dix réponses valent dix points et ouvrent le ×2, dix de plus en valent vingt — on est
+    donc à <b>trente points quand le ×3 s’ouvre</b>. La séquence joue le vrai barème, réponse par
+    réponse, puis casse sur une erreur.
 </p>
 
-<div class="grille" id="grille"></div>
+<div class="plateau">
+    <div class="scene">
+        <span class="onde"></span>
+        <div class="compteurs">
+            <div class="serie" id="serie">
+                <span class="v" id="v">0</span>
+                <span class="l">score</span>
+            </div>
+            <div class="record"><span class="v" id="rec">0</span><span class="l">record</span></div>
+        </div>
+    </div>
+    <div class="bareme" id="bareme"></div>
+</div>
 
 <script>
-const PISTES = [
-    { cle: 'p1', t: '1 · Orbitron', n: "Anguleuse et technique, elle tranche franchement avec le Bebas du chiffre. C’est celle qui fait le plus « écran de jeu » au sens noble — pensée pour les chiffres." },
-    { cle: 'p2', t: '2 · Russo One', n: "Plus massive et plus penchée. Elle pèse davantage à côté du chiffre, ce qui la rend visible de loin — au risque de lui disputer la vedette." },
-    { cle: 'p3', t: '3 · Rajdhani italique', n: "Fine, italique, penchée : c’est la plus rapide à l’œil, et celle qui évoque le mieux la vitesse. La plus discrète des quatre aussi." },
-    { cle: 'p4', t: '4 · Bebas, comme le chiffre', n: "La police du jeu, simplement penchée et plus brillante. Aucune rupture de style — au prix de moins de contraste avec le chiffre qu’elle surplombe." },
-];
+const PALIER = 10;
+const mult = (serie) => 1 + Math.floor(serie / PALIER);
 
-const grille = document.getElementById('grille');
-for (const p of PISTES) {
-    const bloc = document.createElement('div');
-    bloc.className = 'piste';
-    bloc.innerHTML = '<h3>' + p.t + '</h3><p>' + p.n + '</p>' +
-        '<div class="scene ' + p.cle + '">' +
-        '<span class="onde"></span>' +
-        '<div class="compteurs">' +
-            '<div class="bloc serie"><span class="v">8</span><span class="mult">×2</span>' +
-            '<span class="trait"></span><span class="l">série</span></div>' +
-            '<div class="bloc record"><span class="v">32</span><span class="l">record</span></div>' +
-        '</div></div>';
-    grille.appendChild(bloc);
+// Le barème déroulé : la même formule que le serveur, jouée à sec.
+const bareme = document.getElementById('bareme');
+(() => {
+    let serie = 0, score = 0;
+    const l = ['<table><tr><td>réponses</td><td>score</td><td>cran</td></tr>'];
+    for (let rep = 1; rep <= 40; rep++) {
+        score += mult(serie); serie++;
+        if (serie % PALIER === 0) {
+            l.push('<tr data-rep="' + rep + '"><td>' + rep + '</td><td>' + score +
+                '</td><td class="cran">×' + mult(serie) + '</td></tr>');
+        }
+    }
+    bareme.innerHTML = l.join('') + '</table>';
+})();
+
+const eSerie = document.getElementById('serie');
+const eV = document.getElementById('v');
+const eRec = document.getElementById('rec');
+const eOnde = document.querySelector('.onde');
+
+let serie = 0, score = 0, record = 0, cran = 1, pas = 0;
+
+function poserMult(n) {
+    const vieux = eSerie.querySelector('.mult');
+    if (vieux) vieux.remove();
+    if (n <= 1) return;
+    const s = document.createElement('span');
+    s.className = 'mult';
+    s.textContent = '×' + n;
+    eV.appendChild(s);
 }
 
-// Le vrai barème : le pas suit le palier atteint.
-const pas = (n) => n >= 30 ? 4 : n >= 20 ? 3 : n >= 10 ? 2 : 1;
-function suite() {
-    const s = [];
-    let n = 8;
-    for (let i = 0; i < 9; i++) { n += pas(n); s.push(n); }
-    s.push(0);                       // l'erreur : tout retombe
-    return s;
-}
-const SUITE = suite();
+function tic() {
+    pas++;
+    const rate = pas % 27 === 0;          // une erreur de loin en loin, pour voir la casse
 
-function jouer() {
-    for (const p of PISTES) {
-        const s = document.querySelector('.scene.' + p.cle);
-        const bloc = s.querySelector('.bloc.serie');
-        const v = bloc.querySelector('.v');
-        const mult = bloc.querySelector('.mult');
-        const onde = s.querySelector('.onde');
+    if (rate) {
+        serie = 0; score = 0;
+    } else {
+        score += mult(serie);             // le cran se lit AVANT d'incrémenter
+        serie++;
+        if (score > record) record = score;
+    }
 
-        v.textContent = '8';
-        bloc.classList.remove('on', 'monte');
-        mult.classList.remove('on');
-        mult.textContent = '×2';
+    eV.textContent = score;
+    eRec.textContent = record;
+    eSerie.classList.toggle('bat', score > 0);
+    eSerie.classList.remove('monte');
+    void eSerie.offsetWidth;
+    if (!rate) eSerie.classList.add('monte');
 
-        SUITE.forEach((n, i) => {
-            setTimeout(() => {
-                v.textContent = n;
-                bloc.classList.remove('monte');
-                void bloc.offsetWidth;
+    const neuf = mult(serie);
+    if (neuf !== cran) {
+        poserMult(neuf);
+        if (neuf > cran) {
+            eOnde.classList.remove('va'); void eOnde.offsetWidth;
+            eOnde.classList.add('va');
+        }
+        cran = neuf;
+    }
 
-                if (n === 0) {
-                    bloc.classList.remove('on');
-                    mult.classList.remove('on');
-                    return;
-                }
-                bloc.classList.add('monte');
-
-                const m = pas(n);
-                if (m > 1) {
-                    const neuf = '×' + m;
-                    const monte = mult.textContent !== neuf || !mult.classList.contains('on');
-                    mult.textContent = neuf;
-                    if (monte) {                      // déblocage ou palier suivant
-                        mult.classList.remove('on'); void mult.offsetWidth;
-                        mult.classList.add('on');
-                        bloc.classList.add('on');
-                        onde.classList.remove('va'); void onde.offsetWidth;
-                        onde.classList.add('va');
-                    }
-                }
-            }, 850 * (i + 1));
-        });
+    for (const tr of bareme.querySelectorAll('tr[data-rep]')) {
+        tr.classList.toggle('courant', Number(tr.dataset.rep) <= serie);
     }
 }
-jouer();
-setInterval(jouer, 850 * (SUITE.length + 2));
+setInterval(tic, 620);
 </script>

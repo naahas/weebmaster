@@ -149,6 +149,13 @@ const RUSH_CONFIG = {
     // Un joueur rapide enchaîne une quarantaine de portraits : on en prépare
     // largement plus, car celui qui échoue souvent avance encore plus vite.
     LONGUEUR_SEQUENCE: 120,
+    // Le multiplicateur monte d'un cran toutes les dix bonnes réponses D'AFFILÉE.
+    // Le palier se compte en RÉPONSES, jamais en points : dix réponses valent
+    // dix points, dix de plus à ×2 en valent vingt, si bien qu'on ouvre le ×3
+    // avec trente points au compteur. Compter le palier sur le score aurait
+    // ouvert le ×3 après quinze réponses, puis le ×4 après quatre de plus —
+    // l'emballement se serait mangé lui-même.
+    MULT_PALIER: 10,
 };
 
 const BOMBANIME_CONFIG = {
@@ -587,6 +594,7 @@ app.get('/game/state', (req, res) => {
             duree: gameState.rush.duree,
             limite: gameState.rush.tempsParPerso,
             filtre: gameState.rush.filtre,
+            multiplicateur: gameState.rush.multiplicateur,
             sequencePartagee: gameState.rush.sequencePartagee,
             filtres: Object.entries(RUSH_FILTRES).map(([id, f]) => ({
                 id, label: f.label, compte: f.compte,
@@ -854,10 +862,11 @@ function etatNeuf() {
         duree: RUSH_CONFIG.DUREE_DEFAUT,          // secondes de jeu
         tempsParPerso: RUSH_CONFIG.PERSO_DEFAUT,  // 0 = pas de limite par portrait
         filtre: 'overall',                        // cle dans RUSH_FILTRES
+        multiplicateur: false,                    // par defaut non : le mode reste une pure course a la serie
         sequencePartagee: true,                   // meme ordre pour tous, sinon le classement ne compare rien
         sequence: [],                             // les portraits de la manche, dans l ordre
         sequencesJoueur: new Map(),               // Map<playerId, string[]> quand chacun a la sienne
-        joueurs: new Map(),                       // Map<playerId, {curseur, serie, record, trouves, rates}>
+        joueurs: new Map(),                       // Map<playerId, {curseur, serie, score, record, trouves, rates}>
         finA: null,                               // horodatage de fin de manche
         timeoutFin: null,
         timeoutsPerso: new Map(),                 // Map<playerId, Timeout> pour la limite par portrait
@@ -1623,6 +1632,17 @@ app.post('/admin/rush/set-filtre', (req, res) => {
     gameState.rush.dejaVus = [];   // on change de lot : la mémoire du salon n'a plus d'objet
     diffuser(gameState, 'rush-config', { filtre: f });
     res.json({ success: true, filtre: f });
+});
+
+// ✖️ Le multiplicateur, oui ou non. Éteint, chaque bonne réponse vaut un
+// point et le compteur redevient exactement la série d'avant.
+app.post('/admin/rush/set-multiplicateur', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+    const on = !!(req.body && req.body.actif);
+    gameState.rush.multiplicateur = on;
+    diffuser(gameState, 'rush-config', { multiplicateur: on });
+    res.json({ success: true, multiplicateur: on });
 });
 
 app.post('/admin/rush/set-sequence', (req, res) => {
@@ -5576,6 +5596,15 @@ function rushPortrait(gameState, playerId) {
     return perso ? { img: jetons.urlImage('rushpic', perso.img), position: etat.curseur } : null;
 }
 
+// Le multiplicateur qui s'appliquera à la PROCHAINE bonne réponse : un cran
+// par tranche de dix réponses d'affilée. Réglage éteint, il vaut toujours 1 et
+// le score suit la série pas à pas — le mode est alors celui d'avant, au point
+// près.
+function rushMultiplicateur(gameState, etat) {
+    if (!gameState.rush.multiplicateur || !etat) return 1;
+    return 1 + Math.floor(etat.serie / RUSH_CONFIG.MULT_PALIER);
+}
+
 function rushClassement(gameState) {
     return [...gameState.rush.joueurs.entries()]
         .map(([playerId, e]) => {
@@ -5586,7 +5615,7 @@ function rushClassement(gameState) {
                 // celui retenu au depart. Un partant garde donc sa place et son nom.
                 username: (joueur && joueur.username) || e.username || 'Joueur',
                 record: e.record,
-                serie: e.serie,
+                serie: e.score,
                 trouves: e.trouves,
             };
         })
@@ -5630,11 +5659,16 @@ function rushAvancer(gameState, playerId, reussi) {
     if (!etat) return;
 
     if (reussi) {
+        // Le multiplicateur se lit AVANT d'incrémenter : la dixième réponse
+        // vaut encore un point, et c'est la onzième qui en vaut deux. Sinon le
+        // palier s'appliquerait à la réponse qui l'ouvre.
+        etat.score += rushMultiplicateur(gameState, etat);
         etat.serie++;
         etat.trouves++;
-        if (etat.serie > etat.record) etat.record = etat.serie;
+        if (etat.score > etat.record) etat.record = etat.score;
     } else {
         etat.serie = 0;
+        etat.score = 0;
         etat.rates++;
     }
     etat.curseur++;
@@ -5642,7 +5676,11 @@ function rushAvancer(gameState, playerId, reussi) {
     const portrait = rushPortrait(gameState, playerId);
     rushVersJoueur(gameState, playerId, 'rush-portrait', {
         portrait,
-        serie: etat.serie,
+        // « serie » reste le grand nombre affiché — c'est le score dès que le
+        // multiplicateur est en jeu. Le client n'a donc pas deux compteurs à
+        // tenir : réglage éteint, les deux valeurs sont égales de toute façon.
+        serie: etat.score,
+        mult: rushMultiplicateur(gameState, etat),
         record: etat.record,
         reussi,
         limite: gameState.rush.tempsParPerso,
@@ -5670,7 +5708,9 @@ function demarrerRush(gameState) {
             // Le pseudo est copie ici : un joueur qui part reste au classement
             // avec son nom, alors que la liste des presents l a deja oublie.
             username: joueur.username,
-            curseur: 0, serie: 0, record: 0, trouves: 0, rates: 0, limiteA: null,
+            // « serie » compte les bonnes réponses d'affilée et ne sert qu'au
+            // multiplicateur ; « score » est ce qu'on affiche et ce qui classe.
+            curseur: 0, serie: 0, score: 0, record: 0, trouves: 0, rates: 0, limiteA: null,
         });
         if (!gameState.rush.sequencePartagee) {
             gameState.rush.sequencesJoueur.set(joueur.playerId,
@@ -5687,6 +5727,7 @@ function demarrerRush(gameState) {
         finA: gameState.rush.finA,
         limite: gameState.rush.tempsParPerso,
         filtre: gameState.rush.filtre,
+        multiplicateur: gameState.rush.multiplicateur,
         classement: rushClassement(gameState),
     });
 
@@ -5694,7 +5735,7 @@ function demarrerRush(gameState) {
     for (const joueur of joueurs) {
         const portrait = rushPortrait(gameState, joueur.playerId);
         rushVersJoueur(gameState, joueur.playerId, 'rush-portrait', {
-            portrait, serie: 0, record: 0, reussi: null,
+            portrait, serie: 0, record: 0, mult: 1, reussi: null,
             limite: gameState.rush.tempsParPerso,
         });
         rushArmerLimite(gameState, joueur.playerId);
@@ -6505,7 +6546,9 @@ io.on('connection', (socket) => {
             limite: gameState.rush.tempsParPerso,
             finA: gameState.rush.finA,
             portrait: rushPortrait(gameState, joueur.playerId),
-            serie: etat.serie,
+            serie: etat.score,
+            mult: rushMultiplicateur(gameState, etat),
+            multiplicateur: gameState.rush.multiplicateur,
             record: etat.record,
             classement: rushClassement(gameState),
             limiteA: etat.limiteA || null,

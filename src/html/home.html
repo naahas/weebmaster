@@ -611,6 +611,20 @@
                                     </span>
                                 </div>
 
+                                <!-- Le palier se compte en bonnes réponses D'AFFILÉE, pas en
+                                     points : dix réponses ouvrent le ×2, dix de plus le ×3, et
+                                     l'on a alors trente points au compteur. -->
+                                <div class="v2-set" data-info="rush-multiplicateur">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg>
+                                    <span class="v2-set-label">Multiplicateur</span>
+                                    <span class="v2-set-value">{{ rush.multiplicateur ? 'Oui' : 'Non' }}</span>
+                                    <span class="v2-set-opts">
+                                        <button v-for="o in [{ v: false, t: 'Non' }, { v: true, t: 'Oui' }]" :key="o.t"
+                                                class="v2-set-opt" :class="{ on: rush.multiplicateur === o.v }"
+                                                @click="applySetting('/admin/rush/set-multiplicateur', { actif: o.v }, () => rush.multiplicateur = o.v)">{{ o.t }}</button>
+                                    </span>
+                                </div>
+
                                 <!-- Chacun avance à son rythme : avec une séquence commune, celui
                                      qui voit l'écran d'un autre découvre ses portraits en avance. -->
                                 <div class="v2-set" data-info="rush-sequence">
@@ -1479,9 +1493,13 @@
                         <!-- La série et le record au-dessus, le portrait dessous -->
                         <div class="rush-rang">
                             <div class="rush-compteurs">
+                                <!-- L'exposant vit DANS le chiffre : dans la colonne, il se serait
+                                     accroché au plus large des deux — le libellé sur téléphone, où le
+                                     chiffre rétrécit. -->
                                 <div class="rush-serie" :class="{ bat: rush.serie > 0, monte: rush.pulse }">
-                                    <span class="v">{{ rush.serie }}</span>
-                                    <span class="l">série</span>
+                                    <span class="rush-onde" v-if="rush.mult > 1" :key="rush.mult"></span>
+                                    <span class="v">{{ rush.serie }}<span class="rush-mult" v-if="rush.mult > 1">×{{ rush.mult }}</span></span>
+                                    <span class="l">{{ rush.multiplicateur ? 'score' : 'série' }}</span>
                                 </div>
                                 <div class="rush-record">
                                     <span class="v">{{ rush.record }}</span>

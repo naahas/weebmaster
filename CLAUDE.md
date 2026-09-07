@@ -71,6 +71,9 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   Longtemps intermittente : elle rejouait 700 ms après une erreur, alors que celle-ci
   ferme la grille une seconde — le second clic tombait dans le vide une fois sur trois.
   Six passages d'affilée depuis), `npm run test:rush` (le mode Rush de bout en bout),
+  `npm run test:rush-mult` (le barème du multiplicateur : le palier se compte en
+  réponses et non en points, la casse sur une erreur, et le réglage éteint rend
+  exactement le mode d'avant),
   `npm run test:depart` (quitter BombAnime en pleine partie), `npm run test:plafond` (le plafond
   de BombAnime : remplissage, refus du joueur de trop), `npm run test:bomb` (réglages
   BombAnime et enchaînement des manches), `npm run test:reprise`
@@ -112,7 +115,7 @@ src/img/               avatars, questionpic
 |-------------|-----------|----------|
 | `classic`   | Classique | Quiz QCM en solo. Réglage **Mode** : `lives` (vies) ou `points` (score + bonus rapidité) |
 | `rivalry`   | Classique | Le même quiz en deux camps. Ce n'est **pas un mode à part** : c'est le réglage **Format** du quiz |
-| `rush`      | Rush      | Un portrait, un nom, sans touche Entrée. La plus longue série de la manche gagne. Réglages : **durée** (30/60/90 s), **limite par portrait** (5–12 s ou aucune), **filtre** (Tout, Mainstream, Big 3) et **séquence** commune ou propre à chacun. Jouable seul. Données dans `rushdata.json`, portraits dans `src/img/rushpic/` |
+| `rush`      | Rush      | Un portrait, un nom, sans touche Entrée. La plus longue série de la manche gagne. Réglages : **durée** (30/60/90 s), **limite par portrait** (5–12 s ou aucune), **filtre** (Tout, Mainstream, Big 3), **séquence** commune ou propre à chacun, et **multiplicateur** (non par défaut — voir plus bas). Jouable seul. Données dans `rushdata.json`, portraits dans `src/img/rushpic/` |
 | `collect`   | Collect   | Jeu de cartes, 2 a 5 joueurs. Reunir **deux sets de trois** personnages du meme anime. A son tour, une action : piocher, echanger au marche, scanner une main, **voler** (deux temps de 7 s : on annonce sa cible, puis on designe une carte DE DOS chez elle ; elle se retourne au milieu du feutre. Si l on a la MEME CLASSE en main, on la garde en lachant une carte de cette classe ; sinon LE VOL ECHOUE — la carte retourne a sa place — et l on paie deux cartes d avoir tente a l aveugle. C est ce qui donne son prix au scan) ou poser un set. Poser ne refait PAS la main : on repart avec ce qui reste, et la pioche ajoute une carte tant que la main n est pas pleine. Le marche est une FILE : a chaque fin de tour celle de gauche part SOUS le paquet (jamais melee au
   hasard, sinon elle reviendrait aussitot), tout glisse d un cran et une neuve entre par la droite —
   la position d une carte est donc son compte a rebours, et une fleche marque celle qui s en va.
@@ -120,6 +123,16 @@ src/img/               avatars, questionpic
   (faire glisser la rangee pour un troc la rendait illisible). Les deux ne se croisent jamais :
   un echange ne renouvelle pas le marche. Reglages : **main** (3, 4 ou 5 — l objectif suit tout seul : 3 paires, 2 sets de 3, ou 3 sets de 3) et **animes** (8/10/12) |
 | `bombanime` | BombAnime | Bombe tournante : citer un perso d'une série, alphabet à compléter, défis + bonus. Réglages du salon : **série** (21 au choix), **temps du tour** (5–10 s, 8 par défaut), **vies** (1 ou 2, 2 par défaut) ; quinze joueurs au plus |
+
+⚠️ **Le multiplicateur du Rush compte les RÉPONSES, jamais les points.** Un cran toutes les dix
+bonnes réponses d'affilée : dix réponses valent dix points et ouvrent le ×2, dix de plus en valent
+vingt — on est donc à **trente points quand le ×3 s'ouvre**, soixante pour le ×4. Compter le palier
+sur le score affiché aurait ouvert le ×3 après quinze réponses puis le ×4 après quatre de plus :
+l'emballement se serait mangé lui-même. D'où deux nombres dans l'état du joueur — `serie` compte les
+réponses et ne sert qu'au palier, `score` est ce qu'on affiche et ce qui classe. Réglage éteint (le
+défaut), le pas vaut toujours un et les deux valeurs sont égales : c'est le mode d'avant, au point
+près. Le libellé du compteur bascule de « série » à « score » quand le réglage est allumé, sans quoi
+il annoncerait une série là où le nombre saute de deux en deux. Visuel dans `/prototypes/rush-multi`.
 
 ⚠️ `classic` et `rivalry` sont **un seul mode pour le joueur**. Le réglage *Format* (Solo / Équipe)
 bascule `lobbyMode` de l'un à l'autre en cours de salon (`POST /admin/set-teams`). Le badge de mode
@@ -176,6 +189,8 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
   d'un salon — c'est elle qui le crée. L'événement socket `kick-player` le porte aussi.
 - `/prototypes/*` : pages de travail sur le visuel (boutons, timer, cœurs, HUD, podium, icônes…).
   Dont `/prototypes/rush-passage` : six facons d enchainer les portraits du Rush.
+  Et `/prototypes/rush-multi` : le multiplicateur RETENU, isole hors d une manche
+  pour qu on puisse le regler sans jouer, avec le vrai bareme deroule a cote.
   Et `/prototypes/code` : cinq facons de demander le code du salon, avec un
   basculeur ordinateur/telephone.
   Et `/prototypes/rush-multi` : cinq facons d afficher le multiplicateur de Rush,

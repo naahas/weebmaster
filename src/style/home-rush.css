@@ -254,7 +254,12 @@
     line-height: 1;
 }
 
+.rush-serie { position: relative; }
+
+/* Le chiffre sert de repere a l exposant : en colonne, « align-items: center »
+   laisse chaque enfant a sa largeur propre, celle du nombre exactement. */
 .rush-serie .v {
+    position: relative;
     font-family: 'Bebas Neue', sans-serif;
     font-size: clamp(2.8rem, 8vw, 4rem);
     color: rgba(255, 255, 255, 0.35);
@@ -274,6 +279,65 @@
     0%   { transform: scale(1); }
     45%  { transform: scale(1.35); }
     100% { transform: scale(1); }
+}
+
+/* ══════════ ✖️ Le multiplicateur ══════════
+   Un exposant, et rien autour. Une pastille pleine y ferait badge de jeu
+   mobile : tout l ecran du Rush est fait de chiffres nus sur du noir, et un
+   rectangle de couleur pose dessus casse le ton du reste.
+
+   Rajdhani italique contre le Bebas du chiffre : c est le contraste de police
+   qui empeche le ×2 de se lire comme un troisieme digit. Elle est deja chargee
+   par la page, il n y a pas une requete de plus.
+
+   « bottom » depasse volontairement les 100 % de la hauteur du chiffre : le
+   glyphe doit mordre au-dessus de lui, pas s aligner sur son sommet. */
+.rush-mult {
+    position: absolute;
+    left: 100%;
+    bottom: 74%;
+    margin-left: 0.06em;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-style: italic;
+    font-size: 0.36em;
+    letter-spacing: 0.02em;
+    color: #fff;
+    white-space: nowrap;
+    pointer-events: none;
+    transform: rotate(-7deg) skewX(-6deg);
+    text-shadow:
+        0 0 0.12em #ffd700,
+        0 0 0.34em rgba(255, 179, 0, 0.95),
+        0 0 0.7em rgba(255, 179, 0, 0.45);
+    animation: rushMultPose 0.45s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+
+@keyframes rushMultPose {
+    0%   { opacity: 0; transform: rotate(-30deg) skewX(-6deg) translateY(0.4em) scale(0.3); }
+    100% { opacity: 1; transform: rotate(-7deg) skewX(-6deg) translateY(0) scale(1); }
+}
+
+/* L onde du palier : elle part du chiffre au moment ou le cran s ouvre. Sa
+   clef Vue est le multiplicateur lui-meme, si bien qu elle se rejoue toute
+   seule a chaque nouveau palier et jamais entre deux. */
+.rush-onde {
+    position: absolute;
+    left: 50%;
+    top: 1.4rem;
+    width: 4rem;
+    height: 4rem;
+    margin: -2rem 0 0 -2rem;
+    border: 0.09rem solid var(--neon-primary, #ffd700);
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+    animation: rushOnde 0.7s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+@keyframes rushOnde {
+    0%   { opacity: 0.9; transform: scale(0.4); }
+    100% { opacity: 0;   transform: scale(2.6); }
 }
 
 /* Le record en bleu froid : c'est un acquis, pas la course en cours */
