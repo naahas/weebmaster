@@ -2876,7 +2876,21 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- ⚠️ « .prod », et une version FIGEE. Deux decisions, deux raisons.
+
+         La version de developpement pese 580 Ko contre 164, mais surtout elle
+         travaille plus : avertissements, suivi des composants, validation des
+         props, controles a chaque rendu. Sur un composant unique redessine
+         plusieurs fois par seconde, ca se paie en continu.
+
+         « vue@3 » suivait la derniere 3.x publiee : une version pouvait donc
+         changer sous nos pieds, en production, sans que rien ne soit teste —
+         il n y a ni build ni verrou de dependances ici. On fige.
+
+         Pour retrouver les avertissements de Vue en console pendant une mise au
+         point, retirer « .prod » de cette ligne — et le remettre avant de
+         pousser. C est la seule difference entre les deux fichiers. -->
+    <script src="https://unpkg.com/vue@3.5.42/dist/vue.global.prod.js"></script>
     <script src="app.js"></script>
 </body>
 
