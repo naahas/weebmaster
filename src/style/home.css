@@ -10301,15 +10301,18 @@ body.v2-sheet-open .v2q-report-btn { opacity: 0; pointer-events: none; transitio
     .v2-choices { order: 2; width: 100%; }
     .v2-recent { order: 3; }
 
-    /* Decollees du bord bas : plaquees dessus, elles se lisaient comme une
-       barre de navigation et non comme les chiffres du site. C est « bottom »
-       qui les commande, et lui seul — l element etant ancre par le bas, toute
-       marge haute reste sans effet. */
+    /* Alignees sur les icones de reseaux, en bas a gauche : deux blocs a des
+       hauteurs differentes se lisaient comme deux barres empilees. Le calcul
+       est celui-ci — l icone fait 2,3 rem et son bord bas est a 0,9 rem, donc
+       son centre est a 2,05 rem ; le bloc de chiffres fait environ 1,9 rem,
+       son centre est donc a « bottom + 0,95 rem ». D ou 1,1 rem.
+       C est « bottom » qui commande, et lui seul — l element etant ancre par le
+       bas, toute marge haute reste sans effet. */
     .v2-bigstats {
         position: fixed;
         left: 0;
         right: 0;
-        bottom: 2.7rem;
+        bottom: 1.1rem;
         z-index: 4;
         flex-wrap: wrap;
         justify-content: center;
