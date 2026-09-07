@@ -36,39 +36,55 @@ const urlImage = (nom) => JETONS.urlImage('ascensionpic', nom);
 // une carte vide portant « chichi » en minuscules, exactement ce qu'on
 // cherchait a eviter. Le message disait « ecartes des tirages » et c'etait faux
 // pour cinq epreuves sur neuf. On emporte donc les lignes qui le citent.
+//
+// La MEME carte vide sortait d'un identifiant simplement mal tape dans
+// « couples », « rivals », « techniques », « weapons » ou « same_voice » : ces
+// tables ne designent pas les personnages par leur nom mais par leur « id », et
+// rien ne verifiait qu'il existe. Les deux cas se traitent donc ensemble — un
+// personnage qu'on ne peut pas montrer, qu'il ait perdu son fichier ou n'ait
+// jamais existe, ne doit pas atteindre l'ecran.
 {
     const absents = (ASCENSION_DATA.characters || []).filter(c => c.img && !JETONS.connait('ascensionpic', c.img));
-    if (absents.length) {
-        const perdus = new Set(absents.map(c => c.id));
+    const perdus = new Set(absents.map(c => c.id));
+    if (perdus.size) {
         ASCENSION_DATA.characters = (ASCENSION_DATA.characters || []).filter(c => !perdus.has(c.id));
-
-        // Chaque table designe ses personnages a sa facon.
-        const cite = {
-            couples: (l) => perdus.has(l.char1) || perdus.has(l.char2),
-            rivals: (l) => perdus.has(l.char1) || perdus.has(l.char2),
-            techniques: (l) => perdus.has(l.character),
-            weapons: (l) => perdus.has(l.character),
-            // Une meme voix en reunit trois : on ne jette la ligne que s'il en
-            // reste moins de deux, sinon un absent en emporterait deux valides.
-            same_voice: (l) => (l.chars || []).filter(id => !perdus.has(id)).length < 2,
-        };
-        const emportees = [];
-        for (const table of Object.keys(cite)) {
-            const avant = (ASCENSION_DATA[table] || []).length;
-            ASCENSION_DATA[table] = (ASCENSION_DATA[table] || []).filter(l => !cite[table](l));
-            // « same_voice » garde sa ligne mais doit perdre l'absent dedans.
-            if (table === 'same_voice') {
-                for (const l of ASCENSION_DATA.same_voice) {
-                    l.chars = (l.chars || []).filter(id => !perdus.has(id));
-                }
-            }
-            const perdues = avant - ASCENSION_DATA[table].length;
-            if (perdues) emportees.push(perdues + ' ' + table);
-        }
-
         console.warn('⚠️ Ascension : ' + absents.length + ' portrait(s) sans fichier, ecarte(s) des tirages — '
-            + absents.map(c => c.id + ' (' + c.img + ')').join(', ')
-            + (emportees.length ? ' — emporte aussi ' + emportees.join(', ') : ''));
+            + absents.map(c => c.id + ' (' + c.img + ')').join(', '));
+    }
+
+    // Chaque table designe ses personnages a sa facon.
+    const connus = new Set((ASCENSION_DATA.characters || []).map(c => c.id));
+    const CITES = {
+        couples: (l) => [l.char1, l.char2],
+        rivals: (l) => [l.char1, l.char2],
+        techniques: (l) => [l.character],
+        weapons: (l) => [l.character],
+        same_voice: (l) => l.chars || [],
+    };
+    const emportees = [], inconnus = new Set();
+    for (const table of Object.keys(CITES)) {
+        const avant = (ASCENSION_DATA[table] || []).length;
+        ASCENSION_DATA[table] = (ASCENSION_DATA[table] || []).filter(l => {
+            const mauvais = CITES[table](l).filter(id => id && !connus.has(id));
+            for (const id of mauvais) if (!perdus.has(id)) inconnus.add(table + '.' + id);
+            // Une meme voix en reunit trois : on ne jette la ligne que s'il en
+            // reste au moins deux, sinon un absent en emporterait deux valides.
+            if (table === 'same_voice') {
+                l.chars = (l.chars || []).filter(id => connus.has(id));
+                return l.chars.length >= 2;
+            }
+            return mauvais.length === 0;
+        });
+        const perdues = avant - ASCENSION_DATA[table].length;
+        if (perdues) emportees.push(perdues + ' ' + table);
+    }
+
+    if (inconnus.size) {
+        console.warn('⚠️ Ascension : ' + inconnus.size + ' liaison(s) citent un personnage qui n\'existe pas — '
+            + 'ces tables designent par l\'« id » de « characters », pas par le nom : ' + [...inconnus].join(', '));
+    }
+    if (emportees.length) {
+        console.warn('⚠️ Ascension : ' + emportees.join(', ') + ' retiree(s) des tirages, faute d\'un personnage montrable.');
     }
 }
 

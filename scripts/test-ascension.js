@@ -216,6 +216,46 @@ const jetonValide = (u) => /^\/pic\/[0-9a-f]{20}$/.test(String(u));
     }
 }
 
+// ── 🔗 Les liaisons ne citent que des personnages qui existent ──
+//
+// Couples, rivaux, techniques, armes et memes voix designent leurs
+// personnages par leur « id », JAMAIS par leur nom — « itadori » et non
+// « Yuji ». Un identifiant mal tape ne cassait rien : le generateur retombait
+// dessus et l'affichait tel quel, en minuscules, sur une carte sans image.
+//
+// ⚠️ On relit le fichier depuis le disque. Le module d'Ascension retire de
+// lui-meme les lignes fautives au chargement, et il mute l'objet que « require »
+// met en cache : le lire par « require » ne montrerait que des donnees deja
+// nettoyees, et cette verification passerait toujours.
+const BRUT = JSON.parse(require('fs').readFileSync(require('path')
+    .join(__dirname, '..', 'ascensiondata.json'), 'utf8'));
+const idsConnus = new Set((BRUT.characters || []).map(c => c.id));
+const CITES = {
+    couples: (l) => [l.char1, l.char2],
+    rivals: (l) => [l.char1, l.char2],
+    techniques: (l) => [l.character],
+    weapons: (l) => [l.character],
+    same_voice: (l) => l.chars || [],
+};
+const orphelines = [];
+for (const table of Object.keys(CITES)) {
+    for (const l of BRUT[table] || []) {
+        for (const id of CITES[table](l)) {
+            if (id && !idsConnus.has(id)) orphelines.push(table + ' → ' + id);
+        }
+    }
+}
+check('aucune liaison ne cite un personnage inexistant', orphelines.length === 0,
+    orphelines.length ? orphelines.join(', ')
+        : Object.keys(CITES).map(k => (BRUT[k] || []).length + ' ' + k).join(', '));
+
+// Et le portrait doit exister, sinon la carte sort vide.
+const sansFichier = (BRUT.characters || []).filter(c => c.img &&
+    !require('fs').existsSync(require('path').join(__dirname, '..', 'src', 'img', 'ascensionpic', c.img)));
+check('chaque personnage cite un fichier de portrait qui existe',
+    sansFichier.length === 0,
+    sansFichier.length ? sansFichier.map(c => c.id + ' (' + c.img + ')').join(', ')
+        : (BRUT.characters || []).length + ' portrait(s) en place');
 // ── 🔤 Le sac de l'Anagramme ──
 //
 // Deux listes nommées dans le fichier de données, et elles seules. L'étage se
