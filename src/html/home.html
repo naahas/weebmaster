@@ -2178,48 +2178,58 @@
                         </div>
 
 
-                        <!-- Ouverture du classement quand il ne tient pas à côté du panel -->
-                        <button class="v2q-top-btn" :class="{ decale: isHost }"
-                                v-if="panneauLateral"
-                                @click="showTopSheet = !showTopSheet"
-                                :title="panneauLateral === 'moi' ? 'Placement' : 'Classement'"
-                                :aria-label="panneauLateral === 'moi' ? 'Placement' : 'Classement'">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M8 21h8M12 17v4M6 4h12v5a6 6 0 0 1-12 0z"/><path d="M18 5h3v2a4 4 0 0 1-3.2 3.9M6 5H3v2a4 4 0 0 0 3.2 3.9"/>
-                            </svg>
-                        </button>
+                        <!-- ── Les pastilles de gauche ──
+                             Détail, classement, signalement, preuve. Le conteneur les tasse et les
+                             centre sur le panneau : posées une par une, le groupe descendait, et
+                             chaque bouton qui manque selon le rôle laissait un trou.
+                             ⚠️ L'ordre du gabarit EST l'ordre affiché, en colonne sur grand écran
+                             comme en rangée sur téléphone. Le classement ne paraît que sur
+                             téléphone (« display: none » ailleurs) : il ne compte donc pas dans la
+                             colonne, et n'a plus besoin d'un décalage pour laisser passer le
+                             détail. -->
+                        <div class="v2q-cote">
+                            <!-- Détail de la question : l'hôte seul y a accès -->
+                            <button class="v2q-stats-btn" v-if="isHost && showResults && lobbyMode !== 'bombanime'"
+                                    @click="openQuestionStats" title="Détail de la question" aria-label="Détail de la question">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>
+                                </svg>
+                            </button>
+                            <!-- Ouverture du classement quand il ne tient pas à côté du panel -->
+                            <button class="v2q-top-btn" v-if="panneauLateral"
+                                    @click="showTopSheet = !showTopSheet"
+                                    :title="panneauLateral === 'moi' ? 'Placement' : 'Classement'"
+                                    :aria-label="panneauLateral === 'moi' ? 'Placement' : 'Classement'">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M8 21h8M12 17v4M6 4h12v5a6 6 0 0 1-12 0z"/><path d="M18 5h3v2a4 4 0 0 1-3.2 3.9M6 5H3v2a4 4 0 0 0 3.2 3.9"/>
+                                </svg>
+                            </button>
 
-                        <!-- La preuve de la réponse, saisie au back-office. Ouverte à TOUS,
-                             contrairement au drapeau : c'est ce qui clôt une discussion en
-                             vocal ou sur un stream, et l'hôte n'est pas toujours celui qui
-                             conteste. Elle ne paraît qu'aux résultats — l'URL nomme souvent
-                             la réponse, et le serveur ne l'envoie pas avant. -->
-                        <a class="v2q-proof-btn" v-if="showResults && lobbyMode !== 'bombanime' && questionResults && questionResults.proofUrl"
-                           :href="questionResults.proofUrl" target="_blank" rel="noopener noreferrer"
-                           title="Voir la source de la réponse" aria-label="Voir la source de la réponse">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01"/>
-                            </svg>
-                        </a>
+                            <!-- Signalement d'une question. Réservé à l'hôte : ouvrir aux joueurs
+                                 remplirait la table de motifs de dépit après une mauvaise réponse.
+                                 Pour l'ouvrir à tous, retirer « isHost && » ci-dessous. -->
+                            <button class="v2q-report-btn" v-if="isHost && showResults && lobbyMode !== 'bombanime'"
+                                    @click="openReport" title="Signaler cette question"
+                                    aria-label="Signaler cette question">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 21V4M4 4h11l-1.6 3.4L15 11H4"/>
+                                </svg>
+                            </button>
 
-                        <!-- Signalement d'une question. Réservé à l'hôte : ouvrir aux joueurs
-                             remplirait la table de motifs de dépit après une mauvaise réponse.
-                             Pour l'ouvrir à tous, retirer « isHost && » ci-dessous. -->
-                        <button class="v2q-report-btn" v-if="isHost && showResults && lobbyMode !== 'bombanime'"
-                                @click="openReport" title="Signaler cette question"
-                                aria-label="Signaler cette question">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M4 21V4M4 4h11l-1.6 3.4L15 11H4"/>
-                            </svg>
-                        </button>
+                            <!-- La preuve de la réponse, saisie au back-office. Ouverte à TOUS,
+                                 contrairement au drapeau : c'est ce qui clôt une discussion en
+                                 vocal ou sur un stream, et l'hôte n'est pas toujours celui qui
+                                 conteste. Elle ne paraît qu'aux résultats — l'URL nomme souvent
+                                 la réponse, et le serveur ne l'envoie pas avant. -->
+                            <a class="v2q-proof-btn" v-if="showResults && lobbyMode !== 'bombanime' && questionResults && questionResults.proofUrl"
+                               :href="questionResults.proofUrl" target="_blank" rel="noopener noreferrer"
+                               title="Voir la source de la réponse" aria-label="Voir la source de la réponse">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01"/>
+                                </svg>
+                            </a>
 
-                        <!-- Détail de la question : l'hôte seul y a accès -->
-                        <button class="v2q-stats-btn" v-if="isHost && showResults && lobbyMode !== 'bombanime'"
-                                @click="openQuestionStats" title="Détail de la question" aria-label="Détail de la question">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>
-                            </svg>
-                        </button>
+                        </div>
 
                     </div>
 

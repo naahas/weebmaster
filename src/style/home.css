@@ -9399,6 +9399,18 @@ body.game-active:has(.poll-game-container) #particles-js {
 /* Lignes nues : ni fond ni filet, l'air suffit à séparer */
 .v2q-top-row { display: flex; align-items: baseline; gap: 0.8rem; padding: 0.66rem 0; }
 
+/* ⚠️ En mode vies, la colonne du milieu tient DEUX lignes — le pseudo, puis les
+   cœurs. Alignée sur la ligne de base, elle prenait celle des cœurs et non celle
+   du pseudo : « .nm » porte « overflow: hidden », ce qui empêche un bloc de
+   donner sa ligne de base à son parent, et le navigateur descendait donc à la
+   suivante. Le pseudo se retrouvait poussé au-dessus de sa propre rangée — sur
+   deux joueurs les deux noms se superposaient au même endroit, l'un paraissant
+   gras et l'autre disparu, et les cœurs venaient chevaucher le repère de
+   réponse.
+   En mode points la colonne n'a qu'une ligne et rien ne se voyait : on ne
+   change donc que le cas à deux lignes. */
+.v2q-top-row:has(.sub) { align-items: center; }
+
 .v2q-top-row .rk {
     width: 1.6rem;
     font-family: 'Bebas Neue', 'Russo One', sans-serif;
@@ -9469,11 +9481,35 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2q-top-me b { font-family: 'Bebas Neue', 'Russo One', sans-serif; font-size: 1.2rem; color: var(--neon-primary); }
 
 /* Bouton de détail, en pendant du classement */
-.v2q-stats-btn {
+/* ── La colonne de pastilles, à gauche du panneau ──
+   Détail, classement, signalement, preuve. Elles étaient posées une par une, à
+   coups de « top: calc(50% + 3.7rem) » : le groupe descendait au lieu de rester
+   centré sur le panneau, et chaque bouton qui apparaît ou disparaît selon le
+   rôle laissait un trou. La preuve, visible de tous, flottait même seule à onze
+   rem chez un joueur non-hôte sur téléphone — sa place supposait le drapeau
+   devant elle, que seul l'hôte voit.
+   Un conteneur flex tasse ce qui est là, quel qu'en soit le nombre, et le
+   centre. Le bouton de classement en fait partie : il est « display: none » sur
+   grand écran, donc il ne compte pas dans la colonne, et rejoint la rangée tout
+   seul dès qu'elle se couche. */
+.v2q-cote {
     position: absolute;
     right: calc(100% + 3.4rem);
     top: 50%;
     transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.7rem;
+    animation: v2qStatsIn 0.85s cubic-bezier(0.16, 0.9, 0.25, 1) 0.12s both;
+}
+
+@keyframes v2qStatsIn {
+    from { opacity: 0; transform: translateY(-50%) translateX(-1.4rem); }
+    to   { opacity: 1; transform: translateY(-50%); }
+}
+
+.v2q-stats-btn {
     display: grid;
     place-items: center;
     width: 3rem;
@@ -9485,12 +9521,6 @@ body.game-active:has(.poll-game-container) #particles-js {
     border-radius: 50%;
     cursor: pointer;
     transition: color 0.25s ease, background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
-    animation: v2qStatsIn 0.85s cubic-bezier(0.16, 0.9, 0.25, 1) 0.12s both;
-}
-
-@keyframes v2qStatsIn {
-    from { opacity: 0; transform: translateY(-50%) translateX(-1.4rem); }
-    to   { opacity: 1; transform: translateY(-50%); }
 }
 
 .v2q-stats-btn svg { width: 1.3rem; height: 1.3rem; }
@@ -9614,15 +9644,6 @@ body.game-active:has(.poll-game-container) #particles-js {
         margin-top: 1.6rem;
         animation: none;
     }
-    .v2q-stats-btn {
-        position: fixed;
-        right: auto;
-        left: clamp(0.8rem, 2vw, 1.6rem);
-        bottom: 5rem;
-        top: auto;
-        transform: none;
-        animation: none;
-    }
     .v2q-stats-btn:hover { transform: scale(1.06); }
 }
 
@@ -9744,7 +9765,7 @@ body.game-active:has(.poll-game-container) #particles-js {
 
     .challenges-mobile-icon { bottom: 4.6rem !important; left: 0.9rem !important; }
 
-    .v2q-stats-btn { bottom: 8.3rem; left: 0.9rem; width: 2.7rem; height: 2.7rem; }
+    .v2q-stats-btn { width: 2.7rem; height: 2.7rem; }
     .v2q-stats-btn svg { width: 1.15rem; height: 1.15rem; }
 
     /* Le panel doit s'arrêter au-dessus des commandes */
@@ -9969,8 +9990,6 @@ body.game-active:has(.poll-game-container) #particles-js {
     }
 
     .v2q-top-btn {
-        position: fixed;
-        z-index: 60;
         display: grid;
         place-items: center;
         width: 3rem;
@@ -9987,10 +10006,20 @@ body.game-active:has(.poll-game-container) #particles-js {
     .v2q-top-btn svg { width: 1.3rem; height: 1.3rem; }
     .v2q-top-btn:hover { color: var(--neon-primary); border-color: rgba(255, 215, 0, 0.45); background: rgba(255, 215, 0, 0.07); }
 
-    /* Consultation en haut à gauche : le détail pour l'hôte, le classement à côté */
-    .v2q-stats-btn { top: 0.9rem; left: 0.9rem; right: auto; bottom: auto; }
-    .v2q-top-btn { top: 0.9rem; left: 0.9rem; }
-    .v2q-top-btn.decale { left: 4.4rem; }
+    /* Consultation en haut à gauche. La colonne se couche en rangée : plus
+       aucun décalage en dur, l'ordre du gabarit suffit, et rien ne laisse de
+       trou quand un bouton manque. */
+    .v2q-cote {
+        position: fixed;
+        z-index: 60;
+        top: 0.9rem;
+        left: 0.9rem;
+        right: auto;
+        transform: none;
+        flex-direction: row;
+        gap: 0.5rem;
+        animation: none;
+    }
 }
 
 @media (max-width: 768px) {
@@ -10025,7 +10054,6 @@ body.game-active:has(.poll-game-container) #particles-js {
     .v2q-top-btn { width: 2.7rem; height: 2.7rem; }
     .v2q-stats-btn svg,
     .v2q-top-btn svg { width: 1.15rem; height: 1.15rem; }
-    .v2q-top-btn.decale { left: 4.1rem; }
 
     .v2q-top { padding: 1.3rem 1.1rem 1.1rem; }
 }
@@ -10120,10 +10148,6 @@ body.v2-sheet-open .v2-hud {
 
 /* Le drapeau se range sous le bouton de détail, du même côté du panel */
 .v2q-report-btn {
-    position: absolute;
-    right: calc(100% + 3.4rem);
-    top: calc(50% + 3.7rem);
-    transform: translateY(-50%);
     display: grid;
     place-items: center;
     width: 3rem;
@@ -10135,7 +10159,6 @@ body.v2-sheet-open .v2-hud {
     border-radius: 50%;
     cursor: pointer;
     transition: color 0.25s ease, background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
-    animation: v2qStatsIn 0.85s cubic-bezier(0.16, 0.9, 0.25, 1) 0.18s both;
 }
 
 .v2q-report-btn svg { width: 1.25rem; height: 1.25rem; }
@@ -10144,7 +10167,7 @@ body.v2-sheet-open .v2-hud {
     color: #ff8a8a;
     background: rgba(239, 68, 68, 0.18);
     border-color: rgba(239, 68, 68, 0.6);
-    transform: translateY(-50%) scale(1.06);
+    transform: scale(1.06);
 }
 
 /* ── Le lien de preuve ──
@@ -10152,10 +10175,6 @@ body.v2-sheet-open .v2-hud {
    rondes de trois rem alignées à gauche du panneau. En bleu froid — le rouge
    est pris par le signalement, et l'or par tout le reste de l'écran. */
 .v2q-proof-btn {
-    position: absolute;
-    right: calc(100% + 3.4rem);
-    top: calc(50% + 7.4rem);
-    transform: translateY(-50%);
     display: grid;
     place-items: center;
     width: 3rem;
@@ -10167,7 +10186,6 @@ body.v2-sheet-open .v2-hud {
     border-radius: 50%;
     cursor: pointer;
     transition: color 0.25s ease, background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
-    animation: v2qStatsIn 0.85s cubic-bezier(0.16, 0.9, 0.25, 1) 0.26s both;
 }
 
 .v2q-proof-btn svg { width: 1.3rem; height: 1.3rem; }
@@ -10176,7 +10194,7 @@ body.v2-sheet-open .v2-hud {
     color: #a8ccff;
     background: rgba(110, 168, 255, 0.18);
     border-color: rgba(110, 168, 255, 0.6);
-    transform: translateY(-50%) scale(1.06);
+    transform: scale(1.06);
 }
 
 /* ── La modale ── */
@@ -10285,31 +10303,14 @@ body.v2-sheet-open .v2-hud {
 .v2-report-send:hover:not(:disabled) { background: rgba(239, 68, 68, 0.26); border-color: rgba(239, 68, 68, 0.75); }
 .v2-report-send:disabled { opacity: 0.4; cursor: default; }
 
-/* Sur petit écran, le drapeau rejoint la rangée du haut, après le classement,
-   et la preuve le suit. La colonne de gauche n'existe plus : elle se couche. */
-@media (max-width: 1200px) {
-    .v2q-report-btn, .v2q-proof-btn {
-        position: fixed;
-        top: 0.9rem;
-        right: auto;
-        transform: none;
-        animation: none;
-    }
-    .v2q-report-btn { left: 7.9rem; }
-    .v2q-proof-btn { left: 11.4rem; }
-    .v2q-report-btn:hover, .v2q-proof-btn:hover { transform: scale(1.06); }
-}
-
+/* Le drapeau et la preuve suivent la colonne : c'est elle qui se couche. */
 @media (max-width: 768px) {
     .v2q-report-btn, .v2q-proof-btn { width: 2.7rem; height: 2.7rem; }
     .v2q-report-btn svg, .v2q-proof-btn svg { width: 1.1rem; height: 1.1rem; }
-    .v2q-report-btn { left: 7.3rem; }
-    .v2q-proof-btn { left: 10.5rem; }
 }
 
-/* Le drapeau disparaît aussi derrière un calque, et la preuve avec */
-body.v2-sheet-open .v2q-report-btn,
-body.v2-sheet-open .v2q-proof-btn { opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
+/* La colonne entière disparaît derrière un calque */
+body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
 
 /* Retour visuel du signalement : les notifications de la v1 ne font plus rien */
 .v2-report-send.fait { color: #b9f5d8; background: rgba(16, 185, 129, 0.18); border-color: rgba(16, 185, 129, 0.6); opacity: 1; }
