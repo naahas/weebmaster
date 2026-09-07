@@ -29,13 +29,46 @@ const urlImage = (nom) => JETONS.urlImage('ascensionpic', nom);
 // avait rien a reconnaitre — et le chronometre tournait quand meme. On l'ecarte
 // des tirages plutot que de le montrer, en le disant assez fort pour qu'on
 // pense a poser le fichier : il revient de lui-meme le jour ou il existe.
+//
+// ⚠️ Le retirer de « characters » ne suffit pas. Les tables de liaisons le
+// designent par son IDENTIFIANT, et leurs generateurs retombent sur cet
+// identifiant brut quand l'annuaire ne le connait plus : la Liaison affichait
+// une carte vide portant « chichi » en minuscules, exactement ce qu'on
+// cherchait a eviter. Le message disait « ecartes des tirages » et c'etait faux
+// pour cinq epreuves sur neuf. On emporte donc les lignes qui le citent.
 {
     const absents = (ASCENSION_DATA.characters || []).filter(c => c.img && !JETONS.connait('ascensionpic', c.img));
     if (absents.length) {
-        console.warn('⚠️ Ascension : ' + absents.length + ' portrait(s) sans fichier, ecarte(s) des tirages — '
-            + absents.map(c => c.id + ' (' + c.img + ')').join(', '));
         const perdus = new Set(absents.map(c => c.id));
         ASCENSION_DATA.characters = (ASCENSION_DATA.characters || []).filter(c => !perdus.has(c.id));
+
+        // Chaque table designe ses personnages a sa facon.
+        const cite = {
+            couples: (l) => perdus.has(l.char1) || perdus.has(l.char2),
+            rivals: (l) => perdus.has(l.char1) || perdus.has(l.char2),
+            techniques: (l) => perdus.has(l.character),
+            weapons: (l) => perdus.has(l.character),
+            // Une meme voix en reunit trois : on ne jette la ligne que s'il en
+            // reste moins de deux, sinon un absent en emporterait deux valides.
+            same_voice: (l) => (l.chars || []).filter(id => !perdus.has(id)).length < 2,
+        };
+        const emportees = [];
+        for (const table of Object.keys(cite)) {
+            const avant = (ASCENSION_DATA[table] || []).length;
+            ASCENSION_DATA[table] = (ASCENSION_DATA[table] || []).filter(l => !cite[table](l));
+            // « same_voice » garde sa ligne mais doit perdre l'absent dedans.
+            if (table === 'same_voice') {
+                for (const l of ASCENSION_DATA.same_voice) {
+                    l.chars = (l.chars || []).filter(id => !perdus.has(id));
+                }
+            }
+            const perdues = avant - ASCENSION_DATA[table].length;
+            if (perdues) emportees.push(perdues + ' ' + table);
+        }
+
+        console.warn('⚠️ Ascension : ' + absents.length + ' portrait(s) sans fichier, ecarte(s) des tirages — '
+            + absents.map(c => c.id + ' (' + c.img + ')').join(', ')
+            + (emportees.length ? ' — emporte aussi ' + emportees.join(', ') : ''));
     }
 }
 
