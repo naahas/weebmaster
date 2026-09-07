@@ -6,25 +6,26 @@
    d'affilée, ×3 à vingt, ×4 à trente. Une erreur casse la série,
    donc il tombe avec elle.
 
-   Deux moments à traiter, et ils n'appellent pas la même chose :
+   ⚠️ AUCUNE PASTILLE PLEINE. Un rectangle jaune posé sur le chiffre
+   fait badge de jeu mobile — le reste de l'écran est fait de
+   chiffres nus sur du noir, et une pastille de couleur y détonne.
+   Ici c'est la TYPOGRAPHIE qui porte le multiplicateur : un glyphe,
+   sa taille, sa couleur, sa place. Rien à encadrer.
 
-   · LE DÉBLOCAGE — la dixième bonne réponse. Il arrive deux ou
-     trois fois par manche, on peut y mettre du fracas.
-   · LA VIE AVEC — les réponses suivantes, où le ×2 reste affiché.
-     Là il faut de la retenue : ça dure, et un truc qui tremble en
-     permanence à côté du chiffre qu'on lit devient vite pénible.
+   Deux moments, et ils n'appellent pas la même chose : le déblocage
+   arrive deux ou trois fois par manche et peut se permettre du
+   fracas ; la vie avec dure, et doit se faire oublier.
 
-   Chaque piste rejoue la même séquence : 8, 9, 10 (déblocage),
-   11, 12, puis une erreur. Elles tournent en boucle.
+   Même séquence sur les cinq : 8, 9, 10 (déblocage), 11, 12, raté.
    ════════════════════════════════════════════════════════════════ */
-:root { --or: #ffd700; --chaud: #ffb300; }
+:root { --or: #ffd700; --chaud: #ffb300; --bleu: #6ea8ff; }
 * { box-sizing: border-box; }
 
 body {
     margin: 0; padding: 2rem 1.5rem 5rem;
     font-family: 'Inter', system-ui, sans-serif;
     color: #fff;
-    background: radial-gradient(70% 55% at 50% 0%, #17150f, #08080b 68%);
+    background: radial-gradient(70% 55% at 50% 0%, #141310, #08080b 68%);
     min-height: 100vh;
 }
 h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
@@ -34,171 +35,169 @@ h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem;
 .grille { display: flex; flex-wrap: wrap; gap: 1.6rem; }
 .piste { width: 21rem; }
 .piste h3 { margin: 0 0 0.15rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 0.07em; }
-.piste p { margin: 0 0 0.8rem; font-size: 0.72rem; line-height: 1.5; color: rgba(255,255,255,0.4); min-height: 6em; }
+.piste p { margin: 0 0 0.8rem; font-size: 0.72rem; line-height: 1.5; color: rgba(255,255,255,0.4); min-height: 6.4em; }
 
 .scene {
     position: relative;
-    height: 13rem;
+    height: 14rem;
     display: grid; place-items: center;
     border-radius: 0.9rem;
-    background: radial-gradient(60% 60% at 50% 40%, rgba(255,255,255,0.035), transparent 70%), #0b0b0f;
-    box-shadow: inset 0 0 2rem rgba(0,0,0,0.5);
+    background: #08080b;
+    box-shadow: inset 0 0 0 0.06rem rgba(255,255,255,0.05);
     overflow: hidden;
 }
 .scene::after {
     content: 'en boucle';
-    position: absolute; right: 0.5rem; bottom: 0.35rem;
-    font-size: 0.52rem; letter-spacing: 0.14em; text-transform: uppercase;
-    color: rgba(255,255,255,0.18);
+    position: absolute; right: 0.6rem; bottom: 0.4rem;
+    font-size: 0.5rem; letter-spacing: 0.16em; text-transform: uppercase;
+    color: rgba(255,255,255,0.14);
 }
 
 /* Le compteur, repris du jeu à l'identique */
-.compteurs { display: flex; gap: 2.2rem; align-items: flex-start; }
+.compteurs { display: flex; gap: 2.6rem; align-items: flex-start; }
 .bloc { position: relative; display: flex; flex-direction: column; align-items: center; line-height: 1; }
 .bloc .v {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 3.4rem;
+    font-size: 3.6rem;
     color: var(--or);
-    text-shadow: 0 0 1.8rem rgba(255, 215, 0, 0.4);
+    text-shadow: 0 0 1.8rem rgba(255, 215, 0, 0.35);
     font-variant-numeric: tabular-nums;
+    transition: color 0.35s ease, text-shadow 0.35s ease;
 }
 .bloc .l {
-    margin-top: 0.25rem;
+    margin-top: 0.3rem;
     font-size: 0.55rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
-    color: rgba(255,255,255,0.3);
-}
-.bloc.record .v { color: #6ea8ff; text-shadow: 0 0 1.4rem rgba(110,168,255,0.35); }
-
-/* Le battement d'une bonne réponse, repris du jeu */
-.bloc.monte .v { animation: monte 0.34s cubic-bezier(0.2, 1.6, 0.4, 1); }
-@keyframes monte { 0% { transform: scale(1); } 45% { transform: scale(1.22); } 100% { transform: scale(1); } }
-
-/* Le badge, commun à toutes les pistes — chacune le décline ensuite */
-.mult {
-    position: absolute; left: 50%; top: -1.05rem;
-    transform: translateX(-50%);
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 0.95rem; letter-spacing: 0.05em;
-    padding: 0.05rem 0.4rem;
-    border-radius: 0.35rem;
+    color: rgba(255,255,255,0.28);
     white-space: nowrap;
+    transition: color 0.35s ease;
+}
+.bloc.record .v { color: var(--bleu); text-shadow: 0 0 1.4rem rgba(110,168,255,0.3); }
+
+.bloc.monte .v { animation: monte 0.34s cubic-bezier(0.2, 1.6, 0.4, 1); }
+@keyframes monte { 0% { transform: scale(1); } 45% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+/* Le glyphe, sans cadre, dans toutes les pistes */
+.mult {
+    font-family: 'Bebas Neue', sans-serif;
+    color: var(--or);
     opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
 }
 .mult.on { opacity: 1; }
 
-/* ─────────── A · le badge sage ─────────── */
+/* ─────────── A · l'exposant ─────────── */
 .a .mult {
-    color: #17140a;
-    background: linear-gradient(135deg, #ffe066, var(--chaud));
-    box-shadow: 0 0 0.9rem rgba(255, 179, 0, 0.55);
+    position: absolute; left: 100%; top: 0.1rem;
+    margin-left: 0.14rem;
+    font-size: 1.15rem; letter-spacing: 0.02em;
+    text-shadow: 0 0 1rem rgba(255, 215, 0, 0.7);
 }
-.a .mult.on { animation: aParait 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
-@keyframes aParait {
-    0%   { opacity: 0; transform: translateX(-50%) translateY(0.6rem) scale(0.6); }
+.a .mult.on { animation: exposant 0.45s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+@keyframes exposant {
+    0%   { opacity: 0; transform: translateY(0.5rem) scale(0.4); }
+    100% { opacity: 1; transform: none; }
+}
+
+/* ─────────── B · dans le libellé ─────────── */
+.b .mult {
+    position: static;
+    display: inline;
+    font-size: inherit; letter-spacing: inherit;
+    margin-left: 0.35rem;
+    text-shadow: 0 0 0.7rem rgba(255, 215, 0, 0.6);
+}
+.b .bloc.on .l { color: rgba(255, 215, 0, 0.75); }
+
+/* ─────────── C · le contour ─────────── */
+.c .mult {
+    position: absolute; left: 50%; top: -1.15rem;
+    transform: translateX(-50%);
+    font-size: 0.95rem; letter-spacing: 0.06em;
+    padding: 0.06rem 0.42rem;
+    border: 0.07rem solid rgba(255, 215, 0, 0.6);
+    border-radius: 0.3rem;
+    text-shadow: 0 0 0.8rem rgba(255, 215, 0, 0.5);
+}
+.c .mult.on { animation: contour 0.45s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+@keyframes contour {
+    0%   { opacity: 0; transform: translateX(-50%) translateY(0.5rem) scale(0.7); }
     100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
 }
 
-/* ─────────── B · le badge qui tremble en continu ─────────── */
-.b .mult {
-    color: #17140a;
-    background: linear-gradient(135deg, #ffe066, var(--chaud));
-    box-shadow: 0 0 0.9rem rgba(255, 179, 0, 0.55);
-}
-.b .mult.on { animation: aParait 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) both, bTremble 0.5s linear 0.4s infinite; }
-@keyframes bTremble {
-    0%, 100% { transform: translateX(-50%) rotate(0deg); }
-    25%      { transform: translateX(-50%) translate(-0.06rem, 0.04rem) rotate(-1.6deg); }
-    75%      { transform: translateX(-50%) translate(0.06rem, -0.04rem) rotate(1.6deg); }
-}
-.b .bloc.on .v { animation: bChiffre 0.5s linear infinite; }
-@keyframes bChiffre {
-    0%, 100% { transform: translate(0, 0); }
-    25%      { transform: translate(-0.05rem, 0.05rem); }
-    75%      { transform: translate(0.05rem, -0.05rem); }
-}
-
-/* ─────────── C · la secousse au rythme des réponses ─────────── */
-.c .mult {
-    color: #17140a;
-    background: linear-gradient(135deg, #ffe066, var(--chaud));
-    box-shadow: 0 0 0.9rem rgba(255, 179, 0, 0.55);
-}
-.c .mult.on { animation: aParait 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
-/* elle ne tremble QUE sur une bonne réponse, puis se tait */
-.c .bloc.monte.on .v { animation: cSecousse 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
-.c .mult.on.secoue { animation: cSecousse 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
-@keyframes cSecousse {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    20%      { transform: translate(-0.18rem, 0.08rem) scale(1.1); }
-    45%      { transform: translate(0.2rem, -0.1rem) scale(1.14); }
-    70%      { transform: translate(-0.1rem, 0.05rem) scale(1.06); }
-}
-.c .mult.on.secoue { transform-origin: center; }
-
-/* ─────────── D · le chiffre change de couleur par palier ─────────── */
+/* ─────────── D · le fantôme derrière ─────────── */
 .d .mult {
-    color: #17140a;
-    background: linear-gradient(135deg, #ffe066, var(--chaud));
-    box-shadow: 0 0 0.9rem rgba(255, 179, 0, 0.55);
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -58%);
+    font-size: 5.4rem; letter-spacing: 0;
+    color: rgba(255, 215, 0, 0.13);
+    z-index: -1;
 }
-.d .mult.on { animation: aParait 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
-.d .bloc.on .v {
-    color: #ff9d3d;
-    text-shadow: 0 0 2.2rem rgba(255, 157, 61, 0.75);
-    animation: dSouffle 1.6s ease-in-out infinite;
-}
-@keyframes dSouffle {
-    0%, 100% { text-shadow: 0 0 1.6rem rgba(255, 157, 61, 0.5); }
-    50%      { text-shadow: 0 0 2.8rem rgba(255, 157, 61, 0.95); }
+.d .mult.on { animation: fantome 0.6s ease both; }
+@keyframes fantome {
+    0%   { opacity: 0; transform: translate(-50%, -58%) scale(1.5); }
+    100% { opacity: 1; transform: translate(-50%, -58%) scale(1); }
 }
 
-/* ─────────── E · l'anneau qui se remplit ─────────── */
-.e .jauge {
-    position: absolute; left: 50%; top: -0.5rem;
-    transform: translateX(-50%);
-    width: 3.6rem; height: 0.16rem;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.1);
-    overflow: hidden;
-}
-.e .jauge i {
-    display: block; height: 100%;
-    background: linear-gradient(90deg, var(--or), var(--chaud));
-    transform-origin: left;
-    transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.25, 1);
-}
+/* ─────────── E · le trait sous le chiffre ─────────── */
 .e .mult {
-    top: -1.5rem;
-    color: #17140a;
-    background: linear-gradient(135deg, #ffe066, var(--chaud));
-    box-shadow: 0 0 0.9rem rgba(255, 179, 0, 0.55);
+    position: absolute; left: 100%; top: 0.15rem;
+    margin-left: 0.14rem;
+    font-size: 1.05rem;
+    text-shadow: 0 0 1rem rgba(255, 215, 0, 0.7);
 }
-.e .mult.on { animation: aParait 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
-
-/* Le déblocage : un éclat qui part du chiffre, sur toutes les pistes */
-.eclat {
-    position: absolute; left: 50%; top: 42%;
-    width: 7rem; height: 7rem; margin: -3.5rem 0 0 -3.5rem;
-    border-radius: 50%;
-    pointer-events: none;
-    background: radial-gradient(closest-side, rgba(255,224,102,0.55), transparent 70%);
+.e .mult.on { animation: exposant 0.45s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+.e .trait {
+    position: absolute; left: 50%; bottom: -0.35rem;
+    transform: translateX(-50%);
+    width: 2.6rem; height: 0.1rem;
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, var(--or), transparent);
     opacity: 0;
+    transition: opacity 0.3s ease;
 }
-.eclat.va { animation: eclat 0.6s ease-out; }
-@keyframes eclat {
-    0%   { opacity: 0; transform: scale(0.3); }
-    25%  { opacity: 1; transform: scale(0.8); }
-    100% { opacity: 0; transform: scale(2.2); }
+.e .bloc.on .trait { opacity: 1; animation: traitSouffle 1.8s ease-in-out infinite; }
+@keyframes traitSouffle {
+    0%, 100% { opacity: 0.45; width: 2.2rem; }
+    50%      { opacity: 1;    width: 3rem; }
+}
+
+/* ── La secousse à chaque bonne réponse, commune aux cinq ──
+   Immobile entre deux portraits, franche au moment où l'on trouve : on garde
+   l'énergie du tremblement sans le bruit de fond d'une vibration permanente. */
+.bloc.on.monte .v,
+.bloc.on.monte .mult { animation: secousse 0.38s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+@keyframes secousse {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    20%      { transform: translate(-0.16rem, 0.07rem) scale(1.12); }
+    50%      { transform: translate(0.18rem, -0.09rem) scale(1.16); }
+    78%      { transform: translate(-0.08rem, 0.04rem) scale(1.05); }
+}
+/* le fantôme ne tremble pas : à cette taille, ça donne le mal de mer */
+.d .bloc.on.monte .mult { animation: none; }
+
+/* Le déblocage : une onde qui part du chiffre */
+.onde {
+    position: absolute; left: 50%; top: 44%;
+    width: 4rem; height: 4rem; margin: -2rem 0 0 -2rem;
+    border: 0.09rem solid var(--or);
+    border-radius: 50%;
+    opacity: 0; pointer-events: none;
+}
+.onde.va { animation: onde 0.7s cubic-bezier(0.2, 0.8, 0.3, 1); }
+@keyframes onde {
+    0%   { opacity: 0.9; transform: scale(0.4); }
+    100% { opacity: 0;   transform: scale(2.6); }
 }
 </style>
 
 <h1>Rush — le multiplicateur</h1>
 <p class="sous">
-    Il monte avec la <b>série en cours</b> : ×2 à dix d’affilée, ×3 à vingt, ×4 à trente. Une erreur
-    casse la série, donc il tombe avec elle. Deux moments à traiter, et ils n’appellent pas la même
-    chose : <b>le déblocage</b> arrive deux ou trois fois par manche, on peut y mettre du fracas ;
-    <b>la vie avec</b>, elle, dure — et un badge qui tremble en permanence à côté du chiffre qu’on
-    lit devient vite pénible. Chaque piste rejoue la même séquence : 8, 9, 10, 11, 12, puis une
+    Sans aucune pastille pleine : un rectangle jaune posé sur le chiffre fait badge de jeu mobile,
+    alors que tout l’écran est fait de chiffres nus sur du noir. Ici c’est la <b>typographie</b> qui
+    porte le multiplicateur — un glyphe, sa taille, sa couleur, sa place. Toutes secouent le chiffre
+    <b>à chaque bonne réponse</b> et restent immobiles entre deux portraits : l’énergie du
+    tremblement, sans le bruit de fond. Même séquence sur les cinq : 8, 9, 10, 11, 12, puis une
     erreur.
 </p>
 
@@ -206,32 +205,32 @@ h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem;
 
 <script>
 const PISTES = [
-    { cle: 'a', t: 'A · Le badge sage', n: "Il apparaît d’un bond au déblocage, puis ne bouge plus. Le plus lisible et le moins fatigant — mais rien ne rappelle qu’on est en série une fois passé le premier instant." },
-    { cle: 'b', t: 'B · Le tremblement continu', n: "Le badge ET le chiffre vibrent tant que le multiplicateur tient. C’est ce que tu décrivais. À l’essai sur une manche entière, la question est de savoir si ça reste excitant ou si ça devient du bruit." },
-    { cle: 'c', t: 'C · La secousse à chaque réponse', n: "Immobile entre deux portraits, secoué franchement à chaque bonne réponse. On garde l’énergie du tremblement sans le bruit de fond, et chaque trouvaille se sent. Mon avis." },
-    { cle: 'd', t: 'D · Le chiffre s’embrase', n: "Pas de tremblement : le chiffre de la série change de couleur et respire. Le multiplicateur devient un état plutôt qu’un effet — plus calme, et lisible d’un coup d’œil de l’autre bout d’un stream." },
-    { cle: 'e', t: 'E · L’anneau de progression', n: "Une barre au-dessus se remplit de 0 à 10 : on voit venir le palier suivant. C’est la seule qui donne une information nouvelle — « encore trois et je passe ×3 » — au prix d’un élément de plus." },
+    { cle: 'a', t: 'A · L’exposant', n: "Le ×2 se colle en haut à droite du chiffre, comme une puissance. Rien à encadrer, rien de neuf à l’écran : la série et son multiplicateur ne font qu’un seul objet. Mon avis." },
+    { cle: 'b', t: 'B · Dans le libellé', n: "« SÉRIE ×2 » : le libellé existant gagne un suffixe et s’allume. Absolument rien n’apparaît — c’est le plus sobre des cinq, et le seul qui ne coûte pas un pixel de plus. Peut-être trop discret pour un stream." },
+    { cle: 'c', t: 'C · Le contour', n: "Un badge, mais en contour fin sur fond transparent. On garde l’idée du badge sans le côté vignette de jeu mobile — reste que c’est un élément de plus, posé au-dessus du chiffre." },
+    { cle: 'd', t: 'D · Le fantôme', n: "Un ×2 énorme et très pâle derrière le chiffre. Spectaculaire de loin, et il ne prend aucune place puisqu’il occupe celle qui existe déjà. Il ne tremble pas : à cette taille, ça donne le mal de mer." },
+    { cle: 'e', t: 'E · L’exposant et le trait', n: "L’exposant de A, plus un filet doré sous le chiffre qui respire tant que le multiplicateur tient. Le trait dit « c’est en cours » là où l’exposant seul se fait oublier entre deux réponses." },
 ];
 
 const grille = document.getElementById('grille');
 for (const p of PISTES) {
     const bloc = document.createElement('div');
     bloc.className = 'piste';
+    const libelle = p.cle === 'b'
+        ? '<span class="l">série<span class="mult">×2</span></span>'
+        : '<span class="l">série</span>';
+    const mult = p.cle === 'b' ? '' : '<span class="mult">×2</span>';
+    const trait = p.cle === 'e' ? '<span class="trait"></span>' : '';
     bloc.innerHTML = '<h3>' + p.t + '</h3><p>' + p.n + '</p>' +
         '<div class="scene ' + p.cle + '">' +
-        '<span class="eclat"></span>' +
+        '<span class="onde"></span>' +
         '<div class="compteurs">' +
-            '<div class="bloc serie">' +
-                (p.cle === 'e' ? '<span class="jauge"><i></i></span>' : '') +
-                '<span class="mult">×2</span>' +
-                '<span class="v">8</span><span class="l">série</span>' +
-            '</div>' +
+            '<div class="bloc serie"><span class="v">8</span>' + mult + trait + libelle + '</div>' +
             '<div class="bloc record"><span class="v">12</span><span class="l">record</span></div>' +
         '</div></div>';
     grille.appendChild(bloc);
 }
 
-// La même séquence pour toutes : 8 → 9 → 10 (déblocage) → 11 → 12 → raté.
 const SUITE = [9, 10, 11, 12, 0];
 
 function jouer() {
@@ -239,14 +238,12 @@ function jouer() {
         const s = document.querySelector('.scene.' + p.cle);
         const bloc = s.querySelector('.bloc.serie');
         const v = bloc.querySelector('.v');
-        const mult = s.querySelector('.mult');
-        const eclat = s.querySelector('.eclat');
-        const jauge = s.querySelector('.jauge i');
+        const mult = bloc.querySelector('.mult');
+        const onde = s.querySelector('.onde');
 
         v.textContent = '8';
-        bloc.classList.remove('on');
-        mult.classList.remove('on', 'secoue');
-        if (jauge) jauge.style.transform = 'scaleX(0.8)';
+        bloc.classList.remove('on', 'monte');
+        mult.classList.remove('on');
 
         SUITE.forEach((n, i) => {
             setTimeout(() => {
@@ -256,28 +253,21 @@ function jouer() {
 
                 if (n === 0) {                       // l'erreur : tout retombe
                     bloc.classList.remove('on');
-                    mult.classList.remove('on', 'secoue');
-                    if (jauge) jauge.style.transform = 'scaleX(0)';
+                    mult.classList.remove('on');
                     return;
                 }
                 bloc.classList.add('monte');
-                if (jauge) jauge.style.transform = 'scaleX(' + ((n % 10) / 10 || 1) + ')';
 
-                if (n >= 10) {
-                    if (!mult.classList.contains('on')) {   // le déblocage
-                        mult.classList.add('on');
-                        eclat.classList.remove('va'); void eclat.offsetWidth;
-                        eclat.classList.add('va');
-                        bloc.classList.add('on');
-                    } else if (p.cle === 'c') {             // la secousse par réponse
-                        mult.classList.remove('secoue'); void mult.offsetWidth;
-                        mult.classList.add('secoue');
-                    }
+                if (n >= 10 && !mult.classList.contains('on')) {   // le déblocage
+                    mult.classList.add('on');
+                    bloc.classList.add('on');
+                    onde.classList.remove('va'); void onde.offsetWidth;
+                    onde.classList.add('va');
                 }
-            }, 900 * (i + 1));
+            }, 950 * (i + 1));
         });
     }
 }
 jouer();
-setInterval(jouer, 900 * (SUITE.length + 2));
+setInterval(jouer, 950 * (SUITE.length + 2));
 </script>
