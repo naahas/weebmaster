@@ -4034,5 +4034,135 @@
   "Noragami",
   "Toradora",
   "Trigun"
- ]
+ ],
+ "openings": {
+  "Naruto": [
+   { "name": "R★O★C★K★S", "order": 1, "img": "op_naruto_01.webp" },
+   { "name": "Haruka Kanata", "order": 2, "img": "op_naruto_02.webp" },
+   { "name": "Kanashimi wo Yasashisa ni", "order": 3, "img": "op_naruto_03.webp" },
+   { "name": "GO!!!", "order": 4, "img": "op_naruto_04.webp" },
+   { "name": "Seishun Kyousoukyoku", "order": 5, "img": "op_naruto_05.webp" },
+   { "name": "No Boy, No Cry", "order": 6, "img": "op_naruto_06.webp" },
+   { "name": "Namikaze Satellite", "order": 7, "img": "op_naruto_07.webp" },
+   { "name": "Re:member", "order": 8, "img": "op_naruto_08.webp" },
+   { "name": "YURA YURA", "order": 9, "img": "op_naruto_09.webp" }
+  ],
+  "Naruto Shippuden": [
+   { "name": "Hero's Come Back!!", "order": 1, "img": "op_shippuden_01.webp" },
+   { "name": "distance", "order": 2, "img": "op_shippuden_02.webp" },
+   { "name": "Blue Bird", "order": 3, "img": "op_shippuden_03.webp" },
+   { "name": "Closer", "order": 4, "img": "op_shippuden_04.webp" },
+   { "name": "Hotaru no Hikari", "order": 5, "img": "op_shippuden_05.webp" },
+   { "name": "Sign", "order": 6, "img": "op_shippuden_06.webp" },
+   { "name": "Toumei Datta Sekai", "order": 7, "img": "op_shippuden_07.webp" },
+   { "name": "Diver", "order": 8, "img": "op_shippuden_08.webp" },
+   { "name": "Lovers", "order": 9, "img": "op_shippuden_09.webp" },
+   { "name": "newsong", "order": 10, "img": "op_shippuden_10.webp" },
+   { "name": "Totsugeki Rock", "order": 11, "img": "op_shippuden_11.webp" },
+   { "name": "Moshimo", "order": 12, "img": "op_shippuden_12.webp" },
+   { "name": "Niwaka Ame ni mo Makezu", "order": 13, "img": "op_shippuden_13.webp" },
+   { "name": "Tsuki no Ookisa", "order": 14, "img": "op_shippuden_14.webp" },
+   { "name": "Guren", "order": 15, "img": "op_shippuden_15.webp" },
+   { "name": "Silhouette", "order": 16, "img": "op_shippuden_16.webp" },
+   { "name": "Kaze", "order": 17, "img": "op_shippuden_17.webp" },
+   { "name": "LINE", "order": 18, "img": "op_shippuden_18.webp" },
+   { "name": "Blood Circulator", "order": 19, "img": "op_shippuden_19.webp" },
+   { "name": "Kara no Kokoro", "order": 20, "img": "op_shippuden_20.webp" }
+  ],
+  "One Piece": [
+   { "name": "We Are!", "order": 1, "img": "op_onepiece_01.webp" },
+   { "name": "Believe", "order": 2, "img": "op_onepiece_02.webp" },
+   { "name": "Hikari e", "order": 3, "img": "op_onepiece_03.webp" },
+   { "name": "BON VOYAGE!", "order": 4, "img": "op_onepiece_04.webp" },
+   { "name": "Kokoro no Chizu", "order": 5, "img": "op_onepiece_05.webp" },
+   { "name": "Brand New World", "order": 6, "img": "op_onepiece_06.webp" },
+   { "name": "We Are! (Tsuyoshi Domoto)", "order": 7, "img": "op_onepiece_07.webp" },
+   { "name": "Crazy Rainbow", "order": 8, "img": "op_onepiece_08.webp" },
+   { "name": "Jungle P", "order": 9, "img": "op_onepiece_09.webp" },
+   { "name": "We Are! (TVXQ)", "order": 10, "img": "op_onepiece_10.webp" },
+   { "name": "Share the World", "order": 11, "img": "op_onepiece_11.webp" },
+   { "name": "Kaze wo Sagashite", "order": 12, "img": "op_onepiece_12.webp" },
+   { "name": "One day", "order": 13, "img": "op_onepiece_13.webp" },
+   { "name": "Fight Together", "order": 14, "img": "op_onepiece_14.webp" },
+   { "name": "We Go!", "order": 15, "img": "op_onepiece_15.webp" },
+   { "name": "Hands Up!", "order": 16, "img": "op_onepiece_16.webp" },
+   { "name": "Wake up!", "order": 17, "img": "op_onepiece_17.webp" },
+   { "name": "Hard Knock Days", "order": 18, "img": "op_onepiece_18.webp" },
+   { "name": "We Can!", "order": 19, "img": "op_onepiece_19.webp" },
+   { "name": "Hope", "order": 20, "img": "op_onepiece_20.webp" },
+   { "name": "Super Powers", "order": 21, "img": "op_onepiece_21.webp" },
+   { "name": "OVER THE TOP", "order": 22, "img": "op_onepiece_22.webp" },
+   { "name": "DREAMIN' ON", "order": 23, "img": "op_onepiece_23.webp" },
+   { "name": "PAINT", "order": 24, "img": "op_onepiece_24.webp" }
+  ],
+  "Bleach": [
+   { "name": "*~Asterisk~", "order": 1, "img": "op_bleach_01.webp" },
+   { "name": "D-tecnoLife", "order": 2, "img": "op_bleach_02.webp" },
+   { "name": "Ichirin no Hana", "order": 3, "img": "op_bleach_03.webp" },
+   { "name": "Tonight, Tonight, Tonight", "order": 4, "img": "op_bleach_04.webp" },
+   { "name": "Rolling Star", "order": 5, "img": "op_bleach_05.webp" },
+   { "name": "ALONES", "order": 6, "img": "op_bleach_06.webp" },
+   { "name": "After Dark", "order": 7, "img": "op_bleach_07.webp" },
+   { "name": "Chu-Bura", "order": 8, "img": "op_bleach_08.webp" },
+   { "name": "Velonica", "order": 9, "img": "op_bleach_09.webp" },
+   { "name": "Shoujo S", "order": 10, "img": "op_bleach_10.webp" },
+   { "name": "Anima Rossa", "order": 11, "img": "op_bleach_11.webp" },
+   { "name": "chAngE", "order": 12, "img": "op_bleach_12.webp" },
+   { "name": "Ranbu no Melody", "order": 13, "img": "op_bleach_13.webp" },
+   { "name": "BLUE", "order": 14, "img": "op_bleach_14.webp" },
+   { "name": "Harukaze", "order": 15, "img": "op_bleach_15.webp" }
+  ],
+  "Fullmetal Alchemist": [
+   { "name": "Again", "order": 1, "img": "op_fmab_01.webp" },
+   { "name": "Hologram", "order": 2, "img": "op_fmab_02.webp" },
+   { "name": "Golden Time Lover", "order": 3, "img": "op_fmab_03.webp" },
+   { "name": "Period", "order": 4, "img": "op_fmab_04.webp" },
+   { "name": "Rain", "order": 5, "img": "op_fmab_05.webp" }
+  ],
+  "Jujutsu Kaisen": [
+   { "name": "Kaikai Kitan", "order": 1, "img": "op_jjk_01.webp" },
+   { "name": "VIVID VICE", "order": 2, "img": "op_jjk_02.webp" },
+   { "name": "Ao no Sumika", "order": 3, "img": "op_jjk_03.webp" },
+   { "name": "SPECIALZ", "order": 4, "img": "op_jjk_04.webp" },
+   { "name": "", "order": 5, "img": "op_jjk_05.webp" }
+  ],
+  "Kuroko no Basket": [
+   { "name": "Can Do", "order": 1, "img": "op_kuroko_01.webp" },
+   { "name": "RIMFIRE", "order": 2, "img": "op_kuroko_02.webp" },
+   { "name": "The Other self", "order": 3, "img": "op_kuroko_03.webp" },
+   { "name": "Hengen Jizai no Magical Star", "order": 4, "img": "op_kuroko_04.webp" },
+   { "name": "ZERO", "order": 5, "img": "op_kuroko_05.webp" },
+   { "name": "Punky Funky Love", "order": 6, "img": "op_kuroko_06.webp" }
+  ],
+  "Haikyuu": [
+   { "name": "Imagination", "order": 1, "img": "op_haikyuu_01.webp" },
+   { "name": "Ah Yeah!!", "order": 2, "img": "op_haikyuu_02.webp" },
+   { "name": "I'm a Believer", "order": 3, "img": "op_haikyuu_03.webp" },
+   { "name": "FLY HIGH!!", "order": 4, "img": "op_haikyuu_04.webp" },
+   { "name": "Hikari Are", "order": 5, "img": "op_haikyuu_05.webp" },
+   { "name": "PHOENIX", "order": 6, "img": "op_haikyuu_06.webp" },
+   { "name": "Toppakou", "order": 7, "img": "op_haikyuu_07.webp" }
+  ],
+  "Fairy Tail": [
+   { "name": "Snow Fairy", "order": 1, "img": "op_fairytail_01.webp" },
+   { "name": "S.O.W. Sense of Wonder", "order": 2, "img": "op_fairytail_02.webp" },
+   { "name": "ft.", "order": 3, "img": "op_fairytail_03.webp" },
+   { "name": "R.P.G. ~Rockin' Playing Game~", "order": 4, "img": "op_fairytail_04.webp" },
+   { "name": "Egao no Mahou", "order": 5, "img": "op_fairytail_05.webp" },
+   { "name": "Fiesta", "order": 6, "img": "op_fairytail_06.webp" },
+   { "name": "Evidence", "order": 7, "img": "op_fairytail_07.webp" },
+   { "name": "The Rock City Boy", "order": 8, "img": "op_fairytail_08.webp" }
+  ],
+  "Gintama": [
+   { "name": "Pray", "order": 1, "img": "op_gintama_01.webp" },
+   { "name": "Tooi Nioi", "order": 2, "img": "op_gintama_02.webp" },
+   { "name": "Give it to me", "order": 3, "img": "op_gintama_03.webp" },
+   { "name": "Kasanaru Kage", "order": 4, "img": "op_gintama_04.webp" },
+   { "name": "Donten", "order": 5, "img": "op_gintama_05.webp" },
+   { "name": "Anata Magic", "order": 6, "img": "op_gintama_06.webp" },
+   { "name": "Bakuchi Dancer", "order": 7, "img": "op_gintama_07.webp" }
+  ],
+  "YuGiOh": [
+  ]
+ }
 }

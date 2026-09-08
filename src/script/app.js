@@ -1628,7 +1628,8 @@ createApp({
                 wordle: (d.category === 'anime' ? "Trouve le titre de l'anime"
                                                 : 'Trouve le nom du personnage')
                         + (d.animeHint ? ' · ' + d.animeHint : ''),
-                order: "Remets les arcs de " + (d.anime || '') + " dans l'ordre",
+                order: "Remets les " + (d.subtype === 'openings' ? 'openings' : 'arcs')
+                       + ' de ' + (d.anime || '') + " dans l'ordre",
                 match: (function () {
                     const par = {
                         char_anime: 'Relie chaque personnage à son anime',

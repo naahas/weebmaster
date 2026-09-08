@@ -273,6 +273,66 @@ const SCRAMBLE_SAC = (() => {
     return sac;
 })();
 
+// ═══ 🗓️ Ce que « l'ordre chronologique » peut servir ═══
+//
+// Une série n'entre dans le tirage que si elle réunit CINQ entrées, que chacune
+// porte un titre, et que TOUTES ses vignettes sont sur le disque. Un titre vide
+// est une donnée en cours de saisie, une vignette absente est une carte muette
+// devant laquelle le chronomètre tourne quand même — c'est exactement ce qui
+// est arrivé à un portrait de Liaison. On écarte la série entière plutôt que de
+// la servir amputée, et elle revient d'elle-même le jour où elle est complète.
+//
+// Le compte est refait à chaque appel, et non figé au démarrage : poser les
+// images pendant que le serveur tourne suffirait presque, s'il ne fallait pas
+// aussi les recenser (« JETONS.recenser » ne passe qu'au lancement).
+function ORDRE_JOUABLE() {
+    const saveurs = [];
+    for (const [subtype, source, dossier] of [
+        ['arcs', ASCENSION_DATA.arcs, 'ascensionarcs'],
+        ['openings', ASCENSION_DATA.openings, 'ascensionops'],
+    ]) {
+        for (const anime of Object.keys(source || {})) {
+            const liste = source[anime] || [];
+            if (liste.length < 5) continue;
+            if (liste.some(x => !x || !x.name)) continue;
+            const manquantes = liste.filter(x => {
+                const img = x.img || ('arc_' + slugifyArc(x.name) + '.webp');
+                return !JETONS.connait('ascensionpic', dossier + '/' + img);
+            });
+            if (manquantes.length) continue;
+            saveurs.push({ subtype, anime, dossier, liste });
+        }
+    }
+    return saveurs;
+}
+
+// Un état des lieux au démarrage : c'est la seule facon de savoir ce qui reste
+// a produire sans lancer une partie et esperer tomber dessus.
+{
+    const pret = new Set(ORDRE_JOUABLE().map(s => s.subtype + '/' + s.anime));
+    const attente = [];
+    for (const [subtype, source, dossier] of [
+        ['arcs', ASCENSION_DATA.arcs, 'ascensionarcs'],
+        ['openings', ASCENSION_DATA.openings, 'ascensionops'],
+    ]) {
+        for (const anime of Object.keys(source || {})) {
+            if (pret.has(subtype + '/' + anime)) continue;
+            const liste = source[anime] || [];
+            let raison;
+            if (liste.length < 5) raison = liste.length + ' entree(s), il en faut 5';
+            else if (liste.some(x => !x || !x.name)) raison = 'titre(s) a completer';
+            else {
+                const n = liste.filter(x => !JETONS.connait('ascensionpic',
+                    dossier + '/' + (x.img || ('arc_' + slugifyArc(x.name) + '.webp')))).length;
+                raison = n + ' vignette(s) sur ' + liste.length + ' a poser';
+            }
+            attente.push(anime + ' [' + subtype + '] : ' + raison);
+        }
+    }
+    console.log('🗓️ Ordre chronologique : ' + pret.size + ' serie(s) jouable(s)');
+    if (attente.length) console.warn('   en attente — ' + attente.join(' | '));
+}
+
 const GAME_TYPES = [
     'guess',      // Devine le perso (5 images, tape les noms)
     'target',     // Cible (30 persos, 5 consignes "clique sur X")
@@ -579,25 +639,44 @@ function genererEtageBrut(type, usedData) {
         }
 
         case 'order': {
-            const arcAnimes = Object.keys(ASCENSION_DATA.arcs);
-            // Filtrer pour ne garder que les animes ayant ≥ 5 arcs
-            const validAnimes = arcAnimes.filter(a => ASCENSION_DATA.arcs[a].length >= 5);
-            if (validAnimes.length === 0) return generateFloorData('guess', usedData);
-            
-            const animeName = validAnimes[Math.floor(Math.random() * validAnimes.length)];
-            const allArcs = ASCENSION_DATA.arcs[animeName];
-            
-            // 🆕 Prendre 5 arcs CONSÉCUTIFS (cohérence chronologique). Si l'anime en a + de 5,
-            // on choisit une fenêtre aléatoire ; sinon on prend les 5 disponibles.
+            // Deux saveurs, même geste : les ARCS d'un anime, ou ses OPENINGS.
+            // C'est un SOUS-TYPE et non un huitième type d'étage — le
+            // glisser-déposer reviendrait sinon quatre fois sur quinze au lieu
+            // de deux, et l'on se lasse d'un même geste bien avant d'en épuiser
+            // le contenu. Même raisonnement que les neuf sous-types de Liaison.
+            // « usedData.subtype » ne vient que de l'etage force (ASC_ETAGE_FORCE=
+            // order:openings) : le tirage ordinaire ne le pose jamais.
+            const vise = usedData && usedData.subtype;
+            let jouables = ORDRE_JOUABLE();
+            if (vise) {
+                const filtres = jouables.filter(s => s.subtype === vise);
+                // On le dit plutot que de servir autre chose en silence : une
+                // saveur sans une seule serie complete retomberait sur « guess »,
+                // et l'on chercherait longtemps pourquoi l'etage force n arrive pas.
+                if (!filtres.length) console.warn('⚠️ Ascension : etage force sur « order:' + vise
+                    + ' » mais aucune serie de cette saveur n est complete.');
+                else jouables = filtres;
+            }
+            if (!jouables.length) return generateFloorData('guess', usedData);
+
+            const choix = jouables[Math.floor(Math.random() * jouables.length)];
+            const animeName = choix.anime;
+            const allArcs = choix.liste;
+
+            // 5 CONSÉCUTIFS, pour que la chronologie ait un sens. Si la série en
+            // a plus de cinq, on choisit une fenêtre au hasard.
             const total = allArcs.length;
             const startIdx = total > 5 ? Math.floor(Math.random() * (total - 4)) : 0;
             const slice = allArcs.slice(startIdx, startIdx + 5);
-            
-            // Enrichir chaque arc avec id (slug) + img (convention "arc_<slug>.png")
+
+            // ⚠️ L'identifiant part au client TEL QUEL : « order » ne passe pas
+            // par « anonymiserEtage ». Il se dérive donc du TITRE et jamais du
+            // nom de fichier — « op_naruto_03 » annoncerait le rang à qui ouvre
+            // les outils du navigateur, et l'étage se gagnerait sans rien savoir.
             const enriched = slice.map(a => ({
                 id: slugifyArc(a.name),
                 name: a.name,
-                img: 'arc_' + slugifyArc(a.name) + '.webp',
+                img: a.img || ('arc_' + slugifyArc(a.name) + '.webp'),
                 order: a.order,  // côté serveur seulement, retiré dans getFloorDataForClient
             }));
             
@@ -619,6 +698,8 @@ function genererEtageBrut(type, usedData) {
             
             return {
                 type: 'order',
+                subtype: choix.subtype,   // 'arcs' ou 'openings' — change le libellé
+                dossier: choix.dossier,   // les vignettes ne vivent pas au même endroit
                 label: 'Ordre chronologique',
                 anime: animeName,
                 arcs: shuffled,
@@ -1204,9 +1285,13 @@ function getFloorDataForClient(floorData) {
         // 🆕 Anti-triche : retirer correctOrder ET le champ "order" individuel de chaque arc
         return {
             type: data.type,
+            subtype: data.subtype,
             label: data.label,
             anime: data.anime,
-            arcs: data.arcs.map(a => ({ id: a.id, name: a.name, img: urlImage('ascensionarcs/' + a.img) })),
+            arcs: data.arcs.map(a => ({
+                id: a.id, name: a.name,
+                img: urlImage((data.dossier || 'ascensionarcs') + '/' + a.img),
+            })),
         };
     }
     if (data.type === 'match') {
