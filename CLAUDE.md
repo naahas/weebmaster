@@ -47,6 +47,9 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   `npm run test:backoffice` (les routes /api/*question* exigent `QUESTION_ADMIN_CODE`),
   `npm run openings` liste les vignettes d openings a produire, serie par serie, avec
   le nom exact du fichier attendu — il ne verifie rien, il inventorie.
+  `npm run openings:convertir` passe en WebP 400 px tout ce qui traine dans
+  `src/img/ascensionpic/ascensionops` et supprime l original. Une capture d opening
+  en PNG pese 400 a 800 Ko : les 171 vignettes feraient plus de 100 Mo, contre 5 en WebP.
   `npm run test:preuve` (le lien de preuve d une question n atteint le joueur
   qu APRES la revelation : ni `new-question` ni `/game/state` ne le portent),
   `npm run test:collect` (le moteur de Collect sans serveur : les regles, les neuf

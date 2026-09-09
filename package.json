@@ -37,7 +37,8 @@
     "check:vue": "node scripts/verif-calculees.js",
     "test:rush-mult": "node scripts/test-rush-multiplicateur.js",
     "test:preuve": "node scripts/test-preuve.js",
-    "openings": "node scripts/openings.js"
+    "openings": "node scripts/openings.js",
+    "openings:convertir": "node scripts/openings-convertir.js"
   },
   "keywords": [
     "quiz",
