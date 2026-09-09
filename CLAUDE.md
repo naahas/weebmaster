@@ -50,6 +50,8 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   `npm run openings:convertir` passe en WebP 400 px tout ce qui traine dans
   `src/img/ascensionpic/ascensionops` et supprime l original. Une capture d opening
   en PNG pese 400 a 800 Ko : les 171 vignettes feraient plus de 100 Mo, contre 5 en WebP.
+  Un dossier peut lui etre passe (`-- ~/Bureau`) : il n y prend alors que les fichiers
+  nommes `op_*` et ne supprime RIEN — on ne touche pas a ce qui vit hors du depot.
   `npm run test:preuve` (le lien de preuve d une question n atteint le joueur
   qu APRES la revelation : ni `new-question` ni `/game/state` ne le portent),
   `npm run test:collect` (le moteur de Collect sans serveur : les regles, les neuf

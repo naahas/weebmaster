@@ -9,8 +9,13 @@
 // et cent soixante-dix d'entre elles feraient plus de cent mégaoctets à cloner
 // et à télécharger chez chaque joueur. En WebP l'ensemble tient dans cinq.
 //
-//   npm run openings:convertir
-//   npm run openings:convertir -- --force   (refait celles déjà converties)
+//   npm run openings:convertir                 (ce qui est déjà dans le dossier)
+//   npm run openings:convertir -- ~/Bureau     (aller les chercher ailleurs)
+//   npm run openings:convertir -- --force      (refaire celles déjà converties)
+//
+// ⚠️ Depuis un dossier EXTÉRIEUR, l'original n'est jamais supprimé : on ne touche
+// pas à ce qui vit hors du dépôt. Et seuls les fichiers nommés « op_… » sont pris,
+// pour ne pas ramasser ce qui traîne à côté sur un bureau.
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
@@ -19,6 +24,11 @@ const DOSSIER = path.join(__dirname, '..', 'src', 'img', 'ascensionpic', 'ascens
 const LARGEUR = 400;          // la largeur des 64 vignettes d'arcs
 const QUALITE = 82;
 const force = process.argv.includes('--force');
+const SOURCE = process.argv.slice(2).find(a => !a.startsWith('--'));
+const DEPUIS = SOURCE
+    ? path.resolve(SOURCE.replace(/^~/, process.env.USERPROFILE || process.env.HOME || '~'))
+    : DOSSIER;
+const surPlace = path.resolve(DEPUIS) === path.resolve(DOSSIER);
 
 try { execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' }); }
 catch (e) {
@@ -26,13 +36,15 @@ catch (e) {
     process.exit(1);
 }
 
-if (!fs.existsSync(DOSSIER)) {
-    console.error('❌ Le dossier n\'existe pas : ' + DOSSIER);
-    process.exit(1);
+for (const d of [DOSSIER, DEPUIS]) {
+    if (!fs.existsSync(d)) { console.error('❌ Dossier introuvable : ' + d); process.exit(1); }
 }
 
-const sources = fs.readdirSync(DOSSIER)
+const sources = fs.readdirSync(DEPUIS)
     .filter(n => /\.(png|jpe?g|bmp|webp)$/i.test(n))
+    // Hors du dépôt, on ne prend que ce qui porte le préfixe : un bureau contient
+    // autre chose que des vignettes d'openings, et on n'a rien à y faire.
+    .filter(n => surPlace || /^op_/i.test(n))
     .filter(n => force || !/\.webp$/i.test(n));
 
 if (!sources.length) {
@@ -45,7 +57,7 @@ let avant = 0, apres = 0, faits = 0;
 const ratés = [];
 
 for (const nom of sources) {
-    const source = path.join(DOSSIER, nom);
+    const source = path.join(DEPUIS, nom);
     const cible = path.join(DOSSIER, nom.replace(/\.[^.]+$/, '.webp'));
     // ffmpeg refuse d'écrire dans le fichier qu'il lit : on passe par un temporaire.
     const temp = cible + '.tmp.webp';
@@ -60,7 +72,7 @@ for (const nom of sources) {
     fs.renameSync(temp, cible);
     // On ne supprime la source qu'une fois la cible en place, et jamais si elle
     // porte le même nom : ce serait effacer ce qu'on vient d'écrire.
-    if (path.resolve(source) !== path.resolve(cible)) fs.unlinkSync(source);
+    if (surPlace && path.resolve(source) !== path.resolve(cible)) fs.unlinkSync(source);
 
     const poidsApres = fs.statSync(cible).size;
     avant += poidsAvant; apres += poidsApres; faits++;
@@ -73,5 +85,6 @@ console.log(faits + ' vignette(s) converties : ' + Math.round(avant / 1024) + ' 
     + Math.round(apres / 1024) + ' Ko'
     + (avant ? ' (' + Math.round(100 - apres / avant * 100) + ' % de moins)' : ''));
 if (ratés.length) console.log('❌ échec sur : ' + ratés.join(', '));
+if (!surPlace) console.log('   Les originaux restent dans ' + DEPUIS + ' — à toi de les ranger.');
 console.log('⚠️ Relance le serveur : il ne recense les images qu\'au démarrage.');
 console.log('   « npm run openings » dit ce qui manque encore.');

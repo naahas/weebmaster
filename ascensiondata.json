@@ -4072,7 +4072,6 @@
   "One Piece": [
    { "name": "We Are!", "order": 1, "img": "op_onepiece_01.webp" },
    { "name": "Believe", "order": 2, "img": "op_onepiece_02.webp" },
-   { "name": "Hikari e", "order": 3, "img": "op_onepiece_03.webp" },
    { "name": "BON VOYAGE!", "order": 4, "img": "op_onepiece_04.webp" },
    { "name": "Kokoro no Chizu", "order": 5, "img": "op_onepiece_05.webp" },
    { "name": "Brand New World", "order": 6, "img": "op_onepiece_06.webp" },
