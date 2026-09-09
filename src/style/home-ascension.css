@@ -1164,10 +1164,11 @@
     max-width: 23rem;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    /* Le titre se collait à l'image : il lui faut sa propre marge, en bas
-       comme sur les côtés, sinon la carte paraît coupée. */
-    padding: 0.55rem 0.55rem 0.85rem;
+    /* L'ecart entre l'image et le titre, et la marge sous le titre. Les deux
+       ensemble font l'air autour du texte : le regler d'un seul cote decale la
+       carte au lieu de la respirer. */
+    gap: 1rem;
+    padding: 0.55rem 0.55rem 1.2rem;
     background: rgba(140, 180, 255, 0.07);
     border: 0.09rem solid rgba(140, 180, 255, 0.24);
     border-radius: 0.5rem;
