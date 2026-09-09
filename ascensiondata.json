@@ -4127,9 +4127,8 @@
    { "name": "RIMFIRE", "order": 2, "img": "op_kuroko_02.webp" },
    { "name": "The Other self", "order": 3, "img": "op_kuroko_03.webp" },
    { "name": "Hengen Jizai no Magical Star", "order": 4, "img": "op_kuroko_04.webp" },
-   { "name": "ZERO", "order": 5, "img": "op_kuroko_05.webp" },
-   { "name": "Punky Funky Love", "order": 6, "img": "op_kuroko_06.webp" },
-    { "name": "GLITTER DAYS", "order": 7, "img": "op_kuroko_07.webp" }
+   { "name": "ZERO", "order": 6, "img": "op_kuroko_06.webp" },
+    { "name": "Memories", "order": 7, "img": "op_kuroko_07.webp" }
   ],
   "Haikyuu": [
    { "name": "Imagination", "order": 1, "img": "op_haikyuu_01.webp" },
