@@ -36,7 +36,8 @@
     "test:collect-salon": "node scripts/test-collect-salon.js",
     "check:vue": "node scripts/verif-calculees.js",
     "test:rush-mult": "node scripts/test-rush-multiplicateur.js",
-    "test:preuve": "node scripts/test-preuve.js"
+    "test:preuve": "node scripts/test-preuve.js",
+    "openings": "node scripts/openings.js"
   },
   "keywords": [
     "quiz",
