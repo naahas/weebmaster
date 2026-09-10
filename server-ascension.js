@@ -180,6 +180,52 @@ if (ETAGE_FORCE) {
         + ' » (ASC_ETAGE_FORCE). Retirer la variable pour revenir au tirage.');
 }
 
+// ═══ 🔡 Le sac du Wordle ═══
+//
+// L'indice affiché sous les cases — « Trouve le nom du personnage · Bleach »
+// — est l'anime du personnage, retrouvé par son nom dans « characters ».
+//
+// ⚠️ Il faut chercher AUSSI dans les alias. « FRIEZA » n'est le nom principal
+// de personne : c'est un alias de « Freezer ». Idem « MUSTANG » pour « Roy
+// Mustang ». Ces mots-là sortaient sans indice, et rien ne le disait —
+// quatre-vingt-douze personnages portent des alias, le trou était large.
+//
+// Reste le nom qui n'existe nulle part : Beerus, Ryûk. Pour ceux-là on écrit
+// { "mot": "RYUK", "anime": "Death Note" } au lieu du mot seul.
+//
+// Et l'indice est retiré quand il EST la réponse : annoncer « Naruto » sous
+// les lettres de NARUTO donnerait l'étage.
+const WORDLE_SAC = (() => {
+    const parNom = {};
+    for (const c of ASCENSION_DATA.characters || []) {
+        if (!c || !c.anime) continue;
+        if (c.name) parNom[c.name.toUpperCase()] = c.anime;
+        for (const a of c.aliases || []) if (a) parNom[a.toUpperCase()] = c.anime;
+    }
+    const sans = [];
+    const mots = (ASCENSION_DATA.wordle_words || []).map(e => {
+        const objet = !!e && typeof e === 'object';
+        const brut = objet ? e.mot : e;
+        if (!brut) return null;
+        const MOT = String(brut).toUpperCase();
+        const anime = (objet && e.anime) || parNom[MOT] || null;
+        if (!anime) sans.push(MOT);
+        return {
+            raw: MOT,
+            groups: [MOT.length],
+            anime: anime && anime.toUpperCase() !== MOT ? anime : null,
+        };
+    }).filter(Boolean);
+
+    if (sans.length) {
+        console.warn('⚠️ Wordle : ' + sans.length + ' mot(s) sans indice d\'anime — introuvables dans '
+            + '« characters », alias compris. Écrire { "mot": "…", "anime": "…" } : ' + sans.join(', '));
+    }
+    console.log('🔡 Wordle : ' + mots.length + ' nom(s) de personnage, '
+        + mots.filter(m => m.anime).length + ' avec indice');
+    return mots;
+})();
+
 // ═══ 🔤 Le sac de l'Anagramme ═══
 //
 // Deux listes NOMMÉES dans « ascensiondata.json » — « scramble_characters » et
@@ -607,18 +653,8 @@ function genererEtageBrut(type, usedData) {
         }
 
         case 'wordle': {
-            // 🆕 Map nom UPPER → anime pour retrouver l'anime d'un perso wordle_words
-            const charAnimeMap = {};
-            (ASCENSION_DATA.characters || []).forEach(c => {
-                if (c && c.name) charAnimeMap[c.name.toUpperCase()] = c.anime;
-            });
-
-            // Pool : persos (wordle_words, single-word) + animes (single OU multi-mots, lettres+espaces only)
-            const personsPool = (ASCENSION_DATA.wordle_words || []).map(w => ({
-                raw: w,
-                groups: [w.length],
-                anime: charAnimeMap[w] || null,
-            }));
+            // Le sac est construit une fois au chargement — voir WORDLE_SAC.
+            const personsPool = WORDLE_SAC;
             const animesPool = (ASCENSION_DATA.animes || [])
                 .map(a => a.name.toUpperCase())
                 .filter(n => /^[A-Z]+( [A-Z]+)*$/.test(n))
