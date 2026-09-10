@@ -4187,6 +4187,7 @@
   ],
   "Attack on Titan": [
     { "name": "Guren no Yumiya", "order": 1, "img": "op_aot_01.webp" },
+    { "name": "Jiyuu no Tsubasa", "order": 2, "img": "op_aot_02.webp" },
     { "name": "Shinzou wo Sasageyo!", "order": 3, "img": "op_aot_03.webp" },
     { "name": "Red Swan", "order": 4, "img": "op_aot_04.webp" },
     { "name": "Shoukei to Shikabane no Michi", "order": 5, "img": "op_aot_05.webp" },
