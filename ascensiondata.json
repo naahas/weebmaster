@@ -4145,18 +4145,11 @@
    { "name": "Fiesta", "order": 6, "img": "op_fairytail_06.webp" },
    { "name": "Evidence", "order": 7, "img": "op_fairytail_07.webp" },
    { "name": "The Rock City Boy", "order": 8, "img": "op_fairytail_08.webp" },
-   { "name": "Towa no Kizuna", "order": 9, "img": "op_fairytail_9.webp" },
+   { "name": "Towa no Kizuna", "order": 9, "img": "op_fairytail_09.webp" },
    { "name": "I Wish", "order": 10, "img": "op_fairytail_10.webp" },
-   { "name": "The Starting Sky", "order": 11, "img": "op_fairytail_11.webp" },
-   { "name": "Tenohira", "order": 12, "img": "op_fairytail_12.webp" },
-   { "name": "Breakthrough", "order": 13, "img": "op_fairytail_13.webp" },
    { "name": "Yakusoku no Hi", "order": 14, "img": "op_fairytail_14.webp" },
    { "name": "MASAYUME CHASING", "order": 15, "img": "op_fairytail_15.webp" },
-   { "name": "STRIKE BACK", "order": 16, "img": "op_fairytail_16.webp" },
-   { "name": "Mysterious Magic", "order": 17, "img": "op_fairytail_17.webp" },
-   { "name": "BREAK OUT", "order": 18, "img": "op_fairytail_18.webp" },
-   { "name": "Yumeiro Graffiti", "order": 19, "img": "op_fairytail_19.webp" },
-   { "name": "NEVER-END TALE", "order": 20, "img": "op_fairytail_20.webp" }
+   { "name": "STRIKE BACK", "order": 16, "img": "op_fairytail_16.webp" }
    
   ],
   "Gintama": [
