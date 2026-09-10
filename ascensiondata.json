@@ -4094,12 +4094,9 @@
   "Bleach": [
    { "name": "*~Asterisk~", "order": 1, "img": "op_bleach_01.webp" },
    { "name": "D-tecnoLife", "order": 2, "img": "op_bleach_02.webp" },
-   { "name": "Ichirin no Hana", "order": 3, "img": "op_bleach_03.webp" },
-   { "name": "Tonight, Tonight, Tonight", "order": 4, "img": "op_bleach_04.webp" },
    { "name": "Rolling Star", "order": 5, "img": "op_bleach_05.webp" },
    { "name": "ALONES", "order": 6, "img": "op_bleach_06.webp" },
    { "name": "After Dark", "order": 7, "img": "op_bleach_07.webp" },
-   { "name": "Chu-Bura", "order": 8, "img": "op_bleach_08.webp" },
    { "name": "Velonica", "order": 9, "img": "op_bleach_09.webp" },
    { "name": "Shoujo S", "order": 10, "img": "op_bleach_10.webp" },
    { "name": "Anima Rossa", "order": 11, "img": "op_bleach_11.webp" },
