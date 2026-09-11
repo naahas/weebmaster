@@ -4154,12 +4154,11 @@
   ],
   "Gintama": [
    { "name": "Pray", "order": 1, "img": "op_gintama_01.webp" },
-   { "name": "Give it to me", "order": 3, "img": "op_gintama_03.webp" },
+    { "name": "Donten", "order": 5, "img": "op_gintama_05.webp" },
    { "name": "Togenkyo Alien", "order": 9, "img": "op_gintama_09.webp" },
    { "name": "Let's Go Out", "order": 12, "img": "op_gintama_12.webp" },
     { "name": "Sakura Mitsutsuki", "order": 13, "img": "op_gintama_13.webp" },
     { "name": "Pride Kakumei", "order": 15, "img": "op_gintama_15.webp" },
-    { "name": "Know Know Know", "order": 17, "img": "op_gintama_17.webp" },
     { "name": "Kagerou", "order": 18, "img": "op_gintama_18.webp" },
     { "name": "I Wanna Be", "order": 21, "img": "op_gintama_21.webp" }
   ],
@@ -4174,9 +4173,9 @@
     { "name": "Drawing days", "order": 1, "img": "op_reborn_01.webp" },
     { "name": "Boys and Girls", "order": 2, "img": "op_reborn_02.webp" },
     { "name": "Dive to World", "order": 3, "img": "op_reborn_03.webp" },
-    { "name": "Funny Sunny Day", "order": 4, "img": "op_reborn_04.webp" },
-    { "name": "Listen to the Stereo!!", "order": 6, "img": "op_reborn_06.webp" },
-    { "name": "Funny Sunny Day", "order": 8, "img": "op_reborn_08.webp" }
+    { "name": "88", "order": 4, "img": "op_reborn_04.webp" },
+    { "name": "Easy Go!", "order": 6, "img": "op_reborn_06.webp" },
+    { "name": "Listen to the Stereo", "order": 8, "img": "op_reborn_08.webp" }
   ],
   "Attack on Titan": [
     { "name": "Guren no Yumiya", "order": 1, "img": "op_aot_01.webp" },
@@ -4219,9 +4218,9 @@
     { "name": "Sono Chi no Sadame", "order": 1, "img": "op_jojo_01.webp" },
     { "name": "Bloody Stream", "order": 2, "img": "op_jojo_02.webp" },
     { "name": "Stand Proud", "order": 3, "img": "op_jojo_03.webp" },
-    { "name": "Chase", "order": 6, "img": "op_jojo_06.webp" },
-    { "name": "Fighting Gold", "order": 8, "img": "op_jojo_08.webp" },
-    { "name": "Heaven’s falling down", "order": 11, "img": "op_jojo_11.webp" }
+    { "name": "Chase", "order": 6, "img": "op_jojo_04.webp" },
+    { "name": "Fighting Gold", "order": 8, "img": "op_jojo_05.webp" },
+    { "name": "Heaven’s falling down", "order": 11, "img": "op_jojo_06.webp" }
     
   ]
  }
