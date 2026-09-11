@@ -1460,8 +1460,18 @@
                                            occupe: ascParPalier[e] }">
                                 <span class="asc-etg-n">{{ e }}</span>
                                 <span class="asc-etg-trait"></span>
-                                <span class="asc-etg-nb" v-if="ascParPalier[e]">{{ ascParPalier[e].length }}</span>
                             </div>
+
+                            <!-- Les cabines glissent le long du fût au lieu de
+                                 disparaître d'un palier pour reparaître au suivant.
+                                 La hauteur se calcule en pourcentage : les quinze
+                                 paliers se partagent la colonne à parts égales, il
+                                 n'y a donc rien à mesurer. Voir « ascCabines ». -->
+                            <span class="asc-cabines">
+                                <span class="asc-cabine" v-for="c in ascCabines" :key="c.id"
+                                      :class="{ moi: c.moi }"
+                                      :style="{ top: ((asc.total - c.etage + 0.5) / asc.total * 100) + '%' }">{{ c.nb }}</span>
+                            </span>
                         </aside>
                         </template>
                     </div>

@@ -210,6 +210,13 @@
    qui s'y trouvent. Des jetons nominatifs cessent de se lire au-delà d'une
    poignée de joueurs ; un compte tient à cinquante comme à trois. */
 .asc-tour {
+    --fut-x: 2.2rem;
+    --fut-w: 2.6rem;
+    /* Ce que le rembourrage retire en haut et en bas. Nul ici, pas sur
+       téléphone — voir la note sur « .asc-cabines ». */
+    --tour-haut: 0rem;
+    --tour-bas: 0rem;
+
     position: absolute;
     top: 3.6rem;
     bottom: 1.4rem;
@@ -221,13 +228,16 @@
 }
 
 /* Le fût, en fond : il court d'un bout à l'autre de la colonne, les paliers
-   se posant dessus. Sa base est plus dense que son sommet — on part du sol. */
+   se posant dessus. Sa base est plus dense que son sommet — on part du sol.
+   Sa gouttière est décrite une seule fois, en variables sur « .asc-tour » :
+   les cabines doivent tomber exactement dedans, et deux jeux de valeurs à
+   tenir d'accord finissent toujours par diverger. */
 .asc-fut {
     position: absolute;
-    left: 2.2rem;
+    left: var(--fut-x);
     top: -0.2rem;
     bottom: -0.2rem;
-    width: 2.6rem;
+    width: var(--fut-w);
     border-radius: 0.35rem 0.35rem 0 0;
     background: linear-gradient(180deg,
         rgba(140, 180, 255, 0.03),
@@ -275,27 +285,52 @@
     transition: background 0.3s ease;
 }
 
-/* Combien de monde ici. Le pastillage remplace les jetons : à cinquante
-   grimpeurs, cinquante initiales ne se lisaient plus. */
-.asc-etg-nb {
+/* ── Les cabines ──
+   Combien de monde à chaque palier. Une pastille ovale par palier
+   renseignait, mais elle naissait et mourait sur place : on ne voyait jamais
+   personne monter, seulement deux états. La cabine, elle, REMONTE le fût.
+   C'est le seul endroit du jeu où la progression est un geste.
+
+   ⚠️ Une boîte absolue se place sur la BOÎTE DE REMBOURRAGE de son parent, pas
+   sur son contenu. Sur téléphone la tour porte 3,2 rem en haut et 4,6 en bas
+   pour dégager les commandes : sans « --tour-haut » et « --tour-bas », les
+   cabines glisseraient d'autant par rapport aux paliers qu'elles désignent. */
+.asc-cabines {
     position: absolute;
-    left: 2.2rem;
-    width: 2.6rem;
-    display: grid;
-    place-items: center;
-    height: 1.15rem;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 0.8rem;
-    color: #0b0b0e;
-    background: rgba(140, 180, 255, 0.85);
-    border-radius: 2rem;
-    transform: scale(0.82);
-    animation: ascCompte 0.4s cubic-bezier(0.2, 1.3, 0.35, 1) both;
+    left: var(--fut-x);
+    width: var(--fut-w);
+    top: var(--tour-haut);
+    bottom: var(--tour-bas);
+    pointer-events: none;
 }
 
-@keyframes ascCompte {
+.asc-cabine {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 1.25rem;
+    /* La moitié de sa hauteur : le « top » vise le milieu du palier. */
+    margin-top: -0.625rem;
+    display: grid;
+    place-items: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.78rem;
+    color: #0b0b0e;
+    background: rgba(140, 180, 255, 0.9);
+    border-radius: 0.28rem;
+    box-shadow: 0 0.15rem 0.5rem rgba(0, 0, 0, 0.5);
+    transition: top 0.6s cubic-bezier(0.3, 0.9, 0.25, 1);
+    animation: ascCabine 0.4s cubic-bezier(0.2, 1.3, 0.35, 1) both;
+}
+
+.asc-cabine.moi {
+    background: var(--neon-primary, #ffd700);
+    box-shadow: 0 0.15rem 0.5rem rgba(0, 0, 0, 0.5), 0 0 0.8rem rgba(255, 215, 0, 0.5);
+}
+
+@keyframes ascCabine {
     from { opacity: 0; transform: scale(0.5); }
-    to   { opacity: 1; transform: scale(0.82); }
+    to   { opacity: 1; transform: scale(1); }
 }
 
 /* Le sommet : c'est là qu'on va, autant que ça se voie */
@@ -312,10 +347,7 @@
     box-shadow: 0 0 0.7rem rgba(255, 215, 0, 0.5);
 }
 
-.asc-etg.moi .asc-etg-nb {
-    color: #14100a;
-    background: var(--neon-primary, #ffd700);
-}
+
 
 /* Ma place se marque d'une pointe dans la marge des numéros, et non d'un
    mot : « Vous » forçait la colonne à réserver sa largeur, ce qui poussait
@@ -621,13 +653,18 @@
     /* Dressée comme sur grand écran, mais posée par-dessus et retirée tant
        qu'on ne la demande pas. */
     .asc-tour {
+        /* Repris par « .asc-cabines » : elles doivent s'arrêter là où les
+           paliers s'arrêtent, et non là où la tour s'arrête. */
+        --tour-haut: 3.2rem;
+        --tour-bas: 4.6rem;
+
         position: fixed;
         top: 0;
         bottom: 0;
         right: 0;
         z-index: 58;
         width: 5.4rem;
-        padding: 3.2rem 0.4rem 4.6rem;
+        padding: var(--tour-haut) 0.4rem var(--tour-bas);
         background: rgba(10, 12, 18, 0.82);
         backdrop-filter: blur(0.4rem);
         border-left: 0.06rem solid rgba(255, 255, 255, 0.07);
@@ -1855,6 +1892,7 @@ body.game-active:has(.asc) {
     .asc-etage i { font-size: 1.4rem; }
 
     /* La tour gagne de quoi rester lisible a cote d un plateau plus large */
-    .asc-tour { width: 6rem; }
-    .asc-fut { left: 2.7rem; width: 3.1rem; }
+    /* La gouttière s'élargit en un seul endroit : le fût et les cabines la
+       lisent tous les deux. */
+    .asc-tour { width: 6rem; --fut-x: 2.7rem; --fut-w: 3.1rem; }
 }

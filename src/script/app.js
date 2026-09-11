@@ -1053,6 +1053,32 @@ createApp({
             return carte;
         },
 
+        // Les cabines de la tour : un bloc par JOUEUR, et non par palier.
+        //
+        // ⚠️ C'est ce qui donne le glissement. Une cabine posée par palier
+        // serait détruite et recréée à chaque montée — deux états, aucun
+        // mouvement. Clé sur le « playerId », l'élément survit d'un rendu à
+        // l'autre et seul son « top » change : la transition CSS joue.
+        //
+        // Plusieurs joueurs d'un même palier se superposent EXACTEMENT : à
+        // l'écran c'est une seule cabine, qui porte leur nombre. Celui qui la
+        // quitte emmène la sienne et découvre celles des autres, déjà au bon
+        // compte. Ça vaut aussi à cinquante — c'est le nombre qui s'affiche,
+        // pas les initiales, et c'étaient elles qui ne tenaient pas.
+        ascCabines() {
+            const l = [];
+            for (const [etage, joueurs] of Object.entries(this.ascParPalier)) {
+                for (const j of joueurs) {
+                    l.push({
+                        id: j.playerId, etage: Number(etage), nb: joueurs.length,
+                        moi: j.playerId === this.playerId,
+                    });
+                }
+            }
+            // La mienne en dernier : elle passe devant sans empiler de z-index.
+            return l.sort((a, b) => (a.moi ? 1 : 0) - (b.moi ? 1 : 0));
+        },
+
         // Ma place, pour la mettre en avant sans avoir à la chercher
         // Vrai tant que la pénalité court. Recalculé au rendu, il suffit à
         // fermer la grille — le serveur, lui, refuse pour de bon.
