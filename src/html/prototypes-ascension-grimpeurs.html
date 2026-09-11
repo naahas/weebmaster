@@ -1,0 +1,312 @@
+<title>Ascension — les grimpeurs sur la tour</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   Comment montrer QUI est où sur la tour, à droite de l'épreuve.
+
+   L'existant : un filet de 0.06 rem par palier, et une pastille
+   ovale portant le nombre. Ça renseigne, mais ça ne fait pas objet —
+   deux traits posés sur un fond, sans matière.
+
+   ⚠️ La contrainte qui a tué les jetons nominatifs la première fois :
+   à cinquante grimpeurs, cinquante initiales ne se lisent plus. Tout
+   ce qui suit doit donc tenir de deux à cinquante joueurs. Les pistes
+   qui montrent les individus le font avec un seuil et un « +N ».
+
+   ⚠️ La largeur est comptée : la colonne fait 4.9 rem, dont 2.6 pour
+   le fût. Elle est posée en « absolute » à droite de l'écran de jeu,
+   et l'élargir mangerait l'épreuve.
+
+   La simulation fait monter six grimpeurs pour de vrai : sur ce
+   composant, c'est le mouvement qui décide, pas la pose.
+   ════════════════════════════════════════════════════════════════ */
+:root { --or: #ffd700; --bleu: #8cb4ff; --bleu-vif: #6ea8ff; }
+* { box-sizing: border-box; }
+
+body {
+    margin: 0; padding: 2rem 1.5rem 4rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #fff;
+    background: radial-gradient(70% 55% at 50% 0%, #12131a, #08080b 70%);
+    min-height: 100vh;
+}
+h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
+.sous { margin: 0 0 2rem; max-width: 56rem; font-size: 0.85rem; line-height: 1.55; color: rgba(255,255,255,0.45); }
+.sous b { color: rgba(255,255,255,0.75); }
+
+.rangee { display: flex; flex-wrap: wrap; gap: 2.4rem; align-items: flex-start; }
+.piste { width: 15rem; }
+.piste h3 { margin: 0 0 0.2rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.05rem; letter-spacing: 0.07em; }
+.piste p { margin: 0 0 1rem; font-size: 0.72rem; line-height: 1.5; color: rgba(255,255,255,0.42); min-height: 7.2em; }
+
+/* La scène : un écran de jeu réduit, la tour à droite comme en vrai */
+.scene {
+    position: relative;
+    height: 27rem;
+    border-radius: 0.7rem;
+    background: #0a0a0d;
+    box-shadow: inset 0 0 0 0.06rem rgba(255,255,255,0.05);
+    overflow: hidden;
+}
+.scene::before {
+    content: 'l’épreuve';
+    position: absolute; left: 0; top: 0; bottom: 0; right: 5.8rem;
+    display: grid; place-items: center;
+    font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: rgba(255,255,255,0.07);
+}
+
+.tour {
+    position: absolute;
+    top: 1.2rem; bottom: 1.2rem; right: 0.7rem;
+    width: 4.9rem;
+    display: flex; flex-direction: column; justify-content: space-between;
+}
+
+/* Le fût, commun à toutes les pistes */
+.fut {
+    position: absolute;
+    left: 2.2rem; top: -0.2rem; bottom: -0.2rem;
+    width: 2.6rem;
+    border-radius: 0.35rem 0.35rem 0 0;
+    background: linear-gradient(180deg, rgba(140,180,255,0.03), rgba(140,180,255,0.09));
+    box-shadow: inset 0 0 0 0.06rem rgba(255,255,255,0.07);
+}
+
+.etg { position: relative; flex: 1; min-height: 0; display: flex; align-items: center; }
+
+.etg-n {
+    position: absolute; left: 0; width: 1.25rem; text-align: right;
+    font-family: 'Bebas Neue', sans-serif; font-size: 0.78rem;
+    color: rgba(255,255,255,0.16);
+    font-variant-numeric: tabular-nums;
+    transition: color 0.3s ease;
+}
+.etg.moi .etg-n { color: #fff; }
+.etg.sommet .etg-n { color: rgba(255,215,0,0.55); }
+
+/* ═══ A · l'existant, pour comparer ═══ */
+.a .etg-trait {
+    position: absolute; left: 2.2rem; width: 2.6rem; bottom: 0;
+    height: 0.06rem; background: rgba(255,255,255,0.08);
+}
+.a .etg.sommet .etg-trait { background: rgba(255,215,0,0.4); }
+.a .etg.moi .etg-trait { height: 0.11rem; background: var(--or); box-shadow: 0 0 0.7rem rgba(255,215,0,0.5); }
+.a .nb {
+    position: absolute; left: 2.2rem; width: 2.6rem;
+    display: grid; place-items: center; height: 1.15rem;
+    font-family: 'Bebas Neue', sans-serif; font-size: 0.8rem;
+    color: #0b0b0e; background: rgba(140,180,255,0.85);
+    border-radius: 2rem; transform: scale(0.82);
+}
+.a .etg.moi .nb { color: #14100a; background: var(--or); }
+
+/* ═══ B · les paliers allumés ═══
+   Pas de pastille du tout : c'est le palier lui-même qui s'allume, et
+   d'autant plus qu'il porte du monde. La tour devient un thermomètre. */
+.b .etg-plaque {
+    position: absolute; left: 2.2rem; width: 2.6rem;
+    top: 0.09rem; bottom: 0.09rem;
+    border-radius: 0.18rem;
+    background: rgba(140,180,255,0);
+    transition: background 0.45s ease, box-shadow 0.45s ease;
+}
+.b .etg-plaque .cpt {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 0.72rem;
+    color: rgba(11,11,14,0.85);
+    opacity: 0; transition: opacity 0.3s ease;
+}
+.b .etg.occupe .etg-plaque .cpt { opacity: 1; }
+.b .etg.moi .etg-plaque { box-shadow: inset 0 0 0 0.09rem var(--or), 0 0 0.8rem rgba(255,215,0,0.35); }
+.b .etg.sommet .etg-plaque { box-shadow: inset 0 0 0 0.06rem rgba(255,215,0,0.35); }
+
+/* ═══ C · les cabines qui glissent ═══
+   Un bloc par groupe, qui remonte le fût au lieu d'apparaître ailleurs.
+   On VOIT le grimpeur changer d'étage — c'est la seule piste où la
+   montée est un mouvement et non deux états. */
+.c .etg-trait {
+    position: absolute; left: 2.2rem; width: 2.6rem; bottom: 0;
+    height: 0.06rem; background: rgba(255,255,255,0.06);
+}
+.cabines { position: absolute; left: 2.2rem; width: 2.6rem; top: 0; bottom: 0; pointer-events: none; }
+.cabine {
+    position: absolute; left: 0; width: 100%;
+    height: 1.25rem; margin-top: -0.625rem;
+    display: grid; place-items: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 0.78rem;
+    color: #0b0b0e;
+    background: var(--bleu);
+    border-radius: 0.28rem;
+    box-shadow: 0 0.15rem 0.5rem rgba(0,0,0,0.5);
+    transition: top 0.6s cubic-bezier(0.3, 0.9, 0.25, 1);
+}
+.cabine.moi { background: var(--or); box-shadow: 0 0.15rem 0.5rem rgba(0,0,0,0.5), 0 0 0.8rem rgba(255,215,0,0.5); }
+
+/* ═══ D · les jetons empilés ═══
+   Trois jetons au plus, puis « +N ». On retrouve QUI est là sans
+   retomber dans les cinquante initiales illisibles. */
+.d .etg-trait {
+    position: absolute; left: 2.2rem; width: 2.6rem; bottom: 0;
+    height: 0.06rem; background: rgba(255,255,255,0.06);
+}
+.d .jetons { position: absolute; left: 2.2rem; width: 2.6rem; display: flex; justify-content: center; }
+.d .jeton {
+    width: 0.95rem; height: 0.95rem; margin-left: -0.3rem;
+    display: grid; place-items: center;
+    font-size: 0.5rem; font-weight: 700;
+    color: #0b0b0e; background: var(--bleu);
+    border: 0.09rem solid #0a0a0d;
+    border-radius: 50%;
+    animation: pose 0.4s cubic-bezier(0.2,1.3,0.35,1) both;
+}
+.d .jeton:first-child { margin-left: 0; }
+.d .jeton.moi { background: var(--or); }
+.d .jeton.plus { background: rgba(140,180,255,0.25); color: #dce8ff; font-size: 0.44rem; }
+@keyframes pose { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
+
+/* ═══ E · la jauge de remplissage ═══
+   Le palier est une barre qui se remplit selon le monde qu'il porte.
+   Aucun chiffre à lire : la longueur suffit, et l'œil compare deux
+   paliers d'un coup. */
+.e .etg-jauge {
+    position: absolute; left: 2.2rem; width: 2.6rem; bottom: 0;
+    height: 0.34rem;
+    border-radius: 0.17rem;
+    background: rgba(255,255,255,0.05);
+    overflow: hidden;
+}
+.e .etg-jauge i {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 0;
+    background: var(--bleu-vif);
+    border-radius: 0.17rem;
+    transition: width 0.5s cubic-bezier(0.3,0.9,0.25,1);
+}
+.e .etg.moi .etg-jauge i { background: var(--or); box-shadow: 0 0 0.6rem rgba(255,215,0,0.5); }
+.e .etg.sommet .etg-jauge { box-shadow: inset 0 0 0 0.06rem rgba(255,215,0,0.3); }
+
+/* La pointe « c'est moi », commune à toutes les pistes */
+.etg.moi::before {
+    content: '';
+    position: absolute; left: 1.9rem; top: 50%;
+    width: 0; height: 0;
+    border-top: 0.3rem solid transparent;
+    border-bottom: 0.3rem solid transparent;
+    border-left: 0.36rem solid var(--or);
+    transform: translateY(-50%);
+    filter: drop-shadow(0 0 0.35rem rgba(255,215,0,0.6));
+}
+</style>
+
+<h1>Ascension — les grimpeurs sur la tour</h1>
+<p class="sous">
+    L’existant (piste A) renseigne mais ne fait pas objet : un filet de 0,06 rem et une pastille
+    ovale posée dessus. Les quatre autres cherchent de la matière, <b>à largeur constante</b> — la
+    colonne fait 4,9 rem et l’élargir mangerait l’épreuve. Six grimpeurs montent pour de vrai :
+    sur ce composant c’est le <b>mouvement</b> qui décide, pas la pose. ⚠️ Tout doit tenir de deux à
+    cinquante joueurs — c’est ce qui avait tué les jetons nominatifs la première fois.
+</p>
+
+<div class="rangee" id="rangee"></div>
+
+<script>
+const ETAGES = 15;
+const PISTES = [
+    { cle: 'a', t: 'A · l’existant', n: "Un filet par palier, une pastille ovale portant le nombre. C’est ce qui tourne aujourd’hui, mis là pour comparer." },
+    { cle: 'b', t: 'B · les paliers allumés', n: "Aucune pastille : le palier lui-même s’allume, et d’autant plus qu’il porte du monde. La tour devient un thermomètre, et rien ne flotte par-dessus. Le nombre reste lisible au centre du bloc." },
+    { cle: 'c', t: 'C · les cabines qui glissent', n: "Un bloc par groupe, qui REMONTE le fût au lieu de disparaître d’un palier pour reparaître au suivant. La seule piste où la montée est un mouvement et non deux états — c’est ce qui se commente en stream." },
+    { cle: 'd', t: 'D · les jetons empilés', n: "Trois jetons au plus, puis « +N ». On retrouve qui est là, sans retomber dans les cinquante initiales illisibles qui avaient fait abandonner l’idée." },
+    { cle: 'e', t: 'E · la jauge de remplissage', n: "Le palier est une barre qui se remplit selon le monde qu’il porte. Aucun chiffre à lire : la longueur suffit, et l’œil compare deux paliers d’un coup d’un bout à l’autre de la tour." },
+];
+
+const rangee = document.getElementById('rangee');
+for (const p of PISTES) {
+    const d = document.createElement('div');
+    d.className = 'piste';
+    let etages = '';
+    for (let e = ETAGES; e >= 1; e--) {
+        etages += '<div class="etg" data-e="' + e + '">'
+            + '<span class="etg-n">' + e + '</span>'
+            + (p.cle === 'a' ? '<span class="etg-trait"></span>' : '')
+            + (p.cle === 'b' ? '<span class="etg-plaque"><span class="cpt"></span></span>' : '')
+            + (p.cle === 'c' ? '<span class="etg-trait"></span>' : '')
+            + (p.cle === 'd' ? '<span class="etg-trait"></span><span class="jetons"></span>' : '')
+            + (p.cle === 'e' ? '<span class="etg-jauge"><i></i></span>' : '')
+            + '</div>';
+    }
+    d.innerHTML = '<h3>' + p.t + '</h3><p>' + p.n + '</p>'
+        + '<div class="scene"><div class="tour ' + p.cle + '"><span class="fut"></span>'
+        + etages + (p.cle === 'c' ? '<span class="cabines"></span>' : '') + '</div></div>';
+    rangee.appendChild(d);
+}
+
+// ── La simulation : six grimpeurs, dont moi ──
+const NOMS = ['Moi', 'Kenma', 'Adem', 'Sora', 'Rin', 'Yuki'];
+let places = [1, 1, 1, 1, 1, 1];
+
+function dessiner() {
+    const parEtage = {};
+    places.forEach((e, i) => { (parEtage[e] = parEtage[e] || []).push(i); });
+    const foule = Math.max(...Object.values(parEtage).map(l => l.length), 1);
+
+    for (const p of PISTES) {
+        const tour = document.querySelector('.tour.' + p.cle);
+        for (const etg of tour.querySelectorAll('.etg')) {
+            const e = Number(etg.dataset.e);
+            const ici = parEtage[e] || [];
+            etg.classList.toggle('occupe', ici.length > 0);
+            etg.classList.toggle('moi', ici.includes(0));
+            etg.classList.toggle('sommet', e === ETAGES);
+
+            if (p.cle === 'a') {
+                let nb = etg.querySelector('.nb');
+                if (ici.length && !nb) { nb = document.createElement('span'); nb.className = 'nb'; etg.appendChild(nb); }
+                if (nb) { nb.textContent = ici.length; nb.style.display = ici.length ? '' : 'none'; }
+            }
+            if (p.cle === 'b') {
+                const pl = etg.querySelector('.etg-plaque');
+                pl.style.background = ici.length
+                    ? 'rgba(140,180,255,' + (0.25 + 0.55 * ici.length / foule).toFixed(2) + ')'
+                    : 'rgba(140,180,255,0)';
+                if (ici.includes(0)) pl.style.background = 'rgba(255,215,0,'
+                    + (0.35 + 0.5 * ici.length / foule).toFixed(2) + ')';
+                pl.querySelector('.cpt').textContent = ici.length > 1 ? ici.length : '';
+            }
+            if (p.cle === 'd') {
+                const j = etg.querySelector('.jetons');
+                const montres = ici.slice(0, 3);
+                j.innerHTML = montres.map(i =>
+                    '<span class="jeton' + (i === 0 ? ' moi' : '') + '">' + NOMS[i][0] + '</span>').join('')
+                    + (ici.length > 3 ? '<span class="jeton plus">+' + (ici.length - 3) + '</span>' : '');
+            }
+            if (p.cle === 'e') {
+                etg.querySelector('.etg-jauge i').style.width = (ici.length / foule * 100) + '%';
+            }
+        }
+
+        if (p.cle === 'c') {
+            const boite = tour.querySelector('.cabines');
+            const h = boite.getBoundingClientRect().height;
+            const pas = h / ETAGES;
+            boite.innerHTML = Object.entries(parEtage).map(([e, l]) =>
+                '<span class="cabine' + (l.includes(0) ? ' moi' : '') + '" data-e="' + e + '" '
+                + 'style="top:' + (h - (Number(e) - 0.5) * pas) + 'px">' + l.length + '</span>').join('');
+        }
+    }
+}
+
+// Un grimpeur au hasard monte d'un étage. Les cabines se déplacent au lieu
+// de renaître : on les réutilise quand le palier existe déjà.
+function monter() {
+    const candidats = places.map((e, i) => i).filter(i => places[i] < ETAGES);
+    if (!candidats.length) { places = [1, 1, 1, 1, 1, 1]; dessiner(); return; }
+    const qui = candidats[Math.floor(Math.random() * candidats.length)];
+    places[qui]++;
+    dessiner();
+}
+
+dessiner();
+setInterval(monter, 900);
+</script>

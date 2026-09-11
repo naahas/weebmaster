@@ -1304,6 +1304,10 @@ app.get('/prototypes/rush-multi', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-rush-multi.html');
 });
 
+app.get('/prototypes/ascension-grimpeurs', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-ascension-grimpeurs.html');
+});
+
 app.get('/prototypes/collect-duel', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-collect-duel.html');
 });

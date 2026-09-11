@@ -144,6 +144,9 @@ près. Le libellé du compteur reste « série » dans les deux cas : le nombre 
 faire changer le mot selon un réglage embrouillait plus qu il ne renseignait. Visuel dans
 /prototypes/rush-multi.
 
+  Et `/prototypes/ascension-grimpeurs` : cinq facons de montrer qui est ou sur la tour,
+  avec six grimpeurs qui montent pour de vrai — sur ce composant c est le mouvement
+  qui decide, pas la pose. A largeur constante : la colonne fait 4.9 rem.
 ⚠️ `classic` et `rivalry` sont **un seul mode pour le joueur**. Le réglage *Format* (Solo / Équipe)
 bascule `lobbyMode` de l'un à l'autre en cours de salon (`POST /admin/set-teams`). Le badge de mode
 affiche « Classique » dans les deux cas. C'est l'hôte qui attribue les camps (pastille sur chaque
