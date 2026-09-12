@@ -78,8 +78,13 @@ createApp({
                 // elles sont à qui les cherche.
                 reglesVues: false,
                 // réglages du salon, avant la partie
+                // ⚠️ Ces deux-là ne sont qu'un décor le temps que le serveur réponde :
+                // c'est lui qui tient le vrai réglage, et « chargerReglagesCollect »
+                // les écrase dès que le salon a un code. Ils étaient une SECONDE
+                // écriture du défaut, et les deux ont divergé — le serveur est passé
+                // à douze animes, l'écran est resté sur dix.
                 regleMain: 4,
-                regleAnimes: 10,
+                regleAnimes: 12,
             },
 
             asc: {
@@ -1243,15 +1248,24 @@ createApp({
                 return '';
             }
 
+            // Pendant un glissement, on confirme la cible sous le doigt, et rien
+            // d'autre. « Amène-la sur le marché, la pioche… » récitait les cibles
+            // possibles chaque fois qu'on soulevait une carte : c'est précisément ce
+            // qu'on est en train de chercher, pas ce dont on a besoin qu'on nous parle.
+            //
+            // ⚠️ La pioche n'est plus une cible de glissement — elle se clique, et
+            // aucun « data-drop » ne la désigne plus. Sa ligne ne pouvait donc déjà
+            // plus s'afficher.
             if (this.col.drag) {
                 const c = this.col.drag.cible;
-                if (c === 'pioche') return 'Lâche pour <b>piocher</b> à sa place.';
                 if (c === 'poser') return 'Lâche pour <b>poser ton set</b>.';
                 if (c && c.startsWith('marche:')) return 'Lâche pour l\'<b>échanger</b>.';
-                return 'Amène-la sur le marché, la pioche, ou l\'emplacement étoilé.';
+                return '';
             }
+            // Un set prêt, on le DIT : c'est la seule chose qu'un joueur peut avoir
+            // sous les yeux sans la voir. « Ta main n'est pas pleine » n'était pas de
+            // cet ordre — le paquet s'allume déjà quand on peut y aller.
             if (this.colSetPret) return 'Un set est prêt — glisse une carte sur l\'<b>emplacement étoilé</b>.';
-            if (this.colPiocheLibre) return 'Ta main n\'est pas pleine — <b>clique le paquet</b> pour te refaire.';
             // Rien quand il n y a rien a dire. Cette ligne recitait les trois
             // gestes a chaque tour, alors que la modale des regles les donne
             // maintenant en clair et qu on les trouve de toute facon en jouant.
@@ -1590,6 +1604,21 @@ createApp({
                 }
             } catch (e) {
                 console.warn('⚠️ Réglages Rush non chargés :', e);
+            }
+        },
+
+        // Même chose pour Collect, et pour la même raison : le client tenait ses
+        // propres valeurs par défaut, qui n'engagent personne. Le serveur décide.
+        async chargerReglagesCollect() {
+            try {
+                const r = await this.fetchEtatSalon();
+                const etat = await r.json();
+                if (etat && etat.collect) {
+                    if (etat.collect.main !== undefined) this.col.regleMain = etat.collect.main;
+                    if (etat.collect.animes !== undefined) this.col.regleAnimes = etat.collect.animes;
+                }
+            } catch (e) {
+                console.warn('⚠️ Réglages Collect non chargés :', e);
             }
         },
 
@@ -2573,8 +2602,11 @@ createApp({
             this.col.aLacher = [];
         },
         // Les cartes lâchées éclatent sur place, comme un set qu'on pose : ce
-        // qui quitte une main dans ce jeu part toujours de la même façon.
+        // qui quitte une main dans ce jeu part toujours de la même façon. Le son
+        // suit le même principe — le verre du set, sans son accord, parce qu'une
+        // défausse est un prix payé et non une réussite.
         colBriserMain(uids) {
+            this.playSound(this.sounds.colCasse);
             // ⚠️ On relève les RECTANGLES tout de suite, pas au moment d'éclater.
             // Le serveur répond en quelques dizaines de millisecondes : la main
             // est déjà refaite quand le minuteur tombe, l'élément qu'on tenait
@@ -3162,6 +3194,7 @@ createApp({
 
                 // Le salon a un code : ses réglages sont enfin consultables
                 if (this.selectedMode === 'rush') await this.chargerReglagesRush();
+                if (this.selectedMode === 'collect') await this.chargerReglagesCollect();
 
                 // En Rivalité l'hôte choisit d'abord son camp dans le salon
                 if (this.selectedMode !== 'rivalry') {
@@ -7515,6 +7548,7 @@ createApp({
                 colVolRate: this.createPreloadedSound('col-vol-rate.mp3'),
                 colScan: this.createPreloadedSound('col-scan.mp3'),
                 colSet: this.createPreloadedSound('col-set.mp3'),
+                colCasse: this.createPreloadedSound('col-casse.mp3'),
                 colTour: this.createPreloadedSound('col-tour.mp3'),
                 ascPas: this.createPreloadedSound('step.mp3'),
                 // L'ampoule : un carillon quand elle est pleine, un éclat

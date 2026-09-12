@@ -169,6 +169,24 @@ const SONS = {
         }), 0.78), 0.3, 0.5);
     },
 
+    // 💔 DÉFAUSSER — le même verre que le set, sans la fanfare.
+    // Les cartes qu'on jette éclatent exactement comme un set qu'on pose : le
+    // geste est le même à l'écran, le son doit l'être aussi. Mais un set est une
+    // réussite et une défausse un prix payé — on garde donc l'impact et le
+    // verre, et l'on retire l'accord. Ce qui reste est une casse, ce qui est
+    // exactement ce dont il s'agit.
+    // Plus court et plus grave que « col-set », et pour une raison précise : un
+    // vol raté en réclame DEUX d'affilée. Deux fanfares se marcheraient dessus ;
+    // deux bris courts s'entendent comme un seul geste en deux temps.
+    'col-casse': () => {
+        const aigu = passeHaut(3400), corps = passeBas(200);
+        return reverbe(normaliser(fabriquer(0.6, (t) => {
+            const impact = corps(Math.sin(2 * Math.PI * glisse(t, 0.14, 105, 38) * t)) * chute(t, 0.2) * 1.5;
+            const verre = aigu(bruit()) * chute(t, 0.26) * 0.7;
+            return impact + verre;
+        }), 0.7), 0.22, 0.3);
+    },
+
     // ⚔️ VOLER, ET ÇA PASSE — une lame, puis ce qu'elle touche.
     // Le sifflement descend (une lame qui part), l'impact arrive après et
     // porte une courte résonance métallique. C'est le seul moment du jeu où
