@@ -186,11 +186,17 @@
         transparent);
 }
 
+/* Les noms sont en anglais et courts — draw, change, set, scan, steal : on
+   les traite donc en etiquettes, capitales espacees, plutot qu en mots d une
+   phrase. Le corps descend d autant, l espacement leur rendant la largeur. */
 .col-regles-liste b {
     position: relative;
     padding-left: 0.85rem;
-    font-size: 0.82rem;
-    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
     color: currentColor;
     white-space: nowrap;
 }
