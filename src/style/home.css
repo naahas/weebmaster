@@ -7946,7 +7946,7 @@ body.game-active:has(.poll-game-container) #particles-js {
        portrait le remplirait mieux que n'importe quel réglage. */
     .v2-mode-char.char-collect {
         height: auto;
-        width: 104%;
+        width: 97%;
         max-width: none;
         right: -17%;
         bottom: 0.6rem;
