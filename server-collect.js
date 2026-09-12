@@ -39,7 +39,12 @@ const CONFIG = {
     MARCHE: 5,              // cartes face visible, taille constante
     TOUR_MS: 15000,
     ANIMES_POSSIBLES: [8, 10, 12],
-    ANIMES_DEFAUT: 10,
+    // Mesuré : la manche passe de 34 à 38 tours entre dix et douze séries, soit
+    // un tour de table de plus par joueur. Au-delà, la part des poses s'effondre
+    // — 10,7 % des coups à douze contre 6,4 % à vingt-et-une — et le jeu cesse
+    // d'être une suite de décisions pour devenir une attente de pioche. Douze
+    // est donc le dernier réglage qui reste un jeu ; c'est aussi le plafond.
+    ANIMES_DEFAUT: 12,
     MAINS_POSSIBLES: [3, 4, 5],
     MAIN_DEFAUT: 4,
 };

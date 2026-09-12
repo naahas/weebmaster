@@ -142,13 +142,13 @@
     gap: 0.6rem;
     margin-bottom: 0.5rem;
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.5rem;
+    font-size: 1.35rem;
     letter-spacing: 0.04em;
     color: var(--col-or);
 }
 .col-regles-t i {
     font-family: 'Poppins', sans-serif;
-    font-size: 0.62rem;
+    font-size: 0.58rem;
     font-style: normal;
     font-weight: 600;
     letter-spacing: 0.12em;
@@ -164,7 +164,7 @@
 
 .col-regles-but {
     margin: 0;
-    font-size: 1rem;
+    font-size: 0.92rem;
     line-height: 1.45;
     text-align: center;
     color: rgba(255, 255, 255, 0.82);
@@ -218,7 +218,7 @@
     position: relative;
     padding-left: 0.85rem;
     font-family: 'Poppins', sans-serif;
-    font-size: 0.7rem;
+    font-size: 0.66rem;
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -236,7 +236,7 @@
 }
 
 .col-regles-liste span {
-    font-size: 0.82rem;
+    font-size: 0.76rem;
     line-height: 1.45;
     color: rgba(255, 255, 255, 0.52);
 }
@@ -251,7 +251,7 @@
    largeur d'un pouce laissaient à la phrase de quoi tenir trois mots. */
 @media (max-width: 520px) {
     .col-regles { padding: 1.3rem 1.2rem 1.4rem; }
-    .col-regles-t { font-size: 1.3rem; }
+    .col-regles-t { font-size: 1.2rem; }
     .col-regles-liste li { grid-template-columns: 1fr; column-gap: 0; row-gap: 0.15rem; }
     .col-regles-liste span { padding-left: 0.85rem; }
 }
@@ -1581,7 +1581,6 @@
 .col-prise-carte > span {
     position: absolute; inset: 0;
     border-radius: 0.55rem;
-    overflow: hidden;
     backface-visibility: hidden;
     box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.7);
 }
@@ -1589,20 +1588,38 @@
     border: 0.11rem solid rgba(255, 255, 255, 0.2);
     background: repeating-linear-gradient(135deg, #26323f 0 8px, #1b232e 8px 16px);
 }
+
+/* ⚠️ PAS d'« overflow: hidden » ici, et c'est tout l'enjeu : la pastille de
+   classe déborde du coin, et un débordement caché la coupait net au bord de la
+   carte — on en voyait une moitié.
+   Il n'y en a pas besoin : un fond est de toute façon rogné par le rayon de
+   bordure, et la seule chose qui dépassait vraiment était l'image, à qui l'on
+   donne son propre rayon. La pastille ne peut pas vivre ailleurs qu'ici : mise
+   sur la carte, elle tournerait avec elle et s'afficherait en miroir. */
 .col-prise-face { transform: rotateY(180deg); background: #14131a; border: 0.11rem solid; }
 .col-prise-carte.classe-assaut .col-prise-face { border-color: var(--assaut); }
 .col-prise-carte.classe-mirage .col-prise-face { border-color: var(--mirage); }
 .col-prise-carte.classe-oracle .col-prise-face { border-color: var(--oracle); }
-.col-prise-face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.col-prise-face img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: inherit; }
 /* Elle déborde du coin, comme sur les cartes de la main et du marché : posée
    dans l'image, elle passait pour un détail de l'illustration. Et plus grande
    qu'ailleurs — c'est cette classe-là qu'il faut retrouver dans sa main. */
 .col-prise-face .col-pion {
-    position: absolute; top: -0.75rem; right: -0.75rem;
-    width: 2.7rem; height: 2.7rem;
-    border-width: 0.2rem;
+    position: absolute; top: -0.85rem; right: -0.85rem;
+    width: 2.9rem; height: 2.9rem;
+    border-width: 0.22rem;
+    /* Elle brûle : un halo propre par-dessus l'ombre portée, et le symbole qui
+       rayonne au lieu d'être simplement coloré. */
+    box-shadow:
+        0 0.15rem 0.4rem rgba(0, 0, 0, 0.65),
+        0 0 0.9rem currentColor,
+        0 0 2.2rem -0.3rem currentColor;
+    z-index: 6;
 }
-.col-prise-face .col-pion svg { width: 1.5rem; height: 1.5rem; }
+.col-prise-face .col-pion svg {
+    width: 1.55rem; height: 1.55rem;
+    filter: drop-shadow(0 0 0.35rem currentColor);
+}
 
 /* L'onde vit sur un pseudo-élément : on n'animera donc que « transform » et
    « opacity », que le compositeur sait faire sans repeindre. Animer le
@@ -1646,12 +1663,25 @@
 }
 .col-prise-mot b { color: var(--col-or); }
 
-/* Pendant qu'une carte est retournée au milieu du feutre, le marché s'efface.
-   Cinq portraits en pleine lumière juste sous elle se disputaient le regard au
-   moment précis où il n'y a qu'une chose à lire — et à côté d'eux, une carte
-   deux fois plus grande passait presque inaperçue. */
-.col.larcin .col-marche { filter: brightness(0.3) saturate(0.4); }
-.col-marche { transition: filter 0.35s ease; }
+/* ── Pendant le vol, il ne reste que deux choses à regarder ──
+   La carte retournée, et sa propre main où trouver la même classe. Tout le
+   reste s'efface : le marché, le feutre, les sièges adverses, la barre du
+   haut. Le marché seul s'assombrissait, et les cinq portraits voisins se
+   disputaient encore le regard au moment précis où il n'y a qu'une chose à
+   lire.
+   ⚠️ Chaque bloc est nommé un par un, et surtout PAS « .col » en entier : un
+   filtre sur la racine s'appliquerait aussi à la main — qu'il faut justement
+   voir — et créerait un bloc conteneur qui casserait le « position: fixed » de
+   la carte volée. C'est le piège le plus fréquent de ce projet. */
+.col.larcin .col-marche,
+.col.larcin .col-table,
+.col.larcin .col-haut,
+.col.larcin .col-siege { filter: brightness(0.22) saturate(0.35); }
+
+.col-marche, .col-table, .col-haut, .col-siege { transition: filter 0.35s ease; }
+
+/* Ma main, elle, reste pleine : c'est là qu'il faut chercher. */
+.col.larcin .col-moi { filter: none; }
 
 /* ── L'éventail visé : on choisit une PLACE ──
    Les positions ne bougent pas d'un tour à l'autre : le hasard n'en est un que
