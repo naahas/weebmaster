@@ -7951,22 +7951,19 @@ body.game-active:has(.poll-game-container) #particles-js {
         right: -17%;
         bottom: 0.6rem;
 
-        /* ⚠️ À cette largeur elle passe sous le titre, et l'as de pique blanc
-           du dessin tombe pile derrière « COLLECT ». On la fond donc aussi par
-           la GAUCHE, exactement comme le bas l'est déjà — deux masques
-           superposés, intersectés.
-           Sans « mask-composite » le navigateur ne garde que le premier : le
-           fondu du bas, soit le comportement d'avant. La dégradation est donc
-           sans dommage. Les deux écritures sont là, la norme et celle de
-           WebKit, qui ne s'accordent pas sur le nom du mode. */
-        -webkit-mask-image:
-            linear-gradient(to bottom, #000 60%, rgba(0, 0, 0, 0.5) 84%, transparent 100%),
-            linear-gradient(to right, transparent 2%, #000 26%);
-        -webkit-mask-composite: source-in;
-        mask-image:
-            linear-gradient(to bottom, #000 60%, rgba(0, 0, 0, 0.5) 84%, transparent 100%),
-            linear-gradient(to right, transparent 2%, #000 26%);
-        mask-composite: intersect;
+        /* ⚠️ Le fondu de gauche est CUIT DANS L'IMAGE, pas fait au masque.
+           À cette largeur elle passe sous le titre, et l'as de pique blanc du
+           dessin tombe pile derrière « COLLECT » : il faut donc l'effacer là.
+           Mais superposer deux masques demande « mask-composite », dont le nom
+           du mode diffère entre la norme et WebKit et dont le support varie
+           d'une version de Chromium à l'autre. Résultat : là où l'intersection
+           marchait la gauche s'effaçait, ailleurs le navigateur ne gardait que
+           le premier masque et l'on voyait toute la largeur du dessin — Sora
+           paraissait plus grande sur Edge que sur Chrome, seule de tous les
+           personnages, et pour cause : elle seule portait deux masques.
+           Le dégradé vit maintenant dans le canal alpha du fichier. Identique
+           partout, et un masque de moins à faire calculer. Le fondu du bas,
+           lui, reste en CSS : il est commun à tous les personnages. */
     }
 }
 
