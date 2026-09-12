@@ -7948,8 +7948,8 @@ body.game-active:has(.poll-game-container) #particles-js {
         height: auto;
         width: 104%;
         max-width: none;
-        right: -12%;
-        bottom: -1rem;
+        right: -17%;
+        bottom: 0.6rem;
 
         /* ⚠️ À cette largeur elle passe sous le titre, et l'as de pique blanc
            du dessin tombe pile derrière « COLLECT ». On la fond donc aussi par
