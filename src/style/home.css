@@ -7946,10 +7946,27 @@ body.game-active:has(.poll-game-container) #particles-js {
        portrait le remplirait mieux que n'importe quel réglage. */
     .v2-mode-char.char-collect {
         height: auto;
-        width: 84%;
-        max-width: 84%;
-        right: -7%;
-        bottom: 0.6rem;
+        width: 104%;
+        max-width: none;
+        right: -12%;
+        bottom: -1rem;
+
+        /* ⚠️ À cette largeur elle passe sous le titre, et l'as de pique blanc
+           du dessin tombe pile derrière « COLLECT ». On la fond donc aussi par
+           la GAUCHE, exactement comme le bas l'est déjà — deux masques
+           superposés, intersectés.
+           Sans « mask-composite » le navigateur ne garde que le premier : le
+           fondu du bas, soit le comportement d'avant. La dégradation est donc
+           sans dommage. Les deux écritures sont là, la norme et celle de
+           WebKit, qui ne s'accordent pas sur le nom du mode. */
+        -webkit-mask-image:
+            linear-gradient(to bottom, #000 60%, rgba(0, 0, 0, 0.5) 84%, transparent 100%),
+            linear-gradient(to right, transparent 2%, #000 26%);
+        -webkit-mask-composite: source-in;
+        mask-image:
+            linear-gradient(to bottom, #000 60%, rgba(0, 0, 0, 0.5) 84%, transparent 100%),
+            linear-gradient(to right, transparent 2%, #000 26%);
+        mask-composite: intersect;
     }
 }
 

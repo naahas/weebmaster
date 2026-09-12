@@ -153,41 +153,63 @@
 }
 .col-regles-but b { color: var(--col-or); }
 
-/* ⚠️ Une grille, et non un « li » en flex. L'ancienne liste mettait le « li »
-   lui-même en « display: flex » : chaque « b » de la phrase devenait un
-   élément flex à part entière, et la ligne « Voler », qui en portait quatre,
-   se repliait en colonne d'un mot par ligne. Ici le nom et la phrase sont deux
-   cellules, et la phrase reste un bloc de texte ordinaire. */
-.col-regles-liste {
-    margin: 0;
+/* Une ligne par action, en deux colonnes : le nom, puis la phrase.
+   ⚠️ Et surtout PAS un « li » en flex, comme le faisait la version d'avant :
+   chaque « b » de la phrase y devenait un élément flex à part entière, et la
+   ligne « Voler », qui en portait quatre, se repliait en colonne d'un mot par
+   ligne. Ici la phrase est une cellule, donc un bloc de texte ordinaire. */
+.col-regles-liste { margin: 0; padding: 0; list-style: none; }
+
+.col-regles-liste li {
+    position: relative;
     display: grid;
     grid-template-columns: auto 1fr;
     column-gap: 0.9rem;
     align-items: baseline;
+    padding: 0.62rem 0;
 }
-.col-regles-liste dt {
-    position: relative;
-    padding: 0.42rem 0 0.42rem 0.85rem;
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.92);
-    white-space: nowrap;
-}
-.col-regles-liste dt::before {
+
+/* Le filet entre deux lignes : un dégradé qui s'éteint aux deux bouts, dans la
+   couleur de l'action qu'il annonce. Une bordure ne saurait pas se fondre, et
+   un trait plein d'un bout à l'autre faisait tableau.
+   Un enfant en position absolue n'est pas un élément de grille : il peut donc
+   traverser les deux colonnes sans casser la mise en page. */
+.col-regles-liste li + li::before {
     content: '';
     position: absolute;
-    left: 0; top: 0.78rem;
-    width: 0.42rem; height: 0.42rem;
+    left: 0; right: 0; top: 0;
+    height: 0.06rem;
+    background: linear-gradient(90deg,
+        transparent,
+        color-mix(in srgb, currentColor 38%, transparent) 22%,
+        color-mix(in srgb, currentColor 22%, transparent) 70%,
+        transparent);
+}
+
+.col-regles-liste b {
+    position: relative;
+    padding-left: 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: currentColor;
+    white-space: nowrap;
+}
+.col-regles-liste b::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0.38rem;
+    width: 0.4rem; height: 0.4rem;
     border-radius: 50%;
     background: currentColor;
+    box-shadow: 0 0 0.4rem currentColor;
 }
-.col-regles-liste dd {
-    margin: 0;
-    padding: 0.42rem 0;
+
+.col-regles-liste span {
     font-size: 0.82rem;
     line-height: 1.45;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.52);
 }
+
 .col-regles-liste .r-pioche  { color: #9db8d8; }
 .col-regles-liste .r-echange { color: #9db8d8; }
 .col-regles-liste .r-set     { color: var(--col-or); }
@@ -199,9 +221,8 @@
 @media (max-width: 520px) {
     .col-regles { padding: 1.3rem 1.2rem 1.4rem; }
     .col-regles-t { font-size: 1.3rem; }
-    .col-regles-liste { grid-template-columns: 1fr; column-gap: 0; }
-    .col-regles-liste dt { padding-bottom: 0.1rem; }
-    .col-regles-liste dd { padding: 0 0 0.55rem 0.85rem; }
+    .col-regles-liste li { grid-template-columns: 1fr; column-gap: 0; row-gap: 0.15rem; }
+    .col-regles-liste span { padding-left: 0.85rem; }
 }
 .col-scene { position: relative; flex: 1 1 auto; min-height: 0; }
 
