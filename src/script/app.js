@@ -1246,7 +1246,11 @@ createApp({
             if (this.col.piocheOuverte) return 'Quelle carte laisses-tu pour piocher ?';
             if (this.colSetPret) return 'Un set est prêt — glisse une carte sur l\'<b>emplacement étoilé</b>.';
             if (this.colPiocheLibre) return 'Ta main n\'est pas pleine — <b>clique le paquet</b> pour te refaire.';
-            return '<b>Clique le paquet</b>, <b>pose un set</b>, ou survole un adversaire pour le <b>scanner</b> ou le <b>voler</b>.';
+            // Rien quand il n y a rien a dire. Cette ligne recitait les trois
+            // gestes a chaque tour, alors que la modale des regles les donne
+            // maintenant en clair et qu on les trouve de toute facon en jouant.
+            // La barre garde sa hauteur (« min-height »), donc rien ne saute.
+            return '';
         },
 
         ascMonRang() {
