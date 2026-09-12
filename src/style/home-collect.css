@@ -16,11 +16,23 @@
    celui qui choisit sa classe.
    ════════════════════════════════════════════════════════════════ */
 
-.col {
+/* ⚠️ Les couleurs de classe vivent sur « :root » et non sur « .col ».
+   Elles y étaient, et « .col-prise » — la carte volée, qui s'affiche en grand —
+   est en « position: fixed » HORS de « .col » : les variables n'existaient donc
+   pas pour elle, et sa pastille retombait sur la couleur du texte au lieu du
+   corail, du violet ou du turquoise de sa classe. C'est la deuxième fois que ce
+   décalage mord ici, après « --carte ». Tout ce qui peut sortir du plateau doit
+   lire ses couleurs plus haut que le plateau.
+   « --carte » reste sur « .col » : c'est une unité de mise en page du feutre,
+   elle n'a pas de sens ailleurs. */
+:root {
     --assaut: #ff7a5c;
     --mirage: #a78bfa;
     --oracle: #4fd1c5;
     --col-or: #ffd24a;
+}
+
+.col {
     --carte: 4.6rem;
 
     position: fixed;
@@ -1569,11 +1581,49 @@
 .col-prise-carte.classe-mirage .col-prise-face { border-color: var(--mirage); }
 .col-prise-carte.classe-oracle .col-prise-face { border-color: var(--oracle); }
 .col-prise-face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Elle déborde du coin, comme sur les cartes de la main et du marché : posée
+   dans l'image, elle passait pour un détail de l'illustration. Et plus grande
+   qu'ailleurs — c'est cette classe-là qu'il faut retrouver dans sa main. */
 .col-prise-face .col-pion {
-    position: absolute; top: 0.35rem; right: 0.35rem;
-    width: 1.7rem; height: 1.7rem;
+    position: absolute; top: -0.75rem; right: -0.75rem;
+    width: 2.7rem; height: 2.7rem;
+    border-width: 0.2rem;
 }
-.col-prise-face .col-pion svg { width: 1.1rem; height: 1.1rem; }
+.col-prise-face .col-pion svg { width: 1.5rem; height: 1.5rem; }
+
+/* L'onde vit sur un pseudo-élément : on n'animera donc que « transform » et
+   « opacity », que le compositeur sait faire sans repeindre. Animer le
+   « box-shadow » de la pastille elle-même aurait redessiné à chaque image.
+   Un enfant en position absolue n'est pas un élément de grille : il traverse
+   le « place-items: center » de la pastille sans le déranger. */
+.col-prise-face .col-pion::after {
+    content: '';
+    position: absolute;
+    inset: -0.3rem;
+    border: 0.14rem solid currentColor;
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Carte retournée : c'est SA classe qui commande la défausse, et le joueur a
+   sept secondes pour trouver la même dans sa main. Autant qu'elle se voie. */
+.col-prise-carte.retournee .col-prise-face .col-pion {
+    animation: colPionBat 1.3s ease-in-out infinite;
+}
+.col-prise-carte.retournee .col-prise-face .col-pion::after {
+    animation: colPionOnde 1.3s ease-out infinite;
+}
+
+@keyframes colPionBat {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.1); }
+}
+@keyframes colPionOnde {
+    0%   { opacity: 0.8; transform: scale(0.85); }
+    70%  { opacity: 0;   transform: scale(1.55); }
+    100% { opacity: 0;   transform: scale(1.55); }
+}
 .col-prise-mot {
     padding: 0.3rem 0.8rem;
     font-size: 0.78rem;
