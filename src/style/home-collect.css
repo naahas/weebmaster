@@ -72,52 +72,136 @@
 
 /* Posé sur le feutre et non en plein écran : on lit sans quitter la partie des
    yeux, et un clic n'importe où referme. */
-.col-regles {
+/* ── Les règles ──
+   Au milieu de l'écran, sobre, et sans rien d'autre à regarder. Posé dans le
+   coin, le panneau se lisait du coin de l'œil et ne s'imprimait pas ; et il
+   disait tout, si bien qu'on n'en retenait rien. Une phrase par action. */
+.col-regles-voile {
     position: fixed;
-    left: 0.9rem; top: 4rem;
+    inset: 0;
     z-index: 47;
-    width: min(23rem, 88vw);
-    max-height: 78vh; overflow-y: auto;
-    padding: 1rem 1.1rem 1.1rem;
-    background: rgba(12, 12, 17, 0.96);
-    border: 0.06rem solid rgba(255, 210, 74, 0.25);
-    border-radius: 0.9rem;
-    box-shadow: 0 1.2rem 2.6rem rgba(0, 0, 0, 0.7);
+    display: grid;
+    place-items: center;
+    padding: 1.2rem;
+    background: rgba(6, 7, 10, 0.72);
+    backdrop-filter: blur(0.25rem);
     cursor: pointer;
-    animation: colReglesEntre 0.25s cubic-bezier(0.25, 0.9, 0.3, 1) both;
+    animation: colVoileEntre 0.18s ease both;
+}
+@keyframes colVoileEntre { from { opacity: 0; } to { opacity: 1; } }
+
+.col-regles {
+    position: relative;
+    width: min(27rem, 100%);
+    max-height: 88vh;
+    overflow-y: auto;
+    padding: 1.6rem 1.7rem 1.7rem;
+    background: #0c0d12;
+    border: 0.06rem solid rgba(255, 255, 255, 0.09);
+    border-radius: 1rem;
+    box-shadow: 0 1.6rem 3.4rem rgba(0, 0, 0, 0.75);
+    cursor: default;
+    animation: colReglesEntre 0.24s cubic-bezier(0.25, 0.9, 0.3, 1) both;
 }
 @keyframes colReglesEntre {
-    from { opacity: 0; transform: translateY(-0.5rem) scale(0.97); }
+    from { opacity: 0; transform: translateY(0.6rem) scale(0.98); }
     to   { opacity: 1; transform: none; }
 }
+
+.col-regles-x {
+    position: absolute;
+    top: 0.7rem; right: 0.8rem;
+    width: 1.8rem; height: 1.8rem;
+    padding: 0;
+    display: grid; place-items: center;
+    font-size: 1.2rem; line-height: 1;
+    color: rgba(255, 255, 255, 0.35);
+    background: none; border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease;
+}
+.col-regles-x:hover { color: #fff; background: rgba(255, 255, 255, 0.07); }
+
+/* Les deux mots qui structurent tout : en grand, et seuls de leur taille. */
+.col-regles-t {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.04em;
+    color: var(--col-or);
+}
+.col-regles-t i {
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.62rem;
+    font-style: normal;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.3);
+}
+.col-regles-t:not(:first-of-type) { margin-top: 1.5rem; }
+
 .col-regles-but {
-    display: block; margin-bottom: 0.8rem;
-    font-size: 0.82rem; color: rgba(255, 255, 255, 0.75);
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.82);
 }
 .col-regles-but b { color: var(--col-or); }
-.col-regles-liste { margin: 0; padding: 0; list-style: none; }
-.col-regles-liste li {
-    display: flex; gap: 0.6rem;
-    padding: 0.5rem 0;
-    font-size: 0.72rem; line-height: 1.5;
-    color: rgba(255, 255, 255, 0.55);
-    border-top: 0.06rem solid rgba(255, 255, 255, 0.06);
+
+/* ⚠️ Une grille, et non un « li » en flex. L'ancienne liste mettait le « li »
+   lui-même en « display: flex » : chaque « b » de la phrase devenait un
+   élément flex à part entière, et la ligne « Voler », qui en portait quatre,
+   se repliait en colonne d'un mot par ligne. Ici le nom et la phrase sont deux
+   cellules, et la phrase reste un bloc de texte ordinaire. */
+.col-regles-liste {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 0.9rem;
+    align-items: baseline;
 }
-.col-regles-liste b { color: rgba(255, 255, 255, 0.9); }
-.col-regles-liste i {
-    flex: 0 0 auto;
-    width: 0.5rem; height: 0.5rem; margin-top: 0.35rem;
+.col-regles-liste dt {
+    position: relative;
+    padding: 0.42rem 0 0.42rem 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.92);
+    white-space: nowrap;
+}
+.col-regles-liste dt::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0.78rem;
+    width: 0.42rem; height: 0.42rem;
     border-radius: 50%;
+    background: currentColor;
 }
-.col-regles-liste .r-pioche  { background: #7f9cc0; }
-.col-regles-liste .r-echange { background: #7f9cc0; }
-.col-regles-liste .r-set     { background: var(--col-or); }
-.col-regles-liste .r-scan    { background: var(--oracle); }
-.col-regles-liste .r-vol     { background: var(--assaut); }
-.col-regles-fin {
-    display: block; margin-top: 0.8rem;
-    font-size: 0.66rem; line-height: 1.5;
-    color: rgba(255, 255, 255, 0.32);
+.col-regles-liste dd {
+    margin: 0;
+    padding: 0.42rem 0;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.5);
+}
+.col-regles-liste .r-pioche  { color: #9db8d8; }
+.col-regles-liste .r-echange { color: #9db8d8; }
+.col-regles-liste .r-set     { color: var(--col-or); }
+.col-regles-liste .r-scan    { color: var(--oracle); }
+.col-regles-liste .r-vol     { color: var(--assaut); }
+
+/* Sur téléphone, le nom passe au-dessus de sa phrase : deux colonnes dans la
+   largeur d'un pouce laissaient à la phrase de quoi tenir trois mots. */
+@media (max-width: 520px) {
+    .col-regles { padding: 1.3rem 1.2rem 1.4rem; }
+    .col-regles-t { font-size: 1.3rem; }
+    .col-regles-liste { grid-template-columns: 1fr; column-gap: 0; }
+    .col-regles-liste dt { padding-bottom: 0.1rem; }
+    .col-regles-liste dd { padding: 0 0 0.55rem 0.85rem; }
 }
 .col-scene { position: relative; flex: 1 1 auto; min-height: 0; }
 

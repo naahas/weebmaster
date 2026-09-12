@@ -827,35 +827,43 @@
                                 </svg>
                             </button>
 
-                            <!-- Posé sur le feutre, pas en plein écran : on le lit sans quitter
-                                 la partie des yeux, et un clic n'importe où le referme. -->
-                            <div class="col-regles" v-if="col.regles" @click="col.regles = false">
-                                <span class="col-regles-but">
-                                    Réunis <b>{{ col.etat.resume }}</b> du même anime.
-                                </span>
-                                <ul class="col-regles-liste">
-                                    <li><i class="r-pioche"></i>
-                                        <b>Piocher</b> — clique le paquet. Main pleine, tu désignes
-                                        d'abord la carte que tu laisses.</li>
-                                    <li><i class="r-echange"></i>
-                                        <b>Échanger</b> — traîne une carte sur une carte du marché.
-                                        Elles prennent la place l'une de l'autre.</li>
-                                    <li><i class="r-set"></i>
-                                        <b>Poser un set</b> — traîne une carte sur l'emplacement
-                                        étoilé. Ta main ne se refait pas : elle rétrécit.</li>
-                                    <li><i class="r-scan"></i>
-                                        <b>Scanner</b> — survole un adversaire. Tu vois sa main
-                                        <b>sept secondes</b> : retiens les places et les classes.</li>
-                                    <li><i class="r-vol"></i>
-                                        <b>Voler</b> — désigne une carte <b>de dos</b> chez lui.
-                                        Si tu as sa <b>classe</b>, elle est à toi contre une carte
-                                        de cette classe ; sinon elle repart chez lui et tu en
-                                        lâches <b>deux</b>.</li>
-                                </ul>
-                                <span class="col-regles-fin">
-                                    Les places du marché et des mains ne bougent pas :
-                                    qui regarde sait où viser.
-                                </span>
+                            <!-- Au milieu de l'écran et non posé sur le feutre : on ne lit
+                                 pas des règles du coin de l'œil, on s'arrête pour les lire.
+                                 Un clic n'importe où referme.
+                                 ⚠️ Une phrase par action, et une seule. La version d'avant
+                                 disait tout — la main pleine, les places qui ne bougent pas,
+                                 le prix d'un vol raté — et on n'en retenait rien. Le détail
+                                 s'apprend en jouant ; ce panneau ne sert qu'à démarrer. -->
+                            <div class="col-regles-voile" v-if="col.regles" @click="col.regles = false">
+                                <div class="col-regles" @click.stop>
+                                    <button class="col-regles-x" @click="col.regles = false"
+                                            aria-label="Fermer">&times;</button>
+
+                                    <span class="col-regles-t">Objectif</span>
+                                    <p class="col-regles-but">
+                                        Réunir <b>{{ col.etat.resume }}</b> du même anime.
+                                    </p>
+
+                                    <span class="col-regles-t">
+                                        Actions <i>une seule par tour</i>
+                                    </span>
+                                    <dl class="col-regles-liste">
+                                        <dt class="r-pioche">Piocher</dt>
+                                        <dd>Clique le paquet.</dd>
+
+                                        <dt class="r-echange">Échanger</dt>
+                                        <dd>Traîne une carte sur une carte du marché.</dd>
+
+                                        <dt class="r-set">Poser un set</dt>
+                                        <dd>Traîne-le sur l'emplacement étoilé.</dd>
+
+                                        <dt class="r-scan">Scanner</dt>
+                                        <dd>La main d'un adversaire s'ouvre sept secondes.</dd>
+
+                                        <dt class="r-vol">Voler</dt>
+                                        <dd>Une carte de dos, contre une de la même classe.</dd>
+                                    </dl>
+                                </div>
                             </div>
 
                             <!-- Ni le nom du joueur courant ni l'objectif ici : le
