@@ -1216,8 +1216,9 @@ createApp({
             const v = this.col.etat.visee;
             if (v) {
                 if (v.voleur === this.playerId) {
-                    return 'Choisis une carte chez <b>' + this.colNom(v.cible) +
-                           '</b> — tu ne sauras qu\'après ce qu\'elle te coûte.';
+                    // Rien à lui dire : les dos de sa cible se sont mis à battre,
+                    // et c'est le seul endroit de l'écran où quelque chose bouge.
+                    return '';
                 }
                 return v.cible === this.playerId
                     ? '<b>' + this.colNom(v.voleur) + '</b> cherche laquelle te prendre…'
@@ -1248,19 +1249,19 @@ createApp({
                 return '';
             }
 
-            // Pendant un glissement, on confirme la cible sous le doigt, et rien
-            // d'autre. « Amène-la sur le marché, la pioche… » récitait les cibles
-            // possibles chaque fois qu'on soulevait une carte : c'est précisément ce
-            // qu'on est en train de chercher, pas ce dont on a besoin qu'on nous parle.
+            // Pendant un glissement, une seule chose se dit encore : l'emplacement
+            // étoilé. C'est le seul endroit du feutre qui n'annonce pas de lui-même
+            // ce qu'on y fait — avec une carte du marché sous le doigt on sait qu'on
+            // échange, et « Lâche pour l'échanger » ne faisait que le répéter. De
+            // même, « Amène-la sur le marché, la pioche… » récitait les cibles à
+            // chaque carte soulevée : c'est ce qu'on cherche, pas ce dont on a besoin
+            // qu'on nous parle.
             //
-            // ⚠️ La pioche n'est plus une cible de glissement — elle se clique, et
-            // aucun « data-drop » ne la désigne plus. Sa ligne ne pouvait donc déjà
+            // ⚠️ La pioche, elle, n'est plus une cible de glissement du tout : elle se
+            // clique, et aucun « data-drop » ne la désigne. Sa ligne ne pouvait déjà
             // plus s'afficher.
             if (this.col.drag) {
-                const c = this.col.drag.cible;
-                if (c === 'poser') return 'Lâche pour <b>poser ton set</b>.';
-                if (c && c.startsWith('marche:')) return 'Lâche pour l\'<b>échanger</b>.';
-                return '';
+                return this.col.drag.cible === 'poser' ? 'Lâche pour <b>poser ton set</b>.' : '';
             }
             // Un set prêt, on le DIT : c'est la seule chose qu'un joueur peut avoir
             // sous les yeux sans la voir. « Ta main n'est pas pleine » n'était pas de

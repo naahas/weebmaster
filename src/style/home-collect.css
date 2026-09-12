@@ -392,10 +392,19 @@
        distribution, quand la classe « entree » disparaissait avec elle. */
     transform: translateX(var(--dx, 0rem)) translateY(var(--dy, 0rem))
                rotate(var(--rot, 0deg)) rotateY(var(--flip, 0deg)) scale(var(--ech, 1));
-    /* Une seule propriété animée, et c'est « transform ». La largeur et les
-       marges refaisaient la mise en page à chaque image, pour les cinq cartes,
-       pendant que cinq demi-tours tournaient : c'était la saccade. */
-    transition: transform 0.6s cubic-bezier(0.32, 0.72, 0.24, 1);
+    /* Deux propriétés animées, et deux seulement : « transform » pour le
+       demi-tour et l'inclinaison, « opacity » pour l'effacement quand on survole
+       le siège. La largeur et les marges refaisaient la mise en page à chaque
+       image, pour les cinq cartes, pendant que cinq demi-tours tournaient :
+       c'était la saccade. Ces deux-là, le compositeur les fait sans repeindre.
+
+       ⚠️ Elles tiennent dans UNE SEULE déclaration, et ce n'est pas un détail
+       de style. Une seconde règle « .col-dos { transition: opacity … } » posée
+       plus bas écrase celle-ci — le raccourci remplace tout, il ne s'ajoute
+       pas — et le retournement du scan redevient instantané. C'est exactement
+       ce qui est arrivé en ajoutant l'effacement au survol. */
+    transition: transform 0.6s cubic-bezier(0.32, 0.72, 0.24, 1),
+                opacity 0.18s ease;
 }
 .col-dos > span {
     position: absolute; inset: 0;
@@ -1285,7 +1294,6 @@
    effacer, et rien de plus. */
 .col-siege.jouable:hover .col-eventail .col-dos,
 .col-siege.ouvert .col-eventail .col-dos { opacity: 0.35; }
-.col-dos { transition: opacity 0.18s ease; }
 
 /* ════════ Le marché tourne ════════
    Chaque défausse pousse une carte au marché et en renvoie la plus ancienne
