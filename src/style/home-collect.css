@@ -1275,8 +1275,15 @@
 }
 .col-siege-actions button:hover { transform: scale(1.12); }
 .col-siege-actions svg { width: 1.15rem; height: 1.15rem; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-.col-siege.jouable:hover .col-eventail,
-.col-siege.ouvert .col-eventail { opacity: 0.35; transition: opacity 0.18s ease; }
+/* ⚠️ L opacite porte sur les DOS, pas sur l eventail. Les deux boutons vivent
+   DANS l eventail : une opacite posee sur lui s appliquait a toute la branche,
+   boutons compris, et ils sortaient a trente-cinq pour cent — illisibles au
+   moment precis ou l on veut cliquer dessus. Une opacite d ancetre ne se defait
+   pas depuis l enfant, pas plus qu un filtre. On efface donc ce qu il faut
+   effacer, et rien de plus. */
+.col-siege.jouable:hover .col-eventail .col-dos,
+.col-siege.ouvert .col-eventail .col-dos { opacity: 0.35; }
+.col-dos { transition: opacity 0.18s ease; }
 
 /* ════════ Le marché tourne ════════
    Chaque défausse pousse une carte au marché et en renvoie la plus ancienne
