@@ -40,20 +40,26 @@ console.log('\n── Le tour de table ──');
     const vole = C.actionPiocher(e, autre);
     check('on ne joue pas hors de son tour', !vole.ok, vole.erreur);
 
+    // ⚠️ Piocher demande une main INCOMPLÈTE. Le geste échangeait auparavant une
+    // carte contre une inconnue : c'était le seul coup du jeu joué à l'aveugle.
     const premier = e.tourJoueur;
-    const sans = C.actionPiocher(e, premier);
-    check('piocher sans dire quoi rendre est refusé', !sans.ok, sans.erreur);
+    const pleine = C.actionPiocher(e, premier);
+    check('piocher à main pleine est refusé', !pleine.ok, pleine.erreur);
+    check('… et le tour n\'a pas bougé', e.tourJoueur === premier);
+    check('… ni la main', e.mains.get(premier).length === C.regles(e).main,
+        e.mains.get(premier).length + ' cartes');
 
-    const rendue = e.mains.get(premier)[0].uid;
-    C.actionPiocher(e, premier, rendue);
+    // Main incomplète — l'état d'après une pose : on se sert sans rien rendre.
+    const main = e.mains.get(premier);
+    const posee = main.pop();
+    const avantPaquet = e.pioche.length;
+    const libre = C.actionPiocher(e, premier);
+    check('main incomplète, elle se sert sans rien rendre', libre.ok, libre.erreur || 'ok');
     check('le tour passe au suivant', e.tourJoueur !== premier, premier + ' → ' + e.tourJoueur);
-    check('la main garde sa taille après une pioche',
+    check('la main est de nouveau pleine',
         e.mains.get(premier).length === C.regles(e).main, e.mains.get(premier).length + ' cartes');
-    check('la carte lâchée a quitté la main', !e.mains.get(premier).some(c => c.uid === rendue));
-    // Elle repart au paquet, et non au marché : celui-ci se renouvelle tout
-    // seul à chaque fin de tour, depuis le paquet.
-    check('… et retourne au paquet', e.pioche.some(c => c.uid === rendue));
-    check('… sans passer par le marché', !e.marche.some(c => c.uid === rendue));
+    check('le paquet a fourni la carte', e.pioche.length === avantPaquet - 1);
+    check('rien n\'est reparti au paquet', !e.pioche.some(c => c.uid === posee.uid));
     check('le marché garde sa taille', e.marche.length === C.CONFIG.MARCHE, e.marche.length + ' cartes');
 }
 
@@ -108,13 +114,15 @@ console.log('\n── Le marché ──');
         const avant = e2.marche.map(c => c.uid);
         const tour = e2.ordre.length;
         // un tour qui n'achève pas le tour de table ne touche à rien
-        C.actionPiocher(e2, e2.tourJoueur, e2.mains.get(e2.tourJoueur)[0].uid);
+        // ⚠️ « actionParDefaut » plutôt qu'une pioche ou un échange : il fait
+        // passer le tour sans rien toucher. Piocher est refusé à main pleine, et
+        // un échange modifierait justement le marché qu'on observe.
+        C.actionParDefaut(e2, e2.tourJoueur);
         check('un tour seul ne renouvelle pas le marché',
             e2.marche.map(c => c.uid).join(',') === avant.join(','), tour + ' joueurs');
         // on termine le tour de table
         for (let n = 1; n < tour; n++) {
-            const qui = e2.tourJoueur;
-            C.actionPiocher(e2, qui, e2.mains.get(qui)[0].uid);
+            C.actionParDefaut(e2, e2.tourJoueur);
         }
         const apres = e2.marche.map(c => c.uid);
         check('le tour de table bouclé, le marché glisse d\'un cran',
@@ -164,8 +172,10 @@ console.log('\n── Le vol : on prend, et l\'on paie ──');
         check('… mais n\'est pas encore chez le voleur',
             !e.mains.get(a).some(c => c.uid === 'B1'));
         check('le tour n\'a pas encore tourné', e.tourJoueur === a, e.tourJoueur);
+        // ⚠️ « actionParDefaut » et non une pioche : la pioche est de toute façon
+        // refusée à main pleine, le contrôle passerait donc sans rien prouver.
         check('plus personne ne joue tant que la dette court',
-            !C.actionPiocher(e, a, 'A2').ok, C.actionPiocher(e, a, 'A2').erreur);
+            !C.actionParDefaut(e, a).ok, C.actionParDefaut(e, a).erreur);
         // la carte est retournée : elle n'a plus rien de secret
         check('la table voit la carte prise',
             C.vuePublique(e).larcin && C.vuePublique(e).larcin.carte.uid === 'B1');
@@ -263,10 +273,10 @@ console.log('\n── Le vol : on prend, et l\'on paie ──');
         check('la table voit qui vise qui',
             C.vuePublique(e).visee && C.vuePublique(e).visee.cible === b);
         check('plus personne ne joue pendant qu\'il cherche',
-            !C.actionPiocher(e, a, 'A2').ok);
+            !C.actionParDefaut(e, a).ok);
         check('un autre ne prend pas a sa place', !C.actionVoler(e, b, a, 0).ok);
         check('on peut se raviser', C.annulerVisee(e, a).ok && !e.visee);
-        check('… et le tour reprend son cours', C.actionPiocher(e, a, 'A2').ok);
+        check('… et le tour reprend son cours', C.actionParDefaut(e, a).ok);
     }
 
     // ── Sept secondes sans choisir : la place est tiree au sort ──
@@ -332,8 +342,15 @@ console.log('\n── Poser un set ──');
     // et l'on en reçoit trois neuves dans le même geste, avec une chance de
     // reformer un set aussitôt.
     check('la main ne se refait pas', apres.length === 1, apres.length + ' carte(s) restante(s)');
-    check('… mais la pioche redevient utile',
-        C.actionPiocher(e, j, null).ok !== false || true, 'main incomplète : on prend sans rien rendre');
+    // Et c'est désormais le SEUL moment où elle est ouverte : la main incomplète
+    // est l'état d'après une pose.
+    // ⚠️ Poser fait passer le tour : on lui rend la main pour observer sa
+    // pioche suivante. Le contrôle d'avant s'écrivait « .ok !== false || true »
+    // — une expression toujours vraie, qui ne vérifiait donc rien du tout et
+    // cachait ce détail.
+    e.tourJoueur = j;
+    const reprise = C.actionPiocher(e, j);
+    check('… mais la pioche redevient utile', reprise.ok, reprise.erreur || 'ok');
     check('le set est compté', e.sets.get(j).length === 1);
 }
 
@@ -352,7 +369,7 @@ console.log('\n── La victoire ──');
         else check(`le set ${r.sets} donne la victoire`, p.vainqueur === j, p.vainqueur);
     }
     check('la partie se ferme', !e.active);
-    check('rien ne se joue après la fin', !C.actionPiocher(e, j).ok);
+    check('rien ne se joue après la fin', !C.actionParDefaut(e, j).ok);
 }
 
 console.log('\n── Ce que le serveur laisse voir ──');
@@ -387,8 +404,7 @@ console.log('\n── Ce que le serveur laisse voir ──');
         const rendue = e7.mains.get(j7)[0].uid;
         C.actionEchanger(e7, j7, rendue, e7.marche[4].uid);
         for (let tour = 0; tour < 3; tour++) {
-            const qui = e7.tourJoueur;
-            C.actionPiocher(e7, qui, e7.mains.get(qui)[0].uid);
+            C.actionParDefaut(e7, e7.tourJoueur);
         }
         check('rendue en queue de file, elle survit à trois tours',
             e7.marche.some(c => c.uid === rendue), 'elle est entrée en cinquième place');
@@ -410,8 +426,7 @@ console.log('\n── Ce que le serveur laisse voir ──');
             res.ok && e8.marche.map(c => c.uid).join(',') === avant.join(','),
             res.ok ? 'le marché n\'a pas bougé' : res.erreur);
         for (let n = 1; n < e8.ordre.length; n++) {
-            const qui = e8.tourJoueur;
-            C.actionPiocher(e8, qui, e8.mains.get(qui)[0].uid);
+            C.actionParDefaut(e8, e8.tourJoueur);
         }
         check('… mais le tour de table bouclé, si', e8.marche[4].uid !== avant[4],
             'une neuve est entrée');
@@ -427,13 +442,13 @@ console.log('\n── Ce que le serveur laisse voir ──');
         C.actionScanner(e6, lecteur, vise);
         check('scanner ne passe pas la main tout de suite', e6.tourJoueur === lecteur);
         check('la table est bloquée le temps du scan',
-            !C.actionPiocher(e6, lecteur, e6.mains.get(lecteur)[0].uid).ok);
+            !C.actionParDefaut(e6, lecteur).ok);
         check('et personne d’autre ne peut jouer non plus',
-            !C.actionPiocher(e6, vise, e6.mains.get(vise)[0].uid).ok);
+            !C.actionParDefaut(e6, vise).ok);
         C.finirScan(e6);
         check('le scan refermé, la main passe', e6.tourJoueur !== lecteur);
         check('et le jeu repart',
-            C.actionPiocher(e6, e6.tourJoueur, e6.mains.get(e6.tourJoueur)[0].uid).ok);
+            C.actionParDefaut(e6, e6.tourJoueur).ok);
     }
     const apres = JSON.stringify(C.vuePublique(e));
     check('… sans que le salon en sache rien', s.main.every(c => !apres.includes('"' + c.uid + '"')));
@@ -537,11 +552,12 @@ console.log('\n── Une partie entière se termine ──');
                     }
                 }
             }
-            {
-                const par2 = {};
-                for (const c of main) par2[c.anime] = (par2[c.anime] || 0) + 1;
-                const isolee = main.find(c => par2[c.anime] === 1) || main[main.length - 1];
-                C.actionPiocher(e, j, isolee ? isolee.uid : null);
+            // ⚠️ La pioche n'est plus ouverte qu'à main incomplète. Le robot y
+            // allait sans condition : le coup était refusé, le tour ne passait
+            // pas, et la partie tournait en rond — quatre-vingt-seize pour cent
+            // de manches sans vainqueur, ce qui mesurait le robot et non le jeu.
+            if (main.length < C.regles(e).main) {
+                C.actionPiocher(e, j);
                 continue;
             }
             const rendre = main[Math.floor(Math.random() * main.length)];
@@ -553,10 +569,11 @@ console.log('\n── Une partie entière se termine ──');
     const moy = (total / PARTIES).toFixed(1);
     check('presque toutes les parties trouvent un vainqueur', sansVainqueur / PARTIES < 0.05,
         (sansVainqueur / PARTIES * 100).toFixed(1) + ' % sans vainqueur');
-    // Mesuré à 4 joueurs et 10 animes : 8,7 manches. Le caprice du robot,
-    // au-dessus, n'est pas cosmétique — sans lui il tournait en rond et
-    // annonçait le double.
-    check('la partie dure ce qui était annoncé', moy >= 3 && moy <= 14, moy + ' manches en moyenne');
+    // Mesuré à 4 joueurs et douze animes — le défaut — : 13,2 manches. Le
+    // repère disait 8,7, valeur d'un temps où le défaut était à dix animes et
+    // où la pioche s'ouvrait encore à main pleine. Le caprice du robot,
+    // au-dessus, n'est pas cosmétique : sans lui il tourne en rond.
+    check('la partie dure ce qui était annoncé', moy >= 6 && moy <= 20, moy + ' manches en moyenne');
 }
 
 console.log(ko ? `\n💥 ${ko} contrôle(s) en échec` : '\n✨ Le moteur de Collect tient, et ne montre aucune main');

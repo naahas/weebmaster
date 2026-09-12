@@ -953,7 +953,13 @@
                                         <!-- Les deux gestes vivent DANS l'éventail : au milieu de la
                                              colonne du siège, ils tombaient sous les cartes, entre le
                                              nom et les étoiles. -->
-                                        <div class="col-siege-actions" v-if="!col.etat.visee && !col.etat.larcin">
+                                        <!-- ⚠️ « p.cartes > 0 » : un joueur qui a tout pose n a
+                                             plus rien a scanner ni a se faire prendre. Les deux
+                                             icones s affichaient quand meme, et le serveur refusait
+                                             ensuite — un geste offert pour rien, suivi d un
+                                             message. Mieux vaut ne pas le proposer. -->
+                                        <div class="col-siege-actions"
+                                             v-if="!col.etat.visee && !col.etat.larcin && p.cartes > 0">
                                             <button title="Scanner sa main" @click.stop="colScanner(p.playerId)">
                                                 <svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
                                             </button>
@@ -997,7 +1003,6 @@
                                                 class="col-carte" :class="['classe-' + c.classe, {
                                                     partie: col.drag && col.drag.carte.uid === c.uid,
                                                     aimante: colAimantee(c),
-                                                    choisissable: col.piocheOuverte,
                                                     envol: col.enVol === c.uid,
                                                     exigee: col.priseVue && colDetteExige(c),
                                                     horsdette: col.priseVue && colHorsDette(c),
@@ -1066,9 +1071,13 @@
                              carte qu'on traînait : on lâchait par-dessus, elle disparaissait,
                              remplacée par une inconnue. Le clic ne surprend personne — le
                              paquet s'allume, on choisit ensuite ce qu'on laisse. -->
+                        <!-- Main pleine, le paquet est ÉTEINT : on ne pioche qu en
+                             sortant d'une pose. Il ne s'allume donc que quand le geste
+                             est réellement possible, et un clic dessus ne répond rien
+                             le reste du temps. -->
                         <div class="col-pioche"
-                             :class="{ vivante: colPeutAgir,
-                                       attend: col.piocheOuverte }"
+                             :class="{ vivante: colPiocheLibre,
+                                       morte: colPeutAgir && !colPiocheLibre }"
                              @click="colToucherPioche">
                             <span></span><span></span><span>SM</span>
                         </div>

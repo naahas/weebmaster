@@ -64,7 +64,6 @@ createApp({
                 loupe: null,         // la carte qu'on regarde de près
                 drag: null,          // { carte, x, y, cible } pendant qu'on traîne
                 siegeOuvert: null,   // au doigt : le siège dont les gestes sont dépliés
-                piocheOuverte: false, // la pioche attend qu'on désigne la carte à laisser
                 enVol: null,         // l'uid de la carte qui vole encore du paquet vers la main
                 jauge: null,         // le style de la barre de temps, posé une fois par échéance
                 jaugeCle: 0,         // à incrémenter pour forcer la barre à repartir
@@ -1243,7 +1242,6 @@ createApp({
                 if (c && c.startsWith('marche:')) return 'Lâche pour l\'<b>échanger</b>.';
                 return 'Amène-la sur le marché, la pioche, ou l\'emplacement étoilé.';
             }
-            if (this.col.piocheOuverte) return 'Quelle carte laisses-tu pour piocher ?';
             if (this.colSetPret) return 'Un set est prêt — glisse une carte sur l\'<b>emplacement étoilé</b>.';
             if (this.colPiocheLibre) return 'Ta main n\'est pas pleine — <b>clique le paquet</b> pour te refaire.';
             // Rien quand il n y a rien a dire. Cette ligne recitait les trois
@@ -1942,7 +1940,6 @@ createApp({
             this.col.drag = null;
             this.col.scan = null;
             this.col.siegeOuvert = null;
-            this.col.piocheOuverte = false;
             this.col.enVol = null;
             this.col.jauge = null;
             this.col._tourFin = null;
@@ -2011,8 +2008,6 @@ createApp({
                 window.removeEventListener('pointerup', lacher);
                 window.removeEventListener('pointercancel', lacher);
                 this.col._finDrag = null;
-                // On a choisi de traîner : la pioche n'attend plus rien.
-                if (this.col._glisse) this.col.piocheOuverte = false;
                 const cible = this.colCibleSous(e.clientX, e.clientY);
                 const prise = this.col.drag && this.col.drag.carte;
                 this.col.drag = null;
@@ -2454,24 +2449,13 @@ createApp({
         // Un clic sur le paquet. Main incomplète, il donne tout de suite ; main
         // pleine, il attend qu'on lui désigne la carte à laisser — deux touches,
         // comme le glissement, mais sans avoir à viser.
+        // Un seul geste désormais : à main incomplète on clique et l'on prend.
+        // Main pleine, le paquet est éteint et ne répond pas — il n'y a plus de
+        // « désigne la carte que tu laisses », puisqu'on ne laisse plus rien.
         colToucherPioche() {
-            if (!this.colPeutAgir) return;
-            if (this.colPiocheLibre) {
-                this.col._attendPioche = true;
-                this.socket.emit('collect-piocher', {});
-                this.col.piocheOuverte = false;
-                return;
-            }
-            this.col.piocheOuverte = !this.col.piocheOuverte;
-        },
-        colPiocherEnLachant(c) {
-            // Le clic qui suit un glissement n'est pas un choix : voir la marge
-            // des six pixels dans « colPrendre ».
-            if (this.col._glisse) { this.col._glisse = false; return; }
-            if (!this.col.piocheOuverte) return;
-            this.col.piocheOuverte = false;
+            if (!this.colPeutAgir || !this.colPiocheLibre) return;
             this.col._attendPioche = true;
-            this.socket.emit('collect-piocher', { uidDefausse: c.uid });
+            this.socket.emit('collect-piocher', {});
         },
         // Un siège adverse ne s'ouvre que si l'on peut s'en servir. Déplier
         // « scanner » et « voler » quand ce n'est pas notre tour ne menait qu'à
@@ -2550,11 +2534,11 @@ createApp({
             if (this.col.aLacher.includes(c.uid)) return false;
             return l.du === 1 ? c.classe === l.classe : true;
         },
-        // Un clic sur une de mes cartes. Trois sens selon le moment : solder une
-        // dette, désigner ce qu'on laisse pour piocher, ou rien.
+        // Un clic sur une de mes cartes ne veut plus dire qu'une chose : solder
+        // une dette de vol. Il servait aussi à désigner ce qu'on laissait pour
+        // piocher — ce geste n'existe plus.
         colToucherCarte(c) {
             if (this.colMaDette) return this.colLacher(c);
-            return this.colPiocherEnLachant(c);
         },
         colLacher(c) {
             const l = this.colMaDette;
@@ -5987,7 +5971,6 @@ createApp({
                 if (data.tourJoueur !== this.playerId) {
                     this.colCouperDrag();
                     this.col.siegeOuvert = null;
-                    this.col.piocheOuverte = false;
                 }
                 this.colTic();
                 this.colBrancherTic();

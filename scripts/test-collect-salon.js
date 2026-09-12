@@ -117,38 +117,43 @@ const dernier = (j) => j.etats[j.etats.length - 1];
         pasSonTour.refus.length ? pasSonTour.refus[0].erreur : 'aucun refus');
 
     // ── Piocher ──
+    let publique = null;   // la carte qu un echange a rendue visible de tous
+    // ⚠️ La pioche n'est ouverte qu'à main INCOMPLÈTE, donc en sortant d'une
+    // pose. À main pleine le serveur refuse, et c'est ce qu'on vérifie ici : le
+    // refus doit venir de LUI, pas seulement d'un paquet éteint à l'écran.
     let courant = tous.find(j => j.nom === dernier(A).tourJoueur);
-    const marcheAvant = dernier(A).marche.map(c => c.uid);
-    const lachee = courant.main[0].uid;
-    courant.socket.emit('collect-piocher', { uidDefausse: lachee });
+    courant.refus.length = 0;
+    courant.socket.emit('collect-piocher', {});
     await wait(300);
-    check('la pioche passe', dernier(A).tourJoueur !== courant.nom, courant.nom + ' → ' + dernier(A).tourJoueur);
-    // La carte lâchée repart au PAQUET, que le client ne voit pas. Ce qu'il
-    // peut constater, c'est le renouvellement de fin de tour : la plus ancienne
-    // du marché s'en va sous la pile et une neuve arrive du dessus.
-    check('la carte lâchée ne réapparaît pas au marché', !dernier(A).marche.some(c => c.uid === lachee));
-    // Une carte part par TOUR DE TABLE, pas par tour : un seul coup ne bouge
-    // rien. C'est la seule mesure qui compte pour un joueur — « sera-t-elle
-    // encore là quand MON tour reviendra ? » Au rythme du tour, elle vivait
-    // 0,94 de ses tours à six joueurs : elle disparaissait avant qu'il rejoue.
-    {
-        const apres = dernier(A).marche.map(c => c.uid);
-        check('un tour seul ne renouvelle pas le marché',
-            apres.join() === marcheAvant.join(),
-            tous.length + ' joueurs à table');
+    check('piocher à main pleine est refusé par le serveur', courant.refus.length > 0,
+        courant.refus.length ? courant.refus[0].erreur : 'aucun refus');
+    check('… et le tour n\'a pas bougé', dernier(A).tourJoueur === courant.nom, courant.nom);
 
-        // on boucle le tour de table
-        for (let n = 1; n < tous.length; n++) {
-            const qui = tous.find(x => x.nom === dernier(A).tourJoueur);
-            qui.socket.emit('collect-piocher', { uidDefausse: qui.main[0].uid });
-            await wait(250);
-        }
-        const fini = dernier(A).marche.map(c => c.uid);
-        check('le tour de table bouclé, le marché glisse d\'un cran',
-            fini.slice(0, 4).join() === marcheAvant.slice(1).join(),
-            'les quatre restantes ont avancé');
-        check('… et une neuve est entrée par la droite',
-            !marcheAvant.includes(fini[4]), fini[4].slice(0, 6));
+    // Le tour passe donc par le marché, seul geste toujours ouvert.
+    // ⚠️ Le RYTHME du marché — une carte par tour de table, et non par tour —
+    // se vérifie dans « test:collect », sur le moteur à sec : là-bas on fait
+    // passer les tours sans rien toucher, alors qu'ici chaque échange modifie
+    // justement le marché qu'on voudrait observer. Cette suite-ci tient ce
+    // qu'elle seule peut tenir : que le coup parte, qu'il soit diffusé, et que
+    // le marché garde ses cinq places.
+    {
+        const avant = dernier(A).marche.map(c => c.uid);
+        const rendue = courant.main[0].uid;
+        const prise = dernier(A).marche[2].uid;
+        // Elle devient PUBLIQUE : un échange se voit de tous, et le journal
+        // diffusé le nomme. Le contrôle du scan, plus bas, doit donc l écarter.
+        publique = prise;
+        courant.socket.emit('collect-echanger', { uidMain: rendue, uidMarche: prise });
+        await wait(300);
+        check('un échange passe le tour', dernier(A).tourJoueur !== courant.nom,
+            courant.nom + ' → ' + dernier(A).tourJoueur);
+        check('la carte prise a quitté le marché', !dernier(A).marche.some(c => c.uid === prise));
+        check('… et celle qu\'il a rendue y est, à la même place',
+            dernier(A).marche[2].uid === rendue, dernier(A).marche[2].uid.slice(0, 6));
+        check('le marché n\'a pas glissé pour un seul tour',
+            dernier(A).marche.filter((c, i) => i !== 2).map(c => c.uid).join()
+                === avant.filter((c, i) => i !== 2).join(),
+            tous.length + ' joueurs à table');
     }
     check('le marché garde ses cinq cartes', dernier(A).marche.length === 5, String(dernier(A).marche.length));
     check('la main garde sa taille', courant.main.length === 4, String(courant.main.length));
@@ -167,7 +172,12 @@ const dernier = (j) => j.etats[j.etats.length - 1];
     check('… sans que la main scannée passe par le salon',
         tous.every(j => {
             const recents = j.etats.slice(avantEtats[tous.indexOf(j)]).map(x => JSON.stringify(x)).join('');
-            return vise.main.every(c => !recents.includes('"' + c.uid + '"'));
+            // ⚠️ On écarte la carte qu un échange a rendue publique : elle est
+            // dans sa main, mais tout le monde l a vue passer et le journal la
+            // nomme légitimement. Sans cela le contrôle criait à la fuite pour
+            // une carte que le jeu montre exprès.
+            return vise.main.filter(c => c.uid !== publique)
+                .every(c => !recents.includes('"' + c.uid + '"'));
         }), apres.join('/') + ' états reçus');
 
     // ── Le scan retient la table ──
