@@ -1665,23 +1665,42 @@
 
 /* ── Pendant le vol, il ne reste que deux choses à regarder ──
    La carte retournée, et sa propre main où trouver la même classe. Tout le
-   reste s'efface : le marché, le feutre, les sièges adverses, la barre du
-   haut. Le marché seul s'assombrissait, et les cinq portraits voisins se
-   disputaient encore le regard au moment précis où il n'y a qu'une chose à
-   lire.
+   reste s'efface : le marché, les sièges adverses, la barre du haut, et le
+   feutre lui-même.
+
    ⚠️ Chaque bloc est nommé un par un, et surtout PAS « .col » en entier : un
-   filtre sur la racine s'appliquerait aussi à la main — qu'il faut justement
-   voir — et créerait un bloc conteneur qui casserait le « position: fixed » de
-   la carte volée. C'est le piège le plus fréquent de ce projet. */
+   filtre sur la racine créerait un bloc conteneur qui casserait le
+   « position: fixed » de la carte volée. C'est le piège le plus fréquent de ce
+   projet.
+
+   ⚠️ Et le feutre n'est PAS filtré, alors qu'il l'était : « .col-moi » — la
+   main du joueur — est un ENFANT de « .col-table ». Le filtre dévalait donc
+   jusqu'aux cartes qu'il faut justement voir pour choisir sa défausse, et un
+   « filter: none » posé sur l'enfant n'y changeait rien : un filtre d'ancêtre
+   ne se défait pas, il s'applique au rendu de toute la branche.
+   Le feutre s'assombrit donc par un voile pose sur SON FOND, en « z-index: -1 »
+   — ce qui le place au-dessus de son propre dégradé et en dessous de ses
+   enfants. Le « transform » de la table en fait un bloc d'empilement, donc le
+   voile ne peut pas s'échapper. Et l'on n'animera que « opacity », que le
+   compositeur sait faire sans repeindre l'ellipse à chaque image. */
 .col.larcin .col-marche,
-.col.larcin .col-table,
 .col.larcin .col-haut,
 .col.larcin .col-siege { filter: brightness(0.22) saturate(0.35); }
 
-.col-marche, .col-table, .col-haut, .col-siege { transition: filter 0.35s ease; }
+.col-marche, .col-haut, .col-siege { transition: filter 0.35s ease; }
 
-/* Ma main, elle, reste pleine : c'est là qu'il faut chercher. */
-.col.larcin .col-moi { filter: none; }
+.col-table::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: 50%;
+    background: rgba(6, 7, 10, 0.78);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+}
+.col.larcin .col-table::after { opacity: 1; }
 
 /* ── L'éventail visé : on choisit une PLACE ──
    Les positions ne bougent pas d'un tour à l'autre : le hasard n'en est un que
