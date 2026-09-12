@@ -1241,27 +1241,17 @@ createApp({
             // dise déjà, et prenait le regard au moment où il faut lire des cartes.
             if (!this.colPeutAgir) return '';
 
-            // Pendant un glissement, une seule chose se dit encore : l'emplacement
-            // étoilé. C'est le seul endroit du feutre qui n'annonce pas de lui-même
-            // ce qu'on y fait — avec une carte du marché sous le doigt on sait qu'on
-            // échange, et « Lâche pour l'échanger » ne faisait que le répéter. De
-            // même, « Amène-la sur le marché, la pioche… » récitait les cibles à
-            // chaque carte soulevée : c'est ce qu'on cherche, pas ce dont on a besoin
-            // qu'on nous parle.
-            //
-            // ⚠️ La pioche, elle, n'est plus une cible de glissement du tout : elle se
-            // clique, et aucun « data-drop » ne la désigne. Sa ligne ne pouvait déjà
-            // plus s'afficher.
-            if (this.col.drag) {
-                return this.col.drag.cible === 'poser' ? 'Lâche pour <b>poser ton set</b>.' : '';
-            }
 
-            // Rien le reste du temps. Un set pret ne se dit plus non plus : c est
-            // l EMPLACEMENT ETOILE qui s allume, et il le montre a l endroit meme ou
-            // il faudra lacher la carte — un texte a l autre bout de l ecran ne
-            // pouvait pas faire mieux.
-            // La barre est a hauteur FIXE : rien de ce qui s ecrit ici ne peut plus
-            // deplacer le plateau.
+            // Rien, jamais, sauf l'ordre de défausse plus haut.
+            //
+            // Pendant un glissement non plus : l'emplacement étoilé s'ouvre et
+            // avale la carte quand elle le survole, la carte du marché se soulève
+            // sous le doigt. Chaque cible dit elle-même ce qu'elle fait, à
+            // l'endroit où l'on regarde déjà — un texte à l'autre bout de l'écran
+            // arrive après coup.
+            //
+            // La barre est à hauteur FIXE : rien de ce qui s'écrit ici ne peut
+            // plus déplacer le plateau.
             return '';
         },
 
