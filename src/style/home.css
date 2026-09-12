@@ -7928,6 +7928,29 @@ body.game-active:has(.poll-game-container) #particles-js {
         max-width: 82%;
         right: -4%;
     }
+
+    /* Sora est la seule en PAYSAGE : 1,55 contre 1,26 pour Esdeath, la plus
+       large jusqu'ici. Une pose couchée, cartes étalées autour — ça ne tient
+       pas en hauteur, et à « contain » c'est sa largeur qui bornait tout : elle
+       rendait deux fois moins haute que ses voisines, tassée au bas du cadre.
+
+       ⚠️ Et un second effet, invisible sur les autres : le dégradé de fondu est
+       calé sur la BOÎTE de l'image, pas sur l'image. Quand « contain » laisse du
+       vide au-dessus, le fondu descend donc bien plus bas que le haut du dessin
+       et mange le personnage au lieu de lui fondre les pieds. D'où « height:
+       auto » : la boîte épouse alors le dessin, et le fondu retombe où il doit.
+       C'est la largeur seule qui commande la taille — les deux bornes n'ont plus
+       à être tenues d'accord.
+
+       Reste que le panneau est bâti pour des personnages debout. Une Sora en
+       portrait le remplirait mieux que n'importe quel réglage. */
+    .v2-mode-char.char-collect {
+        height: auto;
+        width: 84%;
+        max-width: 84%;
+        right: -7%;
+        bottom: 0.6rem;
+    }
 }
 
 .v2-mode-char.plain {
