@@ -439,7 +439,6 @@
     will-change: transform;
 }
 .col-eventail.scanne .col-dos:hover { --ech: 1.5; z-index: 27; }
-.col-eventail.scanne .col-dos-recto { cursor: zoom-in; }
 .col-eventail.scanne { z-index: 25; }
 /* ── Le temps qu'il reste, SOUS celui qui joue ──
    Il vivait dans le coin de l'écran : il fallait faire l'aller-retour entre
