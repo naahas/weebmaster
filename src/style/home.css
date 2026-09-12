@@ -7948,7 +7948,7 @@ body.game-active:has(.poll-game-container) #particles-js {
         height: auto;
         width: 97%;
         max-width: none;
-        right: -17%;
+        right: -16%;
         bottom: 0.6rem;
 
         /* ⚠️ Le fondu de gauche est CUIT DANS L'IMAGE, pas fait au masque.
