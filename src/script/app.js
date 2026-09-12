@@ -2607,7 +2607,6 @@ createApp({
         // suit le même principe — le verre du set, sans son accord, parce qu'une
         // défausse est un prix payé et non une réussite.
         colBriserMain(uids) {
-            this.playSound(this.sounds.colCasse);
             // ⚠️ On relève les RECTANGLES tout de suite, pas au moment d'éclater.
             // Le serveur répond en quelques dizaines de millisecondes : la main
             // est déjà refaite quand le minuteur tombe, l'élément qu'on tenait
@@ -2630,7 +2629,19 @@ createApp({
                 // un trou entre la carte qui disparait et les morceaux qui
                 // arrivent — on ne la voyait plus se briser, on la voyait partir
                 // puis quelque chose casser.
-                setTimeout(() => this.colEclaterBoite(p.boite, p.carte), 70 + n * 110);
+                //
+                // ⚠️ Le bruit part AVEC chaque carte, pas une seule fois au debut.
+                // Les eclats sont decales de 110 ms pour qu on distingue deux
+                // cartes plutot qu une bouillie : un seul bruit au depart tombait
+                // donc a cote du second, et l on voyait casser sans entendre.
+                // « playSound » garde un jeu de voix pretes et joue la premiere
+                // libre — deux appels rapproches se superposent au lieu de se
+                // couper. Et « col-casse » est court et sec expres pour ce cas :
+                // deux bris s y entendent comme un geste en deux temps.
+                setTimeout(() => {
+                    this.playSound(this.sounds.colCasse);
+                    this.colEclaterBoite(p.boite, p.carte);
+                }, 70 + n * 110);
             }
         },
         // Le compte à rebours vit côté client, mais sur l'heure de fin envoyée
