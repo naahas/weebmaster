@@ -147,6 +147,9 @@ faire changer le mot selon un réglage embrouillait plus qu il ne renseignait. V
   Et `/prototypes/ascension-grimpeurs` : cinq facons de montrer qui est ou sur la tour,
   avec six grimpeurs qui montent pour de vrai — sur ce composant c est le mouvement
   qui decide, pas la pose. A largeur constante : la colonne fait 4.9 rem.
+  Et `/prototypes/collect-regles` : quatre mises en page de la modale des regles.
+  Le contenu est le meme partout — c est la mise en page seule qui se juge, et
+  sur le vrai feutre, parce qu elle s ouvre en pleine partie.
 ⚠️ `classic` et `rivalry` sont **un seul mode pour le joueur**. Le réglage *Format* (Solo / Équipe)
 bascule `lobbyMode` de l'un à l'autre en cours de salon (`POST /admin/set-teams`). Le badge de mode
 affiche « Classique » dans les deux cas. C'est l'hôte qui attribue les camps (pastille sur chaque

@@ -1,0 +1,295 @@
+<title>Collect — la modale des règles</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   Quatre façons de présenter les mêmes cinq lignes.
+
+   Le contenu ne change pas d'une piste à l'autre : un objectif, cinq
+   actions, une phrase chacune. Ce qui change, c'est la MISE EN PAGE
+   — et c'est elle seule qui fait qu'un panneau a l'air soigné ou
+   bricolé.
+
+   ⚠️ Deux contraintes à ne pas perdre de vue :
+   · la modale s'ouvre EN PLEINE PARTIE, chronomètre en marche. Elle
+     doit se lire d'un coup d'œil, pas se parcourir.
+   · elle doit tenir sur un téléphone. Les pistes à deux colonnes
+     passent à une seule en dessous de 520 px — c'est indiqué.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+    --or: #ffd24a;
+    --assaut: #ff7a5c;
+    --mirage: #a78bfa;
+    --oracle: #4fd1c5;
+    --bleu: #9db8d8;
+}
+* { box-sizing: border-box; }
+
+body {
+    margin: 0; padding: 2rem 1.5rem 5rem;
+    font-family: 'Poppins', system-ui, sans-serif;
+    color: #fff;
+    background: radial-gradient(70% 55% at 50% 0%, #10161a, #07080b 70%);
+    min-height: 100vh;
+}
+h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
+.sous { margin: 0 0 2rem; max-width: 58rem; font-size: 0.85rem; line-height: 1.55; color: rgba(255,255,255,0.45); }
+.sous b { color: rgba(255,255,255,0.75); }
+
+.grille { display: flex; flex-wrap: wrap; gap: 2rem; align-items: flex-start; }
+.piste { width: 30rem; max-width: 100%; }
+.piste h3 { margin: 0 0 0.2rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; letter-spacing: 0.07em; }
+.piste > p { margin: 0 0 1rem; font-size: 0.73rem; line-height: 1.5; color: rgba(255,255,255,0.42); min-height: 5.8em; }
+
+/* Le feutre derrière, pour juger sur le vrai fond */
+.fond {
+    position: relative;
+    padding: 1.6rem;
+    border-radius: 0.8rem;
+    background:
+        radial-gradient(60% 60% at 50% 30%, rgba(255,255,255,0.03), transparent 70%),
+        linear-gradient(170deg, #12281f, #0a1713);
+    box-shadow: inset 0 0 0 0.06rem rgba(255,255,255,0.05);
+}
+.fond::before {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    background: rgba(6, 7, 10, 0.72);
+}
+
+.modale { position: relative; }
+
+/* ══════════ A · l'existant ══════════ */
+.a .modale {
+    padding: 2.1rem 1.7rem 1.7rem;
+    background: #0c0d12;
+    border: 0.06rem solid rgba(255,255,255,0.09);
+    border-radius: 1rem;
+    box-shadow: 0 1.6rem 3.4rem rgba(0,0,0,0.75);
+}
+.a .t { display: flex; align-items: baseline; gap: 0.6rem; margin-bottom: 0.5rem;
+        font-family: 'Bebas Neue', sans-serif; font-size: 1.35rem; letter-spacing: 0.04em; color: var(--or); }
+.a .t:first-of-type { justify-content: center; }
+.a .t i { font-family: 'Poppins', sans-serif; font-size: 0.58rem; font-style: normal; font-weight: 600;
+          letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.3); }
+.a .t:not(:first-of-type) { margin-top: 1.5rem; }
+.a .but { margin: 0; font-size: 0.92rem; text-align: center; color: rgba(255,255,255,0.82); }
+.a .but b { color: var(--or); }
+.a ul { margin: 0; padding: 0; list-style: none; }
+.a li { position: relative; display: grid; grid-template-columns: auto 1fr; column-gap: 0.9rem;
+        align-items: baseline; padding: 0.62rem 0; }
+.a li + li::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 0.06rem;
+    background: linear-gradient(90deg, transparent, var(--fil) 22%, var(--fil) 62%, transparent); opacity: 0.75; }
+.a b { position: relative; padding-left: 0.85rem; font-size: 0.66rem; font-weight: 700;
+       letter-spacing: 0.1em; text-transform: uppercase; color: currentColor; white-space: nowrap; }
+.a b::before { content: ''; position: absolute; left: 0; top: 0.38rem; width: 0.4rem; height: 0.4rem;
+    border-radius: 50%; background: currentColor; box-shadow: 0 0 0.4rem currentColor; }
+.a span { font-size: 0.76rem; line-height: 1.45; color: rgba(255,255,255,0.52); }
+
+/* ══════════ B · le manuel ══════════
+   Un bandeau de titre, puis un tableau. Les lignes alternent très
+   légèrement : l'œil suit sa ligne sans avoir besoin d'un filet. */
+.b .modale {
+    background: #0b0d11;
+    border: 0.06rem solid rgba(255,255,255,0.08);
+    border-radius: 0.9rem;
+    box-shadow: 0 1.6rem 3.4rem rgba(0,0,0,0.75);
+    overflow: hidden;
+}
+.b .bandeau {
+    padding: 1.05rem 1.5rem 0.95rem;
+    background: linear-gradient(180deg, rgba(255,210,74,0.09), transparent);
+    border-bottom: 0.06rem solid rgba(255,210,74,0.18);
+}
+.b .bandeau h4 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem;
+    letter-spacing: 0.05em; color: var(--or); }
+.b .bandeau p { margin: 0; font-size: 0.82rem; color: rgba(255,255,255,0.74); }
+.b .bandeau p b { color: #fff; }
+.b .corps { padding: 0.6rem 0 0.9rem; }
+.b .cap { padding: 0.5rem 1.5rem 0.45rem; font-size: 0.56rem; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.3);
+    display: flex; justify-content: space-between; align-items: baseline; }
+.b .rang { display: grid; grid-template-columns: 5.6rem 1fr; gap: 0.9rem;
+    padding: 0.55rem 1.5rem; align-items: baseline; }
+.b .rang:nth-child(odd) { background: rgba(255,255,255,0.022); }
+.b .rang b { font-family: 'Space Grotesk', sans-serif; font-size: 0.72rem; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase; color: currentColor;
+    display: flex; align-items: center; gap: 0.4rem; }
+.b .rang b::before { content: ''; width: 0.22rem; height: 0.9rem; border-radius: 999px;
+    background: currentColor; box-shadow: 0 0 0.5rem currentColor; }
+.b .rang span { font-size: 0.78rem; line-height: 1.45; color: rgba(255,255,255,0.56); }
+
+/* ══════════ C · les tuiles ══════════
+   Chaque action est un bloc à elle, en deux colonnes. On balaye au
+   lieu de lire — le plus rapide des quatre en pleine partie. */
+.c .modale {
+    padding: 1.5rem;
+    background: #0b0d11;
+    border: 0.06rem solid rgba(255,255,255,0.08);
+    border-radius: 1rem;
+    box-shadow: 0 1.6rem 3.4rem rgba(0,0,0,0.75);
+}
+.c .but {
+    margin: 0 0 1.2rem;
+    padding: 0.9rem 1rem;
+    text-align: center;
+    font-size: 0.88rem;
+    color: rgba(255,255,255,0.8);
+    background: rgba(255,210,74,0.07);
+    border: 0.06rem solid rgba(255,210,74,0.22);
+    border-radius: 0.6rem;
+}
+.c .but i { display: block; margin-bottom: 0.25rem; font-style: normal;
+    font-size: 0.54rem; font-weight: 700; letter-spacing: 0.18em;
+    text-transform: uppercase; color: rgba(255,210,74,0.65); }
+.c .but b { color: var(--or); }
+.c .cap { margin: 0 0 0.7rem; font-size: 0.56rem; font-weight: 700; letter-spacing: 0.18em;
+    text-transform: uppercase; color: rgba(255,255,255,0.3);
+    display: flex; justify-content: space-between; align-items: baseline; }
+.c .tuiles { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.c .tuile {
+    padding: 0.7rem 0.8rem;
+    background: rgba(255,255,255,0.028);
+    border: 0.06rem solid rgba(255,255,255,0.07);
+    border-left: 0.16rem solid currentColor;
+    border-radius: 0.5rem;
+}
+.c .tuile:last-child { grid-column: 1 / -1; }
+.c .tuile b { display: block; margin-bottom: 0.2rem;
+    font-family: 'Space Grotesk', sans-serif; font-size: 0.7rem; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase; color: currentColor; }
+.c .tuile span { font-size: 0.74rem; line-height: 1.4; color: rgba(255,255,255,0.55); }
+
+/* ══════════ D · la fiche ══════════
+   Un numéro par action, une colonne de repères à gauche. Le plus
+   « manuel de jeu » des quatre : c'est une liste ordonnée, pas un
+   inventaire. */
+.d .modale {
+    padding: 1.7rem 1.6rem 1.5rem;
+    background:
+        radial-gradient(120% 60% at 50% 0%, rgba(255,210,74,0.06), transparent 60%),
+        #0a0c10;
+    border: 0.06rem solid rgba(255,255,255,0.08);
+    border-radius: 1rem;
+    box-shadow: 0 1.6rem 3.4rem rgba(0,0,0,0.75);
+}
+.d .chapeau { text-align: center; margin-bottom: 1.4rem; }
+.d .chapeau i { display: block; font-style: normal; font-size: 0.54rem; font-weight: 700;
+    letter-spacing: 0.22em; text-transform: uppercase; color: rgba(255,210,74,0.6); }
+.d .chapeau h4 { margin: 0.35rem 0 0; font-size: 1.02rem; font-weight: 500;
+    color: rgba(255,255,255,0.86); }
+.d .chapeau h4 b { color: var(--or); font-weight: 700; }
+.d .chapeau hr { width: 3rem; margin: 0.8rem auto 0; border: 0;
+    height: 0.06rem; background: linear-gradient(90deg, transparent, var(--or), transparent); }
+.d .cap { margin: 0 0 0.8rem; font-size: 0.56rem; font-weight: 700; letter-spacing: 0.18em;
+    text-transform: uppercase; color: rgba(255,255,255,0.3);
+    display: flex; justify-content: space-between; align-items: baseline; }
+.d ol { margin: 0; padding: 0; list-style: none; counter-reset: n; }
+.d li { position: relative; display: grid; grid-template-columns: 1.7rem 5rem 1fr;
+    gap: 0.7rem; align-items: baseline; padding: 0.5rem 0; counter-increment: n; }
+.d li::before {
+    content: counter(n, decimal-leading-zero);
+    font-family: 'Space Grotesk', sans-serif; font-size: 0.62rem; font-weight: 700;
+    color: rgba(255,255,255,0.22); font-variant-numeric: tabular-nums;
+}
+.d li b { font-family: 'Space Grotesk', sans-serif; font-size: 0.72rem; font-weight: 700;
+    letter-spacing: 0.07em; text-transform: uppercase; color: currentColor; }
+.d li span { font-size: 0.76rem; line-height: 1.45; color: rgba(255,255,255,0.54); }
+.d li + li { border-top: 0.06rem solid rgba(255,255,255,0.05); }
+
+/* La croix, commune aux quatre */
+.x {
+    position: absolute; top: 0.7rem; right: 0.8rem;
+    width: 1.8rem; height: 1.8rem;
+    display: grid; place-items: center;
+    font-size: 1.2rem; line-height: 1;
+    color: rgba(255,255,255,0.3);
+    background: none; border: 0; border-radius: 50%;
+    cursor: pointer;
+}
+.x:hover { color: #fff; background: rgba(255,255,255,0.07); }
+
+/* Les couleurs d'action, communes */
+.r-draw   { color: var(--bleu);   --fil: rgba(157,184,216,0.4); }
+.r-change { color: var(--bleu);   --fil: rgba(157,184,216,0.4); }
+.r-set    { color: var(--or);     --fil: rgba(255,210,74,0.4); }
+.r-scan   { color: var(--oracle); --fil: rgba(79,209,197,0.4); }
+.r-steal  { color: var(--assaut); --fil: rgba(255,122,92,0.4); }
+
+@media (max-width: 520px) {
+    .c .tuiles { grid-template-columns: 1fr; }
+    .d li { grid-template-columns: 1.7rem 1fr; }
+    .d li span { grid-column: 2; }
+    .b .rang { grid-template-columns: 1fr; gap: 0.15rem; }
+}
+</style>
+
+<h1>Collect — la modale des règles</h1>
+<p class="sous">
+    Le contenu ne change pas d’une piste à l’autre : un objectif, cinq actions, une phrase chacune.
+    Ce qui change, c’est la <b>mise en page</b> — et c’est elle seule qui fait qu’un panneau a l’air
+    soigné ou bricolé. ⚠️ Deux contraintes : la modale s’ouvre <b>en pleine partie, chronomètre en
+    marche</b>, donc elle doit se lire d’un coup d’œil ; et elle doit tenir sur un téléphone — les
+    pistes à deux colonnes passent à une seule sous 520 px.
+</p>
+
+<div class="grille" id="grille"></div>
+
+<script>
+const ACTIONS = [
+    ['r-draw',   'Draw',   'Prends une carte du paquet.'],
+    ['r-change', 'Change', 'Troque une carte de ta main contre une du marché.'],
+    ['r-set',    'Set',    'Place sur la table un groupe de cartes du même anime.'],
+    ['r-scan',   'Scan',   'Regarde la main d’un adversaire.'],
+    ['r-steal',  'Steal',  'Prends une carte chez un adversaire contre une de la même classe — sans elle, tu défausses deux cartes.'],
+];
+const BUT = 'Réunir <b>2 sets de 3</b> du même anime.';
+
+const PISTES = [
+    { cle: 'a', t: 'A · l’existant', n: "Ce qui tourne aujourd’hui : deux titres en grand, une liste à filets dégradés. Mis là pour comparer." },
+    { cle: 'b', t: 'B · le manuel', n: "Un bandeau porte l’objectif, le reste est un tableau aux lignes très légèrement alternées — l’œil suit sa ligne sans avoir besoin d’un filet. Le plus posé, et celui qui ressemble le plus à une notice de jeu." },
+    { cle: 'c', t: 'C · les tuiles', n: "Chaque action est un bloc à elle, deux par rangée, avec un liseré de sa couleur. On BALAYE au lieu de lire : le plus rapide des quatre quand le chronomètre tourne. Steal prend toute la largeur, sa phrase étant deux fois plus longue." },
+    { cle: 'd', t: 'D · la fiche', n: "Un numéro par action et une colonne de repères. C’est une liste ORDONNÉE, pas un inventaire — ça suggère un ordre de lecture, ce qui aide un débutant et n’encombre pas les autres." },
+];
+
+const grille = document.getElementById('grille');
+
+function corps(cle) {
+    if (cle === 'a') {
+        return '<button class="x">&times;</button>'
+            + '<span class="t">Objectif</span>'
+            + '<p class="but">' + BUT.replace('Réunir', 'Réunir') + '</p>'
+            + '<span class="t">Actions <i>une seule par tour</i></span>'
+            + '<ul>' + ACTIONS.map(([c, n, p]) =>
+                '<li class="' + c + '"><b>' + n + '</b><span>' + p + '</span></li>').join('') + '</ul>';
+    }
+    if (cle === 'b') {
+        return '<button class="x">&times;</button>'
+            + '<div class="bandeau"><h4>Objectif</h4><p>' + BUT + '</p></div>'
+            + '<div class="corps"><div class="cap"><span>Actions</span><span>une seule par tour</span></div>'
+            + ACTIONS.map(([c, n, p]) =>
+                '<div class="rang ' + c + '"><b>' + n + '</b><span>' + p + '</span></div>').join('')
+            + '</div>';
+    }
+    if (cle === 'c') {
+        return '<button class="x">&times;</button>'
+            + '<div class="but"><i>Objectif</i>' + BUT + '</div>'
+            + '<div class="cap"><span>Actions</span><span>une seule par tour</span></div>'
+            + '<div class="tuiles">' + ACTIONS.map(([c, n, p]) =>
+                '<div class="tuile ' + c + '"><b>' + n + '</b><span>' + p + '</span></div>').join('') + '</div>';
+    }
+    return '<button class="x">&times;</button>'
+        + '<div class="chapeau"><i>Objectif</i><h4>' + BUT.replace(/^Réunir /, 'Réunir ') + '</h4><hr></div>'
+        + '<div class="cap"><span>Actions</span><span>une seule par tour</span></div>'
+        + '<ol>' + ACTIONS.map(([c, n, p]) =>
+            '<li class="' + c + '"><b>' + n + '</b><span>' + p + '</span></li>').join('') + '</ol>';
+}
+
+for (const p of PISTES) {
+    const d = document.createElement('div');
+    d.className = 'piste ' + p.cle;
+    d.innerHTML = '<h3>' + p.t + '</h3><p>' + p.n + '</p>'
+        + '<div class="fond"><div class="modale">' + corps(p.cle) + '</div></div>';
+    grille.appendChild(d);
+}
+</script>

@@ -1308,6 +1308,10 @@ app.get('/prototypes/ascension-grimpeurs', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-ascension-grimpeurs.html');
 });
 
+app.get('/prototypes/collect-regles', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-collect-regles.html');
+});
+
 app.get('/prototypes/collect-duel', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-collect-duel.html');
 });

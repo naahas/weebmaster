@@ -7701,7 +7701,7 @@ body.game-active:has(.poll-game-container) #particles-js {
     transform: translateY(-50%) translateX(0.2rem);
 }
 
-/* ── Bouton « Créer le salon » ─────────────── */
+/* ── Bouton « Créer un salon » ─────────────── */
 .v2-cta {
     position: relative;
     overflow: hidden;

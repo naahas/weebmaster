@@ -233,7 +233,7 @@
                                 <span class="v2-mode-rule"></span>
                                 <p class="v2-mode-preview-desc">{{ currentMode.desc }}</p>
                                 <button class="v2-cta" @click="createRoom" :disabled="creatingRoom || currentMode.soon">
-                                    <span class="v2-cta-label">{{ creatingRoom ? 'Création…' : (currentMode.soon ? 'Bientôt disponible' : 'Créer le salon') }}</span>
+                                    <span class="v2-cta-label">{{ creatingRoom ? 'Création…' : (currentMode.soon ? 'Bientôt disponible' : 'Créer un salon') }}</span>
                                     <span class="v2-cta-shine"></span>
                                 </button>
                                 <div class="v2-action-error" v-if="createError">{{ createError }}</div>
@@ -817,8 +817,15 @@
                                  un cycle qui n'existe plus — les classes ne se battent plus,
                                  elles décident du prix d'un vol — et il n'expliquait qu'une
                                  règle sur cinq. Un parchemin les dit toutes, à la demande. -->
-                            <button class="col-regles-bouton" @click="col.regles = !col.regles"
-                                    :class="{ ouvert: col.regles }" title="Les règles">
+                            <!-- Il bat tant qu'on ne l'a pas remarqué : une manche qui
+                                 démarre ne dit nulle part où sont les règles, et personne
+                                 ne cherche un bouton qu'il ne sait pas exister. Un survol
+                                 suffit à le faire taire — inutile d'ouvrir le panneau. -->
+                            <button class="col-regles-bouton"
+                                    @click="col.regles = !col.regles; colReglesVues()"
+                                    @mouseenter="colReglesVues()"
+                                    :class="{ ouvert: col.regles, appelle: !col.reglesVues && !col.regles }"
+                                    title="Les règles">
                                 <svg viewBox="0 0 24 24">
                                     <path d="M6 3h9a3 3 0 013 3v13a2 2 0 01-2 2H7a3 3 0 01-3-3V6a3 3 0 013-3z"/>
                                     <path d="M18 3a3 3 0 013 3v1h-4"/>

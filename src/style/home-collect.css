@@ -58,7 +58,40 @@
    les classes ne se battent plus entre elles, elles décident du prix d'un vol —
    et surtout il n'expliquait qu'une règle sur cinq, à un joueur qui débarque en
    cours de partie et n'en connaît aucune. */
+/* ── Le bouton des règles ──
+   Il bat tant qu'on ne l'a pas remarqué. L'onde vit sur un pseudo-élément :
+   on n'anime ainsi que « transform » et « opacity », que le compositeur sait
+   faire sans repeindre — un « box-shadow » animé aurait redessiné le bouton à
+   chaque image, en boucle, pendant toute une manche. */
+.col-regles-bouton.appelle {
+    color: var(--col-or);
+    border-color: rgba(255, 210, 74, 0.55);
+    background: rgba(255, 210, 74, 0.09);
+    animation: colReglesBat 1.6s ease-in-out infinite;
+}
+.col-regles-bouton.appelle::after {
+    content: '';
+    position: absolute;
+    inset: -0.2rem;
+    border: 0.09rem solid var(--col-or);
+    border-radius: 0.85rem;
+    opacity: 0;
+    pointer-events: none;
+    animation: colReglesOnde 1.6s ease-out infinite;
+}
+
+@keyframes colReglesBat {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.07); }
+}
+@keyframes colReglesOnde {
+    0%   { opacity: 0.7; transform: scale(0.9); }
+    70%  { opacity: 0;   transform: scale(1.45); }
+    100% { opacity: 0;   transform: scale(1.45); }
+}
+
 .col-regles-bouton {
+    position: relative;
     flex: 0 0 auto;
     width: 2.6rem; height: 2.6rem;
     display: grid; place-items: center;

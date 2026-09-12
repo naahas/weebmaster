@@ -72,6 +72,11 @@ createApp({
                 priseVue: false,  // la carte prise s'est-elle retournée
                 aLacher: [],      // ce qu'on a désigné pour payer sa dette
                 entree: false,       // le temps de la distribution, au tout début
+                // Le bouton des règles appelle au début de chaque manche, et se
+                // tait dès qu'on l'a survolé une fois. Il ne s'agit pas de
+                // rappeler les règles à qui les connaît, seulement de dire où
+                // elles sont à qui les cherche.
+                reglesVues: false,
                 // réglages du salon, avant la partie
                 regleMain: 4,
                 regleAnimes: 10,
@@ -2452,6 +2457,12 @@ createApp({
         // Un seul geste désormais : à main incomplète on clique et l'on prend.
         // Main pleine, le paquet est éteint et ne répond pas — il n'y a plus de
         // « désigne la carte que tu laisses », puisqu'on ne laisse plus rien.
+        // Un survol suffit : on n'a pas à ouvrir le panneau pour que l'icône
+        // se taise. Celui qui l'a remarquée sait désormais où elle est.
+        colReglesVues() {
+            this.col.reglesVues = true;
+        },
+
         colToucherPioche() {
             if (!this.colPeutAgir || !this.colPiocheLibre) return;
             this.col._attendPioche = true;
@@ -5903,6 +5914,7 @@ createApp({
                     // toutes les cartes retomber en diagonale.
                     if (!this.gameInProgress && data.depuis < 2500) {
                         this.col.entree = true;
+                        this.col.reglesVues = false;
                         // Le bruit de la donne se cale sur l'animation, pas sur
                         // l'arrivée du message : les cartes tombent à 0,5 s.
                         setTimeout(() => this.playSound(this.sounds.colDonne), 450);
