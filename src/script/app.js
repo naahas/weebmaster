@@ -1220,15 +1220,20 @@ createApp({
                     // et c'est le seul endroit de l'écran où quelque chose bouge.
                     return '';
                 }
+                // Rien non plus à la cible : ce sont SES dos qui battent, elle le
+                // voit mieux que personne. On garde la ligne pour les autres, eux
+                // n'ont rien à regarder et ne sauraient pas d'où vient l'attente.
                 return v.cible === this.playerId
-                    ? '<b>' + this.colNom(v.voleur) + '</b> cherche laquelle te prendre…'
+                    ? ''
                     : '<b>' + this.colNom(v.voleur) + '</b> vise <b>' + this.colNom(v.cible) + '</b>…';
             }
             const l = this.col.etat.larcin;
             if (l) {
                 if (l.voleur !== this.playerId) {
+                    // Meme raison : la carte quitte SA main sous ses yeux. Les
+                    // autres, eux, ne verraient rien sans cette ligne.
                     return l.cible === this.playerId
-                        ? '<b>' + this.colNom(l.voleur) + '</b> te prend une carte…'
+                        ? ''
                         : '<b>' + this.colNom(l.voleur) + '</b> prend une carte à <b>' + this.colNom(l.cible) + '</b>…';
                 }
                 // Un ordre, et rien d autre. « Selectionne … a jeter » decrivait le
@@ -1241,13 +1246,11 @@ createApp({
             }
             // Le siège en cours s'allume déjà : le redire en toutes lettres
             // sous la table faisait doublon.
-            if (!this.colPeutAgir) {
-                // Pendant son propre scan, on ne dit pas « ce n'est pas ton tour »
-                // — c'est le sien. On dit ce qu'on attend.
-                const e = this.col.etat;
-                if (e && e.scan && e.scan.par === this.playerId) return 'Retiens ce que tu vois…';
-                return '';
-            }
+            // Pendant son propre scan non plus : la main de l'adversaire vient de
+            // s'ouvrir en grand au milieu du feutre, et sept secondes courent sur
+            // la jauge. « Retiens ce que tu vois » ne disait rien que l'écran ne
+            // dise déjà, et prenait le regard au moment où il faut lire des cartes.
+            if (!this.colPeutAgir) return '';
 
             // Pendant un glissement, une seule chose se dit encore : l'emplacement
             // étoilé. C'est le seul endroit du feutre qui n'annonce pas de lui-même
