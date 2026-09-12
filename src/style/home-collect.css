@@ -139,14 +139,106 @@
     position: relative;
     width: min(27rem, 100%);
     max-height: 88vh;
-    overflow-y: auto;
-    padding: 2.1rem 1.7rem 1.7rem;
-    background: #0c0d12;
-    border: 0.06rem solid rgba(255, 255, 255, 0.09);
-    border-radius: 1rem;
+    overflow: hidden auto;
+    background: #0b0d11;
+    border: 0.06rem solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.9rem;
     box-shadow: 0 1.6rem 3.4rem rgba(0, 0, 0, 0.75);
     cursor: default;
     animation: colReglesEntre 0.24s cubic-bezier(0.25, 0.9, 0.3, 1) both;
+}
+
+/* ── Le bandeau ──
+   L'objectif y tient seul, sur un fond qui s'éteint vers le bas et un filet
+   doré. Deux registres au lieu d'un empilement de titres : on sait du premier
+   coup d'œil ce qu'on cherche, avant de savoir comment. */
+.col-regles-bandeau {
+    padding: 1.05rem 1.5rem 0.95rem;
+    background: linear-gradient(180deg, rgba(255, 210, 74, 0.09), transparent);
+    border-bottom: 0.06rem solid rgba(255, 210, 74, 0.18);
+}
+.col-regles-bandeau h4 {
+    margin: 0 0 0.3rem;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.05em;
+    color: var(--col-or);
+}
+.col-regles-bandeau p { margin: 0; font-size: 0.82rem; color: rgba(255, 255, 255, 0.74); }
+.col-regles-bandeau p b { color: #fff; }
+
+/* Le tableau. Le premier écart est plus large que les autres : le bandeau et
+   la première action se touchaient, et les deux registres n'en faisaient plus
+   qu'un. */
+.col-regles-corps { padding: 0.6rem 0 0.9rem; }
+
+.col-regles-cap {
+    padding: 1rem 1.5rem 0.5rem;
+    font-size: 0.56rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* ⚠️ Une GRILLE, et jamais un « display: flex » sur la ligne elle-même. La
+   première version faisait cela : chaque « b » de la phrase devenait alors un
+   élément flex à part entière, et la ligne « Voler », qui en portait quatre, se
+   repliait en colonne d'un mot par ligne. Ici le nom et la phrase sont deux
+   cellules, et la phrase reste un bloc de texte ordinaire. */
+.col-regles-rang {
+    display: grid;
+    grid-template-columns: 5.6rem 1fr;
+    gap: 0.9rem;
+    padding: 0.55rem 1.5rem;
+    align-items: baseline;
+}
+
+/* Une ligne sur deux à peine éclaircie : l'œil suit la sienne sans qu'il
+   faille tracer un filet entre chacune. */
+.col-regles-rang:nth-of-type(odd) { background: rgba(255, 255, 255, 0.022); }
+
+.col-regles-rang b {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: currentColor;
+}
+/* Un bâtonnet plutôt qu'une pastille : il tient dans la hauteur d'une ligne
+   sans avoir à être calé sur elle. */
+.col-regles-rang b::before {
+    content: '';
+    width: 0.22rem;
+    height: 0.9rem;
+    border-radius: 999px;
+    background: currentColor;
+    box-shadow: 0 0 0.5rem currentColor;
+}
+
+.col-regles-rang span {
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.56);
+}
+
+.col-regles-rang.r-pioche  { color: #9db8d8; }
+.col-regles-rang.r-echange { color: #9db8d8; }
+.col-regles-rang.r-set     { color: var(--col-or); }
+.col-regles-rang.r-scan    { color: var(--oracle); }
+.col-regles-rang.r-vol     { color: var(--assaut); }
+
+/* Sur téléphone, le nom passe au-dessus de sa phrase : deux colonnes dans la
+   largeur d'un pouce laissaient à la phrase de quoi tenir trois mots. */
+@media (max-width: 520px) {
+    .col-regles-bandeau { padding: 0.9rem 1.1rem 0.8rem; }
+    .col-regles-bandeau h4 { font-size: 1.3rem; }
+    .col-regles-cap { padding: 0.85rem 1.1rem 0.45rem; }
+    .col-regles-rang { grid-template-columns: 1fr; gap: 0.15rem; padding: 0.5rem 1.1rem; }
 }
 @keyframes colReglesEntre {
     from { opacity: 0; transform: translateY(0.6rem) scale(0.98); }
@@ -168,126 +260,7 @@
 }
 .col-regles-x:hover { color: #fff; background: rgba(255, 255, 255, 0.07); }
 
-/* Les deux mots qui structurent tout : en grand, et seuls de leur taille. */
-.col-regles-t {
-    display: flex;
-    align-items: baseline;
-    gap: 0.6rem;
-    margin-bottom: 0.5rem;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.35rem;
-    letter-spacing: 0.04em;
-    color: var(--col-or);
-}
-.col-regles-t i {
-    font-family: 'Poppins', sans-serif;
-    font-size: 0.58rem;
-    font-style: normal;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.3);
-}
-.col-regles-t:not(:first-of-type) { margin-top: 1.5rem; }
 
-/* L'objectif se lit centré : c'est une annonce, pas une entrée de liste. Les
-   actions, elles, restent alignées à gauche — une colonne se lit au fil du
-   bord. */
-.col-regles-t:first-of-type { justify-content: center; }
-
-.col-regles-but {
-    margin: 0;
-    font-size: 0.92rem;
-    line-height: 1.45;
-    text-align: center;
-    color: rgba(255, 255, 255, 0.82);
-}
-.col-regles-but b { color: var(--col-or); }
-
-/* Une ligne par action, en deux colonnes : le nom, puis la phrase.
-   ⚠️ Et surtout PAS un « li » en flex, comme le faisait la version d'avant :
-   chaque « b » de la phrase y devenait un élément flex à part entière, et la
-   ligne « Voler », qui en portait quatre, se repliait en colonne d'un mot par
-   ligne. Ici la phrase est une cellule, donc un bloc de texte ordinaire. */
-.col-regles-liste { margin: 0; padding: 0; list-style: none; }
-
-.col-regles-liste li {
-    position: relative;
-    display: grid;
-    grid-template-columns: auto 1fr;
-    column-gap: 0.9rem;
-    align-items: baseline;
-    padding: 0.62rem 0;
-}
-
-/* Le filet entre deux lignes : un dégradé qui s'éteint aux deux bouts, dans la
-   couleur de l'action qu'il annonce. Une bordure ne saurait pas se fondre, et
-   un trait plein d'un bout à l'autre faisait tableau.
-   Un enfant en position absolue n'est pas un élément de grille : il peut donc
-   traverser les deux colonnes sans casser la mise en page. */
-/* ⚠️ La couleur du filet est donnée EN CLAIR par « --fil », et non calculée
-   par « color-mix(in srgb, currentColor …) ». Ce calcul-là ne se résout pas
-   partout : là où il échoue, la déclaration entière est jetée et le filet
-   disparaît — un seul manquait à l'écran, ce qui est le pire des cas, parce
-   qu'on cherche la faute dans la mise en page. Une valeur littérale ne peut
-   pas échouer, et la repli neutre couvre une classe qu'on oublierait. */
-.col-regles-liste li + li::before {
-    content: '';
-    position: absolute;
-    left: 0; right: 0; top: 0;
-    height: 0.06rem;
-    background: linear-gradient(90deg,
-        transparent,
-        var(--fil, rgba(255, 255, 255, 0.16)) 22%,
-        var(--fil, rgba(255, 255, 255, 0.16)) 62%,
-        transparent);
-    opacity: 0.75;
-}
-
-/* Les noms sont en anglais et courts — draw, change, set, scan, steal : on
-   les traite donc en etiquettes, capitales espacees, plutot qu en mots d une
-   phrase. Le corps descend d autant, l espacement leur rendant la largeur. */
-.col-regles-liste b {
-    position: relative;
-    padding-left: 0.85rem;
-    font-family: 'Poppins', sans-serif;
-    font-size: 0.66rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: currentColor;
-    white-space: nowrap;
-}
-.col-regles-liste b::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0.38rem;
-    width: 0.4rem; height: 0.4rem;
-    border-radius: 50%;
-    background: currentColor;
-    box-shadow: 0 0 0.4rem currentColor;
-}
-
-.col-regles-liste span {
-    font-size: 0.76rem;
-    line-height: 1.45;
-    color: rgba(255, 255, 255, 0.52);
-}
-
-.col-regles-liste .r-pioche  { color: #9db8d8; --fil: rgba(157, 184, 216, 0.4); }
-.col-regles-liste .r-echange { color: #9db8d8; --fil: rgba(157, 184, 216, 0.4); }
-.col-regles-liste .r-set     { color: var(--col-or); --fil: rgba(255, 210, 74, 0.4); }
-.col-regles-liste .r-scan    { color: var(--oracle); --fil: rgba(79, 209, 197, 0.4); }
-.col-regles-liste .r-vol     { color: var(--assaut); --fil: rgba(255, 122, 92, 0.4); }
-
-/* Sur téléphone, le nom passe au-dessus de sa phrase : deux colonnes dans la
-   largeur d'un pouce laissaient à la phrase de quoi tenir trois mots. */
-@media (max-width: 520px) {
-    .col-regles { padding: 1.3rem 1.2rem 1.4rem; }
-    .col-regles-t { font-size: 1.2rem; }
-    .col-regles-liste li { grid-template-columns: 1fr; column-gap: 0; row-gap: 0.15rem; }
-    .col-regles-liste span { padding-left: 0.85rem; }
-}
 .col-scene { position: relative; flex: 1 1 auto; min-height: 0; }
 
 .col-table {

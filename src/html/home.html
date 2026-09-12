@@ -846,35 +846,37 @@
                                     <button class="col-regles-x" @click="col.regles = false"
                                             aria-label="Fermer">&times;</button>
 
-                                    <span class="col-regles-t">Objectif</span>
-                                    <p class="col-regles-but">
-                                        Réunir <b>{{ col.etat.resume }}</b> du même anime.
-                                    </p>
+                                    <!-- L'objectif tient dans son bandeau, le reste est un
+                                         tableau. Deux registres au lieu d'un seul empilement :
+                                         on sait du premier coup d'œil ce qu'on cherche, avant
+                                         de savoir comment. -->
+                                    <div class="col-regles-bandeau">
+                                        <h4>Objectif</h4>
+                                        <p>Réunir <b>{{ col.etat.resume }}</b> du même anime.</p>
+                                    </div>
 
-                                    <span class="col-regles-t">
-                                        Actions <i>une seule par tour</i>
-                                    </span>
                                     <!-- ⚠️ Chaque ligne dit CE QUE FAIT l'action, pas comment
                                          la déclencher. « Clique le paquet » décrivait un geste
                                          qu'on trouve tout seul en jouant, et cachait la règle. -->
-                                    <ul class="col-regles-liste">
-                                        <li class="r-pioche">
+                                    <div class="col-regles-corps">
+                                        <div class="col-regles-cap">Actions</div>
+                                        <div class="col-regles-rang r-pioche">
                                             <b>Draw</b><span>Prends une carte du paquet.</span>
-                                        </li>
-                                        <li class="r-echange">
+                                        </div>
+                                        <div class="col-regles-rang r-echange">
                                             <b>Change</b><span>Troque une carte de ta main contre une du marché.</span>
-                                        </li>
-                                        <li class="r-set">
+                                        </div>
+                                        <div class="col-regles-rang r-set">
                                             <b>Set</b><span>Place sur la table un groupe de cartes du même anime.</span>
-                                        </li>
-                                        <li class="r-scan">
+                                        </div>
+                                        <div class="col-regles-rang r-scan">
                                             <b>Scan</b><span>Regarde la main d'un adversaire.</span>
-                                        </li>
-                                        <li class="r-vol">
+                                        </div>
+                                        <div class="col-regles-rang r-vol">
                                             <b>Steal</b><span>Prends une carte chez un adversaire contre une de la
                                             même classe — sans elle, tu défausses deux cartes.</span>
-                                        </li>
-                                    </ul>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
