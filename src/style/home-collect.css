@@ -961,15 +961,26 @@
 .col-loupe .col-pion svg { width: 1.05rem; height: 1.05rem; }
 
 /* ── La consigne et les actions ───────────────────────────────── */
+/* ⚠️ HAUTEUR FIXE, et non « min-height ». C'est là qu'était le vrai défaut :
+   un message assez long pour passer à DEUX lignes agrandissait la barre, et
+   tout le plateau remontait de quelques pixels — à chaque apparition, puis
+   redescendait. « Un set est prêt — glisse une carte sur l'emplacement
+   étoilé » faisait 368 px et passait à la ligne dès qu'on jouait sur un écran
+   étroit.
+   Une hauteur figée le rend impossible quoi qu'on écrive ici un jour, et
+   « nowrap » avec elle : un texte trop long se coupe proprement plutôt que de
+   déborder. Le rembourrage du bas la décolle du bord de l'écran, où elle se
+   lisait comme une légende de page. */
 .col-consigne {
     flex: 0 0 auto;
-    min-height: 1.2rem;
-    /* Un demi-rem de plus sous elle : collee au bord de l ecran, elle se lisait
-       comme une legende de page et non comme une consigne de jeu. */
+    height: 2.25rem;
     padding: 0.35rem 0.2rem 0.7rem;
     text-align: center;
     font-size: 0.74rem; line-height: 1.35;
     color: rgba(255, 255, 255, 0.55);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .col-consigne b { color: var(--col-or); }
 .col-consigne.ko { color: #ff8b98; }

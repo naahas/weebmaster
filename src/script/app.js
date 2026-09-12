@@ -1211,31 +1211,20 @@ createApp({
         },
         // La consigne change avec l'action en cours : sans elle, on ne sait pas
         // ce que l'écran attend de nous.
+        // ⚠️ Il ne reste qu'UNE consigne, et c'est voulu : celle qui donne un
+        // ORDRE. Tout le reste commentait ce que l'écran montrait déjà — les dos
+        // qui battent, la carte qui part d'une main, la main qui s'ouvre au
+        // milieu du feutre. Un texte qui double une image ne se lit pas, il
+        // encombre.
+        //
+        // Celle-ci reste parce qu'elle porte un NOMBRE qu'on ne peut lire nulle
+        // part ailleurs : combien de cartes choisir.
         colConsigne() {
             if (!this.col.etat) return '';
-            const v = this.col.etat.visee;
-            if (v) {
-                if (v.voleur === this.playerId) {
-                    // Rien à lui dire : les dos de sa cible se sont mis à battre,
-                    // et c'est le seul endroit de l'écran où quelque chose bouge.
-                    return '';
-                }
-                // Rien non plus à la cible : ce sont SES dos qui battent, elle le
-                // voit mieux que personne. On garde la ligne pour les autres, eux
-                // n'ont rien à regarder et ne sauraient pas d'où vient l'attente.
-                return v.cible === this.playerId
-                    ? ''
-                    : '<b>' + this.colNom(v.voleur) + '</b> vise <b>' + this.colNom(v.cible) + '</b>…';
-            }
+            if (this.col.etat.visee) return '';
             const l = this.col.etat.larcin;
             if (l) {
-                if (l.voleur !== this.playerId) {
-                    // Meme raison : la carte quitte SA main sous ses yeux. Les
-                    // autres, eux, ne verraient rien sans cette ligne.
-                    return l.cible === this.playerId
-                        ? ''
-                        : '<b>' + this.colNom(l.voleur) + '</b> prend une carte à <b>' + this.colNom(l.cible) + '</b>…';
-                }
+                if (l.voleur !== this.playerId) return '';
                 // Un ordre, et rien d autre. « Selectionne … a jeter » decrivait le
                 // geste ; ce qu on attend, c est le RESULTAT. Le vol rate ne se dit
                 // plus en toutes lettres — la carte repart chez son proprietaire sous
@@ -1266,14 +1255,13 @@ createApp({
             if (this.col.drag) {
                 return this.col.drag.cible === 'poser' ? 'Lâche pour <b>poser ton set</b>.' : '';
             }
-            // Un set prêt, on le DIT : c'est la seule chose qu'un joueur peut avoir
-            // sous les yeux sans la voir. « Ta main n'est pas pleine » n'était pas de
-            // cet ordre — le paquet s'allume déjà quand on peut y aller.
-            if (this.colSetPret) return 'Un set est prêt — glisse une carte sur l\'<b>emplacement étoilé</b>.';
-            // Rien quand il n y a rien a dire. Cette ligne recitait les trois
-            // gestes a chaque tour, alors que la modale des regles les donne
-            // maintenant en clair et qu on les trouve de toute facon en jouant.
-            // La barre garde sa hauteur (« min-height »), donc rien ne saute.
+
+            // Rien le reste du temps. Un set pret ne se dit plus non plus : c est
+            // l EMPLACEMENT ETOILE qui s allume, et il le montre a l endroit meme ou
+            // il faudra lacher la carte — un texte a l autre bout de l ecran ne
+            // pouvait pas faire mieux.
+            // La barre est a hauteur FIXE : rien de ce qui s ecrit ici ne peut plus
+            // deplacer le plateau.
             return '';
         },
 
