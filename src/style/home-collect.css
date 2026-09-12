@@ -107,7 +107,7 @@
     width: min(27rem, 100%);
     max-height: 88vh;
     overflow-y: auto;
-    padding: 1.6rem 1.7rem 1.7rem;
+    padding: 2.1rem 1.7rem 1.7rem;
     background: #0c0d12;
     border: 0.06rem solid rgba(255, 255, 255, 0.09);
     border-radius: 1rem;
@@ -157,10 +157,16 @@
 }
 .col-regles-t:not(:first-of-type) { margin-top: 1.5rem; }
 
+/* L'objectif se lit centré : c'est une annonce, pas une entrée de liste. Les
+   actions, elles, restent alignées à gauche — une colonne se lit au fil du
+   bord. */
+.col-regles-t:first-of-type { justify-content: center; }
+
 .col-regles-but {
     margin: 0;
     font-size: 1rem;
     line-height: 1.45;
+    text-align: center;
     color: rgba(255, 255, 255, 0.82);
 }
 .col-regles-but b { color: var(--col-or); }
@@ -186,6 +192,12 @@
    un trait plein d'un bout à l'autre faisait tableau.
    Un enfant en position absolue n'est pas un élément de grille : il peut donc
    traverser les deux colonnes sans casser la mise en page. */
+/* ⚠️ La couleur du filet est donnée EN CLAIR par « --fil », et non calculée
+   par « color-mix(in srgb, currentColor …) ». Ce calcul-là ne se résout pas
+   partout : là où il échoue, la déclaration entière est jetée et le filet
+   disparaît — un seul manquait à l'écran, ce qui est le pire des cas, parce
+   qu'on cherche la faute dans la mise en page. Une valeur littérale ne peut
+   pas échouer, et la repli neutre couvre une classe qu'on oublierait. */
 .col-regles-liste li + li::before {
     content: '';
     position: absolute;
@@ -193,9 +205,10 @@
     height: 0.06rem;
     background: linear-gradient(90deg,
         transparent,
-        color-mix(in srgb, currentColor 38%, transparent) 22%,
-        color-mix(in srgb, currentColor 22%, transparent) 70%,
+        var(--fil, rgba(255, 255, 255, 0.16)) 22%,
+        var(--fil, rgba(255, 255, 255, 0.16)) 62%,
         transparent);
+    opacity: 0.75;
 }
 
 /* Les noms sont en anglais et courts — draw, change, set, scan, steal : on
@@ -228,11 +241,11 @@
     color: rgba(255, 255, 255, 0.52);
 }
 
-.col-regles-liste .r-pioche  { color: #9db8d8; }
-.col-regles-liste .r-echange { color: #9db8d8; }
-.col-regles-liste .r-set     { color: var(--col-or); }
-.col-regles-liste .r-scan    { color: var(--oracle); }
-.col-regles-liste .r-vol     { color: var(--assaut); }
+.col-regles-liste .r-pioche  { color: #9db8d8; --fil: rgba(157, 184, 216, 0.4); }
+.col-regles-liste .r-echange { color: #9db8d8; --fil: rgba(157, 184, 216, 0.4); }
+.col-regles-liste .r-set     { color: var(--col-or); --fil: rgba(255, 210, 74, 0.4); }
+.col-regles-liste .r-scan    { color: var(--oracle); --fil: rgba(79, 209, 197, 0.4); }
+.col-regles-liste .r-vol     { color: var(--assaut); --fil: rgba(255, 122, 92, 0.4); }
 
 /* Sur téléphone, le nom passe au-dessus de sa phrase : deux colonnes dans la
    largeur d'un pouce laissaient à la phrase de quoi tenir trois mots. */
