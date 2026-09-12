@@ -1225,10 +1225,13 @@ createApp({
                         ? '<b>' + this.colNom(l.voleur) + '</b> te prend une carte…'
                         : '<b>' + this.colNom(l.voleur) + '</b> prend une carte à <b>' + this.colNom(l.cible) + '</b>…';
                 }
+                // Un ordre, et rien d autre. « Selectionne … a jeter » decrivait le
+                // geste ; ce qu on attend, c est le RESULTAT. Le vol rate ne se dit
+                // plus en toutes lettres — la carte repart chez son proprietaire sous
+                // les yeux de tous, et le nombre de deux le dit assez.
                 const reste = l.aRendre - this.col.aLacher.length;
-                if (l.du === 1) return 'Sélectionne <b>1 carte de la même classe</b> à jeter.';
-                return '<b>Vol impossible</b> — sélectionne <b>' + reste + ' carte' +
-                       (reste > 1 ? 's' : '') + '</b> à jeter.';
+                if (l.du === 1) return 'Défausse <b>1 carte de la même classe</b>.';
+                return 'Défausse <b>' + reste + ' carte' + (reste > 1 ? 's' : '') + '</b>.';
             }
             // Le siège en cours s'allume déjà : le redire en toutes lettres
             // sous la table faisait doublon.

@@ -956,7 +956,9 @@
 .col-consigne {
     flex: 0 0 auto;
     min-height: 1.2rem;
-    padding: 0.35rem 0.2rem 0.15rem;
+    /* Un demi-rem de plus sous elle : collee au bord de l ecran, elle se lisait
+       comme une legende de page et non comme une consigne de jeu. */
+    padding: 0.35rem 0.2rem 0.7rem;
     text-align: center;
     font-size: 0.74rem; line-height: 1.35;
     color: rgba(255, 255, 255, 0.55);
