@@ -294,7 +294,16 @@
 /* Le marché est commun donc lointain ; ta main est à toi et sous le pouce.
    Les deux ne méritent pas la même taille. */
 .col-marche .col-carte { width: calc(var(--carte) * 0.9); }
-.col-moi .col-carte { width: calc(var(--carte) * 1.14); }
+/* ⚠️ « touch-action: none » est ce qui rend le GLISSEMENT possible au doigt,
+   et il n'y a pas d'autre moyen. Sans lui, le navigateur garde le geste pour
+   lui au cas où ce serait un défilement : il envoie un « pointercancel » et
+   cesse d'émettre des « pointermove ». La carte se soulevait puis retombait
+   sans avoir bougé — c'est exactement ce qu'on voyait sur téléphone.
+   « preventDefault » sur le « pointerdown » n'y suffit pas : la décision est
+   déjà prise quand il s'exécute.
+   Rien à craindre pour le défilement : le plateau est en « position: fixed »
+   et « overflow: hidden », il n'y a rien à faire défiler. */
+.col-moi .col-carte { width: calc(var(--carte) * 1.14); touch-action: none; }
 
 /* Il n'est pas du marché : la marge l'en détache pour qu'on ne le prenne
    pas pour une sixième carte à échanger. La rangée reste centrée d'un bloc. */
@@ -1870,6 +1879,11 @@
         to   { opacity: 1; transform: none; }
     }
     .col-action { font-size: 0.57rem; padding: 0.5rem 0.1rem; }
+    /* Le marché tenait toute la largeur, d'un bord à l'autre. Un cran de
+       moins et la rangée respire — c'est le marché qu'on rogne, pas la main :
+       elle est sous le pouce, lui est lointain. */
+    .col-marche .col-carte { width: calc(var(--carte) * 0.78); }
+    .col-emplacement { width: calc(var(--carte) * 0.78); margin-left: 1rem; }
 }
 
 @media (min-width: 1500px) {

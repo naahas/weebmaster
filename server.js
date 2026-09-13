@@ -2712,6 +2712,22 @@ app.post('/admin/replay', (req, res) => {
         Object.assign(gameState.ascension, reglages);
     }
 
+    // Collect : même chose, et pour la même raison. Sans cette remise à neuf,
+    // la manche suivante repartait sur la table de la précédente — mains,
+    // marché et sets compris.
+    // ⚠️ « reinitialiser » repart d'un « etatNeuf », qui remet la taille de
+    // main et le nombre de séries à leurs valeurs par défaut. L'hôte les a
+    // choisies avant la première manche ; il n'a pas à les rechoisir entre
+    // deux, donc on les repose par-dessus.
+    if (gameState.collect) {
+        const reglagesCollect = {
+            main: gameState.collect.main,
+            nbAnimes: gameState.collect.nbAnimes,
+        };
+        collect.reinitialiser(gameState);
+        Object.assign(gameState.collect, reglagesCollect);
+    }
+
     console.log(`🔁 Salon ${gameState.roomCode} : retour au lobby pour une nouvelle manche`);
     diffuser(gameState, 'retour-au-salon');
     broadcastLobbyUpdate(gameState);

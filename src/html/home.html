@@ -911,7 +911,8 @@
                                                 paire: colSerieVisible(c.anime) >= 2 }]"
                                             :style="{ '--i': i }"
                                             :data-drop="'marche:' + c.uid"
-                                            @mouseenter="col.loupe = c" @mouseleave="col.loupe = null">
+                                            @pointerenter="colViser(c, $event)" @pointerleave="colDeviser($event)"
+                                            @pointerdown="colLoupeAppui(c, $event)">
                                         <img :src="'collectpic/' + c.img" :alt="c.nom" draggable="false">
                                         <span class="col-pion" :class="'pion-' + c.classe" v-html="colSymbole(c.classe)"></span>
                                         <!-- Celle qui partira au prochain tour. Les cinq places sont
@@ -952,7 +953,8 @@
                                                         prenable: colMaVisee && colMaVisee.cible === p.playerId }"
                                               :style="colIncline(k, colEventail(p).length, colScanDe(p.playerId) ? 10 : 6, colScanDe(p.playerId) ? 0.72 : 0)"
                                               @click.stop="colPrendreChez(p.playerId, k)"
-                                              @mouseenter="d && (col.loupe = d)" @mouseleave="col.loupe = null">
+                                              @pointerenter="colViser(d, $event)" @pointerleave="colDeviser($event)"
+                                              @pointerdown="colLoupeAppui(d, $event)">
                                             <span class="col-dos-verso"></span>
                                             <span class="col-dos-recto" v-if="d">
                                                 <img :src="'collectpic/' + d.img" :alt="d.nom" draggable="false">
@@ -1019,9 +1021,9 @@
                                                     'dans-le-set': colPeutAgir && !col.drag && colSetPret === c.anime,
                                                     paire: colSerieVisible(c.anime) >= 2 }]"
                                                 :style="colIncline(i, col.main.length, 5)"
-                                                @mouseenter="col.loupe = c" @mouseleave="col.loupe = null"
+                                                @pointerenter="colViser(c, $event)" @pointerleave="colDeviser($event)"
                                                 @click="colToucherCarte(c)"
-                                                @pointerdown="colPrendre(c, $event)">
+                                                @pointerdown="colPrendre(c, $event); colLoupeAppui(c, $event)">
                                             <img :src="'collectpic/' + c.img" :alt="c.nom" draggable="false">
                                             <span class="col-pion" :class="'pion-' + c.classe" v-html="colSymbole(c.classe)"></span>
                                         </button>

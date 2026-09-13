@@ -1181,12 +1181,22 @@ createApp({
             return !!(l && l.cible === this.playerId);
         },
         // Ce qu'on lit sous la carte qui vient de se retourner. Le VOLEUR a sa
-        // consigne en bas de l'écran, à l'impératif : ici on ne parle qu'aux
-        // autres, et l'on ne dit que ce qui les regarde — le sort de la carte.
+        // consigne en bas de l'écran, à l'impératif ; ici on parle à tous les
+        // autres — mais pas de la même façon à celui qu'on dépouille.
+        //
+        // C'est SA carte qui part : « X l'emporte » la lui faisait lire comme
+        // un commentaire de match, alors qu'elle vient de lui être prise. Les
+        // autres, eux, ne sont que spectateurs, et la formule impersonnelle
+        // reste la bonne pour eux.
         colMotPrise() {
             const l = this.col.etat && this.col.etat.larcin;
             if (!l || l.voleur === this.playerId) return '';
             const nom = '<b>' + this.colNom(l.voleur) + '</b>';
+            if (l.cible === this.playerId) {
+                return l.du === 1
+                    ? nom + ' vous vole une carte'
+                    : nom + ' n\'a pas la classe — elle vous revient';
+            }
             return l.du === 1
                 ? nom + ' l\'emporte'
                 : nom + ' n\'a pas la classe — elle lui revient';
@@ -1812,14 +1822,25 @@ createApp({
         // Les pourcentages sont ceux de la TABLE, pas de l'écran — le siège est
         // son enfant. À 50 il serait pile sur le bord ; 47 le fait mordre un peu
         // sur le feutre, ce qui donne l'impression qu'on y est assis.
+        // ⚠️ Sur téléphone, l'arc large ne tient pas. À quatre rivaux, les
+        // sièges des extrémités tombaient à 4 % et 96 % de la table : leurs
+        // éventails passaient sous le bord de l'écran, et leur pseudo — posé
+        // SOUS les cartes — arrivait à hauteur du marché, qui court au milieu.
+        // Les deux se chevauchaient.
+        // On resserre l'arc et l'on rentre surtout le rayon HORIZONTAL, celui
+        // qui manquait de place : les bouts remontent et rentrent, sans que la
+        // table ait à rétrécir. Le rayon vertical bouge à peine — c'est en
+        // hauteur qu'il y a de la marge, en 9:16.
         colSiege(i, total) {
-            // L'arc s'ouvre de 170° à 370°, soit un demi-tour et un peu : les
-            // sièges des extrémités descendent alors le long des côtés, vers toi,
-            // au lieu de rester massés en haut.
-            const angle = (170 + (i + 0.5) * (200 / Math.max(1, total))) * Math.PI / 180;
+            const large = !this.isMobile;
+            const debut     = large ? 170 : 185;
+            const ouverture = large ? 200 : 170;
+            const rx        = large ?  47 :  38;
+            const ry        = large ?  47 :  43;
+            const angle = (debut + (i + 0.5) * (ouverture / Math.max(1, total))) * Math.PI / 180;
             return {
-                left: (50 + 47 * Math.cos(angle)).toFixed(1) + '%',
-                top: (50 + 47 * Math.sin(angle)).toFixed(1) + '%',
+                left: (50 + rx * Math.cos(angle)).toFixed(1) + '%',
+                top:  (50 + ry * Math.sin(angle)).toFixed(1) + '%',
             };
         },
         // Un éventail tenu en main, pas un alignement au cordeau : chaque carte
@@ -1997,6 +2018,53 @@ createApp({
         // même et l'on croyait avoir troqué.
         colCouperDrag() {
             if (this.col._finDrag) this.col._finDrag();
+        },
+        // ══ La loupe ══
+        // Elle se conduisait au « mouseenter » / « mouseleave », ce qui n'a de
+        // sens qu'avec une souris. Au doigt, le navigateur synthétise ces deux
+        // événements après coup et de façon peu fiable — sur iOS, toucher une
+        // deuxième carte n'envoyait pas toujours le « mouseleave » de la
+        // première. La loupe restait alors ouverte sur la carte précédente,
+        // par-dessus le jeu : « le visuel ne s'enlève pas ».
+        //
+        // Deux contrats séparés, donc, distingués par « pointerType » :
+        //   souris → survol, comme avant, rien ne change ;
+        //   doigt  → appui LONG pour regarder, relâcher pour refermer.
+        //
+        // L'appui long libère surtout le toucher simple, qui doit rester au
+        // JEU : choisir une carte à défausser, en prendre une chez un rival.
+        // C'était l'autre moitié du défaut — un aperçu s'ouvrait sur chaque
+        // toucher et gênait le geste qu'on voulait faire.
+        colViser(c, ev) {
+            if (!c || (ev && ev.pointerType !== 'mouse')) return;
+            this.col.loupe = c;
+        },
+        colDeviser(ev) {
+            if (ev && ev.pointerType !== 'mouse') return;
+            this.col.loupe = null;
+        },
+        // 320 ms : au-dessous, un toucher un peu appuyé ouvrait l'aperçu et
+        // volait le geste. Huit pixels de tolérance, parce qu'un doigt posé
+        // n'est jamais parfaitement immobile — mais un vrai glissement, lui,
+        // referme aussitôt : on est alors en train de traîner la carte.
+        colLoupeAppui(c, ev) {
+            if (!c || !ev || ev.pointerType === 'mouse') return;
+            const depart = { x: ev.clientX, y: ev.clientY };
+            clearTimeout(this.col._loupeT);
+            this.col._loupeT = setTimeout(() => { this.col.loupe = c; }, 320);
+            const bouger = (e) => {
+                if (Math.hypot(e.clientX - depart.x, e.clientY - depart.y) > 8) fin();
+            };
+            const fin = () => {
+                clearTimeout(this.col._loupeT);
+                this.col.loupe = null;
+                window.removeEventListener('pointermove', bouger);
+                window.removeEventListener('pointerup', fin);
+                window.removeEventListener('pointercancel', fin);
+            };
+            window.addEventListener('pointermove', bouger);
+            window.addEventListener('pointerup', fin);
+            window.addEventListener('pointercancel', fin);
         },
         colPrendre(carte, ev) {
             if (!this.colPeutAgir) return;

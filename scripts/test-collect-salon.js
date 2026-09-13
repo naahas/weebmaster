@@ -291,6 +291,39 @@ const dernier = (j) => j.etats[j.etats.length - 1];
     check('il n\'est plus à la table',
         !dernier(restants[0]).joueurs.some(p => p.playerId === partant.nom));
 
+    // ── Rejouer, une fois la manche éteinte ──
+    // ⚠️ Le défaut qui vaut ce contrôle : « inProgress » ne retombait JAMAIS en
+    // Collect. « demarrerPartie » le lève, et rien ne le rabaissait — ni la
+    // victoire, ni le dernier joueur qui s'en va. « /admin/replay » répondait
+    // donc toujours 400, « Une partie est déjà en cours », et le bouton Rejouer
+    // ne faisait rien EN SILENCE : l'écran de fin de Collect n'a nulle part où
+    // montrer une erreur d'hôte. Le mode était injouable deux manches de suite.
+    {
+        restants[0].socket.emit('leave-lobby', {});
+        await wait(600);
+        const e = await etat();
+        check('la manche s\'éteint quand il ne reste qu\'un joueur',
+            e.inProgress === false, 'inProgress = ' + e.inProgress);
+
+        // ⚠️ On repose des réglages QUI NE SONT PAS ceux par défaut avant de
+        // rejouer. Le rejeu repart d'un « etatNeuf », qui les ramènerait à 4
+        // cartes et 10 animes : contrôler ces deux valeurs-là ne prouverait
+        // rien, elles seraient justes même si le réglage avait été perdu.
+        await post('/admin/collect/set-main', { main: 3 });
+        await post('/admin/collect/set-animes', { animes: 8 });
+
+        const r = await post('/admin/replay', {});
+        check('rejouer est accepté', r.status === 200 && !r.body.error,
+            r.body.error || 'HTTP ' + r.status);
+
+        const apres = await etat();
+        check('les réglages ont survécu au rejeu',
+            apres.collect && apres.collect.main === 3 && apres.collect.animes === 8,
+            apres.collect ? apres.collect.main + ' cartes, ' + apres.collect.animes + ' animes' : 'aucun');
+        check('… et la table est repartie à neuf', apres.inProgress === false,
+            'inProgress = ' + apres.inProgress);
+    }
+
     // ── Ménage ──
     for (const j of tous) j.socket.close();
     await post('/admin/toggle-game', {});

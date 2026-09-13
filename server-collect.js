@@ -645,6 +645,15 @@ function pseudos(gameState) {
 // La main d'un joueur ne part QUE vers lui. Tout le reste va au salon.
 function diffuserEtat(gameState, io) {
     const etat = gameState.collect;
+    // ⚠️ C'est ICI que « inProgress » retombe, et nulle part ailleurs.
+    // « demarrerPartie » le lève et RIEN ne le rabaissait : ni la victoire, ni
+    // le départ de l'avant-dernier joueur. « /admin/replay » refusait donc
+    // toujours, avec « Une partie est déjà en cours » — le bouton Rejouer ne
+    // faisait rien, et l'erreur n'avait nulle part où s'afficher sur l'écran
+    // de fin. Le défaut valait pour TOUTES les fins de manche, pas seulement
+    // pour celle qu'un départ provoque.
+    // Ce point de passage est le seul qu'elles traversent toutes.
+    if (!etat.active) gameState.inProgress = false;
     const publique = { ...vuePublique(etat), pseudos: pseudos(gameState) };
     io.to(gameState.roomCode).emit('collect-state', publique);
     for (const p of gameState.players.values()) {
