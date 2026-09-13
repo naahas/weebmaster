@@ -283,6 +283,18 @@ bavard est celui du Rush, qui se limite lui-même à seize envois par seconde.
 `ADMIN_PASSWORD` (l'ancien panneau d'administration) resservait : voir la mesure temporaire
 ci-dessous. Les variables Twitch, `SESSION_SECRET` et `MASTER_ADMIN_PASSWORD` ne servent plus.
 
+## ⏳ Mesure temporaire — quatre filtres de serie sont suspendus
+
+Les filtres d une SEULE serie — One Piece, Naruto, Dragon Ball, Bleach — sont retires du
+quiz le temps d etoffer leurs banques. Deux endroits, et il faut les deux : `SERIES_FILTERS`
+dans `dbs.js` (le serveur refuse ce qui n y est pas) et `serieCartes` dans `app.js` (le tiroir
+n affiche que ce qui y est).
+
+⚠️ La raison n est pas le volume mais le GOULOT par difficulte : le mode Points reclame 10 %
+d extreme, et Bleach n en a AUCUNE — son barème est donc impossible a honorer. One Piece en a
+quatre, Naruto et Dragon Ball trois : epuises en une ou deux parties. « Big 3 » reste, il
+reunit 218 questions et sept extreme.
+
 ## ⏳ Mesure temporaire — le mode Classique est sous mot de passe
 
 Ouvrir un salon **Classique** exige `ADMIN_PASSWORD` ; Rush et BombAnime restent libres. Le

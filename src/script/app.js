@@ -225,16 +225,20 @@ createApp({
             estDev: false,        // vrai hors production : débloque l'outil de remplissage
             seriesBombOuvertes: false,
             seriesBombPos: { top: 0, left: 0 },
-            // Sept choix de même poids : le tiroir les range en grille plutôt
-            // qu'en ligne, sinon leurs largeurs suivaient celles des libellés.
+            // Le tiroir les range en grille plutôt qu'en ligne, sinon leurs
+            // largeurs suivaient celles des libellés.
+            // ⏳ MESURE TEMPORAIRE : les quatre filtres d'une seule série sont
+            // suspendus, le temps d'étoffer leurs banques — voir la note dans
+            // « SERIES_FILTERS », dbs.js, qui donne les chiffres. Les remettre ici
+            // ne suffit pas : le serveur les refuse tant qu'ils y sont commentés.
             serieCartes: [
                 { id: 'overall',    name: 'Overall',     compte: true },
                 { id: 'mainstream', name: 'Mainstream',  compte: true },
                 { id: 'big3',       name: 'Big 3' },
-                { id: 'onepiece',   name: 'One Piece' },
-                { id: 'naruto',     name: 'Naruto' },
-                { id: 'dragonball', name: 'Dragon Ball' },
-                { id: 'bleach',     name: 'Bleach' },
+                // { id: 'onepiece',   name: 'One Piece' },
+                // { id: 'naruto',     name: 'Naruto' },
+                // { id: 'dragonball', name: 'Dragon Ball' },
+                // { id: 'bleach',     name: 'Bleach' },
             ],
             // Les vingt et une séries de bombdata.json, avec leur vrai nom.
             // Douze seulement étaient proposées : les neuf autres existaient en

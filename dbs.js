@@ -75,26 +75,32 @@ const SERIES_FILTERS = {
             'Fairy Tail', 'Tokyo Ghoul', 'Nanatsu no Taizai', 'Kuroko no Basket', 'Chainsaw Man' , 'Black Clover'
         ]
     },
-    onepiece: {
-        name: 'One Piece',
-        icon: '🏴‍☠️',
-        series: ['One Piece']
-    },
-    naruto: {
-        name: 'Naruto',
-        icon: '🍥',
-        series: ['Naruto']
-    },
-    dragonball: {
-        name: 'Dragon Ball',
-        icon: '🐉',
-        series: ['Dragon Ball', 'Dragon Ball Z', 'Dragon Ball Super']
-    },
-    bleach: {
-        name: 'Bleach',
-        icon: '⚔️',
-        series: ['Bleach']
-    }
+    // ⏳ MESURE TEMPORAIRE — les quatre filtres d'UNE SEULE série sont suspendus,
+    // le temps d'étoffer leurs banques. Ils sont ici, en commentaire : les
+    // remettre, c'est retirer les barres. ⚠️ Il faut aussi les rendre à
+    // « serieCartes » dans app.js, sinon le serveur les accepte mais personne ne
+    // peut les choisir.
+    //
+    // La raison n'est pas seulement le volume, mais le GOULOT par difficulté. En
+    // mode Points, le barème réclame 10 % d'extreme, soit deux questions par
+    // partie de vingt, et une question tirée ne peut pas retomber tant que sa
+    // difficulté n'est pas épuisée :
+    //
+    //     One Piece    88 questions, dont  4 extreme  → épuisé en 2 parties
+    //     Dragon Ball  89 questions, dont  3 extreme  → épuisé en 1 partie
+    //     Naruto       82 questions, dont  3 extreme  → épuisé en 1 partie
+    //     Bleach       48 questions, dont  0 extreme  → RIEN À SERVIR
+    //
+    // Bleach est le cas qui tranche : son sac d'extreme est vide, donc le mode
+    // Points ne peut tout simplement pas honorer son barème sur ce filtre.
+    //
+    // « Big 3 » reste, lui : il réunit One Piece, Naruto et Bleach, soit 218
+    // questions et 7 extreme — c'est un sac, pas un fond de tiroir.
+    //
+    // onepiece:   { name: 'One Piece',   icon: '🏴‍☠️', series: ['One Piece'] },
+    // naruto:     { name: 'Naruto',      icon: '🍥',  series: ['Naruto'] },
+    // dragonball: { name: 'Dragon Ball', icon: '🐉',  series: ['Dragon Ball', 'Dragon Ball Z', 'Dragon Ball Super'] },
+    // bleach:     { name: 'Bleach',      icon: '⚔️',  series: ['Bleach'] },
 };
 
 // Helper pour obtenir les séries d'un filtre
