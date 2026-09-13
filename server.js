@@ -7,7 +7,7 @@ const express = require('express');
 const compression = require('compression');
 const { randomUUID } = require('crypto');
 const { Server } = require('socket.io');
-const { db, supabase, SERIES_FILTERS, getFilterSeries, invaliderBanque } = require('./dbs');
+const { db, supabase, SERIES_FILTERS, getFilterSeries, invaliderBanque, toutesLesLignes } = require('./dbs');
 
 const app = express();
 
@@ -4670,12 +4670,13 @@ app.get('/api/questions', async (req, res) => {
     if (!codeBackOffice(req, res)) return;
 
     try {
-        const { data, error } = await supabase
+        // ⚠️ Paginé : sans cela la liste s'arrêtait à mille et le compteur
+        // affichait « 1000 / 1000 » alors qu'il y en avait davantage. Voir
+        // « toutesLesLignes » dans dbs.js.
+        const data = await toutesLesLignes(() => supabase
             .from('questions')
             .select('*')
-            .order('id', { ascending: false });
-
-        if (error) throw error;
+            .order('id', { ascending: false }));
 
         res.json({ success: true, questions: data });
     } catch (error) {

@@ -31,10 +31,30 @@ let banqueChargeeA = 0;
 let chargementEnCours = null;
 const BANQUE_TTL = 10 * 60 * 1000;
 
+// ⚠️ SUPABASE NE REND JAMAIS PLUS DE MILLE LIGNES par requête. C'est le plafond
+// « max-rows » de PostgREST, il ne lève aucune erreur, et il ne se voit pas : on
+// reçoit mille lignes et l'on croit avoir tout.
+//
+// La banque a franchi ce seuil le 13 septembre 2026. Six questions étaient alors
+// devenues invisibles — pour le jeu comme pour le back-office, qui affichait
+// « 1000 / 1000 » en en ayant 1006 —, et rien ne le signalait. Le trou grandit
+// d'une question à chaque ajout.
+//
+// Toute lecture qui peut dépasser mille lignes passe donc par ici. La requête est
+// refabriquée à chaque page : un constructeur Supabase ne se rejoue pas.
+const PAGE_SUPABASE = 1000;
+async function toutesLesLignes(faireRequete) {
+    const tout = [];
+    for (let debut = 0; ; debut += PAGE_SUPABASE) {
+        const { data, error } = await faireRequete().range(debut, debut + PAGE_SUPABASE - 1);
+        if (error) throw error;
+        tout.push(...(data || []));
+        if (!data || data.length < PAGE_SUPABASE) return tout;
+    }
+}
+
 async function chargerBanque(supabase) {
-    const { data, error } = await supabase.from('questions').select('*');
-    if (error) throw error;
-    banque = data || [];
+    banque = await toutesLesLignes(() => supabase.from('questions').select('*'));
     banqueChargeeA = Date.now();
     console.log(`📚 Banque de questions chargée : ${banque.length} questions`);
     return banque;
@@ -112,14 +132,13 @@ const getFilterSeries = (filterId) => SERIES_FILTERS[filterId]?.series || [];
 
 const db = {
     // ========== QUESTIONS ==========
+    // Aucune difficulté n'atteint mille questions aujourd'hui — la plus fournie
+    // en compte 266 — mais elle y viendra, et le plafond ne préviendra pas.
     async getQuestionsByDifficulty(difficulty) {
-        const { data, error } = await supabase
+        return toutesLesLignes(() => supabase
             .from('questions')
             .select('*')
-            .eq('difficulty', difficulty);
-
-        if (error) throw error;
-        return data;
+            .eq('difficulty', difficulty));
     },
 
     async getAvailableQuestionsCount(serieFilter = 'overall', excludeIds = []) {
@@ -340,4 +359,5 @@ function getFallbackDifficulties(difficulty) {
     return fallback;
 };
 
-module.exports = { supabase, db, SERIES_FILTERS, getFilterSeries, invaliderBanque };
+module.exports = {
+    toutesLesLignes, supabase, db, SERIES_FILTERS, getFilterSeries, invaliderBanque };

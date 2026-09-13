@@ -352,6 +352,11 @@ fait que deplacer la fuite. Le client le recoit par `question-results`.
   affiche, tous modes confondus. Le filtre est a l ecriture pour le premier : une
   partie sous trois joueurs n entre jamais en base, et ne pourra donc pas etre
   comptee apres coup.
+- ⚠️ **Supabase ne rend jamais plus de MILLE lignes** par requete — le plafond `max-rows` de
+  PostgREST. Il ne leve aucune erreur : on recoit mille lignes et l on croit avoir tout. La
+  banque de questions a franchi ce seuil, et six questions etaient devenues invisibles pour le
+  jeu comme pour le back-office, qui affichait « 1000 / 1000 » en en ayant 1006. Toute lecture
+  d une table qui grossit passe par `toutesLesLignes()` (dbs.js), qui pagine.
 - Gros fichiers (`home.css` 11.5k lignes, `server.js` 6.2k, `app.js` 4.9k) : cibler via grep/offset,
   ne jamais relire en entier.
 - Les portraits de Rush et d'Ascension sont en **WebP**, pas en PNG : à 225×350 de trait manga,
