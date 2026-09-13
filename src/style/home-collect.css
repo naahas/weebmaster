@@ -1824,8 +1824,51 @@
     .col-carte.paire::after  { animation-duration: 2.6s; }
     .col-carte.paire::before { animation-duration: 2.2s; filter: blur(0.3rem); opacity: 0.6; }
     .col-nom { max-width: 4.8rem; font-size: 0.56rem; }
-    .col-loupe { width: 8.5rem; left: 0.4rem; top: 32%; }
-    .col-loupe-nom { font-size: 1rem; }
+    /* ── La loupe, au doigt ──
+       Sur grand ecran elle se pose a gauche, hors du chemin du curseur qui la
+       maintient ouverte. Au doigt il n y a pas de chemin a menager : elle se
+       serrait contre le bord, rognee a 8,5 rem, et recouvrait a moitie la main
+       qu on venait de toucher.
+       Elle devient donc un calque : le fond s assombrit, la carte parait au
+       milieu, et toucher ailleurs la referme.
+       ⚠️ « pointer-events » reste a « none », herite de la regle de base. C est
+       ce qui fait marcher la fermeture : sur telephone, toucher un element
+       ailleurs envoie un « mouseleave » a la carte survolee, et le doigt doit
+       atteindre cet element. Un voile qui prend le clic mangerait le geste —
+       il faudrait alors deux touchers pour defausser une carte au lieu d un.
+       ⚠️ Pas de « backdrop-filter » : il se recalcule des que quelque chose
+       bouge dessous, et il y a jusqu a neuf cartes en neon sur le plateau. Un
+       aplat plus opaque coute zero. */
+    .col-loupe {
+        position: fixed;
+        inset: 0;
+        left: 0; top: 0;
+        width: auto;
+        display: grid;
+        place-items: center;
+        padding: 2rem 1.4rem;
+        background: rgba(5, 6, 9, 0.82);
+        border-radius: 0;
+        box-shadow: none;
+        transform: none;
+        z-index: 50;
+        animation: colLoupeVoile 0.16s ease both;
+    }
+    .col-loupe-vue {
+        width: min(15rem, 62vw);
+        box-shadow: 0 1.4rem 3rem rgba(0, 0, 0, 0.7);
+        animation: colLoupeCarte 0.22s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+    }
+    .col-loupe-nom { font-size: 1.15rem; }
+
+    @keyframes colLoupeVoile {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
+    @keyframes colLoupeCarte {
+        from { opacity: 0; transform: scale(0.9); }
+        to   { opacity: 1; transform: none; }
+    }
     .col-action { font-size: 0.57rem; padding: 0.5rem 0.1rem; }
 }
 
