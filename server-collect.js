@@ -39,12 +39,16 @@ const CONFIG = {
     MARCHE: 5,              // cartes face visible, taille constante
     TOUR_MS: 15000,
     ANIMES_POSSIBLES: [8, 10, 12],
-    // Mesuré : la manche passe de 34 à 38 tours entre dix et douze séries, soit
-    // un tour de table de plus par joueur. Au-delà, la part des poses s'effondre
-    // — 10,7 % des coups à douze contre 6,4 % à vingt-et-une — et le jeu cesse
-    // d'être une suite de décisions pour devenir une attente de pioche. Douze
-    // est donc le dernier réglage qui reste un jeu ; c'est aussi le plafond.
-    ANIMES_DEFAUT: 12,
+    // Mesure a quatre joueurs, main de 4 : douze animes donnent 38,5 tours et
+    // 10,4 % de coups qui POSENT quelque chose — les neuf autres dixiemes
+    // brassent des cartes. Dix donnent 34,4 tours et 12,2 % ; huit, 30,1 tours
+    // et 14,4 %.
+    //
+    // ⚠️ Douze avait ete choisi pour la VARIETE, sans mesurer ce que ca coutait
+    // au RYTHME, et une partie reelle a quatre a dure dix minutes — jugee
+    // fastidieuse. On redescend a dix. Douze reste au bareme pour qui prefere
+    // voir plus de series, et huit pour qui veut que ca file.
+    ANIMES_DEFAUT: 10,
     MAINS_POSSIBLES: [3, 4, 5],
     MAIN_DEFAUT: 4,
 };

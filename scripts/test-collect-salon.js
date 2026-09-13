@@ -57,7 +57,7 @@ const dernier = (j) => j.etats[j.etats.length - 1];
         e.collect ? `${e.collect.regles.sets}×${e.collect.regles.taille}, main ${e.collect.regles.main}` : '');
     check('les trois tailles de main sont proposées',
         e.collect && e.collect.mainsPossibles.join() === '3,4,5', e.collect && e.collect.mainsPossibles.join(', '));
-    check('douze animes par défaut', e.collect && e.collect.animes === 12, e.collect && String(e.collect.animes));
+    check('dix animes par défaut', e.collect && e.collect.animes === 10, e.collect && String(e.collect.animes));
     check('jamais moins de huit au barème',
         e.collect && e.collect.animesPossibles.every(n => n >= 8), e.collect && e.collect.animesPossibles.join(', '));
 
