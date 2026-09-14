@@ -1182,24 +1182,24 @@ createApp({
         },
         // Ce qu'on lit sous la carte qui vient de se retourner. Le VOLEUR a sa
         // consigne en bas de l'écran, à l'impératif ; ici on parle à tous les
-        // autres — mais pas de la même façon à celui qu'on dépouille.
+        // autres.
         //
-        // C'est SA carte qui part : « X l'emporte » la lui faisait lire comme
-        // un commentaire de match, alors qu'elle vient de lui être prise. Les
-        // autres, eux, ne sont que spectateurs, et la formule impersonnelle
-        // reste la bonne pour eux.
+        // UN SEUL cas est nommément adressé : le vol qui réussit, lu par celui
+        // qu'on dépouille. C'est sa carte qui part, et « X l'emporte » la lui
+        // faisait lire comme un commentaire de match. Le vol qui échoue, lui,
+        // garde la formule impersonnelle pour tout le monde — la carte revient
+        // où elle était, il ne se passe rien qu'on doive dire à quelqu'un en
+        // particulier.
         colMotPrise() {
             const l = this.col.etat && this.col.etat.larcin;
             if (!l || l.voleur === this.playerId) return '';
             const nom = '<b>' + this.colNom(l.voleur) + '</b>';
-            if (l.cible === this.playerId) {
-                return l.du === 1
+            if (l.du === 1) {
+                return l.cible === this.playerId
                     ? nom + ' vous vole une carte'
-                    : nom + ' n\'a pas la classe — elle vous revient';
+                    : nom + ' l\'emporte';
             }
-            return l.du === 1
-                ? nom + ' l\'emporte'
-                : nom + ' n\'a pas la classe — elle lui revient';
+            return nom + ' n\'a pas la classe — elle lui revient';
         },
         colOnMeLit() {
             const s = this.col.etat && this.col.etat.scan;
