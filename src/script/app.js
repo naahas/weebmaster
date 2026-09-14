@@ -2035,11 +2035,19 @@ createApp({
         // JEU : choisir une carte à défausser, en prendre une chez un rival.
         // C'était l'autre moitié du défaut — un aperçu s'ouvrait sur chaque
         // toucher et gênait le geste qu'on voulait faire.
-        colViser(c, ev) {
+        // ⚠️ « colLoupe… » et non « colViser » : ce nom-là était DÉJÀ pris, par
+        // le viseur du vol, trois cents lignes plus bas. Dans un objet
+        // « methods », la dernière définition l'emporte en silence — la mienne
+        // était morte, et le gabarit appelait le viseur du vol à chaque carte
+        // survolée, en lui passant une carte pour cible. Le vol devenait
+        // inutilisable : entrer sur l'éventail d'un rival annulait la visée
+        // qu'on venait d'armer, et le clic suivant ne trouvait plus rien.
+        // « npm run check:vue » le détecte désormais.
+        colLoupeSurvol(c, ev) {
             if (!c || (ev && ev.pointerType !== 'mouse')) return;
             this.col.loupe = c;
         },
-        colDeviser(ev) {
+        colLoupeSortie(ev) {
             if (ev && ev.pointerType !== 'mouse') return;
             this.col.loupe = null;
         },

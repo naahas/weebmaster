@@ -32,6 +32,20 @@
     --col-or: #ffd24a;
 }
 
+/* ⚠️ iOS ouvre son menu « Partager / Enregistrer l'image / Copier » sur TOUT
+   appui long posé sur une image — et l'aperçu d'une carte se déclenche
+   justement à l'appui long. Les deux se superposaient : on regardait sa carte
+   à travers une feuille de partage.
+   « -webkit-touch-callout: none » est la seule façon de le désarmer, et il faut
+   qu'il porte sur l'image elle-même, c'est elle que le menu vise. « user-select »
+   va avec : sans lui, un appui long sur un pseudo fait sortir les poignées de
+   sélection de texte. Rien, dans ce mode, ne se copie ni ne se partage. */
+.col, .col * {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
 .col {
     --carte: 4.6rem;
 
@@ -1879,11 +1893,34 @@
         to   { opacity: 1; transform: none; }
     }
     .col-action { font-size: 0.57rem; padding: 0.5rem 0.1rem; }
-    /* Le marché tenait toute la largeur, d'un bord à l'autre. Un cran de
+    /* Le marché tenait toute la largeur, d'un bord à l'autre. Deux crans de
        moins et la rangée respire — c'est le marché qu'on rogne, pas la main :
        elle est sous le pouce, lui est lointain. */
-    .col-marche .col-carte { width: calc(var(--carte) * 0.78); }
-    .col-emplacement { width: calc(var(--carte) * 0.78); margin-left: 1rem; }
+    .col-marche .col-carte { width: calc(var(--carte) * 0.72); }
+    .col-emplacement { width: calc(var(--carte) * 0.72); margin-left: 0.9rem; }
+
+    /* ── Les éventails adverses ──
+       Ils gardaient leur taille d'ordinateur. À trois rivaux ça passait ; à
+       quatre, les sièges des bouts se touchaient presque et mordaient sur le
+       marché. Le recouvrement suit la largeur (le retrait vaut toujours 0,6 ×
+       la carte), sinon des cartes plus étroites se chevaucheraient davantage
+       et l'éventail se refermerait sur lui-même. */
+    .col-dos      { width: calc(var(--carte) * 0.56); margin-left: calc(var(--carte) * -0.34); }
+    .col-eventail { padding-left: calc(var(--carte) * 0.34); }
+    .col.serre .col-dos      { width: calc(var(--carte) * 0.48); margin-left: calc(var(--carte) * -0.29); }
+    .col.serre .col-eventail { padding-left: calc(var(--carte) * 0.29); }
+
+    /* ── L'attente ──
+       « right: -3.9rem » la posait à côté du siège : un décalage pensé pour une
+       table d'ordinateur, où il y a de la place à droite. Sur téléphone elle
+       partait hors de l'écran pour le siège de droite, et venait se poser sur
+       le voisin pour les autres. Elle passe AU-DESSUS du siège, centrée sur
+       lui : il y a toujours de la place là, quel que soit le nombre de joueurs. */
+    .col-reflechit {
+        top: auto; bottom: 100%; right: auto; left: 50%;
+        margin-bottom: 0.25rem;
+        transform: translateX(-50%);
+    }
 }
 
 @media (min-width: 1500px) {
