@@ -112,17 +112,33 @@
    texte n'a aucune raison d'intercepter un geste. Le bouton, lui, le
    reprend à son compte : c'est le seul morceau qui se touche. */
 .col-fil {
+    position: relative;
     flex: 0 0 auto;
     display: flex; flex-direction: column; align-items: flex-end;
-    gap: 0.35rem;
     margin: 0.5rem 0.4rem 0 0;
-    max-width: 45%;
     pointer-events: none;
 }
-.col-fil-lignes { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; }
+/* ⚠️ HORS DU FLUX, et c'est là tout l'intérêt. Le fil vit dans « col-haut »,
+   premier enfant d'une colonne flex : une ligne de plus l'agrandit, « col-scene »
+   rétrécit d'autant, et TOUTE LA TABLE glisse vers le bas.
+   Cela sautait aux yeux au doigt, où le fil s'ouvre d'un coup — mais le défaut
+   valait aussi sur grand écran, en douceur : la table dérivait à mesure que les
+   six premières lignes s'écrivaient, quelques pixels par action, sans que rien
+   n'explique pourquoi.
+   Sorti du flux, le fil ne pèse plus rien : il se pose PAR-DESSUS le coin, et
+   « col-haut » garde la hauteur du seul bouton des règles. Le décalage du haut
+   se règle donc ici, librement : plus rien n'en dépend. */
+.col-fil-lignes {
+    position: absolute;
+    top: 1.1rem; right: 0;
+    display: flex; flex-direction: column; align-items: flex-end;
+    gap: 0.45rem;
+    width: max-content;
+    max-width: 42vw;
+}
 .col-fil-ligne {
-    font-size: 0.79rem;
-    line-height: 1.35;
+    font-size: 0.88rem;
+    line-height: 1.3;
     color: rgba(255, 255, 255, 0.34);
     text-align: right;
     white-space: nowrap;
@@ -1994,7 +2010,11 @@
        l'opposé du parchemin des règles — un coin pour ce qu'on consulte, un
        coin pour ce qui se raconte.
        Fermé par défaut : on vient jouer, pas lire. */
-    .col-fil { max-width: 62%; }
+    /* Sous le bouton, et non par-dessus : c'est lui qu'on vient de toucher,
+       le recouvrir donnerait l'impression de l'avoir perdu. Et serré : au doigt
+       on n'y lit pas du coin de l'œil, on ouvre le fil pour le lire, et six
+       lignes doivent tenir dans un coin sans manger le feutre. */
+    .col-fil-lignes { top: 100%; margin-top: 0.4rem; max-width: 62vw; gap: 0.1rem; }
     .col-fil-bouton {
         display: grid; place-items: center;
         pointer-events: auto;
@@ -2021,7 +2041,6 @@
     /* Au doigt on ne les lit pas du coin de l'œil, on ouvre le fil pour les
        lire : elles restent serrées, six lignes devant tenir dans un coin
        d'écran sans manger le feutre. */
-    .col-fil-lignes { gap: 0.1rem; }
     .col-fil-ligne { font-size: 0.64rem; line-height: 1.45; }
 
     /* ── L'attente ──
