@@ -104,6 +104,53 @@
     100% { opacity: 0;   transform: scale(1.45); }
 }
 
+/* ── Le fil des actions ──────────────────────────────────────────
+   En haut à droite, et assez pâle pour se lire du coin de l'œil sans
+   disputer le feutre : il raconte, il ne réclame pas.
+   ⚠️ « pointer-events: none » sur le fil entier — il couvre le coin haut
+   droit, où vit aussi la pioche sur certaines tailles, et une colonne de
+   texte n'a aucune raison d'intercepter un geste. Le bouton, lui, le
+   reprend à son compte : c'est le seul morceau qui se touche. */
+.col-fil {
+    flex: 0 0 auto;
+    display: flex; flex-direction: column; align-items: flex-end;
+    gap: 0.35rem;
+    margin: 0.5rem 0.4rem 0 0;
+    max-width: 45%;
+    pointer-events: none;
+}
+.col-fil-lignes { display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem; }
+.col-fil-ligne {
+    font-size: 0.68rem;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.34);
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+    max-width: 100%;
+}
+/* Le plus récent est en haut et se lit ; les précédents s'effacent sans
+   disparaître. On garde ainsi le fil du tour sans que six lignes pèsent
+   autant l'une que l'autre. */
+.col-fil-ligne:nth-child(2) { color: rgba(255, 255, 255, 0.26); }
+.col-fil-ligne:nth-child(3) { color: rgba(255, 255, 255, 0.20); }
+.col-fil-ligne:nth-child(4) { color: rgba(255, 255, 255, 0.15); }
+.col-fil-ligne:nth-child(5) { color: rgba(255, 255, 255, 0.11); }
+.col-fil-ligne:nth-child(6) { color: rgba(255, 255, 255, 0.08); }
+
+/* Une ligne neuve descend d'un cran et pousse les autres. Seuls « transform »
+   et « opacity » bougent : la colonne se redessine à chaque action, et une
+   hauteur animée ferait recalculer la mise en page du plateau entier. */
+.col-fil-t-enter-active,
+.col-fil-t-leave-active { transition: opacity 0.28s ease, transform 0.28s ease; }
+.col-fil-t-enter-from { opacity: 0; transform: translateY(-0.5rem); }
+.col-fil-t-leave-to   { opacity: 0; transform: translateY(0.4rem); }
+.col-fil-t-leave-active { position: absolute; }
+.col-fil-t-move { transition: transform 0.28s ease; }
+
+/* Ordinateur : rien à déplier, le fil est là. */
+.col-fil-bouton { display: none; }
+
 .col-regles-bouton {
     position: relative;
     flex: 0 0 auto;
@@ -1940,6 +1987,38 @@
        Le siège entier bouge, pseudo compris — pendant une visée la table est
        arrêtée, et ce qui bouge est justement ce qu'on regarde. */
     .col-siege.vise { transform: translate(calc(-50% + var(--recentre, 0px)), -50%); }
+
+    /* ── Le fil, au doigt ──
+       Six lignes en permanence sur un écran de téléphone, ce serait un quart
+       du feutre pris à la table. Il se replie donc derrière un bouton, posé à
+       l'opposé du parchemin des règles — un coin pour ce qu'on consulte, un
+       coin pour ce qui se raconte.
+       Fermé par défaut : on vient jouer, pas lire. */
+    .col-fil { max-width: 62%; }
+    .col-fil-bouton {
+        display: grid; place-items: center;
+        pointer-events: auto;
+        width: 2.6rem; height: 2.6rem;
+        border: 0.06rem solid rgba(255, 255, 255, 0.12);
+        border-radius: 0.7rem;
+        background: rgba(255, 255, 255, 0.04);
+        color: rgba(255, 255, 255, 0.4);
+        cursor: pointer;
+        transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+    .col-fil-bouton svg {
+        width: 1.25rem; height: 1.25rem;
+        fill: none; stroke: currentColor; stroke-width: 1.8;
+        stroke-linecap: round; stroke-linejoin: round;
+    }
+    .col-fil-bouton.ouvert {
+        color: var(--col-or);
+        border-color: rgba(255, 210, 74, 0.4);
+        background: rgba(255, 210, 74, 0.08);
+    }
+    .col-fil .col-fil-lignes { display: none; }
+    .col-fil.ouvert .col-fil-lignes { display: flex; }
+    .col-fil-ligne { font-size: 0.64rem; }
 
     /* ── L'attente ──
        « right: -3.9rem » la posait à côté du siège : un décalage pensé pour une

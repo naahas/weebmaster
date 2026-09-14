@@ -64,6 +64,7 @@ createApp({
                 loupe: null,         // la carte qu'on regarde de près
                 drag: null,          // { carte, x, y, cible } pendant qu'on traîne
                 siegeOuvert: null,   // au doigt : le siège dont les gestes sont dépliés
+                filOuvert: false,    // au doigt : le fil des actions est-il déplié
                 enVol: null,         // l'uid de la carte qui vole encore du paquet vers la main
                 jauge: null,         // le style de la barre de temps, posé une fois par échéance
                 jaugeCle: 0,         // à incrémenter pour forcer la barre à repartir
@@ -1211,6 +1212,37 @@ createApp({
         colPriseCarte() {
             const l = this.col.etat && this.col.etat.larcin;
             return (l && l.carte) || null;
+        },
+        // ══ Le fil des actions ══
+        // Ce qui se passe quand ce n'est pas votre tour ne se voyait que par
+        // une animation, vite finie : arriver en retard sur l'écran, c'était
+        // ne jamais savoir pourquoi la table avait changé.
+        //
+        // ⚠️ Il ne dit QUE du public : qui a fait quoi, et à qui. Jamais ce qui
+        // a été pris ni payé — le serveur a nettoyé le journal, et rien ici ne
+        // doit le recompléter.
+        // « visee » et « vol » sont écartés à dessein : le premier est la
+        // moitié d'un geste dont « prise » dit déjà le tout, le second n'est
+        // que son paiement. Les journaliser tous ferait trois lignes pour un
+        // seul vol.
+        colFil() {
+            const j = (this.col.etat && this.col.etat.journal) || [];
+            const n = (id) => this.colNom(id);
+            const lignes = [];
+            for (const f of j) {
+                let texte = '';
+                if (f.type === 'pioche')       texte = n(f.joueur) + ' pioche';
+                else if (f.type === 'echange') texte = n(f.joueur) + ' échange avec le marché';
+                else if (f.type === 'prise')   texte = n(f.joueur) + ' vole à ' + n(f.cible);
+                else if (f.type === 'scan')    texte = n(f.joueur) + ' scanne ' + n(f.cible);
+                else if (f.type === 'set')     texte = n(f.joueur) + ' pose un set';
+                else if (f.type === 'passe')   texte = n(f.joueur) + ' passe son tour';
+                else continue;
+                lignes.push({ n: f.n, texte });
+            }
+            // Le plus récent en haut, et six au plus : au-delà on ne lit plus,
+            // on subit une colonne de texte au bord du feutre.
+            return lignes.reverse().slice(0, 6);
         },
         colOnMeLit() {
             const s = this.col.etat && this.col.etat.scan;

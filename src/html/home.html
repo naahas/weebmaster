@@ -835,6 +835,25 @@
                                 </svg>
                             </button>
 
+                            <!-- ── Le fil des actions ──
+                                 Sur grand écran il est simplement là, en haut à droite, assez
+                                 pâle pour qu'on le lise du coin de l'œil sans qu'il dispute
+                                 le feutre. Au doigt il n'y a pas de place pour six lignes en
+                                 permanence : un bouton le déplie, à l'opposé du parchemin.
+                                 « col-haut » est en « space-between » et le voile des règles
+                                 est hors du flux — deux enfants, donc un à chaque bout. -->
+                            <div class="col-fil" :class="{ ouvert: col.filOuvert }">
+                                <button class="col-fil-bouton" @click="col.filOuvert = !col.filOuvert"
+                                        :class="{ ouvert: col.filOuvert }" title="Ce qui se passe">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M4 7h16M4 12h16M4 17h10"/>
+                                    </svg>
+                                </button>
+                                <transition-group tag="div" class="col-fil-lignes" name="col-fil-t">
+                                    <span v-for="f in colFil" :key="f.n" class="col-fil-ligne">{{ f.texte }}</span>
+                                </transition-group>
+                            </div>
+
                             <!-- Au milieu de l'écran et non posé sur le feutre : on ne lit
                                  pas des règles du coin de l'œil, on s'arrête pour les lire.
                                  Un clic n'importe où referme.

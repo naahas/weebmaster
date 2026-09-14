@@ -125,6 +125,7 @@ function etatNeuf() {
         scan: null,          // un scan qui retient la table sept secondes
         vainqueur: null,
         journal: [],           // les derniers faits, pour l'écran de tous
+        journalN: 0,           // leur numéro d'ordre, qui ne recule jamais
     };
 }
 
@@ -261,8 +262,12 @@ function verifierTour(etat, playerId) {
     return null;
 }
 
+// « n » est un numéro qui ne recule jamais. Le journal est une fenêtre
+// glissante : sans lui, l'écran n'aurait que la POSITION pour distinguer deux
+// faits, et Vue réemploierait la ligne d'un fait pour en afficher un autre —
+// les entrées du fil apparaîtraient sans jamais s'animer.
 function noter(etat, fait) {
-    etat.journal.push(fait);
+    etat.journal.push({ ...fait, n: ++etat.journalN });
     if (etat.journal.length > 30) etat.journal.shift();
 }
 
@@ -612,7 +617,20 @@ function vuePublique(etat) {
             cartes: (etat.mains.get(id) || []).length,
             sets: (etat.sets.get(id) || []).map(s => ({ anime: s.anime, cartes: s.cartes.map(c => ({ ...c })) })),
         })),
-        journal: etat.journal.slice(-8),
+        // ⚠️ LE JOURNAL EST PUBLIC, et il portait les cartes. « prise » et
+        // « vol » emportaient la carte volée — celle-là même qu'on vient de
+        // retirer de « larcin » —, et « vol » emportait en plus les cartes
+        // payées, qui repartent au paquet FACE CACHÉE et que personne n'a le
+        // droit de connaître. La mesure d'à côté aurait été à moitié vaine :
+        // on ferme la porte, la fenêtre restait ouverte.
+        // « set » garde les siennes : elles sont posées sur la table, tout le
+        // monde les voit, et l'écran des autres s'en sert pour montrer le set
+        // partir.
+        journal: etat.journal.slice(-8).map(f => {
+            if (f.type !== 'prise' && f.type !== 'vol') return f;
+            const { carte, rendues, ...reste } = f;
+            return reste;
+        }),
     };
 }
 

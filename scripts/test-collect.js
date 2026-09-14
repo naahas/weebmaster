@@ -189,6 +189,20 @@ console.log('\n── Le vol : on prend, et l\'on paie ──');
                 !vue ? 'le vol ne se voit pas' : vue.carte ? 'FUITE : ' + vue.carte.uid : 'le vol, sans son objet');
             check('… mais le moteur la tient toujours',
                 e.larcin.carte.uid === 'B1', e.larcin.carte.uid);
+            // ⚠️ LE JOURNAL EST PUBLIC LUI AUSSI, et il portait la carte. Fermer
+            // « larcin » sans fermer le journal n'aurait servi à rien : le fait
+            // « prise » emportait la carte volée, et le fait « vol » emportait
+            // en plus les cartes payées, qui repartent au paquet face cachée.
+            // « set » garde les siennes — elles sont posées sur la table.
+            const faits = C.vuePublique(e).journal;
+            const prise = faits.find(x => x.type === 'prise');
+            check('le journal dit le vol, pas la carte',
+                !!prise && !prise.carte && prise.cible === b,
+                !prise ? 'aucun fait « prise »' : prise.carte ? 'FUITE : ' + prise.carte.uid
+                                                             : 'le fait, sans son objet');
+            check('… et chaque fait porte son numero',
+                faits.every(x => typeof x.n === 'number'),
+                faits.map(x => x.n).join(', '));
         }
     }
 
@@ -325,9 +339,15 @@ console.log('\n── Le vol : on prend, et l\'on paie ──');
         C.actionViser(e, a, b);
         C.actionVoler(e, a, b, 0);
         const vue = JSON.stringify(C.vuePublique(e));
-        check('la carte prise se montre', vue.includes('"B1"'));
-        check('… et le reste de sa main ne sort pas',
-            !vue.includes('"B2"') && !vue.includes('"B3"'), 'ni B2 ni B3');
+        // ⚠️ RIEN de la main de la cible ne sort dans l'état public — la carte
+        // PRISE comprise, depuis qu'elle ne part qu'aux deux intéressés.
+        // Le contrôle porte sur l'état sérialisé tout entier, et c'est
+        // volontaire : la carte a emprunté DEUX chemins — « larcin » et le
+        // « journal » —, et fermer l'un sans l'autre ne servait à rien. Un
+        // troisième s'ouvrirait un jour sans qu'on y pense ; celui-ci le verra.
+        check('rien de sa main ne sort, la carte prise comprise',
+            !vue.includes('"B1"') && !vue.includes('"B2"') && !vue.includes('"B3"'),
+            ['B1', 'B2', 'B3'].filter(u => vue.includes('"' + u + '"')).join(', ') || 'ni B1, ni B2, ni B3');
     }
 }
 
