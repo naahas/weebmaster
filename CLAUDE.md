@@ -36,7 +36,11 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
 - **Tests** : `npm run check` (le template Vue compile-t-il) et `npm run check:vue`
   (une propriété calculée appelée avec des parenthèses dans le gabarit lève une TypeError
   et blanchit la page ; une méthode citée sans parenthèses rend une fonction toujours
-  vraie — `check` ne voit ni l un ni l autre, ce sont des expressions valides), puis,
+  vraie ; et surtout DEUX METHODES DU MEME NOM — une clef en double est du JavaScript
+  valide, la derniere ecrase la premiere en silence, et la page ne blanchit meme pas :
+  elle appelle simplement la mauvaise fonction. C est arrive, et le vol de Collect en
+  est reste injouable sans que rien ne le signale. `check` ne voit aucun des trois,
+  ce sont des expressions valides), puis,
   serveur lancé à côté :
   `npm run smoke` (cycle de jeu complet), `npm run test:host` (contrôles de l'hôte, camps,
   rafraîchissement), `npm run test:tie` (départage solo et en camps, ~1 min), `npm run test:hote`
