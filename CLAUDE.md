@@ -131,7 +131,8 @@ src/img/               avatars, questionpic
 | `rush`      | Rush      | Un portrait, un nom, sans touche Entrée. La plus longue série de la manche gagne. Réglages : **durée** (30/60/90 s), **limite par portrait** (5–12 s ou aucune), **filtre** (Tout, Mainstream, Big 3), **séquence** commune ou propre à chacun, et **multiplicateur** (non par défaut — voir plus bas). Jouable seul. Données dans `rushdata.json`, portraits dans `src/img/rushpic/` |
 | `collect`   | Collect   | Jeu de cartes, 2 a 5 joueurs. Reunir **deux sets de trois** personnages du meme anime. A son tour, une action : piocher, echanger au marche, scanner une main, **voler** (deux temps de 7 s : on annonce sa cible, puis on designe une carte DE DOS chez elle ; elle se retourne au milieu du feutre. Si l on a la MEME CLASSE en main, on la garde en lachant une carte de cette classe ; sinon LE VOL ECHOUE — la carte retourne a sa place — et l on paie deux cartes d avoir tente a l aveugle. C est ce qui donne son prix au scan) ou poser un set. Poser ne refait PAS la main : on repart avec ce qui reste, et la pioche ajoute une carte tant que la main n est pas pleine. Le marche est une FILE : a chaque fin de tour celle de gauche part SOUS le paquet (jamais melee au
   hasard, sinon elle reviendrait aussitot), tout glisse d un cran et une neuve entre par la droite —
-  la position d une carte est donc son compte a rebours, et une fleche marque celle qui s en va.
+  la position d une carte est donc son compte a rebours. Une fleche marquait celle qui s en va :
+  elle a ete retiree, le glissement le dit deja.
   Un ECHANGE, lui, se fait SUR PLACE : chacune prend la place de l autre et rien d autre ne bouge
   (faire glisser la rangee pour un troc la rendait illisible). Les deux ne se croisent jamais :
   un echange ne renouvelle pas le marche. Reglages : **main** (3, 4 ou 5 — l objectif suit tout seul : 3 paires, 2 sets de 3, ou 3 sets de 3) et **animes** (8/10/12) |

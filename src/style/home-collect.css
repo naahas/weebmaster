@@ -957,29 +957,6 @@
 }
 @keyframes colTourne { to { --colTour: 360deg; } }
 
-/* La première de la file, celle qui part à la fin du tour. Discrète — c'est un
-   renseignement, pas une alarme : elle dit qu'il faut se dépêcher si on la
-   convoitait. Le glissement le dit déjà à qui l'a compris ; la flèche le dit
-   aux autres. */
-.col-sortante {
-    position: absolute; left: 50%; bottom: -0.72rem;
-    transform: translateX(-50%);
-    width: 1.05rem; height: 1.05rem;
-    display: grid; place-items: center;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.75);
-    border: 0.06rem solid rgba(255, 255, 255, 0.18);
-    animation: colSortante 2.4s ease-in-out infinite;
-}
-.col-sortante svg {
-    width: 0.6rem; height: 0.6rem;
-    fill: none; stroke: rgba(255, 255, 255, 0.55);
-    stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
-}
-@keyframes colSortante {
-    0%, 100% { opacity: 0.45; transform: translateX(-50%) translateY(0); }
-    50%      { opacity: 1;    transform: translateX(-50%) translateY(0.14rem); }
-}
 
 /* ── La carte regardée de près ────────────────────────────────── */
 .col-loupe {
@@ -1905,7 +1882,12 @@
        vides sur les côtés et écrase les sièges du haut. */
     .col-table { width: min(96%, 30rem); aspect-ratio: 1 / 1.02; top: 42%; }
     .col-marche { gap: 0.18rem; }
-    .col-pioche { right: 1rem; bottom: 1rem; width: calc(var(--carte) * 1.15); }
+    /* ⚠️ 1,9 rem et non 1 : le paquet DÉBORDE de sa boîte. Ses deux dos du
+       dessous sont décalés de 0,85 rem vers la droite et vers le bas, si bien
+       qu'à « right: 1rem » la carte la plus extérieure passait à 0,15 rem du
+       bord de l'écran — elle avait l'air coupée. Le retrait doit couvrir le
+       décalage avant de commencer à écarter. */
+    .col-pioche { right: 1.9rem; bottom: 1.9rem; width: calc(var(--carte) * 1.15); }
 
     /* Le neon de serie coute cher : un degrade conique se rematricule a chaque
        image, et le halo qui l entoure est un filtre. Sur telephone, jusqu a neuf

@@ -1110,10 +1110,6 @@ createApp({
             return this.ecran > 900;
         },
 
-        colProchaineSortie() {
-            const m = (this.col.etat && this.col.etat.marche) || [];
-            return m.length ? m[0].uid : null;
-        },
         // Deux mouvements, deux animations, et jamais les deux à la fois : un
         // échange remplace une carte SUR PLACE (elle tombe, l'autre descend),
         // le renouvellement de fin de tour fait GLISSER toute la rangée. Se
@@ -1146,9 +1142,30 @@ createApp({
         colMonTour() {
             return !!(this.col.etat && this.col.etat.tourJoueur === this.playerId);
         },
+        // ⚠️ L'ordre des sièges EST celui du tour, DÉCALÉ pour commencer juste
+        // après moi. Sans ce décalage, les joueurs étaient servis dans l'ordre
+        // du serveur : à cinq, si j'étais troisième dans « ordre », le tour
+        // partait de moi puis sautait au troisième siège, au quatrième, puis
+        // revenait au premier. Rien ne tournait, et il n'y avait aucun moyen
+        // de savoir qui jouerait après.
+        //
+        // L'arc de « colSiege » va de la GAUCHE au sommet puis à la DROITE.
+        // Depuis ma place, en bas, c'est le SENS DES AIGUILLES D'UNE MONTRE —
+        // sur un cadran, après 6 heures vient 9, puis 12, puis 3. Il suffit
+        // donc que le premier siège soit celui qui joue après moi, et la table
+        // tourne dans le bon sens toute seule.
+        //
+        // Le premier joueur, lui, est déjà tiré au sort : « demarrer » mélange
+        // « ordre » et prend son premier.
         colRivaux() {
-            if (!this.col.etat) return [];
-            return this.col.etat.joueurs.filter(p => p.playerId !== this.playerId);
+            const e = this.col.etat;
+            if (!e) return [];
+            const tous = e.joueurs;
+            const moi = tous.findIndex(p => p.playerId === this.playerId);
+            // Pas à la table (l'hôte qui regarde, un revenant) : l'ordre du
+            // serveur fait l'affaire, il n'y a pas de « après moi ».
+            if (moi < 0) return tous.slice();
+            return tous.slice(moi + 1).concat(tous.slice(0, moi));
         },
         // L'anime dont on tient déjà de quoi poser : c'est ce qui allume « Poser »
         colSetPret() {
@@ -6097,6 +6114,20 @@ createApp({
             // ── 🏔️ Ascension ──
             // ══ 🎴 Collect ══
             this.socket.on('collect-state', (data) => {
+                // ⚠️ UNE COURSE, et c'est ce qui la rendait intermittente.
+                // Le serveur retire bien la socket du salon quand on le quitte
+                // (« socket.leave », dans « leave-lobby »), mais un état PARTI
+                // AVANT peut encore être en vol : il arrive une fraction de
+                // seconde après, et il suffisait à reconstruire le plateau
+                // devant quelqu'un qui venait de le quitter — sans lui à la
+                // table. Selon qu'un joueur agissait ou non à cet instant, on
+                // le voyait ou pas.
+                // Le serveur ferme la porte ; ceci jette ce qui était déjà
+                // passé dessous.
+                // ⚠️ « || this.isHost » n'est pas une précaution inutile :
+                // l'hôte n'a pas toujours « hasJoined », et sans lui il perdait
+                // sa propre table. Même garde qu'ailleurs dans ce fichier.
+                if (!this.hasJoined && !this.isHost) return;
                 const avant = this.col.etat;
                 this.col.etat = data;
                 this.colSonner(avant, data);
