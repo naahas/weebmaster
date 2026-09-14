@@ -223,8 +223,25 @@ const dernier = (j) => j.etats[j.etats.length - 1];
         const st = dernier(A);
         check('le vol ouvre une dette', !!st.larcin,
             st.larcin ? courant.nom + ' → ' + cible.nom : 'aucun');
-        check('la carte prise se montre à toute la table',
-            !!(st.larcin && st.larcin.carte && st.larcin.carte.img));
+        // ⚠️ La carte volée ne regarde QUE les deux intéressés. Elle se montrait
+        // à toute la table : le voleur et sa victime la voient toujours — l'un
+        // doit savoir quelle classe payer, l'autre a le droit de voir ce qu'on
+        // lui prend —, mais un troisième joueur n'en apprend plus rien. Il voit
+        // qu'un vol a lieu, et la carte reste sur son dos au milieu du feutre.
+        // « classe » part avec elle : c'est ce qui dit quoi payer, donc c'est la
+        // moitié de l'information.
+        const tiers = tous.find(j => j.nom !== courant.nom && j.nom !== cible.nom);
+        const vueVoleur = dernier(courant), vueCible = dernier(cible), vueTiers = dernier(tiers);
+        check('le voleur voit la carte qu\'il prend',
+            !!(vueVoleur.larcin && vueVoleur.larcin.carte && vueVoleur.larcin.carte.img),
+            vueVoleur.larcin && vueVoleur.larcin.carte ? vueVoleur.larcin.carte.nom : 'rien');
+        check('la victime voit ce qu\'on lui prend',
+            !!(vueCible.larcin && vueCible.larcin.carte && vueCible.larcin.carte.img),
+            vueCible.larcin && vueCible.larcin.carte ? vueCible.larcin.carte.nom : 'rien');
+        check('… et personne d\'autre', !!vueTiers.larcin && !vueTiers.larcin.carte && !vueTiers.larcin.classe,
+            vueTiers.larcin ? (vueTiers.larcin.carte ? 'FUITE : ' + vueTiers.larcin.carte.nom
+                                                     : 'le vol, sans son objet')
+                            : 'il ne voit meme pas le vol');
         check('la cible a perdu une carte', cible.main.length === avantCible - 1,
             avantCible + ' → ' + cible.main.length);
         check('le tour reste au voleur', st.tourJoueur === courant.nom);

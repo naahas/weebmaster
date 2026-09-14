@@ -937,6 +937,7 @@
                                      class="col-siege"
                                      :class="{ tour: p.playerId === col.etat.tourJoueur,
                                                jouable: colPeutAgir,
+                                               vise: colViseDe(p.playerId),
                                                ouvert: col.siegeOuvert === p.playerId }"
                                      :style="colSiege(i, colRivaux.length)"
                                      @click="colToucherSiege(p.playerId)">
@@ -1114,13 +1115,13 @@
                          rester visible et la main du voleur, cliquable : c'est là
                          qu'il va prendre de quoi payer. -->
                     <div class="col-prise" v-if="col.etat && col.etat.larcin" :style="col._priseDe">
-                        <div class="col-prise-carte" :class="['classe-' + col.etat.larcin.carte.classe,
-                                                             { retournee: col.priseVue }]">
+                        <div class="col-prise-carte" :class="[colPriseCarte ? 'classe-' + colPriseCarte.classe : '',
+                                                             { retournee: col.priseVue && !!colPriseCarte }]">
                             <span class="col-prise-dos"></span>
-                            <span class="col-prise-face">
-                                <img :src="'collectpic/' + col.etat.larcin.carte.img" alt="">
-                                <i class="col-pion" :class="'pion-' + col.etat.larcin.carte.classe"
-                                   v-html="colSymbole(col.etat.larcin.carte.classe)"></i>
+                            <span class="col-prise-face" v-if="colPriseCarte">
+                                <img :src="'collectpic/' + colPriseCarte.img" alt="">
+                                <i class="col-pion" :class="'pion-' + colPriseCarte.classe"
+                                   v-html="colSymbole(colPriseCarte.classe)"></i>
                             </span>
                         </div>
                         <span class="col-prise-mot" v-html="colMotPrise"></span>

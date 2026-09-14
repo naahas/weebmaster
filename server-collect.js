@@ -589,12 +589,17 @@ function vuePublique(etat) {
         // Qui vise qui, et jusqu'à quand. La table doit comprendre pourquoi
         // elle s'est arrêtée — et la cible mérite de voir venir le coup.
         visee: etat.visee ? { voleur: etat.visee.voleur, cible: etat.visee.cible, fin: etat.visee.fin } : null,
-        // Le vol en cours se montre ENTIÈREMENT, carte comprise : elle vient de
-        // se retourner devant tout le monde, c'est le moment du mode. Seul le
-        // paiement reste à venir, et il n'a rien de secret non plus.
+        // ⚠️ Le vol se montre, la CARTE non. Qui vole qui, et pour combien,
+        // regarde toute la table : elle doit comprendre pourquoi elle s'est
+        // arrêtée. Mais l'identité de la carte ne regarde que les deux
+        // intéressés — celui qui la prend, et celui à qui on la prend.
+        // « classe » part avec elle : c'est ce qui dit quoi payer, donc c'est
+        // la moitié de l'information.
+        // La version complète est recousue dans « diffuserEtat », pour ces
+        // deux-là seulement. Ne pas la remettre ici : cet objet part à tout
+        // le monde.
         larcin: etat.larcin ? {
             voleur: etat.larcin.voleur, cible: etat.larcin.cible,
-            carte: { ...etat.larcin.carte }, classe: etat.larcin.classe,
             du: etat.larcin.du, aRendre: etat.larcin.aRendre, fin: etat.larcin.fin,
         } : null,
         // Qui scanne qui, et jusqu'à quand — JAMAIS les cartes. Celui qui se
@@ -655,8 +660,20 @@ function diffuserEtat(gameState, io) {
     // Ce point de passage est le seul qu'elles traversent toutes.
     if (!etat.active) gameState.inProgress = false;
     const publique = { ...vuePublique(etat), pseudos: pseudos(gameState) };
-    io.to(gameState.roomCode).emit('collect-state', publique);
+
+    // ⚠️ Plus de diffusion en bloc : l'état n'est plus le même pour tous. La
+    // carte volée est recousue ICI, et pour les deux intéressés seulement.
+    // Le voleur en a besoin — c'est elle qui lui dit quelle classe payer — et
+    // la victime a le droit de voir ce qu'on lui prend. Les autres reçoivent
+    // le vol sans son objet : ils voient la carte de dos au milieu du feutre.
+    const l = etat.larcin;
+    const intime = l
+        ? { ...publique, larcin: { ...publique.larcin, carte: { ...l.carte }, classe: l.classe } }
+        : null;
+
     for (const p of gameState.players.values()) {
+        const concerne = l && (p.playerId === l.voleur || p.playerId === l.cible);
+        io.to(p.socketId).emit('collect-state', concerne ? intime : publique);
         if (!etat.mains.has(p.playerId)) continue;
         io.to(p.socketId).emit('collect-main', { main: etat.mains.get(p.playerId).map(c => ({ ...c })) });
     }

@@ -176,9 +176,20 @@ console.log('\n── Le vol : on prend, et l\'on paie ──');
         // refusée à main pleine, le contrôle passerait donc sans rien prouver.
         check('plus personne ne joue tant que la dette court',
             !C.actionParDefaut(e, a).ok, C.actionParDefaut(e, a).erreur);
-        // la carte est retournée : elle n'a plus rien de secret
-        check('la table voit la carte prise',
-            C.vuePublique(e).larcin && C.vuePublique(e).larcin.carte.uid === 'B1');
+        // ⚠️ La carte volée ne regarde QUE les deux intéressés, et « vuePublique »
+        // part à TOUT LE MONDE : elle n'a donc plus le droit de la porter, ni la
+        // classe avec — c'est la classe qui dit quoi payer, donc c'est la moitié
+        // de l'information. C'est « diffuserEtat », dans le raccord, qui la
+        // recoud pour le voleur et sa victime.
+        // Le moteur, lui, la tient toujours : c'est d'elle qu'il tire la dette.
+        {
+            const vue = C.vuePublique(e).larcin;
+            check('le vol se montre, la carte non',
+                !!vue && !vue.carte && !vue.classe,
+                !vue ? 'le vol ne se voit pas' : vue.carte ? 'FUITE : ' + vue.carte.uid : 'le vol, sans son objet');
+            check('… mais le moteur la tient toujours',
+                e.larcin.carte.uid === 'B1', e.larcin.carte.uid);
+        }
     }
 
     // ── Le prix : une carte de la même classe ──

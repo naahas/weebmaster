@@ -1204,6 +1204,14 @@ createApp({
             // plus rien : la carte qui retourne à sa place le montre d'elle-même.
             return l.du === 1 ? nom + ' l\'emporte' : '';
         },
+        // La carte volée n'arrive qu'aux DEUX intéressés — le serveur ne la
+        // met pas dans l'état public. Pour les autres elle vaut « rien », et
+        // la carte du milieu reste sur son dos : ils voient qu'un vol a lieu,
+        // jamais ce qui se vole.
+        colPriseCarte() {
+            const l = this.col.etat && this.col.etat.larcin;
+            return (l && l.carte) || null;
+        },
         colOnMeLit() {
             const s = this.col.etat && this.col.etat.scan;
             return !!(s && s.cible === this.playerId);
@@ -1852,9 +1860,26 @@ createApp({
             // de l'arc et 0,13 au milieu. Les bouts remontent de sept points,
             // les autres d'un seul.
             const releve = large ? 0 : 9 * c * c;
+            const gauche = 50 + rx * c;
+            // ⚠️ « --recentre » ne sert QUE pendant la visée — la feuille de
+            // style ne s'en sert que sous « .col-siege.vise ». Il ramène le
+            // siège vers le milieu de l'écran le temps qu'on choisisse une
+            // carte chez lui : les dos s'écartent alors pour tenir sous un
+            // pouce, et l'éventail du siège de gauche butait sinon sur le bord.
+            //
+            // Il se calcule ICI parce qu'il lui faut des PIXELS : « translateX »
+            // en pourcentage se rapporterait à la largeur du siège, pas à celle
+            // de la table. D'où « this.ecran », que le redimensionnement tient
+            // déjà à jour, et la largeur de table recopiée de la feuille de
+            // style (« min(96%, 30rem) »). Un coefficient de 0,15 suffit : le
+            // siège de bout se décale d'une vingtaine de pixels, ceux du haut
+            // d'une poignée, et le milieu ne bouge pas du tout.
+            const largeurTable = Math.min(0.96 * this.ecran, 480);
+            const recentre = large ? 0 : (50 - gauche) / 100 * largeurTable * 0.15;
             return {
-                left: (50 + rx * c).toFixed(1) + '%',
+                left: gauche.toFixed(1) + '%',
                 top:  (50 + ry * Math.sin(angle) - releve).toFixed(1) + '%',
+                '--recentre': recentre.toFixed(1) + 'px',
             };
         },
         // Un éventail tenu en main, pas un alignement au cordeau : chaque carte
