@@ -6183,6 +6183,20 @@ io.on('connection', (socket) => {
 
             gameState.players.delete(socket.id);
             gameState.answers.delete(socket.id);
+
+            // ⚠️ Le retirer de « players » ne suffit pas : la socket reste
+            // abonnée au salon de diffusion, et « diffuser » tape sur
+            // « io.to(roomCode) ». Le partant continuait donc de tout recevoir.
+            // Sur l'accueil ça ne se voyait pas — jusqu'à Collect, dont le
+            // plateau s'affiche sur le seul « col.etat » : le premier
+            // « collect-state » venu le renvoyait dans une partie qu'il avait
+            // quittée, dès qu'un joueur restant faisait une action. Un
+            // rafraîchissement l'en sortait, faute de socket à réabonner.
+            // Aucun « socket.leave » n'existait nulle part dans ce fichier.
+            //
+            // ⚠️ APRÈS les retours anticipés plus haut : à BombAnime le partant
+            // RESTE à la table, éteint, et doit continuer de voir le cercle.
+            socket.leave(gameState.roomCode);
             console.log(`👋 ${data.username} a quitté le lobby`);
 
             broadcastLobbyUpdate(gameState);

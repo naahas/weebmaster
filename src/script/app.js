@@ -1194,12 +1194,15 @@ createApp({
             const l = this.col.etat && this.col.etat.larcin;
             if (!l || l.voleur === this.playerId) return '';
             const nom = '<b>' + this.colNom(l.voleur) + '</b>';
-            if (l.du === 1) {
-                return l.cible === this.playerId
-                    ? nom + ' vous vole une carte'
-                    : nom + ' l\'emporte';
-            }
-            return nom + ' n\'a pas la classe — elle lui revient';
+            // La victime est prévenue DANS TOUS LES CAS — c'est sa carte qui
+            // est sur la table —, et au conditionnel : à cet instant le vol
+            // n'est pas acquis. Le voleur doit encore payer, et s'il n'a pas
+            // la classe la carte lui reviendra. « tente de » couvre les deux
+            // issues sans en révéler aucune.
+            if (l.cible === this.playerId) return nom + ' tente de vous voler une carte';
+            // Les autres ne sont que spectateurs. Le vol qui échoue ne leur dit
+            // plus rien : la carte qui retourne à sa place le montre d'elle-même.
+            return l.du === 1 ? nom + ' l\'emporte' : '';
         },
         colOnMeLit() {
             const s = this.col.etat && this.col.etat.scan;
@@ -1835,12 +1838,23 @@ createApp({
             const large = !this.isMobile;
             const debut     = large ? 170 : 185;
             const ouverture = large ? 200 : 170;
-            const rx        = large ?  47 :  38;
+            const rx        = large ?  47 :  40;
             const ry        = large ?  47 :  43;
             const angle = (debut + (i + 0.5) * (ouverture / Math.max(1, total))) * Math.PI / 180;
+            const c = Math.cos(angle);
+            // ⚠️ Le relèvement ne porte QUE sur les sièges de côté, et c'est tout
+            // son intérêt. Le marché est une bande HORIZONTALE en travers du
+            // milieu : ceux qui le heurtent sont ceux qui l'abordent par les
+            // côtés — leur pseudo, posé sous les cartes, tombait dessus. Ceux du
+            // haut, eux, frôlent déjà le bord supérieur de la table et ne
+            // doivent surtout pas monter davantage.
+            // « cos² » fait exactement ce partage : il vaut 0,80 aux extrémités
+            // de l'arc et 0,13 au milieu. Les bouts remontent de sept points,
+            // les autres d'un seul.
+            const releve = large ? 0 : 9 * c * c;
             return {
-                left: (50 + rx * Math.cos(angle)).toFixed(1) + '%',
-                top:  (50 + ry * Math.sin(angle)).toFixed(1) + '%',
+                left: (50 + rx * c).toFixed(1) + '%',
+                top:  (50 + ry * Math.sin(angle) - releve).toFixed(1) + '%',
             };
         },
         // Un éventail tenu en main, pas un alignement au cordeau : chaque carte
