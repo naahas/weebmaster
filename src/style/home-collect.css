@@ -119,10 +119,10 @@
     max-width: 45%;
     pointer-events: none;
 }
-.col-fil-lignes { display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem; }
+.col-fil-lignes { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; }
 .col-fil-ligne {
-    font-size: 0.68rem;
-    line-height: 1.45;
+    font-size: 0.79rem;
+    line-height: 1.35;
     color: rgba(255, 255, 255, 0.34);
     text-align: right;
     white-space: nowrap;
@@ -2018,7 +2018,11 @@
     }
     .col-fil .col-fil-lignes { display: none; }
     .col-fil.ouvert .col-fil-lignes { display: flex; }
-    .col-fil-ligne { font-size: 0.64rem; }
+    /* Au doigt on ne les lit pas du coin de l'œil, on ouvre le fil pour les
+       lire : elles restent serrées, six lignes devant tenir dans un coin
+       d'écran sans manger le feutre. */
+    .col-fil-lignes { gap: 0.1rem; }
+    .col-fil-ligne { font-size: 0.64rem; line-height: 1.45; }
 
     /* ── L'attente ──
        « right: -3.9rem » la posait à côté du siège : un décalage pensé pour une
