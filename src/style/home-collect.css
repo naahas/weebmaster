@@ -1910,6 +1910,24 @@
     .col.serre .col-dos      { width: calc(var(--carte) * 0.44); margin-left: calc(var(--carte) * -0.26); }
     .col.serre .col-eventail { padding-left: calc(var(--carte) * 0.26); }
 
+    /* ── Viser une carte, au pouce ──
+       C'est le seul geste du mode où l'on doit toucher une carte PRÉCISE chez
+       quelqu'un d'autre, et il est irréversible : le vol part au premier
+       contact. Or les dos se chevauchent, et à quatre rivaux il ne restait que
+       dix pixels de large visibles par carte — on visait la troisième et l'on
+       prenait la deuxième.
+       Pendant la visée, et pendant elle seule, ils grossissent et se
+       recouvrent moins : le pas passe de 10 à 20 px. Cela ne coûte rien au
+       reste du temps, et ne vaut QUE pour le voleur — « prenable » n'est posée
+       que sur l'éventail qu'il est en train de viser, jamais sur les autres.
+       ⚠️ Les deux sélecteurs sont nécessaires : « .col.serre .col-dos » pèse
+       trois classes, « .col-dos.prenable » n'en pèse que deux et perdrait. */
+    .col-dos.prenable,
+    .col.serre .col-dos.prenable {
+        width: calc(var(--carte) * 0.54);
+        margin-left: calc(var(--carte) * -0.18);
+    }
+
     /* ── L'attente ──
        « right: -3.9rem » la posait à côté du siège : un décalage pensé pour une
        table d'ordinateur, où il y a de la place à droite. Sur téléphone elle

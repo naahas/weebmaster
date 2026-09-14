@@ -2066,15 +2066,32 @@ createApp({
             this.col.loupe = null;
         },
         // 320 ms : au-dessous, un toucher un peu appuyé ouvrait l'aperçu et
-        // volait le geste. Huit pixels de tolérance, parce qu'un doigt posé
-        // n'est jamais parfaitement immobile — mais un vrai glissement, lui,
-        // referme aussitôt : on est alors en train de traîner la carte.
+        // volait le geste.
+        //
+        // ⚠️ Le mouvement ne compte QUE tant que l'aperçu n'est pas ouvert.
+        // Avant, il dit qu'on était en train de traîner la carte — l'aperçu
+        // n'a alors rien à y faire, et huit pixels de tolérance suffisent pour
+        // qu'un doigt posé, qui n'est jamais parfaitement immobile, ne le
+        // fasse pas renoncer. APRÈS, le doigt est libre : il couvre presque
+        // toujours le nom et la série, tout en bas de la carte, et il faut
+        // bien pouvoir l'écarter pour les lire. L'aperçu tient donc jusqu'au
+        // relâchement, où qu'aille le pouce.
         colLoupeAppui(c, ev) {
             if (!c || !ev || ev.pointerType === 'mouse') return;
             const depart = { x: ev.clientX, y: ev.clientY };
+            let ouverte = false;
             clearTimeout(this.col._loupeT);
-            this.col._loupeT = setTimeout(() => { this.col.loupe = c; }, 320);
+            this.col._loupeT = setTimeout(() => {
+                ouverte = true;
+                this.col.loupe = c;
+                // Tenir une carte pour la REGARDER n'est pas la traîner. Le
+                // glissement que « colPrendre » a commencé sur le même appui
+                // est abandonné, sinon relâcher au-dessus du marché
+                // déclencherait un échange qu'on n'a jamais voulu faire.
+                this.colCouperDrag();
+            }, 320);
             const bouger = (e) => {
+                if (ouverte) return;
                 if (Math.hypot(e.clientX - depart.x, e.clientY - depart.y) > 8) fin();
             };
             const fin = () => {
