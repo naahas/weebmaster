@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Questions à saisir — ShonenMaster</title>
+<style>:root{
+    --fond:#0d0e12; --carte:#15171d; --bord:#242731; --or:#ffd24a;
+    --texte:#e8e9ee; --pale:#8b8fa0; --vert:#4ade80;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:2rem 1rem 6rem;background:var(--fond);color:var(--texte);
+       font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .page{max-width:56rem;margin:0 auto}
+  h1{font-size:1.5rem;margin:0 0 .3rem}
+  .sous{color:var(--pale);margin:0 0 2rem;font-size:.9rem}
+  .barre{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem}
+  .puce{font-size:.72rem;padding:.25rem .6rem;border-radius:999px;
+        border:1px solid var(--bord);background:var(--carte);color:var(--pale)}
+
+  .q{background:var(--carte);border:1px solid var(--bord);border-radius:.8rem;
+     padding:1.1rem 1.2rem;margin-bottom:1.2rem;position:relative}
+  .q.fait{opacity:.42}
+  .tete{display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem}
+  .num{font-weight:700;color:var(--or);font-size:1.05rem}
+  .diff{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+        padding:.2rem .55rem;border-radius:.3rem;font-weight:700}
+  .veryeasy{background:rgba(0,255,136,.15);color:#00ff88}
+  .easy{background:rgba(0,200,255,.15);color:#00c8ff}
+  .medium{background:rgba(255,200,0,.15);color:#ffc800}
+  .hard{background:rgba(255,100,0,.15);color:#ff6400}
+  .veryhard{background:rgba(255,50,50,.15);color:#ff3232}
+  .extreme{background:rgba(190,80,255,.18);color:#c77dff}
+  .coche{margin-left:auto;display:flex;align-items:center;gap:.4rem;
+         color:var(--pale);font-size:.78rem;cursor:pointer;user-select:none}
+
+  .champ{display:grid;grid-template-columns:7.5rem 1fr auto;gap:.5rem;
+         align-items:start;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+  .champ:last-of-type{border-bottom:0}
+  .etiq{color:var(--pale);font-size:.78rem;padding-top:.15rem}
+  .val{word-break:break-word}
+  .val.url{font-size:.8rem;color:#7aa7ff}
+
+  .reps{margin-top:.8rem;border-top:1px solid var(--bord);padding-top:.7rem}
+  .rep{display:grid;grid-template-columns:1.4rem 1fr auto;gap:.5rem;
+       align-items:center;padding:.22rem 0}
+  .rep .i{color:var(--pale);font-size:.8rem;text-align:right}
+  .rep.bonne .t{color:var(--vert);font-weight:600}
+  .rep.bonne .i{color:var(--vert);font-weight:700}
+
+  button.c{background:transparent;border:1px solid var(--bord);color:var(--pale);
+           border-radius:.35rem;font-size:.68rem;padding:.18rem .5rem;cursor:pointer;
+           white-space:nowrap;transition:all .15s}
+  button.c:hover{border-color:var(--or);color:var(--or)}
+  button.c.ok{border-color:var(--vert);color:var(--vert)}
+
+  .src{margin-top:.9rem;padding:.6rem .8rem;background:rgba(255,255,255,.028);
+       border-left:2px solid var(--bord);border-radius:0 .3rem .3rem 0;
+       font-size:.8rem;color:var(--pale);font-style:italic}
+  .note{margin-top:.5rem;padding:.6rem .8rem;background:rgba(255,210,74,.06);
+        border-left:2px solid rgba(255,210,74,.4);border-radius:0 .3rem .3rem 0;
+        font-size:.8rem;color:#d8c48a;font-style:normal}
+  .note b{color:var(--or)}
+  .grappe{font-size:.68rem;color:var(--pale);text-transform:uppercase;letter-spacing:.05em}
+  .filtres{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.6rem}
+  button.f{background:var(--carte);border:1px solid var(--bord);color:var(--pale);
+           border-radius:999px;font-size:.75rem;padding:.3rem .8rem;cursor:pointer;transition:all .15s}
+  button.f:hover{border-color:var(--or);color:var(--or)}
+  button.f.actif{border-color:var(--or);color:var(--fond);background:var(--or);font-weight:600}
+  .puce.veryeasy{color:#00ff88}.puce.easy{color:#00c8ff}.puce.medium{color:#ffc800}
+  .puce.hard{color:#ff6400}.puce.veryhard{color:#ff3232}.puce.extreme{color:#c77dff}
+</style></head><body>
+<div class="page">
+  <h1>Questions à saisir</h1>
+  <p class="sous">50 questions, aucun doublon entre elles ni avec la banque.
+     Coche une carte quand tu l'as saisie — l'état est retenu dans ce navigateur.</p>
+  <div class="barre" id="barre"></div>
+  <div class="filtres" id="filtres"></div>
+  <div id="liste"></div>
+</div>
+<script>
+const QUESTIONS = [{"g":"Luffy — le fruit","d":"medium","t":"Quel est le véritable nom du Gomu Gomu no Mi ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Gomu_Gomu_no_Mi","b":1,"r":["Hito Hito no Mi, modèle Nika","Hito Hito no Mi, modèle Joy Boy","Gomu Gomu no Mi, modèle Nika","Zoan Zoan no Mi, modèle Soleil","Nika Nika no Mi","Hito Hito no Mi, modèle Soleil"],"src":"étant anciennement connu sous le nom du Hito Hito no Mi, modèle Nika, ou Fruit de l'Humain, version Nika en français, qui est un Fruit du Démon de type Zoan Mythique."},{"g":"Luffy — le fruit","d":"hard","t":"Qui avait mangé ce fruit il y a environ 900 ans ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Gomu_Gomu_no_Mi","b":1,"r":["Joy Boy","Nika","Gol D. Roger","Kozuki Oden","Imu","Le premier Roi des Pirates"],"src":"Ce fruit a été mangé il y a environ 900 ans par Joy Boy, avant son décès éventuel, menant le fruit à revenir à la circulation."},{"g":"Luffy — le fruit","d":"veryhard","t":"Depuis combien de temps le Gouvernement Mondial traquait-il ce fruit avant que Shanks ne le vole ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Gomu_Gomu_no_Mi","b":1,"r":["Près de 800 ans","Près de 100 ans","Près de 200 ans","Près de 900 ans","Près de 500 ans","Depuis le Siècle Oublié seulement"],"src":"Il y a 13 ans, le Gouvernement Mondial a manqué d'entrer en possession du fruit après près de 800 ans de chasse."},{"g":"Luffy — le fruit","d":"hard","t":"Quelle unité protégeait le convoi à qui Shanks a volé le fruit ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Gomu_Gomu_no_Mi","b":1,"r":["Le CP9","Le CP0","Les Dragons Célestes","La flotte de l'Amiral en Chef","Le SWORD","Le CP5"],"src":"Shanks et son équipage l'ont volé à un convoi protégé par le CP9, censé le ramener à Mary Geoise."},{"g":"Luffy — le fruit","d":"veryhard","t":"À quel fruit réel le Gomu Gomu no Mi ressemble-t-il ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Gomu_Gomu_no_Mi","b":1,"r":["Un melon Yubari violet","Une pomme violette","Un ananas violet","Une prune géante","Un raisin géant","Une figue violette"],"src":"Le Gomu Gomu no Mi ressemble à un melon Yubari violet avec les tourbillons typiques des Fruits du Démon dessinés dessus. L'intérieur du Fruit est vert."},{"g":"Luffy — le fruit","d":"extreme","t":"Qu'est-ce qui rend Nika unique parmi les créatures des Zoan Mythiques ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Gomu_Gomu_no_Mi","b":1,"r":["C'est une divinité propre à la mythologie de One Piece","C'est le seul dieu vivant encore en vie","C'est le seul Zoan Mythique sans forme animale","C'est le seul à avoir été mangé deux fois","C'est une invention du Gouvernement Mondial","C'est le seul Zoan capable de parler"],"src":"« Nika » est le nom du dieu du soleil Nika, qui contrairement aux autres créatures représentés par les Zoan Mythiques, est propre à la mythologie de One Piece.","n":"Les autres Zoan Mythiques puisent dans des mythologies RÉELLES (phénix, dragon oriental…). Nika, non."},{"g":"Luffy — le fruit","d":"hard","t":"Comment fonctionne le Gear 2 de Luffy ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Gomu_Gomu_no_Mi","b":1,"r":["Il étire ses vaisseaux sanguins pour accélérer son flux sanguin","Il insuffle de l'air dans ses os","Il durcit sa peau avec le Haki","Il comprime ses muscles","Il accélère son rythme cardiaque par la volonté","Il réduit son poids corporel"],"src":"Soit en étirant ses vaisseaux sanguins, en créant un effet de pompe avec ses jambes, ce qui permet d'augmenter le flux sanguin, rendant Luffy plus rapide donc plus puissant."},{"g":"Luffy — le fruit","d":"hard","t":"Que Luffy insuffle-t-il dans ses os pour déclencher le Gear 3 ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Gomu_Gomu_no_Mi","b":1,"r":["De l'air","Du sang","Du Haki","De l'eau de mer","De la fumée","Rien, il gonfle ses muscles"],"src":"Soit en insufflant de l'air dans ses os (« Hone Fuusen ») afin d'augmenter le volume de son corps et renforcer ses attaques : le Gear 3."},{"g":"Luffy — le fruit","d":"veryhard","t":"Quel était l'effet secondaire du Gear 3 avant l'ellipse ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Gomu_Gomu_no_Mi","b":1,"r":["Luffy rétrécissait pendant un temps proportionnel à l'usage","Luffy perdait la vue quelques minutes","Luffy ne pouvait plus parler","Luffy s'endormait aussitôt","Luffy perdait l'usage de ses bras","Luffy devenait vulnérable au Haki"],"src":"Ce qui a pour effet secondaire de réduire sa taille pendant un délais proportionnel au temps d'utilisation de la technique, du moins avant l'ellipse."},{"g":"Luffy — le fruit","d":"medium","t":"Quel geste Luffy fait-il sur lui-même pour activer le Gear 4 ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Gomu_Gomu_no_Mi","b":1,"r":["Il mord son avant-bras","Il frappe sa poitrine","Il souffle dans son pouce","Il se mord la langue","Il claque des doigts","Il retire son chapeau"],"src":"Luffy, afin d'activer la technique, équipe ses bras du Busoshoku no Haki, puis mord son avant-bras gauche."},{"g":"Luffy — la création","d":"veryhard","t":"Quelle série a fortement influencé Oda lorsqu'il concevait les personnages de One Piece ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Divers","b":1,"r":["Dragon Ball","Hokuto no Ken","Saint Seiya","Captain Tsubasa","Ranma ½","Yu Yu Hakusho"],"src":"Lorsqu'il dessinait One Piece, Eiichiro Oda était grandement influencé par Dragon Ball et avait la série à l'esprit lorsqu'il conçut ses personnages."},{"g":"Luffy — la création","d":"extreme","t":"À quelle notion Oda pensait-il en créant Luffy ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Divers","b":1,"r":["La masculinité","La liberté","L'innocence","L'amitié","L'appétit","Le courage"],"src":"Oda a dit que lorsqu'il créa Luffy, il pensait à la « masculinité », parce que Dragon Ball a déjà fait toutes les choses qu'un enfant pouvait être heureux de faire."},{"g":"Luffy — la création","d":"hard","t":"Dans quel one-shot Luffy est-il apparu pour la première fois, avant le début de One Piece ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Divers","b":1,"r":["Romance Dawn","Wanted!","Monsters","God's Gift for the Future","Ikki Yakô","Cross Epoch"],"src":"Luffy fit sa première apparition en tant que protagoniste principal dans le premier pilote de One Piece, Romance Dawn Vol. 1."},{"g":"Luffy — la création","d":"extreme","t":"Combien de versions de Romance Dawn Oda a-t-il réalisées ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Divers","b":1,"r":["Trois","Deux","Une","Quatre","Cinq","Six"],"src":"Il demeura le protagoniste principal dans la seconde sortie de Romance Dawn, Romance Dawn Vol. 2, et dans la version finale, Romance Dawn Vol. 3."},{"g":"Luffy — la création","d":"extreme","t":"Quel genre de pirate Luffy voulait-il être dans la première version de Romance Dawn ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Divers","b":1,"r":["Un pirate pacificateur","Un pirate chasseur de primes","Un pirate marchand","Un pirate justicier","Un pirate explorateur","Le roi des pirates, déjà"],"src":"Il dit qu'il voulait être candidat pour être pirate et, plus spécifiquement, un pirate pacificateur."},{"g":"Luffy — la création","d":"extreme","t":"Dans la première version de Romance Dawn, qu'est-ce qui avait emporté le bras de Shanks ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Divers","b":1,"r":["Un requin","Un Monstre Marin","Un Roi des Mers","Un boulet de canon","Une explosion","Rien, il avait ses deux bras"],"src":"Une autre différence est que le bras de Shanks fut mangé par un requin au lieu d'un Monstre Marin."},{"g":"Luffy — la création","d":"extreme","t":"Qu'est-ce que la première version de Romance Dawn contient d'unique dans toute l'œuvre d'Oda ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Divers","b":1,"r":["Le seul dessin d'un Luffy adulte","Le seul dessin de Roger jeune","Le seul dessin du One Piece","La seule apparition d'Imu","Le seul dessin de la mère de Luffy","Le seul plan de la carte du monde"],"src":"Dans Romance Dawn Vol. 1, il y a un panneau qui montre un Luffy en tant que capitaine de son propre équipage. C'est le seul moment où une version adulte de Luffy a été dessinée par Oda en ce qui concerne l'histoire de One Piece."},{"g":"Luffy — la création","d":"extreme","t":"De qui Luffy recevait-il son chapeau et son fruit dans la deuxième version de Romance Dawn ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Divers","b":1,"r":["De son grand-père","De Shanks","De son père","De Roger","De Dadan","Il les avait trouvés"],"src":"Son histoire, bien qu'on le montre en train de manger un fruit du démon, ne présente pas Shanks et, à la place, Luffy recevait son chapeau et le fruit du démon qu'il a mangé de son grand-père."},{"g":"Luffy — la création","d":"extreme","t":"Qu'est-ce qui manquait au visage de Luffy dans les deux premières versions de Romance Dawn ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Divers","b":1,"r":["La cicatrice sous l'œil gauche","Le sourire en coin","Les sourcils","La cicatrice sur la poitrine","Le chapeau de paille","Rien, il était identique"],"src":"Dans les deux versions, la cicatrice sous l'œil gauche de Luffy était absente."},{"g":"Luffy — la création","d":"extreme","t":"Comment s'appelait le protagoniste du one-shot abandonné d'Oda qui préfigurait Luffy ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Divers","b":1,"r":["Land","Pao","Dawn","Gum","Roman","Monkey"],"src":"La première idée connue concernant Luffy apparaît dans le one-shot abandonné d'Oda, Land, le Dragon et les Dix Voleurs, où le protagoniste, Land, ressemble fortement à Luffy."},{"g":"Luffy — la création","d":"extreme","t":"Quel nom portait le protagoniste d'un concept d'Oda, très semblable à Luffy et coiffé d'un bandeau au motif du Gomu Gomu no Mi ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Divers","b":1,"r":["Monkey D. Pao","Monkey D. Land","Monkey D. Gum","Monkey D. Dawn","Monkey D. Nika","Monkey D. Joy"],"src":"son concept futur aurait mis en scène un protagoniste nommé « Monkey D. Pao », lui aussi très semblable à Luffy ; il porte un bandeau dont le design est identique à celui du Gomu Gomu no Mi de Luffy."},{"g":"Luffy — manga vs anime","d":"veryhard","t":"Quelle scène du passé de Luffy l'anime a-t-il supprimée ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Divers","b":1,"r":["Celle où il se poignarde sous l'œil pour prouver son courage","Celle où Shanks lui donne son chapeau","Celle où il rencontre Ace","Celle où Higuma l'enlève","Celle où Garp l'abandonne à Dadan","Celle où il mange le fruit"],"src":"Dans l'anime, le passé de Luffy n'inclut pas la scène où il se poignarde sous l'œil gauche afin de prouver à Shanks qu'il était un homme."},{"g":"Luffy — manga vs anime","d":"extreme","t":"Pourquoi Shanks surnomme-t-il Luffy « l'ancre » dans le manga ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Divers","b":1,"r":["Parce qu'il ne savait pas nager, même avant de manger le fruit","Parce qu'il était trop lourd pour son âge","Parce qu'il refusait de quitter le village","Parce qu'il s'accrochait toujours à son bateau","Parce qu'il coulait quand il buvait","Parce qu'il portait une ancre tatouée"],"src":"Aussi dans le manga, Luffy ne pouvait nager, même avant qu'il ne mange le fruit du démon, ce qui explique pourquoi Shanks l'appelle l'« ancre », d'où la chemise que portait Luffy.","n":"C'est aussi ce qui explique le motif d'<b>ancre</b> sur sa chemise d'enfant."},{"g":"Luffy — manga vs anime","d":"extreme","t":"Comment Luffy arrête-t-il l'anneau tranchant de Jango dans l'anime, à la différence du manga ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Divers","b":1,"r":["Il l'attrape entre ses dents","Il le renvoie d'un coup de pied","Il l'attrape à mains nues","Il le laisse rebondir sur son ventre","Il l'esquive complètement","Il le coupe avec un sabre"],"src":"Dans le manga, au moment où Nami était sur le point de se faire frapper par l'anneau tranchant de Jango, Luffy se leva et le prit en pleine tête. Dans l'anime, il l'attrapa entre ses dents."},{"g":"Luffy — manga vs anime","d":"extreme","t":"Dans le manga, qui fait franchir la vague gelée au navire des évadés d'Impel Down ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Divers","b":1,"r":["Ivankov, avec son Death Wink","Luffy, Jinbe et Crocodile ensemble","Baggy seul","Crocodile avec son sable","Jinbe avec son Karaté des Hommes-Poissons","Le navire passe par-dessous"],"src":"Dans l'anime, ce sont grâce aux efforts combinés de Luffy, Jinbe, Crocodile, Baggy et Ivankov qu'ils arrivent à Marineford. Toutefois, dans le manga, il est indiqué qu'Ivankov a fait cela avec son « Death Wink »."},{"g":"Luffy — crossovers","d":"extreme","t":"Comment s'appelle l'attaque créée par Luffy et Son Goku dans leur crossover ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Divers","b":1,"r":["Gomu Gomu no Kamehameha","Gomu Gomu no Genkidama","Kamehameha Pistol","Gomu Gomu no Kaio-ken","Le Poing du Soleil","Gum Gum Spirit Bomb"],"src":"Luffy apparaît dans un spécial Shonen Jump, dans lequel Ener attaque Tokyo et Odaiba. Son Goku arrive pour le combattre et Luffy apparaît pour l'aider. Luffy et Son Goku créent une attaque nommée le « Gomu Gomu No Kamehameha » pour vaincre Ener."},{"g":"Luffy — crossovers","d":"extreme","t":"Que prouve le fait que Luffy puisse chevaucher le Nuage Supersonique dans Cross Epoch ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Divers","b":1,"r":["Qu'il a le cœur pur","Qu'il maîtrise le Haki","Qu'il est de sang divin","Qu'il est plus léger qu'il n'y paraît","Qu'il possède un fruit de type Logia","Rien, c'est juste un gag"],"src":"Étant capable de chevaucher le Nuage Supersonique, dans l'univers de Dragon Ball, cela signifie que Luffy a un cœur pur."},{"g":"Luffy — exploits","d":"hard","t":"Comment Luffy a-t-il escaladé les Drum Rockies, hauts de 5 000 mètres ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Aptitudes_et_Comp%C3%A9tences","b":1,"r":["Nami malade sur le dos et Sanji évanoui dans la bouche","Nami et Sanji sur chaque épaule","En les tirant derrière lui sur un traîneau","En s'étirant jusqu'au sommet","Nami dans les bras, Sanji sur le dos","Seul, il est revenu les chercher ensuite"],"src":"le fait d'avoir escaladé les Drum Rockies hauts de 5 000 mètres avec une Nami malade sur le dos et un Sanji évanoui dans la bouche, sans manteau sous une température glaciale."},{"g":"Luffy — exploits","d":"veryhard","t":"Combien d'ombres Luffy a-t-il supportées à Thriller Bark ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Aptitudes_et_Comp%C3%A9tences","b":1,"r":["Cent","Cinquante","Dix","Cinq","Deux cents","Trente"],"src":"la fois où il supporta le fait qu'on lui insère cent ombres sur Thriller Bark alors qu'un homme ordinaire même entraîné ne pourrait en supporter que trois ou cinq."},{"g":"Luffy — exploits","d":"extreme","t":"Combien d'ombres un homme entraîné peut-il supporter au maximum ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Aptitudes_et_Comp%C3%A9tences","b":1,"r":["Trois à cinq","Dix à quinze","Une seule","Vingt","Cinquante","Aucune"],"src":"alors qu'un homme ordinaire même entraîné ne pourrait en supporter que trois ou cinq."},{"g":"Luffy — exploits","d":"veryhard","t":"En combien de temps Luffy est-il sorti du traitement hormonal d'Ivankov ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Aptitudes_et_Comp%C3%A9tences","b":1,"r":["20 heures au lieu de deux jours","Deux jours, comme prévu","Une semaine au lieu de deux jours","Quelques minutes","Trois jours, plus lentement que prévu","Il n'en est jamais vraiment sorti"],"src":"Il a aussi survécu au traitement de soins hormonaux d'Emporio Ivankov, mais il en est sorti en 20 heures au lieu de deux jours, ce qui, selon Ivankov, traduit la grandeur de sa volonté."},{"g":"Luffy — exploits","d":"medium","t":"Contre quoi Luffy est-il devenu immunisé après son combat contre Magellan ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Aptitudes_et_Comp%C3%A9tences","b":1,"r":["Le poison","Le feu","Le froid","Le Haki des Rois","Le sommeil","L'eau de mer"],"src":"Après l'ellipse, Luffy se montre immunisé contre le poison depuis son combat contre Magellan."},{"g":"Luffy — exploits","d":"hard","t":"Quel est le point faible de Crocodile, que Luffy découvre en plein combat ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Aptitudes_et_Comp%C3%A9tences","b":1,"r":["Le contact des liquides","Le Haki des Rois","La lumière du soleil","Le sable mouillé uniquement","Son crochet","Le contact du métal"],"src":"il a montré en comprenant que le point faible de Crocodile était le contact des liquides en voyant la réaction de son adversaire lorsqu'il arrive à lui serrer le bras."},{"g":"Luffy — exploits","d":"extreme","t":"Quelle capacité très particulière Luffy a-t-il développée pour ne plus rater de repas ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Aptitudes_et_Comp%C3%A9tences","b":1,"r":["Manger en dormant","Manger sans respirer","Avaler sans mâcher","Digérer en quelques secondes","Se réveiller à l'odeur de la viande","Manger la tête en bas"],"src":"Luffy a la capacité très très particulière de manger en dormant qu'il a développé parce qu'il n'était pas content du fait qu'il doit rater des repas après les combats."},{"g":"Luffy — exploits","d":"hard","t":"Comment Luffy se remet-il de ses blessures les plus graves ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Aptitudes_et_Comp%C3%A9tences","b":1,"r":["En mangeant de la viande","En dormant plusieurs jours","Grâce aux soins de Chopper uniquement","En se plongeant dans l'eau douce","Grâce à son Haki","Il ne s'en remet jamais complètement"],"src":"Il a d'ailleurs la capacité de se rétablir de ses blessures les plus sévères rien qu'en mangeant de la viande comme il l'a démontré après avoir perdu et été grièvement blessé par Crocodile à Alabasta."},{"g":"Luffy — exploits","d":"veryhard","t":"Parmi une centaine de sosies de cire, comment Luffy a-t-il trouvé le vrai Mr 3 ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Aptitudes_et_Comp%C3%A9tences","b":1,"r":["Du premier coup, à l'instinct","En les brisant tous un par un","Grâce à l'odorat de Chopper","En suivant la chaleur de la cire","Grâce au Haki de l'Observation","Il ne l'a jamais trouvé"],"src":"son instinct lui permet de trouver le vrai Mr 3 caché parmi une bonne centaine de sosies de cire du premier coup."},{"g":"Luffy — exploits","d":"veryhard","t":"Quels sont les deux seuls personnages à entendre la voix de Zunesha sur Zou ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Aptitudes_et_Comp%C3%A9tences","b":1,"r":["Luffy et Momonosuke","Luffy et Zoro","Luffy et Pedro","Momonosuke et Kinemon","Luffy et Nekomamushi","Luffy seul"],"src":"Momonosuke et Luffy sont les seuls à entendre sa voix et ne comprennent pas tout de suite qui parle."},{"g":"Luffy — exploits","d":"extreme","t":"Quels autres personnages, avant Luffy, pouvaient s'entretenir avec Zunesha ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Aptitudes_et_Comp%C3%A9tences","b":1,"r":["Gol D. Roger et Kozuki Oden","Barbe Blanche et Roger","Joy Boy seul","Les Rois de la Mer uniquement","Garp et Roger","Personne d'autre"],"src":"Pedro nous apprend alors que quand Gol D. Roger et Kouzuki Oden sont venus sur Zo, ils pouvaient eux aussi entendre et même s'entretenir avec une voix."},{"g":"Luffy — exploits","d":"extreme","t":"Quelle créature légendaire vivant mille ans Luffy parvient-il à comprendre ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Aptitudes_et_Comp%C3%A9tences","b":1,"r":["Un Dragon Millénaire","Un Roi des Mers","Un Éléphant Millénaire","Un Monstre Marin ancien","Une baleine-île","Un Serpent des Abysses"],"src":"son instinct lui permet de comprendre ce que raconte un Dragon Millénaire, un dragon légendaire vivant 1 000 ans, dans l'Arc de l'île du Vaisseau de Guerre."},{"g":"Luffy — exploits","d":"extreme","t":"Comment Luffy s'est-il sorti du piège de Rob Lucci qui l'avait coincé entre deux immeubles ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Aptitudes_et_Comp%C3%A9tences","b":1,"r":["Il a écarté les deux immeubles à la force des bras","Il s'est étiré pour passer par-dessus","Il a creusé sous les fondations","Il a utilisé le Gear 3","Zoro est venu le libérer","Il s'est dégonflé pour glisser"],"src":"La démonstration de force pure la plus effroyable dont il a fait preuve est celle où il explosa, en les écartant, deux immeubles entre lesquels Rob Lucci l'avait envoyé se coincer."},{"g":"Luffy — exploits","d":"veryhard","t":"À qui Luffy doit-il sa force physique de base, au début de la série ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy/Aptitudes_et_Comp%C3%A9tences","b":1,"r":["À l'entraînement que Garp lui a fait subir","À son fruit du démon","Aux travaux chez Dadan","À son sang de D.","À l'entraînement d'Ace","À Rayleigh"],"src":"On suppose que la force de base de Luffy, celle qu'il avait au début de la série, est due à l'entraînement que Garp lui a fait subir."},{"g":"Luffy — le personnage","d":"medium","t":"Quel poste occupe Monkey D. Dragon, le père de Luffy ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy","b":1,"r":["Chef de l'Armée Révolutionnaire","Amiral de la Marine","Roi d'un royaume du Nouveau Monde","Chef du Gouvernement Mondial","Empereur","Commandant du CP0"],"src":"Il est le fils du chef de l'Armée Révolutionnaire, Monkey D. Dragon."},{"g":"Luffy — le personnage","d":"hard","t":"Qui a élevé Luffy, en tant que mère adoptive ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy","b":1,"r":["Curly Dadan, une bandit des montagnes","Makino, la tenancière du bar","Bell-mère","Kureha","Nojiko","Personne, il a grandi seul"],"src":"le fils adoptif d'une bandit des montagnes, Curly Dadan."},{"g":"Luffy — le personnage","d":"veryhard","t":"À qui appartenait le chapeau de paille avant Shanks ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy","b":1,"r":["Gol D. Roger","Joy Boy","Rayleigh","Le père de Shanks","Barbe Blanche","Kozuki Oden"],"src":"le légendaire capitaine pirate Shanks « le Roux » lui a confié lorsqu'il était jeune, ce dernier le tenant lui-même de Roger."},{"g":"Luffy — le personnage","d":"hard","t":"Quel geste de Luffy à Enies Lobby équivaut à une déclaration de guerre au Gouvernement Mondial ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy","b":1,"r":["Il a fait brûler son drapeau","Il a détruit le Porte du Jugement","Il a libéré tous les prisonniers","Il a frappé un Dragon Céleste","Il a coulé un navire amiral","Il a volé un ponéglyphe"],"src":"Il est aussi célèbre pour avoir fait brûler le drapeau du Gouvernement Mondial à Enies Lobby, déclarant ainsi la guerre à ce dernier."},{"g":"Luffy — le personnage","d":"veryhard","t":"Pourquoi Luffy refuse-t-il de prendre la tête de l'armada de Chapeau de Paille ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy","b":1,"r":["Il ne veut pas priver les autres de leur liberté","Il trouve l'armada trop faible","Il refuse toute responsabilité","Il veut rester discret face à la Marine","Zoro le lui a déconseillé","Il n'en connaît même pas l'existence"],"src":"C'est également le fondateur involontaire de l'armada de Chapeau de Paille, même s'il refuse cependant d'en être à la tête, ne désirant pas priver les autres de leur liberté."},{"g":"Luffy — le personnage","d":"medium","t":"Comment Luffy définit-il ce que signifie devenir le Roi des Pirates ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy","b":1,"r":["Devenir la personne la plus libre qui soit","Posséder le plus grand trésor du monde","Régner sur toutes les mers","Vaincre les quatre Empereurs","Réunir tous les ponéglyphes","Surpasser Gol D. Roger au combat"],"src":"Selon lui, ce rêve se concrétisera, en devenant la personne la plus libre qui soit."},{"g":"Luffy — le personnage","d":"hard","t":"Lequel de ces Grands Corsaires Luffy n'a-t-il PAS vaincu ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy","b":1,"r":["Bartholomew Kuma","Crocodile","Gecko Moria","Doflamingo","Aucun, il les a tous vaincus","Boa Hancock"],"src":"pour avoir vaincu plusieurs des sept grands corsaires (Crocodile, Gecko Moria et Doflamingo)."},{"g":"Luffy — le personnage","d":"veryhard","t":"Lesquels des quatre Empereurs Luffy a-t-il osé défier ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Monkey_D._Luffy","b":1,"r":["Big Mom et Kaido","Barbe Noire et Kaido","Shanks et Big Mom","Barbe Blanche et Kaido","Kaido seul","Les quatre"],"src":"en étant allé jusqu'à défier deux des quatre Empereurs (Big Mom et Kaido)."},{"g":"Luffy — le fruit","d":"extreme","t":"De quel type de mot japonais « Gomu » est-il un exemple ?","s":"One Piece","p":"https://onepiece.fandom.com/fr/wiki/Gomu_Gomu_no_Mi","b":1,"r":["Un wasei-eigo, un anglicisme créé au Japon","Un kanji d'origine chinoise","Un onomatopée pure","Un mot d'origine portugaise","Un ancien mot d'Okinawa","Un néologisme inventé par Oda"],"src":"Il provient de « gum » en anglais signifiant « gomme » ou désignant une matière élastique. Le glissement sémantique fait de « Gomu » un wasei-eigo (anglicisme créé au Japon)."}];
+const LIB = {"veryeasy":"Very Easy","easy":"Easy","medium":"Medium","hard":"Hard","veryhard":"Very Hard","extreme":"Extreme"};
+const ORDRE = ["veryeasy","easy","medium","hard","veryhard","extreme"];
+function copier(txt, bouton) {
+  navigator.clipboard.writeText(txt).then(() => {
+    const av = bouton.textContent;
+    bouton.textContent = '✓'; bouton.classList.add('ok');
+    setTimeout(() => { bouton.textContent = av; bouton.classList.remove('ok'); }, 800);
+  });
+}
+
+function champ(etiq, valeur, classe) {
+  const d = document.createElement('div'); d.className = 'champ';
+  d.innerHTML = '<span class="etiq">' + etiq + '</span><span class="val ' + (classe || '') + '"></span>';
+  d.children[1].textContent = valeur;
+  const b = document.createElement('button'); b.className = 'c'; b.textContent = 'copier';
+  b.onclick = () => copier(valeur, b);
+  d.appendChild(b);
+  return d;
+}
+
+const liste = document.getElementById('liste');
+
+QUESTIONS.forEach((q, i) => {
+  const c = document.createElement('div');
+  c.className = 'q'; c.id = 'q' + i;
+  c.dataset.d = q.d; c.dataset.g = q.g || 'divers';
+
+  const tete = document.createElement('div'); tete.className = 'tete';
+  tete.innerHTML = '<span class="num">' + (i + 1) + '</span>'
+                 + '<span class="diff ' + q.d + '">' + LIB[q.d] + '</span>'
+                 + '<span class="grappe">' + (q.g || '') + '</span>';
+  const lab = document.createElement('label'); lab.className = 'coche';
+  const cb = document.createElement('input'); cb.type = 'checkbox';
+  cb.onchange = () => { c.classList.toggle('fait', cb.checked); sauver(); compter(); };
+  lab.appendChild(cb); lab.appendChild(document.createTextNode('saisie'));
+  tete.appendChild(lab); c.appendChild(tete);
+
+  c.appendChild(champ('Texte', q.t));
+  c.appendChild(champ('Série', q.s || 'Naruto'));
+  c.appendChild(champ('Preuve', q.p, 'url'));
+  c.appendChild(champ('Difficulté', LIB[q.d]));
+  c.appendChild(champ('Bonne rép.', String(q.b)));
+  c.appendChild(champ('Spoil', q.sp ? 'OUI' : 'non'));
+
+  const reps = document.createElement('div'); reps.className = 'reps';
+  q.r.forEach((r, k) => {
+    const l = document.createElement('div');
+    l.className = 'rep' + (k + 1 === q.b ? ' bonne' : '');
+    l.innerHTML = '<span class="i">' + (k + 1) + '</span><span class="t"></span>';
+    l.children[1].textContent = r;
+    const b = document.createElement('button'); b.className = 'c'; b.textContent = 'copier';
+    b.onclick = () => copier(r, b);
+    l.appendChild(b); reps.appendChild(l);
+  });
+  c.appendChild(reps);
+
+  const s = document.createElement('div'); s.className = 'src';
+  s.textContent = '« ' + q.src + ' »';
+  c.appendChild(s);
+
+  if (q.n) { const n = document.createElement('div'); n.className = 'note'; n.innerHTML = q.n; c.appendChild(n); }
+  liste.appendChild(c);
+});
+
+// ── barre de comptage ──
+const parD = {}; QUESTIONS.forEach(q => parD[q.d] = (parD[q.d] || 0) + 1);
+document.getElementById('barre').innerHTML =
+  ORDRE.filter(d => parD[d]).map(d => '<span class="puce ' + d + '">' + LIB[d] + ' ' + parD[d] + '</span>').join('')
+  + '<span class="puce" id="reste"></span>';
+
+// ── filtres par grappe ──
+const grappes = [...new Set(QUESTIONS.map(q => q.g || 'divers'))];
+const fz = document.getElementById('filtres');
+const btnTout = document.createElement('button');
+btnTout.className = 'f actif'; btnTout.textContent = 'tout (' + QUESTIONS.length + ')';
+btnTout.onclick = () => filtrer(null, btnTout);
+fz.appendChild(btnTout);
+grappes.forEach(g => {
+  const n = QUESTIONS.filter(q => (q.g || 'divers') === g).length;
+  const b = document.createElement('button');
+  b.className = 'f'; b.textContent = g + ' (' + n + ')';
+  b.onclick = () => filtrer(g, b);
+  fz.appendChild(b);
+});
+function filtrer(g, bouton) {
+  document.querySelectorAll('.f').forEach(x => x.classList.remove('actif'));
+  bouton.classList.add('actif');
+  document.querySelectorAll('.q').forEach(c => {
+    c.style.display = (!g || c.dataset.g === g) ? '' : 'none';
+  });
+}
+
+function sauver() {
+  const etat = [...document.querySelectorAll('.coche input')].map(x => x.checked);
+  try { localStorage.setItem('qsaisies2', JSON.stringify(etat)); } catch (e) {}
+}
+function compter() {
+  const n = [...document.querySelectorAll('.coche input')].filter(x => !x.checked).length;
+  const el = document.getElementById('reste');
+  if (el) el.textContent = n + ' restante' + (n > 1 ? 's' : '');
+}
+try {
+  const etat = JSON.parse(localStorage.getItem('qsaisies2') || '[]');
+  document.querySelectorAll('.coche input').forEach((x, i) => {
+    if (etat[i]) { x.checked = true; x.closest('.q').classList.add('fait'); }
+  });
+} catch (e) {}
+compter();
+
+</script></body></html>

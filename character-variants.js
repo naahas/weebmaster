@@ -66,7 +66,7 @@ const CHARACTER_VARIANTS = {
     "Naruto": [
         ["JIRAYA", "JIRAIA", "JIRAIYA"],
         ["ICHIBI", "SHUKAKU"],
-        ["KILLER B", "KILLER BEE"],
+        ["KILLER B", "KILLER BEE" , "BEE"],
         ["NIBI", "MATATABI"],
         ["SANBI", "ISOBU"],
         ["ADA", "EIDA"],
@@ -911,8 +911,8 @@ const CHARACTER_VARIANTS = {
     // ============================================
     "Reborn": [
         ["TSUNAYOSHI SAWADA", "SAWADA", "TSUNA", "VONGOLA DECIMO"],
-        ["DEMON SPADE", "DAEMON SPADE"],
-        ["I PIN", "I-PIN"],
+        ["DEMON SPADE", "DAEMON SPADE" , "SPADE"],
+        ["I PIN", "I-PIN" , "IPIN"],
         ["VONGOLA SETTIMO", "FABIO"],
         ["VIPER", "MAMMON"],
         ["MM", "M.M", "M M"],

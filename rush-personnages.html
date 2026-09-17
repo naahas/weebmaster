@@ -1,0 +1,1962 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rush — les personnages</title>
+<style>
+  :root{--fond:#0d0e12;--carte:#15171d;--bord:#242731;--or:#ffd24a;--texte:#e8e9ee;--pale:#8b8fa0}
+  *{box-sizing:border-box}
+  body{margin:0;padding:1.5rem 1rem 5rem;background:var(--fond);color:var(--texte);
+       font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .page{max-width:78rem;margin:0 auto}
+  h1{font-size:1.5rem;margin:0 0 .3rem}
+  .sous{color:var(--pale);margin:0 0 1.4rem;font-size:.9rem}
+  .outils{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:1.8rem;
+          position:sticky;top:0;background:var(--fond);padding:.7rem 0;z-index:5;
+          border-bottom:1px solid var(--bord)}
+  input[type=search]{background:var(--carte);border:1px solid var(--bord);color:var(--texte);
+       border-radius:999px;padding:.45rem 1rem;font-size:.9rem;min-width:15rem;outline:none}
+  input[type=search]:focus{border-color:var(--or)}
+  button.f{background:var(--carte);border:1px solid var(--bord);color:var(--pale);
+           border-radius:999px;font-size:.78rem;padding:.35rem .9rem;cursor:pointer}
+  button.f:hover{border-color:var(--or);color:var(--or)}
+  button.f.actif{border-color:var(--or);color:var(--fond);background:var(--or);font-weight:600}
+  .compteur{margin-left:auto;color:var(--pale);font-size:.82rem}
+
+  section.anime{margin-bottom:2rem}
+  h2{font-size:1.02rem;margin:0 0 .7rem;display:flex;align-items:center;gap:.55rem;
+     border-bottom:1px solid var(--bord);padding-bottom:.45rem}
+  .n{color:var(--or);font-weight:700}
+  .tag{font-size:.63rem;text-transform:uppercase;letter-spacing:.05em;padding:.15rem .5rem;
+       border-radius:.3rem;font-weight:700}
+  .tag.big3{background:rgba(255,100,0,.16);color:#ff8c3a}
+  .tag.main{background:rgba(0,200,255,.13);color:#4cc9ff}
+  .tag.hors{background:rgba(255,255,255,.05);color:var(--pale);font-weight:500}
+
+  .grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(6.2rem,1fr));gap:.7rem}
+  figure{margin:0;background:var(--carte);border:1px solid var(--bord);border-radius:.55rem;
+         overflow:hidden;transition:border-color .15s}
+  figure:hover{border-color:var(--or)}
+  figure img{width:100%;aspect-ratio:225/350;object-fit:cover;display:block;background:#0a0b0e}
+  figcaption{padding:.35rem .4rem .45rem;font-size:.75rem;text-align:center;line-height:1.25}
+  .al{display:block;color:var(--pale);font-size:.63rem;margin-top:.12rem}
+  .vide{display:none}
+  .alerte{background:rgba(255,50,50,.09);border-left:2px solid #ff3232;padding:.6rem .9rem;
+          border-radius:0 .3rem .3rem 0;margin-bottom:1.2rem;font-size:.84rem}
+</style></head><body>
+<div class="page">
+  <h1>Rush — les personnages</h1>
+  <p class="sous">334 portraits · 72 animes · généré depuis <code>rushdata.json</code></p>
+
+  
+  
+
+  <div class="outils">
+    <input type="search" id="q" placeholder="chercher un personnage ou un anime…">
+    <button class="f actif" data-f="tout">tout (334)</button>
+    <button class="f" data-f="big3">Big 3 (75)</button>
+    <button class="f" data-f="main">Mainstream (224)</button>
+    <button class="f" data-f="hors">hors Mainstream (110)</button>
+    <span class="compteur" id="compteur"></span>
+  </div>
+
+  <section class="anime" data-anime="One Piece"
+           data-big3="true" data-main="true">
+    <h2>One Piece
+      <span class="n">27</span>
+      <span class="tag big3">Big 3</span>
+      <span class="tag main">Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="ace">
+        <img src="src/img/rushpic/ace.webp" alt="Ace" loading="lazy">
+        <figcaption>Ace</figcaption>
+      </figure><figure data-nom="aokiji">
+        <img src="src/img/rushpic/aokiji.webp" alt="Aokiji" loading="lazy">
+        <figcaption>Aokiji</figcaption>
+      </figure><figure data-nom="baggy">
+        <img src="src/img/rushpic/baggy.webp" alt="Baggy" loading="lazy">
+        <figcaption>Baggy</figcaption>
+      </figure><figure data-nom="boa hancock">
+        <img src="src/img/rushpic/boa_hancock.webp" alt="Boa Hancock" loading="lazy">
+        <figcaption>Boa Hancock<span class="al">Hancock</span></figcaption>
+      </figure><figure data-nom="brogy">
+        <img src="src/img/rushpic/brogy.webp" alt="Brogy" loading="lazy">
+        <figcaption>Brogy</figcaption>
+      </figure><figure data-nom="chopper">
+        <img src="src/img/rushpic/chopper.webp" alt="Chopper" loading="lazy">
+        <figcaption>Chopper</figcaption>
+      </figure><figure data-nom="doflamingo">
+        <img src="src/img/rushpic/doflamingo.webp" alt="Doflamingo" loading="lazy">
+        <figcaption>Doflamingo</figcaption>
+      </figure><figure data-nom="dorry">
+        <img src="src/img/rushpic/dorry.webp" alt="Dorry" loading="lazy">
+        <figcaption>Dorry<span class="al">dory</span></figcaption>
+      </figure><figure data-nom="ener">
+        <img src="src/img/rushpic/ener.webp" alt="Ener" loading="lazy">
+        <figcaption>Ener<span class="al">enel</span></figcaption>
+      </figure><figure data-nom="kaido">
+        <img src="src/img/rushpic/kaido.webp" alt="Kaido" loading="lazy">
+        <figcaption>Kaido<span class="al">kaidou</span></figcaption>
+      </figure><figure data-nom="katakuri">
+        <img src="src/img/rushpic/katakuri.webp" alt="Katakuri" loading="lazy">
+        <figcaption>Katakuri</figcaption>
+      </figure><figure data-nom="kizaru">
+        <img src="src/img/rushpic/kizaru.webp" alt="Kizaru" loading="lazy">
+        <figcaption>Kizaru<span class="al">borsalino</span></figcaption>
+      </figure><figure data-nom="law">
+        <img src="src/img/rushpic/law.webp" alt="Law" loading="lazy">
+        <figcaption>Law</figcaption>
+      </figure><figure data-nom="luffy">
+        <img src="src/img/rushpic/luffy.webp" alt="Luffy" loading="lazy">
+        <figcaption>Luffy</figcaption>
+      </figure><figure data-nom="marco">
+        <img src="src/img/rushpic/marco.webp" alt="Marco" loading="lazy">
+        <figcaption>Marco</figcaption>
+      </figure><figure data-nom="mihawk">
+        <img src="src/img/rushpic/mihawk.webp" alt="Mihawk" loading="lazy">
+        <figcaption>Mihawk</figcaption>
+      </figure><figure data-nom="nami">
+        <img src="src/img/rushpic/nami.webp" alt="Nami" loading="lazy">
+        <figcaption>Nami</figcaption>
+      </figure><figure data-nom="newgate">
+        <img src="src/img/rushpic/newgate.webp" alt="Newgate" loading="lazy">
+        <figcaption>Newgate<span class="al">Barbe blanche · Edward newgate · Whitebeard · Newgates</span></figcaption>
+      </figure><figure data-nom="robin">
+        <img src="src/img/rushpic/robin.webp" alt="Robin" loading="lazy">
+        <figcaption>Robin<span class="al">nico robin</span></figcaption>
+      </figure><figure data-nom="roger">
+        <img src="src/img/rushpic/roger.webp" alt="Roger" loading="lazy">
+        <figcaption>Roger</figcaption>
+      </figure><figure data-nom="sabo">
+        <img src="src/img/rushpic/sabo.webp" alt="Sabo" loading="lazy">
+        <figcaption>Sabo</figcaption>
+      </figure><figure data-nom="sanji">
+        <img src="src/img/rushpic/sanji.webp" alt="Sanji" loading="lazy">
+        <figcaption>Sanji</figcaption>
+      </figure><figure data-nom="shanks">
+        <img src="src/img/rushpic/shanks.webp" alt="Shanks" loading="lazy">
+        <figcaption>Shanks</figcaption>
+      </figure><figure data-nom="teach">
+        <img src="src/img/rushpic/teach.webp" alt="Teach" loading="lazy">
+        <figcaption>Teach<span class="al">Barbe noire · Blackbeard · Marshall D Teach</span></figcaption>
+      </figure><figure data-nom="vivi">
+        <img src="src/img/rushpic/vivi.webp" alt="Vivi" loading="lazy">
+        <figcaption>Vivi</figcaption>
+      </figure><figure data-nom="yamato">
+        <img src="src/img/rushpic/yamato.webp" alt="Yamato" loading="lazy">
+        <figcaption>Yamato</figcaption>
+      </figure><figure data-nom="zoro">
+        <img src="src/img/rushpic/zoro.webp" alt="Zoro" loading="lazy">
+        <figcaption>Zoro</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Naruto"
+           data-big3="true" data-main="true">
+    <h2>Naruto
+      <span class="n">25</span>
+      <span class="tag big3">Big 3</span>
+      <span class="tag main">Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="asuma">
+        <img src="src/img/rushpic/asuma.webp" alt="Asuma" loading="lazy">
+        <figcaption>Asuma</figcaption>
+      </figure><figure data-nom="boruto">
+        <img src="src/img/rushpic/boruto.webp" alt="Boruto" loading="lazy">
+        <figcaption>Boruto</figcaption>
+      </figure><figure data-nom="gaara">
+        <img src="src/img/rushpic/gaara.webp" alt="Gaara" loading="lazy">
+        <figcaption>Gaara</figcaption>
+      </figure><figure data-nom="gai">
+        <img src="src/img/rushpic/gai.webp" alt="Gai" loading="lazy">
+        <figcaption>Gai<span class="al">guy</span></figcaption>
+      </figure><figure data-nom="hashirama">
+        <img src="src/img/rushpic/hashirama.webp" alt="Hashirama" loading="lazy">
+        <figcaption>Hashirama</figcaption>
+      </figure><figure data-nom="hinata">
+        <img src="src/img/rushpic/hinata.webp" alt="Hinata" loading="lazy">
+        <figcaption>Hinata</figcaption>
+      </figure><figure data-nom="itachi">
+        <img src="src/img/rushpic/itachi.webp" alt="Itachi" loading="lazy">
+        <figcaption>Itachi</figcaption>
+      </figure><figure data-nom="jiraiya">
+        <img src="src/img/rushpic/jiraiya.webp" alt="Jiraiya" loading="lazy">
+        <figcaption>Jiraiya<span class="al">Jiraya</span></figcaption>
+      </figure><figure data-nom="kakashi">
+        <img src="src/img/rushpic/kakashi.webp" alt="Kakashi" loading="lazy">
+        <figcaption>Kakashi</figcaption>
+      </figure><figure data-nom="kawaki">
+        <img src="src/img/rushpic/kawaki.webp" alt="Kawaki" loading="lazy">
+        <figcaption>Kawaki</figcaption>
+      </figure><figure data-nom="kimimaro">
+        <img src="src/img/rushpic/kimimaro.webp" alt="Kimimaro" loading="lazy">
+        <figcaption>Kimimaro</figcaption>
+      </figure><figure data-nom="kisame">
+        <img src="src/img/rushpic/kisame.webp" alt="Kisame" loading="lazy">
+        <figcaption>Kisame</figcaption>
+      </figure><figure data-nom="kurenai">
+        <img src="src/img/rushpic/kurenai.webp" alt="Kurenai" loading="lazy">
+        <figcaption>Kurenai</figcaption>
+      </figure><figure data-nom="kushina">
+        <img src="src/img/rushpic/kushina.webp" alt="Kushina" loading="lazy">
+        <figcaption>Kushina</figcaption>
+      </figure><figure data-nom="madara">
+        <img src="src/img/rushpic/madara.webp" alt="Madara" loading="lazy">
+        <figcaption>Madara</figcaption>
+      </figure><figure data-nom="minato">
+        <img src="src/img/rushpic/minato.webp" alt="Minato" loading="lazy">
+        <figcaption>Minato</figcaption>
+      </figure><figure data-nom="naruto">
+        <img src="src/img/rushpic/naruto.webp" alt="Naruto" loading="lazy">
+        <figcaption>Naruto</figcaption>
+      </figure><figure data-nom="obito">
+        <img src="src/img/rushpic/obito.webp" alt="Obito" loading="lazy">
+        <figcaption>Obito<span class="al">Tobi</span></figcaption>
+      </figure><figure data-nom="orochimaru">
+        <img src="src/img/rushpic/orochimaru.webp" alt="Orochimaru" loading="lazy">
+        <figcaption>Orochimaru</figcaption>
+      </figure><figure data-nom="rock lee">
+        <img src="src/img/rushpic/rock_lee.webp" alt="Rock Lee" loading="lazy">
+        <figcaption>Rock Lee<span class="al">Lee</span></figcaption>
+      </figure><figure data-nom="sakura">
+        <img src="src/img/rushpic/sakura.webp" alt="Sakura" loading="lazy">
+        <figcaption>Sakura</figcaption>
+      </figure><figure data-nom="sasuke">
+        <img src="src/img/rushpic/sasuke.webp" alt="Sasuke" loading="lazy">
+        <figcaption>Sasuke</figcaption>
+      </figure><figure data-nom="shikamaru">
+        <img src="src/img/rushpic/shikamaru.webp" alt="Shikamaru" loading="lazy">
+        <figcaption>Shikamaru</figcaption>
+      </figure><figure data-nom="temari">
+        <img src="src/img/rushpic/temari.webp" alt="Temari" loading="lazy">
+        <figcaption>Temari</figcaption>
+      </figure><figure data-nom="tsunade">
+        <img src="src/img/rushpic/tsunade.webp" alt="Tsunade" loading="lazy">
+        <figcaption>Tsunade</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Bleach"
+           data-big3="true" data-main="true">
+    <h2>Bleach
+      <span class="n">23</span>
+      <span class="tag big3">Big 3</span>
+      <span class="tag main">Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="aizen">
+        <img src="src/img/rushpic/aizen.webp" alt="Aizen" loading="lazy">
+        <figcaption>Aizen</figcaption>
+      </figure><figure data-nom="byakuya">
+        <img src="src/img/rushpic/byakuya.webp" alt="Byakuya" loading="lazy">
+        <figcaption>Byakuya</figcaption>
+      </figure><figure data-nom="gin">
+        <img src="src/img/rushpic/Gin.webp" alt="Gin" loading="lazy">
+        <figcaption>Gin<span class="al">ichimaru</span></figcaption>
+      </figure><figure data-nom="ginjo">
+        <img src="src/img/rushpic/ginjo.webp" alt="Ginjo" loading="lazy">
+        <figcaption>Ginjo</figcaption>
+      </figure><figure data-nom="grimmjow">
+        <img src="src/img/rushpic/grimmjow.webp" alt="Grimmjow" loading="lazy">
+        <figcaption>Grimmjow<span class="al">Grimjow</span></figcaption>
+      </figure><figure data-nom="halibel">
+        <img src="src/img/rushpic/halibel.webp" alt="Halibel" loading="lazy">
+        <figcaption>Halibel<span class="al">Hallibel · Harribel · Haribel</span></figcaption>
+      </figure><figure data-nom="hirako">
+        <img src="src/img/rushpic/hirako.webp" alt="Hirako" loading="lazy">
+        <figcaption>Hirako<span class="al">Shinji</span></figcaption>
+      </figure><figure data-nom="ichigo">
+        <img src="src/img/rushpic/ichigo.webp" alt="Ichigo" loading="lazy">
+        <figcaption>Ichigo</figcaption>
+      </figure><figure data-nom="ishida">
+        <img src="src/img/rushpic/ishida.webp" alt="Ishida" loading="lazy">
+        <figcaption>Ishida</figcaption>
+      </figure><figure data-nom="kyoraku">
+        <img src="src/img/rushpic/kyoraku.webp" alt="Kyoraku" loading="lazy">
+        <figcaption>Kyoraku<span class="al">Shunsui</span></figcaption>
+      </figure><figure data-nom="mayuri">
+        <img src="src/img/rushpic/mayuri.webp" alt="Mayuri" loading="lazy">
+        <figcaption>Mayuri</figcaption>
+      </figure><figure data-nom="orihime">
+        <img src="src/img/rushpic/orihime.webp" alt="Orihime" loading="lazy">
+        <figcaption>Orihime<span class="al">inoue</span></figcaption>
+      </figure><figure data-nom="rangiku">
+        <img src="src/img/rushpic/rangiku.webp" alt="Rangiku" loading="lazy">
+        <figcaption>Rangiku<span class="al">Matsumoto</span></figcaption>
+      </figure><figure data-nom="renji">
+        <img src="src/img/rushpic/renji.webp" alt="Renji" loading="lazy">
+        <figcaption>Renji<span class="al">abarai</span></figcaption>
+      </figure><figure data-nom="rukia">
+        <img src="src/img/rushpic/rukia.webp" alt="Rukia" loading="lazy">
+        <figcaption>Rukia</figcaption>
+      </figure><figure data-nom="soi fon">
+        <img src="src/img/rushpic/soifon.webp" alt="Soi Fon" loading="lazy">
+        <figcaption>Soi Fon</figcaption>
+      </figure><figure data-nom="stark">
+        <img src="src/img/rushpic/stark.webp" alt="Stark" loading="lazy">
+        <figcaption>Stark</figcaption>
+      </figure><figure data-nom="toshiro">
+        <img src="src/img/rushpic/toshiro.webp" alt="Toshiro" loading="lazy">
+        <figcaption>Toshiro<span class="al">Hitsugaya</span></figcaption>
+      </figure><figure data-nom="ulquiorra">
+        <img src="src/img/rushpic/ulquiorra.webp" alt="Ulquiorra" loading="lazy">
+        <figcaption>Ulquiorra</figcaption>
+      </figure><figure data-nom="unohana">
+        <img src="src/img/rushpic/unohana.webp" alt="Unohana" loading="lazy">
+        <figcaption>Unohana</figcaption>
+      </figure><figure data-nom="urahara">
+        <img src="src/img/rushpic/urahara.webp" alt="Urahara" loading="lazy">
+        <figcaption>Urahara<span class="al">kisuke</span></figcaption>
+      </figure><figure data-nom="yoruichi">
+        <img src="src/img/rushpic/yoruichi.webp" alt="Yoruichi" loading="lazy">
+        <figcaption>Yoruichi</figcaption>
+      </figure><figure data-nom="zaraki">
+        <img src="src/img/rushpic/zaraki.webp" alt="Zaraki" loading="lazy">
+        <figcaption>Zaraki<span class="al">kenpachi</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Dragon Ball"
+           data-big3="false" data-main="true">
+    <h2>Dragon Ball
+      <span class="n">20</span>
+      
+      <span class="tag main">Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="broly">
+        <img src="src/img/rushpic/broly.webp" alt="Broly" loading="lazy">
+        <figcaption>Broly</figcaption>
+      </figure><figure data-nom="bulma">
+        <img src="src/img/rushpic/bulma.webp" alt="Bulma" loading="lazy">
+        <figcaption>Bulma</figcaption>
+      </figure><figure data-nom="buu">
+        <img src="src/img/rushpic/buu.webp" alt="Buu" loading="lazy">
+        <figcaption>Buu<span class="al">Boo</span></figcaption>
+      </figure><figure data-nom="c-17">
+        <img src="src/img/rushpic/c17.webp" alt="C-17" loading="lazy">
+        <figcaption>C-17</figcaption>
+      </figure><figure data-nom="c-18">
+        <img src="src/img/rushpic/C-18.webp" alt="C-18" loading="lazy">
+        <figcaption>C-18<span class="al">C18 · C 18 · 18</span></figcaption>
+      </figure><figure data-nom="cell">
+        <img src="src/img/rushpic/cell.webp" alt="Cell" loading="lazy">
+        <figcaption>Cell</figcaption>
+      </figure><figure data-nom="freezer">
+        <img src="src/img/rushpic/frieza.webp" alt="Freezer" loading="lazy">
+        <figcaption>Freezer<span class="al">Frieza</span></figcaption>
+      </figure><figure data-nom="ginyu">
+        <img src="src/img/rushpic/ginyu.webp" alt="Ginyu" loading="lazy">
+        <figcaption>Ginyu</figcaption>
+      </figure><figure data-nom="gohan">
+        <img src="src/img/rushpic/gohan.webp" alt="Gohan" loading="lazy">
+        <figcaption>Gohan</figcaption>
+      </figure><figure data-nom="goku">
+        <img src="src/img/rushpic/goku.webp" alt="Goku" loading="lazy">
+        <figcaption>Goku</figcaption>
+      </figure><figure data-nom="goten">
+        <img src="src/img/rushpic/Goten.webp" alt="Goten" loading="lazy">
+        <figcaption>Goten</figcaption>
+      </figure><figure data-nom="krilin">
+        <img src="src/img/rushpic/krillin.webp" alt="Krilin" loading="lazy">
+        <figcaption>Krilin<span class="al">Krilin</span></figcaption>
+      </figure><figure data-nom="nappa">
+        <img src="src/img/rushpic/nappa.webp" alt="Nappa" loading="lazy">
+        <figcaption>Nappa</figcaption>
+      </figure><figure data-nom="pan">
+        <img src="src/img/rushpic/pan.webp" alt="Pan" loading="lazy">
+        <figcaption>Pan</figcaption>
+      </figure><figure data-nom="piccolo">
+        <img src="src/img/rushpic/piccolo.webp" alt="Piccolo" loading="lazy">
+        <figcaption>Piccolo<span class="al">petit coeur · picolo</span></figcaption>
+      </figure><figure data-nom="trunks">
+        <img src="src/img/rushpic/trunks.webp" alt="Trunks" loading="lazy">
+        <figcaption>Trunks</figcaption>
+      </figure><figure data-nom="vegeta">
+        <img src="src/img/rushpic/vegeta.webp" alt="Vegeta" loading="lazy">
+        <figcaption>Vegeta</figcaption>
+      </figure><figure data-nom="videl">
+        <img src="src/img/rushpic/videl.webp" alt="Videl" loading="lazy">
+        <figcaption>Videl</figcaption>
+      </figure><figure data-nom="whis">
+        <img src="src/img/rushpic/whis.webp" alt="Whis" loading="lazy">
+        <figcaption>Whis</figcaption>
+      </figure><figure data-nom="yamcha">
+        <img src="src/img/rushpic/yamcha.webp" alt="Yamcha" loading="lazy">
+        <figcaption>Yamcha</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Demon Slayer"
+           data-big3="false" data-main="true">
+    <h2>Demon Slayer
+      <span class="n">15</span>
+      
+      <span class="tag main">Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="akaza">
+        <img src="src/img/rushpic/akaza.webp" alt="Akaza" loading="lazy">
+        <figcaption>Akaza</figcaption>
+      </figure><figure data-nom="doma">
+        <img src="src/img/rushpic/doma.webp" alt="Doma" loading="lazy">
+        <figcaption>Doma<span class="al">Douma</span></figcaption>
+      </figure><figure data-nom="giyu">
+        <img src="src/img/rushpic/giyu.webp" alt="Giyu" loading="lazy">
+        <figcaption>Giyu<span class="al">tomioka</span></figcaption>
+      </figure><figure data-nom="gyomei">
+        <img src="src/img/rushpic/gyomei.webp" alt="Gyomei" loading="lazy">
+        <figcaption>Gyomei</figcaption>
+      </figure><figure data-nom="inosuke">
+        <img src="src/img/rushpic/inosuke.webp" alt="Inosuke" loading="lazy">
+        <figcaption>Inosuke</figcaption>
+      </figure><figure data-nom="mitsuri">
+        <img src="src/img/rushpic/mitsuri.webp" alt="Mitsuri" loading="lazy">
+        <figcaption>Mitsuri<span class="al">kanroji</span></figcaption>
+      </figure><figure data-nom="muzan">
+        <img src="src/img/rushpic/muzan.webp" alt="Muzan" loading="lazy">
+        <figcaption>Muzan</figcaption>
+      </figure><figure data-nom="nezuko">
+        <img src="src/img/rushpic/nezuko.webp" alt="Nezuko" loading="lazy">
+        <figcaption>Nezuko</figcaption>
+      </figure><figure data-nom="obanai">
+        <img src="src/img/rushpic/obanai.webp" alt="Obanai" loading="lazy">
+        <figcaption>Obanai</figcaption>
+      </figure><figure data-nom="rengoku">
+        <img src="src/img/rushpic/rengoku.webp" alt="Rengoku" loading="lazy">
+        <figcaption>Rengoku</figcaption>
+      </figure><figure data-nom="sanemi">
+        <img src="src/img/rushpic/sanemi.webp" alt="Sanemi" loading="lazy">
+        <figcaption>Sanemi</figcaption>
+      </figure><figure data-nom="shinobu">
+        <img src="src/img/rushpic/shinobu.webp" alt="Shinobu" loading="lazy">
+        <figcaption>Shinobu</figcaption>
+      </figure><figure data-nom="tanjiro">
+        <img src="src/img/rushpic/tanjiro.webp" alt="Tanjiro" loading="lazy">
+        <figcaption>Tanjiro</figcaption>
+      </figure><figure data-nom="tokito">
+        <img src="src/img/rushpic/tokito.webp" alt="Tokito" loading="lazy">
+        <figcaption>Tokito<span class="al">muichiro</span></figcaption>
+      </figure><figure data-nom="zenitsu">
+        <img src="src/img/rushpic/zenitsu.webp" alt="Zenitsu" loading="lazy">
+        <figcaption>Zenitsu</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="JoJo"
+           data-big3="false" data-main="true">
+    <h2>JoJo
+      <span class="n">14</span>
+      
+      <span class="tag main">Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="bruno">
+        <img src="src/img/rushpic/bruno.webp" alt="Bruno" loading="lazy">
+        <figcaption>Bruno</figcaption>
+      </figure><figure data-nom="diavolo">
+        <img src="src/img/rushpic/diavolo.webp" alt="Diavolo" loading="lazy">
+        <figcaption>Diavolo</figcaption>
+      </figure><figure data-nom="dio">
+        <img src="src/img/rushpic/dio.webp" alt="Dio" loading="lazy">
+        <figcaption>Dio</figcaption>
+      </figure><figure data-nom="ff">
+        <img src="src/img/rushpic/ff.webp" alt="FF" loading="lazy">
+        <figcaption>FF<span class="al">f f</span></figcaption>
+      </figure><figure data-nom="giorno">
+        <img src="src/img/rushpic/giorno.webp" alt="Giorno" loading="lazy">
+        <figcaption>Giorno</figcaption>
+      </figure><figure data-nom="gyro">
+        <img src="src/img/rushpic/gyro.webp" alt="Gyro" loading="lazy">
+        <figcaption>Gyro</figcaption>
+      </figure><figure data-nom="johnny">
+        <img src="src/img/rushpic/johnny.webp" alt="Johnny" loading="lazy">
+        <figcaption>Johnny</figcaption>
+      </figure><figure data-nom="jolyne">
+        <img src="src/img/rushpic/jolyne.webp" alt="Jolyne" loading="lazy">
+        <figcaption>Jolyne</figcaption>
+      </figure><figure data-nom="joseph">
+        <img src="src/img/rushpic/joseph.webp" alt="Joseph" loading="lazy">
+        <figcaption>Joseph</figcaption>
+      </figure><figure data-nom="josuke">
+        <img src="src/img/rushpic/josuke.webp" alt="Josuke" loading="lazy">
+        <figcaption>Josuke</figcaption>
+      </figure><figure data-nom="jotaro">
+        <img src="src/img/rushpic/jotaro.webp" alt="Jotaro" loading="lazy">
+        <figcaption>Jotaro</figcaption>
+      </figure><figure data-nom="kira">
+        <img src="src/img/rushpic/kira.webp" alt="Kira" loading="lazy">
+        <figcaption>Kira</figcaption>
+      </figure><figure data-nom="koichi">
+        <img src="src/img/rushpic/koichi.webp" alt="Koichi" loading="lazy">
+        <figcaption>Koichi</figcaption>
+      </figure><figure data-nom="polnareff">
+        <img src="src/img/rushpic/polnareff.webp" alt="Polnareff" loading="lazy">
+        <figcaption>Polnareff<span class="al">jean pierre · jean-pierre</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="My Hero Academia"
+           data-big3="false" data-main="true">
+    <h2>My Hero Academia
+      <span class="n">14</span>
+      
+      <span class="tag main">Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="aizawa">
+        <img src="src/img/rushpic/aizawa.webp" alt="Aizawa" loading="lazy">
+        <figcaption>Aizawa<span class="al">shota</span></figcaption>
+      </figure><figure data-nom="bakugo">
+        <img src="src/img/rushpic/bakugo.webp" alt="Bakugo" loading="lazy">
+        <figcaption>Bakugo<span class="al">Katsuki</span></figcaption>
+      </figure><figure data-nom="deku">
+        <img src="src/img/rushpic/deku.webp" alt="Deku" loading="lazy">
+        <figcaption>Deku<span class="al">Izuku · Midoriya</span></figcaption>
+      </figure><figure data-nom="denki">
+        <img src="src/img/rushpic/denki.webp" alt="Denki" loading="lazy">
+        <figcaption>Denki</figcaption>
+      </figure><figure data-nom="endeavor">
+        <img src="src/img/rushpic/endeavor.webp" alt="Endeavor" loading="lazy">
+        <figcaption>Endeavor</figcaption>
+      </figure><figure data-nom="hawks">
+        <img src="src/img/rushpic/hawks.webp" alt="Hawks" loading="lazy">
+        <figcaption>Hawks</figcaption>
+      </figure><figure data-nom="iida">
+        <img src="src/img/rushpic/iida.webp" alt="Iida" loading="lazy">
+        <figcaption>Iida<span class="al">tenya · ida</span></figcaption>
+      </figure><figure data-nom="kirishima">
+        <img src="src/img/rushpic/kirishima.webp" alt="Kirishima" loading="lazy">
+        <figcaption>Kirishima</figcaption>
+      </figure><figure data-nom="mirio">
+        <img src="src/img/rushpic/mirio.webp" alt="Mirio" loading="lazy">
+        <figcaption>Mirio<span class="al">lemillion · lemilion</span></figcaption>
+      </figure><figure data-nom="overhaul">
+        <img src="src/img/rushpic/overhaul.webp" alt="Overhaul" loading="lazy">
+        <figcaption>Overhaul</figcaption>
+      </figure><figure data-nom="shigaraki">
+        <img src="src/img/rushpic/shigaraki.webp" alt="Shigaraki" loading="lazy">
+        <figcaption>Shigaraki<span class="al">Tomura</span></figcaption>
+      </figure><figure data-nom="todoroki">
+        <img src="src/img/rushpic/todoroki.webp" alt="Todoroki" loading="lazy">
+        <figcaption>Todoroki<span class="al">Shoto</span></figcaption>
+      </figure><figure data-nom="toga">
+        <img src="src/img/rushpic/toga.webp" alt="Toga" loading="lazy">
+        <figcaption>Toga<span class="al">himiko</span></figcaption>
+      </figure><figure data-nom="uraraka">
+        <img src="src/img/rushpic/uraraka.webp" alt="Uraraka" loading="lazy">
+        <figcaption>Uraraka<span class="al">Ochaco</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Attack on Titan"
+           data-big3="false" data-main="true">
+    <h2>Attack on Titan
+      <span class="n">13</span>
+      
+      <span class="tag main">Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="annie">
+        <img src="src/img/rushpic/annie.webp" alt="Annie" loading="lazy">
+        <figcaption>Annie</figcaption>
+      </figure><figure data-nom="armin">
+        <img src="src/img/rushpic/armin.webp" alt="Armin" loading="lazy">
+        <figcaption>Armin</figcaption>
+      </figure><figure data-nom="eren">
+        <img src="src/img/rushpic/eren.webp" alt="Eren" loading="lazy">
+        <figcaption>Eren</figcaption>
+      </figure><figure data-nom="erwin">
+        <img src="src/img/rushpic/erwin.webp" alt="Erwin" loading="lazy">
+        <figcaption>Erwin</figcaption>
+      </figure><figure data-nom="hange">
+        <img src="src/img/rushpic/hange.webp" alt="Hange" loading="lazy">
+        <figcaption>Hange<span class="al">hanje</span></figcaption>
+      </figure><figure data-nom="jean">
+        <img src="src/img/rushpic/jean.webp" alt="Jean" loading="lazy">
+        <figcaption>Jean</figcaption>
+      </figure><figure data-nom="krista">
+        <img src="src/img/rushpic/krista.webp" alt="Krista" loading="lazy">
+        <figcaption>Krista<span class="al">historia</span></figcaption>
+      </figure><figure data-nom="levi">
+        <img src="src/img/rushpic/levi.webp" alt="Levi" loading="lazy">
+        <figcaption>Levi<span class="al">livaille · rivaille · livai</span></figcaption>
+      </figure><figure data-nom="mikasa">
+        <img src="src/img/rushpic/mikasa.webp" alt="Mikasa" loading="lazy">
+        <figcaption>Mikasa</figcaption>
+      </figure><figure data-nom="reiner">
+        <img src="src/img/rushpic/reiner.webp" alt="Reiner" loading="lazy">
+        <figcaption>Reiner</figcaption>
+      </figure><figure data-nom="sasha">
+        <img src="src/img/rushpic/sasha.webp" alt="Sasha" loading="lazy">
+        <figcaption>Sasha<span class="al">sacha · sascha</span></figcaption>
+      </figure><figure data-nom="ymir">
+        <img src="src/img/rushpic/ymir.webp" alt="Ymir" loading="lazy">
+        <figcaption>Ymir</figcaption>
+      </figure><figure data-nom="zeke">
+        <img src="src/img/rushpic/zeke.webp" alt="Zeke" loading="lazy">
+        <figcaption>Zeke<span class="al">sieg</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Black Clover"
+           data-big3="false" data-main="true">
+    <h2>Black Clover
+      <span class="n">13</span>
+      
+      <span class="tag main">Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="asta">
+        <img src="src/img/rushpic/asta.webp" alt="Asta" loading="lazy">
+        <figcaption>Asta</figcaption>
+      </figure><figure data-nom="charlotte">
+        <img src="src/img/rushpic/charlotte.webp" alt="Charlotte" loading="lazy">
+        <figcaption>Charlotte</figcaption>
+      </figure><figure data-nom="julius">
+        <img src="src/img/rushpic/julius.webp" alt="Julius" loading="lazy">
+        <figcaption>Julius</figcaption>
+      </figure><figure data-nom="luck">
+        <img src="src/img/rushpic/luck.webp" alt="Luck" loading="lazy">
+        <figcaption>Luck</figcaption>
+      </figure><figure data-nom="magna">
+        <img src="src/img/rushpic/magna.webp" alt="Magna" loading="lazy">
+        <figcaption>Magna</figcaption>
+      </figure><figure data-nom="mereoleona">
+        <img src="src/img/rushpic/mereoleona.webp" alt="Mereoleona" loading="lazy">
+        <figcaption>Mereoleona</figcaption>
+      </figure><figure data-nom="mimosa">
+        <img src="src/img/rushpic/mimosa.webp" alt="Mimosa" loading="lazy">
+        <figcaption>Mimosa</figcaption>
+      </figure><figure data-nom="nero">
+        <img src="src/img/rushpic/nero.webp" alt="Nero" loading="lazy">
+        <figcaption>Nero<span class="al">Secre</span></figcaption>
+      </figure><figure data-nom="noelle">
+        <img src="src/img/rushpic/noelle.webp" alt="Noelle" loading="lazy">
+        <figcaption>Noelle</figcaption>
+      </figure><figure data-nom="nozel">
+        <img src="src/img/rushpic/nozel.webp" alt="Nozel" loading="lazy">
+        <figcaption>Nozel</figcaption>
+      </figure><figure data-nom="vanessa">
+        <img src="src/img/rushpic/vanessa.webp" alt="Vanessa" loading="lazy">
+        <figcaption>Vanessa</figcaption>
+      </figure><figure data-nom="yami">
+        <img src="src/img/rushpic/yami.webp" alt="Yami" loading="lazy">
+        <figcaption>Yami</figcaption>
+      </figure><figure data-nom="yuno">
+        <img src="src/img/rushpic/yuno.webp" alt="Yuno" loading="lazy">
+        <figcaption>Yuno</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Jujutsu Kaisen"
+           data-big3="false" data-main="true">
+    <h2>Jujutsu Kaisen
+      <span class="n">13</span>
+      
+      <span class="tag main">Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="choso">
+        <img src="src/img/rushpic/choso.webp" alt="Choso" loading="lazy">
+        <figcaption>Choso</figcaption>
+      </figure><figure data-nom="geto">
+        <img src="src/img/rushpic/geto.webp" alt="Geto" loading="lazy">
+        <figcaption>Geto</figcaption>
+      </figure><figure data-nom="gojo">
+        <img src="src/img/rushpic/gojo.webp" alt="Gojo" loading="lazy">
+        <figcaption>Gojo</figcaption>
+      </figure><figure data-nom="itadori">
+        <img src="src/img/rushpic/itadori.webp" alt="Itadori" loading="lazy">
+        <figcaption>Itadori<span class="al">Yuji</span></figcaption>
+      </figure><figure data-nom="mahito">
+        <img src="src/img/rushpic/mahito.webp" alt="Mahito" loading="lazy">
+        <figcaption>Mahito</figcaption>
+      </figure><figure data-nom="megumi">
+        <img src="src/img/rushpic/megumi.webp" alt="Megumi" loading="lazy">
+        <figcaption>Megumi</figcaption>
+      </figure><figure data-nom="nanami">
+        <img src="src/img/rushpic/nanami.webp" alt="Nanami" loading="lazy">
+        <figcaption>Nanami</figcaption>
+      </figure><figure data-nom="nobara">
+        <img src="src/img/rushpic/nobara.webp" alt="Nobara" loading="lazy">
+        <figcaption>Nobara</figcaption>
+      </figure><figure data-nom="sukuna">
+        <img src="src/img/rushpic/sukuna.webp" alt="Sukuna" loading="lazy">
+        <figcaption>Sukuna</figcaption>
+      </figure><figure data-nom="todo">
+        <img src="src/img/rushpic/todo.webp" alt="Todo" loading="lazy">
+        <figcaption>Todo<span class="al">aoi</span></figcaption>
+      </figure><figure data-nom="toge">
+        <img src="src/img/rushpic/toge.webp" alt="Toge" loading="lazy">
+        <figcaption>Toge<span class="al">inumaki</span></figcaption>
+      </figure><figure data-nom="toji">
+        <img src="src/img/rushpic/toji.webp" alt="Toji" loading="lazy">
+        <figcaption>Toji</figcaption>
+      </figure><figure data-nom="yuta">
+        <img src="src/img/rushpic/yuta.webp" alt="Yuta" loading="lazy">
+        <figcaption>Yuta</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Hunter Hunter"
+           data-big3="false" data-main="true">
+    <h2>Hunter Hunter
+      <span class="n">11</span>
+      
+      <span class="tag main">Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="chrollo">
+        <img src="src/img/rushpic/chrollo.webp" alt="Chrollo" loading="lazy">
+        <figcaption>Chrollo<span class="al">kuroro</span></figcaption>
+      </figure><figure data-nom="feitan">
+        <img src="src/img/rushpic/feitan.webp" alt="Feitan" loading="lazy">
+        <figcaption>Feitan</figcaption>
+      </figure><figure data-nom="gon">
+        <img src="src/img/rushpic/gon.webp" alt="Gon" loading="lazy">
+        <figcaption>Gon</figcaption>
+      </figure><figure data-nom="hisoka">
+        <img src="src/img/rushpic/hisoka.webp" alt="Hisoka" loading="lazy">
+        <figcaption>Hisoka</figcaption>
+      </figure><figure data-nom="illumi">
+        <img src="src/img/rushpic/illumi.webp" alt="Illumi" loading="lazy">
+        <figcaption>Illumi</figcaption>
+      </figure><figure data-nom="killua">
+        <img src="src/img/rushpic/killua.webp" alt="Killua" loading="lazy">
+        <figcaption>Killua<span class="al">kirua</span></figcaption>
+      </figure><figure data-nom="kurapika">
+        <img src="src/img/rushpic/kurapika.webp" alt="Kurapika" loading="lazy">
+        <figcaption>Kurapika</figcaption>
+      </figure><figure data-nom="leorio">
+        <img src="src/img/rushpic/leorio.webp" alt="Leorio" loading="lazy">
+        <figcaption>Leorio</figcaption>
+      </figure><figure data-nom="meruem">
+        <img src="src/img/rushpic/meruem.webp" alt="Meruem" loading="lazy">
+        <figcaption>Meruem</figcaption>
+      </figure><figure data-nom="netero">
+        <img src="src/img/rushpic/netero.webp" alt="Netero" loading="lazy">
+        <figcaption>Netero</figcaption>
+      </figure><figure data-nom="nobunaga">
+        <img src="src/img/rushpic/nobunaga.webp" alt="Nobunaga" loading="lazy">
+        <figcaption>Nobunaga</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Reborn"
+           data-big3="false" data-main="false">
+    <h2>Reborn
+      <span class="n">9</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="gokudera">
+        <img src="src/img/rushpic/gokudera.webp" alt="Gokudera" loading="lazy">
+        <figcaption>Gokudera</figcaption>
+      </figure><figure data-nom="hibari">
+        <img src="src/img/rushpic/hibari.webp" alt="Hibari" loading="lazy">
+        <figcaption>Hibari<span class="al">kyouya · kyoya</span></figcaption>
+      </figure><figure data-nom="lambo">
+        <img src="src/img/rushpic/lambo.webp" alt="Lambo" loading="lazy">
+        <figcaption>Lambo</figcaption>
+      </figure><figure data-nom="mukuro">
+        <img src="src/img/rushpic/mukuro.webp" alt="Mukuro" loading="lazy">
+        <figcaption>Mukuro<span class="al">rokudo</span></figcaption>
+      </figure><figure data-nom="reborn">
+        <img src="src/img/rushpic/reborn.webp" alt="Reborn" loading="lazy">
+        <figcaption>Reborn</figcaption>
+      </figure><figure data-nom="ryohei">
+        <img src="src/img/rushpic/ryohei.webp" alt="Ryohei" loading="lazy">
+        <figcaption>Ryohei<span class="al">sasagawa · ryouhei</span></figcaption>
+      </figure><figure data-nom="tsuna">
+        <img src="src/img/rushpic/tsuna.webp" alt="Tsuna" loading="lazy">
+        <figcaption>Tsuna<span class="al">sawada · tsunayoshi</span></figcaption>
+      </figure><figure data-nom="xanxus">
+        <img src="src/img/rushpic/xanxus.webp" alt="Xanxus" loading="lazy">
+        <figcaption>Xanxus</figcaption>
+      </figure><figure data-nom="yamamoto">
+        <img src="src/img/rushpic/yamamoto.webp" alt="Yamamoto" loading="lazy">
+        <figcaption>Yamamoto</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Fairy Tail"
+           data-big3="false" data-main="true">
+    <h2>Fairy Tail
+      <span class="n">8</span>
+      
+      <span class="tag main">Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="erza">
+        <img src="src/img/rushpic/erza.webp" alt="Erza" loading="lazy">
+        <figcaption>Erza</figcaption>
+      </figure><figure data-nom="gajeel">
+        <img src="src/img/rushpic/gajeel.webp" alt="Gajeel" loading="lazy">
+        <figcaption>Gajeel</figcaption>
+      </figure><figure data-nom="gray">
+        <img src="src/img/rushpic/gray.webp" alt="Gray" loading="lazy">
+        <figcaption>Gray</figcaption>
+      </figure><figure data-nom="juvia">
+        <img src="src/img/rushpic/juvia.webp" alt="Juvia" loading="lazy">
+        <figcaption>Juvia<span class="al">jubia</span></figcaption>
+      </figure><figure data-nom="laxus">
+        <img src="src/img/rushpic/laxus.webp" alt="Laxus" loading="lazy">
+        <figcaption>Laxus<span class="al">luxus</span></figcaption>
+      </figure><figure data-nom="lucy">
+        <img src="src/img/rushpic/lucy.webp" alt="Lucy" loading="lazy">
+        <figcaption>Lucy</figcaption>
+      </figure><figure data-nom="natsu">
+        <img src="src/img/rushpic/natsu.webp" alt="Natsu" loading="lazy">
+        <figcaption>Natsu</figcaption>
+      </figure><figure data-nom="zeref">
+        <img src="src/img/rushpic/zeref.webp" alt="Zeref" loading="lazy">
+        <figcaption>Zeref<span class="al">zeleph · Zelef</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Fullmetal Alchemist"
+           data-big3="false" data-main="true">
+    <h2>Fullmetal Alchemist
+      <span class="n">8</span>
+      
+      <span class="tag main">Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="alphonse">
+        <img src="src/img/rushpic/alphonse.webp" alt="Alphonse" loading="lazy">
+        <figcaption>Alphonse</figcaption>
+      </figure><figure data-nom="edward">
+        <img src="src/img/rushpic/edward.webp" alt="Edward" loading="lazy">
+        <figcaption>Edward</figcaption>
+      </figure><figure data-nom="envy">
+        <img src="src/img/rushpic/envy.webp" alt="Envy" loading="lazy">
+        <figcaption>Envy</figcaption>
+      </figure><figure data-nom="greed">
+        <img src="src/img/rushpic/greed.webp" alt="Greed" loading="lazy">
+        <figcaption>Greed</figcaption>
+      </figure><figure data-nom="lust">
+        <img src="src/img/rushpic/lust.webp" alt="Lust" loading="lazy">
+        <figcaption>Lust</figcaption>
+      </figure><figure data-nom="roy mustang">
+        <img src="src/img/rushpic/roy_mustang.webp" alt="Roy Mustang" loading="lazy">
+        <figcaption>Roy Mustang<span class="al">Mustang · Roy</span></figcaption>
+      </figure><figure data-nom="scar">
+        <img src="src/img/rushpic/scar.webp" alt="Scar" loading="lazy">
+        <figcaption>Scar</figcaption>
+      </figure><figure data-nom="winry">
+        <img src="src/img/rushpic/winry.webp" alt="Winry" loading="lazy">
+        <figcaption>Winry</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Seven Deadly Sins"
+           data-big3="false" data-main="true">
+    <h2>Seven Deadly Sins
+      <span class="n">8</span>
+      
+      <span class="tag main">Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="ban">
+        <img src="src/img/rushpic/ban.webp" alt="Ban" loading="lazy">
+        <figcaption>Ban</figcaption>
+      </figure><figure data-nom="diane">
+        <img src="src/img/rushpic/diane.webp" alt="Diane" loading="lazy">
+        <figcaption>Diane</figcaption>
+      </figure><figure data-nom="elizabeth">
+        <img src="src/img/rushpic/elizabeth.webp" alt="Elizabeth" loading="lazy">
+        <figcaption>Elizabeth</figcaption>
+      </figure><figure data-nom="escanor">
+        <img src="src/img/rushpic/escanor.webp" alt="Escanor" loading="lazy">
+        <figcaption>Escanor</figcaption>
+      </figure><figure data-nom="gowther">
+        <img src="src/img/rushpic/gowther.webp" alt="Gowther" loading="lazy">
+        <figcaption>Gowther</figcaption>
+      </figure><figure data-nom="king">
+        <img src="src/img/rushpic/king.webp" alt="King" loading="lazy">
+        <figcaption>King</figcaption>
+      </figure><figure data-nom="meliodas">
+        <img src="src/img/rushpic/meliodas.webp" alt="Meliodas" loading="lazy">
+        <figcaption>Meliodas</figcaption>
+      </figure><figure data-nom="merlin">
+        <img src="src/img/rushpic/merlin.webp" alt="Merlin" loading="lazy">
+        <figcaption>Merlin</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Blue Lock"
+           data-big3="false" data-main="false">
+    <h2>Blue Lock
+      <span class="n">6</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="bachira">
+        <img src="src/img/rushpic/bachira.webp" alt="Bachira" loading="lazy">
+        <figcaption>Bachira</figcaption>
+      </figure><figure data-nom="baro">
+        <img src="src/img/rushpic/baro.webp" alt="baro" loading="lazy">
+        <figcaption>baro<span class="al">barou</span></figcaption>
+      </figure><figure data-nom="chigiri">
+        <img src="src/img/rushpic/chigiri.webp" alt="chigiri" loading="lazy">
+        <figcaption>chigiri</figcaption>
+      </figure><figure data-nom="isagi">
+        <img src="src/img/rushpic/isagi.webp" alt="Isagi" loading="lazy">
+        <figcaption>Isagi</figcaption>
+      </figure><figure data-nom="nagi">
+        <img src="src/img/rushpic/nagi.webp" alt="Nagi" loading="lazy">
+        <figcaption>Nagi</figcaption>
+      </figure><figure data-nom="rin">
+        <img src="src/img/rushpic/rinitoshi.webp" alt="Rin" loading="lazy">
+        <figcaption>Rin<span class="al">itoshi</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Fate"
+           data-big3="false" data-main="false">
+    <h2>Fate
+      <span class="n">6</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="archer">
+        <img src="src/img/rushpic/archer.webp" alt="Archer" loading="lazy">
+        <figcaption>Archer</figcaption>
+      </figure><figure data-nom="gilgamesh">
+        <img src="src/img/rushpic/gilgamesh.webp" alt="Gilgamesh" loading="lazy">
+        <figcaption>Gilgamesh</figcaption>
+      </figure><figure data-nom="lancer">
+        <img src="src/img/rushpic/lancer.webp" alt="Lancer" loading="lazy">
+        <figcaption>Lancer</figcaption>
+      </figure><figure data-nom="rin">
+        <img src="src/img/rushpic/rin.webp" alt="Rin" loading="lazy">
+        <figcaption>Rin</figcaption>
+      </figure><figure data-nom="saber">
+        <img src="src/img/rushpic/saber.webp" alt="Saber" loading="lazy">
+        <figcaption>Saber</figcaption>
+      </figure><figure data-nom="sakura">
+        <img src="src/img/rushpic/sakuramatou.webp" alt="Sakura" loading="lazy">
+        <figcaption>Sakura</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Haikyuu"
+           data-big3="false" data-main="false">
+    <h2>Haikyuu
+      <span class="n">6</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="hinata">
+        <img src="src/img/rushpic/shoyo.webp" alt="Hinata" loading="lazy">
+        <figcaption>Hinata<span class="al">shoyo</span></figcaption>
+      </figure><figure data-nom="kageyama">
+        <img src="src/img/rushpic/kageyama.webp" alt="Kageyama" loading="lazy">
+        <figcaption>Kageyama</figcaption>
+      </figure><figure data-nom="kenma">
+        <img src="src/img/rushpic/kenma.webp" alt="Kenma" loading="lazy">
+        <figcaption>Kenma</figcaption>
+      </figure><figure data-nom="kuroo">
+        <img src="src/img/rushpic/kuroo.webp" alt="Kuroo" loading="lazy">
+        <figcaption>Kuroo<span class="al">kuro</span></figcaption>
+      </figure><figure data-nom="nishinoya">
+        <img src="src/img/rushpic/nishinoya.webp" alt="Nishinoya" loading="lazy">
+        <figcaption>Nishinoya<span class="al">noya</span></figcaption>
+      </figure><figure data-nom="tsukishima">
+        <img src="src/img/rushpic/tsukishima.webp" alt="Tsukishima" loading="lazy">
+        <figcaption>Tsukishima</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Saint Seiya"
+           data-big3="false" data-main="false">
+    <h2>Saint Seiya
+      <span class="n">6</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="hyoga">
+        <img src="src/img/rushpic/hyoga.webp" alt="Hyoga" loading="lazy">
+        <figcaption>Hyoga<span class="al">hyouga</span></figcaption>
+      </figure><figure data-nom="ikki">
+        <img src="src/img/rushpic/ikki.webp" alt="ikki" loading="lazy">
+        <figcaption>ikki</figcaption>
+      </figure><figure data-nom="saga">
+        <img src="src/img/rushpic/saga.webp" alt="Saga" loading="lazy">
+        <figcaption>Saga</figcaption>
+      </figure><figure data-nom="seiya">
+        <img src="src/img/rushpic/seiya.webp" alt="Seiya" loading="lazy">
+        <figcaption>Seiya</figcaption>
+      </figure><figure data-nom="shiryu">
+        <img src="src/img/rushpic/shiryu.webp" alt="Shiryu" loading="lazy">
+        <figcaption>Shiryu</figcaption>
+      </figure><figure data-nom="shun">
+        <img src="src/img/rushpic/shun.webp" alt="Shun" loading="lazy">
+        <figcaption>Shun</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Chainsaw Man"
+           data-big3="false" data-main="true">
+    <h2>Chainsaw Man
+      <span class="n">5</span>
+      
+      <span class="tag main">Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="aki">
+        <img src="src/img/rushpic/aki.webp" alt="Aki" loading="lazy">
+        <figcaption>Aki</figcaption>
+      </figure><figure data-nom="denji">
+        <img src="src/img/rushpic/denji.webp" alt="Denji" loading="lazy">
+        <figcaption>Denji<span class="al">Chainsaw Man</span></figcaption>
+      </figure><figure data-nom="makima">
+        <img src="src/img/rushpic/makima.webp" alt="Makima" loading="lazy">
+        <figcaption>Makima</figcaption>
+      </figure><figure data-nom="power">
+        <img src="src/img/rushpic/power.webp" alt="Power" loading="lazy">
+        <figcaption>Power</figcaption>
+      </figure><figure data-nom="reze">
+        <img src="src/img/rushpic/reze.webp" alt="Reze" loading="lazy">
+        <figcaption>Reze</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Gintama"
+           data-big3="false" data-main="false">
+    <h2>Gintama
+      <span class="n">4</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="gintoki">
+        <img src="src/img/rushpic/gintoki.webp" alt="Gintoki" loading="lazy">
+        <figcaption>Gintoki</figcaption>
+      </figure><figure data-nom="hijikata">
+        <img src="src/img/rushpic/hijikata.webp" alt="Hijikata" loading="lazy">
+        <figcaption>Hijikata</figcaption>
+      </figure><figure data-nom="katsura">
+        <img src="src/img/rushpic/katsura.webp" alt="Katsura" loading="lazy">
+        <figcaption>Katsura<span class="al">zura</span></figcaption>
+      </figure><figure data-nom="takasugi">
+        <img src="src/img/rushpic/takasugi.webp" alt="Takasugi" loading="lazy">
+        <figcaption>Takasugi</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Re:Zero"
+           data-big3="false" data-main="false">
+    <h2>Re:Zero
+      <span class="n">4</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="emilia">
+        <img src="src/img/rushpic/emilia.webp" alt="Emilia" loading="lazy">
+        <figcaption>Emilia</figcaption>
+      </figure><figure data-nom="ram">
+        <img src="src/img/rushpic/ram.webp" alt="Ram" loading="lazy">
+        <figcaption>Ram</figcaption>
+      </figure><figure data-nom="rem">
+        <img src="src/img/rushpic/rem.webp" alt="Rem" loading="lazy">
+        <figcaption>Rem</figcaption>
+      </figure><figure data-nom="subaru">
+        <img src="src/img/rushpic/subaru.webp" alt="Subaru" loading="lazy">
+        <figcaption>Subaru</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Kuroko no Basket"
+           data-big3="false" data-main="true">
+    <h2>Kuroko no Basket
+      <span class="n">3</span>
+      
+      <span class="tag main">Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="akashi">
+        <img src="src/img/rushpic/akashi.webp" alt="Akashi" loading="lazy">
+        <figcaption>Akashi</figcaption>
+      </figure><figure data-nom="aomine">
+        <img src="src/img/rushpic/aomine.webp" alt="Aomine" loading="lazy">
+        <figcaption>Aomine</figcaption>
+      </figure><figure data-nom="midorima">
+        <img src="src/img/rushpic/midorima.webp" alt="Midorima" loading="lazy">
+        <figcaption>Midorima</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="One Punch Man"
+           data-big3="false" data-main="false">
+    <h2>One Punch Man
+      <span class="n">3</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="boros">
+        <img src="src/img/rushpic/boros.webp" alt="Boros" loading="lazy">
+        <figcaption>Boros</figcaption>
+      </figure><figure data-nom="genos">
+        <img src="src/img/rushpic/genos.webp" alt="Genos" loading="lazy">
+        <figcaption>Genos</figcaption>
+      </figure><figure data-nom="saitama">
+        <img src="src/img/rushpic/saitama.webp" alt="Saitama" loading="lazy">
+        <figcaption>Saitama</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Soul Eater"
+           data-big3="false" data-main="false">
+    <h2>Soul Eater
+      <span class="n">3</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="black star">
+        <img src="src/img/rushpic/blackstar.webp" alt="Black star" loading="lazy">
+        <figcaption>Black star<span class="al">Black Star</span></figcaption>
+      </figure><figure data-nom="death the kid">
+        <img src="src/img/rushpic/deaththekid.webp" alt="Death the Kid" loading="lazy">
+        <figcaption>Death the Kid<span class="al">kid · kid the death</span></figcaption>
+      </figure><figure data-nom="soul">
+        <img src="src/img/rushpic/soul.webp" alt="Soul" loading="lazy">
+        <figcaption>Soul</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Spy Family"
+           data-big3="false" data-main="false">
+    <h2>Spy Family
+      <span class="n">3</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="anya">
+        <img src="src/img/rushpic/anya.webp" alt="Anya" loading="lazy">
+        <figcaption>Anya</figcaption>
+      </figure><figure data-nom="loid">
+        <img src="src/img/rushpic/loid.webp" alt="Loid" loading="lazy">
+        <figcaption>Loid</figcaption>
+      </figure><figure data-nom="yor">
+        <img src="src/img/rushpic/yor.webp" alt="Yor" loading="lazy">
+        <figcaption>Yor</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Yu Yu Hakusho"
+           data-big3="false" data-main="false">
+    <h2>Yu Yu Hakusho
+      <span class="n">3</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="hiei">
+        <img src="src/img/rushpic/hiei.webp" alt="Hiei" loading="lazy">
+        <figcaption>Hiei</figcaption>
+      </figure><figure data-nom="kurama">
+        <img src="src/img/rushpic/kurama.webp" alt="Kurama" loading="lazy">
+        <figcaption>Kurama</figcaption>
+      </figure><figure data-nom="yusuke">
+        <img src="src/img/rushpic/yusuke.webp" alt="Yusuke" loading="lazy">
+        <figcaption>Yusuke</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Yugioh"
+           data-big3="false" data-main="false">
+    <h2>Yugioh
+      <span class="n">3</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="jaden">
+        <img src="src/img/rushpic/jaden.webp" alt="Jaden" loading="lazy">
+        <figcaption>Jaden<span class="al">judai</span></figcaption>
+      </figure><figure data-nom="kaiba">
+        <img src="src/img/rushpic/kaiba.webp" alt="Kaiba" loading="lazy">
+        <figcaption>Kaiba<span class="al">seto</span></figcaption>
+      </figure><figure data-nom="yugi">
+        <img src="src/img/rushpic/yugi.webp" alt="Yugi" loading="lazy">
+        <figcaption>Yugi<span class="al">atem · yami yugi</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Bakuman"
+           data-big3="false" data-main="false">
+    <h2>Bakuman
+      <span class="n">2</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="eiji">
+        <img src="src/img/rushpic/eiji.webp" alt="Eiji" loading="lazy">
+        <figcaption>Eiji<span class="al">nizuma</span></figcaption>
+      </figure><figure data-nom="mashiro">
+        <img src="src/img/rushpic/mashiro.webp" alt="Mashiro" loading="lazy">
+        <figcaption>Mashiro</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Berserk"
+           data-big3="false" data-main="false">
+    <h2>Berserk
+      <span class="n">2</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="griffith">
+        <img src="src/img/rushpic/griffith.webp" alt="Griffith" loading="lazy">
+        <figcaption>Griffith</figcaption>
+      </figure><figure data-nom="guts">
+        <img src="src/img/rushpic/guts.webp" alt="Guts" loading="lazy">
+        <figcaption>Guts</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Cyberpunk Edgerunners"
+           data-big3="false" data-main="false">
+    <h2>Cyberpunk Edgerunners
+      <span class="n">2</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="david">
+        <img src="src/img/rushpic/david.webp" alt="David" loading="lazy">
+        <figcaption>David</figcaption>
+      </figure><figure data-nom="lucy">
+        <img src="src/img/rushpic/lucy2.webp" alt="Lucy" loading="lazy">
+        <figcaption>Lucy</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Death Note"
+           data-big3="false" data-main="true">
+    <h2>Death Note
+      <span class="n">2</span>
+      
+      <span class="tag main">Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="l">
+        <img src="src/img/rushpic/l.webp" alt="L" loading="lazy">
+        <figcaption>L<span class="al">L · Ryuzaki · Lawliet</span></figcaption>
+      </figure><figure data-nom="light">
+        <img src="src/img/rushpic/light.webp" alt="Light" loading="lazy">
+        <figcaption>Light<span class="al">Yagami · Kira</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Dr. Stone"
+           data-big3="false" data-main="false">
+    <h2>Dr. Stone
+      <span class="n">2</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="senku">
+        <img src="src/img/rushpic/senku.webp" alt="Senku" loading="lazy">
+        <figcaption>Senku</figcaption>
+      </figure><figure data-nom="tsukasa">
+        <img src="src/img/rushpic/tsukasa.webp" alt="Tsukasa" loading="lazy">
+        <figcaption>Tsukasa</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Frieren"
+           data-big3="false" data-main="false">
+    <h2>Frieren
+      <span class="n">2</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="fern">
+        <img src="src/img/rushpic/fern.webp" alt="Fern" loading="lazy">
+        <figcaption>Fern</figcaption>
+      </figure><figure data-nom="frieren">
+        <img src="src/img/rushpic/frieren.webp" alt="Frieren" loading="lazy">
+        <figcaption>Frieren</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Horimiya"
+           data-big3="false" data-main="false">
+    <h2>Horimiya
+      <span class="n">2</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="hori">
+        <img src="src/img/rushpic/hori.webp" alt="Hori" loading="lazy">
+        <figcaption>Hori</figcaption>
+      </figure><figure data-nom="miyamura">
+        <img src="src/img/rushpic/miyamura.webp" alt="Miyamura" loading="lazy">
+        <figcaption>Miyamura</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Kaguya-sama"
+           data-big3="false" data-main="false">
+    <h2>Kaguya-sama
+      <span class="n">2</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="kaguya">
+        <img src="src/img/rushpic/kaguya.webp" alt="Kaguya" loading="lazy">
+        <figcaption>Kaguya</figcaption>
+      </figure><figure data-nom="shirogane">
+        <img src="src/img/rushpic/shirogane.webp" alt="Shirogane" loading="lazy">
+        <figcaption>Shirogane</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Magi"
+           data-big3="false" data-main="false">
+    <h2>Magi
+      <span class="n">2</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="morgiana">
+        <img src="src/img/rushpic/morgiana.webp" alt="Morgiana" loading="lazy">
+        <figcaption>Morgiana</figcaption>
+      </figure><figure data-nom="sinbad">
+        <img src="src/img/rushpic/sinbad.webp" alt="Sinbad" loading="lazy">
+        <figcaption>Sinbad</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Oregairu"
+           data-big3="false" data-main="false">
+    <h2>Oregairu
+      <span class="n">2</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="hikigaya">
+        <img src="src/img/rushpic/hikki.webp" alt="Hikigaya" loading="lazy">
+        <figcaption>Hikigaya<span class="al">hachiman · hikki · hikigaya</span></figcaption>
+      </figure><figure data-nom="yukino">
+        <img src="src/img/rushpic/yukino.webp" alt="Yukino" loading="lazy">
+        <figcaption>Yukino</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Pokemon"
+           data-big3="false" data-main="false">
+    <h2>Pokemon
+      <span class="n">2</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="regis">
+        <img src="src/img/rushpic/regis.webp" alt="Regis" loading="lazy">
+        <figcaption>Regis<span class="al">blue</span></figcaption>
+      </figure><figure data-nom="sacha">
+        <img src="src/img/rushpic/sacha.webp" alt="Sacha" loading="lazy">
+        <figcaption>Sacha<span class="al">ash · sasha</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Sword Art Online"
+           data-big3="false" data-main="false">
+    <h2>Sword Art Online
+      <span class="n">2</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="asuna">
+        <img src="src/img/rushpic/asuna.webp" alt="Asuna" loading="lazy">
+        <figcaption>Asuna</figcaption>
+      </figure><figure data-nom="kirito">
+        <img src="src/img/rushpic/kirito.webp" alt="Kirito" loading="lazy">
+        <figcaption>Kirito</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Tokyo Ghoul"
+           data-big3="false" data-main="true">
+    <h2>Tokyo Ghoul
+      <span class="n">2</span>
+      
+      <span class="tag main">Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="kaneki">
+        <img src="src/img/rushpic/kaneki.webp" alt="Kaneki" loading="lazy">
+        <figcaption>Kaneki</figcaption>
+      </figure><figure data-nom="touka">
+        <img src="src/img/rushpic/touka.webp" alt="Touka" loading="lazy">
+        <figcaption>Touka<span class="al">toka</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Vinland Saga"
+           data-big3="false" data-main="false">
+    <h2>Vinland Saga
+      <span class="n">2</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="askeladd">
+        <img src="src/img/rushpic/askeladd.webp" alt="Askeladd" loading="lazy">
+        <figcaption>Askeladd<span class="al">askelad</span></figcaption>
+      </figure><figure data-nom="thorfinn">
+        <img src="src/img/rushpic/thorfinn.webp" alt="Thorfinn" loading="lazy">
+        <figcaption>Thorfinn</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="86"
+           data-big3="false" data-main="false">
+    <h2>86
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="lena">
+        <img src="src/img/rushpic/lena.webp" alt="Lena" loading="lazy">
+        <figcaption>Lena<span class="al">vladilena · milize · léna · vladiléna</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Assassination Classroom"
+           data-big3="false" data-main="false">
+    <h2>Assassination Classroom
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="karma">
+        <img src="src/img/rushpic/karma.webp" alt="Karma" loading="lazy">
+        <figcaption>Karma</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Black Butler"
+           data-big3="false" data-main="false">
+    <h2>Black Butler
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="sebastian">
+        <img src="src/img/rushpic/sebastian.webp" alt="Sebastian" loading="lazy">
+        <figcaption>Sebastian</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Black Lagoon"
+           data-big3="false" data-main="false">
+    <h2>Black Lagoon
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="revy">
+        <img src="src/img/rushpic/revy.webp" alt="Revy" loading="lazy">
+        <figcaption>Revy<span class="al">reby</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Blue Exorcist"
+           data-big3="false" data-main="false">
+    <h2>Blue Exorcist
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="okumura">
+        <img src="src/img/rushpic/okumura.webp" alt="Okumura" loading="lazy">
+        <figcaption>Okumura<span class="al">rin</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Bungou Stray Dogs"
+           data-big3="false" data-main="false">
+    <h2>Bungou Stray Dogs
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="dazai">
+        <img src="src/img/rushpic/dazai.webp" alt="Dazai" loading="lazy">
+        <figcaption>Dazai<span class="al">osamu</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Code Geass"
+           data-big3="false" data-main="false">
+    <h2>Code Geass
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="lelouch">
+        <img src="src/img/rushpic/lelouch.webp" alt="Lelouch" loading="lazy">
+        <figcaption>Lelouch</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Dandadan"
+           data-big3="false" data-main="false">
+    <h2>Dandadan
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="okarun">
+        <img src="src/img/rushpic/okarun.webp" alt="Okarun" loading="lazy">
+        <figcaption>Okarun<span class="al">ken</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="DanMachi"
+           data-big3="false" data-main="false">
+    <h2>DanMachi
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="bell">
+        <img src="src/img/rushpic/bell.webp" alt="Bell" loading="lazy">
+        <figcaption>Bell</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Darling in the Franxx"
+           data-big3="false" data-main="false">
+    <h2>Darling in the Franxx
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="002">
+        <img src="src/img/rushpic/002.webp" alt="002" loading="lazy">
+        <figcaption>002<span class="al">zero two</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Fire Force"
+           data-big3="false" data-main="false">
+    <h2>Fire Force
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="benimaru">
+        <img src="src/img/rushpic/benimaru.webp" alt="Benimaru" loading="lazy">
+        <figcaption>Benimaru</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Food Wars"
+           data-big3="false" data-main="false">
+    <h2>Food Wars
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="soma">
+        <img src="src/img/rushpic/soma.webp" alt="Soma" loading="lazy">
+        <figcaption>Soma<span class="al">souma</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Gambling School"
+           data-big3="false" data-main="false">
+    <h2>Gambling School
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="yumeko">
+        <img src="src/img/rushpic/yumeko.webp" alt="Yumeko" loading="lazy">
+        <figcaption>Yumeko<span class="al">jabami</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="GTO"
+           data-big3="false" data-main="false">
+    <h2>GTO
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="onizuka">
+        <img src="src/img/rushpic/onizuka.webp" alt="Onizuka" loading="lazy">
+        <figcaption>Onizuka</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Kingdom"
+           data-big3="false" data-main="false">
+    <h2>Kingdom
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="shin">
+        <img src="src/img/rushpic/shin.webp" alt="Shin" loading="lazy">
+        <figcaption>Shin<span class="al">ri shin · li shin</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Mashle"
+           data-big3="false" data-main="false">
+    <h2>Mashle
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="mash">
+        <img src="src/img/rushpic/mash.webp" alt="Mash" loading="lazy">
+        <figcaption>Mash</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Medaka Box"
+           data-big3="false" data-main="false">
+    <h2>Medaka Box
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="medaka">
+        <img src="src/img/rushpic/medaka.webp" alt="Medaka" loading="lazy">
+        <figcaption>Medaka</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Monogatari"
+           data-big3="false" data-main="false">
+    <h2>Monogatari
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="araragi">
+        <img src="src/img/rushpic/araragi.webp" alt="Araragi" loading="lazy">
+        <figcaption>Araragi</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Nana"
+           data-big3="false" data-main="false">
+    <h2>Nana
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="nana">
+        <img src="src/img/rushpic/nana.webp" alt="nana" loading="lazy">
+        <figcaption>nana</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="No Game No Life"
+           data-big3="false" data-main="false">
+    <h2>No Game No Life
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="sora">
+        <img src="src/img/rushpic/sora.webp" alt="Sora" loading="lazy">
+        <figcaption>Sora</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Noragami"
+           data-big3="false" data-main="false">
+    <h2>Noragami
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="yato">
+        <img src="src/img/rushpic/yato.webp" alt="Yato" loading="lazy">
+        <figcaption>Yato</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Saiki K"
+           data-big3="false" data-main="false">
+    <h2>Saiki K
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="saiki">
+        <img src="src/img/rushpic/saiki.webp" alt="Saiki" loading="lazy">
+        <figcaption>Saiki</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Shield Hero"
+           data-big3="false" data-main="false">
+    <h2>Shield Hero
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="naofumi">
+        <img src="src/img/rushpic/naofumi.webp" alt="Naofumi" loading="lazy">
+        <figcaption>Naofumi</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Slam Dunk"
+           data-big3="false" data-main="false">
+    <h2>Slam Dunk
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="sakuragi">
+        <img src="src/img/rushpic/sakuragi.webp" alt="Sakuragi" loading="lazy">
+        <figcaption>Sakuragi<span class="al">hanamichi</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Steins;Gate"
+           data-big3="false" data-main="false">
+    <h2>Steins;Gate
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="okabe">
+        <img src="src/img/rushpic/okabe.webp" alt="Okabe" loading="lazy">
+        <figcaption>Okabe<span class="al">kyouma</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Tensura"
+           data-big3="false" data-main="false">
+    <h2>Tensura
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="limule">
+        <img src="src/img/rushpic/limule.webp" alt="limule" loading="lazy">
+        <figcaption>limule<span class="al">rimuru</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="The Promised Neverland"
+           data-big3="false" data-main="false">
+    <h2>The Promised Neverland
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="ray">
+        <img src="src/img/rushpic/ray.webp" alt="Ray" loading="lazy">
+        <figcaption>Ray</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Toriko"
+           data-big3="false" data-main="false">
+    <h2>Toriko
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="toriko">
+        <img src="src/img/rushpic/toriko.webp" alt="Toriko" loading="lazy">
+        <figcaption>Toriko</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Vanitas no Carte"
+           data-big3="false" data-main="false">
+    <h2>Vanitas no Carte
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="vanitas">
+        <img src="src/img/rushpic/vanitas.webp" alt="Vanitas" loading="lazy">
+        <figcaption>Vanitas</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Violet Evergarden"
+           data-big3="false" data-main="false">
+    <h2>Violet Evergarden
+      <span class="n">1</span>
+      
+      <span class="tag hors">hors Mainstream</span>
+    </h2>
+    <div class="grille">
+      <figure data-nom="violet">
+        <img src="src/img/rushpic/violet.webp" alt="Violet" loading="lazy">
+        <figcaption>Violet</figcaption>
+      </figure>
+    </div>
+  </section>
+</div>
+<script>
+const q = document.getElementById('q');
+const compteur = document.getElementById('compteur');
+let filtre = 'tout';
+
+function appliquer() {
+  const t = q.value.trim().toLowerCase();
+  let vus = 0;
+  document.querySelectorAll('section.anime').forEach(s => {
+    const nomAnime = s.dataset.anime.toLowerCase();
+    const okFiltre = filtre === 'tout'
+      || (filtre === 'big3' && s.dataset.big3 === 'true')
+      || (filtre === 'main' && s.dataset.main === 'true')
+      || (filtre === 'hors' && s.dataset.main !== 'true');
+    let montres = 0;
+    s.querySelectorAll('figure').forEach(f => {
+      const ok = okFiltre && (!t || f.dataset.nom.includes(t) || nomAnime.includes(t));
+      f.classList.toggle('vide', !ok);
+      if (ok) montres++;
+    });
+    s.classList.toggle('vide', montres === 0);
+    vus += montres;
+  });
+  compteur.textContent = vus + ' personnage' + (vus > 1 ? 's' : '');
+}
+
+q.addEventListener('input', appliquer);
+document.querySelectorAll('button.f').forEach(b => b.onclick = () => {
+  document.querySelectorAll('button.f').forEach(x => x.classList.remove('actif'));
+  b.classList.add('actif'); filtre = b.dataset.f; appliquer();
+});
+appliquer();
+</script>
+<style>figure.vide,section.anime.vide{display:none}</style>
+</body></html>
